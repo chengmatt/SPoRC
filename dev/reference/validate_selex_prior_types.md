@@ -37,8 +37,8 @@ validate_selex_prior_types(selex_prior, use_flag, what, sel_blocks, n_bins)
 
 - n_bins:
 
-  Integer. Size of the grid the stream's selectivity is parameterized on
-  (ages or lengths per its selectivity type).
+  Integer. Size of the grid the data source's selectivity is
+  parameterized on (ages or lengths per its selectivity type).
 
 ## Value
 

@@ -1,7 +1,7 @@
-# Refresh the map mirrors held in the data list
+# Refresh the map mirrors kept in the data list
 
 Several deviation penalties key on a copy of their parameter's factor
-map carried in the data list under `map_<par>`, since the map itself is
+map kept in the data list under `map_<par>`, since the map itself is
 applied by `RTMB::MakeADFun` and is invisible inside the objective.
 Those copies are written at setup, so a map edited by hand afterwards
 would otherwise leave the penalty evaluating deviations that are no

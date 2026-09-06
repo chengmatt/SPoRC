@@ -15,7 +15,7 @@ at_age_block_complete(use_arr, f, nd, i_y, i_a)
 
 - use_arr:
 
-  Use array for the stream.
+  Use array for the data source.
 
 - f:
 

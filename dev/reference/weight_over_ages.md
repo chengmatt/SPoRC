@@ -1,10 +1,9 @@
 # Weight an at-age likelihood component down to the weight's own dimensions
 
 An at-age component is reported over age and sex, and its weight is not,
-so both margins are summed within a cell before the weight is applied.
-This is what the objective does when it forms `jnLL`, and the profile
-has to match it or the components it reports will not add up to the
-total.
+so both dims are summed within a cell before the weight is applied. This
+is what the objective does when it forms `jnLL`, and the profile has to
+match it or the components it reports will not add up to the total.
 
 ## Usage
 
@@ -20,7 +19,7 @@ weight_over_ages(component, weight)
 
 - weight:
 
-  The stream's weight.
+  The data source's weight.
 
 ## Value
 

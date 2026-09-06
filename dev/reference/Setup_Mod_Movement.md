@@ -223,25 +223,18 @@ Setup_Mod_Movement(
 - ctmc_diffusion_bounds:
 
   How the CTMC generator is kept a valid Metzler matrix (non-negative
-  off-diagonal entries) when taxis outweighs diffusion. Writing \\d\\
-  for the preference gradient along an edge and \\\theta_j\\ for the
-  diffusion rate out of its origin, the accepted values are `"none"` (or
-  `0`, the default) for \\\theta_j + d\\ unbounded; `"softplus"` (or
-  `1`) for a softplus of \\\theta_j + d\\ of width `ctmc_diffusion_eps`;
-  `"clamp"` for its hard positive part; `"upwind"` for the discontinuous
-  Galerkin (finite volume) flux \\\theta_j + \max(d, 0)\\; `"barker"`
-  for \\\theta_j\\\mathrm{logit}^{-1}(d)\\; and `"logsoftplus"` for
-  \\\theta_j \log(1 + e^{d})\\. The last two are positive by
-  construction and ignore `ctmc_diffusion_eps` entirely: they have no
-  floor, no kink and no gradient-dead region, and they leave the
-  diffusion parameter interior when the data want one-way flow. See
-  `Get_Movement` for the full comparison.
+  off-diagonal entries) when taxis outweighs diffusion. `"softplus"` for
+  a softplus of \\\theta_j + d\\ of width `ctmc_diffusion_eps`; and
+  `"upwind"` (or `2`) for the discontinuous Galerkin (finite volume)
+  flux \\\theta_j + \max(d, 0)\\, which has diffusion whole and adds
+  only the down-gradient taxis, so positivity never depends on the two
+  cancelling.
 
 - ctmc_diffusion_eps:
 
   Positive numeric width of the softplus applied when
   `ctmc_diffusion_bounds = "softplus"` (default `0.1`). An edge where
-  taxis exactly cancels diffusion carries `eps * log(2)`, so this sets a
+  taxis exactly cancels diffusion has `eps * log(2)`, so this sets a
   floor on exchange as well as smoothing the hinge.
 
 - move_timing:
@@ -272,7 +265,7 @@ Setup_Mod_Movement(
   power of two \\n \ge 1\\ instead uses \\n\\ implicit (backward Euler)
   substeps, \\(I - A/n)^{-n}\\, evaluated as one linear solve plus
   \\\log_2 n\\ squarings, which is why \\n\\ must be a power of two. The
-  implicit form has a much cheaper reverse-mode adjoint than a matrix
+  implicit form has a much cheaper reverse-mode derivative than a matrix
   exponential, so the gradient is several times faster, but it is a
   first-order approximation: \\n = 1\\ is plain `solve(I - A)` and is an
   approximation.

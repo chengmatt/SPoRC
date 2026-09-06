@@ -191,7 +191,8 @@ modify starting values as needed:</p>
 <span><span class="co"># Specify starting values post-hoc</span></span>
 <span><span class="co"># R0</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_global_R0</span> <span class="co"># default starting value</span></span>
-<span><span class="co">#&gt; [1] 2.70805</span></span>
+<span><span class="co">#&gt;         [,1]</span></span>
+<span><span class="co">#&gt; [1,] 2.70805</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_global_R0</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">30</span><span class="op">)</span> <span class="co"># user specified starting value</span></span>
 <span></span>
 <span><span class="co"># sigmaR</span></span>
@@ -214,7 +215,7 @@ rules are simple:</p>
 <ul>
 <li>
 <strong><code>factor(NA)</code></strong> at a position means that
-parameter is <strong>fixed</strong>, it is held at its value in
+parameter is <strong>fixed</strong>, it is kept at its value in
 <code>input_list$par</code> and not estimated.</li>
 <li>
 <strong>Shared integers</strong> at two or more positions means
@@ -227,7 +228,7 @@ parameter is <strong>independently estimated</strong>.</li>
 <p>Because fixing a parameter holds it at its current value in
 <code>input_list$par</code>, starting values and fixing must always be
 set together. If you fix a parameter without also setting a starting
-value, it will be held at the default value, which may not be what you
+value, it will be kept at the default value, which may not be what you
 intend.</p>
 <div class="section level3">
 <h3 id="fixing-parameters">Fixing Parameters<a class="anchor" aria-label="anchor" href="#fixing-parameters"></a>
@@ -317,8 +318,9 @@ example. We define two fishery fleets: Fleet 1 uses a logistic
 selectivity model (2 parameters: <em>a50</em> and slope), and Fleet 2
 uses a gamma dome-shaped model (2 parameters: <em>amax</em> and
 slope).</p>
-<p><strong>Built-in sharing: estimate all parameters
-independently</strong></p>
+<div class="section level4">
+<h4 id="built-in-sharing-estimate-all-parameters-independently">Built-in sharing: estimate all parameters independently<a class="anchor" aria-label="anchor" href="#built-in-sharing-estimate-all-parameters-independently"></a>
+</h4>
 <p>We first use <code>fish_fixed_sel_pars_spec = "est_all"</code> to
 estimate all selectivity parameters independently across all model
 partitions. With 2 sexes, 2 parameters per fleet, and 2 fleets, we
@@ -339,7 +341,10 @@ expect 8 unique values in the map.</p>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span> <span class="co"># 8 unique numbers, 4 for each sex and fleet combination</span></span>
 <span><span class="co">#&gt; [1] &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; Levels:</span></span></code></pre></div>
-<p><strong>Built-in sharing: share parameters across sexes</strong></p>
+</div>
+<div class="section level4">
+<h4 id="built-in-sharing-share-parameters-across-sexes">Built-in sharing: share parameters across sexes<a class="anchor" aria-label="anchor" href="#built-in-sharing-share-parameters-across-sexes"></a>
+</h4>
 <p>Using <code>fish_fixed_sel_pars_spec = "est_shared_s"</code> links
 selectivity parameters between sexes within each fleet. The same two
 parameters are used for both sexes, so we expect only 4 unique values (2
@@ -360,7 +365,10 @@ per fleet).</p>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span> <span class="co"># 4 unique numbers, 2 for each sex and fleet combination</span></span>
 <span><span class="co">#&gt; [1] &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt; &lt;NA&gt;</span></span>
 <span><span class="co">#&gt; Levels:</span></span></code></pre></div>
-<p><strong>Manual sharing: fine-grained control</strong></p>
+</div>
+<div class="section level4">
+<h4 id="manual-sharing-fine-grained-control">Manual sharing: fine-grained control<a class="anchor" aria-label="anchor" href="#manual-sharing-fine-grained-control"></a>
+</h4>
 <p>For sharing structures not supported by the convenience arguments,
 the map can be constructed manually. In this example, we want:</p>
 <ul>
@@ -448,6 +456,7 @@ provide. The key principle is always the same: positions in the
 flattened map with the same integer are estimated as a single shared
 parameter, while <code>NA</code> positions are fixed at their value in
 <code>input_list$par</code>.</p>
+</div>
 </div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

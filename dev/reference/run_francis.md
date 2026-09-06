@@ -29,7 +29,7 @@ run_francis(
   `Wt_FishLenComps_discard`) and population-specific
   (`Wt_FishAgeComps_pop`, `Wt_FishLenComps_pop`, `Wt_SrvAgeComps_pop`,
   `Wt_SrvLenComps_pop`, `Wt_FishAgeComps_discard_pop`,
-  `Wt_FishLenComps_discard_pop`) data streams.
+  `Wt_FishLenComps_discard_pop`) data sources.
 
 - parameters:
 
@@ -78,9 +78,9 @@ A named list with:
 - `recorded_weights`:
 
   Long-format dataframe of Francis weights from every iteration for all
-  pooled and population-specific data streams, with columns `Region`,
-  `Year`, `Seas`, `Sex`, `Fleet`, `Weight`, `Type`, `Pop` (pooled rows
-  have `Pop = NA`), and `iter`.
+  pooled and population-specific data data sources, with columns
+  `Region`, `Year`, `Seas`, `Sex`, `Fleet`, `Weight`, `Type`, `Pop`
+  (pooled rows have `Pop = NA`), and `iter`.
 
 ## See also
 

@@ -64,5 +64,5 @@ integer indices; fixed parameters are `NA`.
 
 The map decides what is shared, and the recruitment penalty reads each
 region's own slot. Under `rec_region_prop_spec = 1` with multiple
-populations, a population's non-natal region slots carry no deviations
+populations, a population's non-natal region slots have no deviations
 and are mapped off automatically.

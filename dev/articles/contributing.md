@@ -62,7 +62,7 @@ or a single file while iterating:
 testthat::test_file("tests/testthat/test-model_selectivity.R")
 ```
 
-or a whole group, since test files carry the same prefixes as `R/`:
+or a whole group, since test files hold the same prefixes as `R/`:
 
 ``` r
 
@@ -76,8 +76,8 @@ Most test files are narrowly scoped (`test-model_movement.R`,
 `test-setup_fishery_fdev.R`, `test-model_selectivity.R`, …), but the
 `test-regression_*.R` files fit a full model end-to-end against a
 bundled example dataset and check the resulting `obj$rep` values
-(e.g. `SSB`, `Rec`) against pinned reference vectors. These are the
-tests most likely to catch an accidental change in `model_objective.R`’s
+(e.g. `SSB`, `Rec`) against fixed reference vectors. These are the tests
+most likely to catch an accidental change in `model_objective.R`’s
 numerics, and they’re also the slowest (each one runs a real
 optimization) so expect a full local run of just that subset to take
 several minutes to tens of minutes depending on your machine. If you
@@ -104,7 +104,7 @@ changing a roxygen block:
 devtools::document()
 ```
 
-Internal helpers (not meant for users to call directly) should carry
+Internal helpers (not meant for users to call directly) should have
 `@keywords internal` rather than `@export`. If you add a new exported
 function, add it to the appropriate section of `reference:` in
 `_pkgdown.yml` too. pkgdown won’t list a function on the reference index

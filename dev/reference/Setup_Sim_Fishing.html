@@ -238,27 +238,27 @@ dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.
 
 <dt id="arg-ln-sigmacaa-ln-sigmadaa">ln_sigmaCAA, ln_sigmaDAA<a class="anchor" aria-label="anchor" href="#arg-ln-sigmacaa-ln-sigmadaa"></a></dt>
 <dd><p>Log-scale observation error
-for the at-age streams, `n_ages x n_sexes x n_fish_fleets`. An array without
-the sex margin is required.</p></dd>
+for the at-age data sources, `n_ages x n_sexes x n_fish_fleets`. An array without
+the sex dim is required.</p></dd>
 
 
 <dt id="arg-usecatchaa-usediscardaa">UseCatchAA, UseDiscardAA<a class="anchor" aria-label="anchor" href="#arg-usecatchaa-usediscardaa"></a></dt>
 <dd><p>Integer arrays
 `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
-at-age observation is drawn. The sex margin is required: a stream summed
-over sexes carries its flag in sex slot one.</p></dd>
+at-age observation is drawn. The sex dim is required: a data source summed
+over sexes has its flag in sex slot one.</p></dd>
 
 
 <dt id="arg-obscatchaa-se-obsdiscardaa-se">ObsCatchAA_SE, ObsDiscardAA_SE<a class="anchor" aria-label="anchor" href="#arg-obscatchaa-se-obsdiscardaa-se"></a></dt>
 <dd><p>Reported standard errors
-shaped like the use arrays, read only when the stream's `sigma_form` asks
+shaped like the use arrays, read only when the data source's `sigma_form` asks
 for them.</p></dd>
 
 
 <dt id="arg-catchaa-type-discardaa-type">CatchAA_Type, DiscardAA_Type<a class="anchor" aria-label="anchor" href="#arg-catchaa-type-discardaa-type"></a></dt>
-<dd><p>Which margins each fleet
+<dd><p>Which dims each fleet
 reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
-`"spltRspltS"`. A summed margin is drawn once, into slot one.</p></dd>
+`"spltRspltS"`. A summed dim is drawn once, into slot one.</p></dd>
 
 
 <dt id="arg-catchaa-liketype-discardaa-liketype">CatchAA_LikeType, DiscardAA_LikeType<a class="anchor" aria-label="anchor" href="#arg-catchaa-liketype-discardaa-liketype"></a></dt>
@@ -274,7 +274,7 @@ observation error comes from: `"none"` (default), `"data"`,
 
 <dt id="arg-use-catch-aa-use-discard-aa">use_catch_aa, use_discard_aa<a class="anchor" aria-label="anchor" href="#arg-use-catch-aa-use-discard-aa"></a></dt>
 <dd><p>Integer vectors
-`n_fish_fleets`, `1` for fleets whose at-age streams are drawn.</p></dd>
+`n_fish_fleets`, `1` for fleets whose at-age data sources are drawn.</p></dd>
 
 
 <dt id="arg-catch-units">catch_units<a class="anchor" aria-label="anchor" href="#arg-catch-units"></a></dt>
@@ -323,7 +323,7 @@ Error structure each fleet's index is drawn under: <code>"lognormal"</code> (0),
 <code>"normal"</code> (1), or <code>"mvn"</code> (2), matching the estimation model's
 <code>FishIdx_LikeType</code>. An mvn fleet draws from <code>FishIdx_Cov</code> through
 a common-factor decomposition (see <code><a href="cov_to_factor.html">cov_to_factor</a></code>) instead of
-<code>ObsFishIdx_SE</code>, and its population-specific stream stays lognormal.
+<code>ObsFishIdx_SE</code>, and its population-specific data source stays lognormal.
 Default: lognormal for every fleet.</p></dd>
 
 

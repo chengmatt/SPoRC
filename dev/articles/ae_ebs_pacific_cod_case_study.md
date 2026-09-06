@@ -41,7 +41,7 @@ n_reg <- 1; n_sex <- 1; n_fish <- 1; n_srv <- 1
 sigmaR <- dat$rec$sigmaR
 ```
 
-The object carries the model inputs, the assessment’s maximum likelihood
+The object holds the model inputs, the assessment’s maximum likelihood
 estimate in `dat$mle`, used both as a starting point and to check the
 objective before anything is optimized, and the reported quantities in
 `dat$ss3`, which are the comparison target.
@@ -75,7 +75,7 @@ that last deviation at zero and leaves it out of the penalty.
 
 A separate initial equilibrium recruitment is penalized towards
 $`R_{0}`$ with the assessment’s standard deviation, $`\sigma_{R}`$ over
-the average age. Initial fishing mortality is held at the assessment’s
+the average age. Initial fishing mortality is kept at the assessment’s
 value, since `SPoRC` has no equilibrium catch to fit it against.
 
 ``` r
@@ -111,15 +111,15 @@ generalizes von Bertalanffy with a sixth parameter raising the lengths
 to a power, and weight at age is derived from it through the
 weight-length relationship rather than supplied as data.
 
-Three arguments carry the assessment’s growth conventions.
+Three arguments hold the assessment’s growth conventions.
 `growth_tv_model = c(L1 = "iid", K = "iid")` names which parameters vary
 and how, with `growth_tv_years` giving each its own active years.
 `growth_tv_link = "logit"` makes each deviation an offset inside the
-parameter’s bounds. `growth_tv_type = "cohort"` carries size at age
-forward cohort by cohort. The deviations’ standard deviations live in
-the first stream of `growth_pe_pars`, one slot per growth parameter in
-the order `L1`, `L2`, `K`, `CV1`, `CV2`, `rho`, with a placeholder in
-the four slots that do not vary. The second stream belongs to the
+parameter’s bounds. `growth_tv_type = "cohort"` has size at age forward
+cohort by cohort. The deviations’ standard deviations live in the first
+data source of `growth_pe_pars`, one slot per growth parameter in the
+order `L1`, `L2`, `K`, `CV1`, `CV2`, `rho`, with a placeholder in the
+four slots that do not vary. The second data source belongs to the
 semi-parametric surface and is unread here.
 
 Maturity at age is taken from the assessment rather than modeled,
@@ -161,7 +161,7 @@ input_list <- Setup_Mod_Biologicals(
 
 The control file records a second reference age of 999 to mean that
 $`L_{2}`$ is the asymptote itself, which is what the conditional on
-`growth_A2` translates. Two ageing error definitions are carried in
+`growth_A2` translates. Two ageing error definitions are kept in
 `AgeingError`, a biased reader through 2007 and an unbiased one after.
 
 ## Movement and tagging
@@ -194,7 +194,7 @@ input_list <- Setup_Mod_Catch_and_F(
 
 ## Fishery compositions
 
-No fishery index and no fishery ages, lengths only. Two arguments carry
+No fishery index and no fishery ages, lengths only. Two arguments have
 conventions rather than choices. `FishLenComps_sel = "length"` applies
 selectivity at length and sums over ages instead of folding it to age
 first, and `fish_waa_selected = 1` puts the catch in biomass on the
@@ -294,7 +294,7 @@ Block years are given in year-index space, 1 being the first model year.
 
 The same double normal with independent annual deviations on the
 ascending width from 1982, which is `cont_tv_srv_sel = "iid"` with the
-process error standard deviation held at the assessment’s value.
+process error standard deviation kept at the assessment’s value.
 Catchability is estimated.
 
 ``` r
@@ -366,8 +366,8 @@ seed <- fit_model(input_list$data, input_list$par, input_list$map,
                   do_optim = FALSE, silent = TRUE)
 ```
 
-The comparison before anything is optimized, against a report file
-carrying six significant digits:
+The comparison before anything is optimized, against a report file with
+six significant digits:
 
     numbers at age                      1.0e-03 %
     spawning biomass                    4.7e-04 %
@@ -454,8 +454,8 @@ and the selectivity agrees at the report’s own print precision, and so
 does every likelihood component. The refit moves spawning biomass by
 half a percent.
 
-The drift is the recruitment convention. The assessment declares its
-deviations a `devvector`, which ADMB constrains to sum to zero, so
+The difference is the recruitment convention. The assessment declares
+its deviations a `devvector`, which ADMB constrains to sum to zero, so
 $`R_{0}`$ is the geometric mean recruitment of the deviation years by
 construction and the assessment’s main deviations sum to
 $`-5\times10^{-14}`$. `SPoRC` leaves its deviations free under the
@@ -464,10 +464,10 @@ mean deviation is $`-0.105`$ and $`\ln R_{0}`$ falls 0.106, from 13.341
 to 13.235, leaving their product almost unchanged.
 
 The survey’s extra standard deviation differs the same way. The
-assessment estimates it, so how much weight the index carries is settled
+assessment estimates it, so how much weight the index has is settled
 alongside everything else. `SPoRC` has no estimated extra standard
 deviation on an index, so here it is added to the observed standard
-errors and held at the assessment’s value. That is not a small term:
+errors and kept at the assessment’s value. That is not a small term:
 $`0.093`$ against observed standard errors of $`0.044`$ to $`0.094`$, so
 it roughly doubles them, and the index likelihood is unrecognizable
 without it. Holding it costs nothing at the assessment’s estimate, where

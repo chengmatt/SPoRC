@@ -12,8 +12,8 @@ plot_resids(osa)
 ```
 
 Valid at-age sources are `"CatchAA"`, `"DiscardAA"` and `"SrvIdxAA"`,
-each with a `pop = TRUE` variant. The returned data frame carries an
-extra `age` column, which the residual plots facet on.
+each with a `pop = TRUE` variant. The returned data frame has an extra
+`age` column, which the residual plots facet on.
 
 Raw (Pearson) residuals from compositional, count, and index data can be
 difficult to interpret given that multinomial/Dirichlet-multinomial

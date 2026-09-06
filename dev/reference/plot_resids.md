@@ -31,9 +31,9 @@ additionally facet by `fleet`, `pop`, and `seas` whenever
 `year` + bin alone don't uniquely place a bubble-plot point when
 compositions are collected in more than one season). Tagging plots only
 show QQ plots given the number of dimensions in tagging data. Index-type
-residuals (from `get_osa(..., index_source = ...)`, carrying an
-`idx_type` column `%in% c("Catch","Discard","FishIdx","SrvIdx")` instead
-of `comp_type`) facet by `region`, `season`, `fleet`, and `pop` whenever
+residuals (from `get_osa(..., index_source = ...)`, with an `idx_type`
+column `%in% c("Catch","Discard","FishIdx","SrvIdx")` instead of
+`comp_type`) facet by `region`, `season`, `fleet`, and `pop` whenever
 those span more than one level, and pair the QQ-plot with a
 residual-vs-year point plot instead of a bubble plot (there is no
 bin/age/length dimension to plot against). Note: these are

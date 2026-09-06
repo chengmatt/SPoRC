@@ -120,7 +120,7 @@ Get_Comp_Likelihoods_OSA(
   For length compositions, either `NA` (the model and observed bins
   coincide) or a matrix `[n_model_bins x n_obs_bins]` mapping the
   model's length bins onto the observed ones, the same way, when the
-  compositions are recorded on coarser bins than the model carries.
+  compositions are recorded on coarser bins than the model has.
 
 - use:
 
@@ -142,7 +142,7 @@ Get_Comp_Likelihoods_OSA(
   any ageing error or length bin map has mapped model bins onto observed
   ones. The restriction applies to every composition type: for the
   sex-joint comps (`Comp_Type = 2`) the named bins are dropped from each
-  sex's block of the joint stack, so the sex ratio the joint comps carry
+  sex's block of the joint stack, so the sex ratio the joint comps have
   is the ratio within the fitted bins. Logistic-normal covariances are
   built over all observed bins and then cut down to the fitted ones, so
   a gap in `comp_bins` still counts towards the AR1 lag between the bins

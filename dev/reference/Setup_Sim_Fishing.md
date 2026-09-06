@@ -183,26 +183,26 @@ Setup_Sim_Fishing(
 
 - ln_sigmaCAA, ln_sigmaDAA:
 
-  Log-scale observation error for the at-age streams, \`n_ages x n_sexes
-  x n_fish_fleets\`. An array without the sex margin is required.
+  Log-scale observation error for the at-age data sources, \`n_ages x
+  n_sexes x n_fish_fleets\`. An array without the sex dim is required.
 
 - UseCatchAA, UseDiscardAA:
 
   Integer arrays \`n_regions x n_yrs x n_seas x n_ages x n_sexes x
   n_fish_fleets\`, \`1\` where an at-age observation is drawn. The sex
-  margin is required: a stream summed over sexes carries its flag in sex
+  dim is required: a data source summed over sexes has its flag in sex
   slot one.
 
 - ObsCatchAA_SE, ObsDiscardAA_SE:
 
   Reported standard errors shaped like the use arrays, read only when
-  the stream's \`sigma_form\` asks for them.
+  the data source's \`sigma_form\` asks for them.
 
 - CatchAA_Type, DiscardAA_Type:
 
-  Which margins each fleet reports separately: \`"agg"\`,
-  \`"spltRaggS"\` (default), \`"aggRspltS"\` or \`"spltRspltS"\`. A
-  summed margin is drawn once, into slot one.
+  Which dims each fleet reports separately: \`"agg"\`, \`"spltRaggS"\`
+  (default), \`"aggRspltS"\` or \`"spltRspltS"\`. A summed dim is drawn
+  once, into slot one.
 
 - CatchAA_LikeType, DiscardAA_LikeType:
 
@@ -215,8 +215,8 @@ Setup_Sim_Fishing(
 
 - use_catch_aa, use_discard_aa:
 
-  Integer vectors \`n_fish_fleets\`, \`1\` for fleets whose at-age
-  streams are drawn.
+  Integer vectors \`n_fish_fleets\`, \`1\` for fleets whose at-age data
+  sources are drawn.
 
 - catch_units:
 
@@ -267,8 +267,8 @@ Setup_Sim_Fishing(
   mvn fleet draws from `FishIdx_Cov` through a common-factor
   decomposition (see
   [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md))
-  instead of `ObsFishIdx_SE`, and its population-specific stream stays
-  lognormal. Default: lognormal for every fleet.
+  instead of `ObsFishIdx_SE`, and its population-specific data source
+  stays lognormal. Default: lognormal for every fleet.
 
 - FishIdx_Cov:
 

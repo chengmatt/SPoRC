@@ -33,8 +33,8 @@ parse_year_fleet_spec(spec, arg_name, n_fleets, n_yrs, codes, check = NULL)
 - codes:
 
   Named numeric vector mapping each accepted value to the code the model
-  reads. The names are the accepted vocabulary, so a stream with its own
-  set of values passes its own mapping.
+  reads. The names are the accepted vocabulary, so a data source with
+  its own set of values passes its own mapping.
 
 - check:
 

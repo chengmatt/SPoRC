@@ -112,7 +112,7 @@ Get_Reference_Point_Uncertainty(
 - extra_quantities:
 
   Optional `function(rep, refpts)` returning a named vector of extra
-  positive quantities to carry through, e.g. stock status.
+  positive quantities to propagate through, e.g. stock status.
 
 - par_subset:
 
@@ -203,7 +203,7 @@ rp <- Get_Reference_Point_Uncertainty(obj = dusky_rtmb_model, SPR_x = 0.4,
                                       type = "single_region", what = "SPR")
 rp$refpts
 
-# carry stock status through, so the correlation with the reference point is kept
+# have stock status through, so the correlation with the reference point is kept
 status <- function(rep, refpts) {
   ssb <- rep$SSB[1, 1, dim(rep$SSB)[3]]
   c(SSB_terminal = ssb, status = ssb / as.numeric(refpts$b_ref_pt))

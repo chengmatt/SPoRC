@@ -1,11 +1,10 @@
 # Sensible starting values for the double normal's peak
 
-The double normal carries the bin at which its plateau begins on the bin
+The double normal holds the bin at which its plateau begins on the bin
 scale, so a parameter left at zero puts the peak at bin zero. Where the
 first bin is itself zero the ascending limb has no extent, its rescaling
 divides by zero, and the curve comes back as `NaN`. A starting value in
-the middle of the bin range is a curve, which is what a default should
-be.
+the middle of the bin range gives a curve.
 
 ## Usage
 
@@ -36,7 +35,7 @@ seed_dbnrml_peak(pars, sel_model_arr, bin_vec, sex_offset = NULL)
 ## Value
 
 `pars` with the peak slot of every double normal fleet set to the middle
-of the bin range, for the sexes that carry a peak there.
+of the bin range, for the sexes that have a peak there.
 
 ## Details
 

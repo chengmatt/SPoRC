@@ -79,11 +79,14 @@ arguments here describe.</p>
 <span>  NAA_re_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  NAA_re_region <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  NAA_re_sex <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  NAA_re_season <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  pop_corr <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  region_corr <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  sex_corr <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  season_corr <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  NAA_re_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  NAA_re_years <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  NAA_re_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  NAA_re_seasons <span class="op">=</span> <span class="st">"annual"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -106,29 +109,37 @@ of <code>"iid"</code>, <code>"1dar1_a"</code>, <code>"1dar1_y"</code>, <code>"2d
 <dd><p>Numeric. Conditional standard deviation of the innovations,
 the same quantity <code>ln_sigmaNAA</code> holds in the estimation model. Under an
 autoregressive form the marginal standard deviation is larger by
-\(1/\sqrt{1 - \rho^2}\) per correlated margin.</p></dd>
+\(1/\sqrt{1 - \rho^2}\) per correlated dim.</p></dd>
 
 
 <dt id="arg-rho-age-rho-year-rho-cohort">rho_age, rho_year, rho_cohort<a class="anchor" aria-label="anchor" href="#arg-rho-age-rho-year-rho-cohort"></a></dt>
 <dd><p>Numeric correlations in \((-1, 1)\) over
-the age, year and cohort margins. Only the ones the chosen form reads are
+the age, year and cohort dims. Only the ones the chosen form reads are
 used.</p></dd>
 
 
-<dt id="arg-naa-re-pop-naa-re-region-naa-re-sex">NAA_re_pop, NAA_re_region, NAA_re_sex<a class="anchor" aria-label="anchor" href="#arg-naa-re-pop-naa-re-region-naa-re-sex"></a></dt>
-<dd><p>Character, <code>"iid"</code> (default) or
-<code>"us"</code>, an unstructured correlation across that margin.</p></dd>
+<dt id="arg-naa-re-pop-naa-re-region-naa-re-sex-naa-re-season">NAA_re_pop, NAA_re_region, NAA_re_sex, NAA_re_season<a class="anchor" aria-label="anchor" href="#arg-naa-re-pop-naa-re-region-naa-re-sex-naa-re-season"></a></dt>
+<dd><p>Character,
+<code>"iid"</code> (default) or <code>"us"</code>, an unstructured correlation across
+that dim.</p></dd>
 
 
-<dt id="arg-pop-corr-region-corr-sex-corr">pop_corr, region_corr, sex_corr<a class="anchor" aria-label="anchor" href="#arg-pop-corr-region-corr-sex-corr"></a></dt>
-<dd><p>Numeric vectors of length \(n(n-1)/2\)
-giving the correlations for those margins, ordered as the strict lower
-triangle is filled by column. A single value is recycled.</p></dd>
+<dt id="arg-pop-corr-region-corr-sex-corr-season-corr">pop_corr, region_corr, sex_corr, season_corr<a class="anchor" aria-label="anchor" href="#arg-pop-corr-region-corr-sex-corr-season-corr"></a></dt>
+<dd><p>Numeric vectors of length
+\(n(n-1)/2\) giving the correlations for those dims, ordered as the
+strict lower triangle is filled by column. A single value is recycled.</p></dd>
 
 
 <dt id="arg-naa-re-ages-naa-re-years">NAA_re_ages, NAA_re_years<a class="anchor" aria-label="anchor" href="#arg-naa-re-ages-naa-re-years"></a></dt>
 <dd><p>Ages and year indices the state covers.
 <code>NULL</code> (default) uses everything from the second onward.</p></dd>
+
+
+<dt id="arg-naa-re-seasons">NAA_re_seasons<a class="anchor" aria-label="anchor" href="#arg-naa-re-seasons"></a></dt>
+<dd><p>Seasons the state covers. <code>"annual"</code> (default) puts
+a state at season one only, leaving the numbers deterministic between
+seasons; <code>"all"</code> puts one at the start of every season, and an integer
+vector selects specific seasons.</p></dd>
 
 </dl></div>
     <div class="section level2">

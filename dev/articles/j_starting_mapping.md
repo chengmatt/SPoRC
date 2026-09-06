@@ -131,7 +131,8 @@ input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from abov
 # Specify starting values post-hoc
 # R0
 input_list$par$ln_global_R0 # default starting value
-#> [1] 2.70805
+#>         [,1]
+#> [1,] 2.70805
 input_list$par$ln_global_R0 <- log(30) # user specified starting value
 
 # sigmaR
@@ -153,7 +154,7 @@ a parameter array flattened into a vector of factors. The rules are
 simple:
 
 - **`factor(NA)`** at a position means that parameter is **fixed**, it
-  is held at its value in `input_list$par` and not estimated.
+  is kept at its value in `input_list$par` and not estimated.
 - **Shared integers** at two or more positions means those parameters
   are **constrained to be equal** during estimation, only one value is
   estimated for the group.
@@ -163,7 +164,7 @@ simple:
 Because fixing a parameter holds it at its current value in
 `input_list$par`, starting values and fixing must always be set
 together. If you fix a parameter without also setting a starting value,
-it will be held at the default value, which may not be what you intend.
+it will be kept at the default value, which may not be what you intend.
 
 ### Fixing Parameters
 
@@ -261,7 +262,7 @@ example. We define two fishery fleets: Fleet 1 uses a logistic
 selectivity model (2 parameters: *a50* and slope), and Fleet 2 uses a
 gamma dome-shaped model (2 parameters: *amax* and slope).
 
-**Built-in sharing: estimate all parameters independently**
+#### Built-in sharing: estimate all parameters independently
 
 We first use `fish_fixed_sel_pars_spec = "est_all"` to estimate all
 selectivity parameters independently across all model partitions. With 2
@@ -287,7 +288,7 @@ input_list$map$fish_fixed_sel_pars # 8 unique numbers, 4 for each sex and fleet 
 #> Levels:
 ```
 
-**Built-in sharing: share parameters across sexes**
+#### Built-in sharing: share parameters across sexes
 
 Using `fish_fixed_sel_pars_spec = "est_shared_s"` links selectivity
 parameters between sexes within each fleet. The same two parameters are
@@ -312,7 +313,7 @@ input_list$map$fish_fixed_sel_pars # 4 unique numbers, 2 for each sex and fleet 
 #> Levels:
 ```
 
-**Manual sharing: fine-grained control**
+#### Manual sharing: fine-grained control
 
 For sharing structures not supported by the convenience arguments, the
 map can be constructed manually. In this example, we want:

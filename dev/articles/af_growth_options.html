@@ -93,7 +93,7 @@ in <code><a href="../articles/t_model_options.html">vignette("t_model_options")<
 module end to end: <code><a href="../articles/ad_goa_rex_sole_case_study.html">vignette("ad_goa_rex_sole_case_study")</a></code>
 for constant parametric growth with conditional age-at-length, and
 <code><a href="../articles/ae_ebs_pacific_cod_case_study.html">vignette("ae_ebs_pacific_cod_case_study")</a></code> for time-varying
-growth carried cohort by cohort.</p>
+growth kept cohort by cohort.</p>
 <p>The examples use the packaged EBS Pacific cod inputs, which have
 length bins, a weight-length relationship and length compositions, so
 every option below can be switched on against them.</p>
@@ -106,7 +106,7 @@ every option below can be switched on against them.</p>
 <span><span class="va">ages</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">ages</span>; <span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span></span>
 <span><span class="va">n_reg</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_sex</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span></span>
-<span><span class="co"># lens are the bin midpoints the population is carried on; the transition is</span></span>
+<span><span class="co"># lens are the bin midpoints the population is kept on; the transition is</span></span>
 <span><span class="co"># built on the lower edges, which is what growth_len_lower supplies</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
 <span>  years <span class="op">=</span> <span class="va">yrs</span>, ages <span class="op">=</span> <span class="va">ages</span>, lens <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">lens</span>,</span>
@@ -125,7 +125,7 @@ every option below can be switched on against them.</p>
 <div class="section level2">
 <h2 id="notation">Notation<a class="anchor" aria-label="anchor" href="#notation"></a>
 </h2>
-<p>Every symbol used below. Growth parameters additionally carry
+<p>Every symbol used below. Growth parameters additionally have
 population, region and sex subscripts
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>s</mi></mrow><annotation encoding="application/x-tex">p, r, s</annotation></semantics></math>,
 which are dropped throughout because sharing across them is a separate
@@ -430,8 +430,8 @@ distribution is a mixture over ages and abundance at age has to be
 separated from size at age. Conditional age-at-length constrains growth
 much more directly: a CAAL row is the age composition of the otoliths
 taken from one length bin, so it is informative about size at age and
-carries little information about abundance. If you have aged otoliths
-with their lengths, fit them as CAAL (<code>ObsSrv_caal</code>,
+has little information about abundance. If you have aged otoliths with
+their lengths, fit them as CAAL (<code>ObsSrv_caal</code>,
 <code>do_caal = 1</code>) rather than as marginal age compositions.</p>
 </div>
 <div class="section level2">
@@ -544,7 +544,7 @@ coherent pairings at a spread of 0.35, normal with
 note the mass the normal puts in the smallest bin at age 1. Bottom
 right: the resulting size-age transition, on a square root color
 scale.</em></p>
-<p>Two parameters carry the spread,
+<p>Two parameters hold the spread,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>1</mn></msub></mrow><annotation encoding="application/x-tex">CV_{1}</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>C</mi><msub><mi>V</mi><mn>2</mn></msub></mrow><annotation encoding="application/x-tex">CV_{2}</annotation></semantics></math>
@@ -620,7 +620,7 @@ years:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo>+</mo></msub><mo>=</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><msub><mi>a</mi><mo>+</mo></msub></munderover><msup><mi>e</mi><mrow><mi>−</mi><mn>0.2</mn><mi>k</mi></mrow></msup><mrow><mo stretchy="true" form="prefix">[</mo><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo><mo>+</mo><mstyle displaystyle="true"><mfrac><mi>k</mi><msub><mi>a</mi><mo>+</mo></msub></mfrac></mstyle><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>L</mi><mi>∞</mi></msub><mo>−</mo><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><mrow><munderover><mo>∑</mo><mrow><mi>k</mi><mo>=</mo><mn>0</mn></mrow><msub><mi>a</mi><mo>+</mo></msub></munderover><msup><mi>e</mi><mrow><mi>−</mi><mn>0.2</mn><mi>k</mi></mrow></msup></mrow></mfrac></mrow><annotation encoding="application/x-tex">\bar{L}_{+} = \frac{\sum_{k=0}^{a_{+}} e^{-0.2k}\left[ \bar{L}(a_{+}) + \dfrac{k}{a_{+}}\left( L_{\infty} - \bar{L}(a_{+}) \right) \right]}{\sum_{k=0}^{a_{+}} e^{-0.2k}}</annotation></semantics></math></p>
 <p>The 0.2 is a fixed assumption about how fast numbers decline with
 age, not an estimated rate, and it sets how much weight the older and
-larger fish carry.
+larger fish have.
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo>+</mo></msub><annotation encoding="application/x-tex">\bar{L}_{+}</annotation></semantics></math>
 lies between
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mover><mi>L</mi><mo accent="true">‾</mo></mover><mo stretchy="false" form="prefix">(</mo><msub><mi>a</mi><mo>+</mo></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\bar{L}(a_{+})</annotation></semantics></math>
@@ -809,7 +809,7 @@ the size that cohort actually reached.</p>
 <h2 id="sharing-and-fixing">Sharing and fixing<a class="anchor" aria-label="anchor" href="#sharing-and-fixing"></a>
 </h2>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># one curve per sex, shared across regions, with the second CV held fixed</span></span>
+<code class="sourceCode R"><span><span class="co"># one curve per sex, shared across regions, with the second CV kept fixed</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>, <span class="va">...</span>,</span>
 <span>  growth_model <span class="op">=</span> <span class="st">"vb_schnute"</span>,</span>
@@ -867,7 +867,7 @@ at once tends to give a well-fitting series that is hard to interpret.
 Name only the parameters you have a reason to move.</p>
 <p><code>growth_tv_years</code> restricts each parameter’s deviations to
 given calendar years, as a vector applied to all of them or a list named
-per parameter. Deviations outside the range are held at zero. Use the
+per parameter. Deviations outside the range are kept at zero. Use the
 years in which the length data are informative.</p>
 <p><code>growth_tv_link</code> sets the scale the deviation enters on.
 For a base parameter
@@ -893,11 +893,11 @@ sensible bounds is the better default. The realized
 are reported as <code>growth_pars_y</code>.</p>
 <p><code>growth_tv_sigma_spec</code> holds the process error standard
 deviations at their starting values (<code>"fix"</code>) or estimates
-them (<code>"est"</code>). The starting values are the first stream of
-<code>growth_pe_pars</code>, one slot per growth parameter. Fixing them
-makes the deviations a penalized-likelihood problem in which you set how
-much variation is allowed. Estimating them requires the deviations to be
-integrated out; see below.</p>
+them (<code>"est"</code>). The starting values are the first data source
+of <code>growth_pe_pars</code>, one slot per growth parameter. Fixing
+them makes the deviations a penalized-likelihood problem in which you
+set how much variation is allowed. Estimating them requires the
+deviations to be integrated out; see below.</p>
 <p><code>growth_tv_spec</code> shares the deviation series across
 regions and sexes with the same vocabulary as <code>growth_spec</code>.
 A deviation series per stratum adds parameters quickly, so this is often
@@ -920,13 +920,13 @@ in
 from 2000 to make the mechanism visible. It is an illustration, not the
 assessment’s estimate.</em></p>
 <p><code>growth_tv_type = "curve"</code>, the default, reads every
-year’s sizes off that year’s curve. Nothing is carried between years: if
+year’s sizes off that year’s curve. Nothing is kept between years: if
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>K</mi><annotation encoding="application/x-tex">K</annotation></semantics></math>
 drops, every age is immediately shorter, including fish that grew
 through twenty prior years. Use it when the deviations represent
 something acting on all ages at once, or when the curve describes the
 population sampled in a year rather than a growth process.</p>
-<p><code>"cohort"</code> carries size at age forward instead. Writing
+<p><code>"cohort"</code> has size at age forward instead. Writing
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>g</mi><mi>y</mi></msub><annotation encoding="application/x-tex">g_{y}</annotation></semantics></math>
 for the growth increment over one year under year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>’s
@@ -946,7 +946,7 @@ the first age past
 Three things follow. Ages still in the linear phase take the length at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>A</mi><mn>1</mn></msub><annotation encoding="application/x-tex">A_{1}</annotation></semantics></math>
 their <em>birth year’s</em> parameters gave them, so a cohort born in a
-poor year carries that start forward. The plus group blends the cohort
+poor year has that start forward. The plus group blends the cohort
 entering it with the fish already there by their numbers at age, which
 is the only place growth depends on abundance. And a poor growth year
 tracks the affected cohorts up through the ages for the rest of the
@@ -956,7 +956,7 @@ through.</p>
 reads abundance, growth is evaluated inside the population dynamics year
 loop and the model costs more to tape; and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>c</mi><mo stretchy="false" form="prefix">(</mo><mi>x</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">c(x)</annotation></semantics></math>
-is evaluated once from the first year’s curve and then held while the
+is evaluated once from the first year’s curve and then kept while the
 mean moves, so the deviations change mean size without also changing the
 spread.</p>
 </div>
@@ -1016,7 +1016,7 @@ parameters for changes that can be attributed to a named mechanism and
 the surface for the residual, and avoid asking both to explain the same
 variation.</p>
 <div class="section level3">
-<h3 id="why-the-two-deviation-streams-are-separate">Why the two deviation streams are separate<a class="anchor" aria-label="anchor" href="#why-the-two-deviation-streams-are-separate"></a>
+<h3 id="why-the-two-deviation-data-sources-are-separate">Why the two deviation data sources are separate<a class="anchor" aria-label="anchor" href="#why-the-two-deviation-data-sources-are-separate"></a>
 </h3>
 <p>They are indexed over different dimensions and applied at different
 points:</p>
@@ -1031,15 +1031,15 @@ the curve and after any cohort propagation.</p>
 <p>Three things follow from that. The correlated process errors
 correlate over age, year and cohort, which is only meaningful when the
 index is age, so <code>"2dar1"</code> and the 3D forms are available to
-the surface and not to the parametric stream, where <code>"iid"</code>
-and <code>"rw"</code> are the only sensible structures. Cohort
-propagation works off the growth increment the year’s parameters imply,
-so it acts on the parametric stream; the surface multiplies in
-afterwards and is not carried forward. And parametric deviations keep
-size at age inside the curve’s shape, whereas the surface lets it
-leave.</p>
-<p>The two streams do share one array, <code>growth_pe_pars</code>: slot
-<code>[,,,,1]</code> holds the time-varying standard deviations and
+the surface and not to the parametric data source, where
+<code>"iid"</code> and <code>"rw"</code> are the only sensible
+structures. Cohort propagation works off the growth increment the year’s
+parameters imply, so it acts on the parametric data source; the surface
+multiplies in afterwards and is not kept forward. And parametric
+deviations keep size at age inside the curve’s shape, whereas the
+surface lets it leave.</p>
+<p>The two data sources do share one array, <code>growth_pe_pars</code>:
+slot <code>[,,,,1]</code> holds the time-varying standard deviations and
 <code>[,,,,2]</code> the surface’s hyperparameters, with slots a given
 form does not read mapped off.</p>
 </div>
@@ -1047,8 +1047,8 @@ form does not read mapped off.</p>
 <div class="section level2">
 <h2 id="deviations-as-random-effects">Deviations as random effects<a class="anchor" aria-label="anchor" href="#deviations-as-random-effects"></a>
 </h2>
-<p>Both streams can be integrated out with the Laplace approximation
-instead of penalized, as selectivity deviations are in
+<p>Both data sources can be integrated out with the Laplace
+approximation instead of penalized, as selectivity deviations are in
 <code><a href="../articles/n_single_region_ebs_pollock_randomeff_case_study.html">vignette("n_single_region_ebs_pollock_randomeff_case_study")</a></code>.
 Pass the parameter name to <code><a href="../reference/fit_model.html">fit_model()</a></code>:</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
@@ -1343,10 +1343,10 @@ parametric growth with conditional age-at-length in a two-region
 model.</li>
 <li>
 <code><a href="../articles/ae_ebs_pacific_cod_case_study.html">vignette("ae_ebs_pacific_cod_case_study")</a></code> for Richards
-growth with time-varying parameters carried cohort by cohort.</li>
+growth with time-varying parameters kept cohort by cohort.</li>
 <li>
 <code><a href="../articles/n_single_region_ebs_pollock_randomeff_case_study.html">vignette("n_single_region_ebs_pollock_randomeff_case_study")</a></code>
-for the random-effects machinery the growth deviations share with
+for the random-effects routines the growth deviations share with
 selectivity.</li>
 </ul>
 </div>

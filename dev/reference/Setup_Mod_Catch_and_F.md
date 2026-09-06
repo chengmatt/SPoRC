@@ -100,40 +100,39 @@ Setup_Mod_Catch_and_F(
   `[n_regions x n_years x n_seas x n_fish_fleets]`. Values should be in
   the units specified by `catch_units`. For a cell with `UseCatch == 0`
   (and no population-specific catch used), an `NA` entry here is treated
-  as a genuinely missing observation; fishing is assumed to have
-  continued and `Fmort`/ `ln_F_devs` are estimated normally for that
-  year, whereas a true recorded value (typically `0`) is treated as a
-  real closure: `Fmort` is forced to zero and no deviation is estimated.
-  See
+  as a missing observation; fishing is assumed to have continued and
+  `Fmort`/ `ln_F_devs` are estimated normally for that year, whereas a
+  true recorded value (typically `0`) is treated as a real closure:
+  `Fmort` is forced to zero and no deviation is estimated. See
   [`Get_Fdev_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Fdev_PE_loglik.md).
 
 - ObsCatchAA:
 
   Observed catch at age, an array with dimensions
   `[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]`. The
-  sex margin is required whatever the fleet reports: a stream summed
-  over sexes carries its observation in sex slot one. Supplying this
-  fits the catch at age directly, every age its own lognormal
-  observation, in place of an aggregated catch with compositions. This
-  is the native form for ICES age-structured assessments. The two
-  statements are not interchangeable: the exact factorization of an
-  at-age observation into a total and a composition holds for Poisson
-  and multinomial, not for lognormal, so a fleet must use one or the
-  other and supplying both for the same fleet is an error. `NULL`
-  (default) leaves the fleet on aggregated catch.
+  sex dim is required whatever the fleet reports: a data source summed
+  over sexes has its observation in sex slot one. Supplying this fits
+  the catch at age directly, every age its own lognormal observation, in
+  place of an aggregated catch with compositions. This is the native
+  form for ICES age-structured assessments. The two statements are not
+  interchangeable: the exact factorization of an at-age observation into
+  a total and a composition holds for Poisson and multinomial, not for
+  lognormal, so a fleet must use one or the other and supplying both for
+  the same fleet is an error. `NULL` (default) leaves the fleet on
+  aggregated catch.
 
 - UseCatchAA:
 
   Integer array shaped like `ObsCatchAA`, `1` where an observation is
   fit and `0` otherwise. A cell that is not fit is also not fished, so
-  this governs closures the way `UseCatch` does for the aggregated
-  stream.
+  this governs closures the way `UseCatch` does for the aggregated data
+  source.
 
 - ObsCatchAA_SE, ObsDiscardAA_SE, ObsCatchAA_pop_SE,
   ObsDiscardAA_pop_SE:
 
   Reported standard errors shaped like their observation array, read
-  only when the stream's `sigma_form` asks for them.
+  only when the data source's `sigma_form` asks for them.
 
 - sigmaCAA_key:
 
@@ -177,14 +176,14 @@ Setup_Mod_Catch_and_F(
 
 - CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type:
 
-  Which margins the fleet reports separately, following the composition
+  Which dims the fleet reports separately, following the composition
   vocabulary. Give it as one setting for every fleet, one per fleet, or
   as year and fleet specifications such as
   `"spltRaggS_Year_1-20_Fleet_1"` when the setting changes part way
   through the series. `"agg"` sums over regions and sexes, `"spltRaggS"`
   (default) splits regions and sums over sexes, `"aggRspltS"` does the
   reverse, and `"spltRspltS"` splits both. An observation summed over a
-  margin belongs in slot one of it.
+  dim belongs in slot one of it.
 
 - CatchAA_LikeType, DiscardAA_LikeType, CatchAA_pop_LikeType,
   DiscardAA_pop_LikeType:
@@ -210,8 +209,8 @@ Setup_Mod_Catch_and_F(
   ages and years jointly through a separable AR(1), which requires the
   fleet's observed ages and years to form a complete grid. A cell with a
   single observed age falls back to independent. The population-specific
-  streams carry their own settings rather than borrowing the aggregated
-  ones. The fishery and survey index streams are set in
+  data sources have their own settings rather than borrowing the
+  aggregated ones. The fishery and survey index data sources are set in
   [`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md)
   and
   [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
@@ -219,19 +218,19 @@ Setup_Mod_Catch_and_F(
 - rho_catch_spec, rho_discard_spec, rho_catch_pop_spec,
   rho_discard_pop_spec:
 
-  How each stream's correlation parameters are shared, using the same
-  spec strings as `sigmaF_spec` and `Fdev_rho_spec`. The correlations
-  sit over region, sex and fleet, with a leading population margin for
-  the population-specific streams, so `"est_shared_r_s"` gives one per
-  fleet, `"est_shared_s"` one per region and fleet, `"est_shared_r_s_f"`
-  a single value, `"est_all"` one per cell, and `"fix"` holds them.
-  `NULL` (the default) takes `"est_shared_r_s"`, or `"est_shared_p_r_s"`
-  for the population streams, both one per fleet. The spec governs the
-  across-age correlation, the across-year correlation and the
-  unstructured matrix together, so fleets sharing under `"us"` share a
-  whole matrix. A region, sex or population a fleet never observes
-  carries no parameter, which is what holds the unused slots of a summed
-  margin out.
+  How each data source's correlation parameters are shared, using the
+  same spec strings as `sigmaF_spec` and `Fdev_rho_spec`. The
+  correlations sit over region, sex and fleet, with a leading population
+  dim for the population-specific data sources, so `"est_shared_r_s"`
+  gives one per fleet, `"est_shared_s"` one per region and fleet,
+  `"est_shared_r_s_f"` a single value, `"est_all"` one per cell, and
+  `"fix"` holds them. `NULL` (the default) takes `"est_shared_r_s"`, or
+  `"est_shared_p_r_s"` for the population data sources, both one per
+  fleet. The spec governs the across-age correlation, the across-year
+  correlation and the unstructured matrix together, so fleets sharing
+  under `"us"` share a whole matrix. A region, sex or population a fleet
+  never observes has no parameter, which is what holds the unused slots
+  of a summed dim out.
 
 - UseCatch:
 
@@ -331,10 +330,10 @@ Setup_Mod_Catch_and_F(
   of the deviations. `"own_mean"` centers on the mean of the estimated
   deviations, penalizing only their spread and leaving the level free,
   which is what a sum of squares about the series' own mean amounts to.
-  Under a mean-plus-deviations parameterization the level is already
-  carried by `ln_F_mean`, so `"own_mean"` avoids penalizing it twice;
-  note that it also leaves `ln_F_mean` and the deviations' level
-  mutually unidentified unless one of them is fixed, which
+  Under a mean-plus-deviations parameterization the level is already set
+  by `ln_F_mean`, so `"own_mean"` avoids penalizing it twice; note that
+  it also leaves `ln_F_mean` and the deviations' level mutually
+  unidentified unless one of them is fixed, which
   `ln_F_mean_spec = "fix"` does.
 
 - Fdev_rho_spec:
@@ -443,7 +442,7 @@ Setup_Mod_Catch_and_F(
   `...`. `"est"` (default, the previous and only behavior) or `"fix"`.
   `"fix"` maps `ln_F_mean` off at its starting value, which defaults to
   `0` under this spec unless supplied through `...`, so the deviations
-  carry all of log fishing mortality: `F = exp(ln_F_devs)`, where it
+  have all of log fishing mortality: `F = exp(ln_F_devs)`, where it
   follows a free annual log-F parameterization. It must be paired with
   `Fdev_pen_center = "own_mean"` (penalize only the spread about the
   deviations' own mean), `Fdev_model = "rw"`, or `Use_F_pen = 0`: an

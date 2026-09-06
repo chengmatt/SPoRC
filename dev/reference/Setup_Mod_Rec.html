@@ -165,6 +165,8 @@ before model compilation.</p>
 <span> <span class="op">}</span>,</span>
 <span>  use_rinit <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  init_age_devs_shared <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  R0_blocks <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  R0_ref_block <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  use_r0_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  r0_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_rinit_pen <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -231,14 +233,9 @@ structurally via a restricted softmax (see
 
 
 <dt id="arg-sr-ref-yr">SR_ref_yr<a class="anchor" aria-label="anchor" href="#arg-sr-ref-yr"></a></dt>
-<dd><p>Integer year index (not a calendar year) supplying the
-biological inputs, weight-at-age, maturity, natural mortality and movement,
-to unfished spawning biomass per recruit, and so to <code>S0</code> and the scale
-of the stock-recruit curve. Default <code>1</code>, the first model year, which is
-what the model has always used. Set it to <code>length(years)</code> to condition
-the curve on terminal weight-at-age, which is what several ADMB assessments
-do; with time-varying weight-at-age the two differ and the curve shifts with
-them. Ignored when <code>rec_model = "mean_rec"</code>.</p></dd>
+<dd><p>Integer year index supplying every input to unfished spawning
+biomass per recruit, and so to <code>S0</code> and the scale of the stock-recruit
+curve. Matches the estimation model's <code>SR_ref_yr</code>. Default <code>1</code>.</p></dd>
 
 
 <dt id="arg-use-h-prior">Use_h_prior<a class="anchor" aria-label="anchor" href="#arg-use-h-prior"></a></dt>
@@ -354,7 +351,7 @@ project an equilibrium age structure forward from <code>R0</code> and treat
 <code>4</code>/<code>"free"</code> projects no equilibrium at all: the numbers at age
 2 and older are <code>exp(ln_InitDevs)</code> outright, apportioned by sex ratio,
 with age 1 still taken from recruitment. Use it when the initial age
-structure carries no information about <code>R0</code> and should not be pulled
+structure has no information about <code>R0</code> and should not be pulled
 toward an equilibrium.
 Note that under <code>4</code> the deviations are on the scale of numbers rather
 than of log ratios, so the penalty applied through
@@ -424,7 +421,7 @@ Default: zero for all seasons and fleets.</p></dd>
       with it.</p></li>
 <li><p><code>"abs"</code>: <code>init_F = exp(ln_init_F)</code>, an absolute fishing
       mortality independent of <code>ln_F_mean</code>.</p></li>
-</ul><p>Use <code>"abs"</code> when bridging an assessment that carries a separate
+</ul><p>Use <code>"abs"</code> when bridging an assessment that has a separate
   historical F (one estimated as its own parameter, distinct from the mean
   log fishing mortality). Under
   <code>"prop"</code> those two quantities collapse into a single parameter, and
@@ -441,7 +438,7 @@ Default: zero for all seasons and fleets.</p></dd>
   freely with <code>init_F_form</code>, including estimating the proportion itself
   (<code>init_F_form = "prop"</code>, <code>init_F_spec = "est"</code>). Note <code>init_F</code>
   is generally weakly identified, which is why assessments commonly fix it.</p>
-<p>The value is carried by the parameter <code>init_F_par</code>
+<p>The value is set by the parameter <code>init_F_par</code>
   <code>[n_regions x n_seas x n_fish_fleets]</code>, supplied through <code>...</code> like
   any other starting value, e.g.
   <code>Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))</code>.
@@ -576,7 +573,7 @@ itself. <code>"rinit"</code> takes the scale from <code>ln_rinit</code>, the ini
 equilibrium recruitment, so one parameter sets both the unfished age
 structure and the curve; it requires <code>use_rinit = 1</code>. <code>"shared"</code>
 is the better posed of the first two; <code>"est"</code> reproduces templates
-that carry separate mean-recruitment and unfished-recruitment parameters,
+that have separate mean-recruitment and unfished-recruitment parameters,
 and <code>"rinit"</code> reproduces those that use the unfished recruitment in
 both places, which is the usual ADMB arrangement.</p></dd>
 
@@ -736,6 +733,28 @@ share the last estimated deviation, e.g.
 <code>c(1:42, rep(42, 9))</code> for a 52-age model with 43 data ages, giving
 42 free parameters. When <code>NULL</code> (default), age sharing follows the
 standard behavior determined by <code>equil_init_age_strc</code> alone.</p></dd>
+
+
+<dt id="arg-r-blocks">R0_blocks<a class="anchor" aria-label="anchor" href="#arg-r-blocks"></a></dt>
+<dd><p>Character vector giving time blocks for <code>R0</code>, one entry
+per population, in the same vocabulary as the selectivity blocks:
+<code>"none_Pop_&lt;p&gt;"</code>, <code>"Block_&lt;b&gt;_Year_&lt;a&gt;-&lt;e&gt;_Pop_&lt;p&gt;"</code> (1-based year
+indices, <code>"terminal"</code> allowed for the end year).
+Under <code>rec_model = "mean_rec"</code> <code>R0</code> IS mean recruitment, so a block
+is a productivity regime. Under a stock-recruit form it is the curve's scale, so
+blocking it makes the curve time-varying: <code>S0</code> moves with the block, and
+depletion and any reference point built on the curve step at its boundary. A
+curve fitted as a penalty instead (<code>sr_penalty</code> with
+<code>sr_R0_spec = "shared"</code>) takes its scale from <code>R0_ref_block</code> and
+stays put. Default <code>NULL</code>, a single block.</p></dd>
+
+
+<dt id="arg-r-ref-block">R0_ref_block<a class="anchor" aria-label="anchor" href="#arg-r-ref-block"></a></dt>
+<dd><p>Integer, the block whose <code>R0</code> is used everywhere a single
+value is needed rather than a year's value: the initial age structure, the
+regional apportionment, the <code>R0</code> prior, the <code>ln_rinit</code> penalty and the
+stock-recruit scale when <code>sr_R0_spec = "shared"</code>. Default 1. Only the
+recruitment computed each year uses that year's block.</p></dd>
 
 
 <dt id="arg-use-r-prior">use_r0_prior<a class="anchor" aria-label="anchor" href="#arg-use-r-prior"></a></dt>

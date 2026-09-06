@@ -29,13 +29,12 @@ build_plus_group_T(
 
 - M_penult:
 
-  Numeric vector `[n_regions]`. Natural mortality for the penultimate
-  age class, used as an annual rate (scaled by `seasdur` internally).
+  Numeric matrix `[n_regions, n_seas]`. Natural mortality for the
+  penultimate age, a rate per year, scaled by `seasdur` inside.
 
 - M_plus:
 
-  Numeric vector `[n_regions]`. Natural mortality for the plus-group age
-  class.
+  Numeric matrix `[n_regions, n_seas]`. The same for the plus group.
 
 - F_penult:
 

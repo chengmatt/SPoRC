@@ -87,8 +87,7 @@
 sablefish. Where the <a href="e_single_region_sablefish_case_study.html">single region case
 study</a> bridges an existing operational model, this one has no
 operational counterpart: it is a demonstration of what the spatial
-machinery does, so the emphasis is on the equations that only appear
-once
+routines does, so the emphasis is on the equations that only appear once
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>r</mi></msub><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n_{r} &gt; 1</annotation></semantics></math>
 and on reading the resulting regional trajectories.</p>
 <table class="table">
@@ -127,17 +126,16 @@ and on reading the resulting regional trajectories.</p>
 </tr>
 </tbody>
 </table>
-<p>Three things distinguish this from the panmictic model, and each
-carries its own block of equations below: fish <strong>move</strong>
-between regions, recruitment is <strong>apportioned</strong> among
-regions from a single global parameter, and <strong>tag</strong>
-releases and recoveries inform the movement rates that the age and
-length compositions alone cannot.</p>
+<p>Three things distinguish this from the panmictic model, and each has
+its own block of equations below: fish <strong>move</strong> between
+regions, recruitment is <strong>apportioned</strong> among regions from
+a single global parameter, and <strong>tag</strong> releases and
+recoveries inform the movement rates that the age and length
+compositions alone cannot.</p>
 <p>The domestic longline survey operates annually in the Gulf of Alaska
 and biennially across the Bering Sea and Aleutian Islands. Everything
 the case study needs ships with the package in
-<code>mlt_rg_sable_data</code>, and the figures below are produced by
-<code>dev/make_sporc_obj_figs/make_spatial_sablefish_figs.R</code>.</p>
+<code>mlt_rg_sable_data</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/kaskr/RTMB" class="external-link">RTMB</a></span><span class="op">)</span></span>
@@ -170,7 +168,7 @@ the case study needs ships with the package in
 <h2 id="spatial-population-dynamics">Spatial population dynamics<a class="anchor" aria-label="anchor" href="#spatial-population-dynamics"></a>
 </h2>
 <p>The seasonal transition of the population is where the spatial model
-departs from the panmictic one. Numbers at age are carried across a
+departs from the panmictic one. Numbers at age are advanced across a
 season by an operator that combines movement with survival. With a
 single season, movement applied first (<code>move_timing = 0</code>, the
 default), that operator is</p>
@@ -497,7 +495,7 @@ are <code>spltRjntS</code>, split by region and <em>joint</em> across
 sexes. Each region’s compositions sum to one across both sexes
 together,</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><munder><mo>∑</mo><mi>a</mi></munder><munder><mo>∑</mo><mi>s</mi></munder><msub><mi>p</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><mn>1</mn><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for each region </mtext><mspace width="0.333em"></mspace></mrow><mi>r</mi></mrow><annotation encoding="application/x-tex">\sum_{a}\sum_{s} p_{r,y,a,s} = 1 \quad \text{for each region } r</annotation></semantics></math></p>
-<p>so the data carry information about the sex ratio within a region but
+<p>so the data have information about the sex ratio within a region but
 not about the relative abundance <em>between</em> regions. That
 between-region information is deliberately left to the indices and the
 tagging data. Fitting compositions that were normalized across regions
@@ -718,7 +716,7 @@ so they are melted to long format rather than coerced to a vector.</p>
 <p>Reading the regional trajectories, spawning biomass is highest in the
 CGOA, followed by the EGOA, with the three western regions at broadly
 comparable and lower levels. Recruitment shows a different ordering: the
-western regions (BS and AI) together with the CGOA carry the highest
+western regions (BS and AI) together with the CGOA hold the highest
 levels. That mismatch between where fish recruit and where spawning
 biomass accumulates is likely reflecting eastward movement, and it is
 the pattern the age-blocked movement matrix and the tag recoveries are

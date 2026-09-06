@@ -140,7 +140,7 @@ must match <code>N</code>:</p><ul><li><p>aggregated: scalar</p></li>
 
 
 <dt id="arg-years">years<a class="anchor" aria-label="anchor" href="#arg-years"></a></dt>
-<dd><p>Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions carry different years. Both forms work for every composition type. A region with no years is skipped.</p></dd>
+<dd><p>Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions have different years. Both forms work for every composition type. A region with no years is skipped.</p></dd>
 
 
 <dt id="arg-seas">seas<a class="anchor" aria-label="anchor" href="#arg-seas"></a></dt>
@@ -201,7 +201,7 @@ build <code>model</code>. Required when <code>model</code> is supplied.</p></dd>
 internal OSA residuals for. Conditional age-at-length uses
 <code>"Fish_caal"</code> or <code>"Srv_caal"</code>, which return an extra
 <code>len</code> column giving the length bin each age composition was
-conditioned on and ignore <code>family</code>, since CAAL carries only the
+conditioned on and ignore <code>family</code>, since CAAL has only the
 discrete likelihoods. Required when <code>model</code> is supplied and
 <code>index_source</code> is <code>NULL</code> and <code>tag = FALSE</code>.</p></dd>
 

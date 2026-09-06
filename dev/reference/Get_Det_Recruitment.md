@@ -126,7 +126,8 @@ Get_Det_Recruitment(
 
 - natmort:
 
-  Array (`n_pop × n_regions × n_ages`) of natural mortality.
+  Array (`n_pop × n_regions × n_seas × n_ages`) of natural mortality, a
+  rate per year in each season.
 
 - SSB_vals:
 
@@ -242,7 +243,7 @@ assessment (2024, `SrType = 1`):
 \log\left(\frac{4h}{1-h}\right) \$\$
 
 The curve passes through \\(S_0, R_0)\\ by construction. Note that
-\\\alpha\\ is set so the Ricker carries the same compensation ratio as a
+\\\alpha\\ is set so the Ricker holds the same compensation ratio as a
 Beverton-Holt at the same \\h\\, rather than by the textbook definition
 \\R(0.2 S_0) = h R_0\\. Steepness is therefore not interchangeable
 between the two curves: the Ricker here gives \\R(0.2S_0)/R_0 =

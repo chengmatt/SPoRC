@@ -67,7 +67,7 @@ Get_move_PE_loglik(
 
   Integer array dimensioned
   `[pop, from_region, to_region, year, seas, age, sex]` mapping
-  deviations to unique estimated parameters. Shared deviations carry the
+  deviations to unique estimated parameters. Shared deviations hold the
   same integer value; dimensions are extracted from this array to
   determine loop bounds.
 

@@ -82,7 +82,7 @@ N_{1,a} = \exp\left(\log R^{\text{init}} - M(a-1) + \phi_{a}\right)
 `init_age_devs_shared` vector is what makes the ages past the observed
 range share the last deviation. Here the observed range runs to age 45,
 so the deviations are free over the first 42 ages and the final nine
-share the 42nd. `SPoRC` carries the initial numbers as multiplicative
+share the 42nd. `SPoRC` holds the initial numbers as multiplicative
 deviations from an equilibrium age structure rather than as the
 structure itself, so the seeding step below converts between the two.
 
@@ -153,8 +153,8 @@ The assessment writes its catch and F statements as weighted sums of
 squares with weights $`50`$ and $`0.1`$. A weighted sum of squares and a
 normal likelihood with a fixed standard deviation are the same statement
 up to a constant, related by $`\sigma = 1/\sqrt{2w}`$, so both weights
-are carried inside the standard deviations rather than applied outside
-the sums.
+are kept inside the standard deviations rather than applied outside the
+sums.
 
 ``` r
 
@@ -299,17 +299,16 @@ input_list <- Setup_Mod_Weighting(
 
 ## Starting at the ADMB estimate
 
-Before optimizing anything, it is worth checking that the model is
-reproduced *at a known point*. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.
+Before optimizing anything, check that the model is reproduced *at a
+known point*. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.
 
 Most parameters can be assigned directly. The recruitment deviations are
 seeded only over the years the assessment estimates them for, and the
 initial age structure needs the conversion described above: the
-assessment writes the first year directly, while `SPoRC` carries
+assessment writes the first year directly, while `SPoRC` has
 multiplicative deviations from an equilibrium age structure, so the
 deviations are the log ratio of the two.
 

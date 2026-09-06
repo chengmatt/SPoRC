@@ -1,9 +1,9 @@
 # Standard deviation for one at-age observation
 
-An at-age observation may carry its own reported standard error, an
-estimated component, or both, matching what the aggregated index streams
-allow. The parameter alone is the default and is what a stream with no
-reported errors means.
+An at-age observation may have its own reported standard error, an
+estimated component, or both, matching what the aggregated index data
+sources allow. The parameter alone is the default and is what a data
+source with no reported errors means.
 
 ## Usage
 

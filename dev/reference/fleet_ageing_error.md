@@ -3,7 +3,7 @@
 The post-fit diagnostics have to reproduce the expected compositions the
 likelihood built, which means reading the same ageing error the
 objective read. Models fitted before `AgeingError_fish` and
-`AgeingError_srv` existed carry only the shared matrix, so it is
+`AgeingError_srv` existed have only the shared matrix, so it is
 replicated across the fleets and the diagnostics come out exactly as
 they did.
 

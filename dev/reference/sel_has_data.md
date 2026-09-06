@@ -1,9 +1,9 @@
 # Is a fleet's selectivity informed by data in some year?
 
 Reads both the aggregated use array and its at-age counterpart. A fleet
-fitting catch at age or an index at age carries no aggregated
-observations, so keying only off the aggregated array maps its
-selectivity off and silently holds it at the starting value.
+fitting catch at age or an index at age has no aggregated observations,
+so keying only off the aggregated array maps its selectivity off and
+silently holds it at the starting value.
 
 ## Usage
 
@@ -27,4 +27,4 @@ sel_has_data(data, use_field, r, f)
 
 ## Value
 
-`TRUE` when any stream for that region and fleet is fit.
+`TRUE` when any data source for that region and fleet is fit.

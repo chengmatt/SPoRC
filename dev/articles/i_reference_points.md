@@ -442,7 +442,7 @@ Under $`\kappa = 0`$ fish move at the start of the season and spawn at
 their post-movement location; under $`\kappa = 1`$ movement follows
 spawning, so they spawn where they started; under $`\kappa = 2`$ they
 are partially redistributed by the time they spawn. The $`t^{spawn}`$
-mortality discount is carried inside $`\mathbf{N}^{spawn}`$ in all three
+mortality discount is kept inside $`\mathbf{N}^{spawn}`$ in all three
 cases rather than applied separately to $`SSBPR`$.
 
 When $`n_\tau = 1`$ and $`n_p > 1`$ (single-season natal homing), a
@@ -612,16 +612,16 @@ Under $`\kappa = 2`$ fish redistribute among regions while they are
 being caught, so the region-local $`\tfrac{F}{Z}(1 - e^{-Z})`$ form is
 not valid and the season-integrated (spatial Baranov) abundance is
 required instead. The integral runs over elapsed fraction of the season,
-since $`\mathbf{A}_{\tau,a}`$ already carries $`\Delta\tau_\tau`$ in
-both of its terms, and is evaluated together with
-$`\exp(\mathbf{A}_{\tau,a})`$ from the single block exponential
+since $`\mathbf{A}_{\tau,a}`$ already has $`\Delta\tau_\tau`$ in both of
+its terms, and is evaluated together with $`\exp(\mathbf{A}_{\tau,a})`$
+from the single block exponential
 
 ``` math
 \exp\begin{pmatrix} \mathbf{A} & \mathbf{I} \\ \mathbf{0} & \mathbf{0} \end{pmatrix} = \begin{pmatrix} e^{\mathbf{A}} & \int_{0}^{1} e^{\mathbf{A}u}\,du \\ \mathbf{0} & \mathbf{I} \end{pmatrix}
 ```
 
 In every case $`\mathbf{N}_{a}^{\text{fished}}`$ is abundance at the
-*start* of season $`\tau`$, carried forward across seasons by
+*start* of season $`\tau`$, advanced across seasons by
 $`\mathbf{T}_{\tau,a}`$. This applies to the penultimate age and the
 plus group as well as to the ages advanced through the main loop: their
 catch is accumulated over the same seasonal sweep, so each season’s
@@ -720,7 +720,7 @@ $`F_{r,msy}`$ now region-specific:
 \mathbf{F}^{\text{land}}_{a,\tau} = \sum_{f \in \mathcal{F}^{\text{land}}}\text{Frat}_{r,f,\tau} \cdot F_{r,msy} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}
 ```
 
-Each origin cohort is carried forward across seasons by its own
+Each origin cohort is advanced across seasons by its own
 $`\mathbf{T}_{p,\tau,a}`$ before its next season’s catch is taken.
 
 Regional equilibrium recruitment is computed by solving a non-linear
@@ -894,7 +894,7 @@ the left, since the slope was positive and you need to bring it down.
 
 That distance is the sensitivity. The solution moves by the slope the
 parameter gave you, divided by the rate the slope changes as you walk,
-with the minus sign carrying the direction:
+with the minus sign giving the direction:
 
 ``` math
 d_j = -\ \frac{\text{slope gained per unit of } p_j}{\text{slope shed per unit of } x}
@@ -924,8 +924,8 @@ d_j = -\frac{\partial^2 h / \partial x \partial p_j}{\partial^2 h / \partial x^2
 
 which is the same statement: the numerator is the slope gained, measured
 per unit of $`p_j`$, and the denominator is the slope shed, measured per
-unit of $`x`$. Their ratio carries units of $`x`$ per unit of $`p_j`$,
-which is what a sensitivity should be.
+unit of $`x`$. Their ratio has units of $`x`$ per unit of $`p_j`$, which
+is what a sensitivity should be.
 
 This is where the familiar intuition about flat topped yield curves
 becomes a number. A curve that bends slowly sheds slope slowly, so the
@@ -957,8 +957,9 @@ the two are built from the same parameters. $`SSB_{n_y}`$ and $`B_{40}`$
 both rise when estimated recruitment scale rises, so much of the error
 cancels in their ratio. Treating their intervals as independent
 overstates the uncertainty in status, sometimes by a factor of two or
-more. Both methods carry the ratio through the same calculation rather
-than combining intervals afterwards, so the cancellation is retained.
+more. Both methods propagate the ratio through the same calculation
+rather than combining intervals afterwards, so the cancellation is
+retained.
 
 ##### What is not propagated
 
@@ -1146,11 +1147,11 @@ mortality in seasons $`\tau' \leq \tau`$:
 \frac{\partial\, projCatch_{p,r,\tau,y,f}}{\partial\, projF_{r,\tau',y}} = 0, \quad \tau' > \tau
 ```
 
-Targets are set on regions, not on populations. Fishing mortality
-carries no population index, so where several populations occupy a
-region there is a single rate $`projF_{r,y}`$ to solve against several
-targets, and the division of catch between them follows their relative
-abundance and selectivity:
+Targets are set on regions, not on populations. Fishing mortality has no
+population index, so where several populations occupy a region there is
+a single rate $`projF_{r,y}`$ to solve against several targets, and the
+division of catch between them follows their relative abundance and
+selectivity:
 
 ``` math
 \frac{projCatch_{p,r,\tau,y,f}}{projCatch_{p',r,\tau,y,f}} \;\; \text{is set by } projN \text{ and } Sel^{Fsh}, \text{ not by } projF_{r,y}
@@ -1265,6 +1266,14 @@ Thus, this inverse Gaussian mixture ensures the simulated values have
 approximately the correct mean and variability based on historical
 recruitment values.
 
+Recruitment is the only stochastic element of a projection. The
+state-space numbers at age (`NAA_re`, see the model options vignette)
+are **not** projected: numbers past the terminal year advance
+deterministically, so a projection run from a state-space fit leaves
+that process error out and its spread is understated by it. The closed
+loop operating model is a separate path and does hold the state into the
+future.
+
 After recruitment processes occur, movement is applied (only in
 projected years $`y > 1`$, as it has already been accounted for in the
 terminal year estimates of numbers at age), followed by the seasonal
@@ -1314,7 +1323,7 @@ are computed at the end of the previous year. This is why
 `f_ref_pt[r, y]` sets the fishing mortality applied in year $`y+1`$
 rather than year $`y`$.
 
-**`catch_input` does not carry that lag.** `catch_input[r, y]` is the
+**`catch_input` does not have that lag.** `catch_input[r, y]` is the
 catch taken *during* projection year $`y`$, aligned with
 `proj_Catch[, r, y, , ]` in the returned list. The two conventions
 differ, so take care when mixing them.
@@ -1329,12 +1338,12 @@ projected year is year 2. The one exception is
 The equations of the catch solve is given under *Projecting on a Catch
 Target* above. The arguments controlling it are:
 
-- **`catch_input`** carries the targets, and its shape selects annual or
+- **`catch_input`** holds the targets, and its shape selects annual or
   seasonal targeting. Given `[n_regions, n_proj_yrs]`, one annual
   fishing mortality per region is solved and distributed at the terminal
   year seasonal splits. Given `[n_regions, n_proj_yrs, n_seas]`, a
   separate fishing mortality is solved per region and season. Either way
-  the fleet split within a season is held at terminal year ratios, so
+  the fleet split within a season is kept at terminal year ratios, so
   fleet-specific targets are not supported. `catch_input[r, y]` is the
   catch taken *in* year `y`, which is not the same convention as
   `f_ref_pt[r, y]`, which sets fishing mortality in year `y + 1`.
@@ -1348,7 +1357,7 @@ Target* above. The arguments controlling it are:
   year, and so changes the numbers-at-age entering year 2. With
   $`n_\tau > 1`$ the terminal year takes all of its seasons from the
   terminal numbers-at-age rather than propagating them, so only the last
-  season’s fishing mortality carries into year 2; earlier seasons still
+  season’s fishing mortality feeds into year 2; earlier seasons still
   take their catch but do not otherwise feed forward.
 - **`catch_f_max`** bounds the search, and **`catch_tol`** and
   **`catch_max_iter`** control convergence.
@@ -1528,8 +1537,8 @@ head(sort(contrib, decreasing = TRUE), 4)
 sum(rp$d['f_ref_pt', ] == 0) # parameters with no effect at all
 ```
 
-To carry stock status through the same calculation, pass a function of
-the report and the reference points to `extra_quantities`. Setting
+To propagate stock status through the same calculation, pass a function
+of the report and the reference points to `extra_quantities`. Setting
 `method = 'both'` also runs the simulation version, which draws
 parameter vectors from the joint covariance and re-solves the reference
 point at each draw.
@@ -1761,11 +1770,10 @@ projection, after which the harvest control rule resumes.
 
 Note that **projection year 1 is the terminal assessment year replayed,
 not a projected year.** It reproduces the terminal year at the fishing
-mortality the assessment estimated, and exists to carry the terminal
-numbers-at-age into year 2. The first genuinely projected year is index
-2. This is the same reason catch advice is read from
-`proj_Catch[, , 2, , ]` rather than index 1 in the harvest control rule
-example above.
+mortality the assessment estimated, and exists to pass the terminal
+numbers-at-age into year 2. The first projected year is index 2. This is
+the same reason catch advice is read from `proj_Catch[, , 2, , ]` rather
+than index 1 in the harvest control rule example above.
 
 Note also that **`catch_input` is indexed by the year the catch is
 taken.** `catch_input[r, y]` is the catch removed during projection year
@@ -1773,9 +1781,9 @@ taken.** `catch_input[r, y]` is the catch removed during projection year
 `proj_SSB[, r, y]`. This is deliberately *not* the convention `f_ref_pt`
 uses: `f_ref_pt[r, y]` sets fishing mortality in year `y + 1`, because a
 harvest control rule reads year `y`’s spawning biomass to set the
-following year’s rate. A catch target carries no such lag, since the
-fishing mortality that takes a given catch is solved against that same
-year’s numbers-at-age.
+following year’s rate. A catch target has no such lag, since the fishing
+mortality that takes a given catch is solved against that same year’s
+numbers-at-age.
 
 For the sablefish model the terminal assessment year is 2024 and
 `n_proj_yrs` is 15, so `catch_input[1, 2:6] <- recent_catch` maps as:

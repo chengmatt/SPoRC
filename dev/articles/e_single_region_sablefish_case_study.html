@@ -144,11 +144,7 @@ subscript
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>s</mi><annotation encoding="application/x-tex">s</annotation></semantics></math>
 is retained, since sablefish is sex structured.</p>
 <p>Everything the case study needs ships with the package in
-<code>sgl_rg_sable_data</code>. The companion script that produced the
-figures below is
-<code>dev/make_sporc_obj_figs/make_sgl_rg_sablefish_bridge_figs.R</code>,
-and the data container itself is built by
-<code>dev/make_sporc_obj_figs/make_sgl_rg_sabie_data_object.R</code>.</p>
+<code>sgl_rg_sable_data</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://here.r-lib.org/" class="external-link">here</a></span><span class="op">)</span></span>
@@ -189,7 +185,7 @@ about a mean parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">Rec</mtext></msup><annotation encoding="application/x-tex">\mu^{\text{Rec}}</annotation></semantics></math>
 with lognormal annual deviations, split evenly between the sexes:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msup><mi>μ</mi><mtext mathvariant="normal">Rec</mtext></msup><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mi>y</mi><mtext mathvariant="normal">Rec</mtext></msubsup><mo>−</mo><mstyle displaystyle="true"><mfrac><msubsup><mi>σ</mi><mrow><mtext mathvariant="normal">Rec</mtext><mo>,</mo><mi>y</mi></mrow><mn>2</mn></msubsup><mn>2</mn></mfrac></mstyle><msub><mi>b</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow><msub><mi>ψ</mi><mi>s</mi></msub><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>ψ</mi><mi>s</mi></msub><mo>=</mo><mn>0.5</mn></mrow><annotation encoding="application/x-tex">N_{y,a=1,s} = \mu^{\text{Rec}}\exp\left(\epsilon^{\text{Rec}}_{y} - \dfrac{\sigma^{2}_{\text{Rec},y}}{2}b_{y}\right)\psi_{s},\qquad \psi_{s} = 0.5</annotation></semantics></math></p>
-<p>Two features of this expression carry most of the setup. The first is
+<p>Two features of this expression have most of the setup. The first is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mrow><mtext mathvariant="normal">Rec</mtext><mo>,</mo><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">\sigma_{\text{Rec},y}</annotation></semantics></math>,
 which is not constant: the assessment uses an early period value fixed
 at
@@ -233,7 +229,7 @@ the fixed-gear mean fishing mortality, which is exactly
 moves with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>μ</mi><mtext mathvariant="normal">Fsh</mtext></msup><annotation encoding="application/x-tex">\mu^{\text{Fsh}}</annotation></semantics></math>,
 a single parameter both depletes the initial age structure and scales
-the F series. That is the assessment’s own construction, so it is
+the F series. This is the assessment’s own construction, so it is
 reproduced here, but <code>"abs"</code> is the better choice when a
 model’s historical F is conceptually independent of the mean F of the
 modeled period.</p>
@@ -266,7 +262,7 @@ modeled period.</p>
 <h2 id="biological-dynamics">Biological dynamics<a class="anchor" aria-label="anchor" href="#biological-dynamics"></a>
 </h2>
 <p>Natural mortality is sex specific and fixed. The 2024 assessment
-estimates it under a lognormal prior, with males carrying an offset
+estimates it under a lognormal prior, with males with an offset
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>δ</mi><mi>M</mi></msup><annotation encoding="application/x-tex">\delta^{M}</annotation></semantics></math>
 from the female value, but that offset has no direct counterpart in
 <code>SPoRC</code>, so both values are fixed at the assessment’s
@@ -330,7 +326,7 @@ unweighted sums of squares,
 makes
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1/(2\sigma^{2}) = 1</annotation></semantics></math>,
 so <code>SPoRC</code>’s Gaussian form collapses to exactly that sum of
-squares and the assessment’s weights carry over unchanged as
+squares and the assessment’s weights are reused unchanged as
 <code>Wt_Catch = 50</code> and <code>Wt_F = 0.1</code>.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
@@ -435,7 +431,7 @@ in its predicted indices:</p>
 <p>The fixed-gear fleet is logistic, parameterized by the age at 50%
 selection and a slope:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi><mo>=</mo><mn>1</mn></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>=</mo><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msub><mi>k</mi><mi>s</mi></msub><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>−</mo><msubsup><mi>a</mi><mi>s</mi><mn>50</mn></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\text{Sel}^{\text{Fsh}}_{a,s,f=1} = \dfrac{1}{1 + \exp\left[-k_{s}\left(a - a^{50}_{s}\right)\right]}</annotation></semantics></math></p>
-<p>and carries three time blocks, 1960–1994, 1995–2015, and 2016–2024,
+<p>and has three time blocks, 1960–1994, 1995–2015, and 2016–2024,
 reflecting the shift from the pre-IFQ fishery through the IFQ era.
 Catchability is blocked on the same boundaries.</p>
 <p>The trawl fleet is dome shaped, using the reparameterized gamma form
@@ -505,14 +501,14 @@ parameters are shared with the domestic longline survey.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">3</span>, <span class="fl">2</span>, <span class="fl">4</span><span class="op">:</span><span class="fl">6</span>, <span class="fl">5</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">7</span>, <span class="fl">4</span><span class="op">)</span>,</span>
 <span>           <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">8</span>, <span class="fl">4</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">5</span><span class="op">)</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># Cooperative Japanese survey logistic parameters, held at the 2024 values</span></span>
+<span><span class="co"># Cooperative Japanese survey logistic parameters, kept at the 2024 values</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">srv_fixed_sel_pars</span><span class="op">[</span><span class="fl">1</span>,,,<span class="fl">1</span>,<span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0.980660760456</span>, <span class="fl">0.9295241</span><span class="op">)</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">srv_fixed_sel_pars</span><span class="op">[</span><span class="fl">1</span>,,,<span class="fl">2</span>,<span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1.22224502478</span>, <span class="fl">0.8821623</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="weighting">Weighting<a class="anchor" aria-label="anchor" href="#weighting"></a>
 </h2>
-<p>Data sources carry a
+<p>Data sources have a
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>λ</mi><annotation encoding="application/x-tex">\lambda</annotation></semantics></math>
 weight that multiplies the whole component likelihood, on top of the
 observed standard errors and input sample sizes already supplied. For

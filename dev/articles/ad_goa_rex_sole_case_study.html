@@ -158,8 +158,8 @@ to
 Recruitment is age 0, mean recruitment apportioned between the two areas
 by an estimated fraction, with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>R</mi></msub><mo>=</mo><mn>0.6</mn></mrow><annotation encoding="application/x-tex">\sigma_{R} = 0.6</annotation></semantics></math>.
-The Eastern area carries no catch, so its population is shaped entirely
-by the survey.</p>
+The Eastern area has no catch, so its population is shaped entirely by
+the survey.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -240,7 +240,7 @@ stage checks both ramps against the assessment’s own.</p>
 <h2 id="biological-dynamics">Biological dynamics<a class="anchor" aria-label="anchor" href="#biological-dynamics"></a>
 </h2>
 <p>Natural mortality is fixed at 0.17. Maturity is logistic on age for
-females, with none below age 3, and males carry none. Growth is
+females, with none below age 3, and males have none. Growth is
 estimated, one Schnute-Francis curve per area and sex, starting from the
 assessment’s estimates, and weight at age is derived from it through the
 weight-length relationship.</p>
@@ -287,7 +287,7 @@ fleet’s age-length key and weight at age are read at that fleet’s own
 timing: the surveys’ at <code>t_srv</code> and the fishery’s at
 <code>t_fish</code>, both the middle of the year here, where the
 assessment reads them, and the spawning weight at <code>t_spawn</code>.
-<code>growth_len_lower</code> carries the lower edges of the bins, which
+<code>growth_len_lower</code> holds the lower edges of the bins, which
 is what the assessment’s key is built on, rather than the midpoints in
 <code>lens</code>.</p>
 <p>The ageing error matrix is the assessment’s, a normal on observed age
@@ -313,7 +313,7 @@ off.</p>
 <h2 id="catch-and-fishing-mortality">Catch and fishing mortality<a class="anchor" aria-label="anchor" href="#catch-and-fishing-mortality"></a>
 </h2>
 <p>Catch is in the Western-Central area only. Fishing mortality is a
-free parameter per year with no penalty, held to the catch by a
+free parameter per year with no penalty, kept to the catch by a
 lognormal likelihood at CV 0.01.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
@@ -329,7 +329,7 @@ lognormal likelihood at CV 0.01.</p>
 <div class="section level2">
 <h2 id="fishery-compositions">Fishery compositions<a class="anchor" aria-label="anchor" href="#fishery-compositions"></a>
 </h2>
-<p>The fishery has no index and carries joint-sex marginal lengths and
+<p>The fishery has no index and has joint-sex marginal lengths and
 ages.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">joint</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"spltRjntS_Year_1-terminal_Fleet_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
@@ -357,10 +357,10 @@ ages.</p>
 <div class="section level2">
 <h2 id="survey-indices-and-compositions">Survey indices and compositions<a class="anchor" aria-label="anchor" href="#survey-indices-and-compositions"></a>
 </h2>
-<p>Each area’s survey carries a biomass index at mid year, joint-sex
-length compositions, and conditional age-at-length. The assessment also
-holds the surveys’ marginal ages as ghost fleets, so those go in but are
-not fit.</p>
+<p>Each area’s survey has a biomass index at mid year, joint-sex length
+compositions, and conditional age-at-length. The assessment also holds
+the surveys’ marginal ages as ghost fleets, so those go in but are not
+fit.</p>
 <p>The conditional age-at-length arrays are indexed by region, year,
 season, length bin, age, sex and fleet, with a use flag and a sample
 size per length bin. <code>Srv_caal_Type</code> is split by sex as well
@@ -431,7 +431,7 @@ limb to one, which <code>fish_sel_dbnrml_raw</code> and
 <span>  srv_q_prior <span class="op">=</span> <span class="va">q_prior</span>,</span>
 <span>  t_srv <span class="op">=</span> <span class="va">t_srv</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The Western-Central survey’s catchability carries the assessment’s
+<p>The Western-Central survey’s catchability holds the assessment’s
 normal prior on the log scale. The Eastern survey’s is mirrored onto it
 by the map, which the bridge helper sets once the parameters are
 seeded.</p>
@@ -478,7 +478,7 @@ the shared catchability, and the growth and selectivity parameters in
 <span><span class="va">seed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
 <span>                  do_optim <span class="op">=</span> <span class="cn">FALSE</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>The comparison before anything is optimized, against a report file
-carrying six significant digits:</p>
+with six significant digits:</p>
 <pre><code>numbers at age                       5.1e-03 %
 spawning biomass                     4.7e-03 %
 recruitment                          5.0e-03 %
@@ -676,7 +676,7 @@ and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>
 is the mean recruitment of those years by construction.
 <code>SPoRC</code> estimates its deviations freely under the penalty, so
-the mean recruitment of the years carrying deviations can differ from
+the mean recruitment of the years with deviations can differ from
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>,
 which also sets the initial equilibrium and the two terminal years
 without deviations. Under mean recruitment with no stock-recruit curve
@@ -684,7 +684,7 @@ the data prefer about two percent more recruitment in the deviation
 years, so
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>
 falls almost 4 percent with the deviations rising to match, and the
-early years, held by the prior on the initial-age deviations rather than
+early years, set by the prior on the initial-age deviations rather than
 by data, follow
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>
 part of the way.</p>

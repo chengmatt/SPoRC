@@ -588,7 +588,7 @@ movement follows spawning, so they spawn where they started; under
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>κ</mi><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\kappa = 2</annotation></semantics></math>
 they are partially redistributed by the time they spawn. The
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>t</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">t^{spawn}</annotation></semantics></math>
-mortality discount is carried inside
+mortality discount is kept inside
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>𝐍</mi><mrow><mi>s</mi><mi>p</mi><mi>a</mi><mi>w</mi><mi>n</mi></mrow></msup><annotation encoding="application/x-tex">\mathbf{N}^{spawn}</annotation></semantics></math>
 in all three cases rather than applied separately to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><mi>B</mi><mi>P</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">SSBPR</annotation></semantics></math>.</p>
@@ -770,7 +770,7 @@ form is not valid and the season-integrated (spatial Baranov) abundance
 is required instead. The integral runs over elapsed fraction of the
 season, since
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐀</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{A}_{\tau,a}</annotation></semantics></math>
-already carries
+already has
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi mathvariant="normal">Δ</mi><msub><mi>τ</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">\Delta\tau_\tau</annotation></semantics></math>
 in both of its terms, and is evaluated together with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>𝐀</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\mathbf{A}_{\tau,a})</annotation></semantics></math>
@@ -780,7 +780,7 @@ from the single block exponential</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>𝐍</mi><mi>a</mi><mtext mathvariant="normal">fished</mtext></msubsup><annotation encoding="application/x-tex">\mathbf{N}_{a}^{\text{fished}}</annotation></semantics></math>
 is abundance at the <em>start</em> of season
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>τ</mi><annotation encoding="application/x-tex">\tau</annotation></semantics></math>,
-carried forward across seasons by
+advanced across seasons by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐓</mi><mrow><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{T}_{\tau,a}</annotation></semantics></math>.
 This applies to the penultimate age and the plus group as well as to the
 ages advanced through the main loop: their catch is accumulated over the
@@ -893,7 +893,7 @@ separately and with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>m</mi><mi>s</mi><mi>y</mi></mrow></msub><annotation encoding="application/x-tex">F_{r,msy}</annotation></semantics></math>
 now region-specific:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>𝐅</mi><mrow><mi>a</mi><mo>,</mo><mi>τ</mi></mrow><mtext mathvariant="normal">land</mtext></msubsup><mo>=</mo><munder><mo>∑</mo><mrow><mi>f</mi><mo>∈</mo><msup><mi>ℱ</mi><mtext mathvariant="normal">land</mtext></msup></mrow></munder><msub><mtext mathvariant="normal">Frat</mtext><mrow><mi>r</mi><mo>,</mo><mi>f</mi><mo>,</mo><mi>τ</mi></mrow></msub><mo>⋅</mo><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>m</mi><mi>s</mi><mi>y</mi></mrow></msub><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><mo>⋅</mo><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>r</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>=</mo><mn>1</mn><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup></mrow><annotation encoding="application/x-tex">\mathbf{F}^{\text{land}}_{a,\tau} = \sum_{f \in \mathcal{F}^{\text{land}}}\text{Frat}_{r,f,\tau} \cdot F_{r,msy} \cdot \text{Sel}_{r,a,s = 1,f}^{\text{Fsh}} \cdot \text{Sel}_{r,a,s=1,f}^{\text{Ret}}</annotation></semantics></math></p>
-<p>Each origin cohort is carried forward across seasons by its own
+<p>Each origin cohort is advanced across seasons by its own
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝐓</mi><mrow><mi>p</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi></mrow></msub><annotation encoding="application/x-tex">\mathbf{T}_{p,\tau,a}</annotation></semantics></math>
 before its next season’s catch is taken.</p>
 <p>Regional equilibrium recruitment is computed by solving a non-linear
@@ -1066,7 +1066,7 @@ and you walk to the left, since the slope was positive and you need to
 bring it down.</p>
 <p>That distance is the sensitivity. The solution moves by the slope the
 parameter gave you, divided by the rate the slope changes as you walk,
-with the minus sign carrying the direction:</p>
+with the minus sign giving the direction:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>d</mi><mi>j</mi></msub><mo>=</mo><mi>−</mi><mspace width="0.222em"></mspace><mfrac><mrow><mrow><mtext mathvariant="normal">slope gained per unit of </mtext><mspace width="0.333em"></mspace></mrow><msub><mi>p</mi><mi>j</mi></msub></mrow><mrow><mrow><mtext mathvariant="normal">slope shed per unit of </mtext><mspace width="0.333em"></mspace></mrow><mi>x</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">d_j = -\ \frac{\text{slope gained per unit of } p_j}{\text{slope shed per unit of } x}</annotation></semantics></math></p>
 <div class="float">
 <img src="figures/i_refpt_sensitivity.png" alt="Changing a parameter changes the criterion (dashed) away from its fitted shape (solid), leaving a non-zero slope (blue) at the old solution. The new solution is how far you must walk to get rid of that slope. Both panels get the same parameter change, so both pick up the same slope, but the flatter curve on the right gets rid of it four times more slowly and the solution travels four times further."><div class="figcaption">Changing a parameter changes the criterion
@@ -1085,7 +1085,7 @@ measured per unit of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mi>j</mi></msub><annotation encoding="application/x-tex">p_j</annotation></semantics></math>,
 and the denominator is the slope shed, measured per unit of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>.
-Their ratio carries units of
+Their ratio has units of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>x</mi><annotation encoding="application/x-tex">x</annotation></semantics></math>
 per unit of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>p</mi><mi>j</mi></msub><annotation encoding="application/x-tex">p_j</annotation></semantics></math>,
@@ -1124,8 +1124,8 @@ and
 both rise when estimated recruitment scale rises, so much of the error
 cancels in their ratio. Treating their intervals as independent
 overstates the uncertainty in status, sometimes by a factor of two or
-more. Both methods carry the ratio through the same calculation rather
-than combining intervals afterwards, so the cancellation is
+more. Both methods propagate the ratio through the same calculation
+rather than combining intervals afterwards, so the cancellation is
 retained.</p>
 </div>
 <div class="section level5">
@@ -1336,9 +1336,9 @@ depends only on fishing mortality in seasons
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mfrac><mrow><mi>∂</mi><mspace width="0.167em"></mspace><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><mi>C</mi><mi>a</mi><mi>t</mi><mi>c</mi><msub><mi>h</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><mi>∂</mi><mspace width="0.167em"></mspace><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><msup><mi>τ</mi><mo>′</mo></msup><mo>,</mo><mi>y</mi></mrow></msub></mrow></mfrac><mo>=</mo><mn>0</mn><mo>,</mo><mspace width="1.0em"></mspace><msup><mi>τ</mi><mo>′</mo></msup><mo>&gt;</mo><mi>τ</mi></mrow><annotation encoding="application/x-tex">
 \frac{\partial\, projCatch_{p,r,\tau,y,f}}{\partial\, projF_{r,\tau',y}} = 0, \quad \tau' &gt; \tau
 </annotation></semantics></math></p>
-<p>Targets are set on regions, not on populations. Fishing mortality
-carries no population index, so where several populations occupy a
-region there is a single rate
+<p>Targets are set on regions, not on populations. Fishing mortality has
+no population index, so where several populations occupy a region there
+is a single rate
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>p</mi><mi>r</mi><mi>o</mi><mi>j</mi><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">projF_{r,y}</annotation></semantics></math>
 to solve against several targets, and the division of catch between them
 follows their relative abundance and selectivity:</p>
@@ -1434,6 +1434,13 @@ and simulated recruitment is defined as:</p>
 <p>Thus, this inverse Gaussian mixture ensures the simulated values have
 approximately the correct mean and variability based on historical
 recruitment values.</p>
+<p>Recruitment is the only stochastic element of a projection. The
+state-space numbers at age (<code>NAA_re</code>, see the model options
+vignette) are <strong>not</strong> projected: numbers past the terminal
+year advance deterministically, so a projection run from a state-space
+fit leaves that process error out and its spread is understated by it.
+The closed loop operating model is a separate path and does hold the
+state into the future.</p>
 <p>After recruitment processes occur, movement is applied (only in
 projected years
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y &gt; 1</annotation></semantics></math>,
@@ -1549,7 +1556,7 @@ year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y+1</annotation></semantics></math>
 rather than year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>.</p>
-<p><strong><code>catch_input</code> does not carry that lag.</strong>
+<p><strong><code>catch_input</code> does not have that lag.</strong>
 <code>catch_input[r, y]</code> is the catch taken <em>during</em>
 projection year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>,
@@ -1568,13 +1575,13 @@ and the first actual projected year is year 2. The one exception is
 Catch Target</em> above. The arguments controlling it are:</p>
 <ul>
 <li>
-<strong><code>catch_input</code></strong> carries the targets, and
-its shape selects annual or seasonal targeting. Given
+<strong><code>catch_input</code></strong> holds the targets, and its
+shape selects annual or seasonal targeting. Given
 <code>[n_regions, n_proj_yrs]</code>, one annual fishing mortality per
 region is solved and distributed at the terminal year seasonal splits.
 Given <code>[n_regions, n_proj_yrs, n_seas]</code>, a separate fishing
 mortality is solved per region and season. Either way the fleet split
-within a season is held at terminal year ratios, so fleet-specific
+within a season is kept at terminal year ratios, so fleet-specific
 targets are not supported. <code>catch_input[r, y]</code> is the catch
 taken <em>in</em> year <code>y</code>, which is not the same convention
 as <code>f_ref_pt[r, y]</code>, which sets fishing mortality in year
@@ -1594,7 +1601,7 @@ estimated for that year, and so changes the numbers-at-age entering year
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>τ</mi></msub><mo>&gt;</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n_\tau &gt; 1</annotation></semantics></math>
 the terminal year takes all of its seasons from the terminal
 numbers-at-age rather than propagating them, so only the last season’s
-fishing mortality carries into year 2; earlier seasons still take their
+fishing mortality feeds into year 2; earlier seasons still take their
 catch but do not otherwise feed forward.</li>
 <li>
 <strong><code>catch_f_max</code></strong> bounds the search, and
@@ -1784,11 +1791,11 @@ deviations.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/sort.html" class="external-link">sort</a></span><span class="op">(</span><span class="va">contrib</span>, decreasing <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/sum.html" class="external-link">sum</a></span><span class="op">(</span><span class="va">rp</span><span class="op">$</span><span class="va">d</span><span class="op">[</span><span class="st">'f_ref_pt'</span>, <span class="op">]</span> <span class="op">==</span> <span class="fl">0</span><span class="op">)</span> <span class="co"># parameters with no effect at all</span></span></code></pre></div>
-<p>To carry stock status through the same calculation, pass a function
-of the report and the reference points to <code>extra_quantities</code>.
-Setting <code>method = 'both'</code> also runs the simulation version,
-which draws parameter vectors from the joint covariance and re-solves
-the reference point at each draw.</p>
+<p>To propagate stock status through the same calculation, pass a
+function of the report and the reference points to
+<code>extra_quantities</code>. Setting <code>method = 'both'</code> also
+runs the simulation version, which draws parameter vectors from the
+joint covariance and re-solves the reference point at each draw.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># terminal spawning biomass and its ratio to B40</span></span>
 <span><span class="va">status</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">rep</span>, <span class="va">refpts</span><span class="op">)</span> <span class="op">{</span></span>
@@ -1998,9 +2005,9 @@ Updates<a class="anchor" aria-label="anchor" href="#lining-catch-up-with-project
 </h5>
 <p>Note that <strong>projection year 1 is the terminal assessment year
 replayed, not a projected year.</strong> It reproduces the terminal year
-at the fishing mortality the assessment estimated, and exists to carry
-the terminal numbers-at-age into year 2. The first genuinely projected
-year is index 2. This is the same reason catch advice is read from
+at the fishing mortality the assessment estimated, and exists to pass
+the terminal numbers-at-age into year 2. The first projected year is
+index 2. This is the same reason catch advice is read from
 <code>proj_Catch[, , 2, , ]</code> rather than index 1 in the harvest
 control rule example above.</p>
 <p>Note also that <strong><code>catch_input</code> is indexed by the
@@ -2011,8 +2018,8 @@ directly with <code>proj_Catch[, r, y, , ]</code> and
 convention <code>f_ref_pt</code> uses: <code>f_ref_pt[r, y]</code> sets
 fishing mortality in year <code>y + 1</code>, because a harvest control
 rule reads year <code>y</code>’s spawning biomass to set the following
-year’s rate. A catch target carries no such lag, since the fishing
-mortality that takes a given catch is solved against that same year’s
+year’s rate. A catch target has no such lag, since the fishing mortality
+that takes a given catch is solved against that same year’s
 numbers-at-age.</p>
 <p>For the sablefish model the terminal assessment year is 2024 and
 <code>n_proj_yrs</code> is 15, so

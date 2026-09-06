@@ -197,8 +197,8 @@ in likelihood; <code>0</code> = exclude.</p></dd>
 <dd><p>Observed survey index at age, an array with dimensions
 <code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]</code>.
 Supplying this fits the index at age directly, every age its own observation
-with its own catchability. The sex margin is required whatever the fleet
-reports: a stream summed over sexes carries its observation in sex slot one.
+with its own catchability. The sex dim is required whatever the fleet
+reports: a data source summed over sexes has its observation in sex slot one.
 A fleet uses this or the aggregated index, never both.</p></dd>
 
 
@@ -223,10 +223,10 @@ a leading population dimension.</p></dd>
 <dd><p>Integer arrays
 <code>[n_ages, n_sexes, n_srv_fleets]</code> coupling the index at age
 observation error, the key matrix convention ICES assessments use. Equal
-entries share a parameter and <code>NA</code> excludes one. The sex margin is
+entries share a parameter and <code>NA</code> excludes one. The sex dim is
 required; a key coupling the sexes repeats its entries across them. The age shape of
 catchability is not set here: an index fit age by age puts it in selectivity
-through the <code>"nonparfree"</code> form, which carries the height of the curve
+through the <code>"nonparfree"</code> form, which holds the height of the curve
 as well as its shape. See <code><a href="Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></code>.</p></dd>
 
 
@@ -236,7 +236,7 @@ as well as its shape. See <code><a href="Setup_Mod_Srvsel_and_Q.html">Setup_Mod_
 
 
 <dt id="arg-srvidxaa-type-srvidxaa-pop-type">SrvIdxAA_Type, SrvIdxAA_pop_Type<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-type-srvidxaa-pop-type"></a></dt>
-<dd><p>Which margins the fleet reports
+<dd><p>Which dims the fleet reports
 separately: <code>"agg"</code>, <code>"spltRaggS"</code> (default), <code>"aggRspltS"</code>
 or <code>"spltRspltS"</code>, or year and fleet specifications such as
 <code>"spltRaggS_Year_1-20_Fleet_1"</code>. See
@@ -293,7 +293,7 @@ aggregated survey index observation error, one value per fleet. One of:</p><dl><
 weight on a normal likelihood is the same statement as dividing the
 variance by that weight. <code>Setup_Mod_Weighting</code> warns when both are
 used. Fleets with a multivariate normal index likelihood take their scale
-from the supplied covariance and cannot carry one, which is an error rather
+from the supplied covariance and cannot have one, which is an error rather
 than a silently unidentified parameter.</p></dd>
 
 
@@ -330,7 +330,7 @@ population-specific survey index observation error, one value per fleet. One of:
 weight on a normal likelihood is the same statement as dividing the
 variance by that weight. <code>Setup_Mod_Weighting</code> warns when both are
 used. Fleets with a multivariate normal index likelihood take their scale
-from the supplied covariance and cannot carry one, which is an error rather
+from the supplied covariance and cannot have one, which is an error rather
 than a silently unidentified parameter.</p></dd>
 
 
@@ -553,7 +553,7 @@ being forced to be explained; this is how a fleet that only ages part of
 its age range is fitted. Indices refer to observed bins, that is after any
 ageing error has mapped model ages onto observed ones. The restriction
 applies whatever the composition type: for sex-joint comps the named bins
-are dropped from each sex's block, so the sex ratio the joint comps carry
+are dropped from each sex's block, so the sex ratio the joint comps have
 becomes the ratio within the fitted bins. Every fleet must retain at least
 two bins, since the proportion in a lone bin is one whatever the model
 predicts. Default <code>NULL</code>, which fits all bins for all fleets.</p></dd>
@@ -591,7 +591,7 @@ error structure of each survey index. Options are <code>"lognormal"</code>
 <code>"normal"</code> (arithmetic scale), and <code>"mvn"</code> (multivariate
 normal on the arithmetic scale using a fixed covariance supplied through
 <code>SrvIdx_Cov</code>). One-step-ahead residuals are available only for
-lognormal fleets. A fleet's population-specific index stream follows the
+lognormal fleets. A fleet's population-specific index data source follows the
 same choice for <code>"lognormal"</code> and <code>"normal"</code>, but stays
 lognormal under <code>"mvn"</code>, whose covariance describes the regional
 series only.</p></dd>
@@ -630,13 +630,13 @@ fleet fits, ordered as the observations appear when scanning that fleet's
 <dd><p>Observed conditional age-at-length array
 <code>[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x
 n_srv_fleets]</code>. A CAAL observation is the age composition of the fish aged
-from one length bin, so the age margin of each length row is what gets fit.
+from one length bin, so the age dim of each length row is what gets fit.
 <code>NULL</code> (default) for a model with no CAAL data.</p></dd>
 
 
 <dt id="arg-usesrv-caal">UseSrv_caal<a class="anchor" aria-label="anchor" href="#arg-usesrv-caal"></a></dt>
 <dd><p>Use flags <code>[n_regions x n_years x n_seas x n_lens x
-n_srv_fleets]</code>. Length bins with no aged fish carry a zero and are skipped.</p></dd>
+n_srv_fleets]</code>. Length bins with no aged fish have a zero and are skipped.</p></dd>
 
 
 <dt id="arg-iss-srv-caal">ISS_Srv_caal<a class="anchor" aria-label="anchor" href="#arg-iss-srv-caal"></a></dt>

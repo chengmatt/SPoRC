@@ -151,14 +151,14 @@ sex. The assessment writes</p>
 \qquad a = 2, \ldots, a_{+}</annotation></semantics></math></p>
 <p>so one level
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msup><mi>N</mi><mtext mathvariant="normal">init</mtext></msup></mrow><mo accent="true">¯</mo></mover><annotation encoding="application/x-tex">\overline{\log N^{\text{init}}}</annotation></semantics></math>
-is shared and each sex carries its own deviations
+is shared and each sex has its own deviations
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ϵ</mi><mrow><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mtext mathvariant="normal">init</mtext></msubsup><annotation encoding="application/x-tex">\epsilon^{\text{init}}_{a,s}</annotation></semantics></math>.
 Those deviations are penalized about zero, and separately the two sexes
 are compared to each other by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>a</mi></msub><mo stretchy="false" form="prefix">(</mo><msubsup><mi>ϵ</mi><mrow><mi>a</mi><mo>,</mo><mi>m</mi></mrow><mtext mathvariant="normal">init</mtext></msubsup><mo>−</mo><msubsup><mi>ϵ</mi><mrow><mi>a</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">init</mtext></msubsup><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\sum_{a}(\epsilon^{\text{init}}_{a,m} - \epsilon^{\text{init}}_{a,f})^{2}</annotation></semantics></math>.
 The penalty is a statement about how far apart the sexes’ initial age
 structures may sit, which is not the same statement as how variable each
-one is: initial numbers at age carry the exploitation the stock had
+one is: initial numbers at age hold the exploitation the stock had
 already seen before
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mn>1</mn></msub><annotation encoding="application/x-tex">y_{1}</annotation></semantics></math>
 as well as year-class strength, and with sex specific selectivity and
@@ -207,10 +207,10 @@ subscripts collapse to one and are dropped throughout. The sex subscript
 does not.</p>
 <p>The survey enters as two fleets. The assessment reads its index in
 July and its compositions on January 1, off one selectivity curve. Two
-fleets sharing a curve is how that is written: fleet 1 carries the index
+fleets sharing a curve is how that is written: fleet 1 holds the index
 at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mtext mathvariant="normal">srv</mtext></msup><mo>=</mo><mo stretchy="false" form="prefix">(</mo><mn>7</mn><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>12</mn></mrow><annotation encoding="application/x-tex">t^{\text{srv}} = (7 - 1)/12</annotation></semantics></math>,
-fleet 2 carries the compositions at
+fleet 2 holds the compositions at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mtext mathvariant="normal">srv</mtext></msup><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">t^{\text{srv}} = 0</annotation></semantics></math>
 (inconsistent in the flatfish model).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
@@ -384,12 +384,12 @@ lognormal at
 <span>  sigmaC_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  ln_sigmaC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">sigmaC</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">n_yrs</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>The assessment carries two weak penalties on fishing mortality, one
+<p>The assessment has two weak penalties on fishing mortality, one
 pulling annual
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
 toward 0.2 and one forcing the mean deviation to zero.
 <code>ln_F_mean_spec = "fix"</code> does the same thing by fixing the
-mean, so the deviations carry all of
+mean, so the deviations have all of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>F</mi></mrow><annotation encoding="application/x-tex">\log F</annotation></semantics></math>.
 Hoervrt, yhr first has no counterpart in <code>SPoRC</code> is left
 out.</p>
@@ -398,8 +398,7 @@ out.</p>
 <h2 id="fishery-compositions">Fishery compositions<a class="anchor" aria-label="anchor" href="#fishery-compositions"></a>
 </h2>
 <p>Compositions are joint across sexes, females then males, so each
-year’s observation carries the sex ratio as well as the age
-structure.</p>
+year’s observation holds the sex ratio as well as the age structure.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
@@ -420,8 +419,8 @@ structure.</p>
 <span>  FishLenComps_Type <span class="op">=</span> <span class="st">"none_Year_1-terminal_Fleet_1"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><code>spltRjntS</code> is the joint form: one multinomial over both
-sexes at once, which carries the sex ratio. The input sample size goes
-in the first sex’s slot, since the joint composition is one observation
+sexes at once, which holds the sex ratio. The input sample size goes in
+the first sex’s slot, since the joint composition is one observation
 rather than two. There is no fishery index, so
 <code>fish_idx_type = "none"</code> with the use flags off;
 <code>FishIdx_LikeType</code> still has to name a family, and it is
@@ -472,7 +471,7 @@ from the assessment’s coefficients of variation by
 <span>  fish_q_spec <span class="op">=</span> <span class="st">"fix"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Three things are named here.</p>
-<p><code>_NSelBins_17</code> is the plateau. Bins beyond 17 are held at
+<p><code>_NSelBins_17</code> is the plateau. Bins beyond 17 are kept at
 bin 17’s value rather than evaluated through the logistic, which is the
 assessment’s <code>nselages</code>.</p>
 <p><code>fish_sel_sex_offset = "scale"</code> multiplies the male curve
@@ -533,7 +532,7 @@ but it writes the penalty over a vector of
 with one element per survey year, so the same prior is accidentally
 counted 42 times. One parameter at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><mn>0.2</mn><mi>/</mi><msqrt><mn>42</mn></msqrt></mrow><annotation encoding="application/x-tex">\sigma = 0.2/\sqrt{42}</annotation></semantics></math>
-carries the same information, which is what <code>dat$q_prior$sd</code>
+holds the same information, which is what <code>dat$q_prior$sd</code>
 holds.</p>
 </div>
 <div class="section level2">
@@ -553,7 +552,7 @@ holds.</p>
 <span><span class="va">data</span> <span class="op">&lt;-</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span></span>
 <span><span class="va">parameters</span> <span class="op">&lt;-</span> <span class="va">input_list</span><span class="op">$</span><span class="va">par</span></span>
 <span><span class="va">mapping</span> <span class="op">&lt;-</span> <span class="va">input_list</span><span class="op">$</span><span class="va">map</span></span></code></pre></div>
-<p>Every weight is one. The assessment’s own weights are carried as
+<p>Every weight is one. The assessment’s own weights are kept as
 standard deviations where they belong instead: the catch weight of 300
 became
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>C</mi></msub><annotation encoding="application/x-tex">\sigma_{C}</annotation></semantics></math>,
@@ -591,7 +590,7 @@ optimized.</p>
 <span><span class="va">parameters</span><span class="op">$</span><span class="va">fishsel_pe_pars</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">2</span>,,<span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">slp_sigma</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># The two survey fleets share these through the map, and a collapsed parameter</span></span>
-<span><span class="co"># starts at the mean of its cells, so both fleets carry the value.</span></span>
+<span><span class="co"># starts at the mean of its cells, so both fleets hold the value.</span></span>
 <span><span class="kw">for</span><span class="op">(</span><span class="va">sf</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="va">n_srv</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">parameters</span><span class="op">$</span><span class="va">srv_fixed_sel_pars</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="va">sf</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">sel50_srv</span><span class="op">)</span></span>
 <span>  <span class="va">parameters</span><span class="op">$</span><span class="va">srv_fixed_sel_pars</span><span class="op">[</span><span class="fl">1</span>,<span class="fl">2</span>,<span class="fl">1</span>,<span class="fl">1</span>,<span class="va">sf</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">sel_slope_srv</span><span class="op">)</span></span>
@@ -775,9 +774,9 @@ pulling every year’s fishing mortality toward 0.2. Its weight of 0.01 is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>≈</mo><mn>7</mn></mrow><annotation encoding="application/x-tex">\sigma \approx 7</annotation></semantics></math>
 on the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
-scale, which is a numerical stabilizer carried over from the early
+scale, which is a numerical stabilizer left over from the early
 estimation phases rather than a statement about fishing mortality, so
-<code>SPoRC</code> does not carry it.</p>
+<code>SPoRC</code> does not have it.</p>
 <p>Adding it back closes the rest of the gap. With it the assessment’s
 estimate is stationary in <code>SPoRC</code>’s objective to better than
 the assessment’s own convergence level, the optimizer moves the

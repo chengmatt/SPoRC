@@ -124,12 +124,13 @@ Setup_Mod_Retsel(
   `"nonparfree"`
 
   :   Non-parametric on the log scale with no standardization,
-      \\\exp(\theta)\\, so the values carry the height of the curve as
-      well as its shape. This is the form for a stream fit age by age: a
-      free catchability per age and a selectivity estimated at age are
-      one quantity written two ways, so the whole age multiplier lives
-      here and no catchability is set. Pin one bin, by leaving it out of
-      the estimated bins, whenever the mean it multiplies is also free.
+      \\\exp(\theta)\\, so the values hold the height of the curve as
+      well as its shape. This is the form for a data source fit age by
+      age: a free catchability per age and a selectivity estimated at
+      age are one quantity written two ways, so the whole age multiplier
+      lives here and no catchability is set. Pin one bin, by leaving it
+      out of the estimated bins, whenever the mean it multiplies is also
+      free.
 
   `"asymplogist1"`
 
@@ -138,7 +139,7 @@ Setup_Mod_Retsel(
 
   `"asymplogist2"`
 
-  :   Logistic selectivity with with \\a\_{50}\\ and \\a\_{95}\\ and
+  :   Logistic selectivity with \\a\_{50}\\ and \\a\_{95}\\ and
       asymptotic control (3 parameters).
 
   `"bicubic"`
@@ -221,7 +222,7 @@ Setup_Mod_Retsel(
   data and any explicit smoothness or centering penalties. Values other
   than 0 or 1 make an estimated process error sigma reinterpretable, so
   prefer 0 or 1 unless deliberately down-weighting. Applies only to
-  `ln_retsel_devs`; the bin-override deviations carry their own process
+  `ln_retsel_devs`; the bin-override deviations have their own process
   error and are not affected.
 
 - retsel_rw_init_sigma:

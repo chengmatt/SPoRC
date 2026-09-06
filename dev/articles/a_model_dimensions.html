@@ -301,7 +301,7 @@ every penalized cell across sexes</td>
 <td>init_devs_pen_use</td>
 <td>Array dimensioned by n_pop, n_regions, n_ages - 1, n_sexes of 0/1
 flags naming which cells of <code>ln_InitDevs</code> the initial age
-penalty scores, so a curve shared across sexes
+penalty covers, so a curve shared across sexes
 (<code>InitDevs_sex_spec = "est_shared_s"</code>) is penalized once and
 sex-specific curves (<code>"est_all"</code>) each are</td>
 </tr>
@@ -565,12 +565,13 @@ the parametric curve</td>
 <td>growth_pe_pars</td>
 <td>Parameter array dimensioned by n_pop, n_regions, max(4, n_ages,
 n_growth_pars), n_sexes, 2 of process error hyperparameters for both
-growth deviation streams. The first stream holds one log process error
-standard deviation per growth parameter for the time-varying deviations.
-The second holds the semi-parametric surface’s correlations by age, year
-and cohort in slots one to three and the log scale in slot four for the
-correlated forms; the iid and random walk forms instead read one log
-sigma per age. Slots a form does not read are mapped off</td>
+growth deviation data sources. The first data source holds one log
+process error standard deviation per growth parameter for the
+time-varying deviations. The second holds the semi-parametric surface’s
+correlations by age, year and cohort in slots one to three and the log
+scale in slot four for the correlated forms; the iid and random walk
+forms instead read one log sigma per age. Slots a form does not read are
+mapped off</td>
 </tr>
 <tr class="even">
 <td>map_ln_growth_semipar_devs</td>
@@ -622,13 +623,17 @@ scale), and sd (prior standard deviation on log scale)</td>
 <tr class="odd">
 <td>Fixed_natmort</td>
 <td>Natural mortality array dimensioned by n_pop, n_regions, n_years,
-n_ages, n_sexes</td>
+n_ages, n_sexes, or by n_pop, n_regions, n_years, n_seas, n_ages,
+n_sexes when the rate differs between seasons. Values are instantaneous
+rates per year in both forms, and the array without a season dimension
+is expanded across seasons</td>
 </tr>
 <tr class="even">
 <td>M_blocks</td>
 <td>Array that specifies the natural mortality blocking structure,
-dimensioned by n_pop, n_regions, n_years, n_ages, n_sexes. Unique
-integer values denote distinct natural mortality parameter blocks</td>
+dimensioned by n_pop, n_regions, n_years, n_seas, n_ages, n_sexes.
+Unique integer values denote distinct natural mortality parameter
+blocks</td>
 </tr>
 </tbody>
 </table>
@@ -750,7 +755,7 @@ diffusion rates in CTMC movement</td>
 <td>ctmc_diffusion_bounds</td>
 <td>How the generator is kept Metzler: <code>"none"</code> (0),
 <code>"softplus"</code> (1), or <code>"upwind"</code> (2), the
-discontinuous Galerkin flux, which carries diffusion whole and reads no
+discontinuous Galerkin flux, which has diffusion whole and reads no
 eps</td>
 </tr>
 <tr class="even">
@@ -1070,29 +1075,28 @@ order. Validated at setup for symmetry and positive definiteness</td>
 <td>ObsCatchAA, ObsDiscardAA</td>
 <td>Age-disaggregated retained catch and discards, each dimensioned by
 n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets. A fleet fits
-these or the aggregated form with compositions, never both. The sex
-margin is required whatever the fleet reports: a stream summed over
-sexes carries its observation in sex slot one, and an array a dimension
-short is refused</td>
+these or the aggregated form with compositions, never both. The sex dim
+is required whatever the fleet reports: a data source summed over sexes
+has its observation in sex slot one, and an array a dimension short is
+refused</td>
 </tr>
 <tr class="even">
 <td>UseCatchAA, UseDiscardAA</td>
 <td>Arrays shaped like their observations, 1 where an observation is
 fit. A cell not fit for catch at age is also not fished, the way
-UseCatch governs closures for the aggregated stream</td>
+UseCatch governs closures for the aggregated data source</td>
 </tr>
 <tr class="odd">
 <td>ObsCatchAA_SE, ObsDiscardAA_SE</td>
 <td>Reported standard errors shaped like their observations, read only
-when the stream’s sigma_form asks for them</td>
+when the data source’s sigma_form asks for them</td>
 </tr>
 <tr class="even">
 <td>CatchAA_Type, DiscardAA_Type</td>
-<td>Matrices dimensioned by n_years, n_fish_fleets naming the margins
-each fleet reports separately, which may change between years. 0: summed
-over regions and sexes, 1: split by region and summed over sexes
-(default), 2: summed over regions and split by sex, 3: split by
-both</td>
+<td>Matrices dimensioned by n_years, n_fish_fleets naming the dims each
+fleet reports separately, which may change between years. 0: summed over
+regions and sexes, 1: split by region and summed over sexes (default),
+2: summed over regions and split by sex, 3: split by both</td>
 </tr>
 <tr class="odd">
 <td>CatchAA_LikeType, DiscardAA_LikeType</td>
@@ -1110,7 +1114,7 @@ reported standard errors alone, 2: additive, 3: in quadrature</td>
 <td>Vectors dimensioned by n_fish_fleets giving the correlation across
 ages within a cell. 0: iid, 1: AR(1) in age distance, 2: unstructured,
 3: separable AR(1) over ages and years. Each has a _pop counterpart,
-since the population-specific streams carry their own</td>
+since the population-specific data sources have their own</td>
 </tr>
 <tr class="even">
 <td>ObsCatchAA_pop, UseCatchAA_pop, and the rest</td>
@@ -1811,7 +1815,7 @@ Estimated as exp(ln_fish_q) (default), 1: Solved analytically as the
 ratio of mean observed to mean predicted index, 2: Solved analytically
 on the log scale as exp(mean(log(obs) - log(pred))). Analytic fleets
 have their ln_fish_q fixed automatically, ignore block structure, and
-cannot carry catchability covariates or priors</td>
+cannot have catchability covariates or priors</td>
 </tr>
 <tr class="odd">
 <td>Use_fish_q_prior</td>
@@ -1914,7 +1918,7 @@ conventions as fishsel_rw_init_sigma</td>
 <td>map_ln_fishsel_bin_devs</td>
 <td>Array mirroring the ln_fishsel_bin_devs factor map: an estimation
 index where a deviation is estimated, NA where fixed. Only overridden
-bins carry estimated deviations</td>
+bins have estimated deviations</td>
 </tr>
 <tr class="even">
 <td>Use_fish_selex_penalty</td>
@@ -2139,7 +2143,7 @@ catchability is obtained. 0: Estimated as exp(ln_srv_q) (default), 1:
 Solved analytically as the ratio of mean observed to mean predicted
 index, 2: Solved analytically on the log scale as exp(mean(log(obs) -
 log(pred))). Analytic fleets have their ln_srv_q fixed automatically,
-ignore block structure, and cannot carry catchability covariates or
+ignore block structure, and cannot have catchability covariates or
 priors</td>
 </tr>
 <tr class="even">

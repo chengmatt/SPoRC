@@ -2,7 +2,7 @@
 
 The age and year half of
 [`Get_NAA_state_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/Get_NAA_state_penalty.md),
-split out so the region correlation can whiten its margin and then reuse
+split out so the region correlation can whiten its dim and then reuse
 this unchanged for every structure, including the three-dimensional
 field whose cohort term makes it non-separable.
 

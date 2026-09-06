@@ -78,15 +78,14 @@ N_{1,a} = \exp\left(\log R^{\text{init}} - M(a-1) + \phi_{a}\right)
 `use_rinit = 1` is what creates that separate scalar, and
 `equil_init_age_strc = "stoch_shared_ages"` with an explicit
 `init_age_devs_shared` vector is what makes the ages past the observed
-range share the last deviation. `SPoRC` carries the initial numbers as
+range share the last deviation. `SPoRC` holds the initial numbers as
 multiplicative deviations from an equilibrium age structure rather than
 as the structure itself, so the seeding step below converts between the
 two.
 
 The bias ramp is on with every ramp year at the terminal year, which
 centers the recruitment penalty on $`-\sigma_{R}^{2}/2`$. That matches
-the shifted deviations the seeds carry, described in the seeding
-section.
+the shifted deviations the seeds have, described in the seeding section.
 
 ``` r
 
@@ -118,9 +117,9 @@ put the prior mean where the assessment puts it:
 \ell^{M} = \dfrac{\left(\log M - \log\left[\mu_{M}e^{-\text{CV}_{M}^{2}/2}\right]\right)^{2}}{2\,\text{CV}_{M}^{2}}
 ```
 
-Weight at age is year varying, and the fishery carries its own weight at
-age matrix through `WAA_fish`, which prices the catch, while the
-population matrix prices spawning biomass and the survey.
+Weight at age is year varying, and the fishery has its own weight at age
+matrix through `WAA_fish`, which prices the catch, while the population
+matrix prices spawning biomass and the survey.
 
 ``` r
 
@@ -160,7 +159,7 @@ The assessment writes its catch and F statements as weighted sums of
 squares with weights $`200`$ and $`0.1`$. A weighted sum of squares and
 a normal likelihood with a fixed standard deviation are the same
 statement up to a constant, related by $`\sigma = 1/\sqrt{2w}`$, so both
-weights are carried inside the standard deviations rather than applied
+weights are kept inside the standard deviations rather than applied
 outside the sums.
 
 ``` r
@@ -322,23 +321,22 @@ input_list <- Setup_Mod_Weighting(
 
 ## Starting at the ADMB estimate
 
-Before optimizing anything, it is worth checking that the model is
-reproduced *at a known point*. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.
+Before optimizing anything, check that the model is reproduced *at a
+known point*. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.
 
 Two conversions are needed. The assessment builds its three deviation
 free terminal recruits as $`\exp(\overline{\log R} + \sigma_{R}^{2}/2)`$
 while leaving the estimated years raw, and its recruitment deviations
-are a `dev_vector` constrained to sum to zero. Carrying the bias
-correction in `ln_global_R0` and shifting every seeded deviation down by
-the same amount reproduces both the recruitment series and the penalty
-value exactly.
+are a `dev_vector` constrained to sum to zero. With the bias correction
+in `ln_global_R0` and shifting every seeded deviation down by the same
+amount reproduces both the recruitment series and the penalty value
+exactly.
 
 The initial age structure conversion is the second. The assessment
-writes the first year directly, while `SPoRC` carries multiplicative
+writes the first year directly, while `SPoRC` has multiplicative
 deviations from an equilibrium age structure, so the deviations are the
 log ratio of the two.
 

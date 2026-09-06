@@ -5,7 +5,7 @@ Write a simulated at-age cell into its true and observed containers
 ## Usage
 
 ``` r
-store_at_age_cell(sim_env, stream, drawn, r, y, seas, f, sim)
+store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim)
 ```
 
 ## Arguments
@@ -14,9 +14,9 @@ store_at_age_cell(sim_env, stream, drawn, r, y, seas, f, sim)
 
   Environment holding the simulation containers.
 
-- stream:
+- data_source:
 
-  Stream tag, e.g. `"CatchAA"`.
+  Data source tag, e.g. `"CatchAA"`.
 
 - drawn:
 

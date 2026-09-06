@@ -178,14 +178,14 @@ with deviations that ages beyond the observed range share:</p>
 <p><code>use_rinit = 1</code> is what creates that separate scalar, and
 <code>equil_init_age_strc = "stoch_shared_ages"</code> with an explicit
 <code>init_age_devs_shared</code> vector is what makes the ages past the
-observed range share the last deviation. <code>SPoRC</code> carries the
+observed range share the last deviation. <code>SPoRC</code> holds the
 initial numbers as multiplicative deviations from an equilibrium age
 structure rather than as the structure itself, so the seeding step below
 converts between the two.</p>
 <p>The bias ramp is on with every ramp year at the terminal year, which
 centers the recruitment penalty on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">-\sigma_{R}^{2}/2</annotation></semantics></math>.
-That matches the shifted deviations the seeds carry, described in the
+That matches the shifted deviations the seeds have, described in the
 seeding section.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec</a></span><span class="op">(</span></span>
@@ -215,9 +215,9 @@ shifted by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><msup><mtext mathvariant="normal">CV</mtext><mn>2</mn></msup><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(-\text{CV}^{2}/2)</annotation></semantics></math>
 to put the prior mean where the assessment puts it:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>ℓ</mi><mi>M</mi></msup><mo>=</mo><mstyle displaystyle="true"><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><mi>M</mi><mo>−</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">[</mo><msub><mi>μ</mi><mi>M</mi></msub><msup><mi>e</mi><mrow><mi>−</mi><msubsup><mtext mathvariant="normal">CV</mtext><mi>M</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn></mrow></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><mspace width="0.167em"></mspace><msubsup><mtext mathvariant="normal">CV</mtext><mi>M</mi><mn>2</mn></msubsup></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\ell^{M} = \dfrac{\left(\log M - \log\left[\mu_{M}e^{-\text{CV}_{M}^{2}/2}\right]\right)^{2}}{2\,\text{CV}_{M}^{2}}</annotation></semantics></math></p>
-<p>Weight at age is year varying, and the fishery carries its own weight
-at age matrix through <code>WAA_fish</code>, which prices the catch,
-while the population matrix prices spawning biomass and the survey.</p>
+<p>Weight at age is year varying, and the fishery has its own weight at
+age matrix through <code>WAA_fish</code>, which prices the catch, while
+the population matrix prices spawning biomass and the survey.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
@@ -257,7 +257,7 @@ and
 A weighted sum of squares and a normal likelihood with a fixed standard
 deviation are the same statement up to a constant, related by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><mn>1</mn><mi>/</mi><msqrt><mrow><mn>2</mn><mi>w</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">\sigma = 1/\sqrt{2w}</annotation></semantics></math>,
-so both weights are carried inside the standard deviations rather than
+so both weights are kept inside the standard deviations rather than
 applied outside the sums.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span></span>
@@ -405,22 +405,21 @@ assessment’s McAllister Ianelli values and ship in the data object.</p>
 <div class="section level2">
 <h2 id="starting-at-the-admb-estimate">Starting at the ADMB estimate<a class="anchor" aria-label="anchor" href="#starting-at-the-admb-estimate"></a>
 </h2>
-<p>Before optimizing anything, it is worth checking that the model is
-reproduced <em>at a known point</em>. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.</p>
+<p>Before optimizing anything, check that the model is reproduced <em>at
+a known point</em>. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.</p>
 <p>Two conversions are needed. The assessment builds its three deviation
 free terminal recruits as
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mover><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>R</mi></mrow><mo accent="true">¯</mo></mover><mo>+</mo><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\overline{\log R} + \sigma_{R}^{2}/2)</annotation></semantics></math>
 while leaving the estimated years raw, and its recruitment deviations
-are a <code>dev_vector</code> constrained to sum to zero. Carrying the
-bias correction in <code>ln_global_R0</code> and shifting every seeded
+are a <code>dev_vector</code> constrained to sum to zero. With the bias
+correction in <code>ln_global_R0</code> and shifting every seeded
 deviation down by the same amount reproduces both the recruitment series
 and the penalty value exactly.</p>
 <p>The initial age structure conversion is the second. The assessment
-writes the first year directly, while <code>SPoRC</code> carries
+writes the first year directly, while <code>SPoRC</code> has
 multiplicative deviations from an equilibrium age structure, so the
 deviations are the log ratio of the two.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">

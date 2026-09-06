@@ -53,7 +53,7 @@ catch.
 ## Details
 
 The integral runs over the unit interval, not over \\\[0, \Delta\]\\,
-because \\A = Q^\top \Delta - \mathrm{diag}(Z)\\ already carries the
+because \\A = Q^\top \Delta - \mathrm{diag}(Z)\\ already holds the
 season duration in both of its terms. The integration variable is
 elapsed *fraction* of the season, so a full season is \\\tau = 1\\.
 

@@ -1,9 +1,9 @@
 # Sum a conditional age-at-length array across populations
 
-The conditional age-at-length arrays carry a population dimension the
+The conditional age-at-length arrays have a population dimension the
 likelihood does not use, so it is summed away before the comparison. A
 single population needs only a reshape, which avoids an apply over a
-degenerate margin.
+degenerate dim.
 
 ## Usage
 

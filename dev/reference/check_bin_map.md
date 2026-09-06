@@ -54,7 +54,7 @@ to 0.997 or 1.002; the likelihood renormalizes the expectation after the
 multiply, so a row off by that much reweights nothing, and `AgeingError`
 passes `tol = 0.05`. A length bin map is written by hand rather than
 read from a rounded table, so `LenBinMap` keeps the `1e-8` it has always
-been held to. Only a row off by more than `tol` is reported, since that
+been kept to. Only a row off by more than `tol` is reported, since that
 means the matrix is not the map its author thought it was.
 
 `strict` decides whether that is fatal. `LenBinMap` has always rejected

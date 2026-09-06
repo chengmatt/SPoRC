@@ -64,10 +64,10 @@ biological processes, and survey indices follows the earlier vignette
 “Case Study: Eastern Bering Sea Walleye Pollock”, so here we only
 highlight the sections that differ.
 
-The model carries four survey fleets: the bottom trawl survey, the
-acoustic trawl survey, the acoustic vessel of opportunity index, and the
-acoustic survey’s age 1 abundance. The last is not a fifth survey. The
-pollock assessment fits the acoustic survey’s age 1 abundance as its own
+The model has four survey fleets: the bottom trawl survey, the acoustic
+trawl survey, the acoustic vessel of opportunity index, and the acoustic
+survey’s age 1 abundance. The last is not a fifth survey. The pollock
+assessment fits the acoustic survey’s age 1 abundance as its own
 likelihood component with its own catchability, separate from the
 acoustic biomass index and from its age composition, and `SPoRC`
 attaches one index to one survey fleet. `srv_idx_ages` is what restricts
@@ -194,7 +194,7 @@ pol_model <- function(cont_tv_fish_sel,
 
     # Data inputs
     WAA = sgl_rg_ebswp_data$WAA,
-    # the assessment carries a separate weight at age matrix for the fishery
+    # the assessment has a separate weight at age matrix for the fishery
     # and for each survey index
     WAA_fish = sgl_rg_ebswp_data$WAA_fish,
     WAA_srv = sgl_rg_ebswp_data$WAA_srv,
@@ -411,10 +411,10 @@ We can now loop through each row to generate the model inputs, fit the
 model using Laplace approximation, and store the results. The model
 fitting process can take a while!
 
-**Note**: the `random` argument specifies which parameters should be
-treated as random effects in the Laplace approximation. In this case, it
-is set to `"ln_fishsel_devs"` whenever selectivity deviations are
-modeled as random; otherwise, it is `NULL.`
+The `random` argument specifies which parameters are treated as random
+effects in the Laplace approximation. In this case, it is set to
+`"ln_fishsel_devs"` whenever selectivity deviations are modeled as
+random; otherwise, it is `NULL.`
 
 ``` r
 

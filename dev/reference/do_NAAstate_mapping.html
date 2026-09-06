@@ -77,8 +77,13 @@ dynamics and the penalty read.</p>
 <span>  <span class="va">NAA_sigma_popblk_spec_vals</span>,</span>
 <span>  <span class="va">NAA_sigma_regionblk_spec_vals</span>,</span>
 <span>  <span class="va">NAA_sigma_yearblk_spec_vals</span>,</span>
+<span>  <span class="va">NAA_sigma_seasblk_spec_vals</span>,</span>
 <span>  <span class="va">NAA_sigma_ageblk_spec_vals</span>,</span>
-<span>  <span class="va">NAA_sigma_sexblk_spec_vals</span></span>
+<span>  <span class="va">NAA_sigma_sexblk_spec_vals</span>,</span>
+<span>  NAA_pe_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
+<span>  NAA_re_seasons <span class="op">=</span> <span class="st">"annual"</span>,</span>
+<span>  NAA_re_season <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  NAA_re_season_spec <span class="op">=</span> <span class="st">"est_all"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -111,17 +116,39 @@ innovation.</p></dd>
 process error standard deviations are estimated.</p></dd>
 
 
-<dt id="arg-naa-sigma-popblk-spec-vals-naa-sigma-regionblk-spec-vals-naa-sigma-yearblk-spec-vals-naa-sigma-ageblk-spec-vals-naa-sigma-sexblk-spec-vals">NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals<a class="anchor" aria-label="anchor" href="#arg-naa-sigma-popblk-spec-vals-naa-sigma-regionblk-spec-vals-naa-sigma-yearblk-spec-vals-naa-sigma-ageblk-spec-vals-naa-sigma-sexblk-spec-vals"></a></dt>
-<dd><p>Lists of integer vectors assigning indices to blocks, exactly as the
-<code>M_*blk_spec_vals</code> arguments do. Blocking shares the standard
-deviation; it never removes a cell from the state.</p></dd>
+<dt id="arg-naa-sigma-popblk-spec-vals-naa-sigma-regionblk-spec-vals-naa-sigma-yearblk-spec-vals-naa-sigma-seasblk-spec-vals-naa-sigma-ageblk-spec-vals-naa-sigma-sexblk-spec-vals">NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_seasblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals<a class="anchor" aria-label="anchor" href="#arg-naa-sigma-popblk-spec-vals-naa-sigma-regionblk-spec-vals-naa-sigma-yearblk-spec-vals-naa-sigma-seasblk-spec-vals-naa-sigma-ageblk-spec-vals-naa-sigma-sexblk-spec-vals"></a></dt>
+<dd><p>Lists of integer vectors assigning indices to blocks, the same as the
+<code>M_*blk_spec_vals</code> arguments. Blocking shares the standard
+deviation.</p></dd>
+
+
+<dt id="arg-naa-pe-spec">NAA_pe_spec<a class="anchor" aria-label="anchor" href="#arg-naa-pe-spec"></a></dt>
+<dd><p>Character sharing spec for <code>NAA_pe_pars</code>, as documented
+on <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></code>.</p></dd>
+
+
+<dt id="arg-naa-re-seasons">NAA_re_seasons<a class="anchor" aria-label="anchor" href="#arg-naa-re-seasons"></a></dt>
+<dd><p>Seasons the state is active over. <code>"annual"</code>
+(default) uses season one alone, <code>"all"</code> every season, or an integer
+vector of season indices.</p></dd>
+
+
+<dt id="arg-naa-re-season">NAA_re_season<a class="anchor" aria-label="anchor" href="#arg-naa-re-season"></a></dt>
+<dd><p>Character, <code>"iid"</code> (default) or <code>"us"</code>, the
+correlation across the active seasons.</p></dd>
+
+
+<dt id="arg-naa-re-season-spec">NAA_re_season_spec<a class="anchor" aria-label="anchor" href="#arg-naa-re-season-spec"></a></dt>
+<dd><p>Character sharing spec for the season correlations,
+taking the same values as <code>NAA_re_region_spec</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>input_list</code> with <code>$par$ln_NAA</code>, <code>$par$ln_sigmaNAA</code>,
   their maps, and the data fields <code>NAA_re</code>, <code>n_est_naa_re</code>,
-  <code>naa_re_ages</code>, <code>naa_re_yrs</code> and <code>naa_sigma_blocks</code>.</p>
+  <code>naa_re_ages</code>, <code>naa_re_yrs</code>, <code>naa_re_seas</code> and
+  <code>naa_sigma_blocks</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -132,9 +159,15 @@ numbers at age rather than overlapping. The plus group is inside the state and
 not optional: it is the only cell whose influence never decays, so leaving it
 deterministic gives up the conditional independence the state is worth having
 for.</p>
-<p>Ages and years must each be a contiguous run. The penalty scores the active
-cells as one rectangular slice, and a gap would either leave scored cells the
-dynamics never wrote or force a per-cell branch onto the tape.</p>
+<p>Ages and years must each be a contiguous run. The penalty covers the active
+cells as one rectangular slice, and a gap would either leave penalized cells the
+dynamics never wrote or force a per-cell branch onto the tape. Seasons have
+no such requirement, because the season dim is only ever independent or
+unstructured and neither reads adjacency.</p>
+<p>A cell is the log numbers at the start of its season, so season one of year
+<code>y</code> is the state at the year boundary, after ageing and the plus group,
+and later seasons are states on the within-year survival and movement step.
+Season one alone reproduces the annual state exactly.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

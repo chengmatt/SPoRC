@@ -97,7 +97,7 @@ seasonal fractions \(\exp(\dot{\mathbf{Q}}\,\Delta t)\) stored in
 <code>Movement</code>. Those differ once <code>ctmc_scale_by_seasdur = 1</code>, and the
 difference is not benign: a season's movement matrix approaches the identity as
 the season shortens, so a fixed <code>alpha</code> silently becomes a much stronger
-constraint as <code>n_seas</code> grows. On a three-region fixture the same
+constraint as <code>n_seas</code> grows. On a three-region test setup the same
 <code>alpha = 3</code> prior cost 1.04 nLL units at <code>n_seas = 1</code> but 9.91 at
 <code>n_seas = 12</code>. Evaluating on the annual matrix makes <code>alpha</code> mean the
 same thing regardless of seasonal structure, and matches how such priors are

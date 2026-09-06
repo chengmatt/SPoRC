@@ -1,9 +1,9 @@
 # Expand an at-age aggregation setting to a year by fleet matrix
 
-The at-age streams accept their aggregation either as a bare value,
+The at-age data sources accept their aggregation either as a bare value,
 standing for the whole series, or as year and fleet specifications in
-the same form the composition streams take. Both arrive here and leave
-as a matrix, so everything downstream reads one shape.
+the same form the composition data sources take. Both arrive here and
+leave as a matrix, so everything downstream reads one shape.
 
 ## Usage
 

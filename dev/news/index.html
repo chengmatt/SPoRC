@@ -61,6 +61,10 @@
 <li>Added movement-after-mortality and continuous movement dynamics.</li>
 <li>Added continuous-time Markov chain (CTMC) movement estimation using preference functions.</li>
 <li>Added <code>move_expm_nsub</code> to <code>Setup_Mod_Movement</code>, allowing CTMC matrix exponentials to be evaluated using implicit backward Euler substeps, providing a faster alternative for differentiation while preserving non-negative fractions and exact survivor catch balance.</li>
+<li>Added a state-space treatment of the numbers at age via <code>NAA_re</code> in <code>Setup_Mod_Biologicals</code> and <code>Setup_Sim_NAA_state</code>. The log numbers themselves become random effects for ages two and older including the plus group, with the deterministic mortality and ageing step as the prediction they are scored against. Forms are <code>"iid"</code>, <code>"1dar1_a"</code>, <code>"1dar1_y"</code>, <code>"2dar1"</code>, <code>"3dcond"</code> and <code>"3dmarg"</code> over the age-year grid, composable with unstructured correlations across populations, regions, seasons and sexes.</li>
+<li>The state runs at season boundaries as well as year boundaries. <code>NAA_re_seasons</code> takes <code>"annual"</code> (the default, a state at season one only, so the numbers within a year stay deterministic and the innovation is purely annual), <code>"all"</code>, or an arbitrary set of season indices, which need not be contiguous so that states can be placed only in the seasons carrying observations. <code>NAA_re_season</code> adds an unstructured correlation across the active seasons, and <code>NAA_sigma_seasblk_spec</code> blocks the process error standard deviation over them. <code>ln_NAA</code>, <code>ln_sigmaNAA</code>, <code>naa_sigma_blocks</code>, <code>NAA_pred</code> and <code>NAA_scalar</code> all carry the season margin between year and age; saved input lists without it are promoted and hold the state at season one.</li>
+<li>The state-space numbers at age are not projected. <code><a href="../reference/Do_Population_Projection.html">Do_Population_Projection()</a></code> advances projected numbers deterministically from the terminal year with recruitment the only stochastic element, so a forecast from a state-space fit omits that process error. The closed loop operating model does carry the state forward.</li>
+<li>Fixed the tag cohort rescale under a state-space fit: it indexed the state factor by years at liberty rather than by calendar year, so it was correct only for cohorts released in the first model year.</li>
 <li>Added support for local density dependence in reference points for meta-population and natal homing models.</li>
 <li>Added uncertainty estimation for reference points.</li>
 </ul></div>
@@ -96,6 +100,9 @@
 <li>Corrected the double-normal (<code>"dbnrml"</code>) selectivity parameterization and added flexible anchoring of its ascending limb.</li>
 <li>Added <code>_NSelBins_&lt;n&gt;</code> suffixes to selectivity model strings to hold bins beyond <code>n</code> at the value of bin <code>n</code>.</li>
 <li>Added <code>fish_sel_norm_bins</code>/<code>srv_sel_norm_bins</code> to specify the bins over which non-parametric log-scale selectivity is standardized.</li>
+<li>
+<code>Setup_Mod_Rec</code> gained <code>R0_blocks</code>, which takes the same string forms as the selectivity blocks (<code>"none_Pop_p"</code>, <code>"Block_b_Year_a-e_Pop_p"</code>) and gives <code>ln_global_R0</code> a block dimension, together with <code>R0_ref_block</code> for the single value the initial age structure, the R0 prior, the <code>ln_rinit</code> penalty and the stock-recruit scale all read. Under mean recruitment an R0 block is a productivity regime; under a stock-recruit form it is the curve’s scale. <code>R0_yr</code> is reported. A model without R0 blocks keeps one column and is byte-identical to before.</li>
+<li>An analytically solved catchability is now solved <strong>within each catchability time block</strong> rather than pooled over the whole series. <code>srv_q_type</code> / <code>fish_q_type</code> of <code>"arith"</code> or <code>"geo"</code> previously computed one value per region and fleet and discarded <code>srv_q_blocks</code> / <code>fish_q_blocks</code> silently, so a blocked analytic q looked configured and did nothing. Each block is now solved from the observations it owns, a block with none takes the pooled value, and a fleet with a single block is unchanged to machine precision.</li>
 </ul></div>
 <div class="section level4">
 <h4 id="reference-points-1-2-0-9000">Reference points<a class="anchor" aria-label="anchor" href="#reference-points-1-2-0-9000"></a></h4>
@@ -103,6 +110,10 @@
 <li>Added uncertainty estimation for reference points.</li>
 <li>
 <code>Get_Reference_Points</code> now uses growth-derived weight at age from the model report rather than the data placeholder.</li>
+<li>
+<code><a href="../reference/Do_Population_Projection.html">Do_Population_Projection()</a></code> gained the hooks needed to drive it as a management strategy loop. <code>rec_devs</code> supplies multiplicative recruitment deviations from outside, so a deterministic recruitment option becomes a stochastic one under deviations the caller draws and owns, and a set of replicates can share them across management procedures. A <code>HCR_function</code> that declares a <code>state</code> argument is handed the year’s numbers at age, spawning biomass, total biomass and catch, so a rule can be written on mean weight or age structure rather than spawning biomass alone; rules without that argument are called exactly as before. Catch at age is now returned as <code>proj_CAA</code>.</li>
+<li>
+<code><a href="../reference/Do_Population_Projection.html">Do_Population_Projection()</a></code> can now be differentiated through. The projection call chain carries RTMB’s replacement operators, so a projection can be taped with <code><a href="https://rdrr.io/pkg/RTMB/man/Tape.html" class="external-link">MakeTape()</a></code> or <code>MakeADFun()</code> and handed to an optimizer with an exact gradient, which allows an F schedule to be solved against an objective rather than scanned over a grid. <code>recruitment_opt = "inv_gauss"</code> and <code>fmort_opt = "Catch"</code> are refused when the inputs are AD types, since one draws random recruitment and the other inverts the catch target with a numerical solve, and both would otherwise return a gradient that is wrong rather than an error.</li>
 </ul></div>
 <div class="section level4">
 <h4 id="case-studies-and-applications-1-2-0-9000">Case studies and applications<a class="anchor" aria-label="anchor" href="#case-studies-and-applications-1-2-0-9000"></a></h4>
@@ -125,6 +136,7 @@
 <div class="section level3">
 <h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>
 <ul><li>Fixed the time-varying selectivity smoothing penalty not being applied in the first year.</li>
+<li>Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.</li>
 </ul></div>
 </div>
     <div class="section level2">

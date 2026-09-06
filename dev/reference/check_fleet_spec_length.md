@@ -1,4 +1,4 @@
-# Check that a per-fleet setting carries one entry per fleet
+# Check that a per-fleet setting has one entry per fleet
 
 These settings are read one fleet at a time inside the mapping loops. A
 vector shorter than the fleet count indexes past its end and yields NA,

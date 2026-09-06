@@ -163,12 +163,13 @@ Setup_Mod_Fishsel_and_Q(
   `"nonparfree"`
 
   :   Non-parametric on the log scale with no standardization,
-      \\\exp(\theta)\\, so the values carry the height of the curve as
-      well as its shape. This is the form for a stream fit age by age: a
-      free catchability per age and a selectivity estimated at age are
-      one quantity written two ways, so the whole age multiplier lives
-      here and no catchability is set. Pin one bin, by leaving it out of
-      the estimated bins, whenever the mean it multiplies is also free.
+      \\\exp(\theta)\\, so the values hold the height of the curve as
+      well as its shape. This is the form for a data source fit age by
+      age: a free catchability per age and a selectivity estimated at
+      age are one quantity written two ways, so the whole age multiplier
+      lives here and no catchability is set. Pin one bin, by leaving it
+      out of the estimated bins, whenever the mean it multiplies is also
+      free.
 
   `"asymplogist1"`
 
@@ -177,7 +178,7 @@ Setup_Mod_Fishsel_and_Q(
 
   `"asymplogist2"`
 
-  :   Logistic selectivity with with \\a\_{50}\\ and \\a\_{95}\\ and
+  :   Logistic selectivity with \\a\_{50}\\ and \\a\_{95}\\ and
       asymptotic control (3 parameters).
 
   `"bicubic"`
@@ -193,11 +194,11 @@ Setup_Mod_Fishsel_and_Q(
       defined via `fish_sel_blocks`). An optional `_SelStyr_<year>`
       suffix (a calendar year within the block) restricts the actual
       spline fit to `SelStyr`:block-end; years within the block before
-      `SelStyr` are held constant at the `SelStyr` year's fitted curve,
+      `SelStyr` are kept constant at the `SelStyr` year's fitted curve,
       rather than fitting the surface over the whole block. An optional
       `_NSelBins_<n>` suffix restricts the actual spline fit to the
       first `n` bins (ages or lengths, per `fish_selex_type`); bins
-      beyond `n` are held constant at the last fitted bin's curve.
+      beyond `n` are kept constant at the last fitted bin's curve.
 
   See the model equations vignette for mathematical definitions.
 
@@ -226,10 +227,12 @@ Setup_Mod_Fishsel_and_Q(
   catchability is obtained. `"est"` (default) estimates `ln_fish_q`.
   `"arith"` concentrates it out of the likelihood as the ratio of mean
   observed to mean predicted index, and `"geo"` does the same on the log
-  scale as `exp(mean(log(obs) - log(pred)))`. Both analytic forms solve
-  one catchability per region and fleet using only the years with
-  observations, ignore any block structure, and fix that fleet's
-  `ln_fish_q` regardless of `fish_q_spec`.
+  scale as `exp(mean(log(obs) - log(pred)))`. Both analytic forms use
+  only the years with observations and fix that fleet's `ln_fish_q`
+  regardless of `fish_q_spec`. The solve is done within each
+  `fish_q_blocks` time block, so a blocked catchability gets one solved
+  value per block. A single block, the default, is one value for the
+  whole series.
 
 - fish_q_cov_dat:
 
@@ -341,7 +344,7 @@ Setup_Mod_Fishsel_and_Q(
   several existing assessments constrain them. Values other than 0 or 1
   make an estimated process error sigma reinterpretable, so prefer 0 or
   1 unless deliberately down-weighting. Applies only to
-  `ln_fishsel_devs`; the bin-override deviations carry their own process
+  `ln_fishsel_devs`; the bin-override deviations have their own process
   error and are not affected.
 
 - fishsel_rw_init_sigma:
@@ -357,8 +360,8 @@ Setup_Mod_Fishsel_and_Q(
 
   Character vector of length `n_fish_fleets` giving the process error on
   the bin-override deviations for each fleet: `"none"` (default),
-  `"iid"`, or `"rw"`. A random walk carries its own estimated sigma per
-  bin, with `fishsel_bin_devs_rw_init_sigma` governing its first year.
+  `"iid"`, or `"rw"`. A random walk has its own estimated sigma per bin,
+  with `fishsel_bin_devs_rw_init_sigma` governing its first year.
 
 - fish_selex_penalty:
 
@@ -369,7 +372,7 @@ Setup_Mod_Fishsel_and_Q(
   `par`, which may be a single index or a list column of integer vectors
   naming a whole set. This pins the scalar of a non-parametric curve
   that catchability or fishing mortality would otherwise absorb, and is
-  softer than fixing a bin outright. Intended for parameter sets held on
+  softer than fixing a bin outright. Intended for parameter sets kept on
   the log scale. Default `NULL`.
 
 - fishsel_devs_shared_bins:
@@ -422,8 +425,7 @@ Setup_Mod_Fishsel_and_Q(
 
   `"none"` (default)
 
-  :   Each sex's stored parameters are its own, exactly as before this
-      option existed.
+  :   Each sex's stored parameters are its own.
 
   `"par"`
 
@@ -438,9 +440,9 @@ Setup_Mod_Fishsel_and_Q(
   `"scale"`
 
   :   Each sex keeps its own parameters, and every sex beyond the first
-      additionally carries a constant log-scale offset on the whole
-      realized curve, `exp(ln_fishsel_sex_scale)`, estimated per region,
-      block, and sex. The scaled curve may exceed one. Refused for
+      additionally has a constant log-scale offset on the whole realized
+      curve, `exp(ln_fishsel_sex_scale)`, estimated per region, block,
+      and sex. The scaled curve may exceed one. Refused for
       non-parametric forms and semi-parametric time variation, whose
       post-hoc standardization would cancel a constant multiplier.
 
@@ -568,12 +570,13 @@ Setup_Mod_Fishsel_and_Q(
   `"nonparfree"`
 
   :   Non-parametric on the log scale with no standardization,
-      \\\exp(\theta)\\, so the values carry the height of the curve as
-      well as its shape. This is the form for a stream fit age by age: a
-      free catchability per age and a selectivity estimated at age are
-      one quantity written two ways, so the whole age multiplier lives
-      here and no catchability is set. Pin one bin, by leaving it out of
-      the estimated bins, whenever the mean it multiplies is also free.
+      \\\exp(\theta)\\, so the values hold the height of the curve as
+      well as its shape. This is the form for a data source fit age by
+      age: a free catchability per age and a selectivity estimated at
+      age are one quantity written two ways, so the whole age multiplier
+      lives here and no catchability is set. Pin one bin, by leaving it
+      out of the estimated bins, whenever the mean it multiplies is also
+      free.
 
   `"asymplogist1"`
 
@@ -582,7 +585,7 @@ Setup_Mod_Fishsel_and_Q(
 
   `"asymplogist2"`
 
-  :   Logistic selectivity with with \\a\_{50}\\ and \\a\_{95}\\ and
+  :   Logistic selectivity with \\a\_{50}\\ and \\a\_{95}\\ and
       asymptotic control (3 parameters).
 
   `"bicubic"`

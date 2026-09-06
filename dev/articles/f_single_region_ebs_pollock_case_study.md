@@ -28,11 +28,7 @@ to one survey fleet, so reproducing that component requires a fourth
 survey fleet restricted to age 1.
 
 Everything the case study needs, including the ADMB output it is
-compared against, ships with the package in `sgl_rg_ebswp_data`. The
-companion script that produced the figures below is
-`dev/make_sporc_obj_figs/make_ebs_pollock_bridge_figs.R`, and the
-container itself is built by
-`dev/make_sporc_obj_figs/make_ebs_pollock_data_object.R`.
+compared against, ships with the package in `sgl_rg_ebswp_data`.
 
 ``` r
 
@@ -48,7 +44,7 @@ n_ages <- length(dat$ages)
 n_srv <- dat$n_srv_fleets
 ```
 
-The object carries three kinds of content: the model inputs (`ObsCatch`,
+The object has three kinds of content: the model inputs (`ObsCatch`,
 `WAA`, `ObsSrvIdx`, and so on), the ADMB maximum likelihood estimate in
 `dat$mle`, used both as a starting point and to verify the objective
 before any optimization, and the ADMB output in `dat$admb`, which is the
@@ -116,8 +112,8 @@ excluding 1979:
 \ell^{\text{Rec}} = \sum_{y \in \mathcal{Y}^{\text{SR}}} \dfrac{\left(\epsilon_{y}^{\text{Rec}}\right)^{2}}{2\sigma_{R}^{2}},\qquad \sigma_{R} = 1
 ```
 
-The initial numbers at age carry weight $`0.1`$ and the recruitment
-level weight $`1`$, which map onto $`\sigma = 1/\sqrt{2w}`$. The second
+The initial numbers at age have weight $`0.1`$ and the recruitment level
+weight $`1`$, which map onto $`\sigma = 1/\sqrt{2w}`$. The second
 recruitment statement is a sum of squares on all log recruitments about
 their own mean:
 
@@ -146,7 +142,7 @@ input_list <- Setup_Mod_Rec(
   do_rec_bias_ramp = 0,
   sigmaR_switch = 1,
   sigmaR_spec = "fix",
-  # The stock recruit residuals use sigr, fixed at 1. The initial ages carry
+  # The stock recruit residuals use sigr, fixed at 1. The initial ages have
   # weight 0.1, which is sigma = 1/sqrt(2w).
   ln_sigmaR = array(c(log(1 / sqrt(0.2)), log(1)), dim = c(2, 1, 1)),
   init_age_strc = 4,
@@ -175,7 +171,7 @@ Natural mortality is fixed and age specific:
 M_{a} = \begin{cases} 0.9, & a = 1\\ 0.45, & a = 2\\ 0.3, & a \geq 3 \end{cases}
 ```
 
-The assessment carries a different weight at age matrix for spawning
+The assessment has a different weight at age matrix for spawning
 biomass, for catch, and for each survey index, which `SPoRC` supports
 through `WAA`, `WAA_fish` and `WAA_srv`. Spawning biomass is therefore
 
@@ -240,7 +236,7 @@ input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging =
 The 2024 assessment has no mean fishing mortality parameter:
 $`\log F_y`$ is a free annual value penalized about its own mean. In
 `SPoRC` that is `ln_F_mean_spec = "fix"`, which pins the mean at zero
-and maps it off so the deviations carry all of $`\log F`$, together with
+and maps it off so the deviations have all of $`\log F`$, together with
 `Fdev_pen_center = "own_mean"`:
 
 ``` math
@@ -442,7 +438,7 @@ $`\log(1/\sqrt{2})`$ so that $`1/(2\sigma^{2}) = 1`$ reproduces the
 unweighted sum of squares.
 
 The weight applies only to the main deviations. The bin override
-deviations carry their own process error, which no weight multiplies, so
+deviations have their own process error, which no weight multiplies, so
 the trawl survey’s free annual age 1 value keeps its random walk density
 with the sigma fixed to give the assessment’s weight of 8.
 
@@ -474,7 +470,7 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 ## Weighting and selectivity penalties
 
-Beyond the data weights, the 2024 assessment carries a set of shape
+Beyond the data weights, the 2024 assessment has a set of shape
 penalties on selectivity. The fishery has a dome penalty over ages 6–12,
 curvature at the first year and every change year, and a random walk
 penalty whose standard deviation is $`0.5`$ except in two years where it
@@ -563,7 +559,7 @@ inform them, and the deviation groupings.
 
 `SPoRC` parameterizes selectivity deviations as levels while the 2024
 assessment uses increments. The two are equivalent, but the first year’s
-level is redundant with the coefficients and has to be held at zero, and
+level is redundant with the coefficients and has to be kept at zero, and
 bins within a group must move together. `est_shared_b` would share a
 group across years as well, making selectivity time invariant, so the
 maps are built explicitly.
@@ -614,9 +610,9 @@ map_ats[1, , , 1, 3] <- map_ats[1, , , 1, 2]
 mapping$ln_srvsel_devs <- factor(map_ats)
 data$map_ln_srvsel_devs <- map_ats
 
-# Acoustic age 1 log selectivity is held at zero rather than estimated, and the
-# trawl survey has no base logistic pair, so its base is held at zero and the
-# deviations carry the whole curve.
+# Acoustic age 1 log selectivity is kept at zero rather than estimated, and the
+# trawl survey has no base logistic pair, so its base is kept at zero and the
+# deviations hold the whole curve.
 map_srvpar <- array(as.numeric(mapping$srv_fixed_sel_pars), dim = dim(parameters$srv_fixed_sel_pars))
 map_srvpar[1, 1, 1, 1, 2:3] <- NA
 map_srvpar[1, 1:2, 1, 1, 1] <- NA
@@ -634,8 +630,8 @@ data$map_ln_srvsel_bin_devs <- map_bindev
 One penalty has no counterpart in the setup functions. Because
 $`\exp(\theta + \delta)`$ rescaled by its own mean is invariant to
 shifting $`\theta`$ and $`\delta`$ together, the level has to be pinned
-or the likelihood is flat along it. That is what the 2024 assessment’s
-`avgsel` penalty does:
+or the likelihood is flat along it. The 2024 assessment’s `avgsel`
+penalty does this:
 
 ``` math
 \ell^{\text{avgsel}} = w\left(\overline{\theta}\right)^{2}
@@ -656,12 +652,11 @@ data$srv_selex_penalty <- srv_pen
 
 ## Starting at the ADMB estimate
 
-Before optimizing anything, it is worth checking that the objective is
-reproduced *at a known point*. Setting every parameter to the pollock
-maximum likelihood estimate and evaluating there separates a
-specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.
+Before optimizing anything, check that the objective is reproduced *at a
+known point*. Setting every parameter to the pollock maximum likelihood
+estimate and evaluating there separates a specification error from an
+optimization difference: if the population and the likelihood agree at
+the ADMB solution, the two models are the same model.
 
 Most parameters can simply be assigned. Recruitment cannot, because the
 deviations are stock recruit residuals and each year’s residual depends

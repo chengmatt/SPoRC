@@ -96,11 +96,11 @@ Within `model_objective.R` the `## Section` and `### Subsection` comment
 banner style is used consistently. Keep using it if you extend the file,
 since it is the only navigation aid inside a function of this size.
 
-Note that `R/model_transition.R` is worth knowing about before anything
-else. It computes what happens to a vector of abundance over one season,
-given movement, mortality, season duration and a movement timing. Eleven
-other files go through it, including the objective function’s dynamics,
-the reference point solvers and the operating model.
+Read `R/model_transition.R` first. It computes what happens to a vector
+of abundance over one season, given movement, mortality, season duration
+and a movement timing. Eleven other files go through it, including the
+objective function’s dynamics, the reference point solvers and the
+operating model.
 
 ## Naming conventions
 
@@ -148,7 +148,7 @@ into.](figures/arch_stage_diagram-1.png)
 Edge labels count how many file to file dependencies sit behind each
 arrow. `Helpers` is a pure sink and `Plotting` a pure source, which is
 the shape you want: the objective function never reaches up into the
-post fit machinery.
+post fit routines.
 
 Below the same information at file resolution. A filled cell means the
 file on that row calls a function defined in the file in that column,
@@ -159,9 +159,8 @@ package, empty columns are called by nothing.
 where a filled cell means the row file calls a function defined in the
 column file.](figures/arch_dependency_matrix-1.png)
 
-The `model_transition` column is the densest in the matrix, which is the
-point made above: everything that moves fish through a season goes
-through that one file.
+The `model_transition` column is the densest in the matrix: everything
+that moves fish through a season goes through that one file.
 
 ### Per stage detail
 
@@ -170,7 +169,7 @@ through that one file.
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
 | `setup_biologicals.R` | `do_growth_mapping`, `do_NAAstate_mapping`, `do_natmort_mapping`, `Setup_Mod_Biologicals`, `Setup_Sim_Biologicals` | `setup_checks.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
-| `setup_caal.R` | `parse_caal_type`, `setup_caal_stream` | `utils_setup.R` | `setup_fishery_comps.R`, `setup_survey_comps.R` |
+| `setup_caal.R` | `parse_caal_type`, `setup_caal_source` | `utils_setup.R` | `setup_fishery_comps.R`, `setup_survey_comps.R` |
 | `setup_checks.R` | `check_data_dimensions`, `check_sim_dimensions` | nothing | `setup_biologicals.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R` |
 | `setup_dimensions.R` | `Setup_Mod_Dim`, `Setup_Sim_Dim` | `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_fishery_catch.R` | `do_dmr_dev_mapping`, `do_dmr_mean_mapping`, `do_Fdev_rho_mapping`, `do_Fmort_mapping`, `do_sigma_dmr_mapping`, `do_sigmaC_mapping`, `do_sigmaC_pop_mapping`, `do_sigmaD_mapping`, `do_sigmaD_pop_mapping`, `do_sigmaF_mapping`, `Setup_Mod_Catch_and_F` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` |  |
@@ -193,18 +192,18 @@ through that one file.
 | `model_biomass.R` | `compute_biom_y`, `derive_proj_biom` | `model_transition.R` | `model_population_dynamics.R`, `projection.R` |
 | `model_distributions.R` | `build_idx_sd`, `combine_idx_sd`, `dbeta_symmetric`, `ddirichlet`, `ddirmult`, `dlogistnormal`, `dnbinom_robust_noint`, `dpois_noint`, `get_at_age_2dar1_nLL`, `get_at_age_nLL`, `get_beta_scaled_pars`, `get_index_nLL` | `utils_math.R` | `model_lik_at_age.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_objective.R`, `model_priors_penalties.R` |
 | `model_fit.R` | `cmb`, `fit_model` | `setup_mapping.R`, `utils_setup.R` | `diag_francis.R`, `diag_jitter.R`, `diag_likelihood_profile.R`, `diag_retrospective.R`, `refpts_main.R`, `sim_self_test.R` |
-| `model_growth.R` | `get_alk`, `Get_Growth`, `get_growth_pars_year`, `Get_Growth_Year`, `get_laa_curve`, `get_selected_waa`, `grow_increment`, `growth_args_from_model`, `growth_containers`, `growth_fill_year`, `growth_laa_at`, `growth_len_mid`, `growth_selected_waa_year`, `growth_start_state`, `growth_take_year`, `plus_group_size` | nothing | `model_objective.R`, `model_population_dynamics.R` |
-| `model_init_naa.R` | `Get_Init_NAA` | `model_transition.R` | `model_objective.R`, `sim_population.R` |
-| `model_lik_at_age.R` | `at_age_obs_sd`, `at_age_split`, `get_at_age_prediction`, `get_at_age_stream_nLL`, `prep_at_age_obs` | `model_distributions.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_mapping.R`, `sim_observations.R` |
+| `model_growth.R` | `get_alk`, `Get_Growth`, `get_growth_pars_year`, `Get_Growth_Year`, `get_laa_curve`, `get_selected_waa`, `grow_increment`, `growth_containers`, `growth_fill_year`, `growth_laa_at`, `growth_len_mid`, `growth_selected_waa_year`, `growth_start_state`, `growth_take_year`, `plus_group_size` | nothing | `model_objective.R`, `model_population_dynamics.R` |
+| `model_init_naa.R` | `Get_Init_NAA` | `model_transition.R`, `utils_setup.R` | `model_objective.R`, `sim_population.R` |
+| `model_lik_at_age.R` | `at_age_obs_sd`, `at_age_split`, `get_at_age_prediction`, `get_at_age_source_nLL`, `prep_at_age_obs` | `model_distributions.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_mapping.R`, `sim_observations.R` |
 | `model_lik_caal.R` | `caal_sum_pop`, `caal_sum_pop_len`, `eval_caal_osa`, `Get_CAAL_Likelihoods`, `pack_caal_osa` | `model_lik_comps.R` | `diag_osa_residuals.R`, `model_objective.R` |
-| `model_lik_comps.R` | `eval_comp_osa`, `Get_Comp_Likelihoods`, `Get_Comp_Likelihoods_OSA`, `pack_comp_osa` | `model_distributions.R`, `model_osa.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_lik_caal.R`, `model_objective.R` |
+| `model_lik_comps.R` | `eval_comp_osa`, `eval_comp_source_osa`, `Get_Comp_Likelihoods`, `Get_Comp_Likelihoods_OSA`, `get_comp_source_nLL`, `pack_comp_osa`, `pack_comp_source_osa` | `model_distributions.R`, `model_osa.R`, `utils_math.R`, `utils_setup.R` | `diag_osa_residuals.R`, `model_lik_caal.R`, `model_objective.R` |
 | `model_lik_tags.R` | `eval_tag_osa`, `get_conv_tag_likelihoods`, `pack_tag_osa`, `tag_fam_of`, `tag_grid` | `model_distributions.R`, `model_osa.R` | `diag_osa_residuals.R`, `model_objective.R` |
 | `model_movement.R` | `get_ctmc_bound_form`, `Get_Movement`, `get_movement_dp_design_matrix` | `utils_math.R` | `model_objective.R`, `setup_movement.R` |
 | `model_objective.R` | `maintain_backwards_compatibility`, `SPoRC_rtmb` | `model_distributions.R`, `model_growth.R`, `model_init_naa.R`, `model_lik_at_age.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_movement.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_population_dynamics.R`, `model_priors_penalties.R`, `model_selectivity.R`, `utils_setup.R` |  |
-| `model_obs_fishery_survey.R` | `get_fishery_observation_model`, `get_survey_observation_model` | `model_transition.R` | `model_objective.R` |
+| `model_obs_fishery_survey.R` | `get_blocked_analytic_q`, `get_fishery_observation_model`, `get_survey_observation_model` | `model_transition.R` | `model_objective.R` |
 | `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |
 | `model_osa.R` | `ddirmult_osa`, `ddirmult2`, `dmultinom_osa`, `osa_extract_cdf`, `osa_extract_keep`, `osa_extract_values`, `osa_extract_x`, `osa_pbetabinom`, `osa_pbinom`, `osa_squeeze` | nothing | `model_lik_comps.R`, `model_lik_tags.R` |
-| `model_population_dynamics.R` | `compute_mortality_year`, `get_population_projection`, `mortality_args_from_model` | `model_biomass.R`, `model_growth.R`, `model_transition.R` | `model_objective.R` |
+| `model_population_dynamics.R` | `compute_mortality_year`, `get_population_projection` | `model_biomass.R`, `model_growth.R`, `model_transition.R` | `model_objective.R` |
 | `model_precision.R` | `Get_3d_precision` | nothing | `model_priors_penalties.R`, `sim_naa_state.R` |
 | `model_priors_penalties.R` | `get_dmr_penalty`, `Get_Fdev_PE_loglik`, `Get_move_PE_loglik`, `get_movement_dirichlet_prior`, `Get_NAA_state_penalty`, `get_natmort_prior`, `Get_PE_loglik`, `get_q_prior`, `get_r0_prior`, `get_rec_level_penalty`, `get_recruitment_penalty`, `get_recruitment_proportion_priors`, `get_selex_fixed_penalty`, `get_selex_prior`, `Get_Selex_Smoothness_Penalty`, `get_sr_penalty`, `get_steepness_prior`, `get_tagrep_prior`, `penalize_naa_age_year` | `model_distributions.R`, `model_precision.R`, `utils_math.R` | `model_objective.R` |
 | `model_recruitment.R` | `Get_Det_Recruitment` | `model_transition.R` | `projection.R`, `sim_population.R` |
@@ -215,22 +214,22 @@ through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `projection.R` | `build_proj_F`, `Do_Population_Projection`, `proj_catch_at_F`, `proj_log_catch_resid`, `proj_target_catch`, `run_proj_year`, `solve_proj_F_catch`, `solve_proj_year_F` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R`, `sim_random_variates.R` | `plot_figures_tables.R` |
-| `refpts_main.R` | `build_plus_group_T`, `check_msy_rec_model`, `Get_Reference_Points`, `optim_ref_pts`, `solve_plus_group` | `model_fit.R`, `model_transition.R` | `plot_figures_tables.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_closed_loop.R` |
-| `refpts_msy.R` | `equil_rec_phi`, `equil_rec_ssb`, `equil_rec_ssb_deriv`, `global_Fmsy`, `local_Fmsy_multipop`, `local_Fmsy_sglpop`, `single_region_Fmsy` | `model_transition.R`, `refpts_main.R` |  |
-| `refpts_spr.R` | `global_SPR`, `single_region_SPR` | `model_transition.R`, `refpts_main.R` |  |
+| `projection.R` | `bind_proj_SSB`, `build_proj_F`, `Do_Population_Projection`, `proj_catch_at_F`, `proj_log_catch_resid`, `proj_target_catch`, `run_proj_year`, `solve_proj_F_catch`, `solve_proj_year_F` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R`, `sim_random_variates.R`, `utils_setup.R` | `plot_figures_tables.R` |
+| `refpts_main.R` | `build_plus_group_T`, `check_msy_rec_model`, `Get_Reference_Points`, `optim_ref_pts`, `solve_plus_group` | `model_fit.R`, `model_transition.R`, `utils_setup.R` | `plot_figures_tables.R`, `refpts_msy.R`, `refpts_spr.R`, `sim_closed_loop.R` |
+| `refpts_msy.R` | `equil_rec_phi`, `equil_rec_ssb`, `equil_rec_ssb_deriv`, `global_Fmsy`, `local_Fmsy_multipop`, `local_Fmsy_sglpop`, `single_region_Fmsy` | `model_transition.R`, `refpts_main.R`, `utils_setup.R` |  |
+| `refpts_spr.R` | `global_SPR`, `single_region_SPR` | `model_transition.R`, `refpts_main.R`, `utils_setup.R` |  |
 | `refpts_uncertainty.R` | `eval_refpt_log_quantities`, `flatten_refpt`, `Get_Reference_Point_Uncertainty`, `refpt_draw_devs`, `refpt_par_cov`, `refpt_quad_form` | nothing |  |
 
 #### Operating model
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `sim_closed_loop.R` | `catch_to_F_multifleet`, `catch_to_F_singlefleet`, `condition_closed_loop_simulations`, `get_closed_loop_reference_points` | `refpts_main.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `utils_math.R`, `utils_postfit.R`, `utils_setup.R` |  |
-| `sim_naa_state.R` | `color_naa_margin`, `draw_naa_innovations`, `Setup_Sim_NAA_state` | `model_precision.R` | `sim_population.R` |
+| `sim_closed_loop.R` | `catch_to_F_multifleet`, `catch_to_F_singlefleet`, `condition_closed_loop_simulations`, `get_closed_loop_reference_points` | `refpts_main.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `sim_self_test.R`, `utils_math.R`, `utils_postfit.R`, `utils_setup.R` |  |
+| `sim_naa_state.R` | `color_naa_dim`, `draw_naa_innovations`, `Setup_Sim_NAA_state` | `model_precision.R` | `sim_population.R` |
 | `sim_observations.R` | `build_idx_factor`, `cov_to_factor`, `draw_index_obs`, `generate_fishery_catch_comp_idx`, `generate_fishery_conv_tags_recap`, `generate_survey_comp_idx`, `marginalize_conv_fish_tags`, `predict_sim_fish_iss_fmort`, `release_conv_tags`, `resolve_idx_factor`, `sim_at_age_cell`, `simulate_caal`, `simulate_comps`, `simulate_conv_tag_fish_recaptures`, `store_at_age_cell` | `model_lik_at_age.R`, `model_obs_tagging.R`, `model_transition.R`, `sim_random_variates.R`, `utils_math.R`, `utils_setup.R` | `setup_sim_fleets.R`, `sim_population.R` |
 | `sim_population.R` | `apply_pop_dy`, `compute_biom_y_sim`, `generate_initial_age_structure`, `generate_recruitment`, `run_annual_cycle`, `Simulate_Pop_Static` | `model_init_naa.R`, `model_recruitment.R`, `model_transition.R`, `sim_naa_state.R`, `sim_observations.R`, `sim_setup.R` | `sim_self_test.R` |
 | `sim_random_variates.R` | `rdirM`, `rinvgauss_rec`, `rlogistnormal` | `utils_math.R` | `projection.R`, `sim_observations.R` |
-| `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R`, `utils_setup.R` |  |
+| `sim_self_test.R` | `simulation_data_to_SPoRC`, `simulation_self_test`, `warn_R0_ref_block_om` | `model_fit.R`, `setup_biologicals.R`, `setup_dimensions.R`, `setup_recruitment.R`, `setup_sim_containers.R`, `setup_sim_fleets.R`, `setup_tagging.R`, `sim_population.R`, `utils_postfit.R`, `utils_setup.R` | `sim_closed_loop.R` |
 | `sim_setup.R` | `Setup_sim_env` | nothing | `sim_population.R` |
 
 #### Diagnostics
@@ -242,7 +241,7 @@ through that one file.
 | `diag_jitter.R` | `do_jitter` | `model_fit.R` |  |
 | `diag_likelihood_profile.R` | `build_profile_map`, `check_analytic_q`, `check_profile_mirrors`, `do_likelihood_profile`, `weight_over_ages` | `model_fit.R`, `utils_setup.R` |  |
 | `diag_osa_residuals.R` | `comp_osa_field_map`, `get_osa`, `index_osa_field_map`, `osa_default_bins`, `osa_keep_subset`, `osa_one_step_predict`, `plot_resids`, `run_external_comp_osa`, `run_internal_caal_osa`, `run_internal_comp_osa`, `run_internal_index_osa`, `run_internal_tag_osa`, `validate_osa_method` | `model_lik_at_age.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `utils_setup.R` |  |
-| `diag_retrospective.R` | `do_retrospective`, `get_retrospective_relative_difference`, `truncate_yr` | `diag_francis.R`, `model_fit.R` | `plot_figures_tables.R` |
+| `diag_retrospective.R` | `do_retrospective`, `get_retrospective_relative_difference`, `truncate_yr` | `diag_francis.R`, `model_fit.R`, `utils_setup.R` | `plot_figures_tables.R` |
 | `diag_runs_test.R` | `do_runs_test` | nothing |  |
 
 #### Plotting
@@ -258,7 +257,7 @@ through that one file.
 | `utils_math.R` | `build_us_chol`, `build_us_corr`, `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `mat_exp`, `rho_trans` | nothing | `model_distributions.R`, `model_lik_at_age.R`, `model_lik_comps.R`, `model_movement.R`, `model_priors_penalties.R`, `model_transition.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_random_variates.R` |
 | `utils_option_reference.R` | `option_reference`, `rd_argument_text`, `rd_database`, `setup_stage_order` | nothing |  |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
-| `utils_setup.R` | `assign_sel_block`, `bins_or_null`, `check_bin_map`, `check_comp_bins_min`, `check_par_map_lengths`, `collect_message`, `convert_to_numeric`, `drop_empty_fitted_blocks`, `expand_fleet_ageing_error`, `extend_years`, `fleet_ageing_error`, `obs_bin_count`, `obs_len_bins`, `parse_bin_subset`, `parse_comp_bins`, `parse_idx_cov`, `resolve_sel_pen_wts`, `resync_fitted_blocks`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `use_starting_value`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_fits.R`, `diag_likelihood_profile.R`, `diag_osa_residuals.R`, `model_fit.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_self_test.R` |
+| `utils_setup.R` | `assign_sel_block`, `bins_or_null`, `check_bin_map`, `check_comp_bins_min`, `check_par_map_lengths`, `collapse_natmort_annual`, `collect_message`, `convert_to_numeric`, `drop_empty_fitted_blocks`, `expand_fleet_ageing_error`, `expand_natmort_seasons`, `extend_years`, `fleet_ageing_error`, `obs_bin_count`, `obs_len_bins`, `parse_bin_subset`, `parse_comp_bins`, `parse_idx_cov`, `resolve_sel_pen_wts`, `resync_fitted_blocks`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `truncate_years`, `use_starting_value`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_fits.R`, `diag_likelihood_profile.R`, `diag_osa_residuals.R`, `diag_retrospective.R`, `model_fit.R`, `model_init_naa.R`, `model_lik_comps.R`, `model_objective.R`, `plot_figures_tables.R`, `projection.R`, `refpts_main.R`, `refpts_msy.R`, `refpts_spr.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_self_test.R` |
 | `utils_year_fleet_spec.R` | `at_age_type_matrix`, `parse_year_fleet_spec` | nothing | `setup_fishery_comps.R`, `setup_mapping.R`, `setup_sim_fleets.R`, `setup_survey_comps.R` |
 
 #### Package data
@@ -290,7 +289,6 @@ selectivity reads.
             |
             v
     SPoRC_rtmb()                                                [model_objective.R]
-      -> growth_args_from_model()                                [model_growth.R]
            pulls growth's ~20 arguments out of the RTMB frame by name
       -> growth_tv_type == "curve": Get_Growth() builds every year up front
                                                                     [model_growth.R]
@@ -319,9 +317,9 @@ selectivity reads.
 |----|----|
 | [`get_laa_curve()`](https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.md) | The pure closed-form curve: mean length and spread at a vector of real ages, from the six parameters alone. No notion of years, fleets, or cohorts, so it is unit-testable against the textbook von Bertalanffy/Richards formula directly (`test-model_growth.R` does exactly that) without any model scaffolding around it. |
 | [`growth_start_state()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_start_state.md) | The state a year starts from: [`get_laa_curve()`](https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.md) at every integer age, with the plus group adjusted. Both `growth_tv_type`s need a “year 1 initial state” and need it built identically, so it is factored out rather than duplicated in [`Get_Growth()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md) and [`Get_Growth_Year()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth_Year.md). |
-| [`growth_laa_at()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_laa_at.md) | The within-year evaluator at one elapsed time `e`. Under `"curve"` growth every age is just [`get_laa_curve()`](https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.md) at its real age; under `"cohort"` growth, ages already propagated carry a length history the closed form does not know about, so they instead grow from `L_beg` via [`grow_increment()`](https://chengmatt.github.io/SPoRC/dev/reference/grow_increment.md). One function, branching on `cohort`, rather than two, because everything else in it (the plus group, the CV, the semi-parametric deviation) is identical either way. |
-| [`grow_increment()`](https://chengmatt.github.io/SPoRC/dev/reference/grow_increment.md) | The one piece of math with no dependency on ages, `A1`, or `A2` at all: grow a length `e` further given `K`, `Linf`, `rho`. Reused in two genuinely different contexts, evaluating a fleet’s within-year timing (`growth_laa_at`) and advancing a cohort a full year (`Get_Growth_Year`), which is why it is not inlined into either. |
-| [`growth_fill_year()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_fill_year.md) | “Every fleet, timing, and spawning point in one year,” given a start-of-year state: walks each distinct `t_fish`/`t_srv`/`t_spawn` value once (deduplicated), builds the key via [`get_alk()`](https://chengmatt.github.io/SPoRC/dev/reference/get_alk.md), and writes it into every fleet that reads at that timing. Both [`Get_Growth()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md) (looping over years on the “curve” path) and [`Get_Growth_Year()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth_Year.md) (one year at a time on the “cohort” path) call it with a different start-of-year state, so the fleet-timing bookkeeping is written once. |
+| [`growth_laa_at()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_laa_at.md) | The within-year evaluator at one elapsed time `e`. Under `"curve"` growth every age is just [`get_laa_curve()`](https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.md) at its real age; under `"cohort"` growth, ages already propagated have a length history the closed form does not know about, so they instead grow from `L_beg` via [`grow_increment()`](https://chengmatt.github.io/SPoRC/dev/reference/grow_increment.md). One function, branching on `cohort`, rather than two, because everything else in it (the plus group, the CV, the semi-parametric deviation) is identical either way. |
+| [`grow_increment()`](https://chengmatt.github.io/SPoRC/dev/reference/grow_increment.md) | The one piece of math with no dependency on ages, `A1`, or `A2` at all: grow a length `e` further given `K`, `Linf`, `rho`. Reused in two different contexts, evaluating a fleet’s within-year timing (`growth_laa_at`) and advancing a cohort a full year (`Get_Growth_Year`), which is why it is not inlined into either. |
+| [`growth_fill_year()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_fill_year.md) | “Every fleet, timing, and spawning point in one year,” given a start-of-year state: walks each distinct `t_fish`/`t_srv`/`t_spawn` value once (deduplicated), builds the key via [`get_alk()`](https://chengmatt.github.io/SPoRC/dev/reference/get_alk.md), and writes it into every fleet that reads at that timing. Both [`Get_Growth()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md) (looping over years on the “curve” path) and [`Get_Growth_Year()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth_Year.md) (one year at a time on the “cohort” path) call it with a different start-of-year state, so the fleet-timing residual tracking is written once. |
 | [`plus_group_size()`](https://chengmatt.github.io/SPoRC/dev/reference/plus_group_size.md) | The survivorship-weighted mixture for a plus group’s mean length. Kept out of [`get_laa_curve()`](https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.md) because it needs `Linf` and the curve’s own last-age value together, plus the `growth_plus_group` flag; [`get_laa_curve()`](https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.md)’s job is only ever the raw curve. |
 | [`get_growth_pars_year()`](https://chengmatt.github.io/SPoRC/dev/reference/get_growth_pars_year.md) | Applies a year’s time-varying deviations (log or logit link) to the base parameters once, before anything else runs, so [`growth_start_state()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_start_state.md), [`growth_laa_at()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_laa_at.md), and [`growth_fill_year()`](https://chengmatt.github.io/SPoRC/dev/reference/growth_fill_year.md) never have to know deviations exist; they only ever see “this year’s realized parameters.” |
 | [`do_growth_mapping()`](https://chengmatt.github.io/SPoRC/dev/reference/do_growth_mapping.md) | Setup side: builds every growth map (parameters, time-varying deviations, semi-parametric surface) in one place, called from [`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md)’s `# Mapping Options` section next to [`do_natmort_mapping()`](https://chengmatt.github.io/SPoRC/dev/reference/do_natmort_mapping.md), so that function’s own body stays validate-then-hand-off like every other `Setup_Mod_*`. |
@@ -337,9 +335,8 @@ actually reached that year. This is true whatever selectivity looks
 like: even a model with plain age-based selectivity still needs growth
 for weight at age, spawning biomass, and length compositions, and still
 has this same plus-group problem. `growth_tv_type = "curve"` has no such
-problem (nothing carries a length history from year to year) and so
-builds every year’s growth up front, before the population loop even
-starts.
+problem (nothing has a length history from year to year) and so builds
+every year’s growth up front, before the population loop even starts.
 
 Rebuilding that year’s mortality right alongside growth, though, *is*
 specifically about length-based selectivity.
@@ -404,8 +401,8 @@ does.
 |----|----|
 | [`do_fixed_sel_pars_mapping()`](https://chengmatt.github.io/SPoRC/dev/reference/do_fixed_sel_pars_mapping.md), [`do_sel_pe_pars_mapping()`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md), [`do_sel_devs_mapping()`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_devs_mapping.md) | Three separate functions because a fleet can turn each piece on independently: the curve’s own parameters, whether it varies over time and under what process, and the actual deviation values. A fleet might hold the curve fixed with no deviations, vary it under one process with the process’s own settings fixed, or estimate both together. Keeping the three apart means each one’s sharing options do not have to be reconciled against the other two inside a single function. |
 | [`Get_Selex_Array()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Array.md) | The only place that knows about SPoRC’s blocks, year-by-year deviations, and fleet counts. Works out which block and which deviation apply to a given region/year/fleet, then hands off to [`Get_Selex()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md). |
-| [`Get_Selex()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md) | Given one functional form and its parameters, the selectivity at a vector of bins, nothing else. Because it does not know about years, blocks, or fleets, `test-model_selectivity.R` can check every functional form directly against its formula without building a whole model around it, and [`Get_Selex_Array()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Array.md)’s only job is the block/year/fleet bookkeeping around it. |
-| [`Get_PE_loglik()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_PE_loglik.md) | Lives in `model_priors_penalties.R`, not `model_selectivity.R` or `model_growth.R`, because it does not need to know which one is calling it: give it a deviation array, its map, and a code for which process (iid, random walk, …) it is supposed to follow, and it penalizes departures from that process. That is what lets growth and selectivity call the same function with the same five arguments. |
+| [`Get_Selex()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md) | Given one functional form and its parameters, the selectivity at a vector of bins, nothing else. Because it does not know about years, blocks, or fleets, `test-model_selectivity.R` can check every functional form directly against its formula without building a whole model around it, and [`Get_Selex_Array()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Array.md)’s only job is the block/year/fleet residual tracking around it. |
+| [`Get_PE_loglik()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_PE_loglik.md) | Lives in `model_priors_penalties.R`, not `model_selectivity.R` or `model_growth.R`, because it does not need to know which one is calling it: give it a deviation array, its map, and a code for which process (iid, random walk, …) it is supposed to follow, and it penalizes departures from that process. Growth and selectivity therefore call the same function with the same five arguments. |
 
 ### The same shape shows up elsewhere too
 
@@ -419,8 +416,8 @@ for tagging, and so on). Each one stays in the topic’s own `setup_*.R`
 file unless more than one file needs it, in which case it moves to the
 shared `setup_mapping.R`.
 
-The scoring side is not as uniform, which is worth knowing. Growth and
-selectivity’s year-by-year deviations both go through the same
+The penalizing side is not as uniform. Growth and selectivity’s
+year-by-year deviations both go through the same
 [`Get_PE_loglik()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_PE_loglik.md).
 Movement’s own deviations (`move_devs`) instead have their own penalty
 function,
@@ -462,23 +459,24 @@ fashion. Reading it as layers, lowest first:
 
 ## Tests
 
-Test files in `tests/testthat/` carry the same prefixes as `R/`, so the
+Test files in `tests/testthat/` hold the same prefixes as `R/`, so the
 tests for a given source file sort next to each other and the name says
-what is under test rather than which stock the fixture happens to use.
+what is under test rather than which stock the test setup happens to
+use.
 
 | Prefix | Files | What it covers |
 |----|----|----|
 | `test-setup_*` | 18 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
-| `test-model_*` | 29 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
+| `test-model_*` | 32 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 7 | Shared numerical helpers |
 | `test-sim_*` | 5 | Operating model, including simulate then refit self tests |
 | `test-refpts_*` | 12 | SPR and MSY solvers, one file per spatial structure |
-| `test-projection_*` | 3 | Forward projection off a fitted model |
+| `test-projection_*` | 5 | Forward projection off a fitted model |
 | `test-diag_*` | 14 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
-| `test-regression_*` | 17 | End to end fits pinning `obj$rep` and `nll` for known configurations |
+| `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 146 test files in total.
+That is 157 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

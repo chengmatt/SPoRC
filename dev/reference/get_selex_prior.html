@@ -14,7 +14,7 @@ A lognormal
 A normal prior on the realized selectivity value at
     one bin, dnorm(sel[bin], mu, sd), with both hyperparameters on
     the natural scale. par instead names the bin, on the grid the
-    stream's selectivity is parameterized on (ages or lengths per its
+    data source's selectivity is parameterized on (ages or lengths per its
     selectivity type), and the value is read at the first model year of
     block (blocked and time-invariant selectivity are constant within
     a block). This is a constraint on a derived quantity rather than on the
@@ -41,7 +41,7 @@ A lognormal
 A normal prior on the realized selectivity value at
     one bin, dnorm(sel[bin], mu, sd), with both hyperparameters on
     the natural scale. par instead names the bin, on the grid the
-    stream's selectivity is parameterized on (ages or lengths per its
+    data source's selectivity is parameterized on (ages or lengths per its
     selectivity type), and the value is read at the first model year of
     block (blocked and time-invariant selectivity are constant within
     a block). This is a constraint on a derived quantity rather than on the
@@ -120,7 +120,7 @@ prior, and its optional <code>type</code> column selects what the row constrains
 <dd><p>A normal prior on the realized selectivity value at
     one bin, <code>dnorm(sel[bin], mu, sd)</code>, with both hyperparameters on
     the natural scale. <code>par</code> instead names the bin, on the grid the
-    stream's selectivity is parameterized on (ages or lengths per its
+    data source's selectivity is parameterized on (ages or lengths per its
     selectivity type), and the value is read at the first model year of
     <code>block</code> (blocked and time-invariant selectivity are constant within
     a block). This is a constraint on a derived quantity rather than on the
@@ -169,7 +169,7 @@ season 1, matching the smoothness penalties.</p></dd>
 <dt id="arg-sel-l">sel_l<a class="anchor" aria-label="anchor" href="#arg-sel-l"></a></dt>
 <dd><p>Array <code>[region, year, len, sex, fleet]</code> of realized
 length-based selectivity, read by <code>"value"</code> rows instead of
-<code>sel</code> when the stream is length-based.</p></dd>
+<code>sel</code> when the data source is length-based.</p></dd>
 
 
 <dt id="arg-selex-type">selex_type<a class="anchor" aria-label="anchor" href="#arg-selex-type"></a></dt>

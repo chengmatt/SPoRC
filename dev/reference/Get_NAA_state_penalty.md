@@ -1,6 +1,6 @@
 # State-space numbers at age
 
-Scores the realized innovation of the centered numbers-at-age state,
+Penalizes the realized innovation of the centered numbers-at-age state,
 \\\eta = \log N - \log \hat{N}\\, where \\\hat{N}\\ is the deterministic
 mortality and ageing prediction the dynamics computed into `NAA_pred`
 before the state overwrote `NAA`.
@@ -14,6 +14,7 @@ Get_NAA_state_penalty(
   sigmaNAA,
   naa_re_ages,
   naa_re_yrs,
+  naa_re_seas,
   NAA_re = 1,
   NAA_pe_pars = NULL,
   NAA_re_region = 0,
@@ -21,7 +22,9 @@ Get_NAA_state_penalty(
   NAA_re_pop = 0,
   NAA_pop_corr_pars = NULL,
   NAA_re_sex = 0,
-  NAA_sex_corr_pars = NULL
+  NAA_sex_corr_pars = NULL,
+  NAA_re_season = 0,
+  NAA_season_corr_pars = NULL
 )
 ```
 
@@ -29,7 +32,8 @@ Get_NAA_state_penalty(
 
 - ln_NAA:
 
-  Array `[pop, region, year, age, sex]` of log numbers at age.
+  Array `[pop, region, year, season, age, sex]` of log numbers at the
+  start of each season.
 
 - NAA_pred:
 
@@ -47,6 +51,12 @@ Get_NAA_state_penalty(
 - naa_re_yrs:
 
   Integer vector of year indices the state is active over.
+
+- naa_re_seas:
+
+  Integer vector of season indices the state is active over. Season one
+  alone is the annual state, with the numbers deterministic between
+  seasons.
 
 - NAA_re:
 
@@ -81,8 +91,18 @@ Get_NAA_state_penalty(
 
   Numeric vectors of unconstrained parameters for those correlations,
   one per pair. Both are global to the model rather than varying over
-  the other margins, which is what keeps a two-level margin at exactly
-  one parameter.
+  the other dims, which is what keeps a two-level dim at exactly one
+  parameter.
+
+- NAA_re_season:
+
+  Integer code for the structure across the active seasons. `0`
+  independent, `1` unstructured.
+
+- NAA_season_corr_pars:
+
+  Array `[pop, n_k(n_k-1)/2, sex]` of unconstrained parameters for the
+  season correlation, over the \\n_k\\ active seasons.
 
 ## Value
 
@@ -92,14 +112,16 @@ Scalar negative log likelihood.
 
 The state is a level rather than a deviation, so the prediction is
 subtracted here instead of multiplying a deviation onto a value the
-dynamics still computes. That is what makes the random-effects Hessian
+dynamics still computes, which makes the random-effects Hessian
 block-tridiagonal in year: every term is supported on a two-year block,
 because \\\eta_y\\ depends on the states in years \\y\\ and \\y-1\\ and
 on nothing earlier.
 
 Only the independent form admits a standard deviation that varies cell
-by cell. Every other structure is separable or Markov in a margin, and a
+by cell. Every other structure is separable or Markov in a dim, and a
 per-cell variance is neither, so the setup function holds the year and
 age standard deviation blocks to one apiece whenever a correlated form
 is chosen and this function reads one standard deviation per population,
-region and sex.
+region, season and sex. The season dim is whitened before the age and
+year density is reached, so it keeps its own standard deviation under
+every form, and gives it up only under `NAA_re_season = 1`.

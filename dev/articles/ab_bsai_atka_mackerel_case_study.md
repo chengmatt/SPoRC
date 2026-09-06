@@ -55,12 +55,12 @@ $`-\tfrac{1}{2}\sigma_{R}^{2}`$ instead makes it mean recruitment, which
 is what `SPoRC` does by default and is turned off under Recruitment
 below.
 
-`SPoRC` gets there by carrying those ten years as model years with
+`SPoRC` gets there by with those ten years as model years with
 $`F_{y,a} = 0`$, which makes $`Z_{y,a} = M`$ and the recursion above the
 ordinary dynamics. Its initial age structure would be the alternative,
 but that puts one deviation on each age rather than one on each year.
 Below the plus group the two agree, since each age is one cohort; the
-plus group mixes the $`y_{1}`$ recruitment with equilibrium carried
+plus group mixes the $`y_{1}`$ recruitment with equilibrium advanced
 forward, and responds to $`\varepsilon_{y_{1}}`$ only in proportion to
 the $`23.7`$ percent of it that recruitment supplies.
 
@@ -84,12 +84,13 @@ n_yrs <- length(yrs)
 n_ages <- length(dat$ages)
 n_obs <- length(dat$years)
 i_amak <- which(yrs %in% dat$years)             # the years the assessment reports
+i_srv <- which(yrs %in% dat$yrs_srv)            # the years the survey was run
 ```
 
 ``` r
 
 # The assessment's arrays run 1977 to 2024. Put ten years in front of whichever
-# margin holds the years, so they run 1967 to 2024.
+# dim holds the years, so they run 1967 to 2024.
 pad <- function(x, fill = NULL) {
   m <- which(dim(x) == n_obs)
   pre <- if(is.null(fill)) abind::asub(x, rep(1, n_pre), m, drop = FALSE)
@@ -122,7 +123,7 @@ input_list <- Setup_Mod_Dim(
 
 ## Recruitment and the stock-recruit penalty
 
-AMAK carries two recruitment parameters that are not interchangeable.
+AMAK has two recruitment parameters that are not interchangeable.
 `mean_log_rec` sets the level of recruitment and generates it, while
 `log_Rzero` sets the scale of the stock-recruit curve and builds the
 unfished age structure. The curve never generates recruitment; it
@@ -178,7 +179,7 @@ add a parameter the assessment does not have.
 Starting in 1967 rather than 1977 is what removes the initial age
 structure as a problem. At a 1977 start the first year has to absorb ten
 years of propagated deviations, its plus group accumulates them rather
-than carrying one, and matching the assessment’s numbers there costs its
+than with one, and matching the assessment’s numbers there costs its
 penalty on them. Starting where AMAK starts makes those ten years
 ordinary model years with ordinary recruitment deviations, so
 `InitDevs_spec = "fix"` leaves the initial age structure as a bare
@@ -186,7 +187,7 @@ equilibrium. It also supplies the 1976 spawning biomass that AMAK’s 1977
 stock-recruit residual needs, so `sr_pen_yrs` covers the assessment’s
 window in full rather than dropping its first year.
 
-Steepness is fixed at 0.8 and carried on a logit bounded to (0.2, 1), so
+Steepness is fixed at 0.8 and kept on a logit bounded to (0.2, 1), so
 the fixed value goes in transformed. Passing `h = 0.8` is read as a
 starting value rather than as steepness, and leaves the default of 0.6.
 
@@ -205,8 +206,8 @@ restricts only the years its stock-recruit likelihood covers.
 ## Biological dynamics
 
 Weight and maturity at age are time invariant in the assessment but are
-still extended back to $`y_{1}`$ anyway, since `SPoRC` carries them by
-year. Natural mortality is fixed at 0.3.
+still extended back to $`y_{1}`$ anyway, since `SPoRC` has them by year.
+Natural mortality is fixed at 0.3.
 
 ``` r
 
@@ -243,7 +244,7 @@ input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging =
 
 AMAK has no mean fishing mortality parameter. `fmort` is the annual rate
 itself, estimated directly, so `ln_F_mean_spec = "fix"` pins the mean at
-zero and the deviations carry all of $`\log F`$.
+zero and the deviations have all of $`\log F`$.
 
 ``` r
 
@@ -333,7 +334,7 @@ The survey is a biomass index read at $`t^{\text{srv}} = 6.5/12`$.
 
 Selectivity is non-parametric on the log scale, exponentiated and
 standardized so each year averages one. The oldest estimated coefficient
-is held flat to the plus group before the standardization, which is a
+is kept flat to the plus group before the standardization, which is a
 bin grouping rather than a separate parameter.
 
 The assessment lists 46 change years and the template prepends the first
@@ -435,7 +436,7 @@ would be divided by the seven bins and the year difference by the 58
 years. The dome term is not normalized either way.
 
 Here every active term is a per-year vector, which is what lets a term
-act only in the years a block changes. The years before $`y_{0}`$ carry
+act only in the years a block changes. The years before $`y_{0}`$ have
 none, since the first block would otherwise be penalized on its
 curvature and dome eleven times over. The year difference is zeroed at
 $`y_{0}`$ to match AMAK, whose walk starts there with nothing before it;
@@ -445,23 +446,23 @@ share the first block and so share coefficients.
 ``` r
 
 fw <- dat$fish_sel_pen_wts
-for(nm in c("smooth_bin_curve", "smooth_yr_diff", "smooth_dome")) {
-  fw[[1]][[nm]] <- c(rep(0, n_pre), dat$fish_sel_pen_wts[[1]][[nm]])
-} # end nm loop
+for(term_name in c("smooth_bin_curve", "smooth_yr_diff", "smooth_dome")) {
+  fw[[1]][[term_name]] <- c(rep(0, n_pre), dat$fish_sel_pen_wts[[1]][[term_name]])
+} # end term_name loop
 fw[[1]]$smooth_yr_diff[n_pre + 1] <- 0
 
 sw <- dat$srv_sel_pen_wts
-for(nm in c("smooth_bin_curve", "smooth_yr_diff", "smooth_dome")) {
-  if(length(sw[[1]][[nm]]) == n_obs) sw[[1]][[nm]] <- c(rep(0, n_pre), dat$srv_sel_pen_wts[[1]][[nm]])
-} # end nm loop
+for(term_name in c("smooth_bin_curve", "smooth_yr_diff", "smooth_dome")) {
+  if(length(sw[[1]][[term_name]]) == n_obs) sw[[1]][[term_name]] <- c(rep(0, n_pre), dat$srv_sel_pen_wts[[1]][[term_name]])
+} # end term_name loop
 ```
 
 `SPoRC` penalizes a recruitment deviation by
 $`w_{y}\,\varepsilon_{y}^{2}/(2\sigma^{2})`$, where $`w_{y}`$ is that
 year’s `Wt_Rec` and $`\sigma`$ is `ln_sigmaR` exponentiated. AMAK
 penalizes $`\varepsilon_{y}^{2}`$ on every year, a raw sum of squares
-carrying no $`\sigma`$, then adds $`0.5/\sigma_{R}^{2}`$ more over the
-first and last part of the time series. With $`\sigma = \sigma_{R}`$,
+with no $`\sigma`$, then adds $`0.5/\sigma_{R}^{2}`$ more over the first
+and last part of the time series. With $`\sigma = \sigma_{R}`$,
 $`w_{y}`$ is whatever cancels the $`1/(2\sigma_{R}^{2})`$:
 
 ``` math

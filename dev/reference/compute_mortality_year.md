@@ -13,7 +13,7 @@ than assigned into this frame.
 ``` r
 compute_mortality_year(
   y,
-  st,
+  state,
   growth_model,
   derive_waa,
   fish_selex_type,
@@ -54,9 +54,9 @@ compute_mortality_year(
 
   Year index.
 
-- st:
+- state:
 
-  Named list carrying `Fmort`, `dmr`, `fish_sel`, `ret_sel`, `ret_FAA`,
+  Named list with `Fmort`, `dmr`, `fish_sel`, `ret_sel`, `ret_FAA`,
   `disc_FAA`, `tot_FAA`, `ZAA`, `WAA_fish`, `WAA_srv`,
   `SizeAgeTrans_fish` and `SizeAgeTrans_srv`, returned with year `y`
   updated. The last two may be `NULL`, in which case the shared
@@ -103,7 +103,7 @@ compute_mortality_year(
   `[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]`, with a
   leading population dimension for the second, non-zero where a catch at
   age observation is fit. A fleet fitting catch at age is fished in any
-  cell where at least one age is fit, in either stream.
+  cell where at least one age is fit, in either data source.
 
 - use_catch_aa:
 
@@ -121,11 +121,12 @@ compute_mortality_year(
 - SizeAgeTrans:
 
   Shared size-age key, used when no growth-derived per-fleet key is
-  supplied in `st`.
+  supplied in `state`.
 
 - natmort, seasdur:
 
-  Natural mortality at age and season duration.
+  Natural mortality at age, `[pop, region, year, season, age, sex]` and
+  a rate per year, and season duration.
 
 - n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets:
 
@@ -133,4 +134,4 @@ compute_mortality_year(
 
 ## Value
 
-`st` with year `y` updated.
+`state` with year `y` updated.

@@ -164,47 +164,21 @@ Get_Movement(
   `"softplus"` (or `1`)
 
   :   softplus of \\\theta_j + d\\ with width `ctmc_diffusion_eps`.
-      Smooth, but an edge where taxis cancels diffusion carries a floor
-      of `eps * log(2)`.
+      Smooth, but an edge where taxis cancels diffusion has a floor of
+      `eps * log(2)`, so the width is a minimum exchange rate and not
+      only a smoothing constant.
 
-  `"clamp"`
-
-  :   hard positive part of \\\theta_j + d\\. Same fit as the softplus
-      but the optimum sits on a kink, so gradient-based convergence
-      checks stop meaning anything.
-
-  `"upwind"`
+  `"upwind"` (or `2`)
 
   :   discontinuous Galerkin / finite volume upwind flux, \\q =
-      \theta_j + \max(d, 0)\\: diffusion is carried whole and only the
-      down-gradient half of the taxis flux is added, so positivity does
-      not depend on cancelling the two.
-
-  `"barker"`
-
-  :   \\q = \theta_j\\\mathrm{logit}^{-1}(d)\\. Positive by construction
-      with no floor and no kink; the rate is bounded by \\\theta_j\\,
-      and \\q\_{ij}/q\_{ji} = e^d\\ so preference is a log density field
-      with stationary abundance proportional to \\\mathrm{area} \times
-      e^{\gamma}\\.
-
-  `"logsoftplus"`
-
-  :   \\q = \theta_j \log(1 + e^{d})\\. Positive by construction,
-      unbounded above, linear in the preference gradient once taxis
-      dominates.
-
-  `"barker"` and `"logsoftplus"` do not read `ctmc_diffusion_eps` at
-  all.
+      \theta_j + \max(d, 0)\\: diffusion is kept whole and only the
+      down-gradient half of the taxis flux is added, so positivity never
+      depends on the two cancelling.
 
 - ctmc_diffusion_eps:
 
   Positive numeric width of the softplus used when
-  `ctmc_diffusion_bounds` is `"softplus"`. An edge where taxis exactly
-  cancels diffusion carries `eps * log(2)`, so this is a floor on
-  exchange and not only a smoothing width; smaller values approach a
-  hard hinge and can underflow a shut edge to a gradient-dead exact
-  zero. Default 0.1.
+  `ctmc_diffusion_bounds` is `"softplus"`. Default 0.1.
 
 - seasdur:
 
@@ -223,27 +197,6 @@ Get_Movement(
   `0` here so that callers passing an unscaled generator get the
   arithmetic they expect; the user facing default is `1`, set by
   `Setup_Mod_Movement`.
-
-  Whether this flag changes the fit or only reparameterizes it depends
-  on whether the generator varies by season. With a season-agnostic
-  generator it matters: the seasonal steps commute, so scaling on
-  composes across the year to \\\exp(Q)\\ regardless of `n_seas`,
-  whereas scaling off composes to \\\exp(n\_{seas} Q)\\ and inflates
-  movement as the seasonal time step shrinks. With a season-varying
-  generator the scaling is absorbed — \\Q\\ is linear in \\\theta\\, so
-  scaling \\Q\\ by `seasdur[s]` equals shifting
-  `log_move_diffusion_pars` by \\\tfrac{1}{2}\log
-  \mathrm{seasdur}\[s\]\\ — but only if *both* formulas carry a season
-  term, since the flag scales diffusion and taxis together while only
-  \\\theta\\ can absorb it.
-
-  Note that even where the scaling is absorbed, it changes what the
-  estimated diffusion means (per-season step vs annual rate, hence not
-  comparable across seasons of unequal length), and the Dirichlet
-  movement prior is evaluated on annual fractions \\\exp(Q)\\
-  irrespective of this flag. Under `move_timing = 2` the flag governs
-  only the reported `Movement` diagnostic: the dynamics take `Mrate` and
-  apply `seasdur[seas]` themselves.
 
 - expm_nsub:
 

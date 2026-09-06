@@ -100,7 +100,7 @@ pack_caal_osa(
 ## Value
 
 If `return_labels = FALSE` (default), the flat OBS vector, or `NULL`
-when no fleet carries CAAL data. If `return_labels = TRUE`, a list with
+when no fleet has CAAL data. If `return_labels = TRUE`, a list with
 `vec` and `labels`.
 
 ## Details

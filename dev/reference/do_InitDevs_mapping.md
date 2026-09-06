@@ -94,8 +94,8 @@ do_InitDevs_mapping(
 
   Character. `"est_shared_s"` (default) maps every sex onto one shared
   age curve (the pre-sex-dimension behavior, penalized once);
-  `"est_all"` offsets the factor levels per sex so each sex carries its
-  own curve, each penalized. Also builds `data$init_devs_pen_use`, which
+  `"est_all"` offsets the factor levels per sex so each sex has its own
+  curve, each penalized. Also builds `data$init_devs_pen_use`, which
   flags exactly one penalized copy of every estimated parameter.
 
 ## Value

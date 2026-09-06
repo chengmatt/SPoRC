@@ -21,6 +21,7 @@ Get_Init_NAA(
   seasdur,
   rec_seas_prop,
   natmort,
+  natmort_annual = collapse_natmort_annual(natmort, seasdur, seas_dim = 3),
   init_F,
   dmr,
   fish_sel,
@@ -90,8 +91,15 @@ Get_Init_NAA(
 
 - natmort:
 
-  Array (`n_pop x n_regions x n_ages x n_sexes`) of natural mortality
-  rates.
+  Array (`n_pop x n_regions x n_seas x n_ages x n_sexes`) of natural
+  mortality, a rate per year in each season.
+
+- natmort_annual:
+
+  Array (`n_pop x n_regions x n_ages x n_sexes`) of the annual total,
+  the duration weighted sum over seasons. Read by the equilibrium seed
+  and the plus group series, which step a whole year at once. Defaults
+  to that sum.
 
 - init_F:
 

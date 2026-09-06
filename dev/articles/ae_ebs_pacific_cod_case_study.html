@@ -162,7 +162,7 @@ and natural mortality is fixed at 0.3866.</p>
 <span><span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span></span>
 <span><span class="va">n_reg</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_sex</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_fish</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_srv</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="va">sigmaR</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">rec</span><span class="op">$</span><span class="va">sigmaR</span></span></code></pre></div>
-<p>The object carries the model inputs, the assessment’s maximum
+<p>The object holds the model inputs, the assessment’s maximum
 likelihood estimate in <code>dat$mle</code>, used both as a starting
 point and to check the objective before anything is optimized, and the
 reported quantities in <code>dat$ss3</code>, which are the comparison
@@ -196,7 +196,7 @@ leaves it out of the penalty.</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>
 with the assessment’s standard deviation,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>R</mi></msub><annotation encoding="application/x-tex">\sigma_{R}</annotation></semantics></math>
-over the average age. Initial fishing mortality is held at the
+over the average age. Initial fishing mortality is kept at the
 assessment’s value, since <code>SPoRC</code> has no equilibrium catch to
 fit it against.</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
@@ -229,18 +229,18 @@ birth year.</p>
 generalizes von Bertalanffy with a sixth parameter raising the lengths
 to a power, and weight at age is derived from it through the
 weight-length relationship rather than supplied as data.</p>
-<p>Three arguments carry the assessment’s growth conventions.
+<p>Three arguments hold the assessment’s growth conventions.
 <code>growth_tv_model = c(L1 = "iid", K = "iid")</code> names which
 parameters vary and how, with <code>growth_tv_years</code> giving each
 its own active years. <code>growth_tv_link = "logit"</code> makes each
 deviation an offset inside the parameter’s bounds.
-<code>growth_tv_type = "cohort"</code> carries size at age forward
-cohort by cohort. The deviations’ standard deviations live in the first
-stream of <code>growth_pe_pars</code>, one slot per growth parameter in
+<code>growth_tv_type = "cohort"</code> has size at age forward cohort by
+cohort. The deviations’ standard deviations live in the first data
+source of <code>growth_pe_pars</code>, one slot per growth parameter in
 the order <code>L1</code>, <code>L2</code>, <code>K</code>,
 <code>CV1</code>, <code>CV2</code>, <code>rho</code>, with a placeholder
-in the four slots that do not vary. The second stream belongs to the
-semi-parametric surface and is unread here.</p>
+in the four slots that do not vary. The second data source belongs to
+the semi-parametric surface and is unread here.</p>
 <p>Maturity at age is taken from the assessment rather than modeled,
 because maturity is length based and fixed there. <code>LenBinMap</code>
 maps the 121 population bins onto the 24 the compositions are recorded
@@ -278,8 +278,8 @@ on.</p>
 <p>The control file records a second reference age of 999 to mean that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mn>2</mn></msub><annotation encoding="application/x-tex">L_{2}</annotation></semantics></math>
 is the asymptote itself, which is what the conditional on
-<code>growth_A2</code> translates. Two ageing error definitions are
-carried in <code>AgeingError</code>, a biased reader through 2007 and an
+<code>growth_A2</code> translates. Two ageing error definitions are kept
+in <code>AgeingError</code>, a biased reader through 2007 and an
 unbiased one after.</p>
 </div>
 <div class="section level2">
@@ -312,7 +312,7 @@ the catch almost exactly on both sides.</p>
 <h2 id="fishery-compositions">Fishery compositions<a class="anchor" aria-label="anchor" href="#fishery-compositions"></a>
 </h2>
 <p>No fishery index and no fishery ages, lengths only. Two arguments
-carry conventions rather than choices.
+have conventions rather than choices.
 <code>FishLenComps_sel = "length"</code> applies selectivity at length
 and sums over ages instead of folding it to age first, and
 <code>fish_waa_selected = 1</code> puts the catch in biomass on the
@@ -406,7 +406,7 @@ year.</p>
 </h2>
 <p>The same double normal with independent annual deviations on the
 ascending width from 1982, which is <code>cont_tv_srv_sel = "iid"</code>
-with the process error standard deviation held at the assessment’s
+with the process error standard deviation kept at the assessment’s
 value. Catchability is estimated.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></span><span class="op">(</span></span>
@@ -472,7 +472,7 @@ assessment’s unit normal form, and catchability.</p>
 <span><span class="va">seed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
 <span>                  do_optim <span class="op">=</span> <span class="cn">FALSE</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>The comparison before anything is optimized, against a report file
-carrying six significant digits:</p>
+with six significant digits:</p>
 <pre><code>numbers at age                      1.0e-03 %
 spawning biomass                    4.7e-04 %
 recruitment                         7.1e-05 %
@@ -633,8 +633,8 @@ the asymptote</td>
 model and the selectivity agrees at the report’s own print precision,
 and so does every likelihood component. The refit moves spawning biomass
 by half a percent.</p>
-<p>The drift is the recruitment convention. The assessment declares its
-deviations a <code>devvector</code>, which ADMB constrains to sum to
+<p>The difference is the recruitment convention. The assessment declares
+its deviations a <code>devvector</code>, which ADMB constrains to sum to
 zero, so
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_{0}</annotation></semantics></math>
 is the geometric mean recruitment of the deviation years by construction
@@ -649,10 +649,10 @@ and
 falls 0.106, from 13.341 to 13.235, leaving their product almost
 unchanged.</p>
 <p>The survey’s extra standard deviation differs the same way. The
-assessment estimates it, so how much weight the index carries is settled
+assessment estimates it, so how much weight the index has is settled
 alongside everything else. <code>SPoRC</code> has no estimated extra
 standard deviation on an index, so here it is added to the observed
-standard errors and held at the assessment’s value. That is not a small
+standard errors and kept at the assessment’s value. That is not a small
 term:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.093</mn><annotation encoding="application/x-tex">0.093</annotation></semantics></math>
 against observed standard errors of

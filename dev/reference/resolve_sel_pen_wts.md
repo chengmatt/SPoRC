@@ -20,7 +20,7 @@ resolve_sel_pen_wts(pen_wts, n_fleets = 1)
   `"smooth_mean_center"`. Any name not supplied defaults to `0`. Each
   weight is either a scalar applied to every year, or a vector with one
   value per model year, which lets a penalty act only in some years or
-  act with a different strength in each. The list may also carry
+  act with a different strength in each. The list may also have
   `"bin_range"`, a length-two vector giving the first and last age or
   length bin the penalties apply over; the default of every bin is what
   a missing `bin_range` reproduces.

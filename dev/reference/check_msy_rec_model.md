@@ -2,7 +2,7 @@
 
 MSY is the maximum of equilibrium yield over a stock-recruit curve, so
 it is only defined when the fit estimated one. A model fitted with
-`rec_model = "mean_rec"` carries `rec_model == 0`, and the equilibrium
+`rec_model = "mean_rec"` has `rec_model == 0`, and the equilibrium
 recruitment helpers in `refpts_msy.R` branch on Ricker against
 everything else, so an unguarded mean recruitment fit would be handed
 Beverton-Holt reference points. Steepness is also mapped off under mean
@@ -30,7 +30,7 @@ check_msy_rec_model(what, rec_model, sr_penalty = 0)
 - sr_penalty:
 
   Integer. `0` none, `1` Beverton-Holt, `2` Ricker. Only meaningful
-  under `rec_model == 0`, where it adds a curve scored against the
+  under `rec_model == 0`, where it adds a curve penalized against the
   recruitment deviations.
 
 ## Value

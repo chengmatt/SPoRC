@@ -103,13 +103,13 @@ Setup_Sim_Survey(
 - ln_sigmaSrvIdxAA:
 
   Log-scale observation error for the index at age, \`n_ages x n_sexes x
-  n_srv_fleets\`. The sex margin is required.
+  n_srv_fleets\`. The sex dim is required.
 
 - UseSrvIdxAA:
 
   Integer array \`n_regions x n_yrs x n_seas x n_ages x n_sexes x
   n_srv_fleets\`, \`1\` where a survey index at age is drawn. The sex
-  margin is required: a stream summed over sexes carries its flag in sex
+  dim is required: a data source summed over sexes has its flag in sex
   slot one.
 
 - ObsSrvIdxAA_SE:
@@ -119,8 +119,8 @@ Setup_Sim_Survey(
 
 - SrvIdxAA_Type:
 
-  Which margins each fleet reports separately: \`"agg"\`,
-  \`"spltRaggS"\` (default), \`"aggRspltS"\` or \`"spltRspltS"\`.
+  Which dims each fleet reports separately: \`"agg"\`, \`"spltRaggS"\`
+  (default), \`"aggRspltS"\` or \`"spltRspltS"\`.
 
 - SrvIdxAA_LikeType:
 
@@ -165,8 +165,8 @@ Setup_Sim_Survey(
   mvn fleet draws from `SrvIdx_Cov` through a common-factor
   decomposition (see
   [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md))
-  instead of `ObsSrvIdx_SE`, and its population-specific stream stays
-  lognormal. Default: lognormal for every fleet.
+  instead of `ObsSrvIdx_SE`, and its population-specific data source
+  stays lognormal. Default: lognormal for every fleet.
 
 - SrvIdx_Cov:
 

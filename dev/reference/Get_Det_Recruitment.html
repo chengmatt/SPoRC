@@ -177,7 +177,8 @@ event that produced them), validated at setup by
 
 
 <dt id="arg-natmort">natmort<a class="anchor" aria-label="anchor" href="#arg-natmort"></a></dt>
-<dd><p>Array (<code>n_pop × n_regions × n_ages</code>) of natural mortality.</p></dd>
+<dd><p>Array (<code>n_pop × n_regions × n_seas × n_ages</code>) of natural
+mortality, a rate per year in each season.</p></dd>
 
 
 <dt id="arg-ssb-vals">SSB_vals<a class="anchor" aria-label="anchor" href="#arg-ssb-vals"></a></dt>
@@ -282,7 +283,7 @@ R = R_0 \frac{SSB}{S_0} \exp\left(\alpha \left(1 - \frac{SSB}{S_0}\right)\right)
 \quad \alpha = \log\left(\frac{4h}{1-h}\right)
 $$</p>
 <p>The curve passes through \((S_0, R_0)\) by construction. Note that
-\(\alpha\) is set so the Ricker carries the same compensation ratio as a
+\(\alpha\) is set so the Ricker holds the same compensation ratio as a
 Beverton-Holt at the same \(h\), rather than by the textbook definition
 \(R(0.2 S_0) = h R_0\). Steepness is therefore not interchangeable between
 the two curves: the Ricker here gives \(R(0.2S_0)/R_0 = 0.2(4h/(1-h))^{0.8}\),

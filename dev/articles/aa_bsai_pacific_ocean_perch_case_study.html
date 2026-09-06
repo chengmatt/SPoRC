@@ -248,7 +248,7 @@ shifted by
 to put the prior mean where the assessment puts it.</p>
 <p>Maturity is estimated inside the assessment’s template and is absent
 from its report object, so the fitted logistic is rebuilt when the data
-object is constructed and held fixed here. That is why the assessment’s
+object is constructed and kept fixed here. That is why the assessment’s
 maturity likelihood is removed from its side of the objective in the
 crosswalk below.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -289,7 +289,7 @@ and
 A weighted sum of squares and a normal likelihood with a fixed standard
 deviation are the same statement up to a constant, related by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><mn>1</mn><mi>/</mi><msqrt><mrow><mn>2</mn><mi>w</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">\sigma = 1/\sqrt{2w}</annotation></semantics></math>,
-so both weights are carried inside the standard deviations rather than
+so both weights are kept inside the standard deviations rather than
 applied outside the sums.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span></span>
@@ -399,10 +399,10 @@ Getting either wrong changes both the surface and the penalty.</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>a</mi><mn>50</mn></msub><annotation encoding="application/x-tex">a_{50}</annotation></semantics></math>
 parameterization:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">Sel</mtext><mi>a</mi></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><mi>k</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>a</mi><mo>−</mo><msub><mi>a</mi><mn>50</mn></msub><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">\text{Sel}_{a} = \dfrac{1}{1 + \exp\left[-k\left(a - a_{50}\right)\right]}</annotation></semantics></math></p>
-<p>Only the Aleutian Islands survey carries a catchability prior.
-Supplying a single row for fleet 1 in <code>srv_q_prior</code> is what
-restricts it to that fleet; the eastern Bering Sea catchability is
-estimated freely.</p>
+<p>Only the Aleutian Islands survey has a catchability prior. Supplying
+a single row for fleet 1 in <code>srv_q_prior</code> is what restricts
+it to that fleet; the eastern Bering Sea catchability is estimated
+freely.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
@@ -421,11 +421,11 @@ estimated freely.</p>
 <div class="section level2">
 <h2 id="weighting-and-selectivity-penalties">Weighting and selectivity penalties<a class="anchor" aria-label="anchor" href="#weighting-and-selectivity-penalties"></a>
 </h2>
-<p>Beyond the data weights, the assessment carries smoothness penalties
-on the bicubic surface, its lambdas 3 to 6, plus a mean centering term
-its template hardcodes. Those five terms ship in the data object as
+<p>Beyond the data weights, the assessment has smoothness penalties on
+the bicubic surface, its lambdas 3 to 6, plus a mean centering term its
+template hardcodes. Those five terms ship in the data object as
 <code>sel_pen_wts</code> and are passed straight through. Survey
-selectivity is logistic with no deviations, so it carries no smoothness
+selectivity is logistic with no deviations, so it has no smoothness
 penalty and <code>srv_sel_pen_wts</code> is <code>NULL</code>.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
@@ -443,19 +443,18 @@ penalty and <code>srv_sel_pen_wts</code> is <code>NULL</code>.</p>
 <div class="section level2">
 <h2 id="starting-at-the-admb-estimate">Starting at the ADMB estimate<a class="anchor" aria-label="anchor" href="#starting-at-the-admb-estimate"></a>
 </h2>
-<p>Before optimizing anything, it is worth checking that the model is
-reproduced <em>at a known point</em>. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.</p>
+<p>Before optimizing anything, check that the model is reproduced <em>at
+a known point</em>. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.</p>
 <p>Two conversions are needed. The assessment builds its three deviation
 free terminal recruits as
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mover><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>R</mi></mrow><mo accent="true">¯</mo></mover><mo>+</mo><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup><mi>/</mi><mn>2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\overline{\log R} + \sigma_{R}^{2}/2)</annotation></semantics></math>
 while leaving the estimated years raw, and it starts the first year
 equilibrium from the mean of the lognormal rather than from
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msup><mi>R</mi><mtext mathvariant="normal">init</mtext></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\log R^{\text{init}})</annotation></semantics></math>.
-Carrying both corrections in <code>ln_global_R0</code> and
+With both corrections in <code>ln_global_R0</code> and
 <code>ln_rinit</code> and shifting every seeded deviation down by the
 same amount reproduces the recruitment series, the initial age
 structure, and the penalty value at once.</p>
@@ -510,7 +509,7 @@ spawning biomass            max pct diff: 4.1e-04
 recruitment                 max pct diff: 3.1e-04
 total biomass               max pct diff: 2.5e-04</code></pre>
 <p>Total biomass needs a note. <code>SPoRC</code>’s reported
-<code>Total_Biom</code> is spawning time biomass and carries the
+<code>Total_Biom</code> is spawning time biomass and holds the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mi>Z</mi><msup><mi>t</mi><mtext mathvariant="normal">spawn</mtext></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(-Z t^{\text{spawn}})</annotation></semantics></math>
 discount, while the assessment reports January 1 biomass. The like for
 like quantity is rebuilt from numbers at age, which is what the figure
@@ -618,8 +617,8 @@ on a term of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>7.5</mn><annotation encoding="application/x-tex">7.5</annotation></semantics></math>,
 which is a
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.07</mn><annotation encoding="application/x-tex">0.07</annotation></semantics></math>
-percent difference in the predicted proportions carried through an
-applied sample size of
+percent difference in the predicted proportions with an applied sample
+size of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>224</mn><annotation encoding="application/x-tex">224</annotation></semantics></math>.
 That is consistent with the multinomial offset convention rather than
 with the size at age transition, and it is
@@ -663,13 +662,13 @@ factor of
 and the shift in the estimated recruitment level between the two fits
 accounts for
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1.068451</mn><annotation encoding="application/x-tex">1.068451</annotation></semantics></math>
-of it. Those recruits are deviation free, so they carry the level and
+of it. Those recruits are deviation free, so they hold the level and
 nothing else; the assessment’s sum to zero <code>dev_vector</code>
 cannot move the level while <code>SPoRC</code>’s free deviations
 can.</p>
-<p>Fishery selectivity is a bicubic surface over year and age, held flat
+<p>Fishery selectivity is a bicubic surface over year and age, kept flat
 before 1964 and past the last selectivity node, so a handful of years
-carries the whole shape change. Four years are shown; the full
+holds the whole shape change. Four years are shown; the full
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>65</mn><mo>×</mo><mn>38</mn></mrow><annotation encoding="application/x-tex">65\times38</annotation></semantics></math>
 surface is what the bridge test checks. Survey selectivity is logistic
 and time invariant in each of the two surveys.</p>

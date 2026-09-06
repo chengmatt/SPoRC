@@ -1,7 +1,7 @@
-# Name the split margins of one at-age stream
+# Name the split dims of one at-age data source
 
 An at-age observation is stored over regions and sexes whether or not it
-is reported that way, and the Type code names which of those margins the
+is reported that way, and the Type code names which of those dims the
 fleet reports separately. The vocabulary is the composition one, so a
 model stating both kinds of data states them the same way.
 
@@ -11,7 +11,7 @@ model stating both kinds of data states them the same way.
 do_at_age_type_setup(
   input_list,
   type,
-  stream,
+  data_source,
   fleet_field,
   use_field,
   pop = FALSE
@@ -32,9 +32,9 @@ do_at_age_type_setup(
   `"spltRaggS_Year_1-20_Fleet_1"`, in which case every year of every
   fleet needs an entry covering it.
 
-- stream:
+- data_source:
 
-  Stream tag naming the data element, e.g. `"CatchAA"`.
+  Data source tag naming the data element, e.g. `"CatchAA"`.
 
 - fleet_field:
 
@@ -42,24 +42,23 @@ do_at_age_type_setup(
 
 - use_field:
 
-  Name of the use array for this stream.
+  Name of the use array for this data source.
 
 - pop:
 
-  Logical. `TRUE` for the population-specific stream.
+  Logical. `TRUE` for the population-specific data source.
 
 ## Value
 
-`input_list` with `$data$<stream>_Type` set to a numeric matrix
+`input_list` with `$data$<data source>_Type` set to a numeric matrix
 `[n_yrs, n_fleets]` of codes.
 
 ## Details
 
-A margin the fleet sums over carries its observation in slot one, and a
-use flag anywhere else on that margin is refused rather than quietly
-ignored.
+A dim the fleet sums over has its observation in slot one, and a use
+flag anywhere else on that dim is refused rather than quietly ignored.
 
 The setting may change part way through a series, given in the same
-`Value_Year_x-y_Fleet_f` form the composition streams take. A bare value
-stands for the whole series, either one setting for every fleet or one
-per fleet.
+`Value_Year_x-y_Fleet_f` form the composition data sources take. A bare
+value stands for the whole series, either one setting for every fleet or
+one per fleet.

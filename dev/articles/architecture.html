@@ -177,12 +177,11 @@ its data, parameters and mapping get prepared beforehand.</p>
 <code>### Subsection</code> comment banner style is used consistently.
 Keep using it if you extend the file, since it is the only navigation
 aid inside a function of this size.</p>
-<p>Note that <code>R/model_transition.R</code> is worth knowing about
-before anything else. It computes what happens to a vector of abundance
-over one season, given movement, mortality, season duration and a
-movement timing. Eleven other files go through it, including the
-objective function’s dynamics, the reference point solvers and the
-operating model.</p>
+<p>Read <code>R/model_transition.R</code> first. It computes what
+happens to a vector of abundance over one season, given movement,
+mortality, season duration and a movement timing. Eleven other files go
+through it, including the objective function’s dynamics, the reference
+point solvers and the operating model.</p>
 </div>
 </div>
 <div class="section level2">
@@ -309,15 +308,15 @@ what”. “Calls into” lists the files whose functions this one calls;
 <p>Edge labels count how many file to file dependencies sit behind each
 arrow. <code>Helpers</code> is a pure sink and <code>Plotting</code> a
 pure source, which is the shape you want: the objective function never
-reaches up into the post fit machinery.</p>
+reaches up into the post fit routines.</p>
 <p>Below the same information at file resolution. A filled cell means
 the file on that row calls a function defined in the file in that
 column, and cells are grouped by stage. Empty rows call nothing else in
 the package, empty columns are called by nothing.</p>
 <p><img src="figures/arch_dependency_matrix-1.png" class="r-plt" alt="Dependency matrix of the 52 files in R/, grouped by pipeline stage, where a filled cell means the row file calls a function defined in the column file." width="100%"></p>
 <p>The <code>model_transition</code> column is the densest in the
-matrix, which is the point made above: everything that moves fish
-through a season goes through that one file.</p>
+matrix: everything that moves fish through a season goes through that
+one file.</p>
 <div class="section level3">
 <h3 id="per-stage-detail">Per stage detail<a class="anchor" aria-label="anchor" href="#per-stage-detail"></a>
 </h3>
@@ -355,7 +354,7 @@ through a season goes through that one file.</p>
 <tr class="even">
 <td><code>setup_caal.R</code></td>
 <td>
-<code>parse_caal_type</code>, <code>setup_caal_stream</code>
+<code>parse_caal_type</code>, <code>setup_caal_source</code>
 </td>
 <td><code>utils_setup.R</code></td>
 <td>
@@ -624,11 +623,11 @@ through a season goes through that one file.</p>
 <code>get_alk</code>, <code>Get_Growth</code>,
 <code>get_growth_pars_year</code>, <code>Get_Growth_Year</code>,
 <code>get_laa_curve</code>, <code>get_selected_waa</code>,
-<code>grow_increment</code>, <code>growth_args_from_model</code>,
-<code>growth_containers</code>, <code>growth_fill_year</code>,
-<code>growth_laa_at</code>, <code>growth_len_mid</code>,
-<code>growth_selected_waa_year</code>, <code>growth_start_state</code>,
-<code>growth_take_year</code>, <code>plus_group_size</code>
+<code>grow_increment</code>, <code>growth_containers</code>,
+<code>growth_fill_year</code>, <code>growth_laa_at</code>,
+<code>growth_len_mid</code>, <code>growth_selected_waa_year</code>,
+<code>growth_start_state</code>, <code>growth_take_year</code>,
+<code>plus_group_size</code>
 </td>
 <td>nothing</td>
 <td>
@@ -639,7 +638,9 @@ through a season goes through that one file.</p>
 <tr class="odd">
 <td><code>model_init_naa.R</code></td>
 <td><code>Get_Init_NAA</code></td>
-<td><code>model_transition.R</code></td>
+<td>
+<code>model_transition.R</code>, <code>utils_setup.R</code>
+</td>
 <td>
 <code>model_objective.R</code>, <code>sim_population.R</code>
 </td>
@@ -648,7 +649,7 @@ through a season goes through that one file.</p>
 <td><code>model_lik_at_age.R</code></td>
 <td>
 <code>at_age_obs_sd</code>, <code>at_age_split</code>,
-<code>get_at_age_prediction</code>, <code>get_at_age_stream_nLL</code>,
+<code>get_at_age_prediction</code>, <code>get_at_age_source_nLL</code>,
 <code>prep_at_age_obs</code>
 </td>
 <td>
@@ -676,12 +677,14 @@ through a season goes through that one file.</p>
 <tr class="even">
 <td><code>model_lik_comps.R</code></td>
 <td>
-<code>eval_comp_osa</code>, <code>Get_Comp_Likelihoods</code>,
-<code>Get_Comp_Likelihoods_OSA</code>, <code>pack_comp_osa</code>
+<code>eval_comp_osa</code>, <code>eval_comp_source_osa</code>,
+<code>Get_Comp_Likelihoods</code>,
+<code>Get_Comp_Likelihoods_OSA</code>, <code>get_comp_source_nLL</code>,
+<code>pack_comp_osa</code>, <code>pack_comp_source_osa</code>
 </td>
 <td>
 <code>model_distributions.R</code>, <code>model_osa.R</code>,
-<code>utils_math.R</code>
+<code>utils_math.R</code>, <code>utils_setup.R</code>
 </td>
 <td>
 <code>diag_osa_residuals.R</code>, <code>model_lik_caal.R</code>,
@@ -736,6 +739,7 @@ through a season goes through that one file.</p>
 <tr class="even">
 <td><code>model_obs_fishery_survey.R</code></td>
 <td>
+<code>get_blocked_analytic_q</code>,
 <code>get_fishery_observation_model</code>,
 <code>get_survey_observation_model</code>
 </td>
@@ -772,8 +776,7 @@ through a season goes through that one file.</p>
 <td><code>model_population_dynamics.R</code></td>
 <td>
 <code>compute_mortality_year</code>,
-<code>get_population_projection</code>,
-<code>mortality_args_from_model</code>
+<code>get_population_projection</code>
 </td>
 <td>
 <code>model_biomass.R</code>, <code>model_growth.R</code>,
@@ -871,14 +874,16 @@ through a season goes through that one file.</p>
 <tr class="odd">
 <td><code>projection.R</code></td>
 <td>
-<code>build_proj_F</code>, <code>Do_Population_Projection</code>,
-<code>proj_catch_at_F</code>, <code>proj_log_catch_resid</code>,
-<code>proj_target_catch</code>, <code>run_proj_year</code>,
-<code>solve_proj_F_catch</code>, <code>solve_proj_year_F</code>
+<code>bind_proj_SSB</code>, <code>build_proj_F</code>,
+<code>Do_Population_Projection</code>, <code>proj_catch_at_F</code>,
+<code>proj_log_catch_resid</code>, <code>proj_target_catch</code>,
+<code>run_proj_year</code>, <code>solve_proj_F_catch</code>,
+<code>solve_proj_year_F</code>
 </td>
 <td>
 <code>model_biomass.R</code>, <code>model_recruitment.R</code>,
-<code>model_transition.R</code>, <code>sim_random_variates.R</code>
+<code>model_transition.R</code>, <code>sim_random_variates.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td><code>plot_figures_tables.R</code></td>
 </tr>
@@ -890,7 +895,8 @@ through a season goes through that one file.</p>
 <code>solve_plus_group</code>
 </td>
 <td>
-<code>model_fit.R</code>, <code>model_transition.R</code>
+<code>model_fit.R</code>, <code>model_transition.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td>
 <code>plot_figures_tables.R</code>, <code>refpts_msy.R</code>,
@@ -906,7 +912,8 @@ through a season goes through that one file.</p>
 <code>single_region_Fmsy</code>
 </td>
 <td>
-<code>model_transition.R</code>, <code>refpts_main.R</code>
+<code>model_transition.R</code>, <code>refpts_main.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -916,7 +923,8 @@ through a season goes through that one file.</p>
 <code>global_SPR</code>, <code>single_region_SPR</code>
 </td>
 <td>
-<code>model_transition.R</code>, <code>refpts_main.R</code>
+<code>model_transition.R</code>, <code>refpts_main.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -963,15 +971,16 @@ through a season goes through that one file.</p>
 <code>refpts_main.R</code>, <code>setup_biologicals.R</code>,
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
-<code>setup_tagging.R</code>, <code>utils_math.R</code>,
-<code>utils_postfit.R</code>, <code>utils_setup.R</code>
+<code>setup_tagging.R</code>, <code>sim_self_test.R</code>,
+<code>utils_math.R</code>, <code>utils_postfit.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
 <tr class="even">
 <td><code>sim_naa_state.R</code></td>
 <td>
-<code>color_naa_margin</code>, <code>draw_naa_innovations</code>,
+<code>color_naa_dim</code>, <code>draw_naa_innovations</code>,
 <code>Setup_Sim_NAA_state</code>
 </td>
 <td><code>model_precision.R</code></td>
@@ -1031,7 +1040,8 @@ through a season goes through that one file.</p>
 <td><code>sim_self_test.R</code></td>
 <td>
 <code>simulation_data_to_SPoRC</code>,
-<code>simulation_self_test</code>
+<code>simulation_self_test</code>,
+<code>warn_R0_ref_block_om</code>
 </td>
 <td>
 <code>model_fit.R</code>, <code>setup_biologicals.R</code>,
@@ -1040,7 +1050,7 @@ through a season goes through that one file.</p>
 <code>setup_tagging.R</code>, <code>sim_population.R</code>,
 <code>utils_postfit.R</code>, <code>utils_setup.R</code>
 </td>
-<td></td>
+<td><code>sim_closed_loop.R</code></td>
 </tr>
 <tr class="odd">
 <td><code>sim_setup.R</code></td>
@@ -1136,7 +1146,8 @@ through a season goes through that one file.</p>
 <code>truncate_yr</code>
 </td>
 <td>
-<code>diag_francis.R</code>, <code>model_fit.R</code>
+<code>diag_francis.R</code>, <code>model_fit.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td><code>plot_figures_tables.R</code></td>
 </tr>
@@ -1246,9 +1257,11 @@ through a season goes through that one file.</p>
 <td>
 <code>assign_sel_block</code>, <code>bins_or_null</code>,
 <code>check_bin_map</code>, <code>check_comp_bins_min</code>,
-<code>check_par_map_lengths</code>, <code>collect_message</code>,
+<code>check_par_map_lengths</code>,
+<code>collapse_natmort_annual</code>, <code>collect_message</code>,
 <code>convert_to_numeric</code>, <code>drop_empty_fitted_blocks</code>,
-<code>expand_fleet_ageing_error</code>, <code>extend_years</code>,
+<code>expand_fleet_ageing_error</code>,
+<code>expand_natmort_seasons</code>, <code>extend_years</code>,
 <code>fleet_ageing_error</code>, <code>obs_bin_count</code>,
 <code>obs_len_bins</code>, <code>parse_bin_subset</code>,
 <code>parse_comp_bins</code>, <code>parse_idx_cov</code>,
@@ -1257,17 +1270,21 @@ through a season goes through that one file.</p>
 <code>set_data_indicator_unused</code>, <code>setup_dbnrml_raw</code>,
 <code>setup_dbnrml_startbin</code>, <code>setup_sel_bin_devs</code>,
 <code>setup_sel_norm_bins</code>, <code>setup_sel_sex_offset</code>,
-<code>use_starting_value</code>, <code>validate_selex_penalty</code>,
+<code>truncate_years</code>, <code>use_starting_value</code>,
+<code>validate_selex_penalty</code>,
 <code>validate_selex_prior_types</code>
 </td>
 <td>nothing</td>
 <td>
 <code>diag_fits.R</code>, <code>diag_likelihood_profile.R</code>,
-<code>diag_osa_residuals.R</code>, <code>model_fit.R</code>,
-<code>model_objective.R</code>, <code>plot_figures_tables.R</code>,
-<code>setup_biologicals.R</code>, <code>setup_caal.R</code>,
-<code>setup_dimensions.R</code>, <code>setup_fishery_catch.R</code>,
-<code>setup_fishery_comps.R</code>,
+<code>diag_osa_residuals.R</code>, <code>diag_retrospective.R</code>,
+<code>model_fit.R</code>, <code>model_init_naa.R</code>,
+<code>model_lik_comps.R</code>, <code>model_objective.R</code>,
+<code>plot_figures_tables.R</code>, <code>projection.R</code>,
+<code>refpts_main.R</code>, <code>refpts_msy.R</code>,
+<code>refpts_spr.R</code>, <code>setup_biologicals.R</code>,
+<code>setup_caal.R</code>, <code>setup_dimensions.R</code>,
+<code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_mapping.R</code>,
 <code>setup_movement.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_fleets.R</code>, <code>setup_survey_comps.R</code>,
@@ -1335,7 +1352,6 @@ length-based selectivity reads.</p>
         |
         v
 SPoRC_rtmb()                                                [model_objective.R]
-  -&gt; growth_args_from_model()                                [model_growth.R]
        pulls growth's ~20 arguments out of the RTMB frame by name
   -&gt; growth_tv_type == "curve": Get_Growth() builds every year up front
                                                                 [model_growth.R]
@@ -1390,7 +1406,7 @@ built identically, so it is factored out rather than duplicated in
 <td>The within-year evaluator at one elapsed time <code>e</code>. Under
 <code>"curve"</code> growth every age is just
 <code><a href="../reference/get_laa_curve.html">get_laa_curve()</a></code> at its real age; under
-<code>"cohort"</code> growth, ages already propagated carry a length
+<code>"cohort"</code> growth, ages already propagated have a length
 history the closed form does not know about, so they instead grow from
 <code>L_beg</code> via <code><a href="../reference/grow_increment.html">grow_increment()</a></code>. One function,
 branching on <code>cohort</code>, rather than two, because everything
@@ -1402,7 +1418,7 @@ identical either way.</td>
 <td>The one piece of math with no dependency on ages, <code>A1</code>,
 or <code>A2</code> at all: grow a length <code>e</code> further given
 <code>K</code>, <code>Linf</code>, <code>rho</code>. Reused in two
-genuinely different contexts, evaluating a fleet’s within-year timing
+different contexts, evaluating a fleet’s within-year timing
 (<code>growth_laa_at</code>) and advancing a cohort a full year
 (<code>Get_Growth_Year</code>), which is why it is not inlined into
 either.</td>
@@ -1417,7 +1433,7 @@ into every fleet that reads at that timing. Both
 <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code> (looping over years on the “curve” path) and
 <code><a href="../reference/Get_Growth_Year.html">Get_Growth_Year()</a></code> (one year at a time on the “cohort” path)
 call it with a different start-of-year state, so the fleet-timing
-bookkeeping is written once.</td>
+residual tracking is written once.</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/plus_group_size.html">plus_group_size()</a></code></td>
@@ -1457,7 +1473,7 @@ is true whatever selectivity looks like: even a model with plain
 age-based selectivity still needs growth for weight at age, spawning
 biomass, and length compositions, and still has this same plus-group
 problem. <code>growth_tv_type = "curve"</code> has no such problem
-(nothing carries a length history from year to year) and so builds every
+(nothing has a length history from year to year) and so builds every
 year’s growth up front, before the population loop even starts.</p>
 <p>Rebuilding that year’s mortality right alongside growth, though,
 <em>is</em> specifically about length-based selectivity.
@@ -1555,7 +1571,7 @@ vector of bins, nothing else. Because it does not know about years,
 blocks, or fleets, <code>test-model_selectivity.R</code> can check every
 functional form directly against its formula without building a whole
 model around it, and <code><a href="../reference/Get_Selex_Array.html">Get_Selex_Array()</a></code>’s only job is the
-block/year/fleet bookkeeping around it.</td>
+block/year/fleet residual tracking around it.</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/Get_PE_loglik.html">Get_PE_loglik()</a></code></td>
@@ -1563,8 +1579,8 @@ block/year/fleet bookkeeping around it.</td>
 <code>model_selectivity.R</code> or <code>model_growth.R</code>, because
 it does not need to know which one is calling it: give it a deviation
 array, its map, and a code for which process (iid, random walk, …) it is
-supposed to follow, and it penalizes departures from that process. That
-is what lets growth and selectivity call the same function with the same
+supposed to follow, and it penalizes departures from that process.
+Growth and selectivity therefore call the same function with the same
 five arguments.</td>
 </tr>
 </tbody>
@@ -1581,8 +1597,8 @@ blocks to one or more <code>do_*_mapping</code> helpers
 so on). Each one stays in the topic’s own <code>setup_*.R</code> file
 unless more than one file needs it, in which case it moves to the shared
 <code>setup_mapping.R</code>.</p>
-<p>The scoring side is not as uniform, which is worth knowing. Growth
-and selectivity’s year-by-year deviations both go through the same
+<p>The penalizing side is not as uniform. Growth and selectivity’s
+year-by-year deviations both go through the same
 <code><a href="../reference/Get_PE_loglik.html">Get_PE_loglik()</a></code>. Movement’s own deviations
 (<code>move_devs</code>) instead have their own penalty function,
 <code><a href="../reference/Get_move_PE_loglik.html">Get_move_PE_loglik()</a></code>, sitting right next to
@@ -1629,10 +1645,10 @@ diagnostics, plotting, operating model.</li>
 <div class="section level2">
 <h2 id="tests">Tests<a class="anchor" aria-label="anchor" href="#tests"></a>
 </h2>
-<p>Test files in <code>tests/testthat/</code> carry the same prefixes as
+<p>Test files in <code>tests/testthat/</code> hold the same prefixes as
 <code>R/</code>, so the tests for a given source file sort next to each
 other and the name says what is under test rather than which stock the
-fixture happens to use.</p>
+test setup happens to use.</p>
 <table class="table">
 <colgroup>
 <col width="33%">
@@ -1653,7 +1669,7 @@ fixture happens to use.</p>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>29</td>
+<td>32</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1674,7 +1690,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-projection_*</code></td>
-<td>3</td>
+<td>5</td>
 <td>Forward projection off a fitted model</td>
 </tr>
 <tr class="odd">
@@ -1690,13 +1706,13 @@ and the operating model</td>
 </tr>
 <tr class="odd">
 <td><code>test-regression_*</code></td>
-<td>17</td>
+<td>18</td>
 <td>End to end fits pinning <code>obj$rep</code> and <code>nll</code>
 for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 146 test files in total.</p>
+<p>That is 157 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

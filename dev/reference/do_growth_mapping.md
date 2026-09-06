@@ -40,13 +40,13 @@ do_growth_mapping(
 
 - growth_fix:
 
-  Logical vector, one entry per growth parameter, naming any held at its
+  Logical vector, one entry per growth parameter, naming any kept at its
   starting value while the others are estimated.
 
 - tv_vals:
 
   Integer vector, one entry per growth parameter, of the time variation
-  each carries (0 none, 1 iid, 2 random walk).
+  each has (0 none, 1 iid, 2 random walk).
 
 - tv_active:
 

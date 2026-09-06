@@ -78,13 +78,13 @@ in `sim_env`; corresponding `Use*_PopSpec` flags are derived
 automatically.
 
 Input sample sizes for age and length compositions are extracted for
-both aggregate and population-specific data streams, including retained
+both aggregate and population-specific data sources, including retained
 (`ISS_FishAgeComps`, `ISS_FishLenComps`, `ISS_FishAgeComps_pop`,
 `ISS_FishLenComps_pop`, `ISS_SrvAgeComps`, `ISS_SrvLenComps`,
 `ISS_SrvAgeComps_pop`, `ISS_SrvLenComps_pop`) and discard
 (`ISS_FishAgeComps_discard`, `ISS_FishLenComps_discard`,
 `ISS_FishAgeComps_discard_pop`, `ISS_FishLenComps_discard_pop`) data
-streams.
+sources.
 
 Length composition outputs (`ObsFishLenComps`, `ObsSrvLenComps`, and
 their population-specific and discard variants) and `SizeAgeTrans` are

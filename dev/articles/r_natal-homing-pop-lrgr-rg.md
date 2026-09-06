@@ -717,7 +717,7 @@ With mostly region-aggregated data, the model has little direct
 information about which recruits belong to which population or where
 they originated (except for tagging data). When multiple populations
 co-occur in the same region, as populations 1 and 2 do in Region 1 here,
-the aggregated age compositions and survey indices carry a mixed signal,
+the aggregated age compositions and survey indices have a mixed signal,
 and the model must attempt to decompose it using movement dynamics,
 tagging data, and spatial contrast alone (as well as fixed parameters).
 However, incorporating population-specific data greatly enhances the

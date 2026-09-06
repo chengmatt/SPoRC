@@ -27,6 +27,7 @@ get_population_projection(
   rec_region_prop,
   rec_seas_prop,
   h_trans,
+  R0_yr = NULL,
   natal_region,
   t_spawn,
   spawn_seas,
@@ -65,7 +66,8 @@ get_population_projection(
   n_est_naa_re = 0,
   ln_NAA = NULL,
   naa_re_ages = NULL,
-  naa_re_yrs = NULL
+  naa_re_yrs = NULL,
+  naa_re_seas = NULL
 )
 ```
 
@@ -91,6 +93,13 @@ get_population_projection(
   Recruitment and timing arguments passed through to
   `Get_Det_Recruitment`.
 
+- R0_yr:
+
+  Matrix `[n_pop x n_yrs]` of R0 by year when R0 has time blocks, or
+  `NULL` to use the single `R0` in every year. Only the recruitment
+  computed each year reads it; everything that needs one value still
+  uses `R0`.
+
 - ln_RecDevs:
 
   Array `[pop, region, year]` of log recruitment deviations; applied
@@ -108,7 +117,8 @@ get_population_projection(
 
 - natmort:
 
-  Array `[pop, region, year, age, sex]` of natural mortality at age.
+  Array `[pop, region, year, season, age, sex]` of natural mortality at
+  age.
 
 - Movement:
 
@@ -183,16 +193,16 @@ get_population_projection(
 
   Optional function of `(y, NAA_y, growth_mortality_state)` called at
   the top of every year with the numbers at age at the start of that
-  year, array `[pop, region, age, sex]`, and the state carried from the
-  previous year. It returns a list with `state`, carried forward to the
-  next call and returned to the caller, and `ZAA_y`, `WAA_y` and
-  `MatAA_y`, the year's slices of total mortality, weight and maturity
-  at age, which replace those handed in for that year. Passing the state
-  in and out keeps the per-year step a function of its arguments.
+  year, array `[pop, region, age, sex]`, and the state kept from the
+  previous year. It returns a list with `state`, advanced to the next
+  call and returned to the caller, and `ZAA_y`, `WAA_y` and `MatAA_y`,
+  the year's slices of total mortality, weight and maturity at age,
+  which replace those handed in for that year. Passing the state in and
+  out keeps the per-year step a function of its arguments.
 
 - growth_mortality_state:
 
-  Initial state for `growth_mortality_year_fn`, carried through the year
+  Initial state for `growth_mortality_year_fn`, passed through the year
   loop and returned as `growth_mortality_state`. Ignored when
   `growth_mortality_year_fn` is `NULL`. This is how cohort growth, whose
   plus group blends by numbers, is evaluated inside the year loop.
@@ -206,10 +216,13 @@ get_population_projection(
 
 - ln_NAA:
 
-  Array `[pop, region, year, age, sex]` of log numbers at age,
-  overwriting the deterministic prediction wherever the state is active.
+  Array `[pop, region, year, season, age, sex]` of log numbers at the
+  start of a season, overwriting the deterministic prediction wherever
+  the state is active. Season one is the year boundary, after ageing and
+  the plus group; later seasons are states on the within-year survival
+  step.
 
-- naa_re_ages, naa_re_yrs:
+- naa_re_ages, naa_re_yrs, naa_re_seas:
 
   Integer index vectors the state is active over.
 

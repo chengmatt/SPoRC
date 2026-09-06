@@ -210,8 +210,8 @@ of:</p><dl><dt><code>"&lt;model&gt;_Fleet_x"</code></dt>
 
   <dt><code>"nonparfree"</code></dt>
 <dd><p>Non-parametric on the log scale with no
-    standardization, \(\exp(\theta)\), so the values carry the height of the
-    curve as well as its shape. This is the form for a stream fit age by age:
+    standardization, \(\exp(\theta)\), so the values hold the height of the
+    curve as well as its shape. This is the form for a data source fit age by age:
     a free catchability per age and a selectivity estimated at age are one
     quantity written two ways, so the whole age multiplier lives here and no
     catchability is set. Pin one bin, by leaving it out of the estimated bins,
@@ -221,7 +221,7 @@ of:</p><dl><dt><code>"&lt;model&gt;_Fleet_x"</code></dt>
 <dd><p>Logistic selectivity with \(a_{50}\) and slope \(k\) and asymptotic control (3 parameters).</p></dd>
 
   <dt><code>"asymplogist2"</code></dt>
-<dd><p>Logistic selectivity with with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
+<dd><p>Logistic selectivity with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
 
   <dt><code>"bicubic"</code></dt>
 <dd><p>Bicubic spline over a bin-node x year-node grid
@@ -234,11 +234,11 @@ of:</p><dl><dt><code>"&lt;model&gt;_Fleet_x"</code></dt>
     defined via <code>srv_sel_blocks</code>). An optional <code>_SelStyr_&lt;year&gt;</code>
     suffix (a calendar year within the block) restricts the actual spline
     fit to <code>SelStyr</code>:block-end; years within the block before
-    <code>SelStyr</code> are held constant at the <code>SelStyr</code> year's fitted
+    <code>SelStyr</code> are kept constant at the <code>SelStyr</code> year's fitted
     curve, rather than fitting the surface over the whole block. An
     optional <code>_NSelBins_&lt;n&gt;</code> suffix restricts the actual spline fit
     to the first <code>n</code> bins (ages or lengths, per <code>srv_selex_type</code>);
-    bins beyond <code>n</code> are held constant at the last fitted bin's
+    bins beyond <code>n</code> are kept constant at the last fitted bin's
     curve.</p></dd>
 
 
@@ -292,9 +292,11 @@ catchability is obtained. <code>"est"</code> (default) estimates
 <code>ln_srv_q</code>. <code>"arith"</code> concentrates it out of the likelihood as
 the ratio of mean observed to mean predicted index, and <code>"geo"</code> does
 the same on the log scale as <code>exp(mean(log(obs) - log(pred)))</code>. Both
-analytic forms solve one catchability per region and fleet using only the
-years with observations, ignore any block structure, and fix that fleet's
-<code>ln_srv_q</code> regardless of <code>srv_q_spec</code>.</p></dd>
+analytic forms use only the years with observations and fix that fleet's
+<code>ln_srv_q</code> regardless of <code>srv_q_spec</code>. The solve is done within
+each <code>srv_q_blocks</code> time block, so a blocked catchability gets one
+solved value per block. A single block, the default, is one value for the
+whole series.</p></dd>
 
 
 <dt id="arg-srv-sel-devs-spec">srv_sel_devs_spec<a class="anchor" aria-label="anchor" href="#arg-srv-sel-devs-spec"></a></dt>
@@ -383,7 +385,7 @@ objective only through the data and any explicit smoothness or centering
 penalties, which is how several existing assessments constrain them. Values
 other than 0 or 1 make an estimated process error sigma reinterpretable, so
 prefer 0 or 1 unless deliberately down-weighting. Applies only to
-<code>ln_srvsel_devs</code>; the bin-override deviations carry their own process
+<code>ln_srvsel_devs</code>; the bin-override deviations have their own process
 error and are not affected.</p></dd>
 
 
@@ -400,7 +402,7 @@ base parametric curve already describes the first year well.</p></dd>
 <dd><p>Character vector <code>[n_srv_fleets]</code> giving
 the process error on the bin-override deviations for each fleet:
 <code>"none"</code> (default), <code>"iid"</code>, or <code>"rw"</code>. A random walk
-carries its own estimated sigma per bin, with
+has its own estimated sigma per bin, with
 <code>srvsel_bin_devs_rw_init_sigma</code> governing its first year.</p></dd>
 
 
@@ -413,7 +415,7 @@ set of parameters named in <code>par</code>, which may be a single index or a
 list column of integer vectors naming a whole set. This pins the scalar of
 a non-parametric curve that catchability or fishing mortality would
 otherwise absorb, and is softer than fixing a bin outright. Intended for
-parameter sets held on the log scale. Default <code>NULL</code>.</p></dd>
+parameter sets kept on the log scale. Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-t-srv">t_srv<a class="anchor" aria-label="anchor" href="#arg-t-srv"></a></dt>
@@ -462,7 +464,7 @@ linking the sexes of a fleet's selectivity, for models with
 <code>n_sexes &gt; 1</code>. Options per fleet are <code>"none"</code> (default, each
 sex's stored parameters are its own), <code>"par"</code> (sexes beyond the first
 store additive offsets on the first sex's transformed-scale parameters),
-<code>"scale"</code> (sexes beyond the first carry an estimated constant
+<code>"scale"</code> (sexes beyond the first have an estimated constant
 log-scale offset on the whole realized curve), <code>"par_scale"</code> (both),
 <code>"apical"</code> (sexes beyond the first build their double normal's limbs
 up to an estimated height rather than to one, which moves the middle of

@@ -1,9 +1,9 @@
 # Dimensions of one at-age observation array
 
-Every at-age stream is stored region by year by season by age by sex by
-fleet, with a leading population dimension for the population-specific
-form. This is the layout of the prediction arrays the likelihood reads,
-so the two line up margin for margin.
+Every at-age data source is stored region by year by season by age by
+sex by fleet, with a leading population dimension for the
+population-specific form. This is the layout of the prediction arrays
+the likelihood reads, so the two line up dim for dim.
 
 ## Usage
 
@@ -23,7 +23,7 @@ at_age_dims(input_list, fleet_field, pop = FALSE)
 
 - pop:
 
-  Logical. `TRUE` for the population-specific stream.
+  Logical. `TRUE` for the population-specific data source.
 
 ## Value
 

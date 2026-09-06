@@ -17,7 +17,7 @@ Two case studies run the module end to end:
 [`vignette("ad_goa_rex_sole_case_study")`](https://chengmatt.github.io/SPoRC/dev/articles/ad_goa_rex_sole_case_study.md)
 for constant parametric growth with conditional age-at-length, and
 [`vignette("ae_ebs_pacific_cod_case_study")`](https://chengmatt.github.io/SPoRC/dev/articles/ae_ebs_pacific_cod_case_study.md)
-for time-varying growth carried cohort by cohort.
+for time-varying growth kept cohort by cohort.
 
 The examples use the packaged EBS Pacific cod inputs, which have length
 bins, a weight-length relationship and length compositions, so every
@@ -33,7 +33,7 @@ yrs <- dat$years; n_yrs <- length(yrs)
 ages <- dat$ages; n_ages <- length(ages)
 n_reg <- 1; n_sex <- 1
 
-# lens are the bin midpoints the population is carried on; the transition is
+# lens are the bin midpoints the population is kept on; the transition is
 # built on the lower edges, which is what growth_len_lower supplies
 input_list <- Setup_Mod_Dim(
   years = yrs, ages = ages, lens = dat$lens,
@@ -53,10 +53,9 @@ input_list <- Setup_Mod_Rec(
 
 ## Notation
 
-Every symbol used below. Growth parameters additionally carry
-population, region and sex subscripts $`p, r, s`$, which are dropped
-throughout because sharing across them is a separate choice
-(`growth_spec`).
+Every symbol used below. Growth parameters additionally have population,
+region and sex subscripts $`p, r, s`$, which are dropped throughout
+because sharing across them is a separate choice (`growth_spec`).
 
 | Symbol | Meaning | Kind |
 |----|----|----|
@@ -132,10 +131,10 @@ compositions identify the curve weakly, because a length distribution is
 a mixture over ages and abundance at age has to be separated from size
 at age. Conditional age-at-length constrains growth much more directly:
 a CAAL row is the age composition of the otoliths taken from one length
-bin, so it is informative about size at age and carries little
-information about abundance. If you have aged otoliths with their
-lengths, fit them as CAAL (`ObsSrv_caal`, `do_caal = 1`) rather than as
-marginal age compositions.
+bin, so it is informative about size at age and has little information
+about abundance. If you have aged otoliths with their lengths, fit them
+as CAAL (`ObsSrv_caal`, `do_caal = 1`) rather than as marginal age
+compositions.
 
 ## The curve and its anchors
 
@@ -246,7 +245,7 @@ spread of 0.35, normal with `growth_sd_type = "cv"` and lognormal with
 Bottom right: the resulting size-age transition, on a square root color
 scale.*
 
-Two parameters carry the spread, $`CV_{1}`$ and $`CV_{2}`$ at the two
+Two parameters hold the spread, $`CV_{1}`$ and $`CV_{2}`$ at the two
 reference ages, interpolated between them. `growth_cv_type` sets what
 the interpolation runs on:
 
@@ -315,7 +314,7 @@ second lifetime of $`a_{+}`$ years:
 
 The 0.2 is a fixed assumption about how fast numbers decline with age,
 not an estimated rate, and it sets how much weight the older and larger
-fish carry. $`\bar{L}_{+}`$ lies between $`\bar{L}(a_{+})`$ and
+fish have. $`\bar{L}_{+}`$ lies between $`\bar{L}(a_{+})`$ and
 $`L_{\infty}`$. `growth_plus_group = "curve"` uses $`\bar{L}(a_{+})`$
 directly.
 
@@ -459,7 +458,7 @@ $`\bar{L}_{y,a}`$, the size that cohort actually reached.
 
 ``` r
 
-# one curve per sex, shared across regions, with the second CV held fixed
+# one curve per sex, shared across regions, with the second CV kept fixed
 input_list <- Setup_Mod_Biologicals(
   input_list = input_list, ...,
   growth_model = "vb_schnute",
@@ -523,7 +522,7 @@ only the parameters you have a reason to move.
 
 `growth_tv_years` restricts each parameter’s deviations to given
 calendar years, as a vector applied to all of them or a list named per
-parameter. Deviations outside the range are held at zero. Use the years
+parameter. Deviations outside the range are kept at zero. Use the years
 in which the length data are informative.
 
 `growth_tv_link` sets the scale the deviation enters on. For a base
@@ -546,8 +545,8 @@ $`P_{y}`$ are reported as `growth_pars_y`.
 
 `growth_tv_sigma_spec` holds the process error standard deviations at
 their starting values (`"fix"`) or estimates them (`"est"`). The
-starting values are the first stream of `growth_pe_pars`, one slot per
-growth parameter. Fixing them makes the deviations a
+starting values are the first data source of `growth_pe_pars`, one slot
+per growth parameter. Fixing them makes the deviations a
 penalized-likelihood problem in which you set how much variation is
 allowed. Estimating them requires the deviations to be integrated out;
 see below.
@@ -572,14 +571,14 @@ from 2000 to make the mechanism visible. It is an illustration, not the
 assessment’s estimate.*
 
 `growth_tv_type = "curve"`, the default, reads every year’s sizes off
-that year’s curve. Nothing is carried between years: if $`K`$ drops,
-every age is immediately shorter, including fish that grew through
-twenty prior years. Use it when the deviations represent something
-acting on all ages at once, or when the curve describes the population
-sampled in a year rather than a growth process.
+that year’s curve. Nothing is kept between years: if $`K`$ drops, every
+age is immediately shorter, including fish that grew through twenty
+prior years. Use it when the deviations represent something acting on
+all ages at once, or when the curve describes the population sampled in
+a year rather than a growth process.
 
-`"cohort"` carries size at age forward instead. Writing $`g_{y}`$ for
-the growth increment over one year under year $`y`$’s parameters,
+`"cohort"` has size at age forward instead. Writing $`g_{y}`$ for the
+growth increment over one year under year $`y`$’s parameters,
 
 ``` math
 g_{y}(L) = \left[ L_{\infty,y}^{\rho_{y}} + \left( L^{\rho_{y}} - L_{\infty,y}^{\rho_{y}} \right)e^{-K_{y}} \right]^{1/\rho_{y}}
@@ -598,9 +597,9 @@ g_{y}\left( \bar{L}_{y,a-1} \right) & a^{\ast} < a < a_{+} \\[2ex]
 
 with $`a^{\ast}`$ the first age past $`A_{1}`$. Three things follow.
 Ages still in the linear phase take the length at $`A_{1}`$ their *birth
-year’s* parameters gave them, so a cohort born in a poor year carries
-that start forward. The plus group blends the cohort entering it with
-the fish already there by their numbers at age, which is the only place
+year’s* parameters gave them, so a cohort born in a poor year has that
+start forward. The plus group blends the cohort entering it with the
+fish already there by their numbers at age, which is the only place
 growth depends on abundance. And a poor growth year tracks the affected
 cohorts up through the ages for the rest of the series. Use it when the
 deviations represent conditions a fish lived through.
@@ -608,7 +607,7 @@ deviations represent conditions a fish lived through.
 Two consequences of `"cohort"`: because the plus group reads abundance,
 growth is evaluated inside the population dynamics year loop and the
 model costs more to tape; and $`c(x)`$ is evaluated once from the first
-year’s curve and then held while the mean moves, so the deviations
+year’s curve and then kept while the mean moves, so the deviations
 change mean size without also changing the spread.
 
 ## Semi-parametric growth
@@ -676,7 +675,7 @@ parameters for changes that can be attributed to a named mechanism and
 the surface for the residual, and avoid asking both to explain the same
 variation.
 
-### Why the two deviation streams are separate
+### Why the two deviation data sources are separate
 
 They are indexed over different dimensions and applied at different
 points:
@@ -695,20 +694,21 @@ propagation.
 Three things follow from that. The correlated process errors correlate
 over age, year and cohort, which is only meaningful when the index is
 age, so `"2dar1"` and the 3D forms are available to the surface and not
-to the parametric stream, where `"iid"` and `"rw"` are the only sensible
-structures. Cohort propagation works off the growth increment the year’s
-parameters imply, so it acts on the parametric stream; the surface
-multiplies in afterwards and is not carried forward. And parametric
-deviations keep size at age inside the curve’s shape, whereas the
-surface lets it leave.
+to the parametric data source, where `"iid"` and `"rw"` are the only
+sensible structures. Cohort propagation works off the growth increment
+the year’s parameters imply, so it acts on the parametric data source;
+the surface multiplies in afterwards and is not kept forward. And
+parametric deviations keep size at age inside the curve’s shape, whereas
+the surface lets it leave.
 
-The two streams do share one array, `growth_pe_pars`: slot `[,,,,1]`
-holds the time-varying standard deviations and `[,,,,2]` the surface’s
-hyperparameters, with slots a given form does not read mapped off.
+The two data sources do share one array, `growth_pe_pars`: slot
+`[,,,,1]` holds the time-varying standard deviations and `[,,,,2]` the
+surface’s hyperparameters, with slots a given form does not read mapped
+off.
 
 ## Deviations as random effects
 
-Both streams can be integrated out with the Laplace approximation
+Both data sources can be integrated out with the Laplace approximation
 instead of penalized, as selectivity deviations are in
 [`vignette("n_single_region_ebs_pollock_randomeff_case_study")`](https://chengmatt.github.io/SPoRC/dev/articles/n_single_region_ebs_pollock_randomeff_case_study.md).
 Pass the parameter name to
@@ -871,8 +871,8 @@ sampling.
   for constant parametric growth with conditional age-at-length in a
   two-region model.
 - [`vignette("ae_ebs_pacific_cod_case_study")`](https://chengmatt.github.io/SPoRC/dev/articles/ae_ebs_pacific_cod_case_study.md)
-  for Richards growth with time-varying parameters carried cohort by
+  for Richards growth with time-varying parameters kept cohort by
   cohort.
 - [`vignette("n_single_region_ebs_pollock_randomeff_case_study")`](https://chengmatt.github.io/SPoRC/dev/articles/n_single_region_ebs_pollock_randomeff_case_study.md)
-  for the random-effects machinery the growth deviations share with
+  for the random-effects routines the growth deviations share with
   selectivity.

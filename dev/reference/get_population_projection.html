@@ -91,6 +91,7 @@ here rather than derived from <code>NAA</code>.</p>
 <span>  <span class="va">rec_region_prop</span>,</span>
 <span>  <span class="va">rec_seas_prop</span>,</span>
 <span>  <span class="va">h_trans</span>,</span>
+<span>  R0_yr <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">natal_region</span>,</span>
 <span>  <span class="va">t_spawn</span>,</span>
 <span>  <span class="va">spawn_seas</span>,</span>
@@ -129,7 +130,8 @@ here rather than derived from <code>NAA</code>.</p>
 <span>  n_est_naa_re <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  ln_NAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  naa_re_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  naa_re_yrs <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  naa_re_yrs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  naa_re_seas <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -156,6 +158,13 @@ recruitment once per year ahead of the seasonal loop.</p></dd>
 <code>Get_Det_Recruitment</code>.</p></dd>
 
 
+<dt id="arg-r-yr">R0_yr<a class="anchor" aria-label="anchor" href="#arg-r-yr"></a></dt>
+<dd><p>Matrix <code>[n_pop x n_yrs]</code> of R0 by year when R0 has time
+blocks, or <code>NULL</code> to use the single <code>R0</code> in every
+year. Only the recruitment computed each year reads it; everything that needs one
+value still uses <code>R0</code>.</p></dd>
+
+
 <dt id="arg-ln-recdevs">ln_RecDevs<a class="anchor" aria-label="anchor" href="#arg-ln-recdevs"></a></dt>
 <dd><p>Array <code>[pop, region, year]</code> of log recruitment
 deviations; applied multiplicatively to deterministic recruitment for
@@ -173,7 +182,7 @@ weight-at-age and maturity-at-age.</p></dd>
 
 
 <dt id="arg-natmort">natmort<a class="anchor" aria-label="anchor" href="#arg-natmort"></a></dt>
-<dd><p>Array <code>[pop, region, year, age, sex]</code> of natural
+<dd><p>Array <code>[pop, region, year, season, age, sex]</code> of natural
 mortality at age.</p></dd>
 
 
@@ -252,8 +261,8 @@ dimension (retrospectives) must clamp it.</p></dd>
 <dt id="arg-growth-mortality-year-fn">growth_mortality_year_fn<a class="anchor" aria-label="anchor" href="#arg-growth-mortality-year-fn"></a></dt>
 <dd><p>Optional function of <code>(y, NAA_y, growth_mortality_state)</code> called at
 the top of every year with the numbers at age at the start of that year,
-array <code>[pop, region, age, sex]</code>, and the state carried from the
-previous year. It returns a list with <code>state</code>, carried forward to the
+array <code>[pop, region, age, sex]</code>, and the state kept from the
+previous year. It returns a list with <code>state</code>, advanced to the
 next call and returned to the caller, and <code>ZAA_y</code>, <code>WAA_y</code> and
 <code>MatAA_y</code>, the year's slices of total mortality, weight and maturity
 at age, which replace those handed in for that year. Passing the state in
@@ -261,7 +270,7 @@ and out keeps the per-year step a function of its arguments.</p></dd>
 
 
 <dt id="arg-growth-mortality-state">growth_mortality_state<a class="anchor" aria-label="anchor" href="#arg-growth-mortality-state"></a></dt>
-<dd><p>Initial state for <code>growth_mortality_year_fn</code>, carried through the
+<dd><p>Initial state for <code>growth_mortality_year_fn</code>, passed through the
 year loop and returned as <code>growth_mortality_state</code>. Ignored when
 <code>growth_mortality_year_fn</code> is <code>NULL</code>.
 This is how cohort growth, whose plus group blends by numbers, is evaluated
@@ -275,12 +284,15 @@ non-zero once the setup function has run at all.</p></dd>
 
 
 <dt id="arg-ln-naa">ln_NAA<a class="anchor" aria-label="anchor" href="#arg-ln-naa"></a></dt>
-<dd><p>Array <code>[pop, region, year, age, sex]</code> of log numbers at age,
-overwriting the deterministic prediction wherever the state is active.</p></dd>
+<dd><p>Array <code>[pop, region, year, season, age, sex]</code> of log numbers
+at the start of a season, overwriting the deterministic prediction wherever
+the state is active. Season one is the year boundary, after ageing and the
+plus group; later seasons are states on the within-year survival step.</p></dd>
 
 
-<dt id="arg-naa-re-ages-naa-re-yrs">naa_re_ages, naa_re_yrs<a class="anchor" aria-label="anchor" href="#arg-naa-re-ages-naa-re-yrs"></a></dt>
-<dd><p>Integer index vectors the state is active over.</p></dd>
+<dt id="arg-naa-re-ages-naa-re-yrs-naa-re-seas">naa_re_ages, naa_re_yrs, naa_re_seas<a class="anchor" aria-label="anchor" href="#arg-naa-re-ages-naa-re-yrs-naa-re-seas"></a></dt>
+<dd><p>Integer index vectors the state is
+active over.</p></dd>
 
 </dl></div>
     <div class="section level2">

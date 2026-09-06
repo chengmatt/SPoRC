@@ -71,7 +71,10 @@ SPoRC_rtmb.R.'><meta name="robots" content="noindex"></head><body>
 <dd><p>Data frame with columns <code>popblk</code>, <code>regionblk</code>,
 <code>yearblk</code>, <code>ageblk</code>, <code>sexblk</code> (block indices into
 <code>M_blocks</code>), <code>mu</code> (prior mean, natural scale), <code>sd</code> (prior
-SD, log scale), one row per penalized parameter.</p></dd>
+SD, log scale), one row per penalized parameter. An optional
+<code>seasblk</code> column names the season block the prior applies to; without
+it the prior reads the block covering the first season, which is every
+season when mortality does not vary within the year.</p></dd>
 
 
 <dt id="arg-ln-m">ln_M<a class="anchor" aria-label="anchor" href="#arg-ln-m"></a></dt>
@@ -80,8 +83,8 @@ SD, log scale), one row per penalized parameter.</p></dd>
 
 
 <dt id="arg-m-blocks">M_blocks<a class="anchor" aria-label="anchor" href="#arg-m-blocks"></a></dt>
-<dd><p>Array <code>[pop, region, year, age, sex]</code> mapping each
-population/region/year/age/sex cell to an index into <code>ln_M</code>.</p></dd>
+<dd><p>Array <code>[pop, region, year, season, age, sex]</code> mapping each
+population/region/year/season/age/sex cell to an index into <code>ln_M</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

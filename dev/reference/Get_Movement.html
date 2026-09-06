@@ -220,42 +220,22 @@ gradient \(\gamma_i - \gamma_j\) along the edge from \(j\) to \(i\) and
   <dt><code>"softplus"</code> (or <code>1</code>)</dt>
 <dd><p>softplus of \(\theta_j + d\) with
     width <code>ctmc_diffusion_eps</code>. Smooth, but an edge where taxis cancels
-    diffusion carries a floor of <code>eps * log(2)</code>.</p></dd>
+    diffusion has a floor of <code>eps * log(2)</code>, so the width is a
+    minimum exchange rate and not only a smoothing constant.</p></dd>
 
-  <dt><code>"clamp"</code></dt>
-<dd><p>hard positive part of \(\theta_j + d\). Same fit as
-    the softplus but the optimum sits on a kink, so gradient-based
-    convergence checks stop meaning anything.</p></dd>
-
-  <dt><code>"upwind"</code></dt>
+  <dt><code>"upwind"</code> (or <code>2</code>)</dt>
 <dd><p>discontinuous Galerkin / finite volume upwind flux,
-    \(q = \theta_j + \max(d, 0)\): diffusion is carried whole and only the
-    down-gradient half of the taxis flux is added, so positivity does not
-    depend on cancelling the two.</p></dd>
-
-  <dt><code>"barker"</code></dt>
-<dd><p>\(q = \theta_j\,\mathrm{logit}^{-1}(d)\). Positive
-    by construction with no floor and no kink; the rate is bounded by
-    \(\theta_j\), and \(q_{ij}/q_{ji} = e^d\) so preference is a log
-    density field with stationary abundance proportional to
-    \(\mathrm{area} \times e^{\gamma}\).</p></dd>
-
-  <dt><code>"logsoftplus"</code></dt>
-<dd><p>\(q = \theta_j \log(1 + e^{d})\). Positive by
-    construction, unbounded above, linear in the preference gradient once
-    taxis dominates.</p></dd>
+    \(q = \theta_j + \max(d, 0)\): diffusion is kept whole and only the
+    down-gradient half of the taxis flux is added, so positivity never depends
+    on the two cancelling.</p></dd>
 
 
-</dl><p><code>"barker"</code> and <code>"logsoftplus"</code> do not read <code>ctmc_diffusion_eps</code>
-at all.</p></dd>
+</dl></dd>
 
 
 <dt id="arg-ctmc-diffusion-eps">ctmc_diffusion_eps<a class="anchor" aria-label="anchor" href="#arg-ctmc-diffusion-eps"></a></dt>
 <dd><p>Positive numeric width of the softplus used when
-<code>ctmc_diffusion_bounds</code> is <code>"softplus"</code>. An edge where taxis exactly
-cancels diffusion carries <code>eps * log(2)</code>, so this is a floor on exchange
-and not only a smoothing width; smaller values approach a hard hinge and can
-underflow a shut edge to a gradient-dead exact zero. Default 0.1.</p></dd>
+<code>ctmc_diffusion_bounds</code> is <code>"softplus"</code>. Default 0.1.</p></dd>
 
 
 <dt id="arg-seasdur">seasdur<a class="anchor" aria-label="anchor" href="#arg-seasdur"></a></dt>
@@ -267,30 +247,13 @@ reproduces the unscaled behavior.</p></dd>
 
 <dt id="arg-ctmc-scale-by-seasdur">ctmc_scale_by_seasdur<a class="anchor" aria-label="anchor" href="#arg-ctmc-scale-by-seasdur"></a></dt>
 <dd><p>Integer flag controlling the time units of the CTMC
-  generator. <code>1</code> = treat \(Q\) as an annual rate and exponentiate
-  \(Q \cdot \mathrm{seasdur}[s]\) for each season; <code>0</code> = treat \(Q\) as
-  a per season rate and exponentiate it once per season irrespective of season
-  duration. Only affects <code>move_type == 1</code> with <code>n_seas &gt; 1</code>. Defaults
-  to <code>0</code> here so that callers passing an unscaled generator get the
-  arithmetic they expect; the user facing default is <code>1</code>, set by
-  <code>Setup_Mod_Movement</code>.</p>
-<p>Whether this flag changes the fit or only reparameterizes it depends on
-  whether the generator varies by season. With a season-agnostic generator it
-  matters: the seasonal steps commute, so scaling on composes across the year to
-  \(\exp(Q)\) regardless of <code>n_seas</code>, whereas scaling off composes to
-  \(\exp(n_{seas} Q)\) and inflates movement as the seasonal time step shrinks.
-  With a season-varying generator the scaling is absorbed — \(Q\) is linear in
-  \(\theta\), so scaling \(Q\) by <code>seasdur[s]</code> equals shifting
-  <code>log_move_diffusion_pars</code> by \(\tfrac{1}{2}\log \mathrm{seasdur}[s]\) —
-  but only if <em>both</em> formulas carry a season term, since the flag scales
-  diffusion and taxis together while only \(\theta\) can absorb it.</p>
-<p>Note that even where the scaling is absorbed, it changes what the estimated
-  diffusion means (per-season step vs annual rate, hence not comparable across
-  seasons of unequal length), and the Dirichlet movement prior is evaluated on
-  annual fractions \(\exp(Q)\) irrespective of this flag. Under
-  <code>move_timing = 2</code> the flag governs only the reported <code>Movement</code>
-  diagnostic: the dynamics take <code>Mrate</code> and apply <code>seasdur[seas]</code>
-  themselves.</p></dd>
+generator. <code>1</code> = treat \(Q\) as an annual rate and exponentiate
+\(Q \cdot \mathrm{seasdur}[s]\) for each season; <code>0</code> = treat \(Q\) as
+a per season rate and exponentiate it once per season irrespective of season
+duration. Only affects <code>move_type == 1</code> with <code>n_seas &gt; 1</code>. Defaults
+to <code>0</code> here so that callers passing an unscaled generator get the
+arithmetic they expect; the user facing default is <code>1</code>, set by
+<code>Setup_Mod_Movement</code>.</p></dd>
 
 
 <dt id="arg-expm-nsub">expm_nsub<a class="anchor" aria-label="anchor" href="#arg-expm-nsub"></a></dt>

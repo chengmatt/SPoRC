@@ -42,7 +42,7 @@ that might arise include:
     0/1-valued and marks which region/year/season/fleet cells actually
     have data and should enter the likelihood. Getting `Obs` shaped
     correctly is necessary but not sufficient. In particular, a cell
-    with `Obs == 0` because there’s genuinely no data there still needs
+    with `Obs == 0` because there’s no data there still needs
     `Use == 0`, or the model will interpret it as an observed zero.
 
 ## Worked example: fishery catch and age composition
@@ -144,8 +144,8 @@ UseFishAgeComps[1, , 1, 1] <- 1
 ## Age-disaggregated observations
 
 A fleet can fit catch, discards or an index **at age** instead of an
-aggregate with a composition beside it. The arrays carry an age
-dimension in front of the fleet, so `ObsCatch` at
+aggregate with a composition beside it. The arrays have an age dimension
+in front of the fleet, so `ObsCatch` at
 `[n_regions, n_years, n_seas, n_fish_fleets]` becomes `ObsCatchAA` at
 `[n_regions, n_years, n_seas, n_ages, n_fish_fleets]`, and the `_pop`
 variants add a leading population dimension.
@@ -175,10 +175,10 @@ for(i in seq_len(nrow(raw_caa))) {
 ```
 
 Two things to know before choosing this form. A fleet fits the
-aggregated stream or the at-age stream, never both, and supplying both
-is an error rather than a warning: they are the same information stated
-twice. And an age a fleet never observes should be left at
-`UseCatchAA == 0` rather than given a zero observation, since a
+aggregated data source or the at-age data source, never both, and
+supplying both is an error rather than a warning: they are the same
+information stated twice. And an age a fleet never observes should be
+left at `UseCatchAA == 0` rather than given a zero observation, since a
 structurally absent age is not a zero catch.
 
 ## Structuring tagging data
@@ -300,9 +300,9 @@ double-checking.
 - `Use` left out of sync with `Obs`. A zero in `Obs` is ambiguous
   between “we observed zero” and “we have no data here”; only `Use`
   disambiguates it. Building `Use` from `Obs > 0` (as above) is a
-  reasonable default only when a true zero-count observation genuinely
-  can’t occur in your data; otherwise set it explicitly from which cells
-  you actually sampled.
+  reasonable default only when a true zero-count observation cannot
+  occur in your data; otherwise set it explicitly from which cells you
+  actually sampled.
 - Sex order reversed. Because `n_sexes == 2` always means
   female-then-male, a reversed sex axis won’t error. It’ll just fit a
   model where sex-specific parameters are swapped.

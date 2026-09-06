@@ -145,7 +145,7 @@ reports over observed ages 2 to 45. Lengths run 15 to 45 cm.</p>
 <span><span class="va">yrs</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">years</span></span>
 <span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">yrs</span><span class="op">)</span></span>
 <span><span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">ages</span><span class="op">)</span></span></code></pre></div>
-<p>The object carries three kinds of content: the model inputs
+<p>The object has three kinds of content: the model inputs
 (<code>ObsCatch</code>, <code>WAA</code>, <code>ObsSrvIdx</code>, and so
 on), the ADMB maximum likelihood estimate in <code>dat$mle</code>, used
 both as a starting point and to verify the objective before any
@@ -185,7 +185,7 @@ recruit function:</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>R</mi></msub><mo>=</mo><mn>1.5</mn></mrow><annotation encoding="application/x-tex">\sigma_{R} = 1.5</annotation></semantics></math>
 fixed. There is no lognormal bias correction, so
 <code>do_rec_bias_ramp = 0</code> and the penalty is centered on zero,
-which is what the ADMB template does. Every year carries a deviation,
+which is what the ADMB template does. Every year has a deviation,
 including the terminal years, so <code>dont_est_recdev_last = 0</code>.
 The first year sits in an unfished equilibrium age structure with its
 own deviations, which is <code>init_age_strc = 1</code>, and spawning
@@ -252,12 +252,12 @@ standard deviation are the same statement up to a constant, related by
 so the weights enter through <code>ln_sigmaC</code> and
 <code>ln_sigmaF</code> rather than through a separate multiplier:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>ℓ</mi><mtext mathvariant="normal">Catch</mtext></msup><mo>=</mo><munder><mo>∑</mo><mi>y</mi></munder><msubsup><mi>w</mi><mi>y</mi><mtext mathvariant="normal">Catch</mtext></msubsup><msup><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><msubsup><mi>C</mi><mi>y</mi><mtext mathvariant="normal">obs</mtext></msubsup><mo>−</mo><mi mathvariant="normal">log</mi><msubsup><mi>C</mi><mi>y</mi><mtext mathvariant="normal">pred</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mo>,</mo><mspace width="2.0em"></mspace><msubsup><mi>σ</mi><mi>y</mi><mi>C</mi></msubsup><mo>=</mo><msqrt><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><msubsup><mi>w</mi><mi>y</mi><mtext mathvariant="normal">Catch</mtext></msubsup><mo stretchy="false" form="postfix">)</mo></mrow></msqrt></mrow><annotation encoding="application/x-tex">\ell^{\text{Catch}} = \sum_{y} w_{y}^{\text{Catch}}\left(\log C_{y}^{\text{obs}} - \log C_{y}^{\text{pred}}\right)^{2},\qquad \sigma_{y}^{C} = \sqrt{1/(2w_{y}^{\text{Catch}})}</annotation></semantics></math></p>
-<p>The reconstructed catches before 1978 carry a weight of
+<p>The reconstructed catches before 1978 have a weight of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>5</mn><annotation encoding="application/x-tex">5</annotation></semantics></math>
 and the observer era series a weight of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>50</mn><annotation encoding="application/x-tex">50</annotation></semantics></math>,
 which is the assessment’s way of saying the early series is less
-certain. The F deviations carry
+certain. The F deviations have
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>F</mi></msub><mo>=</mo><mn>1</mn><mi>/</mi><msqrt><mn>2</mn></msqrt></mrow><annotation encoding="application/x-tex">\sigma_{F} = 1/\sqrt{2}</annotation></semantics></math>
 with the overall weight of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.1</mn><annotation encoding="application/x-tex">0.1</annotation></semantics></math>
@@ -382,11 +382,11 @@ which is loose enough to let the data move it:</p>
 <div class="section level2">
 <h2 id="weighting">Weighting<a class="anchor" aria-label="anchor" href="#weighting"></a>
 </h2>
-<p>The survey index carries a weight of
+<p>The survey index has a weight of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.25</mn><annotation encoding="application/x-tex">0.25</annotation></semantics></math>
 and the F penalty a weight of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.1</mn><annotation encoding="application/x-tex">0.1</annotation></semantics></math>.
-Every composition source carries the assessment’s own multipliers, which
+Every composition source holds the assessment’s own multipliers, which
 ship in the data object.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
@@ -402,12 +402,11 @@ ship in the data object.</p>
 <div class="section level2">
 <h2 id="starting-at-the-admb-estimate">Starting at the ADMB estimate<a class="anchor" aria-label="anchor" href="#starting-at-the-admb-estimate"></a>
 </h2>
-<p>Before optimizing anything, it is worth checking that the model is
-reproduced <em>at a known point</em>. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.</p>
+<p>Before optimizing anything, check that the model is reproduced <em>at
+a known point</em>. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.</p>
 <p>Every parameter can be assigned directly here, because recruitment is
 a mean with deviations rather than a stock recruit function and nothing
 has to be solved by substitution. The initial age deviations were back
@@ -550,7 +549,7 @@ readable.</p>
 </table>
 <p><img src="figures/w_goa_nork_ts_comparison.png"></p>
 <p>Selectivity is time invariant in both fleets, so a single curve per
-gear carries everything.</p>
+gear has everything.</p>
 <p><img src="figures/w_goa_nork_sel_comparison.png"></p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

@@ -10,7 +10,7 @@ historical maximum \\F\\ (capped at 1). If no valid historical
 observations exist for a cell, ISS is set to zero. If conditions for
 scaling are not met (e.g., maximum historical \\F = 0\\), the mean
 historical ISS is used as a fallback. All prior years (`1:(y-1)`) are
-carried over unchanged from `ISS_FishComps`.
+reused unchanged from `ISS_FishComps`.
 
 ## Usage
 

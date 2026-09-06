@@ -3,11 +3,11 @@
 The factor behind
 [`build_us_corr`](https://chengmatt.github.io/SPoRC/dev/reference/build_us_corr.md),
 returned in its own right for callers that need to whiten rather than to
-form the correlation. Whitening a margin, \\z = L^{-1} x\\, is what lets
-a correlation over one margin compose with an arbitrary structure over
-the others: the transformed margin is independent, so each slice can
-then be scored by whatever density the remaining margins call for,
-separable or not.
+form the correlation. Whitening a dim, \\z = L^{-1} x\\, is what lets a
+correlation over one dim compose with an arbitrary structure over the
+others: the transformed dim is independent, so each slice can then be
+evaluated by whatever density the remaining dims call for, separable or
+not.
 
 ## Usage
 
@@ -23,7 +23,7 @@ build_us_chol(pars, n)
 
 - n:
 
-  Dimension of the margin.
+  Dimension of the dim.
 
 ## Value
 

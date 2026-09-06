@@ -40,6 +40,7 @@ n_yrs <- length(yrs)
 ages <- 0:4
 n_ages <- length(ages)
 n_seas <- 2
+seasdur <- c(0.5, 0.5)
 lhs <- sandeel_1r$lhs
 ```
 
@@ -59,7 +60,7 @@ input_list <- Setup_Mod_Dim(
   n_regions = 1,
   n_sexes = 1,
   n_seas = n_seas,
-  seasdur = c(0.5, 0.5),
+  seasdur = seasdur,
   n_fish_fleets = 2,
   n_srv_fleets = 2,
   verbose = TRUE
@@ -71,7 +72,7 @@ input_list <- Setup_Mod_Dim(
 Recruitment is a mean with annual deviations. `smsR` treats its as a
 hockey stick, but the population dynamics set recruitment to a free
 parameter each year and the hockey stick enters only as a penalty on
-those deviations, carrying a weight of 0.05. Spawning is at the start of
+those deviations, with a weight of 0.05. Spawning is at the start of
 season 1 and recruits enter in season 2, one season later.
 
 ``` r
@@ -97,19 +98,12 @@ input_list$map$ln_InitDevs <- factor(seq_along(input_list$map$ln_InitDevs))
 
 ## Biological dynamics
 
-`smsR` carries natural mortality as a free array over age, year and
-season. `SPoRC` builds seasonal mortality as an annual rate scaled by
-season duration, so a free seasonal array cannot currently represented.
-Setting the annual rate to the sum over seasons preserves the annual
-trajectory exactly, because spawning biomass is taken at the start of
-the spawning season and start of year numbers depend only on annual
-totals. Only the within season split is approximated, and that affects
-the observation layer rather than the trajectory.
-
-The recruitment age needs separate handling. Age 0 fish do not exist
-until season 2, so they are exposed to one season of mortality rather
-than two, and their annual rate is set so that the realized exposure
-matches.
+`smsR` stores natural mortality as a free array over age, year and
+season, and so does `SPoRC`. But `smsR` stores the mortality accumulated
+within a season, while `SPoRC` stores an instantaneous rate per year and
+multiplies it by the season’s duration. The rate is therefore the `smsR`
+number divided by that duration, and with two half-year seasons that is
+a factor of two.
 
 Maturity is doubled. `SPoRC` multiplies spawning biomass by 0.5 for
 single sex models, on the reasoning that a single sex model represents
@@ -121,7 +115,7 @@ the reason it is there.
 
 ``` r
 
-# smsR carries its biologicals as [age, year, season]. SPoRC wants
+# smsR stores its biologicals as [age, year, season]. SPoRC wants
 # [pop, region, year, season, age, sex], the same numbers with three dimensions
 # of length one, and one more for fleet on the weights a fleet sees.
 WAA      <- array(0, dim = c(1, 1, n_yrs, n_seas, n_ages, 1))
@@ -138,14 +132,12 @@ for(y in 1:n_yrs) {
   } # end seas loop
 } # end y loop
 
-# smsR carries natural mortality by season; SPoRC scales an annual rate by season
-# duration, so the annual sum preserves the annual trajectory...
+# smsR holds the mortality accumulated within each season. SPoRC parameterizes an
+# instantaneous rate per year and multiplies it by the season's duration ... 
 M_sms <- lhs$M[, 1:n_yrs, ]
-natmort <- array(0, dim = c(1, 1, n_yrs, n_ages, 1))
+natmort <- array(0, dim = c(1, 1, n_yrs, n_seas, n_ages, 1))
 for(y in 1:n_yrs) {
-  annual_M = M_sms[, y, 1] + M_sms[, y, 2]
-  annual_M[1] = M_sms[1, y, 2] / 0.5   # age 0 is only present in season 2
-  natmort[1, 1, y, , 1] = annual_M
+  for(seas in 1:n_seas) natmort[1, 1, y, seas, , 1] = M_sms[, y, seas] / seasdur[seas]
 } # end y loop
 
 input_list <- Setup_Mod_Biologicals(
@@ -190,7 +182,7 @@ an `NA`.
 ``` r
 
 # ages 1-2 and ages 3+ share a standard deviation, separately by season (fleets are defined as season x fishery fleet in this case to allow for seasonal selex)
-# the key is age by sex by fleet; this stock is single sex, so the sex margin is 1
+# the key is age by sex by fleet; this stock is single sex, so the sex dim is 1
 sigmaCAA_key <- array(c(NA, 1, 1, 2, 2,
                         NA, 3, 3, 4, 4), dim = c(n_ages, 1, 2))
 
@@ -257,7 +249,7 @@ where
 | $`E_{y,\tau}`$ | observed effort, a data series | median about 2100 |
 | $`S_{a,b(y)}`$ | fishery selectivity at age, constant within a block | 6 estimated values |
 | $`\mu_{f}`$ | log of the fleet’s scale, `ln_F_mean` | 2 estimated values |
-| $`\varepsilon_{y,\tau,f}`$ | fishing mortality deviation, `ln_F_devs` | held at $`\log E_{y,\tau}`$, not estimated |
+| $`\varepsilon_{y,\tau,f}`$ | fishing mortality deviation, `ln_F_devs` | kept at $`\log E_{y,\tau}`$, not estimated |
 
 Setting $`\varepsilon_{y,\tau,f} = \log E_{y,\tau}`$ and holding it
 there makes the two identical, because
@@ -292,7 +284,7 @@ input_list$par$ln_F_mean[] <- -5 # starting values ... for 'q'
 
 `smsR` zeroes fishing on age 0 through its age selectivity and shares
 selectivity across ages 3 and above. Both are set through the
-selectivity map: age 0 held at a value giving zero selection, and ages 3
+selectivity map: age 0 kept at a value giving zero selection, and ages 3
 and 4 sharing a parameter, in each of the two blocks.
 
 Also, `smsR` writes its age pattern relative to a reference: ages 3 and
@@ -310,7 +302,7 @@ $`\theta_{a,b}`$ the estimated parameter behind it. Because nothing is
 divided out, $`\theta = 0`$ is a selectivity of exactly one and a large
 negative $`\theta`$ is a selectivity of zero, so both of the things
 `smsR` fixes are set by fixing $`\theta`$ rather than by any extra
-machinery:
+routines:
 
 ``` math
 \theta_{0,b} = -10 \;\Rightarrow\; S_{0,b} \approx 0,
@@ -319,7 +311,7 @@ machinery:
 ```
 
 The first line is age 0, never fished. The second is block one’s
-reference, held at one so the level of fishing stays in $`q`$.
+reference, kept at one so the level of fishing stays in $`q`$.
 Everything else is estimated, and what it estimates is a ratio to that
 reference. Putting it together with the effort model above, fishing
 mortality at age is
@@ -329,7 +321,7 @@ F_{a,y,\tau} = \underbrace{\exp\!\left(\theta_{a,b(y)}\right)}_{S_{a,b(y)}}
 \; \underbrace{\exp\!\left(\mu_{f}\right)}_{q_{f}} \; E_{y,\tau}
 ```
 
-There is no fishery index here, so that stream is declared empty.
+There is no fishery index here, so that data source is declared empty.
 
 ``` r
 
@@ -448,7 +440,7 @@ sigmaSrvIdxAA_key[2, 1, 1] <- 1
 sigmaSrvIdxAA_key[2, 1, 2] <- 2
 sigmaSrvIdxAA_key[3:4, 1, 2] <- 3
 
-# The Dredge's age-0 value is held rather than estimated. Age 0 appears in this
+# The Dredge's age-0 value is kept rather than estimated. Age 0 appears in this
 # one index and nowhere else, and the recruitment deviations are free, so they
 # fit it exactly: the residual goes to zero and the likelihood is unbounded.
 sigmaSrvIdxAA_start <- array(log(0.5), dim = c(n_ages, 1, 2))
@@ -520,25 +512,24 @@ est <- fit_model(input_list$data, input_list$par, input_list$map,
                  random = NULL, newton_loops = 3, silent = F)
 ```
 
-| Quantity               | Correlation | Largest annual discrepancy |
-|------------------------|-------------|----------------------------|
-| Spawning biomass       | 0.9999      | 3.13 %                     |
-| Recruitment            | 0.9999      | 3.33 %                     |
-| Numbers at ages 1 to 4 | 1.0000      | 3.01 to 3.43 %             |
-| Fbar, ages 1 and 2     | 1.0000      | 0.64 %                     |
+| Quantity | Correlation | Median annual difference | Largest annual difference |
+|----|----|----|----|
+| Spawning biomass | 0.9989 | 2.18 % | 5.32 % |
+| Recruitment | 0.9993 | 3.70 % | 16.97 % |
+| Numbers at ages 1 to 4 | 0.9985 to 0.9994 | 3.58 to 4.22 % | 10.02 to 15.26 % |
+| Fbar, ages 1 and 2 | 0.9997 | 2.68 % | 3.27 % |
+
+Seeded at `smsR`’s own MLE rather than refitted, the population dynamics
+agree to 4e-11 %, so the table shows where the two likelihoods disagree,
+not where the population models do. The biggest recruitment differences
+land in the years the `smsR` hockey stick penalty pulls hardest, the
+structural difference noted below.
 
 ![](figures/ah_sandeel_ts_refit.png)
 
 ## Discrepancies
 
-Some things still differ from the reference smsR model.
-
-Seasonal natural mortality is approximated. `smsR` carries natural
-mortality as a free array over age, year and season, whereas `SPoRC`
-scales an annual rate by season duration. Setting the annual rate to the
-sum over seasons preserves the annual trajectory, and only the within
-season split differs.
-
-Also, the recruitment penalty is not the same statement. `smsR`
-penalizes its deviations towards a hockey stick at a weight of 0.05,
-while `SPoRC` assumes mean recruitment with some annual deviations.
+One thing still differs from the reference smsR model. The recruitment
+penalty is not the same: `smsR` penalizes its deviations towards a
+hockey stick at a weight of 0.05, while `SPoRC` assumes mean recruitment
+with annual deviations.

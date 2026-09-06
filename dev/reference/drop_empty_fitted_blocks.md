@@ -20,12 +20,12 @@ drop_empty_fitted_blocks(obs, use, bins_arr, bin_dim, what)
 
 - obs:
 
-  Observation array for the stream.
+  Observation array for the data source.
 
 - use:
 
-  Use-flag array for the stream, whose margins are `obs` without its bin
-  and sex dimensions.
+  Use-flag array for the data source, whose dims are `obs` without its
+  bin and sex dimensions.
 
 - bins_arr:
 
@@ -38,7 +38,7 @@ drop_empty_fitted_blocks(obs, use, bins_arr, bin_dim, what)
 
 - what:
 
-  Character. Stream name, used in the message.
+  Character. Data source name, used in the message.
 
 ## Value
 
@@ -47,10 +47,10 @@ drop_empty_fitted_blocks(obs, use, bins_arr, bin_dim, what)
 ## Details
 
 Clearing it changes nothing about the fit: the likelihood was already
-contributing zero for those blocks. It only stops the residual machinery
+contributing zero for those blocks. It only stops the residual routines
 inventing an observation that was never there. Anything cleared is
-reported, so a restriction that guts a stream is visible rather than
-silent.
+reported, so a restriction that guts a data source is visible rather
+than silent.
 
 A block counts as empty when it holds no finite values at all, exactly
 as when it sums to zero, since that is the test the likelihood's own

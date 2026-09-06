@@ -1,4 +1,4 @@
-# Delta method quadratic form
+# Delta method covariance of derived quantities
 
 Evaluates \\d \Sigma d'\\. A precision matrix is applied by solving, so
 the dense inverse is never built.

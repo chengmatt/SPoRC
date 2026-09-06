@@ -97,7 +97,7 @@ pack_comp_osa(
   relabeling of
   [`TMB::oneStepPredict()`](https://rdrr.io/pkg/TMB/man/oneStepPredict.html)
   residuals (see \[get_osa()\]); left `FALSE` (default) inside the model
-  itself to avoid the extra bookkeeping cost.
+  itself to avoid the extra residual tracking cost.
 
 - BinsArr:
 

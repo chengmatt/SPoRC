@@ -143,7 +143,7 @@ across dimensions abbreviated <code>r</code> (region), <code>seas</code>
 </tr>
 <tr class="odd">
 <td><code>"fix"</code></td>
-<td>Held at its starting value (not estimated)</td>
+<td>Kept at its starting value (not estimated)</td>
 </tr>
 </tbody>
 </table>
@@ -174,14 +174,14 @@ but far fewer ideas: most names are one of a handful of stems assembled
 from the same pieces. Reading the grammar is faster than reading the
 list, and it lets you derive a name rather than search for it.</p>
 <div class="section level4">
-<h4 id="a-data-streams-three-arrays">A data stream’s three arrays<a class="anchor" aria-label="anchor" href="#a-data-streams-three-arrays"></a>
+<h4 id="a-data-sources-three-arrays">A data source’s three arrays<a class="anchor" aria-label="anchor" href="#a-data-sources-three-arrays"></a>
 </h4>
-<p>Every observed stream is supplied as a triple, and the names differ
-only in the prefix.</p>
+<p>Every observed data source is supplied as a triple, and the names
+differ only in the prefix.</p>
 <table class="table">
 <thead><tr class="header">
 <th>Prefix</th>
-<th>Carries</th>
+<th>Has</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -194,24 +194,24 @@ only in the prefix.</p>
 </tr>
 <tr class="odd">
 <td><code>ISS_</code></td>
-<td>Input sample size, for composition streams</td>
+<td>Input sample size, for composition data sources</td>
 </tr>
 </tbody>
 </table>
 <p>So the fishery age compositions are <code>ObsFishAgeComps</code>,
 <code>UseFishAgeComps</code>, <code>ISS_FishAgeComps</code>, and the
 survey twins swap <code>Fish</code> for <code>Srv</code>. An
-<code>_SE</code> suffix carries observation error where a stream reports
-its own (<code>ObsSrvIdx_SE</code>).</p>
-<p>The <code>Use</code> array is the switch. A stream with data present
-and its <code>Use</code> flags at zero is carried through the model and
-contributes nothing, which is how a stream is turned off without
-removing it.</p>
+<code>_SE</code> suffix has observation error where a data source
+reports its own (<code>ObsSrvIdx_SE</code>).</p>
+<p>The <code>Use</code> array is the switch. A data source with data
+present and its <code>Use</code> flags at zero is passed through the
+model and contributes nothing, which is how a data source is turned off
+without removing it.</p>
 </div>
 <div class="section level4">
-<h4 id="how-a-stream-is-configured">How a stream is configured<a class="anchor" aria-label="anchor" href="#how-a-stream-is-configured"></a>
+<h4 id="how-a-data-source-is-configured">How a data source is configured<a class="anchor" aria-label="anchor" href="#how-a-data-source-is-configured"></a>
 </h4>
-<p>Four suffixes appear on nearly every stream.</p>
+<p>Four suffixes appear on nearly every data source.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -226,7 +226,7 @@ removing it.</p>
 <td><code>_Type</code></td>
 <td>How the observation is split across regions and sexes:
 <code>"agg"</code>, <code>"spltRaggS"</code>, <code>"aggRspltS"</code>,
-<code>"spltRspltS"</code> for at-age streams; <code>"agg"</code>,
+<code>"spltRspltS"</code> for at-age data sources; <code>"agg"</code>,
 <code>"spltRspltS"</code>, <code>"spltRjntS"</code>, <code>"none"</code>
 for compositions</td>
 </tr>
@@ -259,9 +259,9 @@ it. Later entries overwrite earlier ones where they overlap, so a
 general setting can be given first and a period carved out of it
 afterwards.</p>
 <p>The two families differ only in what a bare setting means.
-Composition and CAAL <code>_Type</code> strings must carry the range,
-and the bare setting on its own is rejected with an error naming the
-full form. At-age <code>_Type</code> strings accept either, so a bare
+Composition and CAAL <code>_Type</code> strings must hold the range, and
+the bare setting on its own is rejected with an error naming the full
+form. At-age <code>_Type</code> strings accept either, so a bare
 <code>"spltRaggS"</code> sets the whole series, one value per fleet sets
 each fleet’s whole series, and the grammar is needed only when the
 setting changes.</p>
@@ -269,20 +269,20 @@ setting changes.</p>
 <div class="section level4">
 <h4 id="two-infixes-that-multiply-the-surface">Two infixes that multiply the surface<a class="anchor" aria-label="anchor" href="#two-infixes-that-multiply-the-surface"></a>
 </h4>
-<p><code>AA</code> marks an age-disaggregated stream, fit age by age
-rather than as a total: <code>ObsCatch</code> against
+<p><code>AA</code> marks an age-disaggregated data source, fit age by
+age rather than as a total: <code>ObsCatch</code> against
 <code>ObsCatchAA</code>, with the configuration suffixes following
 (<code>CatchAA_Type</code>, <code>CatchAA_LikeType</code>,
 <code>CatchAA_sigma_form</code>, <code>sigmaCAA_spec</code>). A fleet
 fits one or the other, not both.</p>
-<p><code>_pop</code> marks the population-specific twin of a stream, fit
-for one population rather than summed across them. Over a hundred
-arguments are <code>_pop</code> variants, and every one of them is inert
-in a single-population model. <code>ObsSrvIdx</code> has
+<p><code>_pop</code> marks the population-specific twin of a data
+source, fit for one population rather than summed across them. Over a
+hundred arguments are <code>_pop</code> variants, and every one of them
+is inert in a single-population model. <code>ObsSrvIdx</code> has
 <code>ObsSrvIdx_pop</code>; <code>Wt_SrvIdx</code> has
 <code>Wt_SrvIdx_pop</code>; <code>rho_srv_idx_spec</code> has
 <code>rho_srv_idx_pop_spec</code>.</p>
-<p>The two compose, so a single stream can reach
+<p>The two compose, so a single data source can reach
 <code>ObsCatchAA_pop_SE</code>.</p>
 </div>
 <div class="section level4">
@@ -616,7 +616,7 @@ initial log numbers-at-age (ages 2+, apportioned by sex ratio), with age
 <p>Recommendations. Use the default <code>"matrix"</code> (2) for
 spatial models; <code>"scalar_no_move"</code> (1) is fine, and
 marginally cheaper, for single-region models. Use <code>"free"</code>
-(4) when the initial age structure carries no information about
+(4) when the initial age structure has no information about
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
 and should not be pulled toward an equilibrium, matching assessments in
 which initial numbers-at-age are freely estimated parameters. Note two
@@ -764,11 +764,13 @@ prior calibrated for one should not be reused for the other</td>
 </tr>
 </tbody>
 </table>
-<p><code>SR_ref_yr</code> sets the year index whose biological inputs
-(WAA, maturity,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>,
-movement) feed the unfished spawning-biomass-per-recruit calculation,
-and hence
+<p><code>SR_ref_yr</code> sets the year index whose inputs feed the
+unfished spawning-biomass-per-recruit calculation. That is
+<em>every</em> input to it, not only weight-at-age and maturity: natural
+mortality, movement, stray rate, sex ratio, and the selectivity, discard
+mortality and continuous-movement rate that enter through
+<code>init_F</code> all come from that year, in the operating model as
+well as the estimation model, and hence
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_0</annotation></semantics></math>
 and the scale of the stock-recruit curve. Default <code>1</code> (first
 model year, the long-standing behavior); set <code>length(years)</code>
@@ -779,6 +781,44 @@ different
 pick whichever the assessment you are bridging or the reference-point
 convention you follow uses, and keep it consistent with how reference
 points are computed.</p>
+<p><code>SR_ref_yr</code> fixes everything in the per-recruit part; the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+that multiplies spawning biomass per recruit to give
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_0</annotation></semantics></math>
+is always the year’s own value, and it is the same
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+the curve’s numerator uses. The two are one argument in the code and
+cannot be split: steepness is recruitment at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.2</mn><mspace width="0.167em"></mspace><msub><mi>S</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">0.2\,S_0</annotation></semantics></math>
+as a fraction of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>,
+so drawing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_0</annotation></semantics></math>
+from a different year’s
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+would leave the unfished state off the curve. With
+<code>R0_blocks</code> of 5 then 12 and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>ϕ</mi><mn>0</mn></msub><mo>=</mo><mn>2.5</mn></mrow><annotation encoding="application/x-tex">\phi_0 = 2.5</annotation></semantics></math>,
+building
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_0</annotation></semantics></math>
+from the first block while the numerator uses the second returns 12.8 at
+the second block’s unfished biomass instead of 12. So: reference-year
+biologicals for the per-recruit part, current-year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+for the scale.</p>
+<p>The consequence of that, when <code>R0_blocks</code> is used with a
+stock-recruit form, is that a block rescales the entire curve, so
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_0</annotation></semantics></math>,
+depletion, and any reference point derived from the curve step at the
+block boundary. That is the intended reading of “the curve’s scale is
+time-varying”, but it is a strong statement and worth being deliberate
+about. Under <code>rec_model = "mean_rec"</code> it does not arise. And
+a curve fitted as a <em>penalty</em> on mean-recruitment residuals
+(<code>sr_penalty</code> with <code>sr_R0_spec = "shared"</code>) takes
+its scale from <code>R0_ref_block</code>, one fixed value, so the
+diagnostic curve stays put while the blocked
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+drives recruitment.</p>
 </div>
 <div class="section level4">
 <h4 id="density-dependence-scope-rec_dd">Density dependence scope (<code>rec_dd</code>)<a class="anchor" aria-label="anchor" href="#density-dependence-scope-rec_dd"></a>
@@ -961,13 +1001,36 @@ with <code>ln_global_R0</code> governing only the recruitment
 relationship.</td>
 </tr>
 <tr class="odd">
-<td>
-<code>Use_rinit_pen</code>, <code>rinit_pen_sd</code>
-</td>
-<td>0/1 and a standard deviation. With <code>use_rinit = 1</code> the
-two recruitment levels are linked only through the data, and the initial
-age structure is often the thinnest part of it. <code>1</code> places a
-normal on
+<td><code>R0_blocks</code></td>
+<td>Time blocks for R0, one entry per population:
+<code>"none_Pop_&lt;p&gt;"</code> (default) or
+<code>"Block_&lt;b&gt;_Year_&lt;a&gt;-&lt;e&gt;_Pop_&lt;p&gt;"</code> in
+1-based year indices with <code>"terminal"</code> allowed. Under
+<code>rec_model = "mean_rec"</code> R0 IS mean recruitment, so a block
+is a productivity regime; under a stock-recruit form it is the curve’s
+scale, so blocking makes the curve time-varying</td>
+</tr>
+<tr class="even">
+<td><code>R0_ref_block</code></td>
+<td>Which block supplies R0 wherever a single value is needed rather
+than a year’s value: the initial age structure, the regional
+apportionment, the R0 prior, the <code>ln_rinit</code> penalty, and the
+stock-recruit scale under <code>sr_R0_spec = "shared"</code>. Default
+1</td>
+</tr>
+</tbody>
+</table>
+<p>A simulation self-test is worth reading before relying on R0 blocks.
+With a doubling of productivity partway through a 30-year series,
+hand-placed blocks recovered R0 as 4.49 and 12.12 against a truth of 5
+and 12 and cut the median SSB error from -10.3% to -6.3%. R0 and the
+recruitment deviations are partly confounded under mean recruitment, and
+the deviations absorb much of a regime a block is trying to capture, so
+place blocks on years you have an external reason to suspect. |
+<code>Use_rinit_pen</code>, <code>rinit_pen_sd</code> | 0/1 and a
+standard deviation. With <code>use_rinit = 1</code> the two recruitment
+levels are linked only through the data, and the initial age structure
+is often the thinnest part of it. <code>1</code> places a normal on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">rinit</mtext><mi>/</mi><msub><mi>R</mi><mn>0</mn></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(\text{rinit}/R_0)</annotation></semantics></math>,
 reported as <code>rinit_nLL</code>, saying how far the stock’s
 equilibrium recruitment may have sat from the level the modeled years
@@ -977,15 +1040,11 @@ rather than one, so its spread is narrower than
 A reasonable choice is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>R</mi></msub><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mi>/</mi><mi>M</mi><mo>−</mo><mn>0.5</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\sigma_R/(1/M - 0.5)</annotation></semantics></math>,
 the recruitment variability shrunk by the number of year classes the
-equilibrium averages over</td>
-</tr>
-</tbody>
-</table>
+equilibrium averages over |</p>
 <p>A deviation shared across cells of the parameter array through the
 map (<code>est_shared_pop_r</code>, <code>est_shared_r</code>,
 <code>est_shared_s</code>, <code>init_age_devs_shared</code>) is one
-parameter and carries one penalty: each cell the penalty loop visits
-takes
+parameter and has one penalty: each cell the penalty loop visits takes
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">1/n</annotation></semantics></math>
 of it,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
@@ -1037,11 +1096,11 @@ choice when
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>R</mi></msub><annotation encoding="application/x-tex">\sigma_R</annotation></semantics></math>
 is estimated or the deviations are treated as random effects: the
 penalty is then a genuine distributional assumption, and the bias ramp
-machinery depends on the mean being asserted. <code>"own_mean"</code> is
+routines depends on the mean being asserted. <code>"own_mean"</code> is
 primarily a <em>bridging</em> device: it reproduces assessments where
 the mean parameter (<code>ln_global_R0</code>, <code>ln_F_mean</code>)
-carries the level and the deviations carry only shape, so the level is
-not penalized twice. Two cautions: under <code>"own_mean"</code> the
+holds the level and the deviations have only shape, so the level is not
+penalized twice. Two cautions: under <code>"own_mean"</code> the
 deviations’ level must be pinned elsewhere (an
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
 prior, a fixed deviation, or informative data) or the likelihood is flat
@@ -1096,17 +1155,17 @@ residuals about the predicted curve, so a model that also wants the
 <em>realized</em> recruitment series to stay regular has nowhere else to
 say so. This penalty is that second, independent statement, and
 reproduces the recruitment regularity penalties several existing
-assessments carry (e.g., a penalty on log recruitment variability).
-Leave it off unless recruitment in data-poor years is wandering
-unreasonably; it is a tuning penalty, not a probability model, and it
-will shrink genuine recruitment variability if over-weighted (hence the
+assessments have (e.g., a penalty on log recruitment variability). Leave
+it off unless recruitment in data-poor years is wandering unreasonably;
+it is a tuning penalty, not a probability model, and it will shrink
+genuine recruitment variability if over-weighted (hence the
 <code>rec_level_pen_sigma</code> is left as data rather than an
 estimated parameter).</p>
 </div>
 <div class="section level4">
 <h4 id="initial-age-deviations-tie-between-sexes">Initial age deviations, tie between sexes<a class="anchor" aria-label="anchor" href="#initial-age-deviations-tie-between-sexes"></a>
 </h4>
-<p>When the sexes carry their own initial age curves
+<p>When the sexes have their own initial age curves
 (<code>InitDevs_sex_spec = "est_all"</code>), a second statement can be
 made about them: not how variable each curve is (that is the initial-age
 penalty) but how far apart the two curves may sit,</p>
@@ -1144,10 +1203,10 @@ Default 1</td>
 the objective unweighted (reported as <code>Init_Sex_nLL</code>). Its
 natural use is the one flatfish assessments put it to: male and female
 initial numbers are estimated separately, the first few years of
-compositions are all that informs them, and the tie keeps the two from
-drifting apart where those data are thin. Like the recruitment level
-penalty it is a tuning prior rather than a probability model, so its
-sigma is held as data.</p>
+compositions are all that informs them, and the tie keeps the two
+together where those data are thin. Like the recruitment level penalty
+it is a tuning prior rather than a probability model, so its sigma is
+kept as data.</p>
 </div>
 <div class="section level4">
 <h4 id="stock-recruit-curve-as-a-penalty">Stock-recruit curve as a penalty<a class="anchor" aria-label="anchor" href="#stock-recruit-curve-as-a-penalty"></a>
@@ -1185,7 +1244,7 @@ and setup rejects the combination</td>
 <td><code>sr_pen_sigma</code></td>
 <td>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mtext mathvariant="normal">SR</mtext></msub><annotation encoding="application/x-tex">\sigma_{\text{SR}}</annotation></semantics></math>,
-the standard deviation of the residual. Held as data rather than
+the standard deviation of the residual. Kept as data rather than
 estimated. Default 1</td>
 </tr>
 <tr class="odd">
@@ -1233,9 +1292,9 @@ rather than on an unfished level. Default</td>
 <tr class="even">
 <td><code>"est"</code></td>
 <td>The curve’s own estimated <code>ln_sr_R0</code>, identified by the
-curve fit alone. Reproduces templates carrying separate mean-recruitment
-and unfished-recruitment parameters, though nothing ties the two
-together, so the pair can slide</td>
+curve fit alone. Reproduces templates with separate mean-recruitment and
+unfished-recruitment parameters, though nothing ties the two together,
+so the pair can slide</td>
 </tr>
 <tr class="odd">
 <td><code>"rinit"</code></td>
@@ -1263,8 +1322,8 @@ reported as <code>SR_pred</code> and its penalty as
 <code>SR_pen_nLL</code>; see <code><a href="../articles/d_model_report.html">vignette("d_model_report")</a></code>.
 MSY is the maximum of equilibrium yield over a curve that drives the
 dynamics, and this curve does not, so
-<code><a href="../reference/Get_Reference_Points.html">Get_Reference_Points()</a></code> refuses an MSY request on a fit
-carrying the penalty and directs it to the SPR variants.</p>
+<code><a href="../reference/Get_Reference_Points.html">Get_Reference_Points()</a></code> refuses an MSY request on a fit with
+the penalty and directs it to the SPR variants.</p>
 </div>
 <div class="section level4">
 <h4 id="recruitment-penalty-weighting-setup_mod_weighting">Recruitment penalty weighting
@@ -1412,13 +1471,13 @@ default:</p>
 </table>
 <p>The support matters, not just the mean and SD: a beta on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0,1)</annotation></semantics></math>
-is a genuinely different function of
+is a different function of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>h</mi><annotation encoding="application/x-tex">h</annotation></semantics></math>
 than one on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mn>0.2</mn><mo>,</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">(0.2,1)</annotation></semantics></math>
-(it carries
+(it has
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(h)</annotation></semantics></math>
-where the rescaled form carries
+where the rescaled form has
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>h</mi><mo>−</mo><mn>0.2</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(h - 0.2)</annotation></semantics></math>),
 and no choice of shape parameters reconciles the two. When bridging an
 assessment, match its prior’s support via
@@ -1603,7 +1662,7 @@ and length-based selectivity</a>)</td>
 <td><code>"nonparfree"</code></td>
 <td>Non-parametric on the log scale with no standardization at all:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>θ</mi><mtext mathvariant="normal">bin</mtext></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\theta_\text{bin})</annotation></semantics></math>,
-so the values carry the height of the curve as well as its shape</td>
+so the values hold the height of the curve as well as its shape</td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub><annotation encoding="application/x-tex">n_\text{bins}</annotation></semantics></math></td>
 </tr>
 <tr class="odd">
@@ -1640,7 +1699,7 @@ year-node grid</td>
 </table>
 <p>The three non-parametric forms differ only in what happens after the
 transform, and that difference is what decides whether selectivity can
-carry a scale. Write
+have a scale. Write
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi></mrow></msub><annotation encoding="application/x-tex">\theta_{a,b}</annotation></semantics></math>
 for the estimated parameter at bin
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
@@ -1682,17 +1741,16 @@ every
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>θ</mi><mrow><mi>a</mi><mo>,</mo><mi>b</mi></mrow></msub><annotation encoding="application/x-tex">\theta_{a,b}</annotation></semantics></math>
 is a selectivity in its own right and the level is estimated along with
 the shape.</p>
-<p>That last point is the practical one. A standardized form cannot hold
-a level, so the level has to live somewhere else, in catchability or in
-the fishing mortality mean. A free form can hold it, which is what makes
-it the right choice for an index fit age by age, where the age
-multiplier is the whole quantity being estimated. It is also what makes
-it possible to estimate a level twice by accident: if selectivity
-carries a level <em>and</em> the mean it multiplies is free, the two
-trade a common factor, the Hessian stops being positive definite, and
-the selectivity standard errors inflate while the fitted trajectory
-looks fine. Pin one bin, or one block’s reference group, by leaving it
-out of <code>*_sel_nonpar_est_bins</code>.</p>
+<p>A standardized form cannot hold a level, so the level then sits in
+catchability or in the fishing mortality mean. A free form can hold it,
+which is why an index fit age by age uses one: the age multiplier is the
+whole quantity being estimated. It also makes it possible to estimate a
+level twice by accident: if selectivity has a level <em>and</em> the
+mean it multiplies is free, the two trade a common factor, the Hessian
+stops being positive definite, and the selectivity standard errors
+inflate while the fitted trajectory looks fine. Pin one bin, or one
+block’s reference group, by leaving it out of
+<code>*_sel_nonpar_est_bins</code>.</p>
 <p>Choosing among the three non-parametric forms. <code>"nonpar"</code>
 bounds every raw value below one (logistic transform) and
 mean-standardizes jointly over years and bins; <code>"nonparlog"</code>
@@ -1705,8 +1763,8 @@ centering penalty (below) or fix a bin group via
 <code>"nonpar"</code> when you want selectivity interpretable as a
 proportion without further constraints.</p>
 <p><code>"nonparfree"</code> does not standardize at all, so its values
-hold the level as well as the shape. That is what an index fit age by
-age needs: a free catchability per age and a selectivity estimated at
+hold the level as well as the shape. An index fit age by age needs
+exactly that: a free catchability per age and a selectivity estimated at
 age are one quantity written two ways, so an at-age index puts the whole
 age multiplier in selectivity and leaves catchability alone. Group ages
 the way a catchability key would through
@@ -1716,7 +1774,7 @@ leaving it free and uninformed. Because nothing is canceled by
 standardization, <code>"nonparfree"</code> also accepts a
 <code>"scale"</code> sex offset, which <code>"nonpar"</code> and
 <code>"nonparlog"</code> refuse. Do not pair it with the centering
-penalty!</p>
+penalty.</p>
 </div>
 <div class="section level4">
 <h4 id="bicubic-spline-selectivity-bicubic">Bicubic spline selectivity (<code>"bicubic"</code>)<a class="anchor" aria-label="anchor" href="#bicubic-spline-selectivity-bicubic"></a>
@@ -1756,14 +1814,14 @@ edge-holding (flat-lining) outside it:</p>
 <code>_SelStyr_&lt;year&gt;</code>: a calendar year within the
 block. Only years from <code>SelStyr</code> through the block’s end are
 actually spline-fit across the year dimension; years within the block
-before <code>SelStyr</code> are held constant at the
+before <code>SelStyr</code> are kept constant at the
 <code>SelStyr</code> year’s fitted curve (“previous years are
 filled”).</li>
 <li>
 <code>_NSelBins_&lt;n&gt;</code>: restricts the spline fit to the
 first <code>n</code> bins (ages or lengths, per
 <code>fish_selex_type</code>/<code>srv_selex_type</code>). Bins beyond
-<code>n</code> are held constant at the last fitted bin’s value (a
+<code>n</code> are kept constant at the last fitted bin’s value (a
 plateau), rather than continuing the spline extrapolation.</li>
 </ul>
 <p>Both suffixes only change which years/bins are considered part of the
@@ -1932,7 +1990,7 @@ described by a parametric form except for one bin governed by
 a trawl survey varying with year-class strength). Overriding that bin
 gives it free annual variation without abandoning the parametric form
 (or paying for a full semi-parametric surface) elsewhere. Give the
-override <code>"rw"</code> process error unless the bin genuinely jumps
+override <code>"rw"</code> process error unless the bin jumps
 independently between years; with <code>"none"</code>, each year’s value
 is informed only by that year’s compositions and can be poorly
 determined in sparse years.</p>
@@ -2023,9 +2081,9 @@ selectivity parameters are estimated:</p>
 <code>_NSelBins_&lt;n&gt;</code> suffix
 (e.g. <code>"logist1_Fleet_1_NSelBins_17"</code>, composable with
 <code>_Block_&lt;b&gt;</code> in either order): bins beyond
-<code>n</code> are held at bin <code>n</code>’s computed value rather
+<code>n</code> are kept at bin <code>n</code>’s computed value rather
 than evaluated through the form. This is the plateau convention many
-existing assessments carry, where selectivity is the functional form up
+existing assessments have, where selectivity is the functional form up
 to a chosen bin and constant after it. The bicubic form already had this
 suffix and builds its plateau into its spline weights; for every other
 form the hold is applied after the form and its parameter deviations,
@@ -2103,7 +2161,7 @@ sex-shared parameters, so the option nests <code>"est_shared_s"</code>
 while letting the link be estimated; no new parameters are involved, the
 existing sex slots simply change meaning. Under <code>"scale"</code>,
 the offset is a log-scale constant on the whole curve, which is how
-several existing assessments carry a male selectivity offset; because a
+several existing assessments have a male selectivity offset; because a
 constant multiplier is canceled by mean standardization, setup refuses
 <code>"scale"</code> for the non-parametric forms
 (<code>"nonpar"</code>, <code>"nonparlog"</code>) and the
@@ -2132,7 +2190,7 @@ parameter is the selectivity at a bin the data inform, and every bin
 below it takes
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="false" form="prefix">(</mo><mi>b</mi><mi>/</mi><msub><mi>b</mi><mtext mathvariant="normal">start</mtext></msub><msup><mo stretchy="false" form="postfix">)</mo><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">(b/b_{\text{start}})^{2}</annotation></semantics></math>
 times the selectivity there. Set it to the first bin the compositions
-carry whenever those start above the population’s first bin.</p>
+have whenever those start above the population’s first bin.</p>
 <p>Unanchored limbs. <code>fish_sel_dbnrml_raw</code> and
 <code>srv_sel_dbnrml_raw</code> (0/1 matrices, one row per fleet,
 columns for the ascending and descending limbs) leave a limb as the raw
@@ -2155,8 +2213,8 @@ maximum, or to the mean across a bin range. When
 <code>fit_lengths = 1</code>, selectivity operates on length bins and is
 mapped to age-space via a user-supplied size-age transition matrix
 (<code>SizeAgeTrans</code>).</p>
-<p>The <code>"nonparlog"</code> form carries its own standardization:
-each year’s curve is divided by the mean of
+<p>The <code>"nonparlog"</code> form has its own standardization: each
+year’s curve is divided by the mean of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>θ</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(\theta)</annotation></semantics></math>
 over a window of bins
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ℬ</mi><annotation encoding="application/x-tex">\mathcal{B}</annotation></semantics></math>,</p>
@@ -2278,12 +2336,12 @@ that year’s fishing mortality)</td>
 <p>Per-fleet specifications. A single named specification is shared by
 every fleet; alternatively, pass an <em>unnamed list</em> with one named
 specification per fleet (use <code><a href="https://rdrr.io/r/base/list.html" class="external-link">list()</a></code> or <code>NULL</code>
-for fleets with no penalties) so, e.g., two surveys can carry different
+for fleets with no penalties) so, e.g., two surveys can have different
 smoothing.</p>
 <p>Per-year weights, bin ranges, and normalization. Each weight may also
 be a vector with one value per model year (<code>0</code> skips that
 year), so a penalty can act only in years where selectivity changes, or
-with year-specific strength. A specification may additionally carry:</p>
+with year-specific strength. A specification may additionally have:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -2369,7 +2427,7 @@ or
 </tr>
 <tr class="odd">
 <td><code>"fix"</code></td>
-<td>Held at user-supplied value</td>
+<td>Kept at user-supplied value</td>
 </tr>
 </tbody>
 </table>
@@ -2420,23 +2478,38 @@ index</td>
 </tr>
 </tbody>
 </table>
-<p>Both analytic forms solve one
+<p>Both analytic forms use only the years with observations and
+automatically fix that fleet’s catchability parameter regardless of
+<code>srv_q_spec</code> / <code>fish_q_spec</code>; they are
+incompatible with catchability covariates and priors on that fleet.</p>
+<p>The solve is done <strong>within each catchability time
+block</strong>. A fleet with a single block, the default, gets one
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
-per region and fleet from only the years with observations, ignore block
-structure, and automatically fix that fleet’s catchability parameter
-regardless of <code>srv_q_spec</code> / <code>fish_q_spec</code>; they
-are incompatible with catchability covariates and priors on that
-fleet.</p>
+for the whole series; a fleet with
+<code>srv_q_blocks = c("Block_1_Year_1-30_Fleet_1", "Block_2_Year_31-terminal_Fleet_1")</code>
+gets two, each from the observations its own block owns. Writing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">w_b(i)</annotation></semantics></math>
+for the weight block
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>b</mi><annotation encoding="application/x-tex">b</annotation></semantics></math>
+has on observation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>i</mi><annotation encoding="application/x-tex">i</annotation></semantics></math>,
+which is one for the observations in that block and zero elsewhere:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mover><mi>q</mi><mo accent="true">̂</mo></mover><mi>b</mi><mrow><mspace width="0.167em"></mspace><mtext mathvariant="normal">arith</mtext></mrow></msubsup><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>w</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><msub><mi>o</mi><mi>i</mi></msub></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>w</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><msub><mi>p</mi><mi>i</mi></msub></mrow></mfrac><mo>,</mo><mspace width="2.0em"></mspace><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msubsup><mover><mi>q</mi><mo accent="true">̂</mo></mover><mi>b</mi><mrow><mspace width="0.167em"></mspace><mtext mathvariant="normal">geo</mtext></mrow></msubsup><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>w</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo><mrow><mo stretchy="true" form="prefix">(</mo><mi mathvariant="normal">log</mi><msub><mi>o</mi><mi>i</mi></msub><mo>−</mo><mi mathvariant="normal">log</mi><msub><mi>p</mi><mi>i</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><mrow><munder><mo>∑</mo><mi>i</mi></munder><msub><mi>w</mi><mi>b</mi></msub><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mrow><annotation encoding="application/x-tex">\hat q_b^{\,\text{arith}}=\frac{\sum_i w_b(i)\,o_i}{\sum_i w_b(i)\,p_i}, \qquad \log \hat q_b^{\,\text{geo}}=\frac{\sum_i w_b(i)\left(\log o_i-\log p_i\right)}{\sum_i w_b(i)}</annotation></semantics></math></p>
+<p>A block that owns no observations has nothing to solve from and takes
+the pooled value over the whole series.</p>
 <p>Recommendations. Use <code>"geo"</code> with a lognormal index
 likelihood: it is the exact maximum-likelihood solution under a shared
 SE, removes one ridge-prone parameter per fleet, and typically speeds
 and stabilizes optimization. <code>"arith"</code> exists to match
-assessments that use the arithmetic ratio. Stay with <code>"est"</code>
-whenever you need a
+assessments that use the arithmetic ratio. Blocks are the way to let a
+solved
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
-prior, covariates, time blocks, or when the index’s absolute scale is
-genuinely informative (e.g., a swept-area survey with a strong prior
-near 1, where concentrating
+shift: they cost nothing and the solve stays exact within each block.
+Stay with <code>"est"</code> whenever you need a
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
+prior, covariates, or when the index’s absolute scale is informative
+(e.g., a swept-area survey with a strong prior near 1, where
+concentrating
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>q</mi><annotation encoding="application/x-tex">q</annotation></semantics></math>
 out would discard that information).</p>
 </div>
@@ -2500,16 +2573,56 @@ across the defined block structure</td>
 <tr class="even">
 <td><code>"fix"</code></td>
 <td>Fix at values supplied via <code>Fixed_natmort</code> (array
-<code>[p × r × y × a × s]</code>)</td>
+<code>[p × r × y × a × s]</code>, or
+<code>[p × r × y × seas × a × s]</code> when the rate differs between
+seasons)</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level4">
+<h4 id="what-the-value-means">What the value means<a class="anchor" aria-label="anchor" href="#what-the-value-means"></a>
+</h4>
+<p><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
+is a rate per year, and mortality within a season is that rate times the
+season’s duration. Four equal seasons at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>M</mi><mo>=</mo><mn>0.2</mn></mrow><annotation encoding="application/x-tex">M = 0.2</annotation></semantics></math>
+removes
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.05</mn><annotation encoding="application/x-tex">0.05</annotation></semantics></math>
+per season and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.2</mn><annotation encoding="application/x-tex">0.2</annotation></semantics></math>
+over the year, same as a single season model. Adding the season axis
+changed none of that.</p>
+<p>So a rate is not a share. Two half-year seasons at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.2</mn><annotation encoding="application/x-tex">0.2</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.4</mn><annotation encoding="application/x-tex">0.4</annotation></semantics></math>
+accumulate
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.1</mn><annotation encoding="application/x-tex">0.1</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.2</mn><annotation encoding="application/x-tex">0.2</annotation></semantics></math>,
+an annual
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.3</mn><annotation encoding="application/x-tex">0.3</annotation></semantics></math>;
+they don’t split
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.3</mn><annotation encoding="application/x-tex">0.3</annotation></semantics></math>
+between them. To get a stock whose season-1 share of annual
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
+is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.38</mn><annotation encoding="application/x-tex">0.38</annotation></semantics></math>,
+with two half-year seasons and annual
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
+of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.3</mn><annotation encoding="application/x-tex">0.3</annotation></semantics></math>,
+set season 1 to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.38</mn><mo>×</mo><mn>0.3</mn><mi>/</mi><mn>0.5</mn><mo>=</mo><mn>0.228</mn></mrow><annotation encoding="application/x-tex">0.38 \times 0.3 / 0.5 = 0.228</annotation></semantics></math>
+and season 2 to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.62</mn><mo>×</mo><mn>0.3</mn><mi>/</mi><mn>0.5</mn><mo>=</mo><mn>0.372</mn></mrow><annotation encoding="application/x-tex">0.62 \times 0.3 / 0.5 = 0.372</annotation></semantics></math>.</p>
+</div>
+<div class="section level4">
 <h4 id="block-structure">Block structure<a class="anchor" aria-label="anchor" href="#block-structure"></a>
 </h4>
 <p>Natural mortality parameters can be shared or made specific along any
-combination of five axes. Each argument takes either
+combination of six axes. Each argument takes either
 <code>'constant'</code> (all levels pooled) or a list of integer vectors
 defining blocks:</p>
 <table class="table">
@@ -2543,12 +2656,19 @@ pop 3 is separate</td>
 <td><code>list(1:20, 21:40)</code></td>
 </tr>
 <tr class="even">
+<td><code>M_seasblk_spec</code></td>
+<td>Season</td>
+<td>
+<code>list(1, 2)</code> → a separate rate in each of two seasons;
+<code>list(1:2, 3:4)</code> splits a four season year in half</td>
+</tr>
+<tr class="odd">
 <td><code>M_ageblk_spec</code></td>
 <td>Age</td>
 <td>
 <code>list(1:5, 6:30)</code> → young vs. old</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>M_sexblk_spec</code></td>
 <td>Sex</td>
 <td>
@@ -2621,6 +2741,14 @@ contiguous run, because the penalty compares the likelihood for one
 rectangular matrix</td>
 </tr>
 <tr class="odd">
+<td><code>NAA_re_seasons</code></td>
+<td>Seasons the state covers. <code>"annual"</code> (default) puts a
+state at season one only, so the numbers within a year stay
+deterministic and the innovation is purely annual; <code>"all"</code>
+puts one at the start of every season; an integer vector selects
+specific seasons and need not be contiguous</td>
+</tr>
+<tr class="even">
 <td><code>NAA_sigma_spec</code></td>
 <td>
 <code>"est"</code> (default) or <code>"fix"</code>, whether the
@@ -2629,9 +2757,40 @@ are always estimated</td>
 </tr>
 </tbody>
 </table>
+<p>A cell of the state is the log numbers at the <strong>start</strong>
+of its season, so season one is the year boundary, after ageing and the
+plus group, and later seasons sit on the within-year survival and
+movement step where no ageing happens. The annual state is therefore the
+special case of the seasonal one, not a different model, and
+<code>"annual"</code> reproduces what the package did before seasons
+were an option.</p>
+<p>Whether to go past <code>"annual"</code> is a question about data,
+not about routines. Within a year nothing structurally separates one
+season from the next except the observations assigned to them, so a
+season with no data returns its prior as its posterior and the seasons
+that do have data trade against it. <code>NAA_re_seasons</code> takes an
+arbitrary set for this reason: put states only in the seasons that have
+observations. It is the same weak-information story as a seasonal split
+of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>,
+and the same advice follows.</p>
+<p>The state covers the assessment years only.
+<code><a href="../reference/Do_Population_Projection.html">Do_Population_Projection()</a></code> does not have it, so projected
+numbers at age advance deterministically from the terminal year with
+recruitment the only stochastic element, and a forecast from a
+state-space fit omits this process error. The closed loop operating
+model is a separate path and does have it forward, extending the active
+years over the projection period.</p>
+<p>The split of what varies by season is deliberate.
+<code>NAA_pe_pars</code> has no season dim, so every active season
+shares the age, year and cohort correlations within a population, region
+and sex; the standard deviation is what varies, through
+<code>NAA_sigma_seasblk_spec</code>. A long season and a short one
+differ in how much process error accumulates, not in the shape of the
+correlation across ages.</p>
 </div>
 <div class="section level4">
-<h4 id="correlation-across-populations-regions-and-sexes">Correlation across populations, regions and sexes<a class="anchor" aria-label="anchor" href="#correlation-across-populations-regions-and-sexes"></a>
+<h4 id="correlation-across-populations-regions-seasons-and-sexes">Correlation across populations, regions, seasons and sexes<a class="anchor" aria-label="anchor" href="#correlation-across-populations-regions-seasons-and-sexes"></a>
 </h4>
 <table class="table">
 <colgroup>
@@ -2646,28 +2805,56 @@ are always estimated</td>
 <tr class="odd">
 <td>
 <code>NAA_re_pop</code>, <code>NAA_re_region</code>,
-<code>NAA_re_sex</code>
+<code>NAA_re_sex</code>, <code>NAA_re_season</code>
 </td>
 <td>
 <code>"iid"</code> (default) or <code>"us"</code>, an unstructured
-correlation over that margin,
+correlation over that dim,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>n</mi><mo stretchy="false" form="prefix">(</mo><mi>n</mi><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">n(n-1)/2</annotation></semantics></math>
 parameters. Composed with whatever <code>NAA_re</code> gives over the
-age-year grid, so a correlation over one margin says nothing about the
-others</td>
+age-year grid, so a correlation over one dim says nothing about the
+others. The season correlation runs over the active seasons, so it needs
+more than one of them</td>
 </tr>
 <tr class="even">
-<td><code>NAA_re_region_spec</code></td>
-<td>How the region correlations are shared: <code>"est_all"</code>
-(default), <code>"est_shared_p"</code>, <code>"est_shared_s"</code>,
-<code>"est_shared_p_s"</code>, <code>"fix"</code>
+<td>
+<code>NAA_re_region_spec</code>,
+<code>NAA_re_season_spec</code>
+</td>
+<td>How the region and season correlations are shared:
+<code>"est_all"</code> (default), <code>"est_shared_p"</code>,
+<code>"est_shared_s"</code>, <code>"est_shared_p_s"</code>,
+<code>"fix"</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>NAA_pe_spec</code></td>
+<td>How the age, year and cohort correlations from <code>NAA_re</code>
+are shared across these same dims: <code>"est_all"</code> (default, a
+free set per population, region and sex), <code>"est_shared_p"</code>,
+<code>"est_shared_r"</code>, <code>"est_shared_s"</code>,
+<code>"est_shared_p_r"</code>, <code>"est_shared_p_s"</code>,
+<code>"est_shared_r_s"</code>, <code>"est_shared_p_r_s"</code> (one set
+for the whole model), <code>"fix"</code>
 </td>
 </tr>
 </tbody>
 </table>
-<p>Unstructured is the only non-independent option on these margins
-because none of them has an ordering: regions are not in a line, so a
+<p>Unstructured is the only non-independent option on these dims because
+none of them has an ordering: regions are not in a line, so a
 correlation decaying with distance has nothing to decay along.</p>
+<p>Sharing a correlation and correlating the innovations are different
+operations, and <code>NAA_pe_spec</code> does the first.
+<code>"est_shared_r"</code> gives every region the same
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>ρ</mi><annotation encoding="application/x-tex">\rho</annotation></semantics></math>
+while their shocks stay independent, which cuts the count: a
+three-region <code>"2dar1"</code> model goes from six correlations to
+two. <code>NAA_re_region = "us"</code> instead makes the shocks
+themselves covary, and adds parameters. Neither touches which cells of
+the state are estimated, only how many hyperparameters they draw on.
+Worth reaching for when a dim is thin, since each region otherwise
+estimates its own age correlation from however many ages
+<code>NAA_re_ages</code> leaves it.</p>
 </div>
 <div class="section level4">
 <h4 id="standard-deviations">Standard deviations<a class="anchor" aria-label="anchor" href="#standard-deviations"></a>
@@ -2685,7 +2872,8 @@ correlation decaying with distance has nothing to decay along.</p>
 <td>
 <code>NAA_sigma_popblk_spec</code>,
 <code>NAA_sigma_regionblk_spec</code>,
-<code>NAA_sigma_yearblk_spec</code>, <code>NAA_sigma_ageblk_spec</code>,
+<code>NAA_sigma_yearblk_spec</code>,
+<code>NAA_sigma_seasblk_spec</code>, <code>NAA_sigma_ageblk_spec</code>,
 <code>NAA_sigma_sexblk_spec</code>
 </td>
 <td>
@@ -2697,29 +2885,15 @@ arguments do</td>
 <p>Blocking shares a standard deviation; it never removes a cell from
 the state. Only <code>NAA_re = "iid"</code> admits a standard deviation
 that varies over years or ages: every other form is separable or Markov
-in one of those margins, and a per-cell variance is neither. The setup
+in one of those dims, and a per-cell variance is neither. The setup
 errors rather than silently ignoring a year or age block under a
 correlated form.</p>
-</div>
-<div class="section level4">
-<h4 id="what-it-does-not-combine-with">What it does not combine with<a class="anchor" aria-label="anchor" href="#what-it-does-not-combine-with"></a>
-</h4>
-<p>A freely estimated natural mortality that varies over time is the
-same log-survival surface the state carries, and <code>ln_M</code> is
-unpenalized while the state pays a marginal likelihood cost, so the
-optimizer loads the signal into <code>ln_M</code>. <code>NAA_re</code>
-together with <code>M_spec = "est_ln_M"</code> over more than one year
-block is refused. Time-varying
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>
-alongside the state comes in as data through a
-<code>Fixed_natmort</code> array with <code>M_spec = "fix"</code>.</p>
-<p>Time-varying selectivity is a softer case. The data see numbers at
-age and selectivity only through their product, so a free age-by-year
-surface on selectivity and a free age-by-year state describe overlapping
-objects. Both are penalized and the compositions and catch constrain the
-product, so the pair is identified in the same sense it is in WHAM and
-SAM, but the two lean on their priors more than either does alone. Worth
-a profile rather than a prohibition.</p>
+<p>The season dim is the exception, because it is whitened before the
+age and year density is reached rather than inside it. A season-varying
+standard deviation therefore works under every <code>NAA_re</code>,
+which is usually what a model with unequal season durations wants, and
+the one thing that rules it out is <code>NAA_re_season = "us"</code>: a
+correlation has one scale across the dim it spans.</p>
 </div>
 </div>
 <div class="section level2">
@@ -2872,15 +3046,15 @@ rate out of its origin: <code>"none"</code> (or <code>0</code>) leaves
 <tr class="odd">
 <td></td>
 <td>
-<code>"upwind"</code> carries diffusion whole and hinges only the
-taxis, so positivity in the rate estiamtes don’t depend on the two
+<code>"upwind"</code> has diffusion whole and hinges only the taxis,
+so positivity in the rate estiamtes don’t depend on the two
 cancelling</td>
 </tr>
 <tr class="even">
 <td><code>ctmc_diffusion_eps</code></td>
 <td>Positive numeric (default <code>0.1</code>): softplus width for
 <code>ctmc_diffusion_bounds = "softplus"</code>, read by no other form.
-An edge where taxis exactly cancels diffusion carries
+An edge where taxis exactly cancels diffusion has
 <code>eps * log(2)</code>, so eps is a minimum exchange rate as well as
 a smoothing width and the fit moves with it; <code>0.001</code> behaves
 like a hard clamp and leaves shut edges gradient-dead</td>
@@ -3040,13 +3214,14 @@ exponent, so <code>n</code> costs one linear solve plus
 restricted to powers of two, which squaring reaches exactly. The scheme
 is first order either way, so the finer ladder a general integer would
 allow buys nothing.</p>
-<p>The reason to want this is the adjoint. Under reverse-mode AD the
-derivative of a linear solve is another solve, whereas the derivative of
-a matrix exponential is much more expensive than its forward evaluation.
-Benchmarking the exponential on its own over 600 six-region strata, the
-gradient runs about 18x faster at <code>n = 1</code>, 4x at
-<code>n = 8</code> and 2.5x at <code>n = 64</code>, against a tape that
-is slightly more expensive to build.</p>
+<p>The reason to want this is the cost of the gradient. Under
+reverse-mode AD the derivative of a linear solve is another solve,
+whereas the derivative of a matrix exponential is much more expensive
+than its forward evaluation. Benchmarking the exponential on its own
+over 600 six-region strata, the gradient runs about 18x faster at
+<code>n = 1</code>, 4x at <code>n = 8</code> and 2.5x at
+<code>n = 64</code>, against a tape that is slightly more expensive to
+build.</p>
 <p>Inside a real fit the gain is far smaller, because the exponential is
 only a slice of the gradient and binary powering’s <code>log2(n)</code>
 matrix products claw back the rest as <code>n</code> grows. On a
@@ -3060,7 +3235,7 @@ share of the work: cost grows with the cube of <code>n_regions</code>
 and with the number of (pop, year, season, age, sex) strata, so measure
 on the model you intend to fit rather than assuming the isolated
 figure.</p>
-<p>What it costs is accuracy, and not by a small margin. The scheme is
+<p>What it costs is accuracy, and not by a small dim. The scheme is
 first order in <code>1/n</code>, so it is a different discretization of
 the movement process rather than a cheap route to the same numbers. On a
 six-region chain generator with <code>Z</code> between 0.25 and
@@ -3100,12 +3275,12 @@ exponential gives <code>exp(-Z)</code>. Since substeps are nearly free,
 to approximate the exponential; small <code>n</code> is only defensible
 if backward Euler is being adopted as the movement process itself.</p>
 <p>Two structural properties survive at any <code>n</code>, which is
-what makes the option safe to use rather than merely fast.
-<code>I - A/n</code> is a non-singular M-matrix, so its inverse is
-non-negative and movement fractions cannot go negative; with no
-mortality the result is exactly column-stochastic, so fractions still
-sum to one without renormalization. And because the seasonal operator
-and the catch integral come from the same Van Loan block,
+what makes the option safe to use, not just fast. the inverse of
+<code>I - A/n</code> is non-negative, so movement fractions cannot go
+negative (it is a non-singular M-matrix); with no mortality the result
+is exactly column-stochastic, so fractions still sum to one without
+renormalization. And because the seasonal operator and the catch
+integral come from the same Van Loan block,
 <code>1'T = 1' - z'Integral</code> holds algebraically, so catch plus
 survivors equals the starting abundance to machine precision even where
 the operator itself is a coarse approximation.</p>
@@ -3290,7 +3465,7 @@ centered; see the deviation penalty centering discussion in the
 Recruitment section for the shared rationale. Under the
 mean-plus-deviations parameterization the level of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>F</mi><annotation encoding="application/x-tex">F</annotation></semantics></math>
-is already carried by <code>ln_F_mean</code>, so <code>"own_mean"</code>
+is already set by <code>ln_F_mean</code>, so <code>"own_mean"</code>
 penalizes only the deviations’ spread and avoids constraining the level
 twice, matching assessments whose deviation vectors sum to zero. It
 leaves <code>ln_F_mean</code> and the deviations’ level mutually
@@ -3407,9 +3582,9 @@ biomass fraction</td>
 </h4>
 <p><code>dmr_dev_spec = "est_all"</code> estimates an annual deviation
 in every fished region × year × season × fleet cell, not only in cells
-carrying a discard observation. This is deliberate. From the
-decomposition above, <code>dmr</code> scales the dead-discard component
-of total mortality, so it enters
+with a discard observation. This is deliberate. From the decomposition
+above, <code>dmr</code> scales the dead-discard component of total
+mortality, so it enters
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>Z</mi><annotation encoding="application/x-tex">Z</annotation></semantics></math>
 and therefore propagates into predicted retained catch, indices, and
 compositions:</p>
@@ -3451,13 +3626,12 @@ after setup is neither estimated nor penalized:</p>
 <span><span class="va">mp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">logit_dmr_devs</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">logit_dmr_devs</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mp</span><span class="op">[</span>, <span class="fl">10</span><span class="op">:</span><span class="fl">20</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">logit_dmr_devs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">mp</span><span class="op">)</span></span></code></pre></div>
-<p>Two consequences worth knowing. Mapping a deviation off pins it at
-whatever sits in <code>$par</code>, which is <code>0</code> by default,
-so <code>dmr</code> falls back on <code>plogis(logit_dmr_mean)</code>,
-but a starting value supplied through <code>...</code> is kept, not
-reset to zero. And under <code>Fdev_model = "rw"</code> or
-<code>"ar1"</code>, a pinned deviation is dropped from the active
-sequence, widening the gap
+<p>Two consequences. Mapping a deviation off fixes it at whatever sits
+in <code>$par</code>, which is <code>0</code> by default, so
+<code>dmr</code> falls back on <code>plogis(logit_dmr_mean)</code>, but
+a starting value supplied through <code>...</code> is kept, not reset to
+zero. And under <code>Fdev_model = "rw"</code> or <code>"ar1"</code>, a
+fixed deviation is dropped from the active sequence, widening the gap
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>d</mi><annotation encoding="application/x-tex">d</annotation></semantics></math>
 between the deviations either side of it rather than being treated as an
 actual year.</p>
@@ -3569,10 +3743,10 @@ on the operating-model side</td>
 <code>[p × r × y × τ × l × a × s × f]</code> like <code>CAA</code> and
 <code>CAL</code>. Requires <code>fit_lengths = 1</code>, and is switched
 on by itself when conditional age-at-length data are supplied, since
-their expected rows are read from these arrays. Each array carries a
-length and an age dimension at once, so they are the largest objects the
-model builds and every cell lands on the AD tape; leave off unless they
-are wanted</td>
+their expected rows are read from these arrays. Each array has a length
+and an age dimension at once, so they are the largest objects the model
+builds and every cell lands on the AD tape; leave off unless they are
+wanted</td>
 </tr>
 <tr class="odd">
 <td><code>growth_model</code></td>
@@ -3668,8 +3842,8 @@ order, or named by parameter (<code>L1</code>, <code>L2</code>,
 <code>K</code>, <code>CV1</code>, <code>CV2</code>, <code>rho</code>)
 with the rest constant. A varying parameter gains a deviation series
 <code>ln_growth_devs[p, r, y, k, s]</code> and a log sigma in the first
-stream of <code>growth_pe_pars</code>; its realized value by year is
-reported as <code>growth_pars_y</code>
+data source of <code>growth_pe_pars</code>; its realized value by year
+is reported as <code>growth_pars_y</code>
 </td>
 </tr>
 <tr class="odd">
@@ -3678,7 +3852,7 @@ reported as <code>growth_pars_y</code>
 <code>NULL</code>, a vector, or a list</td>
 <td>Calendar years each varying parameter’s deviations are active in.
 <code>NULL</code> uses every year, a vector applies to all of them, a
-list names them per parameter. Deviations outside the range are held at
+list names them per parameter. Deviations outside the range are kept at
 zero</td>
 </tr>
 <tr class="even">
@@ -3703,7 +3877,7 @@ under the logit link</td>
 <code>"fix"</code> / <code>"est"</code>
 </td>
 <td>Whether the process error standard deviations of the deviations are
-estimated. Their starting values are the first stream of
+estimated. Their starting values are the first data source of
 <code>growth_pe_pars</code>, one slot per growth parameter, supplied
 through <code>starting_values</code> and defaulting to
 <code>log(0.1)</code>. <code>growth_rw_init_sigma</code> gives the first
@@ -3724,16 +3898,16 @@ year of a random walk its own standard deviation</td>
 </td>
 <td>How the deviated parameters reach size at age. <code>"curve"</code>
 (default) reads each year’s sizes off that year’s own curve, so a fish
-carries no memory of the years it lived through. <code>"cohort"</code>
-carries size at age forward: each cohort grows by the increment the
-current year’s parameters imply from the size it reached, ages still in
-the linear phase keep the length at <code>growth_A1</code> their birth
-year gave them, the first age past <code>growth_A1</code> sits on the
-current year’s curve, and the plus group blends the cohort entering it
-with the fish already there by their numbers at age. The CV at age is
-then held at the first year’s. Because the plus group reads abundance,
-growth under this option is evaluated inside the population dynamics
-year loop</td>
+has no memory of the years it lived through. <code>"cohort"</code> has
+size at age forward: each cohort grows by the increment the current
+year’s parameters imply from the size it reached, ages still in the
+linear phase keep the length at <code>growth_A1</code> their birth year
+gave them, the first age past <code>growth_A1</code> sits on the current
+year’s curve, and the plus group blends the cohort entering it with the
+fish already there by their numbers at age. The CV at age is then kept
+at the first year’s. Because the plus group reads abundance, growth
+under this option is evaluated inside the population dynamics year
+loop</td>
 </tr>
 <tr class="odd">
 <td><code>growth_semipar</code></td>
@@ -3760,10 +3934,10 @@ untouched</td>
 <code>"fix"</code> / <code>"est"</code>
 </td>
 <td>Whether the surface’s process error parameters are estimated. Their
-starting values are the second stream of <code>growth_pe_pars</code>, in
-the same slots the selectivity forms use, supplied through
-<code>starting_values</code> and defaulting to a scale of
-<code>0.05</code> with correlations of <code>0.3</code>
+starting values are the second data source of
+<code>growth_pe_pars</code>, in the same slots the selectivity forms
+use, supplied through <code>starting_values</code> and defaulting to a
+scale of <code>0.05</code> with correlations of <code>0.3</code>
 </td>
 </tr>
 <tr class="odd">
@@ -3774,7 +3948,7 @@ the same slots the selectivity forms use, supplied through
 <td>
 <code>NULL</code> or vectors</td>
 <td>Ages and calendar years the surface is estimated over; outside them
-the deviations are held at zero, which is how a surface is restricted to
+the deviations are kept at zero, which is how a surface is restricted to
 the ages the length data actually inform</td>
 </tr>
 <tr class="even">
@@ -3784,7 +3958,7 @@ the ages the length data actually inform</td>
 </td>
 <td>Maps the model’s length bins onto the bins the compositions are
 recorded on, each row summing to one, for compositions on coarser bins
-than the population carries. Expected compositions are mapped through it
+than the population has. Expected compositions are mapped through it
 inside the likelihood exactly as the ageing error matrix maps ages, and
 the observed arrays are then dimensioned by the observed bins</td>
 </tr>
@@ -3815,8 +3989,8 @@ survey reading scales do not misclassify the same way. <code>NULL</code>
 (default) gives every fleet the shared <code>AgeingError</code>, which
 is what a model written before these existed does. Every fleet must land
 on the same observed age bins, since the observed composition arrays
-carry one age dimension shared across fleets. Wired through the
-operating model too, as <code>AgeingError_fish_input</code> /
+have one age dimension shared across fleets. Wired through the operating
+model too, as <code>AgeingError_fish_input</code> /
 <code>AgeingError_srv_input</code> in
 <code>Setup_Sim_Biologicals</code>
 </td>
@@ -3932,7 +4106,7 @@ information stated twice.</p>
 <table class="table">
 <thead><tr class="header">
 <th>Argument</th>
-<th>Stream</th>
+<th>Data source</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
@@ -3959,14 +4133,14 @@ information stated twice.</p>
 dimension. All six evaluate the same at-age likelihood through one
 function, differing only in which array supplies the prediction.</p>
 <div class="section level5">
-<h5 id="how-a-stream-is-reported">How a stream is reported<a class="anchor" aria-label="anchor" href="#how-a-stream-is-reported"></a>
+<h5 id="how-a-data-source-is-reported">How a data source is reported<a class="anchor" aria-label="anchor" href="#how-a-data-source-is-reported"></a>
 </h5>
 <p>Every at-age array is dimensioned
 <code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets]</code>,
 the layout of the prediction arrays the likelihood reads, so the two
-line up margin for margin. That is the storage, not the claim. A fleet
-says which of regions and sexes it reports separately through a
-<code>Type</code>, using the same vocabulary the compositions use:</p>
+line up dim for dim. A fleet says which of regions and sexes it reports
+separately through a <code>Type</code>, using the same vocabulary the
+compositions use:</p>
 <table class="table">
 <thead><tr class="header">
 <th>String</th>
@@ -3999,12 +4173,12 @@ says which of regions and sexes it reports separately through a
 <p><code>CatchAA_Type</code>, <code>DiscardAA_Type</code> and
 <code>SrvIdxAA_Type</code> take one setting for every fleet, one per
 fleet, or the year and fleet grammar, and each has a <code>_pop</code>
-counterpart. A margin the fleet sums over carries its observation in
-slot one of that margin, and a use flag anywhere else on it is refused
-rather than quietly ignored, since the prediction has already added
-those cells in. That check runs per year, so a fleet reporting sexes
-separately early and combined later is held to each rule in the years
-where it applies.</p>
+counterpart. A dim the fleet sums over has its observation in slot one
+of that dim, and a use flag anywhere else on it is refused rather than
+quietly ignored, since the prediction has already added those cells in.
+That check runs per year, so a fleet reporting sexes separately early
+and combined later is kept to each rule in the years where it
+applies.</p>
 <p>A fleet whose reporting changed part way through the series states it
 directly:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
@@ -4016,17 +4190,17 @@ correlation is defined over the whole block of years by ages, and a
 setting that changes inside that block has nothing to mean there. Either
 hold the aggregation constant for that fleet, or give each period its
 own fleet so that each block is its own observation.</p>
-<p>The sex margin is required whatever the fleet reports. A stream
-summed over sexes still carries its observation in the full array, in
-sex slot one, and an array one dimension short is refused rather than
+<p>The sex dim is required whatever the fleet reports. A data source
+summed over sexes still has its observation in the full array, in sex
+slot one, and an array one dimension short is refused rather than
 promoted: the alternative is a silent reinterpretation of what you
 passed.</p>
 </div>
 <div class="section level5">
 <h5 id="density-and-where-the-observation-error-comes-from">Density and where the observation error comes from<a class="anchor" aria-label="anchor" href="#density-and-where-the-observation-error-comes-from"></a>
 </h5>
-<p>An at-age stream has the same choices the aggregated index has, per
-fleet:</p>
+<p>An at-age data source has the same choices the aggregated index has,
+per fleet:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -4057,8 +4231,8 @@ fleet:</p>
 </tbody>
 </table>
 <p><code>"none"</code> uses the estimated parameter alone, which is what
-a stream with no reported errors means. <code>"data"</code> uses the
-reported standard errors alone and holds the parameter fixed, since
+a data source with no reported errors means. <code>"data"</code> uses
+the reported standard errors alone and holds the parameter fixed, since
 nothing reads it. The other two combine them, added or in quadrature.
 Disaggregating a survey index by age therefore no longer costs you its
 survey-design errors.</p>
@@ -4097,20 +4271,20 @@ every sharing pattern that would otherwise need its own argument:</p>
 </tr>
 </tbody>
 </table>
-<p>The sex margin is required here too; a key coupling the sexes says so
-by repeating its entries across them. An age and sex a fleet never
-observes carries no parameter whatever the key says, which is what holds
-the unused sexes of a sex-summed stream out.</p>
+<p>The sex dim is required here too; a key coupling the sexes says so by
+repeating its entries across them. An age and sex a fleet never observes
+has no parameter whatever the key says, which is what holds the unused
+sexes of a sex-summed data source out.</p>
 <p><code>sigmaCAA_key</code>, <code>sigmaDAA_key</code> and
-<code>sigmaSrvIdxAA_key</code> carry the observation error. Catchability
-at age is not keyed here: an index fit age by age carries its age shape
-in selectivity, through the <code>"nonparfree"</code> form (see
-Selectivity above), since a free catchability per age and a selectivity
-estimated at age are the same statement twice. A parameter informed by
-fewer than two observations is refused, and fewer than five warns: an
-observation error standard deviation with a single observation drives
-the likelihood to negative infinity rather than failing outright, and
-the optimizer reports convergence either way.</p>
+<code>sigmaSrvIdxAA_key</code> hold the observation error. Catchability
+at age is not keyed here: an index fit age by age has its age shape in
+selectivity, through the <code>"nonparfree"</code> form (see Selectivity
+above), since a free catchability per age and a selectivity estimated at
+age are the same statement twice. A parameter informed by fewer than two
+observations is refused, and fewer than five warns: an observation error
+standard deviation with a single observation drives the likelihood to
+negative infinity rather than failing outright, and the optimizer
+reports convergence either way.</p>
 <p>A season needing its own observation error is a separate fleet, the
 same way anything else needing its own selectivity or catchability
 is.</p>
@@ -4118,10 +4292,10 @@ is.</p>
 <div class="section level5">
 <h5 id="correlation-across-ages">Correlation across ages<a class="anchor" aria-label="anchor" href="#correlation-across-ages"></a>
 </h5>
-<p>Each stream is set where its data are set, following how the package
-separates fishery from survey elsewhere, and the population-specific
-form carries its own setting rather than borrowing the aggregated
-one:</p>
+<p>Each data source is set where its data are set, following how the
+package separates fishery from survey elsewhere, and the
+population-specific form has its own setting rather than borrowing the
+aggregated one:</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -4196,8 +4370,8 @@ refused, and fewer than three cells per parameter warns.</p>
 covariance the Kronecker product of an AR(1) over each. It is defined on
 a complete grid, so a fleet’s observed ages and years must form one; a
 gap is refused at setup rather than filled in. Use <code>"1dar1"</code>
-or <code>"us"</code> for a ragged stream. The year correlation is
-<code>trans_rho_&lt;stream&gt;_year</code>.</p>
+or <code>"us"</code> for a ragged data source. The year correlation is
+<code>trans_rho_&lt;data source&gt;_year</code>.</p>
 <p>How the correlations are shared is a spec string, the same one the
 rest of the package uses for <code>sigmaF_spec</code> and
 <code>Fdev_rho_spec</code>, rather than a structure of its own:
@@ -4205,7 +4379,7 @@ rest of the package uses for <code>sigmaF_spec</code> and
 <code>rho_srv_idx_spec</code>, each with a <code>_pop</code>
 counterpart.</p>
 <p>The correlations sit over region, sex and fleet, with a leading
-population margin for the population-specific streams, so the
+population dim for the population-specific data sources, so the
 abbreviations are <code>r</code>, <code>s</code>, <code>f</code> and
 <code>p</code>:</p>
 <table class="table">
@@ -4222,7 +4396,7 @@ abbreviations are <code>r</code>, <code>s</code>, <code>f</code> and
 <td><code>NULL</code></td>
 <td>
 <code>"est_shared_r_s"</code>, or <code>"est_shared_p_r_s"</code>
-for a <code>_pop</code> stream. Default</td>
+for a <code>_pop</code> data source. Default</td>
 </tr>
 <tr class="even">
 <td><code>"est_shared_r_s"</code></td>
@@ -4246,19 +4420,19 @@ for a <code>_pop</code> stream. Default</td>
 </tr>
 <tr class="odd">
 <td><code>"fix"</code></td>
-<td>Held at their starting values</td>
+<td>Kept at their starting values</td>
 </tr>
 </tbody>
 </table>
-<p>One spec governs the stream’s across-age correlation, its across-year
-correlation and its unstructured matrix together, so two fleets that
-share under <code>"us"</code> share a whole matrix rather than one entry
-of it. A region, sex or population a fleet never observes carries no
-correlation parameter whatever the spec says, which is what holds the
-unused slots of a summed margin out: a stream summed over regions gets
-one correlation, in region one, however free the spec.</p>
-<p>A cell with a single observed age carries no correlation to describe
-and falls back to independent. Be careful estimating an AR(1) on a fleet
+<p>One spec governs the data source’s across-age correlation, its
+across-year correlation and its unstructured matrix together, so two
+fleets that share under <code>"us"</code> share a whole matrix rather
+than one entry of it. A region, sex or population a fleet never observes
+has no correlation parameter whatever the spec says, which is what holds
+the unused slots of a summed dim out: a data source summed over regions
+gets one correlation, in region one, however free the spec.</p>
+<p>A cell with a single observed age has no correlation to describe and
+falls back to independent. Be careful estimating an AR(1) on a fleet
 observing only two or three ages: the correlation is barely identified
 and will sit on its bound.</p>
 <p>A correlated cell contributes its whole density to the first age
@@ -4270,11 +4444,11 @@ age by age.</p>
 <h5 id="units">Units<a class="anchor" aria-label="anchor" href="#units"></a>
 </h5>
 <p><code>catch_units</code> and <code>discard_units</code> apply to the
-at-age streams as they do to the aggregated ones: <code>"abd"</code>
-reads the numbers at age, <code>"biom"</code> multiplies them by the
-fleet’s weight at age.</p>
-<p>Worth knowing that for a lognormal stream with a weight at age
-supplied as data, the two are the same statement. The residual is
+at-age data sources as they do to the aggregated ones:
+<code>"abd"</code> reads the numbers at age, <code>"biom"</code>
+multiplies them by the fleet’s weight at age.</p>
+<p>For a lognormal data source with a weight at age supplied as data,
+the two are the same statement. The residual is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mi>O</mi><mi>a</mi></msub><mo>−</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mover><mi>C</mi><mo accent="true">̂</mo></mover><mi>a</mi></msub><msub><mi>W</mi><mi>a</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>O</mi><mi>a</mi></msub><mi>/</mi><msub><mi>W</mi><mi>a</mi></msub><mo stretchy="false" form="postfix">)</mo><mo>−</mo><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mover><mi>C</mi><mo accent="true">̂</mo></mover><mi>a</mi></msub></mrow><annotation encoding="application/x-tex">\log O_{a} - \log(\hat{C}_{a} W_{a}) = \log(O_{a}/W_{a}) - \log \hat{C}_{a}</annotation></semantics></math>,
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>W</mi><mi>a</mi></msub><annotation encoding="application/x-tex">W_{a}</annotation></semantics></math>
@@ -4288,7 +4462,7 @@ on the arithmetic scale, so the weight rescales it against a fixed
 And where weight at age is derived from estimated growth rather than
 supplied,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>W</mi><mi>a</mi></msub><annotation encoding="application/x-tex">W_{a}</annotation></semantics></math>
-carries parameters, so a biomass observation at age informs growth and a
+has parameters, so a biomass observation at age informs growth and a
 numbers one does not.</p>
 </div>
 <div class="section level5">
@@ -4296,7 +4470,7 @@ numbers one does not.</p>
 </h5>
 <p>Discards at age are the total discarded, not the dead fraction the
 population dynamics track, which is the same statement the aggregated
-discard stream makes: the prediction is
+discard data source makes: the prediction is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>D</mi><mi>a</mi></msub><mi>/</mi><mtext mathvariant="normal">dmr</mtext></mrow><annotation encoding="application/x-tex">D_{a}/\text{dmr}</annotation></semantics></math>.
 They are reported in numbers or weight, so a fleet fitting discards at
 age needs <code>discard_units</code> of <code>"abd"</code> or
@@ -4306,7 +4480,6 @@ whole rather than of one age and are refused.</p>
 <div class="section level5">
 <h5 id="identifiability">Identifiability<a class="anchor" aria-label="anchor" href="#identifiability"></a>
 </h5>
-<p>Two things are worth knowing before fitting these.</p>
 <p>An estimated observation error needs the thing predicting the mean to
 be more constrained than the data. Fishing mortality with free annual
 deviations can reproduce every catch at age exactly, at which point the
@@ -4325,17 +4498,17 @@ which each age’s fishing mortality absorbs its own abundance.</p>
 <h4 id="estimated-index-observation-error-sigmafishidx_spec-sigmasrvidx_spec">Estimated index observation error (<code>sigmaFishIdx_spec</code> /
 <code>sigmaSrvIdx_spec</code>)<a class="anchor" aria-label="anchor" href="#estimated-index-observation-error-sigmafishidx_spec-sigmasrvidx_spec"></a>
 </h4>
-<p>An index carries a standard error from its own survey design, and an
+<p>An index has a standard error from its own survey design, and an
 assessment may additionally estimate a component covering everything
 that design does not. this is often called an extra standard deviation.
 By default <code>SPoRC</code> uses the reported standard errors as they
 stand, which is <code>"fix"</code>.</p>
 <p>One parameter is estimated per fleet, <code>ln_sigmaFishIdx</code> or
-<code>ln_sigmaSrvIdx</code>. The aggregated and population-specific
-streams are separate observations with separate error structures, so
-they carry separate parameters, in the same way <code>ln_sigmaC</code>
-and <code>ln_sigmaC_pop</code> do. The population streams are configured
-through <code>sigmaFishIdx_pop_spec</code> and
+<code>ln_sigmaSrvIdx</code>. The aggregated and population-specific data
+sources are separate observations with separate error structures, so
+they have separate parameters, in the same way <code>ln_sigmaC</code>
+and <code>ln_sigmaC_pop</code> do. The population data sources are
+configured through <code>sigmaFishIdx_pop_spec</code> and
 <code>sigmaSrvIdx_pop_spec</code>.</p>
 <table class="table">
 <colgroup>
@@ -4373,15 +4546,14 @@ errors. What several ICES assessments do</td>
 vector of length <code>n_fish_fleets</code> or
 <code>n_srv_fleets</code>. Fleets sharing a value share a parameter and
 <code>NA</code> holds a fleet at its starting value, which is how a
-fleet a reference assessment pinned at a bound is carried without
+fleet a reference assessment pinned at a bound is kept without
 pretending it was estimated.</p>
-<p>Two things are worth knowing before turning this on. An estimated
-component is confounded with a likelihood weight, because a weight on a
-normal likelihood is the same statement as dividing the variance by that
-weight, so the estimate will absorb the weight;
-<code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code> warns when both are used. A fleet
-with a multivariate normal index likelihood takes its scale from the
-supplied covariance and ignores a standard deviation entirely, so
+<p>An estimated component is confounded with a likelihood weight,
+because a weight on a normal likelihood is the same statement as
+dividing the variance by that weight, so the estimate will absorb the
+weight; <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code> warns when both are used. A
+fleet with a multivariate normal index likelihood takes its scale from
+the supplied covariance and ignores a standard deviation entirely, so
 requesting one there is an error rather than a silently unidentified
 parameter.</p>
 <p>The simulator draws index observations from whatever total the fitted
@@ -4392,10 +4564,10 @@ estimated component without further configuration.</p>
 <h4 id="index-error-structure-fishidx_liketype-srvidx_liketype">Index error structure (<code>FishIdx_LikeType</code> /
 <code>SrvIdx_LikeType</code>)<a class="anchor" aria-label="anchor" href="#index-error-structure-fishidx_liketype-srvidx_liketype"></a>
 </h4>
-<p>Per fleet. A fleet’s population-specific index stream follows the
-same choice for <code>"lognormal"</code> and <code>"normal"</code>, but
-stays lognormal under <code>"mvn"</code>, whose covariance describes the
-region-aggregated series only. The simulator
+<p>Per fleet. A fleet’s population-specific index data source follows
+the same choice for <code>"lognormal"</code> and <code>"normal"</code>,
+but stays lognormal under <code>"mvn"</code>, whose covariance describes
+the region-aggregated series only. The simulator
 (<code>Setup_Sim_Fishing</code> / <code>Setup_Sim_Survey</code>, and
 <code>simulation_self_test</code> automatically) draws index
 observations under the same structures, with an <code>"mvn"</code> fleet
@@ -4556,9 +4728,9 @@ Observed and expected compositions are both subset to the named bins and
 renormalized within them, so bins outside are left out of the likelihood
 rather than forced to be explained. Use for gears that never resolve
 part of the range (a fishery that never catches the youngest ages, whose
-structural zeros would otherwise carry information); leave alone when
-the zeros are informative sampling zeros.</p>
-<p>Every composition stream takes one, and they all share the same
+structural zeros would otherwise have information); leave alone when the
+zeros are informative sampling zeros.</p>
+<p>Every composition data source takes one, and they all share the same
 format: a list with one element per fleet, each a vector of bin indices
 or <code>NULL</code> for all bins, or an
 <code>[n_obs_bins x n_fleets]</code> array of 0/1 weights. Indices are
@@ -4571,7 +4743,7 @@ or <code>LenBinMap</code>. Default <code>NULL</code> fits every bin.</p>
 <col width="33%">
 </colgroup>
 <thead><tr class="header">
-<th>Stream</th>
+<th>Data source</th>
 <th>Fishery</th>
 <th>Survey</th>
 </tr></thead>
@@ -4628,7 +4800,7 @@ or <code>LenBinMap</code>. Default <code>NULL</code> fits every bin.</p>
 <span><span class="va">SrvAgeComps_bins</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">15</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
 <p>Every fleet must keep at least two bins. A composition fitted over
 one bin says nothing, since the proportion in a lone bin is one whatever
-the model predicts, and the one-step-ahead machinery degenerates around
+the model predicts, and the one-step-ahead routines degenerates around
 it: the logistic-normal families spend a bin as the additive log-ratio
 reference and have none left, and the discrete families mark their only
 bin as the multinomial’s determined cell, leaving <code><a href="../reference/get_osa.html">get_osa()</a></code>
@@ -4636,14 +4808,14 @@ nothing to keep. Setup refuses it and names the fleet.</p>
 <p>The restriction applies whatever the composition type. For sex-joint
 comps (<code>spltRjntS</code>) the named bins are dropped from each
 sex’s block of the <code>[bin x sex]</code> stack, so the sex ratio the
-joint comps carry becomes the ratio <em>within</em> the fitted bins,
+joint comps have becomes the ratio <em>within</em> the fitted bins,
 which is usually what you want when the excluded bins are unsampled
-rather than genuinely absent. Logistic-normal covariances are built
-across all observed bins and then cut down to the fitted ones, so a gap
-in the named bins still counts towards the AR1 lag between the bins
-either side of it. One-step-ahead residuals are packed and evaluated
-over the same restricted bins, so <code><a href="../reference/get_osa.html">get_osa()</a></code> and the
-likelihood always agree on what was fitted.</p>
+rather than absent. Logistic-normal covariances are built across all
+observed bins and then cut down to the fitted ones, so a gap in the
+named bins still counts towards the AR1 lag between the bins either side
+of it. One-step-ahead residuals are packed and evaluated over the same
+restricted bins, so <code><a href="../reference/get_osa.html">get_osa()</a></code> and the likelihood always
+agree on what was fitted.</p>
 </div>
 <div class="section level4">
 <h4 id="restricting-bins-versus-remapping-them">Restricting bins versus remapping them<a class="anchor" aria-label="anchor" href="#restricting-bins-versus-remapping-them"></a>
@@ -4698,7 +4870,7 @@ likelihood cannot fit, so a map cannot do a restriction’s job.
 sum to one (or to zero, to drop a model bin from the observations
 entirely), and no observed bin may be left with nothing mapped into
 it.</p>
-<p>Worked on six model bins carrying expected proportions
+<p>Worked on six model bins with expected proportions
 <code>0.05, 0.10, 0.25, 0.30, 0.20, 0.10</code>:</p>
 <table class="table">
 <colgroup>
@@ -4730,13 +4902,13 @@ it.</p>
 </tbody>
 </table>
 <p>Both shrink the vector, which is why they get confused, but only the
-map carries the first two bins’ fish somewhere rather than throwing them
+map holds the first two bins’ fish somewhere rather than throwing them
 away. If bins 1 and 2 are 10 cm fish your survey does catch but records
 in a coarser bin, you want the first row. If they are 10 cm fish your
 survey never sees, so their observed proportion is a sampling artifact
 rather than a measurement, you want the second. Choosing the map when
 you meant the restriction quietly asks the model to explain a bin that
-carries no information; choosing the restriction when you meant the map
+has no information; choosing the restriction when you meant the map
 throws away fish that were really there.</p>
 <p>A restriction leaves a visible trace at setup, so you can confirm it
 took:</p>
@@ -4782,7 +4954,7 @@ correlation</td>
 </tr>
 </tbody>
 </table>
-<p>These are set per data stream via <code>comp_fishage_like</code>,
+<p>These are set per data source via <code>comp_fishage_like</code>,
 <code>comp_fishlen_like</code>, <code>comp_srvage_like</code>,
 <code>comp_srvlen_like</code>, and their <code>_pop</code> and
 <code>_discard</code> variants.</p>
@@ -4790,7 +4962,7 @@ correlation</td>
 <div class="section level4">
 <h4 id="composition-structure-types">Composition structure types<a class="anchor" aria-label="anchor" href="#composition-structure-types"></a>
 </h4>
-<p>Each composition stream says how its observations are aggregated
+<p>Each composition data source says how its observations are aggregated
 through a <code>_Type</code>, given as a year and fleet
 specification:</p>
 <table class="table">
@@ -4809,8 +4981,7 @@ specification:</p>
 </tr>
 <tr class="even">
 <td><code>"spltRspltS"</code></td>
-<td>Split by sex and region, carrying no implicit sex-ratio
-information</td>
+<td>Split by sex and region, with no implicit sex-ratio information</td>
 </tr>
 <tr class="odd">
 <td><code>"spltRjntS"</code></td>
@@ -4833,9 +5004,9 @@ normal, which needs a composition split by region and sex to correlate
 over.</p>
 </div>
 <div class="section level4">
-<h4 id="data-streams">Data streams<a class="anchor" aria-label="anchor" href="#data-streams"></a>
+<h4 id="data-sources">Data sources<a class="anchor" aria-label="anchor" href="#data-sources"></a>
 </h4>
-<p>SPoRC supports a full matrix of composition data streams, each
+<p>SPoRC supports a full matrix of composition data sources, each
 independently configurable:</p>
 <table class="table">
 <colgroup>
@@ -4881,7 +5052,7 @@ independently configurable:</p>
 </tr>
 </tbody>
 </table>
-<p>Each stream carries its own ISS arrays,
+<p>Each data source has its own ISS arrays,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
 parameters (log-scale overdispersion), and correlation parameters.</p>
 </div>
@@ -4895,7 +5066,7 @@ parameters (log-scale overdispersion), and correlation parameters.</p>
 <code><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps()</a></code> (the <code>Srv_</code> twins),
 with the weights <code>Wt_Fish_caal</code> and <code>Wt_Srv_caal</code>
 on <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>. A CAAL observation is the age
-composition of the fish aged from one length bin, so the arrays carry a
+composition of the fish aged from one length bin, so the arrays have a
 length dimension ahead of the age one
 (<code>[r × y × τ × l × a × s × f]</code>), the use flag and input
 sample size are per length bin (<code>[r × y × τ × l × f]</code>,
@@ -4956,7 +5127,7 @@ row was conditioned on.</p>
 </h2>
 <p>Set on <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>. Every weight multiplies
 its likelihood component in the joint negative log likelihood, so
-<code>0</code> drops a data stream from the fit without removing it from
+<code>0</code> drops a data source from the fit without removing it from
 the model or from the reported fits.</p>
 <p>Two shapes appear. The scalar weights apply one number to the whole
 component. The composition weights are arrays
@@ -5060,9 +5231,9 @@ array)</td>
 <div class="section level4">
 <h4 id="population-specific-weights">Population-specific weights<a class="anchor" aria-label="anchor" href="#population-specific-weights"></a>
 </h4>
-<p>Every stream fit separately by population carries a <code>_pop</code>
-twin, weighted independently of its aggregated counterpart:
-<code>Wt_Catch_pop</code>, <code>Wt_Discard_pop</code>,
+<p>Every data source fit separately by population has a
+<code>_pop</code> twin, weighted independently of its aggregated
+counterpart: <code>Wt_Catch_pop</code>, <code>Wt_Discard_pop</code>,
 <code>Wt_FishIdx_pop</code>, <code>Wt_SrvIdx_pop</code>, and the four
 composition arrays <code>Wt_FishAgeComps_pop</code>,
 <code>Wt_FishLenComps_pop</code>, <code>Wt_SrvAgeComps_pop</code>,
@@ -5070,13 +5241,13 @@ composition arrays <code>Wt_FishAgeComps_pop</code>,
 <code>Wt_FishAgeComps_discard_pop</code> and
 <code>Wt_FishLenComps_discard_pop</code>. These have no effect in a
 single-population model.</p>
-<p>Recommendations. Reach for weights to switch a stream off
+<p>Recommendations. Use weights to switch a data source off
 (<code>0</code>) or to reproduce another assessment’s weighting, not to
 tune fit. Where compositions are over-weighted relative to their real
 information content, the Dirichlet-multinomial or a Francis iteration
 estimates that down-weighting rather than asserting it;
 <code><a href="../reference/run_francis.html">run_francis()</a></code> returns the multipliers to apply here. The
-at-age observation streams take the same weight as their aggregated
+at-age data sources take the same weight as their aggregated
 counterpart, so a fleet moved from aggregated to at-age keeps whatever
 weight it already had.</p>
 <hr>
@@ -5168,7 +5339,7 @@ cell</td>
 </table>
 </div>
 <div class="section level4">
-<h4 id="what-a-tag-carries-conv_fish_tag_attr">What a tag carries (<code>conv_fish_tag_attr</code>)<a class="anchor" aria-label="anchor" href="#what-a-tag-carries-conv_fish_tag_attr"></a>
+<h4 id="what-a-tag-has-conv_fish_tag_attr">What a tag has (<code>conv_fish_tag_attr</code>)<a class="anchor" aria-label="anchor" href="#what-a-tag-has-conv_fish_tag_attr"></a>
 </h4>
 <p>Which biological dimensions are resolved at release and therefore
 retained at recapture. Region and fleet are always retained. Built from

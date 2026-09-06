@@ -1,7 +1,7 @@
-# Store one at-age stream's observations, use flags and standard errors
+# Store one at-age data source's observations, use flags and standard errors
 
-Shared by the three streams and their population-specific forms. An
-absent stream is given a zeroed array so the objective can index it
+Shared by the three data sources and their population-specific forms. An
+absent data source is given a zeroed array so the objective can index it
 unconditionally.
 
 ## Usage
@@ -12,7 +12,7 @@ do_at_age_data_setup(
   obs,
   use,
   se,
-  stream,
+  data_source,
   fleet_field,
   pop = FALSE
 )
@@ -29,9 +29,9 @@ do_at_age_data_setup(
   Observation, use and reported standard error arrays, any of them
   `NULL`.
 
-- stream:
+- data_source:
 
-  Stream tag naming the data elements, e.g. `"CatchAA"`.
+  Data source tag naming the data elements, e.g. `"CatchAA"`.
 
 - fleet_field:
 
@@ -39,8 +39,8 @@ do_at_age_data_setup(
 
 - pop:
 
-  Logical. `TRUE` for the population-specific stream.
+  Logical. `TRUE` for the population-specific data source.
 
 ## Value
 
-`input_list` with the stream's three data elements set.
+`input_list` with the data source's three data elements set.

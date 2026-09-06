@@ -290,7 +290,7 @@ By default:
 - Recruitment is simulated forward when not fully specified by
   `Rec_input`.
 
-- Population-specific data streams (`ObsFishIdx_pop_SE`,
+- Population-specific data sources (`ObsFishIdx_pop_SE`,
   `ObsSrvIdx_pop_SE`, and all `*_pop` ISS arrays) fall back to
   uninformative defaults when the corresponding `Use*_pop` flags contain
   no ones.

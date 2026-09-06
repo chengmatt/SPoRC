@@ -4,8 +4,8 @@ Shared by
 [`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md)
 and
 [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md),
-which carry the same parameter under different names and over a
-different fleet dimension.
+which hold the same parameter under different names and over a different
+fleet dimension.
 
 ## Usage
 

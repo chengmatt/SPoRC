@@ -13,7 +13,7 @@ growth_fill_year(
   r,
   s,
   fill_yrs,
-  gp,
+  growth_pars,
   L_beg,
   L1_birth,
   cv_ref_fn,

@@ -105,7 +105,7 @@ fully flexible selectivity structures.</p>
 
   <dt>4</dt>
 <dd><p>Double-normal dome with plateau and flexible tails (6 parameters).
-           \(p_{1}\) is the bin at which the plateau starts, carried on the bin
+           \(p_{1}\) is the bin at which the plateau starts, kept on the bin
            scale rather than transformed, \(p_{5}\) is the selectivity at the
            first bin and \(p_{6}\) the selectivity at the last bin.</p></dd>
 
@@ -299,7 +299,7 @@ standardizes over that part, which shifts the scale absorbed by q.</p></dd>
 
 <dt id="arg-n-sel-bins">n_sel_bins<a class="anchor" aria-label="anchor" href="#arg-n-sel-bins"></a></dt>
 <dd><p>Integer or <code>NULL</code>/<code>0</code> for none. Bins beyond this
-one are held at its computed value rather than evaluated through the
+one are kept at its computed value rather than evaluated through the
 functional form, the <code>NSelBins</code> plateau convention several existing
 assessments apply (e.g. <code>nselages</code>). Applied after the form and its
 parameter deviations, but before the bin-level semi-parametric deviations and
@@ -309,7 +309,7 @@ the bin overrides.</p></dd>
 <dt id="arg-apical">apical<a class="anchor" aria-label="anchor" href="#arg-apical"></a></dt>
 <dd><p>Numeric. For the double normal (<code>Selex_Model == 4</code>), the
 height the ascending and descending limbs are built up to and the plateau
-sits at. <code>1</code> (the default) is the ordinary curve. A sex carrying an
+sits at. <code>1</code> (the default) is the ordinary curve. A sex with an
 apical offset takes <code>exp(ln_*sel_sex_scale)</code> here, which moves the
 middle of its curve and leaves the selectivity at the first and last bins
 where their own parameters put them. Ignored by every other form.</p></dd>
@@ -352,7 +352,7 @@ bin-specific logit parameters are optionally adjusted by time-varying
 deviations and transformed via:
 $$\text{selex}_b = \text{logit}^{-1}(\eta_b)$$.</p>
 <p>For <code>Selex_Model = 9</code>, selectivity is likewise fully non-parametric but
-held on the log scale and standardized within each year:
+kept on the log scale and standardized within each year:
 $$\text{selex}_b = \exp(\eta_b) / \overline{\exp(\eta)}$$.
 Only the differences among \(\eta\) within a year are identified, so the
 level of \(\eta\) is free and is absorbed by catchability or fishing

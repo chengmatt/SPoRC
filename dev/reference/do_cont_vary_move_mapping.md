@@ -44,7 +44,7 @@ do_cont_vary_move_mapping(
 
   `"none"` or `"fix"`
 
-  :   All `move_pe_pars` held fixed (mapped to `NA` or at starting
+  :   All `move_pe_pars` kept fixed (mapped to `NA` or at starting
       values).
 
   `"est_shared"`

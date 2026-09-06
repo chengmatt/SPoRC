@@ -120,7 +120,7 @@ Get_Selex_Array(
   parameters, an offset of \\\delta\\ makes the sex-\\s\\ natural-scale
   parameter the first sex's value times \\e^{\delta}\\, which is the
   male-offset convention several existing assessments use. An offset
-  held at zero reproduces sex-shared parameters.
+  kept at zero reproduces sex-shared parameters.
 
 - sex_scale_offset:
 
@@ -151,7 +151,7 @@ Get_Selex_Array(
 - nselbins:
 
   Integer array `n_regions x n_yrs x n_fleets` naming each cell's
-  plateau bin (`0` = none), or `NULL`. Bins beyond it are held at its
+  plateau bin (`0` = none), or `NULL`. Bins beyond it are kept at its
   value for the parametric forms (see `n_sel_bins` in
   [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md));
   the bicubic form's own setup-built plateau is unaffected.

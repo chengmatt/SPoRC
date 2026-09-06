@@ -148,11 +148,7 @@ reproducing that component requires a fourth survey fleet restricted to
 age 1.</p>
 <p>Everything the case study needs, including the ADMB output it is
 compared against, ships with the package in
-<code>sgl_rg_ebswp_data</code>. The companion script that produced the
-figures below is
-<code>dev/make_sporc_obj_figs/make_ebs_pollock_bridge_figs.R</code>, and
-the container itself is built by
-<code>dev/make_sporc_obj_figs/make_ebs_pollock_data_object.R</code>.</p>
+<code>sgl_rg_ebswp_data</code>.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
@@ -164,7 +160,7 @@ the container itself is built by
 <span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">yrs</span><span class="op">)</span></span>
 <span><span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">ages</span><span class="op">)</span></span>
 <span><span class="va">n_srv</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">n_srv_fleets</span></span></code></pre></div>
-<p>The object carries three kinds of content: the model inputs
+<p>The object has three kinds of content: the model inputs
 (<code>ObsCatch</code>, <code>WAA</code>, <code>ObsSrvIdx</code>, and so
 on), the ADMB maximum likelihood estimate in <code>dat$mle</code>, used
 both as a starting point and to verify the objective before any
@@ -230,7 +226,7 @@ its <code>steepnessprior</code> constant declares:</p>
 variance. The stock recruit residuals are penalized over the years 1978
 to 2022, excluding 1979:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>ℓ</mi><mtext mathvariant="normal">Rec</mtext></msup><mo>=</mo><munder><mo>∑</mo><mrow><mi>y</mi><mo>∈</mo><msup><mi>𝒴</mi><mtext mathvariant="normal">SR</mtext></msup></mrow></munder><mstyle displaystyle="true"><mfrac><msup><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>ϵ</mi><mi>y</mi><mtext mathvariant="normal">Rec</mtext></msubsup><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup><mrow><mn>2</mn><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup></mrow></mfrac></mstyle><mo>,</mo><mspace width="2.0em"></mspace><msub><mi>σ</mi><mi>R</mi></msub><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">\ell^{\text{Rec}} = \sum_{y \in \mathcal{Y}^{\text{SR}}} \dfrac{\left(\epsilon_{y}^{\text{Rec}}\right)^{2}}{2\sigma_{R}^{2}},\qquad \sigma_{R} = 1</annotation></semantics></math></p>
-<p>The initial numbers at age carry weight
+<p>The initial numbers at age have weight
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>0.1</mn><annotation encoding="application/x-tex">0.1</annotation></semantics></math>
 and the recruitment level weight
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>1</mn><annotation encoding="application/x-tex">1</annotation></semantics></math>,
@@ -258,7 +254,7 @@ equilibrium, and their penalty is centered on their own mean.</p>
 <span>  do_rec_bias_ramp <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  sigmaR_switch <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  sigmaR_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>  <span class="co"># The stock recruit residuals use sigr, fixed at 1. The initial ages carry</span></span>
+<span>  <span class="co"># The stock recruit residuals use sigr, fixed at 1. The initial ages have</span></span>
 <span>  <span class="co"># weight 0.1, which is sigma = 1/sqrt(2w).</span></span>
 <span>  ln_sigmaR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">0.2</span><span class="op">)</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  init_age_strc <span class="op">=</span> <span class="fl">4</span>,</span>
@@ -283,7 +279,7 @@ equilibrium, and their penalty is centered on their own mean.</p>
 </h2>
 <p>Natural mortality is fixed and age specific:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>M</mi><mi>a</mi></msub><mo>=</mo><mrow><mo stretchy="true" form="prefix">{</mo><mtable><mtr><mtd columnalign="left" style="text-align: left"><mn>0.9</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>a</mi><mo>=</mo><mn>1</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0.45</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>a</mi><mo>=</mo><mn>2</mn></mtd></mtr><mtr><mtd columnalign="left" style="text-align: left"><mn>0.3</mn><mo>,</mo></mtd><mtd columnalign="left" style="text-align: left"><mi>a</mi><mo>≥</mo><mn>3</mn></mtd></mtr></mtable></mrow></mrow><annotation encoding="application/x-tex">M_{a} = \begin{cases} 0.9, &amp; a = 1\\ 0.45, &amp; a = 2\\ 0.3, &amp; a \geq 3 \end{cases}</annotation></semantics></math></p>
-<p>The assessment carries a different weight at age matrix for spawning
+<p>The assessment has a different weight at age matrix for spawning
 biomass, for catch, and for each survey index, which <code>SPoRC</code>
 supports through <code>WAA</code>, <code>WAA_fish</code> and
 <code>WAA_srv</code>. Spawning biomass is therefore</p>
@@ -345,7 +341,7 @@ tagging data are used. Both still have to be declared.</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mi>F</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">\log F_y</annotation></semantics></math>
 is a free annual value penalized about its own mean. In
 <code>SPoRC</code> that is <code>ln_F_mean_spec = "fix"</code>, which
-pins the mean at zero and maps it off so the deviations carry all of
+pins the mean at zero and maps it off so the deviations have all of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>F</mi></mrow><annotation encoding="application/x-tex">\log F</annotation></semantics></math>,
 together with <code>Fdev_pen_center = "own_mean"</code>:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><msub><mi>F</mi><mi>y</mi></msub><mo>=</mo><msup><mi>μ</mi><mtext mathvariant="normal">Fsh</mtext></msup><mo>+</mo><msubsup><mi>ϵ</mi><mi>y</mi><mi>F</mi></msubsup><mo>,</mo><mspace width="2.0em"></mspace><msup><mi>μ</mi><mtext mathvariant="normal">Fsh</mtext></msup><mo>≡</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">\log F_{y} = \mu^{\text{Fsh}} + \epsilon_{y}^{F},\qquad \mu^{\text{Fsh}} \equiv 0</annotation></semantics></math></p>
@@ -526,7 +522,7 @@ so that
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo><mo>=</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">1/(2\sigma^{2}) = 1</annotation></semantics></math>
 reproduces the unweighted sum of squares.</p>
 <p>The weight applies only to the main deviations. The bin override
-deviations carry their own process error, which no weight multiplies, so
+deviations have their own process error, which no weight multiplies, so
 the trawl survey’s free annual age 1 value keeps its random walk density
 with the sigma fixed to give the assessment’s weight of 8.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
@@ -556,7 +552,7 @@ with the sigma fixed to give the assessment’s weight of 8.</p>
 <div class="section level2">
 <h2 id="weighting-and-selectivity-penalties">Weighting and selectivity penalties<a class="anchor" aria-label="anchor" href="#weighting-and-selectivity-penalties"></a>
 </h2>
-<p>Beyond the data weights, the 2024 assessment carries a set of shape
+<p>Beyond the data weights, the 2024 assessment has a set of shape
 penalties on selectivity. The fishery has a dome penalty over ages 6–12,
 curvature at the first year and every change year, and a random walk
 penalty whose standard deviation is
@@ -643,7 +639,7 @@ nothing to inform them, and the deviation groupings.</p>
 <p><code>SPoRC</code> parameterizes selectivity deviations as levels
 while the 2024 assessment uses increments. The two are equivalent, but
 the first year’s level is redundant with the coefficients and has to be
-held at zero, and bins within a group must move together.
+kept at zero, and bins within a group must move together.
 <code>est_shared_b</code> would share a group across years as well,
 making selectivity time invariant, so the maps are built explicitly.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
@@ -691,9 +687,9 @@ making selectivity time invariant, so the maps are built explicitly.</p>
 <span><span class="va">mapping</span><span class="op">$</span><span class="va">ln_srvsel_devs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">map_ats</span><span class="op">)</span></span>
 <span><span class="va">data</span><span class="op">$</span><span class="va">map_ln_srvsel_devs</span> <span class="op">&lt;-</span> <span class="va">map_ats</span></span>
 <span></span>
-<span><span class="co"># Acoustic age 1 log selectivity is held at zero rather than estimated, and the</span></span>
-<span><span class="co"># trawl survey has no base logistic pair, so its base is held at zero and the</span></span>
-<span><span class="co"># deviations carry the whole curve.</span></span>
+<span><span class="co"># Acoustic age 1 log selectivity is kept at zero rather than estimated, and the</span></span>
+<span><span class="co"># trawl survey has no base logistic pair, so its base is kept at zero and the</span></span>
+<span><span class="co"># deviations hold the whole curve.</span></span>
 <span><span class="va">map_srvpar</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">mapping</span><span class="op">$</span><span class="va">srv_fixed_sel_pars</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">parameters</span><span class="op">$</span><span class="va">srv_fixed_sel_pars</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">map_srvpar</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
 <span><span class="va">map_srvpar</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, <span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
@@ -713,7 +709,7 @@ rescaled by its own mean is invariant to shifting
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>δ</mi><annotation encoding="application/x-tex">\delta</annotation></semantics></math>
 together, the level has to be pinned or the likelihood is flat along it.
-That is what the 2024 assessment’s <code>avgsel</code> penalty does:</p>
+The 2024 assessment’s <code>avgsel</code> penalty does this:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>ℓ</mi><mtext mathvariant="normal">avgsel</mtext></msup><mo>=</mo><mi>w</mi><msup><mrow><mo stretchy="true" form="prefix">(</mo><mover><mi>θ</mi><mo accent="true">¯</mo></mover><mo stretchy="true" form="postfix">)</mo></mrow><mn>2</mn></msup></mrow><annotation encoding="application/x-tex">\ell^{\text{avgsel}} = w\left(\overline{\theta}\right)^{2}</annotation></semantics></math></p>
 <div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">data</span><span class="op">$</span><span class="va">Use_fish_selex_penalty</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
@@ -729,9 +725,9 @@ That is what the 2024 assessment’s <code>avgsel</code> penalty does:</p>
 <div class="section level2">
 <h2 id="starting-at-the-admb-estimate">Starting at the ADMB estimate<a class="anchor" aria-label="anchor" href="#starting-at-the-admb-estimate"></a>
 </h2>
-<p>Before optimizing anything, it is worth checking that the objective
-is reproduced <em>at a known point</em>. Setting every parameter to the
-pollock maximum likelihood estimate and evaluating there separates a
+<p>Before optimizing anything, check that the objective is reproduced
+<em>at a known point</em>. Setting every parameter to the pollock
+maximum likelihood estimate and evaluating there separates a
 specification error from an optimization difference: if the population
 and the likelihood agree at the ADMB solution, the two models are the
 same model.</p>

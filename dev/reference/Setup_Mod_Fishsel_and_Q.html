@@ -205,8 +205,8 @@ follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code>: singl
 
   <dt><code>"nonparfree"</code></dt>
 <dd><p>Non-parametric on the log scale with no
-    standardization, \(\exp(\theta)\), so the values carry the height of the
-    curve as well as its shape. This is the form for a stream fit age by age:
+    standardization, \(\exp(\theta)\), so the values hold the height of the
+    curve as well as its shape. This is the form for a data source fit age by age:
     a free catchability per age and a selectivity estimated at age are one
     quantity written two ways, so the whole age multiplier lives here and no
     catchability is set. Pin one bin, by leaving it out of the estimated bins,
@@ -216,7 +216,7 @@ follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code>: singl
 <dd><p>Logistic selectivity with \(a_{50}\) and slope \(k\) and asymptotic control (3 parameters).</p></dd>
 
   <dt><code>"asymplogist2"</code></dt>
-<dd><p>Logistic selectivity with with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
+<dd><p>Logistic selectivity with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
 
   <dt><code>"bicubic"</code></dt>
 <dd><p>Bicubic spline over a bin-node x year-node grid
@@ -229,11 +229,11 @@ follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code>: singl
     defined via <code>fish_sel_blocks</code>). An optional <code>_SelStyr_&lt;year&gt;</code>
     suffix (a calendar year within the block) restricts the actual spline
     fit to <code>SelStyr</code>:block-end; years within the block before
-    <code>SelStyr</code> are held constant at the <code>SelStyr</code> year's fitted
+    <code>SelStyr</code> are kept constant at the <code>SelStyr</code> year's fitted
     curve, rather than fitting the surface over the whole block. An
     optional <code>_NSelBins_&lt;n&gt;</code> suffix restricts the actual spline fit
     to the first <code>n</code> bins (ages or lengths, per <code>fish_selex_type</code>);
-    bins beyond <code>n</code> are held constant at the last fitted bin's
+    bins beyond <code>n</code> are kept constant at the last fitted bin's
     curve.</p></dd>
 
 
@@ -265,9 +265,11 @@ how catchability is obtained. <code>"est"</code> (default) estimates
 <code>ln_fish_q</code>. <code>"arith"</code> concentrates it out of the likelihood as
 the ratio of mean observed to mean predicted index, and <code>"geo"</code> does
 the same on the log scale as <code>exp(mean(log(obs) - log(pred)))</code>. Both
-analytic forms solve one catchability per region and fleet using only the
-years with observations, ignore any block structure, and fix that fleet's
-<code>ln_fish_q</code> regardless of <code>fish_q_spec</code>.</p></dd>
+analytic forms use only the years with observations and fix that fleet's
+<code>ln_fish_q</code> regardless of <code>fish_q_spec</code>. The solve is done within
+each <code>fish_q_blocks</code> time block, so a blocked catchability gets one
+solved value per block. A single block, the default, is one value for the
+whole series.</p></dd>
 
 
 <dt id="arg-fish-q-cov-dat">fish_q_cov_dat<a class="anchor" aria-label="anchor" href="#arg-fish-q-cov-dat"></a></dt>
@@ -379,7 +381,7 @@ objective only through the data and any explicit smoothness or centering
 penalties, which is how several existing assessments constrain them. Values
 other than 0 or 1 make an estimated process error sigma reinterpretable, so
 prefer 0 or 1 unless deliberately down-weighting. Applies only to
-<code>ln_fishsel_devs</code>; the bin-override deviations carry their own process
+<code>ln_fishsel_devs</code>; the bin-override deviations have their own process
 error and are not affected.</p></dd>
 
 
@@ -396,7 +398,7 @@ the base parametric curve already describes the first year well.</p></dd>
 <dd><p>Character vector of length
 <code>n_fish_fleets</code> giving the process error on the bin-override
 deviations for each fleet: <code>"none"</code> (default), <code>"iid"</code>, or
-<code>"rw"</code>. A random walk carries its own estimated sigma per bin, with
+<code>"rw"</code>. A random walk has its own estimated sigma per bin, with
 <code>fishsel_bin_devs_rw_init_sigma</code> governing its first year.</p></dd>
 
 
@@ -409,7 +411,7 @@ set of parameters named in <code>par</code>, which may be a single index or a
 list column of integer vectors naming a whole set. This pins the scalar of
 a non-parametric curve that catchability or fishing mortality would
 otherwise absorb, and is softer than fixing a bin outright. Intended for
-parameter sets held on the log scale. Default <code>NULL</code>.</p></dd>
+parameter sets kept on the log scale. Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-fishsel-devs-shared-bins">fishsel_devs_shared_bins<a class="anchor" aria-label="anchor" href="#arg-fishsel-devs-shared-bins"></a></dt>
@@ -457,8 +459,7 @@ bin dimension defined by <code>fish_selex_type</code>.</p></dd>
 <dd><p>Character vector of length <code>n_fish_fleets</code>
 linking the sexes of a fleet's selectivity, for models with
 <code>n_sexes &gt; 1</code>. Options per fleet:</p><dl><dt><code>"none"</code> (default)</dt>
-<dd><p>Each sex's stored parameters are its own,
-    exactly as before this option existed.</p></dd>
+<dd><p>Each sex's stored parameters are its own.</p></dd>
 
   <dt><code>"par"</code></dt>
 <dd><p>The stored fixed-effect parameter slots of every sex
@@ -471,7 +472,7 @@ linking the sexes of a fleet's selectivity, for models with
 
   <dt><code>"scale"</code></dt>
 <dd><p>Each sex keeps its own parameters, and every sex
-    beyond the first additionally carries a constant log-scale offset on
+    beyond the first additionally has a constant log-scale offset on
     the whole realized curve, <code>exp(ln_fishsel_sex_scale)</code>, estimated
     per region, block, and sex. The scaled curve may exceed one. Refused
     for non-parametric forms and semi-parametric time variation, whose
@@ -583,8 +584,8 @@ follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code>: singl
 
   <dt><code>"nonparfree"</code></dt>
 <dd><p>Non-parametric on the log scale with no
-    standardization, \(\exp(\theta)\), so the values carry the height of the
-    curve as well as its shape. This is the form for a stream fit age by age:
+    standardization, \(\exp(\theta)\), so the values hold the height of the
+    curve as well as its shape. This is the form for a data source fit age by age:
     a free catchability per age and a selectivity estimated at age are one
     quantity written two ways, so the whole age multiplier lives here and no
     catchability is set. Pin one bin, by leaving it out of the estimated bins,
@@ -594,7 +595,7 @@ follow one of:</p><ul><li><p><code>"&lt;model&gt;_Fleet_&lt;f&gt;"</code>: singl
 <dd><p>Logistic selectivity with \(a_{50}\) and slope \(k\) and asymptotic control (3 parameters).</p></dd>
 
   <dt><code>"asymplogist2"</code></dt>
-<dd><p>Logistic selectivity with with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
+<dd><p>Logistic selectivity with \(a_{50}\) and \(a_{95}\) and asymptotic control (3 parameters).</p></dd>
 
   <dt><code>"bicubic"</code></dt>
 <dd><p>Bicubic spline over a bin-node x year-node grid, specified as

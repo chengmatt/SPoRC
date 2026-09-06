@@ -93,6 +93,8 @@ rec_seas_prop[, 1] <- 1
  },
   use_rinit = 0,
   init_age_devs_shared = NULL,
+  R0_blocks = NULL,
+  R0_ref_block = 1,
   use_r0_prior = 0,
   r0_prior = NULL,
   Use_rinit_pen = 0,
@@ -160,14 +162,9 @@ rec_seas_prop[, 1] <- 1
 
 - SR_ref_yr:
 
-  Integer year index (not a calendar year) supplying the biological
-  inputs, weight-at-age, maturity, natural mortality and movement, to
-  unfished spawning biomass per recruit, and so to `S0` and the scale of
-  the stock-recruit curve. Default `1`, the first model year, which is
-  what the model has always used. Set it to `length(years)` to condition
-  the curve on terminal weight-at-age, which is what several ADMB
-  assessments do; with time-varying weight-at-age the two differ and the
-  curve shifts with them. Ignored when `rec_model = "mean_rec"`.
+  Integer year index supplying every input to unfished spawning biomass
+  per recruit, and so to `S0` and the scale of the stock-recruit curve.
+  Matches the estimation model's `SR_ref_yr`. Default `1`.
 
 - Use_h_prior:
 
@@ -273,7 +270,7 @@ rec_seas_prop[, 1] <- 1
   projects no equilibrium at all: the numbers at age 2 and older are
   `exp(ln_InitDevs)` outright, apportioned by sex ratio, with age 1
   still taken from recruitment. Use it when the initial age structure
-  carries no information about `R0` and should not be pulled toward an
+  has no information about `R0` and should not be pulled toward an
   equilibrium. Note that under `4` the deviations are on the scale of
   numbers rather than of log ratios, so the penalty applied through
   `equil_init_age_strc` is a prior on log abundance; pair it with
@@ -346,14 +343,14 @@ rec_seas_prop[, 1] <- 1
   - `"abs"`: `init_F = exp(ln_init_F)`, an absolute fishing mortality
     independent of `ln_F_mean`.
 
-  Use `"abs"` when bridging an assessment that carries a separate
-  historical F (one estimated as its own parameter, distinct from the
-  mean log fishing mortality). Under `"prop"` those two quantities
-  collapse into a single parameter, and because catch constrains only
-  the PRODUCT of numbers and fishing mortality, the optimizer can raise
-  `ln_F_mean` to deplete the initial age structure and raise F together,
-  fitting catch just as well with a smaller, harder-fished stock. That
-  is a genuine second solution branch, not a rounding difference.
+  Use `"abs"` when bridging an assessment that has a separate historical
+  F (one estimated as its own parameter, distinct from the mean log
+  fishing mortality). Under `"prop"` those two quantities collapse into
+  a single parameter, and because catch constrains only the PRODUCT of
+  numbers and fishing mortality, the optimizer can raise `ln_F_mean` to
+  deplete the initial age structure and raise F together, fitting catch
+  just as well with a smaller, harder-fished stock. That is a genuine
+  second solution branch, not a rounding difference.
 
 - init_F_spec:
 
@@ -363,7 +360,7 @@ rec_seas_prop[, 1] <- 1
   (`init_F_form = "prop"`, `init_F_spec = "est"`). Note `init_F` is
   generally weakly identified, which is why assessments commonly fix it.
 
-  The value is carried by the parameter `init_F_par`
+  The value is set by the parameter `init_F_par`
   `[n_regions x n_seas x n_fish_fleets]`, supplied through `...` like
   any other starting value, e.g.
   `Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))`.
@@ -496,7 +493,7 @@ rec_seas_prop[, 1] <- 1
   scale from `ln_rinit`, the initial equilibrium recruitment, so one
   parameter sets both the unfished age structure and the curve; it
   requires `use_rinit = 1`. `"shared"` is the better posed of the first
-  two; `"est"` reproduces templates that carry separate mean-recruitment
+  two; `"est"` reproduces templates that have separate mean-recruitment
   and unfished-recruitment parameters, and `"rinit"` reproduces those
   that use the unfished recruitment in both places, which is the usual
   ADMB arrangement.
@@ -661,6 +658,28 @@ rec_seas_prop[, 1] <- 1
   52-age model with 43 data ages, giving 42 free parameters. When `NULL`
   (default), age sharing follows the standard behavior determined by
   `equil_init_age_strc` alone.
+
+- R0_blocks:
+
+  Character vector giving time blocks for `R0`, one entry per
+  population, in the same vocabulary as the selectivity blocks:
+  `"none_Pop_<p>"`, `"Block_<b>_Year_<a>-<e>_Pop_<p>"` (1-based year
+  indices, `"terminal"` allowed for the end year). Under
+  `rec_model = "mean_rec"` `R0` IS mean recruitment, so a block is a
+  productivity regime. Under a stock-recruit form it is the curve's
+  scale, so blocking it makes the curve time-varying: `S0` moves with
+  the block, and depletion and any reference point built on the curve
+  step at its boundary. A curve fitted as a penalty instead
+  (`sr_penalty` with `sr_R0_spec = "shared"`) takes its scale from
+  `R0_ref_block` and stays put. Default `NULL`, a single block.
+
+- R0_ref_block:
+
+  Integer, the block whose `R0` is used everywhere a single value is
+  needed rather than a year's value: the initial age structure, the
+  regional apportionment, the `R0` prior, the `ln_rinit` penalty and the
+  stock-recruit scale when `sr_R0_spec = "shared"`. Default 1. Only the
+  recruitment computed each year uses that year's block.
 
 - use_r0_prior:
 

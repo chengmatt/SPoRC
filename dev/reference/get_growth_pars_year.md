@@ -46,4 +46,4 @@ get_growth_pars_year(ln_pars, ln_devs, tv_model, tv_link, bounds, y)
 ## Value
 
 Natural-scale parameter vector for the year, with a seventh element
-`rho` of one when the base carries five parameters.
+`rho` of one when the base has five parameters.

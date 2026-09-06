@@ -16,7 +16,7 @@ Work to date has involved the following released versions:
 |----|----|----|
 | 1.0.0 | 2025-11-24 | First public release. Age, sex, season and region structured dynamics, closed loop simulation and management strategy evaluation. |
 | 1.1.0 | 2026-03-31 | Movement estimated as a continuous time Markov chain with preference functions. |
-| 1.2.0.9000 | in development | Population specific (natal homing) and seasonal dynamics, discarding and retention, time varying and semi-parametric growth, conditional age at length, at age observation streams, estimated index observation error, per fleet ageing error. |
+| 1.2.0.9000 | in development | Population specific (natal homing) and seasonal dynamics, discarding and retention, time varying and semi-parametric growth, conditional age at length, at age data sources, estimated index observation error, per fleet ageing error. |
 
 ## Numbers at age as a state space process
 
@@ -53,7 +53,7 @@ covariance, and fishing mortality takes independent, random walk or
 first order autoregressive deviations. Natural mortality and
 catchability are constant within a time block, and regional recruitment
 deviations are independent. Thus, another priority of `SPoRC` will be to
-add additional process error functionality to these streams.
+add additional process error functionality to these data sources.
 
 ## To be revisited
 

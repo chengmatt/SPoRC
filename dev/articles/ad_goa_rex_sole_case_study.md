@@ -24,8 +24,8 @@ Ages run $`a = 0`$ to $`a_{+} = 20`$ with ages observed from $`1`$ to
 $`20`$, lengths are 29 two centimeter bins from 10 to 66 cm, and model
 years run $`y_{1} = 1982`$ to $`y_{\text{end}} = 2024`$. Recruitment is
 age 0, mean recruitment apportioned between the two areas by an
-estimated fraction, with $`\sigma_{R} = 0.6`$. The Eastern area carries
-no catch, so its population is shaped entirely by the survey.
+estimated fraction, with $`\sigma_{R} = 0.6`$. The Eastern area has no
+catch, so its population is shaped entirely by the survey.
 
 ``` r
 
@@ -109,7 +109,7 @@ assessment’s own.
 ## Biological dynamics
 
 Natural mortality is fixed at 0.17. Maturity is logistic on age for
-females, with none below age 3, and males carry none. Growth is
+females, with none below age 3, and males have none. Growth is
 estimated, one Schnute-Francis curve per area and sex, starting from the
 assessment’s estimates, and weight at age is derived from it through the
 weight-length relationship.
@@ -159,8 +159,8 @@ module rather than going in as data. Each fleet’s age-length key and
 weight at age are read at that fleet’s own timing: the surveys’ at
 `t_srv` and the fishery’s at `t_fish`, both the middle of the year here,
 where the assessment reads them, and the spawning weight at `t_spawn`.
-`growth_len_lower` carries the lower edges of the bins, which is what
-the assessment’s key is built on, rather than the midpoints in `lens`.
+`growth_len_lower` holds the lower edges of the bins, which is what the
+assessment’s key is built on, rather than the midpoints in `lens`.
 
 The ageing error matrix is the assessment’s, a normal on observed age
 with the standard deviation growing with true age, binned to the
@@ -185,7 +185,7 @@ input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging =
 ## Catch and fishing mortality
 
 Catch is in the Western-Central area only. Fishing mortality is a free
-parameter per year with no penalty, held to the catch by a lognormal
+parameter per year with no penalty, kept to the catch by a lognormal
 likelihood at CV 0.01.
 
 ``` r
@@ -203,8 +203,7 @@ input_list <- Setup_Mod_Catch_and_F(
 
 ## Fishery compositions
 
-The fishery has no index and carries joint-sex marginal lengths and
-ages.
+The fishery has no index and has joint-sex marginal lengths and ages.
 
 ``` r
 
@@ -233,7 +232,7 @@ input_list <- Setup_Mod_FishIdx_and_Comps(
 
 ## Survey indices and compositions
 
-Each area’s survey carries a biomass index at mid year, joint-sex length
+Each area’s survey has a biomass index at mid year, joint-sex length
 compositions, and conditional age-at-length. The assessment also holds
 the surveys’ marginal ages as ghost fleets, so those go in but are not
 fit.
@@ -314,9 +313,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 )
 ```
 
-The Western-Central survey’s catchability carries the assessment’s
-normal prior on the log scale. The Eastern survey’s is mirrored onto it
-by the map, which the bridge helper sets once the parameters are seeded.
+The Western-Central survey’s catchability holds the assessment’s normal
+prior on the log scale. The Eastern survey’s is mirrored onto it by the
+map, which the bridge helper sets once the parameters are seeded.
 
 ## Weighting
 
@@ -364,8 +363,8 @@ seed <- fit_model(input_list$data, input_list$par, input_list$map,
                   do_optim = FALSE, silent = TRUE)
 ```
 
-The comparison before anything is optimized, against a report file
-carrying six significant digits:
+The comparison before anything is optimized, against a report file with
+six significant digits:
 
     numbers at age                       5.1e-03 %
     spawning biomass                     4.7e-03 %
@@ -447,10 +446,10 @@ recruitment deviations. Stock Synthesis declares them a `devvector`, so
 the 41 deviations of 1982 to 2022 sum to zero and $`R_{0}`$ is the mean
 recruitment of those years by construction. `SPoRC` estimates its
 deviations freely under the penalty, so the mean recruitment of the
-years carrying deviations can differ from $`R_{0}`$, which also sets the
+years with deviations can differ from $`R_{0}`$, which also sets the
 initial equilibrium and the two terminal years without deviations. Under
 mean recruitment with no stock-recruit curve the data prefer about two
 percent more recruitment in the deviation years, so $`R_{0}`$ falls
 almost 4 percent with the deviations rising to match, and the early
-years, held by the prior on the initial-age deviations rather than by
+years, set by the prior on the initial-age deviations rather than by
 data, follow $`R_{0}`$ part of the way.

@@ -37,5 +37,5 @@ draw_index_obs(true, se, like_type = 0, d = NULL, lambda = NULL, u = NULL)
 
 - u:
 
-  Shared factor draw for this fleet and replicate, held constant across
+  Shared factor draw for this fleet and replicate, kept constant across
   years. MVN only.

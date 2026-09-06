@@ -140,7 +140,7 @@ integrate out the random effects. The setup for recruitment, mortality,
 biological processes, and survey indices follows the earlier vignette
 “Case Study: Eastern Bering Sea Walleye Pollock”, so here we only
 highlight the sections that differ.</p>
-<p>The model carries four survey fleets: the bottom trawl survey, the
+<p>The model has four survey fleets: the bottom trawl survey, the
 acoustic trawl survey, the acoustic vessel of opportunity index, and the
 acoustic survey’s age 1 abundance. The last is not a fifth survey. The
 pollock assessment fits the acoustic survey’s age 1 abundance as its own
@@ -268,7 +268,7 @@ acoustic biomass index and from its age composition, and
 <span></span>
 <span>    <span class="co"># Data inputs</span></span>
 <span>    WAA <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">WAA</span>,</span>
-<span>    <span class="co"># the assessment carries a separate weight at age matrix for the fishery</span></span>
+<span>    <span class="co"># the assessment has a separate weight at age matrix for the fishery</span></span>
 <span>    <span class="co"># and for each survey index</span></span>
 <span>    WAA_fish <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">WAA_fish</span>,</span>
 <span>    WAA_srv <span class="op">=</span> <span class="va">sgl_rg_ebswp_data</span><span class="op">$</span><span class="va">WAA_srv</span>,</span>
@@ -480,11 +480,10 @@ scenario.</p>
 <p>We can now loop through each row to generate the model inputs, fit
 the model using Laplace approximation, and store the results. The model
 fitting process can take a while!</p>
-<p><strong>Note</strong>: the <code>random</code> argument specifies
-which parameters should be treated as random effects in the Laplace
-approximation. In this case, it is set to <code>"ln_fishsel_devs"</code>
-whenever selectivity deviations are modeled as random; otherwise, it is
-<code>NULL.</code></p>
+<p>The <code>random</code> argument specifies which parameters are
+treated as random effects in the Laplace approximation. In this case, it
+is set to <code>"ln_fishsel_devs"</code> whenever selectivity deviations
+are modeled as random; otherwise, it is <code>NULL.</code></p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># model storage</span></span>
 <span><span class="va">models</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>

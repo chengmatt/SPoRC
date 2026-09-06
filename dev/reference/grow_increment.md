@@ -4,9 +4,9 @@ The increment of the Richards (or von Bertalanffy, `rho = 1`) curve over
 an elapsed time `e` from a current mean length `L`: \$\$L(t + e)^\rho =
 L\_\infty^\rho + (L^\rho - L\_\infty^\rho) e^{-K e}\$\$ Applied to a
 length that sits on the curve it returns the curve's value `e` later, so
-splitting a year into seasons changes nothing; applied to a length
-carried from an earlier year's parameters it is how a cohort keeps its
-own history.
+splitting a year into seasons changes nothing; applied to a length kept
+from an earlier year's parameters it is how a cohort keeps its own
+history.
 
 ## Usage
 

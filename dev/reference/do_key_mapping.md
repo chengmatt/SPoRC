@@ -33,7 +33,7 @@ do_key_mapping(
 
   Integer array `[n_ages, n_sexes, n_fleets]`, or `NULL` for the default
   given by `default_shared`. Gains a leading population dimension when
-  `pop` is `TRUE`. The sex margin is required: a key coupling the sexes
+  `pop` is `TRUE`. The sex dim is required: a key coupling the sexes
   says so by repeating its entries across them.
 
 - spec:
@@ -59,7 +59,7 @@ do_key_mapping(
 
 - pop:
 
-  Logical. `TRUE` for the population-specific stream.
+  Logical. `TRUE` for the population-specific data source.
 
 - default_shared:
 
@@ -73,9 +73,9 @@ do_key_mapping(
 
 ## Details
 
-Shared by every at-age stream: the catch, discard and index observation
-errors, the age-specific catchabilities, and their population-specific
-counterparts.
+Shared by every at-age data source: the catch, discard and index
+observation errors, the age-specific catchabilities, and their
+population-specific counterparts.
 
 Coupled parameters are checked against the observations informing them.
 A standard deviation with a single observation is not merely poorly

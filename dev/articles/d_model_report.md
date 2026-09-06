@@ -11,6 +11,7 @@ the order they are defined.
 | Name | Description | Dimensions |
 |----|----|----|
 | `R0` | Global mean or virgin recruitment for each population | `n_pop` |
+| `R0_yr` | Global mean or virgin recruitment by year, through its `R0_blocks` time blocks; `R0` itself is the `R0_ref_block` value | `n_pop × n_years` |
 | `rinit` | Global recruitment scalar for initialization for each population | `n_pop` |
 | `rec_region_prop` | Recruitment regional apportionment proportions | `n_pop × n_regions` |
 | `rec_seas_prop` | Recruitment seasonal apportionment proportions | `n_pop × n_seas` |
@@ -23,11 +24,11 @@ the order they are defined.
 | `NAA0` | Numbers-at-age (unfished) | `n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes` |
 | `NAA_bef` | Numbers-at-age at the start of the season, before movement is applied | `n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes` |
 | `NAA_aft` | Numbers-at-age after movement is applied. Under `move_timing = 0` this is the post-movement, pre-mortality state; under `move_timing` 1 and 2 movement is resolved at the end of the season, so it is the post-season state (movement and mortality together) | `n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes` |
-| `NAA_pred` | Deterministic numbers-at-age the mortality and ageing step predicts, before the state-space overwrite. Zero unless `NAA_re` is on. The realized innovation is `log(exp(ln_NAA)) - log(NAA_pred)` over the active cells | `n_pop × n_regions × n_years × n_ages × n_sexes` |
-| `NAA_scalar` | Multiplicative factor the state applied to that prediction, one wherever it did not apply. Tag cohorts and the unfished numbers take the same factor | `n_pop × n_regions × n_years × n_ages × n_sexes` |
+| `NAA_pred` | Deterministic numbers at the start of a season that the mortality and ageing step predicts, before the state-space overwrite. Zero unless `NAA_re` is on, and zero in seasons outside `NAA_re_seasons`. The realized innovation is `log(exp(ln_NAA)) - log(NAA_pred)` over the active cells | `n_pop × n_regions × n_years × n_seasons × n_ages × n_sexes` |
+| `NAA_scalar` | Multiplicative factor the state applied to that prediction, one wherever it did not apply. Tag cohorts and the unfished numbers take the same factor | `n_pop × n_regions × n_years × n_seasons × n_ages × n_sexes` |
 | `NAA_state_nLL` | Penalty on the state-space numbers-at-age innovations. Zero when `NAA_re` is `"none"` | scalar |
 | `ZAA` | Total instantaneous mortality | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes` |
-| `natmort` | Instantaneous natural mortality | `n_pop × n_regions × n_years × n_ages × n_sexes` |
+| `natmort` | Instantaneous natural mortality per year, in force during each season; multiply by `seasdur` for the amount accumulated within a season | `n_pop × n_regions × n_years × n_seas × n_ages × n_sexes` |
 | `bias_ramp` | Vector of bias ramp correction values applied to recruitment deviations | `n_est_rec_devs` |
 | `Movement` | Movement (transition) matrix | `n_pop × n_regions × n_regions × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes` |
 | `Mrate` | Instantaneous movement rate matrix (CTMC movement only; `NULL` otherwise) | `n_pop × n_regions × n_regions × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes` |
@@ -97,9 +98,9 @@ to age via the size-age transition matrix).
 ### Age-disaggregated observation likelihoods
 
 Reported whenever the model is built, and zero everywhere unless that
-stream is fit. Each carries an age dimension the aggregated counterparts
-do not, and is summed over ages within a cell before its weight is
-applied.
+data source is fit. Each has an age dimension the aggregated
+counterparts do not, and is summed over ages within a cell before its
+weight is applied.
 
 | Object | Dimensions |
 |----|----|
@@ -109,16 +110,16 @@ applied.
 | `CatchAA_pop_nLL`, `DiscardAA_pop_nLL`, `SrvIdxAA_pop_nLL` | as above, with a leading population dimension |
 | `PredCatchAA`, `PredDiscardAA`, `PredSrvIdxAA` (and `_pop`) | shaped like their likelihood arrays, on the natural scale |
 
-A stream summed over regions or sexes writes into slot one of those
-margins and leaves the rest at zero, so the array’s shape does not tell
-you what the fleet reported; its `Type` does. A cell whose ages are
+A data source summed over regions or sexes writes into slot one of those
+dims and leaves the rest at zero, so the array’s shape does not tell you
+what the fleet reported; its `Type` does. A cell whose ages are
 correlated contributes its whole density to the first age present, so
 the array still sums correctly but is not readable age by age.
 
 The parameters behind them are also reported: `ln_sigmaCAA`,
 `ln_sigmaDAA`, and `ln_sigmaSrvIdxAA`, each over age, sex and fleet. The
-age shape of catchability is not among them: an index fit age by age
-carries it in selectivity, through the `"nonparfree"` form.
+age shape of catchability is not among them: an index fit age by age has
+it in selectivity, through the `"nonparfree"` form.
 
 Region-aggregated likelihoods combine contributions across all
 populations; population-specific likelihoods (`_pop_`) are only computed

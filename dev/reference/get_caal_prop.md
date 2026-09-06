@@ -29,4 +29,4 @@ get_caal_prop(data, rep)
 A list with `Obs_Fish_caal`, `Pred_Fish_caal`, `Obs_Srv_caal` and
 `Pred_Srv_caal`, each dimensioned by
 `n_regions, n_years, n_seas, n_lens, n_obs_ages, n_sexes, n_fleets`, or
-`NULL` for a fleet type carrying no conditional age-at-length data.
+`NULL` for a fleet type with no conditional age-at-length data.

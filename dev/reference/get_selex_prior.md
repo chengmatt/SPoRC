@@ -16,7 +16,7 @@ prior, and its optional `type` column selects what the row constrains:
 
   A normal prior on the realized selectivity value at one bin,
   `dnorm(sel[bin], mu, sd)`, with both hyperparameters on the natural
-  scale. `par` instead names the bin, on the grid the stream's
+  scale. `par` instead names the bin, on the grid the data source's
   selectivity is parameterized on (ages or lengths per its selectivity
   type), and the value is read at the first model year of `block`
   (blocked and time-invariant selectivity are constant within a block).
@@ -62,8 +62,8 @@ get_selex_prior(
 - sel_l:
 
   Array `[region, year, len, sex, fleet]` of realized length-based
-  selectivity, read by `"value"` rows instead of `sel` when the stream
-  is length-based.
+  selectivity, read by `"value"` rows instead of `sel` when the data
+  source is length-based.
 
 - selex_type:
 

@@ -1,9 +1,6 @@
 # Names for the CTMC generator bound forms
 
-`ctmc_diffusion_bounds` started life as a 0/1 flag and now also takes
-the name of the form directly, so input lists built before the named
-forms existed keep evaluating. Shared by `Setup_Mod_Movement` and
-`Get_Movement` so validation and the objective agree on the spelling.
+Names for the CTMC generator bound forms
 
 ## Usage
 
@@ -15,8 +12,8 @@ get_ctmc_bound_form(x)
 
 - x:
 
-  The `ctmc_diffusion_bounds` value: `0`, `1`, or one of `"none"`,
-  `"softplus"`, `"clamp"`, `"upwind"`, `"barker"`, `"logsoftplus"`.
+  The `ctmc_diffusion_bounds` value: the code `0`, `1` or `2`, or the
+  matching name `"none"`, `"softplus"` or `"upwind"`.
 
 ## Value
 

@@ -1,8 +1,8 @@
 # State-Space Numbers at Age
 
 A stock lives in three regions with different fishing histories, and its
-survival carries process error correlated across those regions. However,
-in some cases, spatial models may not be feasible. The purpose of this
+survival has process error correlated across those regions. However, in
+some cases, spatial models may not be feasible. The purpose of this
 vignette is to demonstrate how state-space treatment of numbers-at-age
 can in some cases, approximate spatial process error (e.g., through
 migration). Let us first set up a simulation in the following with three
@@ -218,9 +218,13 @@ spatial_state <- build_em(dat, n_regions, NAA_re = "iid", NAA_re_region = "us")
 
 `ln_NAA` holds the log numbers themselves rather than deviations. It
 starts from an equilibrium decay built from $`R_0`$ and $`M`$, so the
-state needs nothing supplied by hand. What is still worth carrying over
-is the fixed effects, taken from a deterministic pass of the same model
-so both fits start from the same place.
+state needs nothing supplied by hand. A cell is the log numbers at the
+start of a season, and the default `NAA_re_seasons = "annual"` keeps a
+state at season one only, which on this single-season model is every
+boundary there is. A seasonal model can put one at the start of every
+season with `"all"`, or at a chosen set of them. What is still worth
+reusing is the fixed effects, taken from a deterministic pass of the
+same model so both fits start from the same place.
 
 ``` r
 
@@ -315,9 +319,9 @@ weighting each region’s proportions by that region’s index.
 ## Results
 
 Twelve replicates at each of four process error levels, including a
-control where the operating model carries none at all. Every model in
-this case converged. Spawning biomass is summed across regions and
-compared to the operating model’s truth over forty years.
+control where the operating model has none at all. Every model in this
+case converged. Spawning biomass is summed across regions and compared
+to the operating model’s truth over forty years.
 
 | $`\sigma^{\text{NAA}}`$ | spatial, no state | spatial + state | aggregated, no state | aggregated + state |
 |---:|---:|---:|---:|---:|
@@ -343,7 +347,7 @@ model (not shown in this case study here), across thirty replicates at
 each structure, the process error standard deviation and every
 correlation are estimated close to the values that generated them, and
 the standard deviation is estimated at exactly zero when the operating
-model carries no process error at all.
+model has no process error at all.
 
 ![Recovery of the process error parameters over thirty replicates per
 structure. Diamonds mark the operating model’s true values. (a) the

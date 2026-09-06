@@ -55,8 +55,8 @@ advice set five years in advance. Future recruitment will be sampled
 from the burn-in period, while uncertainty in the composition data
 (input sample sizes) will follow the fishing mortality pattern. If the
 assessment estimated a state-space process on numbers at age, its
-standard deviations and correlations are carried across as well and the
-state stays active through the projection, so the operating model keeps
+standard deviations and correlations are reused as well and the state
+stays active through the projection, so the operating model keeps
 generating process error rather than running deterministically once the
 data stop.
 
@@ -427,7 +427,7 @@ for (sim in 1:sim_env$n_sims) {
        tmp_MatAA <- array(rep(asmt_data$MatAA[,,y,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_pop, length(asmt_data$ages), asmt_data$n_sexes)) # maturity at age
        tmp_fish_sel <- array(rep(obj$rep$fish_sel[,,y,,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes, asmt_data$n_fish_fleets)) # selectivity
        tmp_terminal_F <- array(obj$rep$Fmort[,y,,], dim = c(asmt_data$n_regions, asmt_data$n_seas, asmt_data$n_fish_fleets)) # terminal fishing mortality
-       tmp_natmort <- array(rep(obj$rep$natmort[,,y,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, length(asmt_data$ages), asmt_data$n_sexes)) # natural mortality
+       tmp_natmort <- array(rep(obj$rep$natmort[,,y,,,], each = proj_opt$n_proj_yrs), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes)) # natural mortality, a rate per year in each season
        tmp_recruitment <- array(obj$rep$Rec[,,1:y], dim = c(asmt_data$n_pop, asmt_data$n_regions, length(1:y))) # recruitment to use for projections
        tmp_sexratio <- array(replicate(n = proj_opt$n_proj_yrs, obj$rep$sexratio[,,y,]), dim = c(asmt_data$n_pop, asmt_data$n_regions, proj_opt$n_proj_yrs, asmt_data$n_sexes)) # recruitment sex ratio
        tmp_Movement <- array(dim = c(asmt_data$n_pop, asmt_data$n_regions, asmt_data$n_regions, proj_opt$n_proj_yrs,asmt_data$n_seas, length(asmt_data$ages), asmt_data$n_sexes))
@@ -477,7 +477,7 @@ for (sim in 1:sim_env$n_sims) {
             catch = tmp_TAC[,r, tac_year_index,, f], # catch values to use
             NAA = sim_env$NAA[1, r, y+1,,, , sim], # numbers at age in simulation (truth)
             WAA = sim_env$WAA[1, r, y+1,, , , sim], # weight-at-age in simulation (truth)
-            natmort  = sim_env$natmort[1, r, y+1, , , sim], # natural mortality in simulation (truth)
+            natmort  = sim_env$natmort[1, r, y+1, , , , sim], # natural mortality in simulation (truth)
             fish_sel = sim_env$fish_sel[1, r, y+1, 1, , , f, sim] # fishery selectivity in simulation (truth)
           )
         }, r = rf_grid$r, f = rf_grid$f)

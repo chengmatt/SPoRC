@@ -107,39 +107,46 @@ defined.</p>
 <td><code>n_pop</code></td>
 </tr>
 <tr class="even">
+<td><code>R0_yr</code></td>
+<td>Global mean or virgin recruitment by year, through its
+<code>R0_blocks</code> time blocks; <code>R0</code> itself is the
+<code>R0_ref_block</code> value</td>
+<td><code>n_pop × n_years</code></td>
+</tr>
+<tr class="odd">
 <td><code>rinit</code></td>
 <td>Global recruitment scalar for initialization for each
 population</td>
 <td><code>n_pop</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>rec_region_prop</code></td>
 <td>Recruitment regional apportionment proportions</td>
 <td><code>n_pop × n_regions</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>rec_seas_prop</code></td>
 <td>Recruitment seasonal apportionment proportions</td>
 <td><code>n_pop × n_seas</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>stray_rate</code></td>
 <td>Proportion of each population’s spawning biomass contributing to
 non-natal regions (only relevant when <code>n_pop &gt; 1</code>)</td>
 <td><code>n_pop × n_years</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sexratio</code></td>
 <td>Recruitment sex ratio (female proportion)</td>
 <td><code>n_pop × n_regions × n_years × n_sexes</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>h_trans</code></td>
 <td>Steepness parameter by population and region; ignored under mean
 recruitment unless a stock-recruit penalty is applied</td>
 <td><code>n_pop × n_regions</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>SR_pred</code></td>
 <td>Stock-recruit curve prediction under
 <code>rec_model = "mean_rec"</code> with <code>sr_penalty</code>,
@@ -147,7 +154,7 @@ evaluated alongside the dynamics but never advancing them; ones when no
 such penalty is applied</td>
 <td><code>n_pop × n_regions × n_years</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sr_R0</code></td>
 <td>Scale of the stock-recruit curve under <code>sr_penalty</code>.
 Equals <code>ln_global_R0</code> exponentiated under
@@ -156,23 +163,23 @@ Equals <code>ln_global_R0</code> exponentiated under
 so the three settings are distinguishable here.</td>
 <td><code>n_pop</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>NAA</code></td>
 <td>Numbers-at-age (fished)</td>
 <td><code>n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>NAA0</code></td>
 <td>Numbers-at-age (unfished)</td>
 <td><code>n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>NAA_bef</code></td>
 <td>Numbers-at-age at the start of the season, before movement is
 applied</td>
 <td><code>n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>NAA_aft</code></td>
 <td>Numbers-at-age after movement is applied. Under
 <code>move_timing = 0</code> this is the post-movement, pre-mortality
@@ -181,56 +188,59 @@ the end of the season, so it is the post-season state (movement and
 mortality together)</td>
 <td><code>n_pop × n_regions × (n_years + 1) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="even">
-<td><code>NAA_pred</code></td>
-<td>Deterministic numbers-at-age the mortality and ageing step predicts,
-before the state-space overwrite. Zero unless <code>NAA_re</code> is on.
-The realized innovation is <code>log(exp(ln_NAA)) - log(NAA_pred)</code>
-over the active cells</td>
-<td><code>n_pop × n_regions × n_years × n_ages × n_sexes</code></td>
-</tr>
 <tr class="odd">
+<td><code>NAA_pred</code></td>
+<td>Deterministic numbers at the start of a season that the mortality
+and ageing step predicts, before the state-space overwrite. Zero unless
+<code>NAA_re</code> is on, and zero in seasons outside
+<code>NAA_re_seasons</code>. The realized innovation is
+<code>log(exp(ln_NAA)) - log(NAA_pred)</code> over the active cells</td>
+<td><code>n_pop × n_regions × n_years × n_seasons × n_ages × n_sexes</code></td>
+</tr>
+<tr class="even">
 <td><code>NAA_scalar</code></td>
 <td>Multiplicative factor the state applied to that prediction, one
 wherever it did not apply. Tag cohorts and the unfished numbers take the
 same factor</td>
-<td><code>n_pop × n_regions × n_years × n_ages × n_sexes</code></td>
+<td><code>n_pop × n_regions × n_years × n_seasons × n_ages × n_sexes</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>NAA_state_nLL</code></td>
 <td>Penalty on the state-space numbers-at-age innovations. Zero when
 <code>NAA_re</code> is <code>"none"</code>
 </td>
 <td>scalar</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>ZAA</code></td>
 <td>Total instantaneous mortality</td>
 <td><code>n_pop × n_regions × n_years × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="even">
-<td><code>natmort</code></td>
-<td>Instantaneous natural mortality</td>
-<td><code>n_pop × n_regions × n_years × n_ages × n_sexes</code></td>
-</tr>
 <tr class="odd">
+<td><code>natmort</code></td>
+<td>Instantaneous natural mortality per year, in force during each
+season; multiply by <code>seasdur</code> for the amount accumulated
+within a season</td>
+<td><code>n_pop × n_regions × n_years × n_seas × n_ages × n_sexes</code></td>
+</tr>
+<tr class="even">
 <td><code>bias_ramp</code></td>
 <td>Vector of bias ramp correction values applied to recruitment
 deviations</td>
 <td><code>n_est_rec_devs</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>Movement</code></td>
 <td>Movement (transition) matrix</td>
 <td><code>n_pop × n_regions × n_regions × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>Mrate</code></td>
 <td>Instantaneous movement rate matrix (CTMC movement only;
 <code>NULL</code> otherwise)</td>
 <td><code>n_pop × n_regions × n_regions × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sgl_seas_spawning_movement</code></td>
 <td>Spawning movement matrix applied during the spawning event when
 <code>n_seas == 1</code> and <code>n_pop &gt; 1</code>
@@ -489,9 +499,9 @@ and fleet</td>
 <h3 id="age-disaggregated-observation-likelihoods">Age-disaggregated observation likelihoods<a class="anchor" aria-label="anchor" href="#age-disaggregated-observation-likelihoods"></a>
 </h3>
 <p>Reported whenever the model is built, and zero everywhere unless that
-stream is fit. Each carries an age dimension the aggregated counterparts
-do not, and is summed over ages within a cell before its weight is
-applied.</p>
+data source is fit. Each has an age dimension the aggregated
+counterparts do not, and is summed over ages within a cell before its
+weight is applied.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -529,17 +539,17 @@ applied.</p>
 </tr>
 </tbody>
 </table>
-<p>A stream summed over regions or sexes writes into slot one of those
-margins and leaves the rest at zero, so the array’s shape does not tell
-you what the fleet reported; its <code>Type</code> does. A cell whose
-ages are correlated contributes its whole density to the first age
+<p>A data source summed over regions or sexes writes into slot one of
+those dims and leaves the rest at zero, so the array’s shape does not
+tell you what the fleet reported; its <code>Type</code> does. A cell
+whose ages are correlated contributes its whole density to the first age
 present, so the array still sums correctly but is not readable age by
 age.</p>
 <p>The parameters behind them are also reported:
 <code>ln_sigmaCAA</code>, <code>ln_sigmaDAA</code>, and
 <code>ln_sigmaSrvIdxAA</code>, each over age, sex and fleet. The age
-shape of catchability is not among them: an index fit age by age carries
-it in selectivity, through the <code>"nonparfree"</code> form.</p>
+shape of catchability is not among them: an index fit age by age has it
+in selectivity, through the <code>"nonparfree"</code> form.</p>
 <p>Region-aggregated likelihoods combine contributions across all
 populations; population-specific likelihoods (<code>_pop_</code>) are
 only computed when the corresponding <code>UseCatch_pop</code>,

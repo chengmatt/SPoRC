@@ -288,24 +288,17 @@ variables must be present in <code>ctmc_move_dat</code>. Required for
 <dt id="arg-ctmc-diffusion-bounds">ctmc_diffusion_bounds<a class="anchor" aria-label="anchor" href="#arg-ctmc-diffusion-bounds"></a></dt>
 <dd><p>How the CTMC generator is kept a valid Metzler
 matrix (non-negative off-diagonal entries) when taxis outweighs diffusion.
-Writing \(d\) for the preference gradient along an edge and \(\theta_j\)
-for the diffusion rate out of its origin, the accepted values are
-<code>"none"</code> (or <code>0</code>, the default) for \(\theta_j + d\) unbounded;
-<code>"softplus"</code> (or <code>1</code>) for a softplus of \(\theta_j + d\) of width
-<code>ctmc_diffusion_eps</code>; <code>"clamp"</code> for its hard positive part;
-<code>"upwind"</code> for the discontinuous Galerkin (finite volume) flux
-\(\theta_j + \max(d, 0)\); <code>"barker"</code> for
-\(\theta_j\,\mathrm{logit}^{-1}(d)\); and <code>"logsoftplus"</code> for
-\(\theta_j \log(1 + e^{d})\). The last two are positive by construction and
-ignore <code>ctmc_diffusion_eps</code> entirely: they have no floor, no kink and no
-gradient-dead region, and they leave the diffusion parameter interior when the
-data want one-way flow. See <code>Get_Movement</code> for the full comparison.</p></dd>
+<code>"softplus"</code> for a softplus of \(\theta_j + d\) of width
+<code>ctmc_diffusion_eps</code>; and <code>"upwind"</code> (or <code>2</code>) for the discontinuous Galerkin
+(finite volume) flux \(\theta_j + \max(d, 0)\), which has diffusion whole
+and adds only the down-gradient taxis, so positivity never depends on the two
+cancelling.</p></dd>
 
 
 <dt id="arg-ctmc-diffusion-eps">ctmc_diffusion_eps<a class="anchor" aria-label="anchor" href="#arg-ctmc-diffusion-eps"></a></dt>
 <dd><p>Positive numeric width of the softplus applied when
 <code>ctmc_diffusion_bounds = "softplus"</code> (default <code>0.1</code>). An edge where
-taxis exactly cancels diffusion carries <code>eps * log(2)</code>, so this sets a
+taxis exactly cancels diffusion has <code>eps * log(2)</code>, so this sets a
 floor on exchange as well as smoothing the hinge.</p></dd>
 
 
@@ -335,7 +328,7 @@ generator are evaluated, both when converting \(Q\) to movement fractions and
 inside the <code>move_timing = 2</code> seasonal operators. <code>0</code> (default)
 uses <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>. A power of two \(n \ge 1\) instead uses \(n\) implicit
 (backward Euler) substeps, \((I - A/n)^{-n}\), evaluated as one linear solve plus
-\(\log_2 n\) squarings, which is why \(n\) must be a power of two. The implicit form has a much cheaper reverse-mode adjoint
+\(\log_2 n\) squarings, which is why \(n\) must be a power of two. The implicit form has a much cheaper reverse-mode derivative
 than a matrix exponential, so the gradient is several times faster, but it is a
 first-order approximation: \(n = 1\) is plain <code>solve(I - A)</code> and is an approximation.</p></dd>
 

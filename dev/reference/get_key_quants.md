@@ -82,7 +82,7 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
 
   :   Number of terminal model years over which demographic inputs
       (selectivity, weight-at-age, maturity, natural mortality,
-      movement) are averaged before being held constant across the
+      movement) are averaged before being kept constant across the
       projection period.
 
   `HCR_function`

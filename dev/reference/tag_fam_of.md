@@ -6,12 +6,12 @@ used for OSA packing and evaluation.
 ## Usage
 
 ``` r
-tag_fam_of(lt)
+tag_fam_of(like_type)
 ```
 
 ## Arguments
 
-- lt:
+- like_type:
 
   Integer likelihood type code:
 

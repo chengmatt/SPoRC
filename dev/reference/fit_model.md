@@ -102,7 +102,7 @@ fit_model(
   Default
   [`SPoRC_rtmb`](https://chengmatt.github.io/SPoRC/dev/reference/SPoRC_rtmb.md).
   Allows non-SPoRC RTMB models to be fit with the same optimization and
-  Newton-refinement machinery.
+  Newton-refinement routines.
 
 - ...:
 

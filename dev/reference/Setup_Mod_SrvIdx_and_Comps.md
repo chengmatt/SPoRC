@@ -125,8 +125,8 @@ Setup_Mod_SrvIdx_and_Comps(
   Observed survey index at age, an array with dimensions
   `[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]`.
   Supplying this fits the index at age directly, every age its own
-  observation with its own catchability. The sex margin is required
-  whatever the fleet reports: a stream summed over sexes carries its
+  observation with its own catchability. The sex dim is required
+  whatever the fleet reports: a data source summed over sexes has its
   observation in sex slot one. A fleet uses this or the aggregated
   index, never both.
 
@@ -150,10 +150,10 @@ Setup_Mod_SrvIdx_and_Comps(
 
   Integer arrays `[n_ages, n_sexes, n_srv_fleets]` coupling the index at
   age observation error, the key matrix convention ICES assessments use.
-  Equal entries share a parameter and `NA` excludes one. The sex margin
-  is required; a key coupling the sexes repeats its entries across them.
+  Equal entries share a parameter and `NA` excludes one. The sex dim is
+  required; a key coupling the sexes repeats its entries across them.
   The age shape of catchability is not set here: an index fit age by age
-  puts it in selectivity through the `"nonparfree"` form, which carries
+  puts it in selectivity through the `"nonparfree"` form, which holds
   the height of the curve as well as its shape. See
   [`Setup_Mod_Srvsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md).
 
@@ -163,7 +163,7 @@ Setup_Mod_SrvIdx_and_Comps(
 
 - SrvIdxAA_Type, SrvIdxAA_pop_Type:
 
-  Which margins the fleet reports separately: `"agg"`, `"spltRaggS"`
+  Which dims the fleet reports separately: `"agg"`, `"spltRaggS"`
   (default), `"aggRspltS"` or `"spltRspltS"`, or year and fleet
   specifications such as `"spltRaggS_Year_1-20_Fleet_1"`. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
@@ -223,7 +223,7 @@ Setup_Mod_SrvIdx_and_Comps(
   weight on a normal likelihood is the same statement as dividing the
   variance by that weight. `Setup_Mod_Weighting` warns when both are
   used. Fleets with a multivariate normal index likelihood take their
-  scale from the supplied covariance and cannot carry one, which is an
+  scale from the supplied covariance and cannot have one, which is an
   error rather than a silently unidentified parameter.
 
 - sigmaSrvIdx_map:
@@ -266,7 +266,7 @@ Setup_Mod_SrvIdx_and_Comps(
   weight on a normal likelihood is the same statement as dividing the
   variance by that weight. `Setup_Mod_Weighting` warns when both are
   used. Fleets with a multivariate normal index likelihood take their
-  scale from the supplied covariance and cannot carry one, which is an
+  scale from the supplied covariance and cannot have one, which is an
   error rather than a silently unidentified parameter.
 
 - sigmaSrvIdx_pop_map:
@@ -487,7 +487,7 @@ Setup_Mod_SrvIdx_and_Comps(
   refer to observed bins, that is after any ageing error has mapped
   model ages onto observed ones. The restriction applies whatever the
   composition type: for sex-joint comps the named bins are dropped from
-  each sex's block, so the sex ratio the joint comps carry becomes the
+  each sex's block, so the sex ratio the joint comps have becomes the
   ratio within the fitted bins. Every fleet must retain at least two
   bins, since the proportion in a lone bin is one whatever the model
   predicts. Default `NULL`, which fits all bins for all fleets.
@@ -523,9 +523,9 @@ Setup_Mod_SrvIdx_and_Comps(
   and `"mvn"` (multivariate normal on the arithmetic scale using a fixed
   covariance supplied through `SrvIdx_Cov`). One-step-ahead residuals
   are available only for lognormal fleets. A fleet's population-specific
-  index stream follows the same choice for `"lognormal"` and `"normal"`,
-  but stays lognormal under `"mvn"`, whose covariance describes the
-  regional series only.
+  index data source follows the same choice for `"lognormal"` and
+  `"normal"`, but stays lognormal under `"mvn"`, whose covariance
+  describes the regional series only.
 
 - SrvLenComps_sel:
 
@@ -561,13 +561,13 @@ Setup_Mod_SrvIdx_and_Comps(
   Observed conditional age-at-length array
   `[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x n_srv_fleets]`.
   A CAAL observation is the age composition of the fish aged from one
-  length bin, so the age margin of each length row is what gets fit.
-  `NULL` (default) for a model with no CAAL data.
+  length bin, so the age dim of each length row is what gets fit. `NULL`
+  (default) for a model with no CAAL data.
 
 - UseSrv_caal:
 
   Use flags `[n_regions x n_years x n_seas x n_lens x n_srv_fleets]`.
-  Length bins with no aged fish carry a zero and are skipped.
+  Length bins with no aged fish have a zero and are skipped.
 
 - ISS_Srv_caal:
 

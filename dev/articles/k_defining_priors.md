@@ -176,6 +176,7 @@ input_list <- Setup_Mod_Biologicals(
 #> Natural Mortality Population Blocks is specified as: 1
 #> Natural Mortality Region Blocks is specified as: 1
 #> Natural Mortality Year Blocks is specified as: 1
+#> Natural Mortality Season Blocks is specified as: 1
 #> Natural Mortality Age Blocks is specified as: 1
 #> Natural Mortality Sex Blocks is specified as: 2
 ```

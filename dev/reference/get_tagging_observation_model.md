@@ -101,7 +101,8 @@ get_tagging_observation_model(
 
 - natmort:
 
-  Array `[pop, region, year, age, sex]` of natural mortality at age.
+  Array `[pop, region, year, season, age, sex]` of natural mortality at
+  age.
 
 - seasdur:
 
@@ -162,12 +163,14 @@ get_tagging_observation_model(
 
 - NAA_scalar:
 
-  Array `[pop, region, year, age, sex]` of the factor the state-space
-  numbers at age applied to the deterministic prediction, one wherever
-  it did not apply. Tagged fish are a subset of the population and the
-  innovation reads as unmodelled mortality, so the cohorts take the same
-  factor at the year boundary. `NULL` (the default) leaves them on the
-  deterministic trajectory, which is correct only when the state is off.
+  Array `[pop, region, year, season, age, sex]` of the factor the
+  state-space numbers at age applied to the deterministic prediction,
+  one wherever it did not apply. Tagged fish are a subset of the
+  population and the innovation reads as unmodelled mortality, so the
+  cohorts take the same factor at every boundary the state acts on,
+  within a year as well as across one. `NULL` (the default) leaves them
+  on the deterministic trajectory, which is correct only when the state
+  is off.
 
 ## Value
 

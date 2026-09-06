@@ -3,7 +3,7 @@
 The year-loop companion of
 [`Get_Growth`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md)
 under cohort propagation. For year `y` it builds every key, length,
-weight and weight of the year from the start-of-year state, and carries
+weight and weight of the year from the start-of-year state, and holds
 the state to the next year with the year's parameters: each propagated
 age grows by the year's increment, the first propagated age is placed on
 the year's curve, the ages in the linear phase keep the length at `A1`
@@ -12,7 +12,7 @@ the cohort entering it with the fish already there by their numbers at
 the start of this year, \$\$\bar L\_{+,y+1} = \frac{(N\_{n-1} + 0.01)\\
 g(L\_{n-1}) + (N\_{n} + 0.01)\\ g(L\_{+})}{N\_{n-1} + N_n + 0.02}\$\$
 with \\g\\ the year's increment and \\N\\ the start-of-year numbers of
-the stratum. The CV at age is held at the first year's sizes.
+the stratum. The CV at age is kept at the first year's sizes.
 
 ## Usage
 
@@ -58,7 +58,7 @@ Get_Growth_Year(
 
   The list
   [`Get_Growth`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md)
-  returned, carrying the output containers and the years before the
+  returned, with the output containers and the years before the
   propagation started.
 
 - y:

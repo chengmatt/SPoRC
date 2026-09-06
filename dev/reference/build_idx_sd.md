@@ -4,7 +4,7 @@ Applies
 [`combine_idx_sd`](https://chengmatt.github.io/SPoRC/dev/reference/combine_idx_sd.md)
 fleet by fleet, where the fleet is the last dimension of `se`. Handles
 both the aggregated arrays, indexed region by year by season by fleet,
-and the population-specific arrays, which carry a leading population
+and the population-specific arrays, which have a leading population
 dimension.
 
 ## Usage

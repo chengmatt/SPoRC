@@ -78,6 +78,7 @@ geometric-series solutions that optionally incorporate seasonal movement.</p>
 <span>  <span class="va">seasdur</span>,</span>
 <span>  <span class="va">rec_seas_prop</span>,</span>
 <span>  <span class="va">natmort</span>,</span>
+<span>  natmort_annual <span class="op">=</span> <span class="fu"><a href="collapse_natmort_annual.html">collapse_natmort_annual</a></span><span class="op">(</span><span class="va">natmort</span>, <span class="va">seasdur</span>, seas_dim <span class="op">=</span> <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  <span class="va">init_F</span>,</span>
 <span>  <span class="va">dmr</span>,</span>
 <span>  <span class="va">fish_sel</span>,</span>
@@ -145,8 +146,15 @@ proportions.</p></dd>
 
 
 <dt id="arg-natmort">natmort<a class="anchor" aria-label="anchor" href="#arg-natmort"></a></dt>
-<dd><p>Array (<code>n_pop x n_regions x n_ages x n_sexes</code>) of natural
-mortality rates.</p></dd>
+<dd><p>Array (<code>n_pop x n_regions x n_seas x n_ages x n_sexes</code>) of
+natural mortality, a rate per year in each season.</p></dd>
+
+
+<dt id="arg-natmort-annual">natmort_annual<a class="anchor" aria-label="anchor" href="#arg-natmort-annual"></a></dt>
+<dd><p>Array (<code>n_pop x n_regions x n_ages x n_sexes</code>) of
+the annual total, the duration weighted sum over seasons. Read by the
+equilibrium seed and the plus group series, which step a whole year at once.
+Defaults to that sum.</p></dd>
 
 
 <dt id="arg-init-f">init_F<a class="anchor" aria-label="anchor" href="#arg-init-f"></a></dt>

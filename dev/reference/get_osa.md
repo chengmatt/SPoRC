@@ -99,7 +99,7 @@ get_osa(
 
   Years with composition data. Either a plain vector, used for every
   region, or a list with one vector of years per region when the regions
-  carry different years. Both forms work for every composition type. A
+  have different years. Both forms work for every composition type. A
   region with no years is skipped.
 
 - seas:
@@ -167,7 +167,7 @@ get_osa(
   which composition data source to pull internal OSA residuals for.
   Conditional age-at-length uses `"Fish_caal"` or `"Srv_caal"`, which
   return an extra `len` column giving the length bin each age
-  composition was conditioned on and ignore `family`, since CAAL carries
+  composition was conditioned on and ignore `family`, since CAAL has
   only the discrete likelihoods. Required when `model` is supplied and
   `index_source` is `NULL` and `tag = FALSE`.
 

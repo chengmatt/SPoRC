@@ -88,14 +88,13 @@ the plus-group age, under either unfished or fished conditions.</p>
 
 
 <dl><dt id="arg-m-penult">M_penult<a class="anchor" aria-label="anchor" href="#arg-m-penult"></a></dt>
-<dd><p>Numeric vector <code>[n_regions]</code>. Natural mortality for
-the penultimate age class, used as an annual rate (scaled by
-<code>seasdur</code> internally).</p></dd>
+<dd><p>Numeric matrix <code>[n_regions, n_seas]</code>. Natural mortality
+for the penultimate age, a rate per year, scaled by <code>seasdur</code> inside.</p></dd>
 
 
 <dt id="arg-m-plus">M_plus<a class="anchor" aria-label="anchor" href="#arg-m-plus"></a></dt>
-<dd><p>Numeric vector <code>[n_regions]</code>. Natural mortality for the
-plus-group age class.</p></dd>
+<dd><p>Numeric matrix <code>[n_regions, n_seas]</code>. The same for the
+plus group.</p></dd>
 
 
 <dt id="arg-f-penult">F_penult<a class="anchor" aria-label="anchor" href="#arg-f-penult"></a></dt>

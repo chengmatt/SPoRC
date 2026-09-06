@@ -164,7 +164,7 @@ a Beverton-Holt curve with steepness fixed at 0.75 and
 <div class="section level3">
 <h3 id="what-stock-synthesis-says-differently">What Stock Synthesis says differently<a class="anchor" aria-label="anchor" href="#what-stock-synthesis-says-differently"></a>
 </h3>
-<p>Seven conventions carry the whole bridge, and each of them can easily
+<p>Seven conventions hold the whole bridge, and each of them can easily
 forgotten if missed. Age 0 fish spawn in the equilibrium year only.
 Spawning biomass is female numbers times fecundity at age, formed before
 the year’s recruits settle, so the age 0 cell is empty in every year the
@@ -176,7 +176,7 @@ and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_{0}</annotation></semantics></math>
 are built from. Dropping those fish everywhere moves
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>S</mi><mn>0</mn></msub><annotation encoding="application/x-tex">S_{0}</annotation></semantics></math>
-by 0.009 percent, which the Beverton-Holt then carries into recent
+by 0.009 percent, which the Beverton-Holt then propagates into recent
 recruitment. <code>SPoRC</code> forms the first year’s spawning biomass
 from the initial numbers and every later year’s from the survivors, so a
 maturity at age 0 that is the fecundity ratio in
@@ -201,20 +201,20 @@ them.</p>
 <p>Extra survey standard deviation is added, not combined in quadrature.
 For each survey,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>y</mi></msub><mo>=</mo><msubsup><mi>σ</mi><mi>y</mi><mtext mathvariant="normal">input</mtext></msubsup><mo>+</mo><msup><mi>σ</mi><mtext mathvariant="normal">extra</mtext></msup></mrow><annotation encoding="application/x-tex">\sigma_{y} = \sigma_{y}^{\text{input}} + \sigma^{\text{extra}}</annotation></semantics></math>.
-<code>SPoRC</code> currently has no parameter for it, so it is held at
+<code>SPoRC</code> currently has no parameter for it, so it is kept at
 the assessment’s estimate.</p>
 <p>The recruitment index is a likelihood on the deviations. Fleet 11 is
 units 36, a normal likelihood on
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\varepsilon_{y}</annotation></semantics></math>
-itself rather than on abundance. <code>SPoRC</code> carries this as
+itself rather than on abundance. <code>SPoRC</code> holds this as
 <code>srv_idx_type = "recdev"</code>, a survey fleet that observes year
 class strength directly and reads no part of the population.</p>
-<p>Two fleets carry two composition streams. The trawl fishery and the
-West Coast groundfish bottom trawl survey each have sexed and unsexed
-compositions in the same years. <code>SPoRC</code> holds one composition
-type per fleet, so each gets a second fleet sharing the first’s
-selectivity: a fishery fleet companion with no catch observation, and a
-survey fleet companion with no index.</p>
+<p>Two fleets have two composition data sources. The trawl fishery and
+the West Coast groundfish bottom trawl survey each have sexed and
+unsexed compositions in the same years. <code>SPoRC</code> holds one
+composition type per fleet, so each gets a second fleet sharing the
+first’s selectivity: a fishery fleet companion with no catch
+observation, and a survey fleet companion with no index.</p>
 </div>
 </div>
 <div class="section level2">
@@ -289,7 +289,7 @@ it went in right.</p>
 <p>Weight at age and fecundity at age are empirical and year specific,
 read from the assessment’s <code>wtatage.ss</code>. Maturity is the
 ratio of the two, so spawning biomass is numbers times fecundity, with
-the age 0 cell carrying its value in the equilibrium year alone.</p>
+the age 0 cell with its value in the equilibrium year alone.</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
@@ -346,7 +346,7 @@ in.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>The assessment has no fishing mortality penalty and no mean fishing
 mortality parameter, so <code>Use_F_pen = 0</code> and
-<code>ln_F_mean_spec = "fix"</code> leave the deviations carrying all of
+<code>ln_F_mean_spec = "fix"</code> leave the deviations with all of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>F</mi></mrow><annotation encoding="application/x-tex">\log F</annotation></semantics></math>.
 Fixing the mean matters: with the deviations unpenalized the mean and
 their average are exactly redundant, and fixing one of them is what
@@ -361,7 +361,7 @@ is different: it has no catch observation at all, entered as
 it takes nothing out of the population, so its catch at age is the trawl
 fleet’s numbers at age scaled by the same selectivity, which is what
 makes its compositions the right expectation. This is needed because one
-fleet can’t carry two sets of composition data.</p>
+fleet can’t have two sets of composition data.</p>
 </div>
 <div class="section level2">
 <h2 id="fishery-compositions">Fishery compositions<a class="anchor" aria-label="anchor" href="#fishery-compositions"></a>
@@ -386,10 +386,10 @@ fleet can’t carry two sets of composition data.</p>
 <span>                             <span class="st">"_Year_1-terminal_Fleet_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n_fish</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  FishLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"none_Year_1-terminal_Fleet_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n_fish</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p><code>FishAgeComps_Type</code> is where the two composition streams
-show up. The three gear fleets carry sexed compositions, which is
+<p><code>FishAgeComps_Type</code> is where the two composition data
+sources show up. The three gear fleets have sexed compositions, which is
 <code>spltRjntS</code>, females and males in one vector normalized
-together. The three discard fleets and the trawl companion carry
+together. The three discard fleets and the trawl companion have
 compositions with the sexes pooled, which is <code>agg</code>.</p>
 <p>The sample sizes were built as</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">ISS</mtext><mi>y</mi></msub><mo>=</mo><msub><mi>N</mi><mi>y</mi></msub><mo>⋅</mo><msub><mi>ν</mi><mi>f</mi></msub><mi minsize="120%" maxsize="120%" stretchy="true">/</mi><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>+</mo><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub><mo>⋅</mo><mn>0.001</mn><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\text{ISS}_{y} = N_{y} \cdot \nu_{f} \big/ \left(1 + n_{\text{bins}} \cdot 0.001\right)</annotation></semantics></math></p>
@@ -406,14 +406,23 @@ the assessment’s variance adjustment for that fleet, which run from
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">t_srv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">t_srv</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="va">n_srv</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
+<span><span class="co"># The assessment reports each survey's standard error with its estimated extra</span></span>
+<span><span class="co"># standard deviation already added. Subtracting it recovers what went in, which</span></span>
+<span><span class="co"># is what SPoRC wants, since the extra component is kept as a parameter.</span></span>
+<span><span class="va">input_se</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">se</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">ObsSrvIdx_SE</span></span>
+<span>  <span class="kw">for</span><span class="op">(</span><span class="va">f</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">extra_sd</span><span class="op">)</span><span class="op">)</span> <span class="va">se</span><span class="op">[</span>,,,<span class="va">f</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">se</span><span class="op">[</span>,,,<span class="va">f</span><span class="op">]</span> <span class="op">-</span> <span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">extra_sd</span><span class="op">[</span><span class="va">f</span><span class="op">]</span></span>
+<span>  <span class="va">se</span></span>
+<span><span class="op">}</span></span>
+<span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
 <span>  ObsSrvIdx <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">ObsSrvIdx</span>,</span>
 <span>  <span class="co"># The assessment reports its survey standard errors with an estimated extra</span></span>
 <span>  <span class="co"># standard deviation already added, so subtracting it recovers the input errors</span></span>
-<span>  <span class="co"># and the extra component is carried as a parameter instead. Fleets 1 and 4 sit</span></span>
-<span>  <span class="co"># at the assessment's lower bound, which is it asking for none, so they are held.</span></span>
-<span>  ObsSrvIdx_SE <span class="op">=</span> <span class="fu">sweep_extra_sd</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span>,</span>
+<span>  <span class="co"># and the extra component is kept as a parameter instead. Fleets 1 and 4 sit</span></span>
+<span>  <span class="co"># at the assessment's lower bound, which is it asking for none, so they are kept.</span></span>
+<span>  ObsSrvIdx_SE <span class="op">=</span> <span class="fu">input_se</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span>,</span>
 <span>  sigmaSrvIdx_spec <span class="op">=</span> <span class="st">"est_additive"</span>,</span>
 <span>  sigmaSrvIdx_map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
 <span>  ln_sigmaSrvIdx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">extra_sd</span>, <span class="fl">1e-8</span>, <span class="fl">1e-8</span><span class="op">)</span>, <span class="fl">1e-8</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -435,7 +444,7 @@ the assessment’s variance adjustment for that fleet, which run from
 <span><span class="op">)</span></span></code></pre></div>
 <p>All four surveys are in month 7, so <code>t_srv = 0.5</code> and the
 index is formed from numbers decayed half a year. The standard errors
-already carry the extra standard deviation added to them.</p>
+already hold the extra standard deviation added to them.</p>
 </div>
 <div class="section level2">
 <h2 id="selectivity">Selectivity<a class="anchor" aria-label="anchor" href="#selectivity"></a>
@@ -487,12 +496,12 @@ which is <code>fish_sel_sex_offset = "par_apical"</code>.</p>
 <span><span class="op">)</span></span></code></pre></div>
 <p>Catchability floats in the assessment, meaning it is solved rather
 than estimated, which reaches the same optimum as estimating it. The
-composition companion of the bottom trawl survey carries no index, so
-its catchability stays out of the parameter vector.</p>
+composition companion of the bottom trawl survey has no index, so its
+catchability stays out of the parameter vector.</p>
 <p>All six parameters are on the same scale in both, so the assessment’s
 values go straight in as starting values, and the parameter count comes
 out at the assessment’s own 32.</p>
-<p><code>fish_sel_sex_offset = "par_apical"</code> is what carries the
+<p><code>fish_sel_sex_offset = "par_apical"</code> is what holds the
 male curve. The <code>par</code> half makes the male slots offsets on
 the female’s, which is how the assessment writes the peak and the
 selectivity at the last bin. The <code>apical</code> half is the
@@ -500,7 +509,7 @@ assessment’s fifth male parameter: the height the male ascending and
 descending limbs are built up to and the plateau sits at, with the two
 ends left where their own parameters put them. That is a different
 statement from a <code>"scale"</code> offset, which multiplies the
-finished curve and carries the ends along with it, and the difference is
+finished curve and holds the ends along with it, and the difference is
 not cosmetic: the two agree on the curve at any one point but disagree
 about how it moves, so under a scale offset the assessment’s estimate is
 not a stationary point and the fit walks away from it. The male
@@ -545,12 +554,12 @@ model expected, that such an index measures. Taking it from the
 penalty’s own center is what makes the two agree without any special
 casing.</p>
 <p>Two things follow from the deviations being signed. The fleet takes
-<code>SrvIdx_LikeType = "normal"</code>, since a lognormal cannot carry
-a negative observation, and setup refuses any other choice for it. It
-also reads no numbers at age, so its selectivity, survey timing and
-weight at age are never used and its compositions are left off. Its
-catchability is an ordinary element of <code>ln_srv_q</code>, carried on
-the log scale where the assessment carries it on the natural scale.</p>
+<code>SrvIdx_LikeType = "normal"</code>, since a lognormal cannot have a
+negative observation, and setup refuses any other choice for it. It also
+reads no numbers at age, so its selectivity, survey timing and weight at
+age are never used and its compositions are left off. Its catchability
+is an ordinary element of <code>ln_srv_q</code>, kept on the log scale
+where the assessment has it on the natural scale.</p>
 </div>
 <div class="section level2">
 <h2 id="starting-at-the-assessments-estimate">Starting at the assessment’s estimate<a class="anchor" aria-label="anchor" href="#starting-at-the-assessments-estimate"></a>
@@ -569,7 +578,7 @@ selectivity parameters in <code>SPoRC</code>’s transforms.</p>
 <span><span class="va">seed</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
 <span>                  do_optim <span class="op">=</span> <span class="cn">FALSE</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 <p>The comparison before anything is optimized, against a report file
-carrying six significant digits:</p>
+with six significant digits:</p>
 <pre><code>numbers at age                     5.8e-04 %
 spawning biomass                   4.5e-04 %
 recruitment                        3.9e-04 %
@@ -800,10 +809,10 @@ four thousandths of a percent.</p>
 mortality from the catch where <code>SPoRC</code> estimates it against a
 lognormal catch likelihood at CV 0.01, so the two agree only to the
 precision that likelihood enforces; and the extra survey standard
-deviation is held at the assessment’s estimate, because
+deviation is kept at the assessment’s estimate, because
 <code>SPoRC</code> has no parameter for it. Neither moves the fit, but
-the second does mean the standard errors here do not carry that source
-of uncertainty.</p>
+the second does mean the standard errors here do not have that source of
+uncertainty.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

@@ -38,6 +38,7 @@ rec_seas_prop[, 1, ] <- 1
   spawn_seas = 1,
   t_spawn = 0,
   rec_lag = 1,
+  SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
   InitDevs_sex_spec = "est_shared_s"
@@ -211,6 +212,12 @@ rec_seas_prop[, 1, ] <- 1
   enter in `spawn_seas` itself or a later season in the same year;
   `rec_seas_prop_input` must be zero for every season before
   `spawn_seas` when `rec_lag = 0`.
+
+- SR_ref_yr:
+
+  Integer year index supplying the biological inputs to unfished
+  spawning biomass per recruit, and so the scale of the stock-recruit
+  curve. Matches the estimation model's `SR_ref_yr`. Default `1`.
 
 - Rec_input:
 

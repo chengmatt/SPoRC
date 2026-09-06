@@ -2,9 +2,9 @@
 
 Constructs the `M_blocks` index array and the `ln_M` factor map used by
 the TMB/RTMB objective function to share or fix natural mortality
-parameters across population, region, year, age, and sex dimensions.
-Each unique combination of blocks is assigned a sequential integer ID;
-all cells within a block share the same `ln_M` parameter.
+parameters across population, region, year, season, age, and sex
+dimensions. Each unique combination of blocks is assigned a sequential
+integer ID; all cells within a block share the same `ln_M` parameter.
 
 ## Usage
 
@@ -15,6 +15,7 @@ do_natmort_mapping(
   M_popblk_spec_vals,
   M_regionblk_spec_vals,
   M_yearblk_spec_vals,
+  M_seasblk_spec_vals,
   M_ageblk_spec_vals,
   M_sexblk_spec_vals
 )
@@ -56,6 +57,11 @@ do_natmort_mapping(
   List of integer vectors assigning year indices to blocks, e.g.,
   `list(1:10, 11:30)` for two time periods.
 
+- M_seasblk_spec_vals:
+
+  List of integer vectors assigning season indices to blocks, e.g.,
+  `list(1, 2)` for two season-specific rates.
+
 - M_ageblk_spec_vals:
 
   List of integer vectors assigning age indices to blocks, e.g.,
@@ -80,6 +86,6 @@ The input `input_list` with two fields updated:
 - `$data$M_blocks`:
 
   Integer array of dimensions
-  `[n_pop × n_regions × n_years × n_ages × n_sexes]` mapping each
-  population-region-year-age-sex cell to its corresponding `ln_M`
-  parameter index.
+  `[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]` mapping
+  each population-region-year-season-age-sex cell to its corresponding
+  `ln_M` parameter index.

@@ -19,11 +19,14 @@ Setup_Sim_NAA_state(
   NAA_re_pop = "iid",
   NAA_re_region = "iid",
   NAA_re_sex = "iid",
+  NAA_re_season = "iid",
   pop_corr = 0,
   region_corr = 0,
   sex_corr = 0,
+  season_corr = 0,
   NAA_re_ages = NULL,
-  NAA_re_years = NULL
+  NAA_re_years = NULL,
+  NAA_re_seasons = "annual"
 )
 ```
 
@@ -46,28 +49,35 @@ Setup_Sim_NAA_state(
   Numeric. Conditional standard deviation of the innovations, the same
   quantity `ln_sigmaNAA` holds in the estimation model. Under an
   autoregressive form the marginal standard deviation is larger by
-  \\1/\sqrt{1 - \rho^2}\\ per correlated margin.
+  \\1/\sqrt{1 - \rho^2}\\ per correlated dim.
 
 - rho_age, rho_year, rho_cohort:
 
   Numeric correlations in \\(-1, 1)\\ over the age, year and cohort
-  margins. Only the ones the chosen form reads are used.
+  dims. Only the ones the chosen form reads are used.
 
-- NAA_re_pop, NAA_re_region, NAA_re_sex:
+- NAA_re_pop, NAA_re_region, NAA_re_sex, NAA_re_season:
 
   Character, `"iid"` (default) or `"us"`, an unstructured correlation
-  across that margin.
+  across that dim.
 
-- pop_corr, region_corr, sex_corr:
+- pop_corr, region_corr, sex_corr, season_corr:
 
   Numeric vectors of length \\n(n-1)/2\\ giving the correlations for
-  those margins, ordered as the strict lower triangle is filled by
-  column. A single value is recycled.
+  those dims, ordered as the strict lower triangle is filled by column.
+  A single value is recycled.
 
 - NAA_re_ages, NAA_re_years:
 
   Ages and year indices the state covers. `NULL` (default) uses
   everything from the second onward.
+
+- NAA_re_seasons:
+
+  Seasons the state covers. `"annual"` (default) puts a state at season
+  one only, leaving the numbers deterministic between seasons; `"all"`
+  puts one at the start of every season, and an integer vector selects
+  specific seasons.
 
 ## Value
 

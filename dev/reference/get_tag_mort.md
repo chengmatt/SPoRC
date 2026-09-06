@@ -61,7 +61,8 @@ get_tag_mort(
 
 - natmort:
 
-  Array `[pop, region, year, age, sex]` of natural mortality at age.
+  Array `[pop, region, year, season, age, sex]` of natural mortality at
+  age.
 
 - seasdur:
 

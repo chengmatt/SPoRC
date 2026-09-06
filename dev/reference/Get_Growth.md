@@ -150,14 +150,14 @@ Get_Growth(
 
   Array `[pop, region, year, age, sex]` of log deviations on mean length
   at age, or `NULL` for none. Multiplies the parametric mean at age, so
-  the curve stays the parametric part and the deviations carry
-  departures from it; the spread at age follows the deviated mean,
-  leaving the coefficient of variation at age alone.
+  the curve stays the parametric part and the deviations have departures
+  from it; the spread at age follows the deviated mean, leaving the
+  coefficient of variation at age alone.
 
 - growth_semipar:
 
   Integer process error code for those deviations, `0` for none. Only
-  its being nonzero is read here; the structure is scored in the
+  its being nonzero is read here; the structure is penalized in the
   objective.
 
 ## Value
@@ -179,10 +179,10 @@ at that fleet's timing, the spawning key `SizeAgeTrans_spawn`
 With no deviations the key is built once and broadcast over the years.
 With deviations on any parameter and `growth_tv_type = 0` ("curve")
 every year's sizes are read from that year's own curve. Under
-`growth_tv_type = 1` ("cohort") the sizes are carried forward cohort by
-cohort from `growth_cohort_styr` on, which needs the numbers at age of
-each year to blend the plus group; that form is run one year at a time
-from the population dynamics through
+`growth_tv_type = 1` ("cohort") the sizes are advanced cohort by cohort
+from `growth_cohort_styr` on, which needs the numbers at age of each
+year to blend the plus group; that form is run one year at a time from
+the population dynamics through
 [`Get_Growth_Year`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth_Year.md),
 and this function only evaluates the years before the propagation
 starts, which all sit on the first year's curve.
@@ -203,4 +203,4 @@ the spawning fraction of the season, and each fleet's key and weight at
 that fleet's own timing, `t_fish` or `t_srv`, so a composition and the
 weight behind an index are formed at the point in the season the
 observation is taken. Fleets that share a timing share one evaluation.
-Seasonal multipliers on \\K\\ are not carried.
+Seasonal multipliers on \\K\\ are not kept.

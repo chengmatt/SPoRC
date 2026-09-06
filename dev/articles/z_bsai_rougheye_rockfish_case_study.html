@@ -186,7 +186,7 @@ with deviations that ages beyond the observed range share:</p>
 <code>init_age_devs_shared</code> vector is what makes the ages past the
 observed range share the last deviation. Here the observed range runs to
 age 45, so the deviations are free over the first 42 ages and the final
-nine share the 42nd. <code>SPoRC</code> carries the initial numbers as
+nine share the 42nd. <code>SPoRC</code> holds the initial numbers as
 multiplicative deviations from an equilibrium age structure rather than
 as the structure itself, so the seeding step below converts between the
 two.</p>
@@ -256,7 +256,7 @@ and
 A weighted sum of squares and a normal likelihood with a fixed standard
 deviation are the same statement up to a constant, related by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>σ</mi><mo>=</mo><mn>1</mn><mi>/</mi><msqrt><mrow><mn>2</mn><mi>w</mi></mrow></msqrt></mrow><annotation encoding="application/x-tex">\sigma = 1/\sqrt{2w}</annotation></semantics></math>,
-so both weights are carried inside the standard deviations rather than
+so both weights are kept inside the standard deviations rather than
 applied outside the sums.</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/warning.html" class="external-link">suppressWarnings</a></span><span class="op">(</span></span>
@@ -392,18 +392,17 @@ assessment’s stage 2 values and ship in the data object.</p>
 <div class="section level2">
 <h2 id="starting-at-the-admb-estimate">Starting at the ADMB estimate<a class="anchor" aria-label="anchor" href="#starting-at-the-admb-estimate"></a>
 </h2>
-<p>Before optimizing anything, it is worth checking that the model is
-reproduced <em>at a known point</em>. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.</p>
+<p>Before optimizing anything, check that the model is reproduced <em>at
+a known point</em>. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.</p>
 <p>Most parameters can be assigned directly. The recruitment deviations
 are seeded only over the years the assessment estimates them for, and
 the initial age structure needs the conversion described above: the
-assessment writes the first year directly, while <code>SPoRC</code>
-carries multiplicative deviations from an equilibrium age structure, so
-the deviations are the log ratio of the two.</p>
+assessment writes the first year directly, while <code>SPoRC</code> has
+multiplicative deviations from an equilibrium age structure, so the
+deviations are the log ratio of the two.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">mle</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">mle</span></span>
 <span></span>

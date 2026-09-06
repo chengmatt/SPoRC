@@ -179,8 +179,8 @@ is median recruitment. Penalizing about
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mstyle displaystyle="false"><mfrac><mn>1</mn><mn>2</mn></mfrac></mstyle><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">-\tfrac{1}{2}\sigma_{R}^{2}</annotation></semantics></math>
 instead makes it mean recruitment, which is what <code>SPoRC</code> does
 by default and is turned off under Recruitment below.</p>
-<p><code>SPoRC</code> gets there by carrying those ten years as model
-years with
+<p><code>SPoRC</code> gets there by with those ten years as model years
+with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>F</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">F_{y,a} = 0</annotation></semantics></math>,
 which makes
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>Z</mi><mrow><mi>y</mi><mo>,</mo><mi>a</mi></mrow></msub><mo>=</mo><mi>M</mi></mrow><annotation encoding="application/x-tex">Z_{y,a} = M</annotation></semantics></math>
@@ -189,7 +189,7 @@ would be the alternative, but that puts one deviation on each age rather
 than one on each year. Below the plus group the two agree, since each
 age is one cohort; the plus group mixes the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mn>1</mn></msub><annotation encoding="application/x-tex">y_{1}</annotation></semantics></math>
-recruitment with equilibrium carried forward, and responds to
+recruitment with equilibrium advanced forward, and responds to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><msub><mi>y</mi><mn>1</mn></msub></msub><annotation encoding="application/x-tex">\varepsilon_{y_{1}}</annotation></semantics></math>
 only in proportion to the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>23.7</mn><annotation encoding="application/x-tex">23.7</annotation></semantics></math>
@@ -220,10 +220,11 @@ their use flags off.</p>
 <span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">yrs</span><span class="op">)</span></span>
 <span><span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">ages</span><span class="op">)</span></span>
 <span><span class="va">n_obs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">years</span><span class="op">)</span></span>
-<span><span class="va">i_amak</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">yrs</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">dat</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>             <span class="co"># the years the assessment reports</span></span></code></pre></div>
+<span><span class="va">i_amak</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">yrs</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">dat</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>             <span class="co"># the years the assessment reports</span></span>
+<span><span class="va">i_srv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="va">yrs</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">dat</span><span class="op">$</span><span class="va">yrs_srv</span><span class="op">)</span>            <span class="co"># the years the survey was run</span></span></code></pre></div>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># The assessment's arrays run 1977 to 2024. Put ten years in front of whichever</span></span>
-<span><span class="co"># margin holds the years, so they run 1967 to 2024.</span></span>
+<span><span class="co"># dim holds the years, so they run 1967 to 2024.</span></span>
 <span><span class="va">pad</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span>, <span class="va">fill</span> <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">m</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="op">==</span> <span class="va">n_obs</span><span class="op">)</span></span>
 <span>  <span class="va">pre</span> <span class="op">&lt;-</span> <span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">fill</span><span class="op">)</span><span class="op">)</span> <span class="fu">abind</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/abind/man/asub.html" class="external-link">asub</a></span><span class="op">(</span><span class="va">x</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">n_pre</span><span class="op">)</span>, <span class="va">m</span>, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
@@ -255,7 +256,7 @@ throughout.</p>
 <div class="section level2">
 <h2 id="recruitment-and-the-stock-recruit-penalty">Recruitment and the stock-recruit penalty<a class="anchor" aria-label="anchor" href="#recruitment-and-the-stock-recruit-penalty"></a>
 </h2>
-<p>AMAK carries two recruitment parameters that are not interchangeable.
+<p>AMAK has two recruitment parameters that are not interchangeable.
 <code>mean_log_rec</code> sets the level of recruitment and generates
 it, while <code>log_Rzero</code> sets the scale of the stock-recruit
 curve and builds the unfished age structure. The curve never generates
@@ -307,15 +308,15 @@ does not have.</p>
 <p>Starting in 1967 rather than 1977 is what removes the initial age
 structure as a problem. At a 1977 start the first year has to absorb ten
 years of propagated deviations, its plus group accumulates them rather
-than carrying one, and matching the assessment’s numbers there costs its
+than with one, and matching the assessment’s numbers there costs its
 penalty on them. Starting where AMAK starts makes those ten years
 ordinary model years with ordinary recruitment deviations, so
 <code>InitDevs_spec = "fix"</code> leaves the initial age structure as a
 bare equilibrium. It also supplies the 1976 spawning biomass that AMAK’s
 1977 stock-recruit residual needs, so <code>sr_pen_yrs</code> covers the
 assessment’s window in full rather than dropping its first year.</p>
-<p>Steepness is fixed at 0.8 and carried on a logit bounded to (0.2, 1),
-so the fixed value goes in transformed. Passing <code>h = 0.8</code> is
+<p>Steepness is fixed at 0.8 and kept on a logit bounded to (0.2, 1), so
+the fixed value goes in transformed. Passing <code>h = 0.8</code> is
 read as a starting value rather than as steepness, and leaves the
 default of 0.6.</p>
 <p><code>ln_sigmaR</code> is the assessment’s
@@ -338,8 +339,8 @@ covers.</p>
 <p>Weight and maturity at age are time invariant in the assessment but
 are still extended back to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mn>1</mn></msub><annotation encoding="application/x-tex">y_{1}</annotation></semantics></math>
-anyway, since <code>SPoRC</code> carries them by year. Natural mortality
-is fixed at 0.3.</p>
+anyway, since <code>SPoRC</code> has them by year. Natural mortality is
+fixed at 0.3.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
@@ -373,7 +374,7 @@ is fixed at 0.3.</p>
 <p>AMAK has no mean fishing mortality parameter. <code>fmort</code> is
 the annual rate itself, estimated directly, so
 <code>ln_F_mean_spec = "fix"</code> pins the mean at zero and the
-deviations carry all of
+deviations have all of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mi>F</mi></mrow><annotation encoding="application/x-tex">\log F</annotation></semantics></math>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
@@ -464,7 +465,7 @@ constant.</p>
 </h2>
 <p>Selectivity is non-parametric on the log scale, exponentiated and
 standardized so each year averages one. The oldest estimated coefficient
-is held flat to the plus group before the standardization, which is a
+is kept flat to the plus group before the standardization, which is a
 bin grouping rather than a separate parameter.</p>
 <p>The assessment lists 46 change years and the template prepends the
 first model year, so there are 47 blocks and the terminal year shares
@@ -559,7 +560,7 @@ dome term is not normalized either way.</p>
 <p>Here every active term is a per-year vector, which is what lets a
 term act only in the years a block changes. The years before
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mn>0</mn></msub><annotation encoding="application/x-tex">y_{0}</annotation></semantics></math>
-carry none, since the first block would otherwise be penalized on its
+have none, since the first block would otherwise be penalized on its
 curvature and dome eleven times over. The year difference is zeroed at
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>y</mi><mn>0</mn></msub><annotation encoding="application/x-tex">y_{0}</annotation></semantics></math>
 to match AMAK, whose walk starts there with nothing before it; the term
@@ -570,15 +571,15 @@ and
 share the first block and so share coefficients.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">fw</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">fish_sel_pen_wts</span></span>
-<span><span class="kw">for</span><span class="op">(</span><span class="va">nm</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smooth_bin_curve"</span>, <span class="st">"smooth_yr_diff"</span>, <span class="st">"smooth_dome"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">fw</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">n_pre</span><span class="op">)</span>, <span class="va">dat</span><span class="op">$</span><span class="va">fish_sel_pen_wts</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="co"># end nm loop</span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">term_name</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smooth_bin_curve"</span>, <span class="st">"smooth_yr_diff"</span>, <span class="st">"smooth_dome"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">fw</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">term_name</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">n_pre</span><span class="op">)</span>, <span class="va">dat</span><span class="op">$</span><span class="va">fish_sel_pen_wts</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">term_name</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="co"># end term_name loop</span></span>
 <span><span class="va">fw</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">smooth_yr_diff</span><span class="op">[</span><span class="va">n_pre</span> <span class="op">+</span> <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
 <span></span>
 <span><span class="va">sw</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">srv_sel_pen_wts</span></span>
-<span><span class="kw">for</span><span class="op">(</span><span class="va">nm</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smooth_bin_curve"</span>, <span class="st">"smooth_yr_diff"</span>, <span class="st">"smooth_dome"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sw</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="op">==</span> <span class="va">n_obs</span><span class="op">)</span> <span class="va">sw</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">n_pre</span><span class="op">)</span>, <span class="va">dat</span><span class="op">$</span><span class="va">srv_sel_pen_wts</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">nm</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="op">}</span> <span class="co"># end nm loop</span></span></code></pre></div>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">term_name</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"smooth_bin_curve"</span>, <span class="st">"smooth_yr_diff"</span>, <span class="st">"smooth_dome"</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="kw">if</span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sw</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">term_name</span><span class="op">]</span><span class="op">]</span><span class="op">)</span> <span class="op">==</span> <span class="va">n_obs</span><span class="op">)</span> <span class="va">sw</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">term_name</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">n_pre</span><span class="op">)</span>, <span class="va">dat</span><span class="op">$</span><span class="va">srv_sel_pen_wts</span><span class="op">[[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span><span class="op">[[</span><span class="va">term_name</span><span class="op">]</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="op">}</span> <span class="co"># end term_name loop</span></span></code></pre></div>
 <p><code>SPoRC</code> penalizes a recruitment deviation by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>w</mi><mi>y</mi></msub><mspace width="0.167em"></mspace><msubsup><mi>ε</mi><mi>y</mi><mn>2</mn></msubsup><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><msup><mi>σ</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">w_{y}\,\varepsilon_{y}^{2}/(2\sigma^{2})</annotation></semantics></math>,
 where
@@ -587,7 +588,7 @@ is that year’s <code>Wt_Rec</code> and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>
 is <code>ln_sigmaR</code> exponentiated. AMAK penalizes
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ε</mi><mi>y</mi><mn>2</mn></msubsup><annotation encoding="application/x-tex">\varepsilon_{y}^{2}</annotation></semantics></math>
-on every year, a raw sum of squares carrying no
+on every year, a raw sum of squares with no
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>σ</mi><annotation encoding="application/x-tex">\sigma</annotation></semantics></math>,
 then adds
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>0.5</mn><mi>/</mi><msubsup><mi>σ</mi><mi>R</mi><mn>2</mn></msubsup></mrow><annotation encoding="application/x-tex">0.5/\sigma_{R}^{2}</annotation></semantics></math>

@@ -64,7 +64,7 @@ Get_PE_loglik(
 - map_sel_devs:
 
   Integer array dimensioned `[fleet, year, bin, sex]` mapping deviations
-  to unique estimated parameters. Shared deviations carry the same
+  to unique estimated parameters. Shared deviations hold the same
   integer value; `NA` entries are treated as fixed and excluded from
   likelihood evaluation.
 

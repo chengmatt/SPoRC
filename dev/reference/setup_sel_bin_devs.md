@@ -1,10 +1,10 @@
-# Set up bin-override selectivity deviations for one selectivity stream
+# Set up bin-override selectivity deviations for one selectivity data source
 
 Creates the bin-override deviation parameter array, its factor map, and
 its process-error hyperparameters, and records which bins each fleet
 overrides. Bins named here take a free annual selectivity value instead
 of whatever the fleet's functional form produces, which lets an
-otherwise parametric curve carry a handful of freely estimated bins.
+otherwise parametric curve have a handful of freely estimated bins.
 
 ## Usage
 
@@ -42,7 +42,7 @@ setup_sel_bin_devs(
 
 - n_fleets:
 
-  Integer. Number of fleets in this stream.
+  Integer. Number of fleets in this data source.
 
 - bins:
 

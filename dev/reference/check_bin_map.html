@@ -113,7 +113,7 @@ are rounded at source, and real ones come in with rows summing to 0.997 or
 row off by that much reweights nothing, and <code>AgeingError</code> passes
 <code>tol = 0.05</code>. A length bin map is written by hand rather than read from a
 rounded table, so <code>LenBinMap</code> keeps the <code>1e-8</code> it has always been
-held to. Only a row off by more than <code>tol</code> is reported, since that means
+kept to. Only a row off by more than <code>tol</code> is reported, since that means
 the matrix is not the map its author thought it was.</p>
 <p><code>strict</code> decides whether that is fatal. <code>LenBinMap</code> has always
 rejected such a matrix outright and keeps doing so. <code>AgeingError</code> has

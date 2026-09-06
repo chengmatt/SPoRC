@@ -1,8 +1,8 @@
-# Should an at-age stream's observation error parameter be estimated?
+# Should an at-age data source's observation error parameter be estimated?
 
-A stream nobody fits has nothing to inform its standard deviation, and a
-stream taking its error from reported standard errors alone has no
-parameter to read, so both are held fixed whatever the spec says.
+A data source nobody fits has nothing to inform its standard deviation,
+and a data source taking its error from reported standard errors alone
+has no parameter to read, so both are kept fixed whatever the spec says.
 
 ## Usage
 
@@ -18,11 +18,11 @@ at_age_sigma_spec(spec, form, any_used)
 
 - form:
 
-  The stream's `sigma_form`.
+  The data source's `sigma_form`.
 
 - any_used:
 
-  `TRUE` when any fleet fits this stream.
+  `TRUE` when any fleet fits this data source.
 
 ## Value
 

@@ -63,7 +63,7 @@ catch integral for the same stratum, which is every fished stratum,
 since the dynamics advance the numbers and the Baranov equation
 integrates them over the identical \\A\\, should take both from here
 rather than exponentiating \\A\\ once and the block again. Under
-reverse-mode AD the adjoint of a matrix exponential is far more
+reverse-mode AD the derivative of a matrix exponential is far more
 expensive than its forward evaluation, so halving the number of
 exponentials on the tape is worth more than the flop count alone
 suggests.

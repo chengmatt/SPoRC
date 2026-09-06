@@ -195,13 +195,15 @@ also be appended to this data frame when `n_proj_yrs_devs > 0`.
 
 ``` r
 
-adjacency <- igraph::as_adjacency_matrix(
+# as.matrix, since Setup_Mod_Movement wants a plain numeric matrix and igraph
+# hands back a sparse one
+adjacency <- as.matrix(igraph::as_adjacency_matrix(
   igraph::make_graph(
     ~ 1 - 2,
     2 - 3,
     1 - 3
   )
-)
+))
 
 # make ctmc data, must include pop, regions, years, seas, ages, sexes columns
 ctmc_data <- expand.grid(
@@ -230,6 +232,20 @@ scale with area size. Here, all areas are assumed to be equal. However,
 when areas differ in size, `area_r` should be defined as proportional to
 area, such that smaller areas are associated with higher diffusion
 rates.
+
+Note that a region-varying `diffusion_formula` such as
+`~0 + factor(regions)` still redistributes abundance, even with
+`preference_formula = ~0`. An edge of the generator holds the diffusion
+rate of the region a fish is leaving, so the two directions across a
+boundary differ whenever the regions differ in diffusion, and at
+equilibrium density settles proportional to `1 / diffusion`: abundance
+accumulates where fish move slowly. That is a real behavioral mechanism,
+but it does mean the estimated diffusion field and the estimated
+preference field both act on the equilibrium spatial distribution, so a
+region-varying `diffusion_formula` and a region-varying
+`preference_formula` are hard to separate from the spatial pattern
+alone. They differ in how fast that pattern re-establishes, not in the
+pattern itself.
 
 ``` r
 

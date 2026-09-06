@@ -1,4 +1,4 @@
-# Decode an at-age aggregation type into its split margins
+# Decode an at-age aggregation type into its split dims
 
 The Type codes follow the composition vocabulary: `"agg"` sums over both
 regions and sexes, `"spltRaggS"` keeps regions apart and sums over
@@ -19,5 +19,4 @@ at_age_split(code)
 
 ## Value
 
-A list with logical `region` and `sex`, `TRUE` where that margin is
-split.
+A list with logical `region` and `sex`, `TRUE` where that dim is split.

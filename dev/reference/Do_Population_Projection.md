@@ -59,7 +59,8 @@ rec_seas_prop[] <- 1/n_seas
  },
   Mrate = NULL,
   move_timing = 0,
-  expm_nsub = 0
+  expm_nsub = 0,
+  rec_devs = NULL
 )
 ```
 
@@ -130,7 +131,9 @@ rec_seas_prop[] <- 1/n_seas
 
 - natmort:
 
-  Array \`\[n_pop, n_regions, n_proj_yrs, n_ages, n_sexes\]\`. Annual
+  Array of natural mortality, a rate per year in each season. Either
+  \`\[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes\]\` or the
+  same without the season dim, which is expanded across seasons. Annual
   natural mortality-at-age, scaled internally by season duration.
 
 - natal_region:
@@ -200,7 +203,14 @@ rec_seas_prop[] <- 1/n_seas
 - HCR_function:
 
   Function. Harvest control rule with arguments \`x\` (SSB), \`frp\` (F
-  reference point), and \`brp\` (B reference point).
+  reference point), and \`brp\` (B reference point). A rule that also
+  declares a \`state\` argument (or \`...\`) is handed this year's
+  population as a named list, so a rule can be written on more than
+  spawning biomass: \`y\` (projection year), \`r\` (region the F is
+  being set for), \`NAA\`, \`SSB\`, \`Total_Biom\` and \`Catch\`. Mean
+  weight, age structure and last year's catch all follow from those.
+  Rules that do not declare it are called exactly as before and the
+  state is not assembled.
 
 - recruitment_opt:
 
@@ -222,7 +232,7 @@ rec_seas_prop[] <- 1/n_seas
   ones; which shape is supplied decides what gets solved.
   \`catch_input\[r, y\]\` is the catch removed from region \`r\` during
   projection year \`y\`, indexed the same way \`proj_Catch\` is in the
-  returned list rather than carrying the one year lag \`f_ref_pt\` does.
+  returned list rather than with the one year lag \`f_ref_pt\` does.
   Targets are totals over populations and fleets, and over seasons too
   in the annual case. A target of 0 sets \`F = 0\` there without a
   solve.
@@ -236,7 +246,7 @@ rec_seas_prop[] <- 1/n_seas
   season the terminal year did not fish has no fleet split to inherit
   and so can take no catch, which is an error rather than a silent zero.
 
-  Not every projection year has to carry a target. Set a year to \`NA\`
+  Not every projection year has to have a target. Set a year to \`NA\`
   and it falls back to \`catch_fallback_opt\` instead, which is the
   usual shape of catch advice: a year or two of agreed catch followed by
   the harvest control rule. \`NA\` (no target, use the fallback) and
@@ -258,7 +268,7 @@ rec_seas_prop[] <- 1/n_seas
   are only needed if some year actually falls back. Mind the indexing
   difference when mixing the two: \`catch_input\[r, y\]\` is the catch
   taken in year \`y\`, but \`f_ref_pt\[r, y\]\` sets F in year \`y +
-  1\`, which is the lag the HCR and Input options have always carried.
+  1\`, which is the lag the HCR and Input options have always kept.
 
 - catch_terminal_yr:
 
@@ -272,7 +282,7 @@ rec_seas_prop[] <- 1/n_seas
   1\` the terminal year takes all its seasons from \`terminal_NAA\`
   rather than propagating them, so only the last season's F feeds year
   2; the earlier seasons still take their catch, but do not otherwise
-  carry forward.
+  propagate.
 
 - catch_f_max:
 
@@ -343,7 +353,9 @@ rec_seas_prop[] <- 1/n_seas
 
   `natmort`
 
-  :   Array `[n_pop, n_regions, n_ages]`. Natural mortality.
+  :   Array `[n_pop, n_regions, n_seas, n_ages]`. Natural mortality, a
+      rate per year in each season. Also accepted without the season
+      dim.
 
   `Movement`
 
@@ -445,13 +457,26 @@ rec_seas_prop[] <- 1/n_seas
   \`move_timing = 2\`: \`0\` uses \`Matrix::expm\`, \`n \>= 1\` uses
   \`n\` implicit backward Euler substeps. See \[mat_exp()\].
 
+- rec_devs:
+
+  Optional array `[n_pop, n_regions, n_proj_yrs]` of multiplicative
+  deviations applied to whatever recruitment `recruitment_opt` produces,
+  so a deterministic option becomes a stochastic one under deviations
+  the caller draws and owns. Defaults to `NULL`, which leaves
+  recruitment as the option alone gives it. Projection year 1 replays
+  the terminal assessment year and generates no recruitment, so its
+  slice is never read. Drawing the deviations outside is what makes a
+  set of replicates share the same recruitment across management
+  procedures, and what lets the projection be differentiated with
+  respect to the rule while the deviations are kept fixed.
+
 ## Value
 
 A named list of projected quantities. Year index 1 is the terminal
-assessment year replayed, so year 2 is the first genuinely projected
-year and catch advice for terminal year + 1 is read from index 2.
+assessment year replayed, so year 2 is the first projected year and
+catch advice for terminal year + 1 is read from index 2.
 
-Several arrays carry a trailing \`n_proj_yrs + 1\` year slot, which is
+Several arrays have a trailing \`n_proj_yrs + 1\` year slot, which is
 used inconsistently and is noted per element below. In short:
 \`proj_NAA\`, \`proj_NAA0\`, \`proj_F\` and \`proj_F_seas\` fill it, and
 \`proj_ZAA\`, \`proj_ret_FAA\` and \`proj_disc_FAA\` leave it at 0.
@@ -518,18 +543,18 @@ used inconsistently and is noted per element below. In short:
 - `proj_Dynamic_SSB0`:
 
   Array \`\[n_pop, n_regions, n_proj_yrs\]\`. Spawning biomass the
-  population would have carried under the same realized recruitment but
-  no fishing, for dynamic depletion.
+  population would have kept under the same realized recruitment but no
+  fishing, for dynamic depletion.
 
 - `proj_NAA`:
 
   Array \`\[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages,
-  n_sexes\]\`. Fished numbers-at-age held at the start of each season,
+  n_sexes\]\`. Fished numbers-at-age kept at the start of each season,
   before that season's mortality and ageing. Under the default
   \`move_timing = 0\` movement has already been applied at this point;
   under \`move_timing\` 1 and 2 it has not, since movement is deferred
   into the mortality step. The trailing year slot is filled, and holds
-  the numbers carried into the year after the projection ends.
+  the numbers passed into the year after the projection ends.
 
 - `proj_NAA0`:
 
@@ -549,10 +574,10 @@ used inconsistently and is noted per element below. In short:
   Array shaped like \`catch_input\`: \`\[n_regions, n_proj_yrs\]\` for
   annual targets, \`\[n_regions, n_proj_yrs, n_seas\]\` for seasonal
   ones. Relative miss on each catch target, \`(realized - target) /
-  target\`, and \`NA\` for years carrying no target (including every
-  year when \`fmort_opt != "Catch"\`). Should be at or below
-  \`catch_tol\` wherever the solve converged, and is worth checking
-  directly rather than relying on warnings alone.
+  target\`, and \`NA\` for years with no target (including every year
+  when \`fmort_opt != "Catch"\`). Should be at or below \`catch_tol\`
+  wherever the solve converged, and is worth checking directly rather
+  than relying on warnings alone.
 
 ## Details
 
@@ -597,8 +622,8 @@ biomass is computed from the survivor population alone (no new recruits
 exist yet), that SSB is used to generate this year's recruitment, and
 only then are the recruits inserted (no earlier than `spawn_seas`) -
 immediately before mortality/ageing runs for that season, so the new
-cohort is carried forward exactly like any other seasonal recruit pulse.
-Years `y > 1` generate recruitment this way; year 1 carries the supplied
+cohort is advanced exactly like any other seasonal recruit pulse. Years
+`y > 1` generate recruitment this way; year 1 holds the supplied
 terminal assessment state forward with no new recruitment event,
 matching the classic case.
 
@@ -628,6 +653,28 @@ each natal region.
 
 When `n_sexes = 1`, spawning biomass is multiplied by 0.5. When
 `n_regions = 1`, movement is skipped.
+
+## Differentiating through the projection
+
+The projection uses RTMB's replacement operators, so it can be taped
+with [`MakeTape`](https://rdrr.io/pkg/RTMB/man/Tape.html) or `MakeADFun`
+and handed to an optimizer with an exact gradient. That gives an F
+schedule solved against an objective rather than scanned over a grid,
+and the delta method on projected quantities from a fitted model's
+parameters.
+
+Two options are refused when the inputs are AD types, because neither
+has a derivative and both would otherwise return a gradient that is
+wrong rather than an error. `recruitment_opt = "inv_gauss"` draws
+recruitment at random, and `fmort_opt = "Catch"` inverts the catch
+target with a numerical solve, so the F it hands back has no derivative.
+Tape under `"mean_rec"`, `"bh_rec"` or `"ricker_rec"` with
+`fmort_opt = "Input"`.
+
+A control rule stops on its own rather than being refused here. The
+usual threshold rule branches on stock status, and a comparison against
+an AD spawning biomass raises an error inside RTMB. Optimizing through a
+control rule means writing a smooth one.
 
 ## See also
 

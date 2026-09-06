@@ -36,7 +36,7 @@ n_yrs <- length(yrs)
 n_ages <- length(dat$ages)
 ```
 
-The object carries three kinds of content: the model inputs (`ObsCatch`,
+The object has three kinds of content: the model inputs (`ObsCatch`,
 `WAA`, `ObsSrvIdx`, and so on), the ADMB maximum likelihood estimate in
 `dat$mle`, used both as a starting point and to verify the objective
 before any optimization, and the ADMB output in `dat$admb`, which is the
@@ -81,10 +81,10 @@ function:
 
 with $`\sigma_{R} = 1.5`$ fixed. There is no lognormal bias correction,
 so `do_rec_bias_ramp = 0` and the penalty is centered on zero, which is
-what the ADMB template does. Every year carries a deviation, including
-the terminal years, so `dont_est_recdev_last = 0`. The first year sits
-in an unfished equilibrium age structure with its own deviations, which
-is `init_age_strc = 1`, and spawning occurs at the start of the year.
+what the ADMB template does. Every year has a deviation, including the
+terminal years, so `dont_est_recdev_last = 0`. The first year sits in an
+unfished equilibrium age structure with its own deviations, which is
+`init_age_strc = 1`, and spawning occurs at the start of the year.
 
 ``` r
 
@@ -158,9 +158,9 @@ $`\sigma = 1/\sqrt{2w}`$, so the weights enter through `ln_sigmaC` and
 \ell^{\text{Catch}} = \sum_{y} w_{y}^{\text{Catch}}\left(\log C_{y}^{\text{obs}} - \log C_{y}^{\text{pred}}\right)^{2},\qquad \sigma_{y}^{C} = \sqrt{1/(2w_{y}^{\text{Catch}})}
 ```
 
-The reconstructed catches before 1978 carry a weight of $`5`$ and the
+The reconstructed catches before 1978 have a weight of $`5`$ and the
 observer era series a weight of $`50`$, which is the assessment’s way of
-saying the early series is less certain. The F deviations carry
+saying the early series is less certain. The F deviations have
 $`\sigma_{F} = 1/\sqrt{2}`$ with the overall weight of $`0.1`$ applied
 in the weighting section.
 
@@ -294,8 +294,8 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 ## Weighting
 
-The survey index carries a weight of $`0.25`$ and the F penalty a weight
-of $`0.1`$. Every composition source carries the assessment’s own
+The survey index has a weight of $`0.25`$ and the F penalty a weight of
+$`0.1`$. Every composition source holds the assessment’s own
 multipliers, which ship in the data object.
 
 ``` r
@@ -313,12 +313,11 @@ input_list <- Setup_Mod_Weighting(
 
 ## Starting at the ADMB estimate
 
-Before optimizing anything, it is worth checking that the model is
-reproduced *at a known point*. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.
+Before optimizing anything, check that the model is reproduced *at a
+known point*. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.
 
 Every parameter can be assigned directly here, because recruitment is a
 mean with deviations rather than a stock recruit function and nothing
@@ -409,6 +408,6 @@ readable.
 ![](figures/w_goa_nork_ts_comparison.png)
 
 Selectivity is time invariant in both fleets, so a single curve per gear
-carries everything.
+has everything.
 
 ![](figures/w_goa_nork_sel_comparison.png)

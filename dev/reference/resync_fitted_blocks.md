@@ -3,10 +3,10 @@
 [`drop_empty_fitted_blocks`](https://chengmatt.github.io/SPoRC/dev/reference/drop_empty_fitted_blocks.md)
 runs once at setup, against the observations the model was built with. A
 self test or closed loop replaces those observations replicate by
-replicate while carrying the setup's use flags forward, so under a bin
+replicate while with the setup's use flags forward, so under a bin
 restriction a simulated replicate can hold nothing in the fitted bins of
 a block the flags still call used. This walks the marginal composition
-streams of a data list and reconciles them again.
+data sources of a data list and reconciles them again.
 
 ## Usage
 
@@ -26,4 +26,4 @@ resync_fitted_blocks(data)
 
 ## Details
 
-A no-op when no stream is restricted, which is the usual case.
+A no-op when no data source is restricted, which is the usual case.

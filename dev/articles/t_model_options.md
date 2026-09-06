@@ -32,7 +32,7 @@ across dimensions abbreviated `r` (region), `seas` (season), and `f`
 | `"est_shared_f"` | Shared across fleets |
 | `"est_shared_r_seas"`, `"est_shared_r_f"`, `"est_shared_seas_f"` | Shared across the named pair of dimensions |
 | `"est_shared_r_seas_f"` | A single parameter shared across everything |
-| `"fix"` | Held at its starting value (not estimated) |
+| `"fix"` | Kept at its starting value (not estimated) |
 
 Which dimension abbreviations are valid, and in what order they can be
 combined, depends on the specific parameter (see each section below for
@@ -57,33 +57,33 @@ far fewer ideas: most names are one of a handful of stems assembled from
 the same pieces. Reading the grammar is faster than reading the list,
 and it lets you derive a name rather than search for it.
 
-#### A data stream’s three arrays
+#### A data source’s three arrays
 
-Every observed stream is supplied as a triple, and the names differ only
-in the prefix.
+Every observed data source is supplied as a triple, and the names differ
+only in the prefix.
 
-| Prefix | Carries                                                |
+| Prefix | Has                                                    |
 |--------|--------------------------------------------------------|
 | `Obs`  | The observations                                       |
 | `Use`  | A 0/1 flag per cell, saying which observations are fit |
-| `ISS_` | Input sample size, for composition streams             |
+| `ISS_` | Input sample size, for composition data sources        |
 
 So the fishery age compositions are `ObsFishAgeComps`,
 `UseFishAgeComps`, `ISS_FishAgeComps`, and the survey twins swap `Fish`
-for `Srv`. An `_SE` suffix carries observation error where a stream
+for `Srv`. An `_SE` suffix has observation error where a data source
 reports its own (`ObsSrvIdx_SE`).
 
-The `Use` array is the switch. A stream with data present and its `Use`
-flags at zero is carried through the model and contributes nothing,
-which is how a stream is turned off without removing it.
+The `Use` array is the switch. A data source with data present and its
+`Use` flags at zero is passed through the model and contributes nothing,
+which is how a data source is turned off without removing it.
 
-#### How a stream is configured
+#### How a data source is configured
 
-Four suffixes appear on nearly every stream.
+Four suffixes appear on nearly every data source.
 
 | Suffix | Chooses |
 |----|----|
-| `_Type` | How the observation is split across regions and sexes: `"agg"`, `"spltRaggS"`, `"aggRspltS"`, `"spltRspltS"` for at-age streams; `"agg"`, `"spltRspltS"`, `"spltRjntS"`, `"none"` for compositions |
+| `_Type` | How the observation is split across regions and sexes: `"agg"`, `"spltRaggS"`, `"aggRspltS"`, `"spltRspltS"` for at-age data sources; `"agg"`, `"spltRspltS"`, `"spltRjntS"`, `"none"` for compositions |
 | `_LikeType` | The density: `"lognormal"`/`"normal"` for indices, or the composition families |
 | `_sigma_form` | Where observation error comes from: `"none"`, `"data"`, `"est_additive"`, `"est_quadrature"` |
 | `_spec` | How a parameter is shared or fixed across dimensions, per the sharing conventions above |
@@ -98,7 +98,7 @@ general setting can be given first and a period carved out of it
 afterwards.
 
 The two families differ only in what a bare setting means. Composition
-and CAAL `_Type` strings must carry the range, and the bare setting on
+and CAAL `_Type` strings must hold the range, and the bare setting on
 its own is rejected with an error naming the full form. At-age `_Type`
 strings accept either, so a bare `"spltRaggS"` sets the whole series,
 one value per fleet sets each fleet’s whole series, and the grammar is
@@ -106,18 +106,19 @@ needed only when the setting changes.
 
 #### Two infixes that multiply the surface
 
-`AA` marks an age-disaggregated stream, fit age by age rather than as a
-total: `ObsCatch` against `ObsCatchAA`, with the configuration suffixes
-following (`CatchAA_Type`, `CatchAA_LikeType`, `CatchAA_sigma_form`,
-`sigmaCAA_spec`). A fleet fits one or the other, not both.
+`AA` marks an age-disaggregated data source, fit age by age rather than
+as a total: `ObsCatch` against `ObsCatchAA`, with the configuration
+suffixes following (`CatchAA_Type`, `CatchAA_LikeType`,
+`CatchAA_sigma_form`, `sigmaCAA_spec`). A fleet fits one or the other,
+not both.
 
-`_pop` marks the population-specific twin of a stream, fit for one
+`_pop` marks the population-specific twin of a data source, fit for one
 population rather than summed across them. Over a hundred arguments are
 `_pop` variants, and every one of them is inert in a single-population
 model. `ObsSrvIdx` has `ObsSrvIdx_pop`; `Wt_SrvIdx` has `Wt_SrvIdx_pop`;
 `rho_srv_idx_spec` has `rho_srv_idx_pop_spec`.
 
-The two compose, so a single stream can reach `ObsCatchAA_pop_SE`.
+The two compose, so a single data source can reach `ObsCatchAA_pop_SE`.
 
 #### Worked expansion
 
@@ -248,7 +249,7 @@ simulated equilibria remain on a consistent scale.
 Recommendations. Use the default `"matrix"` (2) for spatial models;
 `"scalar_no_move"` (1) is fine, and marginally cheaper, for
 single-region models. Use `"free"` (4) when the initial age structure
-carries no information about $`R_0`$ and should not be pulled toward an
+has no information about $`R_0`$ and should not be pulled toward an
 equilibrium, matching assessments in which initial numbers-at-age are
 freely estimated parameters. Note two consequences of `"free"`: the
 initial condition becomes independent of `init_F_par` and of `ln_rinit`,
@@ -328,15 +329,42 @@ Controlled via
 | `"bh_rec"` | Beverton-Holt: $`R = 4hR_0 \cdot \text{SSB} / \left[(1-h)S_0 + (5h-1)\text{SSB}\right]`$. Unfished spawning biomass per recruit ($`S_0`$) is computed internally by projecting a single recruit through all ages and seasons with movement |
 | `"ricker_rec"` | Ricker in depletion form: $`R = R_0 (S/S_0)\exp(\alpha(1 - S/S_0))`$ with $`\alpha = \log(4h/(1-h))`$ (the “Dorn form” used by the EBS pollock assessment). The curve passes through $`(S_0, R_0)`$ and shares the Beverton-Holt’s compensation ratio at a given $`h`$, not the textbook $`R(0.2S_0) = hR_0`$ definition, so steepness values are not interchangeable between `"bh_rec"` and `"ricker_rec"`, and a steepness prior calibrated for one should not be reused for the other |
 
-`SR_ref_yr` sets the year index whose biological inputs (WAA, maturity,
-$`M`$, movement) feed the unfished spawning-biomass-per-recruit
-calculation, and hence $`S_0`$ and the scale of the stock-recruit curve.
-Default `1` (first model year, the long-standing behavior); set
-`length(years)` to condition the curve on terminal biologicals, a
-convention several assessments use. With time-varying weight-at-age the
-two choices give different $`S_0`$; pick whichever the assessment you
-are bridging or the reference-point convention you follow uses, and keep
-it consistent with how reference points are computed.
+`SR_ref_yr` sets the year index whose inputs feed the unfished
+spawning-biomass-per-recruit calculation. That is *every* input to it,
+not only weight-at-age and maturity: natural mortality, movement, stray
+rate, sex ratio, and the selectivity, discard mortality and
+continuous-movement rate that enter through `init_F` all come from that
+year, in the operating model as well as the estimation model, and hence
+$`S_0`$ and the scale of the stock-recruit curve. Default `1` (first
+model year, the long-standing behavior); set `length(years)` to
+condition the curve on terminal biologicals, a convention several
+assessments use. With time-varying weight-at-age the two choices give
+different $`S_0`$; pick whichever the assessment you are bridging or the
+reference-point convention you follow uses, and keep it consistent with
+how reference points are computed.
+
+`SR_ref_yr` fixes everything in the per-recruit part; the $`R_0`$ that
+multiplies spawning biomass per recruit to give $`S_0`$ is always the
+year’s own value, and it is the same $`R_0`$ the curve’s numerator uses.
+The two are one argument in the code and cannot be split: steepness is
+recruitment at $`0.2\,S_0`$ as a fraction of $`R_0`$, so drawing $`S_0`$
+from a different year’s $`R_0`$ would leave the unfished state off the
+curve. With `R0_blocks` of 5 then 12 and $`\phi_0 = 2.5`$, building
+$`S_0`$ from the first block while the numerator uses the second returns
+12.8 at the second block’s unfished biomass instead of 12. So:
+reference-year biologicals for the per-recruit part, current-year
+$`R_0`$ for the scale.
+
+The consequence of that, when `R0_blocks` is used with a stock-recruit
+form, is that a block rescales the entire curve, so $`S_0`$, depletion,
+and any reference point derived from the curve step at the block
+boundary. That is the intended reading of “the curve’s scale is
+time-varying”, but it is a strong statement and worth being deliberate
+about. Under `rec_model = "mean_rec"` it does not arise. And a curve
+fitted as a *penalty* on mean-recruitment residuals (`sr_penalty` with
+`sr_R0_spec = "shared"`) takes its scale from `R0_ref_block`, one fixed
+value, so the diagnostic curve stays put while the blocked $`R_0`$
+drives recruitment.
 
 #### Density dependence scope (`rec_dd`)
 
@@ -376,17 +404,36 @@ it consistent with how reference points are computed.
 | `dont_est_recdev_last` | Number of terminal-year recruitment deviations to fix at zero |
 | `init_age_devs_shared` | Integer vector of length `n_ages - 1` specifying age-sharing for `ln_InitDevs`. Positions with the same value share a single estimated parameter (e.g. `c(1:42, rep(42, 9))`). Required when `equil_init_age_strc = 3`; `NULL` (default) uses standard behavior |
 | `use_rinit` | 0 = population initialized using `ln_global_R0` (default); 1 = separate `ln_rinit` used for initialization, with `ln_global_R0` governing only the recruitment relationship. |
-| `Use_rinit_pen`, `rinit_pen_sd` | 0/1 and a standard deviation. With `use_rinit = 1` the two recruitment levels are linked only through the data, and the initial age structure is often the thinnest part of it. `1` places a normal on $`\log(\text{rinit}/R_0)`$, reported as `rinit_nLL`, saying how far the stock’s equilibrium recruitment may have sat from the level the modeled years show. An equilibrium recruitment averages over several year classes rather than one, so its spread is narrower than $`\sigma_R`$. A reasonable choice is $`\sigma_R/(1/M - 0.5)`$, the recruitment variability shrunk by the number of year classes the equilibrium averages over |
+| `R0_blocks` | Time blocks for R0, one entry per population: `"none_Pop_<p>"` (default) or `"Block_<b>_Year_<a>-<e>_Pop_<p>"` in 1-based year indices with `"terminal"` allowed. Under `rec_model = "mean_rec"` R0 IS mean recruitment, so a block is a productivity regime; under a stock-recruit form it is the curve’s scale, so blocking makes the curve time-varying |
+| `R0_ref_block` | Which block supplies R0 wherever a single value is needed rather than a year’s value: the initial age structure, the regional apportionment, the R0 prior, the `ln_rinit` penalty, and the stock-recruit scale under `sr_R0_spec = "shared"`. Default 1 |
+
+A simulation self-test is worth reading before relying on R0 blocks.
+With a doubling of productivity partway through a 30-year series,
+hand-placed blocks recovered R0 as 4.49 and 12.12 against a truth of 5
+and 12 and cut the median SSB error from -10.3% to -6.3%. R0 and the
+recruitment deviations are partly confounded under mean recruitment, and
+the deviations absorb much of a regime a block is trying to capture, so
+place blocks on years you have an external reason to suspect. \|
+`Use_rinit_pen`, `rinit_pen_sd` \| 0/1 and a standard deviation. With
+`use_rinit = 1` the two recruitment levels are linked only through the
+data, and the initial age structure is often the thinnest part of it.
+`1` places a normal on $`\log(\text{rinit}/R_0)`$, reported as
+`rinit_nLL`, saying how far the stock’s equilibrium recruitment may have
+sat from the level the modeled years show. An equilibrium recruitment
+averages over several year classes rather than one, so its spread is
+narrower than $`\sigma_R`$. A reasonable choice is
+$`\sigma_R/(1/M - 0.5)`$, the recruitment variability shrunk by the
+number of year classes the equilibrium averages over \|
 
 A deviation shared across cells of the parameter array through the map
 (`est_shared_pop_r`, `est_shared_r`, `est_shared_s`,
-`init_age_devs_shared`) is one parameter and carries one penalty: each
-cell the penalty loop visits takes $`1/n`$ of it, $`n`$ the number of
-such cells holding the level. Under the bias ramp the initial age
-deviations are centered on the ramp read at each age’s own birth year,
-deviation index $`1 - a`$ for the deviation on age $`a`$, which is how a
-ramp defined on calendar years treats the years before the first model
-year; `bias_year` can therefore be negative.
+`init_age_devs_shared`) is one parameter and has one penalty: each cell
+the penalty loop visits takes $`1/n`$ of it, $`n`$ the number of such
+cells holding the level. Under the bias ramp the initial age deviations
+are centered on the ramp read at each age’s own birth year, deviation
+index $`1 - a`$ for the deviation on age $`a`$, which is how a ramp
+defined on calendar years treats the years before the first model year;
+`bias_year` can therefore be negative.
 
 #### Deviation penalty centering (`RecDevs_pen_center`, `InitDevs_pen_center`, `Fdev_pen_center`)
 
@@ -401,10 +448,10 @@ penalties can each be centered in one of two ways:
 Recommendations. `"fixed"` is the statistically coherent choice when
 $`\sigma_R`$ is estimated or the deviations are treated as random
 effects: the penalty is then a genuine distributional assumption, and
-the bias ramp machinery depends on the mean being asserted. `"own_mean"`
+the bias ramp routines depends on the mean being asserted. `"own_mean"`
 is primarily a *bridging* device: it reproduces assessments where the
-mean parameter (`ln_global_R0`, `ln_F_mean`) carries the level and the
-deviations carry only shape, so the level is not penalized twice. Two
+mean parameter (`ln_global_R0`, `ln_F_mean`) holds the level and the
+deviations have only shape, so the level is not penalized twice. Two
 cautions: under `"own_mean"` the deviations’ level must be pinned
 elsewhere (an $`R_0`$ prior, a fixed deviation, or informative data) or
 the likelihood is flat along it, and `RecDevs_pen_center = "own_mean"`
@@ -428,7 +475,7 @@ Rationale. Under a stock-recruit relationship the deviations are
 residuals about the predicted curve, so a model that also wants the
 *realized* recruitment series to stay regular has nowhere else to say
 so. This penalty is that second, independent statement, and reproduces
-the recruitment regularity penalties several existing assessments carry
+the recruitment regularity penalties several existing assessments have
 (e.g., a penalty on log recruitment variability). Leave it off unless
 recruitment in data-poor years is wandering unreasonably; it is a tuning
 penalty, not a probability model, and it will shrink genuine recruitment
@@ -437,7 +484,7 @@ data rather than an estimated parameter).
 
 #### Initial age deviations, tie between sexes
 
-When the sexes carry their own initial age curves
+When the sexes have their own initial age curves
 (`InitDevs_sex_spec = "est_all"`), a second statement can be made about
 them: not how variable each curve is (that is the initial-age penalty)
 but how far apart the two curves may sit,
@@ -455,9 +502,9 @@ It runs over the same ages the initial-age penalty covers and enters the
 objective unweighted (reported as `Init_Sex_nLL`). Its natural use is
 the one flatfish assessments put it to: male and female initial numbers
 are estimated separately, the first few years of compositions are all
-that informs them, and the tie keeps the two from drifting apart where
-those data are thin. Like the recruitment level penalty it is a tuning
-prior rather than a probability model, so its sigma is held as data.
+that informs them, and the tie keeps the two together where those data
+are thin. Like the recruitment level penalty it is a tuning prior rather
+than a probability model, so its sigma is kept as data.
 
 #### Stock-recruit curve as a penalty
 
@@ -475,14 +522,14 @@ $`\xi^{\text{SR}}_y = \ln R_y - \ln \hat{R}_y`$:
 | Argument | Description |
 |----|----|
 | `sr_penalty` | `"none"` (default), `"bh"`, or `"ricker"`, naming the curve $`\hat{R}_y`$ follows. Valid only with `rec_model = "mean_rec"`; under `"bh_rec"` or `"ricker_rec"` the curve already generates recruitment, which makes the deviation the residual by construction, so penalizing the residual as well would count it twice and setup rejects the combination |
-| `sr_pen_sigma` | $`\sigma_{\text{SR}}`$, the standard deviation of the residual. Held as data rather than estimated. Default 1 |
+| `sr_pen_sigma` | $`\sigma_{\text{SR}}`$, the standard deviation of the residual. Kept as data rather than estimated. Default 1 |
 | `sr_pen_yrs` | Calendar years $`\mathcal{Y}_{\text{SR}}`$ the penalty is summed over; `NULL` (default) is every year that has a lagged spawning biomass, i.e. all but the first `rec_lag`. Years outside it keep their recruitment deviation estimated and contribute nothing, which is how a restricted stock-recruit window is expressed. Naming a year with no lagged spawning biomass is an error rather than a silent fallback: the curve’s prediction there is the equilibrium, so the residual would not be a stock-recruit residual |
 | `sr_R0_spec` | Where the curve’s scale $`R_0^{\text{SR}}`$ comes from (see below) |
 
 | String | The curve’s scale $`R_0^{\text{SR}}`$ |
 |----|----|
 | `"shared"` | `ln_global_R0`, i.e. $`R_0^{\text{mean}}`$ itself, which under mean recruitment is the mean recruitment level. One parameter and well posed, but the curve is anchored on mean recruitment rather than on an unfished level. Default |
-| `"est"` | The curve’s own estimated `ln_sr_R0`, identified by the curve fit alone. Reproduces templates carrying separate mean-recruitment and unfished-recruitment parameters, though nothing ties the two together, so the pair can slide |
+| `"est"` | The curve’s own estimated `ln_sr_R0`, identified by the curve fit alone. Reproduces templates with separate mean-recruitment and unfished-recruitment parameters, though nothing ties the two together, so the pair can slide |
 | `"rinit"` | `ln_rinit`, the initial-equilibrium recruitment, so one parameter sets both the unfished age structure and the curve. Requires `use_rinit = 1` and errors otherwise. This is the usual ADMB arrangement |
 
 Steepness is reachable in this mode: `h_spec`, `Use_h_prior`, and
@@ -504,8 +551,8 @@ and its penalty as `SR_pen_nLL`; see
 MSY is the maximum of equilibrium yield over a curve that drives the
 dynamics, and this curve does not, so
 [`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md)
-refuses an MSY request on a fit carrying the penalty and directs it to
-the SPR variants.
+refuses an MSY request on a fit with the penalty and directs it to the
+SPR variants.
 
 #### Recruitment penalty weighting (`Setup_Mod_Weighting()`)
 
@@ -556,11 +603,11 @@ steepness ($`h`$) can be penalized with a Beta distribution scaled to
 | `h_spec` | Estimation structure for steepness parameters |
 
 The support matters, not just the mean and SD: a beta on $`(0,1)`$ is a
-genuinely different function of $`h`$ than one on $`(0.2,1)`$ (it
-carries $`\log(h)`$ where the rescaled form carries $`\log(h - 0.2)`$),
-and no choice of shape parameters reconciles the two. When bridging an
-assessment, match its prior’s support via `lb`/`ub` rather than
-approximating with the default.
+different function of $`h`$ than one on $`(0.2,1)`$ (it has $`\log(h)`$
+where the rescaled form has $`\log(h - 0.2)`$), and no choice of shape
+parameters reconciles the two. When bridging an assessment, match its
+prior’s support via `lb`/`ub` rather than approximating with the
+default.
 
 #### R0 priors
 
@@ -619,14 +666,14 @@ are:
 | `"dbnrml"` | Double-normal with ascending and descending widths, plateau, and endpoint control | 6 |
 | `"nonpar"` | Non-parametric: one logit-scale parameter per bin, transformed via $`\text{logit}^{-1}`$ | $`n_\text{bins}`$ |
 | `"nonparlog"` | Non-parametric on the log scale, standardized so each year’s selectivity averages to 1 over a window of bins (every bin by default; see [Normalization and length-based selectivity](#normalization-and-length-based-selectivity)) | $`n_\text{bins}`$ |
-| `"nonparfree"` | Non-parametric on the log scale with no standardization at all: $`\exp(\theta_\text{bin})`$, so the values carry the height of the curve as well as its shape | $`n_\text{bins}`$ |
+| `"nonparfree"` | Non-parametric on the log scale with no standardization at all: $`\exp(\theta_\text{bin})`$, so the values hold the height of the curve as well as its shape | $`n_\text{bins}`$ |
 | `"asymplogist1"` | Logistic with asymptote $`\alpha \in (0,1)`$: $`\alpha / (1 + \exp(-k(\text{bin} - a_{50})))`$ | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln k`$) |
 | `"asymplogist2"` | Logistic with asymptote, $`a_{50}/a_{95}`$ parameterization | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln a_{95}`$) |
 | `"bicubic"` | Bicubic natural-cubic-spline surface over a bin-node $`\times`$ year-node grid | $`n_\text{bin\_nodes} \times n_\text{yr\_nodes}`$ (see below) |
 
 The three non-parametric forms differ only in what happens after the
 transform, and that difference is what decides whether selectivity can
-carry a scale. Write $`\theta_{a,b}`$ for the estimated parameter at bin
+have a scale. Write $`\theta_{a,b}`$ for the estimated parameter at bin
 $`a`$ in block $`b`$, $`b(y)`$ for the block year $`y`$ falls in, and
 $`s_{y,a}`$ for the selectivity the model actually uses. Then
 
@@ -660,17 +707,15 @@ year*, and only within-year contrasts survive. `"nonparfree"` divides by
 nothing, so every $`\theta_{a,b}`$ is a selectivity in its own right and
 the level is estimated along with the shape.
 
-That last point is the practical one. A standardized form cannot hold a
-level, so the level has to live somewhere else, in catchability or in
-the fishing mortality mean. A free form can hold it, which is what makes
-it the right choice for an index fit age by age, where the age
-multiplier is the whole quantity being estimated. It is also what makes
-it possible to estimate a level twice by accident: if selectivity
-carries a level *and* the mean it multiplies is free, the two trade a
-common factor, the Hessian stops being positive definite, and the
-selectivity standard errors inflate while the fitted trajectory looks
-fine. Pin one bin, or one block’s reference group, by leaving it out of
-`*_sel_nonpar_est_bins`.
+A standardized form cannot hold a level, so the level then sits in
+catchability or in the fishing mortality mean. A free form can hold it,
+which is why an index fit age by age uses one: the age multiplier is the
+whole quantity being estimated. It also makes it possible to estimate a
+level twice by accident: if selectivity has a level *and* the mean it
+multiplies is free, the two trade a common factor, the Hessian stops
+being positive definite, and the selectivity standard errors inflate
+while the fitted trajectory looks fine. Pin one bin, or one block’s
+reference group, by leaving it out of `*_sel_nonpar_est_bins`.
 
 Choosing among the three non-parametric forms. `"nonpar"` bounds every
 raw value below one (logistic transform) and mean-standardizes jointly
@@ -684,7 +729,7 @@ want selectivity interpretable as a proportion without further
 constraints.
 
 `"nonparfree"` does not standardize at all, so its values hold the level
-as well as the shape. That is what an index fit age by age needs: a free
+as well as the shape. An index fit age by age needs exactly that: a free
 catchability per age and a selectivity estimated at age are one quantity
 written two ways, so an at-age index puts the whole age multiplier in
 selectivity and leaves catchability alone. Group ages the way a
@@ -693,7 +738,7 @@ out of the list entirely when the fleet never observes it, which maps it
 off rather than leaving it free and uninformed. Because nothing is
 canceled by standardization, `"nonparfree"` also accepts a `"scale"` sex
 offset, which `"nonpar"` and `"nonparlog"` refuse. Do not pair it with
-the centering penalty!
+the centering penalty.
 
 #### Bicubic spline selectivity (`"bicubic"`)
 
@@ -729,12 +774,12 @@ edge-holding (flat-lining) outside it:
 
 - `_SelStyr_<year>`: a calendar year within the block. Only years from
   `SelStyr` through the block’s end are actually spline-fit across the
-  year dimension; years within the block before `SelStyr` are held
+  year dimension; years within the block before `SelStyr` are kept
   constant at the `SelStyr` year’s fitted curve (“previous years are
   filled”).
 - `_NSelBins_<n>`: restricts the spline fit to the first `n` bins (ages
   or lengths, per `fish_selex_type`/`srv_selex_type`). Bins beyond `n`
-  are held constant at the last fitted bin’s value (a plateau), rather
+  are kept constant at the last fitted bin’s value (a plateau), rather
   than continuing the spline extrapolation.
 
 Both suffixes only change which years/bins are considered part of the
@@ -810,9 +855,9 @@ rather than the gear (e.g., age-1 availability to a trawl survey varying
 with year-class strength). Overriding that bin gives it free annual
 variation without abandoning the parametric form (or paying for a full
 semi-parametric surface) elsewhere. Give the override `"rw"` process
-error unless the bin genuinely jumps independently between years; with
-`"none"`, each year’s value is informed only by that year’s compositions
-and can be poorly determined in sparse years.
+error unless the bin jumps independently between years; with `"none"`,
+each year’s value is informed only by that year’s compositions and can
+be poorly determined in sparse years.
 
 #### Selectivity parameter centering penalty
 
@@ -848,9 +893,9 @@ controls how base selectivity parameters are estimated:
 
 Any functional form’s model string accepts an optional `_NSelBins_<n>`
 suffix (e.g. `"logist1_Fleet_1_NSelBins_17"`, composable with
-`_Block_<b>` in either order): bins beyond `n` are held at bin `n`’s
+`_Block_<b>` in either order): bins beyond `n` are kept at bin `n`’s
 computed value rather than evaluated through the form. This is the
-plateau convention many existing assessments carry, where selectivity is
+plateau convention many existing assessments have, where selectivity is
 the functional form up to a chosen bin and constant after it. The
 bicubic form already had this suffix and builds its plateau into its
 spline weights; for every other form the hold is applied after the form
@@ -881,7 +926,7 @@ Under `"par"`, an offset fixed at zero reproduces sex-shared parameters,
 so the option nests `"est_shared_s"` while letting the link be
 estimated; no new parameters are involved, the existing sex slots simply
 change meaning. Under `"scale"`, the offset is a log-scale constant on
-the whole curve, which is how several existing assessments carry a male
+the whole curve, which is how several existing assessments have a male
 selectivity offset; because a constant multiplier is canceled by mean
 standardization, setup refuses `"scale"` for the non-parametric forms
 (`"nonpar"`, `"nonparlog"`) and the semi-parametric time-varying
@@ -905,7 +950,7 @@ parameter is describing a bin the data never see.
 vectors, one bin index per fleet) anchor the limb at the first *data*
 bin instead, so the parameter is the selectivity at a bin the data
 inform, and every bin below it takes $`(b/b_{\text{start}})^{2}`$ times
-the selectivity there. Set it to the first bin the compositions carry
+the selectivity there. Set it to the first bin the compositions have
 whenever those start above the population’s first bin.
 
 Unanchored limbs. `fish_sel_dbnrml_raw` and `srv_sel_dbnrml_raw` (0/1
@@ -929,8 +974,8 @@ maximum, or to the mean across a bin range. When `fit_lengths = 1`,
 selectivity operates on length bins and is mapped to age-space via a
 user-supplied size-age transition matrix (`SizeAgeTrans`).
 
-The `"nonparlog"` form carries its own standardization: each year’s
-curve is divided by the mean of $`\exp(\theta)`$ over a window of bins
+The `"nonparlog"` form has its own standardization: each year’s curve is
+divided by the mean of $`\exp(\theta)`$ over a window of bins
 $`\mathcal{B}`$,
 
 ``` math
@@ -989,12 +1034,12 @@ Per-fleet specifications. A single named specification is shared by
 every fleet; alternatively, pass an *unnamed list* with one named
 specification per fleet (use
 [`list()`](https://rdrr.io/r/base/list.html) or `NULL` for fleets with
-no penalties) so, e.g., two surveys can carry different smoothing.
+no penalties) so, e.g., two surveys can have different smoothing.
 
 Per-year weights, bin ranges, and normalization. Each weight may also be
 a vector with one value per model year (`0` skips that year), so a
 penalty can act only in years where selectivity changes, or with
-year-specific strength. A specification may additionally carry:
+year-specific strength. A specification may additionally have:
 
 | Name | Description |
 |----|----|
@@ -1034,7 +1079,7 @@ Configured alongside selectivity in
 |------------------|----------------------------------------------------|
 | `"est_all"`      | Free parameter for each region × fleet combination |
 | `"est_shared_r"` | One parameter shared across regions (per fleet)    |
-| `"fix"`          | Held at user-supplied value                        |
+| `"fix"`          | Kept at user-supplied value                        |
 
 #### Time blocks (`fish_q_blocks` / `srv_q_blocks`)
 
@@ -1058,20 +1103,36 @@ whichever index that fleet fits:
 | `"arith"` | Solve analytically as the ratio of mean observed to mean predicted index |
 | `"geo"` | Solve analytically on the log scale, $`\hat{q} = \exp(\overline{\log \text{obs} - \log \text{pred}})`$ |
 
-Both analytic forms solve one $`q`$ per region and fleet from only the
-years with observations, ignore block structure, and automatically fix
-that fleet’s catchability parameter regardless of `srv_q_spec` /
-`fish_q_spec`; they are incompatible with catchability covariates and
-priors on that fleet.
+Both analytic forms use only the years with observations and
+automatically fix that fleet’s catchability parameter regardless of
+`srv_q_spec` / `fish_q_spec`; they are incompatible with catchability
+covariates and priors on that fleet.
+
+The solve is done **within each catchability time block**. A fleet with
+a single block, the default, gets one $`q`$ for the whole series; a
+fleet with
+`srv_q_blocks = c("Block_1_Year_1-30_Fleet_1", "Block_2_Year_31-terminal_Fleet_1")`
+gets two, each from the observations its own block owns. Writing
+$`w_b(i)`$ for the weight block $`b`$ has on observation $`i`$, which is
+one for the observations in that block and zero elsewhere:
+
+``` math
+\hat q_b^{\,\text{arith}}=\frac{\sum_i w_b(i)\,o_i}{\sum_i w_b(i)\,p_i}, \qquad \log \hat q_b^{\,\text{geo}}=\frac{\sum_i w_b(i)\left(\log o_i-\log p_i\right)}{\sum_i w_b(i)}
+```
+
+A block that owns no observations has nothing to solve from and takes
+the pooled value over the whole series.
 
 Recommendations. Use `"geo"` with a lognormal index likelihood: it is
 the exact maximum-likelihood solution under a shared SE, removes one
 ridge-prone parameter per fleet, and typically speeds and stabilizes
 optimization. `"arith"` exists to match assessments that use the
-arithmetic ratio. Stay with `"est"` whenever you need a $`q`$ prior,
-covariates, time blocks, or when the index’s absolute scale is genuinely
-informative (e.g., a swept-area survey with a strong prior near 1, where
-concentrating $`q`$ out would discard that information).
+arithmetic ratio. Blocks are the way to let a solved $`q`$ shift: they
+cost nothing and the solve stays exact within each block. Stay with
+`"est"` whenever you need a $`q`$ prior, covariates, or when the index’s
+absolute scale is informative (e.g., a swept-area survey with a strong
+prior near 1, where concentrating $`q`$ out would discard that
+information).
 
 #### Priors
 
@@ -1092,12 +1153,26 @@ Controlled via
 | String | Description |
 |----|----|
 | `"est_ln_M"` | Estimate $`\ln M`$ across the defined block structure |
-| `"fix"` | Fix at values supplied via `Fixed_natmort` (array `[p × r × y × a × s]`) |
+| `"fix"` | Fix at values supplied via `Fixed_natmort` (array `[p × r × y × a × s]`, or `[p × r × y × seas × a × s]` when the rate differs between seasons) |
+
+#### What the value means
+
+$`M`$ is a rate per year, and mortality within a season is that rate
+times the season’s duration. Four equal seasons at $`M = 0.2`$ removes
+$`0.05`$ per season and $`0.2`$ over the year, same as a single season
+model. Adding the season axis changed none of that.
+
+So a rate is not a share. Two half-year seasons at $`0.2`$ and $`0.4`$
+accumulate $`0.1`$ and $`0.2`$, an annual $`0.3`$; they don’t split
+$`0.3`$ between them. To get a stock whose season-1 share of annual
+$`M`$ is $`0.38`$, with two half-year seasons and annual $`M`$ of
+$`0.3`$, set season 1 to $`0.38 \times 0.3 / 0.5 = 0.228`$ and season 2
+to $`0.62 \times 0.3 / 0.5 = 0.372`$.
 
 #### Block structure
 
 Natural mortality parameters can be shared or made specific along any
-combination of five axes. Each argument takes either `'constant'` (all
+combination of six axes. Each argument takes either `'constant'` (all
 levels pooled) or a list of integer vectors defining blocks:
 
 | Argument | Axis | Example |
@@ -1105,6 +1180,7 @@ levels pooled) or a list of integer vectors defining blocks:
 | `M_popblk_spec` | Population | `list(c(1,2), 3)` → pops 1-2 share $`M`$, pop 3 is separate |
 | `M_regionblk_spec` | Region | `list(1:3, 4:5)` |
 | `M_yearblk_spec` | Year | `list(1:20, 21:40)` |
+| `M_seasblk_spec` | Season | `list(1, 2)` → a separate rate in each of two seasons; `list(1:2, 3:4)` splits a four season year in half |
 | `M_ageblk_spec` | Age | `list(1:5, 6:30)` → young vs. old |
 | `M_sexblk_spec` | Sex | `list(1, 2)` → sex-specific $`M`$ |
 
@@ -1137,49 +1213,81 @@ details can be found in the model equations vignette.
 |----|----|
 | `NAA_re` | `"none"` (default), or the structure over the age-year grid: `"iid"` (independent across both ages and years), `"1dar1_a"` (autoregression over ages, years independent), `"1dar1_y"` (over years, ages independent), `"2dar1"` (separable over both), `"3dcond"` and `"3dmarg"` (three-dimensional field over age, year and cohort, on the conditional or marginal variance) |
 | `NAA_re_ages`, `NAA_re_years` | Ages and calendar years the state covers. `NULL` (default) uses everything from the second onward. Each must be a contiguous run, because the penalty compares the likelihood for one rectangular matrix |
+| `NAA_re_seasons` | Seasons the state covers. `"annual"` (default) puts a state at season one only, so the numbers within a year stay deterministic and the innovation is purely annual; `"all"` puts one at the start of every season; an integer vector selects specific seasons and need not be contiguous |
 | `NAA_sigma_spec` | `"est"` (default) or `"fix"`, whether the process error standard deviations are estimated. The states themselves are always estimated |
 
-#### Correlation across populations, regions and sexes
+A cell of the state is the log numbers at the **start** of its season,
+so season one is the year boundary, after ageing and the plus group, and
+later seasons sit on the within-year survival and movement step where no
+ageing happens. The annual state is therefore the special case of the
+seasonal one, not a different model, and `"annual"` reproduces what the
+package did before seasons were an option.
+
+Whether to go past `"annual"` is a question about data, not about
+routines. Within a year nothing structurally separates one season from
+the next except the observations assigned to them, so a season with no
+data returns its prior as its posterior and the seasons that do have
+data trade against it. `NAA_re_seasons` takes an arbitrary set for this
+reason: put states only in the seasons that have observations. It is the
+same weak-information story as a seasonal split of $`M`$, and the same
+advice follows.
+
+The state covers the assessment years only.
+[`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
+does not have it, so projected numbers at age advance deterministically
+from the terminal year with recruitment the only stochastic element, and
+a forecast from a state-space fit omits this process error. The closed
+loop operating model is a separate path and does have it forward,
+extending the active years over the projection period.
+
+The split of what varies by season is deliberate. `NAA_pe_pars` has no
+season dim, so every active season shares the age, year and cohort
+correlations within a population, region and sex; the standard deviation
+is what varies, through `NAA_sigma_seasblk_spec`. A long season and a
+short one differ in how much process error accumulates, not in the shape
+of the correlation across ages.
+
+#### Correlation across populations, regions, seasons and sexes
 
 | Argument | Description |
 |----|----|
-| `NAA_re_pop`, `NAA_re_region`, `NAA_re_sex` | `"iid"` (default) or `"us"`, an unstructured correlation over that margin, $`n(n-1)/2`$ parameters. Composed with whatever `NAA_re` gives over the age-year grid, so a correlation over one margin says nothing about the others |
-| `NAA_re_region_spec` | How the region correlations are shared: `"est_all"` (default), `"est_shared_p"`, `"est_shared_s"`, `"est_shared_p_s"`, `"fix"` |
+| `NAA_re_pop`, `NAA_re_region`, `NAA_re_sex`, `NAA_re_season` | `"iid"` (default) or `"us"`, an unstructured correlation over that dim, $`n(n-1)/2`$ parameters. Composed with whatever `NAA_re` gives over the age-year grid, so a correlation over one dim says nothing about the others. The season correlation runs over the active seasons, so it needs more than one of them |
+| `NAA_re_region_spec`, `NAA_re_season_spec` | How the region and season correlations are shared: `"est_all"` (default), `"est_shared_p"`, `"est_shared_s"`, `"est_shared_p_s"`, `"fix"` |
+| `NAA_pe_spec` | How the age, year and cohort correlations from `NAA_re` are shared across these same dims: `"est_all"` (default, a free set per population, region and sex), `"est_shared_p"`, `"est_shared_r"`, `"est_shared_s"`, `"est_shared_p_r"`, `"est_shared_p_s"`, `"est_shared_r_s"`, `"est_shared_p_r_s"` (one set for the whole model), `"fix"` |
 
-Unstructured is the only non-independent option on these margins because
+Unstructured is the only non-independent option on these dims because
 none of them has an ordering: regions are not in a line, so a
 correlation decaying with distance has nothing to decay along.
+
+Sharing a correlation and correlating the innovations are different
+operations, and `NAA_pe_spec` does the first. `"est_shared_r"` gives
+every region the same $`\rho`$ while their shocks stay independent,
+which cuts the count: a three-region `"2dar1"` model goes from six
+correlations to two. `NAA_re_region = "us"` instead makes the shocks
+themselves covary, and adds parameters. Neither touches which cells of
+the state are estimated, only how many hyperparameters they draw on.
+Worth reaching for when a dim is thin, since each region otherwise
+estimates its own age correlation from however many ages `NAA_re_ages`
+leaves it.
 
 #### Standard deviations
 
 | Argument | Description |
 |----|----|
-| `NAA_sigma_popblk_spec`, `NAA_sigma_regionblk_spec`, `NAA_sigma_yearblk_spec`, `NAA_sigma_ageblk_spec`, `NAA_sigma_sexblk_spec` | `"constant"` (default) or a list of integer vectors assigning indices to blocks, exactly as the `M_*blk_spec` arguments do |
+| `NAA_sigma_popblk_spec`, `NAA_sigma_regionblk_spec`, `NAA_sigma_yearblk_spec`, `NAA_sigma_seasblk_spec`, `NAA_sigma_ageblk_spec`, `NAA_sigma_sexblk_spec` | `"constant"` (default) or a list of integer vectors assigning indices to blocks, exactly as the `M_*blk_spec` arguments do |
 
 Blocking shares a standard deviation; it never removes a cell from the
 state. Only `NAA_re = "iid"` admits a standard deviation that varies
 over years or ages: every other form is separable or Markov in one of
-those margins, and a per-cell variance is neither. The setup errors
-rather than silently ignoring a year or age block under a correlated
-form.
+those dims, and a per-cell variance is neither. The setup errors rather
+than silently ignoring a year or age block under a correlated form.
 
-#### What it does not combine with
-
-A freely estimated natural mortality that varies over time is the same
-log-survival surface the state carries, and `ln_M` is unpenalized while
-the state pays a marginal likelihood cost, so the optimizer loads the
-signal into `ln_M`. `NAA_re` together with `M_spec = "est_ln_M"` over
-more than one year block is refused. Time-varying $`M`$ alongside the
-state comes in as data through a `Fixed_natmort` array with
-`M_spec = "fix"`.
-
-Time-varying selectivity is a softer case. The data see numbers at age
-and selectivity only through their product, so a free age-by-year
-surface on selectivity and a free age-by-year state describe overlapping
-objects. Both are penalized and the compositions and catch constrain the
-product, so the pair is identified in the same sense it is in WHAM and
-SAM, but the two lean on their priors more than either does alone. Worth
-a profile rather than a prohibition.
+The season dim is the exception, because it is whitened before the age
+and year density is reached rather than inside it. A season-varying
+standard deviation therefore works under every `NAA_re`, which is
+usually what a model with unequal season durations wants, and the one
+thing that rules it out is `NAA_re_season = "us"`: a correlation has one
+scale across the dim it spans.
 
 ## Movement
 
@@ -1224,8 +1332,8 @@ Each dimension can be pooled (`'constant'`) or blocked:
 | `adjacency_mat` | Square `[n_regions × n_regions]` binary connectivity matrix, with a **zero diagonal**: residency falls out of the generator and is not specified here. A fully connected matrix is `1 - diag(n_regions)`; note that `diag(1, n_regions)` is the identity, which connects nothing and is rejected |
 | `area_r` | Numeric vector of region areas (scales diffusion rates) |
 | `ctmc_diffusion_bounds` | How the off-diagonal generator entries are kept non-negative, evaluated on the adjacency edges only. With `d` the preference gradient along an edge and `theta` the diffusion rate out of its origin: `"none"` (or `0`) leaves `theta + d` unbounded; `"softplus"` (or `1`) smooths its positive part with width `ctmc_diffusion_eps`; `"upwind"` (or `2`) is the discontinuous Galerkin (finite volume) flux `theta + max(d, 0)` |
-|  | `"upwind"` carries diffusion whole and hinges only the taxis, so positivity in the rate estiamtes don’t depend on the two cancelling |
-| `ctmc_diffusion_eps` | Positive numeric (default `0.1`): softplus width for `ctmc_diffusion_bounds = "softplus"`, read by no other form. An edge where taxis exactly cancels diffusion carries `eps * log(2)`, so eps is a minimum exchange rate as well as a smoothing width and the fit moves with it; `0.001` behaves like a hard clamp and leaves shut edges gradient-dead |
+|  | `"upwind"` has diffusion whole and hinges only the taxis, so positivity in the rate estiamtes don’t depend on the two cancelling |
+| `ctmc_diffusion_eps` | Positive numeric (default `0.1`): softplus width for `ctmc_diffusion_bounds = "softplus"`, read by no other form. An edge where taxis exactly cancels diffusion has `eps * log(2)`, so eps is a minimum exchange rate as well as a smoothing width and the fit moves with it; `0.001` behaves like a hard clamp and leaves shut edges gradient-dead |
 | `ctmc_scale_by_seasdur` | 0/1 (default `1`): if `1`, treats the generator as an annual rate and exponentiates `Q * seasdur[s]` each season, so movement and mortality share time units. `0` results in `Q * 1` each season. |
 | `move_expm_nsub` | Integer (default `0`): how matrix exponentials of the generator are evaluated. `0` is exact ([`Matrix::expm`](https://rdrr.io/pkg/Matrix/man/expm-methods.html)); a power of two `n >= 1` substitutes `n` implicit backward Euler substeps. See below |
 
@@ -1285,12 +1393,13 @@ squaring doubles the exponent, so `n` costs one linear solve plus
 two, which squaring reaches exactly. The scheme is first order either
 way, so the finer ladder a general integer would allow buys nothing.
 
-The reason to want this is the adjoint. Under reverse-mode AD the
-derivative of a linear solve is another solve, whereas the derivative of
-a matrix exponential is much more expensive than its forward evaluation.
-Benchmarking the exponential on its own over 600 six-region strata, the
-gradient runs about 18x faster at `n = 1`, 4x at `n = 8` and 2.5x at
-`n = 64`, against a tape that is slightly more expensive to build.
+The reason to want this is the cost of the gradient. Under reverse-mode
+AD the derivative of a linear solve is another solve, whereas the
+derivative of a matrix exponential is much more expensive than its
+forward evaluation. Benchmarking the exponential on its own over 600
+six-region strata, the gradient runs about 18x faster at `n = 1`, 4x at
+`n = 8` and 2.5x at `n = 64`, against a tape that is slightly more
+expensive to build.
 
 Inside a real fit the gain is far smaller, because the exponential is
 only a slice of the gradient and binary powering’s `log2(n)` matrix
@@ -1304,10 +1413,10 @@ exponential is a large share of the work: cost grows with the cube of
 so measure on the model you intend to fit rather than assuming the
 isolated figure.
 
-What it costs is accuracy, and not by a small margin. The scheme is
-first order in `1/n`, so it is a different discretization of the
-movement process rather than a cheap route to the same numbers. On a
-six-region chain generator with `Z` between 0.25 and 0.42:
+What it costs is accuracy, and not by a small dim. The scheme is first
+order in `1/n`, so it is a different discretization of the movement
+process rather than a cheap route to the same numbers. On a six-region
+chain generator with `Z` between 0.25 and 0.42:
 
 | `n`  | max abs error in the operator | error in survival |
 |------|-------------------------------|-------------------|
@@ -1323,14 +1432,15 @@ sensible setting if the intent is to approximate the exponential; small
 movement process itself.
 
 Two structural properties survive at any `n`, which is what makes the
-option safe to use rather than merely fast. `I - A/n` is a non-singular
-M-matrix, so its inverse is non-negative and movement fractions cannot
-go negative; with no mortality the result is exactly column-stochastic,
-so fractions still sum to one without renormalization. And because the
-seasonal operator and the catch integral come from the same Van Loan
-block, `1'T = 1' - z'Integral` holds algebraically, so catch plus
-survivors equals the starting abundance to machine precision even where
-the operator itself is a coarse approximation.
+option safe to use, not just fast. the inverse of `I - A/n` is
+non-negative, so movement fractions cannot go negative (it is a
+non-singular M-matrix); with no mortality the result is exactly
+column-stochastic, so fractions still sum to one without
+renormalization. And because the seasonal operator and the catch
+integral come from the same Van Loan block, `1'T = 1' - z'Integral`
+holds algebraically, so catch plus survivors equals the starting
+abundance to machine precision even where the operator itself is a
+coarse approximation.
 
 #### Continuous movement deviations (`cont_vary_movement`)
 
@@ -1392,8 +1502,8 @@ one of three process-error structures, set via `Fdev_model`:
 the iid deviation penalty is centered; see the deviation penalty
 centering discussion in the Recruitment section for the shared
 rationale. Under the mean-plus-deviations parameterization the level of
-$`F`$ is already carried by `ln_F_mean`, so `"own_mean"` penalizes only
-the deviations’ spread and avoids constraining the level twice, matching
+$`F`$ is already set by `ln_F_mean`, so `"own_mean"` penalizes only the
+deviations’ spread and avoids constraining the level twice, matching
 assessments whose deviation vectors sum to zero. It leaves `ln_F_mean`
 and the deviations’ level mutually unidentified unless one is fixed,
 which `ln_F_mean_spec = "fix"` does; setup warns when it is combined
@@ -1458,11 +1568,11 @@ F_{p,r,\tau,a,s} = \sum_f F_{r,\tau,f} \left[\underbrace{\text{sel}_{a,f} \cdot 
 #### Estimating discard mortality rates
 
 `dmr_dev_spec = "est_all"` estimates an annual deviation in every fished
-region × year × season × fleet cell, not only in cells carrying a
-discard observation. This is deliberate. From the decomposition above,
-`dmr` scales the dead-discard component of total mortality, so it enters
-$`Z`$ and therefore propagates into predicted retained catch, indices,
-and compositions:
+region × year × season × fleet cell, not only in cells with a discard
+observation. This is deliberate. From the decomposition above, `dmr`
+scales the dead-discard component of total mortality, so it enters $`Z`$
+and therefore propagates into predicted retained catch, indices, and
+compositions:
 
 ``` math
 C_{a} = \frac{F^{\text{ret}}_{a}}{Z_{a}} N_{a} \left(1 - e^{-Z_{a}}\right)
@@ -1508,11 +1618,11 @@ mp[, 10:20, , ] <- NA
 input_list$map$logit_dmr_devs <- factor(mp)
 ```
 
-Two consequences worth knowing. Mapping a deviation off pins it at
-whatever sits in `$par`, which is `0` by default, so `dmr` falls back on
+Two consequences. Mapping a deviation off fixes it at whatever sits in
+`$par`, which is `0` by default, so `dmr` falls back on
 `plogis(logit_dmr_mean)`, but a starting value supplied through `...` is
 kept, not reset to zero. And under `Fdev_model = "rw"` or `"ar1"`, a
-pinned deviation is dropped from the active sequence, widening the gap
+fixed deviation is dropped from the active sequence, widening the gap
 $`d`$ between the deviations either side of it rather than being treated
 as an actual year.
 
@@ -1554,7 +1664,7 @@ Supplied via
 | `SizeAgeTrans` | `[p × r × y × τ × l × a × s]` | Size-age transition matrix, shared by every fleet unless `SizeAgeTrans_fish`/`SizeAgeTrans_srv` overrides it. Required when `fit_lengths = 1` |
 | `SizeAgeTrans_fish`, `SizeAgeTrans_srv` | `NULL` or `[p × r × y × τ × l × a × s × f]` | Optional per-fleet size-age keys, `SizeAgeTrans` with a trailing fleet dimension appended. `NULL` (default) reads every fleet from the shared `SizeAgeTrans`. Only valid under `growth_model = "none"`; a growth model already derives one key per fleet at that fleet’s own timing and rejects these to avoid two sources for the same quantity. The fixed-data counterpart of `WAA_fish`/`WAA_srv` overriding the shared `WAA`, and of `Setup_Sim_Biologicals`’s `SizeAgeTrans_fish_input`/`SizeAgeTrans_srv_input` on the operating-model side |
 | `fit_lengths` | 0/1 | Toggle for fitting length compositions |
-| `do_caal` | 0/1 | Toggle for reporting the joint arrays at length and age (`Fish_caal`, `Fish_caal_discard`, `Srv_caal`), dimensioned `[p × r × y × τ × l × a × s × f]` like `CAA` and `CAL`. Requires `fit_lengths = 1`, and is switched on by itself when conditional age-at-length data are supplied, since their expected rows are read from these arrays. Each array carries a length and an age dimension at once, so they are the largest objects the model builds and every cell lands on the AD tape; leave off unless they are wanted |
+| `do_caal` | 0/1 | Toggle for reporting the joint arrays at length and age (`Fish_caal`, `Fish_caal_discard`, `Srv_caal`), dimensioned `[p × r × y × τ × l × a × s × f]` like `CAA` and `CAL`. Requires `fit_lengths = 1`, and is switched on by itself when conditional age-at-length data are supplied, since their expected rows are read from these arrays. Each array has a length and an age dimension at once, so they are the largest objects the model builds and every cell lands on the AD tape; leave off unless they are wanted |
 | `growth_model` | `"none"` / `"vb_schnute"` / `"richards"` | `"vb_schnute"` builds each fleet’s size-age transition inside the model from von Bertalanffy parameters in Schnute’s form (`L1` at `growth_A1`, `L2` at `growth_A2`, `K`, `CV1`, `CV2`): linear growth from `growth_L0` at age zero up to `L1`, CV interpolated on length between the references, the plus-group mean size adjusted for fish older than the accumulator age, and a binned normal key with the tails in the end bins, read at each fleet’s own timing (`t_fish`, `t_srv`). `"richards"` is the same curve applied to lengths raised to a sixth estimated parameter `rho`, which nests the von Bertalanffy form at `rho = 1`. Requires `fit_lengths = 1` |
 | `ln_growth_pars` (via `...`) | `[p × r × s × n]` | Starting values for `L1, L2, K, CV1, CV2` (then `rho` under `"richards"`), log scale, passed through `starting_values` as every other parameter’s are. Defaults to the ends of the length bins with `K = 0.15` and CVs of `0.1`, so supply your own for any real model |
 | `growth_spec` | `"est_all"` / `"est_shared_r"` / `"est_shared_s"` / `"est_shared_r_s"` / `"fix"` | How the growth parameters are shared across regions and sexes. `growth_fix` holds individual parameters at their starting values |
@@ -1562,19 +1672,19 @@ Supplied via
 | `growth_len_lower` | `[l]` | Lower edges of the length bins; `lens` in `Setup_Mod_Dim` are midpoints |
 | `growth_cv_type`, `growth_sd_type`, `growth_dist` | `"len"` / `"age"`; `"cv"` / `"sd"`; `"normal"` / `"lognormal"` | Whether the CV interpolates on mean length or on age between the reference ages; whether `CV1`, `CV2` scale the mean or are standard deviations; the distribution of length at age behind the key |
 | `growth_plus_group` | `"mixture"` / `"curve"` | `"mixture"` (default) takes the plus group’s mean length as the survivorship-weighted mixture of the ages it holds, numbers declining at an assumed 0.2 per year and length rising from the curve at the accumulator age to the asymptote; `"curve"` reads the curve at the accumulator age |
-| `growth_tv_model` | `NULL` or per parameter | Time variation of the growth parameters. Either a vector of `"none"`/`"iid"`/`"rw"` in parameter order, or named by parameter (`L1`, `L2`, `K`, `CV1`, `CV2`, `rho`) with the rest constant. A varying parameter gains a deviation series `ln_growth_devs[p, r, y, k, s]` and a log sigma in the first stream of `growth_pe_pars`; its realized value by year is reported as `growth_pars_y` |
-| `growth_tv_years` | `NULL`, a vector, or a list | Calendar years each varying parameter’s deviations are active in. `NULL` uses every year, a vector applies to all of them, a list names them per parameter. Deviations outside the range are held at zero |
+| `growth_tv_model` | `NULL` or per parameter | Time variation of the growth parameters. Either a vector of `"none"`/`"iid"`/`"rw"` in parameter order, or named by parameter (`L1`, `L2`, `K`, `CV1`, `CV2`, `rho`) with the rest constant. A varying parameter gains a deviation series `ln_growth_devs[p, r, y, k, s]` and a log sigma in the first data source of `growth_pe_pars`; its realized value by year is reported as `growth_pars_y` |
+| `growth_tv_years` | `NULL`, a vector, or a list | Calendar years each varying parameter’s deviations are active in. `NULL` uses every year, a vector applies to all of them, a list names them per parameter. Deviations outside the range are kept at zero |
 | `growth_tv_link` | `"log"` / `"logit"` | The scale a deviation enters on. `"log"` multiplies the parameter by `exp(dev)`; `"logit"` keeps it strictly inside `growth_par_bounds` however large the deviation, which every growth parameter is |
 | `growth_par_bounds` | `[n × 2]` | Lower and upper bounds per growth parameter, natural scale; required under the logit link |
-| `growth_tv_sigma_spec` | `"fix"` / `"est"` | Whether the process error standard deviations of the deviations are estimated. Their starting values are the first stream of `growth_pe_pars`, one slot per growth parameter, supplied through `starting_values` and defaulting to `log(0.1)`. `growth_rw_init_sigma` gives the first year of a random walk its own standard deviation |
+| `growth_tv_sigma_spec` | `"fix"` / `"est"` | Whether the process error standard deviations of the deviations are estimated. Their starting values are the first data source of `growth_pe_pars`, one slot per growth parameter, supplied through `starting_values` and defaulting to `log(0.1)`. `growth_rw_init_sigma` gives the first year of a random walk its own standard deviation |
 | `growth_tv_spec` | `"est_all"` / `"est_shared_r"` / `"est_shared_s"` / `"est_shared_r_s"` | How the deviation series are shared across regions and sexes |
-| `growth_tv_type` | `"curve"` / `"cohort"` | How the deviated parameters reach size at age. `"curve"` (default) reads each year’s sizes off that year’s own curve, so a fish carries no memory of the years it lived through. `"cohort"` carries size at age forward: each cohort grows by the increment the current year’s parameters imply from the size it reached, ages still in the linear phase keep the length at `growth_A1` their birth year gave them, the first age past `growth_A1` sits on the current year’s curve, and the plus group blends the cohort entering it with the fish already there by their numbers at age. The CV at age is then held at the first year’s. Because the plus group reads abundance, growth under this option is evaluated inside the population dynamics year loop |
+| `growth_tv_type` | `"curve"` / `"cohort"` | How the deviated parameters reach size at age. `"curve"` (default) reads each year’s sizes off that year’s own curve, so a fish has no memory of the years it lived through. `"cohort"` has size at age forward: each cohort grows by the increment the current year’s parameters imply from the size it reached, ages still in the linear phase keep the length at `growth_A1` their birth year gave them, the first age past `growth_A1` sits on the current year’s curve, and the plus group blends the cohort entering it with the fish already there by their numbers at age. The CV at age is then kept at the first year’s. Because the plus group reads abundance, growth under this option is evaluated inside the population dynamics year loop |
 | `growth_semipar` | `"none"` / `"iid"` / `"rw"` / `"2dar1"` / `"3dmarg"` / `"3dcond"` | Semi-parametric growth: a year-by-age surface `ln_growth_semipar_devs[p, r, y, a, s]` multiplying the parametric mean length at age, so the curve stays the parametric part and the deviations hold departures from it. The structures are the same process errors the semi-parametric selectivity forms use; the correlated ones are what make the surface estimable, since the deviations are not identified year by year and age by age from length data alone. The spread follows the deviated mean, so under `growth_cv_type = "len"` a deviation also moves the fish along the CV ramp and under `"age"` the spread at age is untouched |
-| `growth_semipar_spec` | `"fix"` / `"est"` | Whether the surface’s process error parameters are estimated. Their starting values are the second stream of `growth_pe_pars`, in the same slots the selectivity forms use, supplied through `starting_values` and defaulting to a scale of `0.05` with correlations of `0.3` |
-| `growth_semipar_ages`, `growth_semipar_years` | `NULL` or vectors | Ages and calendar years the surface is estimated over; outside them the deviations are held at zero, which is how a surface is restricted to the ages the length data actually inform |
-| `LenBinMap` | `NULL` or `[l × l_\text{obs}]` | Maps the model’s length bins onto the bins the compositions are recorded on, each row summing to one, for compositions on coarser bins than the population carries. Expected compositions are mapped through it inside the likelihood exactly as the ageing error matrix maps ages, and the observed arrays are then dimensioned by the observed bins |
+| `growth_semipar_spec` | `"fix"` / `"est"` | Whether the surface’s process error parameters are estimated. Their starting values are the second data source of `growth_pe_pars`, in the same slots the selectivity forms use, supplied through `starting_values` and defaulting to a scale of `0.05` with correlations of `0.3` |
+| `growth_semipar_ages`, `growth_semipar_years` | `NULL` or vectors | Ages and calendar years the surface is estimated over; outside them the deviations are kept at zero, which is how a surface is restricted to the ages the length data actually inform |
+| `LenBinMap` | `NULL` or `[l × l_\text{obs}]` | Maps the model’s length bins onto the bins the compositions are recorded on, each row summing to one, for compositions on coarser bins than the population has. Expected compositions are mapped through it inside the likelihood exactly as the ageing error matrix maps ages, and the observed arrays are then dimensioned by the observed bins |
 | `AgeingError` | `NULL`, `[a × a_\text{obs}]` or `[y × a × a_\text{obs}]` | Maps the model’s ages onto the ages the compositions are recorded on: genuine misclassification (a true age 7 read as 6, 7 or 8), a collapse onto coarser observed bins, or both. Each row sums to one, or to zero to drop a model age from the observations. The age-axis twin of `LenBinMap`, applied in the same position inside the likelihood and validated by the same [`check_bin_map()`](https://chengmatt.github.io/SPoRC/dev/reference/check_bin_map.md) |
-| `AgeingError_fish`, `AgeingError_srv` | `NULL`, `[a × a_\text{obs} × n_f]` or `[y × a × a_\text{obs} × n_f]` | Per-fleet ageing error, for when a fishery reading otoliths and a survey reading scales do not misclassify the same way. `NULL` (default) gives every fleet the shared `AgeingError`, which is what a model written before these existed does. Every fleet must land on the same observed age bins, since the observed composition arrays carry one age dimension shared across fleets. Wired through the operating model too, as `AgeingError_fish_input` / `AgeingError_srv_input` in `Setup_Sim_Biologicals` |
+| `AgeingError_fish`, `AgeingError_srv` | `NULL`, `[a × a_\text{obs} × n_f]` or `[y × a × a_\text{obs} × n_f]` | Per-fleet ageing error, for when a fishery reading otoliths and a survey reading scales do not misclassify the same way. `NULL` (default) gives every fleet the shared `AgeingError`, which is what a model written before these existed does. Every fleet must land on the same observed age bins, since the observed composition arrays have one age dimension shared across fleets. Wired through the operating model too, as `AgeingError_fish_input` / `AgeingError_srv_input` in `Setup_Sim_Biologicals` |
 | `waa_model`, `wt_len_pars` | `"data"` / `"wt_len"`; 2 values or `[p × r × s × 2]` | `"data"` (default) reads weight at age from the `WAA*` arguments. `"wt_len"` derives `WAA` (at spawning time) and each fleet’s `WAA_fish` and `WAA_srv` (at that fleet’s `t_fish` or `t_srv`) from its key and $`W = aL^b`$ at the bin midpoints instead of reading them as data. `Get_Reference_Points` reads the derived `rep$WAA` when it is present, falling back to `data$WAA` otherwise; that fallback is a zero placeholder under `"wt_len"`, so pass `rep` from a fitted model rather than calling it on `data` alone |
 
 Growth is not seasonal. The curve depends only on real elapsed time
@@ -1623,7 +1733,7 @@ recovers the at-age statement! A fleet uses one form or the other.
 Supplying both for the same fleet is an error, since it is the same
 information stated twice.
 
-| Argument                        | Stream                |
+| Argument                        | Data source           |
 |---------------------------------|-----------------------|
 | `ObsCatchAA` / `UseCatchAA`     | Retained catch at age |
 | `ObsDiscardAA` / `UseDiscardAA` | Discards at age       |
@@ -1633,14 +1743,13 @@ Each has a `_pop` counterpart with a leading population dimension. All
 six evaluate the same at-age likelihood through one function, differing
 only in which array supplies the prediction.
 
-##### How a stream is reported
+##### How a data source is reported
 
 Every at-age array is dimensioned
 `[n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets]`, the layout of
-the prediction arrays the likelihood reads, so the two line up margin
-for margin. That is the storage, not the claim. A fleet says which of
-regions and sexes it reports separately through a `Type`, using the same
-vocabulary the compositions use:
+the prediction arrays the likelihood reads, so the two line up dim for
+dim. A fleet says which of regions and sexes it reports separately
+through a `Type`, using the same vocabulary the compositions use:
 
 | String         | Regions  | Sexes           |
 |----------------|----------|-----------------|
@@ -1651,12 +1760,12 @@ vocabulary the compositions use:
 
 `CatchAA_Type`, `DiscardAA_Type` and `SrvIdxAA_Type` take one setting
 for every fleet, one per fleet, or the year and fleet grammar, and each
-has a `_pop` counterpart. A margin the fleet sums over carries its
-observation in slot one of that margin, and a use flag anywhere else on
-it is refused rather than quietly ignored, since the prediction has
-already added those cells in. That check runs per year, so a fleet
-reporting sexes separately early and combined later is held to each rule
-in the years where it applies.
+has a `_pop` counterpart. A dim the fleet sums over has its observation
+in slot one of that dim, and a use flag anywhere else on it is refused
+rather than quietly ignored, since the prediction has already added
+those cells in. That check runs per year, so a fleet reporting sexes
+separately early and combined later is kept to each rule in the years
+where it applies.
 
 A fleet whose reporting changed part way through the series states it
 directly:
@@ -1674,14 +1783,14 @@ that block has nothing to mean there. Either hold the aggregation
 constant for that fleet, or give each period its own fleet so that each
 block is its own observation.
 
-The sex margin is required whatever the fleet reports. A stream summed
-over sexes still carries its observation in the full array, in sex slot
-one, and an array one dimension short is refused rather than promoted:
-the alternative is a silent reinterpretation of what you passed.
+The sex dim is required whatever the fleet reports. A data source summed
+over sexes still has its observation in the full array, in sex slot one,
+and an array one dimension short is refused rather than promoted: the
+alternative is a silent reinterpretation of what you passed.
 
 ##### Density and where the observation error comes from
 
-An at-age stream has the same choices the aggregated index has, per
+An at-age data source has the same choices the aggregated index has, per
 fleet:
 
 | Argument | Options |
@@ -1690,11 +1799,11 @@ fleet:
 | `*AA_sigma_form` | `"none"` (default), `"data"`, `"est_additive"`, `"est_quadrature"` |
 | `Obs*AA_SE` | Reported standard errors, shaped like the observations |
 
-`"none"` uses the estimated parameter alone, which is what a stream with
-no reported errors means. `"data"` uses the reported standard errors
-alone and holds the parameter fixed, since nothing reads it. The other
-two combine them, added or in quadrature. Disaggregating a survey index
-by age therefore no longer costs you its survey-design errors.
+`"none"` uses the estimated parameter alone, which is what a data source
+with no reported errors means. `"data"` uses the reported standard
+errors alone and holds the parameter fixed, since nothing reads it. The
+other two combine them, added or in quadrature. Disaggregating a survey
+index by age therefore no longer costs you its survey-design errors.
 
 ##### Key matrices
 
@@ -1713,29 +1822,30 @@ otherwise need its own argument:
 | One for the fleet     | `1 1 1 1 1`                    |
 | Age not observed      | `NA`                           |
 
-The sex margin is required here too; a key coupling the sexes says so by
+The sex dim is required here too; a key coupling the sexes says so by
 repeating its entries across them. An age and sex a fleet never observes
-carries no parameter whatever the key says, which is what holds the
-unused sexes of a sex-summed stream out.
+has no parameter whatever the key says, which is what holds the unused
+sexes of a sex-summed data source out.
 
-`sigmaCAA_key`, `sigmaDAA_key` and `sigmaSrvIdxAA_key` carry the
+`sigmaCAA_key`, `sigmaDAA_key` and `sigmaSrvIdxAA_key` hold the
 observation error. Catchability at age is not keyed here: an index fit
-age by age carries its age shape in selectivity, through the
-`"nonparfree"` form (see Selectivity above), since a free catchability
-per age and a selectivity estimated at age are the same statement twice.
-A parameter informed by fewer than two observations is refused, and
-fewer than five warns: an observation error standard deviation with a
-single observation drives the likelihood to negative infinity rather
-than failing outright, and the optimizer reports convergence either way.
+age by age has its age shape in selectivity, through the `"nonparfree"`
+form (see Selectivity above), since a free catchability per age and a
+selectivity estimated at age are the same statement twice. A parameter
+informed by fewer than two observations is refused, and fewer than five
+warns: an observation error standard deviation with a single observation
+drives the likelihood to negative infinity rather than failing outright,
+and the optimizer reports convergence either way.
 
 A season needing its own observation error is a separate fleet, the same
 way anything else needing its own selectivity or catchability is.
 
 ##### Correlation across ages
 
-Each stream is set where its data are set, following how the package
-separates fishery from survey elsewhere, and the population-specific
-form carries its own setting rather than borrowing the aggregated one:
+Each data source is set where its data are set, following how the
+package separates fishery from survey elsewhere, and the
+population-specific form has its own setting rather than borrowing the
+aggregated one:
 
 | Argument | Set in |
 |----|----|
@@ -1773,7 +1883,8 @@ fewer than three cells per parameter warns.
 the Kronecker product of an AR(1) over each. It is defined on a complete
 grid, so a fleet’s observed ages and years must form one; a gap is
 refused at setup rather than filled in. Use `"1dar1"` or `"us"` for a
-ragged stream. The year correlation is `trans_rho_<stream>_year`.
+ragged data source. The year correlation is
+`trans_rho_<data source>_year`.
 
 How the correlations are shared is a spec string, the same one the rest
 of the package uses for `sigmaF_spec` and `Fdev_rho_spec`, rather than a
@@ -1781,28 +1892,28 @@ structure of its own: `rho_catch_spec`, `rho_discard_spec` and
 `rho_srv_idx_spec`, each with a `_pop` counterpart.
 
 The correlations sit over region, sex and fleet, with a leading
-population margin for the population-specific streams, so the
+population dim for the population-specific data sources, so the
 abbreviations are `r`, `s`, `f` and `p`:
 
 | `rho_*_spec` | Meaning |
 |----|----|
-| `NULL` | `"est_shared_r_s"`, or `"est_shared_p_r_s"` for a `_pop` stream. Default |
+| `NULL` | `"est_shared_r_s"`, or `"est_shared_p_r_s"` for a `_pop` data source. Default |
 | `"est_shared_r_s"` | One per fleet |
 | `"est_shared_s"` | One per region and fleet |
 | `"est_shared_r"` | One per sex and fleet |
 | `"est_shared_r_s_f"` | A single correlation |
 | `"est_all"` | One per region, sex and fleet |
-| `"fix"` | Held at their starting values |
+| `"fix"` | Kept at their starting values |
 
-One spec governs the stream’s across-age correlation, its across-year
-correlation and its unstructured matrix together, so two fleets that
-share under `"us"` share a whole matrix rather than one entry of it. A
-region, sex or population a fleet never observes carries no correlation
-parameter whatever the spec says, which is what holds the unused slots
-of a summed margin out: a stream summed over regions gets one
-correlation, in region one, however free the spec.
+One spec governs the data source’s across-age correlation, its
+across-year correlation and its unstructured matrix together, so two
+fleets that share under `"us"` share a whole matrix rather than one
+entry of it. A region, sex or population a fleet never observes has no
+correlation parameter whatever the spec says, which is what holds the
+unused slots of a summed dim out: a data source summed over regions gets
+one correlation, in region one, however free the spec.
 
-A cell with a single observed age carries no correlation to describe and
+A cell with a single observed age has no correlation to describe and
 falls back to independent. Be careful estimating an AR(1) on a fleet
 observing only two or three ages: the correlation is barely identified
 and will sit on its bound.
@@ -1814,12 +1925,12 @@ age by age.
 
 ##### Units
 
-`catch_units` and `discard_units` apply to the at-age streams as they do
-to the aggregated ones: `"abd"` reads the numbers at age, `"biom"`
-multiplies them by the fleet’s weight at age.
+`catch_units` and `discard_units` apply to the at-age data sources as
+they do to the aggregated ones: `"abd"` reads the numbers at age,
+`"biom"` multiplies them by the fleet’s weight at age.
 
-Worth knowing that for a lognormal stream with a weight at age supplied
-as data, the two are the same statement. The residual is
+For a lognormal data source with a weight at age supplied as data, the
+two are the same statement. The residual is
 $`\log O_{a} - \log(\hat{C}_{a} W_{a}) = \log(O_{a}/W_{a}) - \log \hat{C}_{a}`$,
 and $`W_{a}`$ is a constant, so it cancels and the likelihood is
 identical. Catch at age arrives in numbers, so `"abd"` is the natural
@@ -1829,21 +1940,19 @@ choice.
 `*AA_LikeType = "normal"` the residual is $`O_{a} - \hat{C}_{a} W_{a}`$
 on the arithmetic scale, so the weight rescales it against a fixed
 $`\sigma_{a}`$. And where weight at age is derived from estimated growth
-rather than supplied, $`W_{a}`$ carries parameters, so a biomass
-observation at age informs growth and a numbers one does not.
+rather than supplied, $`W_{a}`$ has parameters, so a biomass observation
+at age informs growth and a numbers one does not.
 
 ##### Discards at age
 
 Discards at age are the total discarded, not the dead fraction the
 population dynamics track, which is the same statement the aggregated
-discard stream makes: the prediction is $`D_{a}/\text{dmr}`$. They are
-reported in numbers or weight, so a fleet fitting discards at age needs
-`discard_units` of `"abd"` or `"biom"`; the fraction units are a
+discard data source makes: the prediction is $`D_{a}/\text{dmr}`$. They
+are reported in numbers or weight, so a fleet fitting discards at age
+needs `discard_units` of `"abd"` or `"biom"`; the fraction units are a
 property of the catch as a whole rather than of one age and are refused.
 
 ##### Identifiability
-
-Two things are worth knowing before fitting these.
 
 An estimated observation error needs the thing predicting the mean to be
 more constrained than the data. Fishing mortality with free annual
@@ -1861,18 +1970,18 @@ which each age’s fishing mortality absorbs its own abundance.
 
 #### Estimated index observation error (`sigmaFishIdx_spec` / `sigmaSrvIdx_spec`)
 
-An index carries a standard error from its own survey design, and an
+An index has a standard error from its own survey design, and an
 assessment may additionally estimate a component covering everything
 that design does not. this is often called an extra standard deviation.
 By default `SPoRC` uses the reported standard errors as they stand,
 which is `"fix"`.
 
 One parameter is estimated per fleet, `ln_sigmaFishIdx` or
-`ln_sigmaSrvIdx`. The aggregated and population-specific streams are
-separate observations with separate error structures, so they carry
+`ln_sigmaSrvIdx`. The aggregated and population-specific data sources
+are separate observations with separate error structures, so they have
 separate parameters, in the same way `ln_sigmaC` and `ln_sigmaC_pop` do.
-The population streams are configured through `sigmaFishIdx_pop_spec`
-and `sigmaSrvIdx_pop_spec`.
+The population data sources are configured through
+`sigmaFishIdx_pop_spec` and `sigmaSrvIdx_pop_spec`.
 
 | String | Total standard deviation |
 |----|----|
@@ -1885,13 +1994,12 @@ and `sigmaSrvIdx_pop_spec`.
 estimation groups as an integer vector of length `n_fish_fleets` or
 `n_srv_fleets`. Fleets sharing a value share a parameter and `NA` holds
 a fleet at its starting value, which is how a fleet a reference
-assessment pinned at a bound is carried without pretending it was
+assessment pinned at a bound is kept without pretending it was
 estimated.
 
-Two things are worth knowing before turning this on. An estimated
-component is confounded with a likelihood weight, because a weight on a
-normal likelihood is the same statement as dividing the variance by that
-weight, so the estimate will absorb the weight;
+An estimated component is confounded with a likelihood weight, because a
+weight on a normal likelihood is the same statement as dividing the
+variance by that weight, so the estimate will absorb the weight;
 [`Setup_Mod_Weighting()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md)
 warns when both are used. A fleet with a multivariate normal index
 likelihood takes its scale from the supplied covariance and ignores a
@@ -1905,8 +2013,8 @@ exercises the estimated component without further configuration.
 
 #### Index error structure (`FishIdx_LikeType` / `SrvIdx_LikeType`)
 
-Per fleet. A fleet’s population-specific index stream follows the same
-choice for `"lognormal"` and `"normal"`, but stays lognormal under
+Per fleet. A fleet’s population-specific index data source follows the
+same choice for `"lognormal"` and `"normal"`, but stays lognormal under
 `"mvn"`, whose covariance describes the region-aggregated series only.
 The simulator (`Setup_Sim_Fishing` / `Setup_Sim_Survey`, and
 `simulation_self_test` automatically) draws index observations under the
@@ -1969,16 +2077,16 @@ and expected compositions are both subset to the named bins and
 renormalized within them, so bins outside are left out of the likelihood
 rather than forced to be explained. Use for gears that never resolve
 part of the range (a fishery that never catches the youngest ages, whose
-structural zeros would otherwise carry information); leave alone when
-the zeros are informative sampling zeros.
+structural zeros would otherwise have information); leave alone when the
+zeros are informative sampling zeros.
 
-Every composition stream takes one, and they all share the same format:
-a list with one element per fleet, each a vector of bin indices or
-`NULL` for all bins, or an `[n_obs_bins x n_fleets]` array of 0/1
+Every composition data source takes one, and they all share the same
+format: a list with one element per fleet, each a vector of bin indices
+or `NULL` for all bins, or an `[n_obs_bins x n_fleets]` array of 0/1
 weights. Indices are into *observed* bins, that is after any
 `AgeingError` or `LenBinMap`. Default `NULL` fits every bin.
 
-| Stream | Fishery | Survey |
+| Data source | Fishery | Survey |
 |----|----|----|
 | Marginal age comps | `FishAgeComps_bins` | `SrvAgeComps_bins` |
 | Marginal length comps | `FishLenComps_bins` | `SrvLenComps_bins` |
@@ -1998,7 +2106,7 @@ SrvAgeComps_bins = list(NULL, 2:15, NULL, NULL)
 
 Every fleet must keep at least two bins. A composition fitted over one
 bin says nothing, since the proportion in a lone bin is one whatever the
-model predicts, and the one-step-ahead machinery degenerates around it:
+model predicts, and the one-step-ahead routines degenerates around it:
 the logistic-normal families spend a bin as the additive log-ratio
 reference and have none left, and the discrete families mark their only
 bin as the multinomial’s determined cell, leaving
@@ -2007,13 +2115,13 @@ nothing to keep. Setup refuses it and names the fleet.
 
 The restriction applies whatever the composition type. For sex-joint
 comps (`spltRjntS`) the named bins are dropped from each sex’s block of
-the `[bin x sex]` stack, so the sex ratio the joint comps carry becomes
+the `[bin x sex]` stack, so the sex ratio the joint comps have becomes
 the ratio *within* the fitted bins, which is usually what you want when
-the excluded bins are unsampled rather than genuinely absent.
-Logistic-normal covariances are built across all observed bins and then
-cut down to the fitted ones, so a gap in the named bins still counts
-towards the AR1 lag between the bins either side of it. One-step-ahead
-residuals are packed and evaluated over the same restricted bins, so
+the excluded bins are unsampled rather than absent. Logistic-normal
+covariances are built across all observed bins and then cut down to the
+fitted ones, so a gap in the named bins still counts towards the AR1 lag
+between the bins either side of it. One-step-ahead residuals are packed
+and evaluated over the same restricted bins, so
 [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
 and the likelihood always agree on what was fitted.
 
@@ -2038,7 +2146,7 @@ enforces both halves of that: map rows must sum to one (or to zero, to
 drop a model bin from the observations entirely), and no observed bin
 may be left with nothing mapped into it.
 
-Worked on six model bins carrying expected proportions
+Worked on six model bins with expected proportions
 `0.05, 0.10, 0.25, 0.30, 0.20, 0.10`:
 
 |  | Result | Bins | What happened to the first two bins’ mass |
@@ -2047,14 +2155,14 @@ Worked on six model bins carrying expected proportions
 | `*_bins = 3:6` | `0.29, 0.35, 0.24, 0.12` | 6 → 4 | Discarded. The remaining four renormalize to one |
 
 Both shrink the vector, which is why they get confused, but only the map
-carries the first two bins’ fish somewhere rather than throwing them
-away. If bins 1 and 2 are 10 cm fish your survey does catch but records
-in a coarser bin, you want the first row. If they are 10 cm fish your
-survey never sees, so their observed proportion is a sampling artifact
-rather than a measurement, you want the second. Choosing the map when
-you meant the restriction quietly asks the model to explain a bin that
-carries no information; choosing the restriction when you meant the map
-throws away fish that were really there.
+holds the first two bins’ fish somewhere rather than throwing them away.
+If bins 1 and 2 are 10 cm fish your survey does catch but records in a
+coarser bin, you want the first row. If they are 10 cm fish your survey
+never sees, so their observed proportion is a sampling artifact rather
+than a measurement, you want the second. Choosing the map when you meant
+the restriction quietly asks the model to explain a bin that has no
+information; choosing the restriction when you meant the map throws away
+fish that were really there.
 
 A restriction leaves a visible trace at setup, so you can confirm it
 took:
@@ -2073,19 +2181,19 @@ Age and length compositions each accept one of five likelihood families:
 | 3 | Logistic-normal with AR(1) correlation across bins |
 | 4 | Logistic-normal with AR(1) bin correlation and constant cross-sex correlation |
 
-These are set per data stream via `comp_fishage_like`,
+These are set per data source via `comp_fishage_like`,
 `comp_fishlen_like`, `comp_srvage_like`, `comp_srvlen_like`, and their
 `_pop` and `_discard` variants.
 
 #### Composition structure types
 
-Each composition stream says how its observations are aggregated through
-a `_Type`, given as a year and fleet specification:
+Each composition data source says how its observations are aggregated
+through a `_Type`, given as a year and fleet specification:
 
 | Value | Structure |
 |----|----|
 | `"agg"` | Aggregated across sexes and regions |
-| `"spltRspltS"` | Split by sex and region, carrying no implicit sex-ratio information |
+| `"spltRspltS"` | Split by sex and region, with no implicit sex-ratio information |
 | `"spltRjntS"` | Joint across sexes, split by region, preserving sex-ratio information |
 | `"none"` | No data for this fleet and year |
 
@@ -2101,9 +2209,9 @@ FishAgeComps_Type = c("agg_Year_1-7_Fleet_1",
 `"agg"` is refused where the likelihood is the 2d logistic normal, which
 needs a composition split by region and sex to correlate over.
 
-#### Data streams
+#### Data sources
 
-SPoRC supports a full matrix of composition data streams, each
+SPoRC supports a full matrix of composition data sources, each
 independently configurable:
 
 | Category | Aggregate | Population-specific |
@@ -2115,8 +2223,8 @@ independently configurable:
 | Survey age | `comp_srvage_like` | `comp_srvage_pop_like` |
 | Survey length | `comp_srvlen_like` | `comp_srvlen_pop_like` |
 
-Each stream carries its own ISS arrays, $`\theta`$ parameters (log-scale
-overdispersion), and correlation parameters.
+Each data source has its own ISS arrays, $`\theta`$ parameters
+(log-scale overdispersion), and correlation parameters.
 
 #### Conditional age-at-length
 
@@ -2128,7 +2236,7 @@ Supplied on
 (the `Srv_` twins), with the weights `Wt_Fish_caal` and `Wt_Srv_caal` on
 [`Setup_Mod_Weighting()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md).
 A CAAL observation is the age composition of the fish aged from one
-length bin, so the arrays carry a length dimension ahead of the age one
+length bin, so the arrays have a length dimension ahead of the age one
 (`[r × y × τ × l × a × s × f]`), the use flag and input sample size are
 per length bin (`[r × y × τ × l × f]`, `[r × y × τ × l × s × f]`), and
 the sample size is the number aged from the bin, not the number
@@ -2157,7 +2265,7 @@ conditioned on.
 Set on
 [`Setup_Mod_Weighting()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md).
 Every weight multiplies its likelihood component in the joint negative
-log likelihood, so `0` drops a data stream from the fit without removing
+log likelihood, so `0` drops a data source from the fit without removing
 it from the model or from the reported fits.
 
 Two shapes appear. The scalar weights apply one number to the whole
@@ -2190,7 +2298,7 @@ region or a sex can be down-weighted on its own; a scalar is recycled.
 
 #### Population-specific weights
 
-Every stream fit separately by population carries a `_pop` twin,
+Every data source fit separately by population has a `_pop` twin,
 weighted independently of its aggregated counterpart: `Wt_Catch_pop`,
 `Wt_Discard_pop`, `Wt_FishIdx_pop`, `Wt_SrvIdx_pop`, and the four
 composition arrays `Wt_FishAgeComps_pop`, `Wt_FishLenComps_pop`,
@@ -2198,15 +2306,15 @@ composition arrays `Wt_FishAgeComps_pop`, `Wt_FishLenComps_pop`,
 `Wt_FishAgeComps_discard_pop` and `Wt_FishLenComps_discard_pop`. These
 have no effect in a single-population model.
 
-Recommendations. Reach for weights to switch a stream off (`0`) or to
+Recommendations. Use weights to switch a data source off (`0`) or to
 reproduce another assessment’s weighting, not to tune fit. Where
 compositions are over-weighted relative to their real information
 content, the Dirichlet-multinomial or a Francis iteration estimates that
 down-weighting rather than asserting it;
 [`run_francis()`](https://chengmatt.github.io/SPoRC/dev/reference/run_francis.md)
-returns the multipliers to apply here. The at-age observation streams
-take the same weight as their aggregated counterpart, so a fleet moved
-from aggregated to at-age keeps whatever weight it already had.
+returns the multipliers to apply here. The at-age data sources take the
+same weight as their aggregated counterpart, so a fleet moved from
+aggregated to at-age keeps whatever weight it already had.
 
 ------------------------------------------------------------------------
 
@@ -2249,7 +2357,7 @@ with them.
 | `conv_tagged_fish` | Numbers released per cohort |
 | `obs_conv_tag_fish_recap` | Observed recaptures, by cohort, year at liberty, and recapture cell |
 
-#### What a tag carries (`conv_fish_tag_attr`)
+#### What a tag has (`conv_fish_tag_attr`)
 
 Which biological dimensions are resolved at release and therefore
 retained at recapture. Region and fleet are always retained. Built from

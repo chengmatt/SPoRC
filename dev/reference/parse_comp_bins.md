@@ -1,12 +1,12 @@
-# Parse and report the observed bins a composition stream is fitted over
+# Parse and report the observed bins a composition data source is fitted over
 
 Wraps
 [`parse_bin_subset`](https://chengmatt.github.io/SPoRC/dev/reference/parse_bin_subset.md)
 and records which fleets ended up restricted, so the setup messages name
-the bins a stream is fitted over rather than leaving it implicit. Used
-for every `*_bins` argument, age and length, retained and discarded,
-marginal and conditional, so a restriction reads the same way whichever
-stream it was set on.
+the bins a data source is fitted over rather than leaving it implicit.
+Used for every `*_bins` argument, age and length, retained and
+discarded, marginal and conditional, so a restriction reads the same way
+whichever data source it was set on.
 
 ## Usage
 
@@ -22,8 +22,8 @@ parse_comp_bins(bins, n_bins, n_fleets, what)
 
 - n_bins:
 
-  Integer. Number of observed bins the stream is recorded on, that is
-  after any ageing error or length bin map.
+  Integer. Number of observed bins the data source is recorded on, that
+  is after any ageing error or length bin map.
 
 - n_fleets:
 

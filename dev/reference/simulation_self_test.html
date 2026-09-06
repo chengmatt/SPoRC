@@ -176,13 +176,13 @@ if any name is not found in <code>rep</code>. Default <code>c("SSB", "Rec")</cod
 <dd><p>Character. How the operating model generates
 recruitment. <code>"input"</code> (default, and the historical behavior) feeds
 the estimated recruitment series in as <code>Rec_input</code>, so every simulated
-replicate carries the same recruitment and <code>rec_model</code> has no effect on
+replicate holds the same recruitment and <code>rec_model</code> has no effect on
 the data. That conditions away recruitment and tests everything downstream
 of it, but it cannot test the stock-recruit relationship itself, because
 steepness is then informed only by its penalty. <code>"model"</code> withholds the
 input so recruitment is generated from the fitted curve under
-<code>rec_model</code>, which is what to use when the point of the test is whether
-steepness and <code>R0</code> are recoverable.</p></dd>
+<code>rec_model</code>. Use it when the test is whether steepness and <code>R0</code>
+are recoverable.</p></dd>
 
 </dl></div>
     <div class="section level2">

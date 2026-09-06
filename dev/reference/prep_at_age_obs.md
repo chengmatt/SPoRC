@@ -1,8 +1,8 @@
 # Transform at-age observations onto the scale their likelihood is written on
 
-A lognormal stream is fit on the log scale and a normal stream on the
-natural scale, and the choice is per fleet, so the transformation is
-applied cell by cell before
+A lognormal data source is fit on the log scale and a normal data source
+on the natural scale, and the choice is per fleet, so the transformation
+is applied cell by cell before
 [`OBS`](https://rdrr.io/pkg/RTMB/man/TMB-interface.html) registration.
 Registration must happen against the name `getAll` supplied, so the
 caller does it: a vector registered under a local name does not link to

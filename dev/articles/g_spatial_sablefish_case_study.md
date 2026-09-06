@@ -6,9 +6,9 @@ This case study sets up a five-region spatial assessment for Alaska
 sablefish. Where the [single region case
 study](https://chengmatt.github.io/SPoRC/dev/articles/e_single_region_sablefish_case_study.md)
 bridges an existing operational model, this one has no operational
-counterpart: it is a demonstration of what the spatial machinery does,
-so the emphasis is on the equations that only appear once $`n_{r} > 1`$
-and on reading the resulting regional trajectories.
+counterpart: it is a demonstration of what the spatial routines does, so
+the emphasis is on the equations that only appear once $`n_{r} > 1`$ and
+on reading the resulting regional trajectories.
 
 | Dimension      | Value                                                |
 |----------------|------------------------------------------------------|
@@ -20,17 +20,15 @@ and on reading the resulting regional trajectories.
 | Survey fleets  | 2 (domestic longline, cooperative Japanese longline) |
 | Tagging        | Longline survey releases, fixed-gear recoveries      |
 
-Three things distinguish this from the panmictic model, and each carries
-its own block of equations below: fish **move** between regions,
-recruitment is **apportioned** among regions from a single global
-parameter, and **tag** releases and recoveries inform the movement rates
-that the age and length compositions alone cannot.
+Three things distinguish this from the panmictic model, and each has its
+own block of equations below: fish **move** between regions, recruitment
+is **apportioned** among regions from a single global parameter, and
+**tag** releases and recoveries inform the movement rates that the age
+and length compositions alone cannot.
 
 The domestic longline survey operates annually in the Gulf of Alaska and
 biennially across the Bering Sea and Aleutian Islands. Everything the
-case study needs ships with the package in `mlt_rg_sable_data`, and the
-figures below are produced by
-`dev/make_sporc_obj_figs/make_spatial_sablefish_figs.R`.
+case study needs ships with the package in `mlt_rg_sable_data`.
 
 ``` r
 
@@ -66,7 +64,7 @@ input_list <- Setup_Mod_Dim(
 ## Spatial population dynamics
 
 The seasonal transition of the population is where the spatial model
-departs from the panmictic one. Numbers at age are carried across a
+departs from the panmictic one. Numbers at age are advanced across a
 season by an operator that combines movement with survival. With a
 single season, movement applied first (`move_timing = 0`, the default),
 that operator is
@@ -412,8 +410,8 @@ compositions sum to one across both sexes together,
 \sum_{a}\sum_{s} p_{r,y,a,s} = 1 \quad \text{for each region } r
 ```
 
-so the data carry information about the sex ratio within a region but
-not about the relative abundance *between* regions. That between-region
+so the data have information about the sex ratio within a region but not
+about the relative abundance *between* regions. That between-region
 information is deliberately left to the indices and the tagging data.
 Fitting compositions that were normalized across regions instead would
 let composition data speak to regional apportionment, which is precisely
@@ -654,7 +652,7 @@ ggplot(ts_df, aes(x = Year, y = value, color = Region)) +
 Reading the regional trajectories, spawning biomass is highest in the
 CGOA, followed by the EGOA, with the three western regions at broadly
 comparable and lower levels. Recruitment shows a different ordering: the
-western regions (BS and AI) together with the CGOA carry the highest
+western regions (BS and AI) together with the CGOA hold the highest
 levels. That mismatch between where fish recruit and where spawning
 biomass accumulates is likely reflecting eastward movement, and it is
 the pattern the age-blocked movement matrix and the tag recoveries are

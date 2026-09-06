@@ -18,7 +18,7 @@ do_francis_reweighting(data, rep, age_labels, len_labels, year_labels)
 
   List of model data inputs containing observed compositions, usage
   flags, input sample sizes, weight arrays, and composition type
-  matrices for both pooled and population-specific data streams.
+  matrices for both pooled and population-specific data sources.
 
 - rep:
 
@@ -59,7 +59,7 @@ A named list containing:
 - `mean_francis`:
 
   Long-format dataframe of observed and expected composition means
-  across all data streams and populations, with columns `Region`,
+  across all data sources and populations, with columns `Region`,
   `Comp_Year`, `Comp_Seas`, `Sex`, `Fleet`, `obs`, `pred`, `Type`, and
   `Pop` (pooled rows have `Pop = NA`).
 

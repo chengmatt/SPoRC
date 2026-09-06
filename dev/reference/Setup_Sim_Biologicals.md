@@ -37,10 +37,11 @@ Setup_Sim_Biologicals(
 
 - natmort_input:
 
-  Natural mortality array with dimensions
-  `[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]`. Note:
-  natural mortality is not season-specific and therefore lacks an
-  `n_seas` dimension.
+  Natural mortality array, either
+  `[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]` or
+  `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]`.
+  Values are instantaneous rates per year in both forms, and the
+  mortality applied within a season is the rate times `seasdur`.
 
 - WAA_input:
 

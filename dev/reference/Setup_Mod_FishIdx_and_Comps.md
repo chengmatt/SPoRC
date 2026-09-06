@@ -157,7 +157,7 @@ Setup_Mod_FishIdx_and_Comps(
   weight on a normal likelihood is the same statement as dividing the
   variance by that weight. `Setup_Mod_Weighting` warns when both are
   used. Fleets with a multivariate normal index likelihood take their
-  scale from the supplied covariance and cannot carry one, which is an
+  scale from the supplied covariance and cannot have one, which is an
   error rather than a silently unidentified parameter.
 
 - sigmaFishIdx_map:
@@ -200,7 +200,7 @@ Setup_Mod_FishIdx_and_Comps(
   weight on a normal likelihood is the same statement as dividing the
   variance by that weight. `Setup_Mod_Weighting` warns when both are
   used. Fleets with a multivariate normal index likelihood take their
-  scale from the supplied covariance and cannot carry one, which is an
+  scale from the supplied covariance and cannot have one, which is an
   error rather than a silently unidentified parameter.
 
 - sigmaFishIdx_pop_map:
@@ -441,7 +441,7 @@ Setup_Mod_FishIdx_and_Comps(
   refer to observed bins, that is after any ageing error has mapped
   model ages onto observed ones. The restriction applies whatever the
   composition type: for sex-joint comps the named bins are dropped from
-  each sex's block, so the sex ratio the joint comps carry becomes the
+  each sex's block, so the sex ratio the joint comps have becomes the
   ratio within the fitted bins. Every fleet must retain at least two
   bins, since the proportion in a lone bin is one whatever the model
   predicts. Default `NULL`, which fits all bins for all fleets.
@@ -477,9 +477,9 @@ Setup_Mod_FishIdx_and_Comps(
   and `"mvn"` (multivariate normal on the arithmetic scale using a fixed
   covariance supplied through `FishIdx_Cov`). One-step-ahead residuals
   are available only for lognormal fleets. A fleet's population-specific
-  index stream follows the same choice for `"lognormal"` and `"normal"`,
-  but stays lognormal under `"mvn"`, whose covariance describes the
-  regional series only.
+  index data source follows the same choice for `"lognormal"` and
+  `"normal"`, but stays lognormal under `"mvn"`, whose covariance
+  describes the regional series only.
 
 - FishIdx_Cov:
 
@@ -494,13 +494,13 @@ Setup_Mod_FishIdx_and_Comps(
   Observed conditional age-at-length array
   `[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x n_fish_fleets]`.
   A CAAL observation is the age composition of the fish aged from one
-  length bin, so the age margin of each length row is what gets fit.
-  `NULL` (default) for a model with no CAAL data.
+  length bin, so the age dim of each length row is what gets fit. `NULL`
+  (default) for a model with no CAAL data.
 
 - UseFish_caal:
 
   Use flags `[n_regions x n_years x n_seas x n_lens x n_fish_fleets]`.
-  Length bins with no aged fish carry a zero and are skipped.
+  Length bins with no aged fish have a zero and are skipped.
 
 - ISS_Fish_caal:
 

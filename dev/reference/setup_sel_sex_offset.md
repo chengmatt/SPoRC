@@ -1,11 +1,11 @@
-# Set up sex offsets on selectivity for one selectivity stream
+# Set up sex offsets on selectivity for one selectivity data source
 
 Parses the per-fleet sex-offset specification, stores the model flags,
 and creates the curve scale-offset parameters with their factor map.
 Under a `"par"` offset the sexes beyond the first store additive offsets
 on the first sex's transformed-scale fixed-effect parameters, which
 needs no new parameters, only the flag. Under a `"scale"` offset each
-sex beyond the first carries a constant log-scale offset on its whole
+sex beyond the first has a constant log-scale offset on its whole
 realized curve, estimated per region and block.
 
 ## Usage
@@ -43,7 +43,7 @@ setup_sel_sex_offset(
 
 - n_fleets:
 
-  Integer. Number of fleets in this stream.
+  Integer. Number of fleets in this data source.
 
 - fleet_label:
 

@@ -36,7 +36,7 @@ do_likelihood_profile(
 
   Mapping list from the fitted model. The profile keeps this map for
   every position other than the ones it fixes, so positions the fitted
-  model held fixed stay fixed and positions it estimated as one shared
+  model kept fixed stay fixed and positions it estimated as one shared
   parameter stay shared, leaving the profile with the same free
   parameters as the model being profiled.
 
@@ -89,9 +89,11 @@ dimensions. Components include:
 
   `jnLL_df`, `rec_nLL_df` (the recruitment, initial age, initial-age sex
   tie, recruitment level, and stock-recruit penalties together, each
-  with its weight), `M_nLL_df`, `sel_nLL_df`, `rec_prop_nLL_df`,
-  `Movement_nLL_df`, `h_nLL_df`, `R0_nLL_df`, `TagRep_nLL_df`,
-  `NAA_state_nLL_df`, `Fmort_nLL_df`, `fish_q_nLL_df`, `srv_q_nLL_df`.
+  with its weight), `M_nLL_df`, `sel_nLL_df`, `srv_sel_block_nLL_df`,
+  `srv_q_block_nLL_df`, `fish_sel_block_nLL_df`, `fish_q_block_nLL_df`,
+  `rec_prop_nLL_df`, `Movement_nLL_df`, `h_nLL_df`, `R0_nLL_df`,
+  `TagRep_nLL_df`, `NAA_state_nLL_df`, `Fmort_nLL_df`, `fish_q_nLL_df`,
+  `srv_q_nLL_df`.
 
 - Pooled data likelihoods:
 

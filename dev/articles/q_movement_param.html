@@ -265,13 +265,15 @@ covariates to be used in the diffusion or preference formulas. The
 projection year covariate values can also be appended to this data frame
 when <code>n_proj_yrs_devs &gt; 0</code>.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">adjacency</span> <span class="op">&lt;-</span> <span class="fu">igraph</span><span class="fu">::</span><span class="fu"><a href="https://r.igraph.org/reference/as_adjacency_matrix.html" class="external-link">as_adjacency_matrix</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="co"># as.matrix, since Setup_Mod_Movement wants a plain numeric matrix and igraph</span></span>
+<span><span class="co"># hands back a sparse one</span></span>
+<span><span class="va">adjacency</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">as.matrix</a></span><span class="op">(</span><span class="fu">igraph</span><span class="fu">::</span><span class="fu"><a href="https://r.igraph.org/reference/as_adjacency_matrix.html" class="external-link">as_adjacency_matrix</a></span><span class="op">(</span></span>
 <span>  <span class="fu">igraph</span><span class="fu">::</span><span class="fu"><a href="https://r.igraph.org/reference/make_graph.html" class="external-link">make_graph</a></span><span class="op">(</span></span>
 <span>    <span class="op">~</span> <span class="fl">1</span> <span class="op">-</span> <span class="fl">2</span>,</span>
 <span>    <span class="fl">2</span> <span class="op">-</span> <span class="fl">3</span>,</span>
 <span>    <span class="fl">1</span> <span class="op">-</span> <span class="fl">3</span></span>
 <span>  <span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># make ctmc data, must include pop, regions, years, seas, ages, sexes columns</span></span>
 <span><span class="va">ctmc_data</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span></span>
@@ -298,6 +300,20 @@ processes scale with area size. Here, all areas are assumed to be equal.
 However, when areas differ in size, <code>area_r</code> should be
 defined as proportional to area, such that smaller areas are associated
 with higher diffusion rates.</p>
+<p>Note that a region-varying <code>diffusion_formula</code> such as
+<code>~0 + factor(regions)</code> still redistributes abundance, even
+with <code>preference_formula = ~0</code>. An edge of the generator
+holds the diffusion rate of the region a fish is leaving, so the two
+directions across a boundary differ whenever the regions differ in
+diffusion, and at equilibrium density settles proportional to
+<code>1 / diffusion</code>: abundance accumulates where fish move
+slowly. That is a real behavioral mechanism, but it does mean the
+estimated diffusion field and the estimated preference field both act on
+the equilibrium spatial distribution, so a region-varying
+<code>diffusion_formula</code> and a region-varying
+<code>preference_formula</code> are hard to separate from the spatial
+pattern alone. They differ in how fast that pattern re-establishes, not
+in the pattern itself.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># constant diffusion, no preference</span></span>
 <span><span class="va">diffusion_formula</span>  <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span></span>

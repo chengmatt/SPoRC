@@ -123,7 +123,7 @@ get_recruitment_penalty(
 
   Integer (0/1). Whether each later sex's initial age deviations are
   tied to the first sex's through a Gaussian on their difference at
-  every penalized age. Only meaningful when the sexes carry their own
+  every penalized age. Only meaningful when the sexes have their own
   curves.
 
 - ln_sigma_init_sex:

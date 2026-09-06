@@ -1,10 +1,10 @@
-# Draw one at-age observation stream for one region, year, season and fleet
+# Draw one at-age data source for one region, year, season and fleet
 
 The operating model states an at-age observation the way the estimation
 model reads it: summed over whichever of regions and sexes the fleet
 reports together, with the fleet's own density and its own standard
-deviation. A stream summed over regions is one number, so it is drawn
-once, when the region loop reaches region one.
+deviation. A data source summed over regions is one number, so it is
+drawn once, when the region loop reaches region one.
 
 ## Usage
 

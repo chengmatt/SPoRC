@@ -339,7 +339,7 @@ Setup_Mod_Weighting(
   Any name not supplied defaults to `0` (off). Must be called after
   `Setup_Mod_Fishsel_and_Q`. Each weight may instead be a vector with
   one value per model year, so a penalty can act only in some years or
-  with a different strength in each. The specification may also carry
+  with a different strength in each. The specification may also have
   `"bin_range"`, a length-two vector giving the first and last bin the
   penalties act over. To give each fleet its own penalties, pass an
   unnamed list with one named specification per fleet instead of a

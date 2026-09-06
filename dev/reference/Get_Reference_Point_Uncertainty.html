@@ -163,7 +163,7 @@ standard error. Default 1e-3. Vary it and confirm <code>d</code> is unchanged.</
 
 <dt id="arg-extra-quantities">extra_quantities<a class="anchor" aria-label="anchor" href="#arg-extra-quantities"></a></dt>
 <dd><p>Optional <code>function(rep, refpts)</code> returning a named
-vector of extra positive quantities to carry through, e.g. stock status.</p></dd>
+vector of extra positive quantities to propagate through, e.g. stock status.</p></dd>
 
 
 <dt id="arg-par-subset">par_subset<a class="anchor" aria-label="anchor" href="#arg-par-subset"></a></dt>
@@ -244,7 +244,7 @@ points in an age-based state-space stock assessment model. Fisheries Research
 <span class="r-in"><span>                                      type <span class="op">=</span> <span class="st">"single_region"</span>, what <span class="op">=</span> <span class="st">"SPR"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">rp</span><span class="op">$</span><span class="va">refpts</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># carry stock status through, so the correlation with the reference point is kept</span></span></span>
+<span class="r-in"><span><span class="co"># have stock status through, so the correlation with the reference point is kept</span></span></span>
 <span class="r-in"><span><span class="va">status</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">rep</span>, <span class="va">refpts</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="va">ssb</span> <span class="op">&lt;-</span> <span class="va">rep</span><span class="op">$</span><span class="va">SSB</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">rep</span><span class="op">$</span><span class="va">SSB</span><span class="op">)</span><span class="op">[</span><span class="fl">3</span><span class="op">]</span><span class="op">]</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>SSB_terminal <span class="op">=</span> <span class="va">ssb</span>, status <span class="op">=</span> <span class="va">ssb</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/numeric.html" class="external-link">as.numeric</a></span><span class="op">(</span><span class="va">refpts</span><span class="op">$</span><span class="va">b_ref_pt</span><span class="op">)</span><span class="op">)</span></span></span>

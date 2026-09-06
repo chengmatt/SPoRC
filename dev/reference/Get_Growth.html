@@ -212,14 +212,14 @@ every year.</p></dd>
 <dd><p>Array <code>[pop, region, year, age, sex]</code> of
 log deviations on mean length at age, or <code>NULL</code> for none. Multiplies
 the parametric mean at age, so the curve stays the parametric part and the
-deviations carry departures from it; the spread at age follows the deviated
+deviations have departures from it; the spread at age follows the deviated
 mean, leaving the coefficient of variation at age alone.</p></dd>
 
 
 <dt id="arg-growth-semipar">growth_semipar<a class="anchor" aria-label="anchor" href="#arg-growth-semipar"></a></dt>
 <dd><p>Integer process error code for those deviations,
 <code>0</code> for none. Only its being nonzero is read here; the structure is
-scored in the objective.</p></dd>
+penalized in the objective.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -242,7 +242,7 @@ scored in the objective.</p></dd>
 <p>With no deviations the key is built once and broadcast over the years. With
 deviations on any parameter and <code>growth_tv_type = 0</code> ("curve") every
 year's sizes are read from that year's own curve. Under
-<code>growth_tv_type = 1</code> ("cohort") the sizes are carried forward cohort by
+<code>growth_tv_type = 1</code> ("cohort") the sizes are advanced cohort by
 cohort from <code>growth_cohort_styr</code> on, which needs the numbers at age of
 each year to blend the plus group; that form is run one year at a time from
 the population dynamics through <code><a href="Get_Growth_Year.html">Get_Growth_Year</a></code>, and this
@@ -268,7 +268,7 @@ weight is read at the spawning fraction of the season, and each fleet's key
 and weight at that fleet's own timing, <code>t_fish</code> or <code>t_srv</code>, so a
 composition and the weight behind an index are formed at the point in the
 season the observation is taken. Fleets that share a timing share one
-evaluation. Seasonal multipliers on \(K\) are not carried.</p>
+evaluation. Seasonal multipliers on \(K\) are not kept.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

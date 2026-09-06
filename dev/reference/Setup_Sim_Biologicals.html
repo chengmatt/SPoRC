@@ -95,10 +95,11 @@ which defines the dimension sizes used to validate all input arrays.</p></dd>
 
 
 <dt id="arg-natmort-input">natmort_input<a class="anchor" aria-label="anchor" href="#arg-natmort-input"></a></dt>
-<dd><p>Natural mortality array with dimensions
-<code>[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]</code>.
-Note: natural mortality is not season-specific and therefore lacks an
-<code>n_seas</code> dimension.</p></dd>
+<dd><p>Natural mortality array, either
+<code>[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]</code> or
+<code>[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]</code>.
+Values are instantaneous rates per year in both forms, and the mortality
+applied within a season is the rate times <code>seasdur</code>.</p></dd>
 
 
 <dt id="arg-waa-input">WAA_input<a class="anchor" aria-label="anchor" href="#arg-waa-input"></a></dt>

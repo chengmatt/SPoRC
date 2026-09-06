@@ -8,9 +8,9 @@ for CAAL data packed via
 [`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)).
 Called by
 [`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
-when `comp_source` is `"Fish_caal"` or `"Srv_caal"`. CAAL carries only
-the discrete families, so there is no family argument; the residuals
-come back with an extra `len` column giving the length bin each age
+when `comp_source` is `"Fish_caal"` or `"Srv_caal"`. CAAL has only the
+discrete families, so there is no family argument; the residuals come
+back with an extra `len` column giving the length bin each age
 composition was conditioned on.
 
 ## Usage
@@ -44,9 +44,9 @@ run_internal_caal_osa(
 - bins:
 
   Age bins, used to label the residuals. Must span every observed bin of
-  the stream, not just the ones a `*_bins` restriction fits: residuals
-  are labeled by true observed bin number, so a subset here shifts every
-  label.
+  the data source, not just the ones a `*_bins` restriction fits:
+  residuals are labeled by true observed bin number, so a subset here
+  shifts every label.
 
 - bin_label:
 

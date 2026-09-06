@@ -1,12 +1,12 @@
-# Reject a bin restriction that leaves a stream nothing to fit
+# Reject a bin restriction that leaves a data source nothing to fit
 
-A composition fitted over a single bin carries no information: the
+A composition fitted over a single bin has no information: the
 normalized proportion in that bin is identically one whatever the model
-says. Every family degenerates, and the machinery around them
-degenerates further. The logistic-normal families spend one bin as the
-additive log-ratio reference and so have no free element left, which
-gives a zero-length packed block, a zero-row label frame, and a
-zero-length slice request in
+says. Every family degenerates, and the routines around them degenerates
+further. The logistic-normal families spend one bin as the additive
+log-ratio reference and so have no free element left, which gives a
+zero-length packed block, a zero-row label frame, and a zero-length
+slice request in
 [`eval_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/eval_comp_osa.md).
 The discrete families mark their one bin as the determined cell of the
 multinomial, which leaves `get_osa` with nothing to keep and it fails

@@ -117,7 +117,7 @@ put the prior mean where the assessment puts it.
 
 Maturity is estimated inside the assessment’s template and is absent
 from its report object, so the fitted logistic is rebuilt when the data
-object is constructed and held fixed here. That is why the assessment’s
+object is constructed and kept fixed here. That is why the assessment’s
 maturity likelihood is removed from its side of the objective in the
 crosswalk below.
 
@@ -158,7 +158,7 @@ The assessment writes its catch and F statements as weighted sums of
 squares with weights $`500`$ and $`0.1`$. A weighted sum of squares and
 a normal likelihood with a fixed standard deviation are the same
 statement up to a constant, related by $`\sigma = 1/\sqrt{2w}`$, so both
-weights are carried inside the standard deviations rather than applied
+weights are kept inside the standard deviations rather than applied
 outside the sums.
 
 ``` r
@@ -278,8 +278,8 @@ $`a_{50}`$ parameterization:
 \text{Sel}_{a} = \dfrac{1}{1 + \exp\left[-k\left(a - a_{50}\right)\right]}
 ```
 
-Only the Aleutian Islands survey carries a catchability prior. Supplying
-a single row for fleet 1 in `srv_q_prior` is what restricts it to that
+Only the Aleutian Islands survey has a catchability prior. Supplying a
+single row for fleet 1 in `srv_q_prior` is what restricts it to that
 fleet; the eastern Bering Sea catchability is estimated freely.
 
 ``` r
@@ -301,11 +301,11 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 ## Weighting and selectivity penalties
 
-Beyond the data weights, the assessment carries smoothness penalties on
-the bicubic surface, its lambdas 3 to 6, plus a mean centering term its
+Beyond the data weights, the assessment has smoothness penalties on the
+bicubic surface, its lambdas 3 to 6, plus a mean centering term its
 template hardcodes. Those five terms ship in the data object as
 `sel_pen_wts` and are passed straight through. Survey selectivity is
-logistic with no deviations, so it carries no smoothness penalty and
+logistic with no deviations, so it has no smoothness penalty and
 `srv_sel_pen_wts` is `NULL`.
 
 ``` r
@@ -325,21 +325,20 @@ input_list <- Setup_Mod_Weighting(
 
 ## Starting at the ADMB estimate
 
-Before optimizing anything, it is worth checking that the model is
-reproduced *at a known point*. Setting every parameter to the
-assessment’s maximum likelihood estimate and evaluating there separates
-a specification error from an optimization difference: if the population
-and the likelihood agree at the ADMB solution, the two models are the
-same model.
+Before optimizing anything, check that the model is reproduced *at a
+known point*. Setting every parameter to the assessment’s maximum
+likelihood estimate and evaluating there separates a specification error
+from an optimization difference: if the population and the likelihood
+agree at the ADMB solution, the two models are the same model.
 
 Two conversions are needed. The assessment builds its three deviation
 free terminal recruits as $`\exp(\overline{\log R} + \sigma_{R}^{2}/2)`$
 while leaving the estimated years raw, and it starts the first year
 equilibrium from the mean of the lognormal rather than from
-$`\exp(\log R^{\text{init}})`$. Carrying both corrections in
-`ln_global_R0` and `ln_rinit` and shifting every seeded deviation down
-by the same amount reproduces the recruitment series, the initial age
-structure, and the penalty value at once.
+$`\exp(\log R^{\text{init}})`$. With both corrections in `ln_global_R0`
+and `ln_rinit` and shifting every seeded deviation down by the same
+amount reproduces the recruitment series, the initial age structure, and
+the penalty value at once.
 
 The second is the node grid orientation. The assessment declares its
 bicubic grid with year nodes as the outer dimension and writes the
@@ -397,11 +396,11 @@ sel_bridge <- normalize(r$fish_sel[1, 1, 1:n_yrs, 1, 1:nsel, 1, 1])
     total biomass               max pct diff: 2.5e-04
 
 Total biomass needs a note. `SPoRC`’s reported `Total_Biom` is spawning
-time biomass and carries the $`\exp(-Z t^{\text{spawn}})`$ discount,
-while the assessment reports January 1 biomass. The like for like
-quantity is rebuilt from numbers at age, which is what the figure above
-compares. Comparing the two reported quantities directly instead is a 6
-percent difference that says nothing about the model.
+time biomass and holds the $`\exp(-Z t^{\text{spawn}})`$ discount, while
+the assessment reports January 1 biomass. The like for like quantity is
+rebuilt from numbers at age, which is what the figure above compares.
+Comparing the two reported quantities directly instead is a 6 percent
+difference that says nothing about the model.
 
 The likelihood is checked the same way. `SPoRC` writes each component as
 a proper density while the assessment drops normalizing constants, so a
@@ -431,9 +430,9 @@ catch to $`10^{-4}`$ and `SPoRC` to $`6\times10^{-2}`$, which is a
 difference in how near exactly catch is driven rather than a difference
 in the statement. The Aleutian Islands survey contributes a single year
 of length compositions, and its gap is $`0.15`$ on a term of $`7.5`$,
-which is a $`0.07`$ percent difference in the predicted proportions
-carried through an applied sample size of $`224`$. That is consistent
-with the multinomial offset convention rather than with the size at age
+which is a $`0.07`$ percent difference in the predicted proportions with
+an applied sample size of $`224`$. That is consistent with the
+multinomial offset convention rather than with the size at age
 transition, and it is $`0.017`$ percent of the objective.
 
 ## Fitting and comparison
@@ -460,13 +459,13 @@ The dashed rule marks where the estimated recruitment deviations stop.
 Over the three terminal years the two models differ by a constant factor
 of $`1.068452`$, and the shift in the estimated recruitment level
 between the two fits accounts for $`1.068451`$ of it. Those recruits are
-deviation free, so they carry the level and nothing else; the
+deviation free, so they hold the level and nothing else; the
 assessment’s sum to zero `dev_vector` cannot move the level while
 `SPoRC`’s free deviations can.
 
-Fishery selectivity is a bicubic surface over year and age, held flat
+Fishery selectivity is a bicubic surface over year and age, kept flat
 before 1964 and past the last selectivity node, so a handful of years
-carries the whole shape change. Four years are shown; the full
+holds the whole shape change. Four years are shown; the full
 $`65\times38`$ surface is what the bridge test checks. Survey
 selectivity is logistic and time invariant in each of the two surveys.
 

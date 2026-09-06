@@ -81,12 +81,12 @@
     
     
 <p>A stock lives in three regions with different fishing histories, and
-its survival carries process error correlated across those regions.
-However, in some cases, spatial models may not be feasible. The purpose
-of this vignette is to demonstrate how state-space treatment of
-numbers-at-age can in some cases, approximate spatial process error
-(e.g., through migration). Let us first set up a simulation in the
-following with three regions, 40 years, and 8 ages.</p>
+its survival has process error correlated across those regions. However,
+in some cases, spatial models may not be feasible. The purpose of this
+vignette is to demonstrate how state-space treatment of numbers-at-age
+can in some cases, approximate spatial process error (e.g., through
+migration). Let us first set up a simulation in the following with three
+regions, 40 years, and 8 ages.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="va">n_regions</span> <span class="op">&lt;-</span> <span class="fl">3</span>; <span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fl">40</span>; <span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fl">8</span></span>
@@ -278,9 +278,14 @@ deviations. It starts from an equilibrium decay built from
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
 and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>M</mi><annotation encoding="application/x-tex">M</annotation></semantics></math>,
-so the state needs nothing supplied by hand. What is still worth
-carrying over is the fixed effects, taken from a deterministic pass of
-the same model so both fits start from the same place.</p>
+so the state needs nothing supplied by hand. A cell is the log numbers
+at the start of a season, and the default
+<code>NAA_re_seasons = "annual"</code> keeps a state at season one only,
+which on this single-season model is every boundary there is. A seasonal
+model can put one at the start of every season with <code>"all"</code>,
+or at a chosen set of them. What is still worth reusing is the fixed
+effects, taken from a deterministic pass of the same model so both fits
+start from the same place.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">warm_start</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">il</span>, <span class="va">il_det</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">det</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">il_det</span><span class="op">$</span><span class="va">data</span>, <span class="va">il_det</span><span class="op">$</span><span class="va">par</span>, <span class="va">il_det</span><span class="op">$</span><span class="va">map</span>, random <span class="op">=</span> <span class="cn">NULL</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -368,9 +373,9 @@ by weighting each region’s proportions by that region’s index.</p>
 <h2 id="results">Results<a class="anchor" aria-label="anchor" href="#results"></a>
 </h2>
 <p>Twelve replicates at each of four process error levels, including a
-control where the operating model carries none at all. Every model in
-this case converged. Spawning biomass is summed across regions and
-compared to the operating model’s truth over forty years.</p>
+control where the operating model has none at all. Every model in this
+case converged. Spawning biomass is summed across regions and compared
+to the operating model’s truth over forty years.</p>
 <table class="table">
 <colgroup>
 <col width="20%">
@@ -433,7 +438,7 @@ model (not shown in this case study here), across thirty replicates at
 each structure, the process error standard deviation and every
 correlation are estimated close to the values that generated them, and
 the standard deviation is estimated at exactly zero when the operating
-model carries no process error at all.</p>
+model has no process error at all.</p>
 <div class="float">
 <img src="figures/naa_state_recovery.png" alt="Recovery of the process error parameters over thirty replicates per structure. Diamonds mark the operating model’s true values. (a) the process error standard deviation, (b) the age and year correlations, (c) spawning biomass error with the state on and off."><div class="figcaption">Recovery of the process error parameters over
 thirty replicates per structure. Diamonds mark the operating model’s

@@ -1,9 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# Wraps RTMB::MakeADFun around SPoRC_rtmb, optimizes with nlminb plus Newton
-# refinement, and returns the fitted object (rep, sdrep, optim) that every post
-# fit routine consumes. cmb curries the data list into the objective, which is
-# how the objective gets its data without a global.
+# Wraps RTMB::MakeADFun around SPoRC_rtmb, optimizes with nlminb plus Newton refinement, and
+# returns the fitted object every post fit routine reads. cmb curries the data list in.
 
 #' Fit a SPoRC RTMB model
 #'
@@ -53,7 +51,7 @@
 #' @param model Function with signature \code{function(pars, data)} passed to
 #'   \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
 #'   Allows non-SPoRC RTMB models to be fit with the same optimization and
-#'   Newton-refinement machinery.
+#'   Newton-refinement routines.
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'
 #' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
@@ -71,19 +69,20 @@
 #' obj <- fit_model(data, parameters, mapping, random = NULL, newton_loops = 3)
 #' obj$rep$SSB
 #' }
-fit_model <- function(data,
-                      parameters,
-                      mapping,
-                      random = NULL,
-                      newton_loops = 3,
-                      silent = FALSE,
-                      do_optim = TRUE,
-                      nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
-                      lower = NULL,
-                      upper = NULL,
-                      model = SPoRC_rtmb,
-                      ...
-                      ) {
+fit_model <- function(
+  data,
+  parameters,
+  mapping,
+  random = NULL,
+  newton_loops = 3,
+  silent = FALSE,
+  do_optim = TRUE,
+  nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
+  lower = NULL,
+  upper = NULL,
+  model = SPoRC_rtmb,
+  ...
+) {
 
   # check par n map len
   check_par_map_lengths(parameters, mapping)
@@ -93,8 +92,14 @@ fit_model <- function(data,
   data <- sync_dev_map_data(data, mapping)
 
   # make AD model function
-  obj <- RTMB::MakeADFun(cmb(model, data), parameters = parameters,
-                         map = mapping, random = random, silent = silent, ...)
+  obj <- RTMB::MakeADFun(
+    cmb(model, data),
+    parameters = parameters,
+    map = mapping,
+    random = random,
+    silent = silent,
+    ...
+  )
 
   if(do_optim == TRUE) {
 
@@ -103,19 +108,22 @@ fit_model <- function(data,
     if(is.null(upper)) upper <- rep(Inf, length(obj$par))
 
     # Now, optimize the function
-    optim <- stats::nlminb(obj$par, obj$fn, obj$gr,
-                           control = nlminb_control,
-                           lower = lower, upper = upper)
+    optim <- stats::nlminb(
+      obj$par,
+      obj$fn,
+      obj$gr,
+      control = nlminb_control,
+      lower = lower,
+      upper = upper
+    )
 
     # newton steps
     try_improve <- tryCatch(expr =
                               for(i in 1:newton_loops) {
                                 g = as.numeric(obj$gr(optim$par))
 
-                                # note that the tape gives the Hessian exactly in a single call, whereas
-                                # optimHess differences the gradient once per parameter. RTMB has
-                                # no tape Hessian under random effects, so those difference the
-                                # Laplace approximated objective instead.
+                                # the tape gives the Hessian exactly in one call; optimHess
+                                # differences the gradient once per parameter
 
                                 if(is.null(random)) {
                                   h = as.matrix(obj$he(optim$par)) # analytical hessian from obj
@@ -123,9 +131,8 @@ fit_model <- function(data,
                                   h = stats::optimHess(optim$par, fn = obj$fn, gr = obj$gr)
                                 } # end if else for hessian source
 
-                                # some second derivatives are not always defined where the objective and
-                                # gradient still are, which shows up as a non-finite Hessian
-                                # on models that have not converged.... break here
+                                # some second derivatives are undefined where the objective and
+                                # gradient still are, showing up as a non-finite Hessian
                                 if(!all(is.finite(h))) break
 
                                 new_par = optim$par - solve(h,g)

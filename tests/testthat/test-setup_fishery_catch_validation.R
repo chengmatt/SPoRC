@@ -7,8 +7,13 @@ library(testthat)
 # the catch arrays are needed to reach the validation block and the mapping calls.
 make_catch_input_list <- function(n_pop = 1, n_regions = 1, n_yrs = 3, n_seas = 1, n_fish_fleets = 1) {
   list(
-    data = list(n_pop = n_pop, n_regions = n_regions, years = 1:n_yrs,
-                n_seas = n_seas, n_fish_fleets = n_fish_fleets),
+    data = list(
+      n_pop = n_pop,
+      n_regions = n_regions,
+      years = 1:n_yrs,
+      n_seas = n_seas,
+      n_fish_fleets = n_fish_fleets
+    ),
     par = list(),
     map = list(),
     verbose = FALSE,

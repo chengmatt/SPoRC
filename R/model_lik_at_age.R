@@ -1,15 +1,7 @@
-# At-age observation likelihoods, shared by eight streams: retained catch,
-# discards, fishery index and survey index, each aggregated and
-# population-specific. Streams differ only in the prediction array they read and
-# the parameter supplying their observation error.
-#
-# Every stream is stored region by year by season by age by sex by fleet, with a
-# leading population dimension for the population-specific form, so an
-# observation can be split or summed over regions and sexes independently. The
-# margins a fleet sums over are named by its Type code, and the observation
-# occupies slot one of every summed margin.
+# At-age observation likelihoods for eight data sources: retained catch, discards, fishery index and
+# survey index, each aggregated and population-specific. Stored region x year x season x age x sex x fleet.
 
-#' Decode an at-age aggregation type into its split margins
+#' Decode an at-age aggregation type into its split dims
 #'
 #' The Type codes follow the composition vocabulary: \code{"agg"} sums over both
 #' regions and sexes, \code{"spltRaggS"} keeps regions apart and sums over sexes,
@@ -18,7 +10,7 @@
 #' @param code Integer, \code{0} to \code{3} in the order above.
 #'
 #' @return A list with logical \code{region} and \code{sex}, \code{TRUE} where
-#'   that margin is split.
+#'   that dim is split.
 #'
 #' @keywords internal
 at_age_split = function(code) {
@@ -27,9 +19,9 @@ at_age_split = function(code) {
 
 #' Standard deviation for one at-age observation
 #'
-#' An at-age observation may carry its own reported standard error, an estimated
-#' component, or both, matching what the aggregated index streams allow. The
-#' parameter alone is the default and is what a stream with no reported errors
+#' An at-age observation may have its own reported standard error, an estimated
+#' component, or both, matching what the aggregated index data sources allow. The
+#' parameter alone is the default and is what a data source with no reported errors
 #' means.
 #'
 #' @param se Reported standard errors for the ages in one cell.
@@ -47,9 +39,11 @@ at_age_obs_sd = function(se, extra, form) {
   return(extra)                               # the parameter alone
 }
 
+# At-Age Observation Helpers ------------------------------------------------
+
 #' Transform at-age observations onto the scale their likelihood is written on
 #'
-#' A lognormal stream is fit on the log scale and a normal stream on the natural
+#' A lognormal data source is fit on the log scale and a normal data source on the natural
 #' scale, and the choice is per fleet, so the transformation is applied cell by
 #' cell before \code{\link[RTMB]{OBS}} registration. Registration must happen
 #' against the name \code{getAll} supplied, so the caller does it: a vector
@@ -85,12 +79,12 @@ prep_at_age_obs = function(obs, use, like_type, const = 0) {
 #'
 #' Catch and discards are already at age and only need their units applied. The
 #' discards are dead discards, so they are raised by the discard mortality rate
-#' to the total the observation counts, exactly as the aggregated stream does.
+#' to the total the observation counts, exactly as the aggregated data source does.
 #' The survey index applies an age-specific catchability to the numbers
 #' available to that fleet.
 #'
 #' Population, region and sex arrive as index vectors rather than single
-#' indices. A margin the fleet splits over is a single index, and a margin it
+#' indices. A dim the fleet splits over is a single index, and a dim it
 #' sums over is the whole extent, so one expression covers every aggregation.
 #'
 #' @param source Character, one of \code{"catch"}, \code{"discard"} or
@@ -98,12 +92,12 @@ prep_at_age_obs = function(obs, use, like_type, const = 0) {
 #' @param arrays Named list of the model arrays the prediction reads:
 #'   \code{CAA}, \code{DAA}, \code{SrvIAA}, \code{WAA_fish},
 #'   \code{dmr}, \code{catch_units} and \code{discard_units}. The two index
-#'   arrays already carry their fleet's selectivity, timing and movement
+#'   arrays already have their fleet's selectivity, timing and movement
 #'   treatment, and the age shape of catchability lives in that selectivity: a
 #'   fleet fit age by age uses the \code{"nonparfree"} selectivity form, whose
-#'   values carry the height of the curve as well as its shape.
+#'   values hold the height of the curve as well as its shape.
 #' @param p_idx,r_idx,s_idx Population, region and sex indices, each either one
-#'   index or the whole extent of that margin.
+#'   index or the whole extent of that dim.
 #' @param y,seas,a,f Year, season, age and fleet indices.
 #'
 #' @return The predicted observation, a scalar.
@@ -130,20 +124,20 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
   return(sum(arrays$SrvIAA[p_idx,r_idx,y,seas,a,s_idx,f])) # survey available numbers
 }
 
-#' Evaluate one age-disaggregated observation stream
+#' Evaluate one age-disaggregated data source
 #'
-#' Computes the at-age negative log likelihood for every fleet in one stream.
+#' Computes the at-age negative log likelihood for every fleet in one data source.
 #' Observations arrive already transformed by \code{\link{prep_at_age_obs}} and
 #' registered through \code{\link[RTMB]{OBS}}.
 #'
-#' Everything that can differ between fleets does: the margins summed over, the
+#' Everything that can differ between fleets does: the dims summed over, the
 #' error structure, whether reported standard errors enter, and whether the
 #' density is lognormal or normal. Ages within a cell may be independent, an
 #' AR(1) across ages, or an unstructured correlation matrix; a fleet may instead
 #' correlate over both age and year through a separable AR(1), which needs the
 #' age by year block it is given to be complete.
 #'
-#' @param obs_t Registered observations for this stream, one element per cell
+#' @param obs_t Registered observations for this data source, one element per cell
 #'   flagged in \code{use}, in \code{which()} order, on the scale its fleet's
 #'   likelihood uses.
 #' @param use Integer array flagging which cells are fit, dimensioned region by
@@ -152,24 +146,24 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
 #' @param ln_sigma Log-scale observation error, over age by sex by fleet, with a
 #'   leading population dimension when \code{pop} is \code{TRUE}.
 #' @param source,arrays Passed to \code{\link{get_at_age_prediction}}.
-#' @param pop Logical. \code{TRUE} for the population-specific stream, whose
-#'   arrays carry a leading population dimension and whose observations are
+#' @param pop Logical. \code{TRUE} for the population-specific data source, whose
+#'   arrays have a leading population dimension and whose observations are
 #'   never summed over populations.
 #' @param obs_se Reported standard errors shaped like \code{use}, read only by
 #'   fleets whose \code{sd_form} asks for them.
 #' @param sd_form Integer per fleet, see \code{\link{at_age_obs_sd}}.
 #' @param like_type Integer per fleet. \code{0} lognormal, \code{1} normal.
 #' @param const Small constant added inside the log of a lognormal cell,
-#'   matching the aggregated stream's convention.
+#'   matching the aggregated data source's convention.
 #' @param corr_type Integer per fleet. \code{0} \code{"iid"}, \code{1}
 #'   \code{"1dar1"}, \code{2} \code{"us"}, \code{3} \code{"2dar1"}.
 #' @param trans_rho Unconstrained correlation across ages, over region by sex by
-#'   fleet, with a leading population margin when \code{pop} is \code{TRUE}.
+#'   fleet, with a leading population dim when \code{pop} is \code{TRUE}.
 #' @param trans_rho_year Unconstrained correlation across years, shaped like
 #'   \code{trans_rho}, read under \code{"2dar1"}.
-#' @param us_pars Unconstrained correlation parameters, over pair by the margins
+#' @param us_pars Unconstrained correlation parameters, over pair by the dims
 #'   of \code{trans_rho}, read under \code{"us"}.
-#' @param aa_type Integer codes naming the split margins, as a matrix over year
+#' @param aa_type Integer codes naming the split dims, as a matrix over year
 #'   by fleet or a vector per fleet standing for every year, see
 #'   \code{\link{at_age_split}}.
 #'
@@ -178,17 +172,30 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
 #'   they can be reported and plotted directly rather than reconstructed.
 #'
 #' @keywords internal
-get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
-                                 obs_se = NULL, sd_form = 0, like_type = 0,
-                                 const = 0, corr_type = 0, trans_rho = 0, trans_rho_year = 0,
-                                 us_pars = NULL, aa_type = 1) {
+get_at_age_source_nLL = function(
+  obs_t,
+  use,
+  ln_sigma,
+  source,
+  pop,
+  arrays,
+  obs_se = NULL,
+  sd_form = 0,
+  like_type = 0,
+  const = 0,
+  corr_type = 0,
+  trans_rho = 0,
+  trans_rho_year = 0,
+  us_pars = NULL,
+  aa_type = 1
+) {
 
   "[<-" <- RTMB::ADoverload("[<-")
 
   d = dim(use)
-  stream_nLL = array(0, dim = d)  # zero wherever nothing is fit
-  stream_pred = array(0, dim = d)
-  if(!any(use == 1)) return(list(nLL = stream_nLL, pred = stream_pred))
+  source_nLL = array(0, dim = d)  # zero wherever nothing is fit
+  source_pred = array(0, dim = d)
+  if(!any(use == 1)) return(list(nLL = source_nLL, pred = source_pred))
 
   nd = length(d)
   n_fleets = d[nd]
@@ -200,14 +207,18 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
   i_r = if(pop) 2 else 1        # dimension positions within one fleet's slice
   i_y = i_r + 1; i_seas = i_y + 1; i_a = i_seas + 1; i_s = i_a + 1
 
-  # the aggregation may change between years, so it is carried as year by fleet
+  # the aggregation may change between years, so it is kept as year by fleet
   # whatever shape it arrived in
   if(is.null(dim(aa_type)))
-    aa_type = base::matrix(rep_len(aa_type, n_fleets), nrow = d[i_y],
-                           ncol = n_fleets, byrow = TRUE)
+    aa_type = base::matrix(
+      rep_len(aa_type, n_fleets),
+      nrow = d[i_y],
+      ncol = n_fleets,
+      byrow = TRUE
+    )
 
-  # the prediction array supplies the full extent of every margin a fleet sums
-  # over, so an aggregated margin reads as the whole dimension
+  # the prediction array supplies the full extent of every dim a fleet sums
+  # over, so an aggregated dim reads as the whole dimension
   pred_arr = switch(source, catch = arrays$CAA, discard = arrays$DAA, arrays$SrvIAA)
   all_pop = seq_len(dim(pred_arr)[1])
   all_reg = seq_len(dim(pred_arr)[2])
@@ -236,23 +247,22 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
            "own fleet so that each block is its own observation.")
     }
 
-    # an unstructured correlation is one matrix per cell the spec keeps apart,
-    # built on first use and reused by the cells sharing it. Only a fleet asking
-    # for one allocates the store, and it is indexed rather than named
+    # an unstructured correlation is one matrix per cell the spec keeps apart, built on first use
+    # and reused by the cells sharing it. only a fleet asking for one allocates the store
     n_us_pop = if(pop) df[1] else 1
     us_corr = if(corr_type[f] == 2) vector("list", n_us_pop * df[i_r] * df[i_s]) else NULL
 
     # a separable correlation runs over years as well as ages, so year leaves the
     # cell definition and the block of years by ages is evaluated at once
     free_dims = if(corr_type[f] == 3) c(i_y, i_a) else i_a
-    margins = setdiff(seq_along(df), free_dims)
-    active_cells = which(apply(use_f == 1, margins, any))
-    cell_index = arrayInd(active_cells, df[margins])
+    dims = setdiff(seq_along(df), free_dims)
+    active_cells = which(apply(use_f == 1, dims, any))
+    cell_index = arrayInd(active_cells, df[dims])
 
     for(cell in seq_len(nrow(cell_index))) {
 
       idx = integer(length(df))
-      idx[margins] = cell_index[cell,]
+      idx[dims] = cell_index[cell,]
       p = if(pop) idx[1] else 1
       s = idx[i_s]
       p_idx = if(pop) p else all_pop
@@ -304,8 +314,8 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
         rho_y = if(pop) trans_rho_year[p,idx[i_r],s,f] else trans_rho_year[idx[i_r],s,f]
         cell_nLL[1] = get_at_age_2dar1_nLL(resid, scale, rho_a, rho_y)
 
-        stream_nLL[lin] = cell_nLL
-        stream_pred[lin] = pred
+        source_nLL[lin] = cell_nLL
+        source_pred[lin] = pred
         next
       } # end 2dar1
 
@@ -341,10 +351,10 @@ get_at_age_stream_nLL = function(obs_t, use, ln_sigma, source, pop, arrays,
       cell_nLL = get_at_age_nLL(obs_t[slot], pred_t, sd_vec, corr_type[f], rho_trans(trans_rho_cell),
                                 ages = obs_ages, corr_mat = corr_mat)
 
-      stream_nLL[lin] = cell_nLL
-      stream_pred[lin] = pred
+      source_nLL[lin] = cell_nLL
+      source_pred[lin] = pred
     } # end cell loop
   } # end f loop
 
-  return(list(nLL = stream_nLL, pred = stream_pred))
+  return(list(nLL = source_nLL, pred = source_pred))
 }

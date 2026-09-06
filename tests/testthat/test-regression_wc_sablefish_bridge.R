@@ -1,12 +1,7 @@
-# Self-validating bridge test. The expectations are not stored SPoRC output: they are
-# the 2025 West Coast sablefish assessment's own reported quantities, shipped in
-# sgl_rg_wc_sablefish_data$ss3. Every parameter is set to the assessment's maximum
-# likelihood estimate and the model is evaluated there without optimizing, so a failure
-# means the population dynamics, a likelihood, or a selectivity form no longer
-# reproduces the assessment at a point where it is known to. Do not loosen the
-# tolerances to make this pass. The assessment's report file carries six significant
-# digits, which is the floor under every comparison here. See the West Coast sablefish
-# case study vignette.
+# Self-validating bridge test: the expectations are the 2025 West Coast sablefish assessment's own
+# quantities in sgl_rg_wc_sablefish_data$ss3, evaluated at its estimate without optimizing.
+#
+# SS3's report file has six significant digits, the floor under every comparison here.
 
 library(SPoRC)
 library(testthat)
@@ -41,7 +36,7 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
   # Predicted observations ----
   i_catch <- dat$UseCatch[1, , 1, 1:6] == 1
   expect_lt(pct(as.vector(r$PredCatch[1, 1, , 1, 1:6])[i_catch], as.vector(dat$ss3$pred_catch)[i_catch]), 1e-2)
-  # fleets 1-4 carry the trawl survey indices; fleet 5 is compositions only and
+  # fleets 1-4 hold the trawl survey indices; fleet 5 is compositions only and
   # fleet 6 the recruitment index, checked separately below
   for(sf in 1:4) {
     ci <- dat$ss3$pred_idx[dat$ss3$pred_idx$Fleet == dat$srv_src[sf], ]
@@ -91,12 +86,12 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
   expect_equal(sum(r$Catch_nLL) - lc(dat$sigmaC, sum(dat$UseCatch == 1, na.rm = TRUE)),
                dat$ss3$lik$catch, tolerance = 1e-4)
   # fleets 1-4 are the trawl surveys and 6 the recruitment index; fleet 5
-  # carries compositions only. The assessment reports all five in one row.
+  # has compositions only. The assessment reports all five in one row.
   for(sf in c(1:4, 6)) {
     expect_equal(sum(r$SrvIdx_nLL[, , , sf]) - 0.5 * log(2 * pi) * sum(dat$UseSrvIdx[, , , sf]),
                  dat$ss3$lik$index[min(sf, 5)], tolerance = 1e-3)
   } # end sf loop
-  # the trawl fleet's two composition streams are one fleet in the assessment
+  # the trawl fleet's two composition data sources are one fleet in the assessment
   expect_equal(sum(r$FishAgeComps_nLL[, , , , c(1, dat$n_fish_fleets)]), dat$ss3$lik$age[1], tolerance = 1e-3)
   for(f in 2:6) expect_equal(sum(r$FishAgeComps_nLL[, , , , f]), dat$ss3$lik$age[f], tolerance = 1e-3)
   for(sf in 1:3) expect_equal(sum(r$SrvAgeComps_nLL[, , , , sf]), dat$ss3$lik$age[6 + sf], tolerance = 1e-3)
@@ -120,8 +115,8 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
   expect_equal(obj$fn(obj$par) - const, dat$mle$objective, tolerance = 1e-6)
 
   # terms the assessment does not have should not be contributing
-  for(nm in c("Fmort_nLL", "sel_nLL", "srv_q_nLL", "fish_q_nLL", "h_nLL", "R0_nLL",
+  for(quant_name in c("Fmort_nLL", "sel_nLL", "srv_q_nLL", "fish_q_nLL", "h_nLL", "R0_nLL",
               "SR_pen_nLL", "Init_Rec_nLL", "FishIdx_nLL")) {
-    expect_equal(sum(r[[nm]]), 0, tolerance = 1e-10)
-  } # end nm loop
+    expect_equal(sum(r[[quant_name]]), 0, tolerance = 1e-10)
+  } # end quant_name loop
 })

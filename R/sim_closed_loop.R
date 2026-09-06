@@ -1,9 +1,7 @@
 # Operating model
 #
-# Closed loop simulation: condition an operating model on a fitted assessment,
-# then run the assessment and a harvest control rule forward against it. The
-# catch_to_F_* helpers invert a catch target to a fishing mortality, which is what
-# a control rule needs to hand back to the operating model.
+# Closed loop simulation: condition an operating model on a fitted assessment, then run the assessment
+# and a control rule forward against it. The catch_to_F_* helpers invert a catch target to an F.
 
 #' Construct and Condition Closed-Loop Simulation Inputs
 #'
@@ -161,7 +159,7 @@
 #'   \item Fishing mortality is initialized to zero in projection years.
 #'   \item Recruitment is simulated forward when not fully specified by
 #'     \code{Rec_input}.
-#'   \item Population-specific data streams (\code{ObsFishIdx_pop_SE},
+#'   \item Population-specific data sources (\code{ObsFishIdx_pop_SE},
 #'     \code{ObsSrvIdx_pop_SE}, and all \code{*_pop} ISS arrays) fall back
 #'     to uninformative defaults when the corresponding \code{Use*_pop}
 #'     flags contain no ones.
@@ -215,6 +213,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # Additional user inputs as desired
   args <- list(...)
+
+  # old reports have no season dim
+  rep$natmort <- expand_natmort_seasons(rep$natmort, data$n_seas)
 
   # Detect partial matching: if *_fill received an array, it was meant as data
   if(is.array(ISS_FishAgeComps_fill)) {
@@ -378,7 +379,12 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$fish_q_input
   # Fishery index uncertainty
   ObsFishIdx_SE <- if(!"ObsFishIdx_SE" %in% names(args)) {
-    extend_years(arr = data$ObsFishIdx_SE / sqrt(data$Wt_FishIdx), n_years = closed_loop_yrs, 2, fill = FishIdx_SE_fill)
+    extend_years(
+      arr = data$ObsFishIdx_SE / sqrt(data$Wt_FishIdx),
+      n_years = closed_loop_yrs,
+      2,
+      fill = FishIdx_SE_fill
+    )
   } else args$ObsFishIdx_SE
 
   # Fishery age compositions
@@ -474,14 +480,12 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   sim_list <- Setup_Sim_Fishing(
     sim_list = sim_list, # update simulate list
     ln_sigmaC = ln_sigmaC,
-    # Age-disaggregated observation error, carried through unweighted: these are
-    # keyed by age and fleet and are not scaled by a likelihood weight the way
-    # the aggregated sigmas are.
+    # age-disaggregated observation error passes through unweighted: it is keyed by age and fleet
+    # and is not scaled by a likelihood weight the way the aggregated sigmas are
     ln_sigmaCAA = optim_parameters_list$ln_sigmaCAA,
     ln_sigmaDAA = optim_parameters_list$ln_sigmaDAA,
-    # the at-age streams carry year on their second margin and no simulation
-    # margin, and the closed-loop years keep observing whatever the terminal year
-    # observed, the same rule the compositions and selectivities follow
+    # the at-age data sources have year on their second dim and no simulation dim, and closed-loop
+    # years keep observing whatever the terminal year observed
     UseCatchAA = extend_years(data$UseCatchAA, closed_loop_yrs, 2, fill = 'last'),
     UseDiscardAA = extend_years(data$UseDiscardAA, closed_loop_yrs, 2, fill = 'last'),
     use_catch_aa = data$use_catch_aa,
@@ -601,7 +605,12 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$srv_q_input
   # Survey index uncertainty
   ObsSrvIdx_SE <- if(!"ObsSrvIdx_SE" %in% names(args)) {
-    extend_years(arr = data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx), n_years = closed_loop_yrs, 2, fill = SrvIdx_SE_fill)
+    extend_years(
+      arr = data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx),
+      n_years = closed_loop_yrs,
+      2,
+      fill = SrvIdx_SE_fill
+    )
   } else args$ObsSrvIdx_SE
 
   # Survey age compositions
@@ -720,7 +729,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # Setup Biological Dynamics -----------------------------------------------
   natmort_input <- if(!"natmort_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, rep$natmort[,,1:length(data$years),,,drop = FALSE]), closed_loop_yrs, 3, 'last')
+    extend_years(replicate(n = sim_list$n_sims, truncate_years(rep$natmort, length(data$years))), closed_loop_yrs, 3, 'last')
   } else args$natmort_input
   # biologicals the growth module derives come from the report, the rest from the data
   WAA_input <- if(!"WAA_input" %in% names(args)) {
@@ -770,10 +779,16 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   h_input <- if(!"h_input" %in% names(args)) {
     replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
   } else args$h_input
+  warn_R0_ref_block_om(data, "condition_closed_loop_simulations")
   R0_input <- if(!"R0_input" %in% names(args)) {
-    R0_r = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)) # container
-    for(p in 1:sim_list$n_pop) R0_r[p,] = rep$R0 [p] * rep$rec_region_prop[p,]
-    replicate(n = sim_list$n_sims, expr = array(R0_r, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
+    # R0 can have time blocks, so the conditioned operating model holds the terminal year's value
+    # forward through the projection. identical to the year-by-year value in an unblocked model
+    n_hist <- length(data$years)
+    R0_by_yr <- if(is.null(rep$R0_yr)) matrix(rep$R0, sim_list$n_pop, n_hist) else rep$R0_yr[, 1:n_hist, drop = FALSE]
+    R0_r = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)) # container
+    for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions)
+      R0_r[p,r,] = c(R0_by_yr[p,], rep(R0_by_yr[p, n_hist], max(0, sim_list$n_yrs - n_hist)))[1:sim_list$n_yrs] * rep$rec_region_prop[p,r]
+    replicate(n = sim_list$n_sims, expr = R0_r)
   } else args$R0_input
   rinit_input <- if(!"rinit_input" %in% names(args)) {
     rinit_r = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)) # container
@@ -821,6 +836,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     rec_dd = rec_dd,
     init_dd = init_dd,
     rec_lag = rec_lag,
+    SR_ref_yr = if(is.null(data$SR_ref_yr)) 1 else data$SR_ref_yr, # match the fit's per-recruit reference year
     stray_rate_input = stray_rate_input,
     rec_seas_prop_input = rec_seas_prop_input
   )
@@ -888,26 +904,29 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # Extend sigma blocks for years etc
   sim_list$sigmaNAA <- if("sigmaNAA" %in% names(args)) args$sigmaNAA else {
     if(!state_on || is.null(optim_parameters_list$ln_sigmaNAA)) 0 else {
-      blk <- data$naa_sigma_blocks[,,1:length(data$years),,,drop = FALSE]
+      blk <- data$naa_sigma_blocks[,,1:length(data$years),,,,drop = FALSE]
       extend_years(array(exp(optim_parameters_list$ln_sigmaNAA)[as.vector(blk)], dim = dim(blk)),
                    closed_loop_yrs, 3, 'last')
     }
   }
 
-  # The simulator takes one correlation per margin, so shared parameters come across as they are
+  # The simulator takes one correlation per dim, so shared parameters come across as they are
   # and per-cell ones are averaged before transforming.
   sim_list$naa_rho <- if("naa_rho" %in% names(args)) args$naa_rho else {
     pe <- optim_parameters_list$NAA_pe_pars
     if(!state_on || is.null(pe)) c(age = 0, year = 0, cohort = 0)
-    else c(age = rho_trans(mean(pe[,,1,])), year = rho_trans(mean(pe[,,2,])),
-           cohort = rho_trans(mean(pe[,,3,])))
+    else c(
+      age = rho_trans(mean(pe[,,1,])),
+      year = rho_trans(mean(pe[,,2,])),
+      cohort = rho_trans(mean(pe[,,3,]))
+    )
   }
 
-  for(nm in c("NAA_re_pop", "NAA_re_region", "NAA_re_sex")) {
-    sim_list[[nm]] <- if(nm %in% names(args)) args[[nm]] else {
-      if(!state_on || is.null(data[[nm]])) 0 else data[[nm]]
+  for(opt_name in c("NAA_re_pop", "NAA_re_region", "NAA_re_sex", "NAA_re_season")) {
+    sim_list[[opt_name]] <- if(opt_name %in% names(args)) args[[opt_name]] else {
+      if(!state_on || is.null(data[[opt_name]])) 0 else data[[opt_name]]
     }
-  } # end nm loop
+  } # end opt_name loop
 
   # Unconstrained parameters become the correlations themselves, in the lower-triangle order the
   # simulator's unstructured factor reads them in.
@@ -929,7 +948,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     else corr_from(optim_parameters_list$NAA_sex_corr_pars, sim_list$n_sexes)
   }
 
-  # The active ages carry over unchanged, and the active years run on through the projection: the
+  # The active ages are reused unchanged, and the active years run on through the projection: the
   # operating model should keep generating process error in the future, not stop at the data.
   sim_list$naa_re_ages <- if("naa_re_ages" %in% names(args)) args$naa_re_ages else {
     if(!state_on || is.null(data$naa_re_ages)) integer(0) else data$naa_re_ages
@@ -937,6 +956,15 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   sim_list$naa_re_yrs <- if("naa_re_yrs" %in% names(args)) args$naa_re_yrs else {
     if(!state_on || is.null(data$naa_re_yrs) || !length(data$naa_re_yrs)) integer(0)
     else seq(min(data$naa_re_yrs), sim_list$n_yrs)
+  }
+
+  # the active seasons are reused unchanged; season one alone is the annual state
+  sim_list$naa_re_seas <- if("naa_re_seas" %in% names(args)) args$naa_re_seas else {
+    if(!state_on) 1L else if(is.null(data$naa_re_seas)) 1L else data$naa_re_seas
+  }
+  sim_list$naa_season_corr <- if("naa_season_corr" %in% names(args)) args$naa_season_corr else {
+    if(!state_on || !isTRUE(sim_list$NAA_re_season == 1)) 0
+    else corr_from(optim_parameters_list$NAA_season_corr_pars, length(sim_list$naa_re_seas))
   }
 
   return(sim_list)
@@ -1029,7 +1057,7 @@ get_closed_loop_reference_points <- function(use_true_values,
       dmr = array(sim_env$dmr[, 1:y,, , sim], dim = c(sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_fish_fleets)),
       fish_sel = array(sim_env$fish_sel[,, 1:y,, , , , sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
       ret_sel = array(sim_env$ret_sel[,, 1:y,, , , , sim, drop = FALSE], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_fish_fleets)),
-      natmort = array(sim_env$natmort[,, 1:y, , , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_ages, sim_env$n_sexes)),
+      natmort = array(sim_env$natmort[,, 1:y, , , , sim], dim = c(sim_env$n_pop, sim_env$n_regions, length(1:y), sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes)),
       h_trans = array(sim_env$h[,, y, sim], dim = c(sim_env$n_pop, sim_env$n_regions)),
       R0 = apply(sim_env$R0[,, y, sim, drop = FALSE], 1, sum),
       stray_rate = array(sim_env$stray_rate[,1:y,sim], dim = c(sim_env$n_pop, length(1:y))),
@@ -1088,7 +1116,13 @@ get_closed_loop_reference_points <- function(use_true_values,
   pop_b_ref_pt <- array(reference_points$pop_b_ref_pt, dim = c(data_obj$n_pop, data_obj$n_regions, n_proj_yrs)) # biological reference points
   virgin_pop_b_ref_pt <- array(reference_points$virgin_pop_b_ref_pt, dim = c(data_obj$n_pop, data_obj$n_regions, n_proj_yrs)) # biological reference points
 
-  return(list(f_ref_pt = f_ref_pt, b_ref_pt = b_ref_pt, virgin_b_ref_pt = virgin_b_ref_pt, pop_b_ref_pt = pop_b_ref_pt, virgin_pop_b_ref_pt = virgin_pop_b_ref_pt))
+  return(list(
+    f_ref_pt = f_ref_pt,
+    b_ref_pt = b_ref_pt,
+    virgin_b_ref_pt = virgin_b_ref_pt,
+    pop_b_ref_pt = pop_b_ref_pt,
+    virgin_pop_b_ref_pt = virgin_pop_b_ref_pt
+  ))
 }
 
 

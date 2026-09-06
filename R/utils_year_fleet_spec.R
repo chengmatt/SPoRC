@@ -1,10 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# The year-by-fleet specification grammar, which twelve composition streams each
-# parsed with their own copy of the same forty lines. One parser means a stream
-# gaining a setting cannot gain it in a form the others do not accept, and it is
-# what lets the at-age streams take the grammar the composition streams already
-# use.
+# The year-by-fleet specification grammar, which twelve composition data sources each parsed with their own
+# copy of. One parser means a source cannot gain a setting in a form the others do not accept.
 
 #' Parse a year-by-fleet specification into a matrix
 #'
@@ -22,7 +19,7 @@
 #' @param n_fleets Number of fleets the matrix must cover.
 #' @param n_yrs Number of years the matrix must cover.
 #' @param codes Named numeric vector mapping each accepted value to the code the
-#'   model reads. The names are the accepted vocabulary, so a stream with its own
+#'   model reads. The names are the accepted vocabulary, so a data source with its own
 #'   set of values passes its own mapping.
 #' @param check Optional function called as \code{check(value, fleet)} for each
 #'   entry, returning a character string to stop with or \code{NULL} to accept.
@@ -104,9 +101,9 @@ parse_year_fleet_spec <- function(spec, arg_name, n_fleets, n_yrs, codes, check 
 
 #' Expand an at-age aggregation setting to a year by fleet matrix
 #'
-#' The at-age streams accept their aggregation either as a bare value, standing
+#' The at-age data sources accept their aggregation either as a bare value, standing
 #' for the whole series, or as year and fleet specifications in the same form the
-#' composition streams take. Both arrive here and leave as a matrix, so
+#' composition data sources take. Both arrive here and leave as a matrix, so
 #' everything downstream reads one shape.
 #'
 #' @param type Character. Bare values, one for all fleets or one per fleet, or
@@ -123,12 +120,11 @@ at_age_type_matrix <- function(type, n_fleets, n_yrs, arg_name = "at-age Type") 
   codes_map <- c(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3)
   valid <- names(codes_map)
 
-  # a model that has already been set up hands its settings back as codes rather
-  # than labels, which is what conditioning a closed loop does. Those pass
-  # through rather than being read as though they were labels
+  # a model already set up hands its settings back as codes rather than labels, which is what
+  # conditioning a closed loop does, so those pass through rather than being read as labels
   if(is.numeric(type)) {
     if(!all(type %in% unname(codes_map))) {
-      stop(arg_name, " carries codes outside ", paste(unname(codes_map), collapse = ", "),
+      stop(arg_name, " has codes outside ", paste(unname(codes_map), collapse = ", "),
            ". A setting given as numbers is one this package produced, so a value ",
            "outside that set means it has been altered since.")
     }

@@ -56,7 +56,7 @@ A conditional age-at-length row is the age composition of the fish aged from
 one length bin, so a fleet's samples are the (year, season, length bin) rows
 rather than the years alone. The Francis statistic is the same standardized
 mean-age residual used for the marginal compositions, pooled over every row a
-fleet carries, which gives one weight per fleet (per region and sex where the
+fleet has, which gives one weight per fleet (per region and sex where the
 composition type splits them). A weight per length bin would rest on far fewer
 samples and would not be stable.
 }

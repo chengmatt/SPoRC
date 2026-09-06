@@ -7,7 +7,7 @@ library(testthat)
 assign("messages_list", character(0), envir = .GlobalEnv)
 
 # A minimal 1-pop, 1-region, 1-fleet, 1-cohort, 2-age, 2-year-of-liberty
-# fixture. conv_fish_tag_attr = "p_a_s" (all dimensions attended) makes
+# test setup. conv_fish_tag_attr = "p_a_s" (all dimensions attended) makes
 # release_conv_tag_attr() a pure pass-through (see release_tag_attr.R: with
 # every dim attended it just reshapes and returns the input unchanged), which
 # isolates this function's own tag decay/movement/recapture mechanics from
@@ -22,11 +22,17 @@ make_tagging_input <- function() {
   Fmort <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
   Fmort[1,1,1,1] <- 0.3; Fmort[1,2,1,1] <- 0.3
 
-  natmort <- array(0.2, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
+  natmort <- array(0.2, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 
   list(
-    n_fish_fleets = n_fish_fleets, n_regions = n_regions, n_conv_tag_cohorts = n_conv_tag_cohorts,
-    n_yrs = n_yrs, n_seas = n_seas, n_pop = n_pop, n_ages = n_ages, n_sexes = n_sexes,
+    n_fish_fleets = n_fish_fleets,
+    n_regions = n_regions,
+    n_conv_tag_cohorts = n_conv_tag_cohorts,
+    n_yrs = n_yrs,
+    n_seas = n_seas,
+    n_pop = n_pop,
+    n_ages = n_ages,
+    n_sexes = n_sexes,
     conv_tag_fish_reporting_blocks = array(1L, dim = c(n_regions, n_yrs, n_fish_fleets)),
     conv_tag_fish_reporting_pars = array(0, dim = c(n_regions, 1, n_fish_fleets)), # logit(0.5) = 0
     conv_tag_fish_reporting = array(0, dim = c(n_regions, n_yrs, n_fish_fleets)),
@@ -45,7 +51,7 @@ make_tagging_input <- function() {
     conv_fish_tag_attr = c("p_a_s"),
     conv_tag_release_platform = matrix(0, nrow = n_conv_tag_cohorts, ncol = 1), # unused (p_a_s short-circuits release_conv_tag_attr)
     srv_sel = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, 1)), # unused, same reason
-    NAA_bef = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)),   # unused, same reason
+    NAA_bef = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)), # unused, same reason
     ln_init_conv_tag_mort = c(-10), # negligible tag-induced mortality
     do_recruits_move = 0,
     Movement = array(1, dim = c(n_pop, n_regions, n_regions, n_yrs, n_seas, n_ages, n_sexes)), # n_regions = 1 -> no-op
@@ -74,7 +80,7 @@ test_that("get_tagging_observation_model: release-year tag availability and pred
   expect_equal(out$conv_tag_fish_avail[1,1,1,1,1,1,1], released, tolerance = 1e-6)
   expect_equal(out$conv_tag_fish_avail[1,1,1,1,1,2,1], released, tolerance = 1e-6)
 
-  # tmp_ZAA = natmort + F + shed (all ~uniform across ages in this fixture)
+  # tmp_ZAA = natmort + F + shed (all ~uniform across ages in this test setup)
   Z <- 0.2 + 0.3 + exp(-10)
   SAA <- exp(-Z)
   reporting <- 0.5

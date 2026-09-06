@@ -1,11 +1,8 @@
-# Purpose: Bridge the smsR assessment for North Sea sandeel in area 1r to SPoRC
-#          and render the case study figures. The model is specified the way
-#          smsR specifies it: one region and one sex, ages 0-4, two half-year
-#          seasons with age 0 recruiting into the second, mean recruitment with
-#          free initial numbers at age, and fishing mortality driven by the
-#          observed effort series rather than estimated year by year.
+# Purpose: Bridge the smsR assessment for North Sea sandeel in area 1r to SPoRC and render its figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/26/26
+#
+# fishing mortality is driven by the observed effort series rather than estimated year by year
 
 library(here)
 library(dplyr)
@@ -26,6 +23,7 @@ ages <- 0:4
 n_yrs <- length(yrs)
 n_ages <- length(ages)
 n_seas <- 2
+seasdur <- c(0.5, 0.5)                       # two half-year seasons
 n_regions <- 1
 n_pop <- 1
 n_sexes <- 1
@@ -39,9 +37,8 @@ srv_seas <- c(2, 1)
 srv_t <- c(0.75, 0)
 
 # Biologicals ----------------------------------------------------------------
-# smsR carries its biologicals as [age, year, season]. SPoRC wants
-# [pop, region, year, season, age, sex], the same numbers with three dimensions
-# of length one, and one more for fleet on the weights a fleet sees.
+# smsR stores biologicals as [age, year, season]; SPoRC wants [pop, region, year, season, age, sex],
+# the same numbers with three length-one dimensions, plus fleet on the weights a fleet sees
 WAA      <- array(0, dim = c(1, 1, n_yrs, n_seas, n_ages, 1))
 MatAA    <- array(0, dim = c(1, 1, n_yrs, n_seas, n_ages, 1))
 WAA_fish <- array(0, dim = c(1, 1, n_yrs, n_seas, n_ages, 1, 2))
@@ -56,20 +53,17 @@ for(y in 1:n_yrs) {
   } # end seas loop
 } # end y loop
 
-# smsR carries natural mortality by season; SPoRC scales an annual rate by season
-# duration, so the annual sum preserves the annual trajectory exactly.
+# smsR stores mortality accumulated in a season, SPoRC a rate per year times seasdur, so the rate
+# is the smsR number over that duration. age 0 has zero season 1 M and passes straight through
 M_sms <- lhs$M[, 1:n_yrs, ]
-natmort <- array(0, dim = c(1, 1, n_yrs, n_ages, 1))
+natmort <- array(0, dim = c(1, 1, n_yrs, n_seas, n_ages, 1))
 for(y in 1:n_yrs) {
-  annual_M = M_sms[, y, 1] + M_sms[, y, 2]
-  annual_M[1] = M_sms[1, y, 2] / 0.5   # age 0 is only present in season 2
-  natmort[1, 1, y, , 1] = annual_M
+  for(seas in 1:n_seas) natmort[1, 1, y, seas, , 1] = M_sms[, y, seas] / seasdur[seas]
 } # end y loop
 
 # Catch at age ---------------------------------------------------------------
-# Ages 1-4 only, with nocatch naming the year and season cells that were fished.
-# Fleet f fishes season f alone, so a season needing its own observation error
-# gets it through the fleet rather than through an extra key dimension.
+# ages 1-4 only, with nocatch naming the fished year and season cells. fleet f fishes season f
+# alone, so a season's own observation error comes through the fleet, not an extra key dimension
 catch_obs <- dat$Catch
 nocatch <- as.matrix(dat$nocatch)
 ObsCatchAA <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish))
@@ -87,7 +81,7 @@ for(y in 1:n_yrs) {
 } # end y loop
 
 # Survey index at age --------------------------------------------------------
-# The aggregated survey stream stays empty: each survey is fit age by age.
+# The aggregated survey data source stays empty: each survey is fit age by age.
 survey_obs <- dat$survey
 ObsSrvIdx <- array(NA, dim = c(n_regions, n_yrs, n_seas, n_srv))
 UseSrvIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv))
@@ -106,24 +100,18 @@ for(k in 1:n_srv) {
   } # end a loop
 } # end k loop
 
-# Observation error keyed by age, as smsR groups it. Catchability at age is not
-# a separate parameter: it is the survey selectivity, through the "nonparfree"
-# form, whose values carry the height of the curve as well as its shape.
+# observation error keyed by age, as smsR groups it. catchability at age is not separate: it is the
+# survey selectivity through "nonparfree", whose values hold the height as well as the shape
 srv_sd_key <- array(NA_integer_, dim = c(n_ages, n_sexes, n_srv))
-# The Dredge's age-0 standard deviation is held rather than estimated. Age 0
-# appears in one place only, that index, and the recruitment deviations are free,
-# so they can fit it exactly: the residual goes to zero, log sigma runs to
-# negative infinity, and the likelihood is unbounded. The optimizer reports
-# convergence from inside that hole, at an objective well below the real one.
-# Held at smsR's own value, every starting value from -5 to -15 reaches the same
-# optimum; estimated, only a narrow band of starting values does.
-srv_sd_key[1, 1, 1] <- NA                    # Dredge age 0, held (see above)
+# the Dredge's age-0 standard deviation is kept rather than estimated: age 0 appears only in that
+# index and free recruitment deviations fit it exactly, so log sigma runs to negative infinity
+srv_sd_key[1, 1, 1] <- NA                    # Dredge age 0, kept (see above)
 srv_sd_key[2, 1, 1] <- 1                     # Dredge age 1
 srv_sd_key[2, 1, 2] <- 2                     # RTM age 1
 srv_sd_key[3:4, 1, 2] <- 3                   # RTM ages 2 and 3 share
 
 srv_sd_start <- array(log(0.5), dim = c(n_ages, n_sexes, n_srv))
-srv_sd_start[1, 1, 1] <- log(0.4052)         # the held value, smsR's own
+srv_sd_start[1, 1, 1] <- log(0.4052)         # the kept value, smsR's own
 
 # smsR groups its catch standard deviations as ages 1-2 and ages 3 and above,
 # separately by season. With a fleet per season that is the plain [age, fleet] key.
@@ -132,45 +120,72 @@ sdc_key <- array(c(NA, 1L, 1L, 2L, 2L,
 
 # Setup ----------------------------------------------------------------------
 input_list <- Setup_Mod_Dim(
-  n_pop = n_pop, years = yrs, ages = ages, lens = NA,
-  n_regions = n_regions, n_sexes = n_sexes, n_seas = n_seas, seasdur = c(0.5, 0.5),
-  n_fish_fleets = n_fish, n_srv_fleets = n_srv, verbose = FALSE)
+  n_pop = n_pop,
+  years = yrs,
+  ages = ages,
+  lens = NA,
+  n_regions = n_regions,
+  n_sexes = n_sexes,
+  n_seas = n_seas,
+  seasdur = seasdur,
+  n_fish_fleets = n_fish,
+  n_srv_fleets = n_srv,
+  verbose = FALSE
+)
 
-# Recruitment enters in season 2, which is what fixed_rec_seas_prop states. smsR
-# estimates the first year's numbers at age as free parameters rather than as
-# departures from an equilibrium, which is init_age_strc "free": ln_InitDevs are
-# then the initial log numbers themselves. It applies no penalty to them, and
-# because those deviations are log-numbers rather than log-ratios a penalty here
-# would act as a prior on initial abundance, so equil_init_age_strc is "equil".
+# recruitment enters in season 2. smsR estimates the first year's numbers at age as free parameters,
+# so ln_InitDevs are the initial log numbers themselves and equil_init_age_strc stays "equil"
 input_list <- Setup_Mod_Rec(
-  input_list, rec_model = "mean_rec", rec_lag = 1,
-  spawn_seas = 1, t_spawn = 0, use_fixed_rec_seas_prop = 1,
+  input_list,
+  rec_model = "mean_rec",
+  rec_lag = 1,
+  spawn_seas = 1,
+  t_spawn = 0,
+  use_fixed_rec_seas_prop = 1,
   fixed_rec_seas_prop = matrix(c(0, 1), nrow = n_pop, ncol = n_seas),
-  sigmaR_spec = "fix", do_rec_bias_ramp = 0,
-  init_age_strc = "free", equil_init_age_strc = "equil",
-  ln_global_R0 = log(2e8))
+  sigmaR_spec = "fix",
+  do_rec_bias_ramp = 0,
+  init_age_strc = "free",
+  equil_init_age_strc = "equil",
+  ln_global_R0 = log(2e8)
+)
 input_list$par$ln_sigmaR[] <- log(1)
 
 input_list <- Setup_Mod_Biologicals(
-  input_list, WAA = WAA, WAA_fish = WAA_fish, WAA_srv = WAA_srv,
-  MatAA = MatAA * 2,                           # cancels SPoRC's single-sex SSB halving
-  fit_lengths = 0, M_spec = "fix", Fixed_natmort = natmort)
+  input_list,
+  WAA = WAA,
+  WAA_fish = WAA_fish,
+  WAA_srv = WAA_srv,
+  MatAA = MatAA * 2, # cancels SPoRC's single-sex SSB halving
+  fit_lengths = 0,
+  M_spec = "fix",
+  Fixed_natmort = natmort
+)
 
-input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1,
-                                 Fixed_Movement = NA, do_recruits_move = 0)
+input_list <- Setup_Mod_Movement(
+  input_list = input_list,
+  use_fixed_movement = 1,
+  Fixed_Movement = NA,
+  do_recruits_move = 0
+)
 
-# The aggregated catch stream is switched off entirely: this fleet fits catch at
+# The aggregated catch data source is switched off entirely: this fleet fits catch at
 # age, and supplying both is an error rather than a warning.
 suppressWarnings(
   input_list <- Setup_Mod_Catch_and_F(
     input_list,
     ObsCatch = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish)),
     UseCatch = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish)),
-    ObsCatchAA = ObsCatchAA, UseCatchAA = UseCatchAA,
-    sigmaCAA_key = sdc_key, sigmaCAA_spec = "est",
+    ObsCatchAA = ObsCatchAA,
+    UseCatchAA = UseCatchAA,
+    sigmaCAA_key = sdc_key,
+    sigmaCAA_spec = "est",
     ln_sigmaCAA = array(log(0.5), dim = c(n_ages, n_sexes, n_fish)),
     catch_units = array("abd", dim = c(n_fish)),
-    Use_F_pen = 0, sigmaC_spec = "fix", sigmaF_spec = "fix"))
+    Use_F_pen = 0,
+    sigmaC_spec = "fix",
+    sigmaF_spec = "fix"
+  ))
 
 input_list <- Setup_Mod_FishIdx_and_Comps(
   input_list,
@@ -191,10 +206,13 @@ input_list <- Setup_Mod_FishIdx_and_Comps(
 
 input_list <- Setup_Mod_SrvIdx_and_Comps(
   input_list,
-  ObsSrvIdx = ObsSrvIdx, ObsSrvIdx_SE = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv)),
+  ObsSrvIdx = ObsSrvIdx,
+  ObsSrvIdx_SE = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv)),
   UseSrvIdx = UseSrvIdx,
-  ObsSrvIdxAA = ObsSrvIdxAA, UseSrvIdxAA = UseSrvIdxAA,
-  sigmaSrvIdxAA_key = srv_sd_key, sigmaSrvIdxAA_spec = "est",
+  ObsSrvIdxAA = ObsSrvIdxAA,
+  UseSrvIdxAA = UseSrvIdxAA,
+  sigmaSrvIdxAA_key = srv_sd_key,
+  sigmaSrvIdxAA_spec = "est",
   ln_sigmaSrvIdxAA = srv_sd_start,
   ObsSrvAgeComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv)),
   UseSrvAgeComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv)),
@@ -206,17 +224,20 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
   SrvAgeComps_LikeType = c("none", "none"),
   SrvLenComps_LikeType = c("none", "none"),
   SrvAgeComps_Type = c("agg_Year_1-terminal_Fleet_1", "agg_Year_1-terminal_Fleet_2"),
-  SrvLenComps_Type = c("agg_Year_1-terminal_Fleet_1", "agg_Year_1-terminal_Fleet_2"))
+  SrvLenComps_Type = c("agg_Year_1-terminal_Fleet_1", "agg_Year_1-terminal_Fleet_2")
+)
 
 input_list <- Setup_Mod_Fishsel_and_Q(
-  input_list, cont_tv_fish_sel = c("none_Fleet_1", "none_Fleet_2"),
+  input_list,
+  cont_tv_fish_sel = c("none_Fleet_1", "none_Fleet_2"),
   fish_sel_blocks = c("Block_1_Year_1-16_Fleet_1", "Block_2_Year_17-terminal_Fleet_1",
                       "Block_1_Year_1-16_Fleet_2", "Block_2_Year_17-terminal_Fleet_2"),
   fish_sel_model = c("nonparfree_Fleet_1", "nonparfree_Fleet_2"),
   fish_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
   fish_sel_nonpar_est_bins = rep(list(list(list(1, 2, 3, c(4, 5)), list(1, 2, 3, c(4, 5)))), 2),
   fish_fixed_sel_pars_spec = c("est_all", "est_all"),
-  fish_q_spec = c("fix", "fix"))
+  fish_q_spec = c("fix", "fix")
+)
 
 t_srv <- array(0, dim = c(n_regions, n_seas, n_srv))
 for(k in 1:n_srv) t_srv[1, srv_seas[k], k] <- srv_t[k]
@@ -233,22 +254,24 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
 input_list <- Setup_Mod_Weighting(
-  input_list, Wt_Catch = 1, Wt_FishIdx = 0, Wt_SrvIdx = 1, Wt_Rec = 1, Wt_F = 1,
+  input_list,
+  Wt_Catch = 1,
+  Wt_FishIdx = 0,
+  Wt_SrvIdx = 1,
+  Wt_Rec = 1,
+  Wt_F = 1,
   Wt_Tagging = 0,
   Wt_FishAgeComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
   Wt_FishLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
   Wt_SrvAgeComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv)),
-  Wt_SrvLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv)))
+  Wt_SrvLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv))
+)
 
-# Fishery selectivity is one value per age, per block, shared by the two season
-# fleets because smsR's age pattern does not vary by season. Three things are not
-# estimated: age 0, which is never fished, and block one's top group, which is the
-# reference the rest of the curve is measured against. Holding that reference at
-# one is what keeps the level of fishing in ln_F_mean rather than splitting it
-# between the two.
+# fishery selectivity is one value per age per block, shared by the two season fleets. age 0 and
+# block one's top group are not estimated, keeping the level of fishing in ln_F_mean
 #
 #             age 0    age 1    age 2    age 3    age 4
-#   block 1     .        1        2      <-- reference, held at 1 -->
+#   block 1     .        1        2      <-- reference, kept at 1 -->
 #   block 2     .        3        4        5        5
 #
 sel_par <- rbind(block_1 = c(NA, 1L, 2L, NA, NA),
@@ -267,9 +290,8 @@ for(b in 1:2) {
 input_list$par$fish_fixed_sel_pars <- sel_start
 input_list$map$fish_fixed_sel_pars <- factor(sel_map)
 
-# Effort-driven fishing mortality, and the free initial numbers at age. An at-age
-# catch likelihood with free annual fishing mortality is close to saturated, so
-# the effort series is what closes that ridge.
+# effort-driven fishing mortality and free initial numbers at age. an at-age catch likelihood with
+# free annual fishing mortality is close to saturated, so the effort series closes that ridge
 effort <- dat$effort
 dev_dim <- dim(input_list$par$ln_F_devs)
 ln_F_devs <- array(0, dim = dev_dim)
@@ -280,18 +302,12 @@ input_list$par$ln_F_devs <- ln_F_devs
 input_list$map$ln_F_devs <- factor(array(NA_integer_, dim = dev_dim))
 input_list$par$ln_F_mean[] <- -5
 
-# One initial numbers-at-age parameter per age, all estimated, and this has to be
-# said by hand. equil_init_age_strc "equil" neither penalizes nor estimates the
-# deviations, and "stoch_all" does both; under init_age_strc "free" what is
-# wanted is the combination neither offers, estimated and unpenalized, because
-# the deviations are the numbers themselves rather than departures from an
-# equilibrium. Setting the map here is one way; init_devs_pen_use[] <- 0 with
-# "stoch_all" is the other, and gives the same fit. Either has to come after the
-# setup calls, which would otherwise overwrite it.
+# one initial numbers-at-age parameter per age, all estimated and unpenalized, which needs the map
+# set by hand after the setup calls since neither "equil" nor "stoch_all" gives that combination
 input_list$map$ln_InitDevs <- factor(seq_along(input_list$par$ln_InitDevs))
 
 # Reference series -----------------------------------------------------------
-# smsR carries fishing mortality and numbers by season, so they are summed or
+# smsR has fishing mortality and numbers by season, so they are summed or
 # read at season one to line up with what SPoRC reports.
 ref_F <- t(apply(ref$F0[, 1:n_yrs, ], c(1, 2), sum))
 ref_N <- t(ref$Nsave[, 1:n_yrs, 1])
@@ -303,10 +319,30 @@ sandeel_fig <- function(rep_obj, file) {
   sp_N <- rep_obj$NAA[1,1,1:n_yrs,1,,1]
   sp_F <- apply(rep_obj$tot_FAA[1,1,1:n_yrs,,,1,], c(1,3), sum)
   d <- bind_rows(
-    data.frame(Year = yrs, smsR = ref$Rsave[1:n_yrs],    SPoRC = as.numeric(rep_obj$Rec)[1:n_yrs], q = qs[1]),
-    data.frame(Year = yrs, smsR = ref$SSB[1:n_yrs],      SPoRC = as.numeric(rep_obj$SSB)[1:n_yrs], q = qs[2]),
-    data.frame(Year = yrs, smsR = rowMeans(ref_F[,2:3]), SPoRC = rowMeans(sp_F[,2:3]),             q = qs[3]),
-    data.frame(Year = yrs, smsR = ref_N[,5],             SPoRC = sp_N[,5],                         q = qs[4])
+    data.frame(
+      Year = yrs,
+      smsR = ref$Rsave[1:n_yrs],
+      SPoRC = as.numeric(rep_obj$Rec)[1:n_yrs],
+      q = qs[1]
+    ),
+    data.frame(
+      Year = yrs,
+      smsR = ref$SSB[1:n_yrs],
+      SPoRC = as.numeric(rep_obj$SSB)[1:n_yrs],
+      q = qs[2]
+    ),
+    data.frame(
+      Year = yrs,
+      smsR = rowMeans(ref_F[,2:3]),
+      SPoRC = rowMeans(sp_F[,2:3]),
+      q = qs[3]
+    ),
+    data.frame(
+      Year = yrs,
+      smsR = ref_N[,5],
+      SPoRC = sp_N[,5],
+      q = qs[4]
+    )
   ) %>% mutate(q = factor(q, levels = qs))
 
   lvl <- d %>% pivot_longer(c(smsR, SPoRC), names_to = "Type", values_to = "Value") %>%
@@ -329,8 +365,13 @@ sandeel_fig <- function(rep_obj, file) {
 
   # file = NULL reports the comparison without writing a figure, which is what
   # the seeded stage wants: it is a check, not something the vignette shows.
-  if(!is.null(file)) ggplot2::ggsave(here("vignettes", "figures", file), p1 | p2,
-                                     width = 13, height = 10, dpi = 150)
+  if(!is.null(file)) ggplot2::ggsave(
+    here("vignettes", "figures", file),
+    p1 | p2,
+    width = 13,
+    height = 10,
+    dpi = 150
+  )
   bind_rows(lapply(qs, function(k) {
     rows <- d[d$q == k, ]
     bridge_cmp(k, rows$SPoRC, rows$smsR)
@@ -391,8 +432,14 @@ message("  fishing mortality at age, every cell: ", signif(100 * max(rel), 3), "
 print(sandeel_fig(seed$rep, NULL))
 
 # Stage two: fit freely -------------------------------------------------------
-est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 random = NULL, newton_loops = 3, silent = TRUE)
+est <- fit_model(
+  input_list$data,
+  input_list$par,
+  input_list$map,
+  random = NULL,
+  newton_loops = 3,
+  silent = TRUE
+)
 for(i in 1:5) est$optim <- stats::nlminb(est$optim$par, est$fn, est$gr,
                     control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15))
 message("\nfree fit: ", length(est$optim$par), " parameters, jnLL ",
@@ -406,3 +453,4 @@ message("\nnumbers at age, free fit")
 for(a in 2:5) message("  age ", a - 1,
                       "  max ", round(max(abs(100*(sp_N[,a]-ref_N[,a])/ref_N[,a])), 2),
                       " %  cor ", round(stats::cor(log(ref_N[,a]), log(sp_N[,a])), 4))
+

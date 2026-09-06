@@ -224,7 +224,7 @@ By default:
   \item Fishing mortality is initialized to zero in projection years.
   \item Recruitment is simulated forward when not fully specified by
     \code{Rec_input}.
-  \item Population-specific data streams (\code{ObsFishIdx_pop_SE},
+  \item Population-specific data sources (\code{ObsFishIdx_pop_SE},
     \code{ObsSrvIdx_pop_SE}, and all \code{*_pop} ISS arrays) fall back
     to uninformative defaults when the corresponding \code{Use*_pop}
     flags contain no ones.

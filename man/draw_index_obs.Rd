@@ -19,7 +19,7 @@ trawl covariance has a diagonal about twice the reported SEs.}
 \item{d, lambda}{Common-factor scale and loading for this observation, from
 \code{\link{cov_to_factor}}. MVN only.}
 
-\item{u}{Shared factor draw for this fleet and replicate, held constant across
+\item{u}{Shared factor draw for this fleet and replicate, kept constant across
 years. MVN only.}
 }
 \description{

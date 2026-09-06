@@ -1,22 +1,17 @@
 # Shared readers and reference reconstruction for the AMAK assessments bridged
 # in this directory. Two jobs live here.
 #
-# The first is parsing. AMAK's .dat files carry comments that are decorative
-# rather than structural, so the only reliable contract is the read order in
-# amak.tpl's DATA_SECTION, and the readers below are positional for that reason.
+# AMAK's .dat comments are decorative rather than structural, so the only reliable order is
+# amak.tpl's DATA_SECTION and the readers below are positional for that reason
 #
-# The second is the comparison target itself. For_R.rep prints six significant
-# digits, which puts a 1e-4 percent floor under everything and hides whether a
-# residual is structural or rounding. amak_dynamics and amak_objective rebuild
-# the population and every objective component from amak.par at full precision
-# instead, and reproduce For_R.rep's $Like_Comp to its printed precision, which
-# is what makes them safe to compare a bridge against.
+# For_R.rep prints six significant digits, hiding whether a residual is structural or rounding, so
+# amak_dynamics and amak_objective rebuild everything from amak.par at full precision instead
 #
 # Sourced by make_bsai_atka_data_object.R.
 # Creator: Matthew LH. Cheng
 # Date Created: 8/17/26
 
-# Strip comments and blank lines, returning one numeric stream ---------------
+# Strip comments and blank lines, returning one numeric data source ---------------
 amak_tokens <- function(path) {
   lines <- readLines(path, warn = FALSE)
   lines <- sub("#.*$", "", lines)
@@ -24,7 +19,7 @@ amak_tokens <- function(path) {
   toks[nzchar(toks)]
 }
 
-# A cursor over that stream. AMAK reads strictly in order, so a stateful
+# A cursor over that data source. AMAK reads strictly in order, so a stateful
 # reader mirrors the TPL line for line and makes a misread obvious.
 amak_reader <- function(path, numeric_only = TRUE) {
   toks <- amak_tokens(path)
@@ -141,7 +136,7 @@ read_amak_dat <- function(path) {
 #'
 #' Only the branches Model 16.0b actually takes are implemented: selectivity
 #' option 1 (age coefficients) for both the fishery and the index. Any other
-#' option stops rather than silently misreading the stream that follows.
+#' option stops rather than silently misreading the data source that follows.
 read_amak_ctl <- function(path, dat) {
   toks <- amak_tokens(path)
   # The first two tokens are the data file name and the model name.
@@ -190,11 +185,8 @@ read_amak_ctl <- function(path, dat) {
   if(ct$fsh_sel_opt != 1) stop("read_amak_ctl only implements fishery selectivity option 1 (coefficients).")
   ct$nselages_fsh <- nxt()
   ct$phase_sel_fsh <- nxt()
-  # Both shape weights are entered as standard deviations and converted to
-  # precisions, but at different points in the file: the curvature sigma at
-  # amak.tpl:948 (only when the coefficients are estimated) and the dome sigma
-  # on read at amak.tpl:610. The control file comments call them "sigma", the
-  # likelihood uses them as weights.
+  # both shape weights are entered as standard deviations and converted to precisions, the curvature
+  # sigma at amak.tpl:948 and the dome sigma on read at amak.tpl:610
   ct$curv_sigma_fsh <- nxt()
   ct$curv_pen_fsh <- if(ct$phase_sel_fsh > 0) 1 / (2 * ct$curv_sigma_fsh^2) else ct$curv_sigma_fsh
   ct$seldec_pen_fsh <- nxt()^2
@@ -279,19 +271,16 @@ read_amak_R_rep <- function(path) {
 
 
 # Selectivity ---------------------------------------------------------------
-# Both streams use option 1: free coefficients over nselages bins, the oldest
-# bin held flat to the plus group, then standardized. The fishery standardizes
-# over every age; the index standardizes over the ages q is defined on, which
-# is a pure rescaling that catchability absorbs.
+# option 1 for both: free coefficients over nselages bins, oldest bin flat to the plus group,
+# then standardized. the index standardizes over q's ages only, a rescaling q absorbs
 amak_selex <- function(coffs, nselages, nages, norm_bins = NULL) {
   ls <- c(coffs[1:nselages], rep(coffs[nselages], nages - nselages))
   nb <- if(is.null(norm_bins)) seq_len(nages) else norm_bins
   ls - log(mean(exp(ls[nb])))
 }
 
-# Map each model year onto its selectivity block. AMAK advances the block
-# pointer on the change year and holds it thereafter, so years past the last
-# change share the last block.
+# map each model year onto its selectivity block. AMAK advances the pointer on the change year and
+# keeps it thereafter, so years past the last change share the last block
 amak_block_of_year <- function(years, yrs_ch) findInterval(years, yrs_ch)
 
 #' Rebuild AMAK's population dynamics from its parameter vector
@@ -376,9 +365,8 @@ amak_dynamics <- function(dat, ctl, par) {
   q_power <- exp(par$log_q_power_ind_1)
   pred_ind <- q * sapply(i_ind, function(y) sum(natage[y, ] * S[y, ]^frac * sel_ind[y, ] * dat$wt_ind[y, ]))^q_power
 
-  # AMAK's `age_err * p` is a matrix-vector product over the SECOND index, so
-  # the observed-age axis is the ROW axis. Anything downstream that wants
-  # `p %*% A` needs the transpose.
+  # AMAK's `age_err * p` multiplies over the SECOND index, so observed age is the ROW axis.
+  # anything wanting `p %*% A` needs the transpose
   ae <- dat$age_err
   i_fsh_age <- match(dat$yrs_fsh_age[1, ], years)
   eac_fsh <- t(sapply(i_fsh_age, function(y) {
@@ -401,15 +389,37 @@ amak_dynamics <- function(dat, ctl, par) {
     s / (alpha + beta * s)
   }), rec_years)
 
-  list(M = M, sel_fsh = sel_fsh, sel_ind = sel_ind, log_sel_fsh = log_sel_fsh,
-       log_sel_ind = log_sel_ind, blk_fsh = blk_fsh, F = Fmat, Z = Z, S = S,
-       natage = natage, catage = catage, pred_catch = pred_catch,
-       Sp_Biom = Sp_Biom, Bzero = Bzero, phizero = phizero, Rzero = Rzero,
-       alpha = alpha, beta = beta, natagetmp = natagetmp,
-       mod_rec = mod_rec, pred_rec = pred_rec, rec_dev = rec_dev,
-       pred_ind = pred_ind, eac_fsh = eac_fsh, eac_ind = eac_ind,
-       i_ind = i_ind, i_fsh_age = i_fsh_age, i_ind_age = i_ind_age,
-       totbiom = as.vector(natage[1:nyrs, ] %*% dat$wt_pop))
+  list(
+    M = M,
+    sel_fsh = sel_fsh,
+    sel_ind = sel_ind,
+    log_sel_fsh = log_sel_fsh,
+    log_sel_ind = log_sel_ind,
+    blk_fsh = blk_fsh,
+    F = Fmat,
+    Z = Z,
+    S = S,
+    natage = natage,
+    catage = catage,
+    pred_catch = pred_catch,
+    Sp_Biom = Sp_Biom,
+    Bzero = Bzero,
+    phizero = phizero,
+    Rzero = Rzero,
+    alpha = alpha,
+    beta = beta,
+    natagetmp = natagetmp,
+    mod_rec = mod_rec,
+    pred_rec = pred_rec,
+    rec_dev = rec_dev,
+    pred_ind = pred_ind,
+    eac_fsh = eac_fsh,
+    eac_ind = eac_ind,
+    i_ind = i_ind,
+    i_fsh_age = i_fsh_age,
+    i_ind_age = i_ind_age,
+    totbiom = as.vector(natage[1:nyrs, ] %*% dat$wt_pop)
+  )
 }
 
 #' Rebuild every AMAK objective function component
@@ -460,7 +470,7 @@ amak_objective <- function(dat, ctl, par, dyn) {
   rec_like_2 <- sum(par$rec_dev^2)
   n_fut <- length(par$rec_dev_future)
   rec_like_3 <- sum(par$rec_dev_future^2) / (2 * sigmarsq) + n_fut * log(sigmar)
-  # ADMB's inclusive index ranges make the sum-of-squares carry one more
+  # ADMB's inclusive index ranges make the sum-of-squares have one more
   # deviation than the log-sigma count on each tail.
   early <- as.character(dat$styr_rec:ctl$styr_rec_est)
   late <- as.character(ctl$endyr_rec_est:dat$endyr)
@@ -482,16 +492,31 @@ amak_objective <- function(dat, ctl, par, dyn) {
   avgsel_ind <- log(mean(exp(par$log_selcoffs_ind_1[1:ctl$nselages_ind])))
   residual <- 0.5 * (par$log_Rzero - par$mean_log_rec)^2 + 20 * sum(avgsel_fsh^2) + 20 * sum(avgsel_ind^2)
 
-  comps <- c(catch_like = catch_like, age_like_fsh = age_like_fsh, length_like_fsh = 0,
-             sel_like_fsh = sel_like_fsh, ind_like = ind_like, age_like_ind = age_like_ind,
-             length_like_ind = 0, sel_like_ind = sel_like_ind, rec_like = rec_like,
-             fpen = fpen, post_priors_indq = post_priors_indq, post_priors = post_priors,
-             residual = residual)
+  comps <- c(
+    catch_like = catch_like,
+    age_like_fsh = age_like_fsh,
+    length_like_fsh = 0,
+    sel_like_fsh = sel_like_fsh,
+    ind_like = ind_like,
+    age_like_ind = age_like_ind,
+    length_like_ind = 0,
+    sel_like_ind = sel_like_ind,
+    rec_like = rec_like,
+    fpen = fpen,
+    post_priors_indq = post_priors_indq,
+    post_priors = post_priors,
+    residual = residual
+  )
 
-  list(comps = c(comps, total = sum(comps)),
-       sel_fsh_parts = c(curve = sel_curve_fsh, rw = sel_rw_fsh, dome = sel_dome_fsh),
-       sel_ind_parts = c(curve = sel_curve_ind, rw = 0, dome = sel_dome_ind),
-       rec_parts = c(sigmar = sigmar, rec_like_1, rec_like_2, rec_like_3, rec_like_4),
-       chi = chi, SSQRec = SSQRec, m_sigmar = sqrt(m_sigmarsq),
-       avgsel_fsh = avgsel_fsh, avgsel_ind = avgsel_ind)
+  list(
+    comps = c(comps, total = sum(comps)),
+    sel_fsh_parts = c(curve = sel_curve_fsh, rw = sel_rw_fsh, dome = sel_dome_fsh),
+    sel_ind_parts = c(curve = sel_curve_ind, rw = 0, dome = sel_dome_ind),
+    rec_parts = c(sigmar = sigmar, rec_like_1, rec_like_2, rec_like_3, rec_like_4),
+    chi = chi,
+    SSQRec = SSQRec,
+    m_sigmar = sqrt(m_sigmarsq),
+    avgsel_fsh = avgsel_fsh,
+    avgsel_ind = avgsel_ind
+  )
 }

@@ -63,13 +63,13 @@ cat('</div>\n')
 
 ```{css, echo = FALSE}
 .optref-controls{position:sticky;top:0;z-index:10;display:flex;gap:8px;align-items:center;
-  flex-wrap:wrap;padding:10px 0;background:inherit;border-bottom:1px solid #ddd;margin-bottom:6px}
+  flex-wrap:wrap;padding:10px 0;background:inherit;border-bottom:1px solid #ddd;dim-bottom:6px}
 .optref-controls input,.optref-controls select{padding:6px 9px;border:1px solid #ccc;
   border-radius:5px;font:inherit;font-size:13px;background:inherit;color:inherit}
 .optref-controls input{flex:1 1 220px;min-width:0}
-#optref-tally{margin-left:auto;font-size:12px;opacity:.65;font-variant-numeric:tabular-nums}
-.optref-stage h3{margin:26px 0 8px;font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-.optref-n{font-size:12px;font-weight:400;opacity:.6;font-family:inherit;margin:-4px 0 8px}
+#optref-tally{dim-left:auto;font-size:12px;opacity:.65;font-variant-numeric:tabular-nums}
+.optref-stage h3{dim:26px 0 8px;font-size:16px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
+.optref-n{font-size:12px;font-weight:400;opacity:.6;font-family:inherit;dim:-4px 0 8px}
 .optref-table{width:100%;border-collapse:collapse;font-size:13px;display:table}
 .optref-table th{text-align:left;font-size:11px;letter-spacing:.06em;text-transform:uppercase;
   opacity:.6;padding:6px 8px;border-bottom:1px solid #ddd}

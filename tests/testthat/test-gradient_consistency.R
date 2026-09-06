@@ -1,15 +1,8 @@
-# The analytic gradient against a finite difference of the objective, and the
-# score against zero on data the model generated itself.
+# The analytic gradient against a finite difference of the objective, and the score against zero on
+# data the model generated itself.
 #
-# Two things go wrong in an AD objective that no comparison of jnLL to a stored
-# number will show. A branch taken on the value of a parameter, an assignment into
-# an AD array that drops the tape, or a cached tape evaluated off-tape all leave
-# the objective returning the right number and its derivative returning the wrong
-# one. The optimizer then walks a surface the reported likelihood does not
-# describe, converges somewhere, and reports success.
-#
-# A gradient that disagrees with a finite difference of the very function it is
-# supposed to differentiate is the direct statement of that fault.
+# A branch on a parameter value, an assignment that drops the tape, or a cached tape evaluated off-tape all
+# leave the objective right and its derivative wrong, so the optimizer walks a surface jnLL does not describe.
 
 #' Finite-difference gradient of the objective in a few coordinates
 #'
@@ -75,7 +68,8 @@ gradient_obj <- function(cfg) {
     fishidx = list(
       ObsFishIdx = array(1e5, dim = c(nr, NY, ns, nf)),
       ObsFishIdx_SE = array(0.2, dim = c(nr, NY, ns, nf)),
-      UseFishIdx = array(1, dim = c(nr, NY, ns, nf)), fish_idx_type = rep("biom", nf),
+      UseFishIdx = array(1, dim = c(nr, NY, ns, nf)),
+      fish_idx_type = rep("biom", nf),
       ObsFishAgeComps = array(1 / NAG, dim = c(nr, NY, ns, NAG, nx, nf)),
       UseFishAgeComps = array(1, dim = c(nr, NY, ns, nf)),
       ISS_FishAgeComps = array(100, dim = c(nr, NY, ns, nx, nf)),
@@ -83,11 +77,13 @@ gradient_obj <- function(cfg) {
       ObsFishLenComps = array(0, dim = c(nr, NY, ns, 1, nx, nf)),
       UseFishLenComps = array(0, dim = c(nr, NY, ns, nf)),
       ISS_FishLenComps = array(0, dim = c(nr, NY, ns, nx, nf)),
-      FishLenComps_LikeType = rep("none", nf)),
+      FishLenComps_LikeType = rep("none", nf)
+    ),
     srvidx = list(
       ObsSrvIdx = array(1e5, dim = c(nr, NY, ns, 1)),
       ObsSrvIdx_SE = array(0.2, dim = c(nr, NY, ns, 1)),
-      UseSrvIdx = array(1, dim = c(nr, NY, ns, 1)), srv_idx_type = "abd",
+      UseSrvIdx = array(1, dim = c(nr, NY, ns, 1)),
+      srv_idx_type = "abd",
       ObsSrvAgeComps = array(1 / NAG, dim = c(nr, NY, ns, NAG, nx, 1)),
       UseSrvAgeComps = array(1, dim = c(nr, NY, ns, 1)),
       ISS_SrvAgeComps = array(100, dim = c(nr, NY, ns, nx, 1)),
@@ -95,7 +91,8 @@ gradient_obj <- function(cfg) {
       ObsSrvLenComps = array(0, dim = c(nr, NY, ns, 1, nx, 1)),
       UseSrvLenComps = array(0, dim = c(nr, NY, ns, 1)),
       ISS_SrvLenComps = array(0, dim = c(nr, NY, ns, nx, 1)),
-      SrvLenComps_LikeType = "none"),
+      SrvLenComps_LikeType = "none"
+    ),
     wt = list(Wt_FishAgeComps = array(1, dim = c(nr, NY, ns, nx, nf)),
               Wt_FishLenComps = array(1, dim = c(nr, NY, ns, nx, nf)),
               Wt_SrvAgeComps = array(1, dim = c(nr, NY, ns, nx, 1)),
@@ -108,10 +105,10 @@ gradient_obj <- function(cfg) {
 test_that("the analytic gradient agrees with a finite difference of the objective", {
   problems <- character()
 
-  for(nm in names(gradient_configs())) {
-    obj <- tryCatch(gradient_obj(gradient_configs()[[nm]]), error = function(e) e)
+  for(config_name in names(gradient_configs())) {
+    obj <- tryCatch(gradient_obj(gradient_configs()[[config_name]]), error = function(e) e)
     if(inherits(obj, "condition")) {
-      problems <- c(problems, sprintf("%s: did not build (%s)", nm,
+      problems <- c(problems, sprintf("%s: did not build (%s)", config_name,
                                       substr(conditionMessage(obj), 1, 120)))
       next
     }
@@ -123,7 +120,7 @@ test_that("the analytic gradient agrees with a finite difference of the objectiv
     bad <- which(rel > 1e-4)
     for(i in bad) {
       problems <- c(problems, sprintf("%s: coordinate %d has analytic gradient %.8g against finite difference %.8g",
-                                      nm, chk$index[i], chk$analytic[i], chk$numeric[i]))
+                                      config_name, chk$index[i], chk$analytic[i], chk$numeric[i]))
     }
   }
 
@@ -137,13 +134,13 @@ test_that("every configuration has a finite objective and a finite gradient", {
   # or steps somewhere arbitrary.
   problems <- character()
 
-  for(nm in names(gradient_configs())) {
-    obj <- tryCatch(gradient_obj(gradient_configs()[[nm]]), error = function(e) e)
+  for(config_name in names(gradient_configs())) {
+    obj <- tryCatch(gradient_obj(gradient_configs()[[config_name]]), error = function(e) e)
     if(inherits(obj, "condition")) next
     if(!is.finite(obj$fn(obj$par)))
-      problems <- c(problems, sprintf("%s: objective is not finite", nm))
+      problems <- c(problems, sprintf("%s: objective is not finite", config_name))
     if(!all(is.finite(obj$gr(obj$par))))
-      problems <- c(problems, sprintf("%s: gradient has %d non-finite entries", nm,
+      problems <- c(problems, sprintf("%s: gradient has %d non-finite entries", config_name,
                                       sum(!is.finite(obj$gr(obj$par)))))
   }
 

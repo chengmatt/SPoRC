@@ -1,6 +1,5 @@
-# Reference points read weight at age from the data, which is a zero placeholder
-# when the growth module derives it. A model with waa_model = "wt_len" would then
-# get an unfished biomass of zero and reference points to match, without a word.
+# Reference points read weight at age from the data, which is a zero placeholder when the growth module
+# derives it. A model with waa_model = "wt_len" would get an unfished biomass of zero silently.
 
 library(SPoRC)
 library(testthat)
@@ -17,10 +16,17 @@ test_that("reference points use the weight at age growth derived", {
   expect_false(is.null(fit$rep$WAA))
   expect_true(any(fit$rep$WAA > 0))
 
-  spr <- Get_Reference_Points(data = input_list$data, rep = fit$rep, SPR_x = 0.4,
-                              t_spawn = input_list$data$t_spawn, calc_rec_st_yr = 1,
-                              rec_age = 1, type = "single_region", what = "SPR",
-                              n_avg_yrs = 1)
+  spr <- Get_Reference_Points(
+    data = input_list$data,
+    rep = fit$rep,
+    SPR_x = 0.4,
+    t_spawn = input_list$data$t_spawn,
+    calc_rec_st_yr = 1,
+    rec_age = 1,
+    type = "single_region",
+    what = "SPR",
+    n_avg_yrs = 1
+  )
 
   # unfished biomass per recruit is built from a real weight at age, not zeros
   expect_true(is.finite(spr$virgin_b_ref_pt[1, 1]))
@@ -35,10 +41,17 @@ test_that("reference points use the weight at age growth derived", {
   # is what the reference points did before they read the report
   rep_zero <- fit$rep
   rep_zero$WAA <- NULL
-  # the solve walks into NaN with no weight at age, which is the point
-  spr_zero <- suppressWarnings(Get_Reference_Points(data = input_list$data, rep = rep_zero, SPR_x = 0.4,
-                                                    t_spawn = input_list$data$t_spawn, calc_rec_st_yr = 1,
-                                                    rec_age = 1, type = "single_region", what = "SPR",
-                                                    n_avg_yrs = 1))
+  # the solve walks into NaN with no weight at age, which is what this checks
+  spr_zero <- suppressWarnings(Get_Reference_Points(
+    data = input_list$data,
+    rep = rep_zero,
+    SPR_x = 0.4,
+    t_spawn = input_list$data$t_spawn,
+    calc_rec_st_yr = 1,
+    rec_age = 1,
+    type = "single_region",
+    what = "SPR",
+    n_avg_yrs = 1
+  ))
   expect_equal(spr_zero$virgin_b_ref_pt[1, 1], 0)
 })

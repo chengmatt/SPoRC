@@ -1,8 +1,9 @@
 # Shared helpers
 #
-# Helpers for building and inspecting the input_list during setup: message
-# collection, type coercion, safe extraction, year extension, and switching a
-# data source off.
+# Helpers for building and inspecting the input_list during setup: message collection, type
+# coercion, safe extraction, year extension, and switching a data source off.
+
+# Selectivity Penalty Weights -----------------------------------------------
 
 #' Resolve a modular selectivity penalty weight vector
 #'
@@ -16,7 +17,7 @@
 #'   \code{"smooth_mean_center"}. Any name not supplied defaults to \code{0}.
 #'   Each weight is either a scalar applied to every year, or a vector with one
 #'   value per model year, which lets a penalty act only in some years or act
-#'   with a different strength in each. The list may also carry
+#'   with a different strength in each. The list may also have
 #'   \code{"bin_range"}, a length-two vector giving the first and last age or
 #'   length bin the penalties apply over; the default of every bin is what a
 #'   missing \code{bin_range} reproduces.
@@ -38,7 +39,7 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
   resolve_one <- function(spec) {
 
     out <- stats::setNames(vector("list", length(allowed)), allowed)
-    for(nm in term_names) out[[nm]] <- 0
+    for(term_name in term_names) out[[term_name]] <- 0
     out$bin_range <- NULL
     out$normalize <- TRUE
     out$yr_diff_ref <- NULL
@@ -51,14 +52,14 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
       stop("pen_wts must be a named numeric vector/list with names in: ", paste(allowed, collapse = ", "))
 
     spec <- as.list(spec)
-    for(nm in names(spec)) {
-      if(is.null(spec[[nm]])) next
-      if(nm == "bin_range" && !is.list(spec[[nm]])) {
-        if(length(spec[[nm]]) != 2) stop("bin_range must be a length-two vector giving the first and last bin the selectivity penalties apply over.")
-        if(spec[[nm]][1] > spec[[nm]][2]) stop("bin_range must be increasing.")
+    for(spec_name in names(spec)) {
+      if(is.null(spec[[spec_name]])) next
+      if(spec_name == "bin_range" && !is.list(spec[[spec_name]])) {
+        if(length(spec[[spec_name]]) != 2) stop("bin_range must be a length-two vector giving the first and last bin the selectivity penalties apply over.")
+        if(spec[[spec_name]][1] > spec[[spec_name]][2]) stop("bin_range must be increasing.")
       }
-      out[[nm]] <- spec[[nm]]
-    } # end nm loop
+      out[[spec_name]] <- spec[[spec_name]]
+    } # end spec_name loop
 
     return(out)
   }
@@ -75,6 +76,8 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
   return(rep(list(resolve_one(pen_wts)), n_fleets))
 }
 
+# Messages and Safe Access --------------------------------------------------
+
 #' Append a message to the global messages list
 #'
 #' Concatenates its arguments into a single string and appends the result to
@@ -88,9 +91,8 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
 #'
 #' @keywords internal
 collect_message <- function(...) {
-  # The setup entry points open a fresh messages_list, but the helpers they call
-  # are also reachable on their own, so start one here rather than failing on a
-  # binding that has not been created yet.
+  # the setup entry points open a fresh messages_list, but the helpers they call are also reachable
+  # on their own, so start one here rather than failing on a binding that does not exist yet
   if(!exists("messages_list", inherits = TRUE)) messages_list <<- character(0)
   messages_list <<- c(messages_list, paste(..., sep = ""))
 }
@@ -116,6 +118,8 @@ safe_extract <- function(obj, name) {
   }
 }
 
+# Parameter and Map Checks --------------------------------------------------
+
 #' Check every parameter block against the map that indexes it
 #'
 #' RTMB pairs a parameter with its map by position, so the two must be the same
@@ -135,17 +139,17 @@ check_par_map_lengths <- function(parameters, mapping) {
   if(is.null(mapping) || length(mapping) == 0) return(invisible(NULL))
 
   problems <- character()
-  for(nm in names(mapping)) {
-    m <- mapping[[nm]]
+  for(par_name in names(mapping)) {
+    m <- mapping[[par_name]]
     if(is.null(m) || length(m) == 0) next
-    if(!nm %in% names(parameters)) {
-      problems <- c(problems, sprintf("map '%s' has no parameter of that name", nm))
+    if(!par_name %in% names(parameters)) {
+      problems <- c(problems, sprintf("map '%s' has no parameter of that name", par_name))
       next
     }
-    n_par <- length(parameters[[nm]])
+    n_par <- length(parameters[[par_name]])
     if(length(m) != n_par)
       problems <- c(problems, sprintf("'%s' is length %d against a map of length %d",
-                                      nm, n_par, length(m)))
+                                      par_name, n_par, length(m)))
   }
 
   if(length(problems) > 0)
@@ -159,37 +163,36 @@ check_par_map_lengths <- function(parameters, mapping) {
 #'
 #' Every \code{Setup_Mod_*} stage builds a default for each parameter and then
 #' lets \code{starting_values} replace it. The replacement used to be taken as
-#' given. A value of the wrong shape is not rejected by that: it is carried into
+#' given. A value of the wrong shape is not rejected by that: it is passed into
 #' the objective, read position by position, and indexes past its own end
 #' somewhere far from the argument that caused it. What comes back is RTMB's
 #' \code{'*this' is not a valid 'advector'}, which names nothing useful.
 #'
-#' The default already carries the shape the model expects, so it is the
+#' The default already holds the shape the model expects, so it is the
 #' reference the supplied value is measured against.
 #'
 #' @param default The parameter as the stage built it.
 #' @param starting_values The user's list of starting values.
-#' @param nm Name of the parameter.
+#' @param par_name Name of the parameter.
 #'
-#' @return \code{starting_values[[nm]]} when it is supplied and correctly
+#' @return \code{starting_values[[par_name]]} when it is supplied and correctly
 #'   shaped, otherwise \code{default}.
 #'
 #' @keywords internal
-use_starting_value <- function(default, starting_values, nm) {
-  if(!nm %in% names(starting_values)) return(default)
-  supplied <- starting_values[[nm]]
+use_starting_value <- function(default, starting_values, par_name) {
+  if(!par_name %in% names(starting_values)) return(default)
+  supplied <- starting_values[[par_name]]
 
-  # a default the stage has not built yet carries no shape to check against
+  # a default the stage has not built yet has no shape to check against
   if(is.null(default) || length(default) == 0) return(supplied)
 
   shape <- function(x) if(is.null(dim(x))) paste0("length ", length(x)) else
     paste(dim(x), collapse = " by ")
 
-  # A single value where the model wants many is the common slip and has an
-  # obvious repair, so the message carries the call rather than only the
-  # measurement.
+  # a single value where the model wants many is the common slip and has an obvious repair, so the
+  # message gives the call rather than only the measurement
   hint <- if(length(supplied) == 1 && length(default) > 1)
-    paste0(" Recycle it with rep(", nm, ", ", length(default), ") if every element takes the same value.")
+    paste0(" Recycle it with rep(", par_name, ", ", length(default), ") if every element takes the same value.")
   else ""
 
   wrong <- if(!is.null(dim(default)) && !is.null(dim(supplied)))
@@ -197,11 +200,13 @@ use_starting_value <- function(default, starting_values, nm) {
   else length(supplied) != length(default)
 
   if(wrong)
-    stop("starting value for ", nm, " is ", shape(supplied), " where the model expects ",
+    stop("starting value for ", par_name, " is ", shape(supplied), " where the model expects ",
          shape(default), ".", hint)
 
   supplied
 }
+
+# Year and Data Extension ---------------------------------------------------
 
 #' Extend an array along its year dimension
 #'
@@ -282,9 +287,9 @@ extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
     }
   } else if (fill == "mean") {
     # get mean along the year dimension, excluding zeros and NaNs
-    margins <- setdiff(seq_along(dim(arr)), yr_dim)
+    dims <- setdiff(seq_along(dim(arr)), yr_dim)
     # get mean excluding zeros and NaNs
-    mean_slice <- apply(arr, margins, function(x) {
+    mean_slice <- apply(arr, dims, function(x) {
       valid_values <- x[!is.na(x) & !is.nan(x) & x != 0]
       if(length(valid_values) == 0) return(0) else mean(valid_values)
     })
@@ -403,6 +408,8 @@ set_data_indicator_unused <- function(data,
   return(data)
 }
 
+# Option Parsing ------------------------------------------------------------
+
 #' Convert character or numeric input to numeric codes
 #'
 #' Maps a character vector to integer codes via a named lookup, or passes
@@ -425,9 +432,8 @@ convert_to_numeric <- function(x, lookup) {
     return(x)
   }
 
-  # if character, validate against the lookup names and convert. Matching on
-  # names is required because subsetting a list by a missing name yields a
-  # one-element list holding NULL, which is.na() reports as FALSE.
+  # if character, validate against the lookup names and convert. matching on names is required
+  # because subsetting a list by a missing name gives a one-element list of NULL, not NA
   if(is.character(x)) {
     idx <- match(x, names(lookup))
     if(any(is.na(idx))) {
@@ -546,6 +552,8 @@ parse_idx_cov <- function(cov_list, like_type_vals, use_arr, n_fleets, what) {
   return(out)
 }
 
+# Selectivity Validation and Setup ------------------------------------------
+
 #' Validate a selectivity fixed-effect centering penalty table
 #'
 #' Checks the table consumed by \code{\link{get_selex_fixed_penalty}} and
@@ -595,7 +603,7 @@ validate_selex_penalty <- function(selex_penalty, use_flag, what) {
 #' @param what Character. Name used in error messages.
 #' @param sel_blocks Integer array \code{[region, year, fleet]} mapping model
 #'   years to selectivity blocks.
-#' @param n_bins Integer. Size of the grid the stream's selectivity is
+#' @param n_bins Integer. Size of the grid the data source's selectivity is
 #'   parameterized on (ages or lengths per its selectivity type).
 #'
 #' @return The validated table, or the input unchanged when \code{use_flag} is
@@ -610,7 +618,7 @@ validate_selex_prior_types <- function(selex_prior, use_flag, what, sel_blocks, 
   if(any(!selex_prior$type %in% c("par", "value"))) stop(what, "$type must be 'par' or 'value'.")
 
   val <- selex_prior$type == "value"
-  if(any(!selex_prior$par[val] %in% 1:n_bins)) stop(what, "$par must index the selectivity grid (1:", n_bins, " for this stream's selectivity type) on rows with type = 'value'.")
+  if(any(!selex_prior$par[val] %in% 1:n_bins)) stop(what, "$par must index the selectivity grid (1:", n_bins, " for this data source's selectivity type) on rows with type = 'value'.")
   if(any(!is.finite(selex_prior$sd[val])) || any(selex_prior$sd[val] <= 0)) stop(what, "$sd must be finite and positive on rows with type = 'value'.")
   for(i in which(val)) {
     if(!selex_prior$block[i] %in% sel_blocks[selex_prior$region[i], , selex_prior$fleet[i]])
@@ -634,32 +642,32 @@ validate_selex_prior_types <- function(selex_prior, use_flag, what, sel_blocks, 
 #' @keywords internal
 setup_sel_norm_bins <- function(input_list, sel_norm_bins, prefix, n_fleets, bins) {
 
-  nm <- paste0(prefix, "_sel_norm_bins")
+  bins_arg <- paste0(prefix, "_sel_norm_bins")
 
   # 0/1 array of which bins each fleet standardizes over; all ones is every bin
   arr <- array(1, dim = c(bins, n_fleets))
   if(!is.null(sel_norm_bins)) {
-    if(!is.list(sel_norm_bins) || length(sel_norm_bins) != n_fleets) stop(nm, " must be a list with one element per fleet (use NULL for a fleet standardizing over every bin).")
+    if(!is.list(sel_norm_bins) || length(sel_norm_bins) != n_fleets) stop(bins_arg, " must be a list with one element per fleet (use NULL for a fleet standardizing over every bin).")
     for(f in seq_len(n_fleets)) {
       if(is.null(sel_norm_bins[[f]])) next
-      if(!all(sel_norm_bins[[f]] %in% seq_len(bins))) stop(nm, " for fleet ", f, " refers to bins outside 1:", bins)
-      if(length(sel_norm_bins[[f]]) == 0) stop(nm, " for fleet ", f, " is empty; a standardization needs at least one bin.")
+      if(!all(sel_norm_bins[[f]] %in% seq_len(bins))) stop(bins_arg, " for fleet ", f, " refers to bins outside 1:", bins)
+      if(length(sel_norm_bins[[f]]) == 0) stop(bins_arg, " for fleet ", f, " is empty; a standardization needs at least one bin.")
       arr[, f] <- 0
       arr[sel_norm_bins[[f]], f] <- 1
     } # end f loop
   }
 
-  input_list$data[[nm]] <- arr
+  input_list$data[[bins_arg]] <- arr
   return(input_list)
 }
 
-#' Set up bin-override selectivity deviations for one selectivity stream
+#' Set up bin-override selectivity deviations for one selectivity data source
 #'
 #' Creates the bin-override deviation parameter array, its factor map, and its
 #' process-error hyperparameters, and records which bins each fleet overrides.
 #' Bins named here take a free annual selectivity value instead of whatever the
 #' fleet's functional form produces, which lets an otherwise parametric curve
-#' carry a handful of freely estimated bins.
+#' have a handful of freely estimated bins.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}.
 #' @param bin_dev_bins List with one element per fleet, each a vector of bins to
@@ -668,7 +676,7 @@ setup_sel_norm_bins <- function(input_list, sel_norm_bins, prefix, n_fleets, bin
 #'   structure of the override deviations: \code{"none"}, \code{"iid"}, or
 #'   \code{"rw"}.
 #' @param prefix One of \code{"fish"}, \code{"ret"}, \code{"srv"}.
-#' @param n_fleets Integer. Number of fleets in this stream.
+#' @param n_fleets Integer. Number of fleets in this data source.
 #' @param bins Integer. Number of age or length bins.
 #' @param starting_values Named list of user-supplied starting values.
 #'
@@ -747,11 +755,11 @@ setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fle
 
 #' Sensible starting values for the double normal's peak
 #'
-#' The double normal carries the bin at which its plateau begins on the bin
+#' The double normal holds the bin at which its plateau begins on the bin
 #' scale, so a parameter left at zero puts the peak at bin zero. Where the first
 #' bin is itself zero the ascending limb has no extent, its rescaling divides by
 #' zero, and the curve comes back as \code{NaN}. A starting value in the middle
-#' of the bin range is a curve, which is what a default should be.
+#' of the bin range gives a curve.
 #'
 #' Only a sex whose slot holds a peak is seeded. Under a par sex offset the
 #' slots of every sex beyond the first hold offsets on the first sex's
@@ -767,7 +775,7 @@ setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fle
 #'   specifications, used to tell a peak from an offset.
 #'
 #' @return \code{pars} with the peak slot of every double normal fleet set to
-#'   the middle of the bin range, for the sexes that carry a peak there.
+#'   the middle of the bin range, for the sexes that have a peak there.
 #'
 #' @keywords internal
 seed_dbnrml_peak <- function(pars, sel_model_arr, bin_vec, sex_offset = NULL) {
@@ -801,14 +809,14 @@ setup_dbnrml_raw <- function(x, n_fleets, what) {
   x
 }
 
-#' Set up sex offsets on selectivity for one selectivity stream
+#' Set up sex offsets on selectivity for one selectivity data source
 #'
 #' Parses the per-fleet sex-offset specification, stores the model flags, and
 #' creates the curve scale-offset parameters with their factor map. Under a
 #' \code{"par"} offset the sexes beyond the first store additive offsets on the
 #' first sex's transformed-scale fixed-effect parameters, which needs no new
 #' parameters, only the flag. Under a \code{"scale"} offset each sex beyond the
-#' first carries a constant log-scale offset on its whole realized curve,
+#' first has a constant log-scale offset on its whole realized curve,
 #' estimated per region and block.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}.
@@ -816,7 +824,7 @@ setup_dbnrml_raw <- function(x, n_fleets, what) {
 #'   \code{"par"}, \code{"scale"}, \code{"par_scale"}, \code{"apical"}, or
 #'   \code{"par_apical"}.
 #' @param prefix One of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
-#' @param n_fleets Integer. Number of fleets in this stream.
+#' @param n_fleets Integer. Number of fleets in this data source.
 #' @param fleet_label Character used in messages.
 #' @param sel_model_arr Integer array \code{[region, year, fleet]} of functional
 #'   forms, used to refuse a scale offset on forms whose standardization would
@@ -840,9 +848,19 @@ setup_dbnrml_raw <- function(x, n_fleets, what) {
 #' @return \code{input_list} with the flags, scale parameters, and map added.
 #'
 #' @keywords internal
-setup_sel_sex_offset <- function(input_list, sex_offset, prefix, n_fleets, fleet_label,
-                                 sel_model_arr, cont_tv_mat, max_blks, sel_blocks = NULL,
-                                 fixed_spec = NULL, starting_values = list()) {
+setup_sel_sex_offset <- function(
+  input_list,
+  sex_offset,
+  prefix,
+  n_fleets,
+  fleet_label,
+  sel_model_arr,
+  cont_tv_mat,
+  max_blks,
+  sel_blocks = NULL,
+  fixed_spec = NULL,
+  starting_values = list()
+) {
 
   scale_nm <- paste0("ln_", prefix, "sel_sex_scale")
   par_flag_nm <- paste0(prefix, "sel_sex_par_offset")
@@ -865,9 +883,8 @@ setup_sel_sex_offset <- function(input_list, sex_offset, prefix, n_fleets, fleet
     if(any(sel_model_arr[,,f] != 4)) stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests an apical offset, which is the height the double normal builds its limbs up to. That fleet is not on the double normal. Use the scale offset, which multiplies whatever curve the form returns.")
   } # end f loop
 
-  # Under a par offset the later sexes' stored slots ARE the offsets, so a
-  # specification sharing those slots across sexes would make them the first
-  # sex's parameters and double them.
+  # under a par offset the later sexes' stored slots are the offsets, so a specification sharing
+  # those slots across sexes would make them the first sex's parameters and double them
   if(!is.null(fixed_spec)) for(f in seq_len(n_fleets)) {
     if(par_flag[f] == 1 && fixed_spec[f] %in% c("est_shared_s", "est_shared_r_s"))
       stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a par offset, but its fixed-parameter specification shares the sex slots, which would read the first sex's parameters as their own offsets. Use est_all or est_shared_r with a par offset.")
@@ -884,8 +901,8 @@ setup_sel_sex_offset <- function(input_list, sex_offset, prefix, n_fleets, fleet
   if(scale_nm %in% names(starting_values)) input_list$par[[scale_nm]] <- starting_values[[scale_nm]]
   else input_list$par[[scale_nm]] <- array(0, dim = c(input_list$data$n_regions, max_blks, input_list$data$n_sexes, n_fleets))
 
-  # The first sex is the reference and never carries a scale or apical offset, and a
-  # fleet only carries one for the blocks it actually has
+  # The first sex is the reference and never has a scale or apical offset, and a
+  # fleet only has one for the blocks it actually has
   map_scale <- array(NA_real_, dim = dim(input_list$par[[scale_nm]]))
   counter <- 1
   for(f in seq_len(n_fleets)) {
@@ -945,11 +962,11 @@ assign_sel_block <- function(arr, blocks_arr, fleet, block, value) {
 #' Ageing error is a property of the sampling program, so a fishery that ages
 #' its catch from otoliths and a survey that reads scales do not misclassify the
 #' same way. \code{AgeingError_fish} and \code{AgeingError_srv} let each fleet
-#' carry its own matrix, defaulting to the shared \code{AgeingError} so a model
+#' have its own matrix, defaulting to the shared \code{AgeingError} so a model
 #' written before they existed behaves exactly as it did.
 #'
 #' Every fleet must land on the same observed age bins, because the observed
-#' composition arrays carry a single age dimension shared across fleets.
+#' composition arrays have a single age dimension shared across fleets.
 #'
 #' @param x \code{NULL}, a 3D array \code{[n_ages x n_obs_ages x n_fleets]} for a
 #'   time-invariant fleet-specific matrix, or a 4D array
@@ -1005,7 +1022,7 @@ expand_fleet_ageing_error <- function(x, shared, n_fleets, what) {
 #' The post-fit diagnostics have to reproduce the expected compositions the
 #' likelihood built, which means reading the same ageing error the objective
 #' read. Models fitted before \code{AgeingError_fish} and \code{AgeingError_srv}
-#' existed carry only the shared matrix, so it is replicated across the fleets
+#' existed have only the shared matrix, so it is replicated across the fleets
 #' and the diagnostics come out exactly as they did.
 #'
 #' @param data Data list from the fitted model.
@@ -1015,9 +1032,9 @@ expand_fleet_ageing_error <- function(x, shared, n_fleets, what) {
 #' @return Array \code{[n_years x n_ages x n_obs_ages x n_fleets]}.
 #' @keywords internal
 fleet_ageing_error <- function(data, shared, which) {
-  nm <- paste0("AgeingError_", which)
+  ae_name <- paste0("AgeingError_", which)
   n_fleets <- if(which == "srv") data$n_srv_fleets else data$n_fish_fleets
-  if(!is.null(data[[nm]])) return(data[[nm]])
+  if(!is.null(data[[ae_name]])) return(data[[ae_name]])
   out <- array(0, dim = c(dim(shared), n_fleets))
   for(f in seq_len(n_fleets)) out[,,,f] <- shared
   return(out)
@@ -1025,7 +1042,7 @@ fleet_ageing_error <- function(data, shared, which) {
 
 #' A bin selection array, or NULL when it restricts nothing
 #'
-#' The composition machinery treats \code{NULL} as "fit every bin", which lets
+#' The composition routines treats \code{NULL} as "fit every bin", which lets
 #' the likelihood and the OSA packers skip the restriction entirely and lets a
 #' backwards-compatible all-ones array of the wrong length never be indexed
 #' into. Both the objective and \code{\link{get_osa}} decide that here, so they
@@ -1059,7 +1076,7 @@ bins_or_null <- function(x) {
 #' row off by that much reweights nothing, and \code{AgeingError} passes
 #' \code{tol = 0.05}. A length bin map is written by hand rather than read from a
 #' rounded table, so \code{LenBinMap} keeps the \code{1e-8} it has always been
-#' held to. Only a row off by more than \code{tol} is reported, since that means
+#' kept to. Only a row off by more than \code{tol} is reported, since that means
 #' the matrix is not the map its author thought it was.
 #'
 #' \code{strict} decides whether that is fatal. \code{LenBinMap} has always
@@ -1106,11 +1123,11 @@ check_bin_map <- function(x, n_model_bins, what, strict = TRUE, tol = 1e-8) {
   invisible(x)
 }
 
-#' Reject a bin restriction that leaves a stream nothing to fit
+#' Reject a bin restriction that leaves a data source nothing to fit
 #'
-#' A composition fitted over a single bin carries no information: the normalized
+#' A composition fitted over a single bin has no information: the normalized
 #' proportion in that bin is identically one whatever the model says. Every
-#' family degenerates, and the machinery around them degenerates further. The
+#' family degenerates, and the routines around them degenerates further. The
 #' logistic-normal families spend one bin as the additive log-ratio reference and
 #' so have no free element left, which gives a zero-length packed block, a
 #' zero-row label frame, and a zero-length slice request in
@@ -1155,20 +1172,20 @@ check_comp_bins_min <- function(bins_arr, like_vals, what) {
 #' observations, so the two are reconciled here instead by clearing the use flag.
 #'
 #' Clearing it changes nothing about the fit: the likelihood was already
-#' contributing zero for those blocks. It only stops the residual machinery
+#' contributing zero for those blocks. It only stops the residual routines
 #' inventing an observation that was never there. Anything cleared is reported,
-#' so a restriction that guts a stream is visible rather than silent.
+#' so a restriction that guts a data source is visible rather than silent.
 #'
 #' A block counts as empty when it holds no finite values at all, exactly as when
 #' it sums to zero, since that is the test the likelihood's own guard applies.
 #'
-#' @param obs Observation array for the stream.
-#' @param use Use-flag array for the stream, whose margins are \code{obs} without
+#' @param obs Observation array for the data source.
+#' @param use Use-flag array for the data source, whose dims are \code{obs} without
 #'   its bin and sex dimensions.
 #' @param bins_arr \code{[n_obs_bins x n_fleets]} 0/1 array.
 #' @param bin_dim Integer. Which dimension of \code{obs} holds the bins. The sex
 #'   dimension is taken to be the next one, and fleets the last.
-#' @param what Character. Stream name, used in the message.
+#' @param what Character. Data source name, used in the message.
 #'
 #' @return \code{use}, with emptied blocks cleared.
 #' @keywords internal
@@ -1177,11 +1194,11 @@ drop_empty_fitted_blocks <- function(obs, use, bins_arr, bin_dim, what) {
   if(all(bins_arr == 1)) return(use)                 # nothing restricted, nothing to check
   d <- dim(obs)
   if(is.null(d) || length(d) < bin_dim + 1) return(use)
-  if(d[bin_dim] != nrow(bins_arr)) return(use)       # sized for a different stream, left to the packers to reject
+  if(d[bin_dim] != nrow(bins_arr)) return(use)       # sized for a different data source, left to the packers to reject
 
   n_dims <- length(d)
-  margins <- setdiff(seq_len(n_dims), c(bin_dim, bin_dim + 1))   # everything but bins and sexes
-  fleet_pos <- length(margins)                                    # fleets are last in obs, so last in margins
+  dims <- setdiff(seq_len(n_dims), c(bin_dim, bin_dim + 1))   # everything but bins and sexes
+  fleet_pos <- length(dims)                                    # fleets are last in obs, so last in dims
   cleared <- 0
 
   for(f in seq_len(ncol(bins_arr))) {
@@ -1193,7 +1210,7 @@ drop_empty_fitted_blocks <- function(obs, use, bins_arr, bin_dim, what) {
     sub <- do.call(`[`, c(list(obs), idx, list(drop = FALSE)))
     # Same predicate the likelihood's own guard uses: a block with no finite values
     # counts as empty just as an all-zero one does, so the two cannot disagree
-    tot <- apply(sub, margins, function(v) if(!any(is.finite(v))) 0 else sum(v, na.rm = TRUE))
+    tot <- apply(sub, dims, function(v) if(!any(is.finite(v))) 0 else sum(v, na.rm = TRUE))
     dim(tot) <- dim(tot)                                          # keep it an array for the assignment below
     uidx <- lapply(seq_along(dim(use)), function(i) seq_len(dim(use)[i]))
     uidx[[length(dim(use))]] <- f
@@ -1217,48 +1234,68 @@ drop_empty_fitted_blocks <- function(obs, use, bins_arr, bin_dim, what) {
 #'
 #' \code{\link{drop_empty_fitted_blocks}} runs once at setup, against the
 #' observations the model was built with. A self test or closed loop replaces
-#' those observations replicate by replicate while carrying the setup's use flags
+#' those observations replicate by replicate while with the setup's use flags
 #' forward, so under a bin restriction a simulated replicate can hold nothing in
 #' the fitted bins of a block the flags still call used. This walks the marginal
-#' composition streams of a data list and reconciles them again.
+#' composition data sources of a data list and reconciles them again.
 #'
-#' A no-op when no stream is restricted, which is the usual case.
+#' A no-op when no data source is restricted, which is the usual case.
 #'
 #' @param data A data list whose \code{Obs*} arrays have just been replaced.
 #'
 #' @return \code{data}, with its use flags reconciled.
 #' @keywords internal
 resync_fitted_blocks <- function(data) {
-  streams <- list(
+  data_sources <- list(
     list(obs = "ObsFishAgeComps", use = "UseFishAgeComps", bins = "FishAgeComps_bins", d = 4),
     list(obs = "ObsFishLenComps", use = "UseFishLenComps", bins = "FishLenComps_bins", d = 4),
     list(obs = "ObsSrvAgeComps", use = "UseSrvAgeComps", bins = "SrvAgeComps_bins", d = 4),
     list(obs = "ObsSrvLenComps", use = "UseSrvLenComps", bins = "SrvLenComps_bins", d = 4),
-    list(obs = "ObsFishAgeComps_pop", use = "UseFishAgeComps_pop", bins = "FishAgeComps_pop_bins", d = 5),
-    list(obs = "ObsFishLenComps_pop", use = "UseFishLenComps_pop", bins = "FishLenComps_pop_bins", d = 5),
-    list(obs = "ObsSrvAgeComps_pop", use = "UseSrvAgeComps_pop", bins = "SrvAgeComps_pop_bins", d = 5),
-    list(obs = "ObsSrvLenComps_pop", use = "UseSrvLenComps_pop", bins = "SrvLenComps_pop_bins", d = 5),
+    list(
+      obs = "ObsFishAgeComps_pop",
+      use = "UseFishAgeComps_pop",
+      bins = "FishAgeComps_pop_bins",
+      d = 5
+    ),
+    list(
+      obs = "ObsFishLenComps_pop",
+      use = "UseFishLenComps_pop",
+      bins = "FishLenComps_pop_bins",
+      d = 5
+    ),
+    list(
+      obs = "ObsSrvAgeComps_pop",
+      use = "UseSrvAgeComps_pop",
+      bins = "SrvAgeComps_pop_bins",
+      d = 5
+    ),
+    list(
+      obs = "ObsSrvLenComps_pop",
+      use = "UseSrvLenComps_pop",
+      bins = "SrvLenComps_pop_bins",
+      d = 5
+    ),
     list(obs = "ObsFish_caal", use = "UseFish_caal", bins = "Fish_caal_bins", d = 5),
     list(obs = "ObsSrv_caal", use = "UseSrv_caal", bins = "Srv_caal_bins", d = 5)
   )
-  for(st in streams) {
-    if(is.null(data[[st$bins]]) || all(data[[st$bins]] == 1)) next
-    data[[st$use]] <- drop_empty_fitted_blocks(data[[st$obs]], data[[st$use]], data[[st$bins]], st$d, st$obs)
-  } # end st loop
+  for(state in data_sources) {
+    if(is.null(data[[state$bins]]) || all(data[[state$bins]] == 1)) next
+    data[[state$use]] <- drop_empty_fitted_blocks(data[[state$obs]], data[[state$use]], data[[state$bins]], state$d, state$obs)
+  } # end state loop
   return(data)
 }
 
-#' Number of observed bins a composition stream is recorded on
+#' Number of observed bins a composition data source is recorded on
 #'
 #' The \code{*_bins} arguments index into observed bins, so they need the bin
 #' count of the array they will be applied to. That is normally read straight
-#' off the supplied observation array, but a model carrying no data for a stream
+#' off the supplied observation array, but a model with no data for a data source
 #' can hand in an array with no dimensions at all, so the model's own observed
 #' bin count stands in: the ageing error's observed-age dimension for ages, and
 #' \code{\link{obs_len_bins}} for lengths.
 #'
 #' @param input_list Input list, used for the fallback.
-#' @param obs The observation array for the stream, possibly dimensionless.
+#' @param obs The observation array for the data source, possibly dimensionless.
 #' @param dim_i Integer. Which dimension of \code{obs} holds the bins.
 #' @param axis Either \code{"age"} or \code{"len"}.
 #'
@@ -1273,16 +1310,16 @@ obs_bin_count <- function(input_list, obs, dim_i, axis) {
   return(dim(ae)[length(dim(ae))])   # last dimension is the observed ages, 2D or 3D alike
 }
 
-#' Parse and report the observed bins a composition stream is fitted over
+#' Parse and report the observed bins a composition data source is fitted over
 #'
 #' Wraps \code{\link{parse_bin_subset}} and records which fleets ended up
-#' restricted, so the setup messages name the bins a stream is fitted over rather
+#' restricted, so the setup messages name the bins a data source is fitted over rather
 #' than leaving it implicit. Used for every \code{*_bins} argument, age and
 #' length, retained and discarded, marginal and conditional, so a restriction
-#' reads the same way whichever stream it was set on.
+#' reads the same way whichever data source it was set on.
 #'
 #' @param bins List, array, or \code{NULL}. Per-fleet bin selection.
-#' @param n_bins Integer. Number of observed bins the stream is recorded on,
+#' @param n_bins Integer. Number of observed bins the data source is recorded on,
 #'   that is after any ageing error or length bin map.
 #' @param n_fleets Integer. Number of fleets.
 #' @param what Character. Argument name, used in messages and errors.
@@ -1322,4 +1359,96 @@ setup_dbnrml_startbin <- function(x, n_fleets, n_bins, what) {
   if(length(x) != n_fleets) stop(what, " must have one entry per fleet (", n_fleets, ")")
   if(any(x < 1 | x > n_bins | x != round(x))) stop(what, " entries must be bin indices between 1 and ", n_bins)
   as.integer(x)
+}
+
+#' Hold a natural mortality array across seasons
+#'
+#' M is an instantaneous rate per year on a
+#' \code{[n_pop x n_regions x n_years x n_seas x n_ages x n_sexes]} grid. An
+#' array without the season dim gets kept at one rate across seasons, which is
+#' the model it came from. An array that already has it passes through.
+#'
+#' @param x Natural mortality array, with or without seasons. \code{NULL} passes
+#'   through.
+#' @param n_seas Number of seasons.
+#' @param seas_dim Where the season dim sits. 4 is the model's layout; the
+#'   recruitment routines use a smaller grid with seasons third.
+#' @param n_dim Number of dims once seasons are there.
+#'
+#' @return An \code{n_dim} array with seasons in \code{seas_dim}.
+#'
+#' @keywords internal
+expand_natmort_seasons <- function(x, n_seas, seas_dim = 4, n_dim = 6) {
+
+  if(is.null(x)) return(NULL)
+  d <- dim(x)
+  if(length(d) == n_dim) return(x)
+  if(length(d) != n_dim - 1) stop("A natural mortality array must have ", n_dim, " dimensions with the season dim in position ", seas_dim, ", or ", n_dim - 1, " without it, but had ", length(d))
+
+  # insert the season dim, same rate in each
+  out_d <- append(d, n_seas, after = seas_dim - 1)
+  out <- array(0, dim = out_d)
+  args <- lapply(out_d, seq_len)
+  for(seas in seq_len(n_seas)) {
+    args[[seas_dim]] <- seas
+    out <- do.call(`[<-`, c(list(out), args, list(array(x, dim = d))))
+  } # end seas loop
+
+  out
+}
+
+#' Collapse a seasonal natural mortality array to an annual rate
+#'
+#' Mortality in a season is the rate times its duration, so the annual total is
+#' the duration weighted sum over seasons. Read by anything stepping a whole year
+#' at once: equilibrium seeds and the plus group geometric series.
+#'
+#' @param natmort Array of rates with a season dim, either the full model grid or
+#'   the smaller one the reference points use.
+#' @param seasdur Season durations, summing to one.
+#' @param seas_dim Position of the season dim.
+#'
+#' @return \code{natmort} with seasons summed out. A constant rate comes back
+#'   unchanged.
+#'
+#' @keywords internal
+collapse_natmort_annual <- function(natmort, seasdur, seas_dim = 4) {
+
+  d <- dim(natmort)
+  if(is.null(d) || length(d) < seas_dim) stop("natmort has no season dim in position ", seas_dim)
+  if(d[seas_dim] != length(seasdur)) stop("The season dimension of natmort is ", d[seas_dim], " but seasdur has ", length(seasdur), " entries")
+
+  # slice at a time so this stays differentiable on an AD array
+  args <- lapply(d, seq_len)
+  out <- NULL
+  for(seas in seq_along(seasdur)) {
+    args[[seas_dim]] <- seas
+    slice <- do.call(`[`, c(list(natmort), args, list(drop = TRUE)))
+    out <- if(is.null(out)) slice * seasdur[seas] else out + (slice * seasdur[seas])
+  } # end seas loop
+
+  array(out, dim = d[-seas_dim])
+}
+
+#' Truncate an array's year dimension
+#'
+#' Keeps the first \code{n_years} of one dim without caring how many dims the
+#' array has, so arrays that have gained a dim still work.
+#'
+#' @param arr Array to truncate. \code{NULL} passes through.
+#' @param n_years Number of years to keep.
+#' @param yr_dim Position of the year dim.
+#'
+#' @return \code{arr} with years truncated.
+#'
+#' @keywords internal
+truncate_years <- function(arr, n_years, yr_dim = 3) {
+
+  if(is.null(arr)) return(NULL)
+  d <- dim(arr)
+  if(is.null(d) || length(d) < yr_dim) stop("The array has no dimension in position ", yr_dim, " to truncate")
+
+  args <- lapply(d, seq_len)
+  args[[yr_dim]] <- seq_len(n_years)
+  do.call(`[`, c(list(arr), args, list(drop = FALSE)))
 }

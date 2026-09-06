@@ -2,7 +2,7 @@ library(SPoRC)
 library(testthat)
 
 # Fleet-specific ageing error. A fishery reading otoliths and a survey reading
-# scales do not misclassify the same way, so each fleet may carry its own matrix.
+# scales do not misclassify the same way, so each fleet may have its own matrix.
 # Both default to the shared AgeingError, and a model written before these
 # existed has to come out bit for bit unchanged.
 
@@ -57,7 +57,7 @@ test_that("expand_fleet_ageing_error refuses shapes that would misalign the comp
   expect_error(expand_fleet_ageing_error(wrong_fleets, shared, 2, "AgeingError_fish"), "3 fleets")
 
   # a different observed age count per fleet cannot work: the observed comp arrays
-  # carry one age dimension shared across fleets
+  # have one age dimension shared across fleets
   wrong_obs <- array(0, dim = c(n_ages, n_ages - 1, 2))
   for(f in 1:2) wrong_obs[,,f] <- diag(1, n_ages)[, 2:n_ages]
   expect_error(expand_fleet_ageing_error(wrong_obs, shared, 2, "AgeingError_fish"), "matching AgeingError")
@@ -93,7 +93,7 @@ test_that("fleet_ageing_error falls back for a model fitted before the arrays ex
 })
 
 test_that("a fleet's own ageing error changes only that fleet's composition likelihood", {
-  input <- objective_fixture_input()
+  input <- objective_setup_input()
   base <- evaluate_input(input)
   n_ages <- length(input$data$ages)
   n_yrs <- length(input$data$years)
@@ -122,7 +122,7 @@ test_that("a fleet's own ageing error changes only that fleet's composition like
 # the shared matrix. That fails silently: the self-test still runs, it just
 # estimates against an ageing error the data were never generated with.
 
-test_that("Simulate_Pop_Static carries the per-fleet matrices through to the estimation model", {
+test_that("Simulate_Pop_Static holds the per-fleet matrices through to the estimation model", {
   skip_if_not(exists("caal_make_om"), "helper-selftest_caal.R not loaded")
 
   om <- caal_make_om()

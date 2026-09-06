@@ -13,7 +13,7 @@ weights for any subset of \code{"smooth_bin_curve"}, \code{"smooth_bin_diff"},
 \code{"smooth_mean_center"}. Any name not supplied defaults to \code{0}.
 Each weight is either a scalar applied to every year, or a vector with one
 value per model year, which lets a penalty act only in some years or act
-with a different strength in each. The list may also carry
+with a different strength in each. The list may also have
 \code{"bin_range"}, a length-two vector giving the first and last age or
 length bin the penalties apply over; the default of every bin is what a
 missing \code{bin_range} reproduces.}

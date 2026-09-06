@@ -1,12 +1,9 @@
 # Stage 3 of 3: post fit
 #
-# Stock-recruit Fmsy solvers. They differ in what is held common across space:
-# single region, one global F, or a local F per region, with separate single and
-# multi population versions of the local case. Each supports both stock-recruit
-# forms through the three helpers below; rec_model comes in on the data list and
-# defaults to Beverton-Holt when absent, which is what these solvers used to
-# assume unconditionally. rec_model 0 (mean recruitment) has no curve at all and
-# is rejected rather than folded into the Beverton-Holt branch.
+# Stock-recruit Fmsy solvers, differing in what is kept common across space: single region, one global
+# F, or a local F per region. rec_model 0 has no curve at all and is rejected rather than folded in.
+
+# Equilibrium Recruitment ---------------------------------------------------
 
 #' Equilibrium recruitment from spawning biomass per recruit
 #'
@@ -64,6 +61,8 @@ equil_rec_ssb_deriv <- function(S, S0, R0, h, rec_model) {
   }
 }
 
+# Single Region MSY ---------------------------------------------------------
+
 #' Compute Beverton-Holt Fmsy for a single-region or non-spatial model
 #'
 #' Finds \eqn{F_{MSY}} by maximizing equilibrium yield under a
@@ -104,17 +103,18 @@ single_region_Fmsy <- function(pars, data) {
 
   RTMB::getAll(pars, data)
 
-  # getAll defines rec_model whenever the caller supplied it. Hand-built data
-  # lists that predate the Ricker will not have, so fall back rather than
-  # assigning before getAll, which would collide with its own definition.
+  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
+  # the Ricker fall back here rather than being assigned before getAll, which would collide
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
-  # The helpers below branch on Ricker against everything else, so without this
-  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
+  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)
+
+  # annual total, read by the plus group series which steps a whole year
+  natmort_annual = collapse_natmort_annual(natmort, seasdur, seas_dim = 2)
 
   # Exponentiate Fmsy
   Fmsy = exp(log_Fmsy)
@@ -136,7 +136,7 @@ single_region_Fmsy <- function(pars, data) {
         F_seas = sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p,seas,j - 1, ] * ret_sel[p,seas,j - 1,]) + # retained F
           sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p,seas,j - 1, ] * (1 - ret_sel[p,seas,j - 1,]) * dmr[seas,]) # discard F
         landed_F_seas = sum(F_fract_flt[seas, landed_fleets] * Fmsy * fish_sel[p,seas,j - 1, landed_fleets] * ret_sel[p,seas,j - 1,landed_fleets]) # landed F
-        M_a_seas = natmort[p, j - 1] * seasdur[seas]
+        M_a_seas = natmort[p,seas, j - 1] * seasdur[seas]
         Z_seas = F_seas + M_a_seas
 
         # Extract out numbers
@@ -184,7 +184,7 @@ single_region_Fmsy <- function(pars, data) {
       F_seas = sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,] * ret_sel[p, seas, n_ages-1,]) +
         sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,] * (1 - ret_sel[p, seas, n_ages-1,]) * dmr[seas,])
       landed_F_seas = sum(F_fract_flt[seas, landed_fleets] * Fmsy * fish_sel[p,seas,n_ages - 1, landed_fleets] * ret_sel[p,seas,n_ages - 1,landed_fleets]) # landed F
-      Z_seas = natmort[p, n_ages-1] * seasdur[seas] + F_seas
+      Z_seas = natmort[p,seas, n_ages-1] * seasdur[seas] + F_seas
       CAA[p, seas, n_ages-1] = tmp_fished_caa_p * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
       tmp_fished_caa_p = tmp_fished_caa_p * exp(-Z_seas)
     }
@@ -195,7 +195,7 @@ single_region_Fmsy <- function(pars, data) {
     for(p in 1:n_pop) {
       for (seas in 1:(spawn_seas - 1)) {
         # Exponential mortality
-        M_seas = natmort[p,n_ages - 1] * seasdur[seas]
+        M_seas = natmort[p,seas,n_ages - 1] * seasdur[seas]
         tmp_unfished[p] = tmp_unfished[p] * exp(-M_seas)
         tmp_fished[p] = tmp_fished[p] * exp(-(sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,] * ret_sel[p, seas, n_ages-1, ]) +
                                               sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages-1,]  * (1 - ret_sel[p, seas, n_ages-1, ]) * dmr[seas,]) + M_seas))
@@ -206,9 +206,9 @@ single_region_Fmsy <- function(pars, data) {
   # Get spawning biomass after mortality decrement
   for(p in 1:n_pop) {
     SB_age[1, p, n_ages - 1] = tmp_unfished[p] * WAA[p,spawn_seas, n_ages - 1] * MatAA[p,spawn_seas, n_ages - 1] *
-      exp(-t_spawn * natmort[p,n_ages - 1] * seasdur[spawn_seas])
+      exp(-t_spawn * natmort[p,spawn_seas,n_ages - 1] * seasdur[spawn_seas])
     SB_age[2, p, n_ages - 1] = tmp_fished[p] * WAA[p,spawn_seas, n_ages - 1] * MatAA[p,spawn_seas, n_ages - 1] *
-      exp(-t_spawn * (natmort[p,n_ages - 1] * seasdur[spawn_seas] +
+      exp(-t_spawn * (natmort[p,spawn_seas,n_ages - 1] * seasdur[spawn_seas] +
                         sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages-1,] * ret_sel[p, spawn_seas, n_ages-1, ]) +
                         sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages-1,] * (1 - ret_sel[p, spawn_seas, n_ages-1, ]) * dmr[spawn_seas, ]) ))
   }
@@ -222,8 +222,8 @@ single_region_Fmsy <- function(pars, data) {
       F_annual_plus = F_annual_plus + sum(F_fract_flt[seas,] * Fmsy * fish_sel[p,seas,n_ages,] * ret_sel[p,seas,n_ages,]) +
         sum(F_fract_flt[seas, ] * Fmsy * fish_sel[p,seas,n_ages, ] * (1 - ret_sel[p,seas,n_ages,]) * dmr[seas,])
     }
-    M_penult = natmort[p, n_ages - 1]
-    M_plus = natmort[p, n_ages]
+    M_penult = natmort_annual[p, n_ages - 1]
+    M_plus = natmort_annual[p, n_ages]
     Nspr[1, p, n_ages] = Nspr[1, p, n_ages-1] * exp(-M_penult) / (1 - exp(-M_plus))
     Nspr[2, p, n_ages] = Nspr[2, p, n_ages-1] * exp(-(M_penult + F_annual_penult)) / (1 - exp(-(M_plus + F_annual_plus)))
   }
@@ -240,7 +240,7 @@ single_region_Fmsy <- function(pars, data) {
       F_seas = sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * ret_sel[p, seas, n_ages,]) +
         sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * (1 - ret_sel[p, seas, n_ages,]) * dmr[seas,])
       landed_F_seas = sum(F_fract_flt[seas, landed_fleets] * Fmsy * fish_sel[p,seas,n_ages, landed_fleets] * ret_sel[p,seas,n_ages,landed_fleets]) # landed F
-      Z_seas = natmort[p, n_ages] * seasdur[seas] + F_seas
+      Z_seas = natmort[p,seas, n_ages] * seasdur[seas] + F_seas
       CAA[p, seas, n_ages] = tmp_fished_caa_p * (landed_F_seas / Z_seas) * (1 - exp(-Z_seas))
       tmp_fished_caa_p = tmp_fished_caa_p * exp(-Z_seas)
     }
@@ -250,8 +250,8 @@ single_region_Fmsy <- function(pars, data) {
   if (spawn_seas > 1) {
     for(p in 1:n_pop) {
       for (seas in 1:(spawn_seas - 1)) {
-        tmp_unfished[p] = tmp_unfished[p] * exp(-natmort[p,n_ages] * seasdur[seas])
-        tmp_fished[p] = tmp_fished[p] * exp(-(natmort[p,n_ages] * seasdur[seas] +
+        tmp_unfished[p] = tmp_unfished[p] * exp(-natmort[p,seas,n_ages] * seasdur[seas])
+        tmp_fished[p] = tmp_fished[p] * exp(-(natmort[p,seas,n_ages] * seasdur[seas] +
                                                 sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * ret_sel[p, seas, n_ages,]) +
                                                 sum(F_fract_flt[seas,] * Fmsy * fish_sel[p, seas, n_ages,] * (1 - ret_sel[p, seas, n_ages,]) * dmr[seas,])
                                               ))
@@ -261,9 +261,9 @@ single_region_Fmsy <- function(pars, data) {
 
   for(p in 1:n_pop) {
     SB_age[1, p, n_ages] = tmp_unfished[p] * WAA[p,spawn_seas, n_ages] * MatAA[p,spawn_seas, n_ages] *
-      exp(-t_spawn * natmort[p,n_ages] * seasdur[spawn_seas])
+      exp(-t_spawn * natmort[p,spawn_seas,n_ages] * seasdur[spawn_seas])
     SB_age[2, p, n_ages] = tmp_fished[p] * WAA[p,spawn_seas, n_ages] * MatAA[p,spawn_seas, n_ages] *
-      exp(-t_spawn * (natmort[p,n_ages] * seasdur[spawn_seas] +
+      exp(-t_spawn * (natmort[p,spawn_seas,n_ages] * seasdur[spawn_seas] +
                         sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages,] * ret_sel[p, spawn_seas, n_ages, ]) +
                         sum(F_fract_flt[spawn_seas,] * Fmsy * fish_sel[p, spawn_seas, n_ages,] * (1 - ret_sel[p, spawn_seas, n_ages, ]) * dmr[spawn_seas, ])
                       ))
@@ -306,6 +306,8 @@ single_region_Fmsy <- function(pars, data) {
 
   return(obj_fun)
 }
+
+# Global MSY ----------------------------------------------------------------
 
 #' Compute Beverton-Holt Fmsy for a spatially explicit model
 #'
@@ -429,18 +431,16 @@ global_Fmsy <- function(pars,
 
   RTMB::getAll(pars, data) # get parameters and data
 
-  # getAll defines rec_model whenever the caller supplied it. Hand-built data
-  # lists that predate the Ricker will not have, so fall back rather than
-  # assigning before getAll, which would collide with its own definition.
+  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
+  # the Ricker fall back here rather than being assigned before getAll, which would collide
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
   # As with rec_model, expm_nsub is only present on data lists built since the
   # implicit matrix exponential option, so fall back to the exact exponential.
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
-  # The helpers below branch on Ricker against everything else, so without this
-  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
+  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)
@@ -490,27 +490,23 @@ global_Fmsy <- function(pars,
       ret_F_seas = ret_F_by_region(j - 1, seas)
       disc_F_seas = disc_F_by_region(j - 1, seas)
       landed_F_seas = landed_F_by_region(j - 1, seas, is_discard_fleet)
-      M_a_seas = natmort[,j - 1] * seasdur[seas]
+      M_a_seas = natmort[,seas,j - 1] * seasdur[seas]
       Z_seas = M_a_seas + ret_F_seas + disc_F_seas
 
       # extract quantities
       tmp_unfished = Nspr[1,, j - 1]
       tmp_fished   = Nspr[2,, j - 1]
 
-      # Add in seasonal recruits. Every season's share of recruitment is apportioned
-      # across regions by rec_region_prop, matching the initial seeding above
-      # (Nspr[,,1] = rec_region_prop * sex_ratio_f * rec_seas_prop[1]). Dropping
-      # rec_region_prop here would spread seasons after the first uniformly across
-      # regions, which only shows up when n_seas > 1 and n_regions > 1.
+      # add in seasonal recruits, apportioned across regions by rec_region_prop to match the initial
+      # seeding; dropping it would spread seasons after the first uniformly across regions
       if(seas > 1 && j - 1 == 1) {
         add_rec = rec_seas_prop[seas] * sex_ratio_f * rec_region_prop
         tmp_unfished = tmp_unfished + add_rec
         tmp_fished   = tmp_fished   + add_rec
       }
 
-      ## Movement operators for this age. Ages that do not move get an identity
-      ## transition and a zero generator, which leaves survival unchanged under
-      ## every move_timing.
+      ## movement operators for this age. ages that do not move get an identity transition and a
+      ## zero generator, which leaves survival unchanged under every move_timing
       if (do_recruits_move == 1 || (do_recruits_move == 0 && j > 2)) {
         Mv = Movement[,,seas, j - 1]
         Qv = Mrate[,,seas, j - 1]
@@ -528,9 +524,8 @@ global_Fmsy <- function(pars,
         SB_age[2,, j - 1] = tmp_fished_spawn * WAA[, spawn_seas, j - 1] * MatAA[, spawn_seas, j - 1]
       }
 
-      # Catch-at-age. Catch is taken where the fish are during the season: post-movement
-      # under move_timing 0, pre-movement under 1. Under continuous movement they
-      # redistribute while dying, so the spatial Baranov integral is required instead.
+      # catch-at-age, taken where the fish are during the season: post-movement under move_timing 0,
+      # pre-movement under 1. under continuous movement the spatial Baranov integral is used instead
       CAA[,seas, j - 1] = catch_at_age(tmp_fished, Mv, Z_seas, Qv, seasdur[seas],
                                        landed_F_seas, move_timing, expm_nsub = expm_nsub)
 
@@ -553,16 +548,15 @@ global_Fmsy <- function(pars,
   tmp_unfished = Nspr[1,,n_ages-1]
   tmp_fished = Nspr[2,,n_ages-1]
 
-  # Catch-at-age for penultimate age. tmp_caa carries the survivors from season to season,
-  # so each season's catch is taken from the fish still alive to be caught in it; tmp_fished
-  # itself stays at the start of the year for the spawning-season advance below.
+  # catch-at-age for the penultimate age. tmp_caa holds the survivors season to season, so each
+  # season's catch comes from the fish still alive to be caught in it
   tmp_caa = tmp_fished
   for (seas in 1:n_seas) {
     # Compute F and Z for this age/season
     ret_F_seas = ret_F_by_region(n_ages - 1, seas)
     disc_F_seas = disc_F_by_region(n_ages - 1, seas)
     landed_F_seas = landed_F_by_region(n_ages - 1, seas, is_discard_fleet)
-    Z_seas = natmort[,n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
+    Z_seas = natmort[,seas,n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
     CAA[,seas, n_ages - 1] = catch_at_age(tmp_caa, Movement[,,seas,n_ages-1], Z_seas,
                                           Mrate[,,seas,n_ages-1], seasdur[seas],
                                           landed_F_seas, move_timing, expm_nsub = expm_nsub)
@@ -576,7 +570,7 @@ global_Fmsy <- function(pars,
 
       ret_F_seas = ret_F_by_region(n_ages - 1, seas)
       disc_F_seas = disc_F_by_region(n_ages - 1, seas)
-      M_seas = natmort[,n_ages-1] * seasdur[seas]
+      M_seas = natmort[,seas,n_ages-1] * seasdur[seas]
       Z_seas = M_seas + ret_F_seas + disc_F_seas
 
       # Apply seasonal movement and mortality together, per move_timing
@@ -589,7 +583,7 @@ global_Fmsy <- function(pars,
   }
 
   ## Penultimate age spawning biomass; t_spawn mortality folded into spawn_state
-  Zu_spawn = natmort[, n_ages - 1] * seasdur[spawn_seas]
+  Zu_spawn = natmort[,spawn_seas, n_ages - 1] * seasdur[spawn_seas]
   Zf_spawn = Zu_spawn + ret_F_by_region(n_ages - 1, spawn_seas) + disc_F_by_region(n_ages - 1, spawn_seas)
   tmp_unfished = spawn_state(tmp_unfished, Movement[,, spawn_seas, n_ages - 1], Zu_spawn,
                              Mrate[,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
@@ -607,8 +601,8 @@ global_Fmsy <- function(pars,
 
   ## Plus group analytical solution
   Ts = build_plus_group_T(
-    M_penult   = natmort[, n_ages - 1],
-    M_plus     = natmort[, n_ages],
+    M_penult = array(natmort[,, n_ages - 1], dim = c(n_regions, n_seas)),
+    M_plus = array(natmort[,, n_ages], dim = c(n_regions, n_seas)),
     F_penult   = F_penult,
     F_plus     = F_plus,
     Mov_penult = array(Movement[,,, n_ages - 1], dim = c(n_regions, n_regions, n_seas)),
@@ -619,7 +613,8 @@ global_Fmsy <- function(pars,
     Mrate_penult = array(Mrate[,,, n_ages - 1], dim = c(n_regions, n_regions, n_seas)),
     Mrate_plus   = array(Mrate[,,, n_ages], dim = c(n_regions, n_regions, n_seas)),
     move_timing = move_timing,
-    expm_nsub = expm_nsub)
+    expm_nsub = expm_nsub
+  )
 
   pg = solve_plus_group(Ts, Nspr[1,, n_ages - 1], Nspr[2,, n_ages - 1], n_regions)
   Nspr[1,, n_ages] = pg$unfished
@@ -635,7 +630,7 @@ global_Fmsy <- function(pars,
     ret_F_seas = ret_F_by_region(n_ages, seas)
     disc_F_seas = disc_F_by_region(n_ages, seas)
     landed_F_seas = landed_F_by_region(n_ages, seas, is_discard_fleet)
-    Z_seas = natmort[,n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
+    Z_seas = natmort[,seas,n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
     CAA[,seas, n_ages] = catch_at_age(tmp_caa, Movement[,,seas,n_ages], Z_seas,
                                       Mrate[,,seas,n_ages], seasdur[seas],
                                       landed_F_seas, move_timing, expm_nsub = expm_nsub)
@@ -648,7 +643,7 @@ global_Fmsy <- function(pars,
     for (seas in 1:(spawn_seas - 1)) {
 
       # get mortality
-      M_seas = natmort[,n_ages] * seasdur[seas]
+      M_seas = natmort[,seas,n_ages] * seasdur[seas]
       ret_F_seas = ret_F_by_region(n_ages, seas)
       disc_F_seas = disc_F_by_region(n_ages, seas)
       Z_seas = ret_F_seas + M_seas + disc_F_seas
@@ -663,7 +658,7 @@ global_Fmsy <- function(pars,
   }
 
   ## Plus group spawning biomass; t_spawn mortality folded into spawn_state
-  Zu_spawn_plus = natmort[, n_ages] * seasdur[spawn_seas]
+  Zu_spawn_plus = natmort[,spawn_seas, n_ages] * seasdur[spawn_seas]
   Zf_spawn_plus = Zu_spawn_plus + ret_F_by_region(n_ages, spawn_seas) + disc_F_by_region(n_ages, spawn_seas)
   tmp_unfished = spawn_state(tmp_unfished, Movement[,, spawn_seas, n_ages], Zu_spawn_plus,
                              Mrate[,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
@@ -699,6 +694,8 @@ global_Fmsy <- function(pars,
 
   return(obj_fun)
 }
+
+# Local MSY, Single Population ----------------------------------------------
 
 #' Compute region-specific Beverton-Holt Fmsy for a spatially explicit
 #' single-population model
@@ -795,18 +792,16 @@ local_Fmsy_sglpop <- function(pars, data) {
 
   RTMB::getAll(pars, data) # get parameters and data
 
-  # getAll defines rec_model whenever the caller supplied it. Hand-built data
-  # lists that predate the Ricker will not have, so fall back rather than
-  # assigning before getAll, which would collide with its own definition.
+  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
+  # the Ricker fall back here rather than being assigned before getAll, which would collide
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
   # As with rec_model, expm_nsub is only present on data lists built since the
   # implicit matrix exponential option, so fall back to the exact exponential.
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
-  # The helpers below branch on Ricker against everything else, so without this
-  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
+  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)
@@ -865,7 +860,7 @@ local_Fmsy_sglpop <- function(pars, data) {
         ret_F_seas = ret_F_by_region(j - 1, seas)
         disc_F_seas = disc_F_by_region(j - 1, seas)
         landed_F_seas = landed_F_by_region(j - 1, seas, is_discard_fleet)
-        M_seas = natmort[, j - 1] * seasdur[seas]
+        M_seas = natmort[,seas, j - 1] * seasdur[seas]
         Z_seas = ret_F_seas + M_seas + disc_F_seas
 
         # extract out quantities
@@ -921,15 +916,14 @@ local_Fmsy_sglpop <- function(pars, data) {
   tmp_fished   = array(Nspr[2,,, n_ages - 1], dim = c(n_regions, n_regions))
 
   for(o in 1:n_regions) {
-    # Catch-at-age for penultimate age. tmp_caa carries this origin cohort's survivors from
-    # season to season, so each season's catch is taken from the fish still alive to be
-    # caught in it; tmp_fished stays at the start of the year for the advance below.
+    # catch-at-age for the penultimate age. tmp_caa holds this origin cohort's survivors season to
+    # season, so each season's catch comes from the fish still alive to be caught in it
     tmp_caa = tmp_fished[o,]
     for(seas in 1:n_seas) {
       ret_F_seas = ret_F_by_region(n_ages - 1, seas)
       disc_F_seas = disc_F_by_region(n_ages - 1, seas)
       landed_F_seas = landed_F_by_region(n_ages - 1, seas, is_discard_fleet)
-      Z_seas = natmort[, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
+      Z_seas = natmort[,seas, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
       CAA[o,, seas, n_ages - 1] = catch_at_age(tmp_caa, Movement[,,seas, n_ages - 1], Z_seas,
                                                Mrate[,,seas, n_ages - 1], seasdur[seas],
                                                landed_F_seas, move_timing, expm_nsub = expm_nsub)
@@ -943,7 +937,7 @@ local_Fmsy_sglpop <- function(pars, data) {
       for(seas in 1:(spawn_seas - 1)) {
 
         # get mortality
-        M_seas = natmort[, n_ages - 1] * seasdur[seas]
+        M_seas = natmort[,seas, n_ages - 1] * seasdur[seas]
         ret_F_seas = ret_F_by_region(n_ages - 1, seas)
         disc_F_seas = disc_F_by_region(n_ages - 1, seas)
 
@@ -961,7 +955,7 @@ local_Fmsy_sglpop <- function(pars, data) {
   ## Advance penultimate age into spawning biomass / season; t_spawn folded in here
   tmp_unfished_spawn = tmp_unfished
   tmp_fished_spawn   = tmp_fished
-  Zu_spawn = natmort[, n_ages - 1] * seasdur[spawn_seas]
+  Zu_spawn = natmort[,spawn_seas, n_ages - 1] * seasdur[spawn_seas]
   Zf_spawn = Zu_spawn + ret_F_by_region(n_ages - 1, spawn_seas) + disc_F_by_region(n_ages - 1, spawn_seas)
   for(o in 1:n_regions) {
     tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[,,spawn_seas, n_ages - 1],
@@ -985,8 +979,8 @@ local_Fmsy_sglpop <- function(pars, data) {
 
   # Build transition matrices
   Ts <- build_plus_group_T(
-    M_penult   = natmort[, n_ages - 1],
-    M_plus     = natmort[, n_ages],
+    M_penult = array(natmort[,, n_ages - 1], dim = c(n_regions, n_seas)),
+    M_plus = array(natmort[,, n_ages], dim = c(n_regions, n_seas)),
     F_penult   = F_penult,
     F_plus     = F_plus,
     Mov_penult = array(Movement[,,, n_ages - 1], dim = c(n_regions, n_regions, n_seas)),
@@ -1017,7 +1011,7 @@ local_Fmsy_sglpop <- function(pars, data) {
       ret_F_seas = ret_F_by_region(n_ages, seas)
       disc_F_seas = disc_F_by_region(n_ages, seas)
       landed_F_seas = landed_F_by_region(n_ages, seas, is_discard_fleet)
-      Z_seas = natmort[, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
+      Z_seas = natmort[,seas, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
       CAA[o,, seas, n_ages] = catch_at_age(tmp_caa, Movement[,,seas, n_ages], Z_seas,
                                            Mrate[,,seas, n_ages], seasdur[seas],
                                            landed_F_seas, move_timing, expm_nsub = expm_nsub)
@@ -1031,7 +1025,7 @@ local_Fmsy_sglpop <- function(pars, data) {
       for(seas in 1:(spawn_seas - 1)) {
 
         # get mortality
-        M_seas = natmort[, n_ages] * seasdur[seas]
+        M_seas = natmort[,seas, n_ages] * seasdur[seas]
         F_seas = F_plus[, seas]
 
         # Apply seasonal movement and mortality together, per move_timing
@@ -1047,7 +1041,7 @@ local_Fmsy_sglpop <- function(pars, data) {
   ## Plus group spawning biomass; t_spawn mortality folded into spawn_state
   tmp_unfished_spawn = tmp_unfished
   tmp_fished_spawn   = tmp_fished
-  Zu_spawn_plus = natmort[, n_ages] * seasdur[spawn_seas]
+  Zu_spawn_plus = natmort[,spawn_seas, n_ages] * seasdur[spawn_seas]
   Zf_spawn_plus = Zu_spawn_plus + F_plus[, spawn_seas]
   for(o in 1:n_regions) {
     tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[,,spawn_seas, n_ages],
@@ -1140,6 +1134,8 @@ local_Fmsy_sglpop <- function(pars, data) {
 
   return(obj_fun)
 }
+
+# Local MSY, Multiple Populations -------------------------------------------
 
 #' Compute local Beverton-Holt Fmsy for a spatially explicit multi-population model
 #'
@@ -1238,18 +1234,16 @@ local_Fmsy_multipop <- function(pars, data) {
 
   RTMB::getAll(pars, data) # get parameters and data
 
-  # getAll defines rec_model whenever the caller supplied it. Hand-built data
-  # lists that predate the Ricker will not have, so fall back rather than
-  # assigning before getAll, which would collide with its own definition.
+  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
+  # the Ricker fall back here rather than being assigned before getAll, which would collide
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
   # As with rec_model, expm_nsub is only present on data lists built since the
   # implicit matrix exponential option, so fall back to the exact exponential.
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over.
-  # The helpers below branch on Ricker against everything else, so without this
-  # a mean recruitment fit would come back with Beverton-Holt numbers.
+  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
+  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)
@@ -1312,7 +1306,7 @@ local_Fmsy_multipop <- function(pars, data) {
           ret_F_a_seas = ret_F_by_region(p, j -1, seas)
           disc_F_a_seas = disc_F_by_region(p, j -1, seas)
           landed_F_a_seas = landed_F_by_region(p, j - 1, seas, is_discard_fleet)
-          Z_a_seas = natmort[p,,j - 1] * seasdur[seas] + ret_F_a_seas + disc_F_a_seas
+          Z_a_seas = natmort[p,,seas,j - 1] * seasdur[seas] + ret_F_a_seas + disc_F_a_seas
 
           # Get temporary values from origin region
           tmp_unfished = Nspr[1,p,o,,j-1]
@@ -1333,7 +1327,7 @@ local_Fmsy_multipop <- function(pars, data) {
             Mv = diag(n_regions)
             Qv = matrix(0, n_regions, n_regions)
           }
-          Mu_a_seas = natmort[p,,j-1] * seasdur[seas]
+          Mu_a_seas = natmort[p,,seas,j-1] * seasdur[seas]
 
           # Calculate spawning biomass if this is the spawning season
           if(seas == spawn_seas) {
@@ -1386,15 +1380,14 @@ local_Fmsy_multipop <- function(pars, data) {
     tmp_fished   = array(Nspr[2, p,,, n_ages - 1], dim = c(n_regions, n_regions))
 
     for(o in 1:n_regions) {
-      # Catch-at-age for penultimate age. tmp_caa carries this origin cohort's survivors from
-      # season to season, so each season's catch is taken from the fish still alive to be
-      # caught in it; tmp_fished stays at the start of the year for the advance below.
+      # catch-at-age for the penultimate age. tmp_caa holds this origin cohort's survivors season to
+      # season, so each season's catch comes from the fish still alive to be caught in it
       tmp_caa = tmp_fished[o,]
       for(seas in 1:n_seas) {
         ret_F_seas = ret_F_by_region(p, n_ages - 1, seas)
         disc_F_seas = disc_F_by_region(p, n_ages - 1, seas)
         landed_F_seas = landed_F_by_region(p, n_ages - 1, seas, is_discard_fleet)
-        Z_seas = natmort[p,, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
+        Z_seas = natmort[p,,seas, n_ages - 1] * seasdur[seas] + ret_F_seas + disc_F_seas
         CAA[p, o,, seas, n_ages - 1] = catch_at_age(tmp_caa, Movement[p,,,seas, n_ages - 1], Z_seas,
                                                     Mrate[p,,,seas, n_ages - 1], seasdur[seas],
                                                     landed_F_seas, move_timing, expm_nsub = expm_nsub)
@@ -1408,7 +1401,7 @@ local_Fmsy_multipop <- function(pars, data) {
         for(seas in 1:(spawn_seas - 1)) {
 
           # get mortality
-          M_seas = natmort[p,, n_ages - 1] * seasdur[seas]
+          M_seas = natmort[p,,seas, n_ages - 1] * seasdur[seas]
           ret_F_seas = ret_F_by_region(p, n_ages - 1, seas)
           disc_F_seas = disc_F_by_region(p, n_ages - 1, seas)
 
@@ -1425,7 +1418,7 @@ local_Fmsy_multipop <- function(pars, data) {
 
     ## Advance penultimate age into spawning biomass / season; t_spawn folded in here
     tmp_unfished_spawn = tmp_unfished; tmp_fished_spawn = tmp_fished
-    Zu_spawn = natmort[p,, n_ages - 1] * seasdur[spawn_seas]
+    Zu_spawn = natmort[p,,spawn_seas, n_ages - 1] * seasdur[spawn_seas]
     Zf_spawn = Zu_spawn + ret_F_by_region(p, n_ages - 1, spawn_seas) + disc_F_by_region(p, n_ages - 1, spawn_seas)
     for(o in 1:n_regions) {
       tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[p,,, spawn_seas, n_ages - 1],
@@ -1459,8 +1452,8 @@ local_Fmsy_multipop <- function(pars, data) {
 
     # Build transition matrices
     Ts <- build_plus_group_T(
-      M_penult   = natmort[p,, n_ages - 1],
-      M_plus     = natmort[p,, n_ages],
+      M_penult = array(natmort[p,,, n_ages - 1], dim = c(n_regions, n_seas)),
+      M_plus = array(natmort[p,,, n_ages], dim = c(n_regions, n_seas)),
       F_penult   = F_penult,
       F_plus     = F_plus,
       Mov_penult = array(Movement[p,,, , n_ages - 1], dim = c(n_regions, n_regions, n_seas)),
@@ -1491,7 +1484,7 @@ local_Fmsy_multipop <- function(pars, data) {
         ret_F_seas = ret_F_by_region(p, n_ages,     seas)
         disc_F_seas = disc_F_by_region(p, n_ages,     seas)
         landed_F_seas = landed_F_by_region(p, n_ages, seas, is_discard_fleet)
-        Z_seas = natmort[p,, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
+        Z_seas = natmort[p,,seas, n_ages] * seasdur[seas] + ret_F_seas + disc_F_seas
         CAA[p, o,, seas, n_ages] = catch_at_age(tmp_caa, Movement[p,,,seas, n_ages], Z_seas,
                                                 Mrate[p,,,seas, n_ages], seasdur[seas],
                                                 landed_F_seas, move_timing, expm_nsub = expm_nsub)
@@ -1505,7 +1498,7 @@ local_Fmsy_multipop <- function(pars, data) {
         for(seas in 1:(spawn_seas - 1)) {
 
           # get mortality
-          M_seas = natmort[p,, n_ages] * seasdur[seas]
+          M_seas = natmort[p,,seas, n_ages] * seasdur[seas]
           F_seas = F_plus[, seas]
 
           # Apply seasonal movement and mortality together, per move_timing
@@ -1520,7 +1513,7 @@ local_Fmsy_multipop <- function(pars, data) {
 
     ## Plus group spawning biomass; t_spawn mortality folded into spawn_state
     tmp_unfished_spawn = tmp_unfished; tmp_fished_spawn = tmp_fished
-    Zu_spawn_plus = natmort[p,, n_ages] * seasdur[spawn_seas]
+    Zu_spawn_plus = natmort[p,,spawn_seas, n_ages] * seasdur[spawn_seas]
     Zf_spawn_plus = Zu_spawn_plus + F_plus[, spawn_seas]
     for(o in 1:n_regions) {
       tmp_unfished_spawn[o,] = spawn_state(tmp_unfished_spawn[o,], Movement[p,,, spawn_seas, n_ages],

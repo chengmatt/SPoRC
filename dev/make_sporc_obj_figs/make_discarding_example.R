@@ -306,14 +306,23 @@ for(i in 1:sim_obj$n_sims) {
 
 # get selectivity
 png(here("vignettes", "figures", "s_selex.png"))
-plot(model$rep$fish_sel[1, 1, 1, 1, , 1, 1],
-     ylim = c(0, 1), xlab = "Age", ylab = "Selectivity",
-     pch = 16, main = "Estimated Selectivity Curves")
+plot(
+  model$rep$fish_sel[1, 1, 1, 1, , 1, 1],
+  ylim = c(0, 1),
+  xlab = "Age",
+  ylab = "Selectivity",
+  pch = 16,
+  main = "Estimated Selectivity Curves"
+)
 lines(model$rep$ret_sel[1, 1, 1, 1, , 1, 1], lwd = 2)
 lines(model$rep$srv_sel[1, 1, 1, 1, , 1, 1], lty = 2, lwd = 2)
-legend("bottomright",
-       legend = c("Fishery (total)", "Retention", "Survey"),
-       pch = c(16, NA, NA), lty = c(NA, 1, 2), lwd = 2)
+legend(
+  "bottomright",
+  legend = c("Fishery (total)", "Retention", "Survey"),
+  pch = c(16, NA, NA),
+  lty = c(NA, 1, 2),
+  lwd = 2
+)
 dev.off()
 
 

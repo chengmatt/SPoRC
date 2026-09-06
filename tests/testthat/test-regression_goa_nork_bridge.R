@@ -1,11 +1,5 @@
-# Self-validating bridge test. The expectations are not stored SPoRC output: they are
-# the 2024 GOA northern rockfish assessment's own reported quantities, shipped in
-# sgl_rg_goa_nork_data$admb. Every parameter is set to the assessment's maximum
-# likelihood estimate and the model is evaluated there without optimizing, so a failure
-# means the population dynamics, a likelihood, or a selectivity form no longer
-# reproduces the assessment at a point where it is known to. Do not loosen the
-# tolerances to make this pass. See tests/README.md and the GOA northern rockfish case
-# study vignette.
+# Self-validating bridge test: the expectations are the 2024 GOA northern rockfish assessment's own
+# reported quantities in sgl_rg_goa_nork_data$admb, evaluated at its estimate without optimizing.
 
 library(SPoRC)
 library(testthat)
@@ -61,7 +55,7 @@ test_that("GOA northern rockfish reproduces the 2024 ADMB assessment at its own 
   expect_equal(catch_ssq, dat$admb$ssqcatch, tolerance = 1e-6)
 
   # The assessment's survey statement keeps the log sigma term but drops the
-  # sqrt(2 pi) constant, and carries a weight of 0.25.
+  # sqrt(2 pi) constant, and has a weight of 0.25.
   n_srv_obs <- sum(dat$UseSrvIdx)
   srv_like <- dat$srv_wt * (sum(r$SrvIdx_nLL) - n_srv_obs * 0.5 * log(2 * pi))
   expect_equal(srv_like, dat$admb$like_srv, tolerance = 1e-6)
@@ -78,7 +72,7 @@ test_that("GOA northern rockfish reproduces the 2024 ADMB assessment at its own 
   # The assessment's recruitment penalty is the lognormal bias corrected sum of
   # squares over all recruitment deviations plus the initial age deviations
   # excluding the plus group, with no normalizing constants. SPoRC's Rec_nLL and
-  # Init_Rec_nLL carry the same penalties plus the constants subtracted here; the
+  # Init_Rec_nLL hold the same penalties plus the constants subtracted here; the
   # plus group deviation sits at zero in this parameterization so it contributes
   # nothing on either side.
   s <- dat$sigmaR

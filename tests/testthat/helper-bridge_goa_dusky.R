@@ -1,12 +1,5 @@
-# GOA dusky rockfish bridge: the 2024 Gulf of Alaska dusky rockfish assessment
-# rebuilt in SPoRC.
-#
-# One Setup_Mod_* call per section, in the order vignette(
-# "x_goa_dusky_rockfish_case_study") walks through them, with a reason for each
-# argument that follows the assessment rather than a SPoRC default.
-#
-# The model is one area, one sex, one season, ages 4-33 with a plus group and
-# lengths 21-52 cm, years 1977-2024.
+# The 2024 GOA dusky rockfish assessment rebuilt in SPoRC. One area, one sex, one season, ages 4-33
+# with a plus group, lengths 21-52 cm, years 1977-2024.
 #
 #   Source                     Years        Observations  Likelihood
 #   Catch                      1977-2024    48            Lognormal, weighted
@@ -15,10 +8,8 @@
 #   Fishery length comps       1991-2023    18            Multinomial
 #   Survey age comps           1990-2023    16            Multinomial
 #
-# dev/make_sporc_obj_figs/make_goa_dusky_bridge_figs.R and
-# tests/testthat/test-regression_dusky.R both build from this file, so the case
-# study figures and the pinned regression cannot drift apart: a change to the
-# specification moves both or neither.
+# make_goa_dusky_bridge_figs.R and test-regression_dusky.R both build from here, so a specification
+# change moves the case study figures and the regression test together.
 
 build_goa_dusky_input <- function(dat) {
 
@@ -202,7 +193,7 @@ build_goa_dusky_input <- function(dat) {
   ## Weighting ----------------------------------------------------------------
   # the early catch series was reconstructed, so the assessment down-weights it
   # relative to the observer era: 2 through 1991 and 50 after. survey length
-  # compositions are present in the data object but carry a weight of zero,
+  # compositions are present in the data object but have a weight of zero,
   # which is how the assessment treats them
   Wt_Catch <- array(0, dim = c(dat$n_regions, length(dat$years), dat$n_seas, dat$n_fish_fleets))
   Wt_Catch[, which(dat$years %in% 1977:1991), 1, ] <- 2

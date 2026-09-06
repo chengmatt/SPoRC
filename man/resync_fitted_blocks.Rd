@@ -15,12 +15,12 @@ resync_fitted_blocks(data)
 \description{
 \code{\link{drop_empty_fitted_blocks}} runs once at setup, against the
 observations the model was built with. A self test or closed loop replaces
-those observations replicate by replicate while carrying the setup's use flags
+those observations replicate by replicate while with the setup's use flags
 forward, so under a bin restriction a simulated replicate can hold nothing in
 the fitted bins of a block the flags still call used. This walks the marginal
-composition streams of a data list and reconciles them again.
+composition data sources of a data list and reconciles them again.
 }
 \details{
-A no-op when no stream is restricted, which is the usual case.
+A no-op when no data source is restricted, which is the usual case.
 }
 \keyword{internal}

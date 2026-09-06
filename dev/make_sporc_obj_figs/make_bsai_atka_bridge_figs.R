@@ -1,17 +1,8 @@
-# Purpose: Bridge the 2024 BSAI Atka mackerel assessment (AMAK Model 16.0b) to
-#          SPoRC and render the case study figures. The model is specified the
-#          way AMAK specifies it, including AMAK's own 1967 start year, so the
-#          period AMAK calls pre-model is carried as model years under a true
-#          closure rather than as an initial age structure with deviations.
-#          Recruitment is a mean with deviations and the Beverton-Holt curve is
-#          fitted as a penalty on the residual, taking its scale from the
-#          initial equilibrium so one parameter plays AMAK's log_Rzero in both
-#          places it appears.
-#
-#          Three stages: set every parameter to the AMAK maximum likelihood
-#          estimate and check the objective there, optimize, then compare.
+# Purpose: Bridge the 2024 BSAI Atka mackerel assessment (AMAK Model 16.0b) to SPoRC and render its figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/18/26
+#
+# AMAK's 1967 start year is kept as model years under a true closure, not as an initial age structure
 
 library(here)
 library(dplyr)
@@ -30,7 +21,7 @@ i_srv <- which(yrs %in% dat$yrs_srv)
 inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
 
 # The assessment's arrays run 1977 to 2024. Put ten years in front of whichever
-# margin holds the years, so they run 1967 to 2024.
+# dim holds the years, so they run 1967 to 2024.
 pad <- function(x, fill = NULL) {
   m <- which(dim(x) == n_obs)
   pre <- if(is.null(fill)) abind::asub(x, rep(1, n_pre), m, drop = FALSE)
@@ -52,15 +43,13 @@ input_list <- Setup_Mod_Dim(
   verbose = FALSE
 )
 
-# AMAK's precision on each recruitment deviation is 1 everywhere from
-# rec_like(2), plus 0.5/sigmaR^2 on the tails from rec_like(4). SPoRC charges
-# Wt_Rec * eps^2 / (2 * sigma^2), so with sigma at AMAK's sigmaR the weights are
-# 2*sigmaR^2 and 2*sigmaR^2 + 1. Both tails sit inside one deviation vector.
+# AMAK's precision on each recruitment deviation is 1 everywhere plus 0.5/sigmaR^2 on the tails,
+# so at AMAK's sigmaR the SPoRC weights are 2*sigmaR^2 and 2*sigmaR^2 + 1
 tail_yrs <- c(dat$styr_rec:dat$styr_rec_est, dat$endyr_rec_est:max(yrs))
 
 input_list <- Setup_Mod_Rec(
   input_list = input_list,
-  # Recruitment is a mean with deviations; the curve is scored, not used.
+  # recruitment is a mean with deviations, so the curve is penalized rather than used
   rec_model = "mean_rec",
   rec_lag = 1,
   SR_ref_yr = 1,
@@ -73,14 +62,12 @@ input_list <- Setup_Mod_Rec(
   # One parameter plays AMAK's log_Rzero in both roles, the 1967 equilibrium
   # and the curve's scale.
   sr_R0_spec = "rinit",
-  # Steepness is fixed at 0.8 and carried on a logit bounded to (0.2, 1), so the
-  # fixed value goes in transformed. Passing 0.8 directly is swallowed by the
-  # starting value mechanism and leaves the default h = 0.6.
+  # steepness is fixed at 0.8 on a logit bounded to (0.2, 1), so the fixed value goes in
+  # transformed; passing 0.8 directly is swallowed and leaves the default h = 0.6
   steepness_h = array(inv_steepness(dat$steepness), dim = c(1, 1)),
   h_spec = "fix",
-  # do_rec_bias_ramp = 0 does NOT center the penalty on zero: it sets the ramp
-  # to one throughout, which centers on -sigmaR^2/2. Breaks past the last year
-  # are what leave the offset out.
+  # do_rec_bias_ramp = 0 does not center the penalty on zero: it sets the ramp to one throughout,
+  # which centers on -sigmaR^2/2. breaks past the last year are what leave the offset out
   do_rec_bias_ramp = 1,
   bias_year = rep(n_yrs + 1, 4),
   sigmaR_switch = 1,
@@ -97,7 +84,7 @@ input_list <- Setup_Mod_Rec(
   # AMAK estimates every deviation from 1967 to 2024 and restricts only its
   # stock recruit LIKELIHOOD; dont_est_recdev_last would delete them instead.
   dont_est_recdev_last = 0,
-  # rec_like(2) is carried by Rec_nLL directly.
+  # rec_like(2) is set by Rec_nLL directly.
   Use_rec_level_pen = 0
 )
 
@@ -117,21 +104,21 @@ input_list <- Setup_Mod_Biologicals(
   addtofishidx = 0
 )
 
-input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1,
-                                 Fixed_Movement = NA, do_recruits_move = 0)
+input_list <- Setup_Mod_Movement(
+  input_list = input_list,
+  use_fixed_movement = 1,
+  Fixed_Movement = NA,
+  do_recruits_move = 0
+)
 
-# ObsCatch = 0 with UseCatch = 0 is a true closure: F is forced to zero and the
-# deviation leaves the parameter vector. NA would be a missing observation
-# instead, which still estimates an F.
+# ObsCatch = 0 with UseCatch = 0 is a true closure: F is forced to zero and the deviation leaves
+# the parameter vector. NA would be a missing observation, which still estimates an F
 input_list <- Setup_Mod_Catch_and_F(
   input_list = input_list,
   ObsCatch = pad(dat$ObsCatch, 0),
   UseCatch = pad(dat$UseCatch, 0),
-  # AMAK has no log_avg_F: fmort is the annual rate itself, so fishing mortality
-  # is free annual log F. ln_F_mean_spec = "fix" is that parameterization, and it
-  # pairs with Use_F_pen = 0 here because AMAK's only F statement penalizes the
-  # realized F at age surface toward 0.2 rather than the deviations, which no
-  # SPoRC term expresses.
+  # AMAK has no log_avg_F: fmort is the annual rate itself, so F is free annual log F ("fix").
+  # Use_F_pen = 0 because AMAK penalizes realized F at age toward 0.2, not the deviations
   ln_F_mean_spec = "fix",
   Use_F_pen = 0,
   sigmaC_spec = "fix",
@@ -178,7 +165,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 )
 
 # Selectivity ----------------------------------------------------------------
-# The oldest estimated coefficient is held flat to the plus group before the
+# The oldest estimated coefficient is kept flat to the plus group before the
 # standardization, which is a bin grouping rather than a separate parameter.
 bin_groups <- function(nsel) c(as.list(seq_len(nsel - 1)), list(nsel:n_ages))
 
@@ -210,10 +197,8 @@ input_list <- Setup_Mod_Srvsel_and_Q(
   srv_sel_blocks = c("none_Fleet_1"),
   srv_sel_model = c("nonparlog_Fleet_1"),
   srv_sel_nonpar_est_bins = list(list(bin_groups(dat$nselages_srv))),
-  # AMAK standardizes the index selectivity over the ages catchability is
-  # defined against rather than over every age (amak.tpl:1947). The difference
-  # is a constant that catchability would absorb were the q prior uninformative;
-  # with a prior it is not free, so the window has to match.
+  # AMAK standardizes index selectivity over the ages catchability is defined against rather than
+  # every age. with a q prior that constant is not free, so the window has to match
   srv_sel_norm_bins = list(dat$q_age_min:dat$q_age_max),
   srv_fixed_sel_pars_spec = c("est_all"),
   srv_q_blocks = c("none_Fleet_1"),
@@ -229,7 +214,7 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
-# The smoothness weights are per year, so the closed years carry none: block 1
+# The smoothness weights are per year, so the closed years have none: block 1
 # would otherwise be charged its curvature and dome penalty eleven times over.
 fw <- dat$fish_sel_pen_wts
 for(nm in c("smooth_bin_curve", "smooth_yr_diff", "smooth_dome")) {
@@ -247,8 +232,13 @@ Wt_Rec[1, 1, which(yrs %in% tail_yrs)] <- 2 * dat$sigmaR^2 + 1
 
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,
-  Wt_Catch = 1, Wt_FishIdx = 1, Wt_SrvIdx = 1,
-  Wt_Rec = Wt_Rec, Wt_Init_Rec = 1, Wt_F = 1, Wt_Tagging = 0,
+  Wt_Catch = 1,
+  Wt_FishIdx = 1,
+  Wt_SrvIdx = 1,
+  Wt_Rec = Wt_Rec,
+  Wt_Init_Rec = 1,
+  Wt_F = 1,
+  Wt_Tagging = 0,
   Wt_FishAgeComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
   Wt_FishLenComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
   Wt_SrvAgeComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
@@ -308,9 +298,8 @@ cat("stock recruit penalty, quadratic part:",
     format(sum(r0$SR_pen_nLL) - n_pen * (0.5 * log(2 * pi) + log(sig_sr)), digits = 10),
     "vs AMAK", format(dat$amak$rec_parts[2] - dat$nrecs_est * log(dat$sigmaR), digits = 10), "\n")
 
-# Likelihood crosswalk. SPoRC writes each component as a proper density while
-# AMAK drops normalizing constants, so a like for like comparison subtracts
-# exactly the constants AMAK omits.
+# likelihood crosswalk. SPoRC writes each component as a proper density while AMAK drops
+# normalizing constants, so a like-for-like comparison subtracts exactly those constants
 lg2pi <- log(2 * pi)
 const <- c(catch = n_obs * (0.5 * lg2pi + log(dat$sigmaC)),
            fish_age = 0,
@@ -358,24 +347,36 @@ rep <- est$rep
 ssb <- as.vector(rep$SSB[1, 1, i_amak])
 rec <- as.vector(rep$Rec[1, 1, i_amak])
 
-ggplot2::ggsave(here("vignettes", "figures", "ab_bsai_atka_ts_comparison.png"),
-                bridge_ts_figure(yrs = dat$years, ssb = ssb, rec = rec,
-                                 admb_ssb = dat$amak$SSB, admb_rec = dat$amak$Rec,
-                                 label = "2024 Atka Mackerel Assessment",
-                                 ssb_se = bridge_se(sdr, "log_SSB", rep$SSB[1, 1, ], exact = TRUE)[i_amak],
-                                 rec_se = bridge_se(sdr, "log_Rec", rep$Rec[1, 1, ], exact = TRUE)[i_amak],
-                                 legend_nrow = NULL),
-                width = 17, height = 9, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "ab_bsai_atka_ts_comparison.png"),
+  bridge_ts_figure(
+                  yrs = dat$years,
+                  ssb = ssb,
+                  rec = rec,
+                  admb_ssb = dat$amak$SSB,
+                  admb_rec = dat$amak$Rec,
+                  label = "2024 Atka Mackerel Assessment",
+                  ssb_se = bridge_se(sdr, "log_SSB", rep$SSB[1, 1, ], exact = TRUE)[i_amak],
+                  rec_se = bridge_se(sdr, "log_Rec", rep$Rec[1, 1, ], exact = TRUE)[i_amak],
+                  legend_nrow = NULL
+                ),
+  width = 17,
+  height = 9,
+  dpi = 150
+)
 
-# Fishery selectivity changes in all but one year, so a handful of years carries
+# Fishery selectivity changes in all but one year, so a handful of years has
 # the shape change; the full surface is what the bridge test checks.
 sel_yrs <- c(1977, 1990, 2005, 2024)
 sel_df <- bind_rows(lapply(sel_yrs, function(y) {
-  bridge_sel_rows(ages = dat$ages,
-                  sporc = rep$fish_sel[1, 1, which(yrs == y), 1, , 1, 1],
-                  admb = dat$amak$sel_fsh[which(dat$years == y), ],
-                  gear = paste("Fishery", y),
-                  label = "2024 Atka Mackerel Assessment", facet_by = "Gear")
+  bridge_sel_rows(
+    ages = dat$ages,
+    sporc = rep$fish_sel[1, 1, which(yrs == y), 1, , 1, 1],
+    admb = dat$amak$sel_fsh[which(dat$years == y), ],
+    gear = paste("Fishery", y),
+    label = "2024 Atka Mackerel Assessment",
+    facet_by = "Gear"
+  )
 })) %>%
   bind_rows(bridge_sel_rows(
     ages = dat$ages,
@@ -385,15 +386,29 @@ sel_df <- bind_rows(lapply(sel_yrs, function(y) {
     admb = dat$amak$sel_ind[1, ] / mean(dat$amak$sel_ind[1, dat$q_age_min:dat$q_age_max]),
     gear = "Survey", label = "2024 Atka Mackerel Assessment", facet_by = "Gear"))
 
-ggplot2::ggsave(here("vignettes", "figures", "ab_bsai_atka_sel_comparison.png"),
-                bridge_sel_figure(sel_df, facet_by = "Gear", nrow = 1),
-                width = 17, height = 6, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "ab_bsai_atka_sel_comparison.png"),
+  bridge_sel_figure(sel_df, facet_by = "Gear", nrow = 1),
+  width = 17,
+  height = 6,
+  dpi = 150
+)
 
 cat("\n=== Stage 3: optimized SPoRC against the AMAK assessment ===\n")
 print(rbind(bridge_cmp("SSB", ssb, dat$amak$SSB),
             bridge_cmp("Recruitment", rec, dat$amak$Rec)),
       row.names = FALSE, digits = 4)
 
-saveRDS(list(rep = rep, sdrep = est$sdrep, opt = est$optim, seed_rep = r0, lik = lik,
-             data = data, parameters = parameters, mapping = mapping, yrs = yrs, i_amak = i_amak),
+saveRDS(list(
+  rep = rep,
+  sdrep = est$sdrep,
+  opt = est$optim,
+  seed_rep = r0,
+  lik = lik,
+  data = data,
+  parameters = parameters,
+  mapping = mapping,
+  yrs = yrs,
+  i_amak = i_amak
+),
         here("dev", "dev_output", "bsai_atka_bridge.rds"))

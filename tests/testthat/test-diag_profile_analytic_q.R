@@ -6,8 +6,8 @@ library(testthat)
 # the index and never reads ln_fish_q/ln_srv_q, so the grid value never reaches the
 # likelihood and the profile would come back flat.
 #
-# ln_fish_q and ln_srv_q are dimensioned [region, block, fleet] and idx carries linear
-# indices, so the fleet a profile touches only falls out of the third margin once the
+# ln_fish_q and ln_srv_q are dimensioned [region, block, fleet] and idx has linear
+# indices, so the fleet a profile touches only falls out of the third dim once the
 # region and block strides are accounted for.
 
 q_pars <- list(
@@ -37,7 +37,7 @@ test_that("the refusal names the analytic form and the survey parameter", {
 
 test_that("an estimated fleet still profiles when another fleet is analytic", {
   # Fleet 1 is "est" and occupies linear indices 1:6. Reading the fleet off the wrong
-  # margin would pick up fleet 2 here and refuse a profile that is perfectly valid.
+  # dim would pick up fleet 2 here and refuse a profile that is perfectly valid.
   expect_true(is.na(guard(list(fish_q_type = c(0, 1)), "ln_fish_q", 1:6)))
 })
 

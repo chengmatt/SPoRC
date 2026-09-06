@@ -1,13 +1,5 @@
-# Names that R CMD check cannot see bindings for. Two sources.
-#
-#   1. Model and reference point code reads its data and parameter objects out of
-#      the frame created by RTMB::getAll(pars, data), so the bindings do not exist
-#      at parse time (model_objective.R, refpts_msy.R, refpts_spr.R).
-#   2. Non-standard evaluation in dplyr and ggplot2 calls refers to column names.
-#
-# Regenerate after adding either kind of name by pulling the 'Undefined global
-# functions or variables' block out of an R CMD check log. A name that is actually
-# a function from another package belongs in a namespaced call, not in this list.
+# Names R CMD check cannot see bindings for: objects read out of the RTMB::getAll frame, and dplyr/ggplot2
+# column names. Regenerate from the 'Undefined global functions or variables' block of an R CMD check log.
 
 utils::globalVariables(c(
   ".", "addtocomp", "addtofishidx", "addtosrvidx", "addtotag", "adjacency_collapsed",
@@ -101,7 +93,7 @@ utils::globalVariables(c(
   "move_expm_nsub", "move_pe_pars", "move_preference_pars", "move_timing", "move_type", "Movement", "Movement_prior",
   "Mrate", "n_age_dim", "n_ages", "n_conv_tag_cohorts", "n_fish_fleets", "n_pop", "n_pop_in_region",
   "n_proj_yrs_devs", "n_regions", "n_seas", "n_sexes", "n_srv_fleets", "name", "natal_region",
-  "NAA_re", "n_est_naa_re", "naa_re_ages", "naa_re_yrs", "naa_sigma_blocks", "ln_NAA", "ln_sigmaNAA", "NAA_pe_pars", "NAA_re_region", "NAA_region_corr_pars", "NAA_re_pop", "NAA_pop_corr_pars", "NAA_re_sex", "NAA_sex_corr_pars", "NAA_scalar", "sigmaNAA", "naa_rho", "naa_pop_corr", "naa_region_corr", "naa_sex_corr", "naa_eta",
+  "NAA_re", "n_est_naa_re", "naa_re_ages", "naa_re_yrs", "naa_re_seas", "naa_sigma_blocks", "ln_NAA", "ln_sigmaNAA", "NAA_pe_pars", "NAA_re_region", "NAA_region_corr_pars", "NAA_re_pop", "NAA_pop_corr_pars", "NAA_re_sex", "NAA_sex_corr_pars", "NAA_re_season", "NAA_season_corr_pars", "NAA_scalar", "sigmaNAA", "naa_rho", "naa_pop_corr", "naa_region_corr", "naa_sex_corr", "naa_season_corr", "naa_eta",
   "natmort", "newton_steps", "obs", "obs_conv_tag_fish_recap", "ObsFishAgeComps",
   "ObsFishAgeComps_discard", "ObsFishAgeComps_discard_pop", "ObsFishAgeComps_pop",
   "ObsFishIdx_pop_SE", "ObsFishIdx_SE", "ObsFishLenComps", "ObsFishLenComps_discard",
@@ -124,7 +116,9 @@ utils::globalVariables(c(
   "srv_fixed_sel_pars", "srv_idx_ages", "srv_idx_type", "srv_q_blocks", "srv_q_coeff", "srv_q_cov",
   "srv_q_prior", "srv_q_type", "srv_sel_bicubic_binnodes", "srv_sel_bicubic_nselbins",
   "srv_sel_bicubic_selstyr", "srv_sel_bicubic_Wbin", "srv_sel_bicubic_Wyr",
-  "srv_sel_bicubic_yrnodes", "srv_sel_bin_dev_bins", "srv_sel_blocks", "srv_sel_input",
+  "srv_sel_bicubic_yrnodes", "srv_sel_bin_dev_bins", "srv_sel_blocks",
+  "R0_blocks", "R0_ref_block", "R0_yr", "ln_R0_mat",
+  "srv_sel_input",
   "srv_sel_model", "srv_sel_pen_wts", "srv_selex_penalty", "srv_selex_prior", "srv_selex_type",
   "SrvAge_corr_pars", "SrvAge_corr_pars_agg", "SrvAge_pop_corr_pars", "SrvAge_pop_corr_pars_agg",
   "Srv_caal_bins", "SrvAgeComps_bins", "SrvAgeComps_LikeType", "SrvAgeComps_pop_bins",

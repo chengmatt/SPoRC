@@ -29,9 +29,18 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
   true_h  <- 0.75
 
   ### Simulate one operating-model replicate, then fit an age-0 (rec_lag = 0) EM
-  sim_list <- Setup_Sim_Dim(n_sims = 1, n_yrs = 35, n_regions = 1, n_ages = 8,
-                            n_lens = NULL, n_sexes = 1, n_fish_fleets = 1,
-                            n_srv_fleets = 1, n_seas = 2, n_pop = 1)
+  sim_list <- Setup_Sim_Dim(
+    n_sims = 1,
+    n_yrs = 35,
+    n_regions = 1,
+    n_ages = 8,
+    n_lens = NULL,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_seas = 2,
+    n_pop = 1
+  )
 
   sim_list <- Setup_Sim_Containers(sim_list)
 
@@ -101,74 +110,133 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
   sim_data <- simulation_data_to_SPoRC(sim_env = sim_obj, y = sim_obj$n_years, sim = 1)
 
   input_list <- Setup_Mod_Dim(
-    years = 1:sim_obj$n_years, ages = 1:sim_obj$n_ages, lens = sim_obj$n_lens,
-    n_regions = sim_obj$n_regions, n_sexes = sim_obj$n_sexes, n_fish_fleets = sim_obj$n_fish_fleets,
-    n_srv_fleets = sim_obj$n_srv_fleets, n_seas = sim_obj$n_seas, n_pop = sim_obj$n_pop,
-    natal_region = sim_obj$natal_region, verbose = FALSE
+    years = 1:sim_obj$n_years,
+    ages = 1:sim_obj$n_ages,
+    lens = sim_obj$n_lens,
+    n_regions = sim_obj$n_regions,
+    n_sexes = sim_obj$n_sexes,
+    n_fish_fleets = sim_obj$n_fish_fleets,
+    n_srv_fleets = sim_obj$n_srv_fleets,
+    n_seas = sim_obj$n_seas,
+    n_pop = sim_obj$n_pop,
+    natal_region = sim_obj$natal_region,
+    verbose = FALSE
   )
 
   fixed_rec_seas_prop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_seas))
   fixed_rec_seas_prop[, 2] <- 1
 
   input_list <- Setup_Mod_Rec(
-    input_list = input_list, rec_model = "bh_rec", rec_dd = "global", rec_lag = 0,
-    spawn_seas = 2, t_spawn = 0, use_fixed_rec_seas_prop = 1, fixed_rec_seas_prop = fixed_rec_seas_prop,
-    do_rec_bias_ramp = 0, sigmaR_switch = 1,
+    input_list = input_list,
+    rec_model = "bh_rec",
+    rec_dd = "global",
+    rec_lag = 0,
+    spawn_seas = 2,
+    t_spawn = 0,
+    use_fixed_rec_seas_prop = 1,
+    fixed_rec_seas_prop = fixed_rec_seas_prop,
+    do_rec_bias_ramp = 0,
+    sigmaR_switch = 1,
     ln_sigmaR = array(log(0.4), c(2, input_list$data$n_pop, input_list$data$n_regions)),
-    sigmaR_spec = "fix", h_spec = "fix",
+    sigmaR_spec = "fix",
+    h_spec = "fix",
     steepness_h = array(inv_steepness(true_h), dim = c(input_list$data$n_pop, input_list$data$n_regions)),
-    init_age_strc = 1, equil_init_age_strc = 2, ln_global_R0 = log(true_R0)
+    init_age_strc = 1,
+    equil_init_age_strc = 2,
+    ln_global_R0 = log(true_R0)
   )
 
   input_list <- Setup_Mod_Biologicals(
-    input_list = input_list, WAA = sim_data$WAA, MatAA = sim_data$MatAA,
-    WAA_fish = sim_data$WAA_fish, WAA_srv = sim_data$WAA_srv, fit_lengths = 0,
-    AgeingError = sim_data$AgeingError, M_spec = "fix",
+    input_list = input_list,
+    WAA = sim_data$WAA,
+    MatAA = sim_data$MatAA,
+    WAA_fish = sim_data$WAA_fish,
+    WAA_srv = sim_data$WAA_srv,
+    fit_lengths = 0,
+    AgeingError = sim_data$AgeingError,
+    M_spec = "fix",
     Fixed_natmort = array(0.25, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years),
                                         length(input_list$data$ages), input_list$data$n_sexes))
   )
 
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1, Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
 
   suppressWarnings(
     input_list <- Setup_Mod_Catch_and_F(
-      input_list = input_list, ObsCatch = sim_data$ObsCatch, UseCatch = sim_data$UseCatch,
-      Use_F_pen = 1, sigmaC_spec = "fix", ln_sigmaC = sim_data$ln_sigmaC,
+      input_list = input_list,
+      ObsCatch = sim_data$ObsCatch,
+      UseCatch = sim_data$UseCatch,
+      Use_F_pen = 1,
+      sigmaC_spec = "fix",
+      ln_sigmaC = sim_data$ln_sigmaC,
       ln_sigmaF = array(log(1), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
     )
   )
 
   input_list <- Setup_Mod_FishIdx_and_Comps(
-    input_list = input_list, ObsFishIdx = sim_data$ObsFishIdx, ObsFishIdx_SE = sim_data$ObsFishIdx_SE,
-    UseFishIdx = sim_data$UseFishIdx, ObsFishAgeComps = sim_data$ObsFishAgeComps, ObsFishLenComps = sim_data$ObsFishLenComps,
-    UseFishAgeComps = sim_data$UseFishAgeComps, UseFishLenComps = sim_data$UseFishLenComps,
-    ISS_FishAgeComps = sim_data$ISS_FishAgeComps, ISS_FishLenComps = sim_data$ISS_FishLenComps,
-    fish_idx_type = c("biom"), FishAgeComps_LikeType = c("Multinomial"), FishLenComps_LikeType = c("none"),
-    FishAgeComps_Type = c("agg_Year_1-terminal_Fleet_1"), FishLenComps_Type = c("none_Year_1-terminal_Fleet_1")
+    input_list = input_list,
+    ObsFishIdx = sim_data$ObsFishIdx,
+    ObsFishIdx_SE = sim_data$ObsFishIdx_SE,
+    UseFishIdx = sim_data$UseFishIdx,
+    ObsFishAgeComps = sim_data$ObsFishAgeComps,
+    ObsFishLenComps = sim_data$ObsFishLenComps,
+    UseFishAgeComps = sim_data$UseFishAgeComps,
+    UseFishLenComps = sim_data$UseFishLenComps,
+    ISS_FishAgeComps = sim_data$ISS_FishAgeComps,
+    ISS_FishLenComps = sim_data$ISS_FishLenComps,
+    fish_idx_type = c("biom"),
+    FishAgeComps_LikeType = c("Multinomial"),
+    FishLenComps_LikeType = c("none"),
+    FishAgeComps_Type = c("agg_Year_1-terminal_Fleet_1"),
+    FishLenComps_Type = c("none_Year_1-terminal_Fleet_1")
   )
 
   input_list <- Setup_Mod_SrvIdx_and_Comps(
-    input_list = input_list, ObsSrvIdx = sim_data$ObsSrvIdx, ObsSrvIdx_SE = sim_data$ObsSrvIdx_SE,
-    UseSrvIdx = sim_data$UseSrvIdx, ObsSrvAgeComps = sim_data$ObsSrvAgeComps, ObsSrvLenComps = sim_data$ObsSrvLenComps,
-    UseSrvAgeComps = sim_data$UseSrvAgeComps, UseSrvLenComps = sim_data$UseSrvLenComps,
-    ISS_SrvAgeComps = sim_data$ISS_SrvAgeComps, ISS_SrvLenComps = sim_data$ISS_SrvLenComps,
-    srv_idx_type = c("biom"), SrvAgeComps_LikeType = c("Multinomial"), SrvLenComps_LikeType = c("none"),
-    SrvAgeComps_Type = c("agg_Year_1-terminal_Fleet_1"), SrvLenComps_Type = c("none_Year_1-terminal_Fleet_1")
+    input_list = input_list,
+    ObsSrvIdx = sim_data$ObsSrvIdx,
+    ObsSrvIdx_SE = sim_data$ObsSrvIdx_SE,
+    UseSrvIdx = sim_data$UseSrvIdx,
+    ObsSrvAgeComps = sim_data$ObsSrvAgeComps,
+    ObsSrvLenComps = sim_data$ObsSrvLenComps,
+    UseSrvAgeComps = sim_data$UseSrvAgeComps,
+    UseSrvLenComps = sim_data$UseSrvLenComps,
+    ISS_SrvAgeComps = sim_data$ISS_SrvAgeComps,
+    ISS_SrvLenComps = sim_data$ISS_SrvLenComps,
+    srv_idx_type = c("biom"),
+    SrvAgeComps_LikeType = c("Multinomial"),
+    SrvLenComps_LikeType = c("none"),
+    SrvAgeComps_Type = c("agg_Year_1-terminal_Fleet_1"),
+    SrvLenComps_Type = c("none_Year_1-terminal_Fleet_1")
   )
 
   input_list <- Setup_Mod_Fishsel_and_Q(
-    input_list = input_list, fish_sel_model = c("logist2_Fleet_1"),
-    fish_fixed_sel_pars_spec = c("est_all"), fish_q_spec = "est_all"
+    input_list = input_list,
+    fish_sel_model = c("logist2_Fleet_1"),
+    fish_fixed_sel_pars_spec = c("est_all"),
+    fish_q_spec = "est_all"
   )
 
   input_list <- Setup_Mod_Srvsel_and_Q(
-    input_list = input_list, srv_sel_model = c("logist2_Fleet_1"),
-    srv_fixed_sel_pars_spec = c("est_all"), srv_q_spec = c("est_all")
+    input_list = input_list,
+    srv_sel_model = c("logist2_Fleet_1"),
+    srv_fixed_sel_pars_spec = c("est_all"),
+    srv_q_spec = c("est_all")
   )
 
   input_list <- Setup_Mod_Weighting(
-    input_list = input_list, Wt_Catch = 1, Wt_FishIdx = 1, Wt_SrvIdx = 1, Wt_Rec = 1, Wt_F = 1, Wt_Tagging = 0,
+    input_list = input_list,
+    Wt_Catch = 1,
+    Wt_FishIdx = 1,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_F = 1,
+    Wt_Tagging = 0,
     Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                        input_list$data$n_sexes, input_list$data$n_fish_fleets)),
     Wt_FishLenComps = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
@@ -216,8 +284,10 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
   terminal_F <- array(const_F / n_seas, dim = c(n_regions, n_seas, n_fish_fleets)) # just defines the seasonal F ratio
   terminal_dmr <- array(rep$dmr[,n_yrs_hist,,], dim = c(n_regions, n_seas, n_fish_fleets))
 
-  natmort_slice <- rep$natmort[,, n_yrs_hist, , ]
+  natmort_slice <- rep$natmort[,, n_yrs_hist, 1, , ] # season 1, M is constant within the year here
   natmort <- array(rep(natmort_slice, each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
+  # packaged report predates seasonal M, hold it across seasons
+  natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
 
   sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # single-sex model (n_sexes = 1)
 
@@ -234,7 +304,9 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
     sex_ratio_f = array(1, dim = c(n_pop, n_regions)), # single-sex model (n_sexes = 1)
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = c(n_pop)),
-    natmort = array(natmort_slice, dim = c(n_pop, n_regions, n_ages)),
+    # take the female rate off the report directly, the old slice no longer
+    # lines up
+    natmort = array(rep$natmort[,, n_yrs_hist, , , 1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     fish_sel = array(rep$fish_sel[,,n_yrs_hist,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     ret_sel = array(rep$ret_sel[,,n_yrs_hist,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
@@ -245,17 +317,36 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
     srr_opt <- srr_opt_base
     srr_opt$rec_lag <- rec_lag
     Do_Population_Projection(
-      n_proj_yrs = n_proj_yrs, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
-      sexratio = sexratio, n_fish_fleets = n_fish_fleets, do_recruits_move = do_recruits_move,
+      n_proj_yrs = n_proj_yrs,
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_ages = n_ages,
+      n_sexes = n_sexes,
+      sexratio = sexratio,
+      n_fish_fleets = n_fish_fleets,
+      do_recruits_move = do_recruits_move,
       rec_seas_prop = array(rep$rec_seas_prop, dim = c(n_pop, n_seas)),
       recruitment = array(rep$Rec, dim = c(n_pop, n_regions, n_yrs_hist)),
-      terminal_NAA = terminal_NAA, terminal_NAA0 = terminal_NAA0, terminal_F = terminal_F, dmr = terminal_dmr,
-      natmort = natmort, WAA = WAA, WAA_fish = WAA_fish, MatAA = MatAA, fish_sel = fish_sel, ret_sel = ret_sel,
+      terminal_NAA = terminal_NAA,
+      terminal_NAA0 = terminal_NAA0,
+      terminal_F = terminal_F,
+      dmr = terminal_dmr,
+      natmort = natmort,
+      WAA = WAA,
+      WAA_fish = WAA_fish,
+      MatAA = MatAA,
+      fish_sel = fish_sel,
+      ret_sel = ret_sel,
       Movement = Movement,
       f_ref_pt = array(const_F, dim = c(n_regions, n_proj_yrs)), # hold F constant - no HCR
-      recruitment_opt = "bh_rec", fmort_opt = "Input",
-      t_spawn = t_spawn, n_seas = n_seas, seasdur = data$seasdur, spawn_seas = data$spawn_seas,
-      natal_region = data$natal_region, srr_opt = srr_opt
+      recruitment_opt = "bh_rec",
+      fmort_opt = "Input",
+      t_spawn = t_spawn,
+      n_seas = n_seas,
+      seasdur = data$seasdur,
+      spawn_seas = data$spawn_seas,
+      natal_region = data$natal_region,
+      srr_opt = srr_opt
     )
   }
 

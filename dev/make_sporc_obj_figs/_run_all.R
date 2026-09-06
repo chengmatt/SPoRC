@@ -1,13 +1,8 @@
-# Purpose: Rebuild the exported data objects, bridge figures, and case study
-#          objects in dev/make_sporc_obj_figs. Scripts are grouped into tiers by
-#          cost and run in dependency order: the data objects write data/*.rda
-#          with usethis::use_data, and everything downstream reads those back
-#          through SPoRC::<object>, so the data tier always runs first.
+# Purpose: Rebuild the data objects, bridge figures, and case study objects in dev/make_sporc_obj_figs
+# Creator: Matthew LH. Cheng
 #
-#          Each script runs in its own Rscript process. That keeps a failure
-#          contained to one script, and guarantees the devtools::load_all at the
-#          top of a downstream script sees the data/*.rda a previous tier just
-#          wrote.
+# data objects run first: they write data/*.rda, everything downstream reads them back through SPoRC::
+# each script runs in its own Rscript process, so a failure stays contained
 #
 # Usage:
 #   Rscript dev/make_sporc_obj_figs/_run_all.R data     # data objects only, fast

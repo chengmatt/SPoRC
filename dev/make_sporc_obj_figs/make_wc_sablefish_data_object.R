@@ -1,30 +1,18 @@
-# Purpose: Build sgl_rg_wc_sablefish_data, the container for the 2025 West Coast
-#          sablefish case study. Everything the case study, its figures and its
-#          regression test need lives in the object: model inputs, the Stock
-#          Synthesis maximum likelihood estimate used as a seed, and the Stock
-#          Synthesis output the bridge is compared against.
+# Purpose: Build sgl_rg_wc_sablefish_data, the inputs, SS3 seed, and SS3 output for the West Coast sablefish case study
 # Creator: Matthew LH. Cheng
 # Date Created: 8/21/26
 #
 # Sources, the 2025 assessment's Stock Synthesis 3.30.23 run:
 #   2025_sablefish_dat.ss   data file
-#   2025_sablefish_ctl.ss   control file, carries the blocks, the variance
+#   2025_sablefish_ctl.ss   control file, holds the blocks, the variance
 #                           adjustments and the phases
 #   wtatage.ss              empirical weight and fecundity at age
 #   ss3.par                 parameter file, read at twelve significant digits;
-#                           Report.sso and r4ss's parameter table carry six
+#                           Report.sso and r4ss's parameter table have six
 #   Report.sso              read through r4ss, the comparison target
 #
-# West Coast sablefish differs from the Alaska case studies in five ways the
-# object has to carry. Recruitment is age 0 and enters the spawning biomass in
-# the equilibrium year only. The four trawl surveys carry an extra standard
-# deviation that is ADDED to the input log standard deviation rather than
-# combined with it in quadrature. A fifth index is a likelihood on the
-# recruitment deviations themselves rather than on abundance. The trawl fishery
-# and the West Coast groundfish bottom trawl survey each carry sexed and
-# unsexed compositions in the same years, which needs a second fleet sharing
-# the first's selectivity. And all selectivity is Stock Synthesis's age based
-# double normal, whose realized surfaces are carried as fixed input.
+# West Coast sablefish differs from the Alaska case studies: age-0 spawners in year one, an additive
+# extra survey sd, a recruitment-deviation index, duplicate fleets, and SS3 double normal selectivity
 
 library(here)
 library(dplyr)
@@ -34,9 +22,12 @@ ss3_dir <- "/Users/matthewcheng/Downloads/2025_sablefish_model_files"
 
 replist <- SS_output(dir = ss3_dir, verbose = FALSE, printstats = FALSE, covar = FALSE)
 inputs <- SS_read(dir = ss3_dir, verbose = FALSE)
-pars_ss3 <- SS_readpar_3.30(parfile = file.path(ss3_dir, "ss3.par"),
-                            datsource = file.path(ss3_dir, "2025_sablefish_dat.ss"),
-                            ctlsource = file.path(ss3_dir, "2025_sablefish_ctl.ss"), verbose = FALSE)
+pars_ss3 <- SS_readpar_3.30(
+  parfile = file.path(ss3_dir, "ss3.par"),
+  datsource = file.path(ss3_dir, "2025_sablefish_dat.ss"),
+  ctlsource = file.path(ss3_dir, "2025_sablefish_ctl.ss"),
+  verbose = FALSE
+)
 obj_ss3 <- as.numeric(sub(".*Objective function value = ([-0-9.eE+]+).*", "\\1",
                           readLines(file.path(ss3_dir, "ss3.par"), n = 1)))
 
@@ -51,10 +42,8 @@ n_sexes <- 2
 fleet_names <- replist$FleetNames
 
 # Fleets ----------------------------------------------------------------------
-# Stock Synthesis fleets 1-6 are the catch fleets (three gears and their discard
-# fleets), 7-10 the trawl surveys, 11 the recruitment index. The trawl fishery
-# and the bottom trawl survey each carry two composition streams in the same
-# years, so each gets a second SPoRC fleet drawing on the same numbers at age.
+# SS3 fleets 1-6 are catch (three gears plus discards), 7-10 trawl surveys, 11 the recruitment index.
+# trawl fishery and bottom trawl survey each carry two comp sources, so each gets a duplicate fleet
 n_fish <- 7
 n_srv <- 6
 fish_src <- c(1:6, 1) # the Stock Synthesis fleet each SPoRC fishery fleet draws from
@@ -77,26 +66,22 @@ stopifnot(all(sapply(0:11, function(f) isTRUE(all.equal(get_wt(f, 1), get_wt(-1,
 WAA <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes))
 for(s in 1:n_sexes) WAA[1,1,,1,,s] <- get_wt(-1, s)
 
-# Maturity is fecundity over weight, so spawning biomass is the sum of numbers
-# times fecundity. The age 0 fish are spawners in the equilibrium year only:
-# the unfished age structure carries them, while every later year's spawning
-# biomass is formed before that year's recruits settle
+# maturity is fecundity over weight, so spawning biomass is numbers times fecundity. age 0 fish are
+# spawners in the equilibrium year only, since later years form SSB before recruits settle
 MatAA <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes))
 MatAA[1,1,,1,,1] <- get_wt(-2, 1) / get_wt(-1, 1)
 mat_age0_yr1 <- MatAA[1,1,1,1,1,1]
 MatAA[1,1,,1,1,1] <- 0
 
-# The ageing error key is printed with the observed bins descending, one block
-# per sex; transposed it maps true ages onto observed bins, the last of which
-# accumulates
+# the ageing error key is printed with the observed bins descending, one block per sex; transposed
+# it maps true ages onto observed bins, the last of which accumulates
 AgeingError <- t(replist$AAK[1, n_obs_ages:1, ])
 stopifnot(max(abs(rowSums(AgeingError) - 1)) < 1e-5)
 AgeingError <- AgeingError / rowSums(AgeingError)
 
 # Catch -----------------------------------------------------------------------
-# Years without a catch record are closures. The duplicate trawl fleet has no
-# catch observation at all, which leaves its fishing mortality estimated rather
-# than forced to zero
+# years without a catch record are closures. the duplicate trawl fleet has no catch observation
+# at all, which leaves its fishing mortality estimated rather than forced to zero
 ObsCatch <- UseCatch <- array(0, dim = c(1, n_yrs, 1, n_fish))
 for(f in 1:6) {
   cf <- inputs$dat$catch %>% dplyr::filter(fleet == f, year %in% yrs)
@@ -121,10 +106,8 @@ for(sf in c(1:4, 6)) {
 } # end sf loop
 
 # Age compositions ------------------------------------------------------------
-# Rows carrying a negative fleet are the ones the assessment excludes. The
-# sample size is the input sample size times the variance adjustment from the
-# control file, divided by one plus the number of bins times the composition
-# constant, which puts SPoRC's multinomial kernel on Stock Synthesis's scale
+# rows with a negative fleet are excluded by the assessment. sample size is the input size times
+# the control file's variance adjustment, over 1 + nbins * comp constant: SS3's multinomial scale
 addtocomp <- 1e-3
 ac <- inputs$dat$agecomp %>% dplyr::filter(fleet > 0)
 va <- replist$Age_Comp_Fit_Summary
@@ -151,11 +134,8 @@ fish_comps <- build_comps(fish_src, fish_sex, n_fish)
 srv_comps <- build_comps(srv_src, srv_sex, n_srv)
 
 # Selectivity -----------------------------------------------------------------
-# Every fleet is on the age based double normal, three of them with time blocks
-# and the hook and line fleet with male parameter offsets; the pot fleet mirrors
-# hook and line. The realized surfaces go in as fixed input, and to keep the
-# object small only the distinct block rows are stored with the year each block
-# starts
+# every fleet is age based double normal, three with time blocks, hook and line with male offsets,
+# pot mirroring it. the realized surfaces go in fixed, stored as distinct block rows plus start year
 asel <- replist$ageselex %>% dplyr::filter(Factor == "Asel2", Yr %in% yrs)
 get_sel <- function(fleet) {
   out <- array(0, dim = c(n_yrs, n_ages, n_sexes))
@@ -178,15 +158,11 @@ compress_sel <- function(src) {
 fish_sel_blocks_ss3 <- compress_sel(fish_src)
 srv_sel_blocks_ss3 <- compress_sel(srv_src[1:5])
 # the recruitment index observes the deviations, so no curve of its own is ever
-# read; a flat one keeps the array dimensions honest
+# read; a flat one keeps the array dimensions right
 srv_sel_blocks_ss3[[6]] <- list(blk_yr = 1, sel = array(1, dim = c(1, n_ages, n_sexes)))
 
-# The selectivity parameters behind those surfaces, so the case study can
-# estimate the curves rather than hold them. Each parameter is either the
-# control file's base value, or, over the years a block pattern covers, the
-# replacement value that block carries. Recording WHICH row supplies each block
-# is what lets the estimation share one parameter across the blocks that draw on
-# the same row, exactly as the assessment does.
+# the selectivity parameters behind those surfaces, so the case study can estimate the curves.
+# recording which row supplies each block lets the estimation share one parameter across blocks
 sel_par_table <- function(src, blk_yr) {
   base_rows <- inputs$ctl$age_selex_parms
   tv_rows <- inputs$ctl$age_selex_parms_tv
@@ -225,15 +201,18 @@ sel_par_table <- function(src, blk_yr) {
   list(pars = pars, est = est, src_id = src_id)
 }
 sel_fish <- lapply(seq_along(fish_src), function(f) {
-  # the pot fleet mirrors hook and line and carries no parameter rows of its own
+  # the pot fleet mirrors hook and line and has no parameter rows of its own
   if(fish_src[f] == 3) return(NULL)
   sel_par_table(fish_src[f], fish_sel_blocks_ss3[[f]]$blk_yr)
 })
 sel_fish[[3]] <- sel_fish[[2]]
 sel_srv <- lapply(seq_len(5), function(sf) sel_par_table(srv_src[sf], srv_sel_blocks_ss3[[sf]]$blk_yr))
 # nothing to estimate for the recruitment index's curve, which is never read
-sel_srv[[6]] <- list(pars = matrix(0, 6, 1), est = matrix(FALSE, 6, 1),
-                     src_id = matrix("recruitment index, unused", 6, 1))
+sel_srv[[6]] <- list(
+  pars = matrix(0, 6, 1),
+  est = matrix(FALSE, 6, 1),
+  src_id = matrix("recruitment index, unused", 6, 1)
+)
 
 # The hook and line fleet's male parameters are offsets on the female's, the
 # last of them a scale on the whole curve. The pot fleet mirrors all of it.
@@ -298,8 +277,15 @@ sgl_rg_wc_sablefish_data <- list(
   },
   max_bias_adj = inputs$ctl$max_bias_adj,
   yrs_rec_est = min(pars_ss3$recdev2[, "year"]):max(yrs),
-  M_prior = data.frame(popblk = 1, regionblk = 1, yearblk = 1, ageblk = 1, sexblk = 1,
-                       mu = exp(-2.631), sd = 0.31),
+  M_prior = data.frame(
+    popblk = 1,
+    regionblk = 1,
+    yearblk = 1,
+    ageblk = 1,
+    sexblk = 1,
+    mu = exp(-2.631),
+    sd = 0.31
+  ),
   fish_sel_blocks_ss3 = fish_sel_blocks_ss3, srv_sel_blocks_ss3 = srv_sel_blocks_ss3,
   sel_fish = sel_fish, sel_srv = sel_srv, sel_male = sel_male,
   rec_idx = data.frame(yr = ri$Yr, obs = ri$Obs, se = ri$SE),
@@ -311,13 +297,19 @@ sgl_rg_wc_sablefish_data <- list(
     ln_srv_q = unname(pars_ss3$Q_parms[grep("^LnQ_base", rownames(pars_ss3$Q_parms)), "ESTIM"]),
     extra_sd = unname(extra_sd),
     q_rec_idx = pars_ss3$Q_parms["Q_base_Recruitment_Index(11)", "ESTIM"],
-    recdev = recdev, bias_adj = bias_adj, Fmort = F_ss3,
-    sel_pars = pars_ss3$S_parms, objective = obj_ss3
+    recdev = recdev,
+    bias_adj = bias_adj,
+    Fmort = F_ss3,
+    sel_pars = pars_ss3$S_parms,
+    objective = obj_ss3
   ),
 
   # The assessment's output, the comparison target
   ss3 = list(
-    SSB = ts$SpawnBio, Rec = ts$Recruit_0, Bio_all = ts$Bio_all, NAA = NAA_ss3,
+    SSB = ts$SpawnBio,
+    Rec = ts$Recruit_0,
+    Bio_all = ts$Bio_all,
+    NAA = NAA_ss3,
     SSB_sd = dq$StdDev[match(paste0("SSB_", yrs), dq$Label)],
     Rec_sd = dq$StdDev[match(paste0("Recr_", yrs), dq$Label)],
     pred_catch = sapply(1:6, function(f) {

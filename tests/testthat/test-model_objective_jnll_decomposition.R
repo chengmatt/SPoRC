@@ -2,14 +2,20 @@ library(SPoRC)
 library(testthat)
 data("dusky_rtmb_model")
 
-# The bundled dusky object carries a $rep snapshot taken when it was built, so the
+# The bundled dusky object has a $rep snapshot taken when it was built, so the
 # objective is re-evaluated here from its stored data and parameters to make sure
 # every check below reflects the current SPoRC_rtmb rather than that snapshot.
 mle_pars <- dusky_rtmb_model$env$parList()
 
 evaluate_at_mle <- function(data) {
-  fit_model(data, mle_pars, dusky_rtmb_model$mapping,
-            random = NULL, silent = TRUE, do_optim = FALSE)
+  fit_model(
+    data,
+    mle_pars,
+    dusky_rtmb_model$mapping,
+    random = NULL,
+    silent = TRUE,
+    do_optim = FALSE
+  )
 }
 
 
@@ -17,7 +23,7 @@ test_that("jnLL equals the weighted sum of its reported likelihood components", 
   baseline <- evaluate_at_mle(dusky_rtmb_model$data)
   expect_jnLL_decomposes(baseline, label = "dusky")
 
-  # the fixture has to actually exercise several components, or the check above
+  # the test setup has to actually exercise several components, or the check above
   # passes for the uninteresting reason that everything is zero
   contributions <- jnLL_contributions(baseline)
   expect_gt(sum(contributions$contribution != 0), 5)
@@ -74,9 +80,9 @@ test_that("each likelihood weight scales its own component and leaves the rest u
     perturbed <- evaluate_at_mle(perturbed_data)
 
     # weights enter only the jnLL sum, so no likelihood component itself may move
-    for(nm in components) {
-      expect_equal(perturbed$rep[[nm]], baseline$rep[[nm]],
-                   info = paste0("doubling ", wt_name, " changed the ", nm, " component"))
+    for(term_name in components) {
+      expect_equal(perturbed$rep[[term_name]], baseline$rep[[term_name]],
+                   info = paste0("doubling ", wt_name, " changed the ", term_name, " component"))
     }
 
     # doubling a weight adds exactly one more copy of what it already contributed,

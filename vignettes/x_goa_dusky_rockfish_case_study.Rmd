@@ -281,7 +281,7 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 The assessment down weights the early catch series, which was reconstructed,
 relative to the observer era: a weight of $2$ through 1991 and $50$ after.
-The survey index carries $1.66$ and the F penalty $2$. Survey length
+The survey index has $1.66$ and the F penalty $2$. Survey length
 compositions are present in the data object but are given a weight of zero,
 which is how the assessment treats them.
 
@@ -333,7 +333,7 @@ pdHess: TRUE
 
 The assessment's own quantities are read from its report file, which is a flat
 label then numbers dump, so each quantity is pulled by its label rather than by
-line number. The figure script carries the reader; the fields used here are
+line number. The figure script holds the reader; the fields used here are
 spawning biomass, numbers at age, fully selected F and the two selectivity
 curves.
 
@@ -350,7 +350,7 @@ at their worst year:
 
 ![](figures/x_goa_dusky_ts_comparison.png)
 
-Selectivity is time invariant in both fleets, so a single curve per gear carries
+Selectivity is time invariant in both fleets, so a single curve per gear has
 everything.
 
 ![](figures/x_goa_dusky_sel_comparison.png)

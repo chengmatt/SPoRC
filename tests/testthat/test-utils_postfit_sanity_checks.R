@@ -5,10 +5,12 @@ library(testthat)
 # as converged. Its four criteria only ever fire on a bad fit, so they are
 # driven here with hand-built sdreport stand-ins rather than a real model.
 
-make_sd_rep <- function(gradient = c(1e-6, 1e-6),
-                        pdHess = TRUE,
-                        cov = diag(c(0.04, 0.09)),
-                        par_names = c("ln_M", "ln_q")) {
+make_sd_rep <- function(
+  gradient = c(1e-6, 1e-6),
+  pdHess = TRUE,
+  cov = diag(c(0.04, 0.09)),
+  par_names = c("ln_M", "ln_q")
+) {
   names(gradient) <- par_names
   dimnames(cov) <- list(par_names, par_names)
   list(

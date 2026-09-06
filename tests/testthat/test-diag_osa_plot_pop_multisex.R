@@ -355,14 +355,26 @@ test_that("get_osa(model = ..., pop = TRUE) + plot_resids() work for a multi-sex
   )
 
   model <- fit_model(
-    input_list$data, input_list$par, input_list$map,
-    random = NULL, silent = TRUE, do_optim = TRUE, newton_loops = 5
+    input_list$data,
+    input_list$par,
+    input_list$map,
+    random = NULL,
+    silent = TRUE,
+    do_optim = TRUE,
+    newton_loops = 5
   )
   expect_true(RTMB::sdreport(model)$pdHess)
   expect_jnLL_decomposes(model)
 
-  osa_pop_fish <- get_osa(model = model, data = input_list$data, comp_source = "FishAge", pop = TRUE,
-                          family = "discrete", bins = input_list$data$ages, bin_label = "Age")
+  osa_pop_fish <- get_osa(
+    model = model,
+    data = input_list$data,
+    comp_source = "FishAge",
+    pop = TRUE,
+    family = "discrete",
+    bins = input_list$data$ages,
+    bin_label = "Age"
+  )
   expect_equal(unique(osa_pop_fish$res$comp_type), "SpltR_JntS")
   expect_setequal(unique(osa_pop_fish$res$region), 1:2)
   sdnr_fish <- sd(osa_pop_fish$res$resid)
@@ -370,8 +382,15 @@ test_that("get_osa(model = ..., pop = TRUE) + plot_resids() work for a multi-sex
   expect_gt(sdnr_fish, 0.7)
   expect_lt(sdnr_fish, 1.3)
 
-  osa_pop_srv <- get_osa(model = model, data = input_list$data, comp_source = "SrvAge", pop = TRUE,
-                         family = "discrete", bins = input_list$data$ages, bin_label = "Age")
+  osa_pop_srv <- get_osa(
+    model = model,
+    data = input_list$data,
+    comp_source = "SrvAge",
+    pop = TRUE,
+    family = "discrete",
+    bins = input_list$data$ages,
+    bin_label = "Age"
+  )
   expect_equal(unique(osa_pop_srv$res$comp_type), "SpltR_JntS")
   sdnr_srv <- sd(osa_pop_srv$res$resid)
   expect_true(is.finite(sdnr_srv))

@@ -1,12 +1,7 @@
 # Stage 1 of 3: setup
 #
-# Conditional age-at-length data streams. These live inside the fishery and survey
-# composition blocks rather than in a block of their own, since a CAAL observation
-# is an age composition and belongs with the other compositions for that fleet.
-# Setup_Mod_FishIdx_and_Comps and Setup_Mod_SrvIdx_and_Comps both call
-# setup_caal_stream, which validates the arrays, translates the likelihood and
-# composition type specifications, and builds the overdispersion parameters and
-# their maps.
+# Conditional age-at-length inputs. These live inside the fishery and survey composition blocks rather
+# than their own, since a CAAL observation is an age composition and belongs with that fleet's comps.
 
 #' Translate a CAAL composition type specification into a year by fleet matrix
 #'
@@ -63,7 +58,7 @@ parse_caal_type <- function(CAAL_Type, n_yrs, n_fleets, what) {
 }
 
 
-#' Set up a conditional age-at-length data stream
+#' Set up a conditional age-at-length data source
 #'
 #' Shared by \code{\link{Setup_Mod_FishIdx_and_Comps}} and
 #' \code{\link{Setup_Mod_SrvIdx_and_Comps}}. Validates the CAAL arrays, converts
@@ -85,7 +80,7 @@ parse_caal_type <- function(CAAL_Type, n_yrs, n_fleets, what) {
 #' @param ObsCAAL Observed CAAL array \code{[n_regions x n_years x n_seas x
 #'   n_lens x n_ages x n_sexes x n_fleets]}, or \code{NULL} for none.
 #' @param UseCAAL Use flags \code{[n_regions x n_years x n_seas x n_lens x
-#'   n_fleets]}. A length bin with no aged fish carries a zero and is skipped.
+#'   n_fleets]}. A length bin with no aged fish has a zero and is skipped.
 #' @param ISS_CAAL Input sample sizes \code{[n_regions x n_years x n_seas x
 #'   n_lens x n_sexes x n_fleets]}, the number aged within each length bin. When
 #'   \code{NULL} it is summed from \code{ObsCAAL}.
@@ -99,7 +94,7 @@ parse_caal_type <- function(CAAL_Type, n_yrs, n_fleets, what) {
 #' @return The updated \code{input_list}.
 #'
 #' @keywords internal
-setup_caal_stream <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
+setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
                               CAAL_LikeType, CAAL_Type, fleet_type) {
 
   n_regions <- input_list$data$n_regions
@@ -123,7 +118,7 @@ setup_caal_stream <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
   iss_dim <- c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fleets)
   use_dim <- c(n_regions, n_yrs, n_seas, n_lens, n_fleets)
 
-  # Defaults for a model that carries no CAAL data at all
+  # Defaults for a model that has no CAAL data at all
   if(is.null(UseCAAL)) UseCAAL <- array(0, dim = use_dim)
   if(is.null(ObsCAAL)) ObsCAAL <- array(0, dim = obs_dim)
   if(is.null(CAAL_LikeType)) CAAL_LikeType <- rep("none", n_fleets)
@@ -144,7 +139,7 @@ setup_caal_stream <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
     # The observed age bins need not be the model ages; the ageing error matrix maps
     # one onto the other, as it does for the marginal age compositions
     n_obs_ages <- dim(ObsCAAL)[5]
-    if(is.null(n_obs_ages) || n_obs_ages < 1) stop(paste0(obs_nm, " must carry at least one observed age bin"))
+    if(is.null(n_obs_ages) || n_obs_ages < 1) stop(paste0(obs_nm, " must have at least one observed age bin"))
     dim_msg(ObsCAAL, replace(obs_dim, 5, n_obs_ages), obs_nm, c("n_regions", "n_years", "n_seas", "n_lens", "n_obs_ages", "n_sexes", "n_fleets"))
   }
   dim_msg(UseCAAL, use_dim, use_nm, c("n_regions", "n_years", "n_seas", "n_lens", "n_fleets"))
@@ -188,9 +183,8 @@ setup_caal_stream <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
     } # end y loop
   } else dim_msg(ISS_CAAL, iss_dim, iss_nm, c("n_regions", "n_years", "n_seas", "n_lens", "n_sexes", "n_fleets"))
 
-  # Reconcile the use flags with any bin restriction, so the fitting likelihood
-  # and the residual machinery agree on which length bins carry aged fish. The
-  # bins array is set by the caller before this runs.
+  # reconcile the use flags with any bin restriction so the fitting likelihood and the residual
+  # routines agree on which length bins have aged fish. the bins array is set before this runs
   UseCAAL <- drop_empty_fitted_blocks(ObsCAAL, UseCAAL, input_list$data[[paste0(stub, "_bins")]], 5, stub)
 
   # Populate Data List ------------------------------------------------------
@@ -212,7 +206,7 @@ setup_caal_stream <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
 
   # Mapping Options ---------------------------------------------------------
   # only the Dirichlet-multinomial estimates an overdispersion, so every other
-  # theta is held
+  # theta is kept
   map_theta <- input_list$par[[theta_nm]]
   map_theta_agg <- input_list$par[[theta_agg_nm]]
   map_theta[] <- NA

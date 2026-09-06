@@ -1,12 +1,12 @@
 library(SPoRC)
 library(testthat)
 
-# Retention is the only selectivity stream whose process error weight and random walk
+# Retention is the only selectivity data source whose process error weight and random walk
 # initial sigma were read by the objective without being reachable from setup. These
 # pin that they arrive through Setup_Mod_Fishsel_and_Q, which is where a user sets
 # retention, and that a zero weight actually removes the retention process error.
 
-build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))
+build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
 # A time-varying retention curve, so the process error block the weight scales is
 # reached at all. Without this the weight is inert whatever it is set to.
@@ -39,7 +39,7 @@ test_that("a wrong length process error weight errors rather than becoming NA pe
   expect_error(build(fishsel = list(retsel_rw_init_sigma = c(5, 5))),
                "retsel_rw_init_sigma has 2 entries for 1 fleet")
 
-  # the same check now guards the fishery and survey streams it was missing from
+  # the same check now guards the fishery and survey data sources it was missing from
   expect_error(build(fishsel = list(fishsel_pe_wt = c(1, 1))),
                "fishsel_pe_wt has 2 entries for 1 fleet")
   expect_error(build(srvsel = list(srvsel_pe_wt = c(1, 1))),

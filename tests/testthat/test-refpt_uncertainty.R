@@ -47,12 +47,14 @@ test_that("Get_Reference_Point_Uncertainty returns intervals with the expected s
 
 test_that("parameters that cannot enter a per-recruit reference point give exactly zero", {
 
-  rp <- Get_Reference_Point_Uncertainty(obj = dusky_rtmb_model,
-                                        SPR_x = 0.4,
-                                        type = "single_region",
-                                        what = "SPR",
-                                        par_subset = c("ln_global_R0", "ln_RecDevs",
-                                                       "ln_F_devs", "fish_fixed_sel_pars"))
+  rp <- Get_Reference_Point_Uncertainty(
+    obj = dusky_rtmb_model,
+    SPR_x = 0.4,
+    type = "single_region",
+    what = "SPR",
+    par_subset = c("ln_global_R0", "ln_RecDevs",
+                                                       "ln_F_devs", "fish_fixed_sel_pars")
+  )
 
   p_names <- colnames(rp$d)
   f_row <- rp$d["f_ref_pt", ]

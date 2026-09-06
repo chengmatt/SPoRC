@@ -10,10 +10,19 @@ library(testthat)
 # redistributing it. These checks are the setup-side guard against that.
 
 make_dim_input_list <- function(n_regions = 2) {
-  Setup_Mod_Dim(years = 1:5, ages = 1:6, lens = 1,
-                n_regions = n_regions, n_sexes = 1,
-                n_fish_fleets = 1, n_srv_fleets = 1,
-                n_seas = 1, n_pop = 1, natal_region = 1, verbose = FALSE)
+  Setup_Mod_Dim(
+    years = 1:5,
+    ages = 1:6,
+    lens = 1,
+    n_regions = n_regions,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_seas = 1,
+    n_pop = 1,
+    natal_region = 1,
+    verbose = FALSE
+  )
 }
 
 make_ctmc_dat <- function(n_regions = 2) {
@@ -71,17 +80,26 @@ test_that("a valid adjacency matrix yields a conservative generator", {
   # the payoff of the guard: rows of Movement sum to 1 and columns of the generator sum to 0
   A <- matrix(c(0, 1, 1, 0), 2, 2)
   mv <- SPoRC:::Get_Movement(
-    move_type = 1, do_recruits_move = 1,
-    n_pop = 1, n_regions = 2, n_yrs = 1, n_proj_yrs_devs = 0,
-    n_ages = 1, n_sexes = 1, n_seas = 1,
+    move_type = 1,
+    do_recruits_move = 1,
+    n_pop = 1,
+    n_regions = 2,
+    n_yrs = 1,
+    n_proj_yrs_devs = 0,
+    n_ages = 1,
+    n_sexes = 1,
+    n_seas = 1,
     move_pars = NULL,
     move_devs = array(0, dim = c(1, 2, 1, 1, 1, 1, 1)),
     use_fixed_movement = 0,
     ctmc_move_dat = expand.grid(pop = 1, regions = 1:2, years = 1, seas = 1, ages = 1, sexes = 1),
-    preference_formula = ~0, diffusion_formula = ~1,
+    preference_formula = ~0,
+    diffusion_formula = ~1,
     log_move_diffusion_pars = array(log(0.3), dim = c(1, 1)),
     move_preference_pars = array(0, dim = c(1, 1)),
-    area_r = c(1, 1), adjacency_mat = A, ctmc_diffusion_bounds = 0
+    area_r = c(1, 1),
+    adjacency_mat = A,
+    ctmc_diffusion_bounds = 0
   )
   M <- matrix(mv$Movement[1, , , 1, 1, 1, 1], 2, 2)
   Q <- matrix(mv$Mrate[1, , , 1, 1, 1, 1], 2, 2)
@@ -93,10 +111,18 @@ test_that("a valid adjacency matrix yields a conservative generator", {
 test_that("ctmc_diffusion_eps is stored with a 0.1 default and rejected when not positive", {
   A <- matrix(c(0, 1, 1, 0), 2, 2)
   setup_eps <- function(...) {
-    Setup_Mod_Movement(input_list = make_dim_input_list(2),
-                       use_fixed_movement = 0, do_recruits_move = 0, move_type = 1,
-                       adjacency_mat = A, diffusion_formula = ~1, preference_formula = ~0,
-                       move_timing = 2, ctmc_move_dat = make_ctmc_dat(2), ...)
+    Setup_Mod_Movement(
+      input_list = make_dim_input_list(2),
+      use_fixed_movement = 0,
+      do_recruits_move = 0,
+      move_type = 1,
+      adjacency_mat = A,
+      diffusion_formula = ~1,
+      preference_formula = ~0,
+      move_timing = 2,
+      ctmc_move_dat = make_ctmc_dat(2),
+      ...
+    )
   }
   expect_equal(setup_eps()$data$ctmc_diffusion_eps, 0.1)
   expect_equal(setup_eps(ctmc_diffusion_bounds = 1, ctmc_diffusion_eps = 0.05)$data$ctmc_diffusion_eps, 0.05)
@@ -108,10 +134,18 @@ test_that("ctmc_diffusion_eps is stored with a 0.1 default and rejected when not
 test_that("ctmc_diffusion_bounds stores its form and rejects an unknown one", {
   A <- matrix(c(0, 1, 1, 0), 2, 2)
   setup_bf <- function(...) {
-    Setup_Mod_Movement(input_list = make_dim_input_list(2),
-                       use_fixed_movement = 0, do_recruits_move = 0, move_type = 1,
-                       adjacency_mat = A, diffusion_formula = ~1, preference_formula = ~0,
-                       move_timing = 2, ctmc_move_dat = make_ctmc_dat(2), ...)
+    Setup_Mod_Movement(
+      input_list = make_dim_input_list(2),
+      use_fixed_movement = 0,
+      do_recruits_move = 0,
+      move_type = 1,
+      adjacency_mat = A,
+      diffusion_formula = ~1,
+      preference_formula = ~0,
+      move_timing = 2,
+      ctmc_move_dat = make_ctmc_dat(2),
+      ...
+    )
   }
   for (bf in c("none", "softplus", "upwind"))
     expect_equal(setup_bf(ctmc_diffusion_bounds = bf)$data$ctmc_diffusion_bounds, bf)

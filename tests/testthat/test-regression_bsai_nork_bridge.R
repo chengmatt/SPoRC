@@ -1,11 +1,5 @@
-# Self-validating bridge test. The expectations are not stored SPoRC output: they are
-# the 2023 BSAI northern rockfish assessment's own reported quantities, shipped in
-# sgl_rg_bsai_nork_data$admb. Every parameter is set to the assessment's maximum
-# likelihood estimate and the model is evaluated there without optimizing, so a failure
-# means the population dynamics, a likelihood, or a selectivity form no longer
-# reproduces the assessment at a point where it is known to. Do not loosen the
-# tolerances to make this pass. See tests/README.md and the BSAI northern rockfish case
-# study vignette.
+# Self-validating bridge test: the expectations are the 2023 BSAI northern rockfish assessment's own
+# reported quantities in sgl_rg_bsai_nork_data$admb, evaluated at its estimate without optimizing.
 
 library(SPoRC)
 library(testthat)
@@ -37,7 +31,7 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
                dat$admb$sel_srv, tolerance = 1e-5, ignore_attr = TRUE)
 
   # The population at the assessment's MLE. The assessment's last reported age is a
-  # plus group while SPoRC carries ages past it, so those columns are summed before
+  # plus group while SPoRC has ages past it, so those columns are summed before
   # comparing.
   naa <- r$NAA[1, 1, 1:n_yrs, 1, , 1]
   naa_obs <- cbind(naa[, 1:(n_obs_ages - 1)], rowSums(naa[, n_obs_ages:n_ages]))
@@ -71,7 +65,7 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
   expect_equal(srv_like, dat$admb$datalikecomp[["aisurvlike"]], tolerance = 1e-3)
 
   # The F penalty is a weighted sum of squares on the F deviations, with the weight
-  # carried in sigmaF rather than applied outside the sum.
+  # kept in sigmaF rather than applied outside the sum.
   n_catch_obs <- sum(dat$UseCatch)
   f_pen <- sum(r$Fmort_nLL) -
     n_catch_obs * (c2pi + as.vector(input_list$par$ln_sigmaF))

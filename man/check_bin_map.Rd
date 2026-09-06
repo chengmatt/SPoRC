@@ -40,7 +40,7 @@ are rounded at source, and real ones come in with rows summing to 0.997 or
 row off by that much reweights nothing, and \code{AgeingError} passes
 \code{tol = 0.05}. A length bin map is written by hand rather than read from a
 rounded table, so \code{LenBinMap} keeps the \code{1e-8} it has always been
-held to. Only a row off by more than \code{tol} is reported, since that means
+kept to. Only a row off by more than \code{tol} is reported, since that means
 the matrix is not the map its author thought it was.
 
 \code{strict} decides whether that is fatal. \code{LenBinMap} has always

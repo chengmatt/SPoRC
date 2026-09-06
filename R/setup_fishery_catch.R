@@ -1,10 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Catch and fishing mortality inputs, plus discard mortality rate.
-# Setup_Mod_Catch_and_F is the entry point and calls every do_*_mapping helper in
-# this file to build the parameter maps for F, its deviations, the catch and
-# discard observation error terms, and the discard mortality rate.
-# Setup_Sim_Fishing, the operating model counterpart, lives in setup_sim_fleets.R.
+# Catch and fishing mortality inputs, plus discard mortality rate. Setup_Mod_Catch_and_F builds the
+# maps for F, its deviations, the catch and discard observation error, and the discard mortality rate.
 
 #' Map sigmaF (fishing mortality process error SD) parameters
 #'
@@ -43,7 +40,8 @@ do_sigmaF_mapping <- function(input_list, sigmaF_spec) {
             fleet  = input_list$data$n_fish_fleets)
 
   input_list$map$ln_sigmaF <- build_shared_spec_map(
-    dims = dims, spec = sigmaF_spec,
+    dims = dims,
+    spec = sigmaF_spec,
     dim_abbrev = c(r = "region", seas = "season", f = "fleet")
   )
 
@@ -84,7 +82,8 @@ do_Fdev_rho_mapping <- function(input_list, Fdev_rho_spec) {
     input_list$map$Fdev_rho <- factor(rep(NA, prod(dims)))
   } else {
     input_list$map$Fdev_rho <- build_shared_spec_map(
-      dims = dims, spec = Fdev_rho_spec,
+      dims = dims,
+      spec = Fdev_rho_spec,
       dim_abbrev = c(r = "region", seas = "season", f = "fleet")
     )
   }
@@ -139,9 +138,11 @@ do_sigmaC_mapping <- function(input_list, sigmaC_spec) {
             fleet  = input_list$data$n_fish_fleets)
 
   input_list$map$ln_sigmaC <- build_shared_spec_map(
-    dims = dims, spec = sigmaC_spec,
+    dims = dims,
+    spec = sigmaC_spec,
     dim_abbrev = c(r = "region", y = "year", seas = "season", f = "fleet"),
-    use = input_list$data$UseCatch, what = "sigmaC"
+    use = input_list$data$UseCatch,
+    what = "sigmaC"
   )
 
   # Print Message
@@ -177,18 +178,14 @@ do_Fmort_mapping <- function(input_list) {
             season = input_list$data$n_seas,
             fleet  = input_list$data$n_fish_fleets)
 
-  # Estimate F devs if aggregated catch OR any pop-specific catch is used, or
-  # if the aggregate catch observation is missing (NA) rather than a true
-  # recorded zero; fishing is assumed to have continued through a missing
-  # observation, whereas a recorded zero (or no catch data used at all) with
-  # no missing observation indicates a true closure
+  # estimate F devs if any catch is used, or if the aggregate catch is missing rather than a
+  # recorded zero: fishing is assumed to continue through a missing observation
   has_catch <- input_list$data$UseCatch == 1 |
     apply(input_list$data$UseCatch_pop == 1, c(2,3,4,5), any) |
     is.na(input_list$data$ObsCatch)
 
-  # A fleet fitting catch at age carries its observations in a different array,
-  # and is fished wherever any age or sex is fit. Without this the fishing
-  # mortality level is mapped off and silently held at its starting value.
+  # a fleet fitting catch at age keeps its observations in a different array and is fished wherever
+  # any age or sex is fit. without this the fishing mortality level is mapped off silently
   if(!is.null(input_list$data$UseCatchAA) && any(input_list$data$UseCatchAA == 1)) {
     has_catch <- has_catch | apply(input_list$data$UseCatchAA == 1, c(1,2,3,6), any)
   }
@@ -201,11 +198,8 @@ do_Fmort_mapping <- function(input_list) {
 
   input_list$map$ln_F_devs <- factor(as.vector(F_dev_map))
 
-  # ln_F_mean only enters the objective through cells that are fished in at
-  # least one year, the same condition that keeps Fmort free rather than
-  # pinned to zero. A region-season-fleet cell that is closed in every year
-  # (e.g. a fleet that only operates in its own region/season) contributes
-  # nothing to the likelihood, so estimating it leaves a flat gradient
+  # ln_F_mean only enters through cells fished in at least one year. a region-season-fleet cell
+  # closed in every year contributes nothing, so estimating it leaves a flat gradient
   F_mean_dims <- dims[c("region", "season", "fleet")]
   F_mean_active <- apply(has_catch, c(1,3,4), any)
 
@@ -214,9 +208,8 @@ do_Fmort_mapping <- function(input_list) {
 
   input_list$map$ln_F_mean <- factor(as.vector(F_mean_map))
 
-  # mirror the deviation map into the data list so the process error penalty can
-  # key on the cells that are actually estimated. A deviation mapped off by hand
-  # after setup is then neither estimated nor penalized
+  # mirror the deviation map into the data list so the process error penalty keys on the cells that
+  # are estimated. a deviation mapped off by hand after setup is then neither estimated nor penalized
   input_list$data$map_ln_F_devs <- array(as.numeric(input_list$map$ln_F_devs), dim = dims)
 
   return(input_list)
@@ -314,7 +307,8 @@ do_sigmaC_pop_mapping <- function(input_list, sigmaC_pop_spec) {
             fleet  = input_list$data$n_fish_fleets)
 
   input_list$map$ln_sigmaC_pop <- build_shared_spec_map(
-    dims = dims, spec = sigmaC_pop_spec,
+    dims = dims,
+    spec = sigmaC_pop_spec,
     dim_abbrev = c(pop = "pop", r = "region", y = "year", seas = "season", f = "fleet")
   )
 
@@ -358,7 +352,8 @@ do_sigma_dmr_mapping <- function(input_list, sigma_dmr_spec) {
             fleet  = input_list$data$n_fish_fleets)
 
   input_list$map$ln_sigma_dmr <- build_shared_spec_map(
-    dims = dims, spec = sigma_dmr_spec,
+    dims = dims,
+    spec = sigma_dmr_spec,
     dim_abbrev = c(r = "region", seas = "season", f = "fleet")
   )
 
@@ -412,7 +407,8 @@ do_sigmaD_mapping <- function(input_list, sigmaD_spec) {
             fleet  = input_list$data$n_fish_fleets)
 
   input_list$map$ln_sigmaD <- build_shared_spec_map(
-    dims = dims, spec = sigmaD_spec,
+    dims = dims,
+    spec = sigmaD_spec,
     dim_abbrev = c(r = "region", y = "year", seas = "season", f = "fleet")
   )
 
@@ -468,14 +464,8 @@ do_dmr_dev_mapping <- function(input_list, dmr_dev_spec) {
     return(input_list)
   }
 
-  # Estimate a deviation wherever dmr enters the dynamics, which is every cell
-  # the objective does not treat as a true closure: aggregated OR any
-  # population-specific catch is used, or the aggregate catch observation is
-  # missing (NA) rather than a recorded zero. dmr is identified through total
-  # mortality (ZAA), so a cell is informative whenever it is fished and
-  # retention is less than one, with or without discard observations.
-  # get_dmr_penalty() keys on the resulting map, so every estimated deviation is
-  # penalized and no deviation fixed at zero contributes to the penalty
+  # estimate a deviation wherever dmr enters the dynamics: any catch used, or the aggregate catch
+  # missing rather than a recorded zero. get_dmr_penalty() keys on the resulting map
   has_catch <- input_list$data$UseCatch == 1 |
     apply(input_list$data$UseCatch_pop == 1, c(2,3,4,5), any) |
     is.na(input_list$data$ObsCatch)
@@ -585,7 +575,8 @@ do_sigmaD_pop_mapping <- function(input_list, sigmaD_pop_spec) {
             fleet  = input_list$data$n_fish_fleets)
 
   input_list$map$ln_sigmaD_pop <- build_shared_spec_map(
-    dims = dims, spec = sigmaD_pop_spec,
+    dims = dims,
+    spec = sigmaD_pop_spec,
     dim_abbrev = c(pop = "pop", r = "region", y = "year", seas = "season", f = "fleet")
   )
 
@@ -621,7 +612,8 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
             fleet  = input_list$data$n_fish_fleets)
 
   input_list$map$logit_dmr_mean <- build_shared_spec_map(
-    dims = dims, spec = dmr_mean_spec,
+    dims = dims,
+    spec = dmr_mean_spec,
     dim_abbrev = c(r = "region", seas = "season", f = "fleet")
   )
 
@@ -646,7 +638,7 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
 #'   Values should be in the units specified by \code{catch_units}. For a
 #'   cell with \code{UseCatch == 0} (and no population-specific catch
-#'   used), an \code{NA} entry here is treated as a genuinely missing
+#'   used), an \code{NA} entry here is treated as a missing
 #'   observation; fishing is assumed to have continued and \code{Fmort}/
 #'   \code{ln_F_devs} are estimated normally for that year, whereas a
 #'   true recorded value (typically \code{0}) is treated as a real
@@ -706,7 +698,7 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   mean of the estimated deviations, penalizing only their spread and leaving
 #'   the level free, which is what a sum of squares about the series' own mean
 #'   amounts to. Under a mean-plus-deviations parameterization the level is
-#'   already carried by \code{ln_F_mean}, so \code{"own_mean"} avoids
+#'   already set by \code{ln_F_mean}, so \code{"own_mean"} avoids
 #'   penalizing it twice; note that it also leaves \code{ln_F_mean} and the
 #'   deviations' level mutually unidentified unless one of them is fixed,
 #'   which \code{ln_F_mean_spec = "fix"} does.
@@ -714,7 +706,7 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   sits after \code{...}. \code{"est"} (default, the previous
 #'   and only behavior) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
 #'   off at its starting value, which defaults to \code{0} under this spec
-#'   unless supplied through \code{...}, so the deviations carry all of log
+#'   unless supplied through \code{...}, so the deviations have all of log
 #'   fishing mortality: \code{F = exp(ln_F_devs)}, where it follows a free annual log-F
 #'   parameterization. It must be paired with \code{Fdev_pen_center = "own_mean"}
 #'   (penalize only the spread about the deviations' own mean),
@@ -831,8 +823,8 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'
 #' @param ObsCatchAA Observed catch at age, an array with dimensions
 #'   \code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}. The
-#'   sex margin is required whatever the fleet reports: a stream summed over
-#'   sexes carries its observation in sex slot one. Supplying this
+#'   sex dim is required whatever the fleet reports: a data source summed over
+#'   sexes has its observation in sex slot one. Supplying this
 #'   fits the catch at age directly, every age its own lognormal observation, in
 #'   place of an aggregated catch with compositions. This is the native form for
 #'   ICES age-structured assessments. The two statements are not interchangeable: the
@@ -844,7 +836,7 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #' @param UseCatchAA Integer array shaped like \code{ObsCatchAA}, \code{1} where
 #'   an observation is fit and \code{0} otherwise. A cell that is not fit is also
 #'   not fished, so this governs closures the way \code{UseCatch} does for the
-#'   aggregated stream.
+#'   aggregated data source.
 #'
 #' @param sigmaCAA_key Integer matrix \code{[n_ages, n_fish_fleets]} coupling the
 #'   catch at age observation error, an integer key matrix, the convention ICES assessments use. Equal
@@ -879,38 +871,38 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   correlates over ages and years jointly through a separable AR(1), which
 #'   requires the fleet's observed ages and years to form a complete grid. A cell
 #'   with a single observed age falls back to independent. The
-#'   population-specific streams carry their own settings rather than borrowing
-#'   the aggregated ones. The fishery and survey index streams are set in
+#'   population-specific data sources have their own settings rather than borrowing
+#'   the aggregated ones. The fishery and survey index data sources are set in
 #'   \code{\link{Setup_Mod_FishIdx_and_Comps}} and
 #'   \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
 #'
 #' @param rho_catch_spec,rho_discard_spec,rho_catch_pop_spec,rho_discard_pop_spec
-#'   How each stream's correlation parameters are shared, using the same spec
+#'   How each data source's correlation parameters are shared, using the same spec
 #'   strings as \code{sigmaF_spec} and \code{Fdev_rho_spec}. The correlations
-#'   sit over region, sex and fleet, with a leading population margin for the
-#'   population-specific streams, so \code{"est_shared_r_s"} gives one per fleet,
+#'   sit over region, sex and fleet, with a leading population dim for the
+#'   population-specific data sources, so \code{"est_shared_r_s"} gives one per fleet,
 #'   \code{"est_shared_s"} one per region and fleet, \code{"est_shared_r_s_f"} a
 #'   single value, \code{"est_all"} one per cell, and \code{"fix"} holds them.
 #'   \code{NULL} (the default) takes \code{"est_shared_r_s"}, or
-#'   \code{"est_shared_p_r_s"} for the population streams, both one per fleet.
+#'   \code{"est_shared_p_r_s"} for the population data sources, both one per fleet.
 #'   The spec governs the across-age correlation, the across-year correlation and
 #'   the unstructured matrix together, so fleets sharing under \code{"us"} share
-#'   a whole matrix. A region, sex or population a fleet never observes carries no
-#'   parameter, which is what holds the unused slots of a summed margin out.
+#'   a whole matrix. A region, sex or population a fleet never observes has no
+#'   parameter, which is what holds the unused slots of a summed dim out.
 #'
 #' @param ObsCatchAA_SE,ObsDiscardAA_SE,ObsCatchAA_pop_SE,ObsDiscardAA_pop_SE
 #'   Reported standard errors shaped like their observation array, read only when
-#'   the stream's \code{sigma_form} asks for them.
+#'   the data source's \code{sigma_form} asks for them.
 #'
 #' @param CatchAA_Type,DiscardAA_Type,CatchAA_pop_Type,DiscardAA_pop_Type
-#'   Which margins the fleet reports separately, following the composition
+#'   Which dims the fleet reports separately, following the composition
 #'   vocabulary. Give it as one setting for every fleet, one per fleet, or as
 #'   year and fleet specifications such as
 #'   \code{"spltRaggS_Year_1-20_Fleet_1"} when the setting changes part way
 #'   through the series. \code{"agg"} sums over
 #'   regions and sexes, \code{"spltRaggS"} (default) splits regions and sums over
 #'   sexes, \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits
-#'   both. An observation summed over a margin belongs in slot one of it.
+#'   both. An observation summed over a dim belongs in slot one of it.
 #'
 #' @param CatchAA_LikeType,DiscardAA_LikeType,CatchAA_pop_LikeType,DiscardAA_pop_LikeType
 #'   \code{"lognormal"} (default) or \code{"normal"}, one setting for every
@@ -1005,22 +997,82 @@ Setup_Mod_Catch_and_F <- function(input_list,
   # Input Validation --------------------------------------------------------
 
   # Catch objects
-  check_data_dimensions(ObsCatch, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsCatch')
-  check_data_dimensions(UseCatch, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseCatch')
+  check_data_dimensions(
+    ObsCatch,
+    n_regions = input_list$data$n_regions,
+    n_years = length(input_list$data$years),
+    n_seas = input_list$data$n_seas,
+    n_fish_fleets = input_list$data$n_fish_fleets,
+    what = 'ObsCatch'
+  )
+  check_data_dimensions(
+    UseCatch,
+    n_regions = input_list$data$n_regions,
+    n_years = length(input_list$data$years),
+    n_seas = input_list$data$n_seas,
+    n_fish_fleets = input_list$data$n_fish_fleets,
+    what = 'UseCatch'
+  )
 
   if(any(UseCatch_pop == 1)) {
-    check_data_dimensions(ObsCatch_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsCatch_pop')
-    check_data_dimensions(UseCatch_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseCatch_pop')
+    check_data_dimensions(
+      ObsCatch_pop,
+      n_pop = input_list$data$n_pop,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_seas = input_list$data$n_seas,
+      n_fish_fleets = input_list$data$n_fish_fleets,
+      what = 'ObsCatch_pop'
+    )
+    check_data_dimensions(
+      UseCatch_pop,
+      n_pop = input_list$data$n_pop,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_seas = input_list$data$n_seas,
+      n_fish_fleets = input_list$data$n_fish_fleets,
+      what = 'UseCatch_pop'
+    )
   }
 
   if(any(UseDiscard == 1)) {
-    check_data_dimensions(ObsDiscard, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsDiscard')
-    check_data_dimensions(UseDiscard, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseDiscard')
+    check_data_dimensions(
+      ObsDiscard,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_seas = input_list$data$n_seas,
+      n_fish_fleets = input_list$data$n_fish_fleets,
+      what = 'ObsDiscard'
+    )
+    check_data_dimensions(
+      UseDiscard,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_seas = input_list$data$n_seas,
+      n_fish_fleets = input_list$data$n_fish_fleets,
+      what = 'UseDiscard'
+    )
   }
 
   if(any(UseDiscard_pop == 1)) {
-    check_data_dimensions(ObsDiscard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'ObsDiscard_pop')
-    check_data_dimensions(UseDiscard_pop, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_fish_fleets = input_list$data$n_fish_fleets, what = 'UseDiscard_pop')
+    check_data_dimensions(
+      ObsDiscard_pop,
+      n_pop = input_list$data$n_pop,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_seas = input_list$data$n_seas,
+      n_fish_fleets = input_list$data$n_fish_fleets,
+      what = 'ObsDiscard_pop'
+    )
+    check_data_dimensions(
+      UseDiscard_pop,
+      n_pop = input_list$data$n_pop,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_seas = input_list$data$n_seas,
+      n_fish_fleets = input_list$data$n_fish_fleets,
+      what = 'UseDiscard_pop'
+    )
   }
 
   # Fishing Mortality checking
@@ -1071,9 +1123,8 @@ Setup_Mod_Catch_and_F <- function(input_list,
 
   # Populate Data List ------------------------------------------------------
 
-  # Retained Catch Stuff
-  # Catch at age. A fleet fits either the aggregated catch with compositions or
-  # the catch at age, never both: they are the same information stated twice.
+  # catch at age. a fleet fits either the aggregated catch with compositions or the catch at age,
+  # never both: they are the same information stated twice
   input_list <- do_at_age_data_setup(input_list, ObsCatchAA, UseCatchAA, ObsCatchAA_SE,
                                      "CatchAA", "n_fish_fleets")
   input_list <- do_at_age_data_setup(input_list, ObsCatchAA_pop, UseCatchAA_pop, ObsCatchAA_pop_SE,
@@ -1102,7 +1153,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
        any(input_list$data$UseDiscardAA_pop[,,,,,,f] == 1)) {
       use_discard_aa[f] <- 1
       # a fraction is a property of the whole catch, not of one age, so the
-      # at-age stream carries discards in numbers or weight
+      # at-age data source has discards in numbers or weight
       if(!discard_units[f] %in% c(0, 1)) {
         stop("Fishery fleet ", f, " fits discards at age with discard_units '",
              c("abd_frac", "biom_frac")[discard_units[f] - 1], "'. A discard fraction is a ",
@@ -1115,7 +1166,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
   input_list$data$use_catch_aa <- use_catch_aa
   input_list$data$use_discard_aa <- use_discard_aa
 
-  # how each stream is reported, what density it uses, and where its error comes from
+  # how each data source is reported, what density it uses, and where its error comes from
   input_list <- do_at_age_type_setup(input_list, CatchAA_Type, "CatchAA", "n_fish_fleets", "UseCatchAA")
   input_list <- do_at_age_type_setup(input_list, CatchAA_pop_Type, "CatchAA", "n_fish_fleets", "UseCatchAA_pop", pop = TRUE)
   input_list <- do_at_age_type_setup(input_list, DiscardAA_Type, "DiscardAA", "n_fish_fleets", "UseDiscardAA")
@@ -1160,17 +1211,13 @@ Setup_Mod_Catch_and_F <- function(input_list,
   if(!ln_F_mean_spec %in% c("est", "fix")) stop("ln_F_mean_spec must be est or fix")
   collect_message("ln_F_mean is specified as: ", ln_F_mean_spec)
 
-  # A fixed zero mean with a penalty centered on that mean shrinks the deviations
-  # toward F = 1, which is a prior nobody intends, so the combination is rejected
-  # rather than warned about.
+  # a fixed zero mean with a penalty centered on that mean shrinks the deviations toward F = 1,
+  # a prior nobody intends, so the combination is rejected rather than warned about
   if(ln_F_mean_spec == "fix" && Use_F_pen == 1 && Fdev_pen_center == "fixed" && Fdev_model %in% c("iid", "ar1"))
     stop("ln_F_mean_spec = 'fix' with a zero-centered '", Fdev_model, "' penalty shrinks the deviations toward F = 1. Pair it with Fdev_pen_center = 'own_mean', Fdev_model = 'rw', or Use_F_pen = 0.")
 
-  # Under own-mean centering the penalty no longer pins the level of log F, so
-  # an estimated ln_F_mean and the deviations' mean trade off along an exactly
-  # flat ridge unless something else still reads the mean: "prop" initialization
-  # F does, but absolute-rate initialization ("abs") and a free initial age
-  # structure (init_age_strc = 4) do not.
+  # under own-mean centering the penalty no longer sets the level of log F, so ln_F_mean and the
+  # deviations' mean trade along a flat ridge unless "prop" initialization F reads the mean
   if(Fdev_pen_center == "own_mean" && ln_F_mean_spec == "est" &&
      (isTRUE(input_list$data$init_F_form == 1) || isTRUE(input_list$data$init_age_strc == 4)))
     warning("Fdev_pen_center = 'own_mean' with an estimated ln_F_mean leaves the mean and the deviations' level mutually unidentified in this configuration, since nothing else reads ln_F_mean. Consider ln_F_mean_spec = 'fix'.")
@@ -1237,7 +1284,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
   input_list <- do_Fdev_rho_mapping(input_list, Fdev_rho_spec)
   input_list <- do_Fmort_mapping(input_list)
   # Free log-F parameterization: the mean is fixed at its starting value and the
-  # deviations carry all of log F.
+  # deviations have all of log F.
   if(ln_F_mean_spec == "fix") input_list$map$ln_F_mean <- factor(rep(NA, length(input_list$par$ln_F_mean)))
 
   # Discard Catch Stuff

@@ -1,16 +1,7 @@
-# Purpose: Render the schematic in the reference point uncertainty section of
-#          vignettes/i_reference_points.Rmd, which shows where the sensitivity
-#          d_j comes from. Changing a parameter deforms the criterion and leaves
-#          a non-zero slope at the old solution; the new solution is however far
-#          you have to walk to shed that slope. Both panels get the same
-#          parameter change, so both pick up the same slope, and the flatter
-#          criterion sheds it more slowly and travels further.
-#
-#          The criterion is a plain quadratic, not a fitted model. Nothing here
-#          reads a data object or runs an optimization, so it is cheap and
-#          belongs in the data tier of _run_all.R.
-#
+# Purpose: Render the sensitivity schematic in the reference point uncertainty section of vignettes/i_reference_points.Rmd
 # Creator: Matthew LH. Cheng
+#
+# the criterion is a plain quadratic, so nothing here reads a data object or optimizes: data tier of _run_all.R
 
 slope_gain <- 0.3   # slope left at the old solution after a parameter changes
 shed_sharp <- 2.0   # slope shed per unit of x, sharply bending criterion
@@ -25,8 +16,17 @@ draw_panel <- function(shed, gain) {
   h_new <- 0.5 * shed * x^2 + gain * x # criterion after p_j changes
   walk <- -gain / shed                 # where the new solution sits
 
-  plot(x, h_fit, type = "l", lwd = 2.6, col = "gray20", ylim = c(-0.75, 2.2),
-       xlab = expression(x == log(F)), ylab = "criterion  h", xaxt = "n")
+  plot(
+    x,
+    h_fit,
+    type = "l",
+    lwd = 2.6,
+    col = "gray20",
+    ylim = c(-0.75, 2.2),
+    xlab = expression(x == log(F)),
+    ylab = "criterion  h",
+    xaxt = "n"
+  )
   lines(x, h_new, lwd = 2.2, col = "gray45", lty = 2)
   abline(h = 0, col = "gray88", lwd = 0.8)
 

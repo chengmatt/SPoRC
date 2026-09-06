@@ -4,12 +4,12 @@
 \alias{store_at_age_cell}
 \title{Write a simulated at-age cell into its true and observed containers}
 \usage{
-store_at_age_cell(sim_env, stream, drawn, r, y, seas, f, sim)
+store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim)
 }
 \arguments{
 \item{sim_env}{Environment holding the simulation containers.}
 
-\item{stream}{Stream tag, e.g. \code{"CatchAA"}.}
+\item{data_source}{Data source tag, e.g. \code{"CatchAA"}.}
 
 \item{drawn}{List returned by \code{\link{sim_at_age_cell}}.}
 

@@ -15,7 +15,7 @@ check_msy_rec_model(what, rec_model, sr_penalty = 0)
 
 \item{sr_penalty}{Integer. \code{0} none, \code{1} Beverton-Holt, \code{2}
 Ricker. Only meaningful under \code{rec_model == 0}, where it adds a curve
-scored against the recruitment deviations.}
+penalized against the recruitment deviations.}
 }
 \value{
 \code{invisible(NULL)}. Called for the error.
@@ -23,7 +23,7 @@ scored against the recruitment deviations.}
 \description{
 MSY is the maximum of equilibrium yield over a stock-recruit curve, so it is
 only defined when the fit estimated one. A model fitted with
-\code{rec_model = "mean_rec"} carries \code{rec_model == 0}, and the
+\code{rec_model = "mean_rec"} has \code{rec_model == 0}, and the
 equilibrium recruitment helpers in \code{refpts_msy.R} branch on Ricker
 against everything else, so an unguarded mean recruitment fit would be handed
 Beverton-Holt reference points. Steepness is also mapped off under mean

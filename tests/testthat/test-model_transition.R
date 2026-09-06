@@ -4,7 +4,7 @@ library(testthat)
 test_that("the fused operator/integral agrees with computing each separately", {
   # get_population_projection takes both the transition operator and the catch integral
   # from one Van Loan exponential. That is only sound because the operator really is the
-  # top-left block of the same matrix, so pin it: any drift here would silently change
+  # top-left block of the same matrix, so pin it: any change here would silently alter
   # either the numbers at age or the catch.
   set.seed(808)
   for (n in c(1, 2, 4)) {
@@ -141,7 +141,7 @@ test_that("continuous movement conserves abundance when mortality is zero", {
   expect_true(all(out >= 0))
 })
 
-# The timings genuinely differ when they should -------------------------------
+# The timings differ when they should -------------------------------
 
 test_that("timings differ under region-varying mortality, with continuous in between", {
   m <- make_move(4, seed = 8)
@@ -241,23 +241,42 @@ test_that("continuous steps compose across seasons to the full-year operator", {
 
 test_that("Get_Movement scales the generator by seasdur when asked", {
   n_regions <- 3; n_seas <- 2
-  dat <- expand.grid(pop = 1, regions = 1:n_regions, years = 1,
-                     seas = 1:n_seas, ages = 1:2, sexes = 1)
+  dat <- expand.grid(
+    pop = 1,
+    regions = 1:n_regions,
+    years = 1,
+    seas = 1:n_seas,
+    ages = 1:2,
+    sexes = 1
+  )
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
   seasdur <- c(0.25, 0.75)
 
   call_gm <- function(scale) {
     Get_Movement(
-      move_type = 1, do_recruits_move = 1,
-      n_pop = 1, n_regions = n_regions, n_yrs = 1, n_proj_yrs_devs = 0,
-      n_ages = 2, n_sexes = 1, n_seas = n_seas,
+      move_type = 1,
+      do_recruits_move = 1,
+      n_pop = 1,
+      n_regions = n_regions,
+      n_yrs = 1,
+      n_proj_yrs_devs = 0,
+      n_ages = 2,
+      n_sexes = 1,
+      n_seas = n_seas,
       move_pars = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, 2, 1)),
       move_devs = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, 2, 1)),
-      use_fixed_movement = 0, Fixed_Movement = NULL,
-      ctmc_move_dat = dat, preference_formula = ~ 1, diffusion_formula = ~ 1,
-      log_move_diffusion_pars = log(0.3), move_preference_pars = 0,
-      area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-      seasdur = seasdur, ctmc_scale_by_seasdur = scale
+      use_fixed_movement = 0,
+      Fixed_Movement = NULL,
+      ctmc_move_dat = dat,
+      preference_formula = ~ 1,
+      diffusion_formula = ~ 1,
+      log_move_diffusion_pars = log(0.3),
+      move_preference_pars = 0,
+      area_r = rep(1, n_regions),
+      adjacency_mat = adj,
+      ctmc_diffusion_bounds = 0,
+      seasdur = seasdur,
+      ctmc_scale_by_seasdur = scale
     )
   }
 
@@ -358,18 +377,42 @@ test_that("spawn_state rejects an unknown move_timing only via its callers", {
 
 test_that("Setup_Mod_Movement validates move_timing", {
   # A bad value must be rejected before the not-yet-wired guard fires
-  dummy <- list(data = list(n_pop = 1, n_regions = 2, n_seas = 1, years = 1:3,
-                            ages = 1:4, n_sexes = 1, n_proj_yrs_devs = 0),
-                par = list(), map = list(), verbose = FALSE, store_config = FALSE)
+  dummy <- list(
+    data = list(
+      n_pop = 1,
+      n_regions = 2,
+      n_seas = 1,
+      years = 1:3,
+      ages = 1:4,
+      n_sexes = 1,
+      n_proj_yrs_devs = 0
+    ),
+    par = list(),
+    map = list(),
+    verbose = FALSE,
+    store_config = FALSE
+  )
   expect_error(Setup_Mod_Movement(dummy, move_timing = 7), "move_timing is not correctly specified")
 })
 
 test_that("continuous movement requires an estimated CTMC generator", {
   # Unstructured multinomial-logit movement has no instantaneous rate matrix, and one
   # cannot in general be recovered from the fractions (the Markov embedding problem)
-  dummy <- list(data = list(n_pop = 1, n_regions = 2, n_seas = 1, years = 1:3,
-                            ages = 1:4, n_sexes = 1, n_proj_yrs_devs = 0),
-                par = list(), map = list(), verbose = FALSE, store_config = FALSE)
+  dummy <- list(
+    data = list(
+      n_pop = 1,
+      n_regions = 2,
+      n_seas = 1,
+      years = 1:3,
+      ages = 1:4,
+      n_sexes = 1,
+      n_proj_yrs_devs = 0
+    ),
+    par = list(),
+    map = list(),
+    verbose = FALSE,
+    store_config = FALSE
+  )
   expect_error(Setup_Mod_Movement(dummy, move_timing = 2, move_type = 0),
                "requires move_type == 1")
 })

@@ -3,7 +3,7 @@ library(testthat)
 
 # ── do_dmr_dev_mapping keys on fished cells, and matches get_dmr_penalty ─────
 #
-# dmr enters the likelihood through total mortality: ZAA carries disc_FAA, and
+# dmr enters the likelihood through total mortality: ZAA has disc_FAA, and
 # CAA = ret_FAA/ZAA * NAA * (1 - exp(-ZAA)), so dmr moves predicted retained
 # catch, indices, and compositions in any fished cell where retention is less
 # than one. Discard observations are not the boundary of identifiability -- dmr
@@ -20,8 +20,13 @@ pop_dims <- c(n_pop, n_regions, n_yrs, n_seas, n_fleets)
 
 make_catch_input_list <- function() {
   list(
-    data = list(n_pop = n_pop, n_regions = n_regions, years = 1:n_yrs,
-                n_seas = n_seas, n_fish_fleets = n_fleets),
+    data = list(
+      n_pop = n_pop,
+      n_regions = n_regions,
+      years = 1:n_yrs,
+      n_seas = n_seas,
+      n_fish_fleets = n_fleets
+    ),
     par = list(),
     map = list(),
     verbose = FALSE,
@@ -29,19 +34,27 @@ make_catch_input_list <- function() {
   )
 }
 
-run_setup <- function(UseCatch,
-                      UseDiscard = array(0, dim = agg_dims),
-                      UseCatch_pop = array(0, dim = pop_dims),
-                      UseDiscard_pop = array(0, dim = pop_dims),
-                      ObsCatch = array(100, dim = agg_dims),
-                      dmr_dev_spec = "est_all", Use_dmr_pen = 1) {
+run_setup <- function(
+  UseCatch,
+  UseDiscard = array(0, dim = agg_dims),
+  UseCatch_pop = array(0, dim = pop_dims),
+  UseDiscard_pop = array(0, dim = pop_dims),
+  ObsCatch = array(100, dim = agg_dims),
+  dmr_dev_spec = "est_all",
+  Use_dmr_pen = 1
+) {
   suppressWarnings(Setup_Mod_Catch_and_F(
     input_list = make_catch_input_list(),
-    ObsCatch = ObsCatch, UseCatch = UseCatch,
-    ObsCatch_pop = array(50, dim = pop_dims), UseCatch_pop = UseCatch_pop,
-    ObsDiscard = array(0.1, dim = agg_dims), UseDiscard = UseDiscard,
-    ObsDiscard_pop = array(0.05, dim = pop_dims), UseDiscard_pop = UseDiscard_pop,
-    Use_dmr_pen = Use_dmr_pen, dmr_dev_spec = dmr_dev_spec
+    ObsCatch = ObsCatch,
+    UseCatch = UseCatch,
+    ObsCatch_pop = array(50, dim = pop_dims),
+    UseCatch_pop = UseCatch_pop,
+    ObsDiscard = array(0.1, dim = agg_dims),
+    UseDiscard = UseDiscard,
+    ObsDiscard_pop = array(0.05, dim = pop_dims),
+    UseDiscard_pop = UseDiscard_pop,
+    Use_dmr_pen = Use_dmr_pen,
+    dmr_dev_spec = dmr_dev_spec
   ))
 }
 
@@ -56,7 +69,10 @@ penalized_cells <- function(il) {
     logit_dmr_devs = array(0.5, dim = agg_dims),
     ln_sigma_dmr = array(log(1), dim = c(n_regions, n_seas, n_fleets)),
     map_logit_dmr_devs = il$data$map_logit_dmr_devs,
-    n_fish_fleets = n_fleets, n_yrs = n_yrs, n_regions = n_regions, n_seas = n_seas
+    n_fish_fleets = n_fleets,
+    n_yrs = n_yrs,
+    n_regions = n_regions,
+    n_seas = n_seas
   )
   pen != 0
 }
@@ -131,9 +147,9 @@ test_that("the estimated set matches the penalized set exactly", {
   ObsCatch <- array(100, dim = agg_dims)
   ObsCatch[1, 2, 1, 1] <- NA # exercise the missing-observation branch on both sides
 
-  # the discard indicator genuinely disagrees with the fished set in both
+  # the discard indicator disagrees with the fished set in both
   # directions, so the match below is a property of the fished set, not a
-  # coincidence of the fixture
+  # coincidence of the test setup
   fished <- UseCatch == 1 | apply(UseCatch_pop == 1, c(2,3,4,5), any) | is.na(ObsCatch)
   expect_true(any(fished & UseDiscard == 0))
   expect_true(any(!fished & UseDiscard == 1))

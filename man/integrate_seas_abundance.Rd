@@ -39,7 +39,7 @@ regions while they are dying.
 }
 \details{
 The integral runs over the unit interval, not over \eqn{[0, \Delta]}, because
-\eqn{A = Q^\top \Delta - \mathrm{diag}(Z)} already carries the season duration in
+\eqn{A = Q^\top \Delta - \mathrm{diag}(Z)} already holds the season duration in
 both of its terms. The integration variable is elapsed \emph{fraction} of the
 season, so a full season is \eqn{\tau = 1}.
 

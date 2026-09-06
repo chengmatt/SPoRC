@@ -49,8 +49,8 @@ element 2 for the sex correlation (skipped when \code{n_sexes == 1}).
 \details{
 One function serves every composition block. \code{comp_prefix} selects age
 versus length and fishery versus survey, \code{discard} selects the retained
-or discarded stream, \code{has_pop} selects the aggregated or population
-specific stream, and \code{fleet_field} names the fleet count to size the map
+or discarded data source, \code{has_pop} selects the aggregated or population
+specific data source, and \code{fleet_field} names the fleet count to size the map
 by. Same parameterization as \code{\link{do_comp_theta_mapping}}.
 }
 \keyword{internal}

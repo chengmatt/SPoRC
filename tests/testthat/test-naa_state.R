@@ -4,7 +4,7 @@ library(testthat)
 # State-space numbers at age. What these guard, in order: that the feature is inert when off,
 # that it is a reparameterization rather than a different model when seeded at the deterministic
 # solution, that every correlation form reduces to independence when its correlations are zero,
-# and that the age and year margins are not transposed. That last one is the only defect here that
+# and that the age and year dims are not transposed. That last one is the only defect here that
 # no objective value, gradient or convergence diagnostic can see.
 
 naa_dims <- list(n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_seas = 1, n_yrs = 22, n_ages = 8)
@@ -18,9 +18,13 @@ naa_seed <- local({
     obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
     rep <- obj$report(obj$par)
     n_yrs <- length(il$data$years)
-    cached <<- list(il = il, obj = obj, rep = rep,
-                    seed = log(array(rep$NAA[,,1:n_yrs,1,,],
-                                     dim = c(1, 1, n_yrs, length(il$data$ages), 1))))
+    cached <<- list(
+      il = il,
+      obj = obj,
+      rep = rep,
+      seed = log(array(rep$NAA[,,1:n_yrs,1,,],
+                                     dim = c(1, 1, n_yrs, 1, length(il$data$ages), 1)))
+    )
     cached
   }
 })
@@ -48,8 +52,8 @@ test_that("seeded at the deterministic solution the state is a reparameterizatio
 
   # the prediction is captured after the plus group accumulates, so the innovation at the seed is
   # zero to machine precision; capturing it earlier would leave the accumulation applied on top
-  eta <- il$par$ln_NAA[,,il$data$naa_re_yrs, il$data$naa_re_ages,, drop = FALSE] -
-         log(rep$NAA_pred[,,il$data$naa_re_yrs, il$data$naa_re_ages,, drop = FALSE])
+  eta <- il$par$ln_NAA[,,il$data$naa_re_yrs, il$data$naa_re_seas, il$data$naa_re_ages,, drop = FALSE] -
+         log(rep$NAA_pred[,,il$data$naa_re_yrs, il$data$naa_re_seas, il$data$naa_re_ages,, drop = FALSE])
   expect_lt(max(abs(eta)), 1e-10)
 
   # and the fit to data is untouched: the whole difference is the prior on the states
@@ -73,9 +77,9 @@ test_that("every correlation form collapses to independence at zero correlation"
   } # end form loop
 })
 
-test_that("the age and year margins are not transposed", {
-  # Deliberately asymmetric: a test with the same structure on both margins passes whether or not
-  # they are swapped, so it would catch nothing. Scored against an explicit Kronecker covariance
+test_that("the age and year dims are not transposed", {
+  # Deliberately asymmetric: a test with the same structure on both dims passes whether or not
+  # they are swapped, so it would catch nothing. Penalized against an explicit Kronecker covariance
   # built independently of the density code.
   skip_if_not_installed("mvtnorm")
   set.seed(11)
@@ -83,20 +87,20 @@ test_that("the age and year margins are not transposed", {
   rho_a <- 0.75; rho_y <- 0.25; sd_prs <- 0.4
   rt_inv <- function(r) 0.5 * log((1 + r) / (1 - r))
 
-  pred <- array(exp(matrix(stats::rnorm(ny * na, 5, 0.2), ny, na)), dim = c(1, 1, ny, na, 1))
-  eta <- array(stats::rnorm(ny * na, 0, 0.3), dim = c(1, 1, ny, na, 1))
+  pred <- array(exp(matrix(stats::rnorm(ny * na, 5, 0.2), ny, na)), dim = c(1, 1, ny, 1, na, 1))
+  eta <- array(stats::rnorm(ny * na, 0, 0.3), dim = c(1, 1, ny, 1, na, 1))
   sig <- array(sd_prs, dim = dim(pred))
   pe <- array(0, dim = c(1, 1, 3, 1))
   pe[1,1,1,1] <- rt_inv(rho_a); pe[1,1,2,1] <- rt_inv(rho_y)
 
-  got <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny,
+  got <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, 1,
                                        NAA_re = 4, NAA_pe_pars = pe)
 
   ar1 <- function(n, r) r^abs(outer(1:n, 1:n, "-"))
   scale <- sd_prs / sqrt(1 - rho_y^2) / sqrt(1 - rho_a^2)
-  v <- as.vector(matrix(eta[1,1,,,1], ny, na)) # year varies fastest, as column-major order gives
+  v <- as.vector(matrix(eta[1,1,,,,1], ny, na)) # year varies fastest, as column-major order gives
 
-  # Cov(as.vector(M)) is the reverse Kronecker of the margin order, so age is on the left
+  # Cov(as.vector(M)) is the reverse Kronecker of the dim order, so age is on the left
   right <- -mvtnorm::dmvnorm(v, sigma = scale^2 * kronecker(ar1(na, rho_a), ar1(ny, rho_y)), log = TRUE)
   swapped <- -mvtnorm::dmvnorm(v, sigma = scale^2 * kronecker(ar1(na, rho_y), ar1(ny, rho_a)), log = TRUE)
 
@@ -111,16 +115,13 @@ test_that("the setup refuses what is not identified", {
   # accumulates every older age, so at equilibrium it sits above the age below it whenever
   # exp(-M) / (1 - exp(-M)) exceeds one.
   unseeded <- suppressMessages(sweep_input(dims = naa_dims, biol = list(NAA_re = "iid", M_spec = "fix")))
-  by_age <- unseeded$par$ln_NAA[1, 1, 1, , 1]
+  by_age <- unseeded$par$ln_NAA[1, 1, 1, 1, , 1]
   na <- length(by_age)
   expect_true(all(diff(by_age[1:(na - 1)]) < 0))
   M_bar <- mean(exp(as.vector(unseeded$par$ln_M)))
   expect_equal(by_age[na] - by_age[na - 1], -M_bar - log(1 - exp(-M_bar)), tolerance = 1e-10)
   expect_gt(by_age[1], log(1))
-  # a freely estimated time-blocked M is the same unpenalized log-survival surface
-  expect_error(naa_on("iid", M_spec = "est_ln_M", M_yearblk_spec = list(1:11, 12:22)),
-               "not separately identified")
-  # the penalty scores one rectangular slice, so the active cells have to be contiguous
+  # the penalty covers one rectangular slice, so the active cells have to be contiguous
   expect_error(naa_on("iid", NAA_re_years = c(2:5, 10:15)), "contiguous run of years")
   expect_error(naa_on("iid", NAA_re_ages = 1:8), "first age")
   # only the independent form is defined for a standard deviation that varies by year or age
@@ -143,7 +144,7 @@ naa_rg_seed <- local({
     obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
     rep <- obj$report(obj$par)
     ny <- length(il$data$years); na <- length(il$data$ages)
-    cached <<- log(array(rep$NAA[,,1:ny,1,,], dim = c(1, 3, ny, na, 2)))
+    cached <<- log(array(rep$NAA[,,1:ny,1,,], dim = c(1, 3, ny, 1, na, 2)))
     cached
   }
 })
@@ -158,18 +159,36 @@ test_that("a region correlation at zero reduces to independent regions", {
   # zero, so every age-year structure must return exactly what it returns without the region factor
   set.seed(4)
   nr <- 3; ny <- 7; na <- 5
-  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, na, 1))
-  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, na, 1))
+  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
+  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
   sig <- array(0.35, dim = dim(pred))
   pe <- array(0.4, dim = c(1, nr, 3, 1))
   zero_rc <- array(0, dim = c(1, nr*(nr-1)/2, 1))
 
   for(code in c(1, 2, 3, 4, 5)) {
-    off <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = code,
-                                         NAA_pe_pars = pe, NAA_re_region = 0)
-    on <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = code,
-                                        NAA_pe_pars = pe, NAA_re_region = 1,
-                                        NAA_region_corr_pars = zero_rc)
+    off <- SPoRC:::Get_NAA_state_penalty(
+      log(pred)+eta,
+      pred,
+      sig,
+      1:na,
+      1:ny,
+      1,
+      NAA_re = code,
+      NAA_pe_pars = pe,
+      NAA_re_region = 0
+    )
+    on <- SPoRC:::Get_NAA_state_penalty(
+      log(pred)+eta,
+      pred,
+      sig,
+      1:na,
+      1:ny,
+      1,
+      NAA_re = code,
+      NAA_pe_pars = pe,
+      NAA_re_region = 1,
+      NAA_region_corr_pars = zero_rc
+    )
     expect_equal(on, off, tolerance = 1e-10, label = paste("NAA_re code", code))
   } # end code loop
 })
@@ -183,21 +202,30 @@ test_that("the region correlation composes as region against the age and year gr
   sd_prs <- 0.35; rho_a <- 0.7; rho_y <- 0.2
   rt_inv <- function(r) 0.5 * log((1 + r) / (1 - r))
 
-  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, na, 1))
-  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, na, 1))
+  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
+  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
   sig <- array(sd_prs, dim = dim(pred))
   pe <- array(0, dim = c(1, nr, 3, 1))
   pe[1,,1,1] <- rt_inv(rho_a); pe[1,,2,1] <- rt_inv(rho_y)
   rc <- array(c(0.6, -0.3, 0.45), dim = c(1, nr*(nr-1)/2, 1))
 
-  got <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = 4,
-                                       NAA_pe_pars = pe, NAA_re_region = 1,
-                                       NAA_region_corr_pars = rc)
+  got <- SPoRC:::Get_NAA_state_penalty(
+    log(pred)+eta,
+    pred,
+    sig,
+    1:na,
+    1:ny,
+    1,
+    NAA_re = 4,
+    NAA_pe_pars = pe,
+    NAA_re_region = 1,
+    NAA_region_corr_pars = rc
+  )
 
   ar1 <- function(n, r) r^abs(outer(1:n, 1:n, "-"))
   C <- SPoRC:::build_us_corr(as.vector(rc), nr)
   scale <- sd_prs / sqrt(1 - rho_y^2) / sqrt(1 - rho_a^2)
-  v <- as.vector(array(eta[1,,,,1], dim = c(nr, ny, na))) # region varies fastest
+  v <- as.vector(array(eta[1,,,,,1], dim = c(nr, ny, na))) # region varies fastest
 
   right <- -mvtnorm::dmvnorm(v, sigma = scale^2 * kronecker(ar1(na, rho_a), kronecker(ar1(ny, rho_y), C)), log = TRUE)
   no_region <- -mvtnorm::dmvnorm(v, sigma = scale^2 * kronecker(ar1(na, rho_a), kronecker(ar1(ny, rho_y), diag(nr))), log = TRUE)
@@ -210,22 +238,41 @@ test_that("the region correlation composes with the non-separable three-dimensio
   # the point of whitening rather than forming a Kronecker: the cohort term never has to factor
   set.seed(4)
   nr <- 3; ny <- 7; na <- 5
-  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, na, 1))
-  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, na, 1))
+  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
+  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
   sig <- array(0.35, dim = dim(pred))
   pe <- array(0.4, dim = c(1, nr, 3, 1))
   rc <- array(c(0.6, -0.3, 0.45), dim = c(1, nr*(nr-1)/2, 1))
 
-  off <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = 5,
-                                       NAA_pe_pars = pe, NAA_re_region = 0)
-  on <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = 5,
-                                      NAA_pe_pars = pe, NAA_re_region = 1, NAA_region_corr_pars = rc)
+  off <- SPoRC:::Get_NAA_state_penalty(
+    log(pred)+eta,
+    pred,
+    sig,
+    1:na,
+    1:ny,
+    1,
+    NAA_re = 5,
+    NAA_pe_pars = pe,
+    NAA_re_region = 0
+  )
+  on <- SPoRC:::Get_NAA_state_penalty(
+    log(pred)+eta,
+    pred,
+    sig,
+    1:na,
+    1:ny,
+    1,
+    NAA_re = 5,
+    NAA_pe_pars = pe,
+    NAA_re_region = 1,
+    NAA_region_corr_pars = rc
+  )
   expect_true(is.finite(on))
   expect_false(isTRUE(all.equal(on, off)))
 })
 
 test_that("the region correlation sharing specs give the parameter counts they claim", {
-  # n_pop is one in this fixture, so sharing over population is a no-op and sharing over sex is not
+  # n_pop is one in this test setup, so sharing over population is a no-op and sharing over sex is not
   n_free <- function(il) length(unique(stats::na.omit(as.integer(as.character(il$map$NAA_region_corr_pars)))))
   expect_equal(n_free(naa_rg_on(NAA_re_region = "us", NAA_re_region_spec = "est_all")), 6)
   expect_equal(n_free(naa_rg_on(NAA_re_region = "us", NAA_re_region_spec = "est_shared_p")), 6)
@@ -242,7 +289,7 @@ test_that("a region correlation needs more than one region", {
   expect_error(naa_rg_on(NAA_re_region = "us", NAA_re_region_spec = "banana"), "Valid options")
 })
 
-test_that("a multi-region state builds on the tape with both margins live", {
+test_that("a multi-region state builds on the tape with both dims live", {
   il <- naa_rg_on(NAA_re = "2dar1", NAA_re_region = "us", NAA_re_region_spec = "est_shared_p_s")
   obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
   expect_true(is.finite(obj$fn(obj$par)))
@@ -251,13 +298,13 @@ test_that("a multi-region state builds on the tape with both margins live", {
 })
 
 # ---------------------------------------------------------------------------
-# Population and sex margins, the selectivity confound, and tag cohorts
+# Population and sex dims, the selectivity confound, and tag cohorts
 # ---------------------------------------------------------------------------
 
-test_that("all four correlation margins compose as one Kronecker product", {
-  # The decisive check on the whitening route: four correlated margins plus a separable structure
+test_that("all four correlation dims compose as one Kronecker product", {
+  # The decisive check on the whitening route: four correlated dims plus a separable structure
   # over the age-year grid, against a five-factor covariance built independently of the density
-  # code. Every margin carries a different structure, so any permutation of them is visible.
+  # code. Every dim has a different structure, so any permutation of them is visible.
   skip_if_not_installed("mvtnorm")
   set.seed(9)
   np <- 2; nr <- 3; ny <- 6; na <- 4; ns <- 2
@@ -265,8 +312,8 @@ test_that("all four correlation margins compose as one Kronecker product", {
   rt <- function(r) 0.5 * log((1 + r) / (1 - r))
   n <- np * nr * ny * na * ns
 
-  pred <- array(exp(stats::rnorm(n, 5, 0.2)), dim = c(np, nr, ny, na, ns))
-  eta <- array(stats::rnorm(n, 0, 0.3), dim = c(np, nr, ny, na, ns))
+  pred <- array(exp(stats::rnorm(n, 5, 0.2)), dim = c(np, nr, ny, 1, na, ns))
+  eta <- array(stats::rnorm(n, 0, 0.3), dim = c(np, nr, ny, 1, na, ns))
   sig <- array(sd0, dim = dim(pred))
   pe <- array(0, dim = c(np, nr, 3, ns)); pe[,,1,] <- rt(rho_a); pe[,,2,] <- rt(rho_y)
 
@@ -276,11 +323,22 @@ test_that("all four correlation margins compose as one Kronecker product", {
   rcR <- array(0, dim = c(np, 3, ns))
   for(p in 1:np) for(s in 1:ns) rcR[p,,s] <- pair
 
-  got <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, NAA_re = 4,
-                                       NAA_pe_pars = pe,
-                                       NAA_re_region = 1, NAA_region_corr_pars = rcR,
-                                       NAA_re_pop = 1, NAA_pop_corr_pars = rcP,
-                                       NAA_re_sex = 1, NAA_sex_corr_pars = rcS)
+  got <- SPoRC:::Get_NAA_state_penalty(
+    log(pred) + eta,
+    pred,
+    sig,
+    1:na,
+    1:ny,
+    1,
+    NAA_re = 4,
+    NAA_pe_pars = pe,
+    NAA_re_region = 1,
+    NAA_region_corr_pars = rcR,
+    NAA_re_pop = 1,
+    NAA_pop_corr_pars = rcP,
+    NAA_re_sex = 1,
+    NAA_sex_corr_pars = rcS
+  )
 
   ar1 <- function(k, r) r^abs(outer(1:k, 1:k, "-"))
   Cp <- SPoRC:::build_us_corr(rcP, np)
@@ -289,7 +347,7 @@ test_that("all four correlation margins compose as one Kronecker product", {
   sc <- sd0 / sqrt(1 - rho_y^2) / sqrt(1 - rho_a^2)
   K <- function(...) Reduce(kronecker, list(...))
 
-  # margins run pop, region, year, age, sex with pop varying fastest, so the covariance of the
+  # dims run pop, region, year, age, sex with pop varying fastest, so the covariance of the
   # vectorized array is the reverse of that order
   ref <- -mvtnorm::dmvnorm(as.vector(eta),
                            sigma = sc^2 * K(Cs, ar1(na, rho_a), ar1(ny, rho_y), Cr, Cp), log = TRUE)
@@ -300,20 +358,40 @@ test_that("a population or sex correlation at zero reduces to independence", {
   set.seed(9)
   np <- 2; nr <- 2; ny <- 5; na <- 4; ns <- 2
   n <- np * nr * ny * na * ns
-  pred <- array(exp(stats::rnorm(n, 5, 0.2)), dim = c(np, nr, ny, na, ns))
-  eta <- array(stats::rnorm(n, 0, 0.3), dim = c(np, nr, ny, na, ns))
+  pred <- array(exp(stats::rnorm(n, 5, 0.2)), dim = c(np, nr, ny, 1, na, ns))
+  eta <- array(stats::rnorm(n, 0, 0.3), dim = c(np, nr, ny, 1, na, ns))
   sig <- array(0.35, dim = dim(pred))
   pe <- array(0.4, dim = c(np, nr, 3, ns))
-  off <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = 4, NAA_pe_pars = pe)
-  expect_equal(SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = 4,
-               NAA_pe_pars = pe, NAA_re_pop = 1, NAA_pop_corr_pars = 0), off, tolerance = 1e-10)
-  expect_equal(SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, NAA_re = 4,
-               NAA_pe_pars = pe, NAA_re_sex = 1, NAA_sex_corr_pars = 0), off, tolerance = 1e-10)
+  off <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1, NAA_re = 4, NAA_pe_pars = pe)
+  expect_equal(SPoRC:::Get_NAA_state_penalty(
+    log(pred)+eta,
+    pred,
+    sig,
+    1:na,
+    1:ny,
+    1,
+    NAA_re = 4,
+    NAA_pe_pars = pe,
+    NAA_re_pop = 1,
+    NAA_pop_corr_pars = 0
+  ), off, tolerance = 1e-10)
+  expect_equal(SPoRC:::Get_NAA_state_penalty(
+    log(pred)+eta,
+    pred,
+    sig,
+    1:na,
+    1:ny,
+    1,
+    NAA_re = 4,
+    NAA_pe_pars = pe,
+    NAA_re_sex = 1,
+    NAA_sex_corr_pars = 0
+  ), off, tolerance = 1e-10)
 })
 
-test_that("a correlation margin with one level is refused", {
+test_that("a correlation dim with one level is refused", {
   expect_error(naa_on("iid", NAA_re_pop = "us"), "more than one pop")
-  # the single-region fixture also has one population, so sex is the one that can be exercised there
+  # the single-region test setup also has one population, so sex is the one that can be exercised there
   expect_error(naa_on("iid", NAA_re_sex = "banana"), "Valid options")
 })
 
@@ -328,25 +406,25 @@ test_that("tag cohorts are rescaled by the state and are untouched without it", 
   expect_equal(max(abs(rep$NAA_scalar - 1)), 0, tolerance = 1e-8)
 })
 
-test_that("the one-dimensional autoregressions run over the margin they name", {
+test_that("the one-dimensional autoregressions run over the dim they name", {
   # 1dar1 correlates ages with years independent, 1dar1_y the reverse. Checked against explicit
-  # Kronecker covariances, and against each other: a form that ran over the wrong margin would
+  # Kronecker covariances, and against each other: a form that ran over the wrong dim would
   # still give a finite objective and converge, so only the cross-check catches it.
   skip_if_not_installed("mvtnorm")
   set.seed(21)
   ny <- 9; na <- 6; sd0 <- 0.4; rho_a <- 0.75; rho_y <- 0.25
   rt <- function(r) 0.5 * log((1 + r) / (1 - r))
 
-  pred <- array(exp(stats::rnorm(ny*na, 5, 0.2)), dim = c(1, 1, ny, na, 1))
-  eta <- array(stats::rnorm(ny*na, 0, 0.3), dim = c(1, 1, ny, na, 1))
+  pred <- array(exp(stats::rnorm(ny*na, 5, 0.2)), dim = c(1, 1, ny, 1, na, 1))
+  eta <- array(stats::rnorm(ny*na, 0, 0.3), dim = c(1, 1, ny, 1, na, 1))
   sig <- array(sd0, dim = dim(pred))
   pe <- array(0, dim = c(1, 1, 3, 1))
   pe[1,1,1,1] <- rt(rho_a); pe[1,1,2,1] <- rt(rho_y)
 
-  P <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny,
+  P <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1,
                                                  NAA_re = k, NAA_pe_pars = pe)
   ar1 <- function(n, r) r^abs(outer(1:n, 1:n, "-"))
-  v <- as.vector(matrix(eta[1,1,,,1], ny, na)) # year varies fastest
+  v <- as.vector(matrix(eta[1,1,,,,1], ny, na)) # year varies fastest
   ll <- function(S) -mvtnorm::dmvnorm(v, sigma = S, log = TRUE)
 
   # ages independent, years correlated
@@ -357,25 +435,25 @@ test_that("the one-dimensional autoregressions run over the margin they name", {
 
   # and both are the independent form when their correlation is zero
   pe0 <- array(0, dim = c(1, 1, 3, 1))
-  Q <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny,
+  Q <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1,
                                                  NAA_re = k, NAA_pe_pars = pe0)
   expect_equal(Q(2), Q(1), tolerance = 1e-10)
   expect_equal(Q(3), Q(1), tolerance = 1e-10)
 })
 
-test_that("1dar1_y estimates the year correlation slot and leaves the others held", {
+test_that("1dar1_y estimates the year correlation slot and leaves the others kept", {
   il <- naa_on("1dar1_y")
   mp <- as.integer(as.character(il$map$NAA_pe_pars))
   live <- array(!is.na(mp), dim = dim(il$par$NAA_pe_pars))
-  expect_false(any(live[,,1,])) # age slot held
+  expect_false(any(live[,,1,])) # age slot kept
   expect_true(all(live[,,2,]))  # year slot estimated
-  expect_false(any(live[,,3,])) # cohort slot held
+  expect_false(any(live[,,3,])) # cohort slot kept
 })
 
 test_that("a retrospective peel truncates the state, its map and its active years", {
   # The penalty slices ln_NAA with naa_re_yrs, so an untruncated index vector reads past the end of
   # the shortened array, and n_est_naa_re gates both the dynamics hook and the penalty. Neither can
-  # be carried over from the full model.
+  # be reused from the full model.
   il <- naa_on("iid")
   n_yrs <- length(il$data$years)
   peel <- 3
@@ -412,4 +490,52 @@ test_that("a peel that removes every active year switches the state off", {
   expect_true(all(is.na(as.integer(as.character(cut$retro_mapping$ln_NAA)))))
   obj <- fit_model(cut$retro_data, cut$retro_parameters, cut$retro_mapping, do_optim = FALSE, silent = TRUE)
   expect_equal(obj$report(obj$par)$NAA_state_nLL, 0)
+})
+
+test_that("the correlation sharing specs give the parameter counts they claim", {
+  # n_pop is one in this test setup, so sharing over population is a no-op; region and sex are not.
+  # 2dar1 claims two of the three slots, so est_all is n_regions * n_sexes * 2 = 12.
+  n_free <- function(il) length(unique(stats::na.omit(as.integer(as.character(il$map$NAA_pe_pars)))))
+  expect_equal(n_free(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_all")), 12)
+  expect_equal(n_free(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_p")), 12)
+  expect_equal(n_free(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_r")), 4)
+  expect_equal(n_free(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_s")), 6)
+  expect_equal(n_free(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_r_s")), 2)
+  expect_equal(n_free(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_p_r_s")), 2)
+  expect_equal(n_free(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "fix")), 0)
+  expect_equal(n_free(naa_rg_on(NAA_re = "3dcond", NAA_pe_spec = "est_shared_r_s")), 3) # all three slots
+  expect_equal(n_free(naa_rg_on(NAA_re = "iid", NAA_pe_spec = "est_all")), 0)           # no slots at all
+  expect_error(naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "banana"), "Valid options")
+})
+
+test_that("sharing collapses the correlations without moving which cells are estimated", {
+  free <- naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_all")
+  shared <- naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_r")
+
+  # est_all must still be the plain column-major sequence the flat seq_len used to give
+  mp <- as.integer(as.character(free$map$NAA_pe_pars))
+  expect_equal(mp[!is.na(mp)], seq_len(sum(!is.na(mp))))
+
+  # sharing over regions gives every region the same parameter, one per slot and sex
+  ms <- array(as.integer(as.character(shared$map$NAA_pe_pars)), dim = dim(shared$par$NAA_pe_pars))
+  for(k in 1:2) for(s in 1:2) expect_equal(length(unique(ms[1,,k,s])), 1)
+  expect_false(any(duplicated(as.vector(ms[1,1,1:2,]))))  # slots and sexes stay distinct
+
+  # the state itself is untouched: same live cells, same count
+  expect_equal(free$data$n_est_naa_re, shared$data$n_est_naa_re)
+  expect_equal(is.na(free$map$ln_NAA), is.na(shared$map$ln_NAA))
+})
+
+test_that("a shared correlation penalizes the same as repeating one value across regions", {
+  # sharing is a parameter-count change, not a model change: the objective at a point where every
+  # region already holds the same rho must be identical under est_all and est_shared_r
+  il_f <- naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_all")
+  il_s <- naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_r")
+  pe <- array(0, dim = dim(il_f$par$NAA_pe_pars)); pe[,,1,] <- 0.6; pe[,,2,] <- -0.4
+  il_f$par$NAA_pe_pars <- pe; il_s$par$NAA_pe_pars <- pe
+
+  o_f <- fit_model(il_f$data, il_f$par, il_f$map, do_optim = FALSE, silent = TRUE)
+  o_s <- fit_model(il_s$data, il_s$par, il_s$map, do_optim = FALSE, silent = TRUE)
+  expect_equal(o_f$fn(o_f$par), o_s$fn(o_s$par), tolerance = 1e-12)
+  expect_equal(length(o_s$par), length(o_f$par) - 8) # 12 correlations collapse to 4
 })

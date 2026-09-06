@@ -86,7 +86,7 @@ and \code{$verbose} sublists, as returned by upstream setup functions.}
 \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
 Values should be in the units specified by \code{catch_units}. For a
 cell with \code{UseCatch == 0} (and no population-specific catch
-used), an \code{NA} entry here is treated as a genuinely missing
+used), an \code{NA} entry here is treated as a missing
 observation; fishing is assumed to have continued and \code{Fmort}/
 \code{ln_F_devs} are estimated normally for that year, whereas a
 true recorded value (typically \code{0}) is treated as a real
@@ -95,8 +95,8 @@ See \code{\link{Get_Fdev_PE_loglik}}.}
 
 \item{ObsCatchAA}{Observed catch at age, an array with dimensions
 \code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}. The
-sex margin is required whatever the fleet reports: a stream summed over
-sexes carries its observation in sex slot one. Supplying this
+sex dim is required whatever the fleet reports: a data source summed over
+sexes has its observation in sex slot one. Supplying this
 fits the catch at age directly, every age its own lognormal observation, in
 place of an aggregated catch with compositions. This is the native form for
 ICES age-structured assessments. The two statements are not interchangeable: the
@@ -108,10 +108,10 @@ one or the other and supplying both for the same fleet is an error.
 \item{UseCatchAA}{Integer array shaped like \code{ObsCatchAA}, \code{1} where
 an observation is fit and \code{0} otherwise. A cell that is not fit is also
 not fished, so this governs closures the way \code{UseCatch} does for the
-aggregated stream.}
+aggregated data source.}
 
 \item{ObsCatchAA_SE, ObsDiscardAA_SE, ObsCatchAA_pop_SE, ObsDiscardAA_pop_SE}{Reported standard errors shaped like their observation array, read only when
-the stream's \code{sigma_form} asks for them.}
+the data source's \code{sigma_form} asks for them.}
 
 \item{sigmaCAA_key}{Integer matrix \code{[n_ages, n_fish_fleets]} coupling the
 catch at age observation error, an integer key matrix, the convention ICES assessments use. Equal
@@ -141,14 +141,14 @@ discards, following the same convention as \code{sigmaCAA_key}.}
 \item{sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec}{\code{"est"} or
 \code{"fix"}.}
 
-\item{CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type}{Which margins the fleet reports separately, following the composition
+\item{CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type}{Which dims the fleet reports separately, following the composition
 vocabulary. Give it as one setting for every fleet, one per fleet, or as
 year and fleet specifications such as
 \code{"spltRaggS_Year_1-20_Fleet_1"} when the setting changes part way
 through the series. \code{"agg"} sums over
 regions and sexes, \code{"spltRaggS"} (default) splits regions and sums over
 sexes, \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits
-both. An observation summed over a margin belongs in slot one of it.}
+both. An observation summed over a dim belongs in slot one of it.}
 
 \item{CatchAA_LikeType, DiscardAA_LikeType, CatchAA_pop_LikeType, DiscardAA_pop_LikeType}{\code{"lognormal"} (default) or \code{"normal"}, one setting for every
 fleet or one per fleet.}
@@ -165,23 +165,23 @@ estimates an unstructured correlation across ages, and \code{"2dar1"}
 correlates over ages and years jointly through a separable AR(1), which
 requires the fleet's observed ages and years to form a complete grid. A cell
 with a single observed age falls back to independent. The
-population-specific streams carry their own settings rather than borrowing
-the aggregated ones. The fishery and survey index streams are set in
+population-specific data sources have their own settings rather than borrowing
+the aggregated ones. The fishery and survey index data sources are set in
 \code{\link{Setup_Mod_FishIdx_and_Comps}} and
 \code{\link{Setup_Mod_SrvIdx_and_Comps}}.}
 
-\item{rho_catch_spec, rho_discard_spec, rho_catch_pop_spec, rho_discard_pop_spec}{How each stream's correlation parameters are shared, using the same spec
+\item{rho_catch_spec, rho_discard_spec, rho_catch_pop_spec, rho_discard_pop_spec}{How each data source's correlation parameters are shared, using the same spec
 strings as \code{sigmaF_spec} and \code{Fdev_rho_spec}. The correlations
-sit over region, sex and fleet, with a leading population margin for the
-population-specific streams, so \code{"est_shared_r_s"} gives one per fleet,
+sit over region, sex and fleet, with a leading population dim for the
+population-specific data sources, so \code{"est_shared_r_s"} gives one per fleet,
 \code{"est_shared_s"} one per region and fleet, \code{"est_shared_r_s_f"} a
 single value, \code{"est_all"} one per cell, and \code{"fix"} holds them.
 \code{NULL} (the default) takes \code{"est_shared_r_s"}, or
-\code{"est_shared_p_r_s"} for the population streams, both one per fleet.
+\code{"est_shared_p_r_s"} for the population data sources, both one per fleet.
 The spec governs the across-age correlation, the across-year correlation and
 the unstructured matrix together, so fleets sharing under \code{"us"} share
-a whole matrix. A region, sex or population a fleet never observes carries no
-parameter, which is what holds the unused slots of a summed margin out.}
+a whole matrix. A region, sex or population a fleet never observes has no
+parameter, which is what holds the unused slots of a summed dim out.}
 
 \item{UseCatch}{Binary indicator array
 \code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
@@ -265,7 +265,7 @@ level and the spread of the deviations. \code{"own_mean"} centers on the
 mean of the estimated deviations, penalizing only their spread and leaving
 the level free, which is what a sum of squares about the series' own mean
 amounts to. Under a mean-plus-deviations parameterization the level is
-already carried by \code{ln_F_mean}, so \code{"own_mean"} avoids
+already set by \code{ln_F_mean}, so \code{"own_mean"} avoids
 penalizing it twice; note that it also leaves \code{ln_F_mean} and the
 deviations' level mutually unidentified unless one of them is fixed,
 which \code{ln_F_mean_spec = "fix"} does.}
@@ -350,7 +350,7 @@ deviation in every fished cell; requires \code{Use_dmr_pen = 1}. See
 sits after \code{...}. \code{"est"} (default, the previous
 and only behavior) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
 off at its starting value, which defaults to \code{0} under this spec
-unless supplied through \code{...}, so the deviations carry all of log
+unless supplied through \code{...}, so the deviations have all of log
 fishing mortality: \code{F = exp(ln_F_devs)}, where it follows a free annual log-F
 parameterization. It must be paired with \code{Fdev_pen_center = "own_mean"}
 (penalize only the spread about the deviations' own mean),

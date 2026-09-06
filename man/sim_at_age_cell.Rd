@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_observations.R
 \name{sim_at_age_cell}
 \alias{sim_at_age_cell}
-\title{Draw one at-age observation stream for one region, year, season and fleet}
+\title{Draw one at-age data source for one region, year, season and fleet}
 \usage{
 sim_at_age_cell(
   numbers,
@@ -44,7 +44,7 @@ A list with \code{true} and \code{obs}, both \code{[n_ages, n_sexes]}
 The operating model states an at-age observation the way the estimation model
 reads it: summed over whichever of regions and sexes the fleet reports
 together, with the fleet's own density and its own standard deviation. A
-stream summed over regions is one number, so it is drawn once, when the region
+data source summed over regions is one number, so it is drawn once, when the region
 loop reaches region one.
 }
 \keyword{internal}

@@ -66,7 +66,7 @@ standard error. Default 1e-3. Vary it and confirm \code{d} is unchanged.}
 \item{level}{Numeric. Confidence level. Default 0.95.}
 
 \item{extra_quantities}{Optional \code{function(rep, refpts)} returning a named
-vector of extra positive quantities to carry through, e.g. stock status.}
+vector of extra positive quantities to propagate through, e.g. stock status.}
 
 \item{par_subset}{Optional character vector of parameter names to perturb. This is the lever for
 a large model if taking too long. Everything left out is asserted to have exactly zero effect,
@@ -119,7 +119,7 @@ rp <- Get_Reference_Point_Uncertainty(obj = dusky_rtmb_model, SPR_x = 0.4,
                                       type = "single_region", what = "SPR")
 rp$refpts
 
-# carry stock status through, so the correlation with the reference point is kept
+# have stock status through, so the correlation with the reference point is kept
 status <- function(rep, refpts) {
   ssb <- rep$SSB[1, 1, dim(rep$SSB)[3]]
   c(SSB_terminal = ssb, status = ssb / as.numeric(refpts$b_ref_pt))

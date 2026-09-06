@@ -1,17 +1,9 @@
-# Purpose: Bridge the 2025 West Coast sablefish assessment to SPoRC and render
-#          the case study figures. The configuration is not restated here: it is
-#          sourced from the bridge test helper, so the figures, the bridge test
-#          and the case study all run the same specification and a change to one
-#          cannot silently leave the others behind.
-#
-#          Three stages: set every parameter to the assessment's maximum
-#          likelihood estimate and check the population and the likelihoods
-#          there, optimize, then compare. Selectivity is estimated, on SPoRC's
-#          own double normal with the assessment's time blocks, mirrored fleets
-#          and male offsets, so the assessment's selectivity parameters go in
-#          as starting values rather than its curves going in as data.
+# Purpose: Bridge the 2025 West Coast sablefish assessment to SPoRC and render its figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/21/26
+#
+# selectivity is estimated, so the assessment's selectivity parameters go in as starting values
+# rather than its curves going in as data
 
 library(here)
 library(dplyr)
@@ -51,7 +43,7 @@ naa_sp <- r$NAA[1, 1, 1:n_yrs, 1, , ]
 totb_jan1 <- sapply(1:n_yrs, function(y) sum(naa_sp[y, , ] * dat$WAA[1, 1, y, 1, , ]))
 i_catch <- dat$UseCatch[1, , 1, 1:6] == 1
 
-cat("=== Stage 1: at the assessment's estimate (its report carries six significant digits) ===\n")
+cat("=== Stage 1: at the assessment's estimate (its report has six significant digits) ===\n")
 stage1 <- data.frame(
   quantity = c("numbers at age", "spawning biomass", "recruitment", "total biomass (Jan 1)",
                "predicted catch", "survey indices"),
@@ -96,9 +88,8 @@ cat("expected age compositions against the assessment's, max absolute difference
     signif(max(c(comp_gap(dat$fish_src, dat$fish_sex, function(y, s, f) r$CAA[1, 1, y, 1, , s, f]),
                  comp_gap(dat$srv_src, dat$srv_sex, function(y, s, f) r$SrvIAA[1, 1, y, 1, , s, f]))), 3), "\n")
 
-# Likelihoods. SPoRC writes each component as a proper density and the
-# assessment drops normalizing constants, so the comparison subtracts exactly
-# the constants it omits.
+# likelihoods. SPoRC writes each component as a proper density and the assessment drops normalizing
+# constants, so the comparison subtracts exactly the constants it omits
 lc <- function(sigma, n) n * (log(sigma) + 0.5 * log(2 * pi))
 n_est_dev <- sum(yrs %in% dat$yrs_rec_est)
 lik <- data.frame(
@@ -113,7 +104,8 @@ lik <- data.frame(
             r$M_nLL - lc(dat$M_prior$sd, 1)),
   assessment = c(dat$ss3$lik$catch, dat$ss3$lik$index[1:5], dat$ss3$lik$age,
                  dat$ss3$lik$recruitment + dat$ss3$lik$forecast_recruitment - sum(dat$mle$bias_adj) * log(dat$sigmaR),
-                 dat$ss3$lik$priors))
+                 dat$ss3$lik$priors)
+)
 lik$difference <- lik$SPoRC - lik$assessment
 cat("\n=== Stage 1: likelihoods, SPoRC net of the constants the assessment omits ===\n")
 print(lik, row.names = FALSE, digits = 8)
@@ -123,9 +115,8 @@ const <- lc(dat$sigmaC, sum(dat$UseCatch == 1, na.rm = TRUE)) + 0.5 * log(2 * pi
 cat(sprintf("\ntotal objective: SPoRC %.8f net of constants against the assessment's %.8f (difference %.2e)\n",
             obj$fn(obj$par) - const, dat$mle$objective, obj$fn(obj$par) - const - dat$mle$objective))
 
-# The assessment solves fishing mortality from the catch where SPoRC estimates
-# it, so SPoRC's partials at its estimate still carry the dependence of F on
-# every other parameter. The comparable quantity profiles them out.
+# the assessment solves fishing mortality from the catch where SPoRC estimates it, so SPoRC's
+# partials still hold the dependence of F on every other parameter. the comparable quantity profiles them out
 H <- as.matrix(obj$he(obj$par)); g <- as.vector(obj$gr(obj$par)); nms <- names(obj$par)
 iF <- which(nms == "ln_F_devs"); iO <- which(nms != "ln_F_devs")
 g_prof <- as.vector(g[iO] - H[iO, iF] %*% solve(H[iF, iF], g[iF]))
@@ -133,8 +124,14 @@ cat("\nmax |gradient| by parameter block, profiled over the fishing mortality de
 print(round(tapply(abs(g_prof), nms[iO], max), 5))
 
 # Stage 2: optimize ------------------------------------------------------------
-est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 do_optim = TRUE, newton_loops = 3, silent = TRUE)
+est <- fit_model(
+  input_list$data,
+  input_list$par,
+  input_list$map,
+  do_optim = TRUE,
+  newton_loops = 3,
+  silent = TRUE
+)
 est$sdrep <- tryCatch(RTMB::sdreport(est, hessian.fixed = est$he(est$optim$par)), error = function(e) NULL)
 pl <- est$env$parList(est$optim$par)
 cat(sprintf("\n=== Stage 2: %d parameters (%d of them selectivity), objective %.6f, fallen %.4e from the assessment's estimate, max |gradient| %.2e ===\n",
@@ -159,13 +156,17 @@ print(data.frame(
   assessment = c(dat$mle$ln_R0, dat$mle$M, exp(dat$mle$ln_srv_q), dat$mle$q_rec_idx)),
   row.names = FALSE, digits = 7)
 
-ggplot2::ggsave(here("vignettes", "figures", "ac_wc_sablefish_ts_comparison.png"),
-                bridge_ts_figure(yrs, ssb, rec, dat$ss3$SSB, dat$ss3$Rec, label,
+ggplot2::ggsave(
+  here("vignettes", "figures", "ac_wc_sablefish_ts_comparison.png"),
+  bridge_ts_figure(yrs, ssb, rec, dat$ss3$SSB, dat$ss3$Rec, label,
                                  ssb_se = ssb_se, rec_se = rec_se),
-                width = 17, height = 9, dpi = 200)
+  width = 17,
+  height = 9,
+  dpi = 200
+)
 
 # Selectivity, one panel per gear in the terminal year. Each gear's two sexes
-# are drawn together, since the hook and line and pot fleets carry male offsets.
+# are drawn together, since the hook and line and pot fleets have male offsets.
 sel_df <- dplyr::bind_rows(lapply(1:6, function(f) {
   dplyr::bind_rows(
     bridge_sel_rows(dat$ages, est$rep$fish_sel[1, 1, n_yrs, 1, , 1, f], sel_fish_ss3[1, 1, n_yrs, 1, , 1, f],
@@ -179,8 +180,13 @@ sel_df <- dplyr::bind_rows(sel_df, dplyr::bind_rows(lapply(1:4, function(sf) {
 })))
 sel_df <- sel_df %>% dplyr::filter(Age <= 30)
 
-ggplot2::ggsave(here("vignettes", "figures", "ac_wc_sablefish_sel_comparison.png"),
-                bridge_sel_figure(sel_df, nrow = 4), width = 15, height = 12, dpi = 170)
+ggplot2::ggsave(
+  here("vignettes", "figures", "ac_wc_sablefish_sel_comparison.png"),
+  bridge_sel_figure(sel_df, nrow = 4),
+  width = 15,
+  height = 12,
+  dpi = 170
+)
 
 cat("\nfigures written to vignettes/figures\n")
 

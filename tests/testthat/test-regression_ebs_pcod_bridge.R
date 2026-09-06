@@ -1,25 +1,14 @@
-# Self-validating bridge test. The expectations are the 2024 eastern Bering Sea
-# Pacific cod assessment's own reported quantities (Stock Synthesis Model 24.1),
-# shipped in sgl_rg_ebs_pcod_data$ss3. Every parameter is set to the assessment's
-# maximum likelihood estimate and the model is evaluated there without
-# optimizing, so a failure means time-varying growth, the cohort propagation of
-# size at age, the Richards curve, length-based selectivity, the length bin map
-# or the selection-weighted weight at age no longer reproduces the assessment at
-# a point where it is known to. Do not loosen the tolerances to make this pass.
-# The assessment's report carries six significant digits, which is the floor
-# under every comparison here.
+# Self-validating bridge test: the expectations are the 2024 EBS Pacific cod assessment's own reported
+# quantities (SS3 Model 24.1) in sgl_rg_ebs_pcod_data$ss3, evaluated at its estimate without optimizing.
 #
-# Three convention differences are deliberate and are compared after restating
-# SPoRC's quantity in the assessment's terms, never by loosening a tolerance:
-#   1. SPoRC's single-sex spawning biomass is the female share at an even sex
-#      ratio; a one-sex Stock Synthesis model's spawning output counts every
-#      mature fish, so the two differ by exactly two.
-#   2. SPoRC's deviation penalties carry the full normal constant
-#      (log(sigma) + 0.5 log(2 pi) per deviation) where Stock Synthesis carries
-#      only the bias-ramp share of log(sigma). With sigmaR and the deviation
-#      standard deviations fixed, as they are here, that is a constant.
-#   3. SPoRC applies half the bias ramp to the log(sigmaR) term of the
-#      recruitment penalty where Stock Synthesis applies the whole ramp.
+# SS3's report has six significant digits, the floor under every comparison here. Three convention
+# differences are compared by restating SPoRC's quantity in SS3's terms, never by loosening a tolerance:
+#
+#   1. SPoRC's single-sex spawning biomass is the female share at an even sex ratio; a one-sex SS3
+#      model's spawning output counts every mature fish, so the two differ by exactly two.
+#   2. SPoRC's deviation penalties hold the full normal constant, log(sigma) + 0.5 log(2 pi) per
+#      deviation, where SS3 has only the bias-ramp share of log(sigma). Constant with sigmaR fixed.
+#   3. SPoRC applies half the bias ramp to the log(sigmaR) term where SS3 applies the whole ramp.
 
 library(SPoRC)
 library(testthat)
@@ -40,7 +29,7 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   yr_row <- function(m, y) { rr <- as.integer(rownames(m)); m[as.character(max(rr[rr <= y])), ] }
 
   # Growth ------------------------------------------------------------------
-  # Size at age is carried cohort by cohort from 2000, so a year late in the
+  # Size at age is kept cohort by cohort from 2000, so a year late in the
   # series only reproduces if every earlier year's increment did.
   for(y in c(1977, 1999, 2000, 2001, 2012, 2023)) {
     iy <- match(y, yrs)
@@ -112,7 +101,7 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
 
   # Likelihood components ---------------------------------------------------
   # Each is restated in the assessment's convention by removing the normal
-  # constants SPoRC carries and Stock Synthesis does not.
+  # constants SPoRC has and Stock Synthesis does not.
   sigmaR <- dat$rec$sigmaR; lsr <- log(sigmaR); c2pi <- 0.5 * log(2 * pi)
   L <- s3$likelihoods; lbf <- s3$likelihoods_by_fleet
   by_fleet <- function(lab, col) lbf[[col]][lbf$Label == lab]
@@ -148,7 +137,7 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
 
   # the gradient at the assessment's estimate is finite everywhere; fishing
   # mortality is conditioned on the catch in the assessment rather than
-  # estimated, so its deviations carry the residual that the soft catch
+  # estimated, so its deviations hold the residual that the soft catch
   # likelihood stands in for and the gradient is not expected to be zero
   expect_true(all(is.finite(obj$gr(obj$par))))
 })

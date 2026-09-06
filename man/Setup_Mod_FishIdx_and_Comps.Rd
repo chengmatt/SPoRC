@@ -130,7 +130,7 @@ An estimated component is confounded with a likelihood weight, since a
 weight on a normal likelihood is the same statement as dividing the
 variance by that weight. \code{Setup_Mod_Weighting} warns when both are
 used. Fleets with a multivariate normal index likelihood take their scale
-from the supplied covariance and cannot carry one, which is an error rather
+from the supplied covariance and cannot have one, which is an error rather
 than a silently unidentified parameter.}
 
 \item{sigmaFishIdx_map}{Optional integer vector of length \code{n_fish_fleets}
@@ -157,7 +157,7 @@ An estimated component is confounded with a likelihood weight, since a
 weight on a normal likelihood is the same statement as dividing the
 variance by that weight. \code{Setup_Mod_Weighting} warns when both are
 used. Fleets with a multivariate normal index likelihood take their scale
-from the supplied covariance and cannot carry one, which is an error rather
+from the supplied covariance and cannot have one, which is an error rather
 than a silently unidentified parameter.}
 
 \item{sigmaFishIdx_pop_map}{Optional integer vector of length \code{n_fish_fleets}
@@ -333,7 +333,7 @@ being forced to be explained; this is how a fleet that only ages part of
 its age range is fitted. Indices refer to observed bins, that is after any
 ageing error has mapped model ages onto observed ones. The restriction
 applies whatever the composition type: for sex-joint comps the named bins
-are dropped from each sex's block, so the sex ratio the joint comps carry
+are dropped from each sex's block, so the sex ratio the joint comps have
 becomes the ratio within the fitted bins. Every fleet must retain at least
 two bins, since the proportion in a lone bin is one whatever the model
 predicts. Default \code{NULL}, which fits all bins for all fleets.}
@@ -361,7 +361,7 @@ error structure of each fishery index. Options are \code{"lognormal"}
 \code{"normal"} (arithmetic scale), and \code{"mvn"} (multivariate normal
 on the arithmetic scale using a fixed covariance supplied through
 \code{FishIdx_Cov}). One-step-ahead residuals are available only for
-lognormal fleets. A fleet's population-specific index stream follows the
+lognormal fleets. A fleet's population-specific index data source follows the
 same choice for \code{"lognormal"} and \code{"normal"}, but stays
 lognormal under \code{"mvn"}, whose covariance describes the regional
 series only.}
@@ -375,11 +375,11 @@ fleet fits, ordered as the observations appear when scanning that fleet's
 \item{ObsFish_caal}{Observed conditional age-at-length array
 \code{[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x
 n_fish_fleets]}. A CAAL observation is the age composition of the fish aged
-from one length bin, so the age margin of each length row is what gets fit.
+from one length bin, so the age dim of each length row is what gets fit.
 \code{NULL} (default) for a model with no CAAL data.}
 
 \item{UseFish_caal}{Use flags \code{[n_regions x n_years x n_seas x n_lens x
-n_fish_fleets]}. Length bins with no aged fish carry a zero and are skipped.}
+n_fish_fleets]}. Length bins with no aged fish have a zero and are skipped.}
 
 \item{ISS_Fish_caal}{Input sample sizes \code{[n_regions x n_years x n_seas x
 n_lens x n_sexes x n_fish_fleets]}, the number aged within each length bin

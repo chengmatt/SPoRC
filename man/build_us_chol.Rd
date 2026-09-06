@@ -9,7 +9,7 @@ build_us_chol(pars, n)
 \arguments{
 \item{pars}{Numeric vector of length \eqn{n(n-1)/2}, unconstrained.}
 
-\item{n}{Dimension of the margin.}
+\item{n}{Dimension of the dim.}
 }
 \value{
 An \eqn{n 	imes n} lower triangular matrix with unit-length rows.
@@ -17,10 +17,10 @@ An \eqn{n 	imes n} lower triangular matrix with unit-length rows.
 \description{
 The factor behind \code{\link{build_us_corr}}, returned in its own right for
 callers that need to whiten rather than to form the correlation. Whitening a
-margin, \eqn{z = L^{-1} x}, is what lets a correlation over one margin compose
-with an arbitrary structure over the others: the transformed margin is
-independent, so each slice can then be scored by whatever density the
-remaining margins call for, separable or not.
+dim, \eqn{z = L^{-1} x}, is what lets a correlation over one dim compose
+with an arbitrary structure over the others: the transformed dim is
+independent, so each slice can then be evaluated by whatever density the
+remaining dims call for, separable or not.
 }
 \details{
 Rows are normalized to unit length, which makes the lower triangular matrix a

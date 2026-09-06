@@ -4,7 +4,7 @@
 \alias{get_at_age_fits_plot}
 \title{Plot observed and predicted age-disaggregated observations}
 \usage{
-get_at_age_fits_plot(data, rep, model_names, stream = "CatchAA")
+get_at_age_fits_plot(data, rep, model_names, data_source = "CatchAA")
 }
 \arguments{
 \item{data}{List of length \code{n_models} of SPoRC data lists, read for the
@@ -15,14 +15,14 @@ predicted at-age values and their standard deviations.}
 
 \item{model_names}{Character vector naming each model run.}
 
-\item{stream}{Which stream to plot: \code{"CatchAA"} (default),
+\item{data_source}{Which data source to plot: \code{"CatchAA"} (default),
 \code{"DiscardAA"} or \code{"SrvIdxAA"}.}
 }
 \value{
-A \code{ggplot}, or \code{NULL} when no model fits that stream.
+A \code{ggplot}, or \code{NULL} when no model fits that data source.
 }
 \description{
-Companion to \code{\link{get_catch_fits_plot}} for the at-age streams:
+Companion to \code{\link{get_catch_fits_plot}} for the at-age data sources:
 retained catch, discards, and the fishery and survey indices at age. Each is
 a lognormal observation with its own standard deviation, so intervals are
 built the same way, and the panel is faceted by age.

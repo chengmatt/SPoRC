@@ -1,9 +1,9 @@
 # Operating model
 #
-# The operating model's true population dynamics: initial age structure,
-# recruitment, biomass, and the annual cycle that applies mortality and movement.
-# Simulate_Pop_Static is the entry point and drives the year loop, calling into
-# sim_observations.R once the true state for a year exists.
+# The operating model's true population dynamics. Simulate_Pop_Static drives the year loop and calls
+# into sim_observations.R once the true state for a year exists.
+
+# Initial Age Structure and Recruitment -------------------------------------
 
 #' Initialize age structure for a simulation replicate
 #'
@@ -60,7 +60,7 @@ generate_initial_age_structure <- function(y,
           tmp_ln_init_devs <- array(ln_InitDevs_input[p,r,,,sim], dim = c(n_ages - 1, n_sexes))
         } else { # simulate new initial age devs otherwise
 
-          # get init devs devs
+          # get init devs
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
           # Draw the deviations. Under est_shared_s one curve is drawn and every
           # sex reads it; under est_all each sex draws its own
@@ -92,7 +92,7 @@ generate_initial_age_structure <- function(y,
       n_seas = n_seas, # seasons
       n_fish_fleets = n_fish_fleets, # number of fishery fleets
       seasdur = seasdur,  # fracion of time in season
-      natmort = array(natmort[,,1,,,sim], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
+      natmort = array(natmort[,,1,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)), # natural mortality in first year
       init_F = init_F, # initial F applied (0 for unfished)\
       dmr = array(dmr[,1,,,sim], dim = c(n_regions, n_seas, n_fish_fleets)), # discard mortality rate
       fish_sel = array(fish_sel[,,1,,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)), # total fishery selectivity in first year
@@ -117,7 +117,7 @@ generate_initial_age_structure <- function(y,
       n_regions = n_regions, # regions
       n_sexes = n_sexes, # sexes
       n_ages = n_ages, # ages
-      natmort = array(natmort[,,1,,,sim], dim = c(n_pop, n_regions, n_ages, n_sexes)), # natural mortality in first year
+      natmort = array(natmort[,,1,,,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)), # natural mortality in first year
       init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)), # initial F applied (0 for unfished)
       dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)), # dmr applied (0 for unfished)
       n_seas = n_seas, # seasons
@@ -206,14 +206,14 @@ generate_recruitment <- function(y,
                                        n_ages = n_ages,
                                        natal_region = natal_region,
 
-                                       # Note: Using first year and female quantities to compute unfished SSB0
-                                       sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1,sim], dim = c(n_pop, n_regions)),
-                                       WAA = array(WAA[,,1,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                       MatAA = array(MatAA[,,1,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
-                                       natmort = array(natmort[,,1,,1,sim], dim = c(n_pop, n_regions, n_ages)),
-                                       stray_rate = array(stray_rate[,1,sim], dim = c(n_pop)),
-                                       Movement = array(Movement[,,,1,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                       sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,1,,1,sim], dim = c(n_pop, n_regions, n_regions, n_ages)),
+                                       # Note: every input to unfished SSB0 is taken at SR_ref_yr, female quantities only
+                                       sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,SR_ref_yr,1,sim], dim = c(n_pop, n_regions)),
+                                       WAA = array(WAA[,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                       MatAA = array(MatAA[,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                       natmort = array(natmort[,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+                                       stray_rate = array(stray_rate[,SR_ref_yr,sim], dim = c(n_pop)),
+                                       Movement = array(Movement[,,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+                                       sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1,sim], dim = c(n_pop, n_regions, n_regions, n_ages)),
                                        SSB_vals = array(SSB[,,,sim], dim = c(n_pop, n_regions, n_yrs)),
                                        n_fish_fleets = n_fish_fleets,
                                        t_spawn = t_spawn,
@@ -222,12 +222,12 @@ generate_recruitment <- function(y,
                                        seasdur = seasdur,
                                        do_recruits_move = do_recruits_move,
                                        init_F = init_F, # initial F applied
-                                       dmr = array(dmr[,1,,,sim], dim = c(n_regions, n_seas, n_fish_fleets)), # discard mortality rate
-                                       fish_sel = array(fish_sel[,,1,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity in first year
-                                       ret_sel = array(ret_sel[,,1,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
+                                       dmr = array(dmr[,SR_ref_yr,,,sim], dim = c(n_regions, n_seas, n_fish_fleets)), # discard mortality rate
+                                       fish_sel = array(fish_sel[,,SR_ref_yr,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity at SR_ref_yr
+                                       ret_sel = array(ret_sel[,,SR_ref_yr,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity at SR_ref_yr
                                        # Sequencing must match the estimation model; SSB0 and the SPR
-                                       # machinery behind Beverton-Holt depend on it
-                                       Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+                                       # routines behind Beverton-Holt depend on it
+                                       Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
                                        move_timing = move_timing
 
     ,
@@ -253,13 +253,12 @@ generate_recruitment <- function(y,
           # recruitment input
           tmp_total_rec <- Rec_input[p,r,y,sim]
 
-          # keep the deviation container consistent with the recruitment being
-          # used, so an operating model conditioned on a fit reports the
-          # deviations it is running on rather than zeros. Anything reading them,
-          # a recruitment deviation index among them, then sees the same series
-          # the population does.
+          # keep the deviation container consistent with the recruitment in use, so an operating
+          # model conditioned on a fit reports the deviations it is running on rather than zeros
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-          if(tmp_det_rec[p,r] > 0 && tmp_total_rec > 0) {
+          # resample_from_input has no deterministic curve, so Get_Det_Recruitment
+          # hands back NA and there is no deviation to back out. Devs stay 0.
+          if(isTRUE(tmp_det_rec[p,r] > 0) && tmp_total_rec > 0) {
             sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + exp(ln_sigmaR[2,p,sigma_idx])^2/2
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
         } else {
@@ -286,6 +285,8 @@ generate_recruitment <- function(y,
     } # end p loop
   })
 }
+
+# Biomass -------------------------------------------------------------------
 
 #' Compute spawning-time biomass quantities for one simulation year/season
 #'
@@ -331,13 +332,13 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
           tmp_NAA_spawn[p,,1,1,a,s,1] <- spawn_state(tmp_NAA_spawn[p,,1,1,a,s,1], Mv,
                                                      ZAA[p,,y,seas,a,s,sim], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           tmp_NAA0_spawn[p,,1,1,a,s,1] <- spawn_state(tmp_NAA0_spawn[p,,1,1,a,s,1], Mv,
-                                                      natmort[p,,y,a,s,sim] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+                                                      natmort[p,,y,seas,a,s,sim] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
         } # end s loop
       } # end a loop
     } # end p loop
   }
 
-  # If we we are natal homing with 1 season
+  # If we are natal homing with 1 season
   if(n_seas == 1 && n_pop > 1) {
     for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
       tmp_NAA_spawn[p,,1,1,a,s,1] <- tmp_NAA_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
@@ -364,7 +365,7 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
   # Get dynamic B0
   SSB0_array <- tmp_NAA0_spawn[,, , , , 1, 1,drop = FALSE] *  WAA[,,  y, seas, , 1, sim, drop = FALSE] * MatAA[,,y, seas, , 1, sim, drop = FALSE]
   if(move_timing == 0 || n_regions == 1) {
-    mort_spawn <- exp(-natmort[,, y, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
+    mort_spawn <- exp(-natmort[,, y, seas, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
     mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
   } else mort_spawn <- 1
   Dynamic_SSB0_y <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
@@ -392,8 +393,15 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
     }
   } else eff_SSB_y[1] = sum(SSB_y[1,])
 
-  list(Total_Biom_y = Total_Biom_y, SSB_y = SSB_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
+  list(
+    Total_Biom_y = Total_Biom_y,
+    SSB_y = SSB_y,
+    Dynamic_SSB0_y = Dynamic_SSB0_y,
+    eff_SSB_y = eff_SSB_y
+  )
 }
+
+# Annual Cycle --------------------------------------------------------------
 
 #' Apply population dynamics within a simulation year
 #'
@@ -443,14 +451,8 @@ apply_pop_dy <- function(y, sim, sim_env) {
 
     for(seas in 1:n_seas) {
 
-      # apportion recruitment across seasons already known from earlier this
-      # year:
-      # - rec_lag != 0: the year's recruitment is already known (computed by
-      #   generate_recruitment() before this function ran), so any season
-      #   past the first gets its share here, as before.
-      # - rec_lag == 0: recruitment isn't known until spawn_seas is reached
-      #   (below), so only seasons strictly after spawn_seas are handled here;
-      #   spawn_seas itself generates and inserts its own share.
+      # apportion recruitment across seasons already known from earlier this year.
+      # under rec_lag == 0 spawn_seas generates and inserts its own share below
       if(if(rec_lag != 0) seas > 1 else seas > spawn_seas) {
         for(p in 1:n_pop) {
           for(r in 1:n_regions) {
@@ -472,7 +474,7 @@ apply_pop_dy <- function(y, sim, sim_env) {
       # Mortality and Ageing
       tmp_Fmort <- array(Fmort[,y,seas,,sim], dim = c(n_regions, n_fish_fleets))
       tmp_dmr <- array(dmr[,y,seas,,sim], dim = c(n_regions, n_fish_fleets))
-      tmp_natmort <- array((natmort[,,y,,,sim] * seasdur[seas]), dim = c(n_pop, n_regions, n_ages, n_sexes))
+      tmp_natmort <- array((natmort[,,y,seas,,,sim] * seasdur[seas]), dim = c(n_pop, n_regions, n_ages, n_sexes))
 
       for(p in 1:n_pop) {
 
@@ -586,6 +588,15 @@ apply_pop_dy <- function(y, sim, sim_env) {
       if(seas < n_seas) { # Within year seasonal mortality
         sim_env$NAA[,,y,seas + 1,1:n_ages,,sim] = sstep_NAA # fished
         sim_env$NAA0[,,y,seas + 1,1:n_ages,,sim] <- sstep_NAA0 # unfished
+
+        # State-space numbers at age at a within-year boundary, where the estimation model
+        # applies it: on the survival and movement step, with no ageing shift
+        if(sim_env$NAA_re > 0) {
+          sim_env$NAA_pred[,,y,seas+1,,,sim] = sim_env$NAA[,,y,seas+1,,,sim]
+          fac <- exp(sim_env$naa_eta[,,y,seas+1,,])
+          sim_env$NAA[,,y,seas+1,,,sim] = sim_env$NAA[,,y,seas+1,,,sim] * fac
+          sim_env$NAA0[,,y,seas+1,,,sim] = sim_env$NAA0[,,y,seas+1,,,sim] * fac
+        }
       } else {
         # Advance into the next year, season 1
         sim_env$NAA[,,y+1,1,2:n_ages,,sim] = sstep_NAA[,,1:(n_ages-1),] # fished
@@ -596,8 +607,8 @@ apply_pop_dy <- function(y, sim, sim_env) {
         # State-space numbers at age, applied where the estimation model applies it: after the plus
         # group accumulates, at the year boundary, with the unfished numbers taking the same factor
         if(sim_env$NAA_re > 0 && (y + 1) <= n_yrs) {
-          sim_env$NAA_pred[,,y+1,,,sim] = sim_env$NAA[,,y+1,1,,,sim]
-          fac <- exp(sim_env$naa_eta[,,y+1,,])
+          sim_env$NAA_pred[,,y+1,1,,,sim] = sim_env$NAA[,,y+1,1,,,sim]
+          fac <- exp(sim_env$naa_eta[,,y+1,1,,])
           sim_env$NAA[,,y+1,1,,,sim] = sim_env$NAA[,,y+1,1,,,sim] * fac
           sim_env$NAA0[,,y+1,1,,,sim] = sim_env$NAA0[,,y+1,1,,,sim] * fac
         }
@@ -656,7 +667,7 @@ run_annual_cycle <- function(y,
     # previous states and formed rectangular over age and year
     if(isTRUE(sim_env$NAA_re > 0)) {
       sim_env$naa_eta <- draw_naa_innovations(sim_env)
-      sim_env$naa_eta_all[,,,,,sim] <- sim_env$naa_eta
+      sim_env$naa_eta_all[,,,,,,sim] <- sim_env$naa_eta
     }
     generate_initial_age_structure(y = 1, sim, sim_env) # Initialize age structure
     if(sim_env$rec_lag != 0) generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
@@ -720,6 +731,8 @@ run_annual_cycle <- function(y,
 #'
 #' @export Simulate_Pop_Static
 #' @family Simulation Setup
+
+# Entry Point ---------------------------------------------------------------
 
 Simulate_Pop_Static <- function(sim_list,
                                 output_path = NULL) {
@@ -882,9 +895,8 @@ Simulate_Pop_Static <- function(sim_list,
                   n_sims = sim_env$n_sims,
                   n_regions = sim_env$n_regions,
                   n_pop = sim_env$n_pop,
-                  # Same quantity under both spellings. n_yrs is what the simulation
-                  # code reads; n_years is the name used throughout the dimension
-                  # documentation, so both are exposed for downstream scripts.
+                  # same quantity under both spellings: n_yrs is what the simulation code reads,
+                  # n_years the name used in the dimension documentation
                   n_years = sim_env$n_yrs,
                   n_yrs = sim_env$n_yrs,
                   n_ages = sim_env$n_ages,

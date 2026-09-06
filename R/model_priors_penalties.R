@@ -1,12 +1,9 @@
 # Stage 2 of 3: objective function
 #
-# Every prior and penalty that contributes to the objective, one small function
-# each: the process error likelihoods for selectivity, movement and fishing
-# mortality deviations, and priors on natural mortality, steepness, catchability,
-# R0, recruitment apportionment, movement, tag reporting rate, discard mortality
-# rate and fixed selectivity.
-#
-# These return positive log likelihoods; the objective negates them.
+# Every prior and penalty in the objective, one small function each. These return positive log
+# likelihoods and the objective negates them.
+
+# Selectivity Smoothness ----------------------------------------------------
 
 #' Compute a model-agnostic selectivity smoothness / dome-shape penalty (Positive Scale)
 #'
@@ -67,14 +64,23 @@
 #'
 #' @keywords internal
 #' @import RTMB
-Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff = 0,
-                                         wt_yr_diff = 0, wt_yr_curve = 0, wt_dome = 0, wt_mean_center = 0,
-                                         normalize = TRUE, bin_range = NULL, yr_diff_ref = NULL) {
+Get_Selex_Smoothness_Penalty <- function(
+  sel_vals,
+  wt_bin_curve = 0,
+  wt_bin_diff = 0,
+  wt_yr_diff = 0,
+  wt_yr_curve = 0,
+  wt_dome = 0,
+  wt_mean_center = 0,
+  normalize = TRUE,
+  bin_range = NULL,
+  yr_diff_ref = NULL
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  ll = 0 # initialize likelihood (positive scale, negated by the caller)
+  loglik = 0 # initialize likelihood (positive scale, negated by the caller)
 
   n_yrs = dim(sel_vals)[2]
   n_bins = dim(sel_vals)[3]
@@ -90,9 +96,8 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
   wt_dome = expand_wt(wt_dome)
   wt_mean_center = expand_wt(wt_mean_center)
 
-  # bin_range and normalize are either one setting shared by every term, or a
-  # named list giving each term its own. A shape penalty confined to the older
-  # ages and a random walk spanning every age are then specified together.
+  # bin_range and normalize are either one setting shared by every term or a named list giving each
+  # its own, so a shape penalty on the older ages and a walk over every age can be set together
   get_bins = function(term) {
     br = if(is.list(bin_range)) bin_range[[term]] else bin_range
     if(is.null(br)) return(c(1, n_bins))
@@ -111,7 +116,7 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
         if(wt_bin_curve[y] == 0) next
         for(b in (b_lo + 1):(b_hi - 1)) {
           bin_penalty = log(sel_vals[1,y,b+1,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y,b-1,s,1])
-          ll = ll - wt_bin_curve[y] / bin_norm * bin_penalty^2
+          loglik = loglik - wt_bin_curve[y] / bin_norm * bin_penalty^2
         } # end b loop
       } # end y loop
     } # end s loop
@@ -125,7 +130,7 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
         if(wt_bin_diff[y] == 0) next
         for(b in b_lo:(b_hi - 1)) {
           bin_diff_penalty = log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b+1,s,1])
-          ll = ll - wt_bin_diff[y] / bin_norm * bin_diff_penalty^2
+          loglik = loglik - wt_bin_diff[y] / bin_norm * bin_diff_penalty^2
         } # end b loop
       } # end y loop
     } # end s loop
@@ -133,10 +138,8 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
 
   bins = get_bins("smooth_yr_diff"); b_lo = bins[1]; b_hi = bins[2]
   yr_norm = if(get_norm("smooth_yr_diff")) n_yrs else 1
-  # The walk has no previous value to penalize in in its first year, so that year is
-  # normally left unpenalized. A reference supplies one: the first penalized
-  # year is then held toward yr_diff_ref on the log scale, which anchors an
-  # otherwise free series to a known selectivity before the data begin.
+  # the walk has no previous value in its first year, so that year is normally unpenalized. a
+  # reference holds the first penalized year toward yr_diff_ref on the log scale instead
   yr_ref_first = if(is.null(yr_diff_ref)) 0 else which(wt_yr_diff != 0)[1]
   yr_ref = if(is.null(yr_diff_ref)) NULL else rep(yr_diff_ref, length.out = n_bins)
   if(any(wt_yr_diff != 0) && n_yrs >= 2) { # inter-annual first difference
@@ -147,7 +150,7 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
           if(y == 1 && y != yr_ref_first) next
           prev_sel = if(y == yr_ref_first) yr_ref[b] else log(sel_vals[1,y-1,b,s,1])
           yr_diff_penalty = log(sel_vals[1,y,b,s,1]) - prev_sel
-          ll = ll - wt_yr_diff[y] / yr_norm * yr_diff_penalty^2
+          loglik = loglik - wt_yr_diff[y] / yr_norm * yr_diff_penalty^2
         } # end y loop
       } # end b loop
     } # end s loop
@@ -161,7 +164,7 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
         for(y in 2:(n_yrs - 1)) {
           if(wt_yr_curve[y] == 0) next
           year_penalty = log(sel_vals[1,y+1,b,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y-1,b,s,1])
-          ll = ll - wt_yr_curve[y] / yr_norm * year_penalty^2
+          loglik = loglik - wt_yr_curve[y] / yr_norm * year_penalty^2
         } # end y loop
       } # end b loop
     } # end s loop
@@ -174,7 +177,7 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
         if(wt_dome[y] == 0) next
         for(b in b_lo:(b_hi - 1)) {
           decrease = max(log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b+1,s,1]), 0) # only decreases contribute
-          ll = ll - wt_dome[y] * decrease^2
+          loglik = loglik - wt_dome[y] * decrease^2
         } # end b loop
       } # end y loop
     } # end s loop
@@ -186,13 +189,15 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
       for(y in 1:n_yrs) {
         if(wt_mean_center[y] == 0) next
         z = mean(log(sel_vals[1,y,bins[1]:bins[2],s,1]))
-        ll = ll - wt_mean_center[y] * z^2
+        loglik = loglik - wt_mean_center[y] * z^2
       } # end y loop
     } # end s loop
   }
 
-  return(ll)
+  return(loglik)
 } # return log likelihood
+
+# Process Error Penalties ---------------------------------------------------
 
 #' Compute Process Error Log-Likelihood for a Deviation Surface (Positive Scale)
 #'
@@ -246,7 +251,7 @@ Get_Selex_Smoothness_Penalty <- function(sel_vals, wt_bin_curve = 0, wt_bin_diff
 #'
 #' @param map_sel_devs Integer array dimensioned \code{[fleet, year, bin, sex]}
 #'   mapping deviations to unique estimated parameters. Shared deviations
-#'   carry the same integer value; \code{NA} entries are treated as fixed
+#'   hold the same integer value; \code{NA} entries are treated as fixed
 #'   and excluded from likelihood evaluation.
 #'
 #' @param rw_init_sigma Standard deviation given to the first year of a random
@@ -276,13 +281,13 @@ Get_PE_loglik <- function(PE_model,
   # Note that the likelihood calculations are positive within the function,
   # because it gets converted to negative outside the wrapper function
 
-  ll = 0 # initialize likelihood
+  loglik = 0 # initialize likelihood
 
   # find unique selectivity deviations to penalize (sort drops NAs)
   unique_sel_devs = sort(unique(as.vector(map_sel_devs)))
 
   # Exit out fxn if this region x fleet slice has no estimated deviations at all.
-  if(length(unique_sel_devs) == 0) return(ll)
+  if(length(unique_sel_devs) == 0) return(loglik)
   n_yrs = dim(map_sel_devs)[2] # get years for indexing
   n_bins = dim(map_sel_devs)[3] # get bins / pars for indexing
   n_sexes = dim(map_sel_devs)[4] # get sexes for indexing
@@ -298,19 +303,17 @@ Get_PE_loglik <- function(PE_model,
       s = idx[4] # get unique sex index
 
       if(PE_model == 1) {
-        if(y >= 1) ll = ll + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, exp(PE_pars[1,i,s,1]), TRUE)
+        if(y >= 1) loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, exp(PE_pars[1,i,s,1]), TRUE)
       } # iid process error
 
       if(PE_model == 2) {
-        # The walk needs a distribution for its first year. A wide sigma leaves
-        # that year unconstrained; NA instead starts the walk at zero under
-        # its own sigma, which is what a first difference taken against a
-        # selectivity of one amounts to.
+        # the walk needs a distribution for its first year. a wide sigma leaves it unconstrained;
+        # NA starts the walk at zero under its own sigma
         if(y == 1) {
           init_sd = if(is.na(rw_init_sigma)) exp(PE_pars[1,i,s,1]) else rw_init_sigma
-          ll = ll + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, init_sd, TRUE)
+          loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, init_sd, TRUE)
         }
-        else ll = ll + RTMB::dnorm(ln_devs[1,y,i,s,1], ln_devs[1,y-1,i,s,1], exp(PE_pars[1,i,s,1]), TRUE)
+        else loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], ln_devs[1,y-1,i,s,1], exp(PE_pars[1,i,s,1]), TRUE)
       } # end random walk process error
 
     } # end dev_idx loop
@@ -349,7 +352,7 @@ Get_PE_loglik <- function(PE_model,
 
         # apply gmrf likelihood
         eps_ay = as.vector(t(ln_devs[1,,min_sel_devs_shared_bins,s,1])) # convert to vector
-        ll = ll + RTMB::dgmrf(x = eps_ay, mu = 0, Q = Q, log = TRUE)
+        loglik = loglik + RTMB::dgmrf(x = eps_ay, mu = 0, Q = Q, log = TRUE)
       } # end if
 
       # 2dar1 model
@@ -369,13 +372,13 @@ Get_PE_loglik <- function(PE_model,
         # Define ar1 separable functions
         f1 = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_y, log = TRUE)
         f2 = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_b, log = TRUE)
-        ll = ll + RTMB::dseparable(f1, f2)(eps_ya, scale = scale)
+        loglik = loglik + RTMB::dseparable(f1, f2)(eps_ya, scale = scale)
       } # end if
     } # end idx loop
 
   } # end 3dgrmf or 2dar1 process error
 
-  return(ll)
+  return(loglik)
 } # return log likelihood
 
 #' Compute Movement Process Error Log-Likelihood (Positive Scale)
@@ -419,7 +422,7 @@ Get_PE_loglik <- function(PE_model,
 #' @param map_move_devs Integer array dimensioned
 #'   \code{[pop, from_region, to_region, year, seas, age, sex]}
 #'   mapping deviations to unique estimated parameters. Shared deviations
-#'   carry the same integer value; dimensions are extracted from this
+#'   hold the same integer value; dimensions are extracted from this
 #'   array to determine loop bounds.
 #'
 #' @param do_recruits_move Integer (0/1). If \code{0} and \code{n_ages >= 2},
@@ -460,7 +463,7 @@ Get_move_PE_loglik <- function(PE_model,
   # Note that the likelihood calculations are positive within the function,
   # because it gets converted to negative outside the wrapper function
 
-  ll = 0 # initialize likelihood
+  loglik = 0 # initialize likelihood
 
   # Get dimensions for penalty
   n_pop = dim(map_move_devs)[1]
@@ -474,10 +477,8 @@ Get_move_PE_loglik <- function(PE_model,
   # whether recruits move
   age_start = ifelse(do_recruits_move == 0 && n_ages >= 2, 2, 1)
 
-  # Dimensions named in each PE_model's spec (see cont_move_map in
-  # Setup_Movement.R for the type <-> integer correspondence); dims absent
-  # from a model's name are shared/broadcast across (held fixed at index 1
-  # for PE_pars, which has no region_to or year dimension of its own).
+  # dims named in each PE_model's spec (see cont_move_map in Setup_Movement.R for the type to
+  # integer correspondence); dims absent from a model's name are shared across, kept at index 1
   key_dims_by_model <- list(
     `1` = "year", `2` = "age", `3` = c("year","age"), `4` = c("year","age","sex"),
     `5` = c("year","season","age","sex"),
@@ -503,7 +504,7 @@ Get_move_PE_loglik <- function(PE_model,
           for(seas in seas_idx) {
             for(a in age_idx) {
               for(s in sex_idx) {
-                ll = ll + RTMB::dnorm(move_devs[p,r,rr,y,seas,a,s], 0, exp(PE_pars[p,r,seas,a,s]), TRUE)
+                loglik = loglik + RTMB::dnorm(move_devs[p,r,rr,y,seas,a,s], 0, exp(PE_pars[p,r,seas,a,s]), TRUE)
               } # end s loop
             } # end a loop
           } # end seas loop
@@ -513,7 +514,7 @@ Get_move_PE_loglik <- function(PE_model,
     } # end r loop
   } # end rr loop
 
-  return(ll)
+  return(loglik)
 }
 
 #' Compute Fishing Mortality Deviation Process Error Log-Likelihood (Negative Scale)
@@ -597,10 +598,8 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_
         sigma <- exp(ln_sigmaF[r,seas,f])
         if(PE_model == 3) rho <- rho_trans(Fdev_rho[r,seas,f])
 
-        # Centering on the deviations' own mean penalizes only their spread, leaving
-        # their level free. With a mean-plus-deviations parameterization the level
-        # is already carried by the mean, so this is the form that does not
-        # penalize it twice.
+        # centering on the deviations' own mean penalizes only their spread. with a mean-plus-
+        # deviations parameterization the mean already holds the level, so it is not penalized twice
         dev_mu <- 0
         if(Fdev_pen_center == 1) {
           act <- which(is_estimated[r,,seas,f])
@@ -642,6 +641,8 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_
 
   return(Fmort_nLL)
 }
+
+# Discard and Selectivity Penalties -----------------------------------------
 
 #' Discard mortality rate deviation penalty
 #'
@@ -715,7 +716,7 @@ get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
 #'   \item{\code{"value"}}{A normal prior on the realized selectivity value at
 #'     one bin, \code{dnorm(sel[bin], mu, sd)}, with both hyperparameters on
 #'     the natural scale. \code{par} instead names the bin, on the grid the
-#'     stream's selectivity is parameterized on (ages or lengths per its
+#'     data source's selectivity is parameterized on (ages or lengths per its
 #'     selectivity type), and the value is read at the first model year of
 #'     \code{block} (blocked and time-invariant selectivity are constant within
 #'     a block). This is a constraint on a derived quantity rather than on the
@@ -736,7 +737,7 @@ get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
 #'   season 1, matching the smoothness penalties.
 #' @param sel_l Array \code{[region, year, len, sex, fleet]} of realized
 #'   length-based selectivity, read by \code{"value"} rows instead of
-#'   \code{sel} when the stream is length-based.
+#'   \code{sel} when the data source is length-based.
 #' @param selex_type Integer. \code{0} reads \code{sel}, \code{1} reads
 #'   \code{sel_l}.
 #' @param sel_blocks Integer array \code{[region, year, fleet]} mapping model
@@ -785,7 +786,7 @@ get_selex_prior <- function(selex_prior, fixed_sel_pars, sel, sel_l, selex_type,
 #'
 #' Each row of the table names one set, so the penalty applies to the group
 #' jointly rather than to each parameter separately. Because the expression
-#' averages on the natural scale, it is meant for parameter sets held on the log
+#' averages on the natural scale, it is meant for parameter sets kept on the log
 #' scale; a set stored on the logit scale (the non-parametric form, or the
 #' asymptote of the asymptotic logistic forms) would not average to anything
 #' interpretable as selectivity.
@@ -820,6 +821,8 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 
   return(nLL)
 }
+
+# Recruitment Penalties -----------------------------------------------------
 
 #' Recruitment and initial age deviation penalties
 #'
@@ -858,7 +861,7 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #'   first sex's slice, which is the pre-sex-dimension behavior.
 #' @param Use_init_sex_pen Integer (0/1). Whether each later sex's initial
 #'   age deviations are tied to the first sex's through a Gaussian on their
-#'   difference at every penalized age. Only meaningful when the sexes carry
+#'   difference at every penalized age. Only meaningful when the sexes have
 #'   their own curves.
 #' @param ln_sigma_init_sex Log standard deviation of that tie.
 #' @param ln_sigmaR Array \code{[early/late, pop, region]} of log-sigma for
@@ -883,15 +886,34 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #'
 #' @keywords internal
 #' @import RTMB
-get_recruitment_penalty <- function(n_pop, n_regions, n_ages, n_est_rec_devs, rec_dd, natal_region,
-                                     rec_region_prop_spec, rec_region_prop, equil_init_age_strc,
-                                     ln_InitDevs, init_age_devs_shared, ln_sigmaR, bias_ramp,
-                                     sigmaR_switch, ln_RecDevs, sigmaR2_early, sigmaR2_late,
-                                     do_rec_bias_ramp, map_ln_RecDevs = NULL,
-                                     RecDevs_pen_center = 0, InitDevs_pen_center = 0,
-                                     init_devs_pen_use = NULL,
-                                     Use_init_sex_pen = 0, ln_sigma_init_sex = 0,
-                                     init_bias_ramp = NULL, map_ln_InitDevs = NULL) {
+get_recruitment_penalty <- function(
+  n_pop,
+  n_regions,
+  n_ages,
+  n_est_rec_devs,
+  rec_dd,
+  natal_region,
+  rec_region_prop_spec,
+  rec_region_prop,
+  equil_init_age_strc,
+  ln_InitDevs,
+  init_age_devs_shared,
+  ln_sigmaR,
+  bias_ramp,
+  sigmaR_switch,
+  ln_RecDevs,
+  sigmaR2_early,
+  sigmaR2_late,
+  do_rec_bias_ramp,
+  map_ln_RecDevs = NULL,
+  RecDevs_pen_center = 0,
+  InitDevs_pen_center = 0,
+  init_devs_pen_use = NULL,
+  Use_init_sex_pen = 0,
+  ln_sigma_init_sex = 0,
+  init_bias_ramp = NULL,
+  map_ln_InitDevs = NULL
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -1076,6 +1098,8 @@ get_sr_penalty <- function(Rec, SR_pred, sigma, yrs = NULL) {
   return(nLL)
 }
 
+# Priors --------------------------------------------------------------------
+
 #' Normal prior on log catchability
 #'
 #' Shared across the fishery and survey catchability prior blocks in
@@ -1116,11 +1140,14 @@ get_q_prior <- function(q_prior, ln_q) {
 #' @param M_prior Data frame with columns \code{popblk}, \code{regionblk},
 #'   \code{yearblk}, \code{ageblk}, \code{sexblk} (block indices into
 #'   \code{M_blocks}), \code{mu} (prior mean, natural scale), \code{sd} (prior
-#'   SD, log scale), one row per penalized parameter.
+#'   SD, log scale), one row per penalized parameter. An optional
+#'   \code{seasblk} column names the season block the prior applies to; without
+#'   it the prior reads the block covering the first season, which is every
+#'   season when mortality does not vary within the year.
 #' @param ln_M Vector of estimated log natural mortality values, indexed by
 #'   \code{M_blocks}.
-#' @param M_blocks Array \code{[pop, region, year, age, sex]} mapping each
-#'   population/region/year/age/sex cell to an index into \code{ln_M}.
+#' @param M_blocks Array \code{[pop, region, year, season, age, sex]} mapping each
+#'   population/region/year/season/age/sex cell to an index into \code{ln_M}.
 #'
 #' @return Numeric scalar negative log-likelihood contribution, summed across
 #'   all rows of \code{M_prior}.
@@ -1139,7 +1166,9 @@ get_natmort_prior <- function(M_prior, ln_M, M_blocks) {
     b <- M_prior$yearblk[i]
     a <- M_prior$ageblk[i]
     s <- M_prior$sexblk[i]
-    idx <- M_blocks[p,r,b,a,s]
+    # priors written before seasonal M have no seasblk, so use the first
+    seas <- if(is.null(M_prior$seasblk)) 1 else M_prior$seasblk[i]
+    idx <- M_blocks[p,r,b,seas,a,s]
     nLL <- nLL + -RTMB::dnorm(ln_M[idx], log(M_prior$mu[i]), M_prior$sd[i], TRUE) # TMB likelihood
   } # end i loop
 
@@ -1193,7 +1222,7 @@ get_steepness_prior <- function(h_prior, h_trans) {
 #' \code{Movement}. Those differ once \code{ctmc_scale_by_seasdur = 1}, and the
 #' difference is not benign: a season's movement matrix approaches the identity as
 #' the season shortens, so a fixed \code{alpha} silently becomes a much stronger
-#' constraint as \code{n_seas} grows. On a three-region fixture the same
+#' constraint as \code{n_seas} grows. On a three-region test setup the same
 #' \code{alpha = 3} prior cost 1.04 nLL units at \code{n_seas = 1} but 9.91 at
 #' \code{n_seas = 12}. Evaluating on the annual matrix makes \code{alpha} mean the
 #' same thing regardless of seasonal structure, and matches how such priors are
@@ -1403,7 +1432,13 @@ get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_par
 
     conv_tag_fishrep_val <- RTMB::plogis(conv_tag_fish_reporting_pars[r,b,f]) # extract tag reporting rate value
     if(conv_tag_fishrep_prior$type[i] == 0) {
-      nLL <- nLL - dbeta_symmetric(p_val = conv_tag_fishrep_val, p_ub = 1, p_lb = 0, p_prsd = conv_tag_fishrep_prior$sd[i], log = TRUE) # penalize
+      nLL <- nLL - dbeta_symmetric(
+        p_val = conv_tag_fishrep_val,
+        p_ub = 1,
+        p_lb = 0,
+        p_prsd = conv_tag_fishrep_prior$sd[i],
+        log = TRUE
+      ) # penalize
     } # end if symmetric beta
 
     if(conv_tag_fishrep_prior$type[i] == 1) {
@@ -1422,25 +1457,31 @@ get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_par
   return(nLL)
 }
 
+# State-Space Numbers at Age ------------------------------------------------
+
 #' State-space numbers at age
 #'
-#' Scores the realized innovation of the centered numbers-at-age state,
+#' Penalizes the realized innovation of the centered numbers-at-age state,
 #' \eqn{\eta = \log N - \log \hat{N}}, where \eqn{\hat{N}} is the deterministic
 #' mortality and ageing prediction the dynamics computed into \code{NAA_pred}
 #' before the state overwrote \code{NAA}.
 #'
 #' The state is a level rather than a deviation, so the prediction is subtracted
 #' here instead of multiplying a deviation onto a value the dynamics still
-#' computes. That is what makes the random-effects Hessian block-tridiagonal in
+#' computes, which makes the random-effects Hessian block-tridiagonal in
 #' year: every term is supported on a two-year block, because \eqn{\eta_y}
 #' depends on the states in years \eqn{y} and \eqn{y-1} and on nothing earlier.
 #'
-#' @param ln_NAA Array \code{[pop, region, year, age, sex]} of log numbers at age.
+#' @param ln_NAA Array \code{[pop, region, year, season, age, sex]} of log numbers
+#'   at the start of each season.
 #' @param NAA_pred Array of the same shape holding the deterministic prediction.
 #' @param sigmaNAA Array of the same shape holding the process error standard
 #'   deviation for each cell, already expanded from its blocking structure.
 #' @param naa_re_ages Integer vector of age indices the state is active over.
 #' @param naa_re_yrs Integer vector of year indices the state is active over.
+#' @param naa_re_seas Integer vector of season indices the state is active over.
+#'   Season one alone is the annual state, with the numbers deterministic between
+#'   seasons.
 #' @param NAA_re Integer code for the structure over the age-year grid.
 #'   \code{1} independent, \code{2} AR(1)
 #'   over ages, \code{3} AR(1) over years with ages independent, \code{4}
@@ -1458,39 +1499,61 @@ get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_par
 #'   and across sexes. \code{0} independent, \code{1} unstructured.
 #' @param NAA_pop_corr_pars,NAA_sex_corr_pars Numeric vectors of unconstrained
 #'   parameters for those correlations, one per pair. Both are global to the
-#'   model rather than varying over the other margins, which is what keeps a
-#'   two-level margin at exactly one parameter.
+#'   model rather than varying over the other dims, which is what keeps a
+#'   two-level dim at exactly one parameter.
+#' @param NAA_re_season Integer code for the structure across the active seasons.
+#'   \code{0} independent, \code{1} unstructured.
+#' @param NAA_season_corr_pars Array \code{[pop, n_k(n_k-1)/2, sex]} of
+#'   unconstrained parameters for the season correlation, over the \eqn{n_k}
+#'   active seasons.
 #'
 #' @details
 #' Only the independent form admits a standard deviation that varies cell by
-#' cell. Every other structure is separable or Markov in a margin, and a
+#' cell. Every other structure is separable or Markov in a dim, and a
 #' per-cell variance is neither, so the setup function holds the year and age
 #' standard deviation blocks to one apiece whenever a correlated form is chosen
-#' and this function reads one standard deviation per population, region and sex.
+#' and this function reads one standard deviation per population, region, season
+#' and sex. The season dim is whitened before the age and year density is
+#' reached, so it keeps its own standard deviation under every form, and gives it
+#' up only under \code{NAA_re_season = 1}.
 #'
 #' @return Scalar negative log likelihood.
 #'
 #' @keywords internal
 #' @import RTMB
-Get_NAA_state_penalty <- function(ln_NAA, NAA_pred, sigmaNAA, naa_re_ages, naa_re_yrs,
-                                  NAA_re = 1, NAA_pe_pars = NULL,
-                                  NAA_re_region = 0, NAA_region_corr_pars = NULL,
-                                  NAA_re_pop = 0, NAA_pop_corr_pars = NULL,
-                                  NAA_re_sex = 0, NAA_sex_corr_pars = NULL) {
+Get_NAA_state_penalty <- function(
+  ln_NAA,
+  NAA_pred,
+  sigmaNAA,
+  naa_re_ages,
+  naa_re_yrs,
+  naa_re_seas,
+  NAA_re = 1,
+  NAA_pe_pars = NULL,
+  NAA_re_region = 0,
+  NAA_region_corr_pars = NULL,
+  NAA_re_pop = 0,
+  NAA_pop_corr_pars = NULL,
+  NAA_re_sex = 0,
+  NAA_sex_corr_pars = NULL,
+  NAA_re_season = 0,
+  NAA_season_corr_pars = NULL
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   d <- dim(ln_NAA)
-  n_pop <- d[1]; n_regions <- d[2]; n_sexes <- d[5]
-  ny <- length(naa_re_yrs); na <- length(naa_re_ages)
+  n_pop <- d[1]; n_regions <- d[2]; n_sexes <- d[6]
+  ny <- length(naa_re_yrs); na <- length(naa_re_ages); nk <- length(naa_re_seas)
 
   # compute the epsilon
-  eta <- ln_NAA[,,naa_re_yrs,naa_re_ages,,drop = FALSE] - log(NAA_pred[,,naa_re_yrs,naa_re_ages,,drop = FALSE])
-  sig <- sigmaNAA[,,naa_re_yrs,naa_re_ages,,drop = FALSE] # get sigma NAA
+  eta <- ln_NAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] - log(NAA_pred[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE])
+  sig <- sigmaNAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] # get sigma NAA
 
   # Compute nLL for independent deviatiosn on every dimension
-  if(NAA_re == 1 && NAA_re_region == 0 && NAA_re_pop == 0 && NAA_re_sex == 0) return(-sum(RTMB::dnorm(as.vector(eta), 0, as.vector(sig), TRUE)))
+  if(NAA_re == 1 && NAA_re_region == 0 && NAA_re_pop == 0 && NAA_re_sex == 0 && NAA_re_season == 0)
+    return(-sum(RTMB::dnorm(as.vector(eta), 0, as.vector(sig), TRUE)))
 
   # initialize nll for other cases (beyond independent cases)
   nll <- 0
@@ -1498,37 +1561,50 @@ Get_NAA_state_penalty <- function(ln_NAA, NAA_pred, sigmaNAA, naa_re_ages, naa_r
   # get correaltion by population (unstructured)
   if(NAA_re_pop > 0) {
     Lp <- build_us_chol(NAA_pop_corr_pars, n_pop)
-    flat <- array(eta, dim = c(n_pop, n_regions * ny * na * n_sexes))
-    eta <- array(solve(Lp, flat), dim = c(n_pop, n_regions, ny, na, n_sexes))
-    nll <- nll + n_regions * ny * na * n_sexes * sum(log(diag(Lp)))
+    flat <- array(eta, dim = c(n_pop, n_regions * ny * nk * na * n_sexes))
+    eta <- array(solve(Lp, flat), dim = c(n_pop, n_regions, ny, nk, na, n_sexes))
+    nll <- nll + n_regions * ny * nk * na * n_sexes * sum(log(diag(Lp)))
   }
 
   # get correaltion by sexes (unstructured)
   if(NAA_re_sex > 0) {
     Ls <- build_us_chol(NAA_sex_corr_pars, n_sexes)
-    flat <- array(eta, dim = c(n_pop * n_regions * ny * na, n_sexes))
-    eta <- array(t(solve(Ls, t(flat))), dim = c(n_pop, n_regions, ny, na, n_sexes))
-    nll <- nll + n_pop * n_regions * ny * na * sum(log(diag(Ls)))
+    flat <- array(eta, dim = c(n_pop * n_regions * ny * nk * na, n_sexes))
+    eta <- array(t(solve(Ls, t(flat))), dim = c(n_pop, n_regions, ny, nk, na, n_sexes))
+    nll <- nll + n_pop * n_regions * ny * nk * na * sum(log(diag(Ls)))
   }
 
   for(p in 1:n_pop) {
     for(s in 1:n_sexes) {
 
       # get epsilon
-      eps <- array(eta[p,,,,s], dim = c(n_regions, ny, na))
+      eps <- array(eta[p,,,,,s], dim = c(n_regions, ny, nk, na))
 
       # get correlation by region (unstructured)
       if(NAA_re_region > 0) {
         Lc <- build_us_chol(NAA_region_corr_pars[p,,s], n_regions)
-        flat <- array(eps, dim = c(n_regions, ny * na))
-        eps <- array(solve(Lc, flat), dim = c(n_regions, ny, na))
-        nll <- nll + ny * na * sum(log(diag(Lc)))
+        flat <- array(eps, dim = c(n_regions, ny * nk * na))
+        eps <- array(solve(Lc, flat), dim = c(n_regions, ny, nk, na))
+        nll <- nll + ny * nk * na * sum(log(diag(Lc)))
+      }
+
+      # get correlation by season (unstructured). The dim is gathered by explicit slicing
+      # rather than aperm, which the AD types do not have.
+      if(NAA_re_season > 0) {
+        Lk <- build_us_chol(NAA_season_corr_pars[p,,s], nk)
+        flat <- array(0, dim = c(nk, n_regions * ny * na))
+        for(k in 1:nk) flat[k,] <- as.vector(array(eps[,,k,], dim = c(n_regions, ny, na)))
+        flat <- solve(Lk, flat)
+        for(k in 1:nk) eps[,,k,] <- array(flat[k,], dim = c(n_regions, ny, na))
+        nll <- nll + n_regions * ny * na * sum(log(diag(Lk)))
       }
 
       for(r in 1:n_regions) {
-        sd_prs <- sig[p,r,1,1,s]
-        eps_ya <- array(eps[r,,], dim = c(ny, na)) # year by age, matching the deviation surfaces
-        nll <- nll + penalize_naa_age_year(eps_ya, sd_prs, NAA_re, if(is.null(NAA_pe_pars)) NULL else NAA_pe_pars[p,r,,s], ny, na)
+        for(k in 1:nk) {
+          sd_prsk <- sig[p,r,1,k,1,s]
+          eps_ya <- array(eps[r,,k,], dim = c(ny, na)) # year by age, matching the deviation surfaces
+          nll <- nll + penalize_naa_age_year(eps_ya, sd_prsk, NAA_re, if(is.null(NAA_pe_pars)) NULL else NAA_pe_pars[p,r,,s], ny, na)
+        } # end k loop
       } # end r loop
 
     } # end s loop
@@ -1540,7 +1616,7 @@ Get_NAA_state_penalty <- function(ln_NAA, NAA_pred, sigmaNAA, naa_re_ages, naa_r
 #' Compare one region's age-by-year innovation surface
 #'
 #' The age and year half of \code{\link{Get_NAA_state_penalty}}, split out so the
-#' region correlation can whiten its margin and then reuse this unchanged for
+#' region correlation can whiten its dim and then reuse this unchanged for
 #' every structure, including the three-dimensional field whose cohort term makes
 #' it non-separable.
 #'
@@ -1564,13 +1640,13 @@ penalize_naa_age_year <- function(eps_ya, sd_prs, NAA_re, pe, ny, na) {
   # 1 = independent over ages and years
   if(NAA_re == 1) return(-sum(RTMB::dnorm(as.vector(eps_ya), 0, sd_prs, TRUE)))
 
-  # 3 = autoregression over ages, 7 = over years, 4 = separable over both. The margin a form
+  # 3 = autoregression over ages, 7 = over years, 4 = separable over both. The dim a form
   # leaves alone takes an independent standard normal, a valid mean zero unit variance factor
   if(NAA_re %in% c(2, 3, 4)) {
     rho_a <- if(NAA_re %in% c(2, 4)) rho_trans(pe[1]) else 0 # 1dar1 over ages
     rho_y <- if(NAA_re %in% c(3, 4)) rho_trans(pe[2]) else 0 # 1dar1_y over years, 2dar1 over both
     scale <- sd_prs / sqrt(1 - rho_y^2) / sqrt(1 - rho_a^2) # get unit scale
-    iid_f <- function(x) sum(RTMB::dnorm(x, 0, 1, TRUE)) # the margin left independent
+    iid_f <- function(x) sum(RTMB::dnorm(x, 0, 1, TRUE)) # the dim left independent
     f_yr <- if(NAA_re %in% c(3, 4)) function(x) RTMB::dautoreg(x, mu = 0, phi = rho_y, log = TRUE) else iid_f
     f_ag <- if(NAA_re %in% c(2, 4)) function(x) RTMB::dautoreg(x, mu = 0, phi = rho_a, log = TRUE) else iid_f
     return(-RTMB::dseparable(f_yr, f_ag)(eps_ya, scale = scale))
@@ -1584,5 +1660,5 @@ penalize_naa_age_year <- function(eps_ya, sd_prs, NAA_re, pe, ny, na) {
     return(-RTMB::dgmrf(x = as.vector(t(eps_ya)), mu = 0, Q = Q, log = TRUE))
   }
 
-  stop("NAA_re code ", NAA_re, " has no scoring branch.")
+  stop("NAA_re code ", NAA_re, " has no penalty branch.")
 }

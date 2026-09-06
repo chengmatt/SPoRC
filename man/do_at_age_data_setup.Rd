@@ -2,14 +2,14 @@
 % Please edit documentation in R/setup_mapping.R
 \name{do_at_age_data_setup}
 \alias{do_at_age_data_setup}
-\title{Store one at-age stream's observations, use flags and standard errors}
+\title{Store one at-age data source's observations, use flags and standard errors}
 \usage{
 do_at_age_data_setup(
   input_list,
   obs,
   use,
   se,
-  stream,
+  data_source,
   fleet_field,
   pop = FALSE
 )
@@ -20,17 +20,17 @@ do_at_age_data_setup(
 \item{obs, use, se}{Observation, use and reported standard error arrays, any of
 them \code{NULL}.}
 
-\item{stream}{Stream tag naming the data elements, e.g. \code{"CatchAA"}.}
+\item{data_source}{Data source tag naming the data elements, e.g. \code{"CatchAA"}.}
 
 \item{fleet_field}{\code{"n_fish_fleets"} or \code{"n_srv_fleets"}.}
 
-\item{pop}{Logical. \code{TRUE} for the population-specific stream.}
+\item{pop}{Logical. \code{TRUE} for the population-specific data source.}
 }
 \value{
-\code{input_list} with the stream's three data elements set.
+\code{input_list} with the data source's three data elements set.
 }
 \description{
-Shared by the three streams and their population-specific forms. An absent
-stream is given a zeroed array so the objective can index it unconditionally.
+Shared by the three data sources and their population-specific forms. An absent
+data source is given a zeroed array so the objective can index it unconditionally.
 }
 \keyword{internal}

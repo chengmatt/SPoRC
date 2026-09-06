@@ -295,8 +295,9 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
   )
 
   tmp_natmort <- array(
-    rep(obj$rep$natmort[,, y, , ], each = n_proj),
-    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, length(asmt_data$ages), asmt_data$n_sexes)
+    rep(obj$rep$natmort[,, y, , , ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_seas,
+            length(asmt_data$ages), asmt_data$n_sexes)
   )
 
   # Extract terminal fishing mortality
@@ -418,7 +419,7 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
         catch = tmp_TAC[1, r, tac_year_index, 1, f],
         NAA = sim_env$NAA[1, r, y + 1, 1, , , sim],
         WAA = sim_env$WAA[1, r, y + 1, 1, , , sim],
-        natmort = sim_env$natmort[1, r, y + 1, , , sim],
+        natmort = sim_env$natmort[1, r, y + 1, , , , sim],
         fish_sel = sim_env$fish_sel[1,r, y + 1, 1, , , f, sim]
       )
     },

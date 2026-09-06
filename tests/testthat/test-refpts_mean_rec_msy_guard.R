@@ -78,7 +78,7 @@ test_that("Every multi region MSY variant is guarded", {
 
 test_that("A stock-recruit penalty under mean recruitment is still rejected, with its own note", {
 
-  # sr_penalty fits a curve, but only as a score against the recruitment
+  # sr_penalty fits a curve, but only as a penalty against the recruitment
   # deviations, and its scale sr_R0 is not reported, so the solvers cannot use it.
   mean_rec_data <- sgl_rg_sable_data
   mean_rec_data$rec_model <- 0 # mean_rec
@@ -125,7 +125,7 @@ test_that("SPR reference points are unaffected by rec_model, since they never to
 test_that("The solvers themselves reject rec_model 0, for data lists built by hand", {
 
   # Get_Reference_Points is the guarded entry point, but the solvers are reachable
-  # directly, so they carry their own check rather than trusting the caller.
+  # directly, so they have their own check rather than trusting the caller.
   for(solver in c("single_region_Fmsy", "global_Fmsy", "local_Fmsy_sglpop", "local_Fmsy_multipop")) {
     expect_error(
       do.call(get(solver, envir = asNamespace("SPoRC")),

@@ -1,8 +1,7 @@
 # Shared helpers
 #
-# Helpers for working with a fitted object: convergence checks, parameter
-# estimate tables, the parameter list for a refit, marginal AIC, and pulling a
-# report out of MCMC draws.
+# Helpers for working with a fitted object: convergence checks, parameter estimate tables, the
+# parameter list for a refit, marginal AIC, and pulling a report out of MCMC draws.
 
 #' Run post-optimization convergence checks on a fitted SPoRC model
 #'
@@ -167,10 +166,12 @@ get_par_est_info <- function(parameters, mapping, sd_rep) {
                   Par_Num_map = paste(Par, map, sep = "_")) # now, make a variable that is consistent with numbering in sdreport
 
   # now, get estimater parameter names and values
-  est_names <- data.frame(Par = c(names(sd_rep$par.fixed), names(sd_rep$par.random)),
-                          Est_Val = c(sd_rep$par.fixed, sd_rep$par.random),
-                          SE_Val = c(sqrt(diag(sd_rep$cov.fixed)), sd_rep$diag.cov.random),
-                          Abs_Grad_Val = c(abs(as.vector(sd_rep$gradient.fixed)), rep(NA, length(sd_rep$diag.cov.random)))) %>%
+  est_names <- data.frame(
+    Par = c(names(sd_rep$par.fixed), names(sd_rep$par.random)),
+    Est_Val = c(sd_rep$par.fixed, sd_rep$par.random),
+    SE_Val = c(sqrt(diag(sd_rep$cov.fixed)), sd_rep$diag.cov.random),
+    Abs_Grad_Val = c(abs(as.vector(sd_rep$gradient.fixed)), rep(NA, length(sd_rep$diag.cov.random)))
+  ) %>%
     dplyr::group_by(Par) %>%
     dplyr::mutate(Par_Num_map = paste(Par, dplyr::row_number(), sep = '_'))
 

@@ -1,9 +1,7 @@
 # Stage 3 of 3: post fit
 #
-# Uncertainty for reference points. Get_Reference_Points takes every estimated
-# quantity in as fixed data, so what it returns carries no uncertainty. A reference
-# point is a deterministic function of the fitted parameters, so its uncertainty
-# follows from theirs by the delta method. Albertsen and Trijoulet (2020).
+# Uncertainty for reference points. Get_Reference_Points takes estimated quantities in as fixed data, so its
+# output has none; a reference point is a deterministic function of the fit. Albertsen and Trijoulet (2020).
 
 #' Flatten a reference point array into a named vector
 #'
@@ -69,7 +67,7 @@ refpt_par_cov <- function(obj, sd_rep = NULL) {
 
 }
 
-#' Delta method quadratic form
+#' Delta method covariance of derived quantities
 #'
 #' Evaluates \eqn{d \Sigma d'}. A precision matrix is applied by solving, so the
 #' dense inverse is never built.
@@ -196,7 +194,7 @@ eval_refpt_log_quantities <- function(obj, p, refpt_args, extra_quantities = NUL
 #' @param seed Integer or \code{NULL}. Seed for the draws. Default \code{NULL}.
 #' @param level Numeric. Confidence level. Default 0.95.
 #' @param extra_quantities Optional \code{function(rep, refpts)} returning a named
-#'   vector of extra positive quantities to carry through, e.g. stock status.
+#'   vector of extra positive quantities to propagate through, e.g. stock status.
 #' @param par_subset Optional character vector of parameter names to perturb. This is the lever for
 #'   a large model if taking too long. Everything left out is asserted to have exactly zero effect,
 #'   which is a claim about the model rather than a shortcut. Make sure to check any subset
@@ -231,7 +229,7 @@ eval_refpt_log_quantities <- function(obj, p, refpt_args, extra_quantities = NUL
 #'                                       type = "single_region", what = "SPR")
 #' rp$refpts
 #'
-#' # carry stock status through, so the correlation with the reference point is kept
+#' # have stock status through, so the correlation with the reference point is kept
 #' status <- function(rep, refpts) {
 #'   ssb <- rep$SSB[1, 1, dim(rep$SSB)[3]]
 #'   c(SSB_terminal = ssb, status = ssb / as.numeric(refpts$b_ref_pt))
@@ -271,11 +269,18 @@ Get_Reference_Point_Uncertainty <- function(obj,
   if(is.null(sex_ratio_f)) sex_ratio_f <- array(0.5, dim = c(data$n_pop, data$n_regions))
   if(is.null(is_discard_fleet)) is_discard_fleet <- array(0, dim = data$n_fish_fleets)
 
-  refpt_args <- list(SPR_x = SPR_x, t_spawn = t_spawn, sex_ratio_f = sex_ratio_f,
-                     calc_rec_st_yr = calc_rec_st_yr, rec_age = rec_age, type = type,
-                     what = what, n_avg_yrs = n_avg_yrs,
-                     local_bh_msy_newton_steps = local_bh_msy_newton_steps,
-                     is_discard_fleet = is_discard_fleet)
+  refpt_args <- list(
+    SPR_x = SPR_x,
+    t_spawn = t_spawn,
+    sex_ratio_f = sex_ratio_f,
+    calc_rec_st_yr = calc_rec_st_yr,
+    rec_age = rec_age,
+    type = type,
+    what = what,
+    n_avg_yrs = n_avg_yrs,
+    local_bh_msy_newton_steps = local_bh_msy_newton_steps,
+    is_discard_fleet = is_discard_fleet
+  )
 
   p <- obj$env$last.par.best
   m <- length(p)
@@ -334,9 +339,16 @@ Get_Reference_Point_Uncertainty <- function(obj,
   log_se <- sqrt(pmax(diag(log_cov), 0))
   z <- stats::qnorm(1 - (1 - level) / 2) # get cis
 
-  out <- list(refpts = NULL, mvn = NULL, d = d, log_cov = log_cov, draws = NULL,
-              n_par = length(idx), n_zero_par = sum(apply(d, 2, function(col) all(col == 0))),
-              step = step)
+  out <- list(
+    refpts = NULL,
+    mvn = NULL,
+    d = d,
+    log_cov = log_cov,
+    draws = NULL,
+    n_par = length(idx),
+    n_zero_par = sum(apply(d, 2, function(col) all(col == 0))),
+    step = step
+  )
 
   if(method %in% c("delta", "both")) {
     out$refpts <- data.frame(quantity = keep,
@@ -363,13 +375,15 @@ Get_Reference_Point_Uncertainty <- function(obj,
     ok <- stats::complete.cases(draws)
     draws <- draws[ok, , drop = FALSE]
     out$draws <- draws
-    out$mvn <- data.frame(quantity = keep,
-                          est = as.numeric(exp(base)),
-                          log_sd = apply(draws, 2, stats::sd),
-                          lwr = as.numeric(exp(apply(draws, 2, stats::quantile, probs = (1 - level) / 2))),
-                          upr = as.numeric(exp(apply(draws, 2, stats::quantile, probs = 1 - (1 - level) / 2))),
-                          n_draw = nrow(draws),
-                          row.names = NULL)
+    out$mvn <- data.frame(
+      quantity = keep,
+      est = as.numeric(exp(base)),
+      log_sd = apply(draws, 2, stats::sd),
+      lwr = as.numeric(exp(apply(draws, 2, stats::quantile, probs = (1 - level) / 2))),
+      upr = as.numeric(exp(apply(draws, 2, stats::quantile, probs = 1 - (1 - level) / 2))),
+      n_draw = nrow(draws),
+      row.names = NULL
+    )
 
   } # end mvn draws
 

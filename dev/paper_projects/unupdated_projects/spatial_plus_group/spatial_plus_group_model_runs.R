@@ -252,9 +252,8 @@ input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
                                           "none_Fleet_2"),
                                       # no blocks since q is not estimated
 
-                                      # whether to estimate all fixed effects
-                                      # for fishery selectivity and later modify
-                                      # to fix and share parameters
+                                      # whether to estimate all fixed effects for fishery
+                                      # selectivity, modified below to fix or share
                                       fish_fixed_sel_pars_spec =
                                         c("est_all", "est_all"),
 
@@ -315,16 +314,14 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
                                        c("none_Fleet_1",
                                          "none_Fleet_2"),
 
-                                     # whether to estiamte all fixed effects
-                                     # for survey selectivity and later
-                                     # modify to fix/share parameters
+                                     # whether to estimate all fixed effects for survey
+                                     # selectivity, modified below to fix or share
                                      srv_fixed_sel_pars_spec =
                                        c("est_all",
                                          "est_all"),
 
-                                     # whether to estiamte all
-                                     # fixed effects for survey catchability
-                                     # spatially-invariant q
+                                     # whether to estimate all fixed effects for survey
+                                     # catchability, spatially-invariant q
                                      srv_q_spec =
                                        c("est_shared_r", "est_shared_r"),
 
@@ -507,13 +504,15 @@ init_naa_sbl <- reshape2::melt(
   rename(Region = Var1, Age = Var2)
 
 init_naa_sbl <- init_naa_sbl %>%
-  mutate(Region = case_when(
+  mutate(
+    Region = case_when(
     Region == 1 ~ "BS+AI+WGOA",
     Region == 2 ~ "CGOA",
     Region == 3 ~ "EGOA"
   ),
-  Region = factor(Region, levels = c("BS+AI+WGOA", "CGOA", "EGOA")),
-  Model = factor(Model, levels = c("no_move_all", "no_move_plus", "ext_ages", "matrix")))
+    Region = factor(Region, levels = c("BS+AI+WGOA", "CGOA", "EGOA")),
+    Model = factor(Model, levels = c("no_move_all", "no_move_plus", "ext_ages", "matrix"))
+  )
 
 ## Bar Plot ----------------------------------------------------------------
 # Inset theme
@@ -604,7 +603,16 @@ dep_plot <- ggplot(ssb_data, aes(x = Year + 1959, y = Depletion, color = Model, 
   labs(x = 'Year', y = 'Depletion')
 
 # combined plot
-comb <- cowplot::plot_grid(ssb_plot, dep_plot, abd_plot, ncol = 1, align = 'v', axis = 'l', labels = c('A', 'B', 'C'), label_size = 30)
+comb <- cowplot::plot_grid(
+  ssb_plot,
+  dep_plot,
+  abd_plot,
+  ncol = 1,
+  align = 'v',
+  axis = 'l',
+  labels = c('A', 'B', 'C'),
+  label_size = 30
+)
 
 ggsave(
   here("dev", "paper_projects", "spatial_plus_group", "sablefish_plus_group_plot.png"),
@@ -697,8 +705,14 @@ move_plot <- reshape2::melt(model[[4]]$rep$Movement) %>%
   labs(x = "From", y = 'To', fill = 'Movement Probability')
 
 rec_move_plot <- cowplot::plot_grid(
-  rec_plot, move_plot, ncol = 1, align = 'v', axis = 'l',
-  labels = c("A", 'B'), label_size = 30, hjust = -2
+  rec_plot,
+  move_plot,
+  ncol = 1,
+  align = 'v',
+  axis = 'l',
+  labels = c("A", 'B'),
+  label_size = 30,
+  hjust = -2
 )
 
 ggsave(

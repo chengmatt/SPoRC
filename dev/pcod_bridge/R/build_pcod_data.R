@@ -12,34 +12,33 @@
 #                                     dat$ss3, which is what the regression test
 #                                     compares against
 #
-# Nothing is typed in by hand; every number comes out of the SS3 files, so
-# rerunning against a new model version picks the changes up. The packaged
-# result is data/sgl_rg_ebs_pcod_data.rda.
+# nothing is typed in by hand; every number comes out of the SS3 files, so rerunning against a new
+# model version picks the changes up. the packaged result is data/sgl_rg_ebs_pcod_data.rda
 #
-# The assessment repository ships inputs only. Report.sso and wtatage.ss_new
-# have to be produced by running SS3 in a copy of the Model 24.1 folder with
-# init_values_src set to 1 and -maxfn 0 -nohess, which evaluates at ss.par
-# without estimating and reproduces the assessment's own reported objective.
-# dev/pcod_bridge/README.md has the build steps.
+# the assessment repository ships inputs only, so Report.sso and wtatage.ss_new have to be produced
+# by running SS3 at ss.par with -maxfn 0 -nohess. dev/pcod_bridge/README.md has the build steps
 #
-# What the SS3 files say, carried into the list as it stands:
+# What the SS3 files say, read into the list as it stands:
 #   ages 0-20 in the population, observed age bins 0-12 with 12 accumulating
 #   two ageing error definitions, a biased reader through 2007, unbiased after
 #   121 population length bins, compositions on 24 bins of 5 cm from 4.5
 #   one sex, one area, spawning and settlement at the start of the year
 #   the survey at month 7, the fishery length compositions at month 1
 #
-# The last of those is a trap. SS3 reads a fishing fleet's compositions at mid
-# season whatever month the data file records, so month 1 is not the timing the
-# model uses, and the bridge helper sets t_fish = 0.5 instead. See
-# vignette("ae_ebs_pacific_cod_case_study") for what the numbers here become.
+# the last of those is a trap: SS3 reads a fishing fleet's compositions at mid season whatever month
+# the data file records, so the bridge helper sets t_fish = 0.5 instead
 
 library(r4ss)
 
 pcod_paths <- function(run_dir) {
-  list(dat = file.path(run_dir, "BSPcod24_OCT_5cm_NB.dat"), ctl = file.path(run_dir, "Model_24.1.ctl"),
-       starter = file.path(run_dir, "starter.ss"), forecast = file.path(run_dir, "forecast.ss"),
-       par = file.path(run_dir, "ss.par"), dir = run_dir)
+  list(
+    dat = file.path(run_dir, "BSPcod24_OCT_5cm_NB.dat"),
+    ctl = file.path(run_dir, "Model_24.1.ctl"),
+    starter = file.path(run_dir, "starter.ss"),
+    forecast = file.path(run_dir, "forecast.ss"),
+    par = file.path(run_dir, "ss.par"),
+    dir = run_dir
+  )
 }
 
 #' Stock Synthesis's population-to-data length bin map
@@ -184,10 +183,8 @@ build_pcod_data <- function(run_dir) {
     }
   }
 
-  # Ageing error: the two definitions as SS3 forms them (get_age_age), the
-  # normal CDF of the read age at the integer edges of observed bins 2..n with
-  # the given mean (a biased reader's expected age, or true age + 0.5) and SD,
-  # tails into the end bins
+  # ageing error: the two definitions as SS3 forms them, the normal CDF of the read age at the
+  # integer edges of observed bins 2..n, with tails into the end bins
   ae <- d$ageerror
   n_defs <- nrow(ae) / 2
   AgeingError_defs <- vector("list", n_defs)
@@ -211,9 +208,12 @@ build_pcod_data <- function(run_dir) {
   mg <- c$MG_parms
   grow <- list(
     M = mg[grep("^NatM", rownames(mg)), "INIT"],
-    L1 = mg[grep("L_at_Amin", rownames(mg)), "INIT"], L2 = mg[grep("L_at_Amax", rownames(mg)), "INIT"],
-    K = mg[grep("VonBert_K", rownames(mg)), "INIT"], rho = mg[grep("Richards", rownames(mg)), "INIT"],
-    CV1 = mg[grep("CV_young", rownames(mg)), "INIT"], CV2 = mg[grep("CV_old", rownames(mg)), "INIT"],
+    L1 = mg[grep("L_at_Amin", rownames(mg)), "INIT"],
+    L2 = mg[grep("L_at_Amax", rownames(mg)), "INIT"],
+    K = mg[grep("VonBert_K", rownames(mg)), "INIT"],
+    rho = mg[grep("Richards", rownames(mg)), "INIT"],
+    CV1 = mg[grep("CV_young", rownames(mg)), "INIT"],
+    CV2 = mg[grep("CV_old", rownames(mg)), "INIT"],
     bounds = rbind(L1 = as.numeric(mg[grep("L_at_Amin", rownames(mg)), c("LO", "HI")]),
                    L2 = as.numeric(mg[grep("L_at_Amax", rownames(mg)), c("LO", "HI")]),
                    K = as.numeric(mg[grep("VonBert_K", rownames(mg)), c("LO", "HI")]),
@@ -224,7 +224,8 @@ build_pcod_data <- function(run_dir) {
     dev_se = c(L1 = mg[grep("L_at_Amin", rownames(mg)), "dev_link"] > 0, K = mg[grep("VonBert_K", rownames(mg)), "dev_link"] > 0),
     dev_years = list(L1 = mg[grep("L_at_Amin", rownames(mg)), "dev_minyr"]:mg[grep("L_at_Amin", rownames(mg)), "dev_maxyr"],
                      K = mg[grep("VonBert_K", rownames(mg)), "dev_minyr"]:mg[grep("VonBert_K", rownames(mg)), "dev_maxyr"]),
-    A1 = c$Growth_Age_for_L1, A2 = c$Growth_Age_for_L2
+    A1 = c$Growth_Age_for_L1,
+    A2 = c$Growth_Age_for_L2
   )
   grow$est["rho"] <- mg[grep("Richards", rownames(mg)), "PHASE"] > 0
   tv <- c$MG_parms_tv
@@ -234,36 +235,83 @@ build_pcod_data <- function(run_dir) {
   mat <- list(L50 = mg[grep("^Mat50%", rownames(mg)), "INIT"], slope = mg[grep("^Mat_slope", rownames(mg)), "INIT"])
 
   sr <- c$SR_parms
-  rec <- list(ln_R0 = sr["SR_LN(R0)", "INIT"], h = sr["SR_BH_steep", "INIT"], sigmaR = sr["SR_sigmaR", "INIT"],
-              regime = c$SR_parms_tv[1, "INIT"],
-              main_first = c$MainRdevYrFirst, main_last = c$MainRdevYrLast,
-              early_start = c$recdev_early_start,
-              bias_years = c(c$last_early_yr_nobias_adj, c$first_yr_fullbias_adj, c$last_yr_fullbias_adj, c$first_recent_yr_nobias_adj),
-              max_bias_adj = c$max_bias_adj)
+  rec <- list(
+    ln_R0 = sr["SR_LN(R0)", "INIT"],
+    h = sr["SR_BH_steep", "INIT"],
+    sigmaR = sr["SR_sigmaR", "INIT"],
+    regime = c$SR_parms_tv[1, "INIT"],
+    main_first = c$MainRdevYrFirst,
+    main_last = c$MainRdevYrLast,
+    early_start = c$recdev_early_start,
+    bias_years = c(c$last_early_yr_nobias_adj, c$first_yr_fullbias_adj, c$last_yr_fullbias_adj, c$first_recent_yr_nobias_adj),
+    max_bias_adj = c$max_bias_adj
+  )
 
-  sel <- list(size = c$size_selex_parms, size_tv = c$size_selex_parms_tv, size_types = c$size_selex_types,
-              blocks = c$Block_Design, blocks_per_pattern = c$blocks_per_pattern)
+  sel <- list(
+    size = c$size_selex_parms,
+    size_tv = c$size_selex_parms_tv,
+    size_types = c$size_selex_types,
+    blocks = c$Block_Design,
+    blocks_per_pattern = c$blocks_per_pattern
+  )
   q <- list(options = c$Q_options, parms = c$Q_parms)
   var_adj <- c$Variance_adjustment_list
   init_F <- c$init_F
 
   list(
-    source = run_dir, years = years, ages = ages, obs_ages = obs_ages,
-    lens_lower = pop_lower, lens = pop_mid, dat_lens_lower = dat_lower, LenBinMap = LenBinMap, startbin = startbin,
-    n_regions = n_regions, n_sexes = n_sexes, n_fish_fleets = n_fish, n_srv_fleets = n_srv,
-    fleetnames = fleetinfo$fleetname, fish_fleets = fish_fleets, srv_fleets = srv_fleets, fleet_area = fleet_area,
-    spawn_month = d$spawn_month, n_subseas = d$Nsubseasons, t_srv = t_srv, t_fish_comp = t_fish_comp,
-    ObsCatch = ObsCatch, UseCatch = UseCatch, catch_se = catch_se,
-    init_equil_catch = init_equil_catch, init_equil_catch_se = init_equil_catch_se, init_F = init_F,
-    ObsSrvIdx = ObsSrvIdx, ObsSrvIdx_SE = ObsSrvIdx_SE, UseSrvIdx = UseSrvIdx,
-    ObsFishLenComps = ObsFishLenComps, ISS_FishLenComps = ISS_FishLenComps, UseFishLenComps = UseFishLenComps,
-    ObsSrvLenComps = ObsSrvLenComps, ISS_SrvLenComps = ISS_SrvLenComps, UseSrvLenComps = UseSrvLenComps,
-    ObsSrvAgeComps = ObsSrvAgeComps, ISS_SrvAgeComps = ISS_SrvAgeComps, UseSrvAgeComps = UseSrvAgeComps,
-    AgeingError = AgeingError, AgeingError_defs = AgeingError_defs, ageerr_by_year = ageerr_by_year, ageerror_raw = ae,
-    growth = grow, wtlen = wtlen, mat = mat, rec = rec,
-    sel = sel, q = q, var_adj = var_adj,
+    source = run_dir,
+    years = years,
+    ages = ages,
+    obs_ages = obs_ages,
+    lens_lower = pop_lower,
+    lens = pop_mid,
+    dat_lens_lower = dat_lower,
+    LenBinMap = LenBinMap,
+    startbin = startbin,
+    n_regions = n_regions,
+    n_sexes = n_sexes,
+    n_fish_fleets = n_fish,
+    n_srv_fleets = n_srv,
+    fleetnames = fleetinfo$fleetname,
+    fish_fleets = fish_fleets,
+    srv_fleets = srv_fleets,
+    fleet_area = fleet_area,
+    spawn_month = d$spawn_month,
+    n_subseas = d$Nsubseasons,
+    t_srv = t_srv,
+    t_fish_comp = t_fish_comp,
+    ObsCatch = ObsCatch,
+    UseCatch = UseCatch,
+    catch_se = catch_se,
+    init_equil_catch = init_equil_catch,
+    init_equil_catch_se = init_equil_catch_se,
+    init_F = init_F,
+    ObsSrvIdx = ObsSrvIdx,
+    ObsSrvIdx_SE = ObsSrvIdx_SE,
+    UseSrvIdx = UseSrvIdx,
+    ObsFishLenComps = ObsFishLenComps,
+    ISS_FishLenComps = ISS_FishLenComps,
+    UseFishLenComps = UseFishLenComps,
+    ObsSrvLenComps = ObsSrvLenComps,
+    ISS_SrvLenComps = ISS_SrvLenComps,
+    UseSrvLenComps = UseSrvLenComps,
+    ObsSrvAgeComps = ObsSrvAgeComps,
+    ISS_SrvAgeComps = ISS_SrvAgeComps,
+    UseSrvAgeComps = UseSrvAgeComps,
+    AgeingError = AgeingError,
+    AgeingError_defs = AgeingError_defs,
+    ageerr_by_year = ageerr_by_year,
+    ageerror_raw = ae,
+    growth = grow,
+    wtlen = wtlen,
+    mat = mat,
+    rec = rec,
+    sel = sel,
+    q = q,
+    var_adj = var_adj,
     comp = list(addtocomp_len = d$len_info$addtocomp[1], addtocomp_age = d$age_info$addtocomp[1]),
-    ctl = c, dat_raw = d
+    ctl = c,
+    dat_raw = d
   )
 }
 
@@ -283,7 +331,7 @@ if(sys.nframe() == 0) {
 #'
 #' Read SS3's year-by-year weight and fecundity at age
 #'
-#' `wtatage.ss_new` carries one row per year and "fleet", where fleet 0 is the
+#' `wtatage.ss_new` has one row per year and "fleet", where fleet 0 is the
 #' population weight at the start of the season, -1 the mid-season weight, -2
 #' the fecundity (maturity times weight at the spawning time), and a positive
 #' fleet its own selection-weighted body weight.
@@ -321,7 +369,7 @@ add_pcod_ss3_report <- function(dat, report, par_file = NULL, wtatage_file = NUL
   p <- r$parameters
   pv <- function(lab) { v <- p$Value[p$Label == lab]; if(length(v) != 1) stop("parameter not found: ", lab); v }
 
-  # the par file carries twelve digits against the report's six
+  # the par file has twelve digits against the report's six
   pf <- if(!is.null(par_file)) readLines(par_file) else NULL
   par_block <- function(name) {
     if(is.null(pf)) return(NULL)
@@ -374,7 +422,13 @@ add_pcod_ss3_report <- function(dat, report, par_file = NULL, wtatage_file = NUL
   init <- ts[ts$Era == "INIT", ]
 
   mg <- r$MGparmAdj
-  growth_by_year <- data.frame(Yr = mg$Yr, L1 = mg$L_at_Amin_Fem_GP_1, L2 = mg$L_at_Amax_Fem_GP_1, K = mg$VonBert_K_Fem_GP_1, rho = mg$Richards_Fem_GP_1)
+  growth_by_year <- data.frame(
+    Yr = mg$Yr,
+    L1 = mg$L_at_Amin_Fem_GP_1,
+    L2 = mg$L_at_Amax_Fem_GP_1,
+    K = mg$VonBert_K_Fem_GP_1,
+    rho = mg$Richards_Fem_GP_1
+  )
   gs <- r$growthseries
   as <- r$ageselex
   asel2 <- lapply(1:2, function(f) { e <- as[as$Fleet == f & as$Factor == "Asel2", ]; m <- as.matrix(e[, as.character(dat$ages)]); rownames(m) <- e$Yr; m })
@@ -382,10 +436,8 @@ add_pcod_ss3_report <- function(dat, report, par_file = NULL, wtatage_file = NUL
   ss <- r$sizeselex
   lsel <- lapply(1:2, function(f) { e <- ss[ss$Fleet == f & ss$Factor == "Lsel", ]; m <- as.matrix(e[, as.character(dat$lens)]); rownames(m) <- e$Yr; m })
 
-  # Maturity at age, as the share of the weight at age that spawns, taken
-  # straight from SS3's own fecundity and start-of-season weight. Maturity is
-  # length based and fixed in the assessment, so this is data to SPoRC while
-  # weight at age stays derived from the estimated growth.
+  # maturity at age as the share of weight at age that spawns, from SS3's own fecundity and
+  # start-of-season weight. length based and fixed, so it is data while weight at age stays derived
   MatAA <- fecundity <- popwt_beg <- NULL
   if(!is.null(wtatage_file) && file.exists(wtatage_file)) {
     wa <- read_ss3_wtatage(wtatage_file, years, dat$ages)
@@ -397,14 +449,26 @@ add_pcod_ss3_report <- function(dat, report, par_file = NULL, wtatage_file = NUL
   }
 
   dat$ss3 <- list(
-    likelihoods = r$likelihoods_used, likelihoods_by_fleet = r$likelihoods_by_fleet, parm_devs = r$Parm_devs_detail,
-    NAA = NAA, NAA_mid = NAA_mid, SSB = SSB, Rec = Rec, Bio_all = Bio_all, dead_B = dead_B,
+    likelihoods = r$likelihoods_used,
+    likelihoods_by_fleet = r$likelihoods_by_fleet,
+    parm_devs = r$Parm_devs_detail,
+    NAA = NAA,
+    NAA_mid = NAA_mid,
+    SSB = SSB,
+    Rec = Rec,
+    Bio_all = Bio_all,
+    dead_B = dead_B,
     SSB_virgin = r$derived_quants$Value[r$derived_quants$Label == "SSB_Virgin"],
     SSB_initial = r$derived_quants$Value[r$derived_quants$Label == "SSB_Initial"],
     init = init[, c("Yr", "Bio_all", "SpawnBio", "Recruit_0")],
     cpue = r$cpue[, intersect(c("Fleet", "Yr", "Obs", "Exp", "Calc_Q", "SE", "SE_input", "Like"), names(r$cpue))],
-    growth_by_year = growth_by_year, growthseries = gs, endgrowth = r$endgrowth,
-    asel2 = asel2, bodywt = bodywt, lsel = lsel, AAK = r$AAK,
+    growth_by_year = growth_by_year,
+    growthseries = gs,
+    endgrowth = r$endgrowth,
+    asel2 = asel2,
+    bodywt = bodywt,
+    lsel = lsel,
+    AAK = r$AAK,
     agedbase = r$agedbase[, intersect(c("Yr", "Fleet", "Bin", "Obs", "Exp", "Nsamp_adj", "Nsamp_in", "Like"), names(r$agedbase))],
     lendbase = r$lendbase[, intersect(c("Yr", "Fleet", "Bin", "Obs", "Exp", "Nsamp_adj", "Nsamp_in", "Like"), names(r$lendbase))],
     recruit = rec[, intersect(c("Yr", "era", "exp_recr", "bias_adjusted", "pred_recr", "SpawnBio", "dev", "biasadjuster"), names(rec))],

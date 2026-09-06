@@ -1,12 +1,8 @@
-# Pinned regression test. The expected SSB and recruitment vectors are output from a
-# previously validated SPoRC fit of this assessment, not hand-derived values. A mismatch
-# means a change moved a fitted result, which is a bug unless the numerical change was
-# intended. If it was intended, re-baseline deliberately and say why in NEWS.md. Do not
-# paste in fresh output to make the test pass. See tests/README.md.
+# Regression test. Expected SSB and recruitment come from a previously validated SPoRC fit, not from
+# hand-derived values, so a mismatch means something moved a fitted result. See tests/README.md.
 #
-# The companion test-regression_goa_nork_bridge.R checks the same configuration against
-# the ADMB assessment's own output without optimizing, so a failure here that does not
-# also fail there is an optimizer or setup change rather than a model change.
+# test-regression_goa_nork_bridge.R checks the same configuration without optimizing, so a failure here
+# that does not also fail there is an optimizer or setup change, not a model change.
 
 library(SPoRC)
 library(testthat)

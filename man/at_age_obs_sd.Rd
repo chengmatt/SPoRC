@@ -18,9 +18,9 @@ errors alone, \code{2} additive, \code{3} in quadrature.}
 A vector of standard deviations the length of \code{extra}.
 }
 \description{
-An at-age observation may carry its own reported standard error, an estimated
-component, or both, matching what the aggregated index streams allow. The
-parameter alone is the default and is what a stream with no reported errors
+An at-age observation may have its own reported standard error, an estimated
+component, or both, matching what the aggregated index data sources allow. The
+parameter alone is the default and is what a data source with no reported errors
 means.
 }
 \keyword{internal}

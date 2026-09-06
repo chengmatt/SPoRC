@@ -26,7 +26,7 @@ actually spans. Composition plots always facet by \code{region}/\code{sex} and a
 whenever \code{osa_results$res} contains more than one of each (\code{seas} matters because
 \code{year} + bin alone don't uniquely place a bubble-plot point when compositions are
 collected in more than one season). Tagging plots only show QQ plots given the number of dimensions in tagging data.
-Index-type residuals (from \code{get_osa(..., index_source = ...)}, carrying
+Index-type residuals (from \code{get_osa(..., index_source = ...)}, with
 an \code{idx_type} column \code{\%in\% c("Catch","Discard","FishIdx","SrvIdx")}
 instead of \code{comp_type}) facet by \code{region},
 \code{season}, \code{fleet}, and \code{pop} whenever those span more than

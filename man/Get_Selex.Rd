@@ -34,7 +34,7 @@ Get_Selex(
   \item{2}{Power function (monotonic decreasing): \eqn{1 / \text{bin}^{\text{power}}}.}
   \item{3}{Logistic (b50, b95 parameterization).}
   \item{4}{Double-normal dome with plateau and flexible tails (6 parameters).
-           \eqn{p_{1}} is the bin at which the plateau starts, carried on the bin
+           \eqn{p_{1}} is the bin at which the plateau starts, kept on the bin
            scale rather than transformed, \eqn{p_{5}} is the selectivity at the
            first bin and \eqn{p_{6}} the selectivity at the last bin.}
   \item{5}{Non-parametric selectivity: bin-level logit parameters mapped via \code{plogis},
@@ -161,7 +161,7 @@ A gear whose catchability is defined against only part of the age range
 standardizes over that part, which shifts the scale absorbed by q.}
 
 \item{n_sel_bins}{Integer or \code{NULL}/\code{0} for none. Bins beyond this
-one are held at its computed value rather than evaluated through the
+one are kept at its computed value rather than evaluated through the
 functional form, the \code{NSelBins} plateau convention several existing
 assessments apply (e.g. \code{nselages}). Applied after the form and its
 parameter deviations, but before the bin-level semi-parametric deviations and
@@ -169,7 +169,7 @@ the bin overrides.}
 
 \item{apical}{Numeric. For the double normal (\code{Selex_Model == 4}), the
 height the ascending and descending limbs are built up to and the plateau
-sits at. \code{1} (the default) is the ordinary curve. A sex carrying an
+sits at. \code{1} (the default) is the ordinary curve. A sex with an
 apical offset takes \code{exp(ln_*sel_sex_scale)} here, which moves the
 middle of its curve and leaves the selectivity at the first and last bins
 where their own parameters put them. Ignored by every other form.}
@@ -214,7 +214,7 @@ deviations and transformed via:
 \deqn{\text{selex}_b = \text{logit}^{-1}(\eta_b)}.
 
 For \code{Selex_Model = 9}, selectivity is likewise fully non-parametric but
-held on the log scale and standardized within each year:
+kept on the log scale and standardized within each year:
 \deqn{\text{selex}_b = \exp(\eta_b) / \overline{\exp(\eta)}}.
 Only the differences among \eqn{\eta} within a year are identified, so the
 level of \eqn{\eta} is free and is absorbed by catchability or fishing

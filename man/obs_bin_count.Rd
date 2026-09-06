@@ -2,14 +2,14 @@
 % Please edit documentation in R/utils_setup.R
 \name{obs_bin_count}
 \alias{obs_bin_count}
-\title{Number of observed bins a composition stream is recorded on}
+\title{Number of observed bins a composition data source is recorded on}
 \usage{
 obs_bin_count(input_list, obs, dim_i, axis)
 }
 \arguments{
 \item{input_list}{Input list, used for the fallback.}
 
-\item{obs}{The observation array for the stream, possibly dimensionless.}
+\item{obs}{The observation array for the data source, possibly dimensionless.}
 
 \item{dim_i}{Integer. Which dimension of \code{obs} holds the bins.}
 
@@ -21,7 +21,7 @@ A single positive integer.
 \description{
 The \code{*_bins} arguments index into observed bins, so they need the bin
 count of the array they will be applied to. That is normally read straight
-off the supplied observation array, but a model carrying no data for a stream
+off the supplied observation array, but a model with no data for a data source
 can hand in an array with no dimensions at all, so the model's own observed
 bin count stands in: the ageing error's observed-age dimension for ages, and
 \code{\link{obs_len_bins}} for lengths.

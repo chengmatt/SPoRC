@@ -1,9 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# One step ahead residual machinery. These are the quantile and randomization
-# routines that turn a fitted composition or tag likelihood into a residual that
-# is standard normal under a correct model. Kept apart from the plain densities in
-# model_distributions.R because they only make sense inside an OSA evaluation.
+# The quantile and randomization routines that turn a fitted composition or tag likelihood into a
+# residual that is standard normal under a correct model. Only meaningful inside an OSA evaluation.
 
 #' Squeeze a probability onto the open unit interval
 #'
@@ -234,22 +232,22 @@ ddirmult_osa <- function(xobs, alpha, log = TRUE) {
   Ntot    <- sum(oval)
   alp_rem <- sum(alpha)
 
-  ll <- 0
+  loglik <- 0
   for (a in 1:A) {
     if (a != A) {
       obs_rem_fixed <- Ntot - sum(oval[seq_len(a)])
       alp_rem       <- alp_rem - alpha[a]
       obs2   <- c(obs[a],   obs_rem_fixed)
       alpha2 <- c(alpha[a], alp_rem)
-      ll <- ll + kk[a] * ddirmult2(obs2, alpha2)
+      loglik <- loglik + kk[a] * ddirmult2(obs2, alpha2)
       # analytic conditional beta-binomial CDF hook
       cdf <- osa_squeeze(osa_pbetabinom(obs[a], obs[a] + obs_rem_fixed, alpha[a], alp_rem))
-      ll <- ll + l[a] * log(cdf) + h[a] * log(1 - cdf)
+      loglik <- loglik + l[a] * log(cdf) + h[a] * log(1 - cdf)
     } else {
-      ll <- ll + kk[a] * 0
+      loglik <- loglik + kk[a] * 0
       cdf <- osa_squeeze(1)
-      ll <- ll + l[a] * log(cdf) + h[a] * log(1 - cdf)
+      loglik <- loglik + l[a] * log(cdf) + h[a] * log(1 - cdf)
     }
   }
-  if (log) ll else exp(ll)
+  if (log) loglik else exp(loglik)
 }

@@ -1,8 +1,4 @@
-# Purpose: Build sgl_rg_rebs_data, the container for the BSAI blackspotted and
-#          rougheye rockfish case study. Everything the case study and its
-#          regression tests need lives in the object: model inputs, the ADMB
-#          maximum likelihood estimate used as a seed, and the ADMB output the
-#          bridge is compared against.
+# Purpose: Build sgl_rg_rebs_data, the inputs, ADMB seed, and ADMB output for the blackspotted/rougheye case study
 # Creator: Matthew LH. Cheng
 # Date Created: 8/7/26
 #
@@ -10,10 +6,8 @@
 #   rougheye24.dat            2024 assessment input file
 #   m_24_1_reweighted.rdat    ADMB report object, the comparison target
 #
-# The maximum likelihood estimates below are transcribed from the
-# m_24_1_reweighted ADMB parameter file, which is not redistributed here. They
-# are the seed for the bridge test, which evaluates SPoRC at the assessment's
-# own optimum without optimizing.
+# the maximum likelihood estimates below are transcribed from the m_24_1_reweighted ADMB parameter
+# file, which is not redistributed here. they seed the bridge test at the assessment's own optimum
 
 library(here)
 
@@ -28,9 +22,7 @@ read_nums <- function(lns) {
 }
 
 # Dimensions -----------------------------------------------------------------
-# The model carries 52 age classes (3 to 54) but the compositions are reported
-# over 43 (3 to 45), so the ageing error matrix maps the model ages onto the
-# shorter observed range.
+# 52 model ages (3 to 54) against 43 observed (3 to 45): the ageing error matrix maps between them
 n_pop <- 1
 n_regions <- 1
 n_seas <- 1
@@ -56,15 +48,14 @@ cv_M <- 0.05
 sigmaR <- 0.75
 
 # Biologicals ----------------------------------------------------------------
-# Weight at age is time invariant and is carried in the .dat in grams.
+# Weight at age is time invariant and is kept in the .dat in grams.
 waa_vec <- read_nums(lines[277])
 stopifnot(length(waa_vec) == n_ages)
 WAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 WAA[1, 1, , 1, , 1] <- matrix(rep(waa_vec, each = n_yrs), nrow = n_yrs)
 
-# Maturity is estimated inside the ADMB template from the binomial maturity
-# data rather than read from the .dat, so the fitted ogive is transcribed from
-# the assessment report and held fixed in SPoRC.
+# maturity is estimated inside the ADMB template from the binomial maturity data, so the fitted
+# ogive is transcribed from the assessment report and kept fixed in SPoRC
 maa_vec <- c(
   0.00340888, 0.0044329,  0.00576276, 0.00748858, 0.00972618, 0.0126239,
   0.0163706,  0.0212055,  0.0274284,  0.0354115,  0.0456091,  0.0585651,
@@ -80,22 +71,28 @@ stopifnot(length(maa_vec) == n_ages)
 MatAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 MatAA[1, 1, , 1, , 1] <- matrix(rep(maa_vec, each = n_yrs), nrow = n_yrs)
 
-# The .dat carries the size at age matrix as [length bin x age] with each age
+# The .dat holds the size at age matrix as [length bin x age] with each age
 # column a distribution over length bins, so the columns are normalized.
-sizeage_raw <- matrix(read_nums(lines[122:(122 + n_lens - 1)]),
-                      nrow = n_lens, ncol = n_ages, byrow = TRUE)
+sizeage_raw <- matrix(
+  read_nums(lines[122:(122 + n_lens - 1)]),
+  nrow = n_lens,
+  ncol = n_ages,
+  byrow = TRUE
+)
 col_sums <- colSums(sizeage_raw)
 col_sums[col_sums == 0] <- 1
 size_age_mat <- sweep(sizeage_raw, 2, col_sums, "/")
 SizeAgeTrans <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes))
 for(y in seq_len(n_yrs)) SizeAgeTrans[1, 1, y, 1, , , 1] <- size_age_mat
 
-# Ageing error is stored as [observed age x true age]. The ADMB template
-# column-normalizes it to P(obs | true); SPoRC multiplies predicted numbers at
-# age on the right, so it needs [true x obs], and the observed plus group
-# collapses rows 43 to 52 onto row 43.
-age_error_raw <- matrix(read_nums(lines[69:(69 + n_ages - 1)]),
-                        nrow = n_ages, ncol = n_ages, byrow = TRUE)
+# stored [observed x true] and column-normalized to P(obs | true); SPoRC needs [true x obs],
+# and the observed plus group collapses rows 43 to 52 onto row 43
+age_error_raw <- matrix(
+  read_nums(lines[69:(69 + n_ages - 1)]),
+  nrow = n_ages,
+  ncol = n_ages,
+  byrow = TRUE
+)
 col_sums <- colSums(age_error_raw)
 col_sums[col_sums == 0] <- 1
 age_error_raw <- sweep(age_error_raw, 2, col_sums, "/")
@@ -120,9 +117,8 @@ ObsCatch <- array(catch_vec, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 UseCatch <- array(1L, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 
 # Survey index ---------------------------------------------------------------
-# The Aleutian Islands bottom trawl survey is the only index. The .dat reports
-# a standard deviation on the arithmetic scale, which is carried to SPoRC as a
-# lognormal coefficient of variation.
+# the Aleutian Islands bottom trawl survey is the only index. its .dat standard deviation is
+# arithmetic scale, kept to SPoRC as a lognormal coefficient of variation
 srv_yrs <- c(1991, 1994, 1997, 2000, 2002, 2004, 2006, 2010, 2012, 2014,
              2016, 2018, 2022, 2024)
 srv_obs <- c(10637.8, 13414.8, 10905.1, 14217.7, 8422.9, 14385.3, 8281.9,
@@ -228,10 +224,8 @@ ISS_SrvLenComps <- make_iss_comp(102, srv_len_ind, n_srv_fleets)
 Wt_SrvLenComps <- make_wt_comp(srv_len_ind, 0.251453, n_srv_fleets)
 
 # ADMB maximum likelihood estimate -------------------------------------------
-# Transcribed from the m_24_1_reweighted parameter file. rec_dev covers
-# 1977 to 2021, the last three years taking mean recruitment; fydev carries the
-# 42 initial age deviations, whose last value is shared by ages beyond the
-# observed range.
+# transcribed from the m_24_1_reweighted parameter file. rec_dev covers 1977 to 2021, the last
+# three taking mean recruitment; fydev holds 42 initial age deviations
 mle <- list(
   M = 0.0500461712767,
   mean_log_rec = 0.322819748196,

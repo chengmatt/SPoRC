@@ -1,7 +1,7 @@
 # Stage 3 of 3: post fit
 #
-# Retrospective analysis: refit the model with terminal years peeled off and
-# measure how the estimates shift.
+# Retrospective analysis: refit the model with terminal years peeled off and measure how the
+# estimates shift.
 
 #' Truncate Model Inputs for Retrospective Diagnostics
 #'
@@ -71,6 +71,21 @@ truncate_yr <- function(j,
   if(!is.null(data$map_ln_RecDevs)) retro_data$map_ln_RecDevs <- data$map_ln_RecDevs[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # keep the penalty's map mirror in step
   if(length(data$Wt_Rec) > 1) retro_data$Wt_Rec <- data$Wt_Rec[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # keep per-deviation recruitment weights in step
 
+  # R0 time blocks. a peel deep enough to remove every year of the terminal block would leave that
+  # column with no data and a zero row in the Hessian, so drop it the same way ln_fish_q is
+  if(!is.null(data$R0_blocks)) {
+    retro_data$R0_blocks <- data$R0_blocks[, 1:(length(data$years) - j), , drop = FALSE]
+    n_R0_keep <- max(retro_data$R0_blocks)
+    if(!is.null(dim(parameters$ln_global_R0))) {
+      if(!is.null(mapping$ln_global_R0))
+        retro_mapping$ln_global_R0 <- factor(array(mapping$ln_global_R0, dim = dim(parameters$ln_global_R0))[, 1:n_R0_keep, drop = FALSE])
+      retro_parameters$ln_global_R0 <- parameters$ln_global_R0[, 1:n_R0_keep, drop = FALSE]
+    }
+    # the reference block supplies the single R0 the initial age structure and the priors
+    # read, so it has to stay within the blocks the peel left behind
+    if(!is.null(data$R0_ref_block)) retro_data$R0_ref_block <- as.integer(min(data$R0_ref_block, n_R0_keep))
+  }
+
 # Stray Rates -------------------------------------------------------------
 
   if(data$n_pop > 1) {
@@ -103,11 +118,12 @@ truncate_yr <- function(j,
 # Natural Mortality -------------------------------------------------------
 
   # Truncate year-indexed M blocks
-  retro_data$M_blocks <- data$M_blocks[,, 1:(length(data$years) - j),,, drop = FALSE]
+  # M_blocks may or may not have seasons, so don't assume how many dims
+  retro_data$M_blocks <- truncate_years(data$M_blocks, length(data$years) - j)
 
   # Truncate fixed natmort array if using fixed values
   if(data$use_fixed_natmort == 1) {
-    retro_data$Fixed_natmort <- data$Fixed_natmort[,, 1:(length(data$years) - j),,, drop = FALSE]
+    retro_data$Fixed_natmort <- truncate_years(data$Fixed_natmort, length(data$years) - j)
   }
 
   # Truncate estimated ln_M pars and mapping to match truncated blocks
@@ -123,21 +139,21 @@ truncate_yr <- function(j,
 
     n_keep <- length(data$years) - j
 
-    retro_parameters$ln_NAA <- parameters$ln_NAA[,, 1:n_keep,,, drop = FALSE]
+    retro_parameters$ln_NAA <- parameters$ln_NAA[,, 1:n_keep,,,, drop = FALSE]
     if(any(names(retro_mapping) == 'ln_NAA')) {
-      retro_mapping$ln_NAA <- factor(array(mapping$ln_NAA, dim = dim(parameters$ln_NAA))[,, 1:n_keep,,, drop = FALSE])
+      retro_mapping$ln_NAA <- factor(array(mapping$ln_NAA, dim = dim(parameters$ln_NAA))[,, 1:n_keep,,,, drop = FALSE])
     }
-    if(!is.null(data$map_ln_NAA)) retro_data$map_ln_NAA <- data$map_ln_NAA[,, 1:n_keep,,, drop = FALSE]
-    retro_data$naa_sigma_blocks <- data$naa_sigma_blocks[,, 1:n_keep,,, drop = FALSE]
+    if(!is.null(data$map_ln_NAA)) retro_data$map_ln_NAA <- data$map_ln_NAA[,, 1:n_keep,,,, drop = FALSE]
+    retro_data$naa_sigma_blocks <- data$naa_sigma_blocks[,, 1:n_keep,,,, drop = FALSE]
 
     # the active years are indices into the year axis, so the peeled ones simply drop out
     retro_data$naa_re_yrs <- data$naa_re_yrs[data$naa_re_yrs <= n_keep]
     retro_data$n_est_naa_re <- dim(parameters$ln_NAA)[1] * dim(parameters$ln_NAA)[2] *
-                               length(retro_data$naa_re_yrs) * length(data$naa_re_ages) *
-                               dim(parameters$ln_NAA)[5]
+                               length(retro_data$naa_re_yrs) * length(data$naa_re_seas) *
+                               length(data$naa_re_ages) * dim(parameters$ln_NAA)[6]
 
     # a peel that removes every active year leaves nothing to estimate, so the state switches off
-    # rather than carrying an empty slice into the penalty
+    # rather than with an empty slice into the penalty
     if(length(retro_data$naa_re_yrs) == 0) {
       retro_data$n_est_naa_re <- 0
       retro_mapping$ln_NAA <- factor(rep(NA, length(retro_parameters$ln_NAA)))
@@ -204,9 +220,8 @@ truncate_yr <- function(j,
   retro_data$fish_sel_blocks <- data$fish_sel_blocks[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$ret_sel_blocks <- data$ret_sel_blocks[,1:(length(data$years) - j),, drop = FALSE]
 
-  # Fishery selectivity form and bicubic spline stuff (year-indexed; must be truncated
-  # alongside data$years so a bicubic-year search in SPoRC_rtmb.R can't return indices beyond
-  # the retro-truncated fish_sel/fish_sel_l arrays)
+  # fishery selectivity form and bicubic spline settings, truncated alongside data$years so a
+  # bicubic-year search cannot return indices past the retro-truncated fish_sel arrays
   retro_data$fish_sel_model <- data$fish_sel_model[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$fish_sel_bicubic_binnodes <- data$fish_sel_bicubic_binnodes[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$fish_sel_bicubic_yrnodes <- data$fish_sel_bicubic_yrnodes[,1:(length(data$years) - j),, drop = FALSE]
@@ -382,7 +397,7 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
     if(!is.null(data[[array_name]])) retro_data[[array_name]] <- data[[array_name]][,,1:n_keep,,,,,drop = FALSE]
   } # end array_name loop
 
-  # the aggregation settings carry a year margin of their own now, so a peel
+  # the aggregation settings have a year dim of their own now, so a peel
   # trims them alongside the observations they describe
   at_age_types <- c("CatchAA_Type", "DiscardAA_Type", "SrvIdxAA_Type",
                     "CatchAA_pop_Type", "DiscardAA_pop_Type", "SrvIdxAA_pop_Type")
@@ -572,37 +587,38 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
 #' @import progressr
 #' @importFrom reshape2 melt
 #' @importFrom stats nlminb optimHess
-do_retrospective <- function(n_retro,
-                             data,
-                             parameters,
-                             mapping,
-                             random = NULL,
-                             do_par,
-                             n_cores,
-                             newton_loops = 3,
-                             do_francis = FALSE,
-                             n_francis_iter = NULL,
-                             nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
-                             do_sdrep = FALSE,
-                             fishidx_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
-                             fishage_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
-                             fishlen_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
-                             fishage_discard_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
-                             fishlen_discard_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
-                             srvidx_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
-                             srvage_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
-                             srvlen_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
-                             fishidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
-                             fishage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
-                             fishlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
-                             fishage_discard_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
-                             fishlen_discard_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
-                             srvidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
-                             srvage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
-                             srvlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
-                             conv_tag_datalag = 0,
-                             return_models = FALSE
-                             ) {
+do_retrospective <- function(
+  n_retro,
+  data,
+  parameters,
+  mapping,
+  random = NULL,
+  do_par,
+  n_cores,
+  newton_loops = 3,
+  do_francis = FALSE,
+  n_francis_iter = NULL,
+  nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
+  do_sdrep = FALSE,
+  fishidx_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
+  fishage_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
+  fishlen_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
+  fishage_discard_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
+  fishlen_discard_datalag = array(0, dim = c(data$n_regions, data$n_fish_fleets)),
+  srvidx_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
+  srvage_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
+  srvlen_datalag = array(0, dim = c(data$n_regions, data$n_srv_fleets)),
+  fishidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  fishage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  fishlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  fishage_discard_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  fishlen_discard_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_fish_fleets)),
+  srvidx_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
+  srvage_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
+  srvlen_pop_datalag = array(0, dim = c(data$n_pop, data$n_regions, data$n_srv_fleets)),
+  conv_tag_datalag = 0,
+  return_models = FALSE
+) {
 
   # Loop through retrospective (no parrallelization)
   if(do_par == FALSE) {

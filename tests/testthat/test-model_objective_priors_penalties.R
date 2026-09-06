@@ -7,15 +7,15 @@ library(testthat)
 # from the prior's own mean and standard deviation. Nothing is optimized, so both
 # evaluations sit at the same parameter values and the difference is the term itself.
 
-build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))
+build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
 # every likelihood other than the one under test must be untouched by switching a prior on,
 # since a prior adds to jnLL without feeding back into the population dynamics
 expect_other_likelihoods_unchanged <- function(with_term, without_term, except) {
   components <- setdiff(grep("_nLL$", names(without_term$rep), value = TRUE), except)
-  for(nm in components) {
-    expect_equal(with_term$rep[[nm]], without_term$rep[[nm]],
-                 info = paste0("switching on ", except, " changed ", nm))
+  for(quant_name in components) {
+    expect_equal(with_term$rep[[quant_name]], without_term$rep[[quant_name]],
+                 info = paste0("switching on ", except, " changed ", quant_name))
   }
 }
 
@@ -60,7 +60,7 @@ test_that("the retained selectivity prior adds a normal penalty on ret_fixed_sel
   ret_par <- build()$par$ret_fixed_sel_pars[1, 1, 1, 1, 1]
   expected <- -stats::dnorm(ret_par, log(ret_selex_prior$mu), ret_selex_prior$sd, log = TRUE)
 
-  # sel_nLL also carries the smoothness penalties, which are zero here, so the prior is the
+  # sel_nLL also holds the smoothness penalties, which are zero here, so the prior is the
   # whole of it
   expect_equal(off$rep$sel_nLL, 0)
   expect_equal(as.numeric(on$rep$sel_nLL), expected, tolerance = 1e-8)
@@ -115,13 +115,22 @@ test_that("the discard mortality rate penalty applies to every fished year, with
 
 
 test_that("jnLL still decomposes with these priors and penalties switched on", {
-  input <- build(rec = list(use_r0_prior = 1, r0_prior = data.frame(pop = 1, mu = 4, sd = 0.2)),
-                 catch_f = list(Use_dmr_pen = 1, dmr_dev_spec = "est_all"),
-                 fishsel = list(Use_fish_q_prior = 1,
+  input <- build(
+    rec = list(use_r0_prior = 1, r0_prior = data.frame(pop = 1, mu = 4, sd = 0.2)),
+    catch_f = list(Use_dmr_pen = 1, dmr_dev_spec = "est_all"),
+    fishsel = list(Use_fish_q_prior = 1,
                                 fish_q_prior = data.frame(region = 1, block = 1, fleet = 1, mu = 0.5, sd = 0.3),
                                 Use_ret_selex_prior = 1,
-                                ret_selex_prior = data.frame(region = 1, par = 1, block = 1, sex = 1,
-                                                             fleet = 1, mu = 2, sd = 0.4)))
+                                ret_selex_prior = data.frame(
+                                  region = 1,
+                                  par = 1,
+                                  block = 1,
+                                  sex = 1,
+                                  fleet = 1,
+                                  mu = 2,
+                                  sd = 0.4
+                                ))
+  )
   model <- evaluate_input(input)
 
   expect_jnLL_decomposes(model, label = "all priors on")

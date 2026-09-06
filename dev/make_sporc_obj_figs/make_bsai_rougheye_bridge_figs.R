@@ -1,13 +1,4 @@
-# Purpose: Bridge the 2024 BSAI blackspotted and rougheye rockfish assessment to
-#          SPoRC and render the case study figures. The configuration is not
-#          restated here: it is sourced from the bridge test helper, so the
-#          figures, the bridge test, and the pinned regression test all run the
-#          same specification and a change to one cannot silently leave the
-#          others behind.
-#
-#          Three stages: set every parameter to the assessment's maximum
-#          likelihood estimate and check the model there, optimize, then
-#          compare.
+# Purpose: Bridge the 2024 BSAI blackspotted and rougheye rockfish assessment to SPoRC and render its figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/7/26
 
@@ -40,11 +31,8 @@ cat("survey selectivity  max pct diff:",
     100 * max(abs(as.vector(r$srv_sel[1, 1, 1, 1, 1:n_obs_ages, 1, 1]) /
                     as.vector(dat$admb$sel_srv) - 1)), "\n")
 
-# The assessment reports numbers at age over the 43 observed ages with the
-# model's ages 45 to 54 pooled into the last column, so SPoRC's 52 ages are
-# pooled the same way. The first three ages of the last years carry the
-# terminal recruitment convention, so the comparison follows the bridge test's
-# windows.
+# the assessment reports numbers at age over 43 observed ages with ages 45 to 54 pooled, so SPoRC's
+# 52 ages are pooled the same way. the comparison follows the bridge test's windows
 n_est <- length(dat$mle$rec_dev)
 naa <- r$NAA[1, 1, 1:n_yrs, 1, , 1]
 naa_pooled <- cbind(naa[, 1:(n_obs_ages - 1)], rowSums(naa[, n_obs_ages:n_ages]))
@@ -62,8 +50,14 @@ cat("jnLL at the assessment MLE:", obj$fn(obj$par), "\n")
 cat("max |gradient| there      :", max(abs(obj$gr(obj$par))), "\n")
 
 # Stage 2: optimize -----------------------------------------------------------
-est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 random = NULL, newton_loops = 3, silent = TRUE)
+est <- fit_model(
+  input_list$data,
+  input_list$par,
+  input_list$map,
+  random = NULL,
+  newton_loops = 3,
+  silent = TRUE
+)
 est$sdrep <- RTMB::sdreport(est)
 cat("\n=== Stage 2: optimized ===\n")
 cat("free parameters:", length(est$optim$par), "\n")
@@ -78,15 +72,25 @@ rep <- est$rep
 ssb <- as.vector(rep$SSB)[1:n_yrs]
 rec <- as.vector(rep$Rec)[1:n_yrs]
 
-# The two series overplot, so the difference gets its own panel. The three
-# terminal recruitments sit exactly exp(-sigmaR^2/2) low by the documented
-# convention difference, which is why that panel's axis is not in 1e-6 units.
-ggplot2::ggsave(here("vignettes", "figures", "z_rebs_ts_comparison.png"),
-                bridge_ts_figure(yrs, ssb, rec, dat$admb$SSB, dat$admb$Rec, label,
-                                 ssb_se = bridge_se(sdr, "log_SSB", ssb),
-                                 rec_se = bridge_se(sdr, "log_Rec", rec),
-                                 mark_year = yrs[n_est] + 0.5),
-                width = 17, height = 9, dpi = 150)
+# the two series overplot, so the difference gets its own panel. the three terminal recruitments
+# sit exactly exp(-sigmaR^2/2) low by the documented convention difference
+ggplot2::ggsave(
+  here("vignettes", "figures", "z_rebs_ts_comparison.png"),
+  bridge_ts_figure(
+    yrs,
+    ssb,
+    rec,
+    dat$admb$SSB,
+    dat$admb$Rec,
+    label,
+    ssb_se = bridge_se(sdr, "log_SSB", ssb),
+    rec_se = bridge_se(sdr, "log_Rec", rec),
+    mark_year = yrs[n_est] + 0.5
+  ),
+  width = 17,
+  height = 9,
+  dpi = 150
+)
 
 # Selectivity is time invariant, so a single curve per fleet suffices.
 sel_df <- bind_rows(
@@ -96,8 +100,13 @@ sel_df <- bind_rows(
                   dat$admb$sel_srv, "AI Survey", label)
 )
 
-ggplot2::ggsave(here("vignettes", "figures", "z_rebs_sel_comparison.png"),
-                bridge_sel_figure(sel_df, base_size = 15), width = 12, height = 5, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "z_rebs_sel_comparison.png"),
+  bridge_sel_figure(sel_df, base_size = 15),
+  width = 12,
+  height = 5,
+  dpi = 150
+)
 
 cat("\n=== Stage 3: optimized SPoRC against the assessment ===\n")
 print(rbind(bridge_cmp("SSB", ssb, dat$admb$SSB),

@@ -1,8 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Conventional tagging inputs: release design, reporting rates, tag shedding and
-# tag induced mortality, plus the overdispersion parameters for the recapture
-# likelihood.
+# Conventional tagging inputs: release design, reporting rates, tag shedding and tag induced
+# mortality, plus the overdispersion parameters for the recapture likelihood.
 
 #' Set up conventional tagging dynamics for the operating model simulation
 #'
@@ -112,34 +111,52 @@
 #' @export Setup_Sim_Tagging
 #' @family Simulation Setup
 Setup_Sim_Tagging <- function(
-                              sim_list,
-                              n_tags = NULL,
-                              n_tags_rel_input = NULL,
-                              use_conv_fish_tagging = 0,
-                              conv_tag_max_liberty = sim_list$n_ages / 2,
-                              conv_tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years = 1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
-                              conv_tag_release_platform = matrix(c("survey", "1"), nrow = nrow(conv_tag_release_indicator),  ncol = 2, byrow = TRUE,dimnames = list(NULL, c("platform", "fleet"))),
-                              conv_tag_t_tagging = 1,
-                              ln_init_conv_tag_mort = -1000,
-                              ln_conv_tag_shed = -1000,
-                              conv_fish_tag_attr = 'p_a_s',
-                              conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_fish_fleets, sim_list$n_sims)),
-                              conv_fish_tag_like = 0,
-                              ln_conv_fish_tag_theta = log(1)
-                              ) {
+  sim_list,
+  n_tags = NULL,
+  n_tags_rel_input = NULL,
+  use_conv_fish_tagging = 0,
+  conv_tag_max_liberty = sim_list$n_ages / 2,
+  conv_tag_release_indicator = expand.grid(
+    regions = 1:sim_list$n_regions,
+    tag_years = 1:sim_list$n_yrs,
+    tag_seas = 1:sim_list$n_seas
+  ),
+  conv_tag_release_platform = matrix(
+    c("survey", "1"),
+    nrow = nrow(conv_tag_release_indicator),
+    ncol = 2,
+    byrow = TRUE,
+    dimnames = list(NULL, c("platform", "fleet"))
+  ),
+  conv_tag_t_tagging = 1,
+  ln_init_conv_tag_mort = -1000,
+  ln_conv_tag_shed = -1000,
+  conv_fish_tag_attr = 'p_a_s',
+  conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_fish_fleets, sim_list$n_sims)),
+  conv_fish_tag_like = 0,
+  ln_conv_fish_tag_theta = log(1)
+) {
 
   if(any(use_conv_fish_tagging == 1)) {
-    check_sim_dimensions(conv_tag_fish_reporting_input, n_regions = sim_list$n_regions,
-                         n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets,
-                         n_sims = sim_list$n_sims, what = "conv_tag_fish_reporting_input")
+    check_sim_dimensions(
+      conv_tag_fish_reporting_input,
+      n_regions = sim_list$n_regions,
+      n_years = sim_list$n_yrs,
+      n_fish_fleets = sim_list$n_fish_fleets,
+      n_sims = sim_list$n_sims,
+      what = "conv_tag_fish_reporting_input"
+    )
   }
 
   # Convert codes to numeric
-  conv_fish_tag_like <- convert_to_numeric(conv_fish_tag_like, list(Poisson = 0, NegBin = 1,
-                                                Multinomial_Release = 2,
-                                                Multinomial_Recapture = 3,
-                                                `Dirichlet-Multinomial_Release` = 4,
-                                                `Dirichlet-Multinomial_Recapture` = 5))
+  conv_fish_tag_like <- convert_to_numeric(conv_fish_tag_like, list(
+    Poisson = 0,
+    NegBin = 1,
+    Multinomial_Release = 2,
+    Multinomial_Recapture = 3,
+    `Dirichlet-Multinomial_Release` = 4,
+    `Dirichlet-Multinomial_Recapture` = 5
+  ))
 
   # Output variables into list
   if(!is.null(n_tags) && !is.null(n_tags_rel_input)) stop("n_tags and n_tags_rel_input cannot be specified simultaneously. n_tags is a scalar, while n_tags_rel_input specifies cohort-specific tags!")
@@ -148,9 +165,8 @@ Setup_Sim_Tagging <- function(
   sim_list$conv_tag_max_liberty <- conv_tag_max_liberty
   sim_list$conv_tag_release_indicator <- conv_tag_release_indicator # tag release indicator (by tag years and regions = a tag cohort)
   sim_list$conv_tag_release_platform <- conv_tag_release_platform # how tags are released
-  # number of tag release events - tag years x tag region (tag cohorts).
-  # When tagging is inactive, conv_tag_release_indicator may arrive as NA/NULL
-  # (no rows); fall back to a length-1 placeholder so scalar recycling is valid.
+  # number of tag release events, tag years by tag region. when tagging is inactive the indicator
+  # may arrive empty, so fall back to a length-1 placeholder to keep scalar recycling valid
   sim_list$n_tag_rel_events <- if(is.null(nrow(conv_tag_release_indicator))) 1L else nrow(conv_tag_release_indicator)
 
   # Per-release-event timing / mortality / shedding (scalars are recycled to all events)
@@ -693,13 +709,27 @@ Setup_Mod_Tagging <- function(input_list,
     if(conv_tagrep_spec == 'fix') warning("Note that tag reporting rates is fixed. Specify est_all or est_shared_r if this was not the intention.")
 
     # Check data
-    check_data_dimensions(conv_tagged_fish, n_conv_tag_cohorts = nrow(conv_tag_release_indicator), n_ages = length(input_list$data$ages),
-                          n_sexes = input_list$data$n_sexes, n_pop = input_list$data$n_pop, what = 'conv_tagged_fish')
+    check_data_dimensions(
+      conv_tagged_fish,
+      n_conv_tag_cohorts = nrow(conv_tag_release_indicator),
+      n_ages = length(input_list$data$ages),
+      n_sexes = input_list$data$n_sexes,
+      n_pop = input_list$data$n_pop,
+      what = 'conv_tagged_fish'
+    )
 
-    check_data_dimensions(obs_conv_tag_fish_recap, conv_tag_max_liberty = conv_tag_max_liberty,  n_pop = input_list$data$n_pop,
-                          n_seas = input_list$data$n_seas, n_regions = input_list$data$n_regions, n_fish_fleets = input_list$data$n_fish_fleets,
-                          n_conv_tag_cohorts = nrow(conv_tag_release_indicator), n_ages = length(input_list$data$ages),
-                          n_sexes = input_list$data$n_sexes, what = 'obs_conv_tag_fish_recap')
+    check_data_dimensions(
+      obs_conv_tag_fish_recap,
+      conv_tag_max_liberty = conv_tag_max_liberty,
+      n_pop = input_list$data$n_pop,
+      n_seas = input_list$data$n_seas,
+      n_regions = input_list$data$n_regions,
+      n_fish_fleets = input_list$data$n_fish_fleets,
+      n_conv_tag_cohorts = nrow(conv_tag_release_indicator),
+      n_ages = length(input_list$data$ages),
+      n_sexes = input_list$data$n_sexes,
+      what = 'obs_conv_tag_fish_recap'
+    )
   }
 
   # Checking tagging priors
@@ -738,19 +768,13 @@ Setup_Mod_Tagging <- function(input_list,
     if(conv_tag_sex_pool == "all") move_sex_tag_pool_vals = list(1:input_list$data$n_sexes)
   } else move_sex_tag_pool_vals = conv_tag_sex_pool
 
-  # Recycle conv_fish_tag_attr to one attended-dimension string per release event
-  # (scalar recycled to all events). Different release events may resolve
-  # different dimensions (e.g. event 1 known at p_a_s, event 2 only at p_a).
-  # n_conv_tag_cohorts is populated further below, so derive the event count
-  # locally here (matching that later logic) since the pooling check needs it.
+  # recycle conv_fish_tag_attr to one attended-dim string per release event. events may resolve
+  # different dims, and n_conv_tag_cohorts is set further below, so count events locally here
   n_events_attr <- if(all(use_conv_fish_tagging == 0)) 1L else nrow(conv_tag_release_indicator)
   conv_fish_tag_attr <- recycle_tag_event_par(conv_fish_tag_attr, max(n_events_attr, 1), "conv_fish_tag_attr")
 
-  # Enforce consistency between pooling structure and conv_fish_tag_attr.
-  # A dimension may only be split into >1 pooling group if it is attended in
-  # EVERY release event; if any event does not resolve that dimension, the
-  # recapture likelihood cannot distinguish groups along it, so pool fully.
-  # Warn the user and correct automatically if not.
+  # a dim may only be split into more than one pooling group if every release event attends it;
+  # otherwise the recapture likelihood cannot tell the groups apart, so pool fully and warn
   attr_parts_list <- strsplit(conv_fish_tag_attr, "_")
   attended_all <- function(dim) all(vapply(attr_parts_list, function(x) dim %in% x, logical(1)))
 

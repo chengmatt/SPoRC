@@ -1,9 +1,5 @@
-# The apical sex offset against the scale sex offset. The two differ in what they
-# hold still: a scale multiplies the finished curve, so the selectivity at the
-# first and last bins moves with it, while an apical offset is the height the two
-# limbs are built up to, so those two bins stay where their own parameters put
-# them. That difference is the whole reason the apical mode exists, so it is what
-# these tests check.
+# The apical sex offset against the scale sex offset. A scale multiplies the finished curve so the first
+# and last bins move with it; an apical offset is the height the limbs build to, so those bins stay put.
 
 library(SPoRC)
 library(testthat)
@@ -11,9 +7,17 @@ library(testthat)
 bins <- 0:40
 zero_devs <- array(0, dim = c(1, 1, 6, 2, 1))
 curve <- function(pars, apical = 1) {
-  as.vector(SPoRC:::Get_Selex(Selex_Model = 4, TimeVary_Model = 0, pars = pars,
-                              ln_seldevs = zero_devs, Region = 1, Year = 1,
-                              Bin = bins, Sex = 1, apical = apical))
+  as.vector(SPoRC:::Get_Selex(
+    Selex_Model = 4,
+    TimeVary_Model = 0,
+    pars = pars,
+    ln_seldevs = zero_devs,
+    Region = 1,
+    Year = 1,
+    Bin = bins,
+    Sex = 1,
+    apical = apical
+  ))
 }
 pars <- c(8, 0, log(6), log(60), -3, -1) # peak at bin 8, both ends well below one
 
@@ -31,7 +35,7 @@ test_that("the apical is the height the plateau sits at, and the ends do not mov
   expect_equal(max(base), 1, tolerance = 1e-8)
 
   # The two ends stay where their own parameters put them. The joiners are what
-  # carry the curve between the limbs and the plateau, and they are around 1e-8
+  # hold the curve between the limbs and the plateau, and they are around 1e-8
   # rather than exactly zero this far from the peak, so that is the level these
   # hold to.
   expect_equal(off[1], base[1], tolerance = 1e-6)
@@ -39,7 +43,7 @@ test_that("the apical is the height the plateau sits at, and the ends do not mov
   expect_equal(off[1], stats::plogis(pars[5]), tolerance = 1e-6)
   expect_equal(off[length(bins)], stats::plogis(pars[6]), tolerance = 1e-6)
 
-  # and the middle of the curve is genuinely lowered
+  # and the middle of the curve is lowered
   expect_lt(off[which.max(base)], base[which.max(base)])
 })
 
@@ -61,9 +65,19 @@ test_that("a scale offset moves the ends and an apical offset does not", {
 
 test_that("setup accepts the apical levels and refuses them off the double normal", {
   build <- function(sel_model, offset) {
-    il <- Setup_Mod_Dim(years = 1:5, ages = 1:10, lens = NA, n_regions = 1, n_sexes = 2,
-                        n_fish_fleets = 1, n_srv_fleets = 1, n_seas = 1, n_pop = 1,
-                        natal_region = 1, verbose = FALSE)
+    il <- Setup_Mod_Dim(
+      years = 1:5,
+      ages = 1:10,
+      lens = NA,
+      n_regions = 1,
+      n_sexes = 2,
+      n_fish_fleets = 1,
+      n_srv_fleets = 1,
+      n_seas = 1,
+      n_pop = 1,
+      natal_region = 1,
+      verbose = FALSE
+    )
     suppressMessages(Setup_Mod_Fishsel_and_Q(
       input_list = il,
       fish_sel_model = paste0(sel_model, "_Fleet_1"),

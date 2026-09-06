@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_mapping.R
 \name{check_fleet_spec_length}
 \alias{check_fleet_spec_length}
-\title{Check that a per-fleet setting carries one entry per fleet}
+\title{Check that a per-fleet setting has one entry per fleet}
 \usage{
 check_fleet_spec_length(spec, n_fleets, what, allow_null = FALSE)
 }

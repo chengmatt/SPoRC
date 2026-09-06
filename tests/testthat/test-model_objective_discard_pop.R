@@ -1,14 +1,14 @@
 library(SPoRC)
 library(testthat)
 
-# Population-specific discard observations. Every other fixture supplies discards only in
+# Population-specific discard observations. Every other test setup supplies discards only in
 # aggregate, so the Discard_pop_nLL block of SPoRC_rtmb, and the Wt_Discard_pop term it
 # feeds into jnLL, are otherwise never reached.
 
-build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))
+build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
 sim_discards <- function() {
-  sim_obj <- objective_fixture_sim()
+  sim_obj <- objective_setup_sim()
   simulation_data_to_SPoRC(sim_env = sim_obj, y = sim_obj$n_years, sim = 1)
 }
 
@@ -58,8 +58,14 @@ test_that("population-specific discards enter jnLL through their own weight", {
   # only true if the term is in the jnLL sum with that weight and no other
   doubled_data <- input$data
   doubled_data$Wt_Discard_pop <- doubled_data$Wt_Discard_pop * 2
-  doubled <- fit_model(doubled_data, input$par, input$map, random = NULL,
-                       silent = TRUE, do_optim = FALSE)
+  doubled <- fit_model(
+    doubled_data,
+    input$par,
+    input$map,
+    random = NULL,
+    silent = TRUE,
+    do_optim = FALSE
+  )
 
   contribution <- sum(input$data$Wt_Discard_pop * baseline$rep$Discard_pop_nLL)
   expect_true(contribution != 0)

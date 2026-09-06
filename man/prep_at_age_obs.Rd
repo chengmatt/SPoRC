@@ -20,7 +20,7 @@ A numeric vector, one element per flagged cell in \code{which()}
   order, on the scale its fleet's likelihood uses.
 }
 \description{
-A lognormal stream is fit on the log scale and a normal stream on the natural
+A lognormal data source is fit on the log scale and a normal data source on the natural
 scale, and the choice is per fleet, so the transformation is applied cell by
 cell before \code{\link[RTMB]{OBS}} registration. Registration must happen
 against the name \code{getAll} supplied, so the caller does it: a vector

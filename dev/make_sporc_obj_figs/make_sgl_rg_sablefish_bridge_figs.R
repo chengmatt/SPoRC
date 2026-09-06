@@ -1,18 +1,11 @@
-# Purpose: Set up the 2024 Alaska sablefish assessment in SPoRC and render the
-#          single region case study figures. Everything is specified the way the
-#          sablefish assessment specifies it: mean recruitment with a Methot and
-#          Taylor bias ramp, early/late sigmaR, a historical F that is a fixed
-#          proportion of the fixed-gear mean F, blocked logistic and gamma
-#          selectivity, and the assessment's own Francis weights.
-#
-#          This is a CLOSE bridge, not an exact one. tem.tpl carries several
-#          conventions SPoRC deliberately does not reproduce (sum-to-zero
-#          deviation vectors, a recruitment penalty centered at zero, an
-#          uncorrected terminal recruitment, and a survey index reweighted by an
-#          observed sex ratio). The measured gap is reported at the bottom and is
-#          what the vignette's difference table quotes.
+# Purpose: Set up the 2024 Alaska sablefish assessment in SPoRC and render the single region case study figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/7/26
+#
+# a CLOSE bridge, not an exact one: tem.tpl has conventions SPoRC does not reproduce (sum-to-zero dev
+# vectors, a zero-centered rec penalty, an uncorrected terminal recruit, a reweighted survey index)
+#
+# the measured gap is reported at the bottom and is what the vignette's difference table quotes
 
 library(here)
 library(dplyr)
@@ -53,9 +46,8 @@ input_list <- Setup_Mod_Rec(
   sigmaR_spec = "fix_early_est_late",
   dont_est_recdev_last = 1,
   init_age_strc = 1,
-  # tem.tpl builds hist_hal_F as hist_hal_prop * exp(log_avg_F_fish1), a fixed
-  # proportion of the fixed-gear mean F, which is exactly init_F_form = "prop".
-  # Assessments carrying an INDEPENDENT historical F need "abs" instead.
+  # tem.tpl builds hist_hal_F as a fixed proportion of the fixed-gear mean F, which is exactly
+  # init_F_form = "prop". assessments with an independent historical F need "abs"
   init_F_form = "prop",
   init_F_spec = "fix",
   init_F_par = array(stats::qlogis(0.1), dim = c(input_list$data$n_regions,
@@ -76,9 +68,8 @@ input_list <- Setup_Mod_Biologicals(
   SizeAgeTrans = dat$SizeAgeTrans,
   Use_M_prior = 0,
   fit_lengths = 1,
-  # tem.tpl estimates a single logm with a male offset mdelta. SPoRC has no
-  # offset parameterization, so both are fixed at the 2024 estimates rather than
-  # left as an uncontrolled difference.
+  # tem.tpl estimates a single logm with a male offset mdelta. SPoRC has no offset form, so both
+  # are fixed at the 2024 estimates rather than left as an uncontrolled difference
   M_spec = "fix",
   Fixed_natmort = fixed_natmort
 )
@@ -195,14 +186,13 @@ input_list <- Setup_Mod_Srvsel_and_Q(
                              input_list$data$n_srv_fleets))
 )
 
-# Longline survey slopes (indices 2 and 5) are shared across time blocks and with
-# the cooperative Japanese survey, which estimates nothing of its own. The trawl
-# survey's power function carries a single parameter per sex (indices 7, 8).
+# longline survey slopes (indices 2 and 5) are shared across time blocks and with the cooperative
+# Japanese survey. the trawl survey's power function has one parameter per sex (indices 7, 8)
 input_list$map$srv_fixed_sel_pars <-
   factor(c(1:3, 2, 4:6, 5, rep(7, 4),
            rep(8, 4), rep(c(NA, 2), 2), rep(c(NA, 5), 2)))
 
-# Cooperative Japanese survey ended in 1994 and its logistic is held at the 2024
+# Cooperative Japanese survey ended in 1994 and its logistic is kept at the 2024
 # values rather than estimated from the remaining data.
 input_list$par$srv_fixed_sel_pars[1, , , 1, 3] <- c(0.980660760456, 0.9295241)
 input_list$par$srv_fixed_sel_pars[1, , , 2, 3] <- c(1.22224502478, 0.8821623)
@@ -268,24 +258,31 @@ rep <- est$rep
 ssb <- as.vector(rep$SSB[1, 1, 1:n_yrs])
 recr <- as.vector(rep$Rec[1, 1, 1:n_yrs])
 
-ggplot2::ggsave(here("vignettes", "figures", "e_ts_comparison.png"),
-                bridge_ts_figure(yrs = yrs, ssb = ssb, rec = recr,
-                                 admb_ssb = dat$admb_spbiom, admb_rec = dat$admb_recr,
-                                 label = "2024 Sablefish Assessment",
-                                 ssb_se = bridge_se(sdr, "log_SSB", ssb, exact = TRUE),
-                                 rec_se = bridge_se(sdr, "log_Rec", recr, exact = TRUE),
-                                 legend_nrow = NULL),
-                width = 17, height = 9, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "e_ts_comparison.png"),
+  bridge_ts_figure(
+                  yrs = yrs,
+                  ssb = ssb,
+                  rec = recr,
+                  admb_ssb = dat$admb_spbiom,
+                  admb_rec = dat$admb_recr,
+                  label = "2024 Sablefish Assessment",
+                  ssb_se = bridge_se(sdr, "log_SSB", ssb, exact = TRUE),
+                  rec_se = bridge_se(sdr, "log_Rec", recr, exact = TRUE),
+                  legend_nrow = NULL
+                ),
+  width = 17,
+  height = 9,
+  dpi = 150
+)
 
 cat("\n=== SPoRC against the 2024 sablefish assessment ===\n")
 print(rbind(bridge_cmp("SSB", ssb, dat$admb_spbiom, signed = TRUE),
             bridge_cmp("Recruitment", recr, dat$admb_recr, signed = TRUE)),
       row.names = FALSE, digits = 4)
 
-# The terminal year is the largest single discrepancy by construction: tem.tpl
-# builds terminal recruitment as exp(log_mean_rec) with NO bias correction, while
-# SPoRC applies the ramp uniformly. Reported separately so it is not read as a
-# population dynamics error.
+# the terminal year is the largest discrepancy by construction: tem.tpl builds terminal recruitment
+# with no bias correction while SPoRC applies the ramp uniformly. reported separately
 cat("\nterminal-year recruitment: SPoRC", recr[n_yrs],
     " ADMB", dat$admb_recr[n_yrs],
     " ratio", recr[n_yrs] / dat$admb_recr[n_yrs], "\n")
@@ -297,6 +294,12 @@ print(rbind(bridge_cmp("SSB", ssb[-n_yrs], dat$admb_spbiom[-n_yrs], signed = TRU
             bridge_cmp("Recruitment", recr[-n_yrs], dat$admb_recr[-n_yrs], signed = TRUE)),
       row.names = FALSE, digits = 4)
 
-saveRDS(list(rep = rep, sdrep = est$sd_rep, opt = est$optim,
-             data = data, parameters = parameters, mapping = mapping),
+saveRDS(list(
+  rep = rep,
+  sdrep = est$sd_rep,
+  opt = est$optim,
+  data = data,
+  parameters = parameters,
+  mapping = mapping
+),
         here("dev", "dev_output", "sgl_rg_sablefish_bridge.rds"))

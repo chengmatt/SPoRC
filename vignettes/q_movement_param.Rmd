@@ -148,13 +148,15 @@ One potential approach to reduce model parameterization is to represent movement
 To implement a CTMC-based movement model, an adjacency matrix must first be defined to specify which regions are connected. In the example below, all regions are assumed to be connected, permitting individuals to move among any spatial strata within a given period. An accompanying data frame is then created to define the covariates associated with movement. This data frame must include columns for `pop`, `regions`, `years`, `seas`, `ages`, and `sexes`, plus any additional covariates to be used in the diffusion or preference formulas. The `seas` column should include all seasons being modeled; projection year covariate values can also be appended to this data frame when `n_proj_yrs_devs > 0`.
 
 ```{r, eval = FALSE}
-adjacency <- igraph::as_adjacency_matrix(
+# as.matrix, since Setup_Mod_Movement wants a plain numeric matrix and igraph
+# hands back a sparse one
+adjacency <- as.matrix(igraph::as_adjacency_matrix(
   igraph::make_graph(
     ~ 1 - 2,
     2 - 3,
     1 - 3
   )
-)
+))
 
 # make ctmc data, must include pop, regions, years, seas, ages, sexes columns
 ctmc_data <- expand.grid(
@@ -172,6 +174,8 @@ ctmc_data <- expand.grid(
 In the code chunk below, movement is defined as arising from a purely diffusive process, which effectively represents constant movement across regions. This formulation results in the estimation of `n_regions` parameters, providing a more parsimonious alternative to the unstructured Markov approach that estimates `n_regions × (n_regions - 1)` parameters. Movement among adjacent areas is determined by the defined adjacency matrix, and no directional preference is specified in this case.
 
 The argument `area_r = rep(1, 3)` specifies how diffusive processes scale with area size. Here, all areas are assumed to be equal. However, when areas differ in size, `area_r` should be defined as proportional to area, such that smaller areas are associated with higher diffusion rates.
+
+Note that a region-varying `diffusion_formula` such as `~0 + factor(regions)` still redistributes abundance, even with `preference_formula = ~0`. An edge of the generator holds the diffusion rate of the region a fish is leaving, so the two directions across a boundary differ whenever the regions differ in diffusion, and at equilibrium density settles proportional to `1 / diffusion`: abundance accumulates where fish move slowly. That is a real behavioral mechanism, but it does mean the estimated diffusion field and the estimated preference field both act on the equilibrium spatial distribution, so a region-varying `diffusion_formula` and a region-varying `preference_formula` are hard to separate from the spatial pattern alone. They differ in how fast that pattern re-establishes, not in the pattern itself.
 
 ```{r, eval = FALSE}
 # constant diffusion, no preference

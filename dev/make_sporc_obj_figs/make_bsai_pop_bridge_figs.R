@@ -1,14 +1,4 @@
-# Purpose: Bridge the 2024 BSAI Pacific ocean perch assessment to SPoRC and
-#          render the case study figures. The configuration is not restated
-#          here: it is sourced from the bridge test helper, so the figures, the
-#          bridge test, and the pinned regression test all run the same
-#          specification and a change to one cannot silently leave the others
-#          behind.
-#
-#          Three stages: set every parameter to the assessment's maximum
-#          likelihood estimate and check the population and likelihood there,
-#          optimize, then compare. The bridge and the refit share one builder,
-#          so there is no specification difference between them.
+# Purpose: Bridge the 2024 BSAI Pacific ocean perch assessment to SPoRC and render its figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/8/26
 
@@ -34,9 +24,8 @@ obj <- fit_model(input_list$data, input_list$par, input_list$map,
                  do_optim = FALSE, silent = TRUE)
 r <- obj$rep
 
-# The assessment normalizes selectivity to a maximum of one within each year for
-# reporting and multiplies F by the same factor, leaving their product invariant.
-# Both sides are put on the reported convention before comparing.
+# the assessment normalizes selectivity to a maximum of one within each year and multiplies F by
+# the same factor, so both sides are put on the reported convention before comparing
 sel_bridge <- r$fish_sel[1, 1, 1:n_yrs, 1, 1:nsel, 1, 1]
 sel_bridge_norm <- norm_bsai_pop_sel_by_year(sel_bridge)
 naa_all <- r$NAA[1, 1, 1:n_yrs, 1, , 1]
@@ -52,9 +41,8 @@ cat("Rec   max pct diff:", 100 * max(abs(as.vector(r$Rec)[1:n_yrs] - dat$admb$Re
 cat("Total biomass max pct diff:",
     100 * max(abs(as.vector(naa_all %*% dat$pop_waa) - dat$admb$TotBiom[yr_ind]) / dat$admb$TotBiom[yr_ind]), "\n")
 
-# The likelihood crosswalk. SPoRC writes each component as a proper density
-# while the assessment drops normalizing constants, so each comparison subtracts
-# exactly the constants the assessment omits.
+# the likelihood crosswalk. SPoRC writes each component as a proper density while the
+# assessment drops normalizing constants, so each comparison subtracts those constants
 c2pi <- 0.5 * log(2 * pi)
 dlc <- unlist(dat$admb$datalikecomp)
 plc <- unlist(dat$admb$pen_likecomp)
@@ -93,8 +81,14 @@ cat("like for like total:", sum(crosswalk$SPoRC), " assessment:",
     dlc[["obj_fun"]] - dlc[["mat_like"]], "\n")
 
 # Stage 2: optimize -------------------------------------------------------------
-est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 random = NULL, newton_loops = 3, silent = TRUE)
+est <- fit_model(
+  input_list$data,
+  input_list$par,
+  input_list$map,
+  random = NULL,
+  newton_loops = 3,
+  silent = TRUE
+)
 est$sdrep <- RTMB::sdreport(est)
 
 cat("\n=== Stage 2: optimized ===\n")
@@ -109,19 +103,28 @@ rep <- est$rep
 ssb <- as.vector(rep$SSB)[1:n_yrs]
 rec <- as.vector(rep$Rec)[1:n_yrs]
 
-# The terminal recruits are deviation free and carry the recruitment level shift,
-# so the boundary is marked rather than left to read as drift.
-ggplot2::ggsave(here("vignettes", "figures", "aa_bsai_pop_ts_comparison.png"),
-                bridge_ts_figure(yrs, ssb, rec, dat$admb$SSB[yr_ind], dat$admb$Rec[yr_ind], label,
-                                 ssb_se = bridge_se(sdr, "log_SSB", ssb),
-                                 rec_se = bridge_se(sdr, "log_Rec", rec),
-                                 mark_year = yrs[n_yrs - dat$fixedrec] + 0.5),
-                width = 17, height = 9, dpi = 150)
+# The terminal recruits are deviation free and hold the recruitment level shift,
+# so the boundary is marked rather than left to read as a real change.
+ggplot2::ggsave(
+  here("vignettes", "figures", "aa_bsai_pop_ts_comparison.png"),
+  bridge_ts_figure(
+                  yrs,
+                  ssb,
+                  rec,
+                  dat$admb$SSB[yr_ind],
+                  dat$admb$Rec[yr_ind],
+                  label,
+                  ssb_se = bridge_se(sdr, "log_SSB", ssb),
+                  rec_se = bridge_se(sdr, "log_Rec", rec),
+                  mark_year = yrs[n_yrs - dat$fixedrec] + 0.5
+                ),
+  width = 17,
+  height = 9,
+  dpi = 150
+)
 
-# Fishery selectivity is a bicubic surface over year and age, held flat before
-# 1964 and past the last selectivity node, so a handful of years carries the
-# shape change while the full surface is what the bridge test checks. Survey
-# selectivity is logistic and time invariant in each of the two surveys.
+# fishery selectivity is a bicubic surface over year and age, flat before 1964 and past the last
+# node. survey selectivity is logistic and time invariant in each of the two surveys
 sel_fit <- norm_bsai_pop_sel_by_year(rep$fish_sel[1, 1, 1:n_yrs, 1, 1:nsel, 1, 1])
 show_yrs <- c(1960, 1980, 2000, yrs[n_yrs])
 
@@ -132,8 +135,13 @@ fsh_df <- bind_rows(
   })
 )
 
-p_fsh <- bridge_sel_figure(fsh_df, facet_by = "Year", ylab = "Fishery selectivity",
-                           base_size = 18, nrow = 1)
+p_fsh <- bridge_sel_figure(
+  fsh_df,
+  facet_by = "Year",
+  ylab = "Fishery selectivity",
+  base_size = 18,
+  nrow = 1
+)
 
 srv_logistic <- function(fl) {
   1 / (1 + exp(-dat$mle$sel_aslope_srv[fl] * (dat$obs_ages - dat$mle$sel_a50_srv[fl])))
@@ -147,12 +155,21 @@ srv_df <- bind_rows(
   })
 )
 
-p_srv <- bridge_sel_figure(srv_df, ylab = "Survey selectivity", base_size = 18,
-                           legend = "none", nrow = 1)
+p_srv <- bridge_sel_figure(
+  srv_df,
+  ylab = "Survey selectivity",
+  base_size = 18,
+  legend = "none",
+  nrow = 1
+)
 
-ggplot2::ggsave(here("vignettes", "figures", "aa_bsai_pop_sel_comparison.png"),
-                patchwork::wrap_plots(p_fsh, p_srv, nrow = 2, heights = c(1, 0.9)),
-                width = 15, height = 10, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "aa_bsai_pop_sel_comparison.png"),
+  patchwork::wrap_plots(p_fsh, p_srv, nrow = 2, heights = c(1, 0.9)),
+  width = 15,
+  height = 10,
+  dpi = 150
+)
 
 est_yrs <- seq_len(n_yrs - dat$fixedrec)
 cat("\n=== Stage 3: optimized SPoRC against the assessment ===\n")
@@ -160,9 +177,8 @@ print(rbind(bridge_cmp("SSB", ssb, dat$admb$SSB[yr_ind]),
             bridge_cmp("Recruitment (estimated years)", rec[est_yrs], dat$admb$Rec[yr_ind][est_yrs])),
       row.names = FALSE, digits = 4)
 
-# The terminal recruits are deviation free and differ by the shift in the
-# recruitment level, which the assessment's sum to zero dev_vector cannot make
-# and SPoRC's free deviations can.
+# the terminal recruits are deviation free and differ by the shift in recruitment level, which the
+# assessment's sum-to-zero dev_vector cannot make and SPoRC's free deviations can
 fit_par <- est$env$parList(est$env$last.par.best)
 term_yrs <- seq(n_yrs - dat$fixedrec + 1, n_yrs)
 r0_shift <- (dat$mle$mean_log_rec + dat$sigmaR^2 / 2) - as.vector(fit_par$ln_global_R0)[1]

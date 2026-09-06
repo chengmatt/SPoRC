@@ -1,28 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# The forward projection at the center of the objective function. Walks the
-# population through every year and season, applying recruitment, mortality and
-# movement in the order set by move_timing, and records the state each
-# observation model needs.
-
-#' Gather the arguments \code{\link{compute_mortality_year}} needs from the model frame
-#'
-#' @param env Environment holding the unpacked data and parameters, i.e. the
-#'   \code{SPoRC_rtmb} frame after \code{RTMB::getAll}. Defaults to the caller.
-#'
-#' @return A named list of arguments for \code{\link{compute_mortality_year}}.
-#'
-#' @keywords internal
-mortality_args_from_model = function(env = parent.frame()) {
-  nm = c("growth_model", "derive_waa", "fish_selex_type", "ret_selex_type", "srv_selex_type",
-         "fish_waa_selected", "srv_waa_selected", "fish_sel_l", "ret_sel_l", "srv_sel_l",
-         "wt_len_pars", "growth_len_mid_vals",
-         "UseCatch", "UseCatch_pop", "missing_catch", "UseCatchAA", "UseCatchAA_pop", "use_catch_aa",
-         "ln_F_mean", "ln_F_devs", "logit_dmr_mean", "logit_dmr_devs",
-         "SizeAgeTrans", "natmort", "seasdur",
-         "n_pop", "n_regions", "n_seas", "n_ages", "n_sexes", "n_fish_fleets")
-  stats::setNames(lapply(nm, function(x) get(x, envir = env)), nm)
-}
+# The forward projection at the center of the objective. Walks every year and season applying recruitment,
+# mortality and movement in the order move_timing sets, recording what each observation model needs.
 
 #' Fishing and total mortality for one year
 #'
@@ -35,7 +14,7 @@ mortality_args_from_model = function(env = parent.frame()) {
 #' assigned into this frame.
 #'
 #' @param y Year index.
-#' @param st Named list carrying \code{Fmort}, \code{dmr}, \code{fish_sel},
+#' @param state Named list with \code{Fmort}, \code{dmr}, \code{fish_sel},
 #'   \code{ret_sel}, \code{ret_FAA}, \code{disc_FAA}, \code{tot_FAA},
 #'   \code{ZAA}, \code{WAA_fish}, \code{WAA_srv}, \code{SizeAgeTrans_fish} and
 #'   \code{SizeAgeTrans_srv}, returned with year \code{y} updated. The last
@@ -60,22 +39,23 @@ mortality_args_from_model = function(env = parent.frame()) {
 #'   n_seas, n_ages, n_sexes, n_fish_fleets]}, with a leading population
 #'   dimension for the second, non-zero where a catch at age observation is fit.
 #'   A fleet fitting catch at age is fished in any cell where at least one age is
-#'   fit, in either stream.
+#'   fit, in either data source.
 #' @param use_catch_aa Integer vector \code{[n_fish_fleets]}, non-zero for fleets
 #'   fitting catch at age rather than aggregated catch.
 #' @param ln_F_mean,ln_F_devs Log fishing mortality mean and deviations.
 #' @param logit_dmr_mean,logit_dmr_devs Logit discard mortality rate mean and
 #'   deviations.
 #' @param SizeAgeTrans Shared size-age key, used when no growth-derived
-#'   per-fleet key is supplied in \code{st}.
-#' @param natmort,seasdur Natural mortality at age and season duration.
+#'   per-fleet key is supplied in \code{state}.
+#' @param natmort,seasdur Natural mortality at age, \code{[pop, region, year,
+#'   season, age, sex]} and a rate per year, and season duration.
 #' @param n_pop,n_regions,n_seas,n_ages,n_sexes,n_fish_fleets Dimensions.
 #'
-#' @return \code{st} with year \code{y} updated.
+#' @return \code{state} with year \code{y} updated.
 #'
 #' @keywords internal
 #' @import RTMB
-compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_type, ret_selex_type, srv_selex_type,
+compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex_type, ret_selex_type, srv_selex_type,
                           fish_waa_selected, srv_waa_selected, fish_sel_l, ret_sel_l, srv_sel_l,
                           wt_len_pars, growth_len_mid_vals,
                           UseCatch, UseCatch_pop, missing_catch, UseCatchAA, UseCatchAA_pop, use_catch_aa,
@@ -86,10 +66,21 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  Fmort = st$Fmort; dmr = st$dmr; fish_sel = st$fish_sel; ret_sel = st$ret_sel
-  ret_FAA = st$ret_FAA; disc_FAA = st$disc_FAA; tot_FAA = st$tot_FAA; ZAA = st$ZAA
-  WAA_fish = st$WAA_fish; SizeAgeTrans_fish = st$SizeAgeTrans_fish
-  WAA_srv = st$WAA_srv; SizeAgeTrans_srv = st$SizeAgeTrans_srv
+  # get mortality values kept in from the previous year
+  Fmort = state$Fmort
+  dmr = state$dmr
+  fish_sel = state$fish_sel
+  ret_sel = state$ret_sel
+  ret_FAA = state$ret_FAA
+  disc_FAA = state$disc_FAA
+  tot_FAA = state$tot_FAA
+  ZAA = state$ZAA
+
+  # get weight at age and sizeage transition at each fleet's timing
+  WAA_fish = state$WAA_fish
+  SizeAgeTrans_fish = state$SizeAgeTrans_fish
+  WAA_srv = state$WAA_srv
+  SizeAgeTrans_srv = state$SizeAgeTrans_srv
 
   if(growth_model != 0 && derive_waa == 1 && fish_selex_type == 1 && any(fish_waa_selected == 1)) {
     WAA_fish = growth_selected_waa_year(WAA_fish, SizeAgeTrans_fish, fish_sel_l, wt_len_pars,
@@ -143,15 +134,15 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 
       # get total mortality
       for(p1 in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes)
-        ZAA[p1,r,y,seas,a,s] = sum(ret_FAA[p1,r,y,seas,a,s,]) + sum(disc_FAA[p1,r,y,seas,a,s,]) + (natmort[p1,r,y,a,s] * seasdur[seas])
+        ZAA[p1,r,y,seas,a,s] = sum(ret_FAA[p1,r,y,seas,a,s,]) + sum(disc_FAA[p1,r,y,seas,a,s,]) + (natmort[p1,r,y,seas,a,s] * seasdur[seas])
     } # end seas loop
   } # end r loop
 
-  st$Fmort = Fmort; st$dmr = dmr; st$fish_sel = fish_sel; st$ret_sel = ret_sel
-  st$ret_FAA = ret_FAA; st$disc_FAA = disc_FAA; st$tot_FAA = tot_FAA; st$ZAA = ZAA
-  st$WAA_fish = WAA_fish; st$WAA_srv = WAA_srv
+  state$Fmort = Fmort; state$dmr = dmr; state$fish_sel = fish_sel; state$ret_sel = ret_sel
+  state$ret_FAA = ret_FAA; state$disc_FAA = disc_FAA; state$tot_FAA = tot_FAA; state$ZAA = ZAA
+  state$WAA_fish = WAA_fish; state$WAA_srv = WAA_srv
 
-  return(st)
+  return(state)
 
 } # end compute_mortality_year
 
@@ -176,6 +167,10 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 #' @param rec_lag Integer. Recruitment timing: \code{0} inserts recruitment
 #'   within the spawning-season biomass computation; non-zero inserts
 #'   recruitment once per year ahead of the seasonal loop.
+#' @param R0_yr Matrix \code{[n_pop x n_yrs]} of R0 by year when R0 has time
+#'   blocks, or \code{NULL} to use the single \code{R0} in every
+#'   year. Only the recruitment computed each year reads it; everything that needs one
+#'   value still uses \code{R0}.
 #' @param rec_model,rec_dd,R0,rec_region_prop,rec_seas_prop,h_trans,natal_region,t_spawn,spawn_seas,seasdur,init_F
 #'   Recruitment and timing arguments passed through to
 #'   \code{Get_Det_Recruitment}.
@@ -187,7 +182,7 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 #'   ratio.
 #' @param WAA,MatAA Arrays \code{[pop, region, year, season, age, sex]} of
 #'   weight-at-age and maturity-at-age.
-#' @param natmort Array \code{[pop, region, year, age, sex]} of natural
+#' @param natmort Array \code{[pop, region, year, season, age, sex]} of natural
 #'   mortality at age.
 #' @param Movement Array \code{[pop, region_from, region_to, year, season,
 #'   age, sex]} of movement rates.
@@ -224,13 +219,13 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 #'   dimension (retrospectives) must clamp it.
 #' @param growth_mortality_year_fn Optional function of \code{(y, NAA_y, growth_mortality_state)} called at
 #'   the top of every year with the numbers at age at the start of that year,
-#'   array \code{[pop, region, age, sex]}, and the state carried from the
-#'   previous year. It returns a list with \code{state}, carried forward to the
+#'   array \code{[pop, region, age, sex]}, and the state kept from the
+#'   previous year. It returns a list with \code{state}, advanced to the
 #'   next call and returned to the caller, and \code{ZAA_y}, \code{WAA_y} and
 #'   \code{MatAA_y}, the year's slices of total mortality, weight and maturity
 #'   at age, which replace those handed in for that year. Passing the state in
 #'   and out keeps the per-year step a function of its arguments.
-#' @param growth_mortality_state Initial state for \code{growth_mortality_year_fn}, carried through the
+#' @param growth_mortality_state Initial state for \code{growth_mortality_year_fn}, passed through the
 #'   year loop and returned as \code{growth_mortality_state}. Ignored when
 #'   \code{growth_mortality_year_fn} is \code{NULL}.
 #'   This is how cohort growth, whose plus group blends by numbers, is evaluated
@@ -238,9 +233,12 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 #' @param n_est_naa_re Number of estimated state-space numbers at age. Zero leaves
 #'   the numbers deterministic. Never inferred from \code{dim(ln_NAA)}, which is
 #'   non-zero once the setup function has run at all.
-#' @param ln_NAA Array \code{[pop, region, year, age, sex]} of log numbers at age,
-#'   overwriting the deterministic prediction wherever the state is active.
-#' @param naa_re_ages,naa_re_yrs Integer index vectors the state is active over.
+#' @param ln_NAA Array \code{[pop, region, year, season, age, sex]} of log numbers
+#'   at the start of a season, overwriting the deterministic prediction wherever
+#'   the state is active. Season one is the year boundary, after ageing and the
+#'   plus group; later seasons are states on the within-year survival step.
+#' @param naa_re_ages,naa_re_yrs,naa_re_seas Integer index vectors the state is
+#'   active over.
 #'
 #' @return List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},
 #'   \code{NAA_aft}, \code{Rec}, \code{SSB}, \code{Total_Biom},
@@ -254,15 +252,64 @@ compute_mortality_year = function(y, st, growth_model, derive_waa, fish_selex_ty
 #'
 #' @keywords internal
 #' @import RTMB
-get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes, n_yrs, n_fish_fleets, n_est_rec_devs,
-                                       rec_lag, rec_model, rec_dd, R0, rec_region_prop, rec_seas_prop, h_trans,
-                                       natal_region, t_spawn, spawn_seas, seasdur, init_F, ln_RecDevs,
-                                       sexratio, WAA, MatAA, natmort, Movement, stray_rate, sgl_seas_spawning_movement,
-                                       do_recruits_move, fish_sel, ret_sel, dmr, ZAA,
-                                       NAA, NAA0, NAA_bef, NAA_aft, Rec, SSB, Total_Biom, Dynamic_SSB0, eff_SSB,
-                                       Mrate = NULL, move_timing = 0, SR_ref_yr = 1,
-                                       sr_penalty = 0, sr_R0 = NULL, growth_mortality_year_fn = NULL, growth_mortality_state = NULL,
-                                       expm_nsub = 0, n_est_naa_re = 0, ln_NAA = NULL, naa_re_ages = NULL, naa_re_yrs = NULL) {
+get_population_projection <- function(
+  n_pop,
+  n_regions,
+  n_seas,
+  n_ages,
+  n_sexes,
+  n_yrs,
+  n_fish_fleets,
+  n_est_rec_devs,
+  rec_lag,
+  rec_model,
+  rec_dd,
+  R0,
+  rec_region_prop,
+  rec_seas_prop,
+  h_trans,
+  R0_yr = NULL,
+  natal_region,
+  t_spawn,
+  spawn_seas,
+  seasdur,
+  init_F,
+  ln_RecDevs,
+  sexratio,
+  WAA,
+  MatAA,
+  natmort,
+  Movement,
+  stray_rate,
+  sgl_seas_spawning_movement,
+  do_recruits_move,
+  fish_sel,
+  ret_sel,
+  dmr,
+  ZAA,
+  NAA,
+  NAA0,
+  NAA_bef,
+  NAA_aft,
+  Rec,
+  SSB,
+  Total_Biom,
+  Dynamic_SSB0,
+  eff_SSB,
+  Mrate = NULL,
+  move_timing = 0,
+  SR_ref_yr = 1,
+  sr_penalty = 0,
+  sr_R0 = NULL,
+  growth_mortality_year_fn = NULL,
+  growth_mortality_state = NULL,
+  expm_nsub = 0,
+  n_est_naa_re = 0,
+  ln_NAA = NULL,
+  naa_re_ages = NULL,
+  naa_re_yrs = NULL,
+  naa_re_seas = NULL
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -271,15 +318,16 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   NAA_int <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 
   # Array for deterministic numbers at age the mortality and ageing step predicts before overwritten by state-space mode
-  NAA_pred <- array(0, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
+  NAA_pred <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 
   # Array for multiplicative factor the state applies to the deterministic prediction
-  NAA_scalar <- array(1, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
+  NAA_scalar <- array(1, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 
   # Stock recruitment prediction - only used when mean recruitment, but penalize the mean recruits to an SR curve
   SR_pred <- array(1, dim = c(n_pop, n_regions, n_yrs))
 
-  # Arguments for determinstic recruitment
+  # arguments for deterministic recruitment. every input to unfished spawning biomass per recruit
+  # is taken at SR_ref_yr; R0 is the year's own value, since it scales phi0 into S0
   det_rec_args <- list(
     rec_dd = rec_dd,
     rec_region_prop = rec_region_prop,
@@ -288,12 +336,12 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
     n_pop = n_pop,
     n_ages = n_ages,
     n_regions = n_regions,
-    sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,1,1], dim = c(n_pop, n_regions)),
+    sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,SR_ref_yr,1], dim = c(n_pop, n_regions)),
     WAA = array(WAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     MatAA = array(MatAA[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-    natmort = array(natmort[,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_ages)),
+    natmort = array(natmort[,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     Movement = array(Movement[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-    stray_rate = array(stray_rate[,1], dim = c(n_pop)),
+    stray_rate = array(stray_rate[,SR_ref_yr], dim = c(n_pop)),
     sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1], dim = c(n_pop, n_regions, n_regions, n_ages)),
     do_recruits_move = do_recruits_move,
     natal_region = natal_region,
@@ -304,16 +352,16 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
     rec_lag = rec_lag,
     n_fish_fleets = n_fish_fleets,
     init_F = init_F, # initF
-    fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
-    ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity in first year
-    dmr = array(dmr[,1,,], dim = c(n_regions, n_seas, n_fish_fleets)),
-    Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+    fish_sel = array(fish_sel[,,SR_ref_yr,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity
+    ret_sel = array(ret_sel[,,SR_ref_yr,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity
+    dmr = array(dmr[,SR_ref_yr,,], dim = c(n_regions, n_seas, n_fish_fleets)),
+    Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
     move_timing = move_timing
   )
 
   for(y in 1:n_yrs) {
 
-    # Growth carried cohort by cohort needs this year's start-of-year numbers
+    # Growth kept cohort by cohort needs this year's start-of-year numbers
     # before anything else in the year is formed
     if(!is.null(growth_mortality_year_fn)) {
       hk <- growth_mortality_year_fn(y, array(NAA[,,y,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)), growth_mortality_state)
@@ -327,7 +375,12 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
     if(rec_lag != 0) {
 
       # Get Deterministic Recruitment
-      tmp_Det_Rec <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = rec_model, R0 = R0, SSB_vals = SSB, y = y)))
+      tmp_Det_Rec <- do.call(Get_Det_Recruitment, c(det_rec_args, list(
+        recruitment_model = rec_model,
+        R0 = if(is.null(R0_yr)) R0 else R0_yr[, y],
+        SSB_vals = SSB,
+        y = y
+      )))
 
       # Predicts the SR curve for use as a penalty
       if(sr_penalty > 0) {
@@ -405,7 +458,12 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         SSB[,, y] <- biom$SSB_y
 
         # Deterministic recruitment
-        tmp_Det_Rec <- do.call(Get_Det_Recruitment, c(det_rec_args, list(recruitment_model = rec_model, R0 = R0, SSB_vals = SSB, y = y)))
+        tmp_Det_Rec <- do.call(Get_Det_Recruitment, c(det_rec_args, list(
+          recruitment_model = rec_model,
+          R0 = if(is.null(R0_yr)) R0 else R0_yr[, y],
+          SSB_vals = SSB,
+          y = y
+        )))
 
         # stock recruitment penalty against a curve
         if(sr_penalty > 0) {
@@ -424,9 +482,8 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
           } # end r loop
         } # end p loop
 
-        # Recruits just inserted above missed this season's movement step. Move recruits if allowed.
-        # Only needed under move_timing == 0, where movement happens at the start of the
-        # season; under timings 1 and 2 these recruits are picked up by the end-of-season step.
+        # recruits just inserted missed this season's movement step, so move them if allowed. only
+        # needed under move_timing == 0; under 1 and 2 the end-of-season step picks them up
         if(do_recruits_move == 1 && n_regions > 1 && move_timing == 0) {
           for(p in 1:n_pop) {
             for(s in 1:n_sexes) {
@@ -455,7 +512,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
       if(n_regions == 1) {
         # One region, so no timing has anything to move and the step is elementwise survival.
         step_NAA <- array(NAA[,,y,seas,1:n_ages,] * exp(-ZAA[,,y,seas,1:n_ages,]), dim = c(n_pop, n_regions, n_ages, n_sexes))
-        step_NAA0 <- array(NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,1:n_ages,] * seasdur[seas])),  dim = c(n_pop, n_regions, n_ages, n_sexes))
+        step_NAA0 <- array(NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,seas,1:n_ages,] * seasdur[seas])),  dim = c(n_pop, n_regions, n_ages, n_sexes))
 
         # Get the season integrated abundance here
         if(move_timing == 2) {
@@ -467,7 +524,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
       } else if(move_timing == 0) {
         # Movement then mortality
         step_NAA <- array(NAA[,,y,seas,1:n_ages,] * exp(-ZAA[,,y,seas,1:n_ages,]), dim = c(n_pop, n_regions, n_ages, n_sexes))
-        step_NAA0 <- array(NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,1:n_ages,] * seasdur[seas])),  dim = c(n_pop, n_regions, n_ages, n_sexes))
+        step_NAA0 <- array(NAA0[,,y,seas,1:n_ages,] * exp(-(natmort[,,y,seas,1:n_ages,] * seasdur[seas])),  dim = c(n_pop, n_regions, n_ages, n_sexes))
 
       } else if(move_timing == 1) {
         # Mortality then movement
@@ -479,7 +536,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
             for(s in 1:n_sexes) {
               Mv <- if(moves) Movement[p,,,y,seas,a,s] else diag(n_regions) # identity leaves survival unchanged
               step_NAA[p,,a,s] <- advance_seas(NAA[p,,y,seas,a,s], Mv, ZAA[p,,y,seas,a,s], NULL, seasdur[seas], move_timing, expm_nsub = expm_nsub)
-              step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,a,s] * seasdur[seas], NULL, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+              step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,seas,a,s] * seasdur[seas], NULL, seasdur[seas], move_timing, expm_nsub = expm_nsub)
             } # end s loop
           } # end a loop
         } # end p loop
@@ -500,7 +557,7 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
               both <- seas_operator_and_integral(ZAA[p,,y,seas,a,s], Qv, seasdur[seas], expm_nsub = expm_nsub)
               step_NAA[p,,a,s] <- as.vector(t(NAA[p,,y,seas,a,s]) %*% both$T) # end of season state, forward
               NAA_int[p,,y,seas,a,s] <- as.vector(both$Integral %*% NAA[p,,y,seas,a,s]) # season integral, to the catch equation
-              step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], NULL, natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+              step_NAA0[p,,a,s] <- advance_seas(NAA0[p,,y,seas,a,s], NULL, natmort[p,,y,seas,a,s] * seasdur[seas], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
             } # end s loop
           } # end a loop
         } # end p loop
@@ -513,6 +570,20 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         # within year / seasonal mortality
         NAA[,,y,seas+1,1:n_ages,] <- step_NAA
         NAA0[,,y,seas+1,1:n_ages,] <- step_NAA0
+
+        # State-space numbers at age at a within-year season boundary, on the survival and
+        # movement step alone since ageing happens only at the year boundary
+        if(n_est_naa_re > 0 && y %in% naa_re_yrs && (seas + 1) %in% naa_re_seas) {
+          NAA_pred[,,y,seas+1,,] <- NAA[,,y,seas+1,,]
+          for(a in naa_re_ages) {
+            for(s in 1:n_sexes) {
+              delta <- ln_NAA[,,y,seas+1,a,s] - log(NAA_pred[,,y,seas+1,a,s]) # realized deviation
+              NAA[,,y,seas+1,a,s] <- exp(ln_NAA[,,y,seas+1,a,s]) # input predicted state-space numbers at age
+              NAA0[,,y,seas+1,a,s] <- NAA0[,,y,seas+1,a,s] * exp(delta) # update with scalar
+              NAA_scalar[,,y,seas+1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
+            } # end s loop
+          } # end a loop
+        }
       } else {
         # age advancement and enter into first season of next year
         # Fished
@@ -522,15 +593,15 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
         NAA0[,,y+1,1,2:n_ages,] <- step_NAA0[,,1:(n_ages-1),] # Exponential mortality for individuals not in plus group
         NAA0[,,y+1,1,n_ages,] <- NAA0[,,y+1,1,n_ages,] + step_NAA0[,,n_ages,] # Acuumulate plus group
 
-        # State-space numbers at age applied after 
-        if(n_est_naa_re > 0 && (y + 1) <= n_yrs && (y + 1) %in% naa_re_yrs) {
-          NAA_pred[,,y+1,,] <- NAA[,,y+1,1,,]
+        # State-space numbers at age at the year boundary, applied after the plus group accumulates
+        if(n_est_naa_re > 0 && (y + 1) <= n_yrs && (y + 1) %in% naa_re_yrs && 1 %in% naa_re_seas) {
+          NAA_pred[,,y+1,1,,] <- NAA[,,y+1,1,,]
           for(a in naa_re_ages) {
             for(s in 1:n_sexes) {
-              delta <- ln_NAA[,,y+1,a,s] - log(NAA_pred[,,y+1,a,s]) # realized deviation
-              NAA[,,y+1,1,a,s] <- exp(ln_NAA[,,y+1,a,s]) # input predicted state-space numbers at age
+              delta <- ln_NAA[,,y+1,1,a,s] - log(NAA_pred[,,y+1,1,a,s]) # realized deviation
+              NAA[,,y+1,1,a,s] <- exp(ln_NAA[,,y+1,1,a,s]) # input predicted state-space numbers at age
               NAA0[,,y+1,1,a,s] <- NAA0[,,y+1,1,a,s] * exp(delta) # update with scalar
-              NAA_scalar[,,y+1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
+              NAA_scalar[,,y+1,1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
             } # end s loop
           } # end a loop
         }
@@ -555,9 +626,22 @@ get_population_projection <- function(n_pop, n_regions, n_seas, n_ages, n_sexes,
   Aggregated_SSB <- apply(SSB, 3, sum)
   Dynamic_Aggregated_SSB0 <- apply(Dynamic_SSB0, 3, sum)
 
-  return(list(NAA = NAA, NAA0 = NAA0, NAA_bef = NAA_bef, NAA_aft = NAA_aft, Rec = Rec,
-              SSB = SSB, Total_Biom = Total_Biom, Dynamic_SSB0 = Dynamic_SSB0, eff_SSB = eff_SSB,
-              Aggregated_SSB = Aggregated_SSB, Dynamic_Aggregated_SSB0 = Dynamic_Aggregated_SSB0,
-              NAA_int = NAA_int, NAA_pred = NAA_pred, NAA_scalar = NAA_scalar, SR_pred = SR_pred,
-              growth_mortality_state = growth_mortality_state))
+  return(list(
+    NAA = NAA,
+    NAA0 = NAA0,
+    NAA_bef = NAA_bef,
+    NAA_aft = NAA_aft,
+    Rec = Rec,
+    SSB = SSB,
+    Total_Biom = Total_Biom,
+    Dynamic_SSB0 = Dynamic_SSB0,
+    eff_SSB = eff_SSB,
+    Aggregated_SSB = Aggregated_SSB,
+    Dynamic_Aggregated_SSB0 = Dynamic_Aggregated_SSB0,
+    NAA_int = NAA_int,
+    NAA_pred = NAA_pred,
+    NAA_scalar = NAA_scalar,
+    SR_pred = SR_pred,
+    growth_mortality_state = growth_mortality_state
+  ))
 }

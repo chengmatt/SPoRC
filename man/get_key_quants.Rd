@@ -45,7 +45,7 @@ fishing mortality, and numbers-at-age arrays.}
   \item{\code{n_proj_yrs}}{Number of years to project forward.}
   \item{\code{n_avg_yrs}}{Number of terminal model years over which
     demographic inputs (selectivity, weight-at-age, maturity, natural
-    mortality, movement) are averaged before being held constant across
+    mortality, movement) are averaged before being kept constant across
     the projection period.}
   \item{\code{HCR_function}}{A harvest control rule function with
     signature \code{function(x, frp, brp, ...)}, where \code{x} is

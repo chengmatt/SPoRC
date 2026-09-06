@@ -3,17 +3,17 @@ library(testthat)
 
 # Joint arrays at length and age, reported when do_caal == 1. Nothing is fit to them, so
 # the tests here are about the arrays being the joint distribution they claim to be: their
-# length margin has to be the catch or index at age, and their age margin the catch or
+# length dim has to be the catch or index at age, and their age dim the catch or
 # index at length. The flag also has to leave the objective untouched, since a reporting
 # switch that moved the likelihood would change every model that turns it on.
 #
 # The arrays are dimensioned like CAA and CAL, that is population specific, and no region
-# level version is reported. Summing the population margin away is left to the caller, the
+# level version is reported. Summing the population dim away is left to the caller, the
 # same way the composition likelihoods already do it on CAA and CAL.
 
 n_lens_test <- 12
 
-build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))
+build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 run <- function(input) suppressWarnings(suppressMessages(evaluate_input(input)))
 
 with_caal <- function() {
@@ -63,7 +63,7 @@ test_that("turning the joint arrays on leaves the objective unchanged", {
 })
 
 
-test_that("the length margin of each joint array is the marginal at age", {
+test_that("the length dim of each joint array is the marginal at age", {
   model <- run(with_caal())
   for(pair in caal_pairs) {
     joint <- model$rep[[pair$joint]]
@@ -73,7 +73,7 @@ test_that("the length margin of each joint array is the marginal at age", {
 })
 
 
-test_that("the age margin of each joint array is the marginal at length", {
+test_that("the age dim of each joint array is the marginal at length", {
   model <- run(with_caal())
   for(pair in caal_pairs) {
     joint <- model$rep[[pair$joint]]
@@ -116,9 +116,14 @@ test_that("do_caal is rejected without length compositions", {
   expect_equal(input$data$fit_lengths, 0)
   expect_error(
     suppressMessages(Setup_Mod_Biologicals(
-      input_list = input, WAA = input$data$WAA, MatAA = input$data$MatAA,
-      fit_lengths = 0, SizeAgeTrans = NA, do_caal = 1,
-      M_spec = "fix", Fixed_natmort = input$data$Fixed_natmort
+      input_list = input,
+      WAA = input$data$WAA,
+      MatAA = input$data$MatAA,
+      fit_lengths = 0,
+      SizeAgeTrans = NA,
+      do_caal = 1,
+      M_spec = "fix",
+      Fixed_natmort = input$data$Fixed_natmort
     )),
     "do_caal"
   )

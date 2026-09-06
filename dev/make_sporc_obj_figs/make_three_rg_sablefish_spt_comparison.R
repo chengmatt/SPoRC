@@ -368,17 +368,15 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
                                          "none_Fleet_2"
                                        ),
 
-                                     # whether to estiamte all fixed effects
-                                     # for survey selectivity and later
-                                     # modify to fix/share parameters
+                                     # whether to estimate all fixed effects for survey
+                                     # selectivity, modified below to fix or share
                                      srv_fixed_sel_pars_spec =
                                        c("est_shared_r",
                                          "est_shared_r"
                                        ),
 
-                                     # whether to estiamte all
-                                     # fixed effects for survey catchability
-                                     # spatially-invariant q
+                                     # whether to estimate all fixed effects for survey
+                                     # catchability, spatially-invariant q
                                      srv_q_spec =
                                        c("est_shared_r",
                                          "est_shared_r"

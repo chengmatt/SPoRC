@@ -1,9 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Survey selectivity and catchability inputs. Setup_Mod_Srvsel_and_Q covers the
-# selectivity of the gear on the stock and the catchability blocks, and
-# delegates its parameter maps to the shared builders in setup_mapping.R.
-# Mirrors setup_fishery_selectivity.R but has no retention stream.
+# Survey selectivity and catchability inputs. Mirrors setup_fishery_selectivity.R but has no
+# retention, and delegates its parameter maps to the shared builders in setup_mapping.R.
 
 #' Set up survey selectivity and catchability specifications
 #'
@@ -48,14 +46,14 @@
 #'       within-year contrasts are identified; the level is absorbed by
 #'       catchability or fishing mortality.}
 #'     \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
-#'       standardization, \eqn{\exp(\theta)}, so the values carry the height of the
-#'       curve as well as its shape. This is the form for a stream fit age by age:
+#'       standardization, \eqn{\exp(\theta)}, so the values hold the height of the
+#'       curve as well as its shape. This is the form for a data source fit age by age:
 #'       a free catchability per age and a selectivity estimated at age are one
 #'       quantity written two ways, so the whole age multiplier lives here and no
 #'       catchability is set. Pin one bin, by leaving it out of the estimated bins,
 #'       whenever the mean it multiplies is also free.}
 #'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
-#'     \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
+#'     \item{\code{"asymplogist2"}}{Logistic selectivity with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
 #'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid
 #'       (see \code{\link{Get_Selex}}, \code{Selex_Model == 8}). Specified as
 #'       \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} (optionally
@@ -66,11 +64,11 @@
 #'       defined via \code{srv_sel_blocks}). An optional \code{_SelStyr_<year>}
 #'       suffix (a calendar year within the block) restricts the actual spline
 #'       fit to \code{SelStyr}:block-end; years within the block before
-#'       \code{SelStyr} are held constant at the \code{SelStyr} year's fitted
+#'       \code{SelStyr} are kept constant at the \code{SelStyr} year's fitted
 #'       curve, rather than fitting the surface over the whole block. An
 #'       optional \code{_NSelBins_<n>} suffix restricts the actual spline fit
 #'       to the first \code{n} bins (ages or lengths, per \code{srv_selex_type});
-#'       bins beyond \code{n} are held constant at the last fitted bin's
+#'       bins beyond \code{n} are kept constant at the last fitted bin's
 #'       curve.}
 #'   }
 #'   No default; must be provided.
@@ -119,7 +117,7 @@
 #'   list column of integer vectors naming a whole set. This pins the scalar of
 #'   a non-parametric curve that catchability or fishing mortality would
 #'   otherwise absorb, and is softer than fixing a bin outright. Intended for
-#'   parameter sets held on the log scale. Default \code{NULL}.
+#'   parameter sets kept on the log scale. Default \code{NULL}.
 #' @param srvsel_devs_shared_bins List of integer vectors defining bin groups
 #'   for age/length-sharing of deviations under semi-parametric forms (e.g.,
 #'   \code{list(1:5, 6:10, 11:30)}). Required when \code{srv_sel_devs_spec}
@@ -136,7 +134,7 @@
 #'   penalties, which is how several existing assessments constrain them. Values
 #'   other than 0 or 1 make an estimated process error sigma reinterpretable, so
 #'   prefer 0 or 1 unless deliberately down-weighting. Applies only to
-#'   \code{ln_srvsel_devs}; the bin-override deviations carry their own process
+#'   \code{ln_srvsel_devs}; the bin-override deviations have their own process
 #'   error and are not affected.
 #' @param srvsel_rw_init_sigma Numeric vector \code{[n_srv_fleets]}. Standard
 #'   deviation given to the first year of an \code{"rw"} deviation series.
@@ -160,7 +158,7 @@
 #' @param cont_tv_srvsel_bin_devs Character vector \code{[n_srv_fleets]} giving
 #'   the process error on the bin-override deviations for each fleet:
 #'   \code{"none"} (default), \code{"iid"}, or \code{"rw"}. A random walk
-#'   carries its own estimated sigma per bin, with
+#'   has its own estimated sigma per bin, with
 #'   \code{srvsel_bin_devs_rw_init_sigma} governing its first year.
 #'
 #' @param srv_q_blocks Character vector defining discrete time blocks for
@@ -176,9 +174,11 @@
 #'   \code{ln_srv_q}. \code{"arith"} concentrates it out of the likelihood as
 #'   the ratio of mean observed to mean predicted index, and \code{"geo"} does
 #'   the same on the log scale as \code{exp(mean(log(obs) - log(pred)))}. Both
-#'   analytic forms solve one catchability per region and fleet using only the
-#'   years with observations, ignore any block structure, and fix that fleet's
-#'   \code{ln_srv_q} regardless of \code{srv_q_spec}.
+#'   analytic forms use only the years with observations and fix that fleet's
+#'   \code{ln_srv_q} regardless of \code{srv_q_spec}. The solve is done within
+#'   each \code{srv_q_blocks} time block, so a blocked catchability gets one
+#'   solved value per block. A single block, the default, is one value for the
+#'   whole series.
 #' @param Use_srv_q_prior Integer (0/1). Whether log-normal priors are applied
 #'   to survey catchability parameters. Default \code{0}.
 #' @param srv_q_prior Data frame of catchability prior specifications. Required
@@ -250,7 +250,7 @@
 #'   \code{n_sexes > 1}. Options per fleet are \code{"none"} (default, each
 #'   sex's stored parameters are its own), \code{"par"} (sexes beyond the first
 #'   store additive offsets on the first sex's transformed-scale parameters),
-#'   \code{"scale"} (sexes beyond the first carry an estimated constant
+#'   \code{"scale"} (sexes beyond the first have an estimated constant
 #'   log-scale offset on the whole realized curve), \code{"par_scale"} (both),
 #'   \code{"apical"} (sexes beyond the first build their double normal's limbs
 #'   up to an estimated height rather than to one, which moves the middle of
@@ -271,41 +271,42 @@
 #' @export Setup_Mod_Srvsel_and_Q
 #' @importFrom stringr str_detect
 #' @family Model Setup
-Setup_Mod_Srvsel_and_Q <- function(input_list,
-                                   cont_tv_srv_sel = paste("none_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
-                                   srv_sel_blocks = paste("none_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
-                                   srv_sel_model,
-                                   Use_srv_q_prior = 0,
-                                   srv_q_prior = NA,
-                                   srv_q_blocks = paste("none_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
-                                   srvsel_pe_pars_spec = NULL,
-                                   srv_fixed_sel_pars_spec,
-                                   srv_q_spec = NULL,
-                                   srv_q_type = rep("est", input_list$data$n_srv_fleets),
-                                   srv_sel_devs_spec = NULL,
-                                   corr_opt_semipar = NULL,
-                                   srv_q_formula = NULL,
-                                   srv_q_cov_dat = NULL,
-                                   Use_srv_selex_prior = 0,
-                                   srv_selex_prior = NULL,
-                                   Use_srv_selex_penalty = 0,
-                                   srv_sel_norm_bins = NULL,
-                                   srv_sel_bin_dev_bins = NULL,
-                                   srvsel_pe_wt = rep(1, input_list$data$n_srv_fleets),
-                                   srvsel_rw_init_sigma = rep(5, input_list$data$n_srv_fleets),
-                                   cont_tv_srvsel_bin_devs = rep("none", input_list$data$n_srv_fleets),
-                                   srv_selex_penalty = NULL,
-                                   t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
-                                   srvsel_devs_shared_bins = NULL,
-                                   srv_selex_type = 'age',
-                                   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
-                                   srv_sel_input = NULL,
-                                   srv_sel_nonpar_est_bins = NULL,
-                                   srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
-                                   srv_sel_dbnrml_raw = NULL,
-                                   srv_sel_dbnrml_startbin = NULL,
-                                   ...
-                                   ) {
+Setup_Mod_Srvsel_and_Q <- function(
+  input_list,
+  cont_tv_srv_sel = paste("none_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
+  srv_sel_blocks = paste("none_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
+  srv_sel_model,
+  Use_srv_q_prior = 0,
+  srv_q_prior = NA,
+  srv_q_blocks = paste("none_Fleet_", 1:input_list$data$n_srv_fleets, sep = ''),
+  srvsel_pe_pars_spec = NULL,
+  srv_fixed_sel_pars_spec,
+  srv_q_spec = NULL,
+  srv_q_type = rep("est", input_list$data$n_srv_fleets),
+  srv_sel_devs_spec = NULL,
+  corr_opt_semipar = NULL,
+  srv_q_formula = NULL,
+  srv_q_cov_dat = NULL,
+  Use_srv_selex_prior = 0,
+  srv_selex_prior = NULL,
+  Use_srv_selex_penalty = 0,
+  srv_sel_norm_bins = NULL,
+  srv_sel_bin_dev_bins = NULL,
+  srvsel_pe_wt = rep(1, input_list$data$n_srv_fleets),
+  srvsel_rw_init_sigma = rep(5, input_list$data$n_srv_fleets),
+  cont_tv_srvsel_bin_devs = rep("none", input_list$data$n_srv_fleets),
+  srv_selex_penalty = NULL,
+  t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
+  srvsel_devs_shared_bins = NULL,
+  srv_selex_type = 'age',
+  use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
+  srv_sel_input = NULL,
+  srv_sel_nonpar_est_bins = NULL,
+  srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
+  srv_sel_dbnrml_raw = NULL,
+  srv_sel_dbnrml_startbin = NULL,
+  ...
+) {
 
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
@@ -349,8 +350,28 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   collect_message("Survey Selectivity priors are: ", ifelse(Use_srv_selex_prior == 0, "Not Used", "Used"))
 
   if(any(use_fixed_srv_sel == 1) && is.null(srv_sel_input)) stop("srv_sel_input is NULL, please provide an input array.")
-  if(any(use_fixed_srv_sel == 1) && srv_selex_type == 'age') check_data_dimensions(srv_sel_input, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'srv_sel_input_age')
-  if(any(use_fixed_srv_sel == 1) && srv_selex_type == 'length') check_data_dimensions(srv_sel_input, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_seas = input_list$data$n_seas, n_lens = length(input_list$data$lens), n_sexes = input_list$data$n_sexes, n_srv_fleets = input_list$data$n_srv_fleets, what = 'srv_sel_input_len')
+  if(any(use_fixed_srv_sel == 1) && srv_selex_type == 'age') check_data_dimensions(
+    srv_sel_input,
+    n_pop = input_list$data$n_pop,
+    n_regions = input_list$data$n_regions,
+    n_years = length(input_list$data$years),
+    n_seas = input_list$data$n_seas,
+    n_ages = length(input_list$data$ages),
+    n_sexes = input_list$data$n_sexes,
+    n_srv_fleets = input_list$data$n_srv_fleets,
+    what = 'srv_sel_input_age'
+  )
+  if(any(use_fixed_srv_sel == 1) && srv_selex_type == 'length') check_data_dimensions(
+    srv_sel_input,
+    n_pop = input_list$data$n_pop,
+    n_regions = input_list$data$n_regions,
+    n_years = length(input_list$data$years),
+    n_seas = input_list$data$n_seas,
+    n_lens = length(input_list$data$lens),
+    n_sexes = input_list$data$n_sexes,
+    n_srv_fleets = input_list$data$n_srv_fleets,
+    what = 'srv_sel_input_len'
+  )
 
   # Selectivity Options -----------------------------------------------------
   # The bin vector is kept as well as its length. Starting values stated on the
@@ -434,8 +455,8 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   srv_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets))
   srv_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # number of bin nodes, only set where srv_sel_model == 8 (bicubic)
   srv_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # number of year nodes, only set where srv_sel_model == 8 (bicubic)
-  srv_sel_bicubic_selstyr_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # calendar year the bicubic surface is actually fit from (0 = block's own start year, i.e. no offset); years within the block before this are edge-held at this year's fitted curve
-  srv_sel_bicubic_nselbins_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # number of bins (starting from the first) the bicubic surface is actually fit over (0 = all bins, i.e. no truncation); bins beyond this are held flat at the last fitted bin's value
+  srv_sel_bicubic_selstyr_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # calendar year the bicubic surface is actually fit from (0 = block's own start year, i.e. no offset); years within the block before this are edge-kept at this year's fitted curve
+  srv_sel_bicubic_nselbins_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # number of bins (starting from the first) the bicubic surface is actually fit over (0 = all bins, i.e. no truncation); bins beyond this are kept flat at the last fitted bin's value
 
   for(i in 1:length(srv_sel_model)) {
 
@@ -631,10 +652,22 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list$data$Use_srv_selex_penalty <- Use_srv_selex_penalty
   input_list$data$srvsel_pe_wt <- srvsel_pe_wt
   input_list$data$srvsel_rw_init_sigma <- srvsel_rw_init_sigma
-  input_list <- setup_sel_bin_devs(input_list, srv_sel_bin_dev_bins, cont_tv_srvsel_bin_devs,
-                                   prefix = "srv", n_fleets = input_list$data$n_srv_fleets,
-                                   bins = bins, starting_values = starting_values)
-  input_list <- setup_sel_norm_bins(input_list, srv_sel_norm_bins, prefix = "srv", n_fleets = input_list$data$n_srv_fleets, bins = bins)
+  input_list <- setup_sel_bin_devs(
+    input_list,
+    srv_sel_bin_dev_bins,
+    cont_tv_srvsel_bin_devs,
+    prefix = "srv",
+    n_fleets = input_list$data$n_srv_fleets,
+    bins = bins,
+    starting_values = starting_values
+  )
+  input_list <- setup_sel_norm_bins(
+    input_list,
+    srv_sel_norm_bins,
+    prefix = "srv",
+    n_fleets = input_list$data$n_srv_fleets,
+    bins = bins
+  )
   input_list$data$srv_selex_penalty <- validate_selex_penalty(srv_selex_penalty, Use_srv_selex_penalty, "srv_selex_penalty")
   input_list$data$t_srv <- t_srv
   if(!is.null(input_list$data$srv_len_comp_sel) && any(input_list$data$srv_len_comp_sel == 1) && srv_selex_type != 1) stop("SrvLenComps_sel = 'length' in Setup_Mod_SrvIdx_and_Comps applies the length selectivity at length, so srv_selex_type must be length")
@@ -659,10 +692,8 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
 
   max_srvsel_blks <- max(apply(input_list$data$srv_sel_blocks, c(1,3), FUN = function(x) length(unique(x)))) # figure out maximum number of survey selectivity blocks for a given reigon and fleet
 
-  # Bicubic spline interpolation weight matrices (bin node x year node grid), built here so they can be
-  # threaded through SPoRC_rtmb.R alongside the flattened node parameters (see Get_Selex, Selex_Model == 8).
-  # Padded with zeros to a common width across regions/blocks/fleets; padding is harmless because unused
-  # (zero-weight) columns/rows never contribute to the resulting selectivity (see Get_Selex documentation).
+  # bicubic spline interpolation weight matrices (bin node by year node grid), passed through the
+  # model with the flattened node parameters. zero-weight rows and columns never contribute
   has_bicubic_srv_sel <- any(input_list$data$srv_sel_model == 8)
   max_bin_nodes_bicubic <- if(has_bicubic_srv_sel) max(input_list$data$srv_sel_bicubic_binnodes) else 1
   max_yr_nodes_bicubic <- if(has_bicubic_srv_sel) max(input_list$data$srv_sel_bicubic_yrnodes) else 1
@@ -685,9 +716,8 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
           n_bin_nodes_this <- unique(input_list$data$srv_sel_bicubic_binnodes[r, block_years, f])
           n_yr_nodes_this <- unique(input_list$data$srv_sel_bicubic_yrnodes[r, block_years, f])
 
-          # Bin dimension: nodes evenly spaced over [0,1]. By default (NSelBins unset, i.e. 0) the
-          # spline is evaluated over all bins, as before. When NSelBins is set, the spline surface is only actually fit over the first NSelBins bins;
-          # bins beyond that are edge-held at the last fitted bin's weights ("plateau").
+          # bin nodes evenly spaced over [0,1]. the spline is fit over all bins unless NSelBins is
+          # set, beyond which bins are edge-kept at the last fitted bin's weights
           nselbins_this <- unique(input_list$data$srv_sel_bicubic_nselbins[r, block_years, f])
           n_fit_bins <- if(nselbins_this == 0) bins else nselbins_this
 
@@ -697,17 +727,17 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
 
           Wbin_this <- matrix(0, nrow = bins, ncol = n_bin_nodes_this)
           Wbin_this[1:n_fit_bins, ] <- Wbin_fit
-          if(n_fit_bins < bins) Wbin_this[(n_fit_bins + 1):bins, ] <- matrix(Wbin_fit[nrow(Wbin_fit), ], nrow = bins - n_fit_bins, ncol = n_bin_nodes_this, byrow = TRUE)
+          if(n_fit_bins < bins) Wbin_this[(n_fit_bins + 1):bins, ] <- matrix(
+            Wbin_fit[nrow(Wbin_fit), ],
+            nrow = bins - n_fit_bins,
+            ncol = n_bin_nodes_this,
+            byrow = TRUE
+          )
 
           srv_sel_bicubic_Wbin[r, , 1:n_bin_nodes_this, b, f] <- Wbin_this
 
-          # Year dimension: nodes evenly spaced over the block's own contiguous fit range. By default
-          # (SelStyr unset, i.e. 0) the fit range is the whole block, as before. When SelStyr is set , only years from SelStyr through the block's end are
-          # actually spline-fit; years within the block before SelStyr are edge-held at the SelStyr
-          # row's weights ("previous years are filled"). Years outside the block entirely (before it,
-          # after it, and any projection years, since projections reuse the terminal modeled year's
-          # block) hold the boundary node weights constant, which for a spline evaluated exactly at
-          # its first/last node reduces to full weight on that node.
+          # year nodes are evenly spaced over the block's fit range, which is the whole block unless
+          # SelStyr is set. years outside that range hold the boundary node weights constant
 
           selstyr_this <- unique(input_list$data$srv_sel_bicubic_selstyr[r, block_years, f])
           selstyr_idx <- if(selstyr_this == 0) min(block_years) else which(input_list$data$years == selstyr_this)
@@ -722,7 +752,12 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
           Wyr_this[fit_years, ] <- Wyr_block
           if(length(pre_fit_years) > 0) Wyr_this[pre_fit_years, ] <- matrix(Wyr_block[1, ], nrow = length(pre_fit_years), ncol = n_yr_nodes_this, byrow = TRUE)
           if(min(block_years) > 1) Wyr_this[1:(min(block_years) - 1), ] <- matrix(Wyr_block[1, ], nrow = min(block_years) - 1, ncol = n_yr_nodes_this, byrow = TRUE)
-          if(max(block_years) < n_yrs_total_bicubic) Wyr_this[(max(block_years) + 1):n_yrs_total_bicubic, ] <- matrix(Wyr_block[nrow(Wyr_block), ], nrow = n_yrs_total_bicubic - max(block_years), ncol = n_yr_nodes_this, byrow = TRUE)
+          if(max(block_years) < n_yrs_total_bicubic) Wyr_this[(max(block_years) + 1):n_yrs_total_bicubic, ] <- matrix(
+            Wyr_block[nrow(Wyr_block), ],
+            nrow = n_yrs_total_bicubic - max(block_years),
+            ncol = n_yr_nodes_this,
+            byrow = TRUE
+          )
 
           srv_sel_bicubic_Wyr[r, , 1:n_yr_nodes_this, b, f] <- Wyr_this
 
@@ -738,7 +773,7 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list$par$srv_fixed_sel_pars <- array(0, dim = c(input_list$data$n_regions, max_srvsel_pars, max_srvsel_blks, input_list$data$n_sexes, input_list$data$n_srv_fleets))
   input_list$par$srv_fixed_sel_pars <- use_starting_value(input_list$par$srv_fixed_sel_pars, starting_values, "srv_fixed_sel_pars")
 
-  # a double normal carries its peak on the bin scale, so a default of zero
+  # a double normal has its peak on the bin scale, so a default of zero
   # would put it at bin zero, where the ascending limb has no extent
   if(!"srv_fixed_sel_pars" %in% names(starting_values)) {
     input_list$par$srv_fixed_sel_pars <- seed_dbnrml_peak(input_list$par$srv_fixed_sel_pars, srv_sel_model_arr,
@@ -760,11 +795,19 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list$par$ln_srvsel_devs <- use_starting_value(input_list$par$ln_srvsel_devs, starting_values, "ln_srvsel_devs")
 
   # Sex offsets on selectivity (parameter offsets and/or a curve scale offset)
-  input_list <- setup_sel_sex_offset(input_list, srv_sel_sex_offset, prefix = "srv",
-                                     n_fleets = input_list$data$n_srv_fleets, fleet_label = "survey fleet",
-                                     sel_model_arr = input_list$data$srv_sel_model, cont_tv_mat = cont_tv_srv_sel_mat,
-                                     max_blks = max_srvsel_blks, sel_blocks = input_list$data$srv_sel_blocks,
-                                     fixed_spec = srv_fixed_sel_pars_spec, starting_values = starting_values)
+  input_list <- setup_sel_sex_offset(
+    input_list,
+    srv_sel_sex_offset,
+    prefix = "srv",
+    n_fleets = input_list$data$n_srv_fleets,
+    fleet_label = "survey fleet",
+    sel_model_arr = input_list$data$srv_sel_model,
+    cont_tv_mat = cont_tv_srv_sel_mat,
+    max_blks = max_srvsel_blks,
+    sel_blocks = input_list$data$srv_sel_blocks,
+    fixed_spec = srv_fixed_sel_pars_spec,
+    starting_values = starting_values
+  )
 
   if(!is.null(input_list$data$srv_waa_selected) && any(input_list$data$srv_waa_selected == 1) && srv_selex_type != 1) stop("srv_waa_selected = 1 in Setup_Mod_SrvIdx_and_Comps weights the survey weight at age by length selectivity, so srv_selex_type must be length")
 
@@ -776,8 +819,9 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
   input_list$par$srv_q_coeff <- srv_q_coeff # input parameter array
   input_list$par$srv_q_coeff <- use_starting_value(input_list$par$srv_q_coeff, starting_values, "srv_q_coeff")
 
-  # Catchability solving ----------------------------------------------------
-  # A fleet whose catchability is concentrated out of the likelihood carries no
+  ## Parameter Maps ---------------------------------------------------------
+  ## Catchability solving ---------------------------------------------------
+  # A fleet whose catchability is concentrated out of the likelihood has no
   # free ln_srv_q, so its mapping is fixed regardless of what srv_q_spec specifies.
   if(!all(srv_q_type %in% c("est", "arith", "geo"))) stop("Invalid specification for srv_q_type. Should be est, arith, or geo")
   check_fleet_spec_length(srv_q_type, input_list$data$n_srv_fleets, "srv_q_type")
@@ -800,13 +844,43 @@ Setup_Mod_Srvsel_and_Q <- function(input_list,
 
   # Mapping Options ---------------------------------------------------------
   input_list$map$srv_q_coeff <- factor(map_srv_q_coeff) # set up mapping for catchability covariate
-  input_list <- do_fixed_sel_pars_mapping(input_list, srv_fixed_sel_pars_spec, bins, srv_sel_nonpar_est_bins,
-                                          prefix = "srv", fleet_field = "n_srv_fleets", use_field = "SrvIdx", fleet_label = "survey fleet")
-  input_list <- do_q_mapping(input_list, srv_q_spec, prefix = "srv", fleet_field = "n_srv_fleets", fleet_label = "survey fleet")
-  input_list <- do_sel_pe_pars_mapping(input_list, srvsel_pe_pars_spec, corr_opt_semipar, bins,
-                                       prefix = "srv", fleet_field = "n_srv_fleets", use_field = "SrvIdx", fleet_label = "survey fleet")
-  input_list <- do_sel_devs_mapping(input_list, srv_sel_devs_spec, srvsel_devs_shared_bins, bins,
-                                    prefix = "srv", fleet_field = "n_srv_fleets", use_field = "SrvIdx", fleet_label = "survey fleet")
+  input_list <- do_fixed_sel_pars_mapping(
+    input_list,
+    srv_fixed_sel_pars_spec,
+    bins,
+    srv_sel_nonpar_est_bins,
+    prefix = "srv",
+    fleet_field = "n_srv_fleets",
+    use_field = "SrvIdx",
+    fleet_label = "survey fleet"
+  )
+  input_list <- do_q_mapping(
+    input_list,
+    srv_q_spec,
+    prefix = "srv",
+    fleet_field = "n_srv_fleets",
+    fleet_label = "survey fleet"
+  )
+  input_list <- do_sel_pe_pars_mapping(
+    input_list,
+    srvsel_pe_pars_spec,
+    corr_opt_semipar,
+    bins,
+    prefix = "srv",
+    fleet_field = "n_srv_fleets",
+    use_field = "SrvIdx",
+    fleet_label = "survey fleet"
+  )
+  input_list <- do_sel_devs_mapping(
+    input_list,
+    srv_sel_devs_spec,
+    srvsel_devs_shared_bins,
+    bins,
+    prefix = "srv",
+    fleet_field = "n_srv_fleets",
+    use_field = "SrvIdx",
+    fleet_label = "survey fleet"
+  )
 
 
   # Print Messages ----------------------------------------------------------

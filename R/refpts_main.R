@@ -1,9 +1,9 @@
 # Stage 3 of 3: post fit
 #
-# Reference point entry point. Get_Reference_Points chooses a solver based on the
-# spatial structure and the requested quantity, then optim_ref_pts runs it as its
-# own small RTMB problem. build_plus_group_T and solve_plus_group give the
-# solvers a shared treatment of the plus group under movement.
+# Reference point entry point: Get_Reference_Points picks a solver from the spatial structure and
+# the requested quantity, then optim_ref_pts runs it as its own small RTMB problem.
+
+# Reference Point Solver ----------------------------------------------------
 
 #' Optimize Reference Point Models
 #'
@@ -47,6 +47,8 @@ optim_ref_pts <- function(model_name, data_list, pars_list) {
   return(tmp_obj)
 }
 
+# Plus Group Equilibrium ----------------------------------------------------
+
 #' Build annual transition matrices for the plus-group analytical solution
 #'
 #' Constructs the four annual transition matrices needed to solve for the
@@ -64,11 +66,10 @@ optim_ref_pts <- function(model_name, data_list, pars_list) {
 #' (\code{global_Fmsy}, \code{local_Fmsy_sglpop}) and the
 #' multi-population case (\code{global_SPR}, \code{local_Fmsy_multipop}).
 #'
-#' @param M_penult Numeric vector \code{[n_regions]}. Natural mortality for
-#'   the penultimate age class, used as an annual rate (scaled by
-#'   \code{seasdur} internally).
-#' @param M_plus Numeric vector \code{[n_regions]}. Natural mortality for the
-#'   plus-group age class.
+#' @param M_penult Numeric matrix \code{[n_regions, n_seas]}. Natural mortality
+#'   for the penultimate age, a rate per year, scaled by \code{seasdur} inside.
+#' @param M_plus Numeric matrix \code{[n_regions, n_seas]}. The same for the
+#'   plus group.
 #' @param F_penult Numeric matrix \code{[n_regions, n_seas]}. Total fishing
 #'   mortality per season for the penultimate age, already summed across
 #'   fleets.
@@ -112,12 +113,21 @@ optim_ref_pts <- function(model_name, data_list, pars_list) {
 #'   }
 #'
 #' @keywords internal
-build_plus_group_T <- function(M_penult, M_plus, F_penult, F_plus,
-                               Mov_penult, Mov_plus,
-                               n_regions, n_seas, seasdur,
-                               Mrate_penult = NULL, Mrate_plus = NULL,
-                               move_timing = 0,
-                               expm_nsub = 0) {
+build_plus_group_T <- function(
+  M_penult,
+  M_plus,
+  F_penult,
+  F_plus,
+  Mov_penult,
+  Mov_plus,
+  n_regions,
+  n_seas,
+  seasdur,
+  Mrate_penult = NULL,
+  Mrate_plus = NULL,
+  move_timing = 0,
+  expm_nsub = 0
+) {
 
   # initialize transition matrices
   T_pu <- T_lu <- T_pf <- T_lf <- diag(n_regions)
@@ -127,10 +137,10 @@ build_plus_group_T <- function(M_penult, M_plus, F_penult, F_plus,
   seas_op <- function(Move, Z, Q, dur) t(build_seas_operator(Move, Z, Q, dur, move_timing, expm_nsub = expm_nsub))
 
   for (seas in seq_len(n_seas)) {
-    Zu_p <- M_penult * seasdur[seas]                      # unfished total mortality
-    Zu_l <- M_plus   * seasdur[seas]
-    Zf_p <- M_penult * seasdur[seas] + F_penult[,seas]    # fished total mortality
-    Zf_l <- M_plus   * seasdur[seas] + F_plus[,seas]
+    Zu_p <- M_penult[,seas] * seasdur[seas]                      # unfished total mortality
+    Zu_l <- M_plus[,seas]   * seasdur[seas]
+    Zf_p <- M_penult[,seas] * seasdur[seas] + F_penult[,seas]    # fished total mortality
+    Zf_l <- M_plus[,seas]   * seasdur[seas] + F_plus[,seas]
     Mp   <- Mov_penult[,, seas] # movement
     Ml   <- Mov_plus[,,   seas] # movement
     Qp   <- if(is.null(Mrate_penult)) NULL else Mrate_penult[,, seas] # instantaneous rates
@@ -182,11 +192,13 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 }
 
 
+# Recruitment Model Guards --------------------------------------------------
+
 #' Reject MSY reference points for a mean recruitment fit
 #'
 #' MSY is the maximum of equilibrium yield over a stock-recruit curve, so it is
 #' only defined when the fit estimated one. A model fitted with
-#' \code{rec_model = "mean_rec"} carries \code{rec_model == 0}, and the
+#' \code{rec_model = "mean_rec"} has \code{rec_model == 0}, and the
 #' equilibrium recruitment helpers in \code{refpts_msy.R} branch on Ricker
 #' against everything else, so an unguarded mean recruitment fit would be handed
 #' Beverton-Holt reference points. Steepness is also mapped off under mean
@@ -204,7 +216,7 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #'   \code{2} Ricker.
 #' @param sr_penalty Integer. \code{0} none, \code{1} Beverton-Holt, \code{2}
 #'   Ricker. Only meaningful under \code{rec_model == 0}, where it adds a curve
-#'   scored against the recruitment deviations.
+#'   penalized against the recruitment deviations.
 #'
 #' @return \code{invisible(NULL)}. Called for the error.
 #'
@@ -229,13 +241,11 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
                 "default steepness of 0.6. Request SPR reference points instead, with what = ", spr_alt,
                 ": they scale spawning biomass per recruit by mean recruitment and are well defined here.")
 
-  # A stock-recruit penalty does fit a curve, but it is scored against the
-  # recruitment deviations rather than governing the stock, so maximizing yield
-  # over it would assert something the fit never assumed. Its scale and
-  # steepness are reported, so a caller who does want that can build srr_opt.
+  # a stock-recruit penalty does fit a curve, but it is penalized against the recruitment deviations
+  # rather than governing the stock, so maximizing yield over it would assert what the fit did not
   if(sr_penalty > 0) {
-    msg <- paste0(msg, " This fit does carry a stock-recruit penalty (sr_penalty = ", sr_penalty,
-                  "), but that curve is scored against the recruitment deviations rather than driving ",
+    msg <- paste0(msg, " This fit does have a stock-recruit penalty (sr_penalty = ", sr_penalty,
+                  "), but that curve is penalized against the recruitment deviations rather than driving ",
                   "the dynamics, so maximizing equilibrium yield over it would assert a stock-recruit ",
                   "relationship this fit did not assume. Its scale and steepness are reported as sr_R0 ",
                   "and h_trans, so a projection over that curve can be requested deliberately by ",
@@ -245,6 +255,8 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
   stop(msg, call. = FALSE)
 
 }
+
+# Entry Point ---------------------------------------------------------------
 
 #' Compute fishing and biological reference points from an assessment or simulation
 #'
@@ -338,26 +350,29 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
 #' @import RTMB
 #' @export Get_Reference_Points
 #' @family Reference Points and Projections
-Get_Reference_Points <- function(data,
-                                 rep,
-                                 SPR_x = NULL,
-                                 t_spawn = 0,
-                                 sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
-                                 calc_rec_st_yr = 1,
-                                 rec_age = 1,
-                                 type,
-                                 what,
-                                 n_avg_yrs = 1,
-                                 local_bh_msy_newton_steps = 6,
-                                 is_discard_fleet = array(0, dim = data$n_fish_fleets)
-                                 ) {
+Get_Reference_Points <- function(
+  data,
+  rep,
+  SPR_x = NULL,
+  t_spawn = 0,
+  sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
+  calc_rec_st_yr = 1,
+  rec_age = 1,
+  type,
+  what,
+  n_avg_yrs = 1,
+  local_bh_msy_newton_steps = 6,
+  is_discard_fleet = array(0, dim = data$n_fish_fleets)
+) {
 
-  # The MSY reference points were named BH_MSY when Beverton-Holt was the only
-  # stock-recruit curve. They now follow whichever curve the fit used, Beverton-Holt
-  # or Ricker, so the BH_ prefix is wrong rather than merely redundant. Mean
-  # recruitment has no curve and is rejected below. The old names still work.
-  deprecated_what <- c(BH_MSY = "MSY", independent_BH_MSY = "independent_MSY",
-                       global_BH_MSY = "global_MSY", local_BH_MSY = "local_MSY")
+  # MSY reference point names follow whichever curve the fit used, Beverton-Holt or Ricker.
+  # mean recruitment has no curve and is rejected below. the older BH_ names are still accepted
+  deprecated_what <- c(
+    BH_MSY = "MSY",
+    independent_BH_MSY = "independent_MSY",
+    global_BH_MSY = "global_MSY",
+    local_BH_MSY = "local_MSY"
+  )
   if(what %in% names(deprecated_what)) {
     warning("'", what, "' is deprecated and will be removed; use '", deprecated_what[[what]],
             "'. These reference points follow the fitted stock-recruit curve, so the BH_ prefix no longer describes them.", call. = FALSE)
@@ -365,6 +380,8 @@ Get_Reference_Points <- function(data,
   }
 
   if(all(is_discard_fleet == 1)) stop("is_discard_fleet is all 1's! At least one fleet needs to be a retention fleet (0).")
+  # old reports have no season dim
+  rep$natmort <- expand_natmort_seasons(rep$natmort, data$n_seas)
 
   # Dimensions
   n_years <- length(data$years) # number of years
@@ -385,10 +402,8 @@ Get_Reference_Points <- function(data,
   n_pop_in_region <- rep(0, n_regions)
   for(p in 1:n_pop) n_pop_in_region[data$natal_region[p]] <- n_pop_in_region[data$natal_region[p]] + 1
 
-  # Weight at age comes from the growth module when the model derived it, and
-  # from the data otherwise, the same way natural mortality is taken from the
-  # report. A model with waa_model = "wt_len" carries a zero placeholder in
-  # data$WAA, so reading the data there would give a spawning biomass of zero.
+  # weight at age comes from the growth module when the model derived it, from the data otherwise.
+  # under waa_model = "wt_len" data$WAA is a zero placeholder and would give zero spawning biomass
   WAA_use <- if(is.null(rep$WAA)) data$WAA else rep$WAA
 
   # movement / mortality sequencing; absent for input lists built before this option existed
@@ -410,9 +425,8 @@ Get_Reference_Points <- function(data,
 
     data_list <- list() # set up data list
     
-    # Reference points are only correct under the stock-recruit curve the model was
-    # fitted with; the two curves agree at (S0, R0) and nowhere else. Absent on
-    # older data lists, which predate the Ricker, so default to Beverton-Holt.
+    # reference points are only correct under the curve the model was fitted with; the two agree at
+    # (S0, R0) and nowhere else. absent on older data lists, so default to Beverton-Holt
     data_list$rec_model <- if(is.null(data$rec_model)) 1 else data$rec_model
 
     # Seasonal stuff
@@ -435,8 +449,8 @@ Get_Reference_Points <- function(data,
     data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female selectivity for all fleets
     ret_sel_avg <- apply(rep$ret_sel[, 1, avg_yrs, , , 1, , drop = FALSE], c(1, 4, 5, 7), mean)
     data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female retention selectivity for all fleets
-    natmort_avg <- apply(rep$natmort[,1,avg_yrs,,1,drop = FALSE], c(1,4), mean)
-    data_list$natmort <- natmort_avg # get female natural mortality
+    natmort_avg <- apply(rep$natmort[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
+    data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_seas, n_ages)) # get female natural mortality
     WAA_avg <- apply(WAA_use[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
     data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
     MatAA_avg <- apply(data$MatAA[,1,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
@@ -525,9 +539,8 @@ Get_Reference_Points <- function(data,
       stop("what is not correctly specified! Should be independent_SPR, independent_MSY, global_SPR, global_MSY, local_MSY for type = multi_region")
 
     data_list <- list() # set up data list
-    # Reference points are only correct under the stock-recruit curve the model was
-    # fitted with; the two curves agree at (S0, R0) and nowhere else. Absent on
-    # older data lists, which predate the Ricker, so default to Beverton-Holt.
+    # reference points are only correct under the curve the model was fitted with; the two agree at
+    # (S0, R0) and nowhere else. absent on older data lists, so default to Beverton-Holt
     data_list$rec_model <- if(is.null(data$rec_model)) 1 else data$rec_model
     check_msy_rec_model(what, data_list$rec_model, if(is.null(data$sr_penalty)) 0 else data$sr_penalty)
 
@@ -555,8 +568,8 @@ Get_Reference_Points <- function(data,
         data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
         ret_sel_avg <- apply(rep$ret_sel[, r, avg_yrs, , , 1, , drop = FALSE], c(1, 4, 5, 7), mean)
         data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
-        natmort_avg <- apply(rep$natmort[,r,avg_yrs,,1,drop = FALSE], c(1,4), mean)
-        data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_ages)) # get female natural mortality
+        natmort_avg <- apply(rep$natmort[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
+        data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_seas, n_ages)) # get female natural mortality
         WAA_avg <- apply(WAA_use[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
         data_list$WAA <- array(WAA_avg, dim = c(n_pop, data$n_seas, n_ages)) # weight at age for females
         MatAA_avg <- apply(data$MatAA[,r,avg_yrs,,,1,drop = FALSE], c(1,4,5), mean)
@@ -661,8 +674,8 @@ Get_Reference_Points <- function(data,
       data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
       ret_sel_avg <- apply(rep$ret_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
       data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
-      natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
-      data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_regions, n_ages)) # get female natural mortality
+      natmort_avg <- apply(rep$natmort[,,avg_yrs,,,1,drop = FALSE], c(1,2,4,5), mean)
+      data_list$natmort <- array(natmort_avg, dim = c(n_pop, n_regions, n_seas, n_ages)) # get female natural mortality
       WAA_avg <- apply(WAA_use[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(n_pop, n_regions, data$n_seas, n_ages)) # weight at age for females
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
@@ -741,8 +754,8 @@ Get_Reference_Points <- function(data,
       data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
       ret_sel_avg <- apply(rep$ret_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
       data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
-      natmort_avg <- apply(rep$natmort[1,,avg_yrs,,1,drop = FALSE], c(2,4), mean)
-      data_list$natmort <- array(natmort_avg, dim = c(n_regions, n_ages)) # get female natural mortality
+      natmort_avg <- apply(rep$natmort[1,,avg_yrs,,,1,drop = FALSE], c(2,4,5), mean)
+      data_list$natmort <- array(natmort_avg, dim = c(n_regions, n_seas, n_ages)) # get female natural mortality
       WAA_avg <- apply(WAA_use[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(n_regions, data$n_seas, n_ages)) # weight at age for females
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(2, 4, 5), mean)
@@ -790,8 +803,8 @@ Get_Reference_Points <- function(data,
       data_list$fish_sel <- array(fish_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female total selectivity for all fleets
       ret_sel_avg <- apply(rep$ret_sel[, , avg_yrs, , , 1, , drop = FALSE], c(1, 2, 4, 5, 7), mean)
       data_list$ret_sel <- array(ret_sel_avg, dim = c(n_pop, n_regions, n_seas, n_ages, data$n_fish_fleets)) # get female retained selectivity for all fleets
-      natmort_avg <- apply(rep$natmort[,,avg_yrs,,1,drop = FALSE], c(1,2,4), mean)
-      data_list$natmort <- array(natmort_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_ages)) # get female natural mortality
+      natmort_avg <- apply(rep$natmort[,,avg_yrs,,,1,drop = FALSE], c(1,2,4,5), mean)
+      data_list$natmort <- array(natmort_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, n_seas, n_ages)) # get female natural mortality
       WAA_avg <- apply(WAA_use[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)
       data_list$WAA <- array(WAA_avg, dim = c(if(n_pop > 1) n_pop else NULL, n_regions, data$n_seas, n_ages)) # weight at age for females
       MatAA_avg <- apply(data$MatAA[,,avg_yrs,,,1,drop = FALSE], c(1, 2, 4, 5), mean)

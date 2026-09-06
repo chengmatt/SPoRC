@@ -1,9 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# Deterministic recruitment: mean recruitment or Beverton Holt, apportioned
-# across regions and seasons. When Beverton Holt is used, unfished spawning
-# biomass per recruit is solved here, which is why this file steps through the
-# seasonal operators in model_transition.R.
+# Deterministic recruitment, mean or Beverton Holt, apportioned across regions and seasons. Beverton
+# Holt solves unfished spawning biomass per recruit here, stepping through model_transition.R.
 
 #' Deterministic Recruitment
 #'
@@ -54,7 +52,8 @@
 #' @param n_ages Number of age classes (including the plus group).
 #' @param WAA Array (\code{n_pop × n_regions × n_seas × n_ages}) of weight-at-age.
 #' @param MatAA Array (\code{n_pop × n_regions × n_seas × n_ages}) of maturity-at-age.
-#' @param natmort Array (\code{n_pop × n_regions × n_ages}) of natural mortality.
+#' @param natmort Array (\code{n_pop × n_regions × n_seas × n_ages}) of natural
+#'   mortality, a rate per year in each season.
 #' @param SSB_vals Array (\code{n_pop × n_regions × n_years}) of spawning biomass.
 #' @param Movement Array
 #'   (\code{n_pop × origin × destination × n_seas × n_ages}) giving seasonal
@@ -122,7 +121,7 @@
 #' }
 #'
 #' The curve passes through \eqn{(S_0, R_0)} by construction. Note that
-#' \eqn{\alpha} is set so the Ricker carries the same compensation ratio as a
+#' \eqn{\alpha} is set so the Ricker holds the same compensation ratio as a
 #' Beverton-Holt at the same \eqn{h}, rather than by the textbook definition
 #' \eqn{R(0.2 S_0) = h R_0}. Steepness is therefore not interchangeable between
 #' the two curves: the Ricker here gives \eqn{R(0.2S_0)/R_0 = 0.2(4h/(1-h))^{0.8}},
@@ -188,8 +187,7 @@ Get_Det_Recruitment <- function(recruitment_model,
                                 seasdur,
                                 sexratio_f,
                                 Mrate = NULL,
-                                move_timing = 0
-,
+                                move_timing = 0,
                                 expm_nsub = 0) {
 
   "c" <- RTMB::ADoverload("c")
@@ -200,10 +198,9 @@ Get_Det_Recruitment <- function(recruitment_model,
     for(p in 1:n_pop) rec[p,] = R0[p] * rec_region_prop[p,] # mean recruitment apportioned across n_pop and n_regions
   }
 
-  # Beverton-Holt (recruitment_model == 1) and Ricker (recruitment_model == 2).
-  # Both are density-dependent forms driven by unfished spawning biomass, so they
-  # share the whole spawning-biomass-per-recruit calculation and differ only in the
-  # curve evaluated at the end.
+  # Stock-Recruit Curves ----------------------------------------------------
+  # Beverton-Holt (1) and Ricker (2) are both driven by unfished spawning biomass, so they share the
+  # whole spawning-biomass-per-recruit calculation and differ only in the curve evaluated at the end
   if(recruitment_model %in% c(1, 2)) {
 
     # Storage for recruitment, S0, and SF (equilibrium fished)
@@ -261,7 +258,7 @@ Get_Det_Recruitment <- function(recruitment_model,
               }
 
               # Total mortality for this season, by region
-              Zu_seas = natmort[p,,j-1] * seasdur[seas]
+              Zu_seas = natmort[p,,seas,j-1] * seasdur[seas]
               Zf_seas = Zu_seas + rowSums(array(init_F[,seas,] * (fish_sel[p,,seas,j-1,] * ret_sel[p,,seas,j-1,] +
                                                                     fish_sel[p,,seas,j-1,] * (1 - ret_sel[p,,seas,j-1,]) * dmr[,seas,]),
                                                 dim = c(n_regions, n_fish_fleets)))
@@ -319,7 +316,7 @@ Get_Det_Recruitment <- function(recruitment_model,
             for (seas in 1:(spawn_seas - 1)) {
 
               # Apply seasonal movement and mortality together, per move_timing
-              Zu_seas = natmort[p,,n_ages-1] * seasdur[seas]
+              Zu_seas = natmort[p,,seas,n_ages-1] * seasdur[seas]
               Zf_seas = Zu_seas + rowSums(array(init_F[,seas,] * (fish_sel[p,,seas,n_ages-1,] * ret_sel[p,,seas,n_ages-1,] +
                                                                     fish_sel[p,,seas,n_ages-1,] * (1 - ret_sel[p,,seas,n_ages-1,]) * dmr[,seas,]),
                                                 dim = c(n_regions, n_fish_fleets)))
@@ -331,7 +328,7 @@ Get_Det_Recruitment <- function(recruitment_model,
           }
 
           # Propagate into the spawning season; t_spawn mortality folded in below
-          Zu_spawn = natmort[p,,n_ages-1] * seasdur[spawn_seas]
+          Zu_spawn = natmort[p,,spawn_seas,n_ages-1] * seasdur[spawn_seas]
           Zf_spawn = Zu_spawn + rowSums(array(init_F[,spawn_seas,] * (fish_sel[p,,spawn_seas,n_ages-1,] * ret_sel[p,,spawn_seas,n_ages-1,] +
                                                                         fish_sel[p,,spawn_seas,n_ages-1,] * (1 - ret_sel[p,,spawn_seas,n_ages-1,]) * dmr[,spawn_seas,]),
                                               dim = c(n_regions, n_fish_fleets)))
@@ -374,10 +371,10 @@ Get_Det_Recruitment <- function(recruitment_model,
           # Column-convention seasonal operators (build_seas_operator returns row convention),
           # composed left-to-right so that season 1 is applied first
           op <- function(age, Z) t(build_seas_operator(Movement[p,,,seas,age], Z, Mrate[p,,,seas,age], seasdur[seas], move_timing, expm_nsub = expm_nsub))
-          T_penult_unfished = op(n_ages-1, natmort[p,,n_ages-1] * seasdur[seas]) %*% T_penult_unfished
-          T_plus_unfished   = op(n_ages,   natmort[p,,n_ages]   * seasdur[seas]) %*% T_plus_unfished
-          T_penult_fished   = op(n_ages-1, natmort[p,,n_ages-1] * seasdur[seas] + F_penult) %*% T_penult_fished
-          T_plus_fished     = op(n_ages,   natmort[p,,n_ages]   * seasdur[seas] + F_plus) %*% T_plus_fished
+          T_penult_unfished = op(n_ages-1, natmort[p,,seas,n_ages-1] * seasdur[seas]) %*% T_penult_unfished
+          T_plus_unfished   = op(n_ages,   natmort[p,,seas,n_ages]   * seasdur[seas]) %*% T_plus_unfished
+          T_penult_fished   = op(n_ages-1, natmort[p,,seas,n_ages-1] * seasdur[seas] + F_penult) %*% T_penult_fished
+          T_plus_fished     = op(n_ages,   natmort[p,,seas,n_ages]   * seasdur[seas] + F_plus) %*% T_plus_fished
         } # end seas loop
 
         for(o in 1:n_regions) {
@@ -403,7 +400,7 @@ Get_Det_Recruitment <- function(recruitment_model,
             for (seas in 1:(spawn_seas - 1)) {
 
               # Apply seasonal movement and mortality together, per move_timing
-              Zu_seas = natmort[p,,n_ages] * seasdur[seas]
+              Zu_seas = natmort[p,,seas,n_ages] * seasdur[seas]
               Zf_seas = Zu_seas + rowSums(array(init_F[,seas,] * (fish_sel[p,,seas,n_ages,] * ret_sel[p,,seas,n_ages,] +
                                                                     fish_sel[p,,seas,n_ages,] * (1 - ret_sel[p,,seas,n_ages,]) * dmr[,seas,]),
                                                 dim = c(n_regions, n_fish_fleets)))
@@ -416,7 +413,7 @@ Get_Det_Recruitment <- function(recruitment_model,
           }
 
           # Propagate into the spawning season; t_spawn mortality folded in below
-          Zu_spawn = natmort[p,,n_ages] * seasdur[spawn_seas]
+          Zu_spawn = natmort[p,,spawn_seas,n_ages] * seasdur[spawn_seas]
           Zf_spawn = Zu_spawn + rowSums(array(init_F[,spawn_seas,] * (fish_sel[p,,spawn_seas,n_ages,] * ret_sel[p,,spawn_seas,n_ages,] +
                                                                         fish_sel[p,,spawn_seas,n_ages,] * (1 - ret_sel[p,,spawn_seas,n_ages,]) * dmr[,spawn_seas,]),
                                               dim = c(n_regions, n_fish_fleets)))
@@ -500,7 +497,7 @@ Get_Det_Recruitment <- function(recruitment_model,
           }
 
           # Total mortality for this season, by region
-          Zu_seas = natmort[1,, j - 1] * seasdur[seas]
+          Zu_seas = natmort[1,,seas, j - 1] * seasdur[seas]
           Zf_seas = Zu_seas + rowSums(array(init_F[,seas,] * (fish_sel[1,,seas,j-1,] * ret_sel[1,,seas,j-1,] +
                                                                 fish_sel[1,,seas,j-1,] * (1 - ret_sel[1,,seas,j-1,]) * dmr[,seas,]),
                                             dim = c(n_regions, n_fish_fleets)))
@@ -536,7 +533,7 @@ Get_Det_Recruitment <- function(recruitment_model,
         for (seas in 1:(spawn_seas - 1)) {
 
           # Apply seasonal movement and mortality together, per move_timing
-          Zu_seas = natmort[1,,n_ages-1] * seasdur[seas]
+          Zu_seas = natmort[1,,seas,n_ages-1] * seasdur[seas]
           Zf_seas = Zu_seas + rowSums(array(init_F[,seas,] * (fish_sel[1,,seas,n_ages-1,] * ret_sel[1,,seas,n_ages-1,] +
                                                                 fish_sel[1,,seas,n_ages-1,] * (1 - ret_sel[1,,seas,n_ages-1,]) * dmr[,seas,]),
                                             dim = c(n_regions, n_fish_fleets)))
@@ -549,7 +546,7 @@ Get_Det_Recruitment <- function(recruitment_model,
       } # end if spawn_seas > 1
 
       ## Penultimate age spawning biomass; t_spawn mortality folded into spawn_state
-      Zu_spawn = natmort[1,, n_ages - 1] * seasdur[spawn_seas]
+      Zu_spawn = natmort[1,,spawn_seas, n_ages - 1] * seasdur[spawn_seas]
       Zf_spawn = Zu_spawn + rowSums(array(init_F[,spawn_seas,] * (fish_sel[1,,spawn_seas,n_ages-1,] * ret_sel[1,,spawn_seas,n_ages-1,] +
                                                                     fish_sel[1,,spawn_seas,n_ages-1,] * (1 - ret_sel[1,,spawn_seas,n_ages-1,]) * dmr[,spawn_seas,]),
                                           dim = c(n_regions, n_fish_fleets)))
@@ -566,8 +563,8 @@ Get_Det_Recruitment <- function(recruitment_model,
       for (seas in 1:n_seas) {
         # Total mortality by region for each age, built directly rather than recovered
         # from the survival matrices
-        Zg_penult_u = natmort[1,, n_ages - 1] * seasdur[seas]
-        Zg_plus_u   = natmort[1,, n_ages] * seasdur[seas]
+        Zg_penult_u = natmort[1,,seas, n_ages - 1] * seasdur[seas]
+        Zg_plus_u   = natmort[1,,seas, n_ages] * seasdur[seas]
         Zg_penult_f = Zg_penult_u + rowSums(array(init_F[,seas,] * (fish_sel[1,,seas,n_ages-1,] * ret_sel[1,,seas,n_ages-1,] +
                                                                       fish_sel[1,,seas,n_ages-1,] * (1 - ret_sel[1,,seas,n_ages-1,]) * dmr[,seas,]),
                                                   dim = c(n_regions, n_fish_fleets)))
@@ -597,7 +594,7 @@ Get_Det_Recruitment <- function(recruitment_model,
         for (seas in 1:(spawn_seas - 1)) {
 
           # Apply seasonal movement and mortality together, per move_timing
-          Zu_seas = natmort[1,,n_ages] * seasdur[seas]
+          Zu_seas = natmort[1,,seas,n_ages] * seasdur[seas]
           Zf_seas = Zu_seas + rowSums(array(init_F[,seas,] * (fish_sel[1,,seas,n_ages,] * ret_sel[1,,seas,n_ages,] +
                                                                 fish_sel[1,,seas,n_ages,] * (1 - ret_sel[1,,seas,n_ages,]) * dmr[,seas,]),
                                             dim = c(n_regions, n_fish_fleets)))
@@ -608,12 +605,9 @@ Get_Det_Recruitment <- function(recruitment_model,
           } # end seas loop
       }
 
-      ## Plus group spawning biomass. The plus group is carried to spawning the same way
-      ## as every other age: spawn_state applies both the spawning season movement step
-      ## and the t_spawn mortality discount, ordered by move_timing. Applying the discount
-      ## alone would fix the ordering at "mortality, then no movement", which is wrong for
-      ## any multi-region model at move_timing = 0.
-      Zu_spawn_plus = natmort[1,, n_ages] * seasdur[spawn_seas]
+      ## plus group spawning biomass. spawn_state applies the spawning season movement step and the
+      ## t_spawn discount, ordered by move_timing; the discount alone would fix the wrong order
+      Zu_spawn_plus = natmort[1,,spawn_seas, n_ages] * seasdur[spawn_seas]
       Zf_spawn_plus = Zu_spawn_plus +
         rowSums(array(init_F[,spawn_seas,] * (fish_sel[1,,spawn_seas,n_ages,] * ret_sel[1,,spawn_seas,n_ages,] +
                                                 fish_sel[1,,spawn_seas,n_ages,] * (1 - ret_sel[1,,spawn_seas,n_ages,]) * dmr[,spawn_seas,]),
@@ -630,12 +624,8 @@ Get_Det_Recruitment <- function(recruitment_model,
       SF = sum(SB_fished_age[,1:n_ages]) * R0[1]
     }
 
-    # get SSB to use to predict recruitment. When rec_lag == 0 (age-0
-    # recruitment), y <= rec_lag is never true for y >= 1, so this always
-    # takes the SSB_vals[,,y-rec_lag] = SSB_vals[,,y] branch, the CURRENT
-    # year's SSB. The caller (SPoRC_rtmb.R) is responsible for computing
-    # SSB_vals[,,y] from survivors only (before this year's recruits exist)
-    # and passing it in before calling this function in that case.
+    # SSB behind this year's recruitment. under age-0 recruitment this is the current year's SSB,
+    # which the caller must have computed from survivors only before calling here
     if(y <= rec_lag) SSB = SF else SSB = array(SSB_vals[,,y-rec_lag], dim = c(n_pop, n_regions))
 
     # Get recruitment based on SSB and R0
@@ -683,9 +673,8 @@ Get_Det_Recruitment <- function(recruitment_model,
             effective_S0[p2]  = effective_S0[p2]  + S0[p, natal_region[p2]]
           } else {
             n_receivers = n_pop_in_region[natal_region[p2]] # get number of populations in a givenr egion
-            # Cross-population contribution scaled by stray_rate
-            # SSB[p, natal_region[p2]] already reflects skip spawning via spawning migration
-            # stray_rate[p] controls what fraction of those actually contribute here
+            # cross-population contribution scaled by stray_rate. SSB[p, natal_region[p2]] already
+            # reflects skip spawning, and stray_rate[p] sets what fraction contributes here
             effective_SSB[p2] = effective_SSB[p2] + (stray_rate[p] / n_receivers) * SSB[p, natal_region[p2]]
             effective_S0[p2]  = effective_S0[p2]  + (stray_rate[p] / n_receivers) * S0[p, natal_region[p2]]
           }

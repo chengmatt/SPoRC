@@ -1,10 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Movement inputs: how fish redistribute among regions, and when in the season
-# that happens. Chooses between unstructured transition matrices (move_type 0)
-# and a continuous time generator (move_type 1), sets move_timing, and builds the
-# movement parameter map. Borrows get_movement_dp_design_matrix from
-# model_movement.R so the setup and the objective agree on the design matrix.
+# Movement inputs: how fish redistribute among regions and when in the season. Chooses unstructured matrices
+# (move_type 0) or a continuous time generator (move_type 1), sets move_timing, and builds the map.
 
 #' Map unstructured Markov movement parameters
 #'
@@ -194,7 +191,7 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
 #' @param Movement_cont_pe_pars_spec Character string controlling estimation of
 #'   the process-error variance for movement deviations. One of:
 #'   \describe{
-#'     \item{\code{"none"} or \code{"fix"}}{All \code{move_pe_pars} held fixed
+#'     \item{\code{"none"} or \code{"fix"}}{All \code{move_pe_pars} kept fixed
 #'       (mapped to \code{NA} or at starting values).}
 #'     \item{\code{"est_shared"}}{Single variance parameter shared across all
 #'       dimensions (all elements mapped to index 1).}
@@ -247,9 +244,8 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 
     map_move_devs <- build_pe_map(dims, share_over = share_over)
 
-    # Whether or not recruits (age 1) move: only relevant when age is itself
-    # a key dim of the spec, when age is a broadcast dim, age 1 shares the
-    # same tied deviation as every other age instead of being masked out.
+    # whether recruits (age 1) move, only relevant when age is a key dim of the spec. where age is
+    # broadcast, age 1 shares the same tied deviation as every other age rather than being masked
     if("age" %in% key_extra && input_list$data$do_recruits_move == 0 && dims["age"] >= 2) {
       map_move_devs[,,,,,1,] <- NA
     }
@@ -423,12 +419,12 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   matrix (non-negative off-diagonal entries) when taxis outweighs diffusion.
 #'   \code{"softplus"} for a softplus of \eqn{\theta_j + d} of width
 #'   \code{ctmc_diffusion_eps}; and \code{"upwind"} (or \code{2}) for the discontinuous Galerkin
-#'   (finite volume) flux \eqn{\theta_j + \max(d, 0)}, which carries diffusion whole
+#'   (finite volume) flux \eqn{\theta_j + \max(d, 0)}, which has diffusion whole
 #'   and adds only the down-gradient taxis, so positivity never depends on the two
 #'   cancelling.
 #' @param ctmc_diffusion_eps Positive numeric width of the softplus applied when
 #'   \code{ctmc_diffusion_bounds = "softplus"} (default \code{0.1}). An edge where
-#'   taxis exactly cancels diffusion carries \code{eps * log(2)}, so this sets a
+#'   taxis exactly cancels diffusion has \code{eps * log(2)}, so this sets a
 #'   floor on exchange as well as smoothing the hinge.
 #' @param move_timing Integer flag setting how movement and mortality are
 #'   sequenced within a season. \code{0} = movement then mortality (default,
@@ -449,7 +445,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   inside the \code{move_timing = 2} seasonal operators. \code{0} (default)
 #'   uses \code{Matrix::expm}. A power of two \eqn{n \ge 1} instead uses \eqn{n} implicit
 #'   (backward Euler) substeps, \eqn{(I - A/n)^{-n}}, evaluated as one linear solve plus
-#'   \eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode adjoint
+#'   \eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode derivative
 #'   than a matrix exponential, so the gradient is several times faster, but it is a
 #'   first-order approximation: \eqn{n = 1} is plain \code{solve(I - A)} and is an approximation.
 #' @param ... Optional starting value overrides, passed by name. Recognized
@@ -519,7 +515,16 @@ Setup_Mod_Movement <- function(input_list,
   # Check fixed movement matrix
   if(!use_fixed_movement %in% c(0,1)) stop('Options for fixing movement are not correctly specified. The options are use_fixed_movement == 0 (dont use and estiamte movement parameters), or == 1 (use)')
   else collect_message("Movement is: ", ifelse(use_fixed_movement == 0, "Estimated", "Fixed"))
-  if(use_fixed_movement == 1) check_data_dimensions(Fixed_Movement, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years), n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, n_seas = input_list$data$n_seas, what = 'Fixed_Movement')
+  if(use_fixed_movement == 1) check_data_dimensions(
+    Fixed_Movement,
+    n_pop = input_list$data$n_pop,
+    n_regions = input_list$data$n_regions,
+    n_years = length(input_list$data$years),
+    n_ages = length(input_list$data$ages),
+    n_sexes = input_list$data$n_sexes,
+    n_seas = input_list$data$n_seas,
+    what = 'Fixed_Movement'
+  )
 
   # Check for movement priors
   if(!Use_Movement_Prior %in% c(0,1)) stop('Options for movement priors not correctly specified. The options are Use_Movement_Prior == 0 (dont use), or == 1 (use)')
@@ -553,9 +558,8 @@ Setup_Mod_Movement <- function(input_list,
                                             "Mortality then movement",
                                             "Continuous (simultaneous)")[move_timing + 1])
 
-  # Continuous movement needs an instantaneous rate matrix, which only exists for an
-  # estimated CTMC. A discrete multinomial-logit matrix has no guaranteed real generator
-  # (the Markov embedding problem), so we refuse rather than attempt a matrix logarithm.
+  # continuous movement needs an instantaneous rate matrix, which only exists for an estimated CTMC.
+  # a discrete multinomial-logit matrix has no guaranteed real generator, so refuse rather than try
   if(move_timing == 2) {
     if(move_type != 1)
       stop("move_timing == 2 (continuous movement) requires move_type == 1 (CTMC). ",
@@ -757,10 +761,12 @@ Setup_Mod_Movement <- function(input_list,
   # softplus width for the bounds
   if(!is.numeric(ctmc_diffusion_eps) || length(ctmc_diffusion_eps) != 1 || !is.finite(ctmc_diffusion_eps) || ctmc_diffusion_eps <= 0) stop('ctmc_diffusion_eps must be a single positive number: the softplus width used when ctmc_diffusion_bounds = "softplus" (default 0.1)')
   if(move_type == 1) {
-    msg <- switch(bound_form,
-                  none = "unbounded generator",
-                  softplus = paste0("softplus of width ", ctmc_diffusion_eps, " on the adjacency edges, so a cancelled edge carries a floor of ", signif(ctmc_diffusion_eps * log(2), 3)),
-                  upwind = "discontinuous Galerkin upwind flux, diffusion carried whole")
+    msg <- switch(
+      bound_form,
+      none = "unbounded generator",
+      softplus = paste0("softplus of width ", ctmc_diffusion_eps, " on the adjacency edges, so a cancelled edge has a floor of ", signif(ctmc_diffusion_eps * log(2), 3)),
+      upwind = "discontinuous Galerkin upwind flux, diffusion kept whole"
+    )
     collect_message("CTMC generator bounds: ", msg)
     if(bound_form == "upwind" && ctmc_diffusion_eps != 0.1) collect_message('ctmc_diffusion_eps is not read by the "upwind" form.')
   }

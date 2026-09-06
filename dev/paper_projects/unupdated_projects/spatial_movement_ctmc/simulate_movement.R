@@ -6,19 +6,21 @@ library(here)
 devtools::load_all(here("R"))
 
 # Create movement matrix via CTMC with logistic preference for region 3
-create_ctmc_model <- function(n_cells = 3,
-                              n_ages = 15,
-                              n_time = 30,
-                              n_sexes = 1,
-                              diffusion = 3,
-                              age_pref_coeff,
-                              use_age_preference = TRUE,
-                              use_time_preference = FALSE,
-                              use_env_preference = FALSE,
-                              env_effects = NULL,
-                              logistic_params = list(L = 1.5, k = 0.3, x0 = 3),
-                              sine_params = list(amplitude = 1, frequency = 1, phase = 0),
-                              from_cell_weights = NULL) {
+create_ctmc_model <- function(
+  n_cells = 3,
+  n_ages = 15,
+  n_time = 30,
+  n_sexes = 1,
+  diffusion = 3,
+  age_pref_coeff,
+  use_age_preference = TRUE,
+  use_time_preference = FALSE,
+  use_env_preference = FALSE,
+  env_effects = NULL,
+  logistic_params = list(L = 1.5, k = 0.3, x0 = 3),
+  sine_params = list(amplitude = 1, frequency = 1, phase = 0),
+  from_cell_weights = NULL
+) {
   # create containers
   diffusion_mat <- adjacency <- array(0, c(n_cells, n_cells))
   movement <- array(0, dim = c(n_cells, n_cells, n_time, 1, n_ages, n_sexes))
@@ -174,13 +176,17 @@ create_ctmc_model <- function(n_cells = 3,
 
 # Age preference only
 model_age <- create_ctmc_model(
-  n_cells = 3, n_ages = 15, n_time = 30, n_sexes = 2,
-  diffusion = 1, age_pref_coeff = rep(1, 15),
+  n_cells = 3,
+  n_ages = 15,
+  n_time = 30,
+  n_sexes = 2,
+  diffusion = 1,
+  age_pref_coeff = rep(1, 15),
   use_age_preference = TRUE,
   use_time_preference = FALSE,
   logistic_params = list(L = 0.9, k = 0.5, x0 = 2),
   from_cell_weights = c(0.05, 0.9, 1)
-  )
+)
 
 plot(model_age$movement_mat[3,3,1,,1], ylim = c(0,1))
 lines(model_age$movement_mat[3,2,1,,1])
@@ -191,8 +197,12 @@ sum(model_age$movement_mat < 0)
 
 # Time preference only
 model_time <- create_ctmc_model(
-  n_cells = 3, n_ages = 15, n_time = 30, n_sexes = 2,
-  diffusion = 1, age_pref_coeff = rep(1, 15),
+  n_cells = 3,
+  n_ages = 15,
+  n_time = 30,
+  n_sexes = 2,
+  diffusion = 1,
+  age_pref_coeff = rep(1, 15),
   use_age_preference = FALSE,
   use_time_preference = TRUE,
   sine_params = list(amplitude = 1.05, frequency = 1.5, phase = 0),
@@ -208,8 +218,12 @@ sum(model_time$movement_mat < 0)
 
 # both age and time preference
 model_both <- create_ctmc_model(
-  n_cells = 3, n_ages = 15, n_time = 30, n_sexes = 2,
-  diffusion = 1, age_pref_coeff = rep(1, 15),
+  n_cells = 3,
+  n_ages = 15,
+  n_time = 30,
+  n_sexes = 2,
+  diffusion = 1,
+  age_pref_coeff = rep(1, 15),
   use_age_preference = TRUE,
   use_time_preference = TRUE,
   logistic_params = list(L = 1, k = 2, x0 = 0.5),
@@ -238,11 +252,16 @@ env_effects$optimal_temp <- 0
 env_effects$temp_width <- 1
 
 model_env <- create_ctmc_model(
-  n_cells = 3, n_ages = 15, n_time = 30, n_sexes = 2,
-  diffusion = 1, age_pref_coeff = rep(1, 15),
+  n_cells = 3,
+  n_ages = 15,
+  n_time = 30,
+  n_sexes = 2,
+  diffusion = 1,
+  age_pref_coeff = rep(1, 15),
   use_age_preference = TRUE,
   use_time_preference = FALSE,
-  use_env_preference = TRUE, env_effects = env_effects,
+  use_env_preference = TRUE,
+  env_effects = env_effects,
   logistic_params = list(L = 0.6, k = 0.5, x0 = 2),
   from_cell_weights = c(0.05, 0.9, 1)
 )

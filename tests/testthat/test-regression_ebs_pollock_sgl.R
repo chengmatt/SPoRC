@@ -1,8 +1,5 @@
-# Pinned regression test. The expected SSB and recruitment vectors are output from a
-# previously validated SPoRC fit of this assessment, not hand-derived values. A mismatch
-# means a change moved a fitted result, which is a bug unless the numerical change was
-# intended. If it was intended, re-baseline deliberately and say why in NEWS.md. Do not
-# paste in fresh output to make the test pass. See tests/README.md.
+# Regression test. Expected SSB and recruitment come from a previously validated SPoRC fit, not from
+# hand-derived values, so a mismatch means something moved a fitted result. See tests/README.md.
 
 library(SPoRC)
 library(testthat)
@@ -74,7 +71,7 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
 
       # Data inputs
       WAA = sgl_rg_ebswp_data$WAA,
-      # the assessment carries a separate weight at age matrix for the fishery
+      # the assessment has a separate weight at age matrix for the fishery
       # and for each survey index
       WAA_fish = sgl_rg_ebswp_data$WAA_fish,
       WAA_srv = sgl_rg_ebswp_data$WAA_srv,

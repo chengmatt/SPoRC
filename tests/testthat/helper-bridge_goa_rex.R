@@ -1,19 +1,8 @@
-# GOA rex sole bridge: Model 25.1 of the 2025 Gulf of Alaska rex sole assessment
-# (Stock Synthesis 3) rebuilt in SPoRC and evaluated at the assessment's own
-# maximum likelihood estimate.
+# Model 25.1 of the 2025 GOA rex sole assessment (SS3) rebuilt in SPoRC, from dev/rex_bridge/R/build_rex_data.R.
+# Two areas, two sexes, one season, ages 0-20 observed from 1, 29 bins from 10 to 66 cm, 1982-2024, sigmaR 0.6.
 #
-# One Setup_Mod_* call per section, in the order vignette(
-# "ad_goa_rex_sole_case_study") walks through them, with a reason for each
-# argument that follows the assessment rather than a SPoRC default. The data
-# list comes from dev/rex_bridge/R/build_rex_data.R.
-#
-# This is the bridge that motivated SPoRC's parametric growth module and its
-# conditional age-at-length likelihood: growth is estimated separately in each
-# area and sex from the survey's conditional age-at-length data.
-#
-# The model is two areas (Western-Central = 1, Eastern = 2), two sexes, one
-# season, ages 0-20 with ages observed from 1, lengths 29 two centimeter bins
-# from 10 to 66 cm, years 1982-2024, sigmaR 0.6.
+# The bridge that motivated SPoRC's growth module and CAAL likelihood: growth is estimated separately
+# in each area and sex from the survey's conditional age-at-length data.
 #
 #   Source                          Years        Observations  Likelihood
 #   Catch, Western-Central          1982-2024    43            Lognormal, CV 0.01
@@ -23,8 +12,7 @@
 #   Survey length comps, both       1990-2023    31            Multinomial
 #   Survey conditional age-at-length 1993-2019   482 rows      Multinomial
 #
-# The Eastern area carries no catch, so its population is shaped entirely by the
-# survey.
+# The Eastern area has no catch, so its population is shaped entirely by the survey.
 
 #' Build the SPoRC input list for the rex sole bridge
 #'
@@ -40,13 +28,21 @@ build_goa_rex_input <- function(dat) {
 
   ## Model dimensions ---------------------------------------------------------
   # the assessment's areas are separate growth patterns sharing one recruitment
-  # series with nothing moving between them, so SPoRC carries them as two
+  # series with nothing moving between them, so SPoRC has them as two
   # regions of one population with the identity movement matrix. the regional
   # subscripts are real here and the movement ones are not
   input_list <- Setup_Mod_Dim(
-    years = yrs, ages = ages, lens = dat$lens,
-    n_regions = n_reg, n_sexes = n_sex, n_fish_fleets = n_fish, n_srv_fleets = n_srv,
-    n_seas = 1, n_pop = 1, natal_region = 1, verbose = FALSE
+    years = yrs,
+    ages = ages,
+    lens = dat$lens,
+    n_regions = n_reg,
+    n_sexes = n_sex,
+    n_fish_fleets = n_fish,
+    n_srv_fleets = n_srv,
+    n_seas = 1,
+    n_pop = 1,
+    natal_region = 1,
+    verbose = FALSE
   )
 
   ## Recruitment --------------------------------------------------------------
@@ -57,14 +53,25 @@ build_goa_rex_input <- function(dat) {
   # year, and each early deviation reads the ramp at its own birth year
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
-    rec_model = "mean_rec", rec_dd = "global", rec_lag = 0, SR_ref_yr = 1, t_spawn = 0,
-    sigmaR_spec = "fix", ln_sigmaR = array(log(dat$rec$sigmaR), dim = c(2, 1, n_reg)), sigmaR_switch = 1,
+    rec_model = "mean_rec",
+    rec_dd = "global",
+    rec_lag = 0,
+    SR_ref_yr = 1,
+    t_spawn = 0,
+    sigmaR_spec = "fix",
+    ln_sigmaR = array(log(dat$rec$sigmaR), dim = c(2, 1, n_reg)),
+    sigmaR_switch = 1,
     do_rec_bias_ramp = 1,
     bias_year = dat$rec$bias_years - yrs[1] + 1,
     max_bias_ramp_fct = dat$rec$max_bias_adj,
-    RecDevs_spec = "est_shared_pop_r", RecDevs_pen_center = "fixed", dont_est_recdev_last = 0,
-    init_age_strc = 2, equil_init_age_strc = 1,
-    InitDevs_spec = "est_shared_pop_r", InitDevs_sex_spec = "est_shared_s", InitDevs_pen_center = "fixed",
+    RecDevs_spec = "est_shared_pop_r",
+    RecDevs_pen_center = "fixed",
+    dont_est_recdev_last = 0,
+    init_age_strc = 2,
+    equil_init_age_strc = 1,
+    InitDevs_spec = "est_shared_pop_r",
+    InitDevs_sex_spec = "est_shared_s",
+    InitDevs_pen_center = "fixed",
     rec_region_prop_spec = NULL,
     ln_global_R0 = dat$mle$ln_R0
   )
@@ -91,23 +98,38 @@ build_goa_rex_input <- function(dat) {
 
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
-    WAA = NULL, MatAA = MatAA,
-    fit_lengths = 1, SizeAgeTrans = NA,
+    WAA = NULL,
+    MatAA = MatAA,
+    fit_lengths = 1,
+    SizeAgeTrans = NA,
     AgeingError = dat$AgeingError,
-    M_spec = "fix", Fixed_natmort = array(dat$growth[[1]]$M, dim = c(1, n_reg, n_yrs, n_ages, n_sex)),
-    addtocomp = dat$comp$addtocomp_age, comp_const_obs = 1, addtosrvidx = 0, addtofishidx = 0,
-    growth_model = "vb_schnute", growth_spec = "est_all",
+    M_spec = "fix",
+    Fixed_natmort = array(dat$growth[[1]]$M, dim = c(1, n_reg, n_yrs, n_ages, n_sex)),
+    addtocomp = dat$comp$addtocomp_age,
+    comp_const_obs = 1,
+    addtosrvidx = 0,
+    addtofishidx = 0,
+    growth_model = "vb_schnute",
+    growth_spec = "est_all",
     ln_growth_pars = log(growth_start),
-    growth_A1 = dat$growth_A1, growth_A2 = dat$growth_A2,
-    growth_len_lower = dat$lens_lower, growth_L0 = dat$lens_lower[1],
+    growth_A1 = dat$growth_A1,
+    growth_A2 = dat$growth_A2,
+    growth_len_lower = dat$lens_lower,
+    growth_L0 = dat$lens_lower[1],
     growth_plus_group = "mixture",
-    waa_model = "wt_len", wt_len_pars = wl
+    waa_model = "wt_len",
+    wt_len_pars = wl
   )
 
   ## Movement and tagging -----------------------------------------------------
   # nothing moves between the two areas, so movement is the identity, and
   # nothing is tagged
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1, Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
@@ -116,9 +138,12 @@ build_goa_rex_input <- function(dat) {
   # against a tight catch error with no penalty on the deviations
   input_list <- Setup_Mod_Catch_and_F(
     input_list = input_list,
-    ObsCatch = dat$ObsCatch, UseCatch = dat$UseCatch,
-    Use_F_pen = 0, ln_F_mean_spec = "fix",
-    sigmaC_spec = "fix", ln_sigmaC = array(log(dat$catch_se_value), dim = c(n_reg, n_yrs, 1, n_fish))
+    ObsCatch = dat$ObsCatch,
+    UseCatch = dat$UseCatch,
+    Use_F_pen = 0,
+    ln_F_mean_spec = "fix",
+    sigmaC_spec = "fix",
+    ln_sigmaC = array(log(dat$catch_se_value), dim = c(n_reg, n_yrs, 1, n_fish))
   )
 
   joint <- function(n) paste0("spltRjntS_Year_1-terminal_Fleet_", seq_len(n))
@@ -134,30 +159,48 @@ build_goa_rex_input <- function(dat) {
     ObsFishIdx = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
     ObsFishIdx_SE = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
     UseFishIdx = array(0, dim = c(n_reg, n_yrs, 1, n_fish)),
-    fish_idx_type = rep("none", n_fish), FishIdx_LikeType = rep("lognormal", n_fish),
-    ObsFishAgeComps = dat$ObsFishAgeComps, UseFishAgeComps = dat$UseFishAgeComps, ISS_FishAgeComps = dat$ISS_FishAgeComps,
-    ObsFishLenComps = dat$ObsFishLenComps, UseFishLenComps = dat$UseFishLenComps, ISS_FishLenComps = dat$ISS_FishLenComps,
-    FishAgeComps_LikeType = rep("Multinomial", n_fish), FishLenComps_LikeType = rep("Multinomial", n_fish),
-    FishAgeComps_Type = joint(n_fish), FishLenComps_Type = joint(n_fish)
+    fish_idx_type = rep("none", n_fish),
+    FishIdx_LikeType = rep("lognormal", n_fish),
+    ObsFishAgeComps = dat$ObsFishAgeComps,
+    UseFishAgeComps = dat$UseFishAgeComps,
+    ISS_FishAgeComps = dat$ISS_FishAgeComps,
+    ObsFishLenComps = dat$ObsFishLenComps,
+    UseFishLenComps = dat$UseFishLenComps,
+    ISS_FishLenComps = dat$ISS_FishLenComps,
+    FishAgeComps_LikeType = rep("Multinomial", n_fish),
+    FishLenComps_LikeType = rep("Multinomial", n_fish),
+    FishAgeComps_Type = joint(n_fish),
+    FishLenComps_Type = joint(n_fish)
   )
 
   ## Survey indices and compositions ------------------------------------------
   # biomass indices and joint-sex lengths, plus the conditional age-at-length
-  # that carries the age information. a CAAL row is an age composition WITHIN a
+  # that holds the age information. a CAAL row is an age composition WITHIN a
   # length bin: each length bin of a survey year holds the ages of the otoliths
   # read from that bin, fit as its own multinomial with the number aged as its
-  # sample size, one sex per row. the assessment carries the marginal survey ages
+  # sample size, one sex per row. the assessment holds the marginal survey ages
   # as ghosts, so they are read in but not fit
   t_srv <- array(rep(dat$t_srv, each = n_reg), dim = c(n_reg, 1, n_srv))
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
-    ObsSrvIdx = dat$ObsSrvIdx, ObsSrvIdx_SE = dat$ObsSrvIdx_SE, UseSrvIdx = dat$UseSrvIdx,
-    srv_idx_type = rep("biom", n_srv), SrvIdx_LikeType = rep("lognormal", n_srv),
-    ObsSrvAgeComps = dat$ObsSrvAgeComps, UseSrvAgeComps = array(0, dim = dim(dat$UseSrvAgeComps)), ISS_SrvAgeComps = dat$ISS_SrvAgeComps,
-    ObsSrvLenComps = dat$ObsSrvLenComps, UseSrvLenComps = dat$UseSrvLenComps, ISS_SrvLenComps = dat$ISS_SrvLenComps,
-    SrvAgeComps_LikeType = rep("none", n_srv), SrvLenComps_LikeType = rep("Multinomial", n_srv),
-    SrvAgeComps_Type = none(n_srv), SrvLenComps_Type = joint(n_srv),
-    ObsSrv_caal = dat$ObsSrv_caal, UseSrv_caal = dat$UseSrv_caal, ISS_Srv_caal = dat$ISS_Srv_caal,
+    ObsSrvIdx = dat$ObsSrvIdx,
+    ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
+    UseSrvIdx = dat$UseSrvIdx,
+    srv_idx_type = rep("biom", n_srv),
+    SrvIdx_LikeType = rep("lognormal", n_srv),
+    ObsSrvAgeComps = dat$ObsSrvAgeComps,
+    UseSrvAgeComps = array(0, dim = dim(dat$UseSrvAgeComps)),
+    ISS_SrvAgeComps = dat$ISS_SrvAgeComps,
+    ObsSrvLenComps = dat$ObsSrvLenComps,
+    UseSrvLenComps = dat$UseSrvLenComps,
+    ISS_SrvLenComps = dat$ISS_SrvLenComps,
+    SrvAgeComps_LikeType = rep("none", n_srv),
+    SrvLenComps_LikeType = rep("Multinomial", n_srv),
+    SrvAgeComps_Type = none(n_srv),
+    SrvLenComps_Type = joint(n_srv),
+    ObsSrv_caal = dat$ObsSrv_caal,
+    UseSrv_caal = dat$UseSrv_caal,
+    ISS_Srv_caal = dat$ISS_Srv_caal,
     Srv_caal_LikeType = rep("Multinomial", n_srv),
     Srv_caal_Type = paste0("spltRspltS_Year_1-terminal_Fleet_", seq_len(n_srv)),
     t_srv = t_srv
@@ -196,7 +239,8 @@ build_goa_rex_input <- function(dat) {
     srv_sel_sex_offset = rep("par", n_srv),
     srv_sel_dbnrml_raw = matrix(c(1, 0), n_srv, 2, byrow = TRUE),
     srv_q_spec = rep("est_all", n_srv),
-    Use_srv_q_prior = 1, srv_q_prior = q_prior,
+    Use_srv_q_prior = 1,
+    srv_q_prior = q_prior,
     t_srv = t_srv
   )
 
@@ -214,9 +258,16 @@ build_goa_rex_input <- function(dat) {
   }
   input_list <- Setup_Mod_Weighting(
     input_list = input_list,
-    Wt_Catch = 1, Wt_FishIdx = 0, Wt_SrvIdx = 1, Wt_Rec = 1, Wt_F = 1, Wt_Tagging = 0,
-    Wt_FishAgeComps = per_fleet(wa_f, n_fish), Wt_FishLenComps = per_fleet(wl_f, n_fish),
-    Wt_SrvAgeComps = per_fleet(rep(1, n_srv), n_srv), Wt_SrvLenComps = per_fleet(wl_s, n_srv),
+    Wt_Catch = 1,
+    Wt_FishIdx = 0,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_F = 1,
+    Wt_Tagging = 0,
+    Wt_FishAgeComps = per_fleet(wa_f, n_fish),
+    Wt_FishLenComps = per_fleet(wl_f, n_fish),
+    Wt_SrvAgeComps = per_fleet(rep(1, n_srv), n_srv),
+    Wt_SrvLenComps = per_fleet(wl_s, n_srv),
     Wt_Srv_caal = per_fleet(wa_s, n_srv, extra = n_lens)
   )
 
@@ -247,7 +298,7 @@ seed_goa_rex_mle <- function(input_list, dat) {
 
   ## Recruitment deviations ---------------------------------------------------
   # SPoRC's deviation is the assessment's less its bias correction. main
-  # deviations run through 2022; the two later years carry none and are mapped
+  # deviations run through 2022; the two later years have none and are mapped
   # off. the series is shared across areas, so every region cell takes the same
   # map level and is penalized once
   main_yrs <- as.integer(names(dat$mle$main_recdev))
@@ -260,7 +311,7 @@ seed_goa_rex_mle <- function(input_list, dat) {
 
   ## Initial age structure ----------------------------------------------------
   # the deviation for year styr - a lands on age a, again less its own bias
-  # correction, since the ramp is defined on calendar years. older ages carry
+  # correction, since the ramp is defined on calendar years. older ages have
   # none
   early_yrs <- as.integer(names(dat$mle$early_recdev))
   early_adj <- dat$mle$early_recdev - 0.5 * dat$mle$biasadj[as.character(early_yrs)] * sigmaR^2
@@ -275,7 +326,7 @@ seed_goa_rex_mle <- function(input_list, dat) {
 
   ## Fishing mortality --------------------------------------------------------
   # a fixed mean plus deviations in the area with the fishery. the Eastern area
-  # carries no fishery, so its mean sits at a rate that removes nothing
+  # has no fishery, so its mean sits at a rate that removes nothing
   lf <- log(dat$mle$Fmort[as.character(yrs)])
   input_list$par$ln_F_mean[] <- log(1e-12)
   input_list$par$ln_F_mean[1, 1, 1] <- mean(lf)
@@ -301,8 +352,8 @@ seed_goa_rex_mle <- function(input_list, dat) {
     }
     for(k in 1:6) if(tab$female_est[k]) { lev <- lev + 1; map[, k, 1, 1, f] <- lev }
     if(n_sex > 1) for(k in c(1, 3, 4, 6)) {
-      nm <- c("Peak", NA, "Ascend", "Descend", NA, "Final")[k]
-      if(isTRUE(tab$male_est[[nm]])) { lev <- lev + 1; map[, k, 1, 2, f] <- lev }
+      quant_name <- c("Peak", NA, "Ascend", "Descend", NA, "Final")[k]
+      if(isTRUE(tab$male_est[[quant_name]])) { lev <- lev + 1; map[, k, 1, 2, f] <- lev }
     }
     list(par = par, map = map, lev = lev)
   }

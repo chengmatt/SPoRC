@@ -53,7 +53,7 @@ A list of \code{ggplot} objects:
 \description{
 Plots observed catch and discard time series alongside model-predicted
 values for one or more SPoRC model runs, for both pooled (region-level)
-and population-specific data streams.
+and population-specific data sources.
 }
 \details{
 Pooled predictions are summed across populations before comparison with

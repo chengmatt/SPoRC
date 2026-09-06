@@ -13,13 +13,13 @@ get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx, y, seas, a, f)
 \item{arrays}{Named list of the model arrays the prediction reads:
 \code{CAA}, \code{DAA}, \code{SrvIAA}, \code{WAA_fish},
 \code{dmr}, \code{catch_units} and \code{discard_units}. The two index
-arrays already carry their fleet's selectivity, timing and movement
+arrays already have their fleet's selectivity, timing and movement
 treatment, and the age shape of catchability lives in that selectivity: a
 fleet fit age by age uses the \code{"nonparfree"} selectivity form, whose
-values carry the height of the curve as well as its shape.}
+values hold the height of the curve as well as its shape.}
 
 \item{p_idx, r_idx, s_idx}{Population, region and sex indices, each either one
-index or the whole extent of that margin.}
+index or the whole extent of that dim.}
 
 \item{y, seas, a, f}{Year, season, age and fleet indices.}
 }
@@ -29,13 +29,13 @@ The predicted observation, a scalar.
 \description{
 Catch and discards are already at age and only need their units applied. The
 discards are dead discards, so they are raised by the discard mortality rate
-to the total the observation counts, exactly as the aggregated stream does.
+to the total the observation counts, exactly as the aggregated data source does.
 The survey index applies an age-specific catchability to the numbers
 available to that fleet.
 }
 \details{
 Population, region and sex arrive as index vectors rather than single
-indices. A margin the fleet splits over is a single index, and a margin it
+indices. A dim the fleet splits over is a single index, and a dim it
 sums over is the whole extent, so one expression covers every aggregation.
 }
 \keyword{internal}

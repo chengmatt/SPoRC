@@ -1,20 +1,12 @@
-# Purpose: Bridge the 2024 GOA dusky rockfish assessment to SPoRC and render the
-#          case study figures in the same form as the other rockfish bridges.
-#          The configuration is not restated here: it is sourced from the bridge
-#          helper, so a change to the specification moves the figures and the
-#          tests together.
-#
-#          Unlike the other four rockfish, sgl_rg_dusky_data carries no ADMB
-#          parameter vector, so there is no stage that seeds SPoRC at the
-#          assessment's maximum likelihood estimate. The assessment's fitted
-#          quantities are read straight from its report file instead, and the
-#          comparison is between the two optimized fits.
+# Purpose: Bridge the 2024 GOA dusky rockfish assessment to SPoRC and render its figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/10/26
+#
+# sgl_rg_dusky_data has no ADMB parameter vector, so there is no stage that seeds SPoRC at the
+# assessment's estimate; the comparison is between the two optimized fits
 
 library(here)
 library(dplyr)
-devtools::load_all(here())
 source(here("tests", "testthat", "helper-bridge_goa_dusky.R"))
 source(here("dev", "make_sporc_obj_figs", "helper-bridge_figs.R"))
 
@@ -68,16 +60,16 @@ stopifnot(length(admb$SSB) == n_yrs,
 input_list <- build_goa_dusky_input(dat)
 
 devtools::load_all(here('R'))
-input_list$data$UseCatch[] <- 0
-input_list$data$UseSrvAgeComps[] <- 0
-input_list$data$UseFishAgeComps[] <- 0
-input_list$data$UseFishLenComps[] <- 0
-input_list$data$UseSrvIdx[] <- 0
-est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 random = 'ln_RecDevs', newton_loops = 3, silent = TRUE, do_optim = F)
 
-image(est$env$spHess(random = T))
-
+est <- fit_model(
+  input_list$data,
+  input_list$par,
+  input_list$map,
+  random = NULL,
+  newton_loops = 3,
+  silent = T,
+  do_optim = T
+)
 
 est$sdrep <- RTMB::sdreport(est)
 
@@ -93,20 +85,29 @@ rep <- est$rep
 ssb <- as.vector(rep$SSB)[1:n_yrs]
 rec <- as.vector(rep$Rec)[1:n_yrs]
 
-ggplot2::ggsave(here("vignettes", "figures", "x_goa_dusky_ts_comparison.png"),
-                bridge_ts_figure(yrs, ssb, rec, admb$SSB, admb$Rec, label,
+ggplot2::ggsave(
+  here("vignettes", "figures", "x_goa_dusky_ts_comparison.png"),
+  bridge_ts_figure(yrs, ssb, rec, admb$SSB, admb$Rec, label,
                                  ssb_se = bridge_se(sdr, "log_SSB", ssb),
                                  rec_se = bridge_se(sdr, "log_Rec", rec)),
-                width = 17, height = 9, dpi = 150)
+  width = 17,
+  height = 9,
+  dpi = 150
+)
 
-# Selectivity is time invariant, so a single curve per gear carries everything.
+# Selectivity is time invariant, so a single curve per gear has everything.
 sel_df <- bind_rows(
   bridge_sel_rows(dat$mod_ages, rep$fish_sel[1, 1, 1, 1, , 1, 1], admb$sel_fsh, "Fishery", label),
   bridge_sel_rows(dat$mod_ages, rep$srv_sel[1, 1, 1, 1, , 1, 1], admb$sel_srv, "Survey", label)
 )
 
-ggplot2::ggsave(here("vignettes", "figures", "x_goa_dusky_sel_comparison.png"),
-                bridge_sel_figure(sel_df), width = 12, height = 7, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "x_goa_dusky_sel_comparison.png"),
+  bridge_sel_figure(sel_df),
+  width = 12,
+  height = 7,
+  dpi = 150
+)
 
 cat("\n=== Optimized SPoRC against the assessment ===\n")
 print(rbind(bridge_cmp("SSB", ssb, admb$SSB),

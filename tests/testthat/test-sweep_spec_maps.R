@@ -1,42 +1,43 @@
-# Sweeps every "<par>_spec" argument in the Setup_Mod_* API across the values that
-# argument itself says are legal, and checks the map it builds against what its
-# name claims.
+# Sweeps every "<par>_spec" argument in the Setup_Mod_* API across the values it says are legal, and
+# checks the map it builds against what its name claims.
 #
-# The other mapping tests pin a map that a particular spec produced. That catches
-# a map which changes, not a map which was never right, and not a spec whose
-# sharing collapses a margin other than the one it names. These checks are
-# written against the spec string instead of against a stored map, so a spec
-# added later is swept the moment it lands, and a spec wired to the wrong
-# dimension fails whether or not anyone thought to pin it.
-#
-# Every check here is a property of the map alone, so the sweep runs the setup
-# stages and never builds an AD tape.
+# Written against the spec string rather than a stored map, so a spec added later is swept the moment it
+# lands. Every check is a property of the map alone, so the sweep never builds an AD tape.
 
 # Abbreviation to the dimension it names, as used across the est_shared_ vocabulary.
-spec_abbrev_dims <- c(p = "pop", pop = "pop", r = "region", y = "year", seas = "season",
-                      s = "sex", f = "fleet", b = "block", x = "sex")
+spec_abbrev_dims <- c(
+  p = "pop",
+  pop = "pop",
+  r = "region",
+  y = "year",
+  seas = "season",
+  s = "sex",
+  f = "fleet",
+  b = "block",
+  x = "sex"
+)
 
-#' Margins of a parameter block the map is constant along
+#' Dims of a parameter block the map is constant along
 #'
 #' A map shared over a dimension takes the same value for every cell that differs
 #' only along that dimension. Reshaping the map to the parameter's own dim and
-#' asking which margins it is constant along recovers what the spec actually did,
+#' asking which dims it is constant along recovers what the spec actually did,
 #' without this test needing to know the layout of each block.
 #'
 #' @param m Map factor for one parameter block.
 #' @param d Dimensions of that block.
 #'
-#' @return Logical vector, one per margin, \code{NA} for margins of extent one
+#' @return Logical vector, one per dim, \code{NA} for dims of extent one
 #'   where sharing cannot be distinguished from not sharing.
 #'
 #' @keywords internal
-map_shared_margins <- function(m, d) {
+map_shared_dims <- function(m, d) {
   v <- as.character(m)
   if(length(v) != prod(d)) return(NULL)
   arr <- array(v, dim = d)
   vapply(seq_along(d), function(k) {
     if(d[k] < 2) return(NA)
-    # constant along margin k when every slice equals the first
+    # constant along dim k when every slice equals the first
     first <- as.vector(apply(arr, seq_along(d)[-k], function(x) x[1]))
     all(vapply(seq_len(d[k]), function(i) {
       idx <- rep(list(bquote()), length(d)); idx[[k]] <- i
@@ -45,7 +46,7 @@ map_shared_margins <- function(m, d) {
   }, logical(1))
 }
 
-#' Estimated-parameter count and shared margins for every block a spec touched
+#' Estimated-parameter count and shared dims for every block a spec touched
 #'
 #' @keywords internal
 spec_block_profile <- function(il, blocks) {
@@ -55,7 +56,7 @@ spec_block_profile <- function(il, blocks) {
     if(is.null(m)) return(list(n_free = length(p), shared = NULL))
     lv <- as.character(m)
     list(n_free = length(unique(lv[!is.na(lv)])),
-         shared = map_shared_margins(m, if(is.null(dim(p))) length(p) else dim(p)))
+         shared = map_shared_dims(m, if(is.null(dim(p))) length(p) else dim(p)))
   }), blocks)
 }
 
@@ -64,9 +65,14 @@ spec_block_profile <- function(il, blocks) {
 #' @keywords internal
 spec_build <- function(entry, value) {
   d <- sweep_live_dims(entry$arg)
-  sweep_build_with(entry$stage, entry$arg, value, dims = d,
-                   extra = sweep_live_config(entry$arg),
-                   other = sweep_live_other(entry$arg))
+  sweep_build_with(
+    entry$stage,
+    entry$arg,
+    value,
+    dims = d,
+    extra = sweep_live_config(entry$arg),
+    other = sweep_live_other(entry$arg)
+  )
 }
 
 #' Whether a build outcome is the model legitimately declining this value
@@ -81,8 +87,8 @@ spec_declined <- function(res) {
 # needs a reason, and a spec that becomes reachable should be removed so the
 # checks above start covering it.
 sweep_unconfigured <- c(
-  # the population-specific observation streams need their own _pop data arrays
-  # and a natal-homing configuration the sweep fixture does not yet build
+  # the population-specific data sources need their own _pop data arrays
+  # and a natal-homing configuration the sweep test setup does not yet build
   "rho_catch_pop_spec", "rho_discard_pop_spec", "rho_srv_idx_pop_spec", "sigmaCAA_pop_spec", "sigmaDAA_pop_spec",
   "sigmaSrvIdxAA_pop_spec",
   "sigmaFishIdx_pop_spec", "sigmaSrvIdx_pop_spec"
@@ -134,7 +140,7 @@ test_that("each spec value produces a different estimation structure", {
   # spec reported here is inert where it is supposed to act, not merely inert
   # beside a feature that happens to be off.
   #
-  # A spec sharing only over dimensions this fixture has one of is excluded: it
+  # A spec sharing only over dimensions this test setup has one of is excluded: it
   # equals est_all by arithmetic rather than by any fault in the wiring.
   problems <- character()
 
@@ -211,10 +217,10 @@ test_that("sharing never increases the number of estimated parameters", {
 })
 
 
-test_that("two different sharing specs do not collapse the same margin", {
+test_that("two different sharing specs do not collapse the same dim", {
   # est_shared_r and est_shared_s name different dimensions, so on a model whose
-  # dimensions all differ they must collapse different margins of the parameter.
-  # Identical collapse means at least one of them is wired to the wrong margin,
+  # dimensions all differ they must collapse different dims of the parameter.
+  # Identical collapse means at least one of them is wired to the wrong dim,
   # which no pinned map detects as long as the pin was taken from the same wiring.
   problems <- character()
 
@@ -234,7 +240,7 @@ test_that("two different sharing specs do not collapse the same margin", {
       if(inherits(alt, "condition")) next
       blocks <- sweep_diff(sweep_signature(est), sweep_signature(alt))$map
       prof <- spec_block_profile(alt, blocks)
-      # signature of which margins this spec collapsed, per block
+      # signature of which dims this spec collapsed, per block
       seen[[v]] <- paste(vapply(blocks, function(b)
         paste(b, paste(which(prof[[b]]$shared %in% TRUE), collapse = "/"), sep = ":"),
         character(1)), collapse = " ")
@@ -248,7 +254,7 @@ test_that("two different sharing specs do not collapse the same margin", {
       # expected to coincide
       if(spec_abbrev_dims[[dims_i]] == spec_abbrev_dims[[dims_j]]) next
       if(nzchar(seen[[i]]) && identical(seen[[i]], seen[[j]]))
-        problems <- c(problems, sprintf("%s: '%s' and '%s' collapse the same margins (%s)",
+        problems <- c(problems, sprintf("%s: '%s' and '%s' collapse the same dims (%s)",
                                         entry$arg, names(seen)[i], names(seen)[j], seen[[i]]))
     }
   }

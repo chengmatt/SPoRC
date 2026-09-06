@@ -15,7 +15,7 @@ get_caal_prop(data, rep)
 A list with \code{Obs_Fish_caal}, \code{Pred_Fish_caal},
   \code{Obs_Srv_caal} and \code{Pred_Srv_caal}, each dimensioned by
   \code{n_regions, n_years, n_seas, n_lens, n_obs_ages, n_sexes, n_fleets},
-  or \code{NULL} for a fleet type carrying no conditional age-at-length data.
+  or \code{NULL} for a fleet type with no conditional age-at-length data.
 }
 \description{
 A conditional age-at-length observation is an age composition within one

@@ -1,9 +1,9 @@
 # Stage 2 of 3: objective function
 #
-# Composition likelihood assembly for every fishery and survey composition
-# stream. Get_Comp_Likelihoods evaluates the likelihood itself; pack_comp_osa and
-# eval_comp_osa carry the one step ahead residual bookkeeping, which has to be
-# built during the objective evaluation and cannot be reconstructed afterwards.
+# Composition likelihood assembly for every fishery and survey composition. The OSA packing has to
+# be built during the objective evaluation and cannot be reconstructed afterwards.
+
+# Composition Likelihoods ---------------------------------------------------
 
 #' Composition Data Likelihood
 #'
@@ -68,7 +68,7 @@
 #'   observed age bins. For length compositions, either \code{NA} (the model
 #'   and observed bins coincide) or a matrix \code{[n_model_bins x n_obs_bins]}
 #'   mapping the model's length bins onto the observed ones, the same way, when
-#'   the compositions are recorded on coarser bins than the model carries.
+#'   the compositions are recorded on coarser bins than the model has.
 #' @param use Integer vector indicating which regions have observations
 #'   (\code{1} = use data, \code{0} = ignore).
 #' @param comp_bins Integer vector of bins the composition is fitted over, or
@@ -79,7 +79,7 @@
 #'   ageing error or length bin map has mapped model bins onto observed ones.
 #'   The restriction applies to every composition type: for the sex-joint comps
 #'   (\code{Comp_Type = 2}) the named bins are dropped from each sex's block of
-#'   the joint stack, so the sex ratio the joint comps carry is the ratio within
+#'   the joint stack, so the sex ratio the joint comps have is the ratio within
 #'   the fitted bins. Logistic-normal covariances are built over all observed
 #'   bins and then cut down to the fitted ones, so a gap in \code{comp_bins}
 #'   still counts towards the AR1 lag between the bins on either side of it.
@@ -161,7 +161,7 @@ Get_Comp_Likelihoods = function(Exp,
   if(Comp_Type == 0) {
 
     # Nothing in the fitted bins means nothing to fit, and normalizing would give
-    # NaN. Same guard the split and joint comps carry.
+    # NaN. Same guard the split and joint comps have.
     if(!any(is.finite(Obs[1,,1])) || sum(Obs[1,,1], na.rm = TRUE) == 0) return(comp_nLL)
 
     tmp_Exp = matrix(rowSums(matrix(Exp, nrow = n_model_bins)) / (n_sexes * n_regions), nrow = 1) # aggregate
@@ -327,10 +327,8 @@ Get_Comp_Likelihoods = function(Exp,
   if(Comp_Type == 2) {
     for(r in 1:n_regions_obs_use) {
 
-      # A region whose fitted block holds no fish contributes nothing, and
-      # normalizing it would give Inf. Matches the guard the split comps carry,
-      # and matters more once a bin restriction can empty a block that the full
-      # composition filled.
+      # a region whose fitted block holds no fish contributes nothing, and normalizing it would give
+      # Inf. matters more once a bin restriction can empty a block the full composition filled
       if(!any(is.finite(Obs[r,,])) || sum(Obs[r,,], na.rm = TRUE) == 0) next
 
       # Expected values
@@ -675,6 +673,8 @@ Get_Comp_Likelihoods_OSA = function(Exp,
   return(comp_nLL)
 }
 
+# One Step Ahead Residual Packing -------------------------------------------
+
 #' Pack observed composition data into a single flat OBS vector (OSA)
 #'
 #' Produces the flat tracked OBS vector required by \code{RTMB::oneStepPredict}.
@@ -726,7 +726,7 @@ Get_Comp_Likelihoods_OSA = function(Exp,
 #'   bin, comp_type, likelihood_type, family, last_in_group) of every entry in
 #'   the tracked vector, in the same order. Intended for post-hoc relabeling of
 #'   \code{TMB::oneStepPredict()} residuals (see [get_osa()]); left \code{FALSE}
-#'   (default) inside the model itself to avoid the extra bookkeeping cost.
+#'   (default) inside the model itself to avoid the extra residual tracking cost.
 #'
 #' @return If \code{return_labels = FALSE} (default): flat OBS vector, or
 #'   \code{NULL} if no fleet of this family is present (unchanged behavior).
@@ -734,42 +734,52 @@ Get_Comp_Likelihoods_OSA = function(Exp,
 #'   OBS vector) and \code{labels} (a data.frame with one row per element of
 #'   \code{vec}), or \code{NULL} if no fleet of this family is present.
 #' @keywords internal
-pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
-                         n_yrs, n_seas, n_fleets, n_sexes, addtocomp,
-                         family = "discrete", pop = FALSE, n_pop = 1,
-                         return_labels = FALSE, BinsArr = NULL) {
+pack_comp_osa = function(
+  ObsArr,
+  ISSArr,
+  WtArr,
+  UseArr,
+  TypeMat,
+  LikeTypeVec,
+  n_yrs,
+  n_seas,
+  n_fleets,
+  n_sexes,
+  addtocomp,
+  family = "discrete",
+  pop = FALSE,
+  n_pop = 1,
+  return_labels = FALSE,
+  BinsArr = NULL
+) {
 
   "c"   <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_obs_bins = if(pop) dim(ObsArr)[5] else dim(ObsArr)[4]
 
-  # Observed bins a fleet is actually fitted over. Everything downstream is sized
-  # on these, so a restricted fleet packs a shorter block and its ALR reference
-  # becomes the last fitted bin rather than the last observed one.
-  # A fleet column is only meaningful against the bins the observations carry.
-  # A mismatched row count would desynchronize the packer from the evaluator
-  # silently, which is the one failure this machinery cannot survive.
+  # observed bins a fleet is fitted over. everything downstream is sized on these, so a restricted
+  # fleet packs a shorter block and its ALR reference becomes the last fitted bin
   bins_of = function(f) {
     if(is.null(BinsArr)) return(seq_len(n_obs_bins))
     if(nrow(BinsArr) != n_obs_bins) {
-      stop("bin selection array has ", nrow(BinsArr), " rows but the observations carry ", n_obs_bins,
-           " bins. The *_bins argument must be indexed on the observed bins of the stream it restricts.")
+      stop("bin selection array has ", nrow(BinsArr), " rows but the observations have ", n_obs_bins,
+           " bins. The *_bins argument must be indexed on the observed bins of the data source it restricts.")
     }
     which(BinsArr[,f] == 1)
   }
 
-  fam_of = function(lt) if(lt %in% c(0,1)) "discrete" else "continuous"
+  fam_of = function(like_type) if(like_type %in% c(0,1)) "discrete" else "continuous"
 
   # additive log-ratio: drop last element as reference
   alr = function(p) log(p[-length(p)]) - log(p[length(p)])
 
   # build the per-element label rows for one accepted (p,y,f,seas) group,
   # mirroring the exact element order used to build 'g' below
-  make_labels = function(used, n_ru, ct, lt, p, y, seas, f, len) {
+  make_labels = function(used, n_ru, ct, like_type, p, y, seas, f, len) {
     fit_bins = bins_of(f)   # true observed bin numbers, so labels stay comparable across fleets
     n_bins   = length(fit_bins)
-    if(lt %in% c(0,1)) { # discrete: every fitted bin retained
+    if(like_type %in% c(0,1)) { # discrete: every fitted bin retained
       if(ct == 0) {
         region = rep(used[1], n_bins); sex = rep(1L, n_bins); bin = fit_bins
         last_in_group = (bin == fit_bins[n_bins])
@@ -782,10 +792,8 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
           # so each has its own redundant/determined bin.
           last_in_group = (bin == fit_bins[n_bins])
         } else {
-          # ct == 2, joint by sex: the whole [bin x sex] stack per region is
-          # one multinomial (matches the joint scaling in the packing step
-          # above), so only the single last cell is redundant/determined,
-          # not one per sex. 
+          # ct == 2, joint by sex: the whole [bin x sex] stack per region is one multinomial, so only
+          # the single last cell is determined, not one per sex
           last_in_group = (bin == fit_bins[n_bins]) & (sex == n_sexes)
         }
       }
@@ -805,9 +813,19 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
       }
       last_in_group = rep(FALSE, len)
     }
-    data.frame(pop = p, region = region, year = y, season = seas, fleet = f,
-               sex = sex, bin = bin, comp_type = ct, likelihood_type = lt,
-               family = family, last_in_group = last_in_group)
+    data.frame(
+      pop = p,
+      region = region,
+      year = y,
+      season = seas,
+      fleet = f,
+      sex = sex,
+      bin = bin,
+      comp_type = ct,
+      likelihood_type = like_type,
+      family = family,
+      last_in_group = last_in_group
+    )
   }
 
   clean = list()
@@ -820,7 +838,7 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
           use_vec = if(pop) UseArr[p, , y, seas, f] else UseArr[, y, seas, f]
           if(sum(use_vec) >= 1) {
             ct   = TypeMat[y, f]
-            lt   = LikeTypeVec[f]
+            like_type   = LikeTypeVec[f]
             used = which(use_vec == 1)
             n_ru = length(used)
             if(pop) {
@@ -834,7 +852,7 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
             n_bins   = length(fit_bins)
             if(n_bins < n_obs_bins) obs_slice = obs_slice[, fit_bins, , drop = FALSE]
 
-            if(lt %in% c(0,1)) {
+            if(like_type %in% c(0,1)) {
               # Discrete: scale to counts
               if(ct == 2) {
                 # Joint by sex: the true sample is one joint draw across sexes
@@ -844,8 +862,8 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                   wt  = if(pop) WtArr[p, r_orig, y, seas, 1, f]  else WtArr[r_orig, y, seas, 1, f]
                   v   = as.vector(obs_slice[rr, , ])             # bin-fastest-then-sex
                   pr  = (v + addtocomp) / sum(v + addtocomp)
-                  if(lt == 0) v = round(pr * iss * wt)  # multinomial
-                  if(lt == 1) v = round(pr * iss)       # DM (no Wt)
+                  if(like_type == 0) v = round(pr * iss * wt)  # multinomial
+                  if(like_type == 1) v = round(pr * iss)       # DM (no Wt)
                   for(s in 1:n_sexes) obs_slice[rr, , s] = v[((s - 1) * n_bins + 1):(s * n_bins)]
                 }
               } else {
@@ -857,8 +875,8 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                     iss = if(pop) ISSArr[p, r_orig, y, seas, s, f] else ISSArr[r_orig, y, seas, s, f]
                     wt  = if(pop) WtArr[p, r_orig, y, seas, s, f]  else WtArr[r_orig, y, seas, s, f]
                     pr  = (obs_slice[rr, , s] + addtocomp) / sum(obs_slice[rr, , s] + addtocomp)
-                    if(lt == 0) obs_slice[rr, , s] = round(pr * iss * wt)  # multinomial
-                    if(lt == 1) obs_slice[rr, , s] = round(pr * iss)       # DM (no Wt)
+                    if(like_type == 0) obs_slice[rr, , s] = round(pr * iss * wt)  # multinomial
+                    if(like_type == 1) obs_slice[rr, , s] = round(pr * iss)       # DM (no Wt)
                   }
                 }
               }
@@ -885,9 +903,8 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                 }
                 g = as.vector(arr)          # region-fastest, matches strided idx
               } else {
-                # joint: per region ALR of [bin x sex] stack. Store as
-                # [n_ru, (n_bins*n_sexes - 1)] and as.vector region-fastest,
-                # matching idx = seq(from=r, by=n_ru, length.out=(n_bins-1)*n_sexes)
+                # joint: per region ALR of the [bin x sex] stack, stored [n_ru, n_bins*n_sexes - 1]
+                # and as.vector region-fastest, matching the idx = seq(from=r, by=n_ru, ...) below
                 Lred = n_bins * n_sexes - 1
                 arr = array(0, dim = c(n_ru, Lred))
                 arr = RTMB::AD(arr); dim(arr) = c(n_ru, Lred)
@@ -902,7 +919,7 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
 
             clean[[length(clean) + 1]] = g
             if(return_labels) {
-              label_rows[[length(label_rows) + 1]] = make_labels(used, n_ru, ct, lt, p, y, seas, f, length(g))
+              label_rows[[length(label_rows) + 1]] = make_labels(used, n_ru, ct, like_type, p, y, seas, f, length(g))
             }
           }
         }
@@ -977,29 +994,48 @@ pack_comp_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
 #'
 #' @return Updated \code{nLL_arr} containing the evaluated negative log-likelihood values.
 #' @keywords internal
-eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
-                         UseArr, TypeMat, LikeTypeVec,
-                         ISSArr, lnThetaArr, lnThetaAggVec,
-                         LNcorrArr, LNcorrAggVec,
-                         n_regions, n_yrs, n_seas, n_fleets, n_sexes,
-                         n_model_bins, n_obs_bins, age_or_len,
-                         AgeingErrorFn, addtocomp, BinsArr = NULL,
-                         family = "discrete", zero_init = TRUE,
-                         pop = FALSE, n_pop = 1) {
+eval_comp_osa = function(
+  nLL_arr,
+  tracked,
+  ExpArrFn,
+  UseArr,
+  TypeMat,
+  LikeTypeVec,
+  ISSArr,
+  lnThetaArr,
+  lnThetaAggVec,
+  LNcorrArr,
+  LNcorrAggVec,
+  n_regions,
+  n_yrs,
+  n_seas,
+  n_fleets,
+  n_sexes,
+  n_model_bins,
+  n_obs_bins,
+  age_or_len,
+  AgeingErrorFn,
+  addtocomp,
+  BinsArr = NULL,
+  family = "discrete",
+  zero_init = TRUE,
+  pop = FALSE,
+  n_pop = 1
+) {
 
   "c"   <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   if(is.null(tracked)) return(nLL_arr)
 
-  fam_of = function(lt) if(lt %in% c(0,1)) "discrete" else "continuous"
+  fam_of = function(like_type) if(like_type %in% c(0,1)) "discrete" else "continuous"
 
   # Must match pack_comp_osa exactly, or the pointer k walks out of step
   bins_of = function(f) {
     if(is.null(BinsArr)) return(seq_len(n_obs_bins))
     if(nrow(BinsArr) != n_obs_bins) {
-      stop("bin selection array has ", nrow(BinsArr), " rows but the observations carry ", n_obs_bins,
-           " bins. The *_bins argument must be indexed on the observed bins of the stream it restricts.")
+      stop("bin selection array has ", nrow(BinsArr), " rows but the observations have ", n_obs_bins,
+           " bins. The *_bins argument must be indexed on the observed bins of the data source it restricts.")
     }
     which(BinsArr[,f] == 1)
   }
@@ -1020,14 +1056,14 @@ eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
           if(sum(use_vec) >= 1) {
 
             ct   = TypeMat[y, f]
-            lt   = LikeTypeVec[f]
+            like_type   = LikeTypeVec[f]
             n_ru = sum(use_vec == 1)
 
             fit_bins = bins_of(f)
             n_bins   = length(fit_bins)
 
             # slice length depends on family + comp type (LN drops ALR reference)
-            if(lt %in% c(0,1)) {
+            if(like_type %in% c(0,1)) {
               slice_length = if(ct == 0) n_bins else n_ru * n_bins * n_sexes
             } else { # LN
               if(ct == 0)      slice_length = (n_bins - 1)
@@ -1046,13 +1082,23 @@ eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
             LNcorr_agg_g   = if(pop) LNcorrAggVec[p, f]        else LNcorrAggVec[f]
 
             comp_out = Get_Comp_Likelihoods_OSA(
-              Exp = ExpArrFn(p, y, seas, f), Obs = active_obs_slice,
-              ISS = ISS_g, ln_theta = ln_theta_g, ln_theta_agg = ln_theta_agg_g,
-              LN_corr_pars = LNcorr_g, LN_corr_pars_agg = LNcorr_agg_g,
-              Comp_Type = ct, Likelihood_Type = lt,
-              n_regions = n_regions, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-              n_sexes = n_sexes, age_or_len = age_or_len, AgeingError = AE,
-              use = use_vec, addtocomp = addtocomp,
+              Exp = ExpArrFn(p, y, seas, f),
+              Obs = active_obs_slice,
+              ISS = ISS_g,
+              ln_theta = ln_theta_g,
+              ln_theta_agg = ln_theta_agg_g,
+              LN_corr_pars = LNcorr_g,
+              LN_corr_pars_agg = LNcorr_agg_g,
+              Comp_Type = ct,
+              Likelihood_Type = like_type,
+              n_regions = n_regions,
+              n_model_bins = n_model_bins,
+              n_obs_bins = n_obs_bins,
+              n_sexes = n_sexes,
+              age_or_len = age_or_len,
+              AgeingError = AE,
+              use = use_vec,
+              addtocomp = addtocomp,
               comp_bins = if(n_bins < n_obs_bins) fit_bins else NULL
             )
 
@@ -1065,5 +1111,433 @@ eval_comp_osa = function(nLL_arr, tracked, ExpArrFn,
       }
     }
   }
+  nLL_arr
+}
+
+# Composition Data Source Drivers -------------------------------------------
+
+#' Evaluate one composition data source through the direct likelihood
+#'
+#' Walks every year, season, fleet and, for a population-specific data source, every
+#' population in one composition data source, and calls
+#' \code{\link{Get_Comp_Likelihoods}} on each cell that is fit. One call stands
+#' for what used to be written out separately for retained fishery, discarded
+#' fishery and survey compositions, for ages and for lengths, and again for the
+#' regional and the population-specific data source of each.
+#'
+#' @param nLL_arr Container for this data source's negative log likelihood, dimensioned
+#'   region by year by season by sex by fleet, with a leading population dimension
+#'   when \code{pop} is \code{TRUE}.
+#' @param ObsArr Observed compositions.
+#' @param ExpArr Predicted numbers the compositions are formed from: catch at age
+#'   or length, discards at age or length, or survey available numbers.
+#' @param UseArr Integer array flagging which cells are fit.
+#' @param ISSArr Input sample size.
+#' @param WtArr Likelihood weight applied to a multinomial.
+#' @param TypeMat Integer codes naming how each year and fleet's compositions are
+#'   split, over year by fleet.
+#' @param LikeTypeVec Integer likelihood per fleet.
+#' @param lnThetaArr,lnThetaAggVec Dirichlet-multinomial dispersion, for the split
+#'   and the aggregated compositions.
+#' @param LNcorrArr,LNcorrAggVec Logistic normal correlation parameters, for the
+#'   split and the aggregated compositions.
+#' @param age_or_len \code{0} for age compositions, \code{1} for length.
+#' @param n_model_bins Number of model bins, \code{n_ages} or \code{n_lens}.
+#' @param comp_bins_spec Array of 0/1 flags over bin by fleet naming the bins this
+#'   data source is fit over. All ones means the whole range.
+#' @param AgeingErrorArr Ageing error over year by model bin by observed bin by
+#'   fleet, read only for age compositions.
+#' @param LenBinMap_lik Model bin to observed bin map, read only for length
+#'   compositions.
+#' @param n_pop,n_regions,n_yrs,n_seas,n_fleets,n_sexes Model dimensions.
+#' @param pop Logical. \code{TRUE} for the population-specific data source, whose arrays
+#'   have a leading population dimension and are never summed over populations.
+#' @param LenBinMap_fn Function of year and fleet returning the model bin to
+#'   observed bin map, read only for length compositions on the OSA route.
+#' @param addtocomp Small constant added to a composition.
+#' @param comp_const_obs Constant the observations are scaled by.
+#' @param do_internal_comp_osa Logical. \code{TRUE} hands the data source to
+#'   \code{\link{eval_comp_source_osa}}, which reads the vectors
+#'   \code{\link{pack_comp_source_osa}} built and the call site registered.
+#' @param tracked_discrete,tracked_continuous Registered observation vectors, read
+#'   only on the OSA route and \code{NULL} where no fleet uses that family.
+#'
+#' @return \code{nLL_arr}, filled in.
+#' @keywords internal
+get_comp_source_nLL = function(
+  nLL_arr,
+  ObsArr,
+  ExpArr,
+  UseArr,
+  ISSArr,
+  WtArr,
+  TypeMat,
+  LikeTypeVec,
+  lnThetaArr,
+  lnThetaAggVec,
+  LNcorrArr,
+  LNcorrAggVec,
+  age_or_len,
+  n_model_bins,
+  comp_bins_spec,
+  AgeingErrorArr = NULL,
+  LenBinMap_lik = NA,
+  LenBinMap_fn = NULL,
+  n_pop,
+  n_regions,
+  n_yrs,
+  n_seas,
+  n_fleets,
+  n_sexes,
+  pop = FALSE,
+  addtocomp = 0,
+  comp_const_obs = 1,
+  do_internal_comp_osa = FALSE,
+  tracked_discrete = NULL,
+  tracked_continuous = NULL
+) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  # a data source with nothing fit never reads its observations, which a model without
+  # this data source does not have
+  if(!any(UseArr == 1)) return(nLL_arr)
+
+  # observed bins sit one dim later when the data source is population-specific
+  n_obs_bins = if(pop) dim(ObsArr)[5] else dim(ObsArr)[4]
+
+  # the OSA route reads the vectors the call site registered rather than looping cells
+  if(do_internal_comp_osa == TRUE) {
+
+    osa_nLL = eval_comp_source_osa(
+      nLL_arr = nLL_arr, # container
+      tracked_discrete = tracked_discrete, # registered discrete observations
+      tracked_continuous = tracked_continuous, # registered continuous observations
+      ObsArr = ObsArr, # observed compositions
+      ExpArr = ExpArr, # predicted numbers
+      UseArr = UseArr, # cells that are fit
+      TypeMat = TypeMat, # how the compositions are split
+      LikeTypeVec = LikeTypeVec, # likelihood for each fleet
+      ISSArr = ISSArr, # input sample size
+      lnThetaArr = lnThetaArr, # dispersion, split compositions
+      lnThetaAggVec = lnThetaAggVec, # dispersion, aggregated compositions
+      LNcorrArr = LNcorrArr, # correlation, split compositions
+      LNcorrAggVec = LNcorrAggVec, # correlation, aggregated compositions
+      age_or_len = age_or_len, # ages or lengths
+      n_model_bins = n_model_bins, # model bins
+      comp_bins_spec = comp_bins_spec, # bins this data source is fit over
+      AgeingErrorArr = AgeingErrorArr, # ageing error
+      LenBinMap_fn = LenBinMap_fn, # model bin to observed bin map
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_yrs = n_yrs,
+      n_seas = n_seas,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      pop = pop, # population-specific or regional
+      addtocomp = addtocomp
+    )
+
+    return(osa_nLL)
+
+  } # end if doing OSA
+
+  # bins this fleet is fit over; NULL leaves the whole range in
+  fleet_bins = function(f) if(all(comp_bins_spec[,f] == 1)) NULL else which(comp_bins_spec[,f] == 1)
+
+  # age comps read ageing error, length comps read the length bin map
+  ageing_error = function(y, f) if(age_or_len == 0) AgeingErrorArr[y,,,f] else LenBinMap_lik
+
+  if(pop) {
+
+    for(p in 1:n_pop) {
+      for(y in 1:n_yrs) {
+        for(f in 1:n_fleets) {
+          for(seas in 1:n_seas) {
+
+            if(sum(UseArr[p,,y,seas,f]) < 1) next # nothing fit in this cell
+
+            nLL_arr[p,,y,seas,,f] = Get_Comp_Likelihoods(
+              comp_const_obs = comp_const_obs,
+              Exp = ExpArr[p,,y,seas,,,f], # predicted numbers
+              Obs = ObsArr[p,,y,seas,,,f], # observed compositions
+              ISS = ISSArr[p,,y,seas,,f], # input sample size
+              Wt_Mltnml = WtArr[p,,y,seas,,f], # multinomial weight
+              Comp_Type = TypeMat[y,f], # how the compositions are split
+              Likelihood_Type = LikeTypeVec[f], # likelihood for this fleet
+              ln_theta = lnThetaArr[p,,,f], # dispersion, split compositions
+              ln_theta_agg = lnThetaAggVec[p,f], # dispersion, aggregated compositions
+              LN_corr_pars = LNcorrArr[p,,,f,], # correlation, split compositions
+              LN_corr_pars_agg = LNcorrAggVec[p,f], # correlation, aggregated compositions
+              n_regions = n_regions,
+              n_sexes = n_sexes,
+              age_or_len = age_or_len, # ages or lengths
+              AgeingError = ageing_error(y, f), # ageing error or length bin map
+              use = UseArr[p,,y,seas,f], # cells that are fit
+              n_model_bins = n_model_bins,
+              n_obs_bins = n_obs_bins,
+              addtocomp = addtocomp,
+              comp_bins = fleet_bins(f) # bins this fleet is fit over
+            )
+
+          } # end seas loop
+        } # end f loop
+      } # end y loop
+    } # end p loop
+
+  } else {
+
+    for(y in 1:n_yrs) {
+      for(f in 1:n_fleets) {
+        for(seas in 1:n_seas) {
+
+          if(sum(UseArr[,y,seas,f]) < 1) next # nothing fit in this cell
+
+          nLL_arr[,y,seas,,f] = Get_Comp_Likelihoods(
+            comp_const_obs = comp_const_obs,
+            Exp = apply(ExpArr[,,y,seas,,,f, drop = FALSE], 2:7, sum), # predicted numbers, summed across populations
+            Obs = ObsArr[,y,seas,,,f], # observed compositions
+            ISS = ISSArr[,y,seas,,f], # input sample size
+            Wt_Mltnml = WtArr[,y,seas,,f], # multinomial weight
+            Comp_Type = TypeMat[y,f], # how the compositions are split
+            Likelihood_Type = LikeTypeVec[f], # likelihood for this fleet
+            ln_theta = lnThetaArr[,,f], # dispersion, split compositions
+            ln_theta_agg = lnThetaAggVec[f], # dispersion, aggregated compositions
+            LN_corr_pars = LNcorrArr[,,f,], # correlation, split compositions
+            LN_corr_pars_agg = LNcorrAggVec[f], # correlation, aggregated compositions
+            n_regions = n_regions,
+            n_sexes = n_sexes,
+            age_or_len = age_or_len, # ages or lengths
+            AgeingError = ageing_error(y, f), # ageing error or length bin map
+            use = UseArr[,y,seas,f], # cells that are fit
+            n_model_bins = n_model_bins,
+            n_obs_bins = n_obs_bins,
+            addtocomp = addtocomp,
+            comp_bins = fleet_bins(f) # bins this fleet is fit over
+          )
+
+        } # end seas loop
+      } # end f loop
+    } # end y loop
+
+  } # end regional data source
+
+  nLL_arr
+}
+
+#' Pack one composition data source's observations for OSA residuals
+#'
+#' Builds the two flat observation vectors \code{\link[RTMB]{oneStepPredict}}
+#' needs, one holding the fleets on a discrete likelihood and one the fleets on a
+#' continuous one. Either is \code{NULL} when no fleet uses that family.
+#'
+#' The result is registered with \code{\link[RTMB]{OBS}} at the call site rather
+#' than here. \code{OBS} takes an observation's name from the variable it is
+#' called on, and \code{\link{get_osa}} looks each data source up under that name, so
+#' registering inside this function would give every data source the same one.
+#'
+#' @inheritParams get_comp_source_nLL
+#' @return A list with \code{discrete} and \code{continuous}.
+#' @keywords internal
+pack_comp_source_osa = function(
+  ObsArr,
+  ISSArr,
+  WtArr,
+  UseArr,
+  TypeMat,
+  LikeTypeVec,
+  comp_bins_spec,
+  n_yrs,
+  n_seas,
+  n_fleets,
+  n_sexes,
+  n_pop = 1,
+  pop = FALSE,
+  addtocomp = 0,
+  do_internal_comp_osa = FALSE
+) {
+
+  # nothing to register when the direct likelihood is in use, or when nothing is fit
+  if(do_internal_comp_osa == FALSE || !any(UseArr == 1)) return(list(discrete = NULL, continuous = NULL))
+
+  BinsArr = bins_or_null(comp_bins_spec) # NULL when the whole bin range is fit
+
+  # fleets on a discrete likelihood
+  tracked_discrete = pack_comp_osa(
+    ObsArr = ObsArr, # observed compositions
+    ISSArr = ISSArr, # input sample size
+    WtArr = WtArr, # multinomial weight
+    UseArr = UseArr, # cells that are fit
+    TypeMat = TypeMat, # how the compositions are split
+    LikeTypeVec = LikeTypeVec, # likelihood for each fleet
+    n_yrs = n_yrs,
+    n_seas = n_seas,
+    n_fleets = n_fleets,
+    n_sexes = n_sexes,
+    addtocomp = addtocomp,
+    family = "discrete",
+    pop = pop, # population-specific or regional
+    n_pop = n_pop,
+    BinsArr = BinsArr # bins this data source is fit over
+  )
+
+  # fleets on a continuous likelihood
+  tracked_continuous = pack_comp_osa(
+    ObsArr = ObsArr, # observed compositions
+    ISSArr = ISSArr, # input sample size
+    WtArr = WtArr, # multinomial weight
+    UseArr = UseArr, # cells that are fit
+    TypeMat = TypeMat, # how the compositions are split
+    LikeTypeVec = LikeTypeVec, # likelihood for each fleet
+    n_yrs = n_yrs,
+    n_seas = n_seas,
+    n_fleets = n_fleets,
+    n_sexes = n_sexes,
+    addtocomp = addtocomp,
+    family = "continuous",
+    pop = pop, # population-specific or regional
+    n_pop = n_pop,
+    BinsArr = BinsArr # bins this data source is fit over
+  )
+
+  list(discrete = tracked_discrete, continuous = tracked_continuous)
+}
+
+#' Evaluate one composition data source from its registered OSA observations
+#'
+#' Runs \code{\link{eval_comp_osa}} over the discrete fleets and then the
+#' continuous ones, on the vectors \code{\link{pack_comp_source_osa}} built and
+#' the call site registered. The discrete pass zeroes the container it fills; the
+#' continuous pass only does so when there were no discrete fleets, so the two
+#' families add rather than overwrite.
+#'
+#' @param tracked_discrete,tracked_continuous Registered observation vectors, or
+#'   \code{NULL} where no fleet uses that family.
+#' @param LenBinMap_fn Function of year and fleet returning the model bin to
+#'   observed bin map, read only for length compositions.
+#' @inheritParams get_comp_source_nLL
+#' @return \code{nLL_arr}, filled in.
+#' @keywords internal
+eval_comp_source_osa = function(
+  nLL_arr,
+  tracked_discrete,
+  tracked_continuous,
+  ObsArr,
+  ExpArr,
+  UseArr,
+  TypeMat,
+  LikeTypeVec,
+  ISSArr,
+  lnThetaArr,
+  lnThetaAggVec,
+  LNcorrArr,
+  LNcorrAggVec,
+  age_or_len,
+  n_model_bins,
+  comp_bins_spec,
+  AgeingErrorArr = NULL,
+  LenBinMap_fn = NULL,
+  n_pop,
+  n_regions,
+  n_yrs,
+  n_seas,
+  n_fleets,
+  n_sexes,
+  pop = FALSE,
+  addtocomp = 0
+) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  # a data source with nothing fit never reads its observations
+  if(!any(UseArr == 1)) return(nLL_arr)
+
+  BinsArr = bins_or_null(comp_bins_spec) # NULL when the whole bin range is fit
+  n_obs_bins = if(pop) dim(ObsArr)[5] else dim(ObsArr)[4] # observed bins sit one dim later for a population data source
+
+  # age comps read ageing error, length comps read the length bin map
+  AgeingErrorFn = if(age_or_len == 0) function(y, f) AgeingErrorArr[y,,,f] else LenBinMap_fn
+
+  # predicted numbers in one cell, summed across populations unless the data source is population-specific
+  if(pop) {
+    ExpArrFn = function(p, y, seas, f) {
+      e = ExpArr[p,,y,seas,,,f, drop = FALSE]
+      dim(e) = c(n_regions, n_model_bins, n_sexes)
+      e
+    }
+  } else {
+    ExpArrFn = function(p, y, seas, f) apply(ExpArr[,,y,seas,,,f, drop = FALSE], 2:7, sum)
+  }
+
+  # discrete fleets zero the container they fill
+  if(!is.null(tracked_discrete)) {
+
+    nLL_arr = eval_comp_osa(
+      nLL_arr = nLL_arr, # container
+      tracked = tracked_discrete, # registered observations
+      ExpArrFn = ExpArrFn, # predicted numbers in one cell
+      UseArr = UseArr, # cells that are fit
+      TypeMat = TypeMat, # how the compositions are split
+      LikeTypeVec = LikeTypeVec, # likelihood for each fleet
+      ISSArr = ISSArr, # input sample size
+      lnThetaArr = lnThetaArr, # dispersion, split compositions
+      lnThetaAggVec = lnThetaAggVec, # dispersion, aggregated compositions
+      LNcorrArr = LNcorrArr, # correlation, split compositions
+      LNcorrAggVec = LNcorrAggVec, # correlation, aggregated compositions
+      n_regions = n_regions,
+      n_yrs = n_yrs,
+      n_seas = n_seas,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      n_model_bins = n_model_bins, # model bins
+      n_obs_bins = n_obs_bins, # observed bins
+      age_or_len = age_or_len, # ages or lengths
+      AgeingErrorFn = AgeingErrorFn, # ageing error or length bin map
+      addtocomp = addtocomp,
+      family = "discrete",
+      zero_init = TRUE, # whether to zero the container first
+      pop = pop, # population-specific or regional
+      n_pop = n_pop,
+      BinsArr = BinsArr # bins this data source is fit over
+    )
+
+  } # end discrete fleets
+
+  # continuous fleets only zero it when there were no discrete ones, so the two add
+  if(!is.null(tracked_continuous)) {
+
+    nLL_arr = eval_comp_osa(
+      nLL_arr = nLL_arr, # container
+      tracked = tracked_continuous, # registered observations
+      ExpArrFn = ExpArrFn, # predicted numbers in one cell
+      UseArr = UseArr, # cells that are fit
+      TypeMat = TypeMat, # how the compositions are split
+      LikeTypeVec = LikeTypeVec, # likelihood for each fleet
+      ISSArr = ISSArr, # input sample size
+      lnThetaArr = lnThetaArr, # dispersion, split compositions
+      lnThetaAggVec = lnThetaAggVec, # dispersion, aggregated compositions
+      LNcorrArr = LNcorrArr, # correlation, split compositions
+      LNcorrAggVec = LNcorrAggVec, # correlation, aggregated compositions
+      n_regions = n_regions,
+      n_yrs = n_yrs,
+      n_seas = n_seas,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      n_model_bins = n_model_bins, # model bins
+      n_obs_bins = n_obs_bins, # observed bins
+      age_or_len = age_or_len, # ages or lengths
+      AgeingErrorFn = AgeingErrorFn, # ageing error or length bin map
+      addtocomp = addtocomp,
+      family = "continuous",
+      zero_init = is.null(tracked_discrete), # whether to zero the container first
+      pop = pop, # population-specific or regional
+      n_pop = n_pop,
+      BinsArr = BinsArr # bins this data source is fit over
+    )
+
+  } # end continuous fleets
+
   nLL_arr
 }

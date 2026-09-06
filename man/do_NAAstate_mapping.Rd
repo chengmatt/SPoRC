@@ -18,8 +18,13 @@ do_NAAstate_mapping(
   NAA_sigma_popblk_spec_vals,
   NAA_sigma_regionblk_spec_vals,
   NAA_sigma_yearblk_spec_vals,
+  NAA_sigma_seasblk_spec_vals,
   NAA_sigma_ageblk_spec_vals,
-  NAA_sigma_sexblk_spec_vals
+  NAA_sigma_sexblk_spec_vals,
+  NAA_pe_spec = "est_all",
+  NAA_re_seasons = "annual",
+  NAA_re_season = "iid",
+  NAA_re_season_spec = "est_all"
 )
 }
 \arguments{
@@ -38,14 +43,28 @@ innovation.}
 \item{NAA_sigma_spec}{Character, \code{"est"} or \code{"fix"}, whether the
 process error standard deviations are estimated.}
 
-\item{NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals}{Lists of integer vectors assigning indices to blocks, exactly as the
-\code{M_*blk_spec_vals} arguments do. Blocking shares the standard
-deviation; it never removes a cell from the state.}
+\item{NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_seasblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals}{Lists of integer vectors assigning indices to blocks, the same as the
+\code{M_*blk_spec_vals} arguments. Blocking shares the standard
+deviation.}
+
+\item{NAA_pe_spec}{Character sharing spec for \code{NAA_pe_pars}, as documented
+on \code{\link{Setup_Mod_Biologicals}}.}
+
+\item{NAA_re_seasons}{Seasons the state is active over. \code{"annual"}
+(default) uses season one alone, \code{"all"} every season, or an integer
+vector of season indices.}
+
+\item{NAA_re_season}{Character, \code{"iid"} (default) or \code{"us"}, the
+correlation across the active seasons.}
+
+\item{NAA_re_season_spec}{Character sharing spec for the season correlations,
+taking the same values as \code{NAA_re_region_spec}.}
 }
 \value{
 \code{input_list} with \code{$par$ln_NAA}, \code{$par$ln_sigmaNAA},
   their maps, and the data fields \code{NAA_re}, \code{n_est_naa_re},
-  \code{naa_re_ages}, \code{naa_re_yrs} and \code{naa_sigma_blocks}.
+  \code{naa_re_ages}, \code{naa_re_yrs}, \code{naa_re_seas} and
+  \code{naa_sigma_blocks}.
 }
 \description{
 Builds the \code{ln_NAA} parameter array and its map, the process error
@@ -61,8 +80,15 @@ not optional: it is the only cell whose influence never decays, so leaving it
 deterministic gives up the conditional independence the state is worth having
 for.
 
-Ages and years must each be a contiguous run. The penalty scores the active
-cells as one rectangular slice, and a gap would either leave scored cells the
-dynamics never wrote or force a per-cell branch onto the tape.
+Ages and years must each be a contiguous run. The penalty covers the active
+cells as one rectangular slice, and a gap would either leave penalized cells the
+dynamics never wrote or force a per-cell branch onto the tape. Seasons have
+no such requirement, because the season dim is only ever independent or
+unstructured and neither reads adjacency.
+
+A cell is the log numbers at the start of its season, so season one of year
+\code{y} is the state at the year boundary, after ageing and the plus group,
+and later seasons are states on the within-year survival and movement step.
+Season one alone reproduces the annual state exactly.
 }
 \keyword{internal}

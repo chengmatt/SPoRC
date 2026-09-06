@@ -1,18 +1,16 @@
-# Shared machinery for the semi-parametric growth self-test. An operating model
-# is built with mean length at age moving over time by a KNOWN year-by-age
-# surface, its length compositions and conditional age-at-length are sampled
-# from the resulting age-length keys, and the estimating model then has to
-# recover that surface with only the parametric curve as a starting point.
+# Shared routines for the semi-parametric growth self-test. Mean length at age moves by a KNOWN
+# year-by-age surface, and the estimating model has to recover it from the parametric curve alone.
 #
-# The surface is smooth in both directions (a slow wave over years times a
-# gradient over ages) rather than white noise, which is what the correlated
-# process errors are for: a 2D AR(1) or a 3D GMRF can borrow strength across
-# neighboring ages and years, and a surface with no structure would give it
-# nothing to borrow.
+# The surface is smooth in both directions rather than white noise, which is what the correlated process
+# errors are for: a 2D AR(1) or 3D GMRF borrows strength across neighboring ages and years.
 
 spcfg <- list(
-  n_yrs = 30, n_ages = 12, n_sims = 1,
-  idx_se = 0.1, comp_iss = 400, caal_per_bin = 40,
+  n_yrs = 30,
+  n_ages = 12,
+  n_sims = 1,
+  idx_se = 0.1,
+  comp_iss = 400,
+  caal_per_bin = 40,
   len_lower = seq(10, 75, by = 5),
   f_ramp = c(seq(0.05, 0.45, length.out = 18), seq(0.45, 0.15, length.out = 12))
 )
@@ -59,9 +57,17 @@ sp_alk <- function(len_lower, mu, sd) {
 #' @keywords internal
 sp_growth <- function(devs = NULL) {
   n_yrs <- spcfg$n_yrs; n_ages <- spcfg$n_ages; ages <- 1:n_ages
-  crv <- get_laa_curve(x = ages, L0 = spcfg$len_lower[1], L1 = sp_pars[["L1"]], L2 = sp_pars[["L2"]],
-                       K = sp_pars[["K"]], CV1 = sp_pars[["CV1"]], CV2 = sp_pars[["CV2"]],
-                       A1 = 1, A2 = n_ages)
+  crv <- get_laa_curve(
+    x = ages,
+    L0 = spcfg$len_lower[1],
+    L1 = sp_pars[["L1"]],
+    L2 = sp_pars[["L2"]],
+    K = sp_pars[["K"]],
+    CV1 = sp_pars[["CV1"]],
+    CV2 = sp_pars[["CV2"]],
+    A1 = 1,
+    A2 = n_ages
+  )
   if(is.null(devs)) devs <- matrix(0, n_yrs, n_ages)
   mu <- sweep(exp(devs), 2, crv$L, "*")          # [year, age]
   sd <- sweep(mu, 2, crv$cv, "*")                # the CV at age is untouched
@@ -76,8 +82,17 @@ semipar_simulate <- function(seed = 11) {
 
   n_yrs <- spcfg$n_yrs; n_ages <- spcfg$n_ages; n_lens <- spcfg$n_lens
 
-  sim_list <- Setup_Sim_Dim(n_sims = 1, n_yrs = n_yrs, n_regions = 1, n_ages = n_ages,
-                            n_lens = n_lens, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1, n_pop = 1)
+  sim_list <- Setup_Sim_Dim(
+    n_sims = 1,
+    n_yrs = n_yrs,
+    n_regions = 1,
+    n_ages = n_ages,
+    n_lens = n_lens,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_pop = 1
+  )
   sim_list <- Setup_Sim_Containers(sim_list)
 
   curve7 <- function(slope, infl) array(rep(1 / (1 + exp(-slope * ((1:n_ages) - infl))), each = n_yrs),
@@ -87,22 +102,29 @@ semipar_simulate <- function(seed = 11) {
 
   sim_list <- Setup_Sim_Fishing(
     sim_list = sim_list,
-    fish_sel_input = replicate(1, curve7(3, 2)), ret_sel_input = replicate(1, curve7(3, 2)),
+    fish_sel_input = replicate(1, curve7(3, 2)),
+    ret_sel_input = replicate(1, curve7(3, 2)),
     dmr_input = array(0, dim = c(1, n_yrs, 1, 1, 1)),
     Fmort_input = array(spcfg$f_ramp, dim = c(1, n_yrs, 1, 1, 1)),
     ISS_FishAgeComps = array(spcfg$comp_iss, dim = c(1, n_yrs, 1, 1, 1, 1)),
     ISS_FishLenComps = array(spcfg$comp_iss, dim = c(1, n_yrs, 1, 1, 1, 1)),
-    FishAgeComps_Type = array(1, dim = c(n_yrs, 1)), FishLenComps_Type = array(1, dim = c(n_yrs, 1))
+    FishAgeComps_Type = array(1, dim = c(n_yrs, 1)),
+    FishLenComps_Type = array(1, dim = c(n_yrs, 1))
   )
   sim_list <- Setup_Sim_Survey(
-    sim_list = sim_list, srv_sel_input = replicate(1, curve7(1.2, 3)),
+    sim_list = sim_list,
+    srv_sel_input = replicate(1, curve7(1.2, 3)),
     t_srv = array(0, dim = c(1, 1, 1)),
     ObsSrvIdx_SE = array(spcfg$idx_se, dim = c(1, n_yrs, 1, 1)),
     ISS_SrvAgeComps = array(spcfg$comp_iss, dim = c(1, n_yrs, 1, 1, 1, 1)),
     ISS_SrvLenComps = array(spcfg$comp_iss, dim = c(1, n_yrs, 1, 1, 1, 1)),
-    SrvAgeComps_Type = array(1, dim = c(n_yrs, 1)), SrvLenComps_Type = array(1, dim = c(n_yrs, 1)),
-    comp_srv_caal_like = "Multinomial", ISS_Srv_caal = iss_caal, Srv_caal_Type = type_mat,
-    ln_Srv_caal_theta = array(log(1), dim = c(1, 1, 1)), ln_Srv_caal_theta_agg = log(1)
+    SrvAgeComps_Type = array(1, dim = c(n_yrs, 1)),
+    SrvLenComps_Type = array(1, dim = c(n_yrs, 1)),
+    comp_srv_caal_like = "Multinomial",
+    ISS_Srv_caal = iss_caal,
+    Srv_caal_Type = type_mat,
+    ln_Srv_caal_theta = array(log(1), dim = c(1, 1, 1)),
+    ln_Srv_caal_theta_agg = log(1)
   )
 
   # the size-age transition the operating model runs on: one key per year, built
@@ -129,10 +151,12 @@ semipar_simulate <- function(seed = 11) {
   sim_list <- Setup_Sim_Tagging(sim_list = sim_list, use_conv_fish_tagging = 0)
   sim_list$Movement <- array(1, dim = c(1, 1, 1, n_yrs, 1, n_ages, 1, 1))
   sim_list <- Setup_Sim_Rec(
-    sim_list = sim_list, R0_input = replicate(1, array(8, dim = c(1, 1, n_yrs))),
+    sim_list = sim_list,
+    R0_input = replicate(1, array(8, dim = c(1, 1, n_yrs))),
     ln_sigmaR = array(log(0.3), dim = c(2, 1, 1)),
     sexratio_input = replicate(1, array(1, dim = c(1, 1, n_yrs, 1))),
-    recruitment_opt = "mean_rec", init_age_strc = 1
+    recruitment_opt = "mean_rec",
+    init_age_strc = 1
   )
 
   set.seed(seed)
@@ -157,69 +181,140 @@ semipar_input <- function(form = "2dar1", obs = NULL) {
   if(is.null(obs)) obs <- semipar_simulate()$obs
   n_yrs <- spcfg$n_yrs; n_ages <- spcfg$n_ages
 
-  input_list <- Setup_Mod_Dim(years = 1:n_yrs, ages = 1:n_ages, lens = spcfg$len_lower + 2.5,
-                              n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1,
-                              n_pop = 1, natal_region = 1, verbose = FALSE)
-  input_list <- Setup_Mod_Rec(input_list = input_list, do_rec_bias_ramp = 0, sigmaR_switch = 1,
-                              ln_sigmaR = array(log(0.3), c(2, 1, 1)), rec_model = "mean_rec",
-                              sigmaR_spec = "fix", init_age_strc = 1, equil_init_age_strc = 2,
-                              ln_global_R0 = log(8))
+  input_list <- Setup_Mod_Dim(
+    years = 1:n_yrs,
+    ages = 1:n_ages,
+    lens = spcfg$len_lower + 2.5,
+    n_regions = 1,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_pop = 1,
+    natal_region = 1,
+    verbose = FALSE
+  )
+  input_list <- Setup_Mod_Rec(
+    input_list = input_list,
+    do_rec_bias_ramp = 0,
+    sigmaR_switch = 1,
+    ln_sigmaR = array(log(0.3), c(2, 1, 1)),
+    rec_model = "mean_rec",
+    sigmaR_spec = "fix",
+    init_age_strc = 1,
+    equil_init_age_strc = 2,
+    ln_global_R0 = log(8)
+  )
   input_list <- suppressMessages(Setup_Mod_Biologicals(
-    input_list = input_list, WAA = NULL, MatAA = obs$MatAA,
-    fit_lengths = 1, SizeAgeTrans = NA, comp_const_obs = 0,
-    AgeingError = obs$AgeingError, M_spec = "fix",
+    input_list = input_list,
+    WAA = NULL,
+    MatAA = obs$MatAA,
+    fit_lengths = 1,
+    SizeAgeTrans = NA,
+    comp_const_obs = 0,
+    AgeingError = obs$AgeingError,
+    M_spec = "fix",
     Fixed_natmort = array(0.25, dim = c(1, 1, n_yrs, n_ages, 1)),
-    growth_model = "vb_schnute", growth_spec = "est_all",
+    growth_model = "vb_schnute",
+    growth_spec = "est_all",
     ln_growth_pars = array(log(sp_pars), dim = c(1, 1, 1, 5)),
-    growth_A1 = 1, growth_A2 = n_ages, growth_len_lower = spcfg$len_lower,
-    growth_plus_group = "curve", waa_model = "wt_len", wt_len_pars = c(1e-5, 3),
-    growth_semipar = form, growth_semipar_spec = "fix",
-    do_caal = 1))
+    growth_A1 = 1,
+    growth_A2 = n_ages,
+    growth_len_lower = spcfg$len_lower,
+    growth_plus_group = "curve",
+    waa_model = "wt_len",
+    wt_len_pars = c(1e-5, 3),
+    growth_semipar = form,
+    growth_semipar_spec = "fix",
+    do_caal = 1
+  ))
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1,
-                                   Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
   suppressWarnings(input_list <- Setup_Mod_Catch_and_F(
-    input_list = input_list, ObsCatch = obs$ObsCatch, UseCatch = obs$UseCatch,
-    Use_F_pen = 1, sigmaC_spec = "fix", ln_sigmaC = obs$ln_sigmaC,
+    input_list = input_list,
+    ObsCatch = obs$ObsCatch,
+    UseCatch = obs$UseCatch,
+    Use_F_pen = 1,
+    sigmaC_spec = "fix",
+    ln_sigmaC = obs$ln_sigmaC,
     ln_sigmaF = array(log(1), dim = c(1, 1, 1)),
-    ObsDiscard = obs$ObsDiscard, UseDiscard = obs$UseDiscard,
-    sigma_dmr_spec = "fix", dmr_mean_spec = "fix", ln_sigmaD = obs$ln_sigmaD))
+    ObsDiscard = obs$ObsDiscard,
+    UseDiscard = obs$UseDiscard,
+    sigma_dmr_spec = "fix",
+    dmr_mean_spec = "fix",
+    ln_sigmaD = obs$ln_sigmaD
+  ))
 
   no_use <- array(0, dim = dim(obs$UseFishAgeComps))
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
-    ObsFishIdx = obs$ObsFishIdx, ObsFishIdx_SE = obs$ObsFishIdx_SE,
-    UseFishIdx = array(0, dim = dim(obs$UseFishIdx)), fish_idx_type = "biom",
-    ObsFishAgeComps = obs$ObsFishAgeComps, ISS_FishAgeComps = obs$ISS_FishAgeComps,
-    UseFishAgeComps = no_use, FishAgeComps_LikeType = "none",
+    ObsFishIdx = obs$ObsFishIdx,
+    ObsFishIdx_SE = obs$ObsFishIdx_SE,
+    UseFishIdx = array(0, dim = dim(obs$UseFishIdx)),
+    fish_idx_type = "biom",
+    ObsFishAgeComps = obs$ObsFishAgeComps,
+    ISS_FishAgeComps = obs$ISS_FishAgeComps,
+    UseFishAgeComps = no_use,
+    FishAgeComps_LikeType = "none",
     FishAgeComps_Type = "none_Year_1-terminal_Fleet_1",
-    ObsFishLenComps = obs$ObsFishLenComps, ISS_FishLenComps = obs$ISS_FishLenComps,
-    UseFishLenComps = obs$UseFishLenComps, FishLenComps_LikeType = "Multinomial",
+    ObsFishLenComps = obs$ObsFishLenComps,
+    ISS_FishLenComps = obs$ISS_FishLenComps,
+    UseFishLenComps = obs$UseFishLenComps,
+    FishLenComps_LikeType = "Multinomial",
     FishLenComps_Type = "spltRspltS_Year_1-terminal_Fleet_1",
-    t_fish = array(0, dim = c(1, 1, 1)))
+    t_fish = array(0, dim = c(1, 1, 1))
+  )
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
-    ObsSrvIdx = obs$ObsSrvIdx, ObsSrvIdx_SE = obs$ObsSrvIdx_SE,
-    UseSrvIdx = obs$UseSrvIdx, srv_idx_type = "biom",
-    ObsSrvAgeComps = obs$ObsSrvAgeComps, ISS_SrvAgeComps = obs$ISS_SrvAgeComps,
-    UseSrvAgeComps = array(0, dim = dim(obs$UseSrvAgeComps)), SrvAgeComps_LikeType = "none",
+    ObsSrvIdx = obs$ObsSrvIdx,
+    ObsSrvIdx_SE = obs$ObsSrvIdx_SE,
+    UseSrvIdx = obs$UseSrvIdx,
+    srv_idx_type = "biom",
+    ObsSrvAgeComps = obs$ObsSrvAgeComps,
+    ISS_SrvAgeComps = obs$ISS_SrvAgeComps,
+    UseSrvAgeComps = array(0, dim = dim(obs$UseSrvAgeComps)),
+    SrvAgeComps_LikeType = "none",
     SrvAgeComps_Type = "none_Year_1-terminal_Fleet_1",
-    ObsSrvLenComps = obs$ObsSrvLenComps, ISS_SrvLenComps = obs$ISS_SrvLenComps,
-    UseSrvLenComps = obs$UseSrvLenComps, SrvLenComps_LikeType = "Multinomial",
+    ObsSrvLenComps = obs$ObsSrvLenComps,
+    ISS_SrvLenComps = obs$ISS_SrvLenComps,
+    UseSrvLenComps = obs$UseSrvLenComps,
+    SrvLenComps_LikeType = "Multinomial",
     SrvLenComps_Type = "spltRspltS_Year_1-terminal_Fleet_1",
-    ObsSrv_caal = obs$ObsSrv_caal, UseSrv_caal = obs$UseSrv_caal, ISS_Srv_caal = obs$ISS_Srv_caal,
-    Srv_caal_LikeType = "Multinomial", Srv_caal_Type = "spltRspltS_Year_1-terminal_Fleet_1")
-  input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list, fish_sel_model = "logist1_Fleet_1",
-                                        fish_fixed_sel_pars_spec = "est_all", fish_q_spec = "est_all",
-                                        use_fixed_ret_sel = 1)
-  input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list, srv_sel_model = "logist1_Fleet_1",
-                                       srv_fixed_sel_pars_spec = "est_all", srv_q_spec = "est_all",
-                                       t_srv = array(0, dim = c(1, 1, 1)))
+    ObsSrv_caal = obs$ObsSrv_caal,
+    UseSrv_caal = obs$UseSrv_caal,
+    ISS_Srv_caal = obs$ISS_Srv_caal,
+    Srv_caal_LikeType = "Multinomial",
+    Srv_caal_Type = "spltRspltS_Year_1-terminal_Fleet_1"
+  )
+  input_list <- Setup_Mod_Fishsel_and_Q(
+    input_list = input_list,
+    fish_sel_model = "logist1_Fleet_1",
+    fish_fixed_sel_pars_spec = "est_all",
+    fish_q_spec = "est_all",
+    use_fixed_ret_sel = 1
+  )
+  input_list <- Setup_Mod_Srvsel_and_Q(
+    input_list = input_list,
+    srv_sel_model = "logist1_Fleet_1",
+    srv_fixed_sel_pars_spec = "est_all",
+    srv_q_spec = "est_all",
+    t_srv = array(0, dim = c(1, 1, 1))
+  )
   input_list <- Setup_Mod_Weighting(
-    input_list = input_list, Wt_Catch = 1, Wt_FishIdx = 1, Wt_SrvIdx = 1, Wt_Rec = 1, Wt_F = 1,
+    input_list = input_list,
+    Wt_Catch = 1,
+    Wt_FishIdx = 1,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_F = 1,
     Wt_FishAgeComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
     Wt_SrvAgeComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
     Wt_FishLenComps = array(1, dim = c(1, n_yrs, 1, 1, 1)),
-    Wt_SrvLenComps = array(1, dim = c(1, n_yrs, 1, 1, 1)))
+    Wt_SrvLenComps = array(1, dim = c(1, n_yrs, 1, 1, 1))
+  )
   input_list
 }

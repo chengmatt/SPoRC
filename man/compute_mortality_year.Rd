@@ -6,7 +6,7 @@
 \usage{
 compute_mortality_year(
   y,
-  st,
+  state,
   growth_model,
   derive_waa,
   fish_selex_type,
@@ -43,7 +43,7 @@ compute_mortality_year(
 \arguments{
 \item{y}{Year index.}
 
-\item{st}{Named list carrying \code{Fmort}, \code{dmr}, \code{fish_sel},
+\item{state}{Named list with \code{Fmort}, \code{dmr}, \code{fish_sel},
 \code{ret_sel}, \code{ret_FAA}, \code{disc_FAA}, \code{tot_FAA},
 \code{ZAA}, \code{WAA_fish}, \code{WAA_srv}, \code{SizeAgeTrans_fish} and
 \code{SizeAgeTrans_srv}, returned with year \code{y} updated. The last
@@ -77,7 +77,7 @@ observation is missing (not a true recorded zero).}
 n_seas, n_ages, n_sexes, n_fish_fleets]}, with a leading population
 dimension for the second, non-zero where a catch at age observation is fit.
 A fleet fitting catch at age is fished in any cell where at least one age is
-fit, in either stream.}
+fit, in either data source.}
 
 \item{use_catch_aa}{Integer vector \code{[n_fish_fleets]}, non-zero for fleets
 fitting catch at age rather than aggregated catch.}
@@ -88,14 +88,15 @@ fitting catch at age rather than aggregated catch.}
 deviations.}
 
 \item{SizeAgeTrans}{Shared size-age key, used when no growth-derived
-per-fleet key is supplied in \code{st}.}
+per-fleet key is supplied in \code{state}.}
 
-\item{natmort, seasdur}{Natural mortality at age and season duration.}
+\item{natmort, seasdur}{Natural mortality at age, \code{[pop, region, year,
+season, age, sex]} and a rate per year, and season duration.}
 
 \item{n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets}{Dimensions.}
 }
 \value{
-\code{st} with year \code{y} updated.
+\code{state} with year \code{y} updated.
 }
 \description{
 Also derives the selection-weighted weight at age where a fleet asks for

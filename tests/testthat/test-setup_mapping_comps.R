@@ -12,8 +12,14 @@ assign("messages_list", character(0), envir = .GlobalEnv)
 # n_regions x n_fish_fleets Type matrix, per-fleet LikeType, and a
 # [region, year, season, fleet] Use array (or [pop, region, year, season,
 # fleet] when has_pop = TRUE).
-make_comp_input_list <- function(comp_type_mat, like_type_vec, use_arr,
-                                 n_sexes = 2, has_pop = FALSE, n_pop = 1) {
+make_comp_input_list <- function(
+  comp_type_mat,
+  like_type_vec,
+  use_arr,
+  n_sexes = 2,
+  has_pop = FALSE,
+  n_pop = 1
+) {
 
   n_regions <- nrow(comp_type_mat)
   n_fish_fleets <- ncol(comp_type_mat)
@@ -150,8 +156,13 @@ test_that("do_sigmaC_pop_mapping / do_sigmaD_pop_mapping correctly share across 
 
   n_pop <- 2; n_regions <- 2; n_years <- 1; n_seas <- 1; n_fish_fleets <- 1
   il <- list(
-    data = list(n_pop = n_pop, n_regions = n_regions, years = 1:n_years,
-               n_seas = n_seas, n_fish_fleets = n_fish_fleets),
+    data = list(
+      n_pop = n_pop,
+      n_regions = n_regions,
+      years = 1:n_years,
+      n_seas = n_seas,
+      n_fish_fleets = n_fish_fleets
+    ),
     par = list(
       ln_sigmaC_pop = array(0, dim = c(n_pop, n_regions, n_years, n_seas, n_fish_fleets)),
       ln_sigmaD_pop = array(0, dim = c(n_pop, n_regions, n_years, n_seas, n_fish_fleets))
@@ -214,7 +225,8 @@ test_that("do_q_mapping estimates q when only population-specific index data is 
 
   il <- list(
     data = list(
-      n_regions = n_regions, n_fish_fleets = n_fish_fleets,
+      n_regions = n_regions,
+      n_fish_fleets = n_fish_fleets,
       UseFishIdx = array(0, dim = c(n_regions, n_years, n_seas, n_fish_fleets)), # aggregate index NOT used
       UseFishIdx_pop = array(c(1, 0), dim = c(n_pop, n_regions, n_years, n_seas, n_fish_fleets)), # pop 1 uses it, pop 2 doesn't
       fish_q_blocks = array("none_Fleet_1", dim = c(n_regions, n_years, n_fish_fleets))
@@ -223,7 +235,13 @@ test_that("do_q_mapping estimates q when only population-specific index data is 
     map = list()
   )
 
-  out <- SPoRC:::do_q_mapping(il, q_spec = "est_all", prefix = "fish", fleet_field = "n_fish_fleets", fleet_label = "fishery fleet")
+  out <- SPoRC:::do_q_mapping(
+    il,
+    q_spec = "est_all",
+    prefix = "fish",
+    fleet_field = "n_fish_fleets",
+    fleet_label = "fishery fleet"
+  )
   expect_false(is.na(out$map$ln_fish_q[1])) # must be estimated, not fixed, since pop 1 uses this index
 })
 
@@ -233,7 +251,8 @@ test_that("do_q_mapping fixes q when no index data (aggregate or pop-specific) i
 
   il <- list(
     data = list(
-      n_regions = n_regions, n_fish_fleets = n_fish_fleets,
+      n_regions = n_regions,
+      n_fish_fleets = n_fish_fleets,
       UseFishIdx = array(0, dim = c(n_regions, n_years, n_seas, n_fish_fleets)),
       UseFishIdx_pop = array(0, dim = c(n_pop, n_regions, n_years, n_seas, n_fish_fleets)),
       fish_q_blocks = array("none_Fleet_1", dim = c(n_regions, n_years, n_fish_fleets))
@@ -242,7 +261,13 @@ test_that("do_q_mapping fixes q when no index data (aggregate or pop-specific) i
     map = list()
   )
 
-  out <- SPoRC:::do_q_mapping(il, q_spec = "est_all", prefix = "fish", fleet_field = "n_fish_fleets", fleet_label = "fishery fleet")
+  out <- SPoRC:::do_q_mapping(
+    il,
+    q_spec = "est_all",
+    prefix = "fish",
+    fleet_field = "n_fish_fleets",
+    fleet_label = "fishery fleet"
+  )
   expect_true(is.na(out$map$ln_fish_q[1]))
 })
 
@@ -252,7 +277,8 @@ test_that("do_q_mapping also serves survey catchability via prefix = 'srv'", {
 
   il <- list(
     data = list(
-      n_regions = n_regions, n_srv_fleets = n_srv_fleets,
+      n_regions = n_regions,
+      n_srv_fleets = n_srv_fleets,
       UseSrvIdx = array(1, dim = c(n_regions, n_years, n_seas, n_srv_fleets)),
       UseSrvIdx_pop = array(0, dim = c(n_pop, n_regions, n_years, n_seas, n_srv_fleets)),
       srv_q_blocks = array("none_Fleet_1", dim = c(n_regions, n_years, n_srv_fleets))
@@ -261,7 +287,13 @@ test_that("do_q_mapping also serves survey catchability via prefix = 'srv'", {
     map = list()
   )
 
-  out <- SPoRC:::do_q_mapping(il, q_spec = "est_all", prefix = "srv", fleet_field = "n_srv_fleets", fleet_label = "survey fleet")
+  out <- SPoRC:::do_q_mapping(
+    il,
+    q_spec = "est_all",
+    prefix = "srv",
+    fleet_field = "n_srv_fleets",
+    fleet_label = "survey fleet"
+  )
   expect_false(is.na(out$map$ln_srv_q[1]))
 })
 

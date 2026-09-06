@@ -2,12 +2,12 @@
 % Please edit documentation in R/setup_mapping.R
 \name{do_at_age_type_setup}
 \alias{do_at_age_type_setup}
-\title{Name the split margins of one at-age stream}
+\title{Name the split dims of one at-age data source}
 \usage{
 do_at_age_type_setup(
   input_list,
   type,
-  stream,
+  data_source,
   fleet_field,
   use_field,
   pop = FALSE
@@ -22,30 +22,30 @@ for every fleet or once per fleet; or year and fleet specifications such as
 \code{"spltRaggS_Year_1-20_Fleet_1"}, in which case every year of every
 fleet needs an entry covering it.}
 
-\item{stream}{Stream tag naming the data element, e.g. \code{"CatchAA"}.}
+\item{data_source}{Data source tag naming the data element, e.g. \code{"CatchAA"}.}
 
 \item{fleet_field}{\code{"n_fish_fleets"} or \code{"n_srv_fleets"}.}
 
-\item{use_field}{Name of the use array for this stream.}
+\item{use_field}{Name of the use array for this data source.}
 
-\item{pop}{Logical. \code{TRUE} for the population-specific stream.}
+\item{pop}{Logical. \code{TRUE} for the population-specific data source.}
 }
 \value{
-\code{input_list} with \code{$data$<stream>_Type} set to a numeric
+\code{input_list} with \code{$data$<data source>_Type} set to a numeric
   matrix \code{[n_yrs, n_fleets]} of codes.
 }
 \description{
 An at-age observation is stored over regions and sexes whether or not it is
-reported that way, and the Type code names which of those margins the fleet
+reported that way, and the Type code names which of those dims the fleet
 reports separately. The vocabulary is the composition one, so a model stating
 both kinds of data states them the same way.
 }
 \details{
-A margin the fleet sums over carries its observation in slot one, and a use
-flag anywhere else on that margin is refused rather than quietly ignored.
+A dim the fleet sums over has its observation in slot one, and a use
+flag anywhere else on that dim is refused rather than quietly ignored.
 
 The setting may change part way through a series, given in the same
-\code{Value_Year_x-y_Fleet_f} form the composition streams take. A bare value
+\code{Value_Year_x-y_Fleet_f} form the composition data sources take. A bare value
 stands for the whole series, either one setting for every fleet or one per
 fleet.
 }

@@ -162,9 +162,8 @@ input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
                                       fish_q_spec = c("est_all", "fix") # estiamte fishery q for fleet 1, not for fleet 2
 )
 
-# mapping for fishery selectivity
-# sharing delta across sexes from early domestic fishery (first time block)
-# also fixing parameters so that no time block for trawl fishery
+# mapping for fishery selectivity: delta shared across sexes in the early domestic fishery, and
+# the trawl fishery fixed so it has no time block
 input_list$map$fish_fixed_sel_pars <- factor(c(1:7, 2, 8:11, rep(12:13,3), rep(c(14,13),3)))
 
 # Setup survey selectivity and catchability
@@ -194,10 +193,8 @@ input_list <- Setup_Mod_Srvsel_and_Q(input_list = input_list,
 
 )
 
-# ll survey, share delta female (index 2) across time blocks and to the coop jp ll survey delta
-# ll survey, share delta male (index 5) across time blocks and to the coop jp ll survey delta
-# coop jp survey does not estimate parameters and shares deltas with longline survey
-# single time block with trawl survey and only one parameter hence, only one parameter estimated across blocks (indices 7 and 8)
+# longline survey deltas (indices 2 and 5) are shared across time blocks and with the cooperative
+# Japanese survey, which estimates nothing. the trawl survey has one parameter per sex (7 and 8)
 input_list$map$srv_fixed_sel_pars <- factor(c(1:3, 2, 4:6, 5,rep(7,4), rep(8, 4), rep(c(NA,2), 2), rep(c(NA, 5), 2)))
 
 # Coop JP Survey (Logistic) Single time block (these estimates are fixed!)
@@ -318,15 +315,19 @@ rec_series <- data.frame(Par = "Recruitment",
                          TMB = as.vector(sabie_rtmb_model$rep$Rec),
                          ADMB = rec[1:length(data$years)])
 
-f_series <- data.frame(Par = "Total F",
-                       Year = 1960:2024,
-                       TMB = apply(sabie_rtmb_model$rep$Fmort,2,sum),
-                       ADMB = tem_dat$t.series$fmort[1:length(data$years)])
+f_series <- data.frame(
+  Par = "Total F",
+  Year = 1960:2024,
+  TMB = apply(sabie_rtmb_model$rep$Fmort,2,sum),
+  ADMB = tem_dat$t.series$fmort[1:length(data$years)]
+)
 
-females_series <- data.frame(Par = "Total Females",
-                             Year = 1960:2024,
-                             TMB = rowSums(sabie_rtmb_model$rep$NAA[1,1,-66,1,,1]),
-                             ADMB = tem_dat$t.series$numbers.f[1:length(data$years)])
+females_series <- data.frame(
+  Par = "Total Females",
+  Year = 1960:2024,
+  TMB = rowSums(sabie_rtmb_model$rep$NAA[1,1,-66,1,,1]),
+  ADMB = tem_dat$t.series$numbers.f[1:length(data$years)]
+)
 
 males_series <- data.frame(Par = "Total Males",
                            Year = 1960:2024,
@@ -493,8 +494,19 @@ dev.off()
 
 png(here("vignettes", "figures", "e_ts_comparison.png"), width = 1000, height = 500)
 ggplot() +
-  geom_line(opt_ts_df_v3 %>% dplyr::filter(Par %in% c("SSB", "Recruitment")), mapping  = aes(x = Year, y = TMB), size = 1.3, lty = 1) +
-  geom_line(opt_ts_df_v3 %>% dplyr::filter(Par %in% c("SSB", "Recruitment")), mapping  = aes(x = Year, y = ADMB), size = 1.3, lty = 2, color = 'red') +
+  geom_line(
+    opt_ts_df_v3 %>% dplyr::filter(Par %in% c("SSB", "Recruitment")),
+    mapping  = aes(x = Year, y = TMB),
+    size = 1.3,
+    lty = 1
+  ) +
+  geom_line(
+    opt_ts_df_v3 %>% dplyr::filter(Par %in% c("SSB", "Recruitment")),
+    mapping  = aes(x = Year, y = ADMB),
+    size = 1.3,
+    lty = 2,
+    color = 'red'
+  ) +
   facet_wrap(~Par, scales = "free_y") +
   labs(x = "Year", color = 'Model', y = "Value") +
   theme_sablefish()

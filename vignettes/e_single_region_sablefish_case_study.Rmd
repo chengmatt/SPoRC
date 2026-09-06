@@ -48,10 +48,6 @@ to one and are dropped from the notation below. The sex subscript $s$ is
 retained, since sablefish is sex structured.
 
 Everything the case study needs ships with the package in `sgl_rg_sable_data`.
-The companion script that produced the figures below is
-`dev/make_sporc_obj_figs/make_sgl_rg_sablefish_bridge_figs.R`, and the data
-container itself is built by
-`dev/make_sporc_obj_figs/make_sgl_rg_sabie_data_object.R`.
 
 ```{r setup, warning = FALSE, message = FALSE, eval = TRUE}
 library(SPoRC)
@@ -94,7 +90,7 @@ between the sexes:
 
 $$N_{y,a=1,s} = \mu^{\text{Rec}}\exp\left(\epsilon^{\text{Rec}}_{y} - \dfrac{\sigma^{2}_{\text{Rec},y}}{2}b_{y}\right)\psi_{s},\qquad \psi_{s} = 0.5$$
 
-Two features of this expression carry most of the setup. The first is
+Two features of this expression have most of the setup. The first is
 $\sigma_{\text{Rec},y}$, which is not constant: the assessment uses an early
 period value fixed at $0.4$ and a late period value that switches on in 1976,
 
@@ -134,7 +130,7 @@ $$F^{\text{Init}} = \text{logit}^{-1}\left(\theta^{\text{Init}}\right)\exp\left(
 
 The `"prop"` form matters: because $F^{\text{Init}}$ moves with
 $\mu^{\text{Fsh}}$, a single parameter both depletes the initial age structure
-and scales the F series. That is the assessment's own construction, so it is
+and scales the F series. This is the assessment's own construction, so it is
 reproduced here, but `"abs"` is the better choice when a model's historical F is
 conceptually independent of the mean F of the modeled period.
 
@@ -167,7 +163,7 @@ input_list <- Setup_Mod_Rec(
 ## Biological dynamics
 
 Natural mortality is sex specific and fixed. The 2024 assessment estimates it
-under a lognormal prior, with males carrying an offset $\delta^{M}$ from the
+under a lognormal prior, with males with an offset $\delta^{M}$ from the
 female value, but that offset has no direct counterpart in `SPoRC`, so both
 values are fixed at the assessment's estimates instead:
 
@@ -232,7 +228,7 @@ The 2024 assessment writes both its catch and its F penalty as unweighted sums
 of squares, `wt_ssqcatch * norm2(log(obs) - log(pred))` and
 `wt_fmort_reg * norm2(log_F_devs)`. Setting $\sigma = 1/\sqrt{2}$ makes
 $1/(2\sigma^{2}) = 1$, so `SPoRC`'s Gaussian form collapses to exactly that sum
-of squares and the assessment's weights carry over unchanged as `Wt_Catch = 50`
+of squares and the assessment's weights are reused unchanged as `Wt_Catch = 50`
 and `Wt_F = 0.1`.
 
 ```{r Setup Catch and Fishing Mortality, message = FALSE}
@@ -341,7 +337,7 @@ a slope:
 
 $$\text{Sel}^{\text{Fsh}}_{a,s,f=1} = \dfrac{1}{1 + \exp\left[-k_{s}\left(a - a^{50}_{s}\right)\right]}$$
 
-and carries three time blocks, 1960--1994, 1995--2015, and 2016--2024,
+and has three time blocks, 1960--1994, 1995--2015, and 2016--2024,
 reflecting the shift from the pre-IFQ fishery through the IFQ era. Catchability
 is blocked on the same boundaries.
 
@@ -414,14 +410,14 @@ input_list$map$srv_fixed_sel_pars <-
   factor(c(1:3, 2, 4:6, 5, rep(7, 4),
            rep(8, 4), rep(c(NA, 2), 2), rep(c(NA, 5), 2)))
 
-# Cooperative Japanese survey logistic parameters, held at the 2024 values
+# Cooperative Japanese survey logistic parameters, kept at the 2024 values
 input_list$par$srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, 0.9295241)
 input_list$par$srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, 0.8821623)
 ```
 
 ## Weighting
 
-Data sources carry a $\lambda$ weight that multiplies the whole component
+Data sources have a $\lambda$ weight that multiplies the whole component
 likelihood, on top of the observed standard errors and input sample sizes
 already supplied. For compositions these come from Francis reweighting; the
 values below are the 2024 assessment's converged weights.

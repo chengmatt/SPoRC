@@ -28,7 +28,7 @@ test_that("OSA composition likelihood pipeline works!", {
   }
 
   # Pack a *single* (year=1, season=1, fleet=1, pop=1) group and return the
-  # tracked OSA vector, using the real pack_comp_osa() machinery so that the
+  # tracked OSA vector, using the real pack_comp_osa() routines so that the
   # unit tests below stay in lock-step with the packer's actual conventions.
   pack_single_group <- function(prop_or_counts, ISS, Wt, use,
                                 n_obs_bins, n_sexes, comp_type, like_type,
@@ -42,11 +42,20 @@ test_that("OSA composition likelihood pipeline works!", {
     LikeTypeVec <- like_type
 
     pack_comp_osa(
-      ObsArr = ObsArr, ISSArr = ISSArr, WtArr = WtArr, UseArr = UseArr,
-      TypeMat = TypeMat, LikeTypeVec = LikeTypeVec,
-      n_yrs = 1, n_seas = 1, n_fleets = 1, n_sexes = n_sexes,
-      addtocomp = addtocomp, family = fam_of(like_type),
-      pop = FALSE, n_pop = 1
+      ObsArr = ObsArr,
+      ISSArr = ISSArr,
+      WtArr = WtArr,
+      UseArr = UseArr,
+      TypeMat = TypeMat,
+      LikeTypeVec = LikeTypeVec,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = 1,
+      n_sexes = n_sexes,
+      addtocomp = addtocomp,
+      family = fam_of(like_type),
+      pop = FALSE,
+      n_pop = 1
     )
   }
 
@@ -54,15 +63,16 @@ test_that("OSA composition likelihood pipeline works!", {
   # sensible defaults for every argument (mirrors call_comp_nll() in the
   # non-OSA test file).
   call_osa_nll <- function(
-    Comp_Type, Likelihood_Type,
+    Comp_Type,
+    Likelihood_Type,
     n_regions    = 2,
     n_model_bins = 4,
     n_obs_bins   = 4,
     n_sexes      = 1,
-    age_or_len   = 1,     # lengths by default (no ageing error needed)
+    age_or_len   = 1, # lengths by default (no ageing error needed)
     use          = NULL,
     Exp          = NULL,
-    Obs_raw      = NULL,  # raw proportions/counts BEFORE packing
+    Obs_raw      = NULL, # raw proportions/counts BEFORE packing
     ISS          = NULL,
     Wt           = NULL,
     ln_theta     = NULL,
@@ -89,13 +99,23 @@ test_that("OSA composition likelihood pipeline works!", {
                                  Comp_Type, Likelihood_Type, addtocomp)
 
     Get_Comp_Likelihoods_OSA(
-      Exp = Exp, Obs = tracked, ISS = ISS,
-      ln_theta = ln_theta, ln_theta_agg = ln_theta_agg,
-      LN_corr_pars = LN_corr_pars, LN_corr_pars_agg = LN_corr_pars_agg,
-      Comp_Type = Comp_Type, Likelihood_Type = Likelihood_Type,
-      n_regions = n_regions, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-      n_sexes = n_sexes, age_or_len = age_or_len, AgeingError = AgeingError,
-      use = use, addtocomp = addtocomp
+      Exp = Exp,
+      Obs = tracked,
+      ISS = ISS,
+      ln_theta = ln_theta,
+      ln_theta_agg = ln_theta_agg,
+      LN_corr_pars = LN_corr_pars,
+      LN_corr_pars_agg = LN_corr_pars_agg,
+      Comp_Type = Comp_Type,
+      Likelihood_Type = Likelihood_Type,
+      n_regions = n_regions,
+      n_model_bins = n_model_bins,
+      n_obs_bins = n_obs_bins,
+      n_sexes = n_sexes,
+      age_or_len = age_or_len,
+      AgeingError = AgeingError,
+      use = use,
+      addtocomp = addtocomp
     )
   }
 
@@ -104,8 +124,12 @@ test_that("OSA composition likelihood pipeline works!", {
     for (ct in 0:2) {
       lts <- if (ct == 2) 0:4 else 0:3
       for (lt in lts) {
-        res <- call_osa_nll(Comp_Type = ct, Likelihood_Type = lt,
-                            n_regions = 3, n_sexes = 2)
+        res <- call_osa_nll(
+          Comp_Type = ct,
+          Likelihood_Type = lt,
+          n_regions = 3,
+          n_sexes = 2
+        )
         expect_true(is.numeric(res),
                     label = sprintf("numeric Comp_Type=%d LT=%d", ct, lt))
         expect_equal(unname(dim(res)), c(3, 2),
@@ -147,12 +171,24 @@ test_that("OSA composition likelihood pipeline works!", {
     Exp_bad  <- normalize_rs(make_prop_array(p_bad,  2, 1))
     Obs_raw  <- make_prop_array(p_true, 2, 1) * 100
 
-    res_good <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 0, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_good, Obs_raw = Obs_raw)
-    res_bad  <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 0, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_bad, Obs_raw = Obs_raw)
+    res_good <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_good,
+      Obs_raw = Obs_raw
+    )
+    res_bad  <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_bad,
+      Obs_raw = Obs_raw
+    )
 
     expect_gt(sum(res_bad), sum(res_good))
   })
@@ -166,12 +202,24 @@ test_that("OSA composition likelihood pipeline works!", {
     Exp_bad  <- normalize_rs(make_prop_array(p_bad,  2, 1))
     Obs_raw  <- make_prop_array(p_true, 2, 1) * 100
 
-    res_good <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 1, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_good, Obs_raw = Obs_raw)
-    res_bad  <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 1, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_bad, Obs_raw = Obs_raw)
+    res_good <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 1,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_good,
+      Obs_raw = Obs_raw
+    )
+    res_bad  <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 1,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_bad,
+      Obs_raw = Obs_raw
+    )
 
     expect_gt(sum(res_bad), sum(res_good))
   })
@@ -185,12 +233,24 @@ test_that("OSA composition likelihood pipeline works!", {
     Exp_bad  <- normalize_rs(make_prop_array(p_bad,  2, 1))
     Obs_raw  <- make_prop_array(p_true, 2, 1)
 
-    res_good <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 2, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_good, Obs_raw = Obs_raw)
-    res_bad  <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 2, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_bad, Obs_raw = Obs_raw)
+    res_good <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 2,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_good,
+      Obs_raw = Obs_raw
+    )
+    res_bad  <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 2,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_bad,
+      Obs_raw = Obs_raw
+    )
 
     expect_gt(sum(res_bad), sum(res_good))
   })
@@ -204,12 +264,24 @@ test_that("OSA composition likelihood pipeline works!", {
     Exp_bad  <- normalize_rs(make_prop_array(p_bad,  2, 1))
     Obs_raw  <- make_prop_array(p_true, 2, 1)
 
-    res_good <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 3, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_good, Obs_raw = Obs_raw)
-    res_bad  <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 3, n_regions = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_bad, Obs_raw = Obs_raw)
+    res_good <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 3,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_good,
+      Obs_raw = Obs_raw
+    )
+    res_bad  <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 3,
+      n_regions = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_bad,
+      Obs_raw = Obs_raw
+    )
 
     expect_gt(sum(res_bad), sum(res_good))
   })
@@ -223,12 +295,26 @@ test_that("OSA composition likelihood pipeline works!", {
     Exp_bad  <- normalize_rs(make_prop_array(p_bad,  2, 2))
     Obs_raw  <- make_prop_array(p_true, 2, 2)
 
-    res_good <- call_osa_nll(Comp_Type = 2, Likelihood_Type = 4, n_regions = 2, n_sexes = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_good, Obs_raw = Obs_raw)
-    res_bad  <- call_osa_nll(Comp_Type = 2, Likelihood_Type = 4, n_regions = 2, n_sexes = 2,
-                             n_model_bins = n_bins, n_obs_bins = n_bins,
-                             Exp = Exp_bad, Obs_raw = Obs_raw)
+    res_good <- call_osa_nll(
+      Comp_Type = 2,
+      Likelihood_Type = 4,
+      n_regions = 2,
+      n_sexes = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_good,
+      Obs_raw = Obs_raw
+    )
+    res_bad  <- call_osa_nll(
+      Comp_Type = 2,
+      Likelihood_Type = 4,
+      n_regions = 2,
+      n_sexes = 2,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = Exp_bad,
+      Obs_raw = Obs_raw
+    )
 
     expect_true(all(is.finite(res_good[, 1])))
     expect_gt(sum(res_bad[, 1]), sum(res_good[, 1]))
@@ -240,16 +326,26 @@ test_that("OSA composition likelihood pipeline works!", {
     Obs_raw[1, 1, 1] <- 0
     Obs_raw[1, 3, 1] <- 0
     for (lt in 2:3) {
-      res <- call_osa_nll(Comp_Type = 1, Likelihood_Type = lt, n_regions = 2,
-                          n_model_bins = n_bins, n_obs_bins = n_bins,
-                          Obs_raw = Obs_raw, addtocomp = 1e-4)
+      res <- call_osa_nll(
+        Comp_Type = 1,
+        Likelihood_Type = lt,
+        n_regions = 2,
+        n_model_bins = n_bins,
+        n_obs_bins = n_bins,
+        Obs_raw = Obs_raw,
+        addtocomp = 1e-4
+      )
       expect_true(all(is.finite(res)), label = sprintf("LT=%d zero handling", lt))
     }
   })
 
   test_that("use-region filtering (OSA): fewer used regions -> fewer populated strata", {
-    res_one <- call_osa_nll(Comp_Type = 1, Likelihood_Type = 0, n_regions = 3,
-                            use = c(0L, 1L, 0L))
+    res_one <- call_osa_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = 3,
+      use = c(0L, 1L, 0L)
+    )
     expect_equal(sum(res_one != 0), 1)
   })
 
@@ -263,10 +359,22 @@ test_that("OSA composition likelihood pipeline works!", {
     TypeMat <- matrix(1, nrow = 1, ncol = 1)
     LikeTypeVec <- 0   # multinomial only -> "discrete"
 
-    out <- pack_comp_osa(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
-                         n_yrs = 1, n_seas = 1, n_fleets = 1, n_sexes = n_sexes,
-                         addtocomp = 1e-4, family = "continuous",
-                         pop = FALSE, n_pop = 1)
+    out <- pack_comp_osa(
+      ObsArr,
+      ISSArr,
+      WtArr,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = 1,
+      n_sexes = n_sexes,
+      addtocomp = 1e-4,
+      family = "continuous",
+      pop = FALSE,
+      n_pop = 1
+    )
     expect_null(out)
   })
 
@@ -279,10 +387,22 @@ test_that("OSA composition likelihood pipeline works!", {
     TypeMat <- matrix(1, nrow = 1, ncol = 1)
     LikeTypeVec <- 0
 
-    out <- pack_comp_osa(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
-                         n_yrs = 1, n_seas = 1, n_fleets = 1, n_sexes = n_sexes,
-                         addtocomp = 1e-4, family = "discrete",
-                         pop = FALSE, n_pop = 1)
+    out <- pack_comp_osa(
+      ObsArr,
+      ISSArr,
+      WtArr,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = 1,
+      n_sexes = n_sexes,
+      addtocomp = 1e-4,
+      family = "discrete",
+      pop = FALSE,
+      n_pop = 1
+    )
     expect_null(out)
   })
 
@@ -293,9 +413,13 @@ test_that("OSA composition likelihood pipeline works!", {
     for (ct in 0:2) {
       g <- pack_single_group(
         prop_or_counts = array(1 / n_obs_bins, dim = c(3, n_obs_bins, n_sexes)),
-        ISS = array(50, dim = c(3, n_sexes)), Wt = array(1, dim = c(3, n_sexes)),
-        use = use, n_obs_bins = n_obs_bins, n_sexes = n_sexes,
-        comp_type = ct, like_type = 0
+        ISS = array(50, dim = c(3, n_sexes)),
+        Wt = array(1, dim = c(3, n_sexes)),
+        use = use,
+        n_obs_bins = n_obs_bins,
+        n_sexes = n_sexes,
+        comp_type = ct,
+        like_type = 0
       )
       expected_len <- if (ct == 0) n_obs_bins else n_ru * n_obs_bins * n_sexes
       expect_equal(length(g), expected_len, label = sprintf("discrete ct=%d", ct))
@@ -309,9 +433,13 @@ test_that("OSA composition likelihood pipeline works!", {
     for (ct in 0:2) {
       g <- pack_single_group(
         prop_or_counts = array(1 / n_obs_bins, dim = c(3, n_obs_bins, n_sexes)),
-        ISS = array(50, dim = c(3, n_sexes)), Wt = array(1, dim = c(3, n_sexes)),
-        use = use, n_obs_bins = n_obs_bins, n_sexes = n_sexes,
-        comp_type = ct, like_type = 2
+        ISS = array(50, dim = c(3, n_sexes)),
+        Wt = array(1, dim = c(3, n_sexes)),
+        use = use,
+        n_obs_bins = n_obs_bins,
+        n_sexes = n_sexes,
+        comp_type = ct,
+        like_type = 2
       )
       expected_len <- if (ct == 0) n_obs_bins - 1
       else if (ct == 1) n_ru * (n_obs_bins - 1) * n_sexes
@@ -326,10 +454,17 @@ test_that("OSA composition likelihood pipeline works!", {
     prop_arr <- make_prop_array(props, 2, 1)  # only region1/sex1 matters for ct=0
     iss <- 200; wt <- 0.5
 
-    g <- pack_single_group(prop_arr, ISS = array(iss, dim = c(2, 1)),
-                           Wt = array(wt, dim = c(2, 1)), use = c(1L, 1L),
-                           n_obs_bins = n_obs_bins, n_sexes = 1,
-                           comp_type = 0, like_type = 0, addtocomp = 1e-4)
+    g <- pack_single_group(
+      prop_arr,
+      ISS = array(iss, dim = c(2, 1)),
+      Wt = array(wt, dim = c(2, 1)),
+      use = c(1L, 1L),
+      n_obs_bins = n_obs_bins,
+      n_sexes = 1,
+      comp_type = 0,
+      like_type = 0,
+      addtocomp = 1e-4
+    )
 
     pr_expected <- (props + 1e-4) / sum(props + 1e-4)
     expected <- round(pr_expected * iss * wt)
@@ -342,10 +477,17 @@ test_that("OSA composition likelihood pipeline works!", {
     prop_arr <- make_prop_array(props, 2, 1)
     iss <- 150; wt <- 999  # Wt should be ignored for DM
 
-    g <- pack_single_group(prop_arr, ISS = array(iss, dim = c(2, 1)),
-                           Wt = array(wt, dim = c(2, 1)), use = c(1L, 1L),
-                           n_obs_bins = n_obs_bins, n_sexes = 1,
-                           comp_type = 0, like_type = 1, addtocomp = 1e-4)
+    g <- pack_single_group(
+      prop_arr,
+      ISS = array(iss, dim = c(2, 1)),
+      Wt = array(wt, dim = c(2, 1)),
+      use = c(1L, 1L),
+      n_obs_bins = n_obs_bins,
+      n_sexes = 1,
+      comp_type = 0,
+      like_type = 1,
+      addtocomp = 1e-4
+    )
 
     pr_expected <- (props + 1e-4) / sum(props + 1e-4)
     expected <- round(pr_expected * iss)
@@ -357,10 +499,17 @@ test_that("OSA composition likelihood pipeline works!", {
     props <- c(0.1, 0.2, 0.3, 0.4)
     prop_arr <- make_prop_array(props, 2, 1)
 
-    g <- pack_single_group(prop_arr, ISS = array(50, dim = c(2, 1)),
-                           Wt = array(1, dim = c(2, 1)), use = c(1L, 1L),
-                           n_obs_bins = n_obs_bins, n_sexes = 1,
-                           comp_type = 0, like_type = 2, addtocomp = 0)
+    g <- pack_single_group(
+      prop_arr,
+      ISS = array(50, dim = c(2, 1)),
+      Wt = array(1, dim = c(2, 1)),
+      use = c(1L, 1L),
+      n_obs_bins = n_obs_bins,
+      n_sexes = 1,
+      comp_type = 0,
+      like_type = 2,
+      addtocomp = 0
+    )
 
     pr_expected <- props / sum(props)
     expected <- alr(pr_expected)
@@ -385,10 +534,22 @@ test_that("OSA composition likelihood pipeline works!", {
     TypeMat <- matrix(1, nrow = 1, ncol = 1)      # Comp_Type = 1 (split)
     LikeTypeVec <- 0                              # multinomial
 
-    tracked <- pack_comp_osa(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
-                             n_yrs = 1, n_seas = 1, n_fleets = 1, n_sexes = n_sexes,
-                             addtocomp = 1e-4, family = "discrete",
-                             pop = FALSE, n_pop = 1)
+    tracked <- pack_comp_osa(
+      ObsArr,
+      ISSArr,
+      WtArr,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = 1,
+      n_sexes = n_sexes,
+      addtocomp = 1e-4,
+      family = "discrete",
+      pop = FALSE,
+      n_pop = 1
+    )
 
     ExpArrFn <- function(p, y, seas, f) Exp_true
     lnThetaArr    <- array(0, dim = c(n_regions, n_sexes, 1))
@@ -399,27 +560,53 @@ test_that("OSA composition likelihood pipeline works!", {
     nLL_init <- array(0, dim = c(n_regions, 1, 1, n_sexes, 1))
 
     res <- eval_comp_osa(
-      nLL_arr = nLL_init, tracked = tracked, ExpArrFn = ExpArrFn,
-      UseArr = UseArr, TypeMat = TypeMat, LikeTypeVec = LikeTypeVec,
-      ISSArr = ISSArr, lnThetaArr = lnThetaArr, lnThetaAggVec = lnThetaAggVec,
-      LNcorrArr = LNcorrArr, LNcorrAggVec = LNcorrAggVec,
-      n_regions = n_regions, n_yrs = 1, n_seas = 1, n_fleets = 1, n_sexes = n_sexes,
-      n_model_bins = n_model_bins, n_obs_bins = n_obs_bins, age_or_len = 1,
-      AgeingErrorFn = NULL, addtocomp = 1e-4,
-      family = "discrete", zero_init = TRUE, pop = FALSE, n_pop = 1
+      nLL_arr = nLL_init,
+      tracked = tracked,
+      ExpArrFn = ExpArrFn,
+      UseArr = UseArr,
+      TypeMat = TypeMat,
+      LikeTypeVec = LikeTypeVec,
+      ISSArr = ISSArr,
+      lnThetaArr = lnThetaArr,
+      lnThetaAggVec = lnThetaAggVec,
+      LNcorrArr = LNcorrArr,
+      LNcorrAggVec = LNcorrAggVec,
+      n_regions = n_regions,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = 1,
+      n_sexes = n_sexes,
+      n_model_bins = n_model_bins,
+      n_obs_bins = n_obs_bins,
+      age_or_len = 1,
+      AgeingErrorFn = NULL,
+      addtocomp = 1e-4,
+      family = "discrete",
+      zero_init = TRUE,
+      pop = FALSE,
+      n_pop = 1
     )
 
     # cross-check against a direct call of Get_Comp_Likelihoods_OSA on the
     # same tracked vector
     direct <- Get_Comp_Likelihoods_OSA(
-      Exp = Exp_true, Obs = tracked,
+      Exp = Exp_true,
+      Obs = tracked,
       ISS = array(200, dim = c(n_regions, n_sexes)),
-      ln_theta = array(0, dim = c(n_regions, n_sexes)), ln_theta_agg = 0,
-      LN_corr_pars = array(0, dim = c(n_regions, n_sexes, 3)), LN_corr_pars_agg = 0,
-      Comp_Type = 1, Likelihood_Type = 0,
-      n_regions = n_regions, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-      n_sexes = n_sexes, age_or_len = 1, AgeingError = identity_ae(n_obs_bins),
-      use = rep(1L, n_regions), addtocomp = 1e-4
+      ln_theta = array(0, dim = c(n_regions, n_sexes)),
+      ln_theta_agg = 0,
+      LN_corr_pars = array(0, dim = c(n_regions, n_sexes, 3)),
+      LN_corr_pars_agg = 0,
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = n_regions,
+      n_model_bins = n_model_bins,
+      n_obs_bins = n_obs_bins,
+      n_sexes = n_sexes,
+      age_or_len = 1,
+      AgeingError = identity_ae(n_obs_bins),
+      use = rep(1L, n_regions),
+      addtocomp = 1e-4
     )
 
     expect_equal(as.numeric(res[, 1, 1, , 1]), as.numeric(direct[, 1]), tolerance = 1e-8)
@@ -441,12 +628,38 @@ test_that("OSA composition likelihood pipeline works!", {
     WtArr  <- array(1,   dim = c(n_regions, 1, 1, n_sexes, n_fleets))
     UseArr <- array(1L,  dim = c(n_regions, 1, 1, n_fleets))
 
-    tracked_discrete   <- pack_comp_osa(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
-                                        n_yrs = 1, n_seas = 1, n_fleets = n_fleets, n_sexes = n_sexes,
-                                        addtocomp = 1e-4, family = "discrete", pop = FALSE, n_pop = 1)
-    tracked_continuous <- pack_comp_osa(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
-                                        n_yrs = 1, n_seas = 1, n_fleets = n_fleets, n_sexes = n_sexes,
-                                        addtocomp = 1e-4, family = "continuous", pop = FALSE, n_pop = 1)
+    tracked_discrete   <- pack_comp_osa(
+      ObsArr,
+      ISSArr,
+      WtArr,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      addtocomp = 1e-4,
+      family = "discrete",
+      pop = FALSE,
+      n_pop = 1
+    )
+    tracked_continuous <- pack_comp_osa(
+      ObsArr,
+      ISSArr,
+      WtArr,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      addtocomp = 1e-4,
+      family = "continuous",
+      pop = FALSE,
+      n_pop = 1
+    )
 
     Exp_true <- normalize_rs(array(0.25, dim = c(n_regions, n_model_bins, n_sexes)))
     ExpArrFn <- function(p, y, seas, f) Exp_true
@@ -458,24 +671,66 @@ test_that("OSA composition likelihood pipeline works!", {
 
     nLL_init <- array(0, dim = c(n_regions, 1, 1, n_sexes, n_fleets))
 
-    res1 <- eval_comp_osa(nLL_init, tracked_discrete, ExpArrFn, UseArr, TypeMat, LikeTypeVec,
-                          ISSArr, lnThetaArr, lnThetaAggVec, LNcorrArr, LNcorrAggVec,
-                          n_regions = n_regions, n_yrs = 1, n_seas = 1, n_fleets = n_fleets,
-                          n_sexes = n_sexes, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-                          age_or_len = 1, AgeingErrorFn = NULL, addtocomp = 1e-4,
-                          family = "discrete", zero_init = TRUE, pop = FALSE, n_pop = 1)
+    res1 <- eval_comp_osa(
+      nLL_init,
+      tracked_discrete,
+      ExpArrFn,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      ISSArr,
+      lnThetaArr,
+      lnThetaAggVec,
+      LNcorrArr,
+      LNcorrAggVec,
+      n_regions = n_regions,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      n_model_bins = n_model_bins,
+      n_obs_bins = n_obs_bins,
+      age_or_len = 1,
+      AgeingErrorFn = NULL,
+      addtocomp = 1e-4,
+      family = "discrete",
+      zero_init = TRUE,
+      pop = FALSE,
+      n_pop = 1
+    )
 
     # fleet 1 (discrete) populated, fleet 2 (continuous) still zero
     expect_true(all(is.finite(res1[, 1, 1, , 1])))
     expect_true(all(res1[, 1, 1, , 1] != 0))
     expect_true(all(res1[, 1, 1, , 2] == 0))
 
-    res2 <- eval_comp_osa(res1, tracked_continuous, ExpArrFn, UseArr, TypeMat, LikeTypeVec,
-                          ISSArr, lnThetaArr, lnThetaAggVec, LNcorrArr, LNcorrAggVec,
-                          n_regions = n_regions, n_yrs = 1, n_seas = 1, n_fleets = n_fleets,
-                          n_sexes = n_sexes, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-                          age_or_len = 1, AgeingErrorFn = NULL, addtocomp = 1e-4,
-                          family = "continuous", zero_init = FALSE, pop = FALSE, n_pop = 1)
+    res2 <- eval_comp_osa(
+      res1,
+      tracked_continuous,
+      ExpArrFn,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      ISSArr,
+      lnThetaArr,
+      lnThetaAggVec,
+      LNcorrArr,
+      LNcorrAggVec,
+      n_regions = n_regions,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      n_model_bins = n_model_bins,
+      n_obs_bins = n_obs_bins,
+      age_or_len = 1,
+      AgeingErrorFn = NULL,
+      addtocomp = 1e-4,
+      family = "continuous",
+      zero_init = FALSE,
+      pop = FALSE,
+      n_pop = 1
+    )
 
     # fleet 1's values from the discrete pass are preserved...
     expect_equal(as.numeric(res2[, 1, 1, , 1]), as.numeric(res1[, 1, 1, , 1]))
@@ -484,12 +739,33 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_true(all(res2[, 1, 1, , 2] != 0))
 
     # zero_init = TRUE wipes the previously-filled discrete slot
-    res3 <- eval_comp_osa(res2, tracked_continuous, ExpArrFn, UseArr, TypeMat, LikeTypeVec,
-                          ISSArr, lnThetaArr, lnThetaAggVec, LNcorrArr, LNcorrAggVec,
-                          n_regions = n_regions, n_yrs = 1, n_seas = 1, n_fleets = n_fleets,
-                          n_sexes = n_sexes, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-                          age_or_len = 1, AgeingErrorFn = NULL, addtocomp = 1e-4,
-                          family = "continuous", zero_init = TRUE, pop = FALSE, n_pop = 1)
+    res3 <- eval_comp_osa(
+      res2,
+      tracked_continuous,
+      ExpArrFn,
+      UseArr,
+      TypeMat,
+      LikeTypeVec,
+      ISSArr,
+      lnThetaArr,
+      lnThetaAggVec,
+      LNcorrArr,
+      LNcorrAggVec,
+      n_regions = n_regions,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = n_fleets,
+      n_sexes = n_sexes,
+      n_model_bins = n_model_bins,
+      n_obs_bins = n_obs_bins,
+      age_or_len = 1,
+      AgeingErrorFn = NULL,
+      addtocomp = 1e-4,
+      family = "continuous",
+      zero_init = TRUE,
+      pop = FALSE,
+      n_pop = 1
+    )
 
     expect_true(all(res3[, 1, 1, , 1] == 0))       # fleet 1 wiped
     expect_true(all(res3[, 1, 1, , 2] != 0))       # fleet 2 still populated
@@ -507,15 +783,33 @@ test_that("OSA composition likelihood pipeline works!", {
     LNcorrArr <- array(0, dim = c(n_regions, n_sexes, 1, 3))
     LNcorrAggVec <- c(0)
 
-    res <- eval_comp_osa(nLL_init, tracked = NULL,
-                         ExpArrFn = function(p, y, seas, f) stop("should not be called"),
-                         UseArr = UseArr, TypeMat = TypeMat, LikeTypeVec = LikeTypeVec,
-                         ISSArr = ISSArr, lnThetaArr = lnThetaArr, lnThetaAggVec = lnThetaAggVec,
-                         LNcorrArr = LNcorrArr, LNcorrAggVec = LNcorrAggVec,
-                         n_regions = n_regions, n_yrs = 1, n_seas = 1, n_fleets = 1,
-                         n_sexes = n_sexes, n_model_bins = 4, n_obs_bins = 4, age_or_len = 1,
-                         AgeingErrorFn = NULL, addtocomp = 1e-4,
-                         family = "discrete", zero_init = TRUE, pop = FALSE, n_pop = 1)
+    res <- eval_comp_osa(
+      nLL_init,
+      tracked = NULL,
+      ExpArrFn = function(p, y, seas, f) stop("should not be called"),
+      UseArr = UseArr,
+      TypeMat = TypeMat,
+      LikeTypeVec = LikeTypeVec,
+      ISSArr = ISSArr,
+      lnThetaArr = lnThetaArr,
+      lnThetaAggVec = lnThetaAggVec,
+      LNcorrArr = LNcorrArr,
+      LNcorrAggVec = LNcorrAggVec,
+      n_regions = n_regions,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = 1,
+      n_sexes = n_sexes,
+      n_model_bins = 4,
+      n_obs_bins = 4,
+      age_or_len = 1,
+      AgeingErrorFn = NULL,
+      addtocomp = 1e-4,
+      family = "discrete",
+      zero_init = TRUE,
+      pop = FALSE,
+      n_pop = 1
+    )
 
     expect_identical(res, nLL_init)
   })

@@ -12,50 +12,78 @@ library(Matrix)
 build_ctmc_model <- function(n_regions = 3, n_seas = 1, n_sexes = 2, n_yrs = 8, n_ages = 6) {
   set.seed(404)
 
-  input_list <- Setup_Mod_Dim(years = 1:n_yrs, ages = 1:n_ages, lens = 1:5, n_regions = n_regions,
-                              n_seas = n_seas, n_sexes = n_sexes, n_fish_fleets = 1,
-                              n_srv_fleets = 1, n_pop = 1, verbose = FALSE)
+  input_list <- Setup_Mod_Dim(
+    years = 1:n_yrs,
+    ages = 1:n_ages,
+    lens = 1:5,
+    n_regions = n_regions,
+    n_seas = n_seas,
+    n_sexes = n_sexes,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_pop = 1,
+    verbose = FALSE
+  )
 
-  ctmc_dat <- expand.grid(pop = 1, regions = seq_len(n_regions), years = seq_len(n_yrs),
-                          seas = seq_len(n_seas), ages = seq_len(n_ages), sexes = seq_len(n_sexes))
+  ctmc_dat <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = seq_len(n_yrs),
+    seas = seq_len(n_seas),
+    ages = seq_len(n_ages),
+    sexes = seq_len(n_sexes)
+  )
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
 
-  input_list <- Setup_Mod_Movement(input_list = input_list,
-                                   move_type = 1,
-                                   do_recruits_move = 0,
-                                   use_fixed_movement = 0,
-                                   ctmc_move_dat = ctmc_dat,
-                                   adjacency_mat = adj,
-                                   area_r = rep(1, n_regions),
-                                   diffusion_formula = ~ 1,
-                                   preference_formula = ~ 1,
-                                   move_timing = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    move_type = 1,
+    do_recruits_move = 0,
+    use_fixed_movement = 0,
+    ctmc_move_dat = ctmc_dat,
+    adjacency_mat = adj,
+    area_r = rep(1, n_regions),
+    diffusion_formula = ~ 1,
+    preference_formula = ~ 1,
+    move_timing = 0
+  )
   input_list
 }
 
 test_that("Setup_Mod_Movement accepts every move_timing for a CTMC model", {
   il <- build_ctmc_model()
   for (tm in 0:2) {
-    out <- Setup_Mod_Movement(input_list = il,
-                              move_type = 1, do_recruits_move = 0, use_fixed_movement = 0,
-                              ctmc_move_dat = il$data$ctmc_move_dat,
-                              adjacency_mat = il$data$adjacency_mat,
-                              area_r = il$data$area_r,
-                              diffusion_formula = ~ 1, preference_formula = ~ 1,
-                              move_timing = tm)
+    out <- Setup_Mod_Movement(
+      input_list = il,
+      move_type = 1,
+      do_recruits_move = 0,
+      use_fixed_movement = 0,
+      ctmc_move_dat = il$data$ctmc_move_dat,
+      adjacency_mat = il$data$adjacency_mat,
+      area_r = il$data$area_r,
+      diffusion_formula = ~ 1,
+      preference_formula = ~ 1,
+      move_timing = tm
+    )
     expect_equal(out$data$move_timing, tm)
   }
 })
 
 test_that("continuous movement forces the generator onto annual time units", {
   il <- build_ctmc_model()
-  out <- Setup_Mod_Movement(input_list = il,
-                            move_type = 1, do_recruits_move = 0, use_fixed_movement = 0,
-                            ctmc_move_dat = il$data$ctmc_move_dat,
-                            adjacency_mat = il$data$adjacency_mat,
-                            area_r = il$data$area_r,
-                            diffusion_formula = ~ 1, preference_formula = ~ 1,
-                            move_timing = 2, ctmc_scale_by_seasdur = 0)
+  out <- Setup_Mod_Movement(
+    input_list = il,
+    move_type = 1,
+    do_recruits_move = 0,
+    use_fixed_movement = 0,
+    ctmc_move_dat = il$data$ctmc_move_dat,
+    adjacency_mat = il$data$adjacency_mat,
+    area_r = il$data$area_r,
+    diffusion_formula = ~ 1,
+    preference_formula = ~ 1,
+    move_timing = 2,
+    ctmc_scale_by_seasdur = 0
+  )
   # Mixing an unscaled generator with seasdur-scaled mortality is dimensionally inconsistent
   expect_equal(out$data$ctmc_scale_by_seasdur, 1)
 })
@@ -64,21 +92,40 @@ test_that("Get_Movement returns a usable generator for every timing", {
   # Shape guard on the pieces the dynamics index into: Movement and Mrate must be
   # dimensioned alike so that Mrate[p,,,y,seas,a,s] lines up with Movement[p,,,y,seas,a,s]
   n_regions <- 3; n_ages <- 4; n_sexes <- 2; n_yrs <- 3; n_seas <- 2
-  dat <- expand.grid(pop = 1, regions = seq_len(n_regions), years = seq_len(n_yrs),
-                     seas = seq_len(n_seas), ages = seq_len(n_ages), sexes = seq_len(n_sexes))
+  dat <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = seq_len(n_yrs),
+    seas = seq_len(n_seas),
+    ages = seq_len(n_ages),
+    sexes = seq_len(n_sexes)
+  )
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
 
   res <- Get_Movement(
-    move_type = 1, do_recruits_move = 1,
-    n_pop = 1, n_regions = n_regions, n_yrs = n_yrs, n_proj_yrs_devs = 0,
-    n_ages = n_ages, n_sexes = n_sexes, n_seas = n_seas,
+    move_type = 1,
+    do_recruits_move = 1,
+    n_pop = 1,
+    n_regions = n_regions,
+    n_yrs = n_yrs,
+    n_proj_yrs_devs = 0,
+    n_ages = n_ages,
+    n_sexes = n_sexes,
+    n_seas = n_seas,
     move_pars = array(0, c(1, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes)),
     move_devs = array(0, c(1, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes)),
-    use_fixed_movement = 0, Fixed_Movement = NULL,
-    ctmc_move_dat = dat, preference_formula = ~ 1, diffusion_formula = ~ 1,
-    log_move_diffusion_pars = log(0.25), move_preference_pars = 0,
-    area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-    seasdur = rep(1 / n_seas, n_seas), ctmc_scale_by_seasdur = 1
+    use_fixed_movement = 0,
+    Fixed_Movement = NULL,
+    ctmc_move_dat = dat,
+    preference_formula = ~ 1,
+    diffusion_formula = ~ 1,
+    log_move_diffusion_pars = log(0.25),
+    move_preference_pars = 0,
+    area_r = rep(1, n_regions),
+    adjacency_mat = adj,
+    ctmc_diffusion_bounds = 0,
+    seasdur = rep(1 / n_seas, n_seas),
+    ctmc_scale_by_seasdur = 1
   )
 
   expect_equal(dim(res$Mrate), dim(res$Movement))

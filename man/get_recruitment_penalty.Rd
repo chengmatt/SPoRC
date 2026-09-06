@@ -86,7 +86,7 @@ first sex's slice, which is the pre-sex-dimension behavior.}
 
 \item{Use_init_sex_pen}{Integer (0/1). Whether each later sex's initial
 age deviations are tied to the first sex's through a Gaussian on their
-difference at every penalized age. Only meaningful when the sexes carry
+difference at every penalized age. Only meaningful when the sexes have
 their own curves.}
 
 \item{ln_sigma_init_sex}{Log standard deviation of that tie.}

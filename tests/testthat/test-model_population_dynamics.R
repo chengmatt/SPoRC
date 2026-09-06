@@ -1,13 +1,13 @@
 library(SPoRC)
 library(testthat)
 
-# A minimal 1-pop, 1-region, 2-season, 3-age fixture. n_regions = 1 means the
+# A minimal 1-pop, 1-region, 2-season, 3-age test setup. n_regions = 1 means the
 # movement step is a structural no-op (gated by n_regions > 1), so this
 # isolates the mortality/ageing/recruitment mechanics without also depending
 # on Get_Movement()'s correctness. rec_model = 0 (mean recruitment) is used
 # because it's a fully deterministic, trivial formula
 # (R0 * rec_region_prop), so the recruitment insertion step can be checked
-# exactly too, without depending on the Beverton-Holt/SSB machinery.
+# exactly too, without depending on the Beverton-Holt/SSB routines.
 # spawn_seas = 1 and rec_seas_prop = c(1, 0) mean season 2 gets none of the
 # year's recruitment, so the season-2 "insert seasonal recruits" step is a
 # guaranteed no-op and doesn't need separate verification.
@@ -29,7 +29,7 @@ make_pop_proj_input <- function() {
     sexratio = array(1, dim = c(n_pop, n_regions, n_yrs, n_sexes)),
     WAA = array(2, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)),
     MatAA = array(0.5, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)),
-    natmort = array(0.2, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes)),
+    natmort = array(0.2, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)),
     Movement = array(1, dim = c(n_pop, n_regions, n_regions, n_yrs, n_seas, n_ages, n_sexes)),
     stray_rate = array(0, dim = c(n_pop, n_yrs)),
     sgl_seas_spawning_movement = array(1, dim = c(n_pop, n_regions, n_regions, n_yrs, n_ages, n_sexes)),

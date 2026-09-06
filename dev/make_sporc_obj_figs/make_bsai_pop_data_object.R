@@ -1,24 +1,17 @@
-# Purpose: Build sgl_rg_bsai_pop_data, the container for the BSAI Pacific ocean
-#          perch case study. Everything the case study and its regression tests
-#          need lives in the object: model inputs, the ADMB maximum likelihood
-#          estimate used as a seed, and the ADMB output the bridge is compared
-#          against.
+# Purpose: Build sgl_rg_bsai_pop_data, the inputs, ADMB seed, and ADMB output for the BSAI POP case study
 # Creator: Matthew LH. Cheng
 # Date Created: 8/8/26
 #
 # Sources, all under dev/dev_data/bsai_pop24:
 #   pop24.dat          2024 assessment input file
-#   pop24.ctl          control file, carries the stage 1 sample sizes and lambdas
+#   pop24.ctl          control file, holds the stage 1 sample sizes and lambdas
 #   compweights.ctl    applied McAllister Ianelli composition weights, read by
 #                      the template separately from pop24.ctl
 #   pop24.par          ADMB parameter file, read at full precision
 #   pop24.rdat         ADMB report object, the comparison target
 #
-# POP differs from the BSAI northern rockfish case study in four ways that the
-# object has to carry: fishery selectivity is a bicubic spline over a 5 by 5
-# node grid rather than a logistic, there are two survey fleets rather than one,
-# the first year sits in equilibrium under a fixed historical F, and weight at
-# age is a single vector broadcast across years.
+# POP differs from the BSAI northern rockfish case study in four ways: a bicubic spline fishery
+# selectivity, two survey fleets, a first year in equilibrium under fixed historical F, one WAA vector
 
 library(here)
 
@@ -64,9 +57,8 @@ get_par <- function(name) {
 }
 
 # Dimensions -------------------------------------------------------------------
-# The model carries 44 age classes (3 to 46) while the compositions are reported
-# over 38 (3 to 40), so the ageing error matrix maps the model ages onto the
-# shorter observed range. The bicubic surface is fit over the first 38 ages.
+# 44 model ages (3 to 46) against 38 observed (3 to 40): the ageing error matrix maps between
+# them, and the bicubic selectivity surface is fit over the first 38
 n_pop <- 1
 n_regions <- 1
 n_seas <- 1
@@ -99,17 +91,15 @@ cv_q <- c(read_nums(lines[428]), read_nums(lines[429]))
 mean_M <- read_nums(lines[440])
 cv_M <- read_nums(lines[442])
 
-# The fishery selectivity block. A bicubic spline over a 5 year by 5 age node
-# grid, fit from 1964 over the first 38 ages; years before 1964 and ages beyond
-# 38 are edge held by the template.
+# the fishery selectivity block: a bicubic spline over a 5 year by 5 age node grid, fit from 1964
+# over the first 38 ages. years before 1964 and ages beyond 38 are edge set by the template
 fsh_sel_styr <- read_nums(lines[357])
 fsh_yr_nodes <- read_nums(lines[375])
 fsh_age_nodes <- read_nums(lines[377])
 stopifnot(read_nums(lines[355]) == 3, all(read_nums(lines[383]) == 1))
 
-# Selectivity penalty lambdas from the control file. These map one to one onto
-# SPoRC's smoothness penalty terms; the mean centering weight is hardcoded in
-# the template rather than read from the control file.
+# selectivity penalty lambdas from the control file, one to one onto SPoRC's smoothness terms.
+# the mean centering weight is hardcoded in the template rather than read from the control file
 lam_rec <- read_nums(ctl[91])
 lam_catch <- read_nums(ctl[93])
 lam_dome <- read_nums(ctl[95])
@@ -119,9 +109,8 @@ lam_yr_curve <- read_nums(ctl[101])
 lam_mean_ctr <- 10000
 
 # Biologicals ------------------------------------------------------------------
-# Weight at age is a single vector broadcast across years. The "(ages 3 - 25)"
-# comment on these lines in the .dat is stale, both rows carry all 44 ages, and
-# the population and fishery vectors are identical in this file.
+# one weight at age vector broadcast across years. the .dat's "(ages 3 - 25)" note is stale:
+# both rows carry all 44 ages, and population and fishery are identical here
 pop_waa <- read_nums(lines[318])
 fish_waa <- read_nums(lines[320])
 stopifnot(length(pop_waa) == n_ages, length(fish_waa) == n_ages)
@@ -132,16 +121,15 @@ WAA[1, 1, , 1, , 1] <- matrix(rep(pop_waa, each = n_yrs), nrow = n_yrs)
 WAA_fish <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 WAA_fish[1, 1, , 1, , 1] <- matrix(rep(fish_waa, each = n_yrs), nrow = n_yrs)
 
-# Maturity is estimated inside the ADMB template rather than read from the .dat,
-# so it is absent from the report object. The fitted logistic is rebuilt from
-# mat_beta1 and mat_beta2 in the parameter file and held fixed in SPoRC.
+# maturity is estimated inside the ADMB template, so it is absent from the report object. the
+# fitted logistic is rebuilt from mat_beta1 and mat_beta2 and kept fixed in SPoRC
 mat_beta1 <- get_par("mat_beta1")
 mat_beta2 <- get_par("mat_beta2")
 maa_vec <- 1 / (1 + exp(-(mat_beta1 + mat_beta2 * ages)))
 MatAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 MatAA[1, 1, , 1, , 1] <- matrix(rep(maa_vec, each = n_yrs), nrow = n_yrs)
 
-# The .dat carries the size at age matrix as [length bin x age] with each age
+# The .dat holds the size at age matrix as [length bin x age] with each age
 # column a distribution over length bins, so the columns are normalized.
 size_age_raw <- read_matrix(121, n_lens, n_ages)
 col_sums <- colSums(size_age_raw)
@@ -150,10 +138,8 @@ size_age_mat <- sweep(size_age_raw, 2, col_sums, "/")
 SizeAgeTrans <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes))
 for(y in seq_len(n_yrs)) SizeAgeTrans[1, 1, y, 1, , , 1] <- size_age_mat
 
-# Ageing error is stored as [observed age x true age]. The ADMB template
-# column-normalizes it to P(obs | true); SPoRC multiplies predicted numbers at
-# age on the right, so it needs [true x obs], and the observed plus group
-# collapses rows 38 to 44 onto row 38.
+# stored [observed x true] and column-normalized to P(obs | true); SPoRC needs [true x obs],
+# and the observed plus group collapses rows 38 to 44 onto row 38
 age_error_raw <- read_matrix(76, n_ages, n_ages)
 col_sums <- colSums(age_error_raw)
 col_sums[col_sums == 0] <- 1
@@ -174,12 +160,8 @@ ObsCatch <- array(catch_vec, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 UseCatch <- array(1L, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 
 # Survey indices ---------------------------------------------------------------
-# The .dat carries two survey blocks, biomass in tonnes and abundance in
-# millions. The control file fits biomass and does not fit abundance, so only
-# the biomass block is bridged. Fleet 1 is the Aleutian Islands bottom trawl
-# survey, fleet 2 the eastern Bering Sea slope survey. The .dat reports a
-# standard deviation on the arithmetic scale, carried to SPoRC as a lognormal
-# coefficient of variation.
+# two .dat blocks, biomass in tonnes and abundance in millions; the control file fits biomass
+# only. fleet 1 is the AI bottom trawl, fleet 2 the EBS slope. arithmetic sd, kept as a CV
 srv_nyrs <- read_nums(lines[39])
 ai_srv_yrs <- read_nums(lines[42])
 ebs_srv_yrs <- read_nums(lines[43])
@@ -226,12 +208,8 @@ fill_iss <- function(arr, iss_vec, ind_vec, fleet) {
 }
 
 # Composition sample sizes and weights -----------------------------------------
-# The ADMB objective uses applied_N = compweight * stage1_N, where the stage 1
-# sample sizes are the square root sample size rows in pop24.ctl and the
-# compweights live in a separate file the template opens itself. The multinomial
-# nLL is linear in sample size, so ISS = stage 1 with Wt = compweight is
-# equivalent to ISS = applied with Wt = 1; the former keeps the two sources
-# visible and separable.
+# the ADMB objective uses applied_N = compweight * stage1_N, with the compweights in a file the
+# template opens itself. the multinomial nLL is linear in N, so keeping the two apart is equivalent
 fish_age_stg1 <- read_nums(ctl[64])
 fish_len_stg1 <- read_nums(ctl[70])
 ai_age_stg1 <- read_nums(ctl[76])
@@ -336,12 +314,8 @@ stopifnot(
 )
 
 # ADMB maximum likelihood estimate ---------------------------------------------
-# Read at full precision from the parameter file. rec_dev covers 62 years, the
-# last three taking mean recruitment. historic_F is fixed at phase -1 and sets
-# the first year equilibrium; log_avg_fmort is estimated and sets the F series,
-# so the two are independent and SPoRC carries historic_F in its own ln_init_F
-# slot. fsh_sel_par is the 5 by 5 bicubic node grid, written row major with the
-# rows as age nodes.
+# read at full precision. historic_F is fixed at phase -1 and sets the first year equilibrium,
+# independent of the estimated log_avg_fmort, so it goes in SPoRC's own ln_init_F slot
 mle <- list(
   M = exp(get_par("log_avg_M")),
   mean_log_rec = get_par("mean_log_rec"),
@@ -362,11 +336,8 @@ stopifnot(length(mle$fmort_dev) == n_yrs,
           length(mle$fsh_sel_par) == fsh_yr_nodes * fsh_age_nodes)
 
 # ADMB output ------------------------------------------------------------------
-# The comparison target. natage is reported over the 38 observed ages with the
-# model's ages 41 to 46 pooled into the final column. selfish and fmort are both
-# rescaled for reporting: the template divides selectivity by its within-year
-# maximum and multiplies F by the same factor, leaving F times selectivity
-# invariant, so the raw quantities have to be recovered before comparing.
+# natage is reported over the 38 observed ages, model ages 41 to 46 pooled into the last column.
+# selfish and fmort are rescaled by the within-year selectivity maximum: undo it before comparing
 admb <- list(
   NAA = as.matrix(mod$natage),
   SSB = mod$t.series$spbiom,

@@ -45,7 +45,7 @@ so callers that need the population step \emph{and} the catch integral for the s
 stratum, which is every fished stratum, since the dynamics advance the numbers and
 the Baranov equation integrates them over the identical \eqn{A}, should take both
 from here rather than exponentiating \eqn{A} once and the block again. Under
-reverse-mode AD the adjoint of a matrix exponential is far more expensive than its
+reverse-mode AD the derivative of a matrix exponential is far more expensive than its
 forward evaluation, so halving the number of exponentials on the tape is worth more
 than the flop count alone suggests.
 }

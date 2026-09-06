@@ -1,23 +1,14 @@
-# Sweeps the options that choose a form rather than a sharing structure: the
-# likelihood a stream is fit under, how its observations are split, what an index
-# measures, how a catchability is computed.
+# Sweeps the options that choose a form rather than a sharing structure: the likelihood a data source
+# is fit under, how its observations are split, what an index measures, how a catchability is computed.
 #
-# Two questions are asked of each. Is it connected to anything, and does it stay
-# inside its own stream.
+# Two questions of each. Is it connected to anything, which a fixed jnLL cannot answer since an option read
+# and never used looks exactly like one that is wired.
 #
-# The first is the one a pinned jnLL cannot answer. A pinned number is equally
-# happy whether the option that was supposed to produce it did any work, so an
-# option read from the argument list and never used again looks exactly like one
-# that is wired. Comparing what changes when the option is flipped asks the
-# question directly.
-#
-# The second is a containment claim. These models are evaluated rather than
-# fitted, so nothing about the survey can reach the fishery through a shared
-# parameter estimate. A survey option that moves a fishery likelihood is reading
-# or writing something that does not belong to it.
+# And does it stay inside its own data source: these models are evaluated rather than fitted, so a survey
+# option that moves a fishery likelihood is reading or writing something that is not its own.
 
-# Which stream an option or a likelihood component belongs to, read off its name.
-# Anything matching neither is shared machinery (recruitment, mortality, movement,
+# Which data source an option or a likelihood component belongs to, read off its name.
+# Anything matching neither is shared routines (recruitment, mortality, movement,
 # selectivity penalties) and is exempt from the containment check.
 wiring_stream_of <- function(x) {
   if(grepl("^Srv|^srv|Srv", x)) return("survey")
@@ -36,22 +27,26 @@ wiring_catalog <- local({
     for(a in args) {
       legal <- sweep_legal_specs(stage, a)
       if(length(legal) < 2) next
-      out[[length(out) + 1]] <- list(stage = stage, arg = a, legal = legal,
-                                     stream = wiring_stream_of(a))
+      out[[length(out) + 1]] <- list(
+        stage = stage,
+        arg = a,
+        legal = legal,
+        data_source = wiring_stream_of(a)
+      )
     }
   }
   out
 })
 
-# Options the base fixture cannot make live: they govern a stream it does not
-# carry (at-age observations, discards, conditional age-at-length, and the
+# Options the base test setup cannot make live: they govern a data source it does not
+# have (at-age observations, discards, conditional age-at-length, and the
 # population-specific forms of all of those). Listing them keeps the gap visible
 # rather than letting a silently inert option pass as tested.
 wiring_unconfigured <- c(
   grep("AA_", vapply(wiring_catalog, function(x) x$arg, character(1)), value = TRUE),
   grep("_pop_|discard|caal", vapply(wiring_catalog, function(x) x$arg, character(1)),
        value = TRUE, ignore.case = TRUE),
-  # the fixture fits ages rather than lengths
+  # the test setup fits ages rather than lengths
   "FishLenComps_LikeType", "FishLenComps_Type", "SrvLenComps_LikeType", "SrvLenComps_Type",
   # only the 'age' setting builds without length data, so there is no second value
   # to compare against here. The length path is exercised directly in
@@ -62,8 +57,14 @@ wiring_unconfigured <- c(
 #' Build one option value all the way through, ready to evaluate
 #'
 #' @keywords internal
-wiring_dims <- list(n_regions = 2, n_sexes = 2, n_fish_fleets = 1,
-                    n_srv_fleets = 1, n_yrs = 8, n_ages = 5)
+wiring_dims <- list(
+  n_regions = 2,
+  n_sexes = 2,
+  n_fish_fleets = 1,
+  n_srv_fleets = 1,
+  n_yrs = 8,
+  n_ages = 5
+)
 
 wiring_build <- function(entry, value) {
   sweep_build_with(entry$stage, entry$arg,
@@ -74,8 +75,8 @@ wiring_build <- function(entry, value) {
 #' Whether two option values produce a model that computes anything differently
 #'
 #' Writing a switch into the data list is not by itself evidence that an option is
-#' connected: a likelihood code is stored whether or not the stream it names
-#' carries data. What counts is a change to what is estimated or to what the
+#' connected: a likelihood code is stored whether or not the data source it names
+#' has data. What counts is a change to what is estimated or to what the
 #' likelihood evaluates to.
 #'
 #' @keywords internal
@@ -136,15 +137,15 @@ test_that("each option changes the model it is supposed to configure", {
 })
 
 
-test_that("an option only moves the likelihood of its own stream", {
+test_that("an option only moves the likelihood of its own data source", {
   # These models are evaluated at fixed parameters, so a survey setting has no
   # route to a fishery likelihood and vice versa. Anything crossing is reading a
-  # margin, an index, or an array slot belonging to the other stream.
+  # dim, an index, or an array slot belonging to the other data source.
   problems <- character()
 
   for(entry in wiring_catalog) {
-    if(entry$arg %in% wiring_unconfigured || is.na(entry$stream)) next
-    other <- if(entry$stream == "survey") "fishery" else "survey"
+    if(entry$arg %in% wiring_unconfigured || is.na(entry$data_source)) next
+    other <- if(entry$data_source == "survey") "fishery" else "survey"
 
     base <- wiring_contributions(entry, entry$legal[1])
     if(is.null(base)) next
@@ -167,16 +168,16 @@ test_that("an option only moves the likelihood of its own stream", {
 })
 
 
-test_that("the containment check can tell the streams apart", {
+test_that("the containment check can tell the data sources apart", {
   # If every component were classified as shared, the check above would compare
-  # nothing and pass regardless. Both streams have to be represented among the
-  # likelihoods the fixture actually reports.
+  # nothing and pass regardless. Both data sources have to be represented among the
+  # likelihoods the test setup actually reports.
   entry <- Filter(function(x) x$arg == "srv_idx_type", wiring_catalog)[[1]]
   contrib <- wiring_contributions(entry, "abd")
 
-  streams <- vapply(names(contrib), wiring_stream_of, character(1))
-  expect_true(any(streams == "survey", na.rm = TRUE))
-  expect_true(any(streams == "fishery", na.rm = TRUE))
+  data_sources <- vapply(names(contrib), wiring_stream_of, character(1))
+  expect_true(any(data_sources == "survey", na.rm = TRUE))
+  expect_true(any(data_sources == "fishery", na.rm = TRUE))
 })
 
 

@@ -1,7 +1,7 @@
 # Stage 3 of 3: post fit
 #
-# Jitter analysis: refit from perturbed starting values to check the optimizer is
-# finding the same minimum.
+# Jitter analysis: refit from perturbed starting values to check the optimizer is finding the same
+# minimum.
 
 #' Run Jitter Analysis for Model Diagnostics
 #'
@@ -77,11 +77,13 @@ do_jitter <- function(data,
 
   jitter_all <- data.frame()
 
-  obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, data),
-                         parameters = parameters,
-                         map = mapping,
-                         random = random,
-                         silent = TRUE)
+  obj <- RTMB::MakeADFun(
+    cmb(SPoRC_rtmb, data),
+    parameters = parameters,
+    map = mapping,
+    random = random,
+    silent = TRUE
+  )
 
   if(do_par == FALSE) {
     for(i in 1:n_jitter) {
@@ -97,14 +99,17 @@ do_jitter <- function(data,
                              control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15))
 
       # newton steps
-      try_improve <- tryCatch(expr =
+      try_improve <- tryCatch(
+        expr =
                                 for(j in 1:n_newton_loops) {
                                   g = as.numeric(obj$gr(optim$par))
                                   h = optimHess(optim$par, fn = obj$fn, gr = obj$gr)
                                   optim$par = optim$par - solve(h,g)
                                   optim$objective = obj$fn(optim$par)
-                                }
-                              , error = function(e){e}, warning = function(w){w})
+                                },
+        error = function(e){e},
+        warning = function(w){w}
+      )
 
       obj$rep <- obj$report(obj$env$last.par.best) # Get report
       obj$sd_rep <- RTMB::sdreport(obj) # Get sd report
@@ -137,7 +142,13 @@ do_jitter <- function(data,
       jitter_all <- future.apply::future_lapply(1:n_jitter, function(i) {
 
         # make obj
-        obj <- RTMB::MakeADFun(cmb(SPoRC_rtmb, data), parameters = parameters,  map = mapping, random = random, silent = TRUE)
+        obj <- RTMB::MakeADFun(
+          cmb(SPoRC_rtmb, data),
+          parameters = parameters,
+          map = mapping,
+          random = random,
+          silent = TRUE
+        )
 
         # Jitter original parameters
         if(is.null(par_vec)) jitter_pars <- obj$par + stats::rnorm(length(obj$par), 0, sd) # if not using mle parameters

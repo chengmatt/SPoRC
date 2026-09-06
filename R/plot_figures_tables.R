@@ -1,8 +1,9 @@
 # Stage 3 of 3: post fit
 #
-# Plots and summary tables from a fitted model. Reads through the extraction
-# layer in diag_fits.R and diag_retrospective.R rather than digging into the
-# fitted object directly. theme_sablefish is the shared ggplot2 theme.
+# Plots and summary tables from a fitted model, read through the extraction layer in diag_fits.R and
+# diag_retrospective.R. theme_sablefish is the shared ggplot2 theme.
+
+# Time Series and Selectivity -----------------------------------------------
 
 #' Get Time Series Plots
 #'
@@ -66,12 +67,14 @@ get_ts_plot <- function(rep,
     ssb_plot_df <- reshape2::melt(rep[[i]]$SSB) %>%
       dplyr::rename(Pop = Var1, Region = Var2, Year = Var3) %>%
       dplyr::bind_cols(se = sd_rep[[i]]$sd[names(sd_rep[[i]]$value) == "log_SSB"]) %>%
-      dplyr::mutate(lwr = exp(log(value) - 1.96 * se),
-                    upr = exp(log(value) + 1.96 * se),
-                    Region = paste("Region", Region),
-                    Pop = paste("Population", Pop),
-                    Type = paste(Pop, 'SSB'),
-                    Model = model_names[i])
+      dplyr::mutate(
+        lwr = exp(log(value) - 1.96 * se),
+        upr = exp(log(value) + 1.96 * se),
+        Region = paste("Region", Region),
+        Pop = paste("Population", Pop),
+        Type = paste(Pop, 'SSB'),
+        Model = model_names[i]
+      )
 
     # Dynamic Unfished Spawning Stock Biomass
     ssb0_plot_df <- reshape2::melt(rep[[i]]$Dynamic_SSB0) %>%
@@ -326,6 +329,8 @@ get_selex_plot <- function(rep, model_names, Selex_Type = 'age', year_indx = NUL
   return(list(fish_sel_plot, srv_sel_plot))
 }
 
+# Biology and Data ----------------------------------------------------------
+
 #' Get Plots of Biological Quantities
 #'
 #' Generates plots of movement probabilities, natural mortality, weight-at-age,
@@ -390,6 +395,9 @@ get_biological_plot <- function(data,
 
   for(i in 1:length(rep)) {
 
+    # old reports have no season dim
+    rep[[i]]$natmort <- expand_natmort_seasons(rep[[i]]$natmort, data[[i]]$n_seas)
+
     # Movement
     move_plot_tmp_df <- reshape2::melt(rep[[i]]$Movement) %>%
       dplyr::rename(Pop = pop, Region_From = from, Region_To = to, Seas = seas, Year = years, Age = ages, Sex = sexes) %>%
@@ -404,9 +412,10 @@ get_biological_plot <- function(data,
 
     # Natural Mortality
     natmort_plot_tmp_df <- reshape2::melt(rep[[i]]$natmort) %>%
-      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Age = Var4, Sex = Var5) %>%
+      dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6) %>%
       dplyr::mutate(Region = paste("Region", Region),
                     Sex = paste("Sex", Sex),
+                    Seas = paste("Seas", Seas),
                     Pop = paste('Population', Pop),
                     Model = model_names[i]
       )
@@ -446,7 +455,13 @@ get_biological_plot <- function(data,
                              ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Sex)) +
       ggplot2::geom_line(lwd = 1) +
       ggplot2::facet_grid(Region_To ~ Region_From + Seas) +
-      ggplot2::labs(x = 'Age', y = 'Movement Probabilities', color = 'Model', lty = 'Sex', title = paste("Population", i)) +
+      ggplot2::labs(
+        x = 'Age',
+        y = 'Movement Probabilities',
+        color = 'Model',
+        lty = 'Sex',
+        title = paste("Population", i)
+      ) +
       ggplot2::coord_cartesian(ylim = c(0, 1)) +
       theme_sablefish() +
       ggplot2::theme(legend.key.width = unit(2, "lines"))
@@ -457,7 +472,7 @@ get_biological_plot <- function(data,
                                     dplyr::filter(Year == max(natmort_plot_df$Year)),
                                   ggplot2::aes(x = Age, y = value, color = factor(Model), lty = factor(Pop))) +
     ggplot2::geom_line(lwd = 2) +
-    ggplot2::facet_grid(Region~Sex) +
+    ggplot2::facet_grid(Region~Sex+Seas) +
     ggplot2::labs(x = 'Age', y = 'Natural Mortality', color = 'Model', lty=  'Population') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     theme_sablefish() +
@@ -652,6 +667,8 @@ get_data_fitted_plot <- function(data,
 
   return(data_plot)
 }
+
+# Fit Diagnostics -----------------------------------------------------------
 
 #' Get Plot of Negative Log Likelihood Values
 #'
@@ -858,7 +875,7 @@ get_idx_fits_plot <- function(data,
 
 #' Plot observed and predicted age-disaggregated observations
 #'
-#' Companion to \code{\link{get_catch_fits_plot}} for the at-age streams:
+#' Companion to \code{\link{get_catch_fits_plot}} for the at-age data sources:
 #' retained catch, discards, and the fishery and survey indices at age. Each is
 #' a lognormal observation with its own standard deviation, so intervals are
 #' built the same way, and the panel is faceted by age.
@@ -868,24 +885,28 @@ get_idx_fits_plot <- function(data,
 #' @param rep List of length \code{n_models} of SPoRC model reports, read for the
 #'   predicted at-age values and their standard deviations.
 #' @param model_names Character vector naming each model run.
-#' @param stream Which stream to plot: \code{"CatchAA"} (default),
+#' @param data_source Which data source to plot: \code{"CatchAA"} (default),
 #'   \code{"DiscardAA"} or \code{"SrvIdxAA"}.
 #'
-#' @return A \code{ggplot}, or \code{NULL} when no model fits that stream.
+#' @return A \code{ggplot}, or \code{NULL} when no model fits that data source.
 #'
 #' @export
 #' @family Plotting Functions
-get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
+get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA") {
 
   valid <- c("CatchAA", "DiscardAA", "SrvIdxAA")
-  if(!stream %in% valid) stop("stream must be one of: ", paste(valid, collapse = ", "))
+  if(!data_source %in% valid) stop("data source must be one of: ", paste(valid, collapse = ", "))
 
-  obs_nm <- paste0("Obs", stream)
-  use_nm <- paste0("Use", stream)
+  obs_nm <- paste0("Obs", data_source)
+  use_nm <- paste0("Use", data_source)
 
-  pred_nm <- paste0("Pred", stream)
-  sigma_nm <- switch(stream, CatchAA = "ln_sigmaCAA", DiscardAA = "ln_sigmaDAA",
-                     SrvIdxAA = "ln_sigmaSrvIdxAA")
+  pred_nm <- paste0("Pred", data_source)
+  sigma_nm <- switch(
+    data_source,
+    CatchAA = "ln_sigmaCAA",
+    DiscardAA = "ln_sigmaDAA",
+    SrvIdxAA = "ln_sigmaSrvIdxAA"
+  )
 
   rows <- list()
   for(i in seq_along(rep)) {
@@ -899,7 +920,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
     # the standard deviation is whatever the fleet's error source says it is,
     # so the intervals shown are the ones the likelihood actually used
     extra <- exp(rep[[i]][[sigma_nm]])[cbind(idx[, 4], idx[, 5], fleet)]
-    form <- data[[i]][[paste0(stream, "_sigma_form")]]
+    form <- data[[i]][[paste0(data_source, "_sigma_form")]]
     se <- data[[i]][[paste0(obs_nm, "_SE")]]
     sigma <- extra
     if(!is.null(form) && !is.null(se)) {
@@ -909,25 +930,26 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
       } # end f loop
     }
 
-    # a margin the fleet sums over holds its observation in slot one, so naming
-    # that slot after a region or a sex would name one the observation is not
-    # about. The setting may differ between years, so it is read per row
-    aa_type <- data[[i]][[paste0(stream, "_Type")]]
+    # a dim the fleet sums over holds its observation in slot one, so naming that slot after a
+    # region or sex would misname it. the setting may differ between years, so read it per row
+    aa_type <- data[[i]][[paste0(data_source, "_Type")]]
     code <- if(is.null(aa_type)) rep(3, length(fleet))
             else if(is.null(dim(aa_type))) aa_type[fleet]
             else aa_type[cbind(idx[, 2], fleet)]
     split <- at_age_split(code)
 
-    like <- data[[i]][[paste0(stream, "_LikeType")]]
+    like <- data[[i]][[paste0(data_source, "_LikeType")]]
     rows[[length(rows) + 1]] <- data.frame(
-      Year = data[[i]]$years[idx[, 2]], Season = idx[, 3],
+      Year = data[[i]]$years[idx[, 2]],
+      Season = idx[, 3],
       Region = ifelse(split$region, paste("Region", idx[, 1]), "All regions"),
       Age = data[[i]]$ages[idx[, 4]],
       Sex = ifelse(split$sex, paste("Sex", idx[, 5]), "All sexes"),
       Fleet = fleet,
       Obs = data[[i]][[obs_nm]][fit_cells],
       Pred = rep[[i]][[pred_nm]][fit_cells],
-      sigma = sigma, lognormal = if(is.null(like)) TRUE else like[fleet] == 0,
+      sigma = sigma,
+      lognormal = if(is.null(like)) TRUE else like[fleet] == 0,
       Model = model_names[i]
     )
   } # end i loop
@@ -943,7 +965,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
     facet_grid(Age ~ Fleet + Region + Sex, scales = "free_y",
                labeller = labeller(Age = function(x) paste("Age", x),
                                    Fleet = function(x) paste("Fleet", x))) +
-    labs(x = "Year", y = stream, color = NULL) +
+    labs(x = "Year", y = data_source, color = NULL) +
     theme_bw(base_size = 11) + theme(panel.grid.minor = element_blank())
 }
 
@@ -951,7 +973,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, stream = "CatchAA") {
 #'
 #' Plots observed catch and discard time series alongside model-predicted
 #' values for one or more SPoRC model runs, for both pooled (region-level)
-#' and population-specific data streams.
+#' and population-specific data sources.
 #'
 #' Pooled predictions are summed across populations before comparison with
 #' observed data. Years where observed values are zero are excluded from both
@@ -1191,6 +1213,8 @@ get_catch_fits_plot <- function(data,
 }
 
 
+# Retrospective -------------------------------------------------------------
+
 #' Get Retrospective Plot
 #'
 #' Generates three retrospective diagnostic plots from a set of peeled model
@@ -1274,13 +1298,26 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
     ggplot2::geom_hline(yintercept = 0, lty = 2, lwd = 1.3) +
     ggplot2::geom_line(ret_df,
                        mapping = ggplot2::aes(x = Year, y = rd, group = as.numeric(peel), color = as.numeric(peel)), lwd = 1.3) +
-    ggplot2::geom_point(ret_df %>% dplyr::filter(peel == max(Year) - Year),
-                        mapping = ggplot2::aes(x = Year, y = rd, group = as.numeric(peel), fill = as.numeric(peel)),
-                        pch = 21, size = 6) +
-    ggplot2::geom_text(mohns_rho, mapping = aes(x = -Inf, y = Inf, label = paste("Mohns Rho:", round(rho, 4))),
-                       hjust = -0.3, vjust = 3, size = 5) +
+    ggplot2::geom_point(
+      ret_df %>% dplyr::filter(peel == max(Year) - Year),
+      mapping = ggplot2::aes(x = Year, y = rd, group = as.numeric(peel), fill = as.numeric(peel)),
+      pch = 21,
+      size = 6
+    ) +
+    ggplot2::geom_text(
+      mohns_rho,
+      mapping = aes(x = -Inf, y = Inf, label = paste("Mohns Rho:", round(rho, 4))),
+      hjust = -0.3,
+      vjust = 3,
+      size = 5
+    ) +
     ggplot2::guides(color = ggplot2::guide_colorbar(barwidth = 15, barheight = 1.3)) +
-    ggplot2::labs(x = 'Year', y = 'Relative Difference from Terminal Year', color = 'Retrospective Year', fill = 'Retrospective Year') +
+    ggplot2::labs(
+      x = 'Year',
+      y = 'Relative Difference from Terminal Year',
+      color = 'Retrospective Year',
+      fill = 'Retrospective Year'
+    ) +
     ggplot2::scale_color_viridis_c() +
     ggplot2::scale_fill_viridis_c() +
     ggplot2::facet_grid(Region~Type + Pop, scales = 'free') +
@@ -1290,7 +1327,12 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
   # get absolute retro plot
   abs_retro_plot <- ggplot2::ggplot() +
     ggplot2::geom_line(retro_output %>% filter(peel != 0), mapping = ggplot2::aes(x = Year, y = value, group = peel, color = peel), lwd = 1) +
-    ggplot2::geom_line(retro_output %>% filter(peel == 0), mapping = ggplot2::aes(x = Year, y = value), lty = 2, lwd = 1) +
+    ggplot2::geom_line(
+      retro_output %>% filter(peel == 0),
+      mapping = ggplot2::aes(x = Year, y = value),
+      lty = 2,
+      lwd = 1
+    ) +
     ggplot2::scale_color_viridis_c() +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     ggplot2::facet_wrap(Region~Type+Pop, scales = 'free_y') +
@@ -1299,17 +1341,28 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
 
   # get squid plot
   squid_plot <- retro_output %>%
-    dplyr::mutate(Year = Year, terminal = max(retro_output$Year) - peel, cohort = Year - Rec_Age, years_est = terminal-Year) %>%
+    dplyr::mutate(
+      Year = Year,
+      terminal = max(retro_output$Year) - peel,
+      cohort = Year - Rec_Age,
+      years_est = terminal-Year
+    ) %>%
     dplyr::filter(Type == 'Recruitment', cohort %in% seq(max(retro_output$Year) - 10, max(retro_output$Year), 1), terminal != Year) %>%
     ggplot2::ggplot(ggplot2::aes(x = years_est - 1, y = value, group = Year, color = factor(cohort))) +
     ggplot2::geom_line(lwd = 1.3) +
     ggplot2::geom_point(size = 4) +
     ggplot2::facet_grid(Pop~Region, scales = 'free') +
     ggplot2::theme_bw(base_size = 15) +
-    ggplot2::labs(x = 'Years since cohort was last estimated', y = 'Recruitment (millions)', color = 'Cohort')
+    ggplot2::labs(
+      x = 'Years since cohort was last estimated',
+      y = 'Recruitment (millions)',
+      color = 'Cohort'
+    )
 
   return(list(retro_plot, abs_retro_plot, squid_plot))
 }
+
+# Convenience Wrappers ------------------------------------------------------
 
 #' Plotting Function for All Basic Quantities
 #'
@@ -1357,9 +1410,8 @@ plot_all_basic <- function(data,
                            model_names,
                            out_path) {
 
-  # here::here() drops a NULL, so an absent out_path leaves pdf() with a
-  # zero-length file name and it writes a file called NA into whatever the
-  # working directory happens to be
+  # here::here() drops a NULL, so an absent out_path leaves pdf() with a zero-length file name
+  # and it writes a file called NA into the working directory
   if(length(out_path) != 1 || is.na(out_path))
     stop("out_path must be a single directory for plot_results.pdf to be written into, but was ",
          if(length(out_path) == 0) "empty" else paste(out_path, collapse = ", "), ".")
@@ -1424,7 +1476,7 @@ plot_all_basic <- function(data,
 #'     \item{\code{n_proj_yrs}}{Number of years to project forward.}
 #'     \item{\code{n_avg_yrs}}{Number of terminal model years over which
 #'       demographic inputs (selectivity, weight-at-age, maturity, natural
-#'       mortality, movement) are averaged before being held constant across
+#'       mortality, movement) are averaged before being kept constant across
 #'       the projection period.}
 #'     \item{\code{HCR_function}}{A harvest control rule function with
 #'       signature \code{function(x, frp, brp, ...)}, where \code{x} is
@@ -1517,6 +1569,9 @@ get_key_quants <- function(data,
                            model_names
 ) {
 
+  # old reports have no season dim
+  for(i in seq_along(rep)) rep[[i]]$natmort <- expand_natmort_seasons(rep[[i]]$natmort, data[[i]]$n_seas)
+
   # required elements for reference points opt
   required <- c("SPR_x", "t_spawn", "sex_ratio_f", "calc_rec_st_yr", "rec_age", "type", "what")
   missing <- setdiff(required, names(reference_points_opt))
@@ -1605,10 +1660,11 @@ get_key_quants <- function(data,
       perm = c(1, 2, 6, 3, 4, 5))
 
     # natural mortality
-    natmort_avg <- apply(rep[[i]]$natmort[,,avg_yrs,,,drop = FALSE], c(1, 2, 4, 5), mean)
+    natmort_avg <- apply(rep[[i]]$natmort[,,avg_yrs,,,,drop = FALSE], c(1, 2, 4, 5, 6), mean)
     natmort <- aperm(array(rep(natmort_avg, times = n_proj_yrs),
-                           dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(data[[i]]$ages),
-                                   data[[i]]$n_sexes, n_proj_yrs)), perm = c(1, 2, 5, 3, 4))
+                           dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas,
+                                   length(data[[i]]$ages), data[[i]]$n_sexes, n_proj_yrs)),
+                     perm = c(1, 2, 6, 3, 4, 5))
     # fishery selectivity
     fish_sel_avg <- apply(rep[[i]]$fish_sel[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
     fish_sel <- aperm(
@@ -1640,13 +1696,11 @@ get_key_quants <- function(data,
     f_ref_pt = array(tmp_ref_pts$f_ref_pt, dim = c(data[[i]]$n_regions, n_proj_yrs))
     b_ref_pt = array(tmp_ref_pts$b_ref_pt, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, n_proj_yrs))
 
-    # Set up stock-recruit options if projecting under a stock-recruit curve.
-    # Do_Population_Projection derives the curve from recruitment_opt itself, so
-    # the same option list serves both forms.
+    # stock-recruit options when projecting under a curve. Do_Population_Projection derives the
+    # curve from recruitment_opt itself, so one option list serves both forms
     if(proj_model_opt$recruitment_opt %in% c('bh_rec', 'ricker_rec')) {
-      # Reference year for the biologicals behind unfished spawning biomass per
-      # recruit. Must match what the model was fitted with or S0, and therefore
-      # the whole curve, shifts. Older data lists predate the option.
+      # reference year for the biologicals behind unfished spawning biomass per recruit. must match
+      # what the model was fitted with, or S0 and the whole curve shift
       sr_yr <- if(is.null(data[[i]]$SR_ref_yr)) 1 else data[[i]]$SR_ref_yr
       srr_opt <- list(
         do_recruits_move = data[[i]]$do_recruits_move,
@@ -1660,10 +1714,10 @@ get_key_quants <- function(data,
         # Demographics for unfished SSB, taken at SR_ref_yr
         WAA = array(data[[i]]$WAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ),
         MatAA = array(data[[i]]$MatAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ) ,
-        natmort = array(rep[[i]]$natmort[,,sr_yr,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(data[[i]]$ages) )),
+        natmort = array(rep[[i]]$natmort[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )),
         sgl_seas_spawning_movement = array(rep[[i]]$sgl_seas_spawning_movement[,,,sr_yr,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, length(data[[i]]$ages) )),
         Movement = array(rep[[i]]$Movement[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )),
-        # Instantaneous rates matched to Movement above, needed by the SPR machinery
+        # Instantaneous rates matched to Movement above, needed by the SPR routines
         # behind Beverton-Holt when movement is continuous
         Mrate = if(proj_move_timing == 2) array(rep[[i]]$Mrate[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )) else NULL,
         stray_rate = array(rep[[i]]$stray_rate[,1], dim = data[[i]]$n_pop),

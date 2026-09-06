@@ -1,10 +1,5 @@
-# Self-validating bridge test. The expectations are not stored SPoRC output: they are
-# the 2024 BSAI blackspotted and rougheye rockfish assessment's own reported quantities,
-# shipped in sgl_rg_rebs_data$admb. Every parameter is set to the assessment's maximum
-# likelihood estimate and the model is evaluated there without optimizing, so a failure
-# means the population dynamics, a likelihood, or a selectivity form no longer reproduces
-# the assessment at a point where it is known to. Do not loosen the tolerances to make
-# this pass. See tests/README.md and the BSAI rougheye case study vignette.
+# Self-validating bridge test: the expectations are the 2024 BSAI blackspotted and rougheye rockfish
+# assessment's own quantities in sgl_rg_rebs_data$admb, evaluated at its estimate without optimizing.
 
 library(SPoRC)
 library(testthat)
@@ -34,7 +29,7 @@ test_that("BSAI rougheye reproduces the 2024 ADMB assessment at its own MLE", {
   # The population at the assessment's MLE. The assessment reports numbers at age
   # over the 43 observed ages with the model's ages 45 to 54 pooled into the last
   # column, so SPoRC's 52 ages are pooled the same way before comparing. The
-  # tolerance is set by the assessment's own report, which carries six significant
+  # tolerance is set by the assessment's own report, which has six significant
   # figures.
   #
   # Age 1 is recruitment and is checked separately below. The three terminal

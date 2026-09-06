@@ -6,11 +6,15 @@ make_unfished_single <- function(n_ages = 4, M = 0.2, R0 = 1000) {
   n_pop <- 1; n_regions <- 1; n_sexes <- 1; n_seas <- 1; n_fish_fleets <- 1
 
   list(
-    n_regions = n_regions, n_pop = n_pop, n_sexes = n_sexes, n_ages = n_ages,
-    n_seas = n_seas, n_fish_fleets = n_fish_fleets,
+    n_regions = n_regions,
+    n_pop = n_pop,
+    n_sexes = n_sexes,
+    n_ages = n_ages,
+    n_seas = n_seas,
+    n_fish_fleets = n_fish_fleets,
     seasdur = 1,
     rec_seas_prop = matrix(1, nrow = n_pop, ncol = n_seas),
-    natmort = array(M, dim = c(n_pop, n_regions, n_ages, n_sexes)),
+    natmort = array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)),
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
     dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
     fish_sel = array(0.5, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)),
@@ -35,12 +39,26 @@ test_that("init_age_strc = 1 (scalar geometric series) matches the hand-derived 
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
-    init_age_strc = 1, init_iter = 0, n_regions = d$n_regions, n_pop = d$n_pop,
-    n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-    seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-    init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-    R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-    do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+    init_age_strc = 1,
+    init_iter = 0,
+    n_regions = d$n_regions,
+    n_pop = d$n_pop,
+    n_sexes = d$n_sexes,
+    n_ages = d$n_ages,
+    n_seas = d$n_seas,
+    n_fish_fleets = d$n_fish_fleets,
+    seasdur = d$seasdur,
+    rec_seas_prop = d$rec_seas_prop,
+    natmort = d$natmort,
+    init_F = d$init_F,
+    dmr = d$dmr,
+    fish_sel = d$fish_sel,
+    ret_sel = d$ret_sel,
+    R0_r = d$R0_r,
+    sexratio = d$sexratio,
+    Movement = d$Movement,
+    do_recruits_move = d$do_recruits_move,
+    ln_InitDevs = d$ln_InitDevs
   )
 
   expected <- expected_unfished_naa(4, 0.2, 1000)
@@ -51,12 +69,26 @@ test_that("init_age_strc = 2 (matrix geometric series) reduces to the scalar sol
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
-    init_age_strc = 2, init_iter = 0, n_regions = d$n_regions, n_pop = d$n_pop,
-    n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-    seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-    init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-    R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-    do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+    init_age_strc = 2,
+    init_iter = 0,
+    n_regions = d$n_regions,
+    n_pop = d$n_pop,
+    n_sexes = d$n_sexes,
+    n_ages = d$n_ages,
+    n_seas = d$n_seas,
+    n_fish_fleets = d$n_fish_fleets,
+    seasdur = d$seasdur,
+    rec_seas_prop = d$rec_seas_prop,
+    natmort = d$natmort,
+    init_F = d$init_F,
+    dmr = d$dmr,
+    fish_sel = d$fish_sel,
+    ret_sel = d$ret_sel,
+    R0_r = d$R0_r,
+    sexratio = d$sexratio,
+    Movement = d$Movement,
+    do_recruits_move = d$do_recruits_move,
+    ln_InitDevs = d$ln_InitDevs
   )
 
   expected <- expected_unfished_naa(4, 0.2, 1000)
@@ -67,12 +99,26 @@ test_that("init_age_strc = 3 (hybrid) reduces to the scalar solution when n_regi
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
-    init_age_strc = 3, init_iter = 0, n_regions = d$n_regions, n_pop = d$n_pop,
-    n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-    seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-    init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-    R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-    do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+    init_age_strc = 3,
+    init_iter = 0,
+    n_regions = d$n_regions,
+    n_pop = d$n_pop,
+    n_sexes = d$n_sexes,
+    n_ages = d$n_ages,
+    n_seas = d$n_seas,
+    n_fish_fleets = d$n_fish_fleets,
+    seasdur = d$seasdur,
+    rec_seas_prop = d$rec_seas_prop,
+    natmort = d$natmort,
+    init_F = d$init_F,
+    dmr = d$dmr,
+    fish_sel = d$fish_sel,
+    ret_sel = d$ret_sel,
+    R0_r = d$R0_r,
+    sexratio = d$sexratio,
+    Movement = d$Movement,
+    do_recruits_move = d$do_recruits_move,
+    ln_InitDevs = d$ln_InitDevs
   )
 
   expected <- expected_unfished_naa(4, 0.2, 1000)
@@ -83,12 +129,26 @@ test_that("init_age_strc = 0 (iterative) converges to the scalar closed form giv
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
-    init_age_strc = 0, init_iter = 50, n_regions = d$n_regions, n_pop = d$n_pop,
-    n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-    seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-    init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-    R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-    do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+    init_age_strc = 0,
+    init_iter = 50,
+    n_regions = d$n_regions,
+    n_pop = d$n_pop,
+    n_sexes = d$n_sexes,
+    n_ages = d$n_ages,
+    n_seas = d$n_seas,
+    n_fish_fleets = d$n_fish_fleets,
+    seasdur = d$seasdur,
+    rec_seas_prop = d$rec_seas_prop,
+    natmort = d$natmort,
+    init_F = d$init_F,
+    dmr = d$dmr,
+    fish_sel = d$fish_sel,
+    ret_sel = d$ret_sel,
+    R0_r = d$R0_r,
+    sexratio = d$sexratio,
+    Movement = d$Movement,
+    do_recruits_move = d$do_recruits_move,
+    ln_InitDevs = d$ln_InitDevs
   )
 
   expected <- expected_unfished_naa(4, 0.2, 1000)
@@ -99,12 +159,26 @@ test_that("init_age_strc = 0 with too few iterations has NOT yet converged (sani
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
-    init_age_strc = 0, init_iter = 1, n_regions = d$n_regions, n_pop = d$n_pop,
-    n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-    seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-    init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-    R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-    do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+    init_age_strc = 0,
+    init_iter = 1,
+    n_regions = d$n_regions,
+    n_pop = d$n_pop,
+    n_sexes = d$n_sexes,
+    n_ages = d$n_ages,
+    n_seas = d$n_seas,
+    n_fish_fleets = d$n_fish_fleets,
+    seasdur = d$seasdur,
+    rec_seas_prop = d$rec_seas_prop,
+    natmort = d$natmort,
+    init_F = d$init_F,
+    dmr = d$dmr,
+    fish_sel = d$fish_sel,
+    ret_sel = d$ret_sel,
+    R0_r = d$R0_r,
+    sexratio = d$sexratio,
+    Movement = d$Movement,
+    do_recruits_move = d$do_recruits_move,
+    ln_InitDevs = d$ln_InitDevs
   )
 
   expected <- expected_unfished_naa(4, 0.2, 1000)
@@ -118,7 +192,7 @@ test_that("init_age_strc = 1 correctly decomposes fishing mortality into retaine
   n_pop <- 1; n_regions <- 1; n_sexes <- 1; n_ages <- 3; n_seas <- 1; n_fish_fleets <- 1
   M <- 0.2; R0 <- 1000; Finit <- 2.0; ret <- 0.8; dmr_val <- 0.3
 
-  natmort <- array(M, dim = c(n_pop, n_regions, n_ages, n_sexes))
+  natmort <- array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   init_F <- array(Finit, dim = c(n_regions, n_seas, n_fish_fleets))
   dmr <- array(dmr_val, dim = c(n_regions, n_seas, n_fish_fleets))
 
@@ -128,14 +202,26 @@ test_that("init_age_strc = 1 correctly decomposes fishing mortality into retaine
   ret_sel <- array(ret, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets))
 
   out <- Get_Init_NAA(
-    init_age_strc = 1, init_iter = 0, n_regions = n_regions, n_pop = n_pop,
-    n_sexes = n_sexes, n_ages = n_ages, n_seas = n_seas, n_fish_fleets = n_fish_fleets,
-    seasdur = 1, rec_seas_prop = matrix(1, nrow = n_pop, ncol = n_seas), natmort = natmort,
-    init_F = init_F, dmr = dmr, fish_sel = fish_sel, ret_sel = ret_sel,
+    init_age_strc = 1,
+    init_iter = 0,
+    n_regions = n_regions,
+    n_pop = n_pop,
+    n_sexes = n_sexes,
+    n_ages = n_ages,
+    n_seas = n_seas,
+    n_fish_fleets = n_fish_fleets,
+    seasdur = 1,
+    rec_seas_prop = matrix(1, nrow = n_pop, ncol = n_seas),
+    natmort = natmort,
+    init_F = init_F,
+    dmr = dmr,
+    fish_sel = fish_sel,
+    ret_sel = ret_sel,
     R0_r = matrix(R0, nrow = n_pop, ncol = n_regions),
     sexratio = array(1, dim = c(n_pop, n_regions, n_sexes)),
     Movement = array(1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)),
-    do_recruits_move = 0, ln_InitDevs = array(0, dim = c(n_pop, n_regions, n_ages - 1))
+    do_recruits_move = 0,
+    ln_InitDevs = array(0, dim = c(n_pop, n_regions, n_ages - 1))
   )
 
   F_age <- Finit * (ret + (1 - ret) * dmr_val) # F for ages with sel = 1 (both age 2 and the plus group here)
@@ -161,10 +247,17 @@ test_that("Get_Init_NAA() allocates age-1 recruits across sexes according to sex
   sexratio[, , 2] <- 0.4
 
   out <- Get_Init_NAA(
-    init_age_strc = 1, init_iter = 0, n_regions = n_regions, n_pop = n_pop,
-    n_sexes = n_sexes, n_ages = n_ages, n_seas = n_seas, n_fish_fleets = n_fish_fleets,
-    seasdur = 1, rec_seas_prop = matrix(1, nrow = n_pop, ncol = n_seas),
-    natmort = array(M, dim = c(n_pop, n_regions, n_ages, n_sexes)),
+    init_age_strc = 1,
+    init_iter = 0,
+    n_regions = n_regions,
+    n_pop = n_pop,
+    n_sexes = n_sexes,
+    n_ages = n_ages,
+    n_seas = n_seas,
+    n_fish_fleets = n_fish_fleets,
+    seasdur = 1,
+    rec_seas_prop = matrix(1, nrow = n_pop, ncol = n_seas),
+    natmort = array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)),
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
     dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
     fish_sel = array(0.5, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)),
@@ -172,7 +265,8 @@ test_that("Get_Init_NAA() allocates age-1 recruits across sexes according to sex
     R0_r = matrix(R0, nrow = n_pop, ncol = n_regions),
     sexratio = sexratio,
     Movement = array(1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)),
-    do_recruits_move = 0, ln_InitDevs = array(0, dim = c(n_pop, n_regions, n_ages - 1))
+    do_recruits_move = 0,
+    ln_InitDevs = array(0, dim = c(n_pop, n_regions, n_ages - 1))
   )
 
   expect_equal(out[1, 1, 1, 1], R0 * 0.6) # age 1, sex 1
@@ -187,22 +281,50 @@ test_that("ln_InitDevs multiplicatively scales ages 2:n_ages but leaves age 1 un
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
 
   out_baseline <- Get_Init_NAA(
-    init_age_strc = 1, init_iter = 0, n_regions = d$n_regions, n_pop = d$n_pop,
-    n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-    seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-    init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-    R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-    do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+    init_age_strc = 1,
+    init_iter = 0,
+    n_regions = d$n_regions,
+    n_pop = d$n_pop,
+    n_sexes = d$n_sexes,
+    n_ages = d$n_ages,
+    n_seas = d$n_seas,
+    n_fish_fleets = d$n_fish_fleets,
+    seasdur = d$seasdur,
+    rec_seas_prop = d$rec_seas_prop,
+    natmort = d$natmort,
+    init_F = d$init_F,
+    dmr = d$dmr,
+    fish_sel = d$fish_sel,
+    ret_sel = d$ret_sel,
+    R0_r = d$R0_r,
+    sexratio = d$sexratio,
+    Movement = d$Movement,
+    do_recruits_move = d$do_recruits_move,
+    ln_InitDevs = d$ln_InitDevs
   )
 
   d$ln_InitDevs[1, 1, ] <- log(2) # double ages 2:4
   out_dev <- Get_Init_NAA(
-    init_age_strc = 1, init_iter = 0, n_regions = d$n_regions, n_pop = d$n_pop,
-    n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-    seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-    init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-    R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-    do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+    init_age_strc = 1,
+    init_iter = 0,
+    n_regions = d$n_regions,
+    n_pop = d$n_pop,
+    n_sexes = d$n_sexes,
+    n_ages = d$n_ages,
+    n_seas = d$n_seas,
+    n_fish_fleets = d$n_fish_fleets,
+    seasdur = d$seasdur,
+    rec_seas_prop = d$rec_seas_prop,
+    natmort = d$natmort,
+    init_F = d$init_F,
+    dmr = d$dmr,
+    fish_sel = d$fish_sel,
+    ret_sel = d$ret_sel,
+    R0_r = d$R0_r,
+    sexratio = d$sexratio,
+    Movement = d$Movement,
+    do_recruits_move = d$do_recruits_move,
+    ln_InitDevs = d$ln_InitDevs
   )
 
   expect_equal(out_dev[1, 1, 1, 1], out_baseline[1, 1, 1, 1]) # age 1 untouched
@@ -220,7 +342,7 @@ test_that("init_age_strc = 2 plus-group solution satisfies its own equilibrium e
   Movement[, 1, 1, , , ] <- 0.7; Movement[, 1, 2, , , ] <- 0.3
   Movement[, 2, 1, , , ] <- 0.3; Movement[, 2, 2, , , ] <- 0.7
 
-  natmort <- array(M, dim = c(n_pop, n_regions, n_ages, n_sexes))
+  natmort <- array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   init_F <- array(0, dim = c(n_regions, n_seas, n_fish_fleets))
   dmr <- array(0, dim = c(n_regions, n_seas, n_fish_fleets))
   fish_sel <- array(0, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets))
@@ -228,12 +350,25 @@ test_that("init_age_strc = 2 plus-group solution satisfies its own equilibrium e
   R0_r <- matrix(R0, nrow = n_pop, ncol = n_regions)
 
   out <- Get_Init_NAA(
-    init_age_strc = 2, init_iter = 0, n_regions = n_regions, n_pop = n_pop,
-    n_sexes = n_sexes, n_ages = n_ages, n_seas = n_seas, n_fish_fleets = n_fish_fleets,
-    seasdur = 1, rec_seas_prop = matrix(1, nrow = n_pop, ncol = n_seas), natmort = natmort,
-    init_F = init_F, dmr = dmr, fish_sel = fish_sel, ret_sel = ret_sel,
-    R0_r = R0_r, sexratio = array(1, dim = c(n_pop, n_regions, n_sexes)),
-    Movement = Movement, do_recruits_move = 0,
+    init_age_strc = 2,
+    init_iter = 0,
+    n_regions = n_regions,
+    n_pop = n_pop,
+    n_sexes = n_sexes,
+    n_ages = n_ages,
+    n_seas = n_seas,
+    n_fish_fleets = n_fish_fleets,
+    seasdur = 1,
+    rec_seas_prop = matrix(1, nrow = n_pop, ncol = n_seas),
+    natmort = natmort,
+    init_F = init_F,
+    dmr = dmr,
+    fish_sel = fish_sel,
+    ret_sel = ret_sel,
+    R0_r = R0_r,
+    sexratio = array(1, dim = c(n_pop, n_regions, n_sexes)),
+    Movement = Movement,
+    do_recruits_move = 0,
     ln_InitDevs = array(0, dim = c(n_pop, n_regions, n_ages - 1))
   )
 
@@ -260,12 +395,26 @@ test_that("all four init_age_strc methods agree with each other when n_regions =
 
   run <- function(method, init_iter = 0) {
     Get_Init_NAA(
-      init_age_strc = method, init_iter = init_iter, n_regions = d$n_regions, n_pop = d$n_pop,
-      n_sexes = d$n_sexes, n_ages = d$n_ages, n_seas = d$n_seas, n_fish_fleets = d$n_fish_fleets,
-      seasdur = d$seasdur, rec_seas_prop = d$rec_seas_prop, natmort = d$natmort,
-      init_F = d$init_F, dmr = d$dmr, fish_sel = d$fish_sel, ret_sel = d$ret_sel,
-      R0_r = d$R0_r, sexratio = d$sexratio, Movement = d$Movement,
-      do_recruits_move = d$do_recruits_move, ln_InitDevs = d$ln_InitDevs
+      init_age_strc = method,
+      init_iter = init_iter,
+      n_regions = d$n_regions,
+      n_pop = d$n_pop,
+      n_sexes = d$n_sexes,
+      n_ages = d$n_ages,
+      n_seas = d$n_seas,
+      n_fish_fleets = d$n_fish_fleets,
+      seasdur = d$seasdur,
+      rec_seas_prop = d$rec_seas_prop,
+      natmort = d$natmort,
+      init_F = d$init_F,
+      dmr = d$dmr,
+      fish_sel = d$fish_sel,
+      ret_sel = d$ret_sel,
+      R0_r = d$R0_r,
+      sexratio = d$sexratio,
+      Movement = d$Movement,
+      do_recruits_move = d$do_recruits_move,
+      ln_InitDevs = d$ln_InitDevs
     )
   }
 
@@ -285,7 +434,7 @@ test_that("Get_Init_NAA() returns correctly-dimensioned, finite, non-negative ou
   n_pop <- 2; n_regions <- 2; n_sexes <- 2; n_ages <- 6; n_seas <- 2; n_fish_fleets <- 1
   M <- 0.25
 
-  natmort <- array(M, dim = c(n_pop, n_regions, n_ages, n_sexes))
+  natmort <- array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   init_F <- array(0.1, dim = c(n_regions, n_seas, n_fish_fleets))
   dmr <- array(0.2, dim = c(n_regions, n_seas, n_fish_fleets))
   fish_sel <- array(0.6, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets))
@@ -303,12 +452,26 @@ test_that("Get_Init_NAA() returns correctly-dimensioned, finite, non-negative ou
 
   for (method in 0:3) {
     out <- Get_Init_NAA(
-      init_age_strc = method, init_iter = if (method == 0) 30 else 0,
-      n_regions = n_regions, n_pop = n_pop, n_sexes = n_sexes, n_ages = n_ages,
-      n_seas = n_seas, n_fish_fleets = n_fish_fleets, seasdur = c(0.5, 0.5),
-      rec_seas_prop = rec_seas_prop, natmort = natmort, init_F = init_F, dmr = dmr,
-      fish_sel = fish_sel, ret_sel = ret_sel, R0_r = R0_r, sexratio = sexratio,
-      Movement = Movement, do_recruits_move = 1, ln_InitDevs = ln_InitDevs
+      init_age_strc = method,
+      init_iter = if (method == 0) 30 else 0,
+      n_regions = n_regions,
+      n_pop = n_pop,
+      n_sexes = n_sexes,
+      n_ages = n_ages,
+      n_seas = n_seas,
+      n_fish_fleets = n_fish_fleets,
+      seasdur = c(0.5, 0.5),
+      rec_seas_prop = rec_seas_prop,
+      natmort = natmort,
+      init_F = init_F,
+      dmr = dmr,
+      fish_sel = fish_sel,
+      ret_sel = ret_sel,
+      R0_r = R0_r,
+      sexratio = sexratio,
+      Movement = Movement,
+      do_recruits_move = 1,
+      ln_InitDevs = ln_InitDevs
     )
 
     expect_equal(dim(out), c(n_pop, n_regions, n_ages, n_sexes), info = paste("method", method))

@@ -13,12 +13,19 @@ library(testthat)
 # multi-fleet, two sexes, partial retention on fleet 2 and non-zero discard
 # mortality, and mildly mixing movement. Every array is filled by explicit index
 # so nothing recycles down the wrong stride.
-make_proj_inputs <- function(n_regions, n_seas, n_fish_fleets, n_proj_yrs = 6,
-                             n_ages = 12, n_sexes = 2, move_timing = 0) {
+make_proj_inputs <- function(
+  n_regions,
+  n_seas,
+  n_fish_fleets,
+  n_proj_yrs = 6,
+  n_ages = 12,
+  n_sexes = 2,
+  move_timing = 0
+) {
   n_pop <- 1
   ages <- 1:n_ages
 
-  natmort <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
+  natmort <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   WAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   MatAA <- array(0, dim = dim(WAA))
   WAA_fish <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
@@ -26,7 +33,7 @@ make_proj_inputs <- function(n_regions, n_seas, n_fish_fleets, n_proj_yrs = 6,
   ret_sel <- array(1, dim = dim(WAA_fish))
 
   for (r in 1:n_regions) for (y in 1:n_proj_yrs) for (s in 1:n_sexes) {
-    natmort[1, r, y, , s] <- 0.1 + 0.01 * s
+    natmort[1, r, y, , , s] <- 0.1 + 0.01 * s
     for (seas in 1:n_seas) {
       WAA[1, r, y, seas, , s] <- (1 - exp(-0.2 * ages))^3 * (5 + s)
       MatAA[1, r, y, seas, , s] <- 1 / (1 + exp(-0.8 * (ages - 5)))
@@ -68,19 +75,39 @@ make_proj_inputs <- function(n_regions, n_seas, n_fish_fleets, n_proj_yrs = 6,
     terminal_F[r, seas, f] <- 0.05 * (1 + 0.2 * r) * (1 + 0.1 * seas) / (n_seas * n_fish_fleets) * f
   }
 
-  list(n_proj_yrs = n_proj_yrs, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages,
-       n_sexes = n_sexes, n_fish_fleets = n_fish_fleets, n_seas = n_seas,
-       seasdur = rep(1 / n_seas, n_seas), spawn_seas = 1, t_spawn = 0.2, natal_region = 1,
-       stray_rate = array(0, dim = c(n_pop, n_proj_yrs)),
-       sexratio = array(1 / n_sexes, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)),
-       recruitment = array(2e5, dim = c(n_pop, n_regions, 20)),
-       rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
-       terminal_NAA = terminal_NAA, terminal_NAA0 = terminal_NAA * 1.6,
-       terminal_F = terminal_F, natmort = natmort, WAA = WAA, WAA_fish = WAA_fish,
-       MatAA = MatAA, fish_sel = fish_sel, ret_sel = ret_sel, dmr = dmr,
-       Movement = Movement, Mrate = Mrate, move_timing = move_timing,
-       sgl_seas_spawning_movement = sgl_move, do_recruits_move = 0,
-       recruitment_opt = "mean_rec")
+  list(
+    n_proj_yrs = n_proj_yrs,
+    n_pop = n_pop,
+    n_regions = n_regions,
+    n_ages = n_ages,
+    n_sexes = n_sexes,
+    n_fish_fleets = n_fish_fleets,
+    n_seas = n_seas,
+    seasdur = rep(1 / n_seas, n_seas),
+    spawn_seas = 1,
+    t_spawn = 0.2,
+    natal_region = 1,
+    stray_rate = array(0, dim = c(n_pop, n_proj_yrs)),
+    sexratio = array(1 / n_sexes, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)),
+    recruitment = array(2e5, dim = c(n_pop, n_regions, 20)),
+    rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
+    terminal_NAA = terminal_NAA,
+    terminal_NAA0 = terminal_NAA * 1.6,
+    terminal_F = terminal_F,
+    natmort = natmort,
+    WAA = WAA,
+    WAA_fish = WAA_fish,
+    MatAA = MatAA,
+    fish_sel = fish_sel,
+    ret_sel = ret_sel,
+    dmr = dmr,
+    Movement = Movement,
+    Mrate = Mrate,
+    move_timing = move_timing,
+    sgl_seas_spawning_movement = sgl_move,
+    do_recruits_move = 0,
+    recruitment_opt = "mean_rec"
+  )
 }
 
 PROJ_ARGS <- c("n_proj_yrs", "n_pop", "n_regions", "n_ages", "n_sexes", "sexratio",
@@ -176,7 +203,8 @@ test_that("catch targets are met under Beverton-Holt recruitment, including rec_
       SSB = array(4e6, dim = c(n_pop, n_regions, 20)),
       WAA = array(inp$WAA[, , 1, , , 1], dim = c(n_pop, n_regions, n_seas, n_ages)),
       MatAA = array(inp$MatAA[, , 1, , , 1], dim = c(n_pop, n_regions, n_seas, n_ages)),
-      natmort = array(inp$natmort[, , 1, , 1], dim = c(n_pop, n_regions, n_ages)),
+    # M now has seasons, which Get_Det_Recruitment reads
+      natmort = array(inp$natmort[, , 1, , , 1], dim = c(n_pop, n_regions, n_seas, n_ages)),
       Movement = array(inp$Movement[, , , 1, , , 1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
       Mrate = array(inp$Mrate[, , , 1, , , 1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
       sgl_seas_spawning_movement = array(inp$sgl_seas_spawning_movement[, , , 1, , 1],
@@ -363,10 +391,14 @@ test_that("a zero target means no fishing and is distinct from NA", {
 
   # a year of all zeros is a real instruction, not a fallback
   ci2 <- array(NA_real_, dim = c(3, npy)); ci2[, 2] <- 0
-  got2 <- run_proj(inp, "Catch", catch_input = ci2,
-                   f_ref_pt = array(0.13, dim = c(3, npy)),
-                   b_ref_pt = array(3e6, dim = c(inp$n_pop, 3, npy)),
-                   HCR_function = threshold_hcr)
+  got2 <- run_proj(
+    inp,
+    "Catch",
+    catch_input = ci2,
+    f_ref_pt = array(0.13, dim = c(3, npy)),
+    b_ref_pt = array(3e6, dim = c(inp$n_pop, 3, npy)),
+    HCR_function = threshold_hcr
+  )
   expect_true(all(got2$proj_F[, 2] == 0))
   expect_true(all(got2$proj_F[, 3] > 0))
 })
@@ -402,7 +434,7 @@ test_that("catch_input is validated before the projection runs", {
   expect_error(run_proj(inp, "Catch", catch_input = array(1, dim = c(2, npy))), "dimensioned")
   expect_error(run_proj(inp, "Catch", catch_input = array(-1, dim = c(3, npy))), "negative")
   expect_error(run_proj(inp, "Catch", catch_input = array(NA_real_, dim = c(3, npy))),
-               "no projection year carries")
+               "no projection year has")
   expect_error(do.call(run_proj, c(list(inp, "Catch"), extra,
                                    list(catch_input = ok_ci, catch_fallback_opt = "bogus"))),
                "fallback options")
@@ -431,7 +463,7 @@ test_that("catch_input is validated before the projection runs", {
 })
 
 
-test_that("other fmort_opt settings are unaffected by the catch machinery", {
+test_that("other fmort_opt settings are unaffected by the catch routines", {
 
   # A catch projection must not change what the existing options do. These run
   # without any catch arguments at all and simply have to work.
@@ -495,17 +527,22 @@ test_that("projected total biomass continues the estimated series and exceeds SS
 })
 
 
-test_that("returned arrays carry the documented dimensions", {
+test_that("returned arrays hold the documented dimensions", {
 
   n_regions <- 3; n_seas <- 4; n_fish_fleets <- 2
   inp <- make_proj_inputs(n_regions, n_seas, n_fish_fleets)
   npy <- inp$n_proj_yrs; n_pop <- inp$n_pop; n_ages <- inp$n_ages; n_sexes <- inp$n_sexes
 
   ci <- array(NA_real_, dim = c(n_regions, npy)); ci[, 2:3] <- 3e5
-  got <- run_proj(inp, "Catch", catch_input = ci, catch_fallback_opt = "HCR",
-                  f_ref_pt = array(0.1, dim = c(n_regions, npy)),
-                  b_ref_pt = array(2e6, dim = c(n_pop, n_regions, npy)),
-                  HCR_function = threshold_hcr)
+  got <- run_proj(
+    inp,
+    "Catch",
+    catch_input = ci,
+    catch_fallback_opt = "HCR",
+    f_ref_pt = array(0.1, dim = c(n_regions, npy)),
+    b_ref_pt = array(2e6, dim = c(n_pop, n_regions, npy)),
+    HCR_function = threshold_hcr
+  )
 
   expect_equal(dim(got$proj_F), c(n_regions, npy + 1L))
   expect_equal(dim(got$proj_F_seas), c(n_regions, npy + 1L, n_seas))
@@ -528,10 +565,15 @@ test_that("returned arrays carry the documented dimensions", {
 
   # seasonal targets give a seasonal residual array
   ci3 <- array(NA_real_, dim = c(n_regions, npy, n_seas)); ci3[, 2:3, ] <- 8e4
-  got3 <- run_proj(inp, "Catch", catch_input = ci3, catch_fallback_opt = "HCR",
-                   f_ref_pt = array(0.1, dim = c(n_regions, npy)),
-                   b_ref_pt = array(2e6, dim = c(n_pop, n_regions, npy)),
-                   HCR_function = threshold_hcr)
+  got3 <- run_proj(
+    inp,
+    "Catch",
+    catch_input = ci3,
+    catch_fallback_opt = "HCR",
+    f_ref_pt = array(0.1, dim = c(n_regions, npy)),
+    b_ref_pt = array(2e6, dim = c(n_pop, n_regions, npy)),
+    HCR_function = threshold_hcr
+  )
   expect_equal(dim(got3$proj_catch_resid), dim(ci3))
 })
 
@@ -553,18 +595,65 @@ test_that("the deprecated bh_rec_opt still works, warns, and cannot be doubled u
 
   # it warns, and it names its replacement rather than only itself
   expect_warning(
-    old <- err(project_at_F(0.05, n_proj_yrs = 5, recruitment_opt = "bh_rec",
-                            srr_opt = NULL, bh_rec_opt = partial)),
+    old <- err(project_at_F(
+      0.05,
+      n_proj_yrs = 5,
+      recruitment_opt = "bh_rec",
+      srr_opt = NULL,
+      bh_rec_opt = partial
+    )),
     "srr_opt")
 
   # and the value arrives where srr_opt would have: same list, same complaint
-  new <- err(project_at_F(0.05, n_proj_yrs = 5, recruitment_opt = "bh_rec",
-                          srr_opt = partial))
+  new <- err(project_at_F(
+    0.05,
+    n_proj_yrs = 5,
+    recruitment_opt = "bh_rec",
+    srr_opt = partial
+  ))
   expect_false(is.na(old))
   expect_identical(old, new)
 
   # supplying both is a mistake rather than a preference
-  expect_error(project_at_F(0.05, n_proj_yrs = 5, recruitment_opt = "bh_rec",
-                            srr_opt = partial, bh_rec_opt = partial),
+  expect_error(project_at_F(
+    0.05,
+    n_proj_yrs = 5,
+    recruitment_opt = "bh_rec",
+    srr_opt = partial,
+    bh_rec_opt = partial
+  ),
                "not both")
+})
+
+
+test_that("a projection written without a season dim on mortality still runs", {
+
+  # Do_Population_Projection is the only exported fn taking M directly, so users
+  # build the array by hand. One written before seasons has no season dim and is
+  # the same model, so hold it across seasons rather than reject it.
+  inp <- make_proj_inputs(n_regions = 2, n_seas = 2, n_fish_fleets = 2)
+  common <- list(
+    f_ref_pt = 0.1,
+    b_ref_pt = 1e6,
+    HCR_function = function(x, ...) 0.1,
+    fmort_opt = "HCR"
+  )
+
+  seasonal <- do.call(Do_Population_Projection, c(inp, common))
+
+  old_style <- inp
+  old_style$natmort <- array(inp$natmort[, , , 1, , ], dim = dim(inp$natmort)[-4])
+  expect_length(dim(old_style$natmort), 5L)
+  legacy <- do.call(Do_Population_Projection, c(old_style, common))
+
+  # M is constant within the year here, so these are the same projection
+  expect_equal(legacy$proj_SSB, seasonal$proj_SSB)
+  expect_equal(legacy$proj_NAA, seasonal$proj_NAA)
+
+  # and a season-varying rate isn't silently flattened onto one of them
+  split <- inp
+  split$natmort[, , , 1, , ] <- inp$natmort[, , , 1, , ] * 1.6
+  split$natmort[, , , 2, , ] <- inp$natmort[, , , 2, , ] * 0.4
+  differs <- do.call(Do_Population_Projection, c(split, common))
+  expect_false(isTRUE(all.equal(differs$proj_SSB, seasonal$proj_SSB)))
 })

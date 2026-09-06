@@ -1,14 +1,8 @@
-# The year-by-fleet specification grammar.
+# The year-by-fleet specification grammar, which twelve composition data sources each parsed with their
+# own copy of the same forty lines, already diverged in their error messages.
 #
-# Twelve composition streams parsed this grammar with their own copy of the same
-# forty lines, and the copies had already drifted in their error messages. They
-# now share one parser, so these check the grammar once rather than once per
-# stream, and the integration test at the bottom checks that every stream still
-# reaches it.
-#
-# The parser takes the accepted vocabulary as an argument rather than hard coding
-# the composition values, which is what lets the at-age streams use the same
-# grammar with their own set of values.
+# They now share one parser, so this checks the grammar once and the integration test at the bottom checks
+# every source still reaches it. The parser takes its vocabulary as an argument, so at-age sources fit too.
 
 CODES <- c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999)
 
@@ -31,7 +25,7 @@ test_that("blocks partition the series and take effect at their own years", {
 
 test_that("a later block overwrites an earlier one where they overlap", {
   # This is what makes a general setting followed by a carve-out work, and it is
-  # the behavior the composition streams have always had.
+  # the behavior the composition data sources have always had.
   m <- parse_year_fleet_spec(c("agg_Year_1-terminal_Fleet_1", "spltRjntS_Year_3-4_Fleet_1"),
                              "X", 1, 10, CODES)
 
@@ -51,8 +45,8 @@ test_that("fleets are filled independently", {
 
 
 test_that("the vocabulary is whatever the caller passes", {
-  # The at-age streams name their margins differently from the composition
-  # streams, and share the grammar rather than the values.
+  # The at-age data sources name their dims differently from the composition
+  # data sources, and share the grammar rather than the values.
   aa <- c(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3)
   m <- parse_year_fleet_spec(c("aggRspltS_Year_1-3_Fleet_1", "spltRspltS_Year_4-terminal_Fleet_1"),
                              "X", 1, 6, aa)
@@ -116,21 +110,27 @@ test_that("the argument name being parsed appears in every message", {
 })
 
 
-test_that("every composition stream still reaches the shared grammar", {
+test_that("every composition data source still reaches the shared grammar", {
   # The twelve call sites, checked through the setup functions rather than
-  # directly, so a stream wired to the wrong fleet count or year count shows up.
-  skip_if_not(exists("sweep_input"), "the sweep fixture is not loaded")
+  # directly, so a data source wired to the wrong fleet count or year count shows up.
+  skip_if_not(exists("sweep_input"), "the sweep test setup is not loaded")
 
-  streams <- list(
+  data_sources <- list(
     list(stage = "fishidx", arg = "FishAgeComps_Type"),
     list(stage = "fishidx", arg = "FishLenComps_Type"),
     list(stage = "srvidx",  arg = "SrvAgeComps_Type"),
     list(stage = "srvidx",  arg = "SrvLenComps_Type"))
 
-  for(s in streams) {
+  for(s in data_sources) {
     ov <- list(); ov[[s$arg]] <- "bogus_Year_1-terminal_Fleet_1"
-    args <- list(dims = list(n_regions = 1, n_sexes = 1, n_fish_fleets = 1,
-                             n_srv_fleets = 1, n_yrs = 10, n_ages = 6))
+    args <- list(dims = list(
+      n_regions = 1,
+      n_sexes = 1,
+      n_fish_fleets = 1,
+      n_srv_fleets = 1,
+      n_yrs = 10,
+      n_ages = 6
+    ))
     args[[s$stage]] <- ov
     expect_error(do.call(sweep_input, args), s$arg, label = s$arg)
   } # end s loop

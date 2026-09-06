@@ -636,8 +636,14 @@ run_sims <- function(sims = 50,
 
       # return NA if faile
       message(sprintf("sim %d failed: %s", i, conditionMessage(e)))
-      list(em_Rec = NA, em_SSB = NA, om_Rec = NA, om_SSB = NA,
-           converged = FALSE, max_grad = NA)
+      list(
+        em_Rec = NA,
+        em_SSB = NA,
+        om_Rec = NA,
+        om_SSB = NA,
+        converged = FALSE,
+        max_grad = NA
+      )
     })
 
   }, future.seed = TRUE)
@@ -724,7 +730,12 @@ ggplot(df_summary %>% filter(quantity == 'Recruitment'), aes(x = year, color = m
   scale_fill_manual(  values = c("#E07B39", "#3A86C8")) +
   scale_y_continuous(labels = scales::percent_format(accuracy = 1)) +
   facet_grid(pop ~ region, scales = "free_y") +
-  labs(x = "Year", y = "Relative error (Recruitment)", color = 'Data Scenario', fill = 'Data Scenario')+
+  labs(
+    x = "Year",
+    y = "Relative error (Recruitment)",
+    color = 'Data Scenario',
+    fill = 'Data Scenario'
+  )+
   theme_bw(base_size = 15) +
   theme(legend.position = 'top')
 dev.off()

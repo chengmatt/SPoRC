@@ -21,7 +21,7 @@ run_internal_caal_osa(
 
 \item{comp_source}{Either \code{"Fish_caal"} or \code{"Srv_caal"}.}
 
-\item{bins}{Age bins, used to label the residuals. Must span every observed bin of the stream, not just
+\item{bins}{Age bins, used to label the residuals. Must span every observed bin of the data source, not just
 the ones a \code{*_bins} restriction fits: residuals are labeled by true
 observed bin number, so a subset here shifts every label.}
 
@@ -40,7 +40,7 @@ Internal counterpart to \code{\link{run_internal_comp_osa}} for CAAL data
 packed via \code{\link{pack_caal_osa}} (requires
 \code{do_internal_comp_osa = TRUE} in \code{\link{Setup_Mod_Dim}}). Called by
 \code{\link{get_osa}} when \code{comp_source} is \code{"Fish_caal"} or
-\code{"Srv_caal"}. CAAL carries only the discrete families, so there is no
+\code{"Srv_caal"}. CAAL has only the discrete families, so there is no
 family argument; the residuals come back with an extra \code{len} column
 giving the length bin each age composition was conditioned on.
 }

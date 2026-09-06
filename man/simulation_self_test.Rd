@@ -65,13 +65,13 @@ if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.}
 \item{sim_recruitment}{Character. How the operating model generates
 recruitment. \code{"input"} (default, and the historical behavior) feeds
 the estimated recruitment series in as \code{Rec_input}, so every simulated
-replicate carries the same recruitment and \code{rec_model} has no effect on
+replicate holds the same recruitment and \code{rec_model} has no effect on
 the data. That conditions away recruitment and tests everything downstream
 of it, but it cannot test the stock-recruit relationship itself, because
 steepness is then informed only by its penalty. \code{"model"} withholds the
 input so recruitment is generated from the fitted curve under
-\code{rec_model}, which is what to use when the point of the test is whether
-steepness and \code{R0} are recoverable.}
+\code{rec_model}. Use it when the test is whether steepness and \code{R0}
+are recoverable.}
 }
 \value{
 Named list with one element per entry in \code{what}, each an

@@ -1,7 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# Tag recapture likelihood assembly, with the same split between evaluation and
-# one step ahead residual bookkeeping as the composition likelihoods.
+# Tag recapture likelihood assembly, with the same split between evaluation and one step ahead
+# residual tracking as the composition likelihoods.
 
 #' Conventional Tagging Likelihood Block
 #'
@@ -96,9 +96,8 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
         # Skip if within mixing period (in seasonal units)
         if(total_seas_at_liberty < conv_tag_mixing_period) next
 
-        # This event's recaptures. Every option below pools these same
-        # [pop, region, age, sex, fleet] numbers, so they are pulled out of the
-        # cohort-spanning arrays once here to reduce overhead
+        # this event's recaptures. every option below pools these same [pop, region, age, sex,
+        # fleet] numbers, so pull them out of the cohort-spanning arrays once here
         pred_ev = array(pred_conv_tag_fish_recap[ry,rseas,tc,,,,,], dim = d_recap)
         obs_ev  = array(obs_conv_tag_fish_recap[ry,rseas,tc,,,,,], dim = d_recap)
 
@@ -132,8 +131,12 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
                         log_mu = log(sum(pred_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag)) # log mu
                         log_var_minus_mu = 2 * log_mu - ln_conv_fish_tag_theta # log var minus mu
                         tmp_nLL = tmp_nLL +
-                          -dnbinom_robust_noint(x = sum(obs_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                                log_mu = log_mu, log_var_minus_mu = log_var_minus_mu, give_log = TRUE)
+                          -dnbinom_robust_noint(
+                            x = sum(obs_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
+                            log_mu = log_mu,
+                            log_var_minus_mu = log_var_minus_mu,
+                            give_log = TRUE
+                          )
                       } # end if for negative binomial likelihood
 
                     } # end s loop
@@ -150,9 +153,8 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
         # # Release Conditioned for Multinomial or Dirichlet-Multinomial
         if(conv_fish_tag_like %in% c(2, 4)) {
 
-          # Recaptured individuals, one cell per fleet, pool and region (containers).
-          # Predicted cells are gathered in a list and joined in one go, which is
-          # cheaper than writing them into a vector one at a time.
+          # recaptured individuals, one cell per fleet, pool and region. predicted cells are
+          # gathered in a list and joined in one go rather than written one at a time
           tmp_pred_cells = vector("list", n_cells)
           tmp_obs_c_all = numeric(n_cells)
           ci = 0 # counter
@@ -195,9 +197,13 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
 
           if(conv_fish_tag_like == 4)
             conv_fish_tag_nLL[ry,rseas,tc,1,1] =
-            -1 * ddirmult(obs = tmp_obs, pred = tmp_pred,
-                          Ntotal = tmp_n_tags_released,
-                          ln_theta = ln_conv_fish_tag_theta, TRUE)
+            -1 * ddirmult(
+              obs = tmp_obs,
+              pred = tmp_pred,
+              Ntotal = tmp_n_tags_released,
+              ln_theta = ln_conv_fish_tag_theta,
+              TRUE
+            )
 
         } # end release conditioned
 
@@ -243,9 +249,13 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
 
           if(conv_fish_tag_like == 5)
             conv_fish_tag_nLL[ry,rseas,tc,1,1] =
-            -1 * ddirmult(obs = tmp_obs_all, pred = tmp_pred_all,
-                          Ntotal = tmp_n_tags_recap,
-                          ln_theta = ln_conv_fish_tag_theta, TRUE)
+            -1 * ddirmult(
+              obs = tmp_obs_all,
+              pred = tmp_pred_all,
+              Ntotal = tmp_n_tags_recap,
+              ln_theta = ln_conv_fish_tag_theta,
+              TRUE
+            )
 
         } # end recapture conditioned
 
@@ -258,12 +268,14 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
 }
 
 
+# Tag Likelihood Helpers ----------------------------------------------------
+
 #' Classify conventional tag likelihood family
 #'
 #' Maps a conventional tag likelihood type code to a coarse
 #' family label used for OSA packing and evaluation.
 #'
-#' @param lt Integer likelihood type code:
+#' @param like_type Integer likelihood type code:
 #'   \itemize{
 #'     \item 0, 1: count-based (Poisson / NB)
 #'     \item 2, 3, 4, 5: composition-based (multinomial / Dirichlet-multinomial)
@@ -272,9 +284,9 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
 #' @return A character scalar: `"count"`, `"comp"`, or `NA_character_` if
 #'   the code is not recognized.
 #' @keywords internal
-tag_fam_of = function(lt) {
-  if(lt %in% c(0,1)) "count"
-  else if(lt %in% c(2,3,4,5)) "comp"
+tag_fam_of = function(like_type) {
+  if(like_type %in% c(0,1)) "count"
+  else if(like_type %in% c(2,3,4,5)) "comp"
   else NA_character_
 }
 
@@ -307,8 +319,14 @@ tag_grid = function(n_conv_tag_cohorts, conv_tag_release_indicator,
         if(ry == 1 && rseas < tseas) next
         total_seas_at_liberty = (ry - 1) * n_seas + (rseas - tseas + 1)
         if(total_seas_at_liberty < conv_tag_mixing_period) next
-        rows[[length(rows) + 1]] = c(tc = tc, ry = ry, rseas = rseas,
-                                     tr = tr, ty = ty, tseas = tseas)
+        rows[[length(rows) + 1]] = c(
+          tc = tc,
+          ry = ry,
+          rseas = rseas,
+          tr = tr,
+          ty = ty,
+          tseas = tseas
+        )
       }
     }
   }
@@ -367,7 +385,7 @@ tag_grid = function(n_conv_tag_cohorts, conv_tag_release_indicator,
 #'   is_tail, last_in_group) of every entry in \code{vec}, in the same order.
 #'   Intended for post-hoc relabeling of \code{TMB::oneStepPredict()} residuals
 #'   (see [get_osa()]); left \code{FALSE} (default) inside the model itself to
-#'   avoid the extra bookkeeping cost.
+#'   avoid the extra residual tracking cost.
 #'
 #' @return A list with components:
 #' \itemize{
@@ -399,11 +417,23 @@ pack_tag_osa = function(family, like_type,
   # one label row per element, mirroring the exact loop order used to build 'clean'
   tag_label_row = function(fleet, region, pop_pool_i, age_pool_i, sex_pool_i,
                            tc, ry, rseas, tr, ty, tseas, is_tail, last_in_group) {
-    data.frame(family = family, like_type = like_type,
-               tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
-               fleet = fleet, region = region,
-               pop_pool = pop_pool_i, age_pool = age_pool_i, sex_pool = sex_pool_i,
-               is_tail = is_tail, last_in_group = last_in_group)
+    data.frame(
+      family = family,
+      like_type = like_type,
+      tc = tc,
+      ry = ry,
+      rseas = rseas,
+      tr = tr,
+      ty = ty,
+      tseas = tseas,
+      fleet = fleet,
+      region = region,
+      pop_pool = pop_pool_i,
+      age_pool = age_pool_i,
+      sex_pool = sex_pool_i,
+      is_tail = is_tail,
+      last_in_group = last_in_group
+    )
   }
 
   for(g in 1:nrow(grid)) {
@@ -411,14 +441,8 @@ pack_tag_osa = function(family, like_type,
     tr = grid$tr[g]; ty = grid$ty[g]; tseas = grid$tseas[g]
 
     if(family == "count") {
-      # one cell per [f,p,r,a,s], must mirror get_conv_tag_likelihoods()'s
-      # exact accumulation structure: a separate Poisson/NB term is evaluated
-      # per (pool, age_pool, sex_pool, region, fleet) cell and their
-      # -log-likelihoods summed. Packing one combined count per [r,f] (summed
-      # across pools first, as this used to do) is a DIFFERENT likelihood,
-      # not equivalent even for Poisson, whenever n_pop_pool/n_age_pool/
-      # n_sex_pool > 1, and also destroys population identity before it ever
-      # reaches the residual/label, so downstream plots can't facet by pop.
+      # one cell per [f,p,r,a,s], mirroring get_conv_tag_likelihoods(). summing pools first would
+      # be a different likelihood and would lose population identity before the residual
       for(f in 1:n_fish_fleets) {
         if(use_fish_tagging[f] != 1) next
         for(p in 1:n_pop_pool) {
@@ -430,9 +454,19 @@ pack_tag_osa = function(family, like_type,
                 pos = pos + 1L
                 if(return_labels) {
                   label_rows[[length(label_rows)+1]] = tag_label_row(
-                    fleet = f, region = r, pop_pool_i = p, age_pool_i = a, sex_pool_i = s,
-                    tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
-                    is_tail = FALSE, last_in_group = NA
+                    fleet = f,
+                    region = r,
+                    pop_pool_i = p,
+                    age_pool_i = a,
+                    sex_pool_i = s,
+                    tc = tc,
+                    ry = ry,
+                    rseas = rseas,
+                    tr = tr,
+                    ty = ty,
+                    tseas = tseas,
+                    is_tail = FALSE,
+                    last_in_group = NA
                   )
                 }
               }
@@ -459,9 +493,19 @@ pack_tag_osa = function(family, like_type,
             obs_cells[ci] = sum(obs_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
             if(return_labels) {
               cell_labels[[ci]] = tag_label_row(
-                fleet = f, region = r, pop_pool_i = p, age_pool_i = a, sex_pool_i = s,
-                tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
-                is_tail = FALSE, last_in_group = FALSE
+                fleet = f,
+                region = r,
+                pop_pool_i = p,
+                age_pool_i = a,
+                sex_pool_i = s,
+                tc = tc,
+                ry = ry,
+                rseas = rseas,
+                tr = tr,
+                ty = ty,
+                tseas = tseas,
+                is_tail = FALSE,
+                last_in_group = FALSE
               )
             }
           }
@@ -479,9 +523,19 @@ pack_tag_osa = function(family, like_type,
         g_counts = round(prop * n_rel)
         if(return_labels) {
           cell_labels[[length(cell_labels)+1]] = tag_label_row(
-            fleet = NA_integer_, region = NA_integer_, pop_pool_i = NA_integer_, age_pool_i = NA_integer_, sex_pool_i = NA_integer_,
-            tc = tc, ry = ry, rseas = rseas, tr = tr, ty = ty, tseas = tseas,
-            is_tail = TRUE, last_in_group = TRUE
+            fleet = NA_integer_,
+            region = NA_integer_,
+            pop_pool_i = NA_integer_,
+            age_pool_i = NA_integer_,
+            sex_pool_i = NA_integer_,
+            tc = tc,
+            ry = ry,
+            rseas = rseas,
+            tr = tr,
+            ty = ty,
+            tseas = tseas,
+            is_tail = TRUE,
+            last_in_group = TRUE
           )
         }
       } else {
@@ -582,10 +636,8 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
     pred_ev = array(pred_recap[ry,rseas,tc,,,,,], dim = d_recap)
 
     if(family == "count") {
-      # mirrors pack_tag_osa()'s [f,p,r,a,s] cell order, one Poisson/NB
-      # term per (pool, age_pool, sex_pool, region, fleet) cell, accumulated
-      # into the same [ry,rseas,tc,r,f] nLL_arr cell (matching
-      # get_conv_tag_likelihoods()'s `+=` accumulation across pools).
+      # mirrors pack_tag_osa()'s [f,p,r,a,s] cell order, one Poisson or negative binomial term per
+      # (pool, age_pool, sex_pool, region, fleet), accumulated into the same [ry,rseas,tc,r,f] cell
       for(f in 1:n_fish_fleets) {
         if(use_fish_tagging[f] != 1) next
         for(p in 1:n_pop_pool) {
@@ -596,8 +648,12 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
                 if(like_type == 0) {          # Poisson
                   term = -RTMB::dpois(tracked[k], mu, log = TRUE)
                 } else {                      # NB (robust): var = mu + mu^2/theta -> size = exp(ln_theta)
-                  term = -RTMB::dnbinom_robust(x = tracked[k], log_mu = log(mu),
-                                               log_var_minus_mu = 2 * log(mu) - ln_theta, log = TRUE)
+                  term = -RTMB::dnbinom_robust(
+                    x = tracked[k],
+                    log_mu = log(mu),
+                    log_var_minus_mu = 2 * log(mu) - ln_theta,
+                    log = TRUE
+                  )
                 }
                 nLL_arr[ry,rseas,tc,r,f] = nLL_arr[ry,rseas,tc,r,f] + term
                 k = k + 1

@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_mapping.R
 \name{sync_dev_map_data}
 \alias{sync_dev_map_data}
-\title{Refresh the map mirrors held in the data list}
+\title{Refresh the map mirrors kept in the data list}
 \usage{
 sync_dev_map_data(data, mapping)
 }
@@ -18,7 +18,7 @@ sync_dev_map_data(data, mapping)
 }
 \description{
 Several deviation penalties key on a copy of their parameter's factor map
-carried in the data list under \code{map_<par>}, since the map itself is
+kept in the data list under \code{map_<par>}, since the map itself is
 applied by \code{RTMB::MakeADFun} and is invisible inside the objective.
 Those copies are written at setup, so a map edited by hand afterwards would
 otherwise leave the penalty evaluating deviations that are no longer

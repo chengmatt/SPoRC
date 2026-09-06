@@ -5,7 +5,7 @@
 \title{Growth state at the start of a year}
 \usage{
 growth_start_state(
-  gp,
+  growth_pars,
   ages,
   growth_A1,
   growth_A2,
@@ -19,7 +19,7 @@ growth_start_state(
 \description{
 Evaluates the curve a stratum starts from and the quantities that stay fixed
 over the years: the mean length at the start of every age in the first year
-(the plus group adjusted), the CV at age and timing when it is held at the
+(the plus group adjusted), the CV at age and timing when it is kept at the
 first year's sizes, and the asymptote.
 }
 \keyword{internal}

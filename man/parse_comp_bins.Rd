@@ -2,14 +2,14 @@
 % Please edit documentation in R/utils_setup.R
 \name{parse_comp_bins}
 \alias{parse_comp_bins}
-\title{Parse and report the observed bins a composition stream is fitted over}
+\title{Parse and report the observed bins a composition data source is fitted over}
 \usage{
 parse_comp_bins(bins, n_bins, n_fleets, what)
 }
 \arguments{
 \item{bins}{List, array, or \code{NULL}. Per-fleet bin selection.}
 
-\item{n_bins}{Integer. Number of observed bins the stream is recorded on,
+\item{n_bins}{Integer. Number of observed bins the data source is recorded on,
 that is after any ageing error or length bin map.}
 
 \item{n_fleets}{Integer. Number of fleets.}
@@ -21,9 +21,9 @@ Array \code{[n_bins x n_fleets]} of 0/1 weights.
 }
 \description{
 Wraps \code{\link{parse_bin_subset}} and records which fleets ended up
-restricted, so the setup messages name the bins a stream is fitted over rather
+restricted, so the setup messages name the bins a data source is fitted over rather
 than leaving it implicit. Used for every \code{*_bins} argument, age and
 length, retained and discarded, marginal and conditional, so a restriction
-reads the same way whichever stream it was set on.
+reads the same way whichever data source it was set on.
 }
 \keyword{internal}

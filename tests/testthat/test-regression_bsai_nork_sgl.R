@@ -1,16 +1,11 @@
-# Pinned regression test. The expected SSB and recruitment vectors are output from a
-# previously validated SPoRC fit of this assessment, not hand-derived values. A mismatch
-# means a change moved a fitted result, which is a bug unless the numerical change was
-# intended. If it was intended, re-baseline deliberately and say why in NEWS.md. Do not
-# paste in fresh output to make the test pass. See tests/README.md.
+# Regression test. Expected SSB and recruitment come from a previously validated SPoRC fit, not from
+# hand-derived values, so a mismatch means something moved a fitted result. See tests/README.md.
 #
-# The companion test-regression_bsai_nork_bridge.R checks the same configuration against
-# the ADMB assessment's own output without optimizing, so a failure here that does not
-# also fail there is an optimizer or setup change rather than a model change.
+# test-regression_bsai_nork_bridge.R checks the same configuration without optimizing, so a failure here
+# that does not also fail there is an optimizer or setup change, not a model change.
 #
-# This refit estimates the uncapped logistic survey selectivity, where the bridge
-# supplies the assessment's age 30 edge hold as a fixed input. That is the only
-# specification difference between the two.
+# This refit estimates the uncapped logistic survey selectivity where the bridge supplies the
+# assessment's age 30 edge hold as fixed input, which is the only specification difference.
 
 library(SPoRC)
 library(testthat)
@@ -76,10 +71,10 @@ test_that("Single-region BSAI northern rockfish RTMB model produces expected res
   # recruitment, exp(mean_log_rec + sigmaR^2 / 2), while SPoRC builds them as the
   # median, exp(R0). With sigmaR fixed at 0.75 that is a factor of exp(sigmaR^2 / 2)
   # = 1.32 between the two by construction, which the refit's own shift in the mean
-  # level carries to 1.36. This is a convention difference, not a wiring bug: the
+  # level has to 1.36. This is a convention difference, not a wiring bug: the
   # bridge test reproduces those same years exactly because it seeds R0 with the bias
   # correction already in it. Asserted here so that the gap stays understood rather
-  # than drifting.
+  # than diverging.
   rec_fit <- as.vector(bsai_nork_rtmb_model$rep$Rec)[1:n_yrs]
   n_fixed <- 3
   est_yrs <- seq_len(n_yrs - n_fixed)

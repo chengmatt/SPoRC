@@ -2,13 +2,13 @@ library(SPoRC)
 library(testthat)
 
 # Equilibrium yield from the multi-region Beverton-Holt MSY reference points, checked against
-# the equilibrium catch of a long projection held at the same F.
+# the equilibrium catch of a long projection kept at the same F.
 #
 # The other refpts test files check spawning biomass, which never touches CAA. Yield does, and
 # the catch side has two failure modes this file guards:
 #
 #   Seasons. The penultimate age and the plus group take their catch in a loop over seasons.
-#   Abundance has to be carried forward through that loop, or every season after the first is
+#   Abundance has to be advanced through that loop, or every season after the first is
 #   charged against fish that should already be dead. This is invisible at n_seas == 1, which
 #   is what the rest of the suite runs at, and grows with the number of seasons.
 #
@@ -54,14 +54,19 @@ msy_vs_projection <- function(n_seas, move_timing) {
   }
 
   data_list <- list(
-    t_spawn = 0, n_seas = n_seas, seasdur = seasdur, spawn_seas = spawn_seas,
-    n_pop = n_pop, n_ages = n_ages, n_regions = n_regions,
+    t_spawn = 0,
+    n_seas = n_seas,
+    seasdur = seasdur,
+    spawn_seas = spawn_seas,
+    n_pop = n_pop,
+    n_ages = n_ages,
+    n_regions = n_regions,
     F_fract_flt = array(rep(seas_w, each = n_regions), dim = c(n_regions, n_seas, n_fish_fleets)),
     dmr      = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
     fish_sel = array(rep(sel, each = n_pop * n_regions * n_seas),
                      dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     ret_sel  = array(1, dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
-    natmort  = array(rep(M_r, times = n_ages), dim = c(n_regions, n_ages)),
+    natmort  = array(rep(M_r, times = n_seas * n_ages), dim = c(n_regions, n_seas, n_ages)),
     WAA      = array(rep(waa, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
     MatAA    = array(rep(mat, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
     Movement = Mov,
@@ -70,9 +75,10 @@ msy_vs_projection <- function(n_seas, move_timing) {
     is_discard_fleet = array(0, dim = n_fish_fleets),
     do_recruits_move = 1,
     rec_region_prop = rec_region_prop,
-    sex_ratio_f = 1,  # matches sexratio = 1 below, so per-recruit yield is directly comparable
+    sex_ratio_f = 1, # matches sexratio = 1 below, so per-recruit yield is directly comparable
     rec_seas_prop = rep(1 / n_seas, n_seas),
-    h = 0.7, R0 = 20
+    h = 0.7,
+    R0 = 20
   )
 
   fit <- SPoRC:::optim_ref_pts(SPoRC:::global_Fmsy, data_list, list(log_Fmsy = log(0.1)))
@@ -94,17 +100,25 @@ msy_vs_projection <- function(n_seas, move_timing) {
 
   natmort <- aperm(array(rep(rep(M_r, times = n_ages), n_pop * n_sexes * n_proj_yrs),
                          dim = c(n_regions, n_ages, n_pop, n_sexes, n_proj_yrs)), c(3, 1, 5, 2, 4))
+  # projection reads a rate per season, constant within the year here
+  natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
 
   # Any starting state converges; a roughly declining age structure just gets there sooner
   init <- array(0, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   for(a in 1:n_ages) init[1,,,a,1] <- outer(Req * rec_region_prop * exp(-0.3 * (a - 1)), rep(1, n_seas))
 
   out <- Do_Population_Projection(
-    n_proj_yrs = n_proj_yrs, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages,
-    n_sexes = n_sexes, sexratio = array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)),
-    n_fish_fleets = n_fish_fleets, do_recruits_move = 1,
+    n_proj_yrs = n_proj_yrs,
+    n_pop = n_pop,
+    n_regions = n_regions,
+    n_ages = n_ages,
+    n_sexes = n_sexes,
+    sexratio = array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)),
+    n_fish_fleets = n_fish_fleets,
+    do_recruits_move = 1,
     recruitment = array(rep(Req * rec_region_prop, each = n_pop), dim = c(n_pop, n_regions, 5)),
-    terminal_NAA = init, terminal_NAA0 = init,
+    terminal_NAA = init,
+    terminal_NAA0 = init,
     terminal_F = array(rep(seas_w, each = n_regions), dim = c(n_regions, n_seas, n_fish_fleets)),
     dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
     natmort = natmort,
@@ -126,20 +140,26 @@ msy_vs_projection <- function(n_seas, move_timing) {
     move_timing = move_timing,
     f_ref_pt = array(Fmsy, dim = c(n_regions, n_proj_yrs)),
     b_ref_pt = array(1, dim = c(n_pop, n_regions, n_proj_yrs)),
-    HCR_function = function(x, frp, brp, alpha = 0.05) frp,  # hold F at Fmsy
-    recruitment_opt = "mean_rec", fmort_opt = "HCR", t_spawn = 0,
-    n_seas = n_seas, seasdur = seasdur, spawn_seas = spawn_seas,
+    HCR_function = function(x, frp, brp, alpha = 0.05) frp, # hold F at Fmsy
+    recruitment_opt = "mean_rec",
+    fmort_opt = "HCR",
+    t_spawn = 0,
+    n_seas = n_seas,
+    seasdur = seasdur,
+    spawn_seas = spawn_seas,
     rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas))
   )
 
-  list(Fmsy = Fmsy,
-       refpts_yield = as.numeric(fit$rep$Yield_r),
-       proj_catch = as.numeric(apply(out$proj_Catch[,, n_proj_yrs,,, drop = FALSE], 2, sum)),
-       ssb_final = as.numeric(out$proj_SSB[,, n_proj_yrs]),
-       ssb_penult = as.numeric(out$proj_SSB[,, n_proj_yrs - 1]))
+  list(
+    Fmsy = Fmsy,
+    refpts_yield = as.numeric(fit$rep$Yield_r),
+    proj_catch = as.numeric(apply(out$proj_Catch[,, n_proj_yrs,,, drop = FALSE], 2, sum)),
+    ssb_final = as.numeric(out$proj_SSB[,, n_proj_yrs]),
+    ssb_penult = as.numeric(out$proj_SSB[,, n_proj_yrs - 1])
+  )
 }
 
-test_that("multi-region BH MSY yield matches the equilibrium catch of a projection held at Fmsy", {
+test_that("multi-region BH MSY yield matches the equilibrium catch of a projection kept at Fmsy", {
   for(n_seas in c(1, 2, 4)) {
     for(move_timing in c(0, 2)) {
       res <- msy_vs_projection(n_seas, move_timing)

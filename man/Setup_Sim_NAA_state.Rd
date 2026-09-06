@@ -14,11 +14,14 @@ Setup_Sim_NAA_state(
   NAA_re_pop = "iid",
   NAA_re_region = "iid",
   NAA_re_sex = "iid",
+  NAA_re_season = "iid",
   pop_corr = 0,
   region_corr = 0,
   sex_corr = 0,
+  season_corr = 0,
   NAA_re_ages = NULL,
-  NAA_re_years = NULL
+  NAA_re_years = NULL,
+  NAA_re_seasons = "annual"
 )
 }
 \arguments{
@@ -32,21 +35,27 @@ of \code{"iid"}, \code{"1dar1_a"}, \code{"1dar1_y"}, \code{"2dar1"},
 \item{sigmaNAA}{Numeric. Conditional standard deviation of the innovations,
 the same quantity \code{ln_sigmaNAA} holds in the estimation model. Under an
 autoregressive form the marginal standard deviation is larger by
-\eqn{1/\sqrt{1 - \rho^2}} per correlated margin.}
+\eqn{1/\sqrt{1 - \rho^2}} per correlated dim.}
 
 \item{rho_age, rho_year, rho_cohort}{Numeric correlations in \eqn{(-1, 1)} over
-the age, year and cohort margins. Only the ones the chosen form reads are
+the age, year and cohort dims. Only the ones the chosen form reads are
 used.}
 
-\item{NAA_re_pop, NAA_re_region, NAA_re_sex}{Character, \code{"iid"} (default) or
-\code{"us"}, an unstructured correlation across that margin.}
+\item{NAA_re_pop, NAA_re_region, NAA_re_sex, NAA_re_season}{Character,
+\code{"iid"} (default) or \code{"us"}, an unstructured correlation across
+that dim.}
 
-\item{pop_corr, region_corr, sex_corr}{Numeric vectors of length \eqn{n(n-1)/2}
-giving the correlations for those margins, ordered as the strict lower
-triangle is filled by column. A single value is recycled.}
+\item{pop_corr, region_corr, sex_corr, season_corr}{Numeric vectors of length
+\eqn{n(n-1)/2} giving the correlations for those dims, ordered as the
+strict lower triangle is filled by column. A single value is recycled.}
 
 \item{NAA_re_ages, NAA_re_years}{Ages and year indices the state covers.
 \code{NULL} (default) uses everything from the second onward.}
+
+\item{NAA_re_seasons}{Seasons the state covers. \code{"annual"} (default) puts
+a state at season one only, leaving the numbers deterministic between
+seasons; \code{"all"} puts one at the start of every season, and an integer
+vector selects specific seasons.}
 }
 \value{
 \code{sim_list} with the state-space settings attached.

@@ -24,8 +24,19 @@ pct <- function(a, b) max(abs(100 * (a - b) / b), na.rm = TRUE)
 
 cat("\n=== growth (area 1 female): SPoRC vs SS3 ===\n")
 g <- dat$ss3$growth[[1]][[1]]
-cmp <- data.frame(age = dat$ages, Len_Beg_ss3 = g$Len_Beg, Len_Beg = r$mean_LAA_spawn[1, 1, 1, 1, , 1], Len_Mid_ss3 = g$Len_Mid, Len_Mid = r$mean_LAA_srv[1, 1, 1, 1, , 1, 1],
-                  SD_Mid_ss3 = g$SD_Mid, SD_Mid = r$sd_LAA_srv[1, 1, 1, 1, , 1, 1], Wt_Beg_ss3 = g$Wt_Beg, Wt_Beg = r$WAA[1, 1, 1, 1, , 1], Wt_Mid_ss3 = g$Wt_Mid, Wt_Mid = r$WAA_fish[1, 1, 1, 1, , 1, 1])
+cmp <- data.frame(
+  age = dat$ages,
+  Len_Beg_ss3 = g$Len_Beg,
+  Len_Beg = r$mean_LAA_spawn[1, 1, 1, 1, , 1],
+  Len_Mid_ss3 = g$Len_Mid,
+  Len_Mid = r$mean_LAA_srv[1, 1, 1, 1, , 1, 1],
+  SD_Mid_ss3 = g$SD_Mid,
+  SD_Mid = r$sd_LAA_srv[1, 1, 1, 1, , 1, 1],
+  Wt_Beg_ss3 = g$Wt_Beg,
+  Wt_Beg = r$WAA[1, 1, 1, 1, , 1],
+  Wt_Mid_ss3 = g$Wt_Mid,
+  Wt_Mid = r$WAA_fish[1, 1, 1, 1, , 1, 1]
+)
 print(round(cmp[c(1:4, 19:21), ], 5))
 cat("max % gap Len_Beg:", signif(pct(cmp$Len_Beg, cmp$Len_Beg_ss3), 3), " Len_Mid:", signif(pct(cmp$Len_Mid, cmp$Len_Mid_ss3), 3), " SD_Mid:", signif(pct(cmp$SD_Mid, cmp$SD_Mid_ss3), 3),
     " Wt_Beg:", signif(pct(cmp$Wt_Beg, cmp$Wt_Beg_ss3), 3), " Wt_Mid:", signif(pct(cmp$Wt_Mid, cmp$Wt_Mid_ss3), 3), "\n")

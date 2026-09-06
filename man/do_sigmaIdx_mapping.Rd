@@ -29,7 +29,7 @@ The input \code{input_list} with \code{$map$<par_name>} set.
 }
 \description{
 Shared by \code{\link{Setup_Mod_FishIdx_and_Comps}} and
-\code{\link{Setup_Mod_SrvIdx_and_Comps}}, which carry the same parameter under
+\code{\link{Setup_Mod_SrvIdx_and_Comps}}, which hold the same parameter under
 different names and over a different fleet dimension.
 }
 \details{

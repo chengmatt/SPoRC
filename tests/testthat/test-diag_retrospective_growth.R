@@ -1,7 +1,5 @@
-# A retrospective peel has to shorten the growth deviations along with everything
-# else. Their penalties re-dimension the deviation and map arrays to the model's
-# year count, so an untruncated array is read in the wrong order rather than
-# ignored past the peel, and the penalty comes out wrong without a word.
+# A retrospective peel has to shorten the growth deviations too. Their penalties re-dimension the deviation
+# and map arrays to the year count, so an untruncated array is read in the wrong order, not just ignored.
 
 library(SPoRC)
 library(testthat)
@@ -47,7 +45,7 @@ test_that("the peeled model penalizes only the deviations it kept", {
   cut <- truncate_yr(peel, input_list$data, input_list$par, input_list$map)
   cut_fit <- fit_model(cut$retro_data, cut$retro_parameters, cut$retro_mapping, do_optim = FALSE, silent = TRUE)$rep
 
-  # both growth parameters carry independent deviations with a fixed sigma, so
+  # both growth parameters have independent deviations with a fixed sigma, so
   # the penalty is a sum of normal densities and the peel drops the last three
   # years of each series
   devs <- input_list$par$ln_growth_devs

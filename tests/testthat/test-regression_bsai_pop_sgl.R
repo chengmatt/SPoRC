@@ -1,13 +1,8 @@
-# Pinned regression test. The expected SSB and recruitment vectors are output from a
-# previously validated SPoRC fit of this assessment, not hand-derived values. A mismatch
-# means a change moved a fitted result, which is a bug unless the numerical change was
-# intended. If it was intended, re-baseline deliberately and say why in NEWS.md. Do not
-# paste in fresh output to make the test pass. See tests/README.md.
+# Regression test. Expected SSB and recruitment come from a previously validated SPoRC fit, not from
+# hand-derived values, so a mismatch means something moved a fitted result. See tests/README.md.
 #
-# The companion test-regression_bsai_pop_bridge.R checks the same configuration against
-# the ADMB assessment's own output without optimizing, so a failure here that does not
-# also fail there is an optimizer or setup change rather than a model change. The two
-# share one builder, so there is no specification difference between them.
+# test-regression_bsai_pop_bridge.R checks the same configuration without optimizing, so a failure
+# here that does not also fail there is an optimizer or setup change, not a model change.
 
 library(SPoRC)
 library(testthat)
@@ -92,7 +87,7 @@ test_that("Single-region BSAI Pacific ocean perch RTMB model produces expected r
   # R0 is seeded with that same bias correction, so unlike the BSAI northern rockfish
   # case the two do not differ by exp(sigmaR^2 / 2) here: this configuration runs the
   # bias ramp at one, which centers the recruitment penalty on the shift the seeds
-  # carry and leaves R0 where it was put.
+  # have and leaves R0 where it was put.
   #
   # What is left is a level shift. The assessment declares its recruitment deviations
   # as a dev_vector, which is constrained to sum to zero, so it cannot slide the

@@ -1,14 +1,10 @@
-# Purpose: Build sgl_rg_bsai_nork_data, the container for the BSAI northern
-#          rockfish case study. Everything the case study and its regression
-#          tests need lives in the object: model inputs, the ADMB maximum
-#          likelihood estimate used as a seed, and the ADMB output the bridge
-#          is compared against.
+# Purpose: Build sgl_rg_bsai_nork_data, the inputs, ADMB seed, and ADMB output for the BSAI northern rockfish case study
 # Creator: Matthew LH. Cheng
 # Date Created: 8/7/26
 #
 # Sources, all under dev/dev_data/bsai_nork23:
 #   nork23.dat         2023 assessment input file
-#   northern.ctl       control file, carries the stage 1 haul counts
+#   northern.ctl       control file, holds the stage 1 haul counts
 #   compweights.ctl    applied McAllister Ianelli composition weights
 #   nork23.par         ADMB parameter file, read at full precision
 #   nork23.rdat        ADMB report object, the comparison target
@@ -48,9 +44,7 @@ get_par <- function(name) {
 }
 
 # Dimensions -------------------------------------------------------------------
-# The model carries 43 age classes (3 to 45) while the compositions are
-# reported over 38 (3 to 40), so the ageing error matrix maps the model ages
-# onto the shorter observed range.
+# 43 model ages (3 to 45) against 38 observed (3 to 40): the ageing error matrix maps between them
 n_pop <- 1
 n_regions <- 1
 n_seas <- 1
@@ -77,10 +71,8 @@ sigmaR <- read_nums(lines[334])
 spawn_mo <- read_nums(lines[315])
 
 # Biologicals ------------------------------------------------------------------
-# Weight at age is genuinely year varying here, and the .dat carries separate
-# population and fishery blocks that differ by up to 50 percent at young ages.
-# The population block prices spawning biomass and the survey; the fishery
-# block prices the catch.
+# weight at age is year varying, and the .dat's population and fishery blocks differ by up to
+# 50 percent at young ages. population weighs spawning biomass and the survey, fishery the catch
 pop_waa <- read_matrix(219, n_yrs, n_ages)
 WAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 WAA[1, 1, , 1, , 1] <- pop_waa
@@ -89,17 +81,15 @@ fish_waa <- read_matrix(267, n_yrs, n_ages)
 WAA_fish <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
 WAA_fish[1, 1, , 1, , 1, 1] <- fish_waa
 
-# Maturity is estimated inside the ADMB template from the TenBrink and Shaw
-# binomial data rather than read from the .dat, so the fitted logistic is
-# rebuilt from mat_beta1 and mat_beta2 in the parameter file and held fixed in
-# SPoRC.
+# maturity is estimated inside the ADMB template from the TenBrink and Shaw binomial data, so the
+# fitted logistic is rebuilt from mat_beta1 and mat_beta2 and kept fixed in SPoRC
 mat_beta1 <- get_par("mat_beta1")
 mat_beta2 <- get_par("mat_beta2")
 maa_vec <- 1 / (1 + exp(-(mat_beta1 + mat_beta2 * ages)))
 MatAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 MatAA[1, 1, , 1, , 1] <- matrix(rep(maa_vec, each = n_yrs), nrow = n_yrs)
 
-# The .dat carries the size at age matrix as [length bin x age] with each age
+# The .dat holds the size at age matrix as [length bin x age] with each age
 # column a distribution over length bins, so the columns are normalized.
 size_age_raw <- read_matrix(90, n_lens, n_ages)
 col_sums <- colSums(size_age_raw)
@@ -108,10 +98,8 @@ size_age_mat <- sweep(size_age_raw, 2, col_sums, "/")
 SizeAgeTrans <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes))
 for(y in seq_len(n_yrs)) SizeAgeTrans[1, 1, y, 1, , , 1] <- size_age_mat
 
-# Ageing error is stored as [observed age x true age]. The ADMB template
-# column-normalizes it to P(obs | true); SPoRC multiplies predicted numbers at
-# age on the right, so it needs [true x obs], and the observed plus group
-# collapses rows 38 to 43 onto row 38.
+# stored [observed x true] and column-normalized to P(obs | true); SPoRC needs [true x obs],
+# and the observed plus group collapses rows 38 to 43 onto row 38
 age_error_raw <- read_matrix(46, n_ages, n_ages)
 col_sums <- colSums(age_error_raw)
 col_sums[col_sums == 0] <- 1
@@ -132,9 +120,8 @@ ObsCatch <- array(catch_vec, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 UseCatch <- array(1L, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 
 # Survey index -----------------------------------------------------------------
-# The Aleutian Islands bottom trawl survey is the only index. The .dat reports
-# a standard deviation on the arithmetic scale, which is carried to SPoRC as a
-# lognormal coefficient of variation.
+# the Aleutian Islands bottom trawl survey is the only index. its .dat standard deviation is
+# arithmetic scale, kept to SPoRC as a lognormal coefficient of variation
 srv_yrs <- read_nums(lines[36])
 srv_obs <- read_nums(lines[38])
 srv_sd <- read_nums(lines[40])
@@ -182,9 +169,8 @@ make_wt_comp <- function(ind_vec, wt_val, n_fl) {
 }
 
 # Compositions -----------------------------------------------------------------
-# The stage 1 input sample sizes are the haul counts from the control file, and
-# the weights are the applied McAllister Ianelli multipliers from
-# compweights.ctl, which the template folds into the sample sizes.
+# stage 1 input sample sizes are the control file's haul counts; the weights are the applied
+# McAllister Ianelli multipliers from compweights.ctl, which the template folds into them
 fish_age_stg1 <- read_nums(ctl[27])
 fish_len_stg1 <- read_nums(ctl[31])
 srv_age_stg1 <- read_nums(ctl[35])
@@ -235,12 +221,8 @@ stopifnot(
 )
 
 # ADMB maximum likelihood estimate ---------------------------------------------
-# Read at full precision from the parameter file. rec_dev covers 1977 to 2020,
-# the last three years taking mean recruitment; fydev carries the 37 initial
-# age deviations, whose last value is shared by ages beyond the observed range.
-# The domestic fishery selectivity parameters in the file are inactive: the
-# report's fishery selectivity equals the foreign fishery logistic in every
-# year.
+# read at full precision. rec_dev covers 1977 to 2020, the last three taking mean recruitment;
+# fydev holds 37 initial age deviations. the domestic fishery selectivity parameters are inactive
 mle <- list(
   M = get_par("M"),
   mean_log_rec = get_par("mean_log_rec"),

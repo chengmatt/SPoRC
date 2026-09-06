@@ -22,7 +22,7 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
   WAA_vec <- c(0.01, 0.05, 0.15, 0.30, 0.45, 0.55)
   MatAA_vec <- c(0, 0, 1, 1, 1, 1) # age-0 and age-1 immature (required for rec_lag = 0)
 
-  natmort <- array(M_val, dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
+  natmort <- array(M_val, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   WAA <- array(rep(WAA_vec, each = n_pop * n_regions * n_proj_yrs * n_seas),
               dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   WAA_fish <- array(WAA_vec[1], dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets))
@@ -62,7 +62,8 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
     sex_ratio_f = array(1, dim = c(n_pop, n_regions)),
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = c(n_pop)),
-    natmort = array(natmort[,,1,,1], dim = c(n_pop, n_regions, n_ages)),
+    # M now has seasons, which Get_Det_Recruitment reads
+    natmort = array(natmort[,,1,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
@@ -106,7 +107,7 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
   expect_true(all(out$proj_NAA[1,1,,1,1,1] == 0))
   expect_true(all(out$proj_NAA0[1,1,,1,1,1] == 0))
 
-  # Recruits do appear in spawn_seas from year 2 onward (year 1 carries the
+  # Recruits do appear in spawn_seas from year 2 onward (year 1 holds the
   # terminal state forward with no new recruitment event)
   expect_true(all(out$proj_NAA[1,1,2:n_proj_yrs,spawn_seas,1,1] > 0))
 

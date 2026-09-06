@@ -1,13 +1,5 @@
-# BSAI blackspotted and rougheye rockfish bridge: the 2024 Bering Sea and
-# Aleutian Islands assessment (ADMB) rebuilt in SPoRC.
-#
-# One Setup_Mod_* call per section, in the order vignette(
-# "z_bsai_rougheye_rockfish_case_study") walks through them, with a reason for
-# each argument that follows the assessment rather than a SPoRC default.
-#
-# The model is one area, one sex, one season, ages 3-54 with a plus group and
-# ages reported over 3-45 with the last column pooling model ages 45-54, lengths
-# 12-50 cm, years 1977-2024.
+# The 2024 BSAI blackspotted and rougheye rockfish assessment (ADMB) rebuilt in SPoRC. One area, one sex,
+# one season, ages 3-54 reported over 3-45 with 45-54 pooled, lengths 12-50 cm, years 1977-2024.
 #
 #   Source                     Years        Observations  Likelihood
 #   Catch                      1977-2024    48            Lognormal, weighted
@@ -17,10 +9,8 @@
 #   Survey age comps           1991-2022    13            Multinomial
 #   Survey length comps        2024          1            Multinomial
 #
-# Both tests build from here. test-regression_rebs_bridge.R evaluates this
-# configuration at the ADMB maximum likelihood estimate without optimizing, and
-# test-regression_rebs_sgl.R refits from it, so a specification change cannot
-# move one without the other.
+# test-regression_rebs_bridge.R evaluates this at the ADMB estimate without optimizing and
+# test-regression_rebs_sgl.R refits from it, so a specification change moves both or neither.
 
 # Build the input_list for the 2024 assessment configuration.
 build_rebs_input <- function(dat) {
@@ -84,8 +74,15 @@ build_rebs_input <- function(dat) {
     AgeingError = dat$AgeingError,
     M_spec = "est_ln_M",
     Use_M_prior = 1,
-    M_prior = data.frame(popblk = 1, regionblk = 1, yearblk = 1, ageblk = 1, sexblk = 1,
-                         mu = dat$mean_M * exp(-dat$cv_M^2 / 2), sd = dat$cv_M),
+    M_prior = data.frame(
+      popblk = 1,
+      regionblk = 1,
+      yearblk = 1,
+      ageblk = 1,
+      sexblk = 1,
+      mu = dat$mean_M * exp(-dat$cv_M^2 / 2),
+      sd = dat$cv_M
+    ),
     addtosrvidx = 1e-13,
     addtocomp = 1e-13
   )
@@ -93,8 +90,12 @@ build_rebs_input <- function(dat) {
   ## Movement and tagging -----------------------------------------------------
   # one area, so movement is the identity and nothing is tagged. both still have
   # to be declared
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1,
-                                   Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
@@ -177,7 +178,7 @@ build_rebs_input <- function(dat) {
 
   ## Survey selectivity and catchability --------------------------------------
   # the same logistic form, with catchability estimated under a lognormal prior
-  # whose median carries the same exp(-cv^2 / 2) shift as the M prior. the
+  # whose median holds the same exp(-cv^2 / 2) shift as the M prior. the
   # survey is read at mid year
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
@@ -188,8 +189,13 @@ build_rebs_input <- function(dat) {
     srv_fixed_sel_pars_spec = "est_all",
     srv_q_spec = "est_all",
     Use_srv_q_prior = 1,
-    srv_q_prior = data.frame(region = 1, block = 1, fleet = 1,
-                             mu = dat$mean_q * exp(-dat$cv_q^2 / 2), sd = dat$cv_q),
+    srv_q_prior = data.frame(
+      region = 1,
+      block = 1,
+      fleet = 1,
+      mu = dat$mean_q * exp(-dat$cv_q^2 / 2),
+      sd = dat$cv_q
+    ),
     t_srv = array(0.5, dim = c(dat$n_regions, dat$n_seas, dat$n_srv_fleets))
   )
 
@@ -199,8 +205,12 @@ build_rebs_input <- function(dat) {
   # stage-2 multipliers
   Setup_Mod_Weighting(
     input_list = input_list,
-    Wt_Catch = 1, Wt_FishIdx = 1, Wt_SrvIdx = 1,
-    Wt_Rec = 1, Wt_F = 1, Wt_Tagging = 0,
+    Wt_Catch = 1,
+    Wt_FishIdx = 1,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_F = 1,
+    Wt_Tagging = 0,
     Wt_FishAgeComps = dat$Wt_FishAgeComps,
     Wt_FishLenComps = dat$Wt_FishLenComps,
     Wt_SrvAgeComps = dat$Wt_SrvAgeComps,
@@ -233,7 +243,7 @@ seed_rebs_mle <- function(input_list, dat) {
 
   ## Initial age structure ----------------------------------------------------
   # the assessment parameterizes it as N(styr, j) = exp(log_rinit - M (j - 1) +
-  # fydev_j), an absolute statement about numbers at age. SPoRC carries
+  # fydev_j), an absolute statement about numbers at age. SPoRC has
   # multiplicative deviations from an equilibrium age structure, so the
   # deviations it wants are the log ratio of the two. build both and divide.
   # ages beyond the observed range reuse the last deviation, and the plus group

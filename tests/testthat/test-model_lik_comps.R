@@ -76,8 +76,12 @@ test_that("Get_Comp_Likelihoods works!", {
 
   test_that("output is a numeric matrix of dim [n_regions x n_sexes]", {
     for (ct in 0:2) {
-      res <- call_comp_nll(Comp_Type = ct, n_regions = 3, n_sexes = 2,
-                           Likelihood_Type = 0)
+      res <- call_comp_nll(
+        Comp_Type = ct,
+        n_regions = 3,
+        n_sexes = 2,
+        Likelihood_Type = 0
+      )
       expect_true(is.numeric(res),  label = sprintf("numeric Comp_Type=%d", ct))
       expect_equal(unname(dim(res)), c(3, 2), label = sprintf("dim Comp_Type=%d", ct))
     }
@@ -172,10 +176,18 @@ test_that("Get_Comp_Likelihoods works!", {
     # The function filters Exp/Obs to used regions and writes results into
     # comp_nLL[1..n_used, s] sequentially — it does NOT preserve the original
     # region index in the output. Using fewer regions should give lower total nLL.
-    res_all  <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                              n_regions = 3, use = c(1L, 1L, 1L))
-    res_one  <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                              n_regions = 3, use = c(0L, 1L, 0L))
+    res_all  <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = 3,
+      use = c(1L, 1L, 1L)
+    )
+    res_one  <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = 3,
+      use = c(0L, 1L, 0L)
+    )
     # With only 1 region used, exactly 1 slot is populated; the rest are 0
     expect_equal(sum(res_one != 0), 1)
     # Total nLL with 3 regions > total nLL with 1 region
@@ -183,10 +195,18 @@ test_that("Get_Comp_Likelihoods works!", {
   })
 
   test_that("nLL increases when more regions are used (Comp_Type=1)", {
-    res1 <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                          n_regions = 3, use = c(1L, 0L, 0L))
-    res3 <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                          n_regions = 3, use = c(1L, 1L, 1L))
+    res1 <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = 3,
+      use = c(1L, 0L, 0L)
+    )
+    res3 <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      n_regions = 3,
+      use = c(1L, 1L, 1L)
+    )
     expect_gt(sum(res3), sum(res1))
   })
 
@@ -194,11 +214,21 @@ test_that("Get_Comp_Likelihoods works!", {
 
   test_that("age compositions with identity ageing error match length compositions", {
     # With a square identity AE matrix the result should be identical to lengths
-    res_len <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                             age_or_len = 1, n_model_bins = 5, n_obs_bins = 5)
-    res_age <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                             age_or_len = 0, n_model_bins = 5, n_obs_bins = 5,
-                             AgeingError = identity_ae(5))
+    res_len <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      age_or_len = 1,
+      n_model_bins = 5,
+      n_obs_bins = 5
+    )
+    res_age <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      age_or_len = 0,
+      n_model_bins = 5,
+      n_obs_bins = 5,
+      AgeingError = identity_ae(5)
+    )
     expect_equal(res_age, res_len, tolerance = 1e-10)
   })
 
@@ -209,11 +239,18 @@ test_that("Get_Comp_Likelihoods works!", {
     AE[1:2, 1] <- 0.5; AE[3:4, 2] <- 0.5; AE[5, 3] <- 1; AE[6, 4] <- 1
     Exp <- peaked_exp(2, n_mod, 1)
     Obs <- uniform_obs(2, n_obs, 1)
-    res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                         age_or_len = 0,
-                         n_model_bins = n_mod, n_obs_bins = n_obs,
-                         AgeingError = AE, Exp = Exp, Obs = Obs,
-                         n_regions = 2, n_sexes = 1)
+    res <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      age_or_len = 0,
+      n_model_bins = n_mod,
+      n_obs_bins = n_obs,
+      AgeingError = AE,
+      Exp = Exp,
+      Obs = Obs,
+      n_regions = 2,
+      n_sexes = 1
+    )
     expect_true(all(is.finite(res)))
   })
 
@@ -222,8 +259,12 @@ test_that("Get_Comp_Likelihoods works!", {
   test_that("zero counts in Obs do not produce NaN (Comp_Type=1, LT=0, addtocomp)", {
     Obs_z <- uniform_obs(2, 5, 1)
     Obs_z[1, 1, 1] <- 0   # introduce a zero
-    res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                         Obs = Obs_z, addtocomp = 1e-4)
+    res <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      Obs = Obs_z,
+      addtocomp = 1e-4
+    )
     expect_true(all(is.finite(res)))
     expect_false(any(is.nan(res)))
   })
@@ -233,9 +274,14 @@ test_that("Get_Comp_Likelihoods works!", {
     Obs_z[1, 1, 1] <- 0
     Obs_z[1, 3, 1] <- 0
     for (lt in 2:3) {
-      res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = lt,
-                           n_model_bins = 6, n_obs_bins = 6,
-                           Obs = Obs_z, addtocomp = 0)
+      res <- call_comp_nll(
+        Comp_Type = 1,
+        Likelihood_Type = lt,
+        n_model_bins = 6,
+        n_obs_bins = 6,
+        Obs = Obs_z,
+        addtocomp = 0
+      )
       expect_true(all(is.finite(res)),
                   label = sprintf("LT=%d zero handling", lt))
     }
@@ -253,8 +299,11 @@ test_that("Get_Comp_Likelihoods works!", {
   })
 
   test_that("Wt_Mltnml = 0 gives zero multinomial nLL (Comp_Type=1)", {
-    res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                         Wt_Mltnml = array(0, c(2, 1)))
+    res <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      Wt_Mltnml = array(0, c(2, 1))
+    )
     expect_equal(sum(res), 0)
   })
 
@@ -264,21 +313,31 @@ test_that("Get_Comp_Likelihoods works!", {
     n_bins <- 5
     # Uniform obs and exactly matching expected
     flat <- array(1 / n_bins, dim = c(2, n_bins, 1))
-    res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                         Exp = flat, Obs = flat * 100,
-                         n_model_bins = n_bins, n_obs_bins = n_bins,
-                         AgeingError = identity_ae(n_bins))
+    res <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      Exp = flat,
+      Obs = flat * 100,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      AgeingError = identity_ae(n_bins)
+    )
     expect_equal(sum(res), 0, tolerance = 1e-10)
   })
 
   test_that("multinomial nLL = 0 when Exp == Obs (Comp_Type=2)", {
     n_bins <- 5; n_sexes <- 2
     flat <- array(1 / (n_bins * n_sexes), dim = c(2, n_bins, n_sexes))
-    res <- call_comp_nll(Comp_Type = 2, Likelihood_Type = 0,
-                         Exp = flat, Obs = flat * 100,
-                         n_model_bins = n_bins, n_obs_bins = n_bins,
-                         n_sexes = n_sexes,
-                         AgeingError = identity_ae(n_bins))
+    res <- call_comp_nll(
+      Comp_Type = 2,
+      Likelihood_Type = 0,
+      Exp = flat,
+      Obs = flat * 100,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      n_sexes = n_sexes,
+      AgeingError = identity_ae(n_bins)
+    )
     expect_equal(sum(res), 0, tolerance = 1e-10)
   })
 
@@ -289,12 +348,22 @@ test_that("Get_Comp_Likelihoods works!", {
     flat  <- array(1 / n_bins, dim = c(2, n_bins, 1))
     # Expected concentrated on bin 1, observed uniform => poor fit
     bad   <- flat; bad[, 1, ] <- 0.9; bad[, 2:5, ] <- 0.1 / 4
-    res_good <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                              Exp = flat, Obs = flat * 100,
-                              n_model_bins = n_bins, n_obs_bins = n_bins)
-    res_bad  <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
-                              Exp = bad,  Obs = flat * 100,
-                              n_model_bins = n_bins, n_obs_bins = n_bins)
+    res_good <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      Exp = flat,
+      Obs = flat * 100,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins
+    )
+    res_bad  <- call_comp_nll(
+      Comp_Type = 1,
+      Likelihood_Type = 0,
+      Exp = bad,
+      Obs = flat * 100,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins
+    )
     expect_gt(sum(res_bad), sum(res_good))
   })
 
@@ -305,8 +374,11 @@ test_that("Get_Comp_Likelihoods works!", {
     # Use a single-region case so the aggregation is unambiguous.
     res <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 0, n_regions = 1)
     expect_true(is.finite(res[1, 1]))
-    expect_equal(res[1, 1], call_comp_nll(Comp_Type = 0, Likelihood_Type = 0,
-                                          n_regions = 1)[1, 1],
+    expect_equal(res[1, 1], call_comp_nll(
+      Comp_Type = 0,
+      Likelihood_Type = 0,
+      n_regions = 1
+    )[1, 1],
                  tolerance = 1e-10)
   })
 
@@ -314,12 +386,24 @@ test_that("Get_Comp_Likelihoods works!", {
     n_bins <- 5
     flat <- array(1 / n_bins, dim = c(1, n_bins, 1))
     bad  <- flat; bad[, 1, ] <- 0.9; bad[, 2:5, ] <- 0.1 / 4
-    res_good <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 0,
-                              n_regions = 1, n_model_bins = n_bins, n_obs_bins = n_bins,
-                              Exp = flat, Obs = flat * 100)
-    res_bad  <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 0,
-                              n_regions = 1, n_model_bins = n_bins, n_obs_bins = n_bins,
-                              Exp = bad, Obs = flat * 100)
+    res_good <- call_comp_nll(
+      Comp_Type = 0,
+      Likelihood_Type = 0,
+      n_regions = 1,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = flat,
+      Obs = flat * 100
+    )
+    res_bad  <- call_comp_nll(
+      Comp_Type = 0,
+      Likelihood_Type = 0,
+      n_regions = 1,
+      n_model_bins = n_bins,
+      n_obs_bins = n_bins,
+      Exp = bad,
+      Obs = flat * 100
+    )
     expect_gt(res_bad[1, 1], res_good[1, 1])
   })
 })

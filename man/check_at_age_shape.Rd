@@ -4,12 +4,12 @@
 \alias{check_at_age_shape}
 \title{Refuse an at-age array or parameter that is missing a dimension}
 \usage{
-check_at_age_shape(x, want, what)
+check_at_age_shape(x, expected_dims, what)
 }
 \arguments{
 \item{x}{The array to check, or \code{NULL} to skip.}
 
-\item{want}{Integer vector of the dimensions expected.}
+\item{expected_dims}{Integer vector of the dimensions expected.}
 
 \item{what}{Name used in the message.}
 }
@@ -17,7 +17,7 @@ check_at_age_shape(x, want, what)
 \code{invisible(NULL)}. Called for its error.
 }
 \description{
-The at-age streams carry a sex margin, and nothing promotes an array into it:
+The at-age data sources have a sex dim, and nothing promotes an array into it:
 an array one dimension short would otherwise be indexed by position and read
 the wrong age or sex. This reports what was supplied against what is wanted.
 }

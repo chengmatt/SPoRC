@@ -36,11 +36,25 @@ test_that("catch_at_age reproduces the analytic partial-interval Baranov under b
     Z_eff <- Z_seas * t
     analytic <- (F_eff / Z_eff) * (1 - exp(-Z_eff)) * N
 
-    disc <- catch_at_age(N = N, Move = diag(1), Z = Z_eff, Q = NULL, dur = seasdur * t,
-                         F_landed = F_eff, move_timing = 0)
+    disc <- catch_at_age(
+      N = N,
+      Move = diag(1),
+      Z = Z_eff,
+      Q = NULL,
+      dur = seasdur * t,
+      F_landed = F_eff,
+      move_timing = 0
+    )
 
-    cont <- catch_at_age(N = N, Move = diag(1), Z = Z_eff, Q = matrix(0, 1, 1),
-                         dur = seasdur * t, F_landed = F_eff, move_timing = 2)
+    cont <- catch_at_age(
+      N = N,
+      Move = diag(1),
+      Z = Z_eff,
+      Q = matrix(0, 1, 1),
+      dur = seasdur * t,
+      F_landed = F_eff,
+      move_timing = 2
+    )
 
     expect_equal(as.vector(disc), analytic, tolerance = 1e-10)
     expect_equal(as.vector(cont), analytic, tolerance = 1e-8)
@@ -125,7 +139,7 @@ test_that("two partial tag steps compose into one full-season step", {
 test_that("partial-interval tag recaptures match direct integration of the true dynamics", {
 
   # The recapture block computes F_full * tag_frac times the unit-interval integral over
-  # the tag_frac-scaled generator. That should equal the honest partial-interval catch,
+  # the tag_frac-scaled generator. That should equal the exact partial-interval catch,
   # integral over [0, tag_frac] of F_full * exp(Lambda * u) * N du. Verified against
   # quadrature on the untouched full-season generator.
   n <- 3

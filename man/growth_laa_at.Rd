@@ -6,7 +6,7 @@
 \usage{
 growth_laa_at(
   e,
-  gp,
+  growth_pars,
   ages,
   growth_A1,
   growth_A2,
@@ -35,7 +35,7 @@ start-of-year state \code{L_beg} and grow by the year's increment; the ages
 still in the linear phase take the length at \code{A1} their own cohort was
 born with; and the first integer age past \code{A1} sits on the current
 year's curve, which is where the propagation picks it up. The CV at age is
-that of the year's own curve under curve growth and is held at the first
+that of the year's own curve under curve growth and is kept at the first
 year's sizes under cohort growth.
 }
 \keyword{internal}

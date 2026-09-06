@@ -124,11 +124,11 @@ input_list$par$ln_sigmaR[,,] <- log(1.5) # user specified starting value
 ## Mapping
 Mapping is a core feature of TMB and RTMB models that controls which parameters are estimated and how they relate to each other. It works through a named list (`input_list$map`) where each entry corresponds to a parameter array flattened into a vector of factors. The rules are simple:
 
-- **`factor(NA)`** at a position means that parameter is **fixed**, it is held at its value in `input_list$par` and not estimated.
+- **`factor(NA)`** at a position means that parameter is **fixed**, it is kept at its value in `input_list$par` and not estimated.
 - **Shared integers** at two or more positions means those parameters are **constrained to be equal** during estimation, only one value is estimated for the group.
 - **Unique integers** at each position means each parameter is **independently estimated**.
 
-Because fixing a parameter holds it at its current value in `input_list$par`, starting values and fixing must always be set together. If you fix a parameter without also setting a starting value, it will be held at the default value, which may not be what you intend.
+Because fixing a parameter holds it at its current value in `input_list$par`, starting values and fixing must always be set together. If you fix a parameter without also setting a starting value, it will be kept at the default value, which may not be what you intend.
 
 ### Fixing Parameters
 The `Setup_xxx` functions include arguments that allow certain parameters to be fixed. As an example, we use `Setup_Mod_Rec` to show how *ln_sigmaR* can be fixed using the convenience argument `sigmaR_spec = "fix"`.
@@ -192,7 +192,7 @@ The `Setup_xxx` functions also support sharing parameters across model partition
 
 Below, we demonstrate both approaches using fishery selectivity as an example. We define two fishery fleets: Fleet 1 uses a logistic selectivity model (2 parameters: *a50* and slope), and Fleet 2 uses a gamma dome-shaped model (2 parameters: *amax* and slope).
 
-**Built-in sharing: estimate all parameters independently**
+#### Built-in sharing: estimate all parameters independently
 
 We first use `fish_fixed_sel_pars_spec = "est_all"` to estimate all selectivity parameters independently across all model partitions. With 2 sexes, 2 parameters per fleet, and 2 fleets, we expect 8 unique values in the map.
 
@@ -212,7 +212,7 @@ input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
 input_list$map$fish_fixed_sel_pars # 8 unique numbers, 4 for each sex and fleet combination
 ```
 
-**Built-in sharing: share parameters across sexes**
+#### Built-in sharing: share parameters across sexes
 
 Using `fish_fixed_sel_pars_spec = "est_shared_s"` links selectivity parameters between sexes within each fleet. The same two parameters are used for both sexes, so we expect only 4 unique values (2 per fleet).
 
@@ -232,7 +232,7 @@ input_list <- SPoRC::Setup_Mod_Fishsel_and_Q(input_list = input_list,
 input_list$map$fish_fixed_sel_pars # 4 unique numbers, 2 for each sex and fleet combination
 ```
 
-**Manual sharing: fine-grained control**
+#### Manual sharing: fine-grained control
 
 For sharing structures not supported by the convenience arguments, the map can be constructed manually. In this example, we want:
 

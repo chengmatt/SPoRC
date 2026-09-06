@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_setup.R
 \name{setup_sel_bin_devs}
 \alias{setup_sel_bin_devs}
-\title{Set up bin-override selectivity deviations for one selectivity stream}
+\title{Set up bin-override selectivity deviations for one selectivity data source}
 \usage{
 setup_sel_bin_devs(
   input_list,
@@ -26,7 +26,7 @@ structure of the override deviations: \code{"none"}, \code{"iid"}, or
 
 \item{prefix}{One of \code{"fish"}, \code{"ret"}, \code{"srv"}.}
 
-\item{n_fleets}{Integer. Number of fleets in this stream.}
+\item{n_fleets}{Integer. Number of fleets in this data source.}
 
 \item{bins}{Integer. Number of age or length bins.}
 
@@ -40,6 +40,6 @@ Creates the bin-override deviation parameter array, its factor map, and its
 process-error hyperparameters, and records which bins each fleet overrides.
 Bins named here take a free annual selectivity value instead of whatever the
 fleet's functional form produces, which lets an otherwise parametric curve
-carry a handful of freely estimated bins.
+have a handful of freely estimated bins.
 }
 \keyword{internal}

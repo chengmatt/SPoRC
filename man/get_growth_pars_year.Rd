@@ -25,7 +25,7 @@ under the logit link.}
 }
 \value{
 Natural-scale parameter vector for the year, with a seventh element
-  \code{rho} of one when the base carries five parameters.
+  \code{rho} of one when the base has five parameters.
 }
 \description{
 Applies the time-varying deviations of one stratum to its base parameters.

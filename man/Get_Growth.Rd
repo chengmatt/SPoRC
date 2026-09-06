@@ -100,12 +100,12 @@ every year.}
 \item{ln_growth_semipar_devs}{Array \code{[pop, region, year, age, sex]} of
 log deviations on mean length at age, or \code{NULL} for none. Multiplies
 the parametric mean at age, so the curve stays the parametric part and the
-deviations carry departures from it; the spread at age follows the deviated
+deviations have departures from it; the spread at age follows the deviated
 mean, leaving the coefficient of variation at age alone.}
 
 \item{growth_semipar}{Integer process error code for those deviations,
 \code{0} for none. Only its being nonzero is read here; the structure is
-scored in the objective.}
+penalized in the objective.}
 }
 \value{
 List with \code{SizeAgeTrans_fish} and \code{SizeAgeTrans_srv}
@@ -131,7 +131,7 @@ spawning weight at \code{t_spawn}.
 With no deviations the key is built once and broadcast over the years. With
 deviations on any parameter and \code{growth_tv_type = 0} ("curve") every
 year's sizes are read from that year's own curve. Under
-\code{growth_tv_type = 1} ("cohort") the sizes are carried forward cohort by
+\code{growth_tv_type = 1} ("cohort") the sizes are advanced cohort by
 cohort from \code{growth_cohort_styr} on, which needs the numbers at age of
 each year to blend the plus group; that form is run one year at a time from
 the population dynamics through \code{\link{Get_Growth_Year}}, and this
@@ -156,7 +156,7 @@ weight is read at the spawning fraction of the season, and each fleet's key
 and weight at that fleet's own timing, \code{t_fish} or \code{t_srv}, so a
 composition and the weight behind an index are formed at the point in the
 season the observation is taken. Fleets that share a timing share one
-evaluation. Seasonal multipliers on \eqn{K} are not carried.
+evaluation. Seasonal multipliers on \eqn{K} are not kept.
 }
 
 \keyword{internal}

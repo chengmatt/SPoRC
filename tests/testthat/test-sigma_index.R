@@ -1,9 +1,8 @@
-# Estimated index observation error. An index carries a standard error from its
-# own survey design, and an assessment may additionally estimate a component
-# covering everything that design does not. These tests pin the three ways the
-# two are combined, the separation of the aggregated and population-specific
-# streams, and the two guard rails: a spec that cannot be identified, and a spec
-# on a likelihood that ignores standard deviations entirely.
+# Estimated index observation error. An index has a standard error from its own survey design, and an
+# assessment may additionally estimate a component covering everything that design does not.
+#
+# Checks the three ways the two combine, the separation of the aggregated and population-specific
+# sources, and two guard rails: a spec that cannot be identified, and one on a likelihood with no SD.
 
 library(SPoRC)
 library(testthat)
@@ -14,29 +13,53 @@ build_toy <- function(n_yrs = 20, n_srv = 1, ...) {
   yrs <- seq_len(n_yrs); ages <- 1:8; n_ages <- length(ages)
   d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
 
-  il <- Setup_Mod_Dim(n_pop = 1, years = yrs, ages = ages, lens = NA,
-                      n_regions = 1, n_sexes = 1, n_seas = 1,
-                      n_fish_fleets = 1, n_srv_fleets = n_srv, verbose = FALSE)
+  il <- Setup_Mod_Dim(
+    n_pop = 1,
+    years = yrs,
+    ages = ages,
+    lens = NA,
+    n_regions = 1,
+    n_sexes = 1,
+    n_seas = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = n_srv,
+    verbose = FALSE
+  )
 
-  il <- Setup_Mod_Rec(il, rec_model = "mean_rec", sigmaR_spec = "fix",
-                      do_rec_bias_ramp = 0, init_age_strc = 1, ln_global_R0 = log(1e6))
+  il <- Setup_Mod_Rec(
+    il,
+    rec_model = "mean_rec",
+    sigmaR_spec = "fix",
+    do_rec_bias_ramp = 0,
+    init_age_strc = 1,
+    ln_global_R0 = log(1e6)
+  )
 
   il <- suppressWarnings(Setup_Mod_Biologicals(
-    il, WAA = array(1, dim = d1),
-    WAA_fish = array(1, dim = c(d1, 1)), WAA_srv = array(1, dim = c(d1, n_srv)),
-    MatAA = array(1, dim = d1), fit_lengths = 0, M_spec = "fix",
-    Fixed_natmort = array(0.2, dim = c(1, 1, n_yrs, n_ages, 1))))
+    il,
+    WAA = array(1, dim = d1),
+    WAA_fish = array(1, dim = c(d1, 1)),
+    WAA_srv = array(1, dim = c(d1, n_srv)),
+    MatAA = array(1, dim = d1),
+    fit_lengths = 0,
+    M_spec = "fix",
+    Fixed_natmort = array(0.2, dim = c(1, 1, n_yrs, n_ages, 1))
+  ))
 
   il <- Setup_Mod_Movement(il, use_fixed_movement = 1, Fixed_Movement = NA, do_recruits_move = 0)
   il <- Setup_Mod_Tagging(il, use_conv_fish_tagging = 0)
 
   il <- suppressWarnings(Setup_Mod_Catch_and_F(
-    il, ObsCatch = array(1e4, dim = c(1, n_yrs, 1, 1)),
+    il,
+    ObsCatch = array(1e4, dim = c(1, n_yrs, 1, 1)),
     UseCatch = array(1, dim = c(1, n_yrs, 1, 1)),
-    sigmaC_spec = "fix", sigmaF_spec = "fix"))
+    sigmaC_spec = "fix",
+    sigmaF_spec = "fix"
+  ))
 
   il <- Setup_Mod_FishIdx_and_Comps(
-    il, ObsFishIdx = array(NA, dim = c(1, n_yrs, 1, 1)),
+    il,
+    ObsFishIdx = array(NA, dim = c(1, n_yrs, 1, 1)),
     ObsFishIdx_SE = array(NA, dim = c(1, n_yrs, 1, 1)),
     UseFishIdx = array(0, dim = c(1, n_yrs, 1, 1)),
     ObsFishAgeComps = array(0, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
@@ -46,13 +69,16 @@ build_toy <- function(n_yrs = 20, n_srv = 1, ...) {
     UseFishLenComps = array(0, dim = c(1, n_yrs, 1, 1)),
     ISS_FishLenComps = array(0, dim = c(1, n_yrs, 1, 1, 1)),
     fish_idx_type = "none",
-    FishAgeComps_LikeType = "none", FishLenComps_LikeType = "none",
+    FishAgeComps_LikeType = "none",
+    FishLenComps_LikeType = "none",
     FishAgeComps_Type = "agg_Year_1-terminal_Fleet_1",
-    FishLenComps_Type = "agg_Year_1-terminal_Fleet_1")
+    FishLenComps_Type = "agg_Year_1-terminal_Fleet_1"
+  )
 
   fl <- function(tag) paste0(tag, "_Fleet_", seq_len(n_srv))
   il <- Setup_Mod_SrvIdx_and_Comps(
-    il, ObsSrvIdx = array(1e5, dim = c(1, n_yrs, 1, n_srv)),
+    il,
+    ObsSrvIdx = array(1e5, dim = c(1, n_yrs, 1, n_srv)),
     ObsSrvIdx_SE = array(0.2, dim = c(1, n_yrs, 1, n_srv)),
     UseSrvIdx = array(1, dim = c(1, n_yrs, 1, n_srv)),
     ObsSrvAgeComps = array(0, dim = c(1, n_yrs, 1, n_ages, 1, n_srv)),
@@ -62,26 +88,47 @@ build_toy <- function(n_yrs = 20, n_srv = 1, ...) {
     UseSrvLenComps = array(0, dim = c(1, n_yrs, 1, n_srv)),
     ISS_SrvLenComps = array(0, dim = c(1, n_yrs, 1, 1, n_srv)),
     srv_idx_type = rep("abd", n_srv),
-    SrvAgeComps_LikeType = rep("none", n_srv), SrvLenComps_LikeType = rep("none", n_srv),
-    SrvAgeComps_Type = fl("agg_Year_1-terminal"), SrvLenComps_Type = fl("agg_Year_1-terminal"),
-    ...)
+    SrvAgeComps_LikeType = rep("none", n_srv),
+    SrvLenComps_LikeType = rep("none", n_srv),
+    SrvAgeComps_Type = fl("agg_Year_1-terminal"),
+    SrvLenComps_Type = fl("agg_Year_1-terminal"),
+    ...
+  )
 
   il <- Setup_Mod_Fishsel_and_Q(
-    il, cont_tv_fish_sel = "none_Fleet_1", fish_sel_blocks = "none_Fleet_1",
-    fish_sel_model = "logist1_Fleet_1", fish_q_blocks = "none_Fleet_1",
-    fish_fixed_sel_pars_spec = "est_all", fish_q_spec = "fix")
+    il,
+    cont_tv_fish_sel = "none_Fleet_1",
+    fish_sel_blocks = "none_Fleet_1",
+    fish_sel_model = "logist1_Fleet_1",
+    fish_q_blocks = "none_Fleet_1",
+    fish_fixed_sel_pars_spec = "est_all",
+    fish_q_spec = "fix"
+  )
 
   il <- Setup_Mod_Srvsel_and_Q(
-    il, cont_tv_srv_sel = fl("none"), srv_sel_blocks = fl("none"),
-    srv_sel_model = fl("logist1"), srv_q_blocks = fl("none"),
+    il,
+    cont_tv_srv_sel = fl("none"),
+    srv_sel_blocks = fl("none"),
+    srv_sel_model = fl("logist1"),
+    srv_q_blocks = fl("none"),
     srv_fixed_sel_pars_spec = rep("est_all", n_srv),
-    srv_q_spec = rep("est_all", n_srv))
+    srv_q_spec = rep("est_all", n_srv)
+  )
 
   cd <- c(1, n_yrs, 1, 1, 1); sd <- c(1, n_yrs, 1, 1, n_srv)
-  Setup_Mod_Weighting(il, Wt_Catch = 1, Wt_FishIdx = 0, Wt_SrvIdx = 1, Wt_Rec = 1,
-                      Wt_F = 1, Wt_Tagging = 0,
-                      Wt_FishAgeComps = array(0, dim = cd), Wt_FishLenComps = array(0, dim = cd),
-                      Wt_SrvAgeComps = array(0, dim = sd), Wt_SrvLenComps = array(0, dim = sd))
+  Setup_Mod_Weighting(
+    il,
+    Wt_Catch = 1,
+    Wt_FishIdx = 0,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_F = 1,
+    Wt_Tagging = 0,
+    Wt_FishAgeComps = array(0, dim = cd),
+    Wt_FishLenComps = array(0, dim = cd),
+    Wt_SrvAgeComps = array(0, dim = sd),
+    Wt_SrvLenComps = array(0, dim = sd)
+  )
 }
 
 sd_of <- function(il) {
@@ -127,21 +174,24 @@ test_that("each estimated form reaches the likelihood with the right total", {
 })
 
 test_that("the fleet map shares and holds fleets as asked", {
-  il <- build_toy(n_srv = 3, sigmaSrvIdx_spec = "est_additive",
-                  sigmaSrvIdx_map = c(NA, 1, 1))
+  il <- build_toy(
+    n_srv = 3,
+    sigmaSrvIdx_spec = "est_additive",
+    sigmaSrvIdx_map = c(NA, 1, 1)
+  )
   m <- as.integer(il$map$ln_sigmaSrvIdx)
-  expect_true(is.na(m[1]))          # held at its starting value
+  expect_true(is.na(m[1]))          # kept at its starting value
   expect_equal(m[2], m[3])          # and these two share one parameter
   expect_equal(length(unique(stats::na.omit(m))), 1)
 })
 
-test_that("the aggregated and population streams carry separate parameters", {
+test_that("the aggregated and population data sources have separate parameters", {
   il <- build_toy(sigmaSrvIdx_spec = "est_additive", sigmaSrvIdx_pop_spec = "est_replace")
   expect_equal(il$data$sigmaSrvIdx_form, 1)
   expect_equal(il$data$sigmaSrvIdx_pop_form, 3)
   expect_true("ln_sigmaSrvIdx" %in% names(il$par))
   expect_true("ln_sigmaSrvIdx_pop" %in% names(il$par))
-  # they are distinct entries, so one can be held while the other is estimated
+  # they are distinct entries, so one can be kept while the other is estimated
   il2 <- build_toy(sigmaSrvIdx_spec = "est_additive", sigmaSrvIdx_pop_spec = "fix")
   expect_false(all(is.na(as.integer(il2$map$ln_sigmaSrvIdx))))
   expect_true(all(is.na(as.integer(il2$map$ln_sigmaSrvIdx_pop))))
@@ -151,8 +201,11 @@ test_that("an estimated sigma is refused on a multivariate normal index", {
   n_yrs <- 20
   cov1 <- list(diag(n_yrs))
   expect_error(
-    build_toy(SrvIdx_LikeType = "mvn", SrvIdx_Cov = cov1,
-              sigmaSrvIdx_spec = "est_additive"),
+    build_toy(
+      SrvIdx_LikeType = "mvn",
+      SrvIdx_Cov = cov1,
+      sigmaSrvIdx_spec = "est_additive"
+    ),
     "multivariate normal", ignore.case = TRUE)
 })
 
@@ -192,10 +245,19 @@ test_that("estimating an index sigma under a likelihood weight warns", {
   il <- build_toy(sigmaSrvIdx_spec = "est_additive")
   cd <- c(1, 20, 1, 1, 1)
   expect_warning(
-    Setup_Mod_Weighting(il, Wt_Catch = 1, Wt_FishIdx = 0, Wt_SrvIdx = 5, Wt_Rec = 1,
-                        Wt_F = 1, Wt_Tagging = 0,
-                        Wt_FishAgeComps = array(0, dim = cd), Wt_FishLenComps = array(0, dim = cd),
-                        Wt_SrvAgeComps = array(0, dim = cd), Wt_SrvLenComps = array(0, dim = cd)),
+    Setup_Mod_Weighting(
+      il,
+      Wt_Catch = 1,
+      Wt_FishIdx = 0,
+      Wt_SrvIdx = 5,
+      Wt_Rec = 1,
+      Wt_F = 1,
+      Wt_Tagging = 0,
+      Wt_FishAgeComps = array(0, dim = cd),
+      Wt_FishLenComps = array(0, dim = cd),
+      Wt_SrvAgeComps = array(0, dim = cd),
+      Wt_SrvLenComps = array(0, dim = cd)
+    ),
     "confounded")
 })
 

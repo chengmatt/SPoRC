@@ -1,23 +1,14 @@
-# Every term of the joint negative log likelihood, written out here separately
-# from the sum in R/model_objective.R. Keeping the two independent means a
-# likelihood dropped from the sum, counted twice, or weighted on the wrong side of
-# its sum() fails a test, instead of quietly shifting SSB by an amount the
-# regression tests would absorb.
+# Every term of the joint negative log likelihood, written out separately from the sum in
+# model_objective.R, so a term dropped, double counted or weighted on the wrong side of sum() fails.
 #
 # Each entry names a REPORTed *_nLL object and the weight applied to it:
 #
-#   weight  name of the weight in input_list$data, or NA when the likelihood
-#           enters jnLL unweighted. The composition likelihoods are unweighted
-#           here because their weights are applied inside the likelihood itself,
-#           and the priors carry no weight at all.
-#   mode    "elementwise" for sum(Wt * nLL), "scalar" for Wt * sum(nLL). These
-#           agree when the weight is a single number and differ when it is an
-#           array, so each term records which form the model uses.
-#           "at_age" collapses the age and sex dimensions the weight does not
-#           carry before applying it, which an age-disaggregated stream needs.
-#   optional TRUE for a likelihood the model reports only when that data stream
-#           is fit, so its absence is not a term dropped from the sum. Every
-#           other term must be reported by every model.
+#   weight  name of the weight in input_list$data, or NA when the likelihood enters jnLL unweighted.
+#           composition weights are applied inside the likelihood; priors have no weight at all
+#   mode    "elementwise" for sum(Wt * nLL), "scalar" for Wt * sum(nLL). these agree on a scalar weight
+#           and differ on an array. "at_age" collapses the age and sex dims the weight does not have
+#   optional TRUE for a likelihood reported only when that data source is fit. every other term must
+#           be reported by every model
 
 jnLL_terms <- list(
   Catch_nLL                    = list(weight = "Wt_Catch",        mode = "elementwise"),
@@ -29,9 +20,9 @@ jnLL_terms <- list(
   SrvIdx_nLL                   = list(weight = "Wt_SrvIdx",       mode = "elementwise"),
   SrvIdx_pop_nLL               = list(weight = "Wt_SrvIdx_pop",   mode = "elementwise"),
 
-  # Age-disaggregated observation streams. Each is reported always but summed
+  # Age-disaggregated data sources. Each is reported always but summed
   # under the same weight as its aggregated counterpart, and every entry is zero
-  # unless that stream is fit, so they are elementwise like the aggregates.
+  # unless that data source is fit, so they are elementwise like the aggregates.
   CatchAA_nLL                  = list(weight = "Wt_Catch",        mode = "at_age"),
   CatchAA_pop_nLL              = list(weight = "Wt_Catch_pop",    mode = "at_age"),
   DiscardAA_nLL                = list(weight = "Wt_Discard",      mode = "at_age"),
@@ -52,7 +43,7 @@ jnLL_terms <- list(
   SrvLenComps_nLL              = list(weight = NA, mode = "scalar"),
   SrvLenComps_pop_nLL          = list(weight = NA, mode = "scalar"),
 
-  # the conditional age-at-length terms are reported only when that stream is
+  # the conditional age-at-length terms are reported only when that data source is
   # fit, so their absence is not a dropped likelihood
   Fish_caal_nLL                = list(weight = NA, mode = "scalar", optional = TRUE),
   Srv_caal_nLL                 = list(weight = NA, mode = "scalar", optional = TRUE),
@@ -114,9 +105,9 @@ jnLL_contributions <- function(model) {
   rep <- bits$rep
   data <- bits$data
 
-  rows <- lapply(names(jnLL_terms), function(nm) {
-    spec <- jnLL_terms[[nm]]
-    component <- rep[[nm]]
+  rows <- lapply(names(jnLL_terms), function(term_name) {
+    spec <- jnLL_terms[[term_name]]
+    component <- rep[[term_name]]
     if(is.null(component)) return(NULL)
 
     # A weight the objective backfills for older input lists is absent from a
@@ -125,11 +116,11 @@ jnLL_contributions <- function(model) {
     wt_name <- spec$weight
     if(!is.na(wt_name[1]) && is.null(data[[wt_name]]) && !is.null(spec$fallback)) wt_name <- spec$fallback
     wt <- if(is.na(wt_name[1])) 1 else data[[wt_name]]
-    if(is.null(wt)) stop("weight '", wt_name, "' listed in jnLL_terms for '", nm, "' is absent from the data list")
+    if(is.null(wt)) stop("weight '", wt_name, "' listed in jnLL_terms for '", term_name, "' is absent from the data list")
     spec$weight <- wt_name
 
     contribution <- if(spec$mode == "at_age") {
-      # An at-age component carries age and sex dimensions the weight does not,
+      # An at-age component has age and sex dimensions the weight does not,
       # so both are summed within a cell before the cell's weight is applied,
       # which is what the objective does.
       nd <- length(dim(component))
@@ -141,11 +132,11 @@ jnLL_contributions <- function(model) {
     # weight returns one value per weight element, which data.frame() would then
     # recycle into one row per element and count the component many times over.
     if(length(contribution) != 1)
-      stop("'", nm, "' resolved to ", length(contribution), " contributions rather than one. Its mode in jnLL_terms is '",
+      stop("'", term_name, "' resolved to ", length(contribution), " contributions rather than one. Its mode in jnLL_terms is '",
            spec$mode, "' but '", wt_name, "' has length ", length(wt),
-           ", so check how ", nm, " enters the jnLL sum in R/model_objective.R.")
+           ", so check how ", term_name, " enters the jnLL sum in R/model_objective.R.")
 
-    data.frame(component = nm,
+    data.frame(component = term_name,
                weight = if(is.na(spec$weight[1])) NA_character_ else spec$weight,
                contribution = as.numeric(contribution),
                stringsAsFactors = FALSE)
@@ -164,7 +155,7 @@ jnLL_contributions <- function(model) {
 #'
 #' @param model Fitted object from \code{fit_model}, or \code{list(rep =, data =)}.
 #' @param tolerance Relative tolerance for the reconstruction.
-#' @param label Name for this fixture, used in failure messages.
+#' @param label Name for this test setup, used in failure messages.
 #'
 #' @keywords internal
 expect_jnLL_decomposes <- function(model, tolerance = 1e-8, label = deparse(substitute(model))) {

@@ -55,13 +55,13 @@ n_srv <- dat$n_srv_fleets
 
 ### What Stock Synthesis says differently
 
-Seven conventions carry the whole bridge, and each of them can easily forgotten if missed.
+Seven conventions hold the whole bridge, and each of them can easily forgotten if missed.
 Age 0 fish spawn in the equilibrium year only. Spawning biomass is female
 numbers times fecundity at age, formed before the year's recruits settle, so
 the age 0 cell is empty in every year the model runs. The unfished equilibrium
 is different: it already holds $R_{0}/2$ at age 0, and that is what
 $SSB_{y_{1}}$ and $S_{0}$ are built from. Dropping those fish everywhere moves
-$S_{0}$ by 0.009 percent, which the Beverton-Holt then carries into recent
+$S_{0}$ by 0.009 percent, which the Beverton-Holt then propagates into recent
 recruitment. `SPoRC` forms the first year's spawning biomass from the initial
 numbers and every later year's from the survivors, so a maturity at age 0 that
 is the fecundity ratio in $y_{1}$ and zero afterwards is exact.
@@ -82,14 +82,14 @@ digits, which is as close as that likelihood's CV of 0.01 holds them.
 
 Extra survey standard deviation is added, not combined in quadrature. For
 each survey, $\sigma_{y} = \sigma_{y}^{\text{input}} + \sigma^{\text{extra}}$.
-`SPoRC` currently has no parameter for it, so it is held at the assessment's estimate.
+`SPoRC` currently has no parameter for it, so it is kept at the assessment's estimate.
 
 The recruitment index is a likelihood on the deviations. Fleet 11 is units
 36, a normal likelihood on $\varepsilon_{y}$ itself rather than on abundance.
-`SPoRC` carries this as `srv_idx_type = "recdev"`, a survey fleet that observes
+`SPoRC` holds this as `srv_idx_type = "recdev"`, a survey fleet that observes
 year class strength directly and reads no part of the population.
 
-Two fleets carry two composition streams. The trawl fishery and the West
+Two fleets have two composition data sources. The trawl fishery and the West
 Coast groundfish bottom trawl survey each have sexed and unsexed compositions
 in the same years. `SPoRC` holds one composition type per fleet, so each gets a
 second fleet sharing the first's selectivity: a fishery fleet companion with no catch
@@ -164,7 +164,7 @@ The bridge stage below checks the resulting ramp against the assessment's own
 
 Weight at age and fecundity at age are empirical and year specific, read from
 the assessment's `wtatage.ss`. Maturity is the ratio of the two, so spawning
-biomass is numbers times fecundity, with the age 0 cell carrying its value in
+biomass is numbers times fecundity, with the age 0 cell with its value in
 the equilibrium year alone.
 
 ```{r, eval = FALSE}
@@ -225,7 +225,7 @@ input_list <- Setup_Mod_Catch_and_F(
 
 The assessment has no fishing mortality penalty and no mean fishing mortality
 parameter, so `Use_F_pen = 0` and `ln_F_mean_spec = "fix"` leave the deviations
-carrying all of $\log F$. Fixing the mean matters: with the deviations
+with all of $\log F$. Fixing the mean matters: with the deviations
 unpenalized the mean and their average are exactly redundant, and fixing one
 of them is what keeps that ridge from going off the rails.
 
@@ -235,7 +235,7 @@ trawl fleet's composition companion is different: it has no catch observation at
 all, entered as `NA`, which leaves its fishing mortality estimated. Seeded at
 $10^{-12}$ it takes nothing out of the population, so its catch at age is the
 trawl fleet's numbers at age scaled by the same selectivity, which is what
-makes its compositions the right expectation. This is needed because one fleet can't carry two sets of composition data.
+makes its compositions the right expectation. This is needed because one fleet can't have two sets of composition data.
 
 ## Fishery compositions
 
@@ -261,10 +261,10 @@ input_list <- Setup_Mod_FishIdx_and_Comps(
 )
 ```
 
-`FishAgeComps_Type` is where the two composition streams show up. The three
-gear fleets carry sexed compositions, which is `spltRjntS`, females and males
+`FishAgeComps_Type` is where the two composition data sources show up. The three
+gear fleets have sexed compositions, which is `spltRjntS`, females and males
 in one vector normalized together. The three discard fleets and the trawl companion
-carry compositions with the sexes pooled, which is `agg`.
+have compositions with the sexes pooled, which is `agg`.
 
 The sample sizes were built as
 
@@ -279,14 +279,23 @@ from 0.005 to 0.97 here, and $n_{\text{bins}}$ 102 for a sexed composition and
 ```{r, eval = FALSE}
 t_srv <- array(dat$t_srv, dim = c(1, 1, n_srv))
 
+# The assessment reports each survey's standard error with its estimated extra
+# standard deviation already added. Subtracting it recovers what went in, which
+# is what SPoRC wants, since the extra component is kept as a parameter.
+input_se <- function(dat) {
+  se <- dat$ObsSrvIdx_SE
+  for(f in seq_along(dat$mle$extra_sd)) se[,,,f] <- se[,,,f] - dat$mle$extra_sd[f]
+  se
+}
+
 input_list <- Setup_Mod_SrvIdx_and_Comps(
   input_list = input_list,
   ObsSrvIdx = dat$ObsSrvIdx,
   # The assessment reports its survey standard errors with an estimated extra
   # standard deviation already added, so subtracting it recovers the input errors
-  # and the extra component is carried as a parameter instead. Fleets 1 and 4 sit
-  # at the assessment's lower bound, which is it asking for none, so they are held.
-  ObsSrvIdx_SE = sweep_extra_sd(dat),
+  # and the extra component is kept as a parameter instead. Fleets 1 and 4 sit
+  # at the assessment's lower bound, which is it asking for none, so they are kept.
+  ObsSrvIdx_SE = input_se(dat),
   sigmaSrvIdx_spec = "est_additive",
   sigmaSrvIdx_map = c(NA, 1, 2, NA, NA, NA),
   ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8, 1e-8), 1e-8)),
@@ -309,7 +318,7 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
 ```
 
 All four surveys are in month 7, so `t_srv = 0.5` and the index is formed from
-numbers decayed half a year. The standard errors already carry the extra
+numbers decayed half a year. The standard errors already hold the extra
 standard deviation added to them.
 
 ## Selectivity
@@ -363,20 +372,20 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 
 Catchability floats in the assessment, meaning it is solved rather than
 estimated, which reaches the same optimum as estimating it. The composition
-companion of the bottom trawl survey carries no index, so its catchability stays out
+companion of the bottom trawl survey has no index, so its catchability stays out
 of the parameter vector.
 
 All six parameters are on the same scale in both, so the assessment's values go
 straight in as starting values, and the parameter count comes out at the
 assessment's own 32.
 
-`fish_sel_sex_offset = "par_apical"` is what carries the male curve. The `par`
+`fish_sel_sex_offset = "par_apical"` is what holds the male curve. The `par`
 half makes the male slots offsets on the female's, which is how the assessment
 writes the peak and the selectivity at the last bin. The `apical` half is the
 assessment's fifth male parameter: the height the male ascending and descending
 limbs are built up to and the plateau sits at, with the two ends left where
 their own parameters put them. That is a different statement from a `"scale"`
-offset, which multiplies the finished curve and carries the ends along with it,
+offset, which multiplies the finished curve and holds the ends along with it,
 and the difference is not cosmetic: the two agree on the curve at any one point
 but disagree about how it moves, so under a scale offset the assessment's
 estimate is not a stationary point and the fit walks away from it. The male
@@ -420,11 +429,11 @@ such an index measures. Taking it from the penalty's own center is what makes
 the two agree without any special casing.
 
 Two things follow from the deviations being signed. The fleet takes
-`SrvIdx_LikeType = "normal"`, since a lognormal cannot carry a negative
+`SrvIdx_LikeType = "normal"`, since a lognormal cannot have a negative
 observation, and setup refuses any other choice for it. It also reads no
 numbers at age, so its selectivity, survey timing and weight at age are never
 used and its compositions are left off. Its catchability is an ordinary
-element of `ln_srv_q`, carried on the log scale where the assessment carries
+element of `ln_srv_q`, kept on the log scale where the assessment has
 it on the natural scale.
 
 
@@ -445,7 +454,7 @@ seed <- fit_model(input_list$data, input_list$par, input_list$map,
                   do_optim = FALSE, silent = TRUE)
 ```
 
-The comparison before anything is optimized, against a report file carrying six
+The comparison before anything is optimized, against a report file with six
 significant digits:
 
 ```
@@ -529,7 +538,7 @@ thousandths of a percent.
 Two things account for that much. The assessment solves fishing mortality from
 the catch where `SPoRC` estimates it against a lognormal catch likelihood at
 CV 0.01, so the two agree only to the precision that likelihood enforces; and
-the extra survey standard deviation is held at the assessment's estimate,
+the extra survey standard deviation is kept at the assessment's estimate,
 because `SPoRC` has no parameter for it. Neither moves the fit, but the second
-does mean the standard errors here do not carry that source of uncertainty.
+does mean the standard errors here do not have that source of uncertainty.
 

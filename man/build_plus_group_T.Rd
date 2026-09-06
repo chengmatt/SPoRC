@@ -21,12 +21,11 @@ build_plus_group_T(
 )
 }
 \arguments{
-\item{M_penult}{Numeric vector \code{[n_regions]}. Natural mortality for
-the penultimate age class, used as an annual rate (scaled by
-\code{seasdur} internally).}
+\item{M_penult}{Numeric matrix \code{[n_regions, n_seas]}. Natural mortality
+for the penultimate age, a rate per year, scaled by \code{seasdur} inside.}
 
-\item{M_plus}{Numeric vector \code{[n_regions]}. Natural mortality for the
-plus-group age class.}
+\item{M_plus}{Numeric matrix \code{[n_regions, n_seas]}. The same for the
+plus group.}
 
 \item{F_penult}{Numeric matrix \code{[n_regions, n_seas]}. Total fishing
 mortality per season for the penultimate age, already summed across

@@ -22,7 +22,7 @@ over an elapsed time \code{e} from a current mean length \code{L}:
 \deqn{L(t + e)^\rho = L_\infty^\rho + (L^\rho - L_\infty^\rho) e^{-K e}}
 Applied to a length that sits on the curve it returns the curve's value
 \code{e} later, so splitting a year into seasons changes nothing; applied to a
-length carried from an earlier year's parameters it is how a cohort keeps its
+length kept from an earlier year's parameters it is how a cohort keeps its
 own history.
 }
 \keyword{internal}

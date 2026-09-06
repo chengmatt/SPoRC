@@ -309,9 +309,14 @@ test_that("get_osa()/plot_resids() support index-type sources (Catch, Discard, F
     expect_false("comp_type" %in% names(res))  # index residuals use idx_type, not comp_type
     expect_equal(unique(res$idx_type), src)
     expect_true(all(is.finite(res$resid)))
-    direct <- RTMB::oneStepPredict(model, observation.name = paste0("Obs", src),
-                                   method = "oneStepGeneric", discrete = FALSE,
-                                   parallel = FALSE, trace = FALSE)
+    direct <- RTMB::oneStepPredict(
+      model,
+      observation.name = paste0("Obs", src),
+      method = "oneStepGeneric",
+      discrete = FALSE,
+      parallel = FALSE,
+      trace = FALSE
+    )
     expect_equal(res$resid, direct$residual, tolerance = 1e-3)
     expect_equal(nrow(res), sum(input_list$data[[paste0("Use", src)]] == 1))
     plots <- plot_resids(out)
@@ -335,13 +340,24 @@ test_that("get_osa()/plot_resids() support index-type sources (Catch, Discard, F
     "not permitted"
   )
   expect_error(
-    get_osa(model = model, data = input_list$data, comp_source = "FishAge", family = "discrete",
-            bins = input_list$data$ages, bin_label = "Age", osa_method = "cdf"),
+    get_osa(
+      model = model,
+      data = input_list$data,
+      comp_source = "FishAge",
+      family = "discrete",
+      bins = input_list$data$ages,
+      bin_label = "Age",
+      osa_method = "cdf"
+    ),
     "not permitted"
   )
   # a valid oneStep* method still works
-  out_valid <- get_osa(model = model, data = input_list$data, index_source = "SrvIdx",
-                       osa_method = "oneStepGaussian")
+  out_valid <- get_osa(
+    model = model,
+    data = input_list$data,
+    index_source = "SrvIdx",
+    osa_method = "oneStepGaussian"
+  )
   expect_false(is.null(out_valid))
   expect_true(all(is.finite(out_valid$res$resid)))
 

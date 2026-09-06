@@ -19,7 +19,7 @@ and never validated, matching how the prior tables are guarded.}
 \item{sel_blocks}{Integer array \code{[region, year, fleet]} mapping model
 years to selectivity blocks.}
 
-\item{n_bins}{Integer. Size of the grid the stream's selectivity is
+\item{n_bins}{Integer. Size of the grid the data source's selectivity is
 parameterized on (ages or lengths per its selectivity type).}
 }
 \value{

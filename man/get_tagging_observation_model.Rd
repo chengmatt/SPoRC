@@ -72,7 +72,7 @@ fish_fleet]} of total/retained fishery selectivity.}
 \item{dmr}{Array \code{[region, year, season, fish_fleet]} of discard
 mortality rate.}
 
-\item{natmort}{Array \code{[pop, region, year, age, sex]} of natural
+\item{natmort}{Array \code{[pop, region, year, season, age, sex]} of natural
 mortality at age.}
 
 \item{seasdur}{Numeric vector \code{[season]} of season duration (fraction
@@ -115,11 +115,12 @@ region, age, sex]}, output container for tags available for recapture.}
 region, age, sex, fish_fleet]}, output container for predicted
 recaptures.}
 
-\item{NAA_scalar}{Array \code{[pop, region, year, age, sex]} of the factor the
-state-space numbers at age applied to the deterministic prediction, one
-wherever it did not apply. Tagged fish are a subset of the population and the
-innovation reads as unmodelled mortality, so the cohorts take the same
-factor at the year boundary. \code{NULL} (the default) leaves them on the
+\item{NAA_scalar}{Array \code{[pop, region, year, season, age, sex]} of the
+factor the state-space numbers at age applied to the deterministic
+prediction, one wherever it did not apply. Tagged fish are a subset of the
+population and the innovation reads as unmodelled mortality, so the cohorts
+take the same factor at every boundary the state acts on, within a year as
+well as across one. \code{NULL} (the default) leaves them on the
 deterministic trajectory, which is correct only when the state is off.}
 }
 \value{

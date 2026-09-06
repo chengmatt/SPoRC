@@ -1,14 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# The lowest level of the population dynamics: what happens to a vector of
-# abundance over one season. Every module that moves fish through time goes
-# through here, which is what keeps movement timing consistent between the
-# estimation model, the reference points and the operating model.
-#
-# build_seas_operator and advance_seas step abundance forward; spawn_state stops
-# partway through a season for spawning; integrate_seas_abundance and
-# catch_at_age give the within season averages the catch equation needs;
-# survey_state gives abundance at the survey timing.
+# What happens to a vector of abundance over one season, and the only route by which fish move through time,
+# which is what keeps movement timing consistent between the estimation model, reference points and OM.
 
 #' Build a seasonal transition operator combining movement and survival
 #'
@@ -157,7 +150,7 @@ spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing 
 #' regions while they are dying.
 #'
 #' The integral runs over the unit interval, not over \eqn{[0, \Delta]}, because
-#' \eqn{A = Q^\top \Delta - \mathrm{diag}(Z)} already carries the season duration in
+#' \eqn{A = Q^\top \Delta - \mathrm{diag}(Z)} already holds the season duration in
 #' both of its terms. The integration variable is elapsed \emph{fraction} of the
 #' season, so a full season is \eqn{\tau = 1}.
 #'
@@ -236,7 +229,7 @@ catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 
 #' stratum, which is every fished stratum, since the dynamics advance the numbers and
 #' the Baranov equation integrates them over the identical \eqn{A}, should take both
 #' from here rather than exponentiating \eqn{A} once and the block again. Under
-#' reverse-mode AD the adjoint of a matrix exponential is far more expensive than its
+#' reverse-mode AD the derivative of a matrix exponential is far more expensive than its
 #' forward evaluation, so halving the number of exponentials on the tape is worth more
 #' than the flop count alone suggests.
 #'

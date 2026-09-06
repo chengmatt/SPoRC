@@ -11,7 +11,7 @@ library(testthat)
 
 n_lens_test <- 8
 
-build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))
+build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
 # A separate curve per class, and a shift per year within each class, so a slice taken from
 # the wrong class or the wrong year cannot match the expected values by coincidence. This is
@@ -26,7 +26,7 @@ fixed_len_sel <- function(d, offset) {
   arr
 }
 
-# The default fixture is built once to read its dimensions, then rebuilt with the fixed
+# The default test setup is built once to read its dimensions, then rebuilt with the fixed
 # length-based inputs. The underlying simulation is cached, so the second build is cheap.
 fixed_length_input <- function() {
   d <- build(n_lens = n_lens_test)$data
@@ -38,14 +38,20 @@ fixed_length_input <- function() {
   input <- build(
     n_lens = n_lens_test,
     fishsel = list(
-      fish_selex_type = "length", use_fixed_fish_sel = 1,
-      fish_fixed_sel_pars_spec = "fix_fish_sel_input", fish_sel_input = fish_in,
-      ret_selex_type = "length", use_fixed_ret_sel = 1,
-      ret_fixed_sel_pars_spec = "fix_ret_sel_input", ret_sel_input = ret_in
+      fish_selex_type = "length",
+      use_fixed_fish_sel = 1,
+      fish_fixed_sel_pars_spec = "fix_fish_sel_input",
+      fish_sel_input = fish_in,
+      ret_selex_type = "length",
+      use_fixed_ret_sel = 1,
+      ret_fixed_sel_pars_spec = "fix_ret_sel_input",
+      ret_sel_input = ret_in
     ),
     srvsel = list(
-      srv_selex_type = "length", use_fixed_srv_sel = 1,
-      srv_fixed_sel_pars_spec = "fix_srv_sel_input", srv_sel_input = srv_in
+      srv_selex_type = "length",
+      use_fixed_srv_sel = 1,
+      srv_fixed_sel_pars_spec = "fix_srv_sel_input",
+      srv_sel_input = srv_in
     )
   )
 
@@ -118,9 +124,9 @@ test_that("fixed length based selectivity maps onto ages through the size-age tr
   expect_gt(stats::sd(model$rep$fish_sel[1, 1, 1, 1, , 1, 1]), 0)
 
   # a weighted average of a bounded curve stays bounded
-  for(nm in c("fish_sel", "ret_sel", "srv_sel")) {
-    expect_true(all(model$rep[[nm]] >= 0), info = nm)
-    expect_true(all(model$rep[[nm]] <= 1), info = nm)
+  for(quant_name in c("fish_sel", "ret_sel", "srv_sel")) {
+    expect_true(all(model$rep[[quant_name]] >= 0), info = quant_name)
+    expect_true(all(model$rep[[quant_name]] <= 1), info = quant_name)
   }
 })
 

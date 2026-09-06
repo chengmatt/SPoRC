@@ -36,7 +36,13 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
   # Model fits testing
   test_that("get_idx_fits_plot, theme_sablefish, do_runs_test, get_idx_fits, and get_comp_prop runs", {
     idx_fits <- get_idx_fits_plot(list(data), list(dusky_rtmb_model$rep), 'Dusky Model') + theme_sablefish()
-    comp_fits <- get_comp_prop(data, dusky_rtmb_model$rep, age_labels = 1:27, len_labels = data$lens, year_labels = data$years)
+    comp_fits <- get_comp_prop(
+      data,
+      dusky_rtmb_model$rep,
+      age_labels = 1:27,
+      len_labels = data$lens,
+      year_labels = data$years
+    )
     idx_fits_df <- get_idx_fits(data, dusky_rtmb_model$rep, data$years)
     resids <- do_runs_test(idx_fits_df$resid)
     expect_type(idx_fits, "object")
@@ -58,10 +64,27 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
 
   # Test whether retro function runs
   test_that("do_retrospective, get_retrospective_plot, and truncate_yr runs", {
-    retro <- do_retrospective(data, parameters, mapping, do_par = FALSE,
-                              random = NULL, n_retro = 1, newton_loops = 1, return_models = TRUE)
-    retro_par <- do_retrospective(data, parameters, mapping, do_par = FALSE,
-                                  random = NULL, n_retro = 1, newton_loops = 1, n_cores = 1, return_models = TRUE)
+    retro <- do_retrospective(
+      data,
+      parameters,
+      mapping,
+      do_par = FALSE,
+      random = NULL,
+      n_retro = 1,
+      newton_loops = 1,
+      return_models = TRUE
+    )
+    retro_par <- do_retrospective(
+      data,
+      parameters,
+      mapping,
+      do_par = FALSE,
+      random = NULL,
+      n_retro = 1,
+      newton_loops = 1,
+      n_cores = 1,
+      return_models = TRUE
+    )
     retro_plot <- get_retrospective_plot(retro$retro_df, 4)
     trunc_retro <- SPoRC:::truncate_yr(0, data, parameters, mapping)
 
@@ -73,19 +96,40 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
 
   # Test whether reference points runs
   test_that("Get_Reference_Points runs", {
-    rp <- Get_Reference_Points(data = data, rep = dusky_rtmb_model$rep,
-                               SPR_x = 0.4, what = 'SPR', type = 'single_region')
+    rp <- Get_Reference_Points(
+      data = data,
+      rep = dusky_rtmb_model$rep,
+      SPR_x = 0.4,
+      what = 'SPR',
+      type = 'single_region'
+    )
     expect_type(rp, "list")
   })
 
   # Test likelihood profile
   test_that("do_likelihood_profile runs", {
-    lp <- do_likelihood_profile(data, parameters, mapping, NULL,
-                                what = 'ln_global_R0', min_val = 1, max_val = 3, inc = 1)
-    lp_par  <- do_likelihood_profile(data, parameters, mapping, NULL,
-                                     what = 'ln_global_R0',
-                                     min_val = 1, max_val = 3, inc = 1,
-                                     do_par = TRUE, n_cores = 3)
+    lp <- do_likelihood_profile(
+      data,
+      parameters,
+      mapping,
+      NULL,
+      what = 'ln_global_R0',
+      min_val = 1,
+      max_val = 3,
+      inc = 1
+    )
+    lp_par  <- do_likelihood_profile(
+      data,
+      parameters,
+      mapping,
+      NULL,
+      what = 'ln_global_R0',
+      min_val = 1,
+      max_val = 3,
+      inc = 1,
+      do_par = TRUE,
+      n_cores = 3
+    )
     expect_type(lp, "list")
     expect_type(lp_par, "list")
 
@@ -94,7 +138,16 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
   # Test jitter analysis
   test_that("do_jitter runs", {
     jit_df <- do_jitter(data, parameters, mapping, NULL, sd = 0.1, n_jitter = 1, do_par = FALSE)
-    jit_par_df <- do_jitter(data = data, parameters = parameters, mapping = mapping, random = NULL, sd = 0.1, n_jitter = 1, do_par = TRUE, n_cores = 1)
+    jit_par_df <- do_jitter(
+      data = data,
+      parameters = parameters,
+      mapping = mapping,
+      random = NULL,
+      sd = 0.1,
+      n_jitter = 1,
+      do_par = TRUE,
+      n_cores = 1
+    )
     expect_type(jit_df, "list")
     expect_type(jit_par_df, "list")
   })
@@ -120,8 +173,14 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
   # Test condition closed loop simulations
   test_that("condition_closed_loop_simulations runs", {
     condition_cl_sim <- condition_closed_loop_simulations(
-      closed_loop_yrs = 1, n_sims = 1, data, parameters, mapping,
-      sd_rep = dusky_rtmb_model$sdrep, rep = dusky_rtmb_model$rep, random =  NULL
+      closed_loop_yrs = 1,
+      n_sims = 1,
+      data,
+      parameters,
+      mapping,
+      sd_rep = dusky_rtmb_model$sdrep,
+      rep = dusky_rtmb_model$rep,
+      random =  NULL
     )
     dusky_sim_env <- Setup_sim_env(condition_cl_sim)
     expect_type(condition_cl_sim, "list")

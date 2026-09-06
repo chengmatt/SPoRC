@@ -1,10 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Recruitment inputs: stock recruit model, steepness, recruitment and initial
-# age deviations, and the spatial, seasonal and sex apportionment of recruits.
-# Setup_Mod_Rec builds the estimation inputs, Setup_Sim_Rec the operating model
-# inputs. The do_*_mapping helpers below build the RTMB map for one parameter
-# block each and are only called from within this file.
+# Recruitment inputs: stock recruit model, steepness, recruitment and initial age deviations, and the
+# spatial, seasonal and sex apportionment of recruits. Setup_Mod_Rec estimates, Setup_Sim_Rec simulates.
 
 #' Set up recruitment dynamics for the operating model simulation
 #'
@@ -137,6 +134,9 @@
 #'   per sex). The \code{n_ages - 1} dimension excludes the reference age used
 #'   during initialization. If \code{NULL} (default), deviations are drawn as
 #'   one shared curve per population and region.
+#' @param SR_ref_yr Integer year index supplying the biological inputs to unfished
+#'   spawning biomass per recruit, and so the scale of the stock-recruit curve.
+#'   Matches the estimation model's \code{SR_ref_yr}. Default \code{1}.
 #'
 #' @return The input \code{sim_list} with recruitment-related fields appended:
 #'   \code{$recruitment_opt}, \code{$rec_dd}, \code{$init_dd}, \code{$R0},
@@ -151,31 +151,32 @@
 #' @export Setup_Sim_Rec
 #' @family Simulation Setup
 Setup_Sim_Rec <- function(
-    sim_list,
-    do_recruits_move = 0,
-    sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
-    R0_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
-    rinit_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)),
-    h_input = array(0.8, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
-    stray_rate_input = array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
-    ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_regions)),
-    rec_seas_prop_input = {
+  sim_list,
+  do_recruits_move = 0,
+  sexratio_input = array(if(sim_list$n_sexes == 1) 1 else 0.5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sexes, sim_list$n_sims)),
+  R0_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+  rinit_input = array(15, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)),
+  h_input = array(0.8, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims)),
+  stray_rate_input = array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
+  ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_regions)),
+  rec_seas_prop_input = {
       rec_seas_prop = array(0, dim = c(sim_list$n_pop, sim_list$n_seas, sim_list$n_sims))
       rec_seas_prop[, 1, ] <- 1
       rec_seas_prop
     },
-    recruitment_opt = 'bh_rec',
-    rec_dd = 'global',
-    init_dd = 'global',
-    use_rinit = 0,
-    init_age_strc = 2,
-    spawn_seas = 1,
-    t_spawn = 0,
-    rec_lag = 1,
-    Rec_input = NULL,
-    ln_InitDevs_input = NULL,
-    InitDevs_sex_spec = "est_shared_s"
-    ) {
+  recruitment_opt = 'bh_rec',
+  rec_dd = 'global',
+  init_dd = 'global',
+  use_rinit = 0,
+  init_age_strc = 2,
+  spawn_seas = 1,
+  t_spawn = 0,
+  rec_lag = 1,
+  SR_ref_yr = 1,
+  Rec_input = NULL,
+  ln_InitDevs_input = NULL,
+  InitDevs_sex_spec = "est_shared_s"
+) {
 
   if(rec_dd == 'global' && sim_list$n_pop > 1 && recruitment_opt == 'bh_rec') stop("Invalid recruitment density-dependence option! When n_pop > 1 and recruitment_opt == 'bh_rec', rec_dd must be local (0).")
   if(rec_lag < 0) stop("rec_lag cannot be negative!")
@@ -186,14 +187,62 @@ Setup_Sim_Rec <- function(
   init_dd <- convert_to_numeric(init_dd, list(local = 0, global = 1))
   init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3, free = 4))
 
-  check_sim_dimensions(sexratio_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "sexratio_input")
-  check_sim_dimensions(R0_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "R0_input")
-  check_sim_dimensions(rinit_input, n_regions = sim_list$n_regions, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "rinit_input")
-  check_sim_dimensions(h_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "h_input")
-  check_sim_dimensions(stray_rate_input, n_years = sim_list$n_yrs, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "stray_rate_input")
-  check_sim_dimensions(rec_seas_prop_input, n_seas = sim_list$n_seas, n_sims  = sim_list$n_sims, n_pop = sim_list$n_pop, what = "rec_seas_prop_input")
+  check_sim_dimensions(
+    sexratio_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_sexes = sim_list$n_sexes,
+    n_sims = sim_list$n_sims,
+    n_pop = sim_list$n_pop,
+    what = "sexratio_input"
+  )
+  check_sim_dimensions(
+    R0_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_sims = sim_list$n_sims,
+    n_pop = sim_list$n_pop,
+    what = "R0_input"
+  )
+  check_sim_dimensions(
+    rinit_input,
+    n_regions = sim_list$n_regions,
+    n_sims = sim_list$n_sims,
+    n_pop = sim_list$n_pop,
+    what = "rinit_input"
+  )
+  check_sim_dimensions(
+    h_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_sims  = sim_list$n_sims,
+    n_pop = sim_list$n_pop,
+    what = "h_input"
+  )
+  check_sim_dimensions(
+    stray_rate_input,
+    n_years = sim_list$n_yrs,
+    n_sims  = sim_list$n_sims,
+    n_pop = sim_list$n_pop,
+    what = "stray_rate_input"
+  )
+  check_sim_dimensions(
+    rec_seas_prop_input,
+    n_seas = sim_list$n_seas,
+    n_sims  = sim_list$n_sims,
+    n_pop = sim_list$n_pop,
+    what = "rec_seas_prop_input"
+  )
   if(!is.null(ln_InitDevs_input)) {
-    check_sim_dimensions(ln_InitDevs_input, n_regions = sim_list$n_regions, n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_sims = sim_list$n_sims, n_pop = sim_list$n_pop, what = "ln_InitDevs_input")
+    check_sim_dimensions(
+      ln_InitDevs_input,
+      n_regions = sim_list$n_regions,
+      n_ages = sim_list$n_ages,
+      n_sexes = sim_list$n_sexes,
+      n_sims = sim_list$n_sims,
+      n_pop = sim_list$n_pop,
+      what = "ln_InitDevs_input"
+    )
     # one shared curve (no sex dimension) broadcasts across sexes
     if(length(dim(ln_InitDevs_input)) == 4) {
       tmp_init_input <- array(0, dim = c(dim(ln_InitDevs_input)[1:3], sim_list$n_sexes, sim_list$n_sims))
@@ -202,9 +251,8 @@ Setup_Sim_Rec <- function(
     }
   }
 
-  # Age-0 (rec_lag = 0) recruitment: recruits produced by this year's spawning
-  # cannot appear in the population before spawn_seas within the same year
-  # (SSB/recruitment aren't known yet at that point). Enforce this up front.
+  # age-0 recruits produced by this year's spawning cannot appear before spawn_seas in the same
+  # year, since SSB and recruitment are not known yet at that point
   if(rec_lag == 0 && spawn_seas > 1 && any(rec_seas_prop_input[, seq_len(spawn_seas - 1), , drop = FALSE] != 0)) {
     stop("rec_lag = 0 requires rec_seas_prop_input to be zero in every season before spawn_seas (age-0 recruits can't predate the spawning event that produced them).")
   }
@@ -236,6 +284,11 @@ Setup_Sim_Rec <- function(
   sim_list$rinit <- rinit_input
   sim_list$sexratio <- sexratio_input
   sim_list$rec_lag <- rec_lag
+  # every input to unfished spawning biomass per recruit is taken at this year, matching
+  # the estimation model's SR_ref_yr so a self test compares like with like
+  if(length(SR_ref_yr) != 1 || SR_ref_yr < 1 || SR_ref_yr > sim_list$n_yrs)
+    stop("SR_ref_yr must be a single year index between 1 and ", sim_list$n_yrs, ".")
+  sim_list$SR_ref_yr <- as.integer(SR_ref_yr)
   sim_list$ln_sigmaR <- ln_sigmaR
   sim_list$t_spawn <- t_spawn
   sim_list$rec_seas_prop <- rec_seas_prop_input
@@ -263,7 +316,7 @@ Setup_Sim_Rec <- function(
 #'
 #' The map decides what is shared, and the recruitment penalty reads each
 #' region's own slot. Under \code{rec_region_prop_spec = 1} with multiple
-#' populations, a population's non-natal region slots carry no deviations and
+#' populations, a population's non-natal region slots have no deviations and
 #' are mapped off automatically.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -313,7 +366,7 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
     map_sigmaR <- build_pe_map(dims, share_over = share_over)
 
     # a population confined to its natal region has no deviations elsewhere, so
-    # those slots carry no information and stay off
+    # those slots have no information and stay off
     if(isTRUE(input_list$data$rec_region_prop_spec == 1) && input_list$data$n_pop > 1) {
       for(p in 1:input_list$data$n_pop) map_sigmaR[, p, -input_list$data$natal_region[p]] <- NA
     } # end if
@@ -403,7 +456,7 @@ do_sigmaR_mapping <- function(input_list, sigmaR_spec) {
 #' @param InitDevs_sex_spec Character. \code{"est_shared_s"} (default) maps
 #'   every sex onto one shared age curve (the pre-sex-dimension behavior,
 #'   penalized once); \code{"est_all"} offsets the factor levels per sex so
-#'   each sex carries its own curve, each penalized. Also builds
+#'   each sex has its own curve, each penalized. Also builds
 #'   \code{data$init_devs_pen_use}, which flags exactly one penalized copy of
 #'   every estimated parameter.
 #'
@@ -423,9 +476,8 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
     if(length(init_age_devs_shared) != (length(input_list$data$ages) - 1)) stop("init_age_devs_shared must have length n_ages - 1 = ", n_age_dim, " but has length ", length(init_age_devs_shared))
   }
 
-  # Sexes either share one age curve (est_shared_s) or carry their own
-  # (est_all). The pop, region, and age logic below is written on a single-sex
-  # slice, so the sex dimension is peeled off here and reattached at the end.
+  # sexes either share one age curve (est_shared_s) or have their own (est_all). the logic below is
+  # written on a single-sex slice, so the sex dim is peeled off here and reattached at the end
   if(!InitDevs_sex_spec %in% c("est_shared_s", "est_all")) stop("InitDevs_sex_spec must be est_shared_s or est_all")
   if(InitDevs_sex_spec == "est_all" && input_list$data$n_sexes == 1) stop("InitDevs_sex_spec = 'est_all' estimates a curve per sex, so it requires n_sexes > 1 (with one sex, est_shared_s is the same thing)")
   par_full <- input_list$par$ln_InitDevs
@@ -558,7 +610,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
     # Plus group and estimating deviations for all dimensions
     if(input_list$data$equil_init_age_strc == 2) {
       input_list$map$ln_InitDevs <- factor(1:length(map_InitDevs)) # input into map
-      collect_message("Initial Age Deviations is estimated for all dimensions. They are are stochastic and estimated for all ages, including the plus group")
+      collect_message("Initial Age Deviations is estimated for all dimensions. They are stochastic and estimated for all ages, including the plus group")
     }
 
     # User-defined age sharing, estimated independently across all pops and regions
@@ -601,11 +653,8 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
     collect_message("No dispersal: initial age deviations for non-natal regions fixed to 0 and not estimated.")
   }
 
-  # Reattach the sex dimension. est_shared_s repeats the single-sex factor
-  # levels so every sex reads one parameter set; est_all offsets them so each
-  # sex has its own. Cells the single-sex logic fixed stay fixed for every sex,
-  # and init_devs_pen_use flags one penalized copy per parameter: the first sex
-  # under sharing, every sex under est_all.
+  # reattach the sex dim. est_shared_s repeats the single-sex factor levels so every sex reads one
+  # parameter set, est_all offsets them. init_devs_pen_use flags one penalized copy per parameter
   map3 <- as.integer(input_list$map$ln_InitDevs)
   dim(map3) <- dim(input_list$par$ln_InitDevs)
   par3 <- input_list$par$ln_InitDevs
@@ -768,9 +817,8 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
     collect_message("No dispersal: Recruitment deviations for non-natal regions fixed to 0 and not estimated.")
   }
 
-  # mirror the deviation map into the data list so the recruitment penalty can
-  # key on the cells that are actually estimated. A deviation mapped off by hand
-  # after setup is then neither estimated nor penalized
+  # mirror the deviation map into the data list so the recruitment penalty keys on the cells that
+  # are estimated. a deviation mapped off by hand after setup is neither estimated nor penalized
   input_list$data$map_ln_RecDevs <- array(as.numeric(input_list$map$ln_RecDevs),
                                           dim = dim(input_list$par$ln_RecDevs))
   # do the initial age deviations too, so that deviations shared across regions
@@ -845,9 +893,8 @@ do_h_mapping <- function(input_list, h_spec, rec_dd) {
     }
   }
 
-  # Mean recruitment with no stock-recruit penalty has no curve, so steepness is
-  # meaningless and stays off. With a penalty there IS a curve and steepness has
-  # to be reachable, so fall through to h_spec.
+  # mean recruitment with no stock-recruit penalty has no curve, so steepness stays off. with a
+  # penalty there is a curve and steepness has to be reachable, so fall through to h_spec
   if(input_list$data$rec_model == 0 && input_list$data$sr_penalty == 0) {
     input_list$map$steepness_h <- factor(rep(NA, length(input_list$par$steepness_h)))
   } else if(!is.null(h_spec)) {
@@ -1257,12 +1304,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
     input_list$map$rec_seas_prop_pars <- NULL
   }
 
-  # Age-0 (rec_lag = 0) recruitment with spawning after season 1: seasons
-  # before spawn_seas are structurally fixed at zero (see the restricted
-  # softmax in SPoRC_rtmb.R), so only the first (n_seas - spawn_seas)
-  # columns of rec_seas_prop_pars are ever used as free logits. Force the
-  # remaining, structurally-unused columns to NA regardless of
-  # rec_seas_prop_spec so they can't silently soak up gradient/estimation.
+  # under age-0 recruitment with spawning after season 1, seasons before spawn_seas are fixed at
+  # zero, so map the structurally unused columns of rec_seas_prop_pars to NA
   if(!is.null(input_list$map$rec_seas_prop_pars) &&
      input_list$data$rec_lag == 0 && input_list$data$spawn_seas > 1) {
     n_allowed <- input_list$data$n_seas - input_list$data$spawn_seas + 1
@@ -1319,14 +1362,27 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       \code{RecDevs_spec}, and \code{InitDevs_spec} to shared or fixed
 #'       options when \code{n_regions > 1}.}
 #'   }
-#' @param SR_ref_yr Integer year index (not a calendar year) supplying the
-#'   biological inputs, weight-at-age, maturity, natural mortality and movement,
-#'   to unfished spawning biomass per recruit, and so to \code{S0} and the scale
-#'   of the stock-recruit curve. Default \code{1}, the first model year, which is
+#' @param SR_ref_yr Integer year index (not a calendar year) supplying EVERY
+#'   input to unfished spawning biomass per recruit, and so to \code{S0} and the
+#'   scale of the stock-recruit curve: weight-at-age, maturity, natural mortality,
+#'   movement, stray rate, sex ratio, and the selectivity, discard mortality and
+#'   continuous-movement rate that enter through \code{init_F}. The operating
+#'   model takes the same year, so a self-test compares like with like. Default \code{1}, the first model year, which is
 #'   what the model has always used. Set it to \code{length(years)} to condition
 #'   the curve on terminal weight-at-age, which is what several ADMB assessments
 #'   do; with time-varying weight-at-age the two differ and the curve shifts with
 #'   them. Ignored when \code{rec_model = "mean_rec"}.
+#'
+#'   \code{R0} is the deliberate exception. The \code{R0} that turns spawning biomass per
+#'   recruit into \code{S0} is the year's own value, the same one the curve's
+#'   numerator uses, so the two cannot come from different years: steepness is
+#'   recruitment at \code{0.2 * S0} as a fraction of \code{R0}, and splitting
+#'   them would leave the unfished state off the curve. With \code{R0_blocks}
+#'   that means a block rescales the whole curve, so \code{S0} and depletion
+#'   step at the block boundary.
+#' @param SR_ref_yr Integer year index supplying every input to unfished spawning
+#'   biomass per recruit, and so to \code{S0} and the scale of the stock-recruit
+#'   curve. Matches the estimation model's \code{SR_ref_yr}. Default \code{1}.
 #' @param rec_lag Integer. Lag between spawning biomass and recruitment (in
 #'   seasons). \code{1} (default) is the classic lagged case: recruitment uses
 #'   SSB from \code{rec_lag} seasons prior and may enter in any season.
@@ -1371,7 +1427,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   equilibrium recruitment, so one parameter sets both the unfished age
 #'   structure and the curve; it requires \code{use_rinit = 1}. \code{"shared"}
 #'   is the better posed of the first two; \code{"est"} reproduces templates
-#'   that carry separate mean-recruitment and unfished-recruitment parameters,
+#'   that have separate mean-recruitment and unfished-recruitment parameters,
 #'   and \code{"rinit"} reproduces those that use the unfished recruitment in
 #'   both places, which is the usual ADMB arrangement.
 #' @param Use_rec_level_pen Integer (0/1). Whether a penalty is applied to the
@@ -1428,7 +1484,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{4}/\code{"free"} projects no equilibrium at all: the numbers at age
 #'   2 and older are \code{exp(ln_InitDevs)} outright, apportioned by sex ratio,
 #'   with age 1 still taken from recruitment. Use it when the initial age
-#'   structure carries no information about \code{R0} and should not be pulled
+#'   structure has no information about \code{R0} and should not be pulled
 #'   toward an equilibrium.
 #'   Note that under \code{4} the deviations are on the scale of numbers rather
 #'   than of log ratios, so the penalty applied through
@@ -1492,7 +1548,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       mortality independent of \code{ln_F_mean}.
 #'   }
 #'
-#'   Use \code{"abs"} when bridging an assessment that carries a separate
+#'   Use \code{"abs"} when bridging an assessment that has a separate
 #'   historical F (one estimated as its own parameter, distinct from the mean
 #'   log fishing mortality). Under
 #'   \code{"prop"} those two quantities collapse into a single parameter, and
@@ -1507,7 +1563,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
 #'   is generally weakly identified, which is why assessments commonly fix it.
 #'
-#'   The value is carried by the parameter \code{init_F_par}
+#'   The value is set by the parameter \code{init_F_par}
 #'   \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
 #'   any other starting value, e.g.
 #'   \code{Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))}.
@@ -1699,6 +1755,22 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   year's; \eqn{\sigma_R / (1 / M - 0.5)}, with \eqn{1/M - 0.5} the average
 #'   age of the stock, is a reasonable choice. Default 0.
 #' @param rinit_pen_sd Standard deviation of that penalty, log scale. Default 1.
+#' @param R0_blocks Character vector giving time blocks for \code{R0}, one entry
+#'   per population, in the same vocabulary as the selectivity blocks:
+#'   \code{"none_Pop_<p>"}, \code{"Block_<b>_Year_<a>-<e>_Pop_<p>"} (1-based year
+#'   indices, \code{"terminal"} allowed for the end year).
+#'   Under \code{rec_model = "mean_rec"} \code{R0} IS mean recruitment, so a block
+#'   is a productivity regime. Under a stock-recruit form it is the curve's scale, so
+#'   blocking it makes the curve time-varying: \code{S0} moves with the block, and
+#'   depletion and any reference point built on the curve step at its boundary. A
+#'   curve fitted as a penalty instead (\code{sr_penalty} with
+#'   \code{sr_R0_spec = "shared"}) takes its scale from \code{R0_ref_block} and
+#'   stays put. Default \code{NULL}, a single block.
+#' @param R0_ref_block Integer, the block whose \code{R0} is used everywhere a single
+#'   value is needed rather than a year's value: the initial age structure, the
+#'   regional apportionment, the \code{R0} prior, the \code{ln_rinit} penalty and the
+#'   stock-recruit scale when \code{sr_R0_spec = "shared"}. Default 1. Only the
+#'   recruitment computed each year uses that year's block.
 #' @param use_r0_prior Integer (0/1). Whether to apply a lognormal prior on R0 for any populations. Default 0.
 #' @param r0_prior Data frame with columns \code{pop} (population index), \code{mu} (prior mean on natural scale), and \code{sd} (prior SD on log scale). Required when \code{use_r0_prior = 1}.
 #'
@@ -1776,6 +1848,8 @@ Setup_Mod_Rec <- function(input_list,
                           },
                           use_rinit = 0,
                           init_age_devs_shared = NULL,
+                          R0_blocks = NULL,
+                          R0_ref_block = 1,
                           use_r0_prior = 0,
                           r0_prior = NULL,
                           Use_rinit_pen = 0,
@@ -1847,12 +1921,8 @@ Setup_Mod_Rec <- function(input_list,
     collect_message("Unfished spawning biomass per recruit uses biologicals from year ",
                     input_list$data$years[SR_ref_yr], ".")
 
-  # Age-0 (rec_lag = 0) recruitment: recruits produced by this year's spawning
-  # cannot appear in the population before spawn_seas within the same year
-  # (SSB/recruitment aren't known yet at that point). When seasonal proportions
-  # are fixed (not estimated), enforce this directly; when estimated, the
-  # restricted softmax in do_rec_seas_prop_mapping()/SPoRC_rtmb.R guarantees it
-  # structurally instead.
+  # age-0 recruits cannot appear before spawn_seas in the same year. fixed seasonal proportions
+  # enforce that here; estimated ones get it from the restricted softmax instead
   if(rec_lag == 0 && spawn_seas > 1 && use_fixed_rec_seas_prop == 1 &&
      any(fixed_rec_seas_prop[, seq_len(spawn_seas - 1), drop = FALSE] != 0)) {
     stop("rec_lag = 0 requires fixed_rec_seas_prop to be zero in every season before spawn_seas (age-0 recruits can't predate the spawning event that produced them).")
@@ -1891,8 +1961,15 @@ Setup_Mod_Rec <- function(input_list,
     tmp_sgl_seas_spawning_movement <- arr
     if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val %in% c(1, 2)) collect_message("Using 100% natal homing rate.")
   } else {
-    check_data_dimensions(sgl_seas_spawning_movement, n_pop = input_list$data$n_pop, n_regions = input_list$data$n_regions, n_years = length(input_list$data$years),
-                          n_ages = length(input_list$data$ages), n_sexes = input_list$data$n_sexes, what = 'sgl_seas_spawning_movement')
+    check_data_dimensions(
+      sgl_seas_spawning_movement,
+      n_pop = input_list$data$n_pop,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_ages = length(input_list$data$ages),
+      n_sexes = input_list$data$n_sexes,
+      what = 'sgl_seas_spawning_movement'
+    )
     tmp_sgl_seas_spawning_movement <- sgl_seas_spawning_movement
     if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val %in% c(1, 2)) collect_message("Using user input natal homing rate.")
   }
@@ -2070,14 +2147,12 @@ Setup_Mod_Rec <- function(input_list,
   if(sr_R0_spec == "rinit" && use_rinit != 1)
     stop("sr_R0_spec = 'rinit' takes the curve's scale from ln_rinit, so it needs use_rinit = 1. With use_rinit = 0 the initial age structure is built from ln_global_R0 and 'shared' is the same thing.")
   if(sr_penalty != "none" && input_list$data$rec_model != 0)
-    stop("sr_penalty is only valid with rec_model = 'mean_rec'. Under bh_rec or ricker_rec the stock-recruit curve already generates recruitment, and penalizing the residual as well would score it twice.")
+    stop("sr_penalty is only valid with rec_model = 'mean_rec'. Under bh_rec or ricker_rec the stock-recruit curve already generates recruitment, and penalizing the residual as well would penalize it twice.")
   input_list$data$sr_penalty <- convert_to_numeric(sr_penalty, list(none = 0, bh = 1, ricker = 2))
   input_list$data$sr_R0_spec <- convert_to_numeric(sr_R0_spec, list(shared = 0, est = 1, rinit = 2))
   input_list$data$ln_sigma_sr_pen <- log(sr_pen_sigma)
-  # A penalty year needs a spawning biomass behind it. The first rec_lag years
-  # have none, and Get_Det_Recruitment falls back to the fished equilibrium
-  # there, so scoring them would compare log recruitment against R0 rather than
-  # against the curve. They are dropped by default and rejected if asked for.
+  # a penalty year needs a spawning biomass behind it. the first rec_lag years have none and fall
+  # back to the fished equilibrium, so they are dropped by default and rejected if asked for
   sr_yr_ok <- seq_along(input_list$data$years) > rec_lag
   input_list$data$sr_pen_yrs <- if(is.null(sr_pen_yrs)) as.numeric(sr_yr_ok) else as.numeric(input_list$data$years %in% sr_pen_yrs)
   if(sr_penalty != "none" && any(input_list$data$sr_pen_yrs == 1 & !sr_yr_ok))
@@ -2116,17 +2191,47 @@ Setup_Mod_Rec <- function(input_list,
 
   # Populate Parameter List -------------------------------------------------
 
-  # Global R0, one per population. A starting value of the wrong length is read
-  # position by position further in, so a single value on a model carrying
-  # several populations reaches the objective as an out-of-range index and
-  # surfaces from RTMB as an invalid advector rather than as a problem with this
-  # argument. use_starting_value catches that here, as it does everywhere else.
-  input_list$par$ln_global_R0 <- array(log(15), dim = c(input_list$data$n_pop))
+  # global R0, one per population; use_starting_value catches a wrong-length starting value here.
+  # time blocks add a column, so a model with no blocks keeps ln_global_R0 a length-n_pop vector
+  n_yrs_r0 <- length(input_list$data$years); n_pop_r0 <- input_list$data$n_pop
+  if(is.null(R0_blocks)) R0_blocks <- paste0("none_Pop_", seq_len(n_pop_r0))
+  R0_blocks_arr <- array(NA, dim = c(1, n_yrs_r0, n_pop_r0))
+  for(str in R0_blocks) {
+    v <- unlist(strsplit(str, "_"))
+    if(!v[1] %in% c("none", "Block")) stop("R0_blocks must be none_Pop_p or Block_b_Year_a-e_Pop_p")
+    if(v[1] == "none") R0_blocks_arr[, , as.numeric(v[3])] <- 1
+    if(v[1] == "Block") {
+      pp <- as.numeric(v[6]); bv <- as.numeric(v[2])
+      rng <- unlist(strsplit(v[4], "-"))
+      yy <- as.numeric(rng[1]):(if(rng[2] == "terminal") n_yrs_r0 else as.numeric(rng[2]))
+      R0_blocks_arr[, yy, pp] <- bv
+    }
+  } # end str loop
+  if(any(is.na(R0_blocks_arr))) stop("R0_blocks leaves some years unassigned for at least one population")
+  n_R0_blks <- max(1, max(R0_blocks_arr))
+  if(R0_ref_block < 1 || R0_ref_block > n_R0_blks) stop("R0_ref_block must lie within 1..", n_R0_blks)
+  input_list$data$R0_blocks <- R0_blocks_arr
+  input_list$data$R0_ref_block <- as.integer(R0_ref_block)
+
+  input_list$par$ln_global_R0 <- array(log(15), dim = c(input_list$data$n_pop, n_R0_blks))
+  # a starting value written for the old shape is a plain length-n_pop vector; give every
+  # block that value rather than refusing it
+  if(!is.null(starting_values$ln_global_R0) && is.null(dim(starting_values$ln_global_R0)) &&
+     length(starting_values$ln_global_R0) == n_pop_r0 && n_R0_blks > 1)
+    starting_values$ln_global_R0 <- matrix(rep(starting_values$ln_global_R0, n_R0_blks), n_pop_r0, n_R0_blks)
+  # only reshape a value whose LENGTH already matches; anything else must still reach
+  # use_starting_value so its own guard names the argument and the expected size
+  if(!is.null(starting_values$ln_global_R0) && n_R0_blks == 1 &&
+     length(starting_values$ln_global_R0) == n_pop_r0)
+    starting_values$ln_global_R0 <- array(as.vector(starting_values$ln_global_R0), dim = c(n_pop_r0, 1L))
   input_list$par$ln_global_R0 <- use_starting_value(input_list$par$ln_global_R0, starting_values, "ln_global_R0")
+  # a starting value supplied as a plain vector loses the block dimension, and every
+  # downstream reader indexes ln_global_R0[pop, block]
+  input_list$par$ln_global_R0 <- array(as.vector(input_list$par$ln_global_R0), dim = c(n_pop_r0, n_R0_blks))
 
   # The stock-recruit curve's own scale, used only when sr_R0_spec = "est".
   # Mapped off otherwise so it never enters the parameter vector by accident.
-  input_list$par$ln_sr_R0 <- array(input_list$par$ln_global_R0, dim = c(input_list$data$n_pop))
+  input_list$par$ln_sr_R0 <- array(input_list$par$ln_global_R0[, R0_ref_block], dim = c(input_list$data$n_pop))
   input_list$par$ln_sr_R0 <- use_starting_value(input_list$par$ln_sr_R0, starting_values, "ln_sr_R0")
   input_list$map$ln_sr_R0 <- if(input_list$data$sr_R0_spec == 1 && input_list$data$sr_penalty > 0) {
     factor(seq_len(length(input_list$par$ln_sr_R0)))

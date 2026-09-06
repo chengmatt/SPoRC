@@ -2,9 +2,13 @@
 # Date Created: 8/24/26
 
 rex_paths <- function(run_dir) {
-  list(dat = file.path(run_dir, "goa_rex.dat"), ctl = file.path(run_dir, "goa_rex.ctl"),
-       starter = file.path(run_dir, "starter.ss"), forecast = file.path(run_dir, "forecast.ss"),
-       dir = run_dir)
+  list(
+    dat = file.path(run_dir, "goa_rex.dat"),
+    ctl = file.path(run_dir, "goa_rex.ctl"),
+    starter = file.path(run_dir, "starter.ss"),
+    forecast = file.path(run_dir, "forecast.ss"),
+    dir = run_dir
+  )
 }
 
 build_rex_data <- function(run_dir) {
@@ -124,7 +128,7 @@ build_rex_data <- function(run_dir) {
     r <- fleet_area[fl]
     use_row <- as.numeric(fcode > 0 & lc$year[i] > 0)
 
-    # year outside the model, the fishery carries three 1977 rows
+    # year outside the model, the fishery has three 1977 rows
     if(is.na(y)) next
 
     # sex code 3 is a joint sex row, otherwise only the first block of bins is filled
@@ -325,37 +329,90 @@ build_rex_data <- function(run_dir) {
 
   # stock recruit relationship and the recruitment deviation year blocks
   sr <- ctl$SR_parms
-  rec <- list(ln_R0 = sr["SR_LN(R0)", "INIT"], h = sr["SR_BH_steep", "INIT"], sigmaR = sr["SR_sigmaR", "INIT"],
-              main_first = ctl$MainRdevYrFirst, main_last = ctl$MainRdevYrLast,
-              early_start = ctl$recdev_early_start, early_phase = ctl$recdev_early_phase,
-              bias_years = c(ctl$last_early_yr_nobias_adj, ctl$first_yr_fullbias_adj, ctl$last_yr_fullbias_adj, ctl$first_recent_yr_nobias_adj),
-              max_bias_adj = ctl$max_bias_adj)
+  rec <- list(
+    ln_R0 = sr["SR_LN(R0)", "INIT"],
+    h = sr["SR_BH_steep", "INIT"],
+    sigmaR = sr["SR_sigmaR", "INIT"],
+    main_first = ctl$MainRdevYrFirst,
+    main_last = ctl$MainRdevYrLast,
+    early_start = ctl$recdev_early_start,
+    early_phase = ctl$recdev_early_phase,
+    bias_years = c(ctl$last_early_yr_nobias_adj, ctl$first_yr_fullbias_adj, ctl$last_yr_fullbias_adj, ctl$first_recent_yr_nobias_adj),
+    max_bias_adj = ctl$max_bias_adj
+  )
 
   # selectivity, catchability, and the francis variance adjustments
-  sel <- list(age = ctl$age_selex_parms, age_types = ctl$age_selex_types, size_types = ctl$size_selex_types)
+  sel <- list(
+    age = ctl$age_selex_parms,
+    age_types = ctl$age_selex_types,
+    size_types = ctl$size_selex_types
+  )
   q <- list(options = ctl$Q_options, parms = ctl$Q_parms)
   var_adj <- ctl$Variance_adjustment_list
 
   list(
-    source = run_dir, years = years, ages = ages, obs_ages = obs_ages, lens_lower = lens_lower, lens = lens_mid,
-    n_regions = n_regions, n_sexes = n_sexes, n_fish_fleets = n_fish, n_srv_fleets = n_srv,
-    fleetnames = fleetinfo$fleetname, fish_fleets = fish_fleets, srv_fleets = srv_fleets, fleet_area = fleet_area,
-    spawn_month = d$spawn_month, n_subseas = d$Nsubseasons, t_srv = t_srv,
-    ObsCatch = ObsCatch, UseCatch = UseCatch, catch_se = catch_se, init_equil_catch = init_equil_catch,
-    ObsSrvIdx = ObsSrvIdx, ObsSrvIdx_SE = ObsSrvIdx_SE, UseSrvIdx = UseSrvIdx,
-    ObsFishLenComps = ObsFishLenComps, ISS_FishLenComps = ISS_FishLenComps, UseFishLenComps = UseFishLenComps,
-    ObsSrvLenComps = ObsSrvLenComps, ISS_SrvLenComps = ISS_SrvLenComps, UseSrvLenComps = UseSrvLenComps,
-    ObsFishAgeComps = ObsFishAgeComps, ISS_FishAgeComps = ISS_FishAgeComps, UseFishAgeComps = UseFishAgeComps,
-    ObsSrvAgeComps = ObsSrvAgeComps, ISS_SrvAgeComps = ISS_SrvAgeComps, UseSrvAgeComps = UseSrvAgeComps,
-    ObsFish_caal = ObsFish_caal, ISS_Fish_caal = ISS_Fish_caal, UseFish_caal = UseFish_caal,
-    ObsSrv_caal = ObsSrv_caal, ISS_Srv_caal = ISS_Srv_caal, UseSrv_caal = UseSrv_caal,
-    len_sex = len_sex, age_sex = age_sex,
-    AgeingError = AgeingError, ageerror_raw = d$ageerror,
-    growth = growth, wtlen = wtlen, mat = mat, rec_dist = rec_dist, rec = rec,
-    sel = sel, q = q, var_adj = var_adj,
-    comp = list(addtocomp_len = d$len_info$addtocomp[1], addtocomp_age = d$age_info$addtocomp[1],
-                minsamplesize = d$len_info$minsamplesize[1], combine_M_F_age = d$age_info$combine_M_F[1]),
-    ctl = ctl, dat_raw = d
+    source = run_dir,
+    years = years,
+    ages = ages,
+    obs_ages = obs_ages,
+    lens_lower = lens_lower,
+    lens = lens_mid,
+    n_regions = n_regions,
+    n_sexes = n_sexes,
+    n_fish_fleets = n_fish,
+    n_srv_fleets = n_srv,
+    fleetnames = fleetinfo$fleetname,
+    fish_fleets = fish_fleets,
+    srv_fleets = srv_fleets,
+    fleet_area = fleet_area,
+    spawn_month = d$spawn_month,
+    n_subseas = d$Nsubseasons,
+    t_srv = t_srv,
+    ObsCatch = ObsCatch,
+    UseCatch = UseCatch,
+    catch_se = catch_se,
+    init_equil_catch = init_equil_catch,
+    ObsSrvIdx = ObsSrvIdx,
+    ObsSrvIdx_SE = ObsSrvIdx_SE,
+    UseSrvIdx = UseSrvIdx,
+    ObsFishLenComps = ObsFishLenComps,
+    ISS_FishLenComps = ISS_FishLenComps,
+    UseFishLenComps = UseFishLenComps,
+    ObsSrvLenComps = ObsSrvLenComps,
+    ISS_SrvLenComps = ISS_SrvLenComps,
+    UseSrvLenComps = UseSrvLenComps,
+    ObsFishAgeComps = ObsFishAgeComps,
+    ISS_FishAgeComps = ISS_FishAgeComps,
+    UseFishAgeComps = UseFishAgeComps,
+    ObsSrvAgeComps = ObsSrvAgeComps,
+    ISS_SrvAgeComps = ISS_SrvAgeComps,
+    UseSrvAgeComps = UseSrvAgeComps,
+    ObsFish_caal = ObsFish_caal,
+    ISS_Fish_caal = ISS_Fish_caal,
+    UseFish_caal = UseFish_caal,
+    ObsSrv_caal = ObsSrv_caal,
+    ISS_Srv_caal = ISS_Srv_caal,
+    UseSrv_caal = UseSrv_caal,
+    len_sex = len_sex,
+    age_sex = age_sex,
+    AgeingError = AgeingError,
+    ageerror_raw = d$ageerror,
+    growth = growth,
+    wtlen = wtlen,
+    mat = mat,
+    rec_dist = rec_dist,
+    rec = rec,
+    sel = sel,
+    q = q,
+    var_adj = var_adj,
+    comp = list(
+      addtocomp_len = d$len_info$addtocomp[1],
+      addtocomp_age = d$age_info$addtocomp[1],
+      minsamplesize = d$len_info$minsamplesize[1],
+      combine_M_F_age = d$age_info$combine_M_F[1]
+    ),
+    ctl = ctl,
+    dat_raw = d
   )
 
 } # end function
@@ -504,10 +561,17 @@ add_rex_ss3_report <- function(dat, report) {
   } # end f loop
 
   dat$ss3 <- list(
-    likelihoods = r$likelihoods_used, NAA = NAA, SSB = SSB, Rec = Rec, Bio_all = Bio_all, dead_B = dead_B,
+    likelihoods = r$likelihoods_used,
+    NAA = NAA,
+    SSB = SSB,
+    Rec = Rec,
+    Bio_all = Bio_all,
+    dead_B = dead_B,
     SSB_virgin = r$derived_quants$Value[r$derived_quants$Label == "SSB_Virgin"],
     cpue = r$cpue[, intersect(c("Fleet", "Yr", "Obs", "Exp", "Calc_Q", "SE", "Like"), names(r$cpue))],
-    growth = growth_tab, ALK = r$ALK, sel = sel_tab,
+    growth = growth_tab,
+    ALK = r$ALK,
+    sel = sel_tab,
     condbase = r$condbase[, intersect(c("Yr", "Fleet", "Sex", "Lbin_lo", "Bin", "Obs", "Exp", "Nsamp_adj", "Nsamp_in", "Like"), names(r$condbase))],
     agedbase = r$agedbase[, intersect(c("Yr", "Fleet", "Sexes", "Sex", "Bin", "Obs", "Exp", "Nsamp_adj", "Nsamp_in", "Like"), names(r$agedbase))],
     lendbase = r$lendbase[, intersect(c("Yr", "Fleet", "Sexes", "Sex", "Bin", "Obs", "Exp", "Nsamp_adj", "Nsamp_in", "Like"), names(r$lendbase))],

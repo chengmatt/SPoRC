@@ -88,7 +88,7 @@ Within `model_objective.R` the `## Section` and `### Subsection` comment banner 
 used consistently. Keep using it if you extend the file, since it is the only navigation
 aid inside a function of this size.
 
-Note that `R/model_transition.R` is worth knowing about before anything else. It computes what happens to a vector of abundance over one season, given movement, mortality,
+Read `R/model_transition.R` first. It computes what happens to a vector of abundance over one season, given movement, mortality,
 season duration and a movement timing. Eleven other files go through it, including the
 objective function's dynamics, the reference point solvers and the operating model.
 
@@ -144,9 +144,9 @@ sporc_call_graph <- function(src_dir) {
 
   for (i in seq_along(files)) {
     lines <- readLines(paths[i], warn = FALSE)
-    nm <- unique(sub(def_re, "\\1", grep(def_re, lines, value = TRUE)))
-    defined_in[[files[i]]] <- sort(nm)
-    defs[setdiff(nm, names(defs))] <- files[i]
+    quant_name <- unique(sub(def_re, "\\1", grep(def_re, lines, value = TRUE)))
+    defined_in[[files[i]]] <- sort(quant_name)
+    defs[setdiff(quant_name, names(defs))] <- files[i]
   }
 
   calls <- setNames(vector("list", length(files)), files)
@@ -237,7 +237,7 @@ if (have_igraph) {
 
 Edge labels count how many file to file dependencies sit behind each arrow. `Helpers`
 is a pure sink and `Plotting` a pure source, which is the shape you want: the objective
-function never reaches up into the post fit machinery.
+function never reaches up into the post fit routines.
 
 Below the same information at file resolution. A filled cell means the file on that row
 calls a function defined in the file in that column, and cells are grouped by stage. Empty
@@ -284,7 +284,7 @@ if (have_src) {
   rect(hit[, 2] - 0.40, hit[, 1] - 0.40, hit[, 2] + 0.40, hit[, 1] + 0.40,
        col = PAL[st[hit[, 1]]], border = "white", lwd = 0.5)
 
-  # Stage color strips just inside each margin, and stage names down the side.
+  # Stage color strips just inside each dim, and stage names down the side.
   for (k in seq_along(blocks)) {
     idx <- blocks[[k]]; s <- names(blocks)[k]
     rect(-1.9, min(idx) - 0.5, -0.7, max(idx) + 0.5, col = PAL[[s]],
@@ -303,8 +303,8 @@ if (have_src) {
 }
 ```
 
-The `model_transition` column is the densest in the matrix, which is the point made
-above: everything that moves fish through a season goes through that one file.
+The `model_transition` column is the densest in the matrix: everything that moves
+fish through a season goes through that one file.
 
 ### Per stage detail
 
@@ -351,7 +351,6 @@ Setup_Mod_Biologicals()                                    [setup_biologicals.R]
         |
         v
 SPoRC_rtmb()                                                [model_objective.R]
-  -> growth_args_from_model()                                [model_growth.R]
        pulls growth's ~20 arguments out of the RTMB frame by name
   -> growth_tv_type == "curve": Get_Growth() builds every year up front
                                                                 [model_growth.R]
@@ -381,9 +380,9 @@ SPoRC_rtmb()                                                [model_objective.R]
 |---|---|
 | `get_laa_curve()` | The pure closed-form curve: mean length and spread at a vector of real ages, from the six parameters alone. No notion of years, fleets, or cohorts, so it is unit-testable against the textbook von Bertalanffy/Richards formula directly (`test-model_growth.R` does exactly that) without any model scaffolding around it. |
 | `growth_start_state()` | The state a year starts from: `get_laa_curve()` at every integer age, with the plus group adjusted. Both `growth_tv_type`s need a "year 1 initial state" and need it built identically, so it is factored out rather than duplicated in `Get_Growth()` and `Get_Growth_Year()`. |
-| `growth_laa_at()` | The within-year evaluator at one elapsed time `e`. Under `"curve"` growth every age is just `get_laa_curve()` at its real age; under `"cohort"` growth, ages already propagated carry a length history the closed form does not know about, so they instead grow from `L_beg` via `grow_increment()`. One function, branching on `cohort`, rather than two, because everything else in it (the plus group, the CV, the semi-parametric deviation) is identical either way. |
-| `grow_increment()` | The one piece of math with no dependency on ages, `A1`, or `A2` at all: grow a length `e` further given `K`, `Linf`, `rho`. Reused in two genuinely different contexts, evaluating a fleet's within-year timing (`growth_laa_at`) and advancing a cohort a full year (`Get_Growth_Year`), which is why it is not inlined into either. |
-| `growth_fill_year()` | "Every fleet, timing, and spawning point in one year," given a start-of-year state: walks each distinct `t_fish`/`t_srv`/`t_spawn` value once (deduplicated), builds the key via `get_alk()`, and writes it into every fleet that reads at that timing. Both `Get_Growth()` (looping over years on the "curve" path) and `Get_Growth_Year()` (one year at a time on the "cohort" path) call it with a different start-of-year state, so the fleet-timing bookkeeping is written once. |
+| `growth_laa_at()` | The within-year evaluator at one elapsed time `e`. Under `"curve"` growth every age is just `get_laa_curve()` at its real age; under `"cohort"` growth, ages already propagated have a length history the closed form does not know about, so they instead grow from `L_beg` via `grow_increment()`. One function, branching on `cohort`, rather than two, because everything else in it (the plus group, the CV, the semi-parametric deviation) is identical either way. |
+| `grow_increment()` | The one piece of math with no dependency on ages, `A1`, or `A2` at all: grow a length `e` further given `K`, `Linf`, `rho`. Reused in two different contexts, evaluating a fleet's within-year timing (`growth_laa_at`) and advancing a cohort a full year (`Get_Growth_Year`), which is why it is not inlined into either. |
+| `growth_fill_year()` | "Every fleet, timing, and spawning point in one year," given a start-of-year state: walks each distinct `t_fish`/`t_srv`/`t_spawn` value once (deduplicated), builds the key via `get_alk()`, and writes it into every fleet that reads at that timing. Both `Get_Growth()` (looping over years on the "curve" path) and `Get_Growth_Year()` (one year at a time on the "cohort" path) call it with a different start-of-year state, so the fleet-timing residual tracking is written once. |
 | `plus_group_size()` | The survivorship-weighted mixture for a plus group's mean length. Kept out of `get_laa_curve()` because it needs `Linf` and the curve's own last-age value together, plus the `growth_plus_group` flag; `get_laa_curve()`'s job is only ever the raw curve. |
 | `get_growth_pars_year()` | Applies a year's time-varying deviations (log or logit link) to the base parameters once, before anything else runs, so `growth_start_state()`, `growth_laa_at()`, and `growth_fill_year()` never have to know deviations exist; they only ever see "this year's realized parameters." |
 | `do_growth_mapping()` | Setup side: builds every growth map (parameters, time-varying deviations, semi-parametric surface) in one place, called from `Setup_Mod_Biologicals()`'s `# Mapping Options` section next to `do_natmort_mapping()`, so that function's own body stays validate-then-hand-off like every other `Setup_Mod_*`. |
@@ -397,7 +396,7 @@ many of each there are, and that count is only known once the population loop ha
 reached that year. This is true whatever selectivity looks like: even a model with plain
 age-based selectivity still needs growth for weight at age, spawning biomass, and length
 compositions, and still has this same plus-group problem. `growth_tv_type = "curve"` has no
-such problem (nothing carries a length history from year to year) and so builds every
+such problem (nothing has a length history from year to year) and so builds every
 year's growth up front, before the population loop even starts.
 
 Rebuilding that year's mortality right alongside growth, though, *is* specifically about
@@ -457,8 +456,8 @@ SPoRC_rtmb()                                                      [model_objecti
 |---|---|
 | `do_fixed_sel_pars_mapping()`, `do_sel_pe_pars_mapping()`, `do_sel_devs_mapping()` | Three separate functions because a fleet can turn each piece on independently: the curve's own parameters, whether it varies over time and under what process, and the actual deviation values. A fleet might hold the curve fixed with no deviations, vary it under one process with the process's own settings fixed, or estimate both together. Keeping the three apart means each one's sharing options do not have to be reconciled against the other two inside a single function. |
 | `Get_Selex_Array()` | The only place that knows about SPoRC's blocks, year-by-year deviations, and fleet counts. Works out which block and which deviation apply to a given region/year/fleet, then hands off to `Get_Selex()`. |
-| `Get_Selex()` | Given one functional form and its parameters, the selectivity at a vector of bins, nothing else. Because it does not know about years, blocks, or fleets, `test-model_selectivity.R` can check every functional form directly against its formula without building a whole model around it, and `Get_Selex_Array()`'s only job is the block/year/fleet bookkeeping around it. |
-| `Get_PE_loglik()` | Lives in `model_priors_penalties.R`, not `model_selectivity.R` or `model_growth.R`, because it does not need to know which one is calling it: give it a deviation array, its map, and a code for which process (iid, random walk, ...) it is supposed to follow, and it penalizes departures from that process. That is what lets growth and selectivity call the same function with the same five arguments. |
+| `Get_Selex()` | Given one functional form and its parameters, the selectivity at a vector of bins, nothing else. Because it does not know about years, blocks, or fleets, `test-model_selectivity.R` can check every functional form directly against its formula without building a whole model around it, and `Get_Selex_Array()`'s only job is the block/year/fleet residual tracking around it. |
+| `Get_PE_loglik()` | Lives in `model_priors_penalties.R`, not `model_selectivity.R` or `model_growth.R`, because it does not need to know which one is calling it: give it a deviation array, its map, and a code for which process (iid, random walk, ...) it is supposed to follow, and it penalizes departures from that process. Growth and selectivity therefore call the same function with the same five arguments. |
 
 ### The same shape shows up elsewhere too
 
@@ -468,7 +467,7 @@ function ends by handing its parameter blocks to one or more `do_*_mapping` help
 tagging, and so on). Each one stays in the topic's own `setup_*.R` file unless more than
 one file needs it, in which case it moves to the shared `setup_mapping.R`.
 
-The scoring side is not as uniform, which is worth knowing. Growth and selectivity's
+The penalizing side is not as uniform. Growth and selectivity's
 year-by-year deviations both go through the same `Get_PE_loglik()`. Movement's own
 deviations (`move_devs`) instead have their own penalty function, `Get_move_PE_loglik()`, sitting
 right next to `Get_PE_loglik()` in `model_priors_penalties.R` rather than sharing it,
@@ -499,9 +498,9 @@ The code is structured as follows and interacts in a hopefully intuitive fashion
 
 ## Tests
 
-Test files in `tests/testthat/` carry the same prefixes as `R/`, so the tests for a given
+Test files in `tests/testthat/` hold the same prefixes as `R/`, so the tests for a given
 source file sort next to each other and the name says what is under test rather than which
-stock the fixture happens to use.
+stock the test setup happens to use.
 
 ```{r test-map, results = "asis"}
 tdir <- if (dir.exists("../tests/testthat")) "../tests/testthat" else NA_character_

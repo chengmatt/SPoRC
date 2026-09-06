@@ -83,9 +83,11 @@ pb <- txtProgressBar(max = n_tasks, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
-results_list <- foreach(row_idx = 1:n_tasks,
-                        .options.snow = opts,
-                        .packages = c("SPoRC", "tidyverse", "here")) %dopar% {
+results_list <- foreach(
+  row_idx = 1:n_tasks,
+  .options.snow = opts,
+  .packages = c("SPoRC", "tidyverse", "here")
+) %dopar% {
                           devtools::load_all(here("R")) # load SPoRC in
                           fit_single_model(
                             row_idx = row_idx,
@@ -169,9 +171,11 @@ pb <- txtProgressBar(max = n_tasks, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
-results_list <- foreach(row_idx = 1:n_tasks,
-                        .options.snow = opts,
-                        .packages = c("SPoRC", "tidyverse", "here")) %dopar% {
+results_list <- foreach(
+  row_idx = 1:n_tasks,
+  .options.snow = opts,
+  .packages = c("SPoRC", "tidyverse", "here")
+) %dopar% {
                           devtools::load_all(here("R")) # load SPoRC in
                           fit_single_model(
                             row_idx = row_idx,
@@ -256,9 +260,11 @@ pb <- txtProgressBar(max = n_tasks, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
-results_list <- foreach(row_idx = 1:n_tasks,
-                        .options.snow = opts,
-                        .packages = c("SPoRC", "tidyverse", "here")) %dopar% {
+results_list <- foreach(
+  row_idx = 1:n_tasks,
+  .options.snow = opts,
+  .packages = c("SPoRC", "tidyverse", "here")
+) %dopar% {
                           devtools::load_all(here("R")) # load SPoRC in
                           fit_single_model(
                             row_idx = row_idx,
@@ -342,9 +348,11 @@ pb <- txtProgressBar(max = n_tasks, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
-results_list <- foreach(row_idx = 1:n_tasks,
-                        .options.snow = opts,
-                        .packages = c("SPoRC", "tidyverse", "here")) %dopar% {
+results_list <- foreach(
+  row_idx = 1:n_tasks,
+  .options.snow = opts,
+  .packages = c("SPoRC", "tidyverse", "here")
+) %dopar% {
                           devtools::load_all(here("R")) # load SPoRC in
                           fit_single_model(
                             row_idx = row_idx,
@@ -438,9 +446,11 @@ pb <- txtProgressBar(max = n_tasks, style = 3)
 progress <- function(n) setTxtProgressBar(pb, n)
 opts <- list(progress = progress)
 
-results_list <- foreach(row_idx = 1:n_tasks,
-                        .options.snow = opts,
-                        .packages = c("SPoRC", "tidyverse", "here")) %dopar% {
+results_list <- foreach(
+  row_idx = 1:n_tasks,
+  .options.snow = opts,
+  .packages = c("SPoRC", "tidyverse", "here")
+) %dopar% {
                           devtools::load_all(here("R")) # load SPoRC in
                           fit_single_model(
                             row_idx = row_idx,

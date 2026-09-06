@@ -20,7 +20,7 @@ Array \code{[n_years x n_ages x n_obs_ages x n_fleets]}.
 The post-fit diagnostics have to reproduce the expected compositions the
 likelihood built, which means reading the same ageing error the objective
 read. Models fitted before \code{AgeingError_fish} and \code{AgeingError_srv}
-existed carry only the shared matrix, so it is replicated across the fleets
+existed have only the shared matrix, so it is replicated across the fleets
 and the diagnostics come out exactly as they did.
 }
 \keyword{internal}

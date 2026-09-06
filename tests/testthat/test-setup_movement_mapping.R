@@ -7,19 +7,31 @@ library(testthat)
 # do_cont_vary_move_mapping() and Get_move_PE_loglik() to run, without going
 # through the full Setup_Mod_* pipeline (no fishery/survey/tagging data
 # required).
-make_move_input_list <- function(n_pop = 2, n_regions = 3, n_yrs = 4, n_proj = 0,
-                                  n_seas = 2, n_ages = 5, n_sexes = 2,
-                                  do_recruits_move = 0, move_type = 0,
-                                  cont_vary_movement_val,
-                                  adjacency_collapsed = matrix(1, n_regions, n_regions - 1)) {
+make_move_input_list <- function(
+  n_pop = 2,
+  n_regions = 3,
+  n_yrs = 4,
+  n_proj = 0,
+  n_seas = 2,
+  n_ages = 5,
+  n_sexes = 2,
+  do_recruits_move = 0,
+  move_type = 0,
+  cont_vary_movement_val,
+  adjacency_collapsed = matrix(1, n_regions, n_regions - 1)
+) {
 
   n_yrs_devs <- n_yrs + n_proj
 
   list(
     data = list(
-      n_pop = n_pop, n_regions = n_regions,
-      years = 1:n_yrs, n_proj_yrs_devs = n_proj,
-      n_seas = n_seas, ages = 1:n_ages, n_sexes = n_sexes,
+      n_pop = n_pop,
+      n_regions = n_regions,
+      years = 1:n_yrs,
+      n_proj_yrs_devs = n_proj,
+      n_seas = n_seas,
+      ages = 1:n_ages,
+      n_sexes = n_sexes,
       do_recruits_move = do_recruits_move,
       use_fixed_movement = 0,
       move_type = move_type,
@@ -64,9 +76,15 @@ test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
 
   for (spec_name in names(expected_groups_per_pair)) {
     val <- cont_move_map$num[cont_move_map$type == spec_name]
-    il <- make_move_input_list(n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs,
-                               n_seas = n_seas, n_ages = n_ages, n_sexes = n_sexes,
-                               cont_vary_movement_val = val)
+    il <- make_move_input_list(
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_yrs = n_yrs,
+      n_seas = n_seas,
+      n_ages = n_ages,
+      n_sexes = n_sexes,
+      cont_vary_movement_val = val
+    )
     il <- SPoRC:::do_cont_vary_move_mapping(il, spec_name, "fix")
 
     map_arr <- il$data$map_move_devs
@@ -100,9 +118,12 @@ test_that("do_cont_vary_move_mapping respects CTMC adjacency masking", {
   adjacency_collapsed <- matrix(1, n_regions, n_regions - 1)
   adjacency_collapsed[1, 1] <- 0 # region 1 -> its first "other" region is not adjacent
 
-  il <- make_move_input_list(n_regions = n_regions, move_type = 1,
-                             cont_vary_movement_val = 1,
-                             adjacency_collapsed = adjacency_collapsed)
+  il <- make_move_input_list(
+    n_regions = n_regions,
+    move_type = 1,
+    cont_vary_movement_val = 1,
+    adjacency_collapsed = adjacency_collapsed
+  )
   il <- SPoRC:::do_cont_vary_move_mapping(il, "iid_y", "fix")
 
   map_arr <- il$data$map_move_devs
@@ -147,10 +168,13 @@ test_that("Get_move_PE_loglik matches a hand-computed dnorm sum for each PE_mode
   for (PE_model in 1:10) {
     do_recruits_move <- 0
     got <- SPoRC:::Get_move_PE_loglik(
-      PE_model = PE_model, PE_pars = PE_pars, move_devs = move_devs,
+      PE_model = PE_model,
+      PE_pars = PE_pars,
+      move_devs = move_devs,
       map_move_devs = array(0, dim = dims), # unused by the current implementation's math, only dims are read
       do_recruits_move = do_recruits_move,
-      adjacency_collapsed = adjacency_collapsed, move_type = 0
+      adjacency_collapsed = adjacency_collapsed,
+      move_type = 0
     )
     expect_equal(got, hand_ll(PE_model, do_recruits_move), tolerance = 1e-10,
                 info = paste("PE_model:", PE_model))

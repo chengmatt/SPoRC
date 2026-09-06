@@ -72,14 +72,14 @@ Supported types:
     within-year contrasts are identified; the level is absorbed by
     catchability or fishing mortality.}
   \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
-    standardization, \eqn{\exp(\theta)}, so the values carry the height of the
-    curve as well as its shape. This is the form for a stream fit age by age:
+    standardization, \eqn{\exp(\theta)}, so the values hold the height of the
+    curve as well as its shape. This is the form for a data source fit age by age:
     a free catchability per age and a selectivity estimated at age are one
     quantity written two ways, so the whole age multiplier lives here and no
     catchability is set. Pin one bin, by leaving it out of the estimated bins,
     whenever the mean it multiplies is also free.}
   \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
-  \item{\code{"asymplogist2"}}{Logistic selectivity with with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
+  \item{\code{"asymplogist2"}}{Logistic selectivity with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
   \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid; see \code{ret_sel_model} in \code{\link{Setup_Mod_Fishsel_and_Q}} for full syntax.}
 }}
 
@@ -135,7 +135,7 @@ likelihood altogether, so the deviations stay estimated but enter the
 objective only through the data and any explicit smoothness or centering
 penalties. Values other than 0 or 1 make an estimated process error sigma
 reinterpretable, so prefer 0 or 1 unless deliberately down-weighting.
-Applies only to \code{ln_retsel_devs}; the bin-override deviations carry
+Applies only to \code{ln_retsel_devs}; the bin-override deviations have
 their own process error and are not affected.}
 
 \item{retsel_rw_init_sigma}{Numeric vector of length \code{n_fish_fleets}.

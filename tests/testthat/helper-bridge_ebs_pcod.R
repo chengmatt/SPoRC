@@ -1,16 +1,8 @@
-# EBS Pacific cod bridge: the 2024 eastern Bering Sea Pacific cod assessment
-# (Stock Synthesis Model 24.1, Barbeaux et al. 2024) rebuilt in SPoRC.
+# The 2024 EBS Pacific cod assessment (SS3 Model 24.1) rebuilt in SPoRC. One area, one sex, one season,
+# ages 0-20, 121 one centimeter population bins reported to 24 five centimeter bins, years 1977-2024.
 #
-# The two functions here are the whole bridge. build_ebs_pcod_input() specifies
-# the model, one Setup_Mod_* call per section in the order the case study
-# vignette walks through them, and seed_ebs_pcod_mle() sets every parameter to
-# the assessment's own maximum likelihood estimate so the model can be checked
-# before it is ever optimized. The data list comes from
-# dev/pcod_bridge/R/build_pcod_data.R and is packaged as sgl_rg_ebs_pcod_data.
-#
-# The model is one area, one sex, one season, ages 0-20, lengths on 121 one
-# centimeter population bins reported to 24 five centimeter data bins, and years
-# 1977-2024.
+# build_ebs_pcod_input() specifies the model and seed_ebs_pcod_mle() sets every parameter to the
+# assessment's estimate. The data list comes from dev/pcod_bridge/R/build_pcod_data.R.
 #
 #   Source                     Years        Observations  Likelihood
 #   Catch                      1977-2024    48            Lognormal
@@ -19,14 +11,8 @@
 #   Survey length comps        1982-2024    19            Multinomial
 #   Survey age comps           2000-2023    23            Multinomial
 #
-# What the assessment does that a SPoRC default would not, all of it set below:
-# Richards growth carried cohort by cohort with annual deviations on the length
-# at age 1.5 and on K from 2000; length based selectivity applied at length
-# rather than folded to age; a fishing fleet's compositions read at mid season
-# whatever month the data carry; the catch in biomass on the selection weighted
-# weight at age. See dev/pcod_bridge/README.md for the ones that were measured
-# rather than assumed, and vignette("ae_ebs_pacific_cod_case_study") for the
-# walkthrough.
+# Not SPoRC defaults: Richards growth cohort by cohort with annual deviations on length at age 1.5 and
+# on K from 2000, selectivity at length, comps at mid season, catch on selection weighted WAA.
 
 #' Build the SPoRC input list for the EBS Pacific cod bridge
 #'
@@ -45,9 +31,17 @@ build_ebs_pcod_input <- function(dat) {
   # collapse to one. lengths are the population bins the assessment grows fish
   # on, not the coarser bins the compositions are reported on
   input_list <- Setup_Mod_Dim(
-    years = yrs, ages = ages, lens = dat$lens,
-    n_regions = n_reg, n_sexes = n_sex, n_fish_fleets = n_fish, n_srv_fleets = n_srv,
-    n_seas = 1, n_pop = 1, natal_region = 1, verbose = FALSE
+    years = yrs,
+    ages = ages,
+    lens = dat$lens,
+    n_regions = n_reg,
+    n_sexes = n_sex,
+    n_fish_fleets = n_fish,
+    n_srv_fleets = n_srv,
+    n_seas = 1,
+    n_pop = 1,
+    natal_region = 1,
+    verbose = FALSE
   )
 
   ## Recruitment --------------------------------------------------------------
@@ -57,24 +51,39 @@ build_ebs_pcod_input <- function(dat) {
   # estimated and penalized along with them, which is equil_init_age_strc =
   # "stoch_all". a separate initial equilibrium recruitment is penalized towards
   # R0 with the assessment's standard deviation, sigmaR over the average age,
-  # and initial fishing mortality is held at the estimate because SPoRC has no
+  # and initial fishing mortality is kept at the estimate because SPoRC has no
   # equilibrium catch to fit it to.
   # bias ramp years are given in deviation-index space, 1 being the first model year
   ave_age <- 1 / dat$growth$M - 0.5
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
-    rec_model = "mean_rec", rec_dd = "global", rec_lag = 0, SR_ref_yr = 1, t_spawn = 0,
-    sigmaR_spec = "fix", ln_sigmaR = array(log(sigmaR), dim = c(2, 1, n_reg)), sigmaR_switch = 1,
+    rec_model = "mean_rec",
+    rec_dd = "global",
+    rec_lag = 0,
+    SR_ref_yr = 1,
+    t_spawn = 0,
+    sigmaR_spec = "fix",
+    ln_sigmaR = array(log(sigmaR), dim = c(2, 1, n_reg)),
+    sigmaR_switch = 1,
     do_rec_bias_ramp = 1,
     bias_year = dat$rec$bias_years - yrs[1] + 1,
     max_bias_ramp_fct = dat$rec$max_bias_adj,
-    RecDevs_spec = "est_shared_pop_r", RecDevs_pen_center = "fixed", dont_est_recdev_last = 0,
-    init_age_strc = 2, equil_init_age_strc = 2,
-    InitDevs_spec = "est_shared_pop_r", InitDevs_pen_center = "fixed",
+    RecDevs_spec = "est_shared_pop_r",
+    RecDevs_pen_center = "fixed",
+    dont_est_recdev_last = 0,
+    init_age_strc = 2,
+    equil_init_age_strc = 2,
+    InitDevs_spec = "est_shared_pop_r",
+    InitDevs_pen_center = "fixed",
     rec_region_prop_spec = NULL,
-    use_rinit = 1, Use_rinit_pen = 1, rinit_pen_sd = sigmaR / ave_age,
-    init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(dat$mle$init_F), dim = c(n_reg, 1, n_fish)),
-    ln_global_R0 = dat$mle$ln_R0, ln_rinit = dat$mle$ln_R0 + dat$mle$regime
+    use_rinit = 1,
+    Use_rinit_pen = 1,
+    rinit_pen_sd = sigmaR / ave_age,
+    init_F_form = "abs",
+    init_F_spec = "fix",
+    init_F_par = array(log(dat$mle$init_F), dim = c(n_reg, 1, n_fish)),
+    ln_global_R0 = dat$mle$ln_R0,
+    ln_rinit = dat$mle$ln_R0 + dat$mle$regime
   )
 
   ## Biological dynamics ------------------------------------------------------
@@ -83,22 +92,22 @@ build_ebs_pcod_input <- function(dat) {
   # the weight-length relationship rather than supplied as data.
   #
   # two things here are specific to this assessment. growth_tv_type = "cohort"
-  # carries size at age forward cohort by cohort instead of reading each year's
+  # has size at age forward cohort by cohort instead of reading each year's
   # curve, so a cohort grows by the increment the current year's parameters
   # imply from the size it has already reached, and the plus group's size is the
   # numbers weighted blend of the cohort entering it with the fish already
   # there. growth_tv_link = "logit" makes each deviation an offset inside the
   # parameter's bounds rather than a multiplier, which is how Stock Synthesis
   # writes deviations on a bounded parameter. only L1 and K vary, so the sigma
-  # vector carries their standard deviations and a placeholder for the four
+  # vector has their standard deviations and a placeholder for the four
   # parameters that do not.
   #
   # maturity at age is taken from the assessment rather than modeled, since
   # maturity is length based and fixed there. LenBinMap maps the 121 population
   # bins onto the 24 bins the compositions are recorded on.
   g <- dat$growth
-  # the deviations' standard deviations sit in the first stream of the shared
-  # process error array, one slot per growth parameter; the second stream is
+  # the deviations' standard deviations sit in the first data source of the shared
+  # process error array, one slot per growth parameter; the second data source is
   # unread with no semi-parametric surface
   pe_start <- array(log(0.05), dim = c(1, n_reg, max(4, n_ages, 6), n_sex, 2))
   pe_start[1, 1, 1:6, 1, 1] <- log(c(g$dev_sd[["L1"]], 1, g$dev_sd[["K"]], 1, 1, 1))
@@ -130,7 +139,12 @@ build_ebs_pcod_input <- function(dat) {
 
   ## Movement and tagging -----------------------------------------------------
   # one area, so there is nothing to move and nothing tagged
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1, Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
@@ -140,9 +154,12 @@ build_ebs_pcod_input <- function(dat) {
   # deviations, which fits the catch essentially exactly
   input_list <- Setup_Mod_Catch_and_F(
     input_list = input_list,
-    ObsCatch = dat$ObsCatch, UseCatch = dat$UseCatch,
-    Use_F_pen = 0, ln_F_mean_spec = "fix",
-    sigmaC_spec = "fix", ln_sigmaC = array(log(dat$catch_se), dim = c(n_reg, n_yrs, 1, n_fish))
+    ObsCatch = dat$ObsCatch,
+    UseCatch = dat$UseCatch,
+    Use_F_pen = 0,
+    ln_F_mean_spec = "fix",
+    sigmaC_spec = "fix",
+    ln_sigmaC = array(log(dat$catch_se), dim = c(n_reg, n_yrs, 1, n_fish))
   )
 
   joint <- function(n) paste0("spltRjntS_Year_1-terminal_Fleet_", seq_len(n))
@@ -161,16 +178,22 @@ build_ebs_pcod_input <- function(dat) {
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     t_fish = array(0.5, dim = c(n_reg, 1, n_fish)),
-    FishLenComps_sel = "length", fish_waa_selected = 1,
+    FishLenComps_sel = "length",
+    fish_waa_selected = 1,
     ObsFishIdx = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
     ObsFishIdx_SE = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
     UseFishIdx = array(0, dim = c(n_reg, n_yrs, 1, n_fish)),
-    fish_idx_type = rep("none", n_fish), FishIdx_LikeType = rep("lognormal", n_fish),
+    fish_idx_type = rep("none", n_fish),
+    FishIdx_LikeType = rep("lognormal", n_fish),
     ObsFishAgeComps = array(NA_real_, dim = c(n_reg, n_yrs, 1, length(dat$obs_ages), n_sex, n_fish)),
     UseFishAgeComps = array(0, dim = c(n_reg, n_yrs, 1, n_fish)),
-    ObsFishLenComps = dat$ObsFishLenComps, UseFishLenComps = dat$UseFishLenComps, ISS_FishLenComps = dat$ISS_FishLenComps,
-    FishAgeComps_LikeType = rep("none", n_fish), FishLenComps_LikeType = rep("Multinomial", n_fish),
-    FishAgeComps_Type = none(n_fish), FishLenComps_Type = joint(n_fish)
+    ObsFishLenComps = dat$ObsFishLenComps,
+    UseFishLenComps = dat$UseFishLenComps,
+    ISS_FishLenComps = dat$ISS_FishLenComps,
+    FishAgeComps_LikeType = rep("none", n_fish),
+    FishLenComps_LikeType = rep("Multinomial", n_fish),
+    FishAgeComps_Type = none(n_fish),
+    FishLenComps_Type = joint(n_fish)
   )
 
   ## Survey index and compositions --------------------------------------------
@@ -183,7 +206,7 @@ build_ebs_pcod_input <- function(dat) {
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx, ObsSrvIdx_SE = dat$ObsSrvIdx_SE, UseSrvIdx = dat$UseSrvIdx,
-    # The assessment's extra survey standard deviation, carried as a parameter
+    # The assessment's extra survey standard deviation, kept as a parameter
     # started at its own estimate. Seeded evaluation is identical to adding it to
     # the standard errors by hand; the free fit estimates it instead.
     sigmaSrvIdx_spec = "est_additive", ln_sigmaSrvIdx = log(dat$mle$extra_sd),
@@ -220,7 +243,7 @@ build_ebs_pcod_input <- function(dat) {
   ## Survey selectivity -------------------------------------------------------
   # the same double normal with independent annual deviations on the ascending
   # width from 1982, which is cont_tv_srv_sel = "iid" with the process error
-  # standard deviation held at the assessment's value. catchability is estimated
+  # standard deviation kept at the assessment's value. catchability is estimated
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
     srv_selex_type = "length",
@@ -249,7 +272,12 @@ build_ebs_pcod_input <- function(dat) {
   per_fleet <- function(w, n_fl) { arr <- array(1, dim = c(n_reg, n_yrs, 1, n_sex, n_fl)); for(f in seq_len(n_fl)) arr[, , , , f] <- w; arr }
   input_list <- Setup_Mod_Weighting(
     input_list = input_list,
-    Wt_Catch = 1, Wt_FishIdx = 0, Wt_SrvIdx = 1, Wt_Rec = 1, Wt_F = 1, Wt_Tagging = 0,
+    Wt_Catch = 1,
+    Wt_FishIdx = 0,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_F = 1,
+    Wt_Tagging = 0,
     Wt_FishAgeComps = per_fleet(0, n_fish),
     Wt_FishLenComps = per_fleet(w_len_fish / (1 + n_obs_lens * dat$comp$addtocomp_len), n_fish),
     Wt_SrvAgeComps = per_fleet(w_age_srv / (1 + n_obs_ages * dat$comp$addtocomp_age), n_srv),
@@ -280,10 +308,10 @@ seed_ebs_pcod_mle <- function(input_list, dat) {
   input_list$par$ln_rinit[] <- dat$mle$ln_R0 + dat$mle$regime
 
   ## Recruitment deviations ---------------------------------------------------
-  # SPoRC's deviation is the log of recruitment over the level, which carries
+  # SPoRC's deviation is the log of recruitment over the level, which has
   # the bias correction inside it, so the assessment's realized ratio can be
   # used directly. the main deviations 1977-2022 are estimated; the two later
-  # years carry the ramp's adjustment only and are held
+  # years hold the ramp's adjustment only and are kept
   rr <- dat$mle$rec_ratio[as.character(yrs)]
   input_list$par$ln_RecDevs[] <- log(rr)
   main_yrs <- as.integer(names(dat$mle$main_recdev))
@@ -311,7 +339,7 @@ seed_ebs_pcod_mle <- function(input_list, dat) {
   input_list$map$ln_InitDevs <- factor(map_init)
 
   ## Fishing mortality --------------------------------------------------------
-  # a fixed mean plus a free deviation per year, which is how SPoRC carries an F
+  # a fixed mean plus a free deviation per year, which is how SPoRC has an F
   # series the assessment solved rather than estimated
   lf <- log(dat$mle$Fmort[as.character(yrs)])
   input_list$par$ln_F_mean[] <- mean(lf)
@@ -345,7 +373,7 @@ seed_ebs_pcod_mle <- function(input_list, dat) {
   # the same two of six estimated, plus deviations on the ascending width from
   # 1982, again the assessment's unit normal deviations times their standard
   # deviation. the data copy of the map is set too, since the process error
-  # penalty reads it to know which deviations it scores
+  # penalty reads it to know which deviations it penalizes
   sv <- dat$mle$sel$survey
   input_list$par$srv_fixed_sel_pars[1, , 1, 1, 1] <- sv$base
   map_srv <- array(NA_real_, dim = dim(input_list$par$srv_fixed_sel_pars))

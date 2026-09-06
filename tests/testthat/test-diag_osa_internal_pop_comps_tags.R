@@ -489,8 +489,12 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
     return(input_list)
   }
 
-  check_osa_calibration <- function(residuals, mean_tol = 0.15, sd_range = c(0.7, 1.3),
-                                    test_autocorr = TRUE) {
+  check_osa_calibration <- function(
+    residuals,
+    mean_tol = 0.15,
+    sd_range = c(0.7, 1.3),
+    test_autocorr = TRUE
+  ) {
     resid <- residuals[is.finite(residuals)]
     n <- length(resid)
 
@@ -508,8 +512,12 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
     }
 
     list(
-      mean = mean(resid), sd = sd_val, shapiro_p = shapiro_p,
-      mean_ok = mean_ok, sd_ok = sd_ok, normal_ok = normal_ok,
+      mean = mean(resid),
+      sd = sd_val,
+      shapiro_p = shapiro_p,
+      mean_ok = mean_ok,
+      sd_ok = sd_ok,
+      normal_ok = normal_ok,
       autocorr_ok = autocorr_ok,
       calibrated = mean_ok && sd_ok && normal_ok && autocorr_ok
     )
@@ -529,7 +537,14 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
   # correct EM
   input_correct <- setup_em_variant(sim_obj, 1, TRUE, misspecify_movement = FALSE)
   obj_correct   <- fit_model(input_correct$data, input_correct$par, input_correct$map, NULL, 3, silent = TRUE, do_optim = TRUE)
-  obj_francis_correct <- run_francis(data = input_correct$data, parameters = input_correct$par, mapping = input_correct$map, random = NULL, n_francis_iter = 2, 0) # also test francis to make sure running
+  obj_francis_correct <- run_francis(
+    data = input_correct$data,
+    parameters = input_correct$par,
+    mapping = input_correct$map,
+    random = NULL,
+    n_francis_iter = 2,
+    0
+  ) # also test francis to make sure running
   osa_tag_correct <- oneStepPredict(obj_correct, 'ObsConvTag_osa_count', method = 'cdf', discrete = TRUE, trace = FALSE)
   chk_correct <- check_osa_calibration(osa_tag_correct$residual)
 

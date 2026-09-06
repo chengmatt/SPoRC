@@ -1,6 +1,5 @@
-# Readers for the flatfish model (fm.tpl) files behind the BSAI northern rock
-# sole case study. Kept apart from the case study script so the parsing and the
-# specification stay separable, the way helper-amak.R serves the Atka scripts.
+# Readers for the flatfish model (fm.tpl) files behind the BSAI northern rock sole case study, kept
+# apart from the case study script so parsing and specification stay separable (cf. helper-amak.R).
 # Creator: Matthew LH. Cheng
 
 # fm.par and writeinput.log both write a "# name" line followed by values, so
@@ -17,9 +16,8 @@ fm_grab <- function(txt, nm, sep = ":") {
   v
 } # end fm_grab
 
-# fm.tpl reads its data file as one token stream in a fixed order, so the file
-# is parsed the same way here. The 123456 check at the end confirms the whole
-# stream stayed aligned.
+# fm.tpl reads its data file as one token data source in a fixed order, so the file is parsed the
+# same way here. the 123456 check at the end confirms the data source stayed aligned
 read_fm_dat <- function(path) {
 
   tok <- scan(text = gsub("#.*$", "", readLines(path)), quiet = TRUE)
@@ -78,13 +76,21 @@ read_fm_dat <- function(path) {
 # read positionally. Only the entries the case study uses are named.
 read_fm_ctl <- function(path) {
   v <- scan(text = gsub("#.*$", "", readLines(path)), quiet = TRUE)
-  list(growth_option = v[1], nselages = v[34],
-       lambda = v[35:44],                            # lambda(4) is a phase, not a weight
-       styr_sr = v[45], endyr_sr = v[46],
-       a50_sigma = v[26], slp_sigma = v[27],
-       q_exp = v[28], q_sigma = v[29],
-       m_exp = v[30], m_sigma = v[31],
-       sigmaR_exp = v[32], sigmaR_sigma = v[33])
+  list(
+    growth_option = v[1],
+    nselages = v[34],
+    lambda = v[35:44], # lambda(4) is a phase, not a weight
+    styr_sr = v[45],
+    endyr_sr = v[46],
+    a50_sigma = v[26],
+    slp_sigma = v[27],
+    q_exp = v[28],
+    q_sigma = v[29],
+    m_exp = v[30],
+    m_sigma = v[31],
+    sigmaR_exp = v[32],
+    sigmaR_sigma = v[33]
+  )
 } # end read_fm_ctl
 
 # Every estimated parameter, read at full precision.
@@ -94,25 +100,38 @@ read_fm_par <- function(path) {
   # the header line names its values in words, so each is taken by its label
   after <- function(lab) as.numeric(sub(paste0("^.*", lab, " *= *([0-9.eE+-]+).*$"), "\\1", txt[1]))
   list(
-    ln_q = g("ln_q_srv"), M_f = g("natmort_f"), M_m = g("natmort_m"),
-    mean_log_rec = g("mean_log_rec"), rec_dev = g("rec_dev"),
+    ln_q = g("ln_q_srv"),
+    M_f = g("natmort_f"),
+    M_m = g("natmort_m"),
+    mean_log_rec = g("mean_log_rec"),
+    rec_dev = g("rec_dev"),
     mean_log_init = g("mean_log_init"),
-    init_dev_f = g("init_dev_f"), init_dev_m = g("init_dev_m"),
-    log_avg_fmort = g("log_avg_fmort"), fmort_dev = g("fmort_dev"),
-    sel_slope_fsh_f = g("sel_slope_fsh_f"), sel50_fsh_f = g("sel50_fsh_f"),
-    slope_devs_f = g("sel_slope_fsh_devs_f"), sel50_devs_f = g("sel50_fsh_devs_f"),
-    sel_slope_fsh_m = g("sel_slope_fsh_m"), sel50_fsh_m = g("sel50_fsh_m"),
-    slope_devs_m = g("sel_slope_fsh_devs_m"), sel50_devs_m = g("sel50_fsh_devs_m"),
+    init_dev_f = g("init_dev_f"),
+    init_dev_m = g("init_dev_m"),
+    log_avg_fmort = g("log_avg_fmort"),
+    fmort_dev = g("fmort_dev"),
+    sel_slope_fsh_f = g("sel_slope_fsh_f"),
+    sel50_fsh_f = g("sel50_fsh_f"),
+    slope_devs_f = g("sel_slope_fsh_devs_f"),
+    sel50_devs_f = g("sel50_fsh_devs_f"),
+    sel_slope_fsh_m = g("sel_slope_fsh_m"),
+    sel50_fsh_m = g("sel50_fsh_m"),
+    slope_devs_m = g("sel_slope_fsh_devs_m"),
+    sel50_devs_m = g("sel50_fsh_devs_m"),
     male_sel_offset = g("male_sel_offset"),
-    sel_slope_srv = g("sel_slope_srv"), sel50_srv = g("sel50_srv"),
-    sel_slope_srv_m = g("sel_slope_srv_m"), sel50_srv_m = g("sel50_srv_m"),
-    R_logalpha = g("R_logalpha"), R_logbeta = g("R_logbeta"),
-    n_par = after("Number of parameters"), objective = after("Objective function value"),
+    sel_slope_srv = g("sel_slope_srv"),
+    sel50_srv = g("sel50_srv"),
+    sel_slope_srv_m = g("sel_slope_srv_m"),
+    sel50_srv_m = g("sel50_srv_m"),
+    R_logalpha = g("R_logalpha"),
+    R_logbeta = g("R_logbeta"),
+    n_par = after("Number of parameters"),
+    objective = after("Objective function value"),
     max_grad = after("Maximum gradient component")
   )
 } # end read_fm_par
 
-# fm.std carries the reported time series with their standard errors.
+# fm.std holds the reported time series with their standard errors.
 read_fm_std <- function(path) {
   x <- utils::read.table(text = readLines(path)[-1], col.names = c("index", "name", "value", "sd"))
   pick <- function(nm) list(value = x$value[x$name == nm], sd = x$sd[x$name == nm])
@@ -125,11 +144,24 @@ read_fm_rep <- function(path) {
   txt <- readLines(path)
   v <- scan(text = txt[tail(grep("^nLogPosterior", txt), 1) + 1], quiet = TRUE)
   list(
-    wt_like = v[1:3], wt_fut_like = v[4], wt_msy_like = v[5], init_like = v[6],
-    srv = v[7], catch = v[8], fsh_age = v[9], srv_age = v[10],
-    rec = v[11], init = v[12], sr = v[13], rec_fut = v[14],
-    sel_slope = v[15], sel_a50 = v[16], q_prior = v[17], sigmaR_prior = v[18],
-    m_prior = v[19], fpen = v[20]
+    wt_like = v[1:3],
+    wt_fut_like = v[4],
+    wt_msy_like = v[5],
+    init_like = v[6],
+    srv = v[7],
+    catch = v[8],
+    fsh_age = v[9],
+    srv_age = v[10],
+    rec = v[11],
+    init = v[12],
+    sr = v[13],
+    rec_fut = v[14],
+    sel_slope = v[15],
+    sel_a50 = v[16],
+    q_prior = v[17],
+    sigmaR_prior = v[18],
+    m_prior = v[19],
+    fpen = v[20]
   )
 } # end read_fm_rep
 

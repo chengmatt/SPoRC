@@ -17,9 +17,9 @@ caal_sum_pop(arr, y, seas, f, n_pop, n_regions, n_lens, n_ages, n_sexes)
 An array indexed region, length, age, sex.
 }
 \description{
-The conditional age-at-length arrays carry a population dimension the
+The conditional age-at-length arrays have a population dimension the
 likelihood does not use, so it is summed away before the comparison. A single
 population needs only a reshape, which avoids an apply over a degenerate
-margin.
+dim.
 }
 \keyword{internal}

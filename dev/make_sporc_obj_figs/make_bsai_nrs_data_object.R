@@ -1,27 +1,18 @@
-# Purpose: Build sgl_rg_bsai_nrs_data, the container for the BSAI northern rock
-#          sole case study. Everything the case study and its regression test
-#          need lives in the object: model inputs, the flatfish model's maximum
-#          likelihood estimate used as a seed, and the assessment output the
-#          bridge is compared against.
+# Purpose: Build sgl_rg_bsai_nrs_data, the inputs, fm.tpl seed, and assessment output for the northern rock sole case study
 # Creator: Matthew LH. Cheng
 # Date Created: 8/21/26
 #
 # Sources, all under dev/dev_data/nrs_m24.2_2024:
 #   c3.dat          2024 assessment input file for Model 24.2
-#   mod.ctl         control file, carries the weights, sigmas and phases
+#   mod.ctl         control file, holds the weights, sigmas and phases
 #   fm.par          parameter file, read at full precision
 #   fm.std          reported time series with standard errors
 #   fm.rep          nLogPosterior, the likelihood components at the estimate
 #   fm_legacy.rep   predicted catch
 #   fm.tpl          the template, for reference
 #
-# Northern rock sole differs from the other single region case studies in four
-# ways the object has to carry: the model is two sex with sex specific natural
-# mortality, the initial numbers at age are free and estimated separately for
-# each sex about one shared level, fishery selectivity is logistic in both
-# parameters of both sexes with annual deviations and the male curve scaled by a
-# constant, and the survey is read twice, once as a July biomass index and once
-# as January 1 compositions.
+# northern rock sole is two sex with sex-specific M, free initial numbers at age about one shared
+# level, logistic fishery selectivity with annual deviations, and a survey read at two timings
 
 library(here)
 source(here("dev", "make_sporc_obj_figs", "helper-fm.R"))
@@ -40,15 +31,13 @@ n_ages <- dat$n_ages
 n_sexes <- 2
 n_srv <- 2                                   # index fleet and composition fleet
 
-# Guard: the reported series have to line up with the model years, and the
-# reported components have to rebuild the reported objective, before anything
-# downstream is entitled to trust the parse. fm.tpl scales catch by lambda(3)
-# inside the objective but reports it unscaled.
+# guard: the reported series must line up with the model years and rebuild the reported objective.
+# fm.tpl scales catch by lambda(3) inside the objective but reports it unscaled
 stopifnot(length(fstd$SSB$value) == n_yrs, length(fstd$pred_rec$value) == n_yrs,
           length(fpar$rec_dev) == n_yrs, length(fpar$fmort_dev) == n_yrs)
 comp_total <- sum(unlist(frep)) + frep$catch * (ctl$lambda[3] - 1)
 # nLogPosterior prints six significant digits, so the largest component alone
-# carries five thousandths; the check is at the precision the file was written
+# has five thousandths; the check is at the precision the file was written
 stopifnot(abs(comp_total - fpar$objective) < 0.01)
 
 i_fsh_age <- match(dat$yrs_fsh_age, yrs)
@@ -131,7 +120,7 @@ sgl_rg_bsai_nrs_data <- list(
   t_spawn = (dat$spawnmo - 1) / 12,
   t_srv = c((dat$srv_mo - 1) / 12, 0),         # July index, January 1 compositions
 
-  # Specification carried by the control file
+  # Specification set by the control file
   nselages = ctl$nselages,
   sigmaC = 1 / sqrt(2 * ctl$lambda[3]),        # lambda(3) as a lognormal sigma
   sigmaR = 1 / sqrt(2 * ctl$lambda[1]),
@@ -146,11 +135,17 @@ sgl_rg_bsai_nrs_data <- list(
 
   # The assessment's own output, the comparison target
   fm = list(
-    SSB = fstd$SSB$value, SSB_sd = fstd$SSB$sd,
-    Rec = fstd$pred_rec$value, Rec_sd = fstd$pred_rec$sd,
-    TotBiom = fstd$TotBiom$value, TotBiom_sd = fstd$TotBiom$sd,
-    pred_catch = pred_catch, Like_Comp = frep,
-    objective = fpar$objective, max_grad = fpar$max_grad, n_par = fpar$n_par
+    SSB = fstd$SSB$value,
+    SSB_sd = fstd$SSB$sd,
+    Rec = fstd$pred_rec$value,
+    Rec_sd = fstd$pred_rec$sd,
+    TotBiom = fstd$TotBiom$value,
+    TotBiom_sd = fstd$TotBiom$sd,
+    pred_catch = pred_catch,
+    Like_Comp = frep,
+    objective = fpar$objective,
+    max_grad = fpar$max_grad,
+    n_par = fpar$n_par
   )
 )
 

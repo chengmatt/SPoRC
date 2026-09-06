@@ -1,17 +1,9 @@
-# Purpose: Bridge the 2023 BSAI northern rockfish assessment to SPoRC and render
-#          the case study figures. The configuration is not restated here: it is
-#          sourced from the bridge test helper, so the figures, the bridge test,
-#          and the pinned regression test all run the same specification and a
-#          change to one cannot silently leave the others behind.
-#
-#          Three stages: set every parameter to the assessment's maximum
-#          likelihood estimate and check the population and likelihood there,
-#          optimize, then compare. The bridge stage supplies the assessment's
-#          age 30 edge hold on survey selectivity as a fixed input, which
-#          SPoRC's logist1 form cannot express; the refit estimates the uncapped
-#          logistic instead. That is the only specification difference.
+# Purpose: Bridge the 2023 BSAI northern rockfish assessment to SPoRC and render its figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/8/26
+#
+# the assessment's age 30 edge hold on survey selectivity goes in as data; the refit estimates
+# the uncapped logistic instead, which is the only specification difference
 
 library(here)
 library(dplyr)
@@ -49,9 +41,8 @@ cat("SSB   max pct diff:", 100 * max(abs(as.vector(r$SSB)[1:n_yrs] - dat$admb$SS
 cat("Rec   max pct diff:", 100 * max(abs(as.vector(r$Rec)[1:n_yrs] - dat$admb$Rec) / dat$admb$Rec), "\n")
 cat("Fmort max pct diff:", 100 * max(abs(as.vector(r$Fmort) - dat$admb$Fmort) / dat$admb$Fmort), "\n")
 
-# The likelihood crosswalk. SPoRC writes each component as a proper density
-# while the assessment drops normalizing constants, so each comparison subtracts
-# exactly the constants the assessment omits.
+# the likelihood crosswalk. SPoRC writes each component as a proper density while the
+# assessment drops normalizing constants, so each comparison subtracts those constants
 c2pi <- 0.5 * log(2 * pi)
 n_catch_obs <- sum(dat$UseCatch)
 n_recdev <- length(dat$mle$rec_dev)
@@ -89,8 +80,14 @@ cat("like for like total:", sum(crosswalk$SPoRC), " assessment:",
     dat$admb$datalikecomp[["obj_fun"]] - dat$admb$datalikecomp[["mat_like"]], "\n")
 
 # Stage 2: optimize -------------------------------------------------------------
-est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 random = NULL, newton_loops = 3, silent = TRUE)
+est <- fit_model(
+  input_list$data,
+  input_list$par,
+  input_list$map,
+  random = NULL,
+  newton_loops = 3,
+  silent = TRUE
+)
 est$sdrep <- RTMB::sdreport(est)
 
 cat("\n=== Stage 2: optimized ===\n")
@@ -105,19 +102,28 @@ rep <- est$rep
 ssb <- as.vector(rep$SSB)[1:n_yrs]
 rec <- as.vector(rep$Rec)[1:n_yrs]
 
-# The three terminal recruits are deviation free and the two models build them on
-# different conventions, so the boundary is marked rather than left to read as
-# drift.
-ggplot2::ggsave(here("vignettes", "figures", "y_bsai_nork_ts_comparison.png"),
-                bridge_ts_figure(yrs, ssb, rec, dat$admb$SSB, dat$admb$Rec, label,
-                                 ssb_se = bridge_se(sdr, "log_SSB", ssb),
-                                 rec_se = bridge_se(sdr, "log_Rec", rec),
-                                 mark_year = yrs[n_yrs - 3] + 0.5),
-                width = 17, height = 9, dpi = 150)
+# the three terminal recruits are deviation free and the two models build them on different
+# conventions, so the boundary is marked rather than left to read as a real difference
+ggplot2::ggsave(
+  here("vignettes", "figures", "y_bsai_nork_ts_comparison.png"),
+  bridge_ts_figure(
+                  yrs,
+                  ssb,
+                  rec,
+                  dat$admb$SSB,
+                  dat$admb$Rec,
+                  label,
+                  ssb_se = bridge_se(sdr, "log_SSB", ssb),
+                  rec_se = bridge_se(sdr, "log_Rec", rec),
+                  mark_year = yrs[n_yrs - 3] + 0.5
+                ),
+  width = 17,
+  height = 9,
+  dpi = 150
+)
 
-# Selectivity is time invariant, so a single curve per gear carries everything.
-# The survey panel is where the refit and the assessment part company, because
-# the assessment holds its curve flat past age 30 and the logistic does not.
+# selectivity is time invariant, so one curve per gear has everything. the survey panel is where
+# refit and assessment part company, since the assessment keeps its curve flat past age 30
 sel_df <- bind_rows(
   bridge_sel_rows(dat$obs_ages, rep$fish_sel[1, 1, 1, 1, seq_len(n_obs_ages), 1, 1],
                   dat$admb$sel_fsh, "Fishery", label),
@@ -125,8 +131,13 @@ sel_df <- bind_rows(
                   dat$admb$sel_srv, "Survey", label)
 )
 
-ggplot2::ggsave(here("vignettes", "figures", "y_bsai_nork_sel_comparison.png"),
-                bridge_sel_figure(sel_df), width = 12, height = 7, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "y_bsai_nork_sel_comparison.png"),
+  bridge_sel_figure(sel_df),
+  width = 12,
+  height = 7,
+  dpi = 150
+)
 
 est_yrs <- seq_len(n_yrs - 3)
 cat("\n=== Stage 3: optimized SPoRC against the assessment ===\n")

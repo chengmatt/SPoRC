@@ -3,7 +3,7 @@ library(testthat)
 
 # Simulate under an arithmetic-scale normal index error and refit: the operating
 # model draws through the same error structure the estimation model fits, so
-# median relative error should sit at zero. Machinery shared through
+# median relative error should sit at zero. Routines shared through
 # helper-selftest_features.R.
 
 test_that("a normal index likelihood recovers SSB and catchability", {

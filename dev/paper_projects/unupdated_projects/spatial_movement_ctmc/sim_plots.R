@@ -97,10 +97,11 @@ conv_rates_plot <- conv_rates %>%
 ssb_sum_df <- ssb_df %>%
   filter((pd == T)) %>%
   rename(region = Var1, years = Var2) %>%
-  mutate(re = (value - true) / true,
-         region = paste("Region", region),
-         model_id = ifelse(model_id == 1, "unstrc_mark", "ctmc")
-         ) %>%
+  mutate(
+    re = (value - true) / true,
+    region = paste("Region", region),
+    model_id = ifelse(model_id == 1, "unstrc_mark", "ctmc")
+  ) %>%
   group_by(model_id, region, years, scenario) %>%
   summarize(med = median(re),
             lwr_95 = quantile(re, 0.025),
@@ -182,7 +183,13 @@ ssb_re_plot <- ssb_sum_df %>%
   theme_bw(base_size = 18) +
   theme(legend.position = c(0.085, 0.95),
         legend.background = element_blank()) +
-  labs(x = 'Year', y = 'Relative Error in Spawning Stock Biomass', fill = 'Model', color = 'Model', lty = 'Model')
+  labs(
+    x = 'Year',
+    y = 'Relative Error in Spawning Stock Biomass',
+    fill = 'Model',
+    color = 'Model',
+    lty = 'Model'
+  )
 
 ggsave(
   here("dev", "spatial_movement_ctmc", "ssb_re.png"),
@@ -194,15 +201,34 @@ ggsave(
 # Movement Plots ----------------------------------------------------------
 # RMSE for Movement
 move_rmse_plot <- ggplot() +
-  geom_pointrange(move_summ_short_df, mapping = aes(x = scenario, y = rmse, ymin = lwr_95_rmse, ymax = upr_95_rmse, color = model_id, alpha = num_pd),
-                  position = position_dodge(width = 0.45), linewidth = 1) +
-  geom_pointrange(move_summ_short_df, mapping = aes(x = scenario, y = rmse, ymin = lwr_75_rmse, ymax = upr_75_rmse, color = model_id, alpha = num_pd),
-                  position = position_dodge(width = 0.45), linewidth = 3, size = 2) +
-  geom_errorbar(move_summ_short_df, mapping = aes(x = scenario, ymin = lwr_95_rmse, ymax = upr_95_rmse, color = model_id, alpha = num_pd),
-                position = position_dodge(width = 0.45), width = 0.25, linewidth = 1) +
+  geom_pointrange(
+    move_summ_short_df,
+    mapping = aes(x = scenario, y = rmse, ymin = lwr_95_rmse, ymax = upr_95_rmse, color = model_id, alpha = num_pd),
+    position = position_dodge(width = 0.45),
+    linewidth = 1
+  ) +
+  geom_pointrange(
+    move_summ_short_df,
+    mapping = aes(x = scenario, y = rmse, ymin = lwr_75_rmse, ymax = upr_75_rmse, color = model_id, alpha = num_pd),
+    position = position_dodge(width = 0.45),
+    linewidth = 3,
+    size = 2
+  ) +
+  geom_errorbar(
+    move_summ_short_df,
+    mapping = aes(x = scenario, ymin = lwr_95_rmse, ymax = upr_95_rmse, color = model_id, alpha = num_pd),
+    position = position_dodge(width = 0.45),
+    width = 0.25,
+    linewidth = 1
+  ) +
   scale_color_manual(values = model_colors) +
   scale_alpha_continuous(breaks = c(0, 25, 50, 75, 100), limits = c(0, 100)) +
-  labs(x = 'Scenario', y = 'Root Mean Squared Error in Movement Estimates', color = 'Model', alpha = "Convergence (%)") +
+  labs(
+    x = 'Scenario',
+    y = 'Root Mean Squared Error in Movement Estimates',
+    color = 'Model',
+    alpha = "Convergence (%)"
+  ) +
   theme_bw(base_size = 20) +
   theme(legend.position = c(0.11, 0.725),
         legend.background = element_blank(),
@@ -212,13 +238,17 @@ move_rmse_plot <- ggplot() +
 const_est_plot <- ggplot() +
   geom_jitter(
     move_conv_idv_df %>% filter(scenario == 'const', years == 1, ages == 2),
-    mapping = aes(x = model_id, y = value, color = model_id), position = position_jitter(width = 0.05, height = 0.05),
+    mapping = aes(x = model_id, y = value, color = model_id),
+    position = position_jitter(width = 0.05, height = 0.05),
     alpha = 0.075
   ) +
   geom_point(
     move_conv_idv_df %>% filter(sim_id == 1, scenario == 'const', years == 1, ages == 2),
     mapping = aes(x = model_id, y = median),
-    shape = 18, color = 'black', size = 5, stroke = 1
+    shape = 18,
+    color = 'black',
+    size = 5,
+    stroke = 1
   ) +
   scale_color_manual(values = model_colors) +
   coord_cartesian(ylim = c(0,1)) +
@@ -231,17 +261,34 @@ const_est_plot <- ggplot() +
 # Age varying movement
 age_est_plot <- ggplot() +
   # Median line
-  geom_line(move_conv_idv_df %>% filter(sim_id == 1, scenario == 'age', years == 1),
-            mapping = aes(x = ages, y = median, color = factor(model_id), group = interaction(factor(model_id), sim_id)), lty = 2, lwd = 1.1) +
+  geom_line(
+    move_conv_idv_df %>% filter(sim_id == 1, scenario == 'age', years == 1),
+    mapping = aes(x = ages, y = median, color = factor(model_id), group = interaction(factor(model_id), sim_id)),
+    lty = 2,
+    lwd = 1.1
+  ) +
   # Individual simulations line
-  geom_line(move_conv_idv_df %>% filter(sim_id %in% seq(1,100,5), scenario == 'age', years == 1), lwd = 0.5,
-            mapping = aes(x = ages, y = value, color = factor(model_id), group = interaction(factor(model_id), sim_id)), alpha = 0.15) +
+  geom_line(
+    move_conv_idv_df %>% filter(sim_id %in% seq(1,100,5), scenario == 'age', years == 1),
+    lwd = 0.5,
+    mapping = aes(x = ages, y = value, color = factor(model_id), group = interaction(factor(model_id), sim_id)),
+    alpha = 0.15
+  ) +
   # Shading 95%
-  geom_ribbon(move_conv_idv_df %>% filter(sim_id == 1, scenario == 'age', years == 1),
-              mapping = aes(x = ages, y = value, ymin = lwr_95, ymax = upr_95, fill = factor(model_id)), color = NA, alpha = 0.15) +
+  geom_ribbon(
+    move_conv_idv_df %>% filter(sim_id == 1, scenario == 'age', years == 1),
+    mapping = aes(x = ages, y = value, ymin = lwr_95, ymax = upr_95, fill = factor(model_id)),
+    color = NA,
+    alpha = 0.15
+  ) +
   # True
-  geom_line(move_conv_df %>% filter(scenario == 'age', from == 3, to == 3, years == 1) ,
-            mapping = aes(x = ages, y = true), lty = 2, color = 'black', lwd = 1.1) +
+  geom_line(
+    move_conv_df %>% filter(scenario == 'age', from == 3, to == 3, years == 1),
+    mapping = aes(x = ages, y = true),
+    lty = 2,
+    color = 'black',
+    lwd = 1.1
+  ) +
   coord_cartesian(ylim = c(0,1)) +
   scale_color_manual(values = model_colors) +
   scale_fill_manual(values = model_colors) +
@@ -255,17 +302,34 @@ age_est_plot <- ggplot() +
 # Time varying movement
 time_est_plot <- ggplot() +
   # Median line
-  geom_line(move_conv_idv_df %>% filter(sim_id == 1, scenario == 'time', ages == 2),
-            mapping = aes(x = years, y = median, color = factor(model_id), group = interaction(factor(model_id), sim_id)), lty = 2, lwd = 1.1) +
+  geom_line(
+    move_conv_idv_df %>% filter(sim_id == 1, scenario == 'time', ages == 2),
+    mapping = aes(x = years, y = median, color = factor(model_id), group = interaction(factor(model_id), sim_id)),
+    lty = 2,
+    lwd = 1.1
+  ) +
   # Individual simulations line
-  geom_line(move_conv_idv_df %>% filter(sim_id %in% seq(1,100,5), scenario == 'time', ages == 2), lwd = 0.5,
-            mapping = aes(x = years, y = value, color = factor(model_id), group = interaction(factor(model_id), sim_id)), alpha = 0.15) +
+  geom_line(
+    move_conv_idv_df %>% filter(sim_id %in% seq(1,100,5), scenario == 'time', ages == 2),
+    lwd = 0.5,
+    mapping = aes(x = years, y = value, color = factor(model_id), group = interaction(factor(model_id), sim_id)),
+    alpha = 0.15
+  ) +
   # Shading 95%
-  geom_ribbon(move_conv_idv_df %>% filter(sim_id == 1, scenario == 'time', ages == 2),
-              mapping = aes(x = years, y = value, ymin = lwr_95, ymax = upr_95, fill = factor(model_id)), color = NA, alpha = 0.15) +
+  geom_ribbon(
+    move_conv_idv_df %>% filter(sim_id == 1, scenario == 'time', ages == 2),
+    mapping = aes(x = years, y = value, ymin = lwr_95, ymax = upr_95, fill = factor(model_id)),
+    color = NA,
+    alpha = 0.15
+  ) +
   # True
-  geom_line(move_conv_df %>% filter(scenario == 'time', from == 3, to == 3, ages == 2) ,
-            mapping = aes(x = years, y = true), lty = 2, color = 'black', lwd = 1.1) +
+  geom_line(
+    move_conv_df %>% filter(scenario == 'time', from == 3, to == 3, ages == 2),
+    mapping = aes(x = years, y = true),
+    lty = 2,
+    color = 'black',
+    lwd = 1.1
+  ) +
   coord_cartesian(ylim = c(0,1)) +
   scale_color_manual(values = model_colors) +
   scale_fill_manual(values = model_colors) +
@@ -303,10 +367,14 @@ age_env_est_plot <- ggplot() +
 
 # combine plots
 one <- cowplot::plot_grid(
-  const_est_plot, age_est_plot, time_est_plot, nrow = 1,
+  const_est_plot,
+  age_est_plot,
+  time_est_plot,
+  nrow = 1,
   rel_widths = c(0.4, 0.6, 0.6),
   labels = c("B", 'C', 'D'),
-  label_size = 30, hjust = -0.3
+  label_size = 30,
+  hjust = -0.3
 )
 
 two <- cowplot::plot_grid(
@@ -316,7 +384,8 @@ two <- cowplot::plot_grid(
 )
 
 three <- cowplot::plot_grid(
-  move_rmse_plot, two,
+  move_rmse_plot,
+  two,
   rel_widths = c(0.5,0.5),
   labels = c('A', ''),
   label_size = 30

@@ -7,15 +7,33 @@ library(testthat)
 # error case is covered here.
 
 sim_dim <- function(n_pop = 1, n_regions = 1, natal_region = NULL, n_sexes = 2, ...) {
-  SPoRC::Setup_Sim_Dim(n_sims = 1, n_yrs = 5, n_pop = n_pop, n_regions = n_regions,
-                       natal_region = natal_region, n_ages = 10, n_sexes = n_sexes,
-                       n_fish_fleets = 1, n_srv_fleets = 1, ...)
+  SPoRC::Setup_Sim_Dim(
+    n_sims = 1,
+    n_yrs = 5,
+    n_pop = n_pop,
+    n_regions = n_regions,
+    natal_region = natal_region,
+    n_ages = 10,
+    n_sexes = n_sexes,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    ...
+  )
 }
 
 mod_dim <- function(n_pop = 1, n_regions = 1, natal_region = NULL, lens = NULL, ...) {
-  SPoRC::Setup_Mod_Dim(years = 1:5, ages = 1:10, lens = lens, n_pop = n_pop,
-                       natal_region = natal_region, n_regions = n_regions,
-                       n_sexes = 2, n_fish_fleets = 1, n_srv_fleets = 1, ...)
+  SPoRC::Setup_Mod_Dim(
+    years = 1:5,
+    ages = 1:10,
+    lens = lens,
+    n_pop = n_pop,
+    natal_region = natal_region,
+    n_regions = n_regions,
+    n_sexes = 2,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    ...
+  )
 }
 
 test_that("Setup_Sim_Dim sends every population to region 1 in a single-region model", {

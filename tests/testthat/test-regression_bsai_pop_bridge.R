@@ -1,11 +1,5 @@
-# Self-validating bridge test. The expectations are not stored SPoRC output: they are
-# the 2024 BSAI Pacific ocean perch assessment's own reported quantities, shipped in
-# sgl_rg_bsai_pop_data$admb. Every parameter is set to the assessment's maximum
-# likelihood estimate and the model is evaluated there without optimizing, so a failure
-# means the population dynamics, a likelihood, or the bicubic selectivity form no longer
-# reproduces the assessment at a point where it is known to. Do not loosen the
-# tolerances to make this pass. See tests/README.md and the BSAI Pacific ocean perch
-# case study vignette.
+# Self-validating bridge test: the expectations are the 2024 BSAI Pacific ocean perch assessment's own
+# reported quantities in sgl_rg_bsai_pop_data$admb, evaluated at its estimate without optimizing.
 
 library(SPoRC)
 library(testthat)
@@ -49,7 +43,7 @@ test_that("BSAI Pacific ocean perch reproduces the 2024 ADMB assessment at its o
   expect_equal(as.vector(r$Rec)[1:n_yrs], dat$admb$Rec[yr_ind],
                tolerance = 1e-5, ignore_attr = TRUE)
 
-  # SPoRC's Total_Biom is spawning time biomass and carries the exp(-Z t_spawn)
+  # SPoRC's Total_Biom is spawning time biomass and holds the exp(-Z t_spawn)
   # discount, while the assessment reports January 1 biomass. The like for like
   # quantity is built from numbers at age, which is a 6 percent difference if the
   # two are compared directly instead.
@@ -72,10 +66,10 @@ test_that("BSAI Pacific ocean perch reproduces the 2024 ADMB assessment at its o
   # The Aleutian Islands survey contributes a single year of length compositions, and
   # it is the one data component that does not land on the assessment's value. The gap
   # is 0.15 on a term of 7.5, which is a 0.07 percent difference in the predicted
-  # proportions carried through an applied sample size of 224. It is consistent with
+  # proportions with an applied sample size of 224. It is consistent with
   # the multinomial offset convention rather than with the size at age transition, and
-  # it is 0.017 percent of the objective. Held at its measured size so a real
-  # regression in the length composition machinery still trips this.
+  # it is 0.017 percent of the objective. Kept at its measured size so a real
+  # regression in the length composition routines still trips this.
   expect_equal(sum(r$SrvLenComps_nLL[, , , , 1]), dlc[["AI_survey.slc"]],
                tolerance = 2.5e-2)
 
@@ -90,7 +84,7 @@ test_that("BSAI Pacific ocean perch reproduces the 2024 ADMB assessment at its o
   expect_equal(srv_like(2), dlc[["EBS_survey.biom"]], tolerance = 1e-3)
 
   # The F penalty is a weighted sum of squares on the F deviations, with the weight
-  # carried in sigmaF rather than applied outside the sum.
+  # kept in sigmaF rather than applied outside the sum.
   f_pen <- sum(r$Fmort_nLL) - n_yrs * (c2pi + as.vector(input_list$par$ln_sigmaF))
   expect_equal(as.vector(f_pen), plc[["Fmortpen"]], tolerance = 1e-5)
 

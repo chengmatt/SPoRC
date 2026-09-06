@@ -1,10 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# The generated half of the options documentation. vignettes/t_model_options.Rmd
-# is written by hand and says why a setting exists and which to reach for; this
-# reads the package itself and says what every setting is. Hand-written coverage
-# drifts the moment an argument is added, so completeness is generated rather
-# than maintained.
+# The generated half of the options documentation. t_model_options.Rmd is hand written and says why a
+# setting exists; this reads the package and says what every setting is, so coverage cannot fall behind.
 
 #' The setup stages, in the order a model is built
 #'
@@ -76,7 +73,7 @@ rd_argument_text <- function(topic, db) {
     if(length(it) < 2) next
     names_i <- trimws(strsplit(trimws(flat(it[[1]])), ",")[[1]])
     text_i <- gsub("[[:space:]]+", " ", trimws(flat(it[[2]])))
-    for(nm in names_i[nzchar(names_i)]) out[nm] <- text_i
+    for(arg_name in names_i[nzchar(names_i)]) out[arg_name] <- text_i
   }
   out
 }
@@ -128,7 +125,9 @@ option_reference <- function(stages = setup_stage_order(), guide = NULL) {
       description = unname(ifelse(args %in% names(desc), desc[args], "")),
       in_guide = if(is.na(guide_text)) NA else
         vapply(args, function(a) grepl(a, guide_text, fixed = TRUE), logical(1)),
-      stringsAsFactors = FALSE, row.names = NULL)
+      stringsAsFactors = FALSE,
+      row.names = NULL
+    )
   })
 
   out <- do.call(rbind, rows)

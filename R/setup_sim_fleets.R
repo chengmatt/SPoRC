@@ -1,11 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Operating model fleet inputs. Setup_Sim_Fishing and Setup_Sim_Survey each
-# populate sim_list with a whole fleet's worth of settings at once: mortality or
-# catchability, selectivity, timing, index type and the composition likelihood
-# choices with their overdispersion and correlation parameters. They live
-# together because each one spans every topic that the setup_fishery_*.R and
-# setup_survey_*.R files split apart on the estimation side.
+# Operating model fleet inputs. Setup_Sim_Fishing and Setup_Sim_Survey each populate a whole fleet at once,
+# spanning every topic the setup_fishery_*.R and setup_survey_*.R files split apart on the estimation side.
 
 #' Setup Simulation Fishing Inputs
 #'
@@ -44,7 +40,7 @@
 #'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
 #'   \code{FishIdx_LikeType}. An mvn fleet draws from \code{FishIdx_Cov} through
 #'   a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
-#'   \code{ObsFishIdx_SE}, and its population-specific stream stays lognormal.
+#'   \code{ObsFishIdx_SE}, and its population-specific data source stays lognormal.
 #'   Default: lognormal for every fleet.
 #' @param FishIdx_Cov List with one element per fishery fleet holding the fixed
 #'   covariance over that fleet's fitted index observations, ordered by scanning
@@ -212,19 +208,19 @@
 #'
 #' @param UseCatchAA,UseDiscardAA Integer arrays
 #'   `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
-#'   at-age observation is drawn. The sex margin is required: a stream summed
-#'   over sexes carries its flag in sex slot one.
+#'   at-age observation is drawn. The sex dim is required: a data source summed
+#'   over sexes has its flag in sex slot one.
 #' @param use_catch_aa,use_discard_aa Integer vectors
-#'   `n_fish_fleets`, `1` for fleets whose at-age streams are drawn.
+#'   `n_fish_fleets`, `1` for fleets whose at-age data sources are drawn.
 #' @param ln_sigmaCAA,ln_sigmaDAA Log-scale observation error
-#'   for the at-age streams, `n_ages x n_sexes x n_fish_fleets`. An array without
-#'   the sex margin is required.
+#'   for the at-age data sources, `n_ages x n_sexes x n_fish_fleets`. An array without
+#'   the sex dim is required.
 #' @param ObsCatchAA_SE,ObsDiscardAA_SE Reported standard errors
-#'   shaped like the use arrays, read only when the stream's `sigma_form` asks
+#'   shaped like the use arrays, read only when the data source's `sigma_form` asks
 #'   for them.
-#' @param CatchAA_Type,DiscardAA_Type Which margins each fleet
+#' @param CatchAA_Type,DiscardAA_Type Which dims each fleet
 #'   reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
-#'   `"spltRspltS"`. A summed margin is drawn once, into slot one.
+#'   `"spltRspltS"`. A summed dim is drawn once, into slot one.
 #' @param CatchAA_LikeType,DiscardAA_LikeType `"lognormal"`
 #'   (default) or `"normal"`, per fleet.
 #' @param CatchAA_sigma_form,DiscardAA_sigma_form Where the
@@ -382,6 +378,7 @@ Setup_Sim_Fishing <- function(sim_list,
 
                               ) {
 
+  # Convert Options to Codes ------------------------------------------------
   # Convert character inputs to numeric codes
   catch_units <- convert_to_numeric(catch_units,  list(abd = 0, biom = 1))
   fish_idx_type <- convert_to_numeric(fish_idx_type, list(abd = 0, biom = 1))
@@ -402,22 +399,71 @@ Setup_Sim_Fishing <- function(sim_list,
   FishLenComps_discard_pop_Type <- convert_to_numeric(FishLenComps_discard_pop_Type, list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   discard_units <- convert_to_numeric(discard_units, list(abd = 0, biom = 1, abd_frac = 2, biom_frac = 3))
 
+  # Input Validation --------------------------------------------------------
   # Validate dimensions of all input parameters
-  check_sim_dimensions(ln_sigmaC, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ln_sigmaC")
-  check_sim_dimensions(ln_sigmaC_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, n_pop = sim_list$n_pop, what = "ln_sigmaC_pop")
-  check_sim_dimensions(Fmort_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "Fmort_input")
-  check_sim_dimensions(fish_sel_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_pop = sim_list$n_pop, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "fish_sel_input")
-  check_sim_dimensions(fish_q_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "fish_q_input")
-  check_sim_dimensions(ObsFishIdx_SE, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ObsFishIdx_SE")
-  check_sim_dimensions(ObsFishIdx_pop_SE, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ObsFishIdx_pop_SE")
+  check_sim_dimensions(
+    ln_sigmaC,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_sigmaC"
+  )
+  check_sim_dimensions(
+    ln_sigmaC_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_pop = sim_list$n_pop,
+    what = "ln_sigmaC_pop"
+  )
+  check_sim_dimensions(
+    Fmort_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "Fmort_input"
+  )
+  check_sim_dimensions(
+    fish_sel_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_ages = sim_list$n_ages,
+    n_sexes = sim_list$n_sexes,
+    n_pop = sim_list$n_pop,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "fish_sel_input"
+  )
+  check_sim_dimensions(
+    fish_q_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "fish_q_input"
+  )
+  check_sim_dimensions(
+    ObsFishIdx_SE,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ObsFishIdx_SE"
+  )
+  check_sim_dimensions(
+    ObsFishIdx_pop_SE,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ObsFishIdx_pop_SE"
+  )
   check_sim_dimensions(FishIdx_LikeType, n_fish_fleets = sim_list$n_fish_fleets, what = "FishIdx_LikeType")
 
   # Multivariate normal index fleets draw from the supplied covariance rather than
@@ -432,109 +478,375 @@ Setup_Sim_Fishing <- function(sim_list,
 
   # Validate fishery age composition parameters
   check_sim_dimensions(comp_fishage_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishage_like")
-  check_sim_dimensions(ISS_FishAgeComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets,
-                       n_sims = sim_list$n_sims, what = "ISS_FishAgeComps")
-  check_sim_dimensions(ln_FishAge_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_theta")
+  check_sim_dimensions(
+    ISS_FishAgeComps,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishAgeComps"
+  )
+  check_sim_dimensions(
+    ln_FishAge_theta,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishAge_theta"
+  )
   check_sim_dimensions(ln_FishAge_theta_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_theta_agg")
   check_sim_dimensions(FishAge_corr_pars_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_corr_pars_agg")
-  check_sim_dimensions(FishAge_corr_pars, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_corr_pars")
-  check_sim_dimensions(FishAgeComps_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets,
-                       what = "FishAgeComps_Type")
+  check_sim_dimensions(
+    FishAge_corr_pars,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAge_corr_pars"
+  )
+  check_sim_dimensions(
+    FishAgeComps_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAgeComps_Type"
+  )
   check_sim_dimensions(comp_fishage_pop_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishage_pop_like")
-  check_sim_dimensions(ISS_FishAgeComps_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "ISS_FishAgeComps_pop")
-  check_sim_dimensions(ln_FishAge_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_pop_theta")
-  check_sim_dimensions(ln_FishAge_pop_theta_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_pop_theta_agg")
-  check_sim_dimensions(FishAge_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_pop_corr_pars_agg")
-  check_sim_dimensions(FishAge_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_pop_corr_pars")
-  check_sim_dimensions(FishAgeComps_pop_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAgeComps_pop_Type")
+  check_sim_dimensions(
+    ISS_FishAgeComps_pop,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishAgeComps_pop"
+  )
+  check_sim_dimensions(
+    ln_FishAge_pop_theta,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishAge_pop_theta"
+  )
+  check_sim_dimensions(
+    ln_FishAge_pop_theta_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishAge_pop_theta_agg"
+  )
+  check_sim_dimensions(
+    FishAge_pop_corr_pars_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAge_pop_corr_pars_agg"
+  )
+  check_sim_dimensions(
+    FishAge_pop_corr_pars,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAge_pop_corr_pars"
+  )
+  check_sim_dimensions(
+    FishAgeComps_pop_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAgeComps_pop_Type"
+  )
 
 
   # Validate fishery length composition parameters
   check_sim_dimensions(comp_fishlen_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishlen_like")
-  check_sim_dimensions(ISS_FishLenComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets,
-                       n_sims = sim_list$n_sims, what = "ISS_FishLenComps")
-  check_sim_dimensions(ln_FishLen_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_theta")
+  check_sim_dimensions(
+    ISS_FishLenComps,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishLenComps"
+  )
+  check_sim_dimensions(
+    ln_FishLen_theta,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishLen_theta"
+  )
   check_sim_dimensions(ln_FishLen_theta_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_theta_agg")
   check_sim_dimensions(FishLen_corr_pars_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_corr_pars_agg")
-  check_sim_dimensions(FishLen_corr_pars, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_corr_pars")
-  check_sim_dimensions(FishLenComps_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets,
-                       what = "FishLenComps_Type")
+  check_sim_dimensions(
+    FishLen_corr_pars,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLen_corr_pars"
+  )
+  check_sim_dimensions(
+    FishLenComps_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLenComps_Type"
+  )
   check_sim_dimensions(comp_fishlen_pop_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishlen_pop_like")
-  check_sim_dimensions(ISS_FishLenComps_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "ISS_FishLenComps_pop")
-  check_sim_dimensions(ln_FishLen_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_pop_theta")
-  check_sim_dimensions(ln_FishLen_pop_theta_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_pop_theta_agg")
-  check_sim_dimensions(FishLen_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_pop_corr_pars_agg")
-  check_sim_dimensions(FishLen_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_pop_corr_pars")
-  check_sim_dimensions(FishLenComps_pop_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLenComps_pop_Type")
+  check_sim_dimensions(
+    ISS_FishLenComps_pop,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishLenComps_pop"
+  )
+  check_sim_dimensions(
+    ln_FishLen_pop_theta,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishLen_pop_theta"
+  )
+  check_sim_dimensions(
+    ln_FishLen_pop_theta_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishLen_pop_theta_agg"
+  )
+  check_sim_dimensions(
+    FishLen_pop_corr_pars_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLen_pop_corr_pars_agg"
+  )
+  check_sim_dimensions(
+    FishLen_pop_corr_pars,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLen_pop_corr_pars"
+  )
+  check_sim_dimensions(
+    FishLenComps_pop_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLenComps_pop_Type"
+  )
 
 
   # Validate retention and discard inputs
-  check_sim_dimensions(ret_sel_input, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_seas = sim_list$n_seas, n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "ret_sel_input")
-  check_sim_dimensions(dmr_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "dmr_input")
-  check_sim_dimensions(ln_sigmaD, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ln_sigmaD")
-  check_sim_dimensions(ln_sigmaD_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_seas = sim_list$n_seas, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_sigmaD_pop")
+  check_sim_dimensions(
+    ret_sel_input,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_ages = sim_list$n_ages,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ret_sel_input"
+  )
+  check_sim_dimensions(
+    dmr_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "dmr_input"
+  )
+  check_sim_dimensions(
+    ln_sigmaD,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_sigmaD"
+  )
+  check_sim_dimensions(
+    ln_sigmaD_pop,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_sigmaD_pop"
+  )
 
   # Validate discard age composition parameters
   check_sim_dimensions(comp_fishage_discard_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishage_discard_like")
-  check_sim_dimensions(ISS_FishAgeComps_discard, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "ISS_FishAgeComps_discard")
-  check_sim_dimensions(ln_FishAge_discard_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_discard_theta")
+  check_sim_dimensions(
+    ISS_FishAgeComps_discard,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishAgeComps_discard"
+  )
+  check_sim_dimensions(
+    ln_FishAge_discard_theta,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishAge_discard_theta"
+  )
   check_sim_dimensions(ln_FishAge_discard_theta_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_discard_theta_agg")
   check_sim_dimensions(FishAge_discard_corr_pars_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_discard_corr_pars_agg")
-  check_sim_dimensions(FishAge_discard_corr_pars, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_discard_corr_pars")
-  check_sim_dimensions(FishAgeComps_discard_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAgeComps_discard_Type")
+  check_sim_dimensions(
+    FishAge_discard_corr_pars,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAge_discard_corr_pars"
+  )
+  check_sim_dimensions(
+    FishAgeComps_discard_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAgeComps_discard_Type"
+  )
 
   # Validate discard length composition parameters
   check_sim_dimensions(comp_fishlen_discard_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishlen_discard_like")
-  check_sim_dimensions(ISS_FishLenComps_discard, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, n_sims = sim_list$n_sims, what = "ISS_FishLenComps_discard")
-  check_sim_dimensions(ln_FishLen_discard_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_discard_theta")
+  check_sim_dimensions(
+    ISS_FishLenComps_discard,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishLenComps_discard"
+  )
+  check_sim_dimensions(
+    ln_FishLen_discard_theta,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishLen_discard_theta"
+  )
   check_sim_dimensions(ln_FishLen_discard_theta_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_discard_theta_agg")
   check_sim_dimensions(FishLen_discard_corr_pars_agg, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_discard_corr_pars_agg")
-  check_sim_dimensions(FishLen_discard_corr_pars, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_discard_corr_pars")
-  check_sim_dimensions(FishLenComps_discard_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLenComps_discard_Type")
+  check_sim_dimensions(
+    FishLen_discard_corr_pars,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLen_discard_corr_pars"
+  )
+  check_sim_dimensions(
+    FishLenComps_discard_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLenComps_discard_Type"
+  )
 
   # Validate population-specific discard age composition parameters
   check_sim_dimensions(comp_fishage_discard_pop_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishage_discard_pop_like")
-  check_sim_dimensions(ISS_FishAgeComps_discard_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets,
-                       n_sims = sim_list$n_sims, what = "ISS_FishAgeComps_discard_pop")
-  check_sim_dimensions(ln_FishAge_discard_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_discard_pop_theta")
-  check_sim_dimensions(ln_FishAge_discard_pop_theta_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishAge_discard_pop_theta_agg")
-  check_sim_dimensions(FishAge_discard_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_discard_pop_corr_pars_agg")
-  check_sim_dimensions(FishAge_discard_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAge_discard_pop_corr_pars")
-  check_sim_dimensions(FishAgeComps_discard_pop_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "FishAgeComps_discard_pop_Type")
+  check_sim_dimensions(
+    ISS_FishAgeComps_discard_pop,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishAgeComps_discard_pop"
+  )
+  check_sim_dimensions(
+    ln_FishAge_discard_pop_theta,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishAge_discard_pop_theta"
+  )
+  check_sim_dimensions(
+    ln_FishAge_discard_pop_theta_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishAge_discard_pop_theta_agg"
+  )
+  check_sim_dimensions(
+    FishAge_discard_pop_corr_pars_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAge_discard_pop_corr_pars_agg"
+  )
+  check_sim_dimensions(
+    FishAge_discard_pop_corr_pars,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAge_discard_pop_corr_pars"
+  )
+  check_sim_dimensions(
+    FishAgeComps_discard_pop_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishAgeComps_discard_pop_Type"
+  )
 
   # Validate population-specific discard length composition parameters
   check_sim_dimensions(comp_fishlen_discard_pop_like, n_fish_fleets = sim_list$n_fish_fleets, what = "comp_fishlen_discard_pop_like")
-  check_sim_dimensions(ISS_FishLenComps_discard_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets,
-                       n_sims = sim_list$n_sims, what = "ISS_FishLenComps_discard_pop")
-  check_sim_dimensions(ln_FishLen_discard_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_discard_pop_theta")
-  check_sim_dimensions(ln_FishLen_discard_pop_theta_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "ln_FishLen_discard_pop_theta_agg")
-  check_sim_dimensions(FishLen_discard_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_discard_pop_corr_pars_agg")
-  check_sim_dimensions(FishLen_discard_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions,
-                       n_sexes = sim_list$n_sexes, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLen_discard_pop_corr_pars")
-  check_sim_dimensions(FishLenComps_discard_pop_Type, n_years = sim_list$n_yrs, n_fish_fleets = sim_list$n_fish_fleets, what = "FishLenComps_discard_pop_Type")
+  check_sim_dimensions(
+    ISS_FishLenComps_discard_pop,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_FishLenComps_discard_pop"
+  )
+  check_sim_dimensions(
+    ln_FishLen_discard_pop_theta,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishLen_discard_pop_theta"
+  )
+  check_sim_dimensions(
+    ln_FishLen_discard_pop_theta_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "ln_FishLen_discard_pop_theta_agg"
+  )
+  check_sim_dimensions(
+    FishLen_discard_pop_corr_pars_agg,
+    n_pop = sim_list$n_pop,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLen_discard_pop_corr_pars_agg"
+  )
+  check_sim_dimensions(
+    FishLen_discard_pop_corr_pars,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLen_discard_pop_corr_pars"
+  )
+  check_sim_dimensions(
+    FishLenComps_discard_pop_Type,
+    n_years = sim_list$n_yrs,
+    n_fish_fleets = sim_list$n_fish_fleets,
+    what = "FishLenComps_discard_pop_Type"
+  )
 
+  # Populate Simulation List ------------------------------------------------
   # output variables into list
   sim_list$Fmort <- Fmort_input # input fishing mortality pattern
   sim_list$catch_units <- catch_units # catch units
@@ -543,8 +855,8 @@ Setup_Sim_Fishing <- function(sim_list,
   aa_use_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
                   sim_list$n_sexes, sim_list$n_fish_fleets)
   aa_sigma_dim <- c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)
-  for(nm in c("ln_sigmaCAA", "ln_sigmaDAA")) check_at_age_shape(get(nm), aa_sigma_dim, nm)
-  for(nm in c("UseCatchAA", "UseDiscardAA")) check_at_age_shape(get(nm), aa_use_dim, nm)
+  for(data_name in c("ln_sigmaCAA", "ln_sigmaDAA")) check_at_age_shape(get(data_name), aa_sigma_dim, data_name)
+  for(data_name in c("UseCatchAA", "UseDiscardAA")) check_at_age_shape(get(data_name), aa_use_dim, data_name)
   sim_list$ln_sigmaCAA <- ln_sigmaCAA
   sim_list$ln_sigmaDAA <- ln_sigmaDAA
   sim_list$UseCatchAA <- UseCatchAA
@@ -552,20 +864,20 @@ Setup_Sim_Fishing <- function(sim_list,
   # a conditioned model built before these settings existed passes them through
   # as NULL, which means the default rather than an error
   or_default <- function(x, default) if(is.null(x)) default else x
-  for(nm in c("CatchAA", "DiscardAA")) {
-    se <- get(paste0("Obs", nm, "_SE"))
-    check_at_age_shape(se, aa_use_dim, paste0("Obs", nm, "_SE"))
-    use_dim <- dim(sim_list[[paste0("Use", nm)]])
-    sim_list[[paste0("Obs", nm, "_SE")]] <- if(is.null(se) && !is.null(use_dim)) array(0, dim = use_dim) else se
-    sim_list[[paste0(nm, "_Type")]] <- at_age_type_matrix(or_default(get(paste0(nm, "_Type")), "spltRaggS"),
+  for(data_name in c("CatchAA", "DiscardAA")) {
+    se <- get(paste0("Obs", data_name, "_SE"))
+    check_at_age_shape(se, aa_use_dim, paste0("Obs", data_name, "_SE"))
+    use_dim <- dim(sim_list[[paste0("Use", data_name)]])
+    sim_list[[paste0("Obs", data_name, "_SE")]] <- if(is.null(se) && !is.null(use_dim)) array(0, dim = use_dim) else se
+    sim_list[[paste0(data_name, "_Type")]] <- at_age_type_matrix(or_default(get(paste0(data_name, "_Type")), "spltRaggS"),
                                                           sim_list$n_fish_fleets, sim_list$n_yrs,
-                                                          paste0(nm, "_Type"))
-    sim_list[[paste0(nm, "_LikeType")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_LikeType")), "lognormal"),
+                                                          paste0(data_name, "_Type"))
+    sim_list[[paste0(data_name, "_LikeType")]] <- rep_len(convert_to_numeric(or_default(get(paste0(data_name, "_LikeType")), "lognormal"),
                                                                       list(lognormal = 0, normal = 1)), sim_list$n_fish_fleets)
-    sim_list[[paste0(nm, "_sigma_form")]] <- rep_len(convert_to_numeric(or_default(get(paste0(nm, "_sigma_form")), "none"),
+    sim_list[[paste0(data_name, "_sigma_form")]] <- rep_len(convert_to_numeric(or_default(get(paste0(data_name, "_sigma_form")), "none"),
                                                                         list(none = 0, data = 1, est_additive = 2, est_quadrature = 3)),
                                                      sim_list$n_fish_fleets)
-  } # end nm loop
+  } # end data_name loop
   sim_list$use_catch_aa <- use_catch_aa
   sim_list$use_discard_aa <- use_discard_aa
   sim_list$init_F <- init_F_val # initial F value
@@ -706,7 +1018,7 @@ Setup_Sim_Fishing <- function(sim_list,
 #'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
 #'   \code{SrvIdx_LikeType}. An mvn fleet draws from \code{SrvIdx_Cov} through
 #'   a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
-#'   \code{ObsSrvIdx_SE}, and its population-specific stream stays lognormal.
+#'   \code{ObsSrvIdx_SE}, and its population-specific data source stays lognormal.
 #'   Default: lognormal for every fleet.
 #' @param SrvIdx_Cov List with one element per survey fleet holding the fixed
 #'   covariance over that fleet's fitted index observations, ordered by scanning
@@ -796,15 +1108,15 @@ Setup_Sim_Fishing <- function(sim_list,
 #'
 #' @param UseSrvIdxAA Integer array
 #'   `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_srv_fleets`, `1` where a
-#'   survey index at age is drawn. The sex margin is required: a stream summed
-#'   over sexes carries its flag in sex slot one.
+#'   survey index at age is drawn. The sex dim is required: a data source summed
+#'   over sexes has its flag in sex slot one.
 #' @param use_srv_idx_aa Integer vector `n_srv_fleets`, `1` for fleets whose
 #'   index at age is drawn.
 #' @param ln_sigmaSrvIdxAA Log-scale observation error for the index at age,
-#'   `n_ages x n_sexes x n_srv_fleets`. The sex margin is required.
+#'   `n_ages x n_sexes x n_srv_fleets`. The sex dim is required.
 #' @param ObsSrvIdxAA_SE Reported standard errors shaped like `UseSrvIdxAA`, read
 #'   only when `SrvIdxAA_sigma_form` asks for them.
-#' @param SrvIdxAA_Type Which margins each fleet reports separately: `"agg"`,
+#' @param SrvIdxAA_Type Which dims each fleet reports separately: `"agg"`,
 #'   `"spltRaggS"` (default), `"aggRspltS"` or `"spltRspltS"`.
 #' @param SrvIdxAA_LikeType `"lognormal"` (default) or `"normal"`, per fleet.
 #' @param SrvIdxAA_sigma_form Where the observation error comes from: `"none"`
@@ -886,6 +1198,7 @@ Setup_Sim_Survey <- function(sim_list,
                              SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
                              ) {
 
+  # Convert Options to Codes ------------------------------------------------
   # Convert character inputs to numeric codes
   srv_idx_type <- convert_to_numeric(srv_idx_type, list(abd = 0, biom = 1, recdev = 2))
   SrvIdx_LikeType <- convert_to_numeric(SrvIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
@@ -898,17 +1211,52 @@ Setup_Sim_Survey <- function(sim_list,
   comp_srvage_pop_like <- convert_to_numeric(comp_srvage_pop_like, list( Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
   comp_srvlen_pop_like <- convert_to_numeric(comp_srvlen_pop_like, list( Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
 
+  # Input Validation --------------------------------------------------------
   # Validate dimensions of all input parameters
-  check_sim_dimensions(srv_sel_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_ages = sim_list$n_ages, n_sexes = sim_list$n_sexes, n_pop = sim_list$n_pop, n_seas = sim_list$n_seas,
-                       n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "srv_sel_input")
-  check_sim_dimensions(srv_q_input, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs,
-                       n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "srv_q_input")
-  check_sim_dimensions(ObsSrvIdx_SE, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_srv_fleets = sim_list$n_srv_fleets, what = "ObsSrvIdx_SE")
-  check_sim_dimensions(ObsSrvIdx_pop_SE, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_srv_fleets = sim_list$n_srv_fleets, what = "ObsSrvIdx_pop_SE")
-  check_sim_dimensions(t_srv, n_regions = sim_list$n_regions, n_seas = sim_list$n_seas, n_srv_fleets = sim_list$n_srv_fleets, what = "t_srv")
+  check_sim_dimensions(
+    srv_sel_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_ages = sim_list$n_ages,
+    n_sexes = sim_list$n_sexes,
+    n_pop = sim_list$n_pop,
+    n_seas = sim_list$n_seas,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    n_sims = sim_list$n_sims,
+    what = "srv_sel_input"
+  )
+  check_sim_dimensions(
+    srv_q_input,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    n_sims = sim_list$n_sims,
+    what = "srv_q_input"
+  )
+  check_sim_dimensions(
+    ObsSrvIdx_SE,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ObsSrvIdx_SE"
+  )
+  check_sim_dimensions(
+    ObsSrvIdx_pop_SE,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ObsSrvIdx_pop_SE"
+  )
+  check_sim_dimensions(
+    t_srv,
+    n_regions = sim_list$n_regions,
+    n_seas = sim_list$n_seas,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "t_srv"
+  )
   check_sim_dimensions(SrvIdx_LikeType, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvIdx_LikeType")
 
   # Multivariate normal index fleets draw from the supplied covariance rather than
@@ -923,47 +1271,168 @@ Setup_Sim_Survey <- function(sim_list,
 
   # Validate survey age composition parameters
   check_sim_dimensions(comp_srvage_like, n_srv_fleets = sim_list$n_srv_fleets, what = "comp_srvage_like")
-  check_sim_dimensions(ISS_SrvAgeComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets,
-                       n_sims = sim_list$n_sims, what = "ISS_SrvAgeComps")
-  check_sim_dimensions(ln_SrvAge_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvAge_theta")
+  check_sim_dimensions(
+    ISS_SrvAgeComps,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_SrvAgeComps"
+  )
+  check_sim_dimensions(
+    ln_SrvAge_theta,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ln_SrvAge_theta"
+  )
   check_sim_dimensions(ln_SrvAge_theta_agg, n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvAge_theta_agg")
   check_sim_dimensions(SrvAge_corr_pars_agg, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvAge_corr_pars_agg")
-  check_sim_dimensions(SrvAge_corr_pars, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_srv_fleets = sim_list$n_srv_fleets, what = "SrvAge_corr_pars")
-  check_sim_dimensions(SrvAgeComps_Type, n_years = sim_list$n_yrs, n_srv_fleets = sim_list$n_srv_fleets,
-                       what = "SrvAgeComps_Type")
+  check_sim_dimensions(
+    SrvAge_corr_pars,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvAge_corr_pars"
+  )
+  check_sim_dimensions(
+    SrvAgeComps_Type,
+    n_years = sim_list$n_yrs,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvAgeComps_Type"
+  )
   check_sim_dimensions(comp_srvage_pop_like, n_srv_fleets = sim_list$n_srv_fleets, what = "comp_srvage_pop_like")
-  check_sim_dimensions(ISS_SrvAgeComps_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "ISS_SrvAgeComps_pop")
-  check_sim_dimensions(ln_SrvAge_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvAge_pop_theta")
-  check_sim_dimensions(ln_SrvAge_pop_theta_agg, n_pop = sim_list$n_pop, n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvAge_pop_theta_agg")
-  check_sim_dimensions(SrvAge_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvAge_pop_corr_pars_agg")
-  check_sim_dimensions(SrvAge_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvAge_pop_corr_pars")
-  check_sim_dimensions(SrvAgeComps_pop_Type, n_years = sim_list$n_yrs, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvAgeComps_pop_Type")
+  check_sim_dimensions(
+    ISS_SrvAgeComps_pop,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_SrvAgeComps_pop"
+  )
+  check_sim_dimensions(
+    ln_SrvAge_pop_theta,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ln_SrvAge_pop_theta"
+  )
+  check_sim_dimensions(
+    ln_SrvAge_pop_theta_agg,
+    n_pop = sim_list$n_pop,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ln_SrvAge_pop_theta_agg"
+  )
+  check_sim_dimensions(
+    SrvAge_pop_corr_pars_agg,
+    n_pop = sim_list$n_pop,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvAge_pop_corr_pars_agg"
+  )
+  check_sim_dimensions(
+    SrvAge_pop_corr_pars,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvAge_pop_corr_pars"
+  )
+  check_sim_dimensions(
+    SrvAgeComps_pop_Type,
+    n_years = sim_list$n_yrs,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvAgeComps_pop_Type"
+  )
 
 
   # Validate survey length composition parameters
   check_sim_dimensions(comp_srvlen_like, n_srv_fleets = sim_list$n_srv_fleets, what = "comp_srvlen_like")
-  check_sim_dimensions(ISS_SrvLenComps, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas,
-                       n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets,
-                       n_sims = sim_list$n_sims, what = "ISS_SrvLenComps")
-  check_sim_dimensions(ln_SrvLen_theta, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvLen_theta")
+  check_sim_dimensions(
+    ISS_SrvLenComps,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_SrvLenComps"
+  )
+  check_sim_dimensions(
+    ln_SrvLen_theta,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ln_SrvLen_theta"
+  )
   check_sim_dimensions(ln_SrvLen_theta_agg, n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvLen_theta_agg")
   check_sim_dimensions(SrvLen_corr_pars_agg, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvLen_corr_pars_agg")
-  check_sim_dimensions(SrvLen_corr_pars, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
-                       n_srv_fleets = sim_list$n_srv_fleets, what = "SrvLen_corr_pars")
-  check_sim_dimensions(SrvLenComps_Type, n_years = sim_list$n_yrs, n_srv_fleets = sim_list$n_srv_fleets,
-                       what = "SrvLenComps_Type")
+  check_sim_dimensions(
+    SrvLen_corr_pars,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvLen_corr_pars"
+  )
+  check_sim_dimensions(
+    SrvLenComps_Type,
+    n_years = sim_list$n_yrs,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvLenComps_Type"
+  )
   check_sim_dimensions(comp_srvlen_pop_like, n_srv_fleets = sim_list$n_srv_fleets, what = "comp_srvlen_pop_like")
-  check_sim_dimensions(ISS_SrvLenComps_pop, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_years = sim_list$n_yrs, n_seas = sim_list$n_seas, n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets, n_sims = sim_list$n_sims, what = "ISS_SrvLenComps_pop")
-  check_sim_dimensions(ln_SrvLen_pop_theta, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvLen_pop_theta")
-  check_sim_dimensions(ln_SrvLen_pop_theta_agg, n_pop = sim_list$n_pop, n_srv_fleets = sim_list$n_srv_fleets, what = "ln_SrvLen_pop_theta_agg")
-  check_sim_dimensions(SrvLen_pop_corr_pars_agg, n_pop = sim_list$n_pop, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvLen_pop_corr_pars_agg")
-  check_sim_dimensions(SrvLen_pop_corr_pars, n_pop = sim_list$n_pop, n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvLen_pop_corr_pars")
-  check_sim_dimensions(SrvLenComps_pop_Type, n_years = sim_list$n_yrs, n_srv_fleets = sim_list$n_srv_fleets, what = "SrvLenComps_pop_Type")
+  check_sim_dimensions(
+    ISS_SrvLenComps_pop,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_years = sim_list$n_yrs,
+    n_seas = sim_list$n_seas,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    n_sims = sim_list$n_sims,
+    what = "ISS_SrvLenComps_pop"
+  )
+  check_sim_dimensions(
+    ln_SrvLen_pop_theta,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ln_SrvLen_pop_theta"
+  )
+  check_sim_dimensions(
+    ln_SrvLen_pop_theta_agg,
+    n_pop = sim_list$n_pop,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "ln_SrvLen_pop_theta_agg"
+  )
+  check_sim_dimensions(
+    SrvLen_pop_corr_pars_agg,
+    n_pop = sim_list$n_pop,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvLen_pop_corr_pars_agg"
+  )
+  check_sim_dimensions(
+    SrvLen_pop_corr_pars,
+    n_pop = sim_list$n_pop,
+    n_regions = sim_list$n_regions,
+    n_sexes = sim_list$n_sexes,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvLen_pop_corr_pars"
+  )
+  check_sim_dimensions(
+    SrvLenComps_pop_Type,
+    n_years = sim_list$n_yrs,
+    n_srv_fleets = sim_list$n_srv_fleets,
+    what = "SrvLenComps_pop_Type"
+  )
 
+  # Populate Simulation List ------------------------------------------------
   # output into list
   sim_list$srv_sel <- srv_sel_input
   sim_list$srv_q <- srv_q_input

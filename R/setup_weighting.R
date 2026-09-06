@@ -1,8 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Relative weighting across data sources, applied as multipliers on each
-# likelihood component. Runs last in the setup chain, once every data source it
-# weights has been declared.
+# Relative weighting across data sources, applied as multipliers on each likelihood component. Runs
+# last in the setup chain, once every data source it weights has been declared.
 
 #' Set likelihood and penalty weights for the estimation model
 #'
@@ -159,7 +158,7 @@
 #'   \code{Setup_Mod_Fishsel_and_Q}.
 #'   Each weight may instead be a vector with one value per model year, so a
 #'   penalty can act only in some years or with a different strength in each.
-#'   The specification may also carry \code{"bin_range"}, a length-two vector
+#'   The specification may also have \code{"bin_range"}, a length-two vector
 #'   giving the first and last bin the penalties act over. To give each fleet
 #'   its own penalties, pass an unnamed list with one named specification per
 #'   fleet instead of a single specification.
@@ -249,9 +248,9 @@ Setup_Mod_Weighting <- function(input_list,
   # A value still passed to the deprecated Setup_Mod_Biologicals arguments wins
   # over this function's own default, but not over a value supplied here
   legacy <- input_list$.legacy_weighting
-  resolve_legacy <- function(val, is_missing, legacy_val, nm) {
+  resolve_legacy <- function(val, is_missing, legacy_val, arg_name) {
     if(is_missing && !is.null(legacy_val)) {
-      collect_message(nm, " taken from the deprecated Setup_Mod_Biologicals argument of the same name.")
+      collect_message(arg_name, " taken from the deprecated Setup_Mod_Biologicals argument of the same name.")
       return(legacy_val)
     }
     val
@@ -283,26 +282,27 @@ Setup_Mod_Weighting <- function(input_list,
   input_list$data$Wt_FishIdx <- Wt_FishIdx
   input_list$data$Wt_SrvIdx <- Wt_SrvIdx
 
+  # Input Validation --------------------------------------------------------
   # Checking to see if sigma is identifiable ...
-  check_sigma_weight_confound <- function(wt, form, nm, spec_nm) {
+  check_sigma_weight_confound <- function(wt, form, arg_name, spec_nm) {
     if(!is.null(form) && form > 0 && any(wt != 1)) {
-      warning(nm, " is not 1 everywhere while ", spec_nm, " estimates the index ",
+      warning(arg_name, " is not 1 everywhere while ", spec_nm, " estimates the index ",
               "observation error. A likelihood weight and an estimated standard ",
               "deviation are confounded, so the estimate will absorb the weight. ",
-              "Set ", nm, " to 1 when estimating, or fix the sigma when weighting.")
+              "Set ", arg_name, " to 1 when estimating, or fix the sigma when weighting.")
     }
   }
   check_sigma_weight_confound(Wt_SrvIdx, input_list$data$sigmaSrvIdx_form, "Wt_SrvIdx", "sigmaSrvIdx_spec")
   check_sigma_weight_confound(Wt_FishIdx, input_list$data$sigmaFishIdx_form, "Wt_FishIdx", "sigmaFishIdx_spec")
 
   # Checking validity of MVN weights
-  check_mvn_weight <- function(wt, like_type, use, n_flt, nm) {
+  check_mvn_weight <- function(wt, like_type, use, n_flt, arg_name) {
     if(is.null(like_type) || length(wt) == 1) return(invisible(NULL))
     for(fl in seq_len(n_flt)) {
       if(is.na(like_type[fl]) || like_type[fl] != 2) next
       w <- wt[,,,fl][use[,,,fl] == 1]
       if(length(w) > 1 && length(unique(w)) > 1)
-        stop(nm, " varies across observations for fleet ", fl, ", which uses a multivariate normal likelihood. ",
+        stop(arg_name, " varies across observations for fleet ", fl, ", which uses a multivariate normal likelihood. ",
              "An MVN fleet's likelihood is a single number over the whole observation vector, so only a constant weight is meaningful.")
     }
     invisible(NULL)
@@ -331,6 +331,7 @@ Setup_Mod_Weighting <- function(input_list,
   }
   if(length(Wt_Rec) > 1 && any(Wt_Rec == 0)) collect_message("Recruitment deviations excluded from the recruitment penalty but still estimated: ", sum(Wt_Rec[1,1,] == 0), " of ", rec_dev_dim[3])
 
+  # Populate Data List ------------------------------------------------------
   # input into list
   input_list$data$Wt_Rec <- Wt_Rec
   input_list$data$Wt_Init_Rec <- Wt_Init_Rec

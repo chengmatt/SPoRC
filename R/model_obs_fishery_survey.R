@@ -1,9 +1,82 @@
 # Stage 2 of 3: objective function
 #
-# Predicted observations from the population state: catch, discards, and index
-# and composition at age or length, for the fishery and the survey. Reads the
-# within season averages from model_transition.R so predictions land at the right
-# point in the season.
+# Predicted catch, discards, and index and composition at age or length, for fishery and survey. Reads
+# the within season averages from model_transition.R so predictions land at the right point in the season.
+
+#' Solve a catchability analytically within each time block
+#'
+#' A catchability that is a pure scaling nuisance can be concentrated out of the
+#' likelihood instead of estimated. The solve is done separately WITHIN each
+#' catchability time block, so a blocked catchability gets one solved value per
+#' block. A single block, which is the default, reduces to one value for the
+#' whole series.
+#'
+#' Two forms, matching \code{q_type}:
+#' \describe{
+#'   \item{arithmetic (1)}{\eqn{\hat q_b = \sum_{i \in b} o_i / \sum_{i \in b} p_i},
+#'     the ratio of the block's mean observed to its mean predicted. The
+#'     observation counts cancel, so only the two sums are needed.}
+#'   \item{geometric (2)}{\eqn{\log \hat q_b = \sum_{i \in b}(\log o_i - \log p_i) / n_b},
+#'     the block's mean log ratio, which is the lognormal maximum likelihood
+#'     value of \eqn{q}.}
+#' }
+#'
+#' A block with no observations has nothing to solve from and is given the
+#' pooled value over every observation instead.
+#'
+#' @param q_type 1 for arithmetic scaling, 2 for geometric.
+#' @param obs_vec Numeric vector of observed index values.
+#' @param pred_vec Vector of predicted index values before scaling, same length.
+#' @param yr_obs Integer vector of the year each observation belongs to.
+#' @param blk_yr Integer vector \code{[n_yrs]} of each year's block.
+#' @param n_blk Number of blocks this fleet and region use.
+#'
+#' @return Vector \code{[n_yrs]} of the solved catchability by year.
+#'
+#' @keywords internal
+get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_blk) {
+
+  "c" <- RTMB::ADoverload("c")
+
+  n_yrs = length(blk_yr)
+  n_obs = length(obs_vec)
+
+  # the pooled solve over every observation, which is the value an empty block takes
+  if(q_type == 1) {
+    pool_num = sum(obs_vec) / n_obs
+    pool_den = sum(pred_vec) / n_obs
+  } else {
+    pool_num = sum(log(obs_vec) - log(pred_vec)) / n_obs
+    pool_den = 1
+  }
+
+  # sums over the observations each block owns. arith is the ratio of the two means, so the counts
+  # cancel and only the sums are needed; geo is the mean log ratio, so it needs the count
+  num = vector("list", n_blk); den = vector("list", n_blk)
+  for(b in 1:n_blk) { num[[b]] = 0; den[[b]] = 0 }
+  for(i in 1:n_obs) {
+    b = blk_yr[yr_obs[i]]
+    if(q_type == 1) {
+      num[[b]] = num[[b]] + obs_vec[i]
+      den[[b]] = den[[b]] + pred_vec[i]
+    } else {
+      num[[b]] = num[[b]] + (log(obs_vec[i]) - log(pred_vec[i]))
+      den[[b]] = den[[b]] + 1
+    }
+  } # end i loop
+
+  # a block with no observations has nothing to solve from, so it takes the pooled value
+  n_in_blk = tabulate(blk_yr[yr_obs], nbins = n_blk)
+  for(b in which(n_in_blk == 0)) { num[[b]] = pool_num; den[[b]] = pool_den }
+
+  q_blk = vector("list", n_blk)
+  for(b in 1:n_blk) q_blk[[b]] = if(q_type == 1) num[[b]] / den[[b]] else exp(num[[b]] / den[[b]])
+
+  q_yr = vector("list", n_yrs)
+  for(y in 1:n_yrs) q_yr[[y]] = q_blk[[blk_yr[y]]]
+
+  do.call(c, q_yr)
+}
 
 #' Fishery observation model
 #'
@@ -80,22 +153,60 @@
 #'
 #' @keywords internal
 #' @import RTMB
-get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets, n_sexes,
-                                           fish_q_blocks, ln_fish_q, fish_q,
-                                           ret_FAA, disc_FAA, ZAA, NAA,
-                                           CAA, DAA, CAL, DAL, PredCatch, PredDiscard, PredFishIdx,
-                                           fit_lengths, SizeAgeTrans,
-                                           catch_units, discard_units, WAA_fish, dmr,
-                                           fish_idx_type, fish_sel, ret_sel,
-                                           Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas),
-                                           NAA_int = NULL, t_fish = NULL, fish_idx_ages = NULL,
-                                           fish_q_type = NULL, do_fish_q_cov = 0, fish_q_cov = NULL,
-                                           fish_q_coeff = NULL, ObsFishIdx = NULL, UseFishIdx = NULL,
-                                           do_caal = 0, Fish_caal = NULL, Fish_caal_discard = NULL,
-                                           SizeAgeTrans_fish = NULL,
-                                           fish_len_comp_sel = NULL, fish_selex_type = 0, ret_selex_type = 0,
-                                           fish_sel_l = NULL, ret_sel_l = NULL, Fmort = NULL,
-                                           expm_nsub = 0) {
+get_fishery_observation_model <- function(
+  n_pop,
+  n_regions,
+  n_yrs,
+  n_seas,
+  n_fish_fleets,
+  n_sexes,
+  fish_q_blocks,
+  ln_fish_q,
+  fish_q,
+  ret_FAA,
+  disc_FAA,
+  ZAA,
+  NAA,
+  CAA,
+  DAA,
+  CAL,
+  DAL,
+  PredCatch,
+  PredDiscard,
+  PredFishIdx,
+  fit_lengths,
+  SizeAgeTrans,
+  catch_units,
+  discard_units,
+  WAA_fish,
+  dmr,
+  fish_idx_type,
+  fish_sel,
+  ret_sel,
+  Mrate = NULL,
+  move_timing = 0,
+  seasdur = rep(1, n_seas),
+  NAA_int = NULL,
+  t_fish = NULL,
+  fish_idx_ages = NULL,
+  fish_q_type = NULL,
+  do_fish_q_cov = 0,
+  fish_q_cov = NULL,
+  fish_q_coeff = NULL,
+  ObsFishIdx = NULL,
+  UseFishIdx = NULL,
+  do_caal = 0,
+  Fish_caal = NULL,
+  Fish_caal_discard = NULL,
+  SizeAgeTrans_fish = NULL,
+  fish_len_comp_sel = NULL,
+  fish_selex_type = 0,
+  ret_selex_type = 0,
+  fish_sel_l = NULL,
+  ret_sel_l = NULL,
+  Fmort = NULL,
+  expm_nsub = 0
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -130,12 +241,15 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
       for(y in 1:n_yrs) {
         for(f in 1:n_fish_fleets) {
 
-          fish_q_blk_idx <- fish_q_blocks[r,y,f] # get time-block catchability index
-          # Analytically solved fleets get their catchability filled in after the
-          # unscaled index exists, so hold them at 1 for now.
-          if(fish_q_type[f] == 0) fish_q[r,y,f] <- exp(ln_fish_q[r,fish_q_blk_idx,f]) # Input into fishery catchability container
-          else fish_q[r,y,f] <- 1
-          if(do_fish_q_cov == 1 && fish_q_type[f] == 0) fish_q[r,y,f] <- fish_q[r,y,f] * exp(sum(fish_q_cov[r,y,f,] * fish_q_coeff[r,f,])) # adding covariate effects
+          # Analytically solved fleets read no ln_fish_q at all and get their
+          # catchability filled in after the unscaled index exists, so hold them at 1.
+          if(fish_q_type[f] != 0) fish_q[r,y,f] <- 1
+          else {
+            fish_q_blk_idx <- fish_q_blocks[r,y,f] # get time-block catchability index
+            ln_q_y <- ln_fish_q[r,fish_q_blk_idx,f]
+            fish_q[r,y,f] <- exp(ln_q_y) # Input into fishery catchability container
+            if(do_fish_q_cov == 1) fish_q[r,y,f] <- fish_q[r,y,f] * exp(sum(fish_q_cov[r,y,f,] * fish_q_coeff[r,f,])) # adding covariate effects
+          }
 
           for(seas in 1:n_seas) {
 
@@ -157,20 +271,15 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
                 if(fish_len_comp_sel[f] == 0) {
                   CAL[p,r,y,seas,,s,f] <- key_f %*% CAA[p,r,y,seas,,s,f] # Retained Catch at length
                   DAL[p,r,y,seas,,s,f] <- key_f %*% DAA[p,r,y,seas,,s,f] # Discarded Catch at length
-                  # Joint catch at length and age. SizeAgeTrans holds P(len | age), so
-                  # scaling each age column by the catch at that age gives an array whose
-                  # length margin is CAL and whose age margin is CAA. Conditioning on a
-                  # length bin is left to the reader, since a composition likelihood
-                  # normalizes within whatever bins it is handed.
+                  # joint catch at length and age. SizeAgeTrans holds P(len | age), so scaling each
+                  # age column by the catch at that age gives length dim CAL and age dim CAA
                   if(do_caal == 1) {
                     Fish_caal[p,r,y,seas,,,s,f] <- key_f * rep(CAA[p,r,y,seas,,s,f], each = n_lens) # Retained catch at length and age
                     Fish_caal_discard[p,r,y,seas,,,s,f] <- key_f * rep(DAA[p,r,y,seas,,s,f], each = n_lens) # Discarded catch at length and age
                   } # building caal
                 } else {
-                  # Selectivity applied at length: the fish available over the season at
-                  # each age are spread over length by the composition key, then taken
-                  # length by length by the length selectivity (and retention, at length
-                  # when it is defined there, at age otherwise)
+                  # selectivity applied at length: the fish available over the season at each age are
+                  # spread over length by the composition key, then taken length by length
                   avail <- if(move_timing == 2) NAA_int[p,r,y,seas,,s] else NAA[p,r,y,seas,,s] * (1 - exp(-ZAA[p,r,y,seas,,s])) / ZAA[p,r,y,seas,,s]
                   avail <- avail * Fmort[r,y,seas,f]
                   if(ret_selex_type == 1) {
@@ -207,18 +316,15 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
               PredDiscard[p,r,y,seas,f] <- 1 - sum(CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) / sum(total_catch * WAA_fish[p,r,y,seas,,,f])
             } # biomass fraction
 
-            # Get fishery index. t_fish is the fraction of the season elapsed when
-            # the index is observed, so the numbers are decayed by that much total
-            # mortality first; t_fish = 0 reproduces a start-of-season index, which
-            # is what the model did before this was available.
+            # get fishery index. t_fish is the fraction of the season elapsed when the index is
+            # observed, so the numbers are decayed by that much total mortality first
             FishIdxN <- if(move_timing == 2) NAA_int[p,r,y,seas,,] else NAA[p,r,y,seas,,]
             if(!is.null(t_fish)) FishIdxN <- FishIdxN * exp(-t_fish[r,seas,f] * ZAA[p,r,y,seas,,])
             # fish_idx_ages restricts which ages enter the index total without
             # touching the selectivity the compositions share.
             fidx_ages <- array(fish_idx_ages[,f], dim = c(dim(NAA)[5], n_sexes))
-            # index numbers at age, before catchability. The at-age likelihood
-            # reads this so it inherits the same timing and movement treatment
-            # the aggregated index gets, exactly as SrvIAA does for surveys.
+            # index numbers at age, before catchability. the at-age likelihood reads this so it
+            # inherits the same timing and movement treatment the aggregated index gets
             if(fish_idx_type[f] == 0) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * fidx_ages) # retained abundance
             if(fish_idx_type[f] == 1) PredFishIdx[p,r,y,seas,f] <- fish_q[r,y,f] * sum(FishIdxN * fish_sel[p,r,y,seas,,,f] * ret_sel[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f] * fidx_ages) # retained biomass
           } # end seas loop
@@ -228,10 +334,8 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
     } # end r loop
   } # end p loop
 
-  # A fleet whose catchability is a scaling nuisance can be concentrated out of
-  # the likelihood rather than estimated. The solve uses only the years with
-  # observations, and is done on the population-summed index because that is
-  # what the index likelihood compares against.
+  # a catchability that is a scaling nuisance is concentrated out rather than estimated, solved on
+  # the population-summed index over observed years only, and once per catchability time block
   if(any(fish_q_type != 0) && !is.null(ObsFishIdx) && !is.null(UseFishIdx)) {
     for(f in 1:n_fish_fleets) {
       if(fish_q_type[f] == 0) next
@@ -251,19 +355,37 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
           pred_vec[i] <- sum(PredFishIdx[,r,y,seas,f])
         } # end i loop
 
-        if(fish_q_type[f] == 1) q_hat <- mean(obs_vec) / mean(pred_vec) # arithmetic scaling
-        if(fish_q_type[f] == 2) q_hat <- exp(mean(log(obs_vec) - log(pred_vec))) # log-scale scaling
+        # one solved catchability per time block, from the observations that
+        # block owns
+        blk_yr <- fish_q_blocks[r,,f]
+        q_yr <- get_blocked_analytic_q(
+          q_type = fish_q_type[f],
+          obs_vec = obs_vec,
+          pred_vec = pred_vec,
+          yr_obs = obs_map[,1],
+          blk_yr = blk_yr,
+          n_blk = max(blk_yr)
+        )
 
-        fish_q[r,,f] <- q_hat
-        PredFishIdx[,r,,,f] <- PredFishIdx[,r,,,f] * q_hat
+        fish_q[r,,f] <- q_yr
+        PredFishIdx[,r,,,f] <- PredFishIdx[,r,,,f] * rep(q_yr, each = n_pop)
 
       } # end r loop
     } # end f loop
   }
 
-  return(list(fish_q = fish_q, CAA = CAA, DAA = DAA, CAL = CAL, DAL = DAL,
-              Fish_caal = Fish_caal, Fish_caal_discard = Fish_caal_discard,
-              PredCatch = PredCatch, PredDiscard = PredDiscard, PredFishIdx = PredFishIdx))
+  return(list(
+    fish_q = fish_q,
+    CAA = CAA,
+    DAA = DAA,
+    CAL = CAL,
+    DAL = DAL,
+    Fish_caal = Fish_caal,
+    Fish_caal_discard = Fish_caal_discard,
+    PredCatch = PredCatch,
+    PredDiscard = PredDiscard,
+    PredFishIdx = PredFishIdx
+  ))
 }
 
 #' Survey observation model
@@ -350,19 +472,46 @@ get_fishery_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_fis
 #'
 #' @keywords internal
 #' @import RTMB
-get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_fleets, n_sexes,
-                                          srv_q_blocks, ln_srv_q, srv_q, do_srv_q_cov, srv_q_cov, srv_q_coeff,
-                                          srv_selex_type, srv_sel, srv_sel_l, SizeAgeTrans,
-                                          NAA, ZAA, t_srv, SrvIAA, fit_lengths, SrvIAL,
-                                          srv_idx_type, WAA_srv, PredSrvIdx,
-                                          Mrate = NULL, move_timing = 0, seasdur = rep(1, n_seas),
-                                          srv_idx_ages = NULL, srv_q_type = NULL,
-                                          ObsSrvIdx = NULL, UseSrvIdx = NULL,
-                                          RecDev_anom = NULL,
-                                          do_caal = 0, Srv_caal = NULL,
-                                          SizeAgeTrans_srv = NULL,
-                                          srv_len_comp_sel = NULL,
-                                          expm_nsub = 0) {
+get_survey_observation_model <- function(
+  n_pop,
+  n_regions,
+  n_yrs,
+  n_seas,
+  n_srv_fleets,
+  n_sexes,
+  srv_q_blocks,
+  ln_srv_q,
+  srv_q,
+  do_srv_q_cov,
+  srv_q_cov,
+  srv_q_coeff,
+  srv_selex_type,
+  srv_sel,
+  srv_sel_l,
+  SizeAgeTrans,
+  NAA,
+  ZAA,
+  t_srv,
+  SrvIAA,
+  fit_lengths,
+  SrvIAL,
+  srv_idx_type,
+  WAA_srv,
+  PredSrvIdx,
+  Mrate = NULL,
+  move_timing = 0,
+  seasdur = rep(1, n_seas),
+  srv_idx_ages = NULL,
+  srv_q_type = NULL,
+  ObsSrvIdx = NULL,
+  UseSrvIdx = NULL,
+  RecDev_anom = NULL,
+  do_caal = 0,
+  Srv_caal = NULL,
+  SizeAgeTrans_srv = NULL,
+  srv_len_comp_sel = NULL,
+  expm_nsub = 0
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -401,12 +550,15 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
       for(y in 1:n_yrs) {
         for(sf in 1:n_srv_fleets) {
 
-          srv_q_blk_idx <- srv_q_blocks[r,y,sf] # get time-block catchability index
-          # Analytically solved fleets get their catchability filled in after the
-          # unscaled index exists, so hold them at 1 for now.
-          if(srv_q_type[sf] == 0) srv_q[r,y,sf] <- exp(ln_srv_q[r,srv_q_blk_idx,sf]) # Input into survey catchability container
-          else srv_q[r,y,sf] <- 1
-          if(do_srv_q_cov == 1 && srv_q_type[sf] == 0) srv_q[r,y,sf] <- srv_q[r,y,sf] * exp(sum(srv_q_cov[r,y,sf,] * srv_q_coeff[r,sf,])) # adding covariate effects
+          # Analytically solved fleets read no ln_srv_q at all and get their
+          # catchability filled in after the unscaled index exists, so hold them at 1.
+          if(srv_q_type[sf] != 0) srv_q[r,y,sf] <- 1
+          else {
+            srv_q_blk_idx <- srv_q_blocks[r,y,sf] # get time-block catchability index
+            ln_q_y <- ln_srv_q[r,srv_q_blk_idx,sf]
+            srv_q[r,y,sf] <- exp(ln_q_y) # Input into survey catchability container
+            if(do_srv_q_cov == 1) srv_q[r,y,sf] <- srv_q[r,y,sf] * exp(sum(srv_q_cov[r,y,sf,] * srv_q_coeff[r,sf,])) # adding covariate effects
+          }
 
           for(seas in 1:n_seas) {
 
@@ -426,14 +578,12 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
               for(s in 1:n_sexes) {
                 if(is.null(srv_len_comp_sel) || srv_len_comp_sel[sf] == 0) {
                   SrvIAL[p,r,y,seas,,s,sf] <- key_sf(s) %*% SrvIAA[p,r,y,seas,,s,sf] # Survey index at length
-                  # Joint survey index at length and age, built the same way as the
-                  # fishery arrays: each age column of P(len | age) scaled by the index
-                  # at that age, so the length margin is SrvIAL and the age margin SrvIAA.
+                  # joint survey index at length and age, built like the fishery arrays: each age
+                  # column of P(len | age) scaled by the index at that age
                   if(do_caal == 1) Srv_caal[p,r,y,seas,,,s,sf] <- key_sf(s) * rep(SrvIAA[p,r,y,seas,,s,sf], each = n_lens) # Survey index at length and age
                 } else {
-                  # Selectivity applied at length: the numbers present at the survey's
-                  # timing spread over length by the composition key, then selected
-                  # length by length
+                  # selectivity applied at length: the numbers present at the survey's timing spread
+                  # over length by the composition key, then selected length by length
                   present <- if(move_timing == 2) SrvN[p,r,y,seas,,s,sf] else NAA[p,r,y,seas,,s] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,s])
                   joint <- (key_sf(s) * rep(present, each = n_lens)) * srv_sel_l[r,y,,s,sf] # [len, age]
                   SrvIAL[p,r,y,seas,,s,sf] <- rowSums(joint)
@@ -442,9 +592,8 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
               } # end s loop
             } # fitting lengths
 
-            # srv_idx_ages restricts which ages enter the index total without
-            # touching the selectivity the compositions share. An index of a
-            # single age is the limiting case.
+            # srv_idx_ages restricts which ages enter the index total without touching the
+            # selectivity the compositions share. an index of a single age is the limiting case
             idx_ages <- array(srv_idx_ages[,sf], dim = c(n_ages, n_sexes))
             if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * idx_ages) # abundance
             if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf] * idx_ages) # biomass
@@ -462,7 +611,8 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
   } # end p loop
 
   ### Analytically solved catchability ---------------------------------------
-  # A fleet's catchability can be a scaling nuisance and can be concentrated out of the likelihood
+  # a fleet's catchability can be a scaling nuisance and concentrated out of the likelihood.
+  # solved once per catchability time block rather than pooled across the whole series
   if(any(srv_q_type != 0) && !is.null(ObsSrvIdx) && !is.null(UseSrvIdx)) {
     for(sf in 1:n_srv_fleets) {
       if(srv_q_type[sf] == 0) next
@@ -482,16 +632,31 @@ get_survey_observation_model <- function(n_pop, n_regions, n_yrs, n_seas, n_srv_
           pred_vec[i] <- sum(PredSrvIdx[,r,y,seas,sf])
         } # end i loop
 
-        if(srv_q_type[sf] == 1) q_hat <- mean(obs_vec) / mean(pred_vec) # arithmetic scaling
-        if(srv_q_type[sf] == 2) q_hat <- exp(mean(log(obs_vec) - log(pred_vec))) # log-scale scaling
+        # one solved catchability per time block, from the observations that
+        # block owns
+        blk_yr <- srv_q_blocks[r,,sf]
+        q_yr <- get_blocked_analytic_q(
+          q_type = srv_q_type[sf],
+          obs_vec = obs_vec,
+          pred_vec = pred_vec,
+          yr_obs = obs_map[,1],
+          blk_yr = blk_yr,
+          n_blk = max(blk_yr)
+        )
 
-        srv_q[r,,sf] <- q_hat
-        PredSrvIdx[,r,,,sf] <- PredSrvIdx[,r,,,sf] * q_hat
+        srv_q[r,,sf] <- q_yr
+        PredSrvIdx[,r,,,sf] <- PredSrvIdx[,r,,,sf] * rep(q_yr, each = n_pop)
 
       } # end r loop
     } # end sf loop
   }
 
-  return(list(srv_q = srv_q, srv_sel = srv_sel, SrvIAA = SrvIAA, SrvIAL = SrvIAL,
-              Srv_caal = Srv_caal, PredSrvIdx = PredSrvIdx))
+  return(list(
+    srv_q = srv_q,
+    srv_sel = srv_sel,
+    SrvIAA = SrvIAA,
+    SrvIAL = SrvIAL,
+    Srv_caal = Srv_caal,
+    PredSrvIdx = PredSrvIdx
+  ))
 }

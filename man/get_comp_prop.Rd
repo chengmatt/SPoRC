@@ -50,7 +50,7 @@ A named list containing:
 Extracts and standardizes age and length composition data for fishery and
 survey fleets from RTMB model output. The function processes both observed
 and expected compositions for pooled (all populations combined) and
-population-specific data streams, returning results in both long-format
+population-specific data sources, returning results in both long-format
 data frames and array formats suitable for diagnostics and likelihood
 evaluation.
 }

@@ -23,10 +23,11 @@ Setup_Sim_Biologicals(
 \item{sim_list}{Simulation list object returned by \code{\link{Setup_Sim_Dim}},
 which defines the dimension sizes used to validate all input arrays.}
 
-\item{natmort_input}{Natural mortality array with dimensions
-\code{[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]}.
-Note: natural mortality is not season-specific and therefore lacks an
-\code{n_seas} dimension.}
+\item{natmort_input}{Natural mortality array, either
+\code{[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]} or
+\code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.
+Values are instantaneous rates per year in both forms, and the mortality
+applied within a season is the rate times \code{seasdur}.}
 
 \item{WAA_input}{Spawning weight-at-age array with dimensions
 \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.

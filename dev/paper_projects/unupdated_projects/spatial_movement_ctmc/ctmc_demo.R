@@ -12,12 +12,14 @@ library(here)
 
 
 # CTMC Model --------------------------------------------------------------
-create_1d_chain <- function(n_cells = 25,
-                            n_ages = 5,
-                            diffusion = 3,
-                            age_pref_coeff,
-                            t_interval = c(1, 3, 5),
-                            grid_start = c(1, 3, 25)) {
+create_1d_chain <- function(
+  n_cells = 25,
+  n_ages = 5,
+  diffusion = 3,
+  age_pref_coeff,
+  t_interval = c(1, 3, 5),
+  grid_start = c(1, 3, 25)
+) {
 
   # create containers
   diffusion_mat <- adjacency <- array(0, c(n_cells, n_cells))
@@ -295,9 +297,12 @@ diffusion_plot <- ggplot(ctmc_list$diffusion, aes(x = from, y = to, fill = value
 # Taxis plot
 taxis_plot <- ggplot(ctmc_list$taxis, aes(x = from, y = to, fill = value)) +
   geom_tile() +
-  geom_text(data = ctmc_list$taxis %>% filter(age == unique(age)[1]) %>% slice(1),
-            aes(x = 5.5, y = 23.5, label = "Taxis Matrix"),
-            size = 5, inherit.aes = FALSE)  +
+  geom_text(
+    data = ctmc_list$taxis %>% filter(age == unique(age)[1]) %>% slice(1),
+    aes(x = 5.5, y = 23.5, label = "Taxis Matrix"),
+    size = 5,
+    inherit.aes = FALSE
+  )  +
   scale_fill_gradient2(low = "darkblue", mid = "white", high = "red",
                        midpoint = 0) +
   scale_x_continuous(expand = c(0, 0)) +
@@ -321,22 +326,28 @@ pref_plots <- cowplot::plot_grid(
   agepref_plot,
   depthpref_plot,
   nrow = 1,
-  labels = c("C", "D", "E"), label_size = 20
+  labels = c("C", "D", "E"),
+  label_size = 20
 )
 
 # matrix plots
 rate_plots <- cowplot::plot_grid(
   diffusion_plot,
-  taxis_plot, ncol = 1, rel_heights = c(0.25,0.75),
-  labels = c('A', "B"), label_size = 20
+  taxis_plot,
+  ncol = 1,
+  rel_heights = c(0.25,0.75),
+  labels = c('A', "B"),
+  label_size = 20
 )
 
 # combine dist and preference plots
 left_plots <- cowplot::plot_grid(
   pref_plots,
   dist_plot,
-  ncol = 1, rel_heights = c(0.35, 0.65),
-  labels = c("", "F"), label_size = 20
+  ncol = 1,
+  rel_heights = c(0.35, 0.65),
+  labels = c("", "F"),
+  label_size = 20
 )
 
 ggsave(

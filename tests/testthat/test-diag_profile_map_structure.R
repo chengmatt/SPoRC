@@ -3,12 +3,12 @@ library(testthat)
 
 # do_likelihood_profile() rebuilds the map for the profiled parameter at every grid value.
 # That rebuild has to start from the map the model was fitted with, because the map is the
-# only record of which positions were held fixed and which were estimated as a single
+# only record of which positions were kept fixed and which were estimated as a single
 # shared parameter. Renumbering every position uniquely instead frees parameters the fitted
 # model never estimated, which lowers the likelihood at every grid value and leaves the
 # difference from the MLE uncomparable.
 #
-# The map factor carries that structure in its level labels: a shared parameter shows up as
+# The map factor has that structure in its level labels: a shared parameter shows up as
 # one label on several positions, and a fixed position shows up as NA.
 
 par_array <- array(0, dim = c(2, 3))
@@ -122,12 +122,17 @@ profile_call_args <- function(do_par, idx = 3) {
   recorder$calls <- list()
   stub <- function(func, parameters, map, random = NULL, silent = TRUE, ...) {
     recorder$calls <- c(recorder$calls, list(list(map = map$ln_M, values = as.vector(parameters$ln_M))))
-    list(par = numeric(0), fn = function(p) stop("stub"), gr = function(p) stop("stub"),
-         report = function(p) stop("stub"), env = list(last.par.best = numeric(0)))
+    list(
+      par = numeric(0),
+      fn = function(p) stop("stub"),
+      gr = function(p) stop("stub"),
+      report = function(p) stop("stub"),
+      env = list(last.par.best = numeric(0))
+    )
   }
 
   parameters <- list(ln_M = array(log(0.2), dim = c(2, 3)))
-  # positions 2 and 5 held fixed, positions 1 and 4 estimated as a single shared parameter
+  # positions 2 and 5 kept fixed, positions 1 and 4 estimated as a single shared parameter
   mapping <- list(ln_M = factor(c("1", NA, "2", "1", NA, "3")))
 
   local_mocked_bindings(MakeADFun = stub, .package = "RTMB")
@@ -137,9 +142,17 @@ profile_call_args <- function(do_par, idx = 3) {
                         .package = "future.apply")
 
   utils::capture.output(suppressMessages(try(
-    do_likelihood_profile(data = list(), parameters = parameters, mapping = mapping,
-                          what = "ln_M", idx = idx, min_val = -2, max_val = -1.5, inc = 0.5,
-                          do_par = do_par),
+    do_likelihood_profile(
+      data = list(),
+      parameters = parameters,
+      mapping = mapping,
+      what = "ln_M",
+      idx = idx,
+      min_val = -2,
+      max_val = -1.5,
+      inc = 0.5,
+      do_par = do_par
+    ),
     silent = TRUE)))
 
   recorder$calls
@@ -176,7 +189,7 @@ for(branch in c("sequential", "parallel")) {
   })
 
   test_that(paste("the", branch, "branch rebuilds each grid value from the fitted map"), {
-    # Rebuilding from the map the previous grid value left behind would drift, so the two
+    # Rebuilding from the map the previous grid value left behind would diverge, so the two
     # grid values have to produce the same map.
     args <- profile_call_args(do_par)
 

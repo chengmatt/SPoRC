@@ -434,9 +434,10 @@ Next, we can then obtain one-step-ahead (OSA) residuals, which uses the `afscOSA
 # get one step ahead fishery ages
 fishages <- get_osa(obs_mat = comp_prop$Obs_FishAge_mat, # observed fishery age compositions
                     exp_mat = comp_prop$Pred_FishAge_mat, # predicted fishery age compositions
-                    N = francis_data$ISS_FishAgeComps[1,which(francis_data$UseFishAgeComps[,,1] == 1),1,1] * # input sample size
-                      unique(francis_data$Wt_FishAgeComps[1,which(francis_data$UseFishAgeComps[,,1] == 1),1,1]), # francis weight
-                    years = which(francis_data$UseFishAgeComps[,,1] == 1), # years with fishery ages
+                    N = francis_data$ISS_FishAgeComps[1,,1,1,1] * # input sample size, at the full year length
+                      unique(francis_data$Wt_FishAgeComps[1,,1,1,1]), # francis weight
+                    years = which(francis_data$UseFishAgeComps[1,,1,1] == 1), # years with fishery ages
+                    seas = 1, # season
                     fleet = 1, # fleet
                     bins = 4:30, # age bins
                     comp_type = 0, # composition type (age-specific)
@@ -469,9 +470,10 @@ cowplot::plot_grid(resid_plot[[2]], # Bubble
 # get one step ahead fishery lengths
 fishlens <- get_osa(obs_mat = comp_prop$Obs_FishLen_mat, # observed fishery length compositions
                     exp_mat = comp_prop$Pred_FishLen_mat, # predicted fishery length compositions
-                    N = francis_data$ISS_FishLenComps[1,which(francis_data$UseFishLenComps[,,1] == 1),1,1] * # input sample size
-                      unique(francis_data$Wt_FishLenComps[1,which(francis_data$UseFishLenComps[,,1] == 1),1,1]), # francis weight
-                    years = which(francis_data$UseFishLenComps[,,1] == 1), # years with fishery ages
+                    N = francis_data$ISS_FishLenComps[1,,1,1,1] * # input sample size, at the full year length
+                      unique(francis_data$Wt_FishLenComps[1,,1,1,1]), # francis weight
+                    years = which(francis_data$UseFishLenComps[1,,1,1] == 1), # years with fishery lengths
+                    seas = 1, # season
                     fleet = 1, # fleet
                     bins = 21:52, # age bins
                     comp_type = 0, # composition type (age-specific)
@@ -503,9 +505,10 @@ cowplot::plot_grid(resid_plot[[2]], # Bubble
 # get one step ahead survey ages
 srvages <- get_osa(obs_mat = comp_prop$Obs_SrvAge_mat, # observed survey age compositions
                    exp_mat = comp_prop$Pred_SrvAge_mat, # predicted survey age compositions
-                   N = francis_data$ISS_SrvAgeComps[1,which(francis_data$UseSrvAgeComps[,,1] == 1),1,1] * # input sample size
-                     unique(francis_data$Wt_SrvAgeComps[1,which(francis_data$UseSrvAgeComps[,,1] == 1),1,1]), # francis weight
-                   years = which(francis_data$UseSrvAgeComps[,,1] == 1), # years with survey ages
+                   N = francis_data$ISS_SrvAgeComps[1,,1,1,1] * # input sample size, at the full year length
+                     unique(francis_data$Wt_SrvAgeComps[1,,1,1,1]), # francis weight
+                   years = which(francis_data$UseSrvAgeComps[1,,1,1] == 1), # years with survey ages
+                   seas = 1, # season
                    fleet = 1, # fleet
                    bins = 4:30, # age bins
                    comp_type = 0, # composition type (age-specific)
@@ -652,10 +655,10 @@ prop_converged <- jitter_res %>%
   summarize(prop_conv = sum(Hessian) / length(Hessian))
 
 # get jitter results
-final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Region = Var1, Year = Var2) %>%
+final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Pop = Var1, Region = Var2, Year = Var3) %>%
   mutate(Type = 'SSB') %>%
   bind_rows(reshape2::melt(francis_model$rep$Rec) %>%
-              rename(Region = Var1, Year = Var2) %>% mutate(Type = 'Recruitment'))
+              rename(Pop = Var1, Region = Var2, Year = Var3) %>% mutate(Type = 'Recruitment'))
 ```
 
 ```{r eval = FALSE}
@@ -728,19 +731,19 @@ plot_uncertainties(mcmc)
 Time series of recruitment and spawning stock biomass derived from posterior samples can also readily be plotted. 
 ```{r eval = FALSE}
 # get mcmc time series plots
-mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, adnuts_obj = mcmc_short, what = c("SSB", "Rec"), n_cores = parallel::detectCores() - 2)
+mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, mcmc_obj = mcmc_short, what = c("SSB", "Rec"), n_cores = parallel::detectCores() - 2)
 
 # ssb plot
 # summarize results
 ssb_summry <- mcmc_ts_plot$SSB %>%
-  group_by(Var1, Var2) %>%
+  group_by(Var1, Var2, Var3) %>%
   summarize(median = median(value),
             lwr = quantile(value, 0.025),
             upr = quantile(value, 0.975))
 ggplot() +
-  geom_line(ssb_summry, mapping = aes(x = Var2, y = median)) +
-  geom_ribbon(ssb_summry, mapping = aes(x = Var2, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
-  geom_line(reshape2::melt(francis_model$rep$SSB), mapping = aes(x = Var2, y = value), col = 'red', lwd = 1.3, lty = 2) +
+  geom_line(ssb_summry, mapping = aes(x = Var3, y = median)) +
+  geom_ribbon(ssb_summry, mapping = aes(x = Var3, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
+  geom_line(reshape2::melt(francis_model$rep$SSB), mapping = aes(x = Var3, y = value), col = 'red', lwd = 1.3, lty = 2) +
   coord_cartesian(ylim = c(0, NA)) +
   labs(x = 'Year', y = 'Spawning Stock Biomass') +
   theme_bw(base_size = 15)
@@ -748,14 +751,14 @@ ggplot() +
 # rec plot
 # summarize results
 rec_summry <- mcmc_ts_plot$Rec %>%
-  group_by(Var1, Var2) %>%
+  group_by(Var1, Var2, Var3) %>%
   summarize(median = median(value),
             lwr = quantile(value, 0.025),
             upr = quantile(value, 0.975))
 ggplot() +
-  geom_line(rec_summry, mapping = aes(x = Var2, y = median)) +
-  geom_ribbon(rec_summry, mapping = aes(x = Var2, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
-  geom_line(reshape2::melt(francis_model$rep$Rec), mapping = aes(x = Var2, y = value), col = 'red', lwd = 1.3, lty = 2) +
+  geom_line(rec_summry, mapping = aes(x = Var3, y = median)) +
+  geom_ribbon(rec_summry, mapping = aes(x = Var3, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
+  geom_line(reshape2::melt(francis_model$rep$Rec), mapping = aes(x = Var3, y = value), col = 'red', lwd = 1.3, lty = 2) +
   coord_cartesian(ylim = c(0, NA)) +
   labs(x = 'Year', y = 'Recruitment') +
   theme_bw(base_size = 15)
@@ -839,7 +842,7 @@ MatAA <- array(rep(francis_data$MatAA[,,length(francis_data$years),,,], each = n
 fish_sel <- array(rep(francis_model$rep$fish_sel[,,length(francis_data$years),,,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
 Movement <- array(rep(francis_model$rep$Movement[,,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement - not used
 terminal_F <- array(francis_model$rep$Fmort[,length(francis_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility
+natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # natural mortality, a rate per year in each season
 recruitment <- array(francis_model$rep$Rec[,,3:(length(francis_data$years) - 4)], dim = c(n_pop, n_regions, length(3:(length(francis_data$years) - 4)))) # recruitment from years 3 - terminal (corresponds to 1979)
 sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 rec_seas_prop <- array(1, dim = c(1,1)) # recruitment seasonal apportionment

@@ -2,7 +2,7 @@ library(SPoRC)
 library(testthat)
 
 # Composition bin restriction (the *_bins arguments). The invariant the whole
-# feature rests on: fitting a stream over a subset of its observed bins must give
+# feature rests on: fitting a data source over a subset of its observed bins must give
 # exactly the likelihood you would get by handing in only those bins in the first
 # place, renormalized within them. That has to hold for every composition type,
 # not just the aggregated one, and for lengths as well as ages.
@@ -27,22 +27,43 @@ lumpy_obs <- function(n_regions, n_bins, n_sexes, total = 200) {
   arr
 }
 
-comp_nll <- function(Exp, Obs, n_model_bins, n_obs_bins, Comp_Type, Likelihood_Type,
-                     n_regions, n_sexes, age_or_len = 0, AgeingError = NULL,
-                     comp_bins = NULL, use = NULL) {
+comp_nll <- function(
+  Exp,
+  Obs,
+  n_model_bins,
+  n_obs_bins,
+  Comp_Type,
+  Likelihood_Type,
+  n_regions,
+  n_sexes,
+  age_or_len = 0,
+  AgeingError = NULL,
+  comp_bins = NULL,
+  use = NULL
+) {
   if(is.null(use)) use <- rep(1L, n_regions)
   if(is.null(AgeingError) && age_or_len == 0) AgeingError <- diag(1, n_model_bins)
   if(is.null(AgeingError)) AgeingError <- NA
   Get_Comp_Likelihoods(
-    Exp = Exp, Obs = Obs,
+    Exp = Exp,
+    Obs = Obs,
     ISS = array(50, dim = c(n_regions, n_sexes)),
     Wt_Mltnml = array(1, dim = c(n_regions, n_sexes)),
-    ln_theta = array(0, dim = c(n_regions, n_sexes)), ln_theta_agg = 0,
-    LN_corr_pars = array(0.3, dim = c(n_regions, n_sexes, 3)), LN_corr_pars_agg = 0.3,
-    Comp_Type = Comp_Type, Likelihood_Type = Likelihood_Type,
-    n_regions = n_regions, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-    n_sexes = n_sexes, age_or_len = age_or_len, AgeingError = AgeingError,
-    use = use, addtocomp = 1e-4, comp_bins = comp_bins
+    ln_theta = array(0, dim = c(n_regions, n_sexes)),
+    ln_theta_agg = 0,
+    LN_corr_pars = array(0.3, dim = c(n_regions, n_sexes, 3)),
+    LN_corr_pars_agg = 0.3,
+    Comp_Type = Comp_Type,
+    Likelihood_Type = Likelihood_Type,
+    n_regions = n_regions,
+    n_model_bins = n_model_bins,
+    n_obs_bins = n_obs_bins,
+    n_sexes = n_sexes,
+    age_or_len = age_or_len,
+    AgeingError = AgeingError,
+    use = use,
+    addtocomp = 1e-4,
+    comp_bins = comp_bins
   )
 }
 
@@ -121,8 +142,19 @@ test_that("length compositions restrict the same way ages do", {
     Exp <- peaked_exp(n_regions, n_bins, n_sexes)
     Obs <- lumpy_obs(n_regions, n_bins, n_sexes)
     for(lt in 0:2) {
-      restricted <- comp_nll(Exp, Obs, n_bins, n_bins, ct, lt, n_regions, n_sexes,
-                             age_or_len = 1, AgeingError = NA, comp_bins = keep)
+      restricted <- comp_nll(
+        Exp,
+        Obs,
+        n_bins,
+        n_bins,
+        ct,
+        lt,
+        n_regions,
+        n_sexes,
+        age_or_len = 1,
+        AgeingError = NA,
+        comp_bins = keep
+      )
       direct <- comp_nll(Exp[, keep, , drop = FALSE], Obs[, keep, , drop = FALSE],
                          length(keep), length(keep), ct, lt, n_regions, n_sexes,
                          age_or_len = 1, AgeingError = NA)
@@ -141,8 +173,19 @@ test_that("a length bin map and a bin restriction compose", {
   Obs <- lumpy_obs(n_regions, n_obs, n_sexes)
   keep <- 2:3
 
-  restricted <- comp_nll(Exp, Obs, n_model, n_obs, 1, 0, n_regions, n_sexes,
-                         age_or_len = 1, AgeingError = map, comp_bins = keep)
+  restricted <- comp_nll(
+    Exp,
+    Obs,
+    n_model,
+    n_obs,
+    1,
+    0,
+    n_regions,
+    n_sexes,
+    age_or_len = 1,
+    AgeingError = map,
+    comp_bins = keep
+  )
   # mapping by hand, then fitting the kept observed bins directly
   mapped <- array((Exp[1,,1] / sum(Exp[1,,1])) %*% map, dim = c(1, n_obs, 1))
   direct <- comp_nll(mapped[, keep, , drop = FALSE], Obs[, keep, , drop = FALSE],
@@ -164,7 +207,7 @@ test_that("the sex-joint stack is restricted within each sex, not across the sta
   direct <- comp_nll(Exp[, keep, , drop = FALSE], Obs[, keep, , drop = FALSE],
                      length(keep), length(keep), 2, 0, n_regions, n_sexes)
   expect_equal(restricted, direct, tolerance = 1e-10)
-  # and the sex ratio the joint comps carry is now the ratio within the kept bins
+  # and the sex ratio the joint comps have is now the ratio within the kept bins
   expect_false(isTRUE(all.equal(
     as.numeric(restricted),
     as.numeric(comp_nll(Exp, Obs, n_bins, n_bins, 2, 0, n_regions, n_sexes))
@@ -216,7 +259,7 @@ test_that("check_bin_map holds AgeingError and LenBinMap to the same rules", {
   # published ageing error matrices are rounded at source, so ordinary rounding
   # must not trip the row-sum rule for them. A length bin map is written by hand
   # rather than read off a rounded table, so it keeps the tight default it has
-  # always been held to.
+  # always been kept to.
   rounded <- ok; rounded[1, 1] <- 0.997; rounded[2, 2] <- 1.002
   expect_silent(check_bin_map(rounded, 6, "AgeingError", strict = FALSE, tol = 0.05))
   expect_error(check_bin_map(rounded, 6, "LenBinMap"), "sum to neither")
@@ -264,10 +307,19 @@ test_that("the OSA packer and evaluator agree on the restricted bin count", {
       TypeMat <- matrix(ct, nrow = 2, ncol = n_fleets)
       fam <- if(lt %in% c(0, 1)) "discrete" else "continuous"
       vec <- pack_comp_osa(
-        ObsArr = ObsArr, ISSArr = ISSArr, WtArr = WtArr, UseArr = UseArr,
-        TypeMat = TypeMat, LikeTypeVec = rep(lt, n_fleets),
-        n_yrs = 2, n_seas = 1, n_fleets = n_fleets, n_sexes = n_sexes,
-        addtocomp = 1e-4, family = fam, BinsArr = BinsArr
+        ObsArr = ObsArr,
+        ISSArr = ISSArr,
+        WtArr = WtArr,
+        UseArr = UseArr,
+        TypeMat = TypeMat,
+        LikeTypeVec = rep(lt, n_fleets),
+        n_yrs = 2,
+        n_seas = 1,
+        n_fleets = n_fleets,
+        n_sexes = n_sexes,
+        addtocomp = 1e-4,
+        family = fam,
+        BinsArr = BinsArr
       )
 
       # length the evaluator will walk, worked out independently of the packer
@@ -318,12 +370,20 @@ test_that("OSA labels report true observed bin numbers under a restriction", {
   ObsArr[1, 1, 1, , 1, 1] <- 100 * (1:n_obs_bins) / sum(1:n_obs_bins)
 
   res <- pack_comp_osa(
-    ObsArr = ObsArr, ISSArr = array(50, dim = c(n_regions, 1, 1, n_sexes, 1)),
+    ObsArr = ObsArr,
+    ISSArr = array(50, dim = c(n_regions, 1, 1, n_sexes, 1)),
     WtArr = array(1, dim = c(n_regions, 1, 1, n_sexes, 1)),
     UseArr = array(1, dim = c(n_regions, 1, 1, 1)),
-    TypeMat = matrix(0, 1, 1), LikeTypeVec = 0,
-    n_yrs = 1, n_seas = 1, n_fleets = 1, n_sexes = n_sexes,
-    addtocomp = 1e-4, family = "discrete", return_labels = TRUE, BinsArr = BinsArr
+    TypeMat = matrix(0, 1, 1),
+    LikeTypeVec = 0,
+    n_yrs = 1,
+    n_seas = 1,
+    n_fleets = 1,
+    n_sexes = n_sexes,
+    addtocomp = 1e-4,
+    family = "discrete",
+    return_labels = TRUE,
+    BinsArr = BinsArr
   )
   expect_equal(nrow(res$labels), length(keep))
   # bins are named by their observed index, not renumbered 1..n_fit_bins, so a
@@ -354,11 +414,11 @@ test_that("an empty fitted block contributes nothing rather than NaN", {
   } # end ct loop
 })
 
-# Degenerate restrictions. A single fitted bin breaks the OSA machinery in three
+# Degenerate restrictions. A single fitted bin breaks the OSA routines in three
 # separate places, so it is refused at setup where the message can name the
 # argument. And a bin array indexed on the wrong number of bins would let the
 # packer and the evaluator disagree silently, which is the one failure this
-# machinery cannot survive, so it is refused at the packer.
+# routines cannot survive, so it is refused at the packer.
 
 test_that("a restriction leaving fewer than two bins is refused at setup", {
   arr <- array(0, dim = c(10, 2)); arr[5, 1] <- 1; arr[, 2] <- 1
@@ -387,17 +447,26 @@ test_that("a bin array indexed on the wrong bin count is refused, not silently m
   n_regions <- 1; n_sexes <- 1; n_obs_bins <- 6
   ObsArr <- array(0, dim = c(n_regions, 1, 1, n_obs_bins, n_sexes, 1))
   ObsArr[1, 1, 1, , 1, 1] <- 100 * (1:n_obs_bins) / sum(1:n_obs_bins)
-  wrong <- array(1, dim = c(n_obs_bins + 3, 1))   # indexed on a different stream's bins
+  wrong <- array(1, dim = c(n_obs_bins + 3, 1))   # indexed on a different data source's bins
   wrong[1, 1] <- 0
 
   expect_error(
-    pack_comp_osa(ObsArr = ObsArr, ISSArr = array(50, dim = c(n_regions, 1, 1, n_sexes, 1)),
-                  WtArr = array(1, dim = c(n_regions, 1, 1, n_sexes, 1)),
-                  UseArr = array(1, dim = c(n_regions, 1, 1, 1)),
-                  TypeMat = matrix(0, 1, 1), LikeTypeVec = 0,
-                  n_yrs = 1, n_seas = 1, n_fleets = 1, n_sexes = n_sexes,
-                  addtocomp = 1e-4, family = "discrete", BinsArr = wrong),
-    "rows but the observations carry")
+    pack_comp_osa(
+      ObsArr = ObsArr,
+      ISSArr = array(50, dim = c(n_regions, 1, 1, n_sexes, 1)),
+      WtArr = array(1, dim = c(n_regions, 1, 1, n_sexes, 1)),
+      UseArr = array(1, dim = c(n_regions, 1, 1, 1)),
+      TypeMat = matrix(0, 1, 1),
+      LikeTypeVec = 0,
+      n_yrs = 1,
+      n_seas = 1,
+      n_fleets = 1,
+      n_sexes = n_sexes,
+      addtocomp = 1e-4,
+      family = "discrete",
+      BinsArr = wrong
+    ),
+    "rows but the observations have")
 })
 
 test_that("a restriction that empties a block clears its use flag", {
@@ -416,12 +485,12 @@ test_that("a restriction that empties a block clears its use flag", {
   expect_equal(sum(out), sum(use) - 1)                      # and only that one
   expect_true(any(grepl("use flag was cleared", messages_list)))
 
-  # an unrestricted stream is returned untouched, with nothing reported
+  # an unrestricted data source is returned untouched, with nothing reported
   messages_list <<- character(0)
   expect_equal(drop_empty_fitted_blocks(obs, use, array(1, dim = c(n_bins, n_fleets)), 4, "x"), use)
   expect_equal(length(messages_list), 0)
 
-  # a bins array sized for a different stream is left for the packers to reject
+  # a bins array sized for a different data source is left for the packers to reject
   expect_equal(drop_empty_fitted_blocks(obs, use, array(1, dim = c(n_bins + 2, n_fleets)), 4, "x"), use)
 
   # a block of NAs counts as empty too, since that is what the likelihood's guard does

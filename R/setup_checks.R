@@ -1,8 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Dimension validation for the setup chain. check_data_dimensions guards the
-# estimation inputs and check_sim_dimensions the operating model inputs. Called
-# throughout setup_*, never from the objective function.
+# Dimension validation for the setup chain: check_data_dimensions guards the estimation inputs,
+# check_sim_dimensions the operating model inputs. Called throughout setup_*, never from the objective.
 
 #' Validate Dimensions of Model Input Objects
 #'
@@ -79,9 +78,12 @@ check_data_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_pop,, n_regions, n_years, n_seas, n_ages, and n_sexes"))
   }
 
+  # M is accepted with or without seasons
   if(what %in% c("Fixed_natmort")) {
-    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_ages, n_sexes)) != 5)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_ages, and n_sexes"))
+    ok_5d <- length(dim(x)) == 5 && sum(dim(x) == c(n_pop, n_regions, n_years, n_ages, n_sexes)) == 5
+    ok_6d <- length(dim(x)) == 6 && sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes)) == 6
+    if(!ok_5d && !ok_6d)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_ages, and n_sexes, or n_pop, n_regions, n_years, n_seas, n_ages, and n_sexes"))
   }
 
   # weight at age for the fishery
@@ -369,9 +371,12 @@ check_sim_dimensions <- function(x,
       stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_sims"))
   }
 
+  # as in the EM, a simulated M may leave seasons out
   if(what %in% c('natmort_input')) {
-    if(sum(dim(x) == c(n_pop, n_regions, n_years, n_ages, n_sexes, n_sims)) != 6)
-      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_ages, n_sexes, n_sims"))
+    ok_6d <- length(dim(x)) == 6 && sum(dim(x) == c(n_pop, n_regions, n_years, n_ages, n_sexes, n_sims)) == 6
+    ok_7d <- length(dim(x)) == 7 && sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_sims)) == 7
+    if(!ok_6d && !ok_7d)
+      stop(paste("Dimensions of", what, "are not correct. Should be n_pop, n_regions, n_years, n_ages, n_sexes, n_sims, or n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_sims"))
   }
 
   if(what == 'WAA_fish_input') {

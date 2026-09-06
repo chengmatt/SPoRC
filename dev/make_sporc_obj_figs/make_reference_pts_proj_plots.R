@@ -209,9 +209,8 @@ n_yrs <- length(sgl_rg_sable_data$years) # terminal year index
 recent_catch <- apply(sgl_rg_sable_data$ObsCatch[1, (n_yrs - 4):n_yrs, 1, , drop = FALSE], 2, sum)
 recent_catch
 
-# NA leaves a year to catch_fallback_opt, so only projection years 2 to 6 are
-# constrained. catch_input is indexed by the year the catch is taken, so column 2
-# is terminal year + 1.
+# NA leaves a year to catch_fallback_opt, so only projection years 2 to 6 are constrained.
+# catch_input is indexed by the year the catch is taken, so column 2 is terminal year + 1
 catch_input <- array(NA_real_, dim = c(n_regions, n_proj_yrs))
 catch_input[1, 2:6] <- recent_catch
 
@@ -251,14 +250,30 @@ n_hist <- n_yrs - 1 # projection year 1 reproduces the terminal year, so drop it
 years <- 1960:(2023 + n_proj_yrs)
 
 biom_df <- bind_rows(
-  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out$proj_SSB[1,1,]),
-         Quantity = "Spawning biomass", Projection = "HCR"),
-  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out_catch$proj_SSB[1,1,]),
-         Quantity = "Spawning biomass", Projection = "Recent catch"),
-  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out$proj_Total_Biom[1,1,]),
-         Quantity = "Total biomass", Projection = "HCR"),
-  tibble(Year = years, Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out_catch$proj_Total_Biom[1,1,]),
-         Quantity = "Total biomass", Projection = "Recent catch")
+  tibble(
+    Year = years,
+    Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out$proj_SSB[1,1,]),
+    Quantity = "Spawning biomass",
+    Projection = "HCR"
+  ),
+  tibble(
+    Year = years,
+    Biomass = c(sgl_rg_sable_rep$SSB[1,1,-n_yrs], out_catch$proj_SSB[1,1,]),
+    Quantity = "Spawning biomass",
+    Projection = "Recent catch"
+  ),
+  tibble(
+    Year = years,
+    Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out$proj_Total_Biom[1,1,]),
+    Quantity = "Total biomass",
+    Projection = "HCR"
+  ),
+  tibble(
+    Year = years,
+    Biomass = c(sgl_rg_sable_rep$Total_Biom[1,1,-n_yrs], out_catch$proj_Total_Biom[1,1,]),
+    Quantity = "Total biomass",
+    Projection = "Recent catch"
+  )
 )
 
 png(here("vignettes", "figures", "i_sgl_catch_proj_biomass.png"), width = 1000, height = 500)
@@ -275,10 +290,16 @@ dev.off()
 
 # catch, showing where the specified period ends and the HCR resumes
 catch_df <- bind_rows(
-  tibble(Year = years[-(1:n_hist)], Catch = apply(out$proj_Catch[,1,,,, drop = FALSE], 3, sum),
-         Projection = "HCR"),
-  tibble(Year = years[-(1:n_hist)], Catch = apply(out_catch$proj_Catch[,1,,,, drop = FALSE], 3, sum),
-         Projection = "Recent catch")
+  tibble(
+    Year = years[-(1:n_hist)],
+    Catch = apply(out$proj_Catch[,1,,,, drop = FALSE], 3, sum),
+    Projection = "HCR"
+  ),
+  tibble(
+    Year = years[-(1:n_hist)],
+    Catch = apply(out_catch$proj_Catch[,1,,,, drop = FALSE], 3, sum),
+    Projection = "Recent catch"
+  )
 )
 
 png(here("vignettes", "figures", "i_sgl_catch_proj_catch.png"), width = 1000, height = 600)

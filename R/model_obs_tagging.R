@@ -1,9 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# Predicted conventional tag recaptures. Follows each release cohort forward
-# through movement, mortality, ageing, shedding and reporting.
-# release_conv_tag_attr spreads releases that were recorded at coarser
-# resolution than the population arrays out to full dimensions.
+# Predicted conventional tag recaptures, following each release cohort forward through movement,
+# mortality, ageing, shedding and reporting.
 
 #' Fishing and natural mortality by tagged fish in one year and season
 #'
@@ -34,7 +32,7 @@
 #'   fish_fleet]} of total/retained fishery selectivity.
 #' @param dmr Array \code{[region, year, season, fish_fleet]} of discard
 #'   mortality rate.
-#' @param natmort Array \code{[pop, region, year, age, sex]} of natural
+#' @param natmort Array \code{[pop, region, year, season, age, sex]} of natural
 #'   mortality at age.
 #' @param seasdur Numeric vector \code{[season]} of season duration (fraction
 #'   of year).
@@ -63,15 +61,19 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
     } # end if
   } # end p loop
 
-  # get natural mortality
-  tmp_natmort <- array(natmort[,,y,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
+  # get natural mortality in the recapture season
+  tmp_natmort <- array(natmort[,,y,rseas,,], dim = c(n_pop, n_regions, 1, n_ages, n_sexes))
 
-  return(list(FAA = tmp_FAA,
-              ret_FAA = tmp_ret_FAA,
-              disc_DAA = tmp_disc_DAA,
-              Z_before_shed = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum)))
+  return(list(
+    FAA = tmp_FAA,
+    ret_FAA = tmp_ret_FAA,
+    disc_DAA = tmp_disc_DAA,
+    Z_before_shed = (tmp_natmort * seasdur[rseas]) + apply(tmp_FAA, 1:5, sum)
+  ))
 }
 
+
+# Tagging Observation Model -------------------------------------------------
 
 #' Tagging observation model
 #'
@@ -107,7 +109,7 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 #'   fish_fleet]} of total/retained fishery selectivity.
 #' @param dmr Array \code{[region, year, season, fish_fleet]} of discard
 #'   mortality rate.
-#' @param natmort Array \code{[pop, region, year, age, sex]} of natural
+#' @param natmort Array \code{[pop, region, year, season, age, sex]} of natural
 #'   mortality at age.
 #' @param seasdur Numeric vector \code{[season]} of season duration (fraction
 #'   of year).
@@ -137,11 +139,12 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 #' @param pred_conv_tag_fish_recap Array \code{[liberty, season, cohort, pop,
 #'   region, age, sex, fish_fleet]}, output container for predicted
 #'   recaptures.
-#' @param NAA_scalar Array \code{[pop, region, year, age, sex]} of the factor the
-#'   state-space numbers at age applied to the deterministic prediction, one
-#'   wherever it did not apply. Tagged fish are a subset of the population and the
-#'   innovation reads as unmodelled mortality, so the cohorts take the same
-#'   factor at the year boundary. \code{NULL} (the default) leaves them on the
+#' @param NAA_scalar Array \code{[pop, region, year, season, age, sex]} of the
+#'   factor the state-space numbers at age applied to the deterministic
+#'   prediction, one wherever it did not apply. Tagged fish are a subset of the
+#'   population and the innovation reads as unmodelled mortality, so the cohorts
+#'   take the same factor at every boundary the state acts on, within a year as
+#'   well as across one. \code{NULL} (the default) leaves them on the
 #'   deterministic trajectory, which is correct only when the state is off.
 #'
 #' @return List with elements \code{conv_tag_fish_reporting},
@@ -149,16 +152,44 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 #'
 #' @keywords internal
 #' @import RTMB
-get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_cohorts, n_yrs, n_seas, n_pop, n_ages, n_sexes,
-                                           conv_tag_fish_reporting_blocks, conv_tag_fish_reporting_pars, conv_tag_fish_reporting,
-                                           conv_tag_release_indicator, conv_tag_max_liberty, use_conv_fish_tagging,
-                                           Fmort, fish_sel, ret_sel, dmr, natmort, seasdur,
-                                           ln_conv_tag_shed, conv_tag_t_tagging, conv_tagged_fish,
-                                           conv_fish_tag_attr, conv_tag_release_platform, srv_sel, NAA_bef,
-                                           ln_init_conv_tag_mort, do_recruits_move, Movement,
-                                           conv_tag_fish_avail, pred_conv_tag_fish_recap,
-                                           Mrate = NULL, move_timing = 0,
-                                           expm_nsub = 0, NAA_scalar = NULL) {
+get_tagging_observation_model <- function(
+  n_fish_fleets,
+  n_regions,
+  n_conv_tag_cohorts,
+  n_yrs,
+  n_seas,
+  n_pop,
+  n_ages,
+  n_sexes,
+  conv_tag_fish_reporting_blocks,
+  conv_tag_fish_reporting_pars,
+  conv_tag_fish_reporting,
+  conv_tag_release_indicator,
+  conv_tag_max_liberty,
+  use_conv_fish_tagging,
+  Fmort,
+  fish_sel,
+  ret_sel,
+  dmr,
+  natmort,
+  seasdur,
+  ln_conv_tag_shed,
+  conv_tag_t_tagging,
+  conv_tagged_fish,
+  conv_fish_tag_attr,
+  conv_tag_release_platform,
+  srv_sel,
+  NAA_bef,
+  ln_init_conv_tag_mort,
+  do_recruits_move,
+  Movement,
+  conv_tag_fish_avail,
+  pred_conv_tag_fish_recap,
+  Mrate = NULL,
+  move_timing = 0,
+  expm_nsub = 0,
+  NAA_scalar = NULL
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -181,12 +212,22 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
       for(rseas in 1:n_seas) {
         idx <- (y - 1) * n_seas + rseas
         if(is.null(tag_mort[[idx]]))
-          tag_mort[[idx]] <- get_tag_mort(y = y, rseas = rseas,
-                                          n_pop = n_pop, n_regions = n_regions, n_ages = n_ages,
-                                          n_sexes = n_sexes, n_fish_fleets = n_fish_fleets,
-                                          use_conv_fish_tagging = use_conv_fish_tagging,
-                                          Fmort = Fmort, fish_sel = fish_sel, ret_sel = ret_sel,
-                                          dmr = dmr, natmort = natmort, seasdur = seasdur)
+          tag_mort[[idx]] <- get_tag_mort(
+            y = y,
+            rseas = rseas,
+            n_pop = n_pop,
+            n_regions = n_regions,
+            n_ages = n_ages,
+            n_sexes = n_sexes,
+            n_fish_fleets = n_fish_fleets,
+            use_conv_fish_tagging = use_conv_fish_tagging,
+            Fmort = Fmort,
+            fish_sel = fish_sel,
+            ret_sel = ret_sel,
+            dmr = dmr,
+            natmort = natmort,
+            seasdur = seasdur
+          )
       } # end rseas loop
     } # end ry loop
   } # end tc loop
@@ -219,13 +260,8 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
         tag_frac <- if(ry == 1 && rseas == tseas) conv_tag_t_tagging[tc] else 1
         tag_dur <- seasdur[rseas] * tag_frac
 
-        # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the
-        # season / year. every mortality component is scaled, not just the total: Baranov's F/Z is
-        # the fraction of deaths owing to fishing, so scaling Z while leaving F at full-season
-        # scale turns it into F/(Z * t_tag), which exceeds 1 whenever t_tag < F/Z, i.e. predicts
-        # more recaptures than there are dead tags. Scaling F and Z together leaves the ratio at
-        # F/Z and lets the (1 - exp(-Z * t_tag)) term carry the shorter exposure, which is the
-        # standard partial-interval Baranov.
+        # discount by tagging time when tagging is not at the start of the season. scale F and Z
+        # together: scaling Z alone makes F/Z exceed one and overpredicts recaptures
         if(tag_frac != 1) {
           tmp_ZAA      <- tmp_ZAA      * tag_frac
           tmp_FAA      <- tmp_FAA      * tag_frac
@@ -254,16 +290,12 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
         # since a full-season transition matrix cannot represent a partial interval.
         tag_moves <- (conv_tag_t_tagging[tc] == 1 || ry != 1 || rseas != tseas)
 
-        # Continuous movement needs no such exemption, and applying one would be inconsistent:
-        # the generator is scaled by tag_dur below, so a mid-season release diffuses for exactly
-        # the fraction of the season it was at liberty for, the same fraction its mortality is
-        # already scaled by. Freezing movement while still discounting mortality partially would
-        # have tags dying on a partial season but holding station for a whole one.
+        # continuous movement needs no such exemption: the generator is scaled by tag_dur, so a
+        # mid-season release diffuses for the same fraction of the season its mortality is scaled by
         tag_moves_seas <- if(move_timing == 2) TRUE else tag_moves
 
-        # Move tagged fish around. Under move_timing == 0 movement is applied here, in place,
-        # and mortality follows below; under timings 1 and 2 both are carried together by the
-        # seasonal transition operator in the mortality step.
+        # move tagged fish around. under move_timing == 0 movement is applied here and mortality
+        # follows; under 1 and 2 the seasonal transition operator does both together
         if(move_timing == 0 && tag_moves) {
           for(p in 1:n_pop) {
             # Movement of tag cohorts
@@ -283,9 +315,8 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
           } # end p loop
         } # end if
 
-        # Post-season tag numbers, before the ageing shift. Under move_timing == 0 movement
-        # was applied above so this is plain survival; under timings 1 and 2 the transition
-        # operator carries movement and mortality together over tag_dur.
+        # post-season tag numbers, before the ageing shift. plain survival under move_timing == 0;
+        # under 1 and 2 the transition operator covers movement and mortality over tag_dur
         if(move_timing == 0 || n_regions == 1) {
           tag_step <- array(avail_tc[ry, rseas, , , , ] * tmp_SAA[,,1,,],
                             dim = c(n_pop, n_regions, n_ages, n_sexes))
@@ -310,6 +341,12 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
           # Season mortality within a given year, advance to next season same year/age
           avail_tc[ry, rseas + 1, , , , ] <- tag_step
 
+          # State-space numbers at age rescale tag cohorts at a within-year boundary too
+          if(!is.null(NAA_scalar) && y <= dim(NAA_scalar)[3]) {
+            avail_tc[ry, rseas + 1, , , , ] <-
+              avail_tc[ry, rseas + 1, , , , ] * NAA_scalar[,,y,rseas + 1,,]
+          }
+
         } else {
 
           # End of year mortality and age advancement (end of season)
@@ -319,10 +356,11 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
           avail_tc[ry + 1, 1, , , n_ages, ] <-
             avail_tc[ry + 1, 1, , , n_ages, ] + tag_step[,,n_ages,]
 
-          # State-space numbers at age shoudl rescale tag cohorts as well if applied
-          if(!is.null(NAA_scalar) && (ry + 1) <= dim(NAA_scalar)[3]) {
+          # State-space numbers at age rescale tag cohorts as well if applied. The factor is
+          # indexed by the calendar year the cohort has reached, not by its years at liberty.
+          if(!is.null(NAA_scalar) && (y + 1) <= dim(NAA_scalar)[3]) {
             avail_tc[ry + 1, 1, , , 2:n_ages, ] <-
-              avail_tc[ry + 1, 1, , , 2:n_ages, ] * NAA_scalar[,,ry + 1,2:n_ages,]
+              avail_tc[ry + 1, 1, , , 2:n_ages, ] * NAA_scalar[,,y + 1,1,2:n_ages,]
           }
         }
 
@@ -330,9 +368,8 @@ get_tagging_observation_model <- function(n_fish_fleets, n_regions, n_conv_tag_c
         for(f in 1:n_fish_fleets) {
           for(p in 1:n_pop) {
             if(move_timing == 2) {
-              # Spatial Baranov: tags redistribute among regions while being caught, so
-              # recaptures use the season-integrated tag abundance rather than the
-              # region-local (1 - exp(-Z)) / Z form.
+              # spatial Baranov: tags redistribute among regions while being caught, so recaptures
+              # use the season-integrated tag abundance rather than the region-local form
               tag_int <- array(0, dim = c(n_regions, n_ages, n_sexes))
               for(a in 1:n_ages) {
                 # must match the generator used for tag_step above, or the cohort's
@@ -484,9 +521,8 @@ release_conv_tag_attr <- function(tagged_fish,
     wt
   }
 
-  # Normalize weights within attended dimensions.
-  # The denominator sums over unattended dims only, preserving totals
-  # within each attended dim combination.
+  # normalize weights within attended dims. the denominator sums over unattended dims only,
+  # which preserves totals within each attended dim combination
   norm_weights = array(0, dim = c(n_pop, n_ages, n_sexes))
   for(p in seq_len(n_pop)) {
     for(a in seq_len(n_ages)) {
@@ -507,9 +543,8 @@ release_conv_tag_attr <- function(tagged_fish,
     }
   }
 
-  # Build output by looking up the correct cell in the original collapsed input.
-  # Use index 1 for any unattended dim (those dims are collapsed to size 1 in
-  # tagged_fish_orig), and the actual loop index for attended dims.
+  # look up the matching cell in the original collapsed input: index 1 for any unattended dim,
+  # since those are collapsed to size 1 in tagged_fish_orig, and the loop index otherwise
   out = array(0, dim = c(n_pop, n_ages, n_sexes))
   for(p in seq_len(n_pop)) {
     for(a in seq_len(n_ages)) {

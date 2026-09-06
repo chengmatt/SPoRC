@@ -1,7 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# Builds the precision matrix for correlated deviations over age, year and
-# cohort. Used by the process error likelihoods in model_priors_penalties.R.
+# Builds the precision matrix for correlated deviations over age, year and cohort. Used by the
+# process error likelihoods in model_priors_penalties.R.
 
 #' Construct a 3D sparse precision matrix over ages, years, and cohorts
 #'

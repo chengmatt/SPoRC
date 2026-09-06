@@ -4,7 +4,7 @@ library(testthat)
 # Concentrated catchability: the analytic arithmetic and geometric solves fix
 # ln_srv_q and derive q from the data inside the likelihood, so the self-test
 # checks the solved q and the biomass scale it implies are both recovered.
-# Machinery shared through helper-selftest_features.R.
+# Routines shared through helper-selftest_features.R.
 
 test_that("an arithmetically concentrated catchability recovers SSB and q", {
 

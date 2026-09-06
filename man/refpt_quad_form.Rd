@@ -2,7 +2,7 @@
 % Please edit documentation in R/refpts_uncertainty.R
 \name{refpt_quad_form}
 \alias{refpt_quad_form}
-\title{Delta method quadratic form}
+\title{Delta method covariance of derived quantities}
 \usage{
 refpt_quad_form(cov_obj, d)
 }

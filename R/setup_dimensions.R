@@ -1,10 +1,9 @@
 # Stage 1 of 3: model setup
 #
-# Entry point for both pipelines. Setup_Mod_Dim starts the input_list
-# accumulator (data, par, map) that every other Setup_Mod_* function threads
-# through; Setup_Sim_Dim does the same for the operating model. Regions,
-# populations, ages, lengths, years, seasons and sexes are fixed here and every
-# later stage sizes its arrays off them.
+# Entry point for both pipelines. Setup_Mod_Dim starts the input_list accumulator every other Setup_Mod_*
+# threads through; regions, populations, ages, lengths, years, seasons and sexes are fixed here.
+
+# Simulation Dimensions -----------------------------------------------------
 
 #' Initialize simulation dimension settings
 #'
@@ -130,6 +129,8 @@ Setup_Sim_Dim <- function(n_sims,
   return(sim_list)
 
 }
+
+# Model Dimensions ----------------------------------------------------------
 
 #' Initialize model dimension settings
 #'

@@ -23,7 +23,7 @@ n_sexes = 1
 n_fish_fleets = 1
 n_seas = 1
 
-# variables held constant
+# variables kept constant
 global_R0 = 1
 init_F = 0
 fish_sel = array(1, dim = c(n_regions, n_ages, n_sexes, n_fish_fleets))
@@ -34,11 +34,7 @@ ln_InitDevs = array(0, dim = c(n_regions, n_ages - 1))
 # initial age structure scenarios
 init_age_strc <- c(0,1,2,3) # ext_ages, scalar w/ no movement, matrix, scalar with movement
 
-# Movement scenarios
-# No movement
-# Random movement
-# One way movement
-# ontogenetic movement
+# movement scenarios: none, random, one way, ontogenetic
 move_list = list(
 
   # no movement
@@ -148,7 +144,8 @@ for(i in 1:length(scenario_list)) {
       Movement = tmp_scenario$movement,
       do_recruits_move = do_recruits_move,
       ln_InitDevs = ln_InitDevs,
-      n_seas = 1, seasdur = 1
+      n_seas = 1,
+      seasdur = 1
     )
 
     # bind results
@@ -169,21 +166,23 @@ init_naa_results <- init_naa_results %>%
 
 # rename init_age_strc
 init_naa_results = init_naa_results %>%
-  mutate(init_age_strc =
+  mutate(
+    init_age_strc =
            case_when(
              init_age_strc == 0 ~ "ext_ages",
              init_age_strc == 1 ~ "no_move_all",
              init_age_strc == 2 ~ "matrix",
              init_age_strc == 3 ~ "no_move_plus"
            ),
-         init_age_strc = factor(init_age_strc, levels = c("no_move_all", "no_move_plus",
+    init_age_strc = factor(init_age_strc, levels = c("no_move_all", "no_move_plus",
                                                           "ext_ages", "matrix")),
-         movement = factor(movement, levels = c("no", "rand", "oneway", "onto"),
+    movement = factor(movement, levels = c("no", "rand", "oneway", "onto"),
                            labels = paste("move:", c("no", "rand", "oneway", "onto"))),
-         natmort = factor(natmort, levels = c("eq", 'uneq', "higheq", 'highuneq',
+    natmort = factor(natmort, levels = c("eq", 'uneq', "higheq", 'highuneq',
                                               "eqage", 'uneqage', "higheqage", 'highuneqage'),
                           labels = paste("natmort:", c("eq", 'uneq', "higheq", 'highuneq',
-                                                       "eqage", 'uneqage', "higheqage", 'highuneqage'))))
+                                                       "eqage", 'uneqage', "higheqage", 'highuneqage')))
+  )
 
 # compute relative difference compared to matrix method
 init_naa_results <- init_naa_results %>%
@@ -599,8 +598,15 @@ ontomove <- ggplot(movement_scenarios %>%
 ggsave(
   here("dev", "paper_projects", "spatial_plus_group", "movement_scenarios.png"),
   cowplot::plot_grid(
-    nomove, randmove, onewaymove, ontomove, align = 'hv',
-    labels = c('A', 'B', 'C', 'D'), label_size = 30, hjust = -3, vjust = 3
+    nomove,
+    randmove,
+    onewaymove,
+    ontomove,
+    align = 'hv',
+    labels = c('A', 'B', 'C', 'D'),
+    label_size = 30,
+    hjust = -3,
+    vjust = 3
   ),
   width = 18.5, height = 13
 )

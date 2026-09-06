@@ -7,18 +7,15 @@
 get_ctmc_bound_form(x)
 }
 \arguments{
-\item{x}{The \code{ctmc_diffusion_bounds} value: \code{0}, \code{1}, or one of
-\code{"none"}, \code{"softplus"}, \code{"clamp"}, \code{"upwind"},
-\code{"barker"}, \code{"logsoftplus"}.}
+\item{x}{The \code{ctmc_diffusion_bounds} value: the code \code{0}, \code{1} or
+\code{2}, or the matching name \code{"none"}, \code{"softplus"} or
+\code{"upwind"}.}
 }
 \value{
 Character scalar naming the form, or \code{NA_character_} if \code{x} is
   not one of the accepted values.
 }
 \description{
-\code{ctmc_diffusion_bounds} started life as a 0/1 flag and now also takes the
-name of the form directly, so input lists built before the named forms existed
-keep evaluating. Shared by \code{Setup_Mod_Movement} and \code{Get_Movement} so
-validation and the objective agree on the spelling.
+Names for the CTMC generator bound forms
 }
 \keyword{internal}

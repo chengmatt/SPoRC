@@ -10,6 +10,7 @@ Get_NAA_state_penalty(
   sigmaNAA,
   naa_re_ages,
   naa_re_yrs,
+  naa_re_seas,
   NAA_re = 1,
   NAA_pe_pars = NULL,
   NAA_re_region = 0,
@@ -17,11 +18,14 @@ Get_NAA_state_penalty(
   NAA_re_pop = 0,
   NAA_pop_corr_pars = NULL,
   NAA_re_sex = 0,
-  NAA_sex_corr_pars = NULL
+  NAA_sex_corr_pars = NULL,
+  NAA_re_season = 0,
+  NAA_season_corr_pars = NULL
 )
 }
 \arguments{
-\item{ln_NAA}{Array \code{[pop, region, year, age, sex]} of log numbers at age.}
+\item{ln_NAA}{Array \code{[pop, region, year, season, age, sex]} of log numbers
+at the start of each season.}
 
 \item{NAA_pred}{Array of the same shape holding the deterministic prediction.}
 
@@ -31,6 +35,10 @@ deviation for each cell, already expanded from its blocking structure.}
 \item{naa_re_ages}{Integer vector of age indices the state is active over.}
 
 \item{naa_re_yrs}{Integer vector of year indices the state is active over.}
+
+\item{naa_re_seas}{Integer vector of season indices the state is active over.
+Season one alone is the annual state, with the numbers deterministic between
+seasons.}
 
 \item{NAA_re}{Integer code for the structure over the age-year grid.
 \code{1} independent, \code{2} AR(1)
@@ -54,14 +62,21 @@ and across sexes. \code{0} independent, \code{1} unstructured.}
 
 \item{NAA_pop_corr_pars, NAA_sex_corr_pars}{Numeric vectors of unconstrained
 parameters for those correlations, one per pair. Both are global to the
-model rather than varying over the other margins, which is what keeps a
-two-level margin at exactly one parameter.}
+model rather than varying over the other dims, which is what keeps a
+two-level dim at exactly one parameter.}
+
+\item{NAA_re_season}{Integer code for the structure across the active seasons.
+\code{0} independent, \code{1} unstructured.}
+
+\item{NAA_season_corr_pars}{Array \code{[pop, n_k(n_k-1)/2, sex]} of
+unconstrained parameters for the season correlation, over the \eqn{n_k}
+active seasons.}
 }
 \value{
 Scalar negative log likelihood.
 }
 \description{
-Scores the realized innovation of the centered numbers-at-age state,
+Penalizes the realized innovation of the centered numbers-at-age state,
 \eqn{\eta = \log N - \log \hat{N}}, where \eqn{\hat{N}} is the deterministic
 mortality and ageing prediction the dynamics computed into \code{NAA_pred}
 before the state overwrote \code{NAA}.
@@ -69,15 +84,18 @@ before the state overwrote \code{NAA}.
 \details{
 The state is a level rather than a deviation, so the prediction is subtracted
 here instead of multiplying a deviation onto a value the dynamics still
-computes. That is what makes the random-effects Hessian block-tridiagonal in
+computes, which makes the random-effects Hessian block-tridiagonal in
 year: every term is supported on a two-year block, because \eqn{\eta_y}
 depends on the states in years \eqn{y} and \eqn{y-1} and on nothing earlier.
 
 
 Only the independent form admits a standard deviation that varies cell by
-cell. Every other structure is separable or Markov in a margin, and a
+cell. Every other structure is separable or Markov in a dim, and a
 per-cell variance is neither, so the setup function holds the year and age
 standard deviation blocks to one apiece whenever a correlated form is chosen
-and this function reads one standard deviation per population, region and sex.
+and this function reads one standard deviation per population, region, season
+and sex. The season dim is whitened before the age and year density is
+reached, so it keeps its own standard deviation under every form, and gives it
+up only under \code{NAA_re_season = 1}.
 }
 \keyword{internal}

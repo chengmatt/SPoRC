@@ -92,7 +92,8 @@ event that produced them), validated at setup by
 
 \item{MatAA}{Array (\code{n_pop × n_regions × n_seas × n_ages}) of maturity-at-age.}
 
-\item{natmort}{Array (\code{n_pop × n_regions × n_ages}) of natural mortality.}
+\item{natmort}{Array (\code{n_pop × n_regions × n_seas × n_ages}) of natural
+mortality, a rate per year in each season.}
 
 \item{SSB_vals}{Array (\code{n_pop × n_regions × n_years}) of spawning biomass.}
 
@@ -185,7 +186,7 @@ R = R_0 \frac{SSB}{S_0} \exp\left(\alpha \left(1 - \frac{SSB}{S_0}\right)\right)
 }
 
 The curve passes through \eqn{(S_0, R_0)} by construction. Note that
-\eqn{\alpha} is set so the Ricker carries the same compensation ratio as a
+\eqn{\alpha} is set so the Ricker holds the same compensation ratio as a
 Beverton-Holt at the same \eqn{h}, rather than by the textbook definition
 \eqn{R(0.2 S_0) = h R_0}. Steepness is therefore not interchangeable between
 the two curves: the Ricker here gives \eqn{R(0.2S_0)/R_0 = 0.2(4h/(1-h))^{0.8}},

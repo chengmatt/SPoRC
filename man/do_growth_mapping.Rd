@@ -27,10 +27,10 @@ growth parameters already populated.}
 \code{"est_shared_r_s"} or \code{"fix"}.}
 
 \item{growth_fix}{Logical vector, one entry per growth parameter, naming any
-held at its starting value while the others are estimated.}
+kept at its starting value while the others are estimated.}
 
 \item{tv_vals}{Integer vector, one entry per growth parameter, of the time
-variation each carries (0 none, 1 iid, 2 random walk).}
+variation each has (0 none, 1 iid, 2 random walk).}
 
 \item{tv_active}{Matrix \code{[n_years x n_gpars]} of ones in the years each
 parameter's deviations are estimated in.}

@@ -1,22 +1,15 @@
-# Shared rendering for the assessment bridge scripts in this directory. Every
-# bridge ends the same way: spawning biomass and recruitment against the
-# assessment beside their percent difference, selectivity against the
-# assessment, and a table of median and maximum percent differences. Only that
-# comparison layer lives here. Each species script keeps its own specification,
-# its own likelihood crosswalk, and its own diagnostics, because those are the
-# parts that carry the species specific reasoning.
+# Shared rendering for the bridge scripts in this directory: SSB and recruitment against the assessment
+# with percent differences, selectivity against the assessment, and a median/maximum difference table.
 #
-# Sourced by make_goa_northern_bridge_figs.R, make_goa_dusky_bridge_figs.R,
-# make_bsai_northern_bridge_figs.R, make_bsai_rougheye_bridge_figs.R,
-# make_bsai_pop_bridge_figs.R, make_sgl_rg_sablefish_bridge_figs.R and
-# make_ebs_pollock_bridge_figs.R.
+# Only the comparison layer lives here. Each species script keeps its own specification, likelihood
+# crosswalk and diagnostics, which is where the species specific reasoning sits.
+#
+# Sourced by make_goa_northern, make_goa_dusky, make_bsai_northern, make_bsai_rougheye, make_bsai_pop,
+# make_sgl_rg_sablefish and make_ebs_pollock _bridge_figs.R.
 # Creator: Matthew LH. Cheng
 
-# Standard errors on the natural scale for a log scale sdreport entry, returned
-# as NA when the quantity was not reported at the length asked for. exact = TRUE
-# also returns NA when the sdreport carries more entries than were asked for,
-# rather than taking the leading ones, which is what the sablefish and pollock
-# bridges want because their sdreports are indexed year for year.
+# standard errors on the natural scale for a log-scale sdreport entry, NA when the quantity was not
+# reported at the length asked for. exact = TRUE also returns NA when the sdreport has more entries
 bridge_se <- function(sdrep, nm, vals, exact = FALSE) {
   se <- sdrep$sd[names(sdrep$value) == nm]
   if(exact && length(se) != length(vals)) return(rep(NA_real_, length(vals)))
@@ -24,9 +17,8 @@ bridge_se <- function(sdrep, nm, vals, exact = FALSE) {
   se[seq_along(vals)] * vals
 } # end bridge_se
 
-# Median and maximum absolute percent difference of a against b. signed = TRUE
-# reports the median of the signed difference instead, which is what the
-# sablefish and pollock bridges quote so the direction of the bias is visible.
+# median and maximum absolute percent difference of a against b. signed = TRUE reports the median
+# of the signed difference, which the sablefish and pollock bridges quote
 bridge_cmp <- function(lab, a, b, signed = FALSE) {
   dev <- 100 * (a - b) / b
   data.frame(quantity = lab,
@@ -34,16 +26,22 @@ bridge_cmp <- function(lab, a, b, signed = FALSE) {
              max_abs_pct = max(abs(dev)))
 } # end bridge_cmp
 
-# Spawning biomass and recruitment against the assessment, beside the percent
-# difference. The two series overplot at bridge accuracy, so the difference gets
-# its own panel and its own axis. mark_year draws a dashed rule at a year
-# boundary, used where the terminal recruitments stop carrying deviations and
-# the two models part company on convention rather than on fit. legend_nrow
-# wraps the legend, which the longer assessment labels need; pass NULL to leave
-# the legend on a single row.
-bridge_ts_figure <- function(yrs, ssb, rec, admb_ssb, admb_rec, label,
-                             ssb_se = NA, rec_se = NA, mark_year = NULL,
-                             base_size = 20, legend_nrow = 2, ref_name = "ADMB") {
+# spawning biomass and recruitment against the assessment, beside the percent difference, which
+# gets its own panel. mark_year draws a dashed rule; legend_nrow wraps the legend, NULL for one row
+bridge_ts_figure <- function(
+  yrs,
+  ssb,
+  rec,
+  admb_ssb,
+  admb_rec,
+  label,
+  ssb_se = NA,
+  rec_se = NA,
+  mark_year = NULL,
+  base_size = 20,
+  legend_nrow = 2,
+  ref_name = "ADMB"
+) {
 
   ts_df <- dplyr::bind_rows(
     data.frame(Year = yrs, value = ssb, se = ssb_se, Par = "Spawning Biomass", type = "SPoRC"),
@@ -52,8 +50,14 @@ bridge_ts_figure <- function(yrs, ssb, rec, admb_ssb, admb_rec, label,
     data.frame(Year = yrs, value = admb_rec, se = NA, Par = "Recruitment", type = label)
   )
 
-  p <- ggplot2::ggplot(ts_df, ggplot2::aes(x = Year, y = value, ymin = value - 1.96 * se,
-                                           ymax = value + 1.96 * se, color = type, fill = type)) +
+  p <- ggplot2::ggplot(ts_df, ggplot2::aes(
+    x = Year,
+    y = value,
+    ymin = value - 1.96 * se,
+    ymax = value + 1.96 * se,
+    color = type,
+    fill = type
+  )) +
     ggplot2::geom_point(size = 2) +
     ggplot2::geom_line() +
     ggplot2::facet_wrap(~Par, scales = "free", ncol = 1) +
@@ -91,11 +95,16 @@ bridge_ts_figure <- function(yrs, ssb, rec, admb_ssb, admb_rec, label,
 
 } # end bridge_ts_figure
 
-# One curve per panel, SPoRC against the assessment. sel_df is long with columns
-# Age, value, type, and the column named by facet_by, which is the gear for a
-# time invariant fleet and the year for a time varying surface.
-bridge_sel_figure <- function(sel_df, facet_by = "Gear", ylab = "Selectivity",
-                             base_size = 20, legend = "top", nrow = NULL) {
+# one curve per panel, SPoRC against the assessment. sel_df is long with Age, value, type and the
+# column named by facet_by, the gear for a time-invariant fleet and the year for a surface
+bridge_sel_figure <- function(
+  sel_df,
+  facet_by = "Gear",
+  ylab = "Selectivity",
+  base_size = 20,
+  legend = "top",
+  nrow = NULL
+) {
 
   p <- ggplot2::ggplot(sel_df, ggplot2::aes(x = Age, y = value, color = type, linetype = type)) +
     ggplot2::geom_line(linewidth = 1) +

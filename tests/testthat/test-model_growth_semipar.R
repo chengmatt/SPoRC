@@ -1,18 +1,12 @@
-# Time-varying and semi-parametric growth.
+# Time-varying and semi-parametric growth. One varies the growth PARAMETERS year by year, off each year's
+# curve or cohort by cohort; the other adds a year-by-age surface of DEVIATIONS on mean length at age.
 #
-# Two ways of letting size at age move over time sit on top of the parametric
-# curve. The first varies the growth PARAMETERS year by year, either reading
-# each year off its own curve or carrying size at age forward cohort by cohort;
-# the second adds a year-by-age surface of DEVIATIONS on mean length at age,
-# scored by the same process error the semi-parametric selectivity forms use.
-# These tests check the mechanics of both against hand calculations, and then
-# that a model estimating a deviation surface recovers one it was simulated
-# from.
+# Checks the mechanics of both against hand calculations, then that a deviation surface is recovered.
 
 library(SPoRC)
 library(testthat)
 
-# a small fixture: one population, one region, one sex, a von Bertalanffy curve
+# a small test setup: one population, one region, one sex, a von Bertalanffy curve
 gcfg <- list(n_yrs = 25, n_ages = 12, len_lower = seq(10, 75, by = 5))
 gpars <- c(L1 = 14, L2 = 68, K = 0.25, CV1 = 0.12, CV2 = 0.07)
 
@@ -20,14 +14,29 @@ growth_call <- function(..., n_yrs = gcfg$n_yrs, n_ages = gcfg$n_ages) {
   ages <- 1:n_ages
   args <- list(
     ln_growth_pars = array(log(gpars), dim = c(1, 1, 1, 5)),
-    growth_A1 = 1, growth_A2 = n_ages, growth_L0 = gcfg$len_lower[1],
+    growth_A1 = 1,
+    growth_A2 = n_ages,
+    growth_L0 = gcfg$len_lower[1],
     growth_len_lower = gcfg$len_lower,
-    growth_cv_type = 0, growth_sd_type = 0, growth_dist = 0, growth_plus_group = 0,
-    derive_waa = 1, wt_len_pars = array(c(1e-5, 3), dim = c(1, 1, 1, 2)),
-    ages = ages, seasdur = 1, spawn_seas = 1, t_spawn = 0,
-    n_pop = 1, n_regions = 1, n_yrs = n_yrs, n_seas = 1, n_sexes = 1,
-    n_fish_fleets = 1, n_srv_fleets = 1,
-    t_fish = array(0.5, dim = c(1, 1, 1)), t_srv = array(0.5, dim = c(1, 1, 1))
+    growth_cv_type = 0,
+    growth_sd_type = 0,
+    growth_dist = 0,
+    growth_plus_group = 0,
+    derive_waa = 1,
+    wt_len_pars = array(c(1e-5, 3), dim = c(1, 1, 1, 2)),
+    ages = ages,
+    seasdur = 1,
+    spawn_seas = 1,
+    t_spawn = 0,
+    n_pop = 1,
+    n_regions = 1,
+    n_yrs = n_yrs,
+    n_seas = 1,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    t_fish = array(0.5, dim = c(1, 1, 1)),
+    t_srv = array(0.5, dim = c(1, 1, 1))
   )
   do.call(Get_Growth, utils::modifyList(args, list(...)))
 }
@@ -50,8 +59,12 @@ test_that("a growth parameter's deviations move that parameter and no other", {
   # approaching a bound rather than crossing it
   bnds <- matrix(c(1, 20, 40, 90, 0.05, 0.6, 0.01, 0.4, 0.01, 0.4), 5, 2, byrow = TRUE)
   big <- devs; big[1, 1, , 3, 1] <- seq(-40, 40, length.out = n_yrs)
-  gl <- growth_call(ln_growth_devs = big, growth_tv_model = c(0, 0, 1, 0, 0),
-                    growth_tv_link = 1, growth_par_bounds = bnds)
+  gl <- growth_call(
+    ln_growth_devs = big,
+    growth_tv_model = c(0, 0, 1, 0, 0),
+    growth_tv_link = 1,
+    growth_par_bounds = bnds
+  )
   k_y <- gl$growth_pars_y[1, 1, , 3, 1]
   expect_true(all(k_y >= bnds[3, 1] & k_y <= bnds[3, 2]))
   expect_equal(k_y[1], bnds[3, 1], tolerance = 1e-6)              # driven to the lower bound
@@ -59,8 +72,12 @@ test_that("a growth parameter's deviations move that parameter and no other", {
   expect_true(all(diff(k_y) > 0))                                 # monotone in the deviation
   # a moderate deviation stays strictly inside
   mid <- devs; mid[1, 1, , 3, 1] <- seq(-2, 2, length.out = n_yrs)
-  km <- growth_call(ln_growth_devs = mid, growth_tv_model = c(0, 0, 1, 0, 0),
-                    growth_tv_link = 1, growth_par_bounds = bnds)$growth_pars_y[1, 1, , 3, 1]
+  km <- growth_call(
+    ln_growth_devs = mid,
+    growth_tv_model = c(0, 0, 1, 0, 0),
+    growth_tv_link = 1,
+    growth_par_bounds = bnds
+  )$growth_pars_y[1, 1, , 3, 1]
   expect_true(all(km > bnds[3, 1] & km < bnds[3, 2]))
   # and a zero deviation returns the parameter itself
   expect_equal(km[which.min(abs(mid[1, 1, , 3, 1]))], gpars[["K"]], tolerance = 1e-3)
@@ -128,14 +145,19 @@ test_that("semi-parametric deviations scale mean length at age and leave the CV 
 })
 
 
-test_that("cohort growth carries size at age forward and blends the plus group by numbers", {
+test_that("cohort growth has size at age forward and blends the plus group by numbers", {
 
   n_yrs <- 6; n_ages <- gcfg$n_ages; ages <- 1:n_ages
   devs <- array(0, dim = c(1, 1, n_yrs, 5, 1))
   devs[1, 1, , 3, 1] <- c(0, 0, 0.2, -0.15, 0.1, 0) # K varies from year 3
 
-  g <- growth_call(n_yrs = n_yrs, ln_growth_devs = devs, growth_tv_model = c(0, 0, 1, 0, 0),
-                   growth_tv_type = 1, growth_cohort_styr = 3)
+  g <- growth_call(
+    n_yrs = n_yrs,
+    ln_growth_devs = devs,
+    growth_tv_model = c(0, 0, 1, 0, 0),
+    growth_tv_type = 1,
+    growth_cohort_styr = 3
+  )
   # only the years before the propagation starts are filled here; they all sit on
   # the first year's curve
   expect_equal(g$L_beg[1, 1, 1, , 1], g$L_beg[1, 1, 3, , 1], tolerance = 1e-12)
@@ -144,17 +166,36 @@ test_that("cohort growth carries size at age forward and blends the plus group b
   # size it reached by the increment this year's parameters imply, and the plus
   # group blends the cohort entering it with the fish already there
   NAA_y <- array(exp(-0.3 * ages), dim = c(1, 1, n_ages, 1))
-  g2 <- Get_Growth_Year(growth = g, y = 3, NAA_y = NAA_y,
-                        ln_growth_pars = array(log(gpars), dim = c(1, 1, 1, 5)),
-                        ln_growth_devs = devs, growth_tv_model = c(0, 0, 1, 0, 0),
-                        growth_tv_link = 0, growth_par_bounds = matrix(0, 5, 2),
-                        growth_A1 = 1, growth_A2 = n_ages, growth_L0 = gcfg$len_lower[1],
-                        growth_len_lower = gcfg$len_lower, growth_cv_type = 0, growth_sd_type = 0,
-                        growth_dist = 0, growth_plus_group = 0, derive_waa = 1,
-                        wt_len_pars = array(c(1e-5, 3), dim = c(1, 1, 1, 2)),
-                        ages = ages, seasdur = 1, spawn_seas = 1, t_spawn = 0,
-                        n_pop = 1, n_regions = 1, n_seas = 1, n_sexes = 1,
-                        t_fish = array(0.5, dim = c(1, 1, 1)), t_srv = array(0.5, dim = c(1, 1, 1)))
+  g2 <- Get_Growth_Year(
+    growth = g,
+    y = 3,
+    NAA_y = NAA_y,
+    ln_growth_pars = array(log(gpars), dim = c(1, 1, 1, 5)),
+    ln_growth_devs = devs,
+    growth_tv_model = c(0, 0, 1, 0, 0),
+    growth_tv_link = 0,
+    growth_par_bounds = matrix(0, 5, 2),
+    growth_A1 = 1,
+    growth_A2 = n_ages,
+    growth_L0 = gcfg$len_lower[1],
+    growth_len_lower = gcfg$len_lower,
+    growth_cv_type = 0,
+    growth_sd_type = 0,
+    growth_dist = 0,
+    growth_plus_group = 0,
+    derive_waa = 1,
+    wt_len_pars = array(c(1e-5, 3), dim = c(1, 1, 1, 2)),
+    ages = ages,
+    seasdur = 1,
+    spawn_seas = 1,
+    t_spawn = 0,
+    n_pop = 1,
+    n_regions = 1,
+    n_seas = 1,
+    n_sexes = 1,
+    t_fish = array(0.5, dim = c(1, 1, 1)),
+    t_srv = array(0.5, dim = c(1, 1, 1))
+  )
 
   # the asymptote is derived from the Schnute pair, so read the year's own
   K3 <- gpars[["K"]] * exp(devs[1, 1, 3, 3, 1]); Linf <- g2$Linf[1, 1, 3, 1]
@@ -174,7 +215,7 @@ test_that("cohort growth carries size at age forward and blends the plus group b
 })
 
 
-test_that("every semi-parametric process error form builds and is scored", {
+test_that("every semi-parametric process error form builds and is penalized", {
 
   source(test_path("helper-selftest_growth_semipar.R"), local = TRUE)
   for(form in c("iid", "rw", "2dar1", "3dmarg", "3dcond")) {
@@ -199,15 +240,28 @@ test_that("a simulated deviation surface is recovered by the model that estimate
   # the estimating model starts from a flat surface and has to find the one the
   # data were simulated under
   inp <- semipar_input("2dar1", obs = sim$obs)
-  fit <- fit_model(inp$data, inp$par, inp$map, random = NULL, silent = TRUE, do_optim = TRUE,
-                   newton_loops = 2)
+  fit <- fit_model(
+    inp$data,
+    inp$par,
+    inp$map,
+    random = NULL,
+    silent = TRUE,
+    do_optim = TRUE,
+    newton_loops = 2
+  )
   est <- fit$rep$mean_LAA_srv[1, 1, , 1, , 1, 1]
 
   # mean length at age comes back close to the truth, and much closer than the
   # parametric curve alone could get
-  flat <- fit_model(semipar_input("none", obs = sim$obs)$data, semipar_input("none", obs = sim$obs)$par,
-                    semipar_input("none", obs = sim$obs)$map, random = NULL, silent = TRUE,
-                    do_optim = TRUE, newton_loops = 2)
+  flat <- fit_model(
+    semipar_input("none", obs = sim$obs)$data,
+    semipar_input("none", obs = sim$obs)$par,
+    semipar_input("none", obs = sim$obs)$map,
+    random = NULL,
+    silent = TRUE,
+    do_optim = TRUE,
+    newton_loops = 2
+  )
   flat_laa <- flat$rep$mean_LAA_srv[1, 1, , 1, , 1, 1]
 
   err_semi <- max(abs(est / sim$mean_LAA - 1))

@@ -1,14 +1,8 @@
-# Projection inputs for the reference point invariants.
+# Projection inputs for the reference point invariants, written once so a test can say which fishing
+# mortality it wants and nothing else.
 #
-# Do_Population_Projection takes every biological and fishery quantity as a fully
-# expanded array over projection years. The existing reference point tests each
-# build that block inline; it is written once here so a test can say which
-# fishing mortality it wants and nothing else.
-#
-# Everything is held at its terminal-year value, so the projection describes a
-# stock under constant biology fished at a constant rate. That is the setting the
-# equilibrium reference points are defined in, which is what makes them
-# comparable to what the projection converges to.
+# Everything is kept at its terminal-year value, which is the constant-biology, constant-F setting the
+# equilibrium reference points are defined in and what makes them comparable to the projection.
 
 #' Project the packaged sablefish stock at a constant fishing mortality
 #'
@@ -27,7 +21,7 @@
 #' @param recruitment_opt \code{"mean_rec"} or \code{"bh_rec"}. Yield has an
 #'   interior maximum in F only under a stock-recruit curve; with mean
 #'   recruitment it rises without bound, so MSY needs \code{"bh_rec"}.
-#' @param bh_rec_opt The deprecated spelling of \code{srr_opt}, carried only so
+#' @param bh_rec_opt The deprecated spelling of \code{srr_opt}, kept only so
 #'   the deprecation shim itself can be tested. Leave it \code{NULL}.
 #' @param srr_opt Beverton-Holt settings, required when
 #'   \code{recruitment_opt = "bh_rec"}.
@@ -35,9 +29,20 @@
 #' @return The list from \code{Do_Population_Projection}.
 #'
 #' @keywords internal
-project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
-                         srr_opt = NULL, data = NULL, rep = NULL, rec_window = 45L,
-                         rec_yrs = NULL, bh_rec_opt = NULL) {
+project_at_F <- function(
+  f,
+  n_proj_yrs = 300,
+  recruitment_opt = "mean_rec",
+  srr_opt = NULL,
+  data = NULL,
+  rep = NULL,
+  rec_window = 45L,
+  rec_yrs = NULL,
+  bh_rec_opt = NULL,
+  rec_devs = NULL,
+  fmort_opt = "Input",
+  HCR_function = function(x, frp, brp, alpha = 0.05) frp
+) {
 
   d <- if(is.null(data)) sgl_rg_sable_data else data
   rp <- if(is.null(rep)) sgl_rg_sable_rep else rep
@@ -47,8 +52,8 @@ project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
 
   biol_d <- c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)
 
-  # A slice taken with drop = TRUE collapses whichever margins happen to be
-  # length one, and which those are depends on the model. Keeping every margin
+  # A slice taken with drop = TRUE collapses whichever dims happen to be
+  # length one, and which those are depends on the model. Keeping every dim
   # and flattening makes the copy positional, so the same code holds a one-season
   # single-sex model and a seasonal sexed one.
   hold_last_year <- function(arr, dims) {
@@ -57,8 +62,8 @@ project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
     slice <- as.vector(do.call(`[`, c(list(arr), idx, list(drop = FALSE))))
     out <- array(0, dim = dims)
     n_per_year <- prod(dims) / n_proj_yrs
-    # a source without a fleet margin (weight at age, which the packaged data
-    # carries once rather than per fleet) is repeated across the fleets
+    # a source without a fleet dim (weight at age, which the packaged data
+    # has once rather than per fleet) is repeated across the fleets
     if(length(slice) && n_per_year %% length(slice) == 0)
       slice <- rep(slice, n_per_year / length(slice))
     if(length(slice) != n_per_year)
@@ -66,7 +71,9 @@ project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
            n_per_year, "; the array layouts have diverged")
     for(y in seq_len(n_proj_yrs)) {
       i <- rep(list(bquote()), length(dims)); i[[3]] <- y
-      out <- do.call(`[<-`, c(list(out), i, list(slice)))
+      # pinned to base: while a tape is being built RTMB's replacement operator is
+      # in scope, and it does not take the empty-symbol form do.call needs here
+      out <- do.call(base::`[<-`, c(list(out), i, list(slice)))
     }
     out
   }
@@ -74,15 +81,14 @@ project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
   WAA <- hold_last_year(d$WAA, biol_d)
   MatAA <- hold_last_year(d$MatAA, biol_d)
   # weight at age in the fishery falls back to the population's where a model
-  # does not carry a separate one
+  # does not have a separate one
   WAA_fish <- hold_last_year(if(is.null(dim(d$WAA_fish))) d$WAA else d$WAA_fish,
                              c(biol_d, n_fish_fleets))
   fish_sel <- hold_last_year(rp$fish_sel, c(biol_d, n_fish_fleets))
   ret_sel <- hold_last_year(rp$ret_sel, c(biol_d, n_fish_fleets))
 
-  natmort_slice <- rp$natmort[, , n_yrs, , ]
-  natmort <- array(rep(natmort_slice, each = n_proj_yrs),
-                   dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
+  # M has the same layout as WAA, seasons included
+  natmort <- hold_last_year(rp$natmort, biol_d)
 
   Do_Population_Projection(
     n_proj_yrs = n_proj_yrs, n_regions = n_regions, n_ages = n_ages,
@@ -113,13 +119,33 @@ project_at_F <- function(f, n_proj_yrs = 300, recruitment_opt = "mean_rec",
     # under fmort_opt = "Input" the projection fishes at f_ref_pt directly, so
     # this is how a constant rate is applied
     f_ref_pt = array(f, dim = c(n_regions, n_proj_yrs)),
-    b_ref_pt = array(0, dim = c(n_pop, n_regions, n_proj_yrs)),
-    HCR_function = function(x, frp, brp, alpha = 0.05) frp,
-    recruitment_opt = recruitment_opt, fmort_opt = "Input",
+    # a rule reads this, so it has to be a real reference point under fmort_opt
+    # "HCR" and is left at zero for the constant-F path the reference point
+    # tests use
+    b_ref_pt = array(if(fmort_opt == "Input") 0 else sum(rp$SSB[,,n_yrs]) * 0.4 / n_pop,
+                     dim = c(n_pop, n_regions, n_proj_yrs)),
+    HCR_function = HCR_function,
+    recruitment_opt = recruitment_opt, fmort_opt = fmort_opt,
+    rec_devs = rec_devs,
     t_spawn = 0, srr_opt = srr_opt, bh_rec_opt = bh_rec_opt)
 }
 
-# Projected quantities are laid out with year on the third margin. The final
+#' Project the packaged sablefish stock under a harvest control rule
+#'
+#' Wraps \code{project_at_F} in \code{fmort_opt = "HCR"} so a test can hand over
+#' a rule and nothing else.
+#'
+#' @param rule The control rule, taking \code{x}, \code{frp}, \code{brp} and
+#'   optionally \code{state}.
+#' @param f The F reference point the rule is given.
+#' @param n_proj_yrs Years to project.
+#' @keywords internal
+project_with_HCR <- function(rule, f = 0.06, n_proj_yrs = 8) {
+  project_at_F(f = f, n_proj_yrs = n_proj_yrs,
+               fmort_opt = "HCR", HCR_function = rule)
+}
+
+# Projected quantities are laid out with year on the third dim. The final
 # projection year is read one year short of the end: the F rules set the next
 # year's rate at the end of the current one, so the last slot is never fished.
 proj_year_total <- function(arr, offset = 1) {

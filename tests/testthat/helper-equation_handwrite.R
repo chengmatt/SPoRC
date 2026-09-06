@@ -1,24 +1,12 @@
-# Independent implementations of the equations in vignettes/c_model_equations.Rmd.
+# Independent implementations of the equations in vignettes/c_model_equations.Rmd, written from the
+# vignette rather than from R/, so the two agree only if both are right.
 #
-# These are written from the vignette, not from R/. That is the whole point: a
-# reimplementation that borrowed the model's own helpers would agree with it
-# whatever either of them computed, and would say nothing about whether the model
-# computes what it is documented to. Written separately, the two agree only if
-# both are right.
-#
-# They are deliberately slow and literal. Every loop is written out, nothing is
-# vectorized, and each function carries the equation it implements so the two can
-# be read side by side. Speed does not matter here; legibility against the
-# vignette does.
-#
-# The fixtures these run against carry one population, one region, one season, one
-# sex and one fleet, so a reported array reduces to a year-by-age matrix. That
-# keeps the reference code close to the printed equations, which are written
-# without those subscripts too.
+# Deliberately slow and literal: every loop written out, nothing vectorized, each function holding the
+# equation it implements. One population, region, season, sex and fleet, as the equations are printed.
 
 #' Reduce a reported array to a year-by-age matrix
 #'
-#' @param arr Array with year and age as its only non-singleton margins.
+#' @param arr Array with year and age as its only non-singleton dims.
 #' @param n_yrs,n_ages Expected extents, checked so a silently reshaped array
 #'   fails here rather than comparing the wrong cells.
 #'
@@ -26,7 +14,7 @@
 oracle_ya <- function(arr, n_yrs, n_ages) {
   m <- drop(arr)
   if(!identical(dim(m), c(as.integer(n_yrs), as.integer(n_ages))))
-    stop("expected a ", n_yrs, " by ", n_ages, " array after dropping singleton margins, got ",
+    stop("expected a ", n_yrs, " by ", n_ages, " array after dropping singleton dims, got ",
          paste(dim(m), collapse = "x"))
   m
 }
@@ -45,7 +33,7 @@ oracle_y <- function(arr, n_yrs) {
 # Process equations
 # ---------------------------------------------------------------------------
 
-#' Numbers at age carried forward
+#' Numbers at age advanced forward
 #'
 #' From "Population Projection". With one season, individuals advance in age at
 #' the end of the year:
@@ -102,13 +90,13 @@ oracle_baranov <- function(retF, Z, N) {
 
 #' Spawning stock biomass
 #'
-#' From "Spawning Biomass Timing". The population is carried a fraction t_spawn
+#' From "Spawning Biomass Timing". The population is kept a fraction t_spawn
 #' into the spawning season before it is weighed:
 #'
 #'   N_spawn[y, a] = N[y, a] exp(-t_spawn Z[y, a])
 #'   SSB[y]        = sum_a N_spawn[y, a] WAA[y, a] MatAA[y, a]
 #'
-#' A single-sex model carries both sexes in one set of numbers, so the sum is
+#' A single-sex model has both sexes in one set of numbers, so the sum is
 #' halved to leave females. The vignette states this in the sentence after the
 #' equation rather than in the equation, which is why it is a separate argument
 #' here: the clause is easy to read past.
@@ -135,8 +123,14 @@ oracle_ssb <- function(N, Z, WAA, MatAA, t_spawn, sex_ratio = 0.5) {
 #' @keywords internal
 oracle_total_biomass <- function(N, Z, WAA, t_spawn) {
   # total biomass counts the whole population, so no sex fraction is applied
-  oracle_ssb(N, Z, WAA, MatAA = matrix(1, nrow(WAA), ncol(WAA)), t_spawn = t_spawn,
-             sex_ratio = 1)
+  oracle_ssb(
+    N,
+    Z,
+    WAA,
+    MatAA = matrix(1, nrow(WAA), ncol(WAA)),
+    t_spawn = t_spawn,
+    sex_ratio = 1
+  )
 }
 
 
@@ -158,7 +152,7 @@ oracle_total_biomass <- function(N, Z, WAA, t_spawn) {
 #' parameters arrive in, which the model fixes: logist1 takes (b50, slope), not
 #' (slope, b50), and the order is as much part of the interface as the curve. And
 #' it prints the gamma root as sqrt(bmax + 4 delta^2), without the square on bmax
-#' that the code carries; unsquared the expression is not dimensionally consistent
+#' that the code has; unsquared the expression is not dimensionally consistent
 #' and is not the standard reparameterized gamma, so the vignette is what is wrong
 #' there.
 #'

@@ -1,7 +1,7 @@
 library(SPoRC)
 library(testthat)
 
-# Minimal 1-pop, 1-region, 1-year, 1-season, 2-age, 1-sex, 1-fleet fixture.
+# Minimal 1-pop, 1-region, 1-year, 1-season, 2-age, 1-sex, 1-fleet test setup.
 # Dimensions match the real model's convention even when degenerate (extent-1
 # dims), so this exercises the same array-indexing/dropping behavior as a
 # real (if tiny) model run.
@@ -19,13 +19,21 @@ make_fishery_obs_input <- function(catch_units = 0, discard_units = 0, fish_idx_
   dmr <- array(1, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 
   list(
-    n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas,
-    n_fish_fleets = n_fish_fleets, n_sexes = n_sexes,
+    n_pop = n_pop,
+    n_regions = n_regions,
+    n_yrs = n_yrs,
+    n_seas = n_seas,
+    n_fish_fleets = n_fish_fleets,
+    n_sexes = n_sexes,
     fish_q_blocks = array(1L, dim = c(n_regions, n_yrs, n_fish_fleets)),
     ln_fish_q = array(log(0.001), dim = c(n_regions, 1, n_fish_fleets)),
     fish_q = array(0, dim = c(n_regions, n_yrs, n_fish_fleets)),
-    ret_FAA = ret_FAA, disc_FAA = disc_FAA, ZAA = ZAA, NAA = NAA,
-    CAA = array(0, dim = dim(ret_FAA)), DAA = array(0, dim = dim(ret_FAA)),
+    ret_FAA = ret_FAA,
+    disc_FAA = disc_FAA,
+    ZAA = ZAA,
+    NAA = NAA,
+    CAA = array(0, dim = dim(ret_FAA)),
+    DAA = array(0, dim = dim(ret_FAA)),
     CAL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)),
     DAL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)),
     PredCatch = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_fish_fleets)),
@@ -34,8 +42,13 @@ make_fishery_obs_input <- function(catch_units = 0, discard_units = 0, fish_idx_
     fit_lengths = fit_lengths,
     SizeAgeTrans = array(rep(diag(n_ages), n_pop * n_regions * n_yrs * n_seas * n_sexes),
                          dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes)),
-    catch_units = catch_units, discard_units = discard_units, WAA_fish = WAA_fish, dmr = dmr,
-    fish_idx_type = fish_idx_type, fish_sel = fish_sel, ret_sel = ret_sel
+    catch_units = catch_units,
+    discard_units = discard_units,
+    WAA_fish = WAA_fish,
+    dmr = dmr,
+    fish_idx_type = fish_idx_type,
+    fish_sel = fish_sel,
+    ret_sel = ret_sel
   )
 }
 
@@ -96,7 +109,7 @@ test_that("get_fishery_observation_model: length compositions via SizeAgeTrans (
   il <- make_fishery_obs_input(fit_lengths = 1)
   out <- do.call(SPoRC:::get_fishery_observation_model, il)
 
-  # SizeAgeTrans is the identity matrix in this fixture, so CAL should equal CAA elementwise
+  # SizeAgeTrans is the identity matrix in this test setup, so CAL should equal CAA elementwise
   expect_equal(as.numeric(out$CAL[1,1,1,1,,1,1]), as.numeric(out$CAA[1,1,1,1,,1,1]), tolerance = 1e-8)
   expect_equal(as.numeric(out$DAL[1,1,1,1,,1,1]), as.numeric(out$DAA[1,1,1,1,,1,1]), tolerance = 1e-8)
 })
@@ -112,23 +125,31 @@ make_survey_obs_input <- function(srv_idx_type = 0, srv_selex_type = 0, do_srv_q
   srv_sel_l <- array(1, dim = c(n_regions, n_yrs, n_lens, n_sexes, n_srv_fleets))
 
   list(
-    n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas,
-    n_srv_fleets = n_srv_fleets, n_sexes = n_sexes,
+    n_pop = n_pop,
+    n_regions = n_regions,
+    n_yrs = n_yrs,
+    n_seas = n_seas,
+    n_srv_fleets = n_srv_fleets,
+    n_sexes = n_sexes,
     srv_q_blocks = array(1L, dim = c(n_regions, n_yrs, n_srv_fleets)),
     ln_srv_q = array(log(0.002), dim = c(n_regions, 1, n_srv_fleets)),
     srv_q = array(0, dim = c(n_regions, n_yrs, n_srv_fleets)),
     do_srv_q_cov = do_srv_q_cov,
     srv_q_cov = array(0.1, dim = c(n_regions, n_yrs, n_srv_fleets, n_cov)),
     srv_q_coeff = array(0.5, dim = c(n_regions, n_srv_fleets, n_cov)),
-    srv_selex_type = srv_selex_type, srv_sel = srv_sel, srv_sel_l = srv_sel_l,
+    srv_selex_type = srv_selex_type,
+    srv_sel = srv_sel,
+    srv_sel_l = srv_sel_l,
     SizeAgeTrans = array(rep(diag(n_ages), n_pop * n_regions * n_yrs * n_seas * n_sexes),
                          dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes)),
-    NAA = NAA, ZAA = ZAA,
+    NAA = NAA,
+    ZAA = ZAA,
     t_srv = array(0.5, dim = c(n_regions, n_seas, n_srv_fleets)),
     SrvIAA = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets)),
     fit_lengths = fit_lengths,
     SrvIAL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets)),
-    srv_idx_type = srv_idx_type, WAA_srv = WAA_srv,
+    srv_idx_type = srv_idx_type,
+    WAA_srv = WAA_srv,
     PredSrvIdx = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_srv_fleets))
   )
 }
@@ -160,7 +181,7 @@ test_that("get_survey_observation_model: biomass index and catchability covariat
 
 test_that("get_survey_observation_model: length-based selectivity is converted via SizeAgeTrans", {
 
-  il <- make_survey_obs_input(srv_selex_type = 1) # srv_sel_l is all 1s in this fixture
+  il <- make_survey_obs_input(srv_selex_type = 1) # srv_sel_l is all 1s in this test setup
   out <- do.call(SPoRC:::get_survey_observation_model, il)
 
   # SizeAgeTrans is the identity here, so age-based srv_sel should end up all 1s too

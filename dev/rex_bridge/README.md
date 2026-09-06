@@ -26,7 +26,7 @@ The run folders in the assessment repository hold inputs and a Windows
 executable only. `Report.sso` was produced by compiling SS3 v3.30.18 from
 `nmfs-ost/ss3-source-code` with ADMB 12.3 (`./Make_SS_330_new.sh -a <admb> -b
 build -o`) and running `ss_opt -nohess` in a copy of the run folder. The current
-SS3 main needs ADMB 13; built with 12.3 its raw stream reads fail on the data
+SS3 main needs ADMB 13; built with 12.3 its raw data source reads fail on the data
 file (a garbage size-frequency count, then an out-of-memory kill).
 
 ## What matched, and what does not

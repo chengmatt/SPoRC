@@ -1,8 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# Spawning and total biomass derived from an abundance array. compute_biom_y
-# serves the annual cycle inside the objective, derive_proj_biom serves the
-# forward projection.
+# Spawning and total biomass derived from an abundance array. compute_biom_y serves the annual cycle
+# inside the objective, derive_proj_biom serves the forward projection.
 
 #' Compute Biomass
 #'
@@ -17,12 +16,31 @@
 #' @param y Year integer
 #' @param seas Season integer
 #' @keywords internal
-compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, seasdur,
-                          n_seas, n_pop, n_regions, n_ages, n_sexes,
-                          sgl_seas_spawning_movement, natal_region, stray_rate,
-                          Movement = NULL, Mrate = NULL, move_timing = 0,
-                          do_recruits_move = 1,
-                          expm_nsub = 0) {
+compute_biom_y = function(
+  y,
+  seas,
+  NAA,
+  NAA0,
+  WAA,
+  MatAA,
+  ZAA,
+  natmort,
+  t_spawn,
+  seasdur,
+  n_seas,
+  n_pop,
+  n_regions,
+  n_ages,
+  n_sexes,
+  sgl_seas_spawning_movement,
+  natal_region,
+  stray_rate,
+  Movement = NULL,
+  Mrate = NULL,
+  move_timing = 0,
+  do_recruits_move = 1,
+  expm_nsub = 0
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -31,11 +49,8 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
   tmp_NAA_spawn = NAA[,,y,seas,,, drop = FALSE]
   tmp_NAA0_spawn = NAA0[,,y,seas,,, drop = FALSE]
 
-  # Propagate to the spawning point. Under move_timing == 0 movement has already been
-  # applied at the top of the season, so the t_spawn mortality discount below is applied
-  # as-is and this block is a no-op. Under move_timing 1 and 2 movement has not yet
-  # happened, so spawners must be advanced through the appropriate fraction of the
-  # season here, and the discount below is skipped (spawn_state already applies it).
+  # propagate to the spawning point. a no-op under move_timing == 0, where movement already ran;
+  # under 1 and 2 spawners advance through part of the season and the discount below is skipped
   if(move_timing != 0 && n_regions > 1) {
     for(p in 1:n_pop) {
       for(a in 1:n_ages) {
@@ -47,13 +62,13 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
           tmp_NAA_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA_spawn[p,,1,1,a,s], Mv,
                                                   ZAA[p,,y,seas,a,s], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           tmp_NAA0_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA0_spawn[p,,1,1,a,s], Mv,
-                                                   natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+                                                   natmort[p,,y,seas,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
         } # end s loop
       } # end a loop
     } # end p loop
   }
 
-  # If we we are natal homing with 1 season
+  # If we are natal homing with 1 season
   if(n_seas == 1 && n_pop > 1) {
     # Get NAA during spawning
     for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
@@ -81,7 +96,7 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
   # Get dynamic B0
   SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, seas, , 1, drop = FALSE] * MatAA[,,y, seas, , 1, drop = FALSE]
   if(move_timing == 0 || n_regions == 1) {
-    mort_spawn = exp(-natmort[,, y, , 1, drop = FALSE] * t_spawn * seasdur[seas])
+    mort_spawn = exp(-natmort[,, y, seas, , 1, drop = FALSE] * t_spawn * seasdur[seas])
     mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
   } else mort_spawn = 1
   Dynamic_SSB0_y = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
@@ -112,36 +127,56 @@ compute_biom_y = function(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn,
     }
   } else eff_SSB_y[1] = sum(SSB_y[1,])
 
-  list(Total_Biom_y = Total_Biom_y, SSB_y = SSB_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
+  list(
+    Total_Biom_y = Total_Biom_y,
+    SSB_y = SSB_y,
+    Dynamic_SSB0_y = Dynamic_SSB0_y,
+    eff_SSB_y = eff_SSB_y
+  )
 }
 
 #' Compute Biomass for Population Projections
 #'
-# Computes SSB / Total_Biom / Dynamic_SSB0 / eff_SSB for projection year y at season seas
-# (always called with seas == spawn_seas) from the current proj_NAA/proj_NAA0
-# state in Do_Population_Projection(). Factored out (plain R, no RTMB/AD
-# concerns since Do_Population_Projection is never used inside an AD tape) so
-# it can run either before or after that season's mortality/ageing step
-# depending on whether rec_lag == 0 (age0_rec), without duplicating the math.
-# Mirrors compute_biom_y() above, which serves the same role for the RTMB
-# estimation model.
+# Computes SSB / Total_Biom / Dynamic_SSB0 / eff_SSB for projection year y at spawn_seas from the
+# current proj_NAA state. Plain R, so it can run either side of mortality depending on rec_lag.
 #'
 #' @param y Projection year integer
 #' @param seas Season integer (always spawn_seas)
 #' @keywords internal
-derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
-                            n_seas, n_pop, n_regions, n_ages, n_sexes,
-                            sgl_seas_spawning_movement, natal_region, stray_rate,
-                            Movement = NULL, Mrate = NULL, move_timing = 0,
-                            do_recruits_move = 1,
-                            expm_nsub = 0) {
+derive_proj_biom = function(
+  y,
+  seas,
+  proj_NAA,
+  proj_NAA0,
+  WAA,
+  MatAA,
+  proj_ZAA,
+  natmort,
+  t_spawn,
+  seasdur,
+  n_seas,
+  n_pop,
+  n_regions,
+  n_ages,
+  n_sexes,
+  sgl_seas_spawning_movement,
+  natal_region,
+  stray_rate,
+  Movement = NULL,
+  Mrate = NULL,
+  move_timing = 0,
+  do_recruits_move = 1,
+  expm_nsub = 0
+) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   tmp_NAA_spawn = proj_NAA[,,y,seas,,, drop = FALSE]
   tmp_NAA0_spawn = proj_NAA0[,,y,seas,,, drop = FALSE]
 
-  # Propagate to the spawning point, as compute_biom_y() does for the estimation model.
-  # Under move_timing 1 and 2 movement has not been applied yet at this point in the
-  # season, so spawners are advanced here and the t_spawn discount below is dropped.
+  # propagate to the spawning point, as compute_biom_y() does for the estimation model. under
+  # move_timing 1 and 2 spawners advance here and the t_spawn discount below is dropped
   if(move_timing != 0 && n_regions > 1) {
     for(p in 1:n_pop) {
       for(a in 1:n_ages) {
@@ -152,13 +187,13 @@ derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, 
           tmp_NAA_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA_spawn[p,,1,1,a,s], Mv,
                                                   proj_ZAA[p,,y,seas,a,s], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           tmp_NAA0_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA0_spawn[p,,1,1,a,s], Mv,
-                                                   natmort[p,,y,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+                                                   natmort[p,,y,seas,a,s] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
         } # end s loop
       } # end a loop
     } # end p loop
   }
 
-  # If we we are natal homing with 1 season
+  # If we are natal homing with 1 season
   if(n_seas == 1 && n_pop > 1) {
     for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
       tmp_NAA_spawn[p,,1,1,a,s] = tmp_NAA_spawn[p,,1,1,a,s] %*% sgl_seas_spawning_movement[p,,,y,a,s]
@@ -184,7 +219,7 @@ derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, 
   # Get dynamic B0
   SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, seas, , 1, drop = FALSE] * MatAA[,,y, seas, , 1, drop = FALSE]
   if(move_timing == 0 || n_regions == 1) {
-    mort_spawn = exp(-natmort[,, y, , 1, drop = FALSE] * t_spawn * seasdur[seas])
+    mort_spawn = exp(-natmort[,, y, seas, , 1, drop = FALSE] * t_spawn * seasdur[seas])
     mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
   } else mort_spawn = 1
   Dynamic_SSB0_y = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
@@ -212,5 +247,10 @@ derive_proj_biom = function(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, 
     } # end p2 loop
   } else eff_SSB_y[1] = sum(SSB_y[1,])
 
-  list(SSB_y = SSB_y, Total_Biom_y = Total_Biom_y, Dynamic_SSB0_y = Dynamic_SSB0_y, eff_SSB_y = eff_SSB_y)
+  list(
+    SSB_y = SSB_y,
+    Total_Biom_y = Total_Biom_y,
+    Dynamic_SSB0_y = Dynamic_SSB0_y,
+    eff_SSB_y = eff_SSB_y
+  )
 }

@@ -71,7 +71,7 @@ must match \code{N}:
 }
 Use [get_logistN_Sigma()] to help construct this input.}
 
-\item{years}{Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions carry different years. Both forms work for every composition type. A region with no years is skipped.}
+\item{years}{Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions have different years. Both forms work for every composition type. A region with no years is skipped.}
 
 \item{seas}{Season index}
 
@@ -116,7 +116,7 @@ build \code{model}. Required when \code{model} is supplied.}
 internal OSA residuals for. Conditional age-at-length uses
 \code{"Fish_caal"} or \code{"Srv_caal"}, which return an extra
 \code{len} column giving the length bin each age composition was
-conditioned on and ignore \code{family}, since CAAL carries only the
+conditioned on and ignore \code{family}, since CAAL has only the
 discrete likelihoods. Required when \code{model} is supplied and
 \code{index_source} is \code{NULL} and \code{tag = FALSE}.}
 

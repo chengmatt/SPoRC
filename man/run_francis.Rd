@@ -22,7 +22,7 @@ usage flags, input sample sizes, and weight arrays for both pooled
 (\code{Wt_FishAgeComps_pop}, \code{Wt_FishLenComps_pop},
 \code{Wt_SrvAgeComps_pop}, \code{Wt_SrvLenComps_pop},
 \code{Wt_FishAgeComps_discard_pop}, \code{Wt_FishLenComps_discard_pop})
-data streams.}
+data sources.}
 
 \item{parameters}{A list of model parameters passed to \code{\link{fit_model}}.}
 
@@ -49,7 +49,7 @@ A named list with:
       iteration.}
     \item{\code{recorded_weights}}{Long-format dataframe of Francis weights
       from every iteration for all pooled and population-specific data
-      streams, with columns \code{Region}, \code{Year}, \code{Seas},
+      data sources, with columns \code{Region}, \code{Year}, \code{Seas},
       \code{Sex}, \code{Fleet}, \code{Weight}, \code{Type}, \code{Pop}
       (pooled rows have \code{Pop = NA}), and \code{iter}.}
   }

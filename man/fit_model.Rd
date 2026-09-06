@@ -70,7 +70,7 @@ Newton refinement step. \code{NULL} (default) is unbounded
 \item{model}{Function with signature \code{function(pars, data)} passed to
 \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
 Allows non-SPoRC RTMB models to be fit with the same optimization and
-Newton-refinement machinery.}
+Newton-refinement routines.}
 
 \item{...}{Additional arguments forwarded to \code{RTMB::MakeADFun}.}
 }

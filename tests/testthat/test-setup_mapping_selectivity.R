@@ -46,8 +46,13 @@ test_that("do_fixed_sel_pars_mapping resolves field names correctly for fish/ret
 
     il <- make_sel_input_list(cfg["prefix"], cfg["use_field"])
     out <- SPoRC:::do_fixed_sel_pars_mapping(
-      il, sel_pars_spec = "est_all", bins = 2, sel_nonpar_est_bins = NULL,
-      prefix = cfg["prefix"], fleet_field = cfg["fleet_field"], use_field = cfg["use_field"],
+      il,
+      sel_pars_spec = "est_all",
+      bins = 2,
+      sel_nonpar_est_bins = NULL,
+      prefix = cfg["prefix"],
+      fleet_field = cfg["fleet_field"],
+      use_field = cfg["use_field"],
       fleet_label = "test fleet"
     )
 
@@ -65,8 +70,13 @@ test_that("do_sel_pe_pars_mapping resolves field names correctly for fish/ret/sr
 
     il <- make_sel_input_list(cfg["prefix"], cfg["use_field"])
     out <- SPoRC:::do_sel_pe_pars_mapping(
-      il, pe_pars_spec = "est_all", corr_opt_semipar = NULL, bins = 2,
-      prefix = cfg["prefix"], fleet_field = cfg["fleet_field"], use_field = cfg["use_field"],
+      il,
+      pe_pars_spec = "est_all",
+      corr_opt_semipar = NULL,
+      bins = 2,
+      prefix = cfg["prefix"],
+      fleet_field = cfg["fleet_field"],
+      use_field = cfg["use_field"],
       fleet_label = "test fleet"
     )
 
@@ -82,8 +92,14 @@ test_that("do_sel_pe_pars_mapping fixes all parameters when there is no time-var
   il$data$cont_tv_fish_sel[1, 1] <- 0 # no time-variation
 
   out <- SPoRC:::do_sel_pe_pars_mapping(
-    il, pe_pars_spec = "est_all", corr_opt_semipar = NULL, bins = 2,
-    prefix = "fish", fleet_field = "n_fish_fleets", use_field = "Catch", fleet_label = "fishery fleet"
+    il,
+    pe_pars_spec = "est_all",
+    corr_opt_semipar = NULL,
+    bins = 2,
+    prefix = "fish",
+    fleet_field = "n_fish_fleets",
+    use_field = "Catch",
+    fleet_label = "fishery fleet"
   )
 
   expect_true(all(is.na(out$map$fishsel_pe_pars)))
@@ -97,8 +113,13 @@ test_that("do_sel_devs_mapping resolves field names correctly for fish/ret/srv",
 
     il <- make_sel_input_list(cfg["prefix"], cfg["use_field"])
     out <- SPoRC:::do_sel_devs_mapping(
-      il, sel_devs_spec = "est_all", sel_devs_shared_bins = NULL, bins = 2,
-      prefix = cfg["prefix"], fleet_field = cfg["fleet_field"], use_field = cfg["use_field"],
+      il,
+      sel_devs_spec = "est_all",
+      sel_devs_shared_bins = NULL,
+      bins = 2,
+      prefix = cfg["prefix"],
+      fleet_field = cfg["fleet_field"],
+      use_field = cfg["use_field"],
       fleet_label = "test fleet"
     )
 
@@ -128,8 +149,14 @@ test_that("do_fixed_sel_pars_mapping fleet-sharing copies the reference fleet's 
   il$par$fish_fixed_sel_pars <- array(0, dim = c(n_regions, 2, 1, n_sexes, n_fleets))
 
   out <- SPoRC:::do_fixed_sel_pars_mapping(
-    il, sel_pars_spec = c("est_all", "est_shared_f_1"), bins = 2, sel_nonpar_est_bins = NULL,
-    prefix = "fish", fleet_field = "n_fish_fleets", use_field = "Catch", fleet_label = "fishery fleet"
+    il,
+    sel_pars_spec = c("est_all", "est_shared_f_1"),
+    bins = 2,
+    sel_nonpar_est_bins = NULL,
+    prefix = "fish",
+    fleet_field = "n_fish_fleets",
+    use_field = "Catch",
+    fleet_label = "fishery fleet"
   )
 
   map_arr <- array(as.integer(out$map$fish_fixed_sel_pars), dim = c(n_regions, 2, 1, n_sexes, n_fleets))

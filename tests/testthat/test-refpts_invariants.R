@@ -1,28 +1,22 @@
-# Reference points against what they are defined to be.
+# Reference points against what they are defined to be, rather than against a stored baseline that came
+# from the same code and so cannot catch one that was wrong when it was taken.
 #
-# The other reference point tests pin numbers taken from a previously validated
-# run, and say so. That catches a reference point which moves. It cannot catch one
-# that was wrong when the baseline was taken, because the baseline came from the
-# same code.
-#
-# These check definitions instead. An SPR reference point is the fishing mortality
-# at which spawning biomass per recruit is a stated fraction of its unfished
-# value, so computing that fraction back from the reference point has to return
-# the fraction that was asked for. Nothing here is pinned, so nothing here can be
-# baselined wrong.
-#
-# The realized ratio is available from the returned object: b_ref_pt is spawning
-# biomass per recruit at the reference F scaled by mean recruitment, and
-# virgin_b_ref_pt is the same quantity unfished with the same scaling, so their
-# ratio is the spawning potential ratio with the recruitment cancelling out.
+# An SPR reference point is the F at which spawning biomass per recruit is a stated fraction of its unfished
+# value, so computing that fraction back from b_ref_pt / virgin_b_ref_pt must return what was asked for.
 
 data("sgl_rg_sable_rep")
 data("sgl_rg_sable_data")
 
 refpt_spr <- function(spr_x) {
-  Get_Reference_Points(data = sgl_rg_sable_data, rep = sgl_rg_sable_rep,
-                       SPR_x = spr_x, type = "single_region", what = "SPR",
-                       calc_rec_st_yr = 20, rec_age = 2)
+  Get_Reference_Points(
+    data = sgl_rg_sable_data,
+    rep = sgl_rg_sable_rep,
+    SPR_x = spr_x,
+    type = "single_region",
+    what = "SPR",
+    calc_rec_st_yr = 20,
+    rec_age = 2
+  )
 }
 
 #' Spawning potential ratio actually achieved at a reference point

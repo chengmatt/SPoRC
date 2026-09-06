@@ -56,11 +56,16 @@ Setup_Mod_Biologicals(
   M_ageblk_spec = "constant",
   M_regionblk_spec = "constant",
   M_yearblk_spec = "constant",
+  M_seasblk_spec = "constant",
   M_sexblk_spec = "constant",
   Fixed_natmort = NULL,
   NAA_re = "none",
   NAA_re_ages = NULL,
   NAA_re_years = NULL,
+  NAA_re_seasons = "annual",
+  NAA_re_season = "iid",
+  NAA_re_season_spec = "est_all",
+  NAA_pe_spec = "est_all",
   NAA_sigma_spec = "est",
   NAA_re_region = "iid",
   NAA_re_region_spec = "est_all",
@@ -69,6 +74,7 @@ Setup_Mod_Biologicals(
   NAA_sigma_popblk_spec = "constant",
   NAA_sigma_regionblk_spec = "constant",
   NAA_sigma_yearblk_spec = "constant",
+  NAA_sigma_seasblk_spec = "constant",
   NAA_sigma_ageblk_spec = "constant",
   NAA_sigma_sexblk_spec = "constant",
   ...
@@ -163,7 +169,7 @@ time-invariant matrix per fleet, a 4D array
 time-varying one, or \code{NULL} (default), which gives every fishery fleet
 the shared \code{AgeingError}. Each fleet's slice is validated the same way
 \code{AgeingError} is, and every fleet must land on the same observed age
-bins, since the observed composition arrays carry one age dimension shared
+bins, since the observed composition arrays have one age dimension shared
 across fleets.}
 
 \item{AgeingError_srv}{Optional fleet-specific ageing error for the survey
@@ -180,6 +186,9 @@ row per unique block combination. Required columns:
   \item{\code{popblk}, \code{regionblk}, \code{yearblk}, \code{ageblk}, \code{sexblk}}{Block indices identifying which parameter the prior applies to.}
   \item{\code{mu}}{Prior mean in natural (untransformed) space.}
   \item{\code{sd}}{Prior standard deviation.}
+  \item{\code{seasblk}}{Optional season block index. Left out, it reads the
+    block covering season one, which is every season unless
+    \code{M_seasblk_spec} splits them.}
 }
 Example for a single shared prior:
 \preformatted{M_prior <- data.frame(
@@ -223,7 +232,7 @@ length \code{L1} at reference age \code{growth_A1}, length \code{L2} at
 \code{growth_A2}, rate \code{K}, and CVs of length at age \code{CV1} and
 \code{CV2} at the two reference ages. Growth below \code{growth_A1} is linear
 from \code{growth_L0} at age zero, the CV interpolates between the two
-references, and the plus group carries an adjustment for fish older than
+references, and the plus group has an adjustment for fish older than
 the accumulator age. \code{"richards"} is the same curve with a sixth
 parameter, the Richards coefficient \code{rho}, applied to the lengths
 raised to that power (\code{rho = 1} recovers the von Bertalanffy form).
@@ -247,13 +256,13 @@ parameter order or named by parameter (\code{L1}, \code{L2}, \code{K},
 \code{CV1}, \code{CV2}, \code{rho}) with the rest constant, each one of
 \code{"none"}, \code{"iid"} (independent annual deviations) or
 \code{"rw"} (a random walk). A varying parameter gets a deviation series
-\code{ln_growth_devs} and a log sigma in the first stream of
+\code{ln_growth_devs} and a log sigma in the first data source of
 \code{growth_pe_pars}.}
 
 \item{growth_tv_years}{Years the deviations are active in, calendar years.
 \code{NULL} (default) for every model year, a vector applied to every
 varying parameter, or a list named by parameter. Deviations outside the
-range are held at zero.}
+range are kept at zero.}
 
 \item{growth_tv_link}{Character, the scale a deviation enters on.
 \code{"log"} (default) multiplies the parameter by \eqn{e^{\delta}};
@@ -267,7 +276,7 @@ bounds, natural scale, required under the logit link.}
 
 \item{growth_tv_sigma_spec}{Character, \code{"fix"} (default) holds the
 process error standard deviations of the deviations at their starting
-values, \code{"est"} estimates them. Both read the first stream of
+values, \code{"est"} estimates them. Both read the first data source of
 \code{growth_pe_pars}, one slot per growth parameter.}
 
 \item{growth_tv_spec}{Character, how the deviations are shared across
@@ -276,14 +285,14 @@ strata, with the same vocabulary as \code{growth_spec}: \code{"est_all"}
 \code{"est_shared_r_s"}.}
 
 \item{growth_tv_type}{Character. \code{"curve"} (default) reads every
-year's size at age off that year's curve. \code{"cohort"} carries size at
+year's size at age off that year's curve. \code{"cohort"} has size at
 age forward cohort by cohort: each year every cohort grows by the increment
 the current year's parameters imply from the size it reached, ages still in
 the linear phase keep the length at \code{growth_A1} their birth year's
 parameters gave them, the first age past \code{growth_A1} is placed on the
 current year's curve, and the plus group's size blends the cohort entering it
 with the fish already there by their numbers at age. The CV at age is
-then held at the first year's sizes. The propagation starts in the first
+then kept at the first year's sizes. The propagation starts in the first
 year any deviation is active; every earlier year sits on the first year's
 curve.}
 
@@ -300,19 +309,19 @@ one of \code{"iid"}, \code{"rw"} (a random walk over years within an age),
 random field over age, year and cohort, on the marginal or conditional
 variance), or \code{"2dar1"} (a separable first-order autoregression over
 ages and years). The same process error forms the selectivity deviations
-use, so a growth surface and a selectivity surface are scored the same way.
+use, so a growth surface and a selectivity surface are penalized the same way.
 The spread at age follows the deviated mean, which leaves the coefficient of
 variation at age to the parametric part.}
 
-\item{growth_semipar_spec}{Character, whether the second stream of
+\item{growth_semipar_spec}{Character, whether the second data source of
 \code{growth_pe_pars} is estimated. Whether the process error
-hyperparameters are estimated (\code{"est"}) or held at their starting
+hyperparameters are estimated (\code{"est"}) or kept at their starting
 values (\code{"fix"}, the default). The deviations themselves are always
 estimated.}
 
 \item{growth_semipar_ages}{Ages the deviations are estimated over, as ages
 (not indices). \code{NULL} (default) uses every age. Ages outside the set
-are held at zero, which is how a surface is restricted to the ages the
+are kept at zero, which is how a surface is restricted to the ages the
 length data actually inform.}
 
 \item{growth_semipar_years}{Years the deviations are estimated over, calendar
@@ -320,7 +329,7 @@ years. \code{NULL} (default) uses every year.}
 
 \item{LenBinMap}{Optional matrix \code{[n_lens x n_obs_lens]} mapping the
 model's length bins onto the bins the length compositions are recorded on,
-for compositions on coarser bins than the model carries (a population of
+for compositions on coarser bins than the model has (a population of
 1 cm bins fit to 5 cm compositions, say). Observed length compositions are
 then dimensioned by \code{n_obs_lens} and the expected compositions are
 mapped through it inside the likelihood. This is the length-axis twin of
@@ -363,7 +372,7 @@ reads the curve at the accumulator age.}
 \code{"data"} (default) reads \code{WAA}, \code{WAA_fish} and
 \code{WAA_srv} from the arguments of the same name. \code{"wt_len"} builds
 them from the size-age key and the weight-length relationship
-\eqn{W = a L^b} applied at the bin midpoints, so weight at age carries the
+\eqn{W = a L^b} applied at the bin midpoints, so weight at age holds the
 spread of length at age rather than being the weight of the mean length;
 the spawning weight uses the key at spawning time and each fleet's weight
 the key at that fleet's timing, \code{t_fish} or \code{t_srv}. Under
@@ -396,43 +405,104 @@ population-specific M.}
 \item{M_yearblk_spec}{Blocking structure across years. Either \code{"constant"}
 (default) or a list of integer index vectors, e.g., \code{list(1:10, 11:30)}.}
 
+\item{M_seasblk_spec}{Blocking structure across seasons. Either
+  \code{"constant"} (default, one rate all year) or a list of integer index
+  vectors, e.g. \code{list(1, 2)} for a rate in each of two seasons, or
+  \code{list(1:2, 3:4)} to split a four season year in half. Blocks hold rates
+  per year, so two half-year seasons at \code{0.2} and \code{0.4} accumulate
+  \code{0.1} and \code{0.2}, an annual \code{0.3}. A rate is not a share.
+  \code{"constant"} is numerically identical to a model built before seasonal
+  M existed.
+
+  Only identifiable off within-year data: seasonal catch, seasonal comps, or
+  surveys in more than one season. Without those it trades against seasonal
+  selectivity and the F devs. Even with them the annual total comes back much
+  better than the split, so prefer fixing the split and estimating the level.
+  Warns if season blocks are given for a single season model.}
+
 \item{M_sexblk_spec}{Blocking structure across sexes. Either \code{"constant"}
 (default; shared across sexes) or a list of integer index vectors, e.g.,
 \code{list(1, 2)} for sex-specific M.}
 
-\item{Fixed_natmort}{Numeric array of fixed natural mortality rates with dimensions
-\code{[n_pop × n_regions × n_years × n_ages × n_sexes]}. Note the absence of an
-\code{n_seas} dimension. Required when \code{M_spec = "fix"}; ignored otherwise.}
+\item{Fixed_natmort}{Numeric array of fixed natural mortality, either
+\code{[n_pop × n_regions × n_years × n_ages × n_sexes]} or the same with
+\code{n_seas} between years and ages. The 5d form is expanded across seasons,
+so old scripts still work. Values are rates per year either way, not
+pre-apportioned amounts: mortality in a season is the rate times
+\code{seasdur}. Required when \code{M_spec = "fix"}, ignored otherwise.}
 
-\item{NAA_re}{Character. State-space numbers at age: the log numbers themselves
-become parameters for ages two and older, including the plus group, and the
-deterministic mortality and ageing step becomes a prediction they are scored
-against. \code{"none"} (default) leaves the numbers deterministic. Otherwise
-one of \code{"iid"},
-\code{"1dar1_a"} (an autoregression over ages, years independent),
-\code{"1dar1_y"} (an autoregression over years, ages independent),
-\code{"2dar1"} (a separable
-autoregression over ages and years), or \code{"3dcond"} and \code{"3dmarg"}
-(a three-dimensional Gaussian Markov random field over age, year and cohort,
-on the conditional or the marginal variance). These are the same process
-error forms the selectivity and growth surfaces use, so a state on the
-numbers and a surface on selectivity are scored the same way. Age one belongs
-to \code{ln_RecDevs} and year one at ages two and older to
-\code{ln_InitDevs}, so the three partition the numbers at age rather than
-overlapping. The state is the log numbers, not a deviation, so \code{ln_NAA}
-starts from an equilibrium decay from \eqn{R_0} at the mean \eqn{M}, split
-over regions and sexes, with the plus group accumulated. Pass \code{ln_NAA}
-through \code{starting_values} to start somewhere else.}
+\item{NAA_re}{Character. State-space numbers at age: the log numbers become
+  parameters for ages two and older, including the plus group, and the
+  deterministic mortality and ageing step becomes the prediction they are
+  penalized against. One of \code{"none"} (default, numbers stay
+  deterministic), \code{"iid"}, \code{"1dar1_a"} (autoregression over ages),
+  \code{"1dar1_y"} (over years), \code{"2dar1"} (separable over both), or
+  \code{"3dcond"} and \code{"3dmarg"} (a Gaussian Markov random field over
+  age, year and cohort, on the conditional or the marginal variance).
 
-\item{NAA_re_ages}{Ages the state is estimated over, as ages rather than
-indices. \code{NULL} (default) uses every age from the second onward. Must be
-a contiguous run.}
+  Age one belongs to \code{ln_RecDevs} and year one at ages two and older to
+  \code{ln_InitDevs}, so the three partition the numbers at age rather than
+  overlapping. Which cells are estimated is set by \code{map$ln_NAA} and
+  \code{data$n_est_naa_re}, never by \code{dim(ln_NAA)}. The state covers the
+  assessment years only: \code{\link{Do_Population_Projection}} advances
+  projected numbers deterministically, so a forecast omits this process error,
+  while the closed loop operating model does project the state forward.}
 
-\item{NAA_re_years}{Calendar years the state is estimated over. \code{NULL}
-(default) uses every year from the second onward. Must be a contiguous run.}
+\item{NAA_re_ages}{Ages the state is estimated over, matched against
+\code{input_list$data$ages} by value, not by position. A model whose ages are
+\code{0:4} therefore takes \code{NAA_re_ages = c(1, 2, 3, 4)} for the full
+state, and \code{c(0, 1, 2, 3)} is an error because age 0 is the first age.
+\code{NULL} (default) uses \code{ages[-1]}. Must be a contiguous run: the
+state is penalized as one rectangular slice, so a gap would leave penalized cells
+the dynamics never wrote.}
+
+\item{NAA_re_years}{Calendar years the state is estimated over, matched against
+\code{input_list$data$years} by value, not by position, so a model starting
+in 1983 takes \code{1984} and not \code{2} for its first state year.
+\code{NULL} (default) uses \code{years[-1]}. Must be a contiguous run.}
+
+\item{NAA_re_seasons}{Seasons the state is estimated over. \code{"annual"}
+(the default) puts a state at season one only, so the numbers within a year
+stay deterministic and the state is a purely annual innovation, which is
+what the model did before seasons were an option. \code{"all"} puts one at
+the start of every season. An integer vector of season indices selects
+specific seasons, and unlike \code{NAA_re_ages} and \code{NAA_re_years} it
+need not be contiguous: the season dim is only ever independent or
+unstructured, neither of which reads adjacency. That is the argument to
+use when only some seasons have observations, since a season with no
+data returns its prior as its posterior. The age, year and cohort
+correlations in \code{NAA_pe_pars} have no season dim, so every active
+season shares them within a population, region and sex; the standard
+deviation is what varies by season, through
+\code{NAA_sigma_seasblk_spec}.}
+
+\item{NAA_re_season}{Character. Correlation across seasons within a year,
+composed with the other dims the same way. \code{"iid"} (the default)
+leaves the seasonal innovations independent; \code{"us"} estimates an
+unstructured correlation, \eqn{n_k(n_k-1)/2} parameters over the
+\eqn{n_k} active seasons. Needs more than one active season.}
+
+\item{NAA_re_season_spec}{Character controlling how the season correlations
+are shared, taking the same values as \code{NAA_re_region_spec}.}
+
+\item{NAA_pe_spec}{Character controlling how the age, year and cohort
+correlations in \code{NAA_pe_pars} are shared, following the package's spec
+strings. \code{"est_all"} (the default) gives a free set per population,
+region and sex, which for a three region model under \code{"2dar1"} is six
+correlations. \code{"est_shared_p"}, \code{"est_shared_r"} and
+\code{"est_shared_s"} share one dim, \code{"est_shared_p_r"},
+\code{"est_shared_p_s"} and \code{"est_shared_r_s"} share two, and
+\code{"est_shared_p_r_s"} gives one set for the whole model. \code{"fix"}
+holds them all at their starting values, which is zero correlation unless
+\code{NAA_pe_pars} is passed through \code{starting_values}. Sharing a
+correlation is not the same as correlating the innovations: regions that
+share \eqn{\rho} still get independent shocks, whereas
+\code{NAA_re_region = "us"} makes the shocks themselves covary. Sharing
+never changes which cells are estimated, only how many hyperparameters they
+draw on.}
 
 \item{NAA_sigma_spec}{Character, whether the process error standard deviations
-are estimated (\code{"est"}, the default) or held at their starting values
+are estimated (\code{"est"}, the default) or kept at their starting values
 (\code{"fix"}). The states themselves are always estimated.}
 
 \item{NAA_re_region}{Character. Correlation across regions, composed with
@@ -446,7 +516,7 @@ real structure.}
 \item{NAA_re_region_spec}{Character controlling how the region correlations are
 shared, following the package's spec strings: \code{"est_all"} (the default)
 gives a free correlation matrix per population and sex, \code{"est_shared_p"}
-and \code{"est_shared_s"} share it over one of those margins,
+and \code{"est_shared_s"} share it over one of those dims,
 \code{"est_shared_p_s"} gives a single matrix for the whole model, and
 \code{"fix"} holds them all.}
 
@@ -454,26 +524,28 @@ and \code{"est_shared_s"} share it over one of those margins,
 across sexes, composed with the region, age and year structures the same way.
 \code{"iid"} (the default) leaves them independent; \code{"us"} estimates an
 unstructured correlation. Both are global to the model rather than varying
-over the other margins, so a two-sex model spends exactly one parameter on
-\code{NAA_re_sex = "us"}. Note that a survival correlation between sexes is
-weakly identified in most configurations: spawning biomass reads the first
-sex while abundance indices sum over sexes, so an antisymmetric shock moves
-spawning biomass at almost no cost in the indices, and only sex-structured
-compositions push back on it.}
+over the other dims, so a two-sex model spends exactly one parameter on
+\code{NAA_re_sex = "us"}.}
 
-\item{NAA_sigma_popblk_spec, NAA_sigma_regionblk_spec, NAA_sigma_yearblk_spec, NAA_sigma_ageblk_spec, NAA_sigma_sexblk_spec}{Blocking for the process error standard deviation, each either
+\item{NAA_sigma_popblk_spec, NAA_sigma_regionblk_spec, NAA_sigma_yearblk_spec, NAA_sigma_seasblk_spec, NAA_sigma_ageblk_spec, NAA_sigma_sexblk_spec}{Blocking for the process error standard deviation, each either
 \code{"constant"} (the default) or a list of integer vectors assigning
 indices to blocks, exactly as the \code{M_*blk_spec} arguments do. Blocking
 shares a standard deviation; it never removes a cell from the state. Only
 \code{NAA_re = "iid"} admits a standard deviation that varies over years or
-ages: every other form is separable or Markov in a margin, so it carries one
-standard deviation per population, region and sex.}
+ages: every other form is separable or Markov in a dim, so it has one
+standard deviation per population, region and sex. The season dim is the
+exception, because it is whitened outside the age and year density: a
+season-varying standard deviation works under any \code{NAA_re}, and is
+ruled out only by \code{NAA_re_season = "us"}, which needs one scale across
+the dim it correlates.}
 
 \item{...}{Optional starting value overrides passed by name. Currently recognized:
 \describe{
   \item{\code{ln_M}}{Array of log-scale starting values for natural mortality,
-    dimensioned \code{[n_popblks × n_regionblks × n_yearblks × n_ageblks × n_sexblks]}.
-    Defaults to \code{log(0.5)} for all blocks if not supplied.}
+    dimensioned
+    \code{[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks × n_sexblks]}.
+    Defaults to \code{log(0.5)}. A 5d array from an older script still works
+    when there is one season block, same values in the same order.}
   \item{\code{ln_growth_pars}}{Array of log-scale starting values for the
     growth parameters, dimensioned \code{[n_pop × n_regions × n_sexes × n_gpars]}
     in the order \code{L1, L2, K, CV1, CV2} and, under the Richards form,
@@ -481,14 +553,14 @@ standard deviation per population, region and sex.}
     \code{0.15} and CVs of \code{0.1}, so supply your own for any real
     model.}
   \item{\code{growth_pe_pars}}{Array of process error starting values for
-    both growth deviation streams, dimensioned
+    both growth deviation data sources, dimensioned
     \code{[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]}.
-    The first stream holds one log sigma per growth parameter for the
+    The first data source holds one log sigma per growth parameter for the
     time-varying deviations; the second holds the semi-parametric surface's
     correlations by age, year and cohort in slots one to three and a log
     scale in slot four for the correlated forms, or one log sigma per age
     for \code{"iid"} and \code{"rw"}. Defaults to \code{log(0.1)} for the
-    first stream and \code{log(0.05)} with correlations of \code{0.3} for
+    first data source and \code{log(0.05)} with correlations of \code{0.3} for
     the second. Slots a form does not read are mapped off.}
 }
 All \code{...} arguments are silently ignored when \code{M_spec = "fix"}.}

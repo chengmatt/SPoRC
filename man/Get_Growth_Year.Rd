@@ -39,7 +39,7 @@ Get_Growth_Year(
 )
 }
 \arguments{
-\item{growth}{The list \code{\link{Get_Growth}} returned, carrying the
+\item{growth}{The list \code{\link{Get_Growth}} returned, with the
 output containers and the years before the propagation started.}
 
 \item{y}{Year index to evaluate.}
@@ -63,7 +63,7 @@ The \code{growth} list with year \code{y} filled and, when a year
 \description{
 The year-loop companion of \code{\link{Get_Growth}} under cohort
 propagation. For year \code{y} it builds every key, length, weight and
-weight of the year from the start-of-year state, and carries the state to
+weight of the year from the start-of-year state, and holds the state to
 the next year with the year's parameters: each propagated age grows by the
 year's increment, the first propagated age is placed on the year's curve, the
 ages in the linear phase keep the length at \code{A1} their cohort was born
@@ -71,6 +71,6 @@ with, and the plus group's size next year blends the cohort entering it with
 the fish already there by their numbers at the start of this year,
 \deqn{\bar L_{+,y+1} = \frac{(N_{n-1} + 0.01)\, g(L_{n-1}) + (N_{n} + 0.01)\, g(L_{+})}{N_{n-1} + N_n + 0.02}}
 with \eqn{g} the year's increment and \eqn{N} the start-of-year numbers of
-the stratum. The CV at age is held at the first year's sizes.
+the stratum. The CV at age is kept at the first year's sizes.
 }
 \keyword{internal}

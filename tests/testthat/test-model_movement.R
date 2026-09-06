@@ -29,8 +29,14 @@ test_that("Get_Movement works", {
     array(val, dim = c(n_pop, n_regions, n_regions, n_yrs, n_seas, n_ages, n_sexes))
   }
 
-  call_fixed <- function(n_pop = 1, n_regions = 3, n_yrs = 2, n_seas = 1,
-                         n_ages = 2, n_sexes = 1) {
+  call_fixed <- function(
+    n_pop = 1,
+    n_regions = 3,
+    n_yrs = 2,
+    n_seas = 1,
+    n_ages = 2,
+    n_sexes = 1
+  ) {
     FM <- make_fixed_move(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)
     Get_Movement(
       move_type           = 0,
@@ -66,10 +72,16 @@ test_that("Get_Movement works", {
 
   # ── unstructured multinomial logit movement (move_type = 0) ─────────────────
 
-  make_unstructured_call <- function(move_pars_val = 0,
-                                     n_pop = 1, n_regions = 3,
-                                     n_yrs = 2, n_proj = 0,
-                                     n_seas = 1, n_ages = 2, n_sexes = 1) {
+  make_unstructured_call <- function(
+    move_pars_val = 0,
+    n_pop = 1,
+    n_regions = 3,
+    n_yrs = 2,
+    n_proj = 0,
+    n_seas = 1,
+    n_ages = 2,
+    n_sexes = 1
+  ) {
     n_total <- n_yrs + n_proj
     mp <- array(move_pars_val, c(n_pop, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes))
     md <- array(0,             c(n_pop, n_regions, n_regions - 1, n_total, n_seas, n_ages, n_sexes))
@@ -109,9 +121,14 @@ test_that("Get_Movement works", {
   })
 
   test_that("unstructured movement output dimensions are correct", {
-    res <- make_unstructured_call(n_pop = 1, n_regions = 3,
-                                  n_yrs = 3, n_proj = 1,
-                                  n_ages = 4, n_sexes = 2)
+    res <- make_unstructured_call(
+      n_pop = 1,
+      n_regions = 3,
+      n_yrs = 3,
+      n_proj = 1,
+      n_ages = 4,
+      n_sexes = 2
+    )
     expect_equal(unname(dim(res$Movement)), c(1, 3, 3, 4, 1, 4, 2))
   })
 
@@ -121,13 +138,24 @@ test_that("Get_Movement works", {
     md <- array(0, c(1, 3, 2, 3, 1, 2, 1))
 
     res <- Get_Movement(
-      move_type = 0, do_recruits_move = 1,
-      n_pop = 1, n_regions = 3, n_yrs = 2, n_proj_yrs_devs = 1,
-      n_ages = 2, n_sexes = 1, n_seas = 1,
-      move_pars = mp, move_devs = md,
-      use_fixed_movement = 0, Fixed_Movement = NULL,
-      log_move_diffusion_pars = numeric(0), move_preference_pars = numeric(0),
-      area_r = rep(1, 3), adjacency_mat = matrix(1, 3, 3), ctmc_diffusion_bounds = 0
+      move_type = 0,
+      do_recruits_move = 1,
+      n_pop = 1,
+      n_regions = 3,
+      n_yrs = 2,
+      n_proj_yrs_devs = 1,
+      n_ages = 2,
+      n_sexes = 1,
+      n_seas = 1,
+      move_pars = mp,
+      move_devs = md,
+      use_fixed_movement = 0,
+      Fixed_Movement = NULL,
+      log_move_diffusion_pars = numeric(0),
+      move_preference_pars = numeric(0),
+      area_r = rep(1, 3),
+      adjacency_mat = matrix(1, 3, 3),
+      ctmc_diffusion_bounds = 0
     )
     expect_equal(res$Movement[, , , 3, , , ], res$Movement[, , , 2, , , ])
     expect_false(isTRUE(all.equal(res$Movement[, , , 3, , , ], res$Movement[, , , 1, , , ])))
@@ -135,8 +163,14 @@ test_that("Get_Movement works", {
 
   # ── CTMC movement (move_type = 1) ────────────────────────────────────────────
 
-  make_ctmc_dat <- function(n_pop = 1, n_regions = 3, n_yrs = 2,
-                            n_seas = 1, n_ages = 2, n_sexes = 1) {
+  make_ctmc_dat <- function(
+    n_pop = 1,
+    n_regions = 3,
+    n_yrs = 2,
+    n_seas = 1,
+    n_ages = 2,
+    n_sexes = 1
+  ) {
     expand.grid(
       pop     = seq_len(n_pop),
       regions = seq_len(n_regions),
@@ -154,16 +188,22 @@ test_that("Get_Movement works", {
     mat
   }
 
-  make_ctmc_call <- function(n_pop = 1, n_regions = 3,
-                             n_yrs = 2, n_proj = 0,
-                             n_seas = 1, n_ages = 2, n_sexes = 1,
-                             pref_pars = NULL,
-                             diff_pars = NULL,
-                             ctmc_diffusion_bounds = 0,
-                             ctmc_diffusion_eps = 0.1,
-                             do_recruits_move = 1,
-                             preference_formula = ~ 1,
-                             move_devs = NULL) {
+  make_ctmc_call <- function(
+    n_pop = 1,
+    n_regions = 3,
+    n_yrs = 2,
+    n_proj = 0,
+    n_seas = 1,
+    n_ages = 2,
+    n_sexes = 1,
+    pref_pars = NULL,
+    diff_pars = NULL,
+    ctmc_diffusion_bounds = 0,
+    ctmc_diffusion_eps = 0.1,
+    do_recruits_move = 1,
+    preference_formula = ~ 1,
+    move_devs = NULL
+  ) {
     n_total <- n_yrs + n_proj
     dat <- make_ctmc_dat(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)
 
@@ -200,8 +240,14 @@ test_that("Get_Movement works", {
   }
 
   test_that("CTMC movement: output dimensions are correct", {
-    res <- make_ctmc_call(n_pop = 1, n_regions = 3, n_yrs = 2,
-                          n_seas = 1, n_ages = 2, n_sexes = 1)
+    res <- make_ctmc_call(
+      n_pop = 1,
+      n_regions = 3,
+      n_yrs = 2,
+      n_seas = 1,
+      n_ages = 2,
+      n_sexes = 1
+    )
     expect_equal(unname(dim(res$Movement)), c(1, 3, 3, 2, 1, 2, 1))
     expect_equal(unname(dim(res$Mrate)),    c(1, 3, 3, 2, 1, 2, 1))
   })
@@ -271,21 +317,29 @@ test_that("Get_Movement works", {
   test_that("CTMC movement: ctmc_diffusion_eps sets the flow on an edge where taxis cancels diffusion", {
     # theta = exp(0) / area 1 = 1 on every edge; preference c(0, 1, 0) puts a taxis
     # contrast of -1 on the edges leaving region 2, so D + Z is exactly 0 there and
-    # the softplus floor eps * log(2) is what the generator carries
+    # the softplus floor eps * log(2) is what the generator has
     for (eps in c(0.1, 0.5)) {
-      res <- make_ctmc_call(ctmc_diffusion_bounds = 1, ctmc_diffusion_eps = eps,
-                            pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))
+      res <- make_ctmc_call(
+        ctmc_diffusion_bounds = 1,
+        ctmc_diffusion_eps = eps,
+        pref_pars = c(0, 1, 0),
+        preference_formula = ~ 0 + factor(regions)
+      )
       q <- res$Mrate[1, , , 1, 1, 2, 1]
       cancelled <- c(q[2, 1], q[1, 2])
       expect_true(any(abs(cancelled - eps * log(2)) < 1e-8),
                   label = sprintf("eps %.1f floor on the cancelled edge", eps))
-      # the opposite direction carries D + 1 = 2 up to the softplus tail
+      # the opposite direction has D + 1 = 2 up to the softplus tail
       expect_true(any(abs(cancelled - (2 + eps * log1p(exp(-2 / eps)))) < 1e-8),
                   label = sprintf("eps %.1f open edge", eps))
     }
     # a hard-clamp width shuts the cancelled edge to the floor of 0.001 * log(2)
-    res <- make_ctmc_call(ctmc_diffusion_bounds = 1, ctmc_diffusion_eps = 0.001,
-                          pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))
+    res <- make_ctmc_call(
+      ctmc_diffusion_bounds = 1,
+      ctmc_diffusion_eps = 0.001,
+      pref_pars = c(0, 1, 0),
+      preference_formula = ~ 0 + factor(regions)
+    )
     q <- res$Mrate[1, , , 1, 1, 2, 1]
     expect_lt(min(q[2, 1], q[1, 2]), 1e-3)
   })
@@ -307,8 +361,11 @@ test_that("Get_Movement works", {
 
   test_that("CTMC movement: every bound form gives a valid generator and valid movement", {
     for (bf in c("none", "softplus", "upwind")) {
-      res <- make_ctmc_call(ctmc_diffusion_bounds = bf, pref_pars = c(0, 1, 0),
-                            preference_formula = ~ 0 + factor(regions))
+      res <- make_ctmc_call(
+        ctmc_diffusion_bounds = bf,
+        pref_pars = c(0, 1, 0),
+        preference_formula = ~ 0 + factor(regions)
+      )
       q <- res$Mrate[1, , , 1, 1, 2, 1]
       expect_true(all(q[row(q) != col(q)] >= 0), label = sprintf("%s off-diagonals non-negative", bf))
       expect_equal(unname(rowSums(q)), rep(0, 3), tolerance = 1e-9, label = sprintf("%s conserves", bf))
@@ -317,17 +374,21 @@ test_that("Get_Movement works", {
     }
   })
 
-  test_that("CTMC movement: the bound forms carry the flow their definition implies", {
+  test_that("CTMC movement: the bound forms hold the flow their definition implies", {
     # theta = exp(0) / area 1 = 1 on every edge; preference c(0, 1, 0) puts a taxis
     # gradient of -1 on the edges leaving region 2 and +1 on the edges into it, so
     # D + Z is exactly 0 on the first and 2 on the second
     got <- function(bf, eps = 0.1) {
-      q <- make_ctmc_call(ctmc_diffusion_bounds = bf, ctmc_diffusion_eps = eps, pref_pars = c(0, 1, 0),
-                          preference_formula = ~ 0 + factor(regions))$Mrate[1, , , 1, 1, 2, 1]
+      q <- make_ctmc_call(
+        ctmc_diffusion_bounds = bf,
+        ctmc_diffusion_eps = eps,
+        pref_pars = c(0, 1, 0),
+        preference_formula = ~ 0 + factor(regions)
+      )$Mrate[1, , , 1, 1, 2, 1]
       c(cancelled = q[2, 1], open = q[1, 2]) # Mrate is [origin, destination]
     }
-    # upwind carries diffusion whole and adds only the down-gradient taxis, so the
-    # cancelled edge carries theta itself rather than a floor set by the hinge
+    # upwind has diffusion whole and adds only the down-gradient taxis, so the
+    # cancelled edge has theta itself rather than a floor set by the hinge
     expect_equal(unname(got("upwind")), c(1, 2), tolerance = 1e-9)
     # and it reads no softplus width
     expect_equal(got("upwind", eps = 0.001), got("upwind", eps = 0.5))
@@ -337,10 +398,14 @@ test_that("Get_Movement works", {
 
   test_that("CTMC movement: upwind holds a down-gradient edge open where the softplus underflows", {
     # a shut edge at eps 0.001 is an exact zero, and an exact zero has no gradient to
-    # reopen it; upwind leaves diffusion outside the hinge so the edge carries theta
+    # reopen it; upwind leaves diffusion outside the hinge so the edge has theta
     steep <- function(bf) {
-      q <- make_ctmc_call(ctmc_diffusion_bounds = bf, ctmc_diffusion_eps = 0.001, pref_pars = c(0, 20, 0),
-                          preference_formula = ~ 0 + factor(regions))$Mrate[1, , , 1, 1, 2, 1]
+      q <- make_ctmc_call(
+        ctmc_diffusion_bounds = bf,
+        ctmc_diffusion_eps = 0.001,
+        pref_pars = c(0, 20, 0),
+        preference_formula = ~ 0 + factor(regions)
+      )$Mrate[1, , , 1, 1, 2, 1]
       q[2, 1]
     }
     expect_equal(steep("softplus"), 0)
@@ -362,13 +427,20 @@ test_that("Get_Movement works", {
 
     # and it multiplies diffusion before the flow transform, for every bound form
     for (bf in c("none", "softplus", "upwind")) {
-      q <- make_ctmc_call(ctmc_diffusion_bounds = bf, move_devs = md, pref_pars = c(0, 1, 0),
-                          preference_formula = ~ 0 + factor(regions))$Mrate[1, , , 1, 1, 2, 1]
+      q <- make_ctmc_call(
+        ctmc_diffusion_bounds = bf,
+        move_devs = md,
+        pref_pars = c(0, 1, 0),
+        preference_formula = ~ 0 + factor(regions)
+      )$Mrate[1, , , 1, 1, 2, 1]
       d <- c(0, 1, 0)[3] - c(0, 1, 0)[2] # gradient on the 2 -> 3 edge
       theta <- 3 # exp(0) / area 1, scaled by the deviation
-      expect_equal(unname(q[2, 3]), switch(bf,
-        none = theta + d, softplus = { u <- theta + d; (u + abs(u)) / 2 + 0.1 * log1p(exp(-abs(u) / 0.1)) },
-        upwind = theta + max(d, 0)),
+      expect_equal(unname(q[2, 3]), switch(
+        bf,
+        none = theta + d,
+        softplus = { u <- theta + d; (u + abs(u)) / 2 + 0.1 * log1p(exp(-abs(u) / 0.1)) },
+        upwind = theta + max(d, 0)
+      ),
         tolerance = 1e-9, label = sprintf("%s deviation on the 2 -> 3 edge", bf))
     }
   })

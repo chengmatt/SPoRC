@@ -59,7 +59,7 @@ all bins. Restricted fleets pack a shorter block at every length bin.}
 }
 \value{
 If \code{return_labels = FALSE} (default), the flat OBS vector, or
-  \code{NULL} when no fleet carries CAAL data. If \code{return_labels = TRUE},
+  \code{NULL} when no fleet has CAAL data. If \code{return_labels = TRUE},
   a list with \code{vec} and \code{labels}.
 }
 \description{

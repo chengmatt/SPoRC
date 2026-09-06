@@ -43,7 +43,7 @@ test_that("a correlated process error is recovered and improves the biomass traj
   expect_true(all(rho[1:2] > 0))
   expect_true(all(rho[1:2] < 0.95))
 
-  # a population carrying real process error is badly served by a model that denies it
+  # a population with real process error is badly served by a model that denies it
   expect_lt(naaom_ssb_rmse(fit, om), naaom_ssb_rmse(det, om) / 2)
 })
 

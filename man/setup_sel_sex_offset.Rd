@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_setup.R
 \name{setup_sel_sex_offset}
 \alias{setup_sel_sex_offset}
-\title{Set up sex offsets on selectivity for one selectivity stream}
+\title{Set up sex offsets on selectivity for one selectivity data source}
 \usage{
 setup_sel_sex_offset(
   input_list,
@@ -27,7 +27,7 @@ setup_sel_sex_offset(
 
 \item{prefix}{One of \code{"fish"}, \code{"ret"}, or \code{"srv"}.}
 
-\item{n_fleets}{Integer. Number of fleets in this stream.}
+\item{n_fleets}{Integer. Number of fleets in this data source.}
 
 \item{fleet_label}{Character used in messages.}
 
@@ -64,7 +64,7 @@ creates the curve scale-offset parameters with their factor map. Under a
 \code{"par"} offset the sexes beyond the first store additive offsets on the
 first sex's transformed-scale fixed-effect parameters, which needs no new
 parameters, only the flag. Under a \code{"scale"} offset each sex beyond the
-first carries a constant log-scale offset on its whole realized curve,
+first has a constant log-scale offset on its whole realized curve,
 estimated per region and block.
 }
 \keyword{internal}

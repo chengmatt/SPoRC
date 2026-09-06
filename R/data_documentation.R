@@ -1,6 +1,4 @@
-# Package data
-#
-# Roxygen documentation for the example datasets shipped in data/. No code.
+# Package data Roxygen documentation for the example datasets shipped in data/. No code.
 
 #' Sablefish data for single region case study
 #'
@@ -154,10 +152,10 @@
 #'
 #' The 2024 eastern Bering Sea Pacific cod assessment (Model 24.1: one area and
 #' one sex, Richards growth with annual deviations on the
-#' length at the young reference age and on K carried cohort by cohort,
+#' length at the young reference age and on K kept cohort by cohort,
 #' length-based double normal selectivity with two fishery blocks and annual
 #' deviations on the survey width, compositions recorded on coarser length bins
-#' than the population carries, two ageing error definitions) parsed from its
+#' than the population has, two ageing error definitions) parsed from its
 #' input files, with the assessment's report quantities attached under
 #' \code{$ss3}, its year-by-year weight and fecundity at age under
 #' \code{$wtatage}, and its maximum likelihood estimates under \code{$mle}.

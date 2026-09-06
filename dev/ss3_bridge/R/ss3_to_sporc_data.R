@@ -20,12 +20,15 @@ ss3_paths <- function(run_dir) {
   wtatage <- file.path(run_dir, c("wtatage.ss", "wtatage.ss_new"))
   wtatage <- wtatage[file.exists(wtatage)][1]
 
-  list(dir = run_dir, starter = starter_path,
-       dat = file.path(run_dir, starter$datfile),
-       ctl = file.path(run_dir, starter$ctlfile),
-       forecast = file.path(run_dir, "forecast.ss"),
-       wtatage = wtatage,
-       report = file.path(run_dir, "Report.sso"))
+  list(
+    dir = run_dir,
+    starter = starter_path,
+    dat = file.path(run_dir, starter$datfile),
+    ctl = file.path(run_dir, starter$ctlfile),
+    forecast = file.path(run_dir, "forecast.ss"),
+    wtatage = wtatage,
+    report = file.path(run_dir, "Report.sso")
+  )
 
 } # end function
 
@@ -103,7 +106,7 @@ ss3_tv_rows <- function(tv_table, base_name, pattern) {
 #' Build fixed natural mortality at [pop, region, year, age, sex]
 #'
 #' Covers natM_type 0 (one rate), 1 (breakpoints interpolated over age) and 3
-#' (one rate per age), each optionally carrying time blocks. Growth patterns map
+#' (one rate per age), each optionally with time blocks. Growth patterns map
 #' onto regions, which holds whenever an SS3 area owns one pattern.
 ss3_natmort <- function(ctl, ages, years, n_pop, n_regions, n_sexes) {
 
@@ -200,7 +203,7 @@ ss3_ageing_error <- function(dat, ages, obs_ages) {
 #' Length at age from the SS3 von Bertalanffy parameters
 #'
 #' L1 is the length at age A1 and L2 the length at age A2. When A2 is the 999
-#' sentinel L2 is already Linf; otherwise Linf is solved from the two anchors.
+#' the L2 flag value is already Linf; otherwise Linf is solved from the two anchors.
 #' Growth is linear below A1, which SS3 holds at the L1 value.
 ss3_laa <- function(ages, L1, L2, K, A1, A2) {
 
@@ -215,7 +218,7 @@ ss3_laa <- function(ages, L1, L2, K, A1, A2) {
 #'
 #' CV_Growth_Pattern selects whether the two parameters are coefficients of
 #' variation or standard deviations, and whether they are interpolated over
-#' length at age or over age. Interpolation is linear and held flat outside the
+#' length at age or over age. Interpolation is linear and kept flat outside the
 #' A1 to A2 anchors.
 ss3_sd_laa <- function(ages, LAA, CV1, CV2, A1, A2, pattern) {
 
@@ -239,7 +242,7 @@ ss3_sd_laa <- function(ages, LAA, CV1, CV2, A1, A2, pattern) {
 #'
 #' Option 2 is logistic in age and reads straight off. Option 1 is logistic in
 #' length, so it is integrated over the normal distribution of length at age.
-#' Options 3 and 4 read a matrix this parser does not carry.
+#' Options 3 and 4 read a matrix this parser does not have.
 ss3_maturity <- function(ctl, mg, sx, ages, LAA, sd_LAA, lens_lower) {
 
   if(ctl$maturity_option == 2) {
@@ -409,8 +412,13 @@ ss3_waa <- function(dat, ctl, wtatage_path, ages, years, n_pop, n_regions, n_sea
 
   } # end if else
 
-  list(WAA = WAA, MatAA = MatAA, WAA_fish = WAA_fish, WAA_srv = WAA_srv,
-       mat_is_fecundity = mat_is_fecundity)
+  list(
+    WAA = WAA,
+    MatAA = MatAA,
+    WAA_fish = WAA_fish,
+    WAA_srv = WAA_srv,
+    mat_is_fecundity = mat_is_fecundity
+  )
 
 } # end function
 
@@ -446,15 +454,13 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
   n_regions <- d$N_areas
   n_pop <- 1
 
-  # SS3 keeps two length axes: lbin_vector is the bins compositions are reported
-  # on and is the axis SPoRC models, while lbin_vector_pop is the finer internal
-  # grid SS3 uses for length-based biology. Bins are given as lower edges.
+  # SS3 keeps two length axes: lbin_vector is what compositions are reported on and what SPoRC
+  # models, lbin_vector_pop the finer internal grid. bins are given as lower edges
   lens_lower <- if(length(d$lbin_vector) > 0) as.numeric(d$lbin_vector) else numeric(0)
   n_lens <- length(lens_lower)
 
-  # midpoints come from the bin edges rather than from binwidth, which a model
-  # that reads its population bins as a vector does not carry; a NULL binwidth
-  # would otherwise collapse the length axis to zero without complaint
+  # midpoints come from the bin edges rather than binwidth, which a model reading its population
+  # bins as a vector does not have; a NULL binwidth would collapse the length axis silently
   lens_mid <- bin_midpoints(lens_lower)
   pop_lens_lower <- if(length(d$lbin_vector_pop) > 0) d$lbin_vector_pop else lens_lower
 
@@ -470,9 +476,8 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
   yidx <- function(y) match(y, years)
   sidx <- function(s) pmax(1, pmin(n_seas, s))
 
-  # In a two-sex model every composition row carries one block of bins per sex.
-  # Code 3 fills both blocks, 1 and 2 fill their own and leave the other at zero,
-  # and 0 is a combined row that occupies the first block.
+  # in a two-sex model every composition row has one block of bins per sex: code 3 fills both,
+  # 1 and 2 fill their own, and 0 is a combined row in the first block
   comp_blocks <- function(v, n_bins, code) {
 
     out <- matrix(0, n_bins, n_sexes)
@@ -490,7 +495,7 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
 
   } # end function
 
-  # which sex blocks a row actually carries data for
+  # which sex blocks a row actually has data for
   sex_slots <- function(code) if(code == 3) seq_len(n_sexes) else if(code == 2) 2 else 1
 
   # SS3 holds a row out of the likelihood by negating either its year or its fleet
@@ -506,7 +511,7 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
 
     ci <- d$catch[i, ]
 
-    # rows before styr carry the equilibrium catch, not a model year
+    # rows before styr hold the equilibrium catch, not a model year
     if(ci$year < d$styr) next
 
     f <- match(ci$fleet, fish_fleets)
@@ -575,15 +580,13 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
   srv_idx_type <- idx_units[srv_fleets]
   fish_idx_type <- idx_units[fish_fleets]
 
-  # Fraction of the year elapsed when each survey is taken. SS3 reads the month
-  # off each observation row, so the observations are the primary source;
-  # fleetinfo$surveytiming is only a fallback for a fleet with no rows, and is
-  # routinely stale (pcod's survey records 1 and is sampled in month 7).
+  # fraction of the year elapsed when each survey is taken, read off each observation row.
+  # fleetinfo$surveytiming is only a fallback for a fleet with no rows and is routinely stale
   srv_month <- rep(NA_real_, n_srv)
 
   for(k in seq_along(srv_fleets)) {
 
-    # a model can carry no age data at all, so the age table may be absent
+    # a model can have no age data at all, so the age table may be absent
     ac_month <- if(NROW(d$agecomp) > 0) d$agecomp$month[abs(d$agecomp$fleet) == srv_fleets[k]] else numeric(0)
     m <- c(cpue$month[abs(cpue[[idx_col]]) == srv_fleets[k]], ac_month)
     srv_month[k] <- if(length(m) > 0) stats::median(m) else max(fleetinfo$surveytiming[srv_fleets[k]], 1)
@@ -635,9 +638,8 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
     slots <- sex_slots(ac$sex[i])
     vals <- comp_blocks(comp_vals(ac, i, "Nsamp"), n_obs_ages, ac$sex[i])
 
-    # SS3 writes a marginal age composition either with a negative Lbin_lo or
-    # with a length range spanning every bin. Anything else is conditional age
-    # at length and carries exactly one length bin per row.
+    # SS3 writes a marginal age composition with either a negative Lbin_lo or a range spanning
+    # every bin. anything else is conditional age at length, one length bin per row
     spans_all <- ac$Lbin_lo[i] <= min(lens_lower) && ac$Lbin_hi[i] >= max(lens_lower)
     marginal <- ac$Lbin_lo[i] < 0 || spans_all
 
@@ -733,10 +735,8 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
   waa <- ss3_waa(d, ctl, p$wtatage, ages, years, n_pop, n_regions, n_seas, n_sexes,
                  n_fish, n_srv, fish_fleets, srv_fleets, pop_lens_lower, waa_fallback)
 
-  # Setup_Mod_Biologicals takes either [n_ages, n_obs_ages, n_fleets] or, when a
-  # fleet changes definition over the series, [n_years, n_ages, n_obs_ages,
-  # n_fleets]. Emit the time-varying form and let the caller collapse it. A year
-  # with no age data carries the fleet's first observed definition.
+  # Setup_Mod_Biologicals takes [n_ages, n_obs_ages, n_fleets] or the time-varying form with a
+  # leading year dim. emit the time-varying one; a year with no age data uses the first definition
   ae_by_fleet <- function(which_def) {
 
     n_fl <- ncol(which_def)
@@ -744,7 +744,7 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
 
     for(k in seq_len(n_fl)) {
 
-      # a year with no age data carries the most recent definition forward, so a
+      # a year with no age data holds the most recent definition forward, so a
       # switch partway through a series holds for every later year
       last_def <- 1
 
@@ -778,27 +778,42 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
   sr <- ctl$SR_parms
   sr_val <- function(nm) if(nm %in% rownames(sr)) sr[nm, "INIT"] else NA
 
-  rec <- list(SR_function = ctl$SR_function,
-              ln_R0 = sr_val("SR_LN(R0)"), h = sr_val("SR_BH_steep"),
-              sigmaR = sr_val("SR_sigmaR"), autocorr = sr_val("SR_autocorr"),
-              main_first = ctl$MainRdevYrFirst, main_last = ctl$MainRdevYrLast,
-              early_start = ctl$recdev_early_start, early_phase = ctl$recdev_early_phase,
-              bias_years = c(ctl$last_early_yr_nobias_adj, ctl$first_yr_fullbias_adj,
+  rec <- list(
+    SR_function = ctl$SR_function,
+    ln_R0 = sr_val("SR_LN(R0)"),
+    h = sr_val("SR_BH_steep"),
+    sigmaR = sr_val("SR_sigmaR"),
+    autocorr = sr_val("SR_autocorr"),
+    main_first = ctl$MainRdevYrFirst,
+    main_last = ctl$MainRdevYrLast,
+    early_start = ctl$recdev_early_start,
+    early_phase = ctl$recdev_early_phase,
+    bias_years = c(ctl$last_early_yr_nobias_adj, ctl$first_yr_fullbias_adj,
                              ctl$last_yr_fullbias_adj, ctl$first_recent_yr_nobias_adj),
-              max_bias_adj = ctl$max_bias_adj)
+    max_bias_adj = ctl$max_bias_adj
+  )
 
   fmort <- list(method = ctl$F_Method, maxF = ctl$maxF, init_F = ctl$init_F)
 
-  sel <- list(age_types = ctl$age_selex_types, age = ctl$age_selex_parms,
-              size_types = ctl$size_selex_types, size = ctl$size_selex_parms,
-              age_tv = ctl$age_selex_parms_tv, size_tv = ctl$size_selex_parms_tv)
+  sel <- list(
+    age_types = ctl$age_selex_types,
+    age = ctl$age_selex_parms,
+    size_types = ctl$size_selex_types,
+    size = ctl$size_selex_parms,
+    age_tv = ctl$age_selex_parms_tv,
+    size_tv = ctl$size_selex_parms_tv
+  )
 
   q <- list(options = ctl$Q_options, parms = ctl$Q_parms)
 
   # comp error is 0 for multinomial and 1 for Dirichlet-multinomial, with
   # ParmSelect naming the row of dirichlet_parms a fleet uses
-  comp <- list(age_info = d$age_info, len_info = d$len_info,
-               dirichlet = ctl$dirichlet_parms, var_adj = ctl$Variance_adjustment_list)
+  comp <- list(
+    age_info = d$age_info,
+    len_info = d$len_info,
+    dirichlet = ctl$dirichlet_parms,
+    var_adj = ctl$Variance_adjustment_list
+  )
 
   list(
     source = run_dir,

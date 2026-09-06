@@ -40,7 +40,7 @@ fish_fleet]} of total/retained fishery selectivity.}
 \item{dmr}{Array \code{[region, year, season, fish_fleet]} of discard
 mortality rate.}
 
-\item{natmort}{Array \code{[pop, region, year, age, sex]} of natural
+\item{natmort}{Array \code{[pop, region, year, season, age, sex]} of natural
 mortality at age.}
 
 \item{seasdur}{Numeric vector \code{[season]} of season duration (fraction

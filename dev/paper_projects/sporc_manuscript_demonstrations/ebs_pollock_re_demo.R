@@ -131,7 +131,7 @@ pol_model <- function(cont_tv_fish_sel,
 
     # Data inputs
     WAA = sgl_rg_ebswp_data$WAA,
-    # the assessment carries a separate weight at age matrix for the fishery
+    # the assessment has a separate weight at age matrix for the fishery
     # and for each survey index
     WAA_fish = sgl_rg_ebswp_data$WAA_fish,
     WAA_srv = sgl_rg_ebswp_data$WAA_srv,
@@ -278,9 +278,8 @@ pol_model <- function(cont_tv_fish_sel,
     srv_sel_model = paste0("logist1_Fleet_", 1:n_srv),
     # survey catchability blocks
     srv_q_blocks = paste0("none_Fleet_", 1:n_srv),
-    # whether to estiamte all fixed effects for survey selectivity. The vessel
-    # of opportunity index shares the acoustic survey's, and fleet 4 sees age 1
-    # only, where selectivity is absorbed into catchability and so is fixed.
+    # whether to estimate all fixed effects for survey selectivity. the vessel of opportunity index
+    # shares the acoustic survey's, and fleet 4 sees age 1 only, so its selectivity is fixed
     srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2", "fix"),
     # whether to estiamte all fixed effects for survey catchability
     srv_q_spec = rep("est_all", n_srv),
@@ -450,7 +449,9 @@ ggsave(
     selex_plot,
     labels = c('A', 'B'),
     label_size = 30,
-    rel_widths = c(0.4, 0.6), align = 'h', vjust = 4
+    rel_widths = c(0.4, 0.6),
+    align = 'h',
+    vjust = 4
   ),
   height = 8, width = 15
 )

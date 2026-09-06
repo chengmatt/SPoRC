@@ -4,10 +4,10 @@
 \alias{tag_fam_of}
 \title{Classify conventional tag likelihood family}
 \usage{
-tag_fam_of(lt)
+tag_fam_of(like_type)
 }
 \arguments{
-\item{lt}{Integer likelihood type code:
+\item{like_type}{Integer likelihood type code:
 \itemize{
   \item 0, 1: count-based (Poisson / NB)
   \item 2, 3, 4, 5: composition-based (multinomial / Dirichlet-multinomial)

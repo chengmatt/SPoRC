@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_lik_at_age.R
 \name{at_age_split}
 \alias{at_age_split}
-\title{Decode an at-age aggregation type into its split margins}
+\title{Decode an at-age aggregation type into its split dims}
 \usage{
 at_age_split(code)
 }
@@ -11,7 +11,7 @@ at_age_split(code)
 }
 \value{
 A list with logical \code{region} and \code{sex}, \code{TRUE} where
-  that margin is split.
+  that dim is split.
 }
 \description{
 The Type codes follow the composition vocabulary: \code{"agg"} sums over both

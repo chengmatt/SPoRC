@@ -2,13 +2,13 @@
 % Please edit documentation in R/setup_mapping.R
 \name{do_at_age_like_setup}
 \alias{do_at_age_like_setup}
-\title{Set the error scale and likelihood of one at-age stream}
+\title{Set the error scale and likelihood of one at-age data source}
 \usage{
 do_at_age_like_setup(
   input_list,
   like_type,
   sigma_form,
-  stream,
+  data_source,
   fleet_field,
   pop = FALSE
 )
@@ -23,16 +23,16 @@ fleet or one per fleet.}
 reported standard errors alone, \code{"est_additive"} or
 \code{"est_quadrature"} for both.}
 
-\item{stream, fleet_field, pop}{See \code{\link{do_at_age_type_setup}}.}
+\item{data_source, fleet_field, pop}{See \code{\link{do_at_age_type_setup}}.}
 }
 \value{
-\code{input_list} with \code{$data$<stream>_LikeType} and
-  \code{$data$<stream>_sigma_form} set.
+\code{input_list} with \code{$data$<data source>_LikeType} and
+  \code{$data$<data source>_sigma_form} set.
 }
 \description{
 An at-age observation may be lognormal or normal, and its standard deviation
 may come from an estimated parameter, from reported standard errors, or from
-both. This is the parity the aggregated index streams already have, stated per
+both. This is the parity the aggregated index data sources already have, stated per
 fleet.
 }
 \keyword{internal}

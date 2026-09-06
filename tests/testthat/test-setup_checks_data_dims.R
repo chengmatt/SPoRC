@@ -48,8 +48,11 @@ array_cases <- list(
   # observed-age axis is free, so tests that perturb the tail must skip these.
   list(what = "AgeingError", tail_checked = FALSE,
        d = with(dims, c(n_ages, n_obs_ages))),
-  list(what = "AgeingError_t", tail_checked = FALSE,
-       d = with(dims, c(n_years, n_ages, n_obs_ages))),
+  list(
+    what = "AgeingError_t",
+    tail_checked = FALSE,
+    d = with(dims, c(n_years, n_ages, n_obs_ages))
+  ),
   list(what = "SizeAgeTrans",
        d = with(dims, c(n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes))),
   list(what = "Fixed_Movement",

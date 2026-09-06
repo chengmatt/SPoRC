@@ -1,8 +1,7 @@
-# SizeAgeTrans_fish/SizeAgeTrans_srv: fixed per-fleet size-age keys, the
-# growth_model = "none" counterpart of a growth module's derived per-fleet keys
-# and of WAA_fish/WAA_srv overriding the shared WAA. Before this, every fleet
-# under growth_model = "none" was forced onto the one shared SizeAgeTrans no
-# matter what a length-selective gear's own key should have been.
+# SizeAgeTrans_fish/SizeAgeTrans_srv: fixed per-fleet size-age keys, the growth_model = "none"
+# counterpart of derived per-fleet keys and of WAA_fish/WAA_srv overriding the shared WAA.
+#
+# Before this, every fleet under growth_model = "none" was forced onto the one shared SizeAgeTrans.
 
 library(SPoRC)
 library(testthat)
@@ -26,57 +25,99 @@ mk_sat <- function(key) array(rep(key, n_yrs), dim = c(1, 1, n_yrs, 1, n_lens, n
 
 build_input <- function(sat_fish = NULL) {
 
-  input_list <- Setup_Mod_Dim(years = 1:n_yrs, ages = 1:n_ages, lens = lens,
-                              n_regions = 1, n_sexes = 1, n_fish_fleets = 2, n_srv_fleets = 1,
-                              n_pop = 1, natal_region = 1, verbose = FALSE)
-  input_list <- Setup_Mod_Rec(input_list = input_list, do_rec_bias_ramp = 0, sigmaR_switch = 1,
-                              ln_sigmaR = array(log(0.3), c(2, 1, 1)), rec_model = "mean_rec",
-                              sigmaR_spec = "fix", init_age_strc = 1, equil_init_age_strc = 2,
-                              ln_global_R0 = log(8))
+  input_list <- Setup_Mod_Dim(
+    years = 1:n_yrs,
+    ages = 1:n_ages,
+    lens = lens,
+    n_regions = 1,
+    n_sexes = 1,
+    n_fish_fleets = 2,
+    n_srv_fleets = 1,
+    n_pop = 1,
+    natal_region = 1,
+    verbose = FALSE
+  )
+  input_list <- Setup_Mod_Rec(
+    input_list = input_list,
+    do_rec_bias_ramp = 0,
+    sigmaR_switch = 1,
+    ln_sigmaR = array(log(0.3), c(2, 1, 1)),
+    rec_model = "mean_rec",
+    sigmaR_spec = "fix",
+    init_age_strc = 1,
+    equil_init_age_strc = 2,
+    ln_global_R0 = log(8)
+  )
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = array(1e-4 * (lens[1:n_ages + 1])^3, dim = c(1, 1, n_yrs, 1, n_ages, 1)),
     MatAA = array(rep(c(0, 0.5, 1, 1, 1, 1), n_yrs), dim = c(1, 1, n_yrs, 1, n_ages, 1)),
-    fit_lengths = 1, SizeAgeTrans = mk_sat(shared_key),
+    fit_lengths = 1,
+    SizeAgeTrans = mk_sat(shared_key),
     SizeAgeTrans_fish = sat_fish,
-    AgeingError = NULL, M_spec = "fix",
+    AgeingError = NULL,
+    M_spec = "fix",
     Fixed_natmort = array(0.3, dim = c(1, 1, n_yrs, n_ages, 1))
   )
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1, Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
   input_list <- suppressWarnings(Setup_Mod_Catch_and_F(
     input_list = input_list,
-    ObsCatch = array(100, dim = c(1, n_yrs, 1, 2)), UseCatch = array(1, dim = c(1, n_yrs, 1, 2)),
-    Use_F_pen = 0, ln_F_mean_spec = "est",
-    sigmaC_spec = "fix", ln_sigmaC = array(log(0.05), dim = c(1, n_yrs, 1, 2))
+    ObsCatch = array(100, dim = c(1, n_yrs, 1, 2)),
+    UseCatch = array(1, dim = c(1, n_yrs, 1, 2)),
+    Use_F_pen = 0,
+    ln_F_mean_spec = "est",
+    sigmaC_spec = "fix",
+    ln_sigmaC = array(log(0.05), dim = c(1, n_yrs, 1, 2))
   ))
   no_age <- array(0, dim = c(1, n_yrs, 1, 2))
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
-    ObsFishIdx = array(NA, dim = c(1, n_yrs, 1, 2)), ObsFishIdx_SE = array(NA, dim = c(1, n_yrs, 1, 2)),
-    UseFishIdx = array(0, dim = c(1, n_yrs, 1, 2)), fish_idx_type = rep("none", 2),
-    ObsFishAgeComps = array(0, dim = c(1, n_yrs, 1, n_ages, 1, 2)), UseFishAgeComps = no_age,
-    FishAgeComps_LikeType = rep("none", 2), FishAgeComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:2),
-    ObsFishLenComps = array(0, dim = c(1, n_yrs, 1, n_lens, 1, 2)), UseFishLenComps = array(0, dim = c(1, n_yrs, 1, 2)),
-    FishLenComps_LikeType = rep("none", 2), FishLenComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:2)
+    ObsFishIdx = array(NA, dim = c(1, n_yrs, 1, 2)),
+    ObsFishIdx_SE = array(NA, dim = c(1, n_yrs, 1, 2)),
+    UseFishIdx = array(0, dim = c(1, n_yrs, 1, 2)),
+    fish_idx_type = rep("none", 2),
+    ObsFishAgeComps = array(0, dim = c(1, n_yrs, 1, n_ages, 1, 2)),
+    UseFishAgeComps = no_age,
+    FishAgeComps_LikeType = rep("none", 2),
+    FishAgeComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:2),
+    ObsFishLenComps = array(0, dim = c(1, n_yrs, 1, n_lens, 1, 2)),
+    UseFishLenComps = array(0, dim = c(1, n_yrs, 1, 2)),
+    FishLenComps_LikeType = rep("none", 2),
+    FishLenComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:2)
   )
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
-    ObsSrvIdx = array(NA, dim = c(1, n_yrs, 1, 1)), ObsSrvIdx_SE = array(NA, dim = c(1, n_yrs, 1, 1)),
-    UseSrvIdx = array(0, dim = c(1, n_yrs, 1, 1)), srv_idx_type = "none",
-    ObsSrvAgeComps = array(0, dim = c(1, n_yrs, 1, n_ages, 1, 1)), UseSrvAgeComps = array(0, dim = c(1, n_yrs, 1, 1)),
-    SrvAgeComps_LikeType = "none", SrvAgeComps_Type = "none_Year_1-terminal_Fleet_1",
-    ObsSrvLenComps = array(0, dim = c(1, n_yrs, 1, n_lens, 1, 1)), UseSrvLenComps = array(0, dim = c(1, n_yrs, 1, 1)),
-    SrvLenComps_LikeType = "none", SrvLenComps_Type = "none_Year_1-terminal_Fleet_1"
+    ObsSrvIdx = array(NA, dim = c(1, n_yrs, 1, 1)),
+    ObsSrvIdx_SE = array(NA, dim = c(1, n_yrs, 1, 1)),
+    UseSrvIdx = array(0, dim = c(1, n_yrs, 1, 1)),
+    srv_idx_type = "none",
+    ObsSrvAgeComps = array(0, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
+    UseSrvAgeComps = array(0, dim = c(1, n_yrs, 1, 1)),
+    SrvAgeComps_LikeType = "none",
+    SrvAgeComps_Type = "none_Year_1-terminal_Fleet_1",
+    ObsSrvLenComps = array(0, dim = c(1, n_yrs, 1, n_lens, 1, 1)),
+    UseSrvLenComps = array(0, dim = c(1, n_yrs, 1, 1)),
+    SrvLenComps_LikeType = "none",
+    SrvLenComps_Type = "none_Year_1-terminal_Fleet_1"
   )
   input_list <- Setup_Mod_Fishsel_and_Q(
-    input_list = input_list, fish_selex_type = "length",
-    fish_sel_model = paste0("logist1_Fleet_", 1:2), fish_fixed_sel_pars_spec = rep("fix", 2),
+    input_list = input_list,
+    fish_selex_type = "length",
+    fish_sel_model = paste0("logist1_Fleet_", 1:2),
+    fish_fixed_sel_pars_spec = rep("fix", 2),
     fish_q_spec = rep("fix", 2)
   )
   input_list <- Setup_Mod_Srvsel_and_Q(
-    input_list = input_list, srv_sel_model = "logist1_Fleet_1",
-    srv_fixed_sel_pars_spec = "fix", srv_q_spec = "fix"
+    input_list = input_list,
+    srv_sel_model = "logist1_Fleet_1",
+    srv_fixed_sel_pars_spec = "fix",
+    srv_q_spec = "fix"
   )
   input_list <- Setup_Mod_Weighting(input_list = input_list, Wt_Catch = 1, Wt_F = 1)
 
@@ -98,17 +139,43 @@ test_that("SizeAgeTrans_fish requires growth_model = 'none' and the right dimens
   base <- build_input()
 
   expect_error(
-    Setup_Mod_Biologicals(input_list = Setup_Mod_Rec(Setup_Mod_Dim(years = 1:n_yrs, ages = 1:n_ages, lens = lens,
-                                                                   n_regions = 1, n_sexes = 1, n_fish_fleets = 2, n_srv_fleets = 1,
-                                                                   n_pop = 1, natal_region = 1, verbose = FALSE),
-                                                      do_rec_bias_ramp = 0, sigmaR_switch = 1, ln_sigmaR = array(log(0.3), c(2, 1, 1)),
-                                                      rec_model = "mean_rec", sigmaR_spec = "fix", init_age_strc = 1,
-                                                      equil_init_age_strc = 2, ln_global_R0 = log(8)),
-                          WAA = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1)), MatAA = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1)),
-                          fit_lengths = 1, growth_model = "vb_schnute", ln_growth_pars = array(log(c(20, 60, 0.2, 0.1, 0.1)), c(1, 1, 1, 5)),
-                          growth_A1 = 1, growth_A2 = n_ages, growth_len_lower = lens,
-                          SizeAgeTrans = NA, SizeAgeTrans_fish = mk_sat(key_short),
-                          AgeingError = NULL, M_spec = "fix", Fixed_natmort = array(0.3, dim = c(1, 1, n_yrs, n_ages, 1))),
+    Setup_Mod_Biologicals(
+      input_list = Setup_Mod_Rec(
+        Setup_Mod_Dim(
+          years = 1:n_yrs,
+          ages = 1:n_ages,
+          lens = lens,
+          n_regions = 1,
+          n_sexes = 1,
+          n_fish_fleets = 2,
+          n_srv_fleets = 1,
+          n_pop = 1,
+          natal_region = 1,
+          verbose = FALSE
+        ),
+        do_rec_bias_ramp = 0,
+        sigmaR_switch = 1,
+        ln_sigmaR = array(log(0.3), c(2, 1, 1)),
+        rec_model = "mean_rec",
+        sigmaR_spec = "fix",
+        init_age_strc = 1,
+        equil_init_age_strc = 2,
+        ln_global_R0 = log(8)
+      ),
+      WAA = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1)),
+      MatAA = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1)),
+      fit_lengths = 1,
+      growth_model = "vb_schnute",
+      ln_growth_pars = array(log(c(20, 60, 0.2, 0.1, 0.1)), c(1, 1, 1, 5)),
+      growth_A1 = 1,
+      growth_A2 = n_ages,
+      growth_len_lower = lens,
+      SizeAgeTrans = NA,
+      SizeAgeTrans_fish = mk_sat(key_short),
+      AgeingError = NULL,
+      M_spec = "fix",
+      Fixed_natmort = array(0.3, dim = c(1, 1, n_yrs, n_ages, 1))
+    ),
     "growth_model = 'none'"
   )
 

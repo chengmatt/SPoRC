@@ -1,7 +1,9 @@
 # Stage 2 of 3: objective function
 #
-# Initial numbers at age: the equilibrium age structure the model starts from,
-# including the equilibrium plus group when movement is present.
+# Initial numbers at age: the equilibrium age structure the model starts from, including the
+# equilibrium plus group when movement is present.
+
+# Initial Numbers at Age ----------------------------------------------------
 
 #' Initialize Numbers-at-Age (NAA) for a Population Model
 #'
@@ -37,8 +39,13 @@
 #' @param rec_seas_prop Matrix (\code{n_pop x n_seas}) giving seasonal recruitment
 #'   proportions.
 #'
-#' @param natmort Array (\code{n_pop x n_regions x n_ages x n_sexes}) of natural
-#'   mortality rates.
+#' @param natmort Array (\code{n_pop x n_regions x n_seas x n_ages x n_sexes}) of
+#'   natural mortality, a rate per year in each season.
+#'
+#' @param natmort_annual Array (\code{n_pop x n_regions x n_ages x n_sexes}) of
+#'   the annual total, the duration weighted sum over seasons. Read by the
+#'   equilibrium seed and the plus group series, which step a whole year at once.
+#'   Defaults to that sum.
 #'
 #' @param init_F Numeric array (\code{n_regions x n_seas x n_fish_fleets})
 #'   giving fishing mortality applied in each region, season, and fleet during
@@ -185,30 +192,32 @@
 #' \eqn{2,\dots,A}.
 #'
 #' @keywords internal
-Get_Init_NAA <- function(init_age_strc,
-                         init_iter,
-                         n_regions,
-                         n_pop,
-                         n_sexes,
-                         n_ages,
-                         n_seas,
-                         n_fish_fleets,
-                         seasdur,
-                         rec_seas_prop,
-                         natmort,
-                         init_F,
-                         dmr,
-                         fish_sel,
-                         ret_sel,
-                         R0_r,
-                         sexratio,
-                         Movement,
-                         do_recruits_move,
-                         ln_InitDevs,
-                         Mrate = NULL,
-                         move_timing = 0
-,
-                         expm_nsub = 0) {
+Get_Init_NAA <- function(
+  init_age_strc,
+  init_iter,
+  n_regions,
+  n_pop,
+  n_sexes,
+  n_ages,
+  n_seas,
+  n_fish_fleets,
+  seasdur,
+  rec_seas_prop,
+  natmort,
+  natmort_annual = collapse_natmort_annual(natmort, seasdur, seas_dim = 3),
+  init_F,
+  dmr,
+  fish_sel,
+  ret_sel,
+  R0_r,
+  sexratio,
+  Movement,
+  do_recruits_move,
+  ln_InitDevs,
+  Mrate = NULL,
+  move_timing = 0,
+  expm_nsub = 0
+) {
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
@@ -242,7 +251,7 @@ Get_Init_NAA <- function(init_age_strc,
             2, as.vector(init_F[r,1,]), "*"
           ))
           tmp_F = tmp_ret_F + tmp_disc_F # total F
-          tmp_cumsum_Z = cumsum(natmort[p,r,1:(n_ages-1),s] + tmp_F)
+          tmp_cumsum_Z = cumsum(natmort_annual[p,r,1:(n_ages-1),s] + tmp_F)
           Init_NAA[p,r,,s] = c(R0_r[p,r] * sexratio[p,r,s] * rec_seas_prop[p,1], R0_r[p,r] * sexratio[p,r,s] * rec_seas_prop[p,1] * exp(-tmp_cumsum_Z))
         } # end s loop
       } # end r loop
@@ -277,19 +286,19 @@ Get_Init_NAA <- function(init_age_strc,
                 2, as.vector(init_F[r,seas,]), "*"
               ))
               tmp_F = tmp_ret_F + tmp_disc_F
-              Z_ra[r,] = (natmort[p,r,1:n_ages,s] * seasdur[seas]) + tmp_F
+              Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F
               # mortality wtihin season
               if(move_timing == 0) {
                 if(seas < n_seas) {
                   Init_NAA_next_year[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
-                    exp(-((natmort[p,r,1:n_ages,s] * seasdur[seas]) + tmp_F ))
+                    exp(-((natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F ))
                 } else {
                   # ageing and mortality (advance ages in the next year)
                   Init_NAA_next_year[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages-1),s] *
-                    exp(-((natmort[p,r,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)] ))
+                    exp(-((natmort[p,r,seas,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)] ))
                   # accumulate plus group
                   Init_NAA_next_year[p,r,n_ages,s] = (Init_NAA_next_year[p,r,n_ages,s]) +
-                    (Init_NAA[p,r,n_ages,s] * exp(-((natmort[p,r,n_ages,s] * seasdur[seas]) + tmp_F[n_ages] )))
+                    (Init_NAA[p,r,n_ages,s] * exp(-((natmort[p,r,seas,n_ages,s] * seasdur[seas]) + tmp_F[n_ages] )))
                 } # end else
               } # end if move_timing == 0
             } # end r loop
@@ -339,13 +348,13 @@ Get_Init_NAA <- function(init_age_strc,
               # within season mortality
               if(seas < n_seas) {
                 Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
-                  exp(-((natmort[p,r,1:n_ages,s] * seasdur[seas]) + tmp_F ))
+                  exp(-((natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F ))
               } else {
                 tmp_plus_befage = Init_NAA[p,r,n_ages,s] # save temporary plus group before ageing
                 # ageing and mortality (age advancement)
-                Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages-1),s] * exp(-((natmort[p,r,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)] ))
+                Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages-1),s] * exp(-((natmort[p,r,seas,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)] ))
                 # accumulate plus group
-                Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,n_ages,s] * seasdur[seas]) + tmp_F[n_ages] )))
+                Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,seas,n_ages,s] * seasdur[seas]) + tmp_F[n_ages] )))
               }
             } # end r loop
           } # end seas loop
@@ -362,8 +371,8 @@ Get_Init_NAA <- function(init_age_strc,
           F_annual_plus = sum(array(init_F[r,,] * (fish_sel[p,r,,n_ages,s,] * ret_sel[p,r,,n_ages,s,] + # retained
                                                      fish_sel[p,r,,n_ages,s,] * (1 - ret_sel[p,r,,n_ages,s,]) * dmr[r,,]), # discarded
                                     dim = c(n_seas, n_fish_fleets)))
-          Z_penult = natmort[p,r,n_ages-1,s] + F_annual_penult
-          Z_plus = natmort[p,r,n_ages,s] + F_annual_plus
+          Z_penult = natmort_annual[p,r,n_ages-1,s] + F_annual_penult
+          Z_plus = natmort_annual[p,r,n_ages,s] + F_annual_plus
           Init_NAA[p,r,n_ages,s] = Init_NAA[p,r,n_ages-1,s] * exp(-Z_penult) / (1 - exp(-Z_plus))
         } # end s loop
       } # end r loop
@@ -395,18 +404,18 @@ Get_Init_NAA <- function(init_age_strc,
               tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
                                          2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
               tmp_F = tmp_ret_F + tmp_disc_F # total F
-              Z_ra[r,] = (natmort[p,r,1:n_ages,s] * seasdur[seas]) + tmp_F
+              Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F
               # within season mortality
               if(move_timing == 0) {
                 if(seas < n_seas) {
                   Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
-                    exp(-((natmort[p,r,1:n_ages,s] * seasdur[seas]) + tmp_F ))
+                    exp(-((natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F ))
                 } else {
                   tmp_plus_befage = Init_NAA[p,r,n_ages,s] # save temporary plus group before ageing
                   # ageing and mortality (age advancement)
-                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages-1),s] * exp(-((natmort[p,r,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)]))
+                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages-1),s] * exp(-((natmort[p,r,seas,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)]))
                   # accumulate plus group
-                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,n_ages,s] * seasdur[seas]) + tmp_F[n_ages])))
+                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,seas,n_ages,s] * seasdur[seas]) + tmp_F[n_ages])))
                 }
               } # end if move_timing == 0
             } # end r loop
@@ -445,8 +454,8 @@ Get_Init_NAA <- function(init_age_strc,
                                  dim = c(n_regions, n_fish_fleets)))
           # Column-convention seasonal operator (build_seas_operator returns row convention),
           # left-composed so that season 1 is applied first.
-          Z_penult = (natmort[p,,n_ages-1,s] * seasdur[seas]) + F_penult
-          Z_plus_s = (natmort[p,,n_ages,s] * seasdur[seas]) + F_plus
+          Z_penult = (natmort[p,,seas,n_ages-1,s] * seasdur[seas]) + F_penult
+          Z_plus_s = (natmort[p,,seas,n_ages,s] * seasdur[seas]) + F_plus
           Qp = if(is.null(Mrate)) NULL else Mrate[p,,,seas,n_ages-1,s]
           Ql = if(is.null(Mrate)) NULL else Mrate[p,,,seas,n_ages,s]
           T_penult = t(build_seas_operator(Movement[p,,,seas,n_ages-1,s], Z_penult, Qp, seasdur[seas], move_timing, expm_nsub = expm_nsub)) %*% T_penult
@@ -483,18 +492,18 @@ Get_Init_NAA <- function(init_age_strc,
               tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
                                          2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
               tmp_F = tmp_ret_F + tmp_disc_F # total F
-              Z_ra[r,] = (natmort[p,r,1:n_ages,s] * seasdur[seas]) + tmp_F
+              Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F
               # within season mortality
               if(move_timing == 0) {
                 if(seas < n_seas) {
                   Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
-                    exp(-((natmort[p,r,1:n_ages,s] * seasdur[seas]) + tmp_F ))
+                    exp(-((natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F ))
                 } else {
                   tmp_plus_befage = Init_NAA[p,r,n_ages,s] # save temporary plus group before ageing
                   # ageing and mortality (age advancement)
-                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages-1),s] * exp(-((natmort[p,r,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)]))
+                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages-1),s] * exp(-((natmort[p,r,seas,1:(n_ages-1),s] * seasdur[seas]) + tmp_F[1:(n_ages-1)]))
                   # accumulate plus group
-                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,n_ages,s] * seasdur[seas]) + tmp_F[n_ages])))
+                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,seas,n_ages,s] * seasdur[seas]) + tmp_F[n_ages])))
                 }
               } # end if move_timing == 0
             } # end r loop
@@ -529,8 +538,8 @@ Get_Init_NAA <- function(init_age_strc,
           F_annual_plus = sum(array(init_F[r,,] * (fish_sel[p,r,,n_ages,s,] * ret_sel[p,r,,n_ages,s,] + # retained
                                                      fish_sel[p,r,,n_ages,s,] * (1 - ret_sel[p,r,,n_ages,s,]) * dmr[r,,]), # discarded
                                     dim = c(n_seas, n_fish_fleets)))
-          Z_penult = natmort[p,r,n_ages-1,s] + F_annual_penult
-          Z_plus = natmort[p,r,n_ages,s] + F_annual_plus
+          Z_penult = natmort_annual[p,r,n_ages-1,s] + F_annual_penult
+          Z_plus = natmort_annual[p,r,n_ages,s] + F_annual_plus
           Init_NAA[p,r,n_ages,s] = Init_NAA[p,r,n_ages-1,s] * exp(-Z_penult) / (1 - exp(-Z_plus))
         } # end s loop
       } # end r loop
@@ -539,9 +548,8 @@ Get_Init_NAA <- function(init_age_strc,
     NAA = Init_NAA
   }
 
-  # Free initial numbers at age: no equilibrium is projected at all, so the
-  # deviations are the numbers rather than multipliers on an equilibrium. Seeding
-  # with the sex ratio lets the shared deviation step below to be used 
+  # free initial numbers at age: nothing is projected, so the deviations are the numbers rather
+  # than multipliers on an equilibrium. seeding with the sex ratio reuses the shared step below
   if(init_age_strc == 4) {
     for(p in 1:n_pop) for(r in 1:n_regions) for(s in 1:n_sexes) NAA[p,r,2:n_ages,s] = sexratio[p,r,s]
   }
@@ -550,7 +558,7 @@ Get_Init_NAA <- function(init_age_strc,
   for(p in 1:n_pop) {
     # Overwrite first age
     for(s in 1:n_sexes) NAA[p,,1,s] <- R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,1]
-    # Apply age deviations; sexes mapped to one shared parameter carry identical values here
+    # Apply age deviations; sexes mapped to one shared parameter have identical values here
     for(r in 1:n_regions) for(s1 in 1:n_sexes) NAA[p,r,2:n_ages,s1] <- NAA[p,r,2:n_ages,s1] * exp(ln_InitDevs[p,r,,s1])
   } # end p loop
 

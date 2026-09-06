@@ -9,7 +9,7 @@ do_francis_reweighting(data, rep, age_labels, len_labels, year_labels)
 \arguments{
 \item{data}{List of model data inputs containing observed compositions,
 usage flags, input sample sizes, weight arrays, and composition type
-matrices for both pooled and population-specific data streams.}
+matrices for both pooled and population-specific data sources.}
 
 \item{rep}{Report list from a fitted RTMB model containing predicted
 compositions (\code{CAA}, \code{CAL}, \code{SrvIAA}, \code{SrvIAL})
@@ -35,7 +35,7 @@ A named list containing:
       \code{data}. Cells remain \code{NA} when the corresponding
       \code{Use*_pop} flag contains no ones.}
     \item{\code{mean_francis}}{Long-format dataframe of observed and
-      expected composition means across all data streams and populations,
+      expected composition means across all data sources and populations,
       with columns \code{Region}, \code{Comp_Year}, \code{Comp_Seas},
       \code{Sex}, \code{Fleet}, \code{obs}, \code{pred}, \code{Type},
       and \code{Pop} (pooled rows have \code{Pop = NA}).}

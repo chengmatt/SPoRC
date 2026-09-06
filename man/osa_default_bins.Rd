@@ -12,7 +12,7 @@ osa_default_bins(data, comp_source, pop = FALSE, discard = FALSE)
 \item{comp_source}{Composition source name, as \code{\link{get_osa}} takes it.}
 
 \item{pop, discard}{Whether the source is population-specific or the discard
-stream, as \code{\link{get_osa}} takes them.}
+data source, as \code{\link{get_osa}} takes them.}
 }
 \value{
 List with \code{bins} and \code{bin_label}.
@@ -24,6 +24,6 @@ the label columns never reach the residual frame and that panel errors when it
 is printed, so they are filled from the data here: the observed age bins for
 an age or conditional age-at-length source and the length bins for a length
 source. The observed bins are read off the observation array, since ageing
-error can leave fewer of them than the model carries.
+error can leave fewer of them than the model has.
 }
 \keyword{internal}

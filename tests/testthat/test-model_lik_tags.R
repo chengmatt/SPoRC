@@ -37,16 +37,25 @@ make_data <- function(like_type, ln_theta = log(5), n_tags_released = 50) {
     n_conv_tag_cohorts = n_conv_tag_cohorts,
     conv_tag_release_indicator = conv_tag_release_indicator,
     conv_tag_max_liberty = conv_tag_max_liberty,
-    n_yrs = n_yrs, n_seas = n_seas, conv_tag_mixing_period = conv_tag_mixing_period,
-    n_fish_fleets = n_fish_fleets, use_conv_fish_tagging = use_conv_fish_tagging,
-    n_conv_tag_pop_pool = n_conv_tag_pop_pool, n_regions = n_regions,
-    n_conv_tag_age_pool = n_conv_tag_age_pool, n_conv_tag_sex_pool = n_conv_tag_sex_pool,
-    conv_tag_pop_pool = conv_tag_pop_pool, conv_tag_age_pool = conv_tag_age_pool,
-    conv_tag_sex_pool = conv_tag_sex_pool, conv_fish_tag_like = like_type,
+    n_yrs = n_yrs,
+    n_seas = n_seas,
+    conv_tag_mixing_period = conv_tag_mixing_period,
+    n_fish_fleets = n_fish_fleets,
+    use_conv_fish_tagging = use_conv_fish_tagging,
+    n_conv_tag_pop_pool = n_conv_tag_pop_pool,
+    n_regions = n_regions,
+    n_conv_tag_age_pool = n_conv_tag_age_pool,
+    n_conv_tag_sex_pool = n_conv_tag_sex_pool,
+    conv_tag_pop_pool = conv_tag_pop_pool,
+    conv_tag_age_pool = conv_tag_age_pool,
+    conv_tag_sex_pool = conv_tag_sex_pool,
+    conv_fish_tag_like = like_type,
     conv_fish_tag_nLL = conv_fish_tag_nLL,
     obs_recap = obs,
-    obs_conv_tag_fish_recap = obs, pred_conv_tag_fish_recap = pred,
-    addtotag = addtotag, ln_conv_fish_tag_theta = ln_theta,
+    obs_conv_tag_fish_recap = obs,
+    pred_conv_tag_fish_recap = pred,
+    addtotag = addtotag,
+    ln_conv_fish_tag_theta = ln_theta,
     conv_tagged_fish = conv_tagged_fish
   )
 }
@@ -187,8 +196,11 @@ test_that("external path: release-conditioned Dirichlet-multinomial (like_type =
     tmp_pred <- c(pred_p, 1 - sum(pred_p))
 
     expected[ry, 1, 1, 1, 1] <- -1 * ddirmult(
-      obs = tmp_obs, pred = tmp_pred, Ntotal = n_rel,
-      ln_theta = d$ln_conv_fish_tag_theta, TRUE
+      obs = tmp_obs,
+      pred = tmp_pred,
+      Ntotal = n_rel,
+      ln_theta = d$ln_conv_fish_tag_theta,
+      TRUE
     )
   }
 
@@ -216,8 +228,11 @@ test_that("external path: recapture-conditioned Dirichlet-multinomial (like_type
     tmp_pred_all <- pred_r / sum(pred_r)
 
     expected[ry, 1, 1, 1, 1] <- -1 * ddirmult(
-      obs = tmp_obs_all, pred = tmp_pred_all, Ntotal = n_recap,
-      ln_theta = d$ln_conv_fish_tag_theta, TRUE
+      obs = tmp_obs_all,
+      pred = tmp_pred_all,
+      Ntotal = n_recap,
+      ln_theta = d$ln_conv_fish_tag_theta,
+      TRUE
     )
   }
 
@@ -243,8 +258,12 @@ test_that("tag_grid() enumerates recovery events and correctly applies the mixin
 
   # mixing_period = 1 -> both ry = 1 and ry = 2 events kept
   g_keep_all <- tag_grid(
-    n_conv_tag_cohorts = 1, conv_tag_release_indicator = conv_tag_release_indicator,
-    conv_tag_max_liberty = 2, n_yrs = 2, n_seas = 1, conv_tag_mixing_period = 1
+    n_conv_tag_cohorts = 1,
+    conv_tag_release_indicator = conv_tag_release_indicator,
+    conv_tag_max_liberty = 2,
+    n_yrs = 2,
+    n_seas = 1,
+    conv_tag_mixing_period = 1
   )
   expect_equal(nrow(g_keep_all), 2)
   expect_equal(g_keep_all$ry, c(1, 2))
@@ -253,16 +272,24 @@ test_that("tag_grid() enumerates recovery events and correctly applies the mixin
   # mixing_period = 2 -> the ry = 1 event (total_seas_at_liberty = 1) is skipped,
   # only ry = 2 (total_seas_at_liberty = 2) survives
   g_skip_first <- tag_grid(
-    n_conv_tag_cohorts = 1, conv_tag_release_indicator = conv_tag_release_indicator,
-    conv_tag_max_liberty = 2, n_yrs = 2, n_seas = 1, conv_tag_mixing_period = 2
+    n_conv_tag_cohorts = 1,
+    conv_tag_release_indicator = conv_tag_release_indicator,
+    conv_tag_max_liberty = 2,
+    n_yrs = 2,
+    n_seas = 1,
+    conv_tag_mixing_period = 2
   )
   expect_equal(nrow(g_skip_first), 1)
   expect_equal(g_skip_first$ry, 2)
 
   # mixing_period so large that no events survive -> empty data.frame
   g_none <- tag_grid(
-    n_conv_tag_cohorts = 1, conv_tag_release_indicator = conv_tag_release_indicator,
-    conv_tag_max_liberty = 2, n_yrs = 2, n_seas = 1, conv_tag_mixing_period = 99
+    n_conv_tag_cohorts = 1,
+    conv_tag_release_indicator = conv_tag_release_indicator,
+    conv_tag_max_liberty = 2,
+    n_yrs = 2,
+    n_seas = 1,
+    conv_tag_mixing_period = 99
   )
   expect_equal(nrow(g_none), NULL)
 })

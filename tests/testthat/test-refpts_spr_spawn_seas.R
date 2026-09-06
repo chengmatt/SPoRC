@@ -1,48 +1,56 @@
-# Spawning-per-recruit when spawning happens in season 1 of a multi-season year.
+# Spawning-per-recruit when spawning happens in season 1 of a multi-season year, the configuration the
+# North Sea sandeel case study uses and the other seasonal reference point tests leave uncovered.
 #
-# The seasonal reference point tests all set spawn_seas = 2. That leaves
-# spawn_seas = 1 with n_seas > 1 uncovered, and it is the configuration the
-# North Sea sandeel case study uses (vignettes/ah_north_sea_sandeel_case_study.Rmd:
-# n_pop 1, n_regions 1, n_sexes 1, n_seas 2, spawn_seas 1).
+# Ages up to n_ages - 2 capture spawning biomass inside the season loop, while the penultimate age and the
+# plus group advance under `if(spawn_seas > 1)`, which at spawn_seas = 1 is skipped entirely.
 #
-# The gap matters because of how the solver is arranged. Ages up to n_ages - 2
-# capture spawning biomass inside the season loop, while the penultimate age and
-# the plus group are handled in separate blocks that advance a start-of-year
-# abundance forward to the spawning season under `if(spawn_seas > 1)`. When
-# spawn_seas is 1 that advancement is skipped, so the two halves of the
-# calculation meet in a way no test exercised.
-#
-# These check the solver against a cohort tracked forward season by season, a
-# different arrangement of the same quantity: one continuous walk rather than a
-# loop plus two closed-form tails. Two conventions are shared rather than
-# rederived, because they are choices the model makes rather than consequences:
-# a season's F is applied whole rather than scaled by season duration, and the
-# plus group accumulates on annual rates.
+# Checked against a cohort tracked forward season by season. Two conventions are shared rather than
+# rederived: a season's F applies whole, and the plus group accumulates on annual rates.
 
-spr_data <- function(spawn_seas, rec_seas_prop, n_seas = 2L, seasdur = NULL,
-                     t_spawn = 0, n_ages = 5L, M = 0.8, sel = NULL, dmr = 0) {
+spr_data <- function(
+  spawn_seas,
+  rec_seas_prop,
+  n_seas = 2L,
+  seasdur = NULL,
+  t_spawn = 0,
+  n_ages = 5L,
+  M = 0.8,
+  sel = NULL,
+  dmr = 0
+) {
   if(is.null(seasdur)) seasdur <- rep(1 / n_seas, n_seas)
   if(is.null(sel)) sel <- c(0, 0.4, 1, 1, 0.7)[seq_len(n_ages)]
   n_flt <- 1L
   list(
-    n_pop = 1L, n_ages = n_ages, n_seas = n_seas, n_fish_fleets = n_flt,
-    seasdur = seasdur, spawn_seas = spawn_seas, t_spawn = t_spawn,
+    n_pop = 1L,
+    n_ages = n_ages,
+    n_seas = n_seas,
+    n_fish_fleets = n_flt,
+    seasdur = seasdur,
+    spawn_seas = spawn_seas,
+    t_spawn = t_spawn,
     F_fract_flt = array(1, dim = c(n_seas, n_flt)),
     fish_sel = array(rep(sel, each = n_seas), dim = c(1, n_seas, n_ages, n_flt)),
     ret_sel = array(1, dim = c(1, n_seas, n_ages, n_flt)),
     dmr = array(dmr, dim = c(n_seas, n_flt)),
-    natmort = array(M, dim = c(1, n_ages)),
+    natmort = array(M, dim = c(1, n_seas, n_ages)),
     WAA = array(rep(seq(0.005, 0.025, length.out = n_ages), each = n_seas),
                 dim = c(1, n_seas, n_ages)),
     MatAA = array(rep(c(0, 0.5, 1, 1, 1)[seq_len(n_ages)], each = n_seas),
                   dim = c(1, n_seas, n_ages)),
-    sex_ratio_f = 1, rec_seas_prop = array(rec_seas_prop, dim = c(1, n_seas)),
-    stray_rate = 0, natal_region = 1L, n_pop_in_region = 1, SPR_x = 0.4)
+    sex_ratio_f = 1,
+    rec_seas_prop = array(rec_seas_prop, dim = c(1, n_seas)),
+    stray_rate = 0,
+    natal_region = 1L,
+    n_pop_in_region = 1,
+    SPR_x = 0.4
+  )
 }
 
 # Spawning biomass per recruit, walked forward one season at a time.
 spr_oracle <- function(d, f) {
-  M <- d$natmort[1, ]; sel <- d$fish_sel[1, 1, , 1]
+  # M is a rate per year per season, laid out [seas, age]
+  M <- array(d$natmort[1, , ], dim = c(d$n_seas, d$n_ages)); sel <- d$fish_sel[1, 1, , 1]
   ss <- d$spawn_seas; ts <- d$t_spawn; sd_ <- d$seasdur
   n_ages <- d$n_ages; n_seas <- d$n_seas
 
@@ -54,7 +62,7 @@ spr_oracle <- function(d, f) {
   for(a in 1:(n_ages - 1)) {
     for(s in 1:n_seas) {
       f_seas <- f * sel[a] * (1 + (1 - 1) * d$dmr[s, 1])
-      z_seas <- f_seas + M[a] * sd_[s]
+      z_seas <- f_seas + M[s, a] * sd_[s]
       if(s > 1 && a == 1) N[a] <- N[a] + d$rec_seas_prop[1, s] * d$sex_ratio_f[1]
       if(s == ss) SB[a] <- N[a] * d$WAA[1, ss, a] * d$MatAA[1, ss, a] * exp(-ts * z_seas)
       if(s < n_seas) {
@@ -67,15 +75,15 @@ spr_oracle <- function(d, f) {
   } # end a loop
 
   # the plus group accumulates from the penultimate age at its start-of-year
-  # abundance, on annual rates, then is carried to the spawning season
-  z_penult <- M[n_ages - 1] + n_seas * f * sel[n_ages - 1]
-  z_plus <- M[n_ages] + n_seas * f * sel[n_ages]
+  # abundance, on annual rates, then is kept to the spawning season
+  z_penult <- sum(M[, n_ages - 1] * sd_) + n_seas * f * sel[n_ages - 1]
+  z_plus <- sum(M[, n_ages] * sd_) + n_seas * f * sel[n_ages]
   n_plus <- start_of_year[n_ages - 1] * exp(-z_penult) / (1 - exp(-z_plus))
   if(ss > 1)
     for(s in 1:(ss - 1))
-      n_plus <- n_plus * exp(-(M[n_ages] * sd_[s] + f * sel[n_ages]))
+      n_plus <- n_plus * exp(-(M[s, n_ages] * sd_[s] + f * sel[n_ages]))
   SB[n_ages] <- n_plus * d$WAA[1, ss, n_ages] * d$MatAA[1, ss, n_ages] *
-    exp(-ts * (M[n_ages] * sd_[ss] + f * sel[n_ages]))
+    exp(-ts * (M[ss, n_ages] * sd_[ss] + f * sel[n_ages]))
 
   sum(SB)
 }
@@ -126,8 +134,12 @@ test_that("unequal season durations and spawning inside the season agree", {
   # from passing.
   for(ss in 1:2) {
     for(ts in c(0, 0.5, 1)) {
-      d <- spr_data(spawn_seas = ss, rec_seas_prop = c(0, 1),
-                    seasdur = c(0.3, 0.7), t_spawn = ts)
+      d <- spr_data(
+        spawn_seas = ss,
+        rec_seas_prop = c(0, 1),
+        seasdur = c(0.3, 0.7),
+        t_spawn = ts
+      )
       for(f in c(0, 0.3)) {
         expect_equal(spr_solver(d, f), spr_oracle(d, f), tolerance = 1e-10,
                      label = sprintf("SBPR at spawn_seas = %d, t_spawn = %g, F = %g",
@@ -150,10 +162,10 @@ test_that("spawning season changes the answer", {
 })
 
 
-test_that("the plus group carries a real share of per-recruit biomass", {
+test_that("the plus group has a real share of per-recruit biomass", {
   # The one place the two arrangements differed was the plus group, and it only
   # showed up because the plus group is a large share of the total here. A
-  # fixture where it were negligible would pass while testing nothing.
+  # test setup where it were negligible would pass while testing nothing.
   d <- spr_data(spawn_seas = 1L, rec_seas_prop = c(0, 1))
   obj <- RTMB::MakeADFun(function(p) single_region_SPR(p, d),
                          list(log_F_x = log(1e-12)), silent = TRUE)

@@ -1,7 +1,4 @@
-# Purpose: Build sgl_rg_ebswp_data, the container for the EBS walleye pollock
-#          case study. Everything the case study needs lives in the object:
-#          model inputs, the ADMB maximum likelihood estimate used as a starting
-#          point, and the ADMB output the bridge is compared against.
+# Purpose: Build sgl_rg_ebswp_data, the inputs, ADMB seed, and ADMB output for the EBS pollock case study
 # Creator: Matthew LH. Cheng
 # Date Created: 8/7/26
 #
@@ -19,9 +16,8 @@ par_txt <- readLines(here("dev", "dev_data", "pm.par"))
 bts_cov <- as.matrix(utils::read.table(here("dev", "dev_data", "cov_2024.dat")))
 
 # Dimensions -----------------------------------------------------------------
-# Survey fleet 1 is the bottom trawl survey, 2 the acoustic trawl survey, 3 the
-# acoustic vessel of opportunity index, and 4 the acoustic survey's age 1
-# abundance, which the assessment fits as an index in its own right.
+# survey fleets: 1 bottom trawl, 2 acoustic trawl, 3 acoustic vessel of opportunity, 4 the
+# acoustic survey's age 1 abundance, which the assessment fits as an index in its own right
 years <- seq(in_dat$styr, in_dat$endyr)
 ages <- 1:in_dat$nages
 n_yrs <- length(years)
@@ -52,7 +48,7 @@ grab <- function(nm) {
 }
 
 # Biologicals ----------------------------------------------------------------
-# The assessment carries a different weight at age matrix for spawning biomass,
+# The assessment has a different weight at age matrix for spawning biomass,
 # for catch, and for each survey index.
 WAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 MatAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
@@ -77,7 +73,7 @@ UseCatch <- array(1, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 
 # Fishery index and compositions ---------------------------------------------
 # The CPUE series covers the second through thirteenth model years and is fit on
-# the arithmetic scale, so its standard error is carried untransformed.
+# the arithmetic scale, so its standard error is kept untransformed.
 ObsFishIdx <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 ObsFishIdx_SE <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 UseFishIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
@@ -94,9 +90,8 @@ UseFishAgeComps[1, i_fsh, 1, 1] <- 1
 ISS_FishAgeComps[1, i_fsh, 1, 1, 1] <- in_dat$sam_fsh
 
 # Survey indices -------------------------------------------------------------
-# The trawl index is fit with a full covariance matrix on the arithmetic scale,
-# the acoustic index lognormally, the vessel of opportunity index normally, and
-# the age 1 index lognormally with a variance folded into its weight.
+# trawl fits with a full covariance matrix on the arithmetic scale, acoustic lognormally, vessel
+# of opportunity normally, age 1 lognormally with a variance folded into its weight
 ObsSrvIdx <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
 ObsSrvIdx_SE <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
 UseSrvIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
@@ -127,12 +122,8 @@ UseSrvAgeComps[1, i_bts, 1, 1] <- 1
 ObsSrvAgeComps[1, i_ats, 1, , 1, 2] <- in_dat$oac_ats[, 1:n_ages]
 UseSrvAgeComps[1, i_ats, 1, 2] <- 1
 
-# pm.tpl divides the observed trawl composition by its ages 2-15 subtotal while
-# keeping all 15 entries, so its observed vector sums to more than one while the
-# expected sums to one. Because sam * sum(p * c * log(e)) equals (sam * c) *
-# sum(p * log(e)), that is a per-year inflation of the sample size, applied here
-# to a properly normalized composition. sam_bts and sam_ats are integer vectors
-# in pm.tpl, so both are truncated.
+# pm.tpl divides the observed trawl composition by its ages 2-15 subtotal while keeping all 15
+# entries, which is a per-year inflation of the sample size applied to a normalized composition
 bts_c <- rowSums(in_dat$oac_bts[, 1:n_ages]) / rowSums(in_dat$oac_bts[, 2:n_ages])
 ISS_SrvAgeComps[1, i_bts, 1, 1, 1] <- floor(in_dat$sam_bts) * bts_c
 ISS_SrvAgeComps[1, i_ats, 1, 1, 2] <- floor(in_dat$sam_ats)
@@ -157,12 +148,8 @@ for(i in 1:(n_yrs - 1)) {
 pars_fsh <- c(coffs_f, rep(coffs_f[nsel_f], n_ages - nsel_f))
 devs_fsh <- cbind(cum_f, matrix(cum_f[, nsel_f], n_yrs, n_ages - nsel_f))
 
-# Acoustic survey: age 1 pinned at log selectivity zero, coefficients over ages
-# 2-8, ages 9-15 flat from age 8. The deviations cannot be accumulated the way
-# the fishery's can, because pm.tpl adds them to ages 2-8 only and leaves age 1
-# at zero in every changed year, so ages 2-15 carry each year's centering
-# constant forward while age 1 does not. Only within year differences are
-# identified, so they are read off the reported surface instead.
+# acoustic survey: age 1 pinned at log selectivity zero, coefficients over ages 2-8, ages 9-15 flat.
+# only within-year differences are identified, so they are read off the reported surface instead
 yrs_ch_ats <- 1995:2024
 coffs_a <- grab("sel_coffs_ats")
 nsel_a <- 8
@@ -172,10 +159,8 @@ devs_ats <- matrix(0, n_yrs, n_ages)
 for(k in seq_along(i_ats_all)) devs_ats[i_ats_all[k], ] <- log(pm$sel_ats[k, ]) - pars_ats
 for(i in seq_len(min(i_ats_all) - 1)) devs_ats[i, ] <- devs_ats[min(i_ats_all), ]
 
-# Bottom trawl survey: logistic with a year specific midpoint and slope, plus a
-# free age 1 value. The slope and midpoint ARE the deviations in pm.tpl, which
-# carries no base pair. SPoRC evaluates at the raw ages while pm.tpl evaluates
-# at 0.5 + age, so the midpoint shifts by 0.5.
+# bottom trawl survey: logistic with a year-specific midpoint and slope plus a free age 1 value.
+# SPoRC evaluates at the raw ages while pm.tpl evaluates at 0.5 + age, so the midpoint shifts by 0.5
 slp <- grab("sel_slp_bts_dev")
 a50 <- grab("sel_a50_bts_dev")
 age1 <- grab("sel_age_one_bts_dev")

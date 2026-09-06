@@ -4,8 +4,8 @@ library(testthat)
 # Simulate under a multivariate normal index error (survey-wide scaling error
 # with a strong common factor) and refit with the same covariance. The shared
 # factor shifts a replicate's whole series, which catchability absorbs, so the
-# catchability median converges slower than under independent error and carries
-# a looser tolerance. Machinery shared through helper-selftest_features.R.
+# catchability median converges slower than under independent error and has
+# a looser tolerance. Routines shared through helper-selftest_features.R.
 
 test_that("an mvn index likelihood recovers SSB and catchability", {
 

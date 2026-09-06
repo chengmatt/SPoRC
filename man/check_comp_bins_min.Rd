@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_setup.R
 \name{check_comp_bins_min}
 \alias{check_comp_bins_min}
-\title{Reject a bin restriction that leaves a stream nothing to fit}
+\title{Reject a bin restriction that leaves a data source nothing to fit}
 \usage{
 check_comp_bins_min(bins_arr, like_vals, what)
 }
@@ -19,9 +19,9 @@ check_comp_bins_min(bins_arr, like_vals, what)
 \code{bins_arr} invisibly.
 }
 \description{
-A composition fitted over a single bin carries no information: the normalized
+A composition fitted over a single bin has no information: the normalized
 proportion in that bin is identically one whatever the model says. Every
-family degenerates, and the machinery around them degenerates further. The
+family degenerates, and the routines around them degenerates further. The
 logistic-normal families spend one bin as the additive log-ratio reference and
 so have no free element left, which gives a zero-length packed block, a
 zero-row label frame, and a zero-length slice request in

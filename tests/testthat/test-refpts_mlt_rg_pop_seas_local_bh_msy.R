@@ -256,9 +256,11 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
   terminal_NAA0 <- array(sim_pop_obj$NAA0[,,n_yrs,,,,1], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
 
   # OM bio arrays
-  natmort_slice <- sim_pop_obj$natmort[,,n_yrs,,,1]
+  natmort_slice <- sim_pop_obj$natmort[,,n_yrs,1,,,1] # season 1, M is constant within the year here
   natmort <- array(rep(c(natmort_slice), times = n_proj_yrs), dim = c(n_pop, n_regions, n_ages, n_sexes, n_proj_yrs))
   natmort <- aperm(natmort, c(1, 2, 5, 3, 4))
+  # packaged report predates seasonal M, hold it across seasons
+  natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
   WAA      <- array(rep(sim_pop_obj$WAA[,,n_yrs,,,,1], each = n_proj_yrs),
                     dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   WAA_fish <- array(rep(sim_pop_obj$WAA_fish[,,n_yrs,,,,,1], each = n_proj_yrs),
@@ -320,7 +322,8 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
     sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
     sgl_seas_spawning_movement = sgl_seas_spawning_movement[,,,1,,],
     stray_rate = array(0.5, dim = c(n_pop)),
-    natmort    = array(natmort[,,1,,], dim = c(n_pop, n_regions, n_ages)),
+    # M now has seasons, which Get_Det_Recruitment reads
+    natmort    = array(natmort[,,1,,,], dim = c(n_pop, n_regions, n_seas, n_ages)),
     fish_sel = array(fish_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     ret_sel = array(ret_sel[,,1,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
@@ -342,40 +345,41 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
 
 
   # do population projection
-  out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs,
-                                  n_regions = n_regions,
-                                  n_ages = n_ages,
-                                  n_sexes = n_sexes,
-                                  n_pop = n_pop,
-                                  sexratio = sexratio,
-                                  n_fish_fleets = n_fish_fleets,
-                                  do_recruits_move = do_recruits_move,
-                                  recruitment = recruitment,
-                                  terminal_NAA = terminal_NAA,
-                                  terminal_NAA0 = terminal_NAA0,
-                                  terminal_F = terminal_F,
-                                  dmr = terminal_dmr,
-                                  natmort = natmort,
-                                  rec_seas_prop = rec_seas_prop,
-                                  natal_region = natal_region,
-                                  WAA = WAA,
-                                  WAA_fish = WAA_fish,
-                                  MatAA = MatAA,
-                                  fish_sel = fish_sel,
-                                  ret_sel = ret_sel,
-                                  Movement = Movement,
-                                  f_ref_pt = array(ref_pts$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
-                                  b_ref_pt = NULL,
-                                  HCR_function = HCR_function,
-                                  recruitment_opt = "bh_rec",
-                                  fmort_opt = "Input",
-                                  t_spawn = t_spawn,
-                                  spawn_seas = spawn_seas,
-                                  n_seas = n_seas,
-                                  sgl_seas_spawning_movement = sgl_seas_spawning_movement,
-                                  stray_rate = stray_rate,
-                                  seasdur = seasdur,
-                                  srr_opt = srr_opt
+  out <- Do_Population_Projection(
+    n_proj_yrs = n_proj_yrs,
+    n_regions = n_regions,
+    n_ages = n_ages,
+    n_sexes = n_sexes,
+    n_pop = n_pop,
+    sexratio = sexratio,
+    n_fish_fleets = n_fish_fleets,
+    do_recruits_move = do_recruits_move,
+    recruitment = recruitment,
+    terminal_NAA = terminal_NAA,
+    terminal_NAA0 = terminal_NAA0,
+    terminal_F = terminal_F,
+    dmr = terminal_dmr,
+    natmort = natmort,
+    rec_seas_prop = rec_seas_prop,
+    natal_region = natal_region,
+    WAA = WAA,
+    WAA_fish = WAA_fish,
+    MatAA = MatAA,
+    fish_sel = fish_sel,
+    ret_sel = ret_sel,
+    Movement = Movement,
+    f_ref_pt = array(ref_pts$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
+    b_ref_pt = NULL,
+    HCR_function = HCR_function,
+    recruitment_opt = "bh_rec",
+    fmort_opt = "Input",
+    t_spawn = t_spawn,
+    spawn_seas = spawn_seas,
+    n_seas = n_seas,
+    sgl_seas_spawning_movement = sgl_seas_spawning_movement,
+    stray_rate = stray_rate,
+    seasdur = seasdur,
+    srr_opt = srr_opt
   )
 
   # Check if F equilibriates back at F40%

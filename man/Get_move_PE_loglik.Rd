@@ -44,7 +44,7 @@ fixed at a constant (e.g., index 1) via the parameter map.}
 \item{map_move_devs}{Integer array dimensioned
 \code{[pop, from_region, to_region, year, seas, age, sex]}
 mapping deviations to unique estimated parameters. Shared deviations
-carry the same integer value; dimensions are extracted from this
+hold the same integer value; dimensions are extracted from this
 array to determine loop bounds.}
 
 \item{do_recruits_move}{Integer (0/1). If \code{0} and \code{n_ages >= 2},

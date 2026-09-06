@@ -1,8 +1,46 @@
 # Operating model
 #
-# Self testing: simulate data from known parameters, fit the estimation model
-# back to it, and compare. simulation_data_to_SPoRC is the bridge that turns
-# operating model output into the data and par lists fit_model expects.
+# Self testing: simulate from known parameters, fit back, and compare. simulation_data_to_SPoRC
+# turns operating model output into the data and par lists fit_model expects.
+
+#' Warn when the estimation and operating models start from different R0
+#'
+#' The operating model takes \code{R0_input} by year, and year one of it does
+#' two jobs: it is the equilibrium \code{\link{generate_initial_age_structure}}
+#' solves from, and it is the R0 that generates year one's recruitment. So the
+#' operating model necessarily starts from the block in force at year one.
+#'
+#' The estimation model instead builds its initial age structure from
+#' \code{R0[R0_ref_block]}. The two agree whenever \code{R0_ref_block} is the
+#' block covering year one, which is the default and the case that makes
+#' physical sense, since the equilibrium the series starts from is the one the
+#' first block describes. Under any other \code{R0_ref_block} the estimation
+#' model cannot reproduce the operating model's initial numbers no matter how
+#' well it fits, so a self-test would be measuring that gap rather than the
+#' feature under test.
+#'
+#' Only matters under \code{use_rinit = 0}; with \code{use_rinit = 1} both
+#' sides initialize from \code{rinit} and the blocks never enter.
+#'
+#' @param data The model data list.
+#' @param where Name of the calling routine, for the message.
+#'
+#' @return \code{NULL}, invisibly. Called for the warning.
+#'
+#' @keywords internal
+warn_R0_ref_block_om <- function(data, where) {
+  if(is.null(data$R0_blocks) || isTRUE(data$use_rinit == 1)) return(invisible(NULL))
+  ref <- if(is.null(data$R0_ref_block)) 1L else data$R0_ref_block
+  yr1 <- unique(as.vector(data$R0_blocks[, 1, , drop = FALSE]))
+  if(all(yr1 == ref)) return(invisible(NULL))
+  warning(where, ": R0_ref_block is ", ref, " but year one sits in block ",
+          paste(yr1, collapse = "/"), ". The operating model starts from the block in force at year one, ",
+          "since that R0 both solves its equilibrium and generates its first year's recruitment, while ",
+          "the estimation model initializes from the reference block. The two therefore start from ",
+          "different numbers at age and the fit cannot recover the operating model. Set R0_ref_block to ",
+          "the block covering year one, which is the default, or use_rinit = 1.")
+  invisible(NULL)
+}
 
 #' Run a simulation self-test of a fitted RTMB estimation model
 #'
@@ -47,13 +85,13 @@
 #' @param sim_recruitment Character. How the operating model generates
 #'   recruitment. \code{"input"} (default, and the historical behavior) feeds
 #'   the estimated recruitment series in as \code{Rec_input}, so every simulated
-#'   replicate carries the same recruitment and \code{rec_model} has no effect on
+#'   replicate holds the same recruitment and \code{rec_model} has no effect on
 #'   the data. That conditions away recruitment and tests everything downstream
 #'   of it, but it cannot test the stock-recruit relationship itself, because
 #'   steepness is then informed only by its penalty. \code{"model"} withholds the
 #'   input so recruitment is generated from the fitted curve under
-#'   \code{rec_model}, which is what to use when the point of the test is whether
-#'   steepness and \code{R0} are recoverable.
+#'   \code{rec_model}. Use it when the test is whether steepness and \code{R0}
+#'   are recoverable.
 #'
 #' @return Named list with one element per entry in \code{what}, each an
 #'   array with the last dimension indexing simulation replicates (via
@@ -74,34 +112,32 @@
 #' )
 #' str(res$SSB)
 #' }
-simulation_self_test <- function(data,
-                                 parameters,
-                                 mapping,
-                                 random,
-                                 rep,
-                                 sd_rep,
-                                 n_sims,
-                                 newton_loops = 3,
-                                 do_sdrep = FALSE,
-                                 do_par = FALSE,
-                                 n_cores = NULL,
-                                 output_path = NULL,
-                                 what = c('SSB', 'Rec'),
-                                 sim_recruitment = c("input", "model")
-                                 ) {
+simulation_self_test <- function(
+  data,
+  parameters,
+  mapping,
+  random,
+  rep,
+  sd_rep,
+  n_sims,
+  newton_loops = 3,
+  do_sdrep = FALSE,
+  do_par = FALSE,
+  n_cores = NULL,
+  output_path = NULL,
+  what = c('SSB', 'Rec'),
+  sim_recruitment = c("input", "model")
+) {
 
   sim_recruitment <- match.arg(sim_recruitment)
+  warn_R0_ref_block_om(data, "simulation_self_test")
 
   missing_names <- setdiff(what, names(rep))
   if(length(missing_names) > 0)  stop(paste("The following elements in 'what' are not found in rep:",  paste(missing_names, collapse = ", ")))
   optim_parameters_list <- get_optim_param_list(parameters, mapping, sd_rep, random) # get optimized parameters in original list format
 
-  # Likelihood weights are converted back into simulation standard deviations as
-  # sd / sqrt(wt). A weight of zero means the datum is excluded from the fit, not
-  # that it carries infinite error, so dividing by sqrt(0) gives Inf and
-  # rnorm(1, 0, Inf) gives NaN, which then propagates through every replicate and
-  # is only caught as a silent failure at the end. Excluded cells keep their
-  # nominal sd instead; they are never fit, so the value does not matter.
+  # weights become simulation sds as sd / sqrt(wt). a weight of zero means excluded, not infinite
+  # error, so excluded cells keep their nominal sd rather than giving Inf and then NaN
   deweight <- function(sd, wt) {
     w <- wt
     w[!is.finite(w) | w <= 0] <- 1
@@ -144,7 +180,7 @@ simulation_self_test <- function(data,
                             } else if(any(data$UseSrvAgeComps_pop == 1)) {
                               dim(data$ObsSrvAgeComps_pop)[5]
                             } else if(!is.null(data$UseFish_caal) && any(data$UseFish_caal == 1)) {
-                              dim(data$ObsFish_caal)[5] # conditional age-at-length carries the observed ages
+                              dim(data$ObsFish_caal)[5] # conditional age-at-length holds the observed ages
                             } else if(!is.null(data$UseSrv_caal) && any(data$UseSrv_caal == 1)) {
                               dim(data$ObsSrv_caal)[5]
                             } else {
@@ -314,7 +350,7 @@ simulation_self_test <- function(data,
                                 FishLen_discard_pop_corr_pars = optim_parameters_list$FishLen_discard_pop_corr_pars[,,,,,drop = F],
 
                                 # conditional age-at-length specifications; absent on models built
-                                # before the stream existed, which the defaults leave off
+                                # before the data source existed, which the defaults leave off
                                 comp_fish_caal_like = if(is.null(data$Fish_caal_LikeType)) rep(999, sim_list$n_fish_fleets) else data$Fish_caal_LikeType,
                                 Fish_caal_Type = if(is.null(data$Fish_caal_Type)) array(999, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)) else data$Fish_caal_Type,
                                 ISS_Fish_caal = if(!is.null(data$UseFish_caal) && any(data$UseFish_caal == 1)) {
@@ -398,7 +434,7 @@ simulation_self_test <- function(data,
   # Setup Biological Dynamics -----------------------------------------------
   sim_list <- Setup_Sim_Biologicals(
     sim_list = sim_list, # simualtion list
-    natmort_input = replicate(n = sim_list$n_sims, rep$natmort[,,1:length(data$years),,,drop = FALSE]), # natuyral mortality
+    natmort_input = replicate(n = sim_list$n_sims, truncate_years(expand_natmort_seasons(rep$natmort, data$n_seas), length(data$years))), # natural mortality
     # derived by the growth module when present, otherwise the data the model was given
     WAA_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA)) data$WAA else rep$WAA)[,,1:length(data$years),,,,drop = FALSE]), # weight at age
     WAA_fish_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_fish)) data$WAA_fish else rep$WAA_fish)[,,1:length(data$years),,,,,drop = FALSE]), # fishery weight at age
@@ -436,8 +472,12 @@ simulation_self_test <- function(data,
     init_age_strc = data$init_age_strc, # initilaizing age structure
     h_input = replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs))), # steepness
     R0_input = {
+      # R0 can have time blocks, so the operating model takes the year-by-year value rather than
+      # rep$R0's single reference-block value. identical in an unblocked model
       tmp = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
-      for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,,] = rep$R0[p] * rep$rec_region_prop[p,r]
+      R0_by_yr = if(is.null(rep$R0_yr)) matrix(rep$R0, sim_list$n_pop, sim_list$n_yrs)
+                 else matrix(rep$R0_yr, sim_list$n_pop, ncol(rep$R0_yr))[, pmin(1:sim_list$n_yrs, ncol(rep$R0_yr)), drop = FALSE]
+      for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,,] = R0_by_yr[p,] * rep$rec_region_prop[p,r]
       tmp
     },
     rinit_input = {
@@ -447,19 +487,11 @@ simulation_self_test <- function(data,
     },
     use_rinit = data$use_rinit,
     sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), # sex ratio
-    # Rescaling by the recruitment weight is only an identity for a single scalar,
-    # and a deviation-specific weight has no equivalent sigma. Both recruitment
-    # and the initial age deviations are supplied directly below, so ln_sigmaR is
-    # never drawn from here and the unscaled value is passed through instead.
+    # rescaling by the recruitment weight is only an identity for a single scalar. recruitment and
+    # the initial age deviations are supplied directly below, so ln_sigmaR passes through unscaled
     ln_sigmaR = if(length(data$Wt_Rec) == 1) optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec) else optim_parameters_list$ln_sigmaR, # ln_sigmaR
-    # Supplying Rec_input for every year makes use_rec_input TRUE throughout
-    # sim_population(), so recruitment_opt is never consulted and rec_model has no
-    # effect on the simulated data. That is the right conditioning for testing
-    # everything downstream of recruitment, but it cannot test the stock-recruit
-    # relationship itself: steepness is then informed only by its penalty.
-    # sim_recruitment = "model" withholds the input so the curve generates
-    # recruitment and the self-test has to recover it. Setup_Sim_Rec only assigns
-    # sim_list$Rec_input when it is non-NULL, so NULL is what turns this off.
+    # Rec_input for every year makes sim_population() ignore rec_model, so the curve itself goes
+    # untested; sim_recruitment = "model" withholds it and makes the self-test recover it
     Rec_input = if(sim_recruitment == "model") NULL else replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE]), # recruitment time series
     ln_InitDevs_input = replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs),  # init devs
     stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,1:length(data$years), drop = FALSE]),
@@ -471,7 +503,10 @@ simulation_self_test <- function(data,
     recruitment_opt = data$rec_model,
     rec_dd = data$rec_dd,
     init_dd = data$rec_dd,
-    rec_lag = data$rec_lag
+    rec_lag = data$rec_lag,
+    # the per-recruit reference year has to match the fit, or the operating model and the
+    # estimation model build S0 from different biology and the self test measures that gap
+    SR_ref_yr = if(is.null(data$SR_ref_yr)) 1 else data$SR_ref_yr
   )
 
   # Setup Tagging -----------------------------------------------------------
@@ -877,13 +912,13 @@ simulation_self_test <- function(data,
 #' derived automatically.
 #'
 #' Input sample sizes for age and length compositions are extracted for both
-#' aggregate and population-specific data streams, including retained
+#' aggregate and population-specific data sources, including retained
 #' (\code{ISS_FishAgeComps}, \code{ISS_FishLenComps}, \code{ISS_FishAgeComps_pop},
 #' \code{ISS_FishLenComps_pop}, \code{ISS_SrvAgeComps}, \code{ISS_SrvLenComps},
 #' \code{ISS_SrvAgeComps_pop}, \code{ISS_SrvLenComps_pop}) and discard
 #' (\code{ISS_FishAgeComps_discard}, \code{ISS_FishLenComps_discard},
 #' \code{ISS_FishAgeComps_discard_pop}, \code{ISS_FishLenComps_discard_pop})
-#' data streams.
+#' data sources.
 #'
 #' Length composition outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps},
 #' and their population-specific and discard variants) and \code{SizeAgeTrans}

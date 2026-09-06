@@ -1,12 +1,5 @@
-# GOA northern rockfish bridge: the 2024 Gulf of Alaska northern rockfish
-# assessment (ADMB) rebuilt in SPoRC.
-#
-# One Setup_Mod_* call per section, in the order vignette(
-# "w_goa_northern_rockfish_case_study") walks through them, with a reason for
-# each argument that follows the assessment rather than a SPoRC default.
-#
-# The model is one area, one sex, one season, ages 2-51 with a plus group and
-# ages reported over 2-45, lengths 15-45 cm, years 1961-2024.
+# The 2024 GOA northern rockfish assessment (ADMB) rebuilt in SPoRC. One area, one sex, one season,
+# ages 2-51 with a plus group reported over 2-45, lengths 15-45 cm, years 1961-2024.
 #
 #   Source                     Years        Observations  Likelihood
 #   Catch                      1961-2024    64            Lognormal, weighted
@@ -15,10 +8,8 @@
 #   Fishery length comps       1991-2023    17            Multinomial
 #   Survey age comps           1990-2023    16            Multinomial
 #
-# Both tests build from here. test-regression_goa_nork_bridge.R evaluates this
-# configuration at the ADMB maximum likelihood estimate without optimizing, and
-# test-regression_goa_nork_sgl.R refits from it, so a specification change
-# cannot move one without the other.
+# test-regression_goa_nork_bridge.R evaluates this at the ADMB estimate without optimizing and
+# test-regression_goa_nork_sgl.R refits from it, so a specification change moves both or neither.
 
 # Build the input_list for the 2024 assessment configuration.
 build_goa_nork_input <- function(dat) {
@@ -73,8 +64,15 @@ build_goa_nork_input <- function(dat) {
     AgeingError = dat$AgeingError,
     M_spec = "est_ln_M",
     Use_M_prior = 1,
-    M_prior = data.frame(popblk = 1, regionblk = 1, yearblk = 1, ageblk = 1, sexblk = 1,
-                         mu = dat$mean_M, sd = dat$cv_M),
+    M_prior = data.frame(
+      popblk = 1,
+      regionblk = 1,
+      yearblk = 1,
+      ageblk = 1,
+      sexblk = 1,
+      mu = dat$mean_M,
+      sd = dat$cv_M
+    ),
     addtosrvidx = 0.00001,
     addtocomp = 0.00001
   )
@@ -82,8 +80,12 @@ build_goa_nork_input <- function(dat) {
   ## Movement and tagging -----------------------------------------------------
   # one area, so movement is the identity and nothing is tagged. both still have
   # to be declared
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1,
-                                   Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
@@ -91,7 +93,7 @@ build_goa_nork_input <- function(dat) {
   # squares. a weighted sum of squares and a normal likelihood with a fixed
   # standard deviation are the same statement up to a constant, related by
   # sigma = 1 / sqrt(2 w), so the weights enter through ln_sigmaC rather than a
-  # separate multiplier. the reconstructed early catches carry a weight of 5 and
+  # separate multiplier. the reconstructed early catches have a weight of 5 and
   # the observer era series 50. the F deviations take sigma = 1 / sqrt(2), with
   # their overall weight applied in the weighting section
   ln_sigmaC <- array(NA_real_, dim = c(dat$n_regions, n_yrs, dat$n_seas, dat$n_fish_fleets))
@@ -181,19 +183,28 @@ build_goa_nork_input <- function(dat) {
     srv_fixed_sel_pars_spec = "est_all",
     srv_q_spec = "est_all",
     Use_srv_q_prior = 1,
-    srv_q_prior = data.frame(region = 1, block = 1, fleet = 1,
-                             mu = dat$mean_q, sd = dat$cv_q),
+    srv_q_prior = data.frame(
+      region = 1,
+      block = 1,
+      fleet = 1,
+      mu = dat$mean_q,
+      sd = dat$cv_q
+    ),
     t_srv = array(0, dim = c(dat$n_regions, dat$n_seas, dat$n_srv_fleets))
   )
 
   ## Weighting ----------------------------------------------------------------
-  # the survey index and the F penalty carry the assessment's own fixed weights,
-  # and every composition source carries the assessment's multipliers, which
+  # the survey index and the F penalty hold the assessment's own fixed weights,
+  # and every composition source holds the assessment's multipliers, which
   # ship in the data object
   Setup_Mod_Weighting(
     input_list = input_list,
-    Wt_Catch = 1, Wt_FishIdx = 1, Wt_SrvIdx = dat$srv_wt,
-    Wt_Rec = 1, Wt_F = dat$fmort_wt, Wt_Tagging = 0,
+    Wt_Catch = 1,
+    Wt_FishIdx = 1,
+    Wt_SrvIdx = dat$srv_wt,
+    Wt_Rec = 1,
+    Wt_F = dat$fmort_wt,
+    Wt_Tagging = 0,
     Wt_FishAgeComps = dat$Wt_FishAgeComps,
     Wt_FishLenComps = dat$Wt_FishLenComps,
     Wt_SrvAgeComps = dat$Wt_SrvAgeComps,

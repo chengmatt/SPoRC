@@ -168,21 +168,21 @@ dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 
 \item{ln_sigmaCAA, ln_sigmaDAA}{Log-scale observation error
-for the at-age streams, `n_ages x n_sexes x n_fish_fleets`. An array without
-the sex margin is required.}
+for the at-age data sources, `n_ages x n_sexes x n_fish_fleets`. An array without
+the sex dim is required.}
 
 \item{UseCatchAA, UseDiscardAA}{Integer arrays
 `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
-at-age observation is drawn. The sex margin is required: a stream summed
-over sexes carries its flag in sex slot one.}
+at-age observation is drawn. The sex dim is required: a data source summed
+over sexes has its flag in sex slot one.}
 
 \item{ObsCatchAA_SE, ObsDiscardAA_SE}{Reported standard errors
-shaped like the use arrays, read only when the stream's `sigma_form` asks
+shaped like the use arrays, read only when the data source's `sigma_form` asks
 for them.}
 
-\item{CatchAA_Type, DiscardAA_Type}{Which margins each fleet
+\item{CatchAA_Type, DiscardAA_Type}{Which dims each fleet
 reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
-`"spltRspltS"`. A summed margin is drawn once, into slot one.}
+`"spltRspltS"`. A summed dim is drawn once, into slot one.}
 
 \item{CatchAA_LikeType, DiscardAA_LikeType}{`"lognormal"`
 (default) or `"normal"`, per fleet.}
@@ -192,7 +192,7 @@ observation error comes from: `"none"` (default), `"data"`,
 `"est_additive"` or `"est_quadrature"`.}
 
 \item{use_catch_aa, use_discard_aa}{Integer vectors
-`n_fish_fleets`, `1` for fleets whose at-age streams are drawn.}
+`n_fish_fleets`, `1` for fleets whose at-age data sources are drawn.}
 
 \item{catch_units}{Numeric vector. Catch units (0 = abundance, 1 = biomass),
 length `n_fish_fleets`. Default: 1.}
@@ -223,7 +223,7 @@ Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
 \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
 \code{FishIdx_LikeType}. An mvn fleet draws from \code{FishIdx_Cov} through
 a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
-\code{ObsFishIdx_SE}, and its population-specific stream stays lognormal.
+\code{ObsFishIdx_SE}, and its population-specific data source stays lognormal.
 Default: lognormal for every fleet.}
 
 \item{FishIdx_Cov}{List with one element per fishery fleet holding the fixed

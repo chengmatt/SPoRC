@@ -21,7 +21,7 @@ do_key_mapping(
 
 \item{key}{Integer array \code{[n_ages, n_sexes, n_fleets]}, or \code{NULL}
 for the default given by \code{default_shared}. Gains a leading population
-dimension when \code{pop} is \code{TRUE}. The sex margin is required: a key
+dimension when \code{pop} is \code{TRUE}. The sex dim is required: a key
 coupling the sexes says so by repeating its entries across them.}
 
 \item{spec}{\code{"est"} or \code{"fix"}.}
@@ -37,7 +37,7 @@ key says.}
 \item{starting_values}{Named list from the caller's \code{...}, read for
 \code{par_name}.}
 
-\item{pop}{Logical. \code{TRUE} for the population-specific stream.}
+\item{pop}{Logical. \code{TRUE} for the population-specific data source.}
 
 \item{default_shared}{Logical. When \code{key} is \code{NULL}, \code{TRUE}
 gives one parameter per fleet shared across ages and \code{FALSE} gives one
@@ -55,7 +55,7 @@ covers every sharing pattern that would otherwise need its own spec string:
 one parameter per age, one per age group, or one for the whole fleet.
 }
 \details{
-Shared by every at-age stream: the catch, discard and index observation
+Shared by every at-age data source: the catch, discard and index observation
 errors, the age-specific catchabilities, and their population-specific
 counterparts.
 

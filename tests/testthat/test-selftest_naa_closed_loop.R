@@ -1,14 +1,8 @@
-# A closed loop run end to end with the state-space numbers at age turned on.
+# A closed loop run end to end with the state-space numbers at age turned on: an assessment is fitted,
+# a closed loop conditioned from it, and a fresh estimation model fitted at each assessment year.
 #
-# The other self tests fit the state to a fixed data set. This one runs the whole management
-# strategy evaluation: an assessment is fitted, a closed loop is conditioned from it, the operating
-# model is advanced year by year, and at each assessment year a fresh estimation model is fitted to
-# the data the operating model has generated so far and its advice is fed back as fishing mortality.
-#
-# What this is guarding is routing rather than statistics. The closed loop never calls
-# Simulate_Pop_Static, so anything the state needs that lives only in that driver is invisible to
-# it, and a conditioning step that drops the state does not fail: it projects a deterministic
-# future and reports nothing about it. Both of those are silent, and both are what this catches.
+# This guards routing rather than statistics: the closed loop never calls Simulate_Pop_Static, and a
+# conditioning step that drops the state projects a deterministic future rather than failing.
 
 naacl <- local({
   cached <- NULL
@@ -22,8 +16,15 @@ naacl <- local({
     sdr <- suppressWarnings(RTMB::sdreport(fit))
 
     sim_list <- condition_closed_loop_simulations(
-      closed_loop_yrs = proj_yrs, n_sims = 1, data = il$data, parameters = il$par,
-      mapping = il$map, sd_rep = sdr, rep = fit$rep, random = "ln_NAA")
+      closed_loop_yrs = proj_yrs,
+      n_sims = 1,
+      data = il$data,
+      parameters = il$par,
+      mapping = il$map,
+      sd_rep = sdr,
+      rep = fit$rep,
+      random = "ln_NAA"
+    )
 
     set.seed(77)
     sim_env <- Setup_sim_env(sim_list)
@@ -41,10 +42,22 @@ naacl <- local({
           obj <- suppressWarnings(fit_model(il_y$data, il_y$par, il_y$map,
                                             random = "ln_NAA", silent = TRUE))
           rp <- get_closed_loop_reference_points(
-            use_true_values = FALSE, sim_env = sim_env, asmt_data = il_y$data,
-            asmt_rep = obj$rep, y = y, sim = sim, n_proj_yrs = assess_every + 1,
-            reference_points_opt = list(n_avg_yrs = 1, SPR_x = 0.4, calc_rec_st_yr = 1,
-                                        rec_age = 1, type = "single_region", what = "SPR"))
+            use_true_values = FALSE,
+            sim_env = sim_env,
+            asmt_data = il_y$data,
+            asmt_rep = obj$rep,
+            y = y,
+            sim = sim,
+            n_proj_yrs = assess_every + 1,
+            reference_points_opt = list(
+              n_avg_yrs = 1,
+              SPR_x = 0.4,
+              calc_rec_st_yr = 1,
+              rec_age = 1,
+              type = "single_region",
+              what = "SPR"
+            )
+          )
 
           # a threshold rule on the assessment's own terminal spawning biomass
           ssb_hat <- sum(obj$rep$SSB[, , y])
@@ -52,10 +65,14 @@ naacl <- local({
           f_next <- as.numeric(rp$f_ref_pt)[1] * max(0, min(1, (ratio - 0.05) / 0.95))
 
           rows[[length(rows) + 1]] <- data.frame(
-            y = y, gradient = max(abs(obj$gr(naaom_fixed(obj)))),
+            y = y,
+            gradient = max(abs(obj$gr(naaom_fixed(obj)))),
             n_states = length(obj$env$random),
             sigmaNAA = exp(naaom_fixed(obj, "ln_sigmaNAA")),
-            ssb_hat = ssb_hat, ssb_true = sum(sim_env$SSB[, , y, sim]), f_set = f_next)
+            ssb_hat = ssb_hat,
+            ssb_true = sum(sim_env$SSB[, , y, sim]),
+            f_set = f_next
+          )
 
           if(y < sim_env$n_yrs)
             sim_env$Fmort[, (y + 1):min(y + assess_every, sim_env$n_yrs), , , sim] <- f_next
@@ -63,9 +80,14 @@ naacl <- local({
       } # end y loop
     } # end sim loop
 
-    cached <<- list(sim_env = sim_env, log = do.call(rbind, rows), start = start,
-                    f_hist = f_hist, conditioned_sd = sim_list$sigmaNAA[1, 1, start, 1, 1],
-                    assess_yrs = assess_yrs)
+    cached <<- list(
+      sim_env = sim_env,
+      log = do.call(rbind, rows),
+      start = start,
+      f_hist = f_hist,
+      conditioned_sd = sim_list$sigmaNAA[1, 1, start, 1, 1, 1],
+      assess_yrs = assess_yrs
+    )
     cached
   }
 })
@@ -88,9 +110,9 @@ test_that("each assessment inside the loop estimates the state and converges", {
   expect_true(all(abs(d$log$sigmaNAA - d$conditioned_sd) / d$conditioned_sd < 0.5))
 })
 
-test_that("the operating model carries process error through the projection years", {
+test_that("the operating model has process error through the projection years", {
   d <- naacl()
-  eta <- d$sim_env$naa_eta_all[1, 1, , , 1, 1]
+  eta <- d$sim_env$naa_eta_all[1, 1, , 1, , 1, 1]
   ages <- d$sim_env$naa_re_ages
   proj <- eta[(d$start + 1):d$sim_env$n_yrs, ages]
   expect_gt(stats::sd(proj), 0)

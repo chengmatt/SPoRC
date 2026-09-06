@@ -1,7 +1,7 @@
 # Stage 3 of 3: post fit
 #
-# Francis data weighting: iteratively rescale composition sample sizes so the
-# model's fit to them is consistent with the variability actually observed.
+# Francis data weighting: iteratively rescale composition sample sizes so the model's fit to them is
+# consistent with the variability actually observed.
 
 # Inverse variance calculations used in Francis reweighting (makes it so that it doesn't take variance from vector of length 1)
 safe_inv_var <- function(x) {
@@ -163,7 +163,7 @@ get_francis_weights <- function(n_regions,
 #'
 #' @param data List of model data inputs containing observed compositions,
 #'   usage flags, input sample sizes, weight arrays, and composition type
-#'   matrices for both pooled and population-specific data streams.
+#'   matrices for both pooled and population-specific data sources.
 #' @param rep Report list from a fitted RTMB model containing predicted
 #'   compositions (\code{CAA}, \code{CAL}, \code{SrvIAA}, \code{SrvIAL})
 #'   with a leading population dimension.
@@ -184,7 +184,7 @@ get_francis_weights <- function(n_regions,
 #'       \code{data}. Cells remain \code{NA} when the corresponding
 #'       \code{Use*_pop} flag contains no ones.}
 #'     \item{\code{mean_francis}}{Long-format dataframe of observed and
-#'       expected composition means across all data streams and populations,
+#'       expected composition means across all data sources and populations,
 #'       with columns \code{Region}, \code{Comp_Year}, \code{Comp_Seas},
 #'       \code{Sex}, \code{Fleet}, \code{obs}, \code{pred}, \code{Type},
 #'       and \code{Pop} (pooled rows have \code{Pop = NA}).}
@@ -430,9 +430,8 @@ do_francis_reweighting <- function(data,
   new_srv_len_wts[] <- srv_len_info$weights
 
   # Conditional Age-at-Length -------------------------------------------------
-  # Each (year, season, length bin) row is one age composition, so a fleet's
-  # samples are the rows rather than the years, and the pooled residual gives one
-  # weight per fleet
+  # each (year, season, length bin) row is one age composition, so a fleet's samples are the rows
+  # rather than the years, and the pooled residual gives one weight per fleet
   new_fish_caal_wts <- data$Wt_Fish_caal
   new_srv_caal_wts <- data$Wt_Srv_caal
   mean_francis_caal <- data.frame()
@@ -444,10 +443,16 @@ do_francis_reweighting <- function(data,
     if(!is.null(caal_prop$Pred_Fish_caal)) {
       new_fish_caal_wts[] <- NA
       fish_caal_info <- get_francis_weights_caal(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_fish_fleets,
-        n_years = n_years, n_seas = n_seas, n_lens = dim(data$UseFish_caal)[4],
-        Use = data$UseFish_caal, ISS = data$ISS_Fish_caal,
-        Pred_array = caal_prop$Pred_Fish_caal, Obs_array = caal_prop$Obs_Fish_caal,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_fish_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
+        n_lens = dim(data$UseFish_caal)[4],
+        Use = data$UseFish_caal,
+        ISS = data$ISS_Fish_caal,
+        Pred_array = caal_prop$Pred_Fish_caal,
+        Obs_array = caal_prop$Obs_Fish_caal,
         weights = new_fish_caal_wts,
         bins = seq_len(dim(caal_prop$Pred_Fish_caal)[5]),
         comp_type = data$Fish_caal_Type
@@ -459,10 +464,16 @@ do_francis_reweighting <- function(data,
     if(!is.null(caal_prop$Pred_Srv_caal)) {
       new_srv_caal_wts[] <- NA
       srv_caal_info <- get_francis_weights_caal(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_srv_fleets,
-        n_years = n_years, n_seas = n_seas, n_lens = dim(data$UseSrv_caal)[4],
-        Use = data$UseSrv_caal, ISS = data$ISS_Srv_caal,
-        Pred_array = caal_prop$Pred_Srv_caal, Obs_array = caal_prop$Obs_Srv_caal,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_srv_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
+        n_lens = dim(data$UseSrv_caal)[4],
+        Use = data$UseSrv_caal,
+        ISS = data$ISS_Srv_caal,
+        Pred_array = caal_prop$Pred_Srv_caal,
+        Obs_array = caal_prop$Obs_Srv_caal,
         weights = new_srv_caal_wts,
         bins = seq_len(dim(caal_prop$Pred_Srv_caal)[5]),
         comp_type = data$Srv_caal_Type
@@ -486,8 +497,11 @@ do_francis_reweighting <- function(data,
   if(any(data$UseFishAgeComps_pop == 1)) {
     for(p in 1:n_pop) {
       tmp_info <- get_francis_weights(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_fish_fleets,
-        n_years = n_years, n_seas = n_seas,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_fish_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
         Use      = array(data$UseFishAgeComps_pop[p,,,,],     dim = dim(data$UseFishAgeComps_pop)[-1]),
         ISS      = array(data$ISS_FishAgeComps_pop[p,,,,,],   dim = dim(data$ISS_FishAgeComps_pop)[-1]),
         Pred_array = array(comp_prop$Pred_FishAge_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_FishAge_pop_mat)[-1]),
@@ -510,8 +524,11 @@ do_francis_reweighting <- function(data,
   if(any(data$UseFishLenComps_pop == 1)) {
     for(p in 1:n_pop) {
       tmp_info <- get_francis_weights(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_fish_fleets,
-        n_years = n_years, n_seas = n_seas,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_fish_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
         Use      = array(data$UseFishLenComps_pop[p,,,,],     dim = dim(data$UseFishLenComps_pop)[-1]),
         ISS      = array(data$ISS_FishLenComps_pop[p,,,,,],   dim = dim(data$ISS_FishLenComps_pop)[-1]),
         Pred_array = array(comp_prop$Pred_FishLen_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_FishLen_pop_mat)[-1]),
@@ -533,8 +550,11 @@ do_francis_reweighting <- function(data,
   if(any(data$UseFishAgeComps_discard_pop == 1)) {
     for(p in 1:n_pop) {
       tmp_info <- get_francis_weights(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_fish_fleets,
-        n_years = n_years, n_seas = n_seas,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_fish_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
         Use      = array(data$UseFishAgeComps_discard_pop[p,,,,],     dim = dim(data$UseFishAgeComps_discard_pop)[-1]),
         ISS      = array(data$ISS_FishAgeComps_discard_pop[p,,,,,],   dim = dim(data$ISS_FishAgeComps_discard_pop)[-1]),
         Pred_array = array(comp_prop$Pred_FishAge_discard_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_FishAge_discard_pop_mat)[-1]),
@@ -556,8 +576,11 @@ do_francis_reweighting <- function(data,
   if(any(data$UseFishLenComps_discard_pop == 1)) {
     for(p in 1:n_pop) {
       tmp_info <- get_francis_weights(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_fish_fleets,
-        n_years = n_years, n_seas = n_seas,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_fish_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
         Use      = array(data$UseFishLenComps_discard_pop[p,,,,],     dim = dim(data$UseFishLenComps_discard_pop)[-1]),
         ISS      = array(data$ISS_FishLenComps_discard_pop[p,,,,,],   dim = dim(data$ISS_FishLenComps_discard_pop)[-1]),
         Pred_array = array(comp_prop$Pred_FishLen_discard_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_FishLen_discard_pop_mat)[-1]),
@@ -579,8 +602,11 @@ do_francis_reweighting <- function(data,
   if(any(data$UseSrvAgeComps_pop == 1)) {
     for(p in 1:n_pop) {
       tmp_info <- get_francis_weights(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_srv_fleets,
-        n_years = n_years, n_seas = n_seas,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_srv_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
         Use      = array(data$UseSrvAgeComps_pop[p,,,,],     dim = dim(data$UseSrvAgeComps_pop)[-1]),
         ISS      = array(data$ISS_SrvAgeComps_pop[p,,,,,],   dim = dim(data$ISS_SrvAgeComps_pop)[-1]),
         Pred_array = array(comp_prop$Pred_SrvAge_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_SrvAge_pop_mat)[-1]),
@@ -603,8 +629,11 @@ do_francis_reweighting <- function(data,
   if(any(data$UseSrvLenComps_pop == 1)) {
     for(p in 1:n_pop) {
       tmp_info <- get_francis_weights(
-        n_regions = n_regions, n_sexes = n_sexes, n_fleets = n_srv_fleets,
-        n_years = n_years, n_seas = n_seas,
+        n_regions = n_regions,
+        n_sexes = n_sexes,
+        n_fleets = n_srv_fleets,
+        n_years = n_years,
+        n_seas = n_seas,
         Use      = array(data$UseSrvLenComps_pop[p,,,,],     dim = dim(data$UseSrvLenComps_pop)[-1]),
         ISS      = array(data$ISS_SrvLenComps_pop[p,,,,,],   dim = dim(data$ISS_SrvLenComps_pop)[-1]),
         Pred_array = array(comp_prop$Pred_SrvLen_pop_mat[p,,,,,,], dim = dim(comp_prop$Pred_SrvLen_pop_mat)[-1]),
@@ -671,7 +700,7 @@ do_francis_reweighting <- function(data,
 #'   (\code{Wt_FishAgeComps_pop}, \code{Wt_FishLenComps_pop},
 #'   \code{Wt_SrvAgeComps_pop}, \code{Wt_SrvLenComps_pop},
 #'   \code{Wt_FishAgeComps_discard_pop}, \code{Wt_FishLenComps_discard_pop})
-#'   data streams.
+#'   data sources.
 #' @param parameters A list of model parameters passed to \code{\link{fit_model}}.
 #' @param mapping A list or mapping object passed to \code{\link{fit_model}}.
 #' @param random Character vector of random effects passed to
@@ -692,7 +721,7 @@ do_francis_reweighting <- function(data,
 #'       iteration.}
 #'     \item{\code{recorded_weights}}{Long-format dataframe of Francis weights
 #'       from every iteration for all pooled and population-specific data
-#'       streams, with columns \code{Region}, \code{Year}, \code{Seas},
+#'       data sources, with columns \code{Region}, \code{Year}, \code{Seas},
 #'       \code{Sex}, \code{Fleet}, \code{Weight}, \code{Type}, \code{Pop}
 #'       (pooled rows have \code{Pop = NA}), and \code{iter}.}
 #'   }
@@ -735,7 +764,7 @@ run_francis <- function(data,
       data$Wt_FishLenComps_discard_pop[] <- 1
       data$Wt_SrvAgeComps_pop[]  <- 1
       data$Wt_SrvLenComps_pop[]  <- 1
-      # conditional age-at-length carries its own weight, and for a model whose age
+      # conditional age-at-length has its own weight, and for a model whose age
       # information is all CAAL it is the one that matters most
       if(!is.null(data$Wt_Fish_caal)) data$Wt_Fish_caal[] <- 1
       if(!is.null(data$Wt_Srv_caal)) data$Wt_Srv_caal[] <- 1
@@ -822,11 +851,14 @@ run_francis <- function(data,
   obj$random <- random
   obj$rep <- rep
 
-  return(list(obj = obj, start_mean_francis = wts_1$mean_francis,
-              end_mean_francis = wts$mean_francis,
-              start_mean_francis_caal = wts_1$mean_francis_caal,
-              end_mean_francis_caal = wts$mean_francis_caal,
-              recorded_weights = wts_df))
+  return(list(
+    obj = obj,
+    start_mean_francis = wts_1$mean_francis,
+    end_mean_francis = wts$mean_francis,
+    start_mean_francis_caal = wts_1$mean_francis_caal,
+    end_mean_francis_caal = wts$mean_francis_caal,
+    recorded_weights = wts_df
+  ))
 
 }
 
@@ -838,7 +870,7 @@ run_francis <- function(data,
 #' one length bin, so a fleet's samples are the (year, season, length bin) rows
 #' rather than the years alone. The Francis statistic is the same standardized
 #' mean-age residual used for the marginal compositions, pooled over every row a
-#' fleet carries, which gives one weight per fleet (per region and sex where the
+#' fleet has, which gives one weight per fleet (per region and sex where the
 #' composition type splits them). A weight per length bin would rest on far fewer
 #' samples and would not be stable.
 #'
@@ -881,7 +913,7 @@ get_francis_weights_caal <- function(n_regions,
 
     if(sum(Use[,,,,f]) == 0) next
 
-    # residuals pooled over every row the fleet carries, kept by composition
+    # residuals pooled over every row the fleet has, kept by composition
     # type so a fleet that changes type mid series is weighted within each
     resid <- array(list(), dim = c(n_regions, n_sexes, length(unique(comp_type[,f]))))
     unique_comp_type <- unique(comp_type[,f])
@@ -894,14 +926,8 @@ get_francis_weights_caal <- function(n_regions,
 
       for(seas in 1:n_seas) {
 
-        # Francis (2011) TA1.8 for conditional data forms one statistic per fleet,
-        # year and season: the mean age over the length bins aged, weighted by the
-        # number aged in each. Within a year the bins share the model's error, so
-        # they are not independent draws. Averaging them first keeps that shared
-        # error in the numerator while the sampling noise averages out of the
-        # standard error. Standardizing each length bin on its own instead treats
-        # one systematic miss as many small independent ones, which understates the
-        # misfit and biases the weight upward.
+        # Francis (2011) TA1.8: one statistic per fleet, year and season, the mean age over the
+        # length bins aged. pooling the bins first keeps the error they share
         acc <- array(list(), dim = c(n_regions, n_sexes))
 
         for(l in 1:n_lens) {
@@ -943,8 +969,15 @@ get_francis_weights_caal <- function(n_regions,
             if(!is.finite(v_row) || v_row <= 0) next
 
             acc[[r, s]] <- rbind(acc[[r, s]], c(obs_bar, exp_bar, v_row, n_row))
-            rows <- rbind(rows, data.frame(Region = r, Comp_Year = y, Comp_Seas = seas,
-                                           Len_Bin = l, Sex = s, obs = obs_bar, pred = exp_bar))
+            rows <- rbind(rows, data.frame(
+              Region = r,
+              Comp_Year = y,
+              Comp_Seas = seas,
+              Len_Bin = l,
+              Sex = s,
+              obs = obs_bar,
+              pred = exp_bar
+            ))
 
           } # end cell loop
         } # end l loop

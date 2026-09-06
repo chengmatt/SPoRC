@@ -92,7 +92,7 @@ when compositions are aggregated.}
 observed age bins. For length compositions, either \code{NA} (the model
 and observed bins coincide) or a matrix \code{[n_model_bins x n_obs_bins]}
 mapping the model's length bins onto the observed ones, the same way, when
-the compositions are recorded on coarser bins than the model carries.}
+the compositions are recorded on coarser bins than the model has.}
 
 \item{use}{Integer vector indicating which regions have observations
 (\code{1} = use data, \code{0} = ignore).}
@@ -108,7 +108,7 @@ forced to be explained. Indices refer to observed bins, that is after any
 ageing error or length bin map has mapped model bins onto observed ones.
 The restriction applies to every composition type: for the sex-joint comps
 (\code{Comp_Type = 2}) the named bins are dropped from each sex's block of
-the joint stack, so the sex ratio the joint comps carry is the ratio within
+the joint stack, so the sex ratio the joint comps have is the ratio within
 the fitted bins. Logistic-normal covariances are built over all observed
 bins and then cut down to the fitted ones, so a gap in \code{comp_bins}
 still counts towards the AR1 lag between the bins on either side of it.}

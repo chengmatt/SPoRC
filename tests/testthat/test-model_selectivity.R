@@ -12,9 +12,16 @@ test_that("Get_Selex works", {
   }
 
   # Convenience wrapper
-  selex <- function(model, pars, bins = ages,
-                    tv = 0, devs = NULL,
-                    region = 1, year = 1, sex = 1) {
+  selex <- function(
+    model,
+    pars,
+    bins = ages,
+    tv = 0,
+    devs = NULL,
+    region = 1,
+    year = 1,
+    sex = 1
+  ) {
     if (is.null(devs)) devs <- zero_devs(length(pars))
     Get_Selex(
       Selex_Model    = model,
@@ -366,17 +373,25 @@ test_that("Get_Selex works", {
 
     for (y in 1:n_yrs) {
       res <- Get_Selex(
-        Selex_Model = 8, TimeVary_Model = 0, pars = pars_flat, ln_seldevs = zero_devs(1),
-        Region = 1, Year = y, Bin = ages, Sex = 1,
-        Wbin_bicubic = Wbin_padded, Wyr_bicubic = Wyr_padded,
-        n_bin_nodes_bicubic = n_bin_nodes_true, n_yr_nodes_bicubic = n_yr_nodes_true
+        Selex_Model = 8,
+        TimeVary_Model = 0,
+        pars = pars_flat,
+        ln_seldevs = zero_devs(1),
+        Region = 1,
+        Year = y,
+        Bin = ages,
+        Sex = 1,
+        Wbin_bicubic = Wbin_padded,
+        Wyr_bicubic = Wyr_padded,
+        n_bin_nodes_bicubic = n_bin_nodes_true,
+        n_yr_nodes_bicubic = n_yr_nodes_true
       )
       expect_equal(res, expected[y, ], tolerance = 1e-8, label = sprintf("year %d, padded-vs-true grid mismatch", y))
     }
   })
 
   test_that("year-block (nearest-node indicator) Wyr gives piecewise-constant-in-year, smooth-in-age selectivity", {
-    # mirrors ADMB sel_option==4: independent age-only spline per year-block, held constant within the block
+    # mirrors ADMB sel_option==4: independent age-only spline per year-block, kept constant within the block
     n_bin_nodes <- 4
     bin_nodes <- seq(0, 1, length.out = n_bin_nodes)
     age_bins  <- seq(0, 1, length.out = length(ages))

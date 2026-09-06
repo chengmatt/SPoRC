@@ -20,6 +20,7 @@ get_population_projection(
   rec_region_prop,
   rec_seas_prop,
   h_trans,
+  R0_yr = NULL,
   natal_region,
   t_spawn,
   spawn_seas,
@@ -58,7 +59,8 @@ get_population_projection(
   n_est_naa_re = 0,
   ln_NAA = NULL,
   naa_re_ages = NULL,
-  naa_re_yrs = NULL
+  naa_re_yrs = NULL,
+  naa_re_seas = NULL
 )
 }
 \arguments{
@@ -73,6 +75,11 @@ recruitment once per year ahead of the seasonal loop.}
 \item{rec_model, rec_dd, R0, rec_region_prop, rec_seas_prop, h_trans, natal_region, t_spawn, spawn_seas, seasdur, init_F}{Recruitment and timing arguments passed through to
 \code{Get_Det_Recruitment}.}
 
+\item{R0_yr}{Matrix \code{[n_pop x n_yrs]} of R0 by year when R0 has time
+blocks, or \code{NULL} to use the single \code{R0} in every
+year. Only the recruitment computed each year reads it; everything that needs one
+value still uses \code{R0}.}
+
 \item{ln_RecDevs}{Array \code{[pop, region, year]} of log recruitment
 deviations; applied multiplicatively to deterministic recruitment for
 \code{y <= n_est_rec_devs}.}
@@ -83,7 +90,7 @@ ratio.}
 \item{WAA, MatAA}{Arrays \code{[pop, region, year, season, age, sex]} of
 weight-at-age and maturity-at-age.}
 
-\item{natmort}{Array \code{[pop, region, year, age, sex]} of natural
+\item{natmort}{Array \code{[pop, region, year, season, age, sex]} of natural
 mortality at age.}
 
 \item{Movement}{Array \code{[pop, region_from, region_to, year, season,
@@ -134,14 +141,14 @@ dimension (retrospectives) must clamp it.}
 
 \item{growth_mortality_year_fn}{Optional function of \code{(y, NAA_y, growth_mortality_state)} called at
 the top of every year with the numbers at age at the start of that year,
-array \code{[pop, region, age, sex]}, and the state carried from the
-previous year. It returns a list with \code{state}, carried forward to the
+array \code{[pop, region, age, sex]}, and the state kept from the
+previous year. It returns a list with \code{state}, advanced to the
 next call and returned to the caller, and \code{ZAA_y}, \code{WAA_y} and
 \code{MatAA_y}, the year's slices of total mortality, weight and maturity
 at age, which replace those handed in for that year. Passing the state in
 and out keeps the per-year step a function of its arguments.}
 
-\item{growth_mortality_state}{Initial state for \code{growth_mortality_year_fn}, carried through the
+\item{growth_mortality_state}{Initial state for \code{growth_mortality_year_fn}, passed through the
 year loop and returned as \code{growth_mortality_state}. Ignored when
 \code{growth_mortality_year_fn} is \code{NULL}.
 This is how cohort growth, whose plus group blends by numbers, is evaluated
@@ -151,10 +158,13 @@ inside the year loop. \code{NULL} (the default) uses the arrays as given.}
 the numbers deterministic. Never inferred from \code{dim(ln_NAA)}, which is
 non-zero once the setup function has run at all.}
 
-\item{ln_NAA}{Array \code{[pop, region, year, age, sex]} of log numbers at age,
-overwriting the deterministic prediction wherever the state is active.}
+\item{ln_NAA}{Array \code{[pop, region, year, season, age, sex]} of log numbers
+at the start of a season, overwriting the deterministic prediction wherever
+the state is active. Season one is the year boundary, after ageing and the
+plus group; later seasons are states on the within-year survival step.}
 
-\item{naa_re_ages, naa_re_yrs}{Integer index vectors the state is active over.}
+\item{naa_re_ages, naa_re_yrs, naa_re_seas}{Integer index vectors the state is
+active over.}
 }
 \value{
 List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},

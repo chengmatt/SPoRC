@@ -1,12 +1,7 @@
-# Self-validating bridge test. The expectations are the 2025 Gulf of Alaska rex sole
-# assessment's own reported quantities (Stock Synthesis Model 25.1), shipped in
-# mlt_rg_goa_rex_data$ss3. Every parameter is set to the assessment's maximum
-# likelihood estimate and the model is evaluated there without optimizing, so a
-# failure means the growth module, the conditional age-at-length likelihood, the
-# two-area dynamics, a selectivity form or the ageing error no longer reproduces the
-# assessment at a point where it is known to. Do not loosen the tolerances to make
-# this pass. The assessment's report and parameter values carry six significant
-# digits, which is the floor under every comparison here.
+# Self-validating bridge test: the expectations are the 2025 GOA rex sole assessment's own reported
+# quantities (SS3 Model 25.1) in mlt_rg_goa_rex_data$ss3, evaluated at its estimate without optimizing.
+#
+# SS3's report and parameter values have six significant digits, the floor under every comparison here.
 
 library(SPoRC)
 library(testthat)
@@ -89,7 +84,7 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
   # Likelihoods ----
   # The composition likelihoods agree up to SS3 renormalizing after adding its
   # constant, which scales each by (1 + n_bins * addtocomp); the index likelihood
-  # up to the 0.5 log(2 pi) SPoRC's normal density carries per observation.
+  # up to the 0.5 log(2 pi) SPoRC's normal density has per observation.
   c_age <- dat$comp$addtocomp_age
   expect_equal(sum(r$FishLenComps_nLL) + sum(r$SrvLenComps_nLL),
                dat$ss3$likelihoods["Length_comp", "values"] * (1 + 2 * length(dat$lens) * c_age), tolerance = 2e-4)
@@ -103,7 +98,7 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
                dat$ss3$likelihoods["Parm_priors", "values"], tolerance = 1e-3)
 
   # The recruitment penalty: SS3 writes sum(dev^2) / (2 sigma^2) + sum(b) log(sigma)
-  # over the early and main deviations together. SPoRC's two arrays carry the normal
+  # over the early and main deviations together. SPoRC's two arrays hold the normal
   # constants, the main deviations' (1 - b/2) log(sigma) adjustment, and one log(sigma)
   # per initial age, so the crosswalk subtracts exactly those. A shared deviation has
   # to be counted once for this to close; counting it per region or per sex fails it.

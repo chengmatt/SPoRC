@@ -35,11 +35,13 @@ ssb_sim <- reshape2::melt(const$SSB) %>% mutate(om = "const") %>%
 # get SSB summary
 ssb_sim_sum <- ssb_sim %>%
   group_by(Region, Year, om) %>%
-  summarize(median = median(value),
-            lwr_95 = quantile(value, 0.025),
-            upr_95 = quantile(value, 0.975),
-            lwr_75 = quantile(value, 0.125),
-            upr_75 = quantile(value, 0.875))
+  summarize(
+    median = median(value),
+    lwr_95 = quantile(value, 0.025),
+    upr_95 = quantile(value, 0.975),
+    lwr_75 = quantile(value, 0.125),
+    upr_75 = quantile(value, 0.875)
+  )
 
 ssb_plot <- ssb_sim_sum %>%
   ggplot(aes(x = Year, y = median, ymin = lwr_95, ymax = upr_95)) +

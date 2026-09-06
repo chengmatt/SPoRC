@@ -24,7 +24,7 @@ Scalar negative log likelihood.
 }
 \description{
 The age and year half of \code{\link{Get_NAA_state_penalty}}, split out so the
-region correlation can whiten its margin and then reuse this unchanged for
+region correlation can whiten its dim and then reuse this unchanged for
 every structure, including the three-dimensional field whose cohort term makes
 it non-separable.
 }

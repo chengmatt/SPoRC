@@ -1,12 +1,9 @@
 # Stage 2 of 3: objective function
 #
-# Conditional age-at-length likelihoods. A CAAL observation is an age composition
-# within one length bin, so everything here loops length bins and hands each row to
-# the composition functions in model_lik_comps.R rather than restating the
-# multinomial and Dirichlet-multinomial algebra. Get_CAAL_Likelihoods evaluates the
-# likelihood; pack_caal_osa and eval_caal_osa carry the one step ahead residual
-# bookkeeping.
-#
+# Conditional age-at-length likelihoods. A CAAL observation is an age composition within one length
+# bin, so this loops length bins and hands each row to model_lik_comps.R.
+
+# Conditional Age-at-Length Likelihood --------------------------------------
 
 #' Conditional Age-at-Length Likelihood
 #'
@@ -95,7 +92,7 @@ Get_CAAL_Likelihoods = function(Exp,
   for(l in 1:n_lens) {
 
     # a length bin with no aged fish anywhere contributes nothing and must be
-    # skipped, since the composition machinery normalizes by a row sum - could cause an Inf
+    # skipped, since the composition routines normalizes by a row sum - could cause an Inf
     if(sum(use[,l]) < 1) next
 
     caal_nLL[,l,] = Get_Comp_Likelihoods(
@@ -124,6 +121,8 @@ Get_CAAL_Likelihoods = function(Exp,
   return(caal_nLL)
 }
 
+
+# One Step Ahead Residual Packing -------------------------------------------
 
 #' Pack observed CAAL data into a single flat OBS vector (OSA)
 #'
@@ -165,7 +164,7 @@ Get_CAAL_Likelihoods = function(Exp,
 #'   all bins. Restricted fleets pack a shorter block at every length bin.
 #'
 #' @return If \code{return_labels = FALSE} (default), the flat OBS vector, or
-#'   \code{NULL} when no fleet carries CAAL data. If \code{return_labels = TRUE},
+#'   \code{NULL} when no fleet has CAAL data. If \code{return_labels = TRUE},
 #'   a list with \code{vec} and \code{labels}.
 #'
 #' @keywords internal
@@ -184,15 +183,15 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
   bins_of = function(f) {
     if(is.null(BinsArr)) return(seq_len(n_obs_bins))
     if(nrow(BinsArr) != n_obs_bins) {
-      stop("bin selection array has ", nrow(BinsArr), " rows but the observations carry ", n_obs_bins,
-           " bins. The *_bins argument must be indexed on the observed bins of the stream it restricts.")
+      stop("bin selection array has ", nrow(BinsArr), " rows but the observations have ", n_obs_bins,
+           " bins. The *_bins argument must be indexed on the observed bins of the data source it restricts.")
     }
     which(BinsArr[,f] == 1)
   }
 
   # the label rows for one accepted (y, seas, f, l) group, in the same element
   # order as the packed values
-  make_labels = function(used, n_ru, ct, lt, y, seas, f, l) {
+  make_labels = function(used, n_ru, ct, like_type, y, seas, f, l) {
     fit_bins = bins_of(f)   # true observed bin numbers, so labels stay comparable across fleets
     n_bins = length(fit_bins)
     if(ct == 0) {
@@ -202,14 +201,23 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
       region = rep(used, times = n_bins * n_sexes)
       bin = rep(rep(fit_bins, each = n_ru), times = n_sexes)
       sex = rep(1:n_sexes, each = n_ru * n_bins)
-      # split by sex: each (region, sex) is its own multinomial, so each has its own
-      # determined bin. Joint by sex: the whole stack per region is one multinomial,
-      # so only the single last cell is determined.
+      # split by sex: each (region, sex) is its own multinomial with its own determined bin.
+      # joint by sex: the whole stack per region is one multinomial, so only the last cell is
       last_in_group = if(ct == 1) (bin == fit_bins[n_bins]) else (bin == fit_bins[n_bins]) & (sex == n_sexes)
     }
-    data.frame(region = region, year = y, season = seas, len = l, fleet = f,
-               sex = sex, bin = bin, comp_type = ct, likelihood_type = lt,
-               family = "discrete", last_in_group = last_in_group)
+    data.frame(
+      region = region,
+      year = y,
+      season = seas,
+      len = l,
+      fleet = f,
+      sex = sex,
+      bin = bin,
+      comp_type = ct,
+      likelihood_type = like_type,
+      family = "discrete",
+      last_in_group = last_in_group
+    )
   }
 
   clean = list()
@@ -225,7 +233,7 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
           if(sum(use_vec) < 1) next
 
           ct = TypeMat[y, f]
-          lt = LikeTypeVec[f]
+          like_type = LikeTypeVec[f]
           used = which(use_vec == 1)
           n_ru = length(used)
 
@@ -244,8 +252,8 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
               wt = WtArr[r_orig, y, seas, l, 1, f]
               v = as.vector(obs_slice[rr, , ]) # bin-fastest-then-sex
               pr = (v + addtocomp) / sum(v + addtocomp)
-              if(lt == 0) v = round(pr * iss * wt) # multinomial
-              if(lt == 1) v = round(pr * iss) # DM (no Wt)
+              if(like_type == 0) v = round(pr * iss * wt) # multinomial
+              if(like_type == 1) v = round(pr * iss) # DM (no Wt)
               for(s in 1:n_sexes) obs_slice[rr, , s] = v[((s - 1) * n_bins + 1):(s * n_bins)]
             } # end rr loop
           } else {
@@ -257,8 +265,8 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
                 iss = ISSArr[r_orig, y, seas, l, s, f]
                 wt = WtArr[r_orig, y, seas, l, s, f]
                 pr = (obs_slice[rr, , s] + addtocomp) / sum(obs_slice[rr, , s] + addtocomp)
-                if(lt == 0) obs_slice[rr, , s] = round(pr * iss * wt) # multinomial
-                if(lt == 1) obs_slice[rr, , s] = round(pr * iss) # DM (no Wt)
+                if(like_type == 0) obs_slice[rr, , s] = round(pr * iss * wt) # multinomial
+                if(like_type == 1) obs_slice[rr, , s] = round(pr * iss) # DM (no Wt)
               } # end s loop
             } # end rr loop
           } # end composition type
@@ -266,7 +274,7 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
           g = if(ct == 0) as.vector(obs_slice[1, , 1]) else as.vector(obs_slice)
 
           clean[[length(clean) + 1]] = g
-          if(return_labels) label_rows[[length(label_rows) + 1]] = make_labels(used, n_ru, ct, lt, y, seas, f, l)
+          if(return_labels) label_rows[[length(label_rows) + 1]] = make_labels(used, n_ru, ct, like_type, y, seas, f, l)
 
         } # end l loop
       } # end seas loop
@@ -333,8 +341,8 @@ eval_caal_osa = function(nLL_arr, tracked, ExpArrFn,
   bins_of = function(f) {
     if(is.null(BinsArr)) return(seq_len(n_obs_bins))
     if(nrow(BinsArr) != n_obs_bins) {
-      stop("bin selection array has ", nrow(BinsArr), " rows but the observations carry ", n_obs_bins,
-           " bins. The *_bins argument must be indexed on the observed bins of the stream it restricts.")
+      stop("bin selection array has ", nrow(BinsArr), " rows but the observations have ", n_obs_bins,
+           " bins. The *_bins argument must be indexed on the observed bins of the data source it restricts.")
     }
     which(BinsArr[,f] == 1)
   }
@@ -354,7 +362,7 @@ eval_caal_osa = function(nLL_arr, tracked, ExpArrFn,
           if(sum(use_vec) < 1) next
 
           ct = TypeMat[y, f]
-          lt = LikeTypeVec[f]
+          like_type = LikeTypeVec[f]
           n_ru = sum(use_vec == 1)
 
           fit_bins = bins_of(f)
@@ -364,14 +372,21 @@ eval_caal_osa = function(nLL_arr, tracked, ExpArrFn,
           active_obs_slice = tracked[seq.int(from = k, length.out = slice_length)]
 
           nLL_arr[, y, seas, l, , f] = Get_Comp_Likelihoods_OSA(
-            Exp = ExpArrFn(y, seas, l, f), Obs = active_obs_slice,
+            Exp = ExpArrFn(y, seas, l, f),
+            Obs = active_obs_slice,
             ISS = array(ISSArr[, y, seas, l, , f], dim = c(n_regions, n_sexes)),
-            ln_theta = lnThetaArr[, , f], ln_theta_agg = lnThetaAggVec[f],
-            Comp_Type = ct, Likelihood_Type = lt,
-            n_regions = n_regions, n_model_bins = n_model_bins, n_obs_bins = n_obs_bins,
-            n_sexes = n_sexes, age_or_len = 0,
+            ln_theta = lnThetaArr[, , f],
+            ln_theta_agg = lnThetaAggVec[f],
+            Comp_Type = ct,
+            Likelihood_Type = like_type,
+            n_regions = n_regions,
+            n_model_bins = n_model_bins,
+            n_obs_bins = n_obs_bins,
+            n_sexes = n_sexes,
+            age_or_len = 0,
             AgeingError = if(is.null(AgeingErrorFn)) NA else AgeingErrorFn(y, f),
-            use = use_vec, addtocomp = addtocomp,
+            use = use_vec,
+            addtocomp = addtocomp,
             comp_bins = if(n_bins < n_obs_bins) fit_bins else NULL
           )
 
@@ -386,12 +401,14 @@ eval_caal_osa = function(nLL_arr, tracked, ExpArrFn,
 }
 
 
+# Population Summing Helpers ------------------------------------------------
+
 #' Sum a conditional age-at-length array across populations
 #'
-#' The conditional age-at-length arrays carry a population dimension the
+#' The conditional age-at-length arrays have a population dimension the
 #' likelihood does not use, so it is summed away before the comparison. A single
 #' population needs only a reshape, which avoids an apply over a degenerate
-#' margin.
+#' dim.
 #'
 #' @param arr Array indexed population, region, year, season, length, age, sex, fleet.
 #' @param y,seas,f Year, season and fleet to extract.

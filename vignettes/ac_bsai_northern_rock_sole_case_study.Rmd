@@ -50,13 +50,13 @@ assessment writes
 $$N_{y_{1},a,s} = \tfrac{1}{2}\exp\left(\overline{\log N^{\text{init}}} + \epsilon^{\text{init}}_{a,s}\right)
 \qquad a = 2, \ldots, a_{+}$$
 
-so one level $\overline{\log N^{\text{init}}}$ is shared and each sex carries its
+so one level $\overline{\log N^{\text{init}}}$ is shared and each sex has its
 own deviations $\epsilon^{\text{init}}_{a,s}$. Those deviations are penalized
 about zero, and separately the two sexes are compared to each other by
 $\sum_{a}(\epsilon^{\text{init}}_{a,m} - \epsilon^{\text{init}}_{a,f})^{2}$. The
 penalty is a statement about how far apart the sexes' initial age structures may
 sit, which is not the same statement as how variable each one is: initial
-numbers at age carry the exploitation the stock had already seen before
+numbers at age hold the exploitation the stock had already seen before
 $y_{1}$ as well as year-class strength, and with sex specific selectivity and
 mortality the two sexes need not have departed from equilibrium by the same
 amount.
@@ -101,8 +101,8 @@ to one and are dropped throughout. The sex subscript does not.
 
 The survey enters as two fleets. The assessment reads its index in July and
 its compositions on January 1, off one selectivity curve. Two fleets sharing a
-curve is how that is written: fleet 1 carries the index at
-$t^{\text{srv}} = (7 - 1)/12$, fleet 2 carries the compositions at
+curve is how that is written: fleet 1 holds the index at
+$t^{\text{srv}} = (7 - 1)/12$, fleet 2 holds the compositions at
 $t^{\text{srv}} = 0$ (inconsistent in the flatfish model).
 
 ```{r, eval = FALSE}
@@ -270,14 +270,14 @@ input_list <- Setup_Mod_Catch_and_F(
 )
 ```
 
-The assessment carries two weak penalties on fishing mortality, one pulling
+The assessment has two weak penalties on fishing mortality, one pulling
 annual $F$ toward 0.2 and one forcing the mean deviation to zero. 
-`ln_F_mean_spec = "fix"` does the same thing by fixing the mean, so the deviations carry all of $\log F$. Hoervrt, yhr first has no counterpart in `SPoRC` is left out.
+`ln_F_mean_spec = "fix"` does the same thing by fixing the mean, so the deviations have all of $\log F$. Hoervrt, yhr first has no counterpart in `SPoRC` is left out.
 
 ## Fishery compositions
 
 Compositions are joint across sexes, females then males, so each year's
-observation carries the sex ratio as well as the age structure.
+observation holds the sex ratio as well as the age structure.
 
 ```{r, eval = FALSE}
 input_list <- Setup_Mod_FishIdx_and_Comps(
@@ -301,7 +301,7 @@ input_list <- Setup_Mod_FishIdx_and_Comps(
 ```
 
 `spltRjntS` is the joint form: one multinomial over both sexes at once, which
-carries the sex ratio. The input sample size goes in the first sex's slot, since
+holds the sex ratio. The input sample size goes in the first sex's slot, since
 the joint composition is one observation rather than two. There is no fishery
 index, so `fish_idx_type = "none"` with the use flags off; `FishIdx_LikeType`
 still has to name a family, and it is never evaluated.
@@ -355,7 +355,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(
 
 Three things are named here.
 
-`_NSelBins_17` is the plateau. Bins beyond 17 are held at bin 17's value rather
+`_NSelBins_17` is the plateau. Bins beyond 17 are kept at bin 17's value rather
 than evaluated through the logistic, which is the assessment's `nselages`.
 
 `fish_sel_sex_offset = "scale"` multiplies the male curve by an estimated
@@ -397,7 +397,7 @@ is how the assessment writes them.
 The catchability prior needs care. The assessment penalizes
 $\log q$ against $\log 1.5$ at $\sigma = 0.2$, but it writes the penalty over a
 vector of $q$ with one element per survey year, so the same prior is accidentally counted
-42 times. One parameter at $\sigma = 0.2/\sqrt{42}$ carries the same
+42 times. One parameter at $\sigma = 0.2/\sqrt{42}$ holds the same
 information, which is what `dat$q_prior$sd` holds.
 
 ## Weighting
@@ -418,7 +418,7 @@ parameters <- input_list$par
 mapping <- input_list$map
 ```
 
-Every weight is one. The assessment's own weights are carried as standard
+Every weight is one. The assessment's own weights are kept as standard
 deviations where they belong instead: the catch weight of 300 became
 $\sigma_{C}$, and the composition weights of one are the input sample sizes.
 
@@ -453,7 +453,7 @@ parameters$fishsel_pe_pars[1,1,,1] <- log(dat$a50_sigma)
 parameters$fishsel_pe_pars[1,2,,1] <- log(dat$slp_sigma)
 
 # The two survey fleets share these through the map, and a collapsed parameter
-# starts at the mean of its cells, so both fleets carry the value.
+# starts at the mean of its cells, so both fleets hold the value.
 for(sf in 1:n_srv) {
   parameters$srv_fixed_sel_pars[1,1,1,1,sf] <- log(mle$sel50_srv)
   parameters$srv_fixed_sel_pars[1,2,1,1,sf] <- log(mle$sel_slope_srv)
@@ -531,8 +531,8 @@ $1.7\times10^{-11}$.
 One penalty is left. The assessment adds
 $0.01\sum_{y}(F_{y} - 0.2)^{2}$, pulling every year's fishing mortality toward
 0.2. Its weight of 0.01 is $\sigma \approx 7$ on the $F$ scale, which is a
-numerical stabilizer carried over from the early estimation phases rather than a
-statement about fishing mortality, so `SPoRC` does not carry it.
+numerical stabilizer left over from the early estimation phases rather than a
+statement about fishing mortality, so `SPoRC` does not have it.
 
 Adding it back closes the rest of the gap. With it the assessment's estimate is
 stationary in `SPoRC`'s objective to better than the assessment's own

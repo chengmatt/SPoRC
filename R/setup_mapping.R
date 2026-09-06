@@ -1,13 +1,11 @@
 # Stage 1 of 3: model setup
 #
-# Parameter map builders shared by more than one Setup_* file. build_pe_map and
-# build_shared_spec_map turn a dimension sharing spec string into an RTMB factor
-# map; the do_*_mapping functions here each serve several parameter blocks at
-# once, selected by a prefix argument. A mapping helper belongs in this file only
-# if more than one Setup_* file calls it; single caller helpers stay with their
-# caller.
+# Parameter map builders shared by more than one Setup_* file. A mapping helper belongs here only if
+# more than one Setup_* file calls it; single caller helpers stay with their caller.
 
-#' Check that a per-fleet setting carries one entry per fleet
+# Shared Spec and Map Builders ----------------------------------------------
+
+#' Check that a per-fleet setting has one entry per fleet
 #'
 #' These settings are read one fleet at a time inside the mapping loops. A vector
 #' shorter than the fleet count indexes past its end and yields NA, which the
@@ -34,7 +32,7 @@ check_fleet_spec_length <- function(spec, n_fleets, what, allow_null = FALSE) {
   }
   if(length(spec) == n_fleets) return(invisible(NULL))
   # a single value is the common mistake and has an obvious repair, so the message
-  # carries the call rather than only the diagnosis
+  # holds the call rather than only the diagnosis
   example <- if(length(spec) == 1) {
     shown <- if(is.character(spec)) paste0("\"", spec[1], "\"") else format(spec[1])
     paste0(", for example rep(", shown, ", ", n_fleets, ")")
@@ -121,8 +119,15 @@ build_pe_map <- function(dims, share_over = character(0)) {
 #'   assignment to \code{input_list$map$<par>}.
 #'
 #' @keywords internal
-build_shared_spec_map <- function(dims, spec, dim_abbrev, use = NULL,
-                                  what = "parameter", min_obs = 2, warn_obs = 5) {
+build_shared_spec_map <- function(
+  dims,
+  spec,
+  dim_abbrev,
+  use = NULL,
+  what = "parameter",
+  min_obs = 2,
+  warn_obs = 5
+) {
 
   shared_specs <- unlist(lapply(seq_along(dim_abbrev), function(k) {
     combs <- utils::combn(names(dim_abbrev), k)
@@ -174,8 +179,16 @@ build_shared_spec_map <- function(dims, spec, dim_abbrev, use = NULL,
 #' @return \code{invisible(NULL)}. Called for its error and warning side effects.
 #'
 #' @keywords internal
-check_spec_map_identifiable <- function(map, use, spec, dims, dim_abbrev,
-                                        what = "parameter", min_obs = 2, warn_obs = 5) {
+check_spec_map_identifiable <- function(
+  map,
+  use,
+  spec,
+  dims,
+  dim_abbrev,
+  what = "parameter",
+  min_obs = 2,
+  warn_obs = 5
+) {
 
   if(length(use) != length(map)) {
     warning("Could not check identifiability of ", what, ": the 'use' array has ",
@@ -213,16 +226,18 @@ check_spec_map_identifiable <- function(map, use, spec, dims, dim_abbrev,
   invisible(NULL)
 }
 
+# At-Age Observation Setup --------------------------------------------------
+
 #' Dimensions of one at-age observation array
 #'
-#' Every at-age stream is stored region by year by season by age by sex by fleet,
+#' Every at-age data source is stored region by year by season by age by sex by fleet,
 #' with a leading population dimension for the population-specific form. This is
 #' the layout of the prediction arrays the likelihood reads, so the two line up
-#' margin for margin.
+#' dim for dim.
 #'
 #' @param input_list Named list with \code{$data}.
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
-#' @param pop Logical. \code{TRUE} for the population-specific stream.
+#' @param pop Logical. \code{TRUE} for the population-specific data source.
 #'
 #' @return An integer vector of dimensions.
 #'
@@ -234,11 +249,10 @@ at_age_dims <- function(input_list, fleet_field, pop = FALSE) {
   return(as.integer(if(pop) c(if(is.null(n_pop)) 1L else n_pop, d) else d))
 }
 
-#' How many sexes an input list carries
+#' How many sexes an input list has
 #'
 #' A list assembled without \code{\link{Setup_Mod_Dim}}, as the mapping unit
-#' tests do, has no sex dimension to read. One sex is what such a list means, and
-#' is what the at-age arrays were shaped as before the margin existed.
+#' tests do, has no sex dimension to read. One sex is what such a list means.
 #'
 #' @param input_list Named list with \code{$data}.
 #'
@@ -252,51 +266,51 @@ at_age_n_sexes <- function(input_list) {
 
 #' Refuse an at-age array or parameter that is missing a dimension
 #'
-#' The at-age streams carry a sex margin, and nothing promotes an array into it:
+#' The at-age data sources have a sex dim, and nothing promotes an array into it:
 #' an array one dimension short would otherwise be indexed by position and read
 #' the wrong age or sex. This reports what was supplied against what is wanted.
 #'
 #' @param x The array to check, or \code{NULL} to skip.
-#' @param want Integer vector of the dimensions expected.
+#' @param expected_dims Integer vector of the dimensions expected.
 #' @param what Name used in the message.
 #'
 #' @return \code{invisible(NULL)}. Called for its error.
 #'
 #' @keywords internal
-check_at_age_shape <- function(x, want, what) {
+check_at_age_shape <- function(x, expected_dims, what) {
 
   if(is.null(x)) return(invisible(NULL))
-  got <- dim(as.array(x))
+  actual_dims <- dim(as.array(x))
 
-  if(is.null(got) || !identical(as.integer(got), as.integer(want))) {
-    stop(what, " is ", if(is.null(got)) paste0("a length ", length(x), " vector")
-                       else paste(got, collapse = " by "),
-         " where ", paste(want, collapse = " by "), " is expected. The at-age streams carry ",
-         "a sex margin, so supply the full array rather than one summed over sexes.")
+  if(is.null(actual_dims) || !identical(as.integer(actual_dims), as.integer(expected_dims))) {
+    stop(what, " is ", if(is.null(actual_dims)) paste0("a length ", length(x), " vector")
+                       else paste(actual_dims, collapse = " by "),
+         " where ", paste(expected_dims, collapse = " by "), " is expected. The at-age data sources have ",
+         "a sex dim, so supply the full array rather than one summed over sexes.")
   }
 
   return(invisible(NULL))
 }
 
-#' Store one at-age stream's observations, use flags and standard errors
+#' Store one at-age data source's observations, use flags and standard errors
 #'
-#' Shared by the three streams and their population-specific forms. An absent
-#' stream is given a zeroed array so the objective can index it unconditionally.
+#' Shared by the three data sources and their population-specific forms. An absent
+#' data source is given a zeroed array so the objective can index it unconditionally.
 #'
 #' @param input_list Named list with \code{$data}.
 #' @param obs,use,se Observation, use and reported standard error arrays, any of
 #'   them \code{NULL}.
-#' @param stream Stream tag naming the data elements, e.g. \code{"CatchAA"}.
+#' @param data_source Data source tag naming the data elements, e.g. \code{"CatchAA"}.
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
-#' @param pop Logical. \code{TRUE} for the population-specific stream.
+#' @param pop Logical. \code{TRUE} for the population-specific data source.
 #'
-#' @return \code{input_list} with the stream's three data elements set.
+#' @return \code{input_list} with the data source's three data elements set.
 #'
 #' @keywords internal
-do_at_age_data_setup <- function(input_list, obs, use, se, stream, fleet_field, pop = FALSE) {
+do_at_age_data_setup <- function(input_list, obs, use, se, data_source, fleet_field, pop = FALSE) {
 
   n_sexes <- at_age_n_sexes(input_list)
-  tag <- if(pop) paste0(stream, "_pop") else stream
+  tag <- if(pop) paste0(data_source, "_pop") else data_source
   dims <- at_age_dims(input_list, fleet_field, pop)
 
   supplied <- list(obs = !is.null(obs), use = !is.null(use), se = !is.null(se))
@@ -309,19 +323,21 @@ do_at_age_data_setup <- function(input_list, obs, use, se, stream, fleet_field, 
   }
   if(is.null(se)) se <- array(0, dim = dims)
 
-  # only what the caller supplied is checked: the zeroed placeholders built
-  # above are correct by construction, and a model carrying no at-age data need
-  # not have an age or sex dimension for them to be checked against
+  # only what the caller supplied is checked: the zeroed placeholders above are correct by
+  # construction, and a model with no at-age data needs no age or sex dim to check against
   fleet_args <- list(input_list$data[[fleet_field]])
   names(fleet_args) <- fleet_field
   check_one <- function(x, what) {
-    do.call(check_data_dimensions, c(list(x, n_regions = input_list$data$n_regions,
-                                          n_years = length(input_list$data$years),
-                                          n_seas = input_list$data$n_seas,
-                                          n_ages = length(input_list$data$ages),
-                                          n_sexes = n_sexes,
-                                          n_pop = input_list$data$n_pop,
-                                          what = what), fleet_args))
+    do.call(check_data_dimensions, c(list(
+      x,
+      n_regions = input_list$data$n_regions,
+      n_years = length(input_list$data$years),
+      n_seas = input_list$data$n_seas,
+      n_ages = length(input_list$data$ages),
+      n_sexes = n_sexes,
+      n_pop = input_list$data$n_pop,
+      what = what
+    ), fleet_args))
   }
   if(supplied$obs) {
     check_one(obs, paste0("Obs", tag))
@@ -336,15 +352,15 @@ do_at_age_data_setup <- function(input_list, obs, use, se, stream, fleet_field, 
   return(input_list)
 }
 
-#' Should an at-age stream's observation error parameter be estimated?
+#' Should an at-age data source's observation error parameter be estimated?
 #'
-#' A stream nobody fits has nothing to inform its standard deviation, and a
-#' stream taking its error from reported standard errors alone has no parameter
-#' to read, so both are held fixed whatever the spec says.
+#' A data source nobody fits has nothing to inform its standard deviation, and a
+#' data source taking its error from reported standard errors alone has no parameter
+#' to read, so both are kept fixed whatever the spec says.
 #'
 #' @param spec \code{"est"} or \code{"fix"} as supplied by the caller.
-#' @param form The stream's \code{sigma_form}.
-#' @param any_used \code{TRUE} when any fleet fits this stream.
+#' @param form The data source's \code{sigma_form}.
+#' @param any_used \code{TRUE} when any fleet fits this data source.
 #'
 #' @return \code{"est"} or \code{"fix"}.
 #'
@@ -356,18 +372,18 @@ at_age_sigma_spec <- function(spec, form, any_used) {
   return(spec)
 }
 
-#' Name the split margins of one at-age stream
+#' Name the split dims of one at-age data source
 #'
 #' An at-age observation is stored over regions and sexes whether or not it is
-#' reported that way, and the Type code names which of those margins the fleet
+#' reported that way, and the Type code names which of those dims the fleet
 #' reports separately. The vocabulary is the composition one, so a model stating
 #' both kinds of data states them the same way.
 #'
-#' A margin the fleet sums over carries its observation in slot one, and a use
-#' flag anywhere else on that margin is refused rather than quietly ignored.
+#' A dim the fleet sums over has its observation in slot one, and a use
+#' flag anywhere else on that dim is refused rather than quietly ignored.
 #'
 #' The setting may change part way through a series, given in the same
-#' \code{Value_Year_x-y_Fleet_f} form the composition streams take. A bare value
+#' \code{Value_Year_x-y_Fleet_f} form the composition data sources take. A bare value
 #' stands for the whole series, either one setting for every fleet or one per
 #' fleet.
 #'
@@ -377,30 +393,28 @@ at_age_sigma_spec <- function(spec, form, any_used) {
 #'   for every fleet or once per fleet; or year and fleet specifications such as
 #'   \code{"spltRaggS_Year_1-20_Fleet_1"}, in which case every year of every
 #'   fleet needs an entry covering it.
-#' @param stream Stream tag naming the data element, e.g. \code{"CatchAA"}.
+#' @param data_source Data source tag naming the data element, e.g. \code{"CatchAA"}.
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
-#' @param use_field Name of the use array for this stream.
-#' @param pop Logical. \code{TRUE} for the population-specific stream.
+#' @param use_field Name of the use array for this data source.
+#' @param pop Logical. \code{TRUE} for the population-specific data source.
 #'
-#' @return \code{input_list} with \code{$data$<stream>_Type} set to a numeric
+#' @return \code{input_list} with \code{$data$<data source>_Type} set to a numeric
 #'   matrix \code{[n_yrs, n_fleets]} of codes.
 #'
 #' @keywords internal
-do_at_age_type_setup <- function(input_list, type, stream, fleet_field, use_field, pop = FALSE) {
+do_at_age_type_setup <- function(input_list, type, data_source, fleet_field, use_field, pop = FALSE) {
 
   valid <- c("agg", "spltRaggS", "aggRspltS", "spltRspltS")
   n_fleets <- input_list$data[[fleet_field]]
   n_yrs <- length(input_list$data$years)
-  tag <- if(pop) paste0(stream, "_pop") else stream
+  tag <- if(pop) paste0(data_source, "_pop") else data_source
   arg <- paste0(tag, "_Type")
 
   codes <- at_age_type_matrix(type, n_fleets, n_yrs, arg)
   input_list$data[[arg]] <- codes
 
-  # a summed margin holds the observation in slot one, so nothing else on that
-  # margin may be flagged: the prediction has already added those cells in. The
-  # check is per year as well as per fleet, since the setting may change between
-  # them
+  # a summed dim holds the observation in slot one, so nothing else on that dim may be flagged.
+  # checked per year as well as per fleet, since the setting may change between them
   use_arr <- input_list$data[[use_field]]
   nd <- length(dim(use_arr))
   i_r <- if(pop) 2 else 1
@@ -432,11 +446,11 @@ do_at_age_type_setup <- function(input_list, type, stream, fleet_field, use_fiel
   return(input_list)
 }
 
-#' Set the error scale and likelihood of one at-age stream
+#' Set the error scale and likelihood of one at-age data source
 #'
 #' An at-age observation may be lognormal or normal, and its standard deviation
 #' may come from an estimated parameter, from reported standard errors, or from
-#' both. This is the parity the aggregated index streams already have, stated per
+#' both. This is the parity the aggregated index data sources already have, stated per
 #' fleet.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
@@ -445,25 +459,25 @@ do_at_age_type_setup <- function(input_list, type, stream, fleet_field, use_fiel
 #' @param sigma_form \code{"none"} for the parameter alone, \code{"data"} for the
 #'   reported standard errors alone, \code{"est_additive"} or
 #'   \code{"est_quadrature"} for both.
-#' @param stream,fleet_field,pop See \code{\link{do_at_age_type_setup}}.
+#' @param data_source,fleet_field,pop See \code{\link{do_at_age_type_setup}}.
 #'
-#' @return \code{input_list} with \code{$data$<stream>_LikeType} and
-#'   \code{$data$<stream>_sigma_form} set.
+#' @return \code{input_list} with \code{$data$<data source>_LikeType} and
+#'   \code{$data$<data source>_sigma_form} set.
 #'
 #' @keywords internal
-do_at_age_like_setup <- function(input_list, like_type, sigma_form, stream, fleet_field, pop = FALSE) {
+do_at_age_like_setup <- function(input_list, like_type, sigma_form, data_source, fleet_field, pop = FALSE) {
 
   n_fleets <- input_list$data[[fleet_field]]
-  tag <- if(pop) paste0(stream, "_pop") else stream
+  tag <- if(pop) paste0(data_source, "_pop") else data_source
 
-  expand <- function(x, nm, valid) {
+  expand <- function(x, par_name, valid) {
     if(length(x) == 1) x <- rep(x, n_fleets)
     if(length(x) != n_fleets) {
-      stop(tag, nm, " has ", length(x), " entries for ", n_fleets, " fleets. Supply one ",
+      stop(tag, par_name, " has ", length(x), " entries for ", n_fleets, " fleets. Supply one ",
            "setting per fleet, or one setting for all of them.")
     }
     if(!all(x %in% valid)) {
-      stop(tag, nm, " is '", paste(unique(x[!x %in% valid]), collapse = "', '"),
+      stop(tag, par_name, " is '", paste(unique(x[!x %in% valid]), collapse = "', '"),
            "'. Valid options: ", paste(valid, collapse = ", "))
     }
     return(x)
@@ -479,11 +493,11 @@ do_at_age_like_setup <- function(input_list, like_type, sigma_form, stream, flee
   return(input_list)
 }
 
-#' Set the correlation structure for one at-age stream
+#' Set the correlation structure for one at-age data source
 #'
-#' Each stream is configured where its data are configured, so the catch and
-#' discard streams are set in \code{\link{Setup_Mod_Catch_and_F}} and the index
-#' streams in their own setup functions. The population-specific form carries its
+#' Each data source is configured where its data are configured, so the catch and
+#' discard data sources are set in \code{\link{Setup_Mod_Catch_and_F}} and the index
+#' data sources in their own setup functions. The population-specific form has its
 #' own setting rather than borrowing the aggregated one.
 #'
 #' Four structures are available, per fleet. \code{"iid"} treats ages as
@@ -496,45 +510,53 @@ do_at_age_like_setup <- function(input_list, like_type, sigma_form, stream, flee
 #'
 #' How the correlations are shared follows the package's spec strings rather than
 #' a structure of its own. They sit over region, sex and fleet, with a leading
-#' population margin for the population-specific streams, so
+#' population dim for the population-specific data sources, so
 #' \code{"est_shared_r_s"} (the default, \code{"est_shared_p_r_s"} for the
 #' population form) gives one per fleet, \code{"est_shared_r_s_f"} a single
 #' value, \code{"est_all"} a free one per cell, and \code{"fix"} holds them all.
-#' One spec governs the stream's across-age correlation, its across-year
+#' One spec governs the data source's across-age correlation, its across-year
 #' correlation and its unstructured matrix together, so two fleets sharing a
 #' correlation share a whole matrix under \code{"us"}. A region, sex or
-#' population a fleet never observes carries no parameter whatever the spec says,
-#' which is what holds the unused slots of a summed margin out.
+#' population a fleet never observes has no parameter whatever the spec says,
+#' which is what holds the unused slots of a summed dim out.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param corr \code{"iid"}, \code{"1dar1"}, \code{"us"} or \code{"2dar1"},
 #'   either one setting for every fleet or one per fleet.
-#' @param stream Stream tag: \code{"catch"}, \code{"discard"},
+#' @param data_source Data source tag: \code{"catch"}, \code{"discard"},
 #'   \code{"fish_idx"} or \code{"srv_idx"}.
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
-#' @param use_field Name of the use array for this stream.
+#' @param use_field Name of the use array for this data source.
 #' @param starting_values Named list from the caller's \code{...}.
 #' @param rho_spec Character string controlling how the correlation parameters
 #'   are shared: \code{"est_all"}, \code{"fix"}, or \code{"est_shared_"}
 #'   followed by any combination of \code{r}, \code{s} and \code{f}, gaining
-#'   \code{p} for the population-specific streams. \code{NULL} (the default)
+#'   \code{p} for the population-specific data sources. \code{NULL} (the default)
 #'   takes \code{"est_shared_r_s"}, or \code{"est_shared_p_r_s"} when
 #'   \code{pop}, both of which give one correlation per fleet.
-#' @param pop Logical. \code{TRUE} for the population-specific stream.
+#' @param pop Logical. \code{TRUE} for the population-specific data source.
 #'
-#' @return \code{input_list} with the stream's correlation flag and its
+#' @return \code{input_list} with the data source's correlation flag and its
 #'   correlation parameters set.
 #'
 #' @keywords internal
-do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
-                              starting_values = list(), rho_spec = NULL, pop = FALSE) {
+do_age_corr_setup <- function(
+  input_list,
+  corr,
+  data_source,
+  fleet_field,
+  use_field,
+  starting_values = list(),
+  rho_spec = NULL,
+  pop = FALSE
+) {
 
   valid <- c("iid", "1dar1", "us", "2dar1")
   n_fleets <- input_list$data[[fleet_field]]
   n_ages <- length(input_list$data$ages)
   n_sexes <- at_age_n_sexes(input_list)
 
-  tag <- if(pop) paste0(stream, "_pop") else stream
+  tag <- if(pop) paste0(data_source, "_pop") else data_source
   rho_name <- paste0("trans_rho_", tag)
   yr_name <- paste0("trans_rho_", tag, "_year")
   us_name <- paste0("trans_rho_", tag, "_us")
@@ -556,12 +578,12 @@ do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
   nd <- length(dim(use_arr))
   i_a <- nd - 2
   i_y <- nd - 4
-  # the correlations sit over the margins the observations are split by, so a
+  # the correlations sit over the dims the observations are split by, so a
   # slot a fleet never observes drops out on its own
   n_regions <- input_list$data$n_regions
   n_pop <- input_list$data$n_pop
-  obs_margins <- if(pop) c(1, 2, nd - 1, nd) else c(1, nd - 1, nd)
-  obs_by <- apply(use_arr, obs_margins, function(x) sum(x != 0)) # (pop,) region, sex, fleet
+  obs_dims <- if(pop) c(1, 2, nd - 1, nd) else c(1, nd - 1, nd)
+  obs_by <- apply(use_arr, obs_dims, function(x) sum(x != 0)) # (pop,) region, sex, fleet
 
   spec_dims <- if(pop) c(pop = n_pop, region = n_regions, sex = n_sexes, fleet = n_fleets)
                else c(region = n_regions, sex = n_sexes, fleet = n_fleets)
@@ -573,10 +595,10 @@ do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
   rho_dims <- as.integer(spec_dims)
   us_dims <- as.integer(c(n_pairs, spec_dims))
 
-  for(nm in c(rho_name, yr_name)) {
-    input_list$par[[nm]] <- if(nm %in% names(starting_values)) array(starting_values[[nm]], dim = rho_dims)
+  for(par_name in c(rho_name, yr_name)) {
+    input_list$par[[par_name]] <- if(par_name %in% names(starting_values)) array(starting_values[[par_name]], dim = rho_dims)
                             else array(0, dim = rho_dims)
-  } # end nm loop
+  } # end par_name loop
   input_list$par[[us_name]] <- if(us_name %in% names(starting_values)) array(starting_values[[us_name]], dim = us_dims)
                                else array(0, dim = us_dims)
 
@@ -608,7 +630,7 @@ do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
   grp <- hold_unless(base_map, 2)
   if(any(!is.na(grp))) {
     n_grp <- max(grp, na.rm = TRUE)
-    # the pair margin runs fastest, so a group's matrix is n_pairs strided ids
+    # the pair dim runs fastest, so a group's matrix is n_pairs strided ids
     us_map[] <- rep((seq_len(n_pairs) - 1) * n_grp, times = length(grp)) +
                 rep(as.vector(grp), each = n_pairs)
   }
@@ -617,8 +639,8 @@ do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
   # guard rails: an unstructured correlation grows with the square of the ages,
   # and a separable one needs a complete grid
   if(any(codes %in% c(2, 3))) {
-    cell_margins <- setdiff(seq_len(nd), i_a)
-    cells <- apply(use_arr == 1, cell_margins, any)
+    cell_dims <- setdiff(seq_len(nd), i_a)
+    cells <- apply(use_arr == 1, cell_dims, any)
     n_cells <- apply(cells, length(dim(cells)), sum)
 
     for(f in which(codes == 2)) {
@@ -649,13 +671,15 @@ do_age_corr_setup <- function(input_list, corr, stream, fleet_field, use_field,
   return(input_list)
 }
 
+# Composition Block Helpers -------------------------------------------------
+
 #' Do a fleet's at-age observations fill a complete age by year grid?
 #'
 #' A separable correlation over ages and years is a statement about a rectangle.
 #' This reports whether every combination of the years and ages a fleet observes
 #' is present, within each population, region, season and sex.
 #'
-#' @param use_arr Use array for the stream.
+#' @param use_arr Use array for the data source.
 #' @param f Fleet index.
 #' @param nd Number of dimensions of \code{use_arr}.
 #' @param i_y,i_a Positions of the year and age dimensions.
@@ -686,7 +710,7 @@ at_age_block_complete <- function(use_arr, f, nd, i_y, i_a) {
 #' Is a fleet's selectivity informed by data in some year?
 #'
 #' Reads both the aggregated use array and its at-age counterpart. A fleet
-#' fitting catch at age or an index at age carries no aggregated observations,
+#' fitting catch at age or an index at age has no aggregated observations,
 #' so keying only off the aggregated array maps its selectivity off and silently
 #' holds it at the starting value.
 #'
@@ -695,18 +719,18 @@ at_age_block_complete <- function(use_arr, f, nd, i_y, i_a) {
 #'   \code{"SrvIdx"}.
 #' @param r,f Region and fleet.
 #'
-#' @return \code{TRUE} when any stream for that region and fleet is fit.
+#' @return \code{TRUE} when any data source for that region and fleet is fit.
 #'
 #' @keywords internal
 sel_has_data <- function(data, use_field, r, f) {
 
-  agg <- paste0("Use", use_field)              # aggregated stream
+  agg <- paste0("Use", use_field)              # aggregated data source
   agg_pop <- paste0(agg, "_pop")
-  at_age <- paste0("Use", use_field, "AA")     # at-age stream
+  at_age <- paste0("Use", use_field, "AA")     # at-age data source
   at_age_pop <- paste0(at_age, "_pop")
 
-  any_of <- function(nm, pop) {
-    arr <- data[[nm]]
+  any_of <- function(par_name, pop) {
+    arr <- data[[par_name]]
     if(is.null(arr)) return(FALSE)
     if(pop) sum(arr[, r, , , , , f]) > 0 else sum(arr[r, , , , , f]) > 0
   }
@@ -727,7 +751,7 @@ sel_has_data <- function(data, use_field, r, f) {
 #' covers every sharing pattern that would otherwise need its own spec string:
 #' one parameter per age, one per age group, or one for the whole fleet.
 #'
-#' Shared by every at-age stream: the catch, discard and index observation
+#' Shared by every at-age data source: the catch, discard and index observation
 #' errors, the age-specific catchabilities, and their population-specific
 #' counterparts.
 #'
@@ -740,7 +764,7 @@ sel_has_data <- function(data, use_field, r, f) {
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param key Integer array \code{[n_ages, n_sexes, n_fleets]}, or \code{NULL}
 #'   for the default given by \code{default_shared}. Gains a leading population
-#'   dimension when \code{pop} is \code{TRUE}. The sex margin is required: a key
+#'   dimension when \code{pop} is \code{TRUE}. The sex dim is required: a key
 #'   coupling the sexes says so by repeating its entries across them.
 #' @param spec \code{"est"} or \code{"fix"}.
 #' @param par_name Name of the parameter to map, e.g. \code{"ln_sigmaCAA"}.
@@ -750,7 +774,7 @@ sel_has_data <- function(data, use_field, r, f) {
 #'   key says.
 #' @param starting_values Named list from the caller's \code{...}, read for
 #'   \code{par_name}.
-#' @param pop Logical. \code{TRUE} for the population-specific stream.
+#' @param pop Logical. \code{TRUE} for the population-specific data source.
 #' @param default_shared Logical. When \code{key} is \code{NULL}, \code{TRUE}
 #'   gives one parameter per fleet shared across ages and \code{FALSE} gives one
 #'   per age and fleet. Catchability defaults to the latter.
@@ -760,8 +784,19 @@ sel_has_data <- function(data, use_field, r, f) {
 #'
 #' @keywords internal
 
-do_key_mapping <- function(input_list, key, spec, par_name, fleet_field, use_field,
-                           starting_values = list(), pop = FALSE, default_shared = TRUE) {
+# Index and Composition Parameter Maps --------------------------------------
+
+do_key_mapping <- function(
+  input_list,
+  key,
+  spec,
+  par_name,
+  fleet_field,
+  use_field,
+  starting_values = list(),
+  pop = FALSE,
+  default_shared = TRUE
+) {
 
   n_fleets <- input_list$data[[fleet_field]]
   n_ages <- length(input_list$data$ages)
@@ -794,12 +829,12 @@ do_key_mapping <- function(input_list, key, spec, par_name, fleet_field, use_fie
   }
   key <- array(as.integer(key), dim = dims)
 
-  # an age and sex a fleet never observes carries no parameter, whatever the key
-  # says. This is what holds the unused sexes of a sex-aggregated stream out
+  # an age and sex a fleet never observes has no parameter, whatever the key
+  # says. This is what holds the unused sexes of a sex-aggregated data source out
   use_arr <- input_list$data[[use_field]]
   nd <- length(dim(use_arr))
-  margins <- if(pop) c(1, nd - 2, nd - 1, nd) else c(nd - 2, nd - 1, nd)
-  obs_by <- apply(use_arr, margins, function(x) sum(x != 0))
+  dims <- if(pop) c(1, nd - 2, nd - 1, nd) else c(nd - 2, nd - 1, nd)
+  obs_by <- apply(use_arr, dims, function(x) sum(x != 0))
   key[obs_by == 0] <- NA_integer_
 
   keep <- !is.na(key)
@@ -828,7 +863,7 @@ do_key_mapping <- function(input_list, key, spec, par_name, fleet_field, use_fie
 #' Map an estimated index observation error standard deviation
 #'
 #' Shared by \code{\link{Setup_Mod_FishIdx_and_Comps}} and
-#' \code{\link{Setup_Mod_SrvIdx_and_Comps}}, which carry the same parameter under
+#' \code{\link{Setup_Mod_SrvIdx_and_Comps}}, which hold the same parameter under
 #' different names and over a different fleet dimension.
 #'
 #' The parameter is one value per fleet. Index standard errors are reported per
@@ -953,9 +988,8 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
       # Loop through to make sure mapping stuff off correctly
       for(r in 1:input_list$data$n_regions) {
 
-        # a (pop,) region with no active comps for this fleet never contributes to the
-        # likelihood, so its theta cell must stay NA (fixed), otherwise it's a free,
-        # unidentifiable parameter
+        # a (pop,) region with no active comps for this fleet never contributes to the likelihood,
+        # so its theta cell stays NA; otherwise it is a free, unidentifiable parameter
         region_has_data <- if(has_pop) {
           sum(input_list$data[[Use_nm]][p,r,,,f]) > 0
         } else {
@@ -1016,8 +1050,8 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
 #'
 #' One function serves every composition block. \code{comp_prefix} selects age
 #' versus length and fishery versus survey, \code{discard} selects the retained
-#' or discarded stream, \code{has_pop} selects the aggregated or population
-#' specific stream, and \code{fleet_field} names the fleet count to size the map
+#' or discarded data source, \code{has_pop} selects the aggregated or population
+#' specific data source, and \code{fleet_field} names the fleet count to size the map
 #' by. Same parameterization as \code{\link{do_comp_theta_mapping}}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
@@ -1135,6 +1169,8 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
   return(input_list)
 }
 
+# Catchability Maps ---------------------------------------------------------
+
 #' Map fishery or survey catchability parameters
 #'
 #' Constructs the factor map for \code{ln_fish_q} or \code{ln_srv_q},
@@ -1142,7 +1178,7 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
 #' per region and time block or shared across regions. Cells with no index
 #' observations (aggregated or population-specific) are automatically mapped
 #' to \code{NA}. Catchability scales the aggregated index alone, so an at-age
-#' index stream does not switch one on: its age multiplier lives in the
+#' index data source does not switch one on: its age multiplier lives in the
 #' selectivity. Serves both the fishery and the survey; \code{prefix} is
 #' \code{"fish"} or \code{"srv"} and picks which parameter and data names to
 #' read.
@@ -1233,6 +1269,8 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
 
   return(input_list)
 }
+
+# Selectivity Maps ----------------------------------------------------------
 
 #' Map fixed selectivity parameters (fishery, retention, or survey)
 #'
@@ -1755,9 +1793,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
   map_sel_devs <- input_list$par[[par_nm]]
   map_sel_devs[] <- NA
 
-  # How many deviation slots a form reads under iid/rw time variation: its
-  # parameter count. Slots beyond it are never read by the model and stay
-  # unmapped, so a parametric fleet carries no dead deviation parameters.
+  # how many deviation slots a form reads under iid or random walk time variation: its parameter
+  # count. slots beyond it are never read and stay unmapped, so no dead deviation parameters
   sel_dev_slot_count <- function(code) {
     if(code == 2) return(1)                 # exponential
     if(code %in% c(0, 1, 3)) return(2)      # logistic or gamma
@@ -1775,12 +1812,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
         if(!sel_devs_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !stringr::str_detect(sel_devs_spec[f], "est_shared_f_\\d+"))
           stop(prefix, "_sel_devs_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_r_b_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
-        # Sharing across bins needs the deviations to be indexed by bin. That is
-        # true for the GMRF and AR1 time-varying forms whatever the functional
-        # form, and also for the non-parametric forms under iid or a random walk,
-        # where each deviation already belongs to one bin. It is not true for a
-        # parametric form under iid or a random walk, whose deviation slots are
-        # its parameters rather than its bins.
+        # sharing across bins needs the deviations indexed by bin: true for the GMRF and AR1 forms and
+        # for non-parametric forms under iid or a walk, not for a parametric form under those
         nonpar_fleet <- all(input_list$data[[model_nm]][r,,f] %in% c(5,9,10))
         if(sel_devs_spec[f] %in% c("est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
            !input_list$data[[cont_tv_nm]][r,f] %in% c(3,4,5) && !nonpar_fleet)
@@ -1806,9 +1839,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
             map_sel_devs[r,y,,s,f] <- NA
           } else {
 
-            # Figure out max number of selectivity parameters for a given region and
-            # fleet. A fleet changing forms across blocks takes the most any of its
-            # forms reads, since the deviation slots are shared across years.
+            # most selectivity parameters for a region and fleet. a fleet changing forms across blocks
+            # takes the most any form reads, since the deviation slots are shared across years
             max_sel_pars <- max(sapply(unique(input_list$data[[model_nm]][r,,f]), sel_dev_slot_count))
 
             # If iid or random walk time-variation for this fleet
@@ -1933,10 +1965,12 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
   return(input_list)
 }
 
-#' Refresh the map mirrors held in the data list
+# Deviation Map Sync --------------------------------------------------------
+
+#' Refresh the map mirrors kept in the data list
 #'
 #' Several deviation penalties key on a copy of their parameter's factor map
-#' carried in the data list under \code{map_<par>}, since the map itself is
+#' kept in the data list under \code{map_<par>}, since the map itself is
 #' applied by \code{RTMB::MakeADFun} and is invisible inside the objective.
 #' Those copies are written at setup, so a map edited by hand afterwards would
 #' otherwise leave the penalty evaluating deviations that are no longer
@@ -1957,11 +1991,11 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
 #' @keywords internal
 sync_dev_map_data <- function(data, mapping) {
 
-  for(nm in grep("^map_", names(data), value = TRUE)) {
-    par_nm <- sub("^map_", "", nm)
+  for(par_name in grep("^map_", names(data), value = TRUE)) {
+    par_nm <- sub("^map_", "", par_name)
     if(is.null(mapping[[par_nm]])) next
-    if(length(mapping[[par_nm]]) != length(data[[nm]])) next
-    data[[nm]] <- array(as.numeric(mapping[[par_nm]]), dim = dim(data[[nm]]))
+    if(length(mapping[[par_nm]]) != length(data[[par_name]])) next
+    data[[par_name]] <- array(as.numeric(mapping[[par_nm]]), dim = dim(data[[par_name]]))
   }
 
   return(data)

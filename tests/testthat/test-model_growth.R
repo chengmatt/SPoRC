@@ -3,17 +3,17 @@ library(testthat)
 
 # The growth module against the SS3 conventions it reproduces, then against the
 # data-driven model it replaces: with parameters chosen to regenerate the size-age
-# transition a fixture was built from, the objective and gradient have to match
+# transition a test setup was built from, the objective and gradient have to match
 # the model that read that transition as data.
 
 L0 <- 9; L1 <- 20; L2 <- 55; K <- 0.25; CV1 <- 0.12; CV2 <- 0.08; A1 <- 2; A2 <- 20
 
-# The CAAL fixture's full input list, with the growth module's fields and parameter
-# taken from a biologicals setup that switched growth on. Everything the fixture
+# The CAAL test setup's full input list, with the growth module's fields and parameter
+# taken from a biologicals setup that switched growth on. Everything the test setup
 # set up downstream of the biologicals (comps, CAAL, selectivity, weights) is kept.
 merge_growth <- function(rest, growth_input) {
   keep <- grep("^growth_|^derive_waa$|^wt_len_pars$|^SizeAgeTrans$", names(growth_input$data), value = TRUE)
-  for(nm in keep) rest$data[[nm]] <- growth_input$data[[nm]]
+  for(quant_name in keep) rest$data[[quant_name]] <- growth_input$data[[quant_name]]
   rest$par$ln_growth_pars <- growth_input$par$ln_growth_pars
   rest$map$ln_growth_pars <- growth_input$map$ln_growth_pars
   rest
@@ -95,16 +95,23 @@ test_that("the age-length key is column stochastic with the tails in the end bin
 })
 
 
-test_that("with parameters that regenerate the fixture's key, the objective matches the data-driven model", {
+test_that("with parameters that regenerate the test setup's key, the objective matches the data-driven model", {
   source(test_path("helper-selftest_caal.R"), local = TRUE)
   om <- caal_make_om()
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = caal_cfg$n_yrs, sim = 1)
   n_ages <- caal_cfg$n_ages
 
-  # data-driven model: the fixture's key built from VB(linf 60, k 0.3, t0 -0.5), CV 0.10,
+  # data-driven model: the test setup's key built from VB(linf 60, k 0.3, t0 -0.5), CV 0.10,
   # evaluated at integer ages at the start of the year
   inp_data <- caal_build_input(sim_data)
-  fit_data <- fit_model(inp_data$data, inp_data$par, inp_data$map, random = NULL, silent = TRUE, do_optim = FALSE)
+  fit_data <- fit_model(
+    inp_data$data,
+    inp_data$par,
+    inp_data$map,
+    random = NULL,
+    silent = TRUE,
+    do_optim = FALSE
+  )
 
   # the same curve in Schnute form with A1 the first age and A2 the last, so the
   # linear phase never applies and L2 is the curve's own value at A2
@@ -112,22 +119,50 @@ test_that("with parameters that regenerate the fixture's key, the objective matc
   pars <- c(L1 = g$mean[1], L2 = g$mean[n_ages], K = 0.3, CV1 = 0.10, CV2 = 0.10)
 
   build_growth <- function(spec = "fix") {
-    input <- Setup_Mod_Dim(years = 1:caal_cfg$n_yrs, ages = 1:n_ages, lens = caal_cfg$len_lower + 2.5,
-                           n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1,
-                           n_pop = 1, natal_region = 1, verbose = FALSE)
-    input <- Setup_Mod_Rec(input_list = input, do_rec_bias_ramp = 0, sigmaR_switch = 1,
-                           ln_sigmaR = array(log(0.3), c(2, 1, 1)), rec_model = "mean_rec",
-                           sigmaR_spec = "fix", init_age_strc = 1, equil_init_age_strc = 2, ln_global_R0 = log(5))
-    input <- Setup_Mod_Biologicals(input_list = input, WAA = sim_data$WAA, MatAA = sim_data$MatAA,
-                                   WAA_fish = sim_data$WAA_fish, WAA_srv = sim_data$WAA_srv,
-                                   fit_lengths = 1, SizeAgeTrans = NA, comp_const_obs = 0,
-                                   AgeingError = sim_data$AgeingError, M_spec = "fix",
-                                   Fixed_natmort = array(0.3, dim = c(1, 1, caal_cfg$n_yrs, n_ages, 1)),
-                                   growth_model = "vb_schnute", growth_spec = spec,
-                                   ln_growth_pars = array(log(pars), dim = c(1, 1, 1, 5)),
-                                   growth_A1 = 1, growth_A2 = n_ages, growth_len_lower = caal_cfg$len_lower,
-                                   growth_plus_group = "curve")
-    # the rest of the fixture, with only the growth fields taken from this input
+    input <- Setup_Mod_Dim(
+      years = 1:caal_cfg$n_yrs,
+      ages = 1:n_ages,
+      lens = caal_cfg$len_lower + 2.5,
+      n_regions = 1,
+      n_sexes = 1,
+      n_fish_fleets = 1,
+      n_srv_fleets = 1,
+      n_pop = 1,
+      natal_region = 1,
+      verbose = FALSE
+    )
+    input <- Setup_Mod_Rec(
+      input_list = input,
+      do_rec_bias_ramp = 0,
+      sigmaR_switch = 1,
+      ln_sigmaR = array(log(0.3), c(2, 1, 1)),
+      rec_model = "mean_rec",
+      sigmaR_spec = "fix",
+      init_age_strc = 1,
+      equil_init_age_strc = 2,
+      ln_global_R0 = log(5)
+    )
+    input <- Setup_Mod_Biologicals(
+      input_list = input,
+      WAA = sim_data$WAA,
+      MatAA = sim_data$MatAA,
+      WAA_fish = sim_data$WAA_fish,
+      WAA_srv = sim_data$WAA_srv,
+      fit_lengths = 1,
+      SizeAgeTrans = NA,
+      comp_const_obs = 0,
+      AgeingError = sim_data$AgeingError,
+      M_spec = "fix",
+      Fixed_natmort = array(0.3, dim = c(1, 1, caal_cfg$n_yrs, n_ages, 1)),
+      growth_model = "vb_schnute",
+      growth_spec = spec,
+      ln_growth_pars = array(log(pars), dim = c(1, 1, 1, 5)),
+      growth_A1 = 1,
+      growth_A2 = n_ages,
+      growth_len_lower = caal_cfg$len_lower,
+      growth_plus_group = "curve"
+    )
+    # the rest of the test setup, with only the growth fields taken from this input
     merge_growth(caal_build_input(sim_data), input)
   }
 
@@ -136,8 +171,8 @@ test_that("with parameters that regenerate the fixture's key, the objective matc
   expect_true(all(is.na(inp_g$map$ln_growth_pars)))
   fit_g <- fit_model(inp_g$data, inp_g$par, inp_g$map, random = NULL, silent = TRUE, do_optim = FALSE)
 
-  # the derived key regenerates the fixture's key
-  # one key per fleet, both read at the season start here, so both are the fixture's
+  # the derived key regenerates the test setup's key
+  # one key per fleet, both read at the season start here, so both are the test setup's
   expect_equal(as.vector(fit_g$rep$SizeAgeTrans_fish[,,,,,,,1]), as.vector(sim_data$SizeAgeTrans), tolerance = 1e-10)
   expect_equal(as.vector(fit_g$rep$SizeAgeTrans_srv[,,,,,,,1]), as.vector(sim_data$SizeAgeTrans), tolerance = 1e-10)
   expect_equal(fit_g$rep$mean_LAA_srv[1, 1, 1, 1, , 1, 1], g$mean, tolerance = 1e-10)
@@ -162,22 +197,50 @@ test_that("growth parameters are recovered from lengths plus conditional age-at-
   g <- caal_growth(n_ages, 1)[[1]]
   truth <- c(L1 = g$mean[1], L2 = g$mean[n_ages], K = 0.3, CV1 = 0.10, CV2 = 0.10)
 
-  input <- Setup_Mod_Dim(years = 1:caal_cfg$n_yrs, ages = 1:n_ages, lens = caal_cfg$len_lower + 2.5,
-                         n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1,
-                         n_pop = 1, natal_region = 1, verbose = FALSE)
-  input <- Setup_Mod_Rec(input_list = input, do_rec_bias_ramp = 0, sigmaR_switch = 1,
-                         ln_sigmaR = array(log(0.3), c(2, 1, 1)), rec_model = "mean_rec",
-                         sigmaR_spec = "fix", init_age_strc = 1, equil_init_age_strc = 2, ln_global_R0 = log(5))
+  input <- Setup_Mod_Dim(
+    years = 1:caal_cfg$n_yrs,
+    ages = 1:n_ages,
+    lens = caal_cfg$len_lower + 2.5,
+    n_regions = 1,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_pop = 1,
+    natal_region = 1,
+    verbose = FALSE
+  )
+  input <- Setup_Mod_Rec(
+    input_list = input,
+    do_rec_bias_ramp = 0,
+    sigmaR_switch = 1,
+    ln_sigmaR = array(log(0.3), c(2, 1, 1)),
+    rec_model = "mean_rec",
+    sigmaR_spec = "fix",
+    init_age_strc = 1,
+    equil_init_age_strc = 2,
+    ln_global_R0 = log(5)
+  )
   # start away from the truth
-  input <- Setup_Mod_Biologicals(input_list = input, WAA = sim_data$WAA, MatAA = sim_data$MatAA,
-                                 WAA_fish = sim_data$WAA_fish, WAA_srv = sim_data$WAA_srv,
-                                 fit_lengths = 1, SizeAgeTrans = NA, comp_const_obs = 0,
-                                 AgeingError = sim_data$AgeingError, M_spec = "fix",
-                                 Fixed_natmort = array(0.3, dim = c(1, 1, caal_cfg$n_yrs, n_ages, 1)),
-                                 growth_model = "vb_schnute",
-                                 ln_growth_pars = array(log(truth * c(1.2, 0.9, 0.7, 1.5, 0.6)), dim = c(1, 1, 1, 5)),
-                                 growth_spec = "est_all", growth_A1 = 1, growth_A2 = n_ages,
-                                 growth_len_lower = caal_cfg$len_lower, growth_plus_group = "curve")
+  input <- Setup_Mod_Biologicals(
+    input_list = input,
+    WAA = sim_data$WAA,
+    MatAA = sim_data$MatAA,
+    WAA_fish = sim_data$WAA_fish,
+    WAA_srv = sim_data$WAA_srv,
+    fit_lengths = 1,
+    SizeAgeTrans = NA,
+    comp_const_obs = 0,
+    AgeingError = sim_data$AgeingError,
+    M_spec = "fix",
+    Fixed_natmort = array(0.3, dim = c(1, 1, caal_cfg$n_yrs, n_ages, 1)),
+    growth_model = "vb_schnute",
+    ln_growth_pars = array(log(truth * c(1.2, 0.9, 0.7, 1.5, 0.6)), dim = c(1, 1, 1, 5)),
+    growth_spec = "est_all",
+    growth_A1 = 1,
+    growth_A2 = n_ages,
+    growth_len_lower = caal_cfg$len_lower,
+    growth_plus_group = "curve"
+  )
   input <- merge_growth(caal_build_input(sim_data), input)
 
   fit <- fit_model(input$data, input$par, input$map, random = NULL, silent = TRUE)
@@ -196,11 +259,32 @@ test_that("each fleet's key and weight are read at that fleet's own timing", {
   pars <- array(log(c(15, 55, 0.3, 0.15, 0.08)), dim = c(1, 1, 1, 5))
   wl <- array(c(1e-5, 3), dim = c(1, 1, 1, 2))
   run <- function(t_fish, t_srv) {
-    Get_Growth(ln_growth_pars = pars, growth_A1 = 1, growth_A2 = 6, growth_L0 = 10, growth_len_lower = lower,
-               growth_cv_type = 0, growth_sd_type = 0, growth_dist = 0, growth_plus_group = 0,
-               derive_waa = 1, wt_len_pars = wl, ages = ages, seasdur = 1, spawn_seas = 1, t_spawn = 0,
-               n_pop = 1, n_regions = 1, n_yrs = 2, n_seas = 1, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 2,
-               t_fish = array(t_fish, dim = c(1, 1, 1)), t_srv = array(t_srv, dim = c(1, 1, 2)))
+    Get_Growth(
+      ln_growth_pars = pars,
+      growth_A1 = 1,
+      growth_A2 = 6,
+      growth_L0 = 10,
+      growth_len_lower = lower,
+      growth_cv_type = 0,
+      growth_sd_type = 0,
+      growth_dist = 0,
+      growth_plus_group = 0,
+      derive_waa = 1,
+      wt_len_pars = wl,
+      ages = ages,
+      seasdur = 1,
+      spawn_seas = 1,
+      t_spawn = 0,
+      n_pop = 1,
+      n_regions = 1,
+      n_yrs = 2,
+      n_seas = 1,
+      n_sexes = 1,
+      n_fish_fleets = 1,
+      n_srv_fleets = 2,
+      t_fish = array(t_fish, dim = c(1, 1, 1)),
+      t_srv = array(t_srv, dim = c(1, 1, 2))
+    )
   }
   g <- run(0.5, c(0.25, 0.5))
 
@@ -232,30 +316,65 @@ test_that("a model estimating growth runs through the simulation self-test", {
   g <- caal_growth(n_ages, 1)[[1]]
   truth <- c(L1 = g$mean[1], L2 = g$mean[n_ages], K = 0.3, CV1 = 0.10, CV2 = 0.10)
 
-  input <- Setup_Mod_Dim(years = 1:caal_cfg$n_yrs, ages = 1:n_ages, lens = caal_cfg$len_lower + 2.5,
-                         n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1,
-                         n_pop = 1, natal_region = 1, verbose = FALSE)
-  input <- Setup_Mod_Rec(input_list = input, do_rec_bias_ramp = 0, sigmaR_switch = 1,
-                         ln_sigmaR = array(log(0.3), c(2, 1, 1)), rec_model = "mean_rec",
-                         sigmaR_spec = "fix", init_age_strc = 1, equil_init_age_strc = 2, ln_global_R0 = log(5))
-  input <- Setup_Mod_Biologicals(input_list = input, WAA = sim_data$WAA, MatAA = sim_data$MatAA,
-                                 WAA_fish = sim_data$WAA_fish, WAA_srv = sim_data$WAA_srv,
-                                 fit_lengths = 1, SizeAgeTrans = NA, comp_const_obs = 0,
-                                 AgeingError = sim_data$AgeingError, M_spec = "fix",
-                                 Fixed_natmort = array(0.3, dim = c(1, 1, caal_cfg$n_yrs, n_ages, 1)),
-                                 growth_model = "vb_schnute",
-                                 ln_growth_pars = array(log(truth), dim = c(1, 1, 1, 5)),
-                                 growth_spec = "est_all", growth_A1 = 1, growth_A2 = n_ages,
-                                 growth_len_lower = caal_cfg$len_lower, growth_plus_group = "curve")
+  input <- Setup_Mod_Dim(
+    years = 1:caal_cfg$n_yrs,
+    ages = 1:n_ages,
+    lens = caal_cfg$len_lower + 2.5,
+    n_regions = 1,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_pop = 1,
+    natal_region = 1,
+    verbose = FALSE
+  )
+  input <- Setup_Mod_Rec(
+    input_list = input,
+    do_rec_bias_ramp = 0,
+    sigmaR_switch = 1,
+    ln_sigmaR = array(log(0.3), c(2, 1, 1)),
+    rec_model = "mean_rec",
+    sigmaR_spec = "fix",
+    init_age_strc = 1,
+    equil_init_age_strc = 2,
+    ln_global_R0 = log(5)
+  )
+  input <- Setup_Mod_Biologicals(
+    input_list = input,
+    WAA = sim_data$WAA,
+    MatAA = sim_data$MatAA,
+    WAA_fish = sim_data$WAA_fish,
+    WAA_srv = sim_data$WAA_srv,
+    fit_lengths = 1,
+    SizeAgeTrans = NA,
+    comp_const_obs = 0,
+    AgeingError = sim_data$AgeingError,
+    M_spec = "fix",
+    Fixed_natmort = array(0.3, dim = c(1, 1, caal_cfg$n_yrs, n_ages, 1)),
+    growth_model = "vb_schnute",
+    ln_growth_pars = array(log(truth), dim = c(1, 1, 1, 5)),
+    growth_spec = "est_all",
+    growth_A1 = 1,
+    growth_A2 = n_ages,
+    growth_len_lower = caal_cfg$len_lower,
+    growth_plus_group = "curve"
+  )
   input <- merge_growth(caal_build_input(sim_data), input)
 
   fit <- fit_model(input$data, input$par, input$map, random = NULL, silent = TRUE)
   expect_false(is.null(fit$rep$SizeAgeTrans_srv))
 
   sd_rep <- RTMB::sdreport(fit)
-  st <- simulation_self_test(data = input$data, parameters = input$par, mapping = input$map,
-                             random = NULL, rep = fit$rep, sd_rep = sd_rep, n_sims = 3,
-                             what = c("SSB", "mean_LAA_srv"))
+  st <- simulation_self_test(
+    data = input$data,
+    parameters = input$par,
+    mapping = input$map,
+    random = NULL,
+    rep = fit$rep,
+    sd_rep = sd_rep,
+    n_sims = 3,
+    what = c("SSB", "mean_LAA_srv")
+  )
 
   # every replicate refit: the replicates are stacked in the last dimension and a
   # failed one would be NA
@@ -331,9 +450,19 @@ test_that("only the flagged fleets take the selection-weighted weight, in the ye
   } # end y loop
   wt_len_pars <- array(wl, dim = c(1, 1, 1, 2))
 
-  out <- growth_selected_waa_year(WAA_fish, SizeAgeTrans_fish, fish_sel_l, wt_len_pars, len_mid,
-                                  waa_selected = c(1, 0), y = 2, n_pop = 1, n_regions = 1,
-                                  n_seas = 1, n_sexes = 1)
+  out <- growth_selected_waa_year(
+    WAA_fish,
+    SizeAgeTrans_fish,
+    fish_sel_l,
+    wt_len_pars,
+    len_mid,
+    waa_selected = c(1, 0),
+    y = 2,
+    n_pop = 1,
+    n_regions = 1,
+    n_seas = 1,
+    n_sexes = 1
+  )
 
   w_mid <- wl[1] * len_mid^wl[2]
   expect_equal(out[1, 1, 2, 1, , 1, 1], get_selected_waa(key, sel, w_mid), tolerance = 1e-12)

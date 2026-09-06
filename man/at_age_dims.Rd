@@ -11,15 +11,15 @@ at_age_dims(input_list, fleet_field, pop = FALSE)
 
 \item{fleet_field}{\code{"n_fish_fleets"} or \code{"n_srv_fleets"}.}
 
-\item{pop}{Logical. \code{TRUE} for the population-specific stream.}
+\item{pop}{Logical. \code{TRUE} for the population-specific data source.}
 }
 \value{
 An integer vector of dimensions.
 }
 \description{
-Every at-age stream is stored region by year by season by age by sex by fleet,
+Every at-age data source is stored region by year by season by age by sex by fleet,
 with a leading population dimension for the population-specific form. This is
 the layout of the prediction arrays the likelihood reads, so the two line up
-margin for margin.
+dim for dim.
 }
 \keyword{internal}

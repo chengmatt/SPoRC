@@ -154,22 +154,15 @@ variables must be present in \code{ctmc_move_dat}. Required for
 
 \item{ctmc_diffusion_bounds}{How the CTMC generator is kept a valid Metzler
 matrix (non-negative off-diagonal entries) when taxis outweighs diffusion.
-Writing \eqn{d} for the preference gradient along an edge and \eqn{\theta_j}
-for the diffusion rate out of its origin, the accepted values are
-\code{"none"} (or \code{0}, the default) for \eqn{\theta_j + d} unbounded;
-\code{"softplus"} (or \code{1}) for a softplus of \eqn{\theta_j + d} of width
-\code{ctmc_diffusion_eps}; \code{"clamp"} for its hard positive part;
-\code{"upwind"} for the discontinuous Galerkin (finite volume) flux
-\eqn{\theta_j + \max(d, 0)}; \code{"barker"} for
-\eqn{\theta_j\,\mathrm{logit}^{-1}(d)}; and \code{"logsoftplus"} for
-\eqn{\theta_j \log(1 + e^{d})}. The last two are positive by construction and
-ignore \code{ctmc_diffusion_eps} entirely: they have no floor, no kink and no
-gradient-dead region, and they leave the diffusion parameter interior when the
-data want one-way flow. See \code{Get_Movement} for the full comparison.}
+\code{"softplus"} for a softplus of \eqn{\theta_j + d} of width
+\code{ctmc_diffusion_eps}; and \code{"upwind"} (or \code{2}) for the discontinuous Galerkin
+(finite volume) flux \eqn{\theta_j + \max(d, 0)}, which has diffusion whole
+and adds only the down-gradient taxis, so positivity never depends on the two
+cancelling.}
 
 \item{ctmc_diffusion_eps}{Positive numeric width of the softplus applied when
 \code{ctmc_diffusion_bounds = "softplus"} (default \code{0.1}). An edge where
-taxis exactly cancels diffusion carries \code{eps * log(2)}, so this sets a
+taxis exactly cancels diffusion has \code{eps * log(2)}, so this sets a
 floor on exchange as well as smoothing the hinge.}
 
 \item{move_timing}{Integer flag setting how movement and mortality are
@@ -193,7 +186,7 @@ generator are evaluated, both when converting \eqn{Q} to movement fractions and
 inside the \code{move_timing = 2} seasonal operators. \code{0} (default)
 uses \code{Matrix::expm}. A power of two \eqn{n \ge 1} instead uses \eqn{n} implicit
 (backward Euler) substeps, \eqn{(I - A/n)^{-n}}, evaluated as one linear solve plus
-\eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode adjoint
+\eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode derivative
 than a matrix exponential, so the gradient is several times faster, but it is a
 first-order approximation: \eqn{n = 1} is plain \code{solve(I - A)} and is an approximation.}
 

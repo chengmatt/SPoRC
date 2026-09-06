@@ -7,9 +7,9 @@
 drop_empty_fitted_blocks(obs, use, bins_arr, bin_dim, what)
 }
 \arguments{
-\item{obs}{Observation array for the stream.}
+\item{obs}{Observation array for the data source.}
 
-\item{use}{Use-flag array for the stream, whose margins are \code{obs} without
+\item{use}{Use-flag array for the data source, whose dims are \code{obs} without
 its bin and sex dimensions.}
 
 \item{bins_arr}{\code{[n_obs_bins x n_fleets]} 0/1 array.}
@@ -17,7 +17,7 @@ its bin and sex dimensions.}
 \item{bin_dim}{Integer. Which dimension of \code{obs} holds the bins. The sex
 dimension is taken to be the next one, and fleets the last.}
 
-\item{what}{Character. Stream name, used in the message.}
+\item{what}{Character. Data source name, used in the message.}
 }
 \value{
 \code{use}, with emptied blocks cleared.
@@ -34,9 +34,9 @@ observations, so the two are reconciled here instead by clearing the use flag.
 }
 \details{
 Clearing it changes nothing about the fit: the likelihood was already
-contributing zero for those blocks. It only stops the residual machinery
+contributing zero for those blocks. It only stops the residual routines
 inventing an observation that was never there. Anything cleared is reported,
-so a restriction that guts a stream is visible rather than silent.
+so a restriction that guts a data source is visible rather than silent.
 
 A block counts as empty when it holds no finite values at all, exactly as when
 it sums to zero, since that is the test the likelihood's own guard applies.

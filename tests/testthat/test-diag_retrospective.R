@@ -236,43 +236,97 @@ make_retro_data <- function(n_yrs = 6,
 ## Generic year-axis truncation table: field name -> (container, axis)
 year_axis_fields <- list(
   data = c(
-    ObsCatch = 2, ObsFishIdx = 2, ObsFishIdx_SE = 2,
-    ObsFishAgeComps = 2, ObsFishLenComps = 2,
-    ObsFishAgeComps_discard = 2, ObsFishLenComps_discard = 2,
-    fish_q_blocks = 2, fish_sel_blocks = 2, ret_sel_blocks = 2,
-    map_ln_fishsel_devs = 2, ln_retsel_devs = 2,
-    ObsSrvIdx = 2, ObsSrvIdx_SE = 2, ObsSrvAgeComps = 2, ObsSrvLenComps = 2,
-    map_ln_srvsel_devs = 2, srv_q_blocks = 2, srv_sel_blocks = 2,
-    M_blocks = 3, Fixed_natmort = 3, sexratio_blocks = 3,
-    Wt_Catch = 2, Wt_Discard = 2,
-    Wt_FishAgeComps = 2, Wt_FishAgeComps_discard = 2, Wt_SrvAgeComps = 2,
-    Wt_FishLenComps = 2, Wt_FishLenComps_discard = 2, Wt_SrvLenComps = 2,
-    FishAgeComps_Type = 1, FishLenComps_Type = 1,
-    FishAgeComps_discard_Type = 1, FishLenComps_discard_Type = 1,
-    SrvLenComps_Type = 1, SrvAgeComps_Type = 1,
-    UseFishAgeComps = 2, UseFishAgeComps_discard = 2, UseFishIdx = 2,
-    UseCatch = 2, UseDiscard = 2, UseFishLenComps = 2, UseFishLenComps_discard = 2,
-    UseSrvAgeComps = 2, UseSrvIdx = 2, UseSrvLenComps = 2,
-    ISS_FishAgeComps = 2, ISS_FishAgeComps_discard = 2, ISS_SrvAgeComps = 2,
-    ISS_FishLenComps = 2, ISS_FishLenComps_discard = 2, ISS_SrvLenComps = 2,
-    UseFishAgeComps_pop = 3, UseFishLenComps_pop = 3,
-    UseFishAgeComps_discard_pop = 3, UseFishLenComps_discard_pop = 3,
-    UseFishIdx_pop = 3, UseSrvAgeComps_pop = 3, UseSrvLenComps_pop = 3, UseSrvIdx_pop = 3,
-    UseCatch_pop = 3, UseDiscard_pop = 3,
-    Wt_FishAgeComps_pop = 3, Wt_FishLenComps_pop = 3,
-    Wt_FishAgeComps_discard_pop = 3, Wt_FishLenComps_discard_pop = 3,
-    Wt_SrvAgeComps_pop = 3, Wt_SrvLenComps_pop = 3,
-    FishAgeComps_pop_Type = 1, FishLenComps_pop_Type = 1,
-    FishAgeComps_discard_pop_Type = 1, FishLenComps_discard_pop_Type = 1,
-    SrvAgeComps_pop_Type = 1, SrvLenComps_pop_Type = 1,
-    ISS_FishAgeComps_pop = 3, ISS_FishLenComps_pop = 3,
-    ISS_FishAgeComps_discard_pop = 3, ISS_FishLenComps_discard_pop = 3,
-    ISS_SrvAgeComps_pop = 3, ISS_SrvLenComps_pop = 3
+    ObsCatch = 2,
+    ObsFishIdx = 2,
+    ObsFishIdx_SE = 2,
+    ObsFishAgeComps = 2,
+    ObsFishLenComps = 2,
+    ObsFishAgeComps_discard = 2,
+    ObsFishLenComps_discard = 2,
+    fish_q_blocks = 2,
+    fish_sel_blocks = 2,
+    ret_sel_blocks = 2,
+    map_ln_fishsel_devs = 2,
+    ln_retsel_devs = 2,
+    ObsSrvIdx = 2,
+    ObsSrvIdx_SE = 2,
+    ObsSrvAgeComps = 2,
+    ObsSrvLenComps = 2,
+    map_ln_srvsel_devs = 2,
+    srv_q_blocks = 2,
+    srv_sel_blocks = 2,
+    M_blocks = 3,
+    Fixed_natmort = 3,
+    sexratio_blocks = 3,
+    Wt_Catch = 2,
+    Wt_Discard = 2,
+    Wt_FishAgeComps = 2,
+    Wt_FishAgeComps_discard = 2,
+    Wt_SrvAgeComps = 2,
+    Wt_FishLenComps = 2,
+    Wt_FishLenComps_discard = 2,
+    Wt_SrvLenComps = 2,
+    FishAgeComps_Type = 1,
+    FishLenComps_Type = 1,
+    FishAgeComps_discard_Type = 1,
+    FishLenComps_discard_Type = 1,
+    SrvLenComps_Type = 1,
+    SrvAgeComps_Type = 1,
+    UseFishAgeComps = 2,
+    UseFishAgeComps_discard = 2,
+    UseFishIdx = 2,
+    UseCatch = 2,
+    UseDiscard = 2,
+    UseFishLenComps = 2,
+    UseFishLenComps_discard = 2,
+    UseSrvAgeComps = 2,
+    UseSrvIdx = 2,
+    UseSrvLenComps = 2,
+    ISS_FishAgeComps = 2,
+    ISS_FishAgeComps_discard = 2,
+    ISS_SrvAgeComps = 2,
+    ISS_FishLenComps = 2,
+    ISS_FishLenComps_discard = 2,
+    ISS_SrvLenComps = 2,
+    UseFishAgeComps_pop = 3,
+    UseFishLenComps_pop = 3,
+    UseFishAgeComps_discard_pop = 3,
+    UseFishLenComps_discard_pop = 3,
+    UseFishIdx_pop = 3,
+    UseSrvAgeComps_pop = 3,
+    UseSrvLenComps_pop = 3,
+    UseSrvIdx_pop = 3,
+    UseCatch_pop = 3,
+    UseDiscard_pop = 3,
+    Wt_FishAgeComps_pop = 3,
+    Wt_FishLenComps_pop = 3,
+    Wt_FishAgeComps_discard_pop = 3,
+    Wt_FishLenComps_discard_pop = 3,
+    Wt_SrvAgeComps_pop = 3,
+    Wt_SrvLenComps_pop = 3,
+    FishAgeComps_pop_Type = 1,
+    FishLenComps_pop_Type = 1,
+    FishAgeComps_discard_pop_Type = 1,
+    FishLenComps_discard_pop_Type = 1,
+    SrvAgeComps_pop_Type = 1,
+    SrvLenComps_pop_Type = 1,
+    ISS_FishAgeComps_pop = 3,
+    ISS_FishLenComps_pop = 3,
+    ISS_FishAgeComps_discard_pop = 3,
+    ISS_FishLenComps_discard_pop = 3,
+    ISS_SrvAgeComps_pop = 3,
+    ISS_SrvLenComps_pop = 3
   ),
   parameters = c(
-    ln_RecDevs = 3, ln_F_devs = 2, logit_dmr_devs = 2,
-    ln_fishsel_devs = 2, ln_retsel_devs = 2,
-    ln_sigmaC = 2, ln_sigmaC_pop = 3, ln_sigmaD = 2, ln_sigmaD_pop = 3,
+    ln_RecDevs = 3,
+    ln_F_devs = 2,
+    logit_dmr_devs = 2,
+    ln_fishsel_devs = 2,
+    ln_retsel_devs = 2,
+    ln_sigmaC = 2,
+    ln_sigmaC_pop = 3,
+    ln_sigmaD = 2,
+    ln_sigmaD_pop = 3,
     ln_srvsel_devs = 2
   )
 )
@@ -285,15 +339,15 @@ test_that("truncate_yr() truncates every year-indexed field to the correct lengt
     out <- truncate_yr(j = j, data = d$data, parameters = d$parameters, mapping = d$mapping)
     expect_length(out$retro_data$years, 6 - j)
 
-    for (nm in names(year_axis_fields$data)) {
-      axis <- year_axis_fields$data[[nm]]
-      got  <- dim(out$retro_data[[nm]])[axis]
-      expect_equal(got, 6 - j, info = paste0("data$", nm, " (axis ", axis, ", j = ", j, ")"))
+    for (field_name in names(year_axis_fields$data)) {
+      axis <- year_axis_fields$data[[field_name]]
+      got  <- dim(out$retro_data[[field_name]])[axis]
+      expect_equal(got, 6 - j, info = paste0("data$", field_name, " (axis ", axis, ", j = ", j, ")"))
     }
-    for (nm in names(year_axis_fields$parameters)) {
-      axis <- year_axis_fields$parameters[[nm]]
-      got  <- dim(out$retro_parameters[[nm]])[axis]
-      expect_equal(got, 6 - j, info = paste0("parameters$", nm, " (axis ", axis, ", j = ", j, ")"))
+    for (field_name in names(year_axis_fields$parameters)) {
+      axis <- year_axis_fields$parameters[[field_name]]
+      got  <- dim(out$retro_parameters[[field_name]])[axis]
+      expect_equal(got, 6 - j, info = paste0("parameters$", field_name, " (axis ", axis, ", j = ", j, ")"))
     }
   }
 })
@@ -336,7 +390,12 @@ test_that("truncate_yr() only truncates bias_year when it is not NA", {
 test_that("truncate_yr() only truncates the ln_RecDevs mapping when it's present in the mapping list", {
 
   d_no_map <- make_retro_data(n_yrs = 6, include_recdevs_map = FALSE)
-  out_no_map <- truncate_yr(j = 2, data = d_no_map$data, parameters = d_no_map$parameters, mapping = d_no_map$mapping)
+  out_no_map <- truncate_yr(
+    j = 2,
+    data = d_no_map$data,
+    parameters = d_no_map$parameters,
+    mapping = d_no_map$mapping
+  )
   expect_null(out_no_map$retro_mapping$ln_RecDevs)
 
   d_map <- make_retro_data(n_yrs = 6, include_recdevs_map = TRUE)
@@ -351,7 +410,12 @@ test_that("truncate_yr() truncates stray rate fields only when n_pop > 1, for bo
   expect_null(out1$retro_data$stray_rate_blocks)
 
   d2_fixed <- make_retro_data(n_yrs = 6, n_pop = 2, use_fixed_stray_rate = 1)
-  out2_fixed <- truncate_yr(j = 2, data = d2_fixed$data, parameters = d2_fixed$parameters, mapping = d2_fixed$mapping)
+  out2_fixed <- truncate_yr(
+    j = 2,
+    data = d2_fixed$data,
+    parameters = d2_fixed$parameters,
+    mapping = d2_fixed$mapping
+  )
   expect_equal(dim(out2_fixed$retro_data$stray_rate_blocks)[2], 4)
   expect_equal(dim(out2_fixed$retro_data$fixed_stray_rate)[2], 4)
   expect_null(out2_fixed$retro_parameters$stray_rate_pars)
@@ -466,14 +530,24 @@ testthat_supports_mocking <- exists("local_mocked_bindings", where = asNamespace
 ## is mocked and never actually reads most fields).
 mk <- function(dims, fill = 1) array(fill, dim = dims)
 
-make_minimal_retro_inputs <- function(n_yrs = 6, n_pop = 1, n_regions = 1,
-                                      n_fish_fleets = 1, n_srv_fleets = 1) {
+make_minimal_retro_inputs <- function(
+  n_yrs = 6,
+  n_pop = 1,
+  n_regions = 1,
+  n_fish_fleets = 1,
+  n_srv_fleets = 1
+) {
   data <- list(
-    n_yrs = n_yrs, n_pop = n_pop, n_regions = n_regions,
-    n_fish_fleets = n_fish_fleets, n_srv_fleets = n_srv_fleets,
-    use_fixed_natmort = 1, use_fixed_stray_rate = 1,
+    n_yrs = n_yrs,
+    n_pop = n_pop,
+    n_regions = n_regions,
+    n_fish_fleets = n_fish_fleets,
+    n_srv_fleets = n_srv_fleets,
+    use_fixed_natmort = 1,
+    use_fixed_stray_rate = 1,
     use_conv_fish_tagging = rep(0, n_fish_fleets),
-    years = 1:n_yrs, bias_year = NA
+    years = 1:n_yrs,
+    bias_year = NA
   )
   data$ObsCatch  <- mk(c(1, n_yrs, n_fish_fleets, 1))
   data$ObsFishIdx <- mk(c(1, n_yrs, n_fish_fleets, 1))
@@ -502,29 +576,29 @@ make_minimal_retro_inputs <- function(n_yrs = 6, n_pop = 1, n_regions = 1,
   data$Wt_Catch_pop <- 1
   data$Wt_Discard_pop <- 1
 
-  for (nm in c("UseFishIdx_pop", "UseFishAgeComps_pop", "UseFishLenComps_pop",
+  for (field_name in c("UseFishIdx_pop", "UseFishAgeComps_pop", "UseFishLenComps_pop",
                "UseFishAgeComps_discard_pop", "UseFishLenComps_discard_pop",
                "UseSrvIdx_pop", "UseSrvAgeComps_pop", "UseSrvLenComps_pop",
                "UseCatch_pop", "UseDiscard_pop")) {
-    n_fleets <- if (grepl("Srv", nm)) n_srv_fleets else n_fish_fleets
-    data[[nm]] <- mk(c(n_pop, n_regions, n_yrs, 1, n_fleets), fill = 0)
+    n_fleets <- if (grepl("Srv", field_name)) n_srv_fleets else n_fish_fleets
+    data[[field_name]] <- mk(c(n_pop, n_regions, n_yrs, 1, n_fleets), fill = 0)
   }
-  for (nm in c("Wt_FishAgeComps_pop", "Wt_FishLenComps_pop",
+  for (field_name in c("Wt_FishAgeComps_pop", "Wt_FishLenComps_pop",
                "Wt_FishAgeComps_discard_pop", "Wt_FishLenComps_discard_pop",
                "ISS_FishAgeComps_pop", "ISS_FishLenComps_pop",
                "ISS_FishAgeComps_discard_pop", "ISS_FishLenComps_discard_pop")) {
-    data[[nm]] <- mk(c(n_pop, n_regions, n_yrs, 1, n_fish_fleets, 1))
+    data[[field_name]] <- mk(c(n_pop, n_regions, n_yrs, 1, n_fish_fleets, 1))
   }
-  for (nm in c("Wt_SrvAgeComps_pop", "Wt_SrvLenComps_pop",
+  for (field_name in c("Wt_SrvAgeComps_pop", "Wt_SrvLenComps_pop",
                "ISS_SrvAgeComps_pop", "ISS_SrvLenComps_pop")) {
-    data[[nm]] <- mk(c(n_pop, n_regions, n_yrs, 1, n_srv_fleets, 1))
+    data[[field_name]] <- mk(c(n_pop, n_regions, n_yrs, 1, n_srv_fleets, 1))
   }
-  for (nm in c("FishAgeComps_pop_Type", "FishLenComps_pop_Type",
+  for (field_name in c("FishAgeComps_pop_Type", "FishLenComps_pop_Type",
                "FishAgeComps_discard_pop_Type", "FishLenComps_discard_pop_Type")) {
-    data[[nm]] <- mk(c(n_yrs, n_fish_fleets))
+    data[[field_name]] <- mk(c(n_yrs, n_fish_fleets))
   }
-  for (nm in c("SrvAgeComps_pop_Type", "SrvLenComps_pop_Type")) {
-    data[[nm]] <- mk(c(n_yrs, n_srv_fleets))
+  for (field_name in c("SrvAgeComps_pop_Type", "SrvLenComps_pop_Type")) {
+    data[[field_name]] <- mk(c(n_yrs, n_srv_fleets))
   }
 
   data$Wt_FishAgeComps <- mk(c(1, n_yrs, 1, 1, n_fish_fleets))
@@ -620,7 +694,7 @@ make_mock_run_francis <- function(call_log_env, n_pop, n_regions) {
   }
 }
 
-## Test 1: sequential loop produces correct peel/year bookkeeping
+## Test 1: sequential loop produces correct peel/year residual tracking
 test_that("do_retrospective() (sequential) produces one row set per peel with correctly truncated years", {
 
   skip_if_not(testthat_supports_mocking, "testthat >= 3.2.0 with 3rd edition required for local_mocked_bindings()")
@@ -634,8 +708,12 @@ test_that("do_retrospective() (sequential) produces one row set per peel with co
   local_mocked_bindings(fit_model = make_mock_fit_model(log_env, n_pop = 1, n_regions = 1))
 
   result <- do_retrospective(
-    n_retro = 2, data = inp$data, parameters = inp$parameters, mapping = inp$mapping,
-    do_par = FALSE, n_cores = 1
+    n_retro = 2,
+    data = inp$data,
+    parameters = inp$parameters,
+    mapping = inp$mapping,
+    do_par = FALSE,
+    n_cores = 1
   )
 
   expect_s3_class(result, "data.frame")
@@ -663,8 +741,13 @@ test_that("do_retrospective() with return_models = TRUE returns both the data.fr
   local_mocked_bindings(fit_model = make_mock_fit_model(log_env, n_pop = 1, n_regions = 1))
 
   result <- do_retrospective(
-    n_retro = 1, data = inp$data, parameters = inp$parameters, mapping = inp$mapping,
-    do_par = FALSE, n_cores = 1, return_models = TRUE
+    n_retro = 1,
+    data = inp$data,
+    parameters = inp$parameters,
+    mapping = inp$mapping,
+    do_par = FALSE,
+    n_cores = 1,
+    return_models = TRUE
   )
 
   expect_named(result, c("retro_df", "retro_models"))
@@ -690,8 +773,13 @@ test_that("do_retrospective() with do_sdrep = TRUE attaches pdHess and max_grad 
   )
 
   result <- do_retrospective(
-    n_retro = 0, data = inp$data, parameters = inp$parameters, mapping = inp$mapping,
-    do_par = FALSE, n_cores = 1, do_sdrep = TRUE
+    n_retro = 0,
+    data = inp$data,
+    parameters = inp$parameters,
+    mapping = inp$mapping,
+    do_par = FALSE,
+    n_cores = 1,
+    do_sdrep = TRUE
   )
 
   expect_true(all(result$pdHess))
@@ -715,8 +803,14 @@ test_that("do_retrospective() with do_francis = TRUE calls run_francis() instead
   )
 
   result <- do_retrospective(
-    n_retro = 0, data = inp$data, parameters = inp$parameters, mapping = inp$mapping,
-    do_par = FALSE, n_cores = 1, do_francis = TRUE, n_francis_iter = 2
+    n_retro = 0,
+    data = inp$data,
+    parameters = inp$parameters,
+    mapping = inp$mapping,
+    do_par = FALSE,
+    n_cores = 1,
+    do_francis = TRUE,
+    n_francis_iter = 2
   )
 
   expect_equal(length(fit_log$calls), 0)      # fit_model() never called
@@ -738,8 +832,13 @@ test_that("do_retrospective() zeros the correct lagged columns of UseFishAgeComp
   fishage_lag <- array(2, dim = c(1, 1)) # [region, fleet] lag of 2 years
 
   do_retrospective(
-    n_retro = 0, data = inp$data, parameters = inp$parameters, mapping = inp$mapping,
-    do_par = FALSE, n_cores = 1, fishage_datalag = fishage_lag
+    n_retro = 0,
+    data = inp$data,
+    parameters = inp$parameters,
+    mapping = inp$mapping,
+    do_par = FALSE,
+    n_cores = 1,
+    fishage_datalag = fishage_lag
   )
 
   passed_data <- log_env$calls[[1]]
@@ -753,7 +852,8 @@ test_that("do_retrospective() zeros the correct lagged columns of UseFishAgeComp
 
 make_retro_df <- function() {
   data.frame(
-    Pop = 1, Region = 1,
+    Pop = 1,
+    Region = 1,
     Year = c(1, 2, 3,   1, 2,   1),
     Type = "SSB",
     peel = c(0, 0, 0,   1, 1,   2),
@@ -802,7 +902,8 @@ test_that("get_retrospective_relative_difference() handles a single peel (n_retr
   skip_if_not_installed("tidyr")
 
   df <- data.frame(
-    Pop = 1, Region = 1,
+    Pop = 1,
+    Region = 1,
     Year = c(1, 2,   1),
     Type = "SSB",
     peel = c(0, 0,   1),
@@ -823,7 +924,8 @@ test_that("get_retrospective_relative_difference() keeps SSB and Recruitment rel
   skip_if_not_installed("tidyr")
 
   df <- data.frame(
-    Pop = 1, Region = 1,
+    Pop = 1,
+    Region = 1,
     Year = c(1, 1,   1, 1),
     Type = c("SSB", "Recruitment",   "SSB", "Recruitment"),
     peel = c(0, 0,   1, 1),

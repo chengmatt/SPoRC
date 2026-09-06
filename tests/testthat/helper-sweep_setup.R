@@ -1,23 +1,25 @@
 # A model built for sweeping the option surface rather than for testing one feature.
 #
-# Two things make it different from the other fixtures. Every dimension has a
-# distinct extent, so an index that walks the wrong margin lands somewhere
-# visible instead of quietly working; and every data stream is switched on, so an
-# option is never dead merely because the data it governs is absent. Both matter
-# because the sweeps below infer what an option does from what changes when it is
-# flipped, and a dimension that collides with another or a stream that is off both
-# read as "nothing changed".
+# Every dimension has a distinct extent, so an index walking the wrong dim lands somewhere visible, and every
+# data source is on, so an option is never dead for want of data. Both would otherwise read as "no change".
 #
-# The stages take override lists rather than dots so a sweep can reach one
-# argument of one stage without disturbing the rest of the build.
+# The stages take override lists rather than dots, so a sweep can reach one argument of one stage.
 
-# Distinct extents for every dimension that carries more than one cell. Sharing an
+# Distinct extents for every dimension that has more than one cell. Sharing an
 # extent between two dimensions is what lets a transposed or mis-strided index
 # return the right shape, so these stay pairwise distinct even when a smaller
 # model would run faster.
-sweep_dims <- list(n_yrs = 13, n_ages = 7, n_regions = 3, n_sexes = 2,
-                   n_fish_fleets = 5, n_srv_fleets = 1, n_seas = 1, n_pop = 1,
-                   natal_region = NA)
+sweep_dims <- list(
+  n_yrs = 13,
+  n_ages = 7,
+  n_regions = 3,
+  n_sexes = 2,
+  n_fish_fleets = 5,
+  n_srv_fleets = 1,
+  n_seas = 1,
+  n_pop = 1,
+  natal_region = NA
+)
 
 #' Build the sweep input list
 #'
@@ -30,10 +32,20 @@ sweep_dims <- list(n_yrs = 13, n_ages = 7, n_regions = 3, n_sexes = 2,
 #'   whose arguments make a later stage unbuildable.
 #'
 #' @keywords internal
-sweep_input <- function(dims = list(), rec = list(), biol = list(), move = list(),
-                        tag = list(), catch = list(), fishidx = list(), srvidx = list(),
-                        fishsel = list(), srvsel = list(), wt = list(),
-                        stop_after = NULL) {
+sweep_input <- function(
+  dims = list(),
+  rec = list(),
+  biol = list(),
+  move = list(),
+  tag = list(),
+  catch = list(),
+  fishidx = list(),
+  srvidx = list(),
+  fishsel = list(),
+  srvsel = list(),
+  wt = list(),
+  stop_after = NULL
+) {
 
   d <- utils::modifyList(sweep_dims, dims)
   n_yrs <- d$n_yrs; n_ages <- d$n_ages; n_regions <- d$n_regions
@@ -41,14 +53,23 @@ sweep_input <- function(dims = list(), rec = list(), biol = list(), move = list(
   n_fish <- d$n_fish_fleets; n_srv <- d$n_srv_fleets
   ff <- seq_len(n_fish); sf <- seq_len(n_srv)
 
-  # region by year by season by age by sex, with a leading population margin, is
+  # region by year by season by age by sex, with a leading population dim, is
   # the biological array layout every stage reads
   biol_d <- c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)
   logistic <- function(k, x0, scale = 1) scale / (1 + exp(-k * (seq_len(n_ages) - x0)))
 
-  dim_args <- list(n_pop = n_pop, years = seq_len(n_yrs), ages = seq_len(n_ages),
-                   lens = NA, n_regions = n_regions, n_sexes = n_sexes, n_seas = n_seas,
-                   n_fish_fleets = n_fish, n_srv_fleets = n_srv, verbose = FALSE)
+  dim_args <- list(
+    n_pop = n_pop,
+    years = seq_len(n_yrs),
+    ages = seq_len(n_ages),
+    lens = NA,
+    n_regions = n_regions,
+    n_sexes = n_sexes,
+    n_seas = n_seas,
+    n_fish_fleets = n_fish,
+    n_srv_fleets = n_srv,
+    verbose = FALSE
+  )
   # passing natal_region = NA is not the same as leaving it out: the NA reaches the
   # data list and the objective indexes on it, so it is only supplied when set
   if(!all(is.na(d$natal_region))) dim_args$natal_region <- d$natal_region
@@ -70,13 +91,16 @@ sweep_input <- function(dims = list(), rec = list(), biol = list(), move = list(
     WAA_fish = array(rep(logistic(1, 3, 5), each = prod(biol_d[1:4])), dim = c(biol_d, n_fish)),
     WAA_srv = array(rep(logistic(1, 3, 5), each = prod(biol_d[1:4])), dim = c(biol_d, n_srv)),
     MatAA = array(rep(logistic(1, 3), each = prod(biol_d[1:4])), dim = biol_d),
-    fit_lengths = 0, M_spec = "fix",
+    fit_lengths = 0,
+    M_spec = "fix",
     Fixed_natmort = array(0.2, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
   ), biol)))
   if(identical(stop_after, "biol")) return(il)
 
   il <- do.call(Setup_Mod_Movement, utils::modifyList(list(
-    input_list = il, use_fixed_movement = 1, do_recruits_move = 0,
+    input_list = il,
+    use_fixed_movement = 1,
+    do_recruits_move = 0,
     Fixed_Movement = if(n_regions == 1) NA else
       array(1 / n_regions, dim = c(n_pop, n_regions, n_regions, n_yrs, n_seas, n_ages, n_sexes))
   ), move))
@@ -91,7 +115,8 @@ sweep_input <- function(dims = list(), rec = list(), biol = list(), move = list(
     input_list = il,
     ObsCatch = array(1e4, dim = c(n_regions, n_yrs, n_seas, n_fish)),
     UseCatch = array(1, dim = c(n_regions, n_yrs, n_seas, n_fish)),
-    sigmaC_spec = "fix", sigmaF_spec = "fix"
+    sigmaC_spec = "fix",
+    sigmaF_spec = "fix"
   ), catch)))
   if(identical(stop_after, "catch")) return(il)
 
@@ -135,23 +160,34 @@ sweep_input <- function(dims = list(), rec = list(), biol = list(), move = list(
 
   il <- do.call(Setup_Mod_Fishsel_and_Q, utils::modifyList(list(
     input_list = il,
-    cont_tv_fish_sel = paste0("none_Fleet_", ff), fish_sel_blocks = paste0("none_Fleet_", ff),
-    fish_sel_model = paste0("logist1_Fleet_", ff), fish_q_blocks = paste0("none_Fleet_", ff),
-    fish_fixed_sel_pars_spec = rep("est_all", n_fish), fish_q_spec = rep("est_all", n_fish)
+    cont_tv_fish_sel = paste0("none_Fleet_", ff),
+    fish_sel_blocks = paste0("none_Fleet_", ff),
+    fish_sel_model = paste0("logist1_Fleet_", ff),
+    fish_q_blocks = paste0("none_Fleet_", ff),
+    fish_fixed_sel_pars_spec = rep("est_all", n_fish),
+    fish_q_spec = rep("est_all", n_fish)
   ), fishsel))
   if(identical(stop_after, "fishsel")) return(il)
 
   il <- do.call(Setup_Mod_Srvsel_and_Q, utils::modifyList(list(
     input_list = il,
-    cont_tv_srv_sel = paste0("none_Fleet_", sf), srv_sel_blocks = paste0("none_Fleet_", sf),
-    srv_sel_model = paste0("logist1_Fleet_", sf), srv_q_blocks = paste0("none_Fleet_", sf),
-    srv_fixed_sel_pars_spec = rep("est_all", n_srv), srv_q_spec = rep("est_all", n_srv)
+    cont_tv_srv_sel = paste0("none_Fleet_", sf),
+    srv_sel_blocks = paste0("none_Fleet_", sf),
+    srv_sel_model = paste0("logist1_Fleet_", sf),
+    srv_q_blocks = paste0("none_Fleet_", sf),
+    srv_fixed_sel_pars_spec = rep("est_all", n_srv),
+    srv_q_spec = rep("est_all", n_srv)
   ), srvsel))
   if(identical(stop_after, "srvsel")) return(il)
 
   do.call(Setup_Mod_Weighting, utils::modifyList(list(
-    input_list = il, Wt_Catch = 1, Wt_FishIdx = 1, Wt_SrvIdx = 1, Wt_Rec = 1,
-    Wt_F = 1, Wt_Tagging = 0,
+    input_list = il,
+    Wt_Catch = 1,
+    Wt_FishIdx = 1,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_F = 1,
+    Wt_Tagging = 0,
     Wt_FishAgeComps = array(1, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
     Wt_FishLenComps = array(1, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
     Wt_SrvAgeComps = array(1, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv)),
@@ -186,8 +222,15 @@ sweep_stage_slot <- c(
 #' @return The input list, or a condition object if the build failed.
 #'
 #' @keywords internal
-sweep_build_with <- function(stage, arg, value, dims = list(), extra = list(),
-                             other = list(), full = FALSE) {
+sweep_build_with <- function(
+  stage,
+  arg,
+  value,
+  dims = list(),
+  extra = list(),
+  other = list(),
+  full = FALSE
+) {
   slot <- sweep_stage_slot[[stage]]
   d <- utils::modifyList(sweep_dims, dims)
   # a spec with no live configuration to apply arrives as NULL
@@ -227,10 +270,10 @@ sweep_build_with <- function(stage, arg, value, dims = list(), extra = list(),
 }
 
 
-#' Whether an error is the model declining a spec its configuration cannot carry
+#' Whether an error is the model declining a spec its configuration cannot have
 #'
 #' Some specs are legal only alongside another option: sharing over selectivity
-#' bins needs a bin-indexed deviation form, for instance. At any one fixture
+#' bins needs a bin-indexed deviation form, for instance. At any one test setup
 #' configuration those specs are legitimately unbuildable, which is the check
 #' working rather than a broken spec.
 #'
@@ -283,7 +326,7 @@ sweep_format_value <- function(stage, arg, value, dims = list()) {
 #'
 #' \code{check_spec_map_identifiable} refuses a spec that leaves an observation
 #' error parameter with too few observations to estimate. Which specs it refuses
-#' depends on the model's dimensions, so at any one fixture size some legal specs
+#' depends on the model's dimensions, so at any one test setup size some legal specs
 #' are legitimately unbuildable. That is the guard working, not a broken spec, and
 #' the sweeps treat it as a skip.
 #'
@@ -298,7 +341,7 @@ sweep_is_identifiability_refusal <- function(e) {
 #'
 #' Every spec argument validates its input against a list it names in the error
 #' it raises, so the surface is discovered by asking rather than by keeping a
-#' second copy of it here that would drift.
+#' second copy of it here that would fall out of step.
 #'
 #' @param stage,arg Stage function name and argument name.
 #' @param dims Dimension overrides.
@@ -330,7 +373,7 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
 
   # The message forms the package uses to name what it will accept. They differ
   # by author rather than by meaning, so all of them are read here instead of
-  # keeping a second copy of the surface that would drift from the first.
+  # keeping a second copy of the surface that would fall out of step with the first.
   patterns <- c("(?<=Should be one of these: ).*", "(?<=Valid options: ).*",
                 "(?<=Must be one of: ).*", "(?<=Must be one of these: ).*",
                 "(?<=Should be one of: ).*", "(?<=one of these: ).*",
@@ -408,7 +451,7 @@ sweep_identical <- function(a, b) {
 # Which configuration makes a spec live
 #
 # Several specs govern a parameter that only exists once some other option is
-# switched on: the age-correlation specs need an at-age stream carrying a
+# switched on: the age-correlation specs need an at-age data source with a
 # non-iid correlation, the selectivity process-error specs need a time-varying
 # selectivity form. Outside that configuration the spec has nothing to map, and
 # every one of its values builds the same model.
@@ -421,7 +464,7 @@ sweep_identical <- function(a, b) {
 #' Extra arguments that put a spec's parameter into the model
 #'
 #' @param arg Spec argument name.
-#' @param dims Dimension overrides, so the arrays match the fixture being swept.
+#' @param dims Dimension overrides, so the arrays match the test setup being swept.
 #'
 #' @return Named list of extra arguments for the same stage, or \code{NULL} when
 #'   the spec needs no special configuration.
@@ -433,10 +476,10 @@ sweep_live_config <- function(arg, dims = list()) {
   aa_dim <- function(n_fleets) c(d$n_regions, d$n_yrs, d$n_seas, d$n_ages, d$n_sexes, n_fleets)
   agg_dim <- function(n_fleets) c(d$n_regions, d$n_yrs, d$n_seas, n_fleets)
 
-  # An at-age stream replaces its aggregated counterpart rather than joining it,
+  # An at-age data source replaces its aggregated counterpart rather than joining it,
   # so the aggregate is switched off wherever the at-age form is switched on. The
   # type is set sex-split because the default sums over sexes, which a model
-  # carrying two sexes of observations cannot do.
+  # with two sexes of observations cannot do.
   aa_stream <- function(prefix, n_fleets, corr_name, agg_use, se = FALSE, extra = list()) {
     out <- list()
     out[[paste0("Obs", prefix)]] <- array(100, dim = aa_dim(n_fleets))
@@ -444,7 +487,7 @@ sweep_live_config <- function(arg, dims = list()) {
     if(se) out[[paste0("Obs", prefix, "_SE")]] <- array(0.2, dim = aa_dim(n_fleets))
     out[[paste0(prefix, "_Type")]] <- "spltRspltS"
     if(!is.null(agg_use)) out[[agg_use]] <- array(0, dim = agg_dim(n_fleets))
-    # an iid correlation has no parameter to map, so the stream is switched on
+    # an iid correlation has no parameter to map, so the data source is switched on
     # with the simplest form that does have one
     if(!is.null(corr_name)) out[[corr_name]] <- "1dar1"
     utils::modifyList(out, extra)
@@ -493,9 +536,9 @@ sweep_live_config <- function(arg, dims = list()) {
 
 #' Dimension overrides a spec needs to have anything to map
 #'
-#' The population-specific streams exist only in a model carrying more than one
+#' The population-specific data sources exist only in a model with more than one
 #' population, so their specs are swept at two populations rather than at the
-#' fixture's default of one.
+#' test setup's default of one.
 #'
 #' @keywords internal
 sweep_live_dims <- function(arg) {
@@ -505,7 +548,7 @@ sweep_live_dims <- function(arg) {
 
 #' Settings on stages earlier than the spec's own that its configuration needs
 #'
-#' A population-specific stream needs a model that carries populations, and a
+#' A population-specific data source needs a model that has populations, and a
 #' model with more than one population only recruits under local density
 #' dependence. That setting belongs to the recruitment stage, several stages
 #' before the spec being swept.
@@ -522,8 +565,16 @@ sweep_live_other <- function(arg) {
 sweep_abbrev_extent <- function(stage, dims = list()) {
   d <- utils::modifyList(sweep_dims, dims)
   n_f <- if(grepl("Srv", stage)) d$n_srv_fleets else d$n_fish_fleets
-  c(p = d$n_pop, pop = d$n_pop, r = d$n_regions, y = d$n_yrs, seas = d$n_seas,
-    s = d$n_sexes, x = d$n_sexes, f = n_f)
+  c(
+    p = d$n_pop,
+    pop = d$n_pop,
+    r = d$n_regions,
+    y = d$n_yrs,
+    seas = d$n_seas,
+    s = d$n_sexes,
+    x = d$n_sexes,
+    f = n_f
+  )
 }
 
 #' Whether a sharing spec collapses only dimensions this model has one of
@@ -533,7 +584,7 @@ sweep_spec_is_degenerate <- function(stage, value, dims = list()) {
   if(!grepl("^est_shared_", value)) return(FALSE)
   parts <- strsplit(sub("^est_shared_", "", value), "_")[[1]]
   ext <- sweep_abbrev_extent(stage, dims)
-  # an abbreviation this table does not carry (selectivity bins, say) cannot be
+  # an abbreviation this table does not have (selectivity bins, say) cannot be
   # ruled degenerate, so the spec is treated as meaningful
   if(!all(parts %in% names(ext))) return(FALSE)
   all(ext[parts] < 2)

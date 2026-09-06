@@ -73,6 +73,8 @@ Setup_Mod_Rec(
  },
   use_rinit = 0,
   init_age_devs_shared = NULL,
+  R0_blocks = NULL,
+  R0_ref_block = 1,
   use_r0_prior = 0,
   r0_prior = NULL,
   Use_rinit_pen = 0,
@@ -118,14 +120,9 @@ zero before \code{spawn_seas}; when estimated, this is enforced
 structurally via a restricted softmax (see
 \code{\link{do_rec_seas_prop_mapping}}).}
 
-\item{SR_ref_yr}{Integer year index (not a calendar year) supplying the
-biological inputs, weight-at-age, maturity, natural mortality and movement,
-to unfished spawning biomass per recruit, and so to \code{S0} and the scale
-of the stock-recruit curve. Default \code{1}, the first model year, which is
-what the model has always used. Set it to \code{length(years)} to condition
-the curve on terminal weight-at-age, which is what several ADMB assessments
-do; with time-varying weight-at-age the two differ and the curve shifts with
-them. Ignored when \code{rec_model = "mean_rec"}.}
+\item{SR_ref_yr}{Integer year index supplying every input to unfished spawning
+biomass per recruit, and so to \code{S0} and the scale of the stock-recruit
+curve. Matches the estimation model's \code{SR_ref_yr}. Default \code{1}.}
 
 \item{Use_h_prior}{Integer (0/1). Whether normal priors on steepness are
 applied. Only relevant when a stock-recruit curve is used
@@ -209,7 +206,7 @@ project an equilibrium age structure forward from \code{R0} and treat
 \code{4}/\code{"free"} projects no equilibrium at all: the numbers at age
 2 and older are \code{exp(ln_InitDevs)} outright, apportioned by sex ratio,
 with age 1 still taken from recruitment. Use it when the initial age
-structure carries no information about \code{R0} and should not be pulled
+structure has no information about \code{R0} and should not be pulled
 toward an equilibrium.
 Note that under \code{4} the deviations are on the scale of numbers rather
 than of log ratios, so the penalty applied through
@@ -263,7 +260,7 @@ Default: zero for all seasons and fleets.}
       mortality independent of \code{ln_F_mean}.
   }
 
-  Use \code{"abs"} when bridging an assessment that carries a separate
+  Use \code{"abs"} when bridging an assessment that has a separate
   historical F (one estimated as its own parameter, distinct from the mean
   log fishing mortality). Under
   \code{"prop"} those two quantities collapse into a single parameter, and
@@ -279,7 +276,7 @@ Default: zero for all seasons and fleets.}
   (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
   is generally weakly identified, which is why assessments commonly fix it.
 
-  The value is carried by the parameter \code{init_F_par}
+  The value is set by the parameter \code{init_F_par}
   \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
   any other starting value, e.g.
   \code{Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))}.
@@ -384,7 +381,7 @@ itself. \code{"rinit"} takes the scale from \code{ln_rinit}, the initial
 equilibrium recruitment, so one parameter sets both the unfished age
 structure and the curve; it requires \code{use_rinit = 1}. \code{"shared"}
 is the better posed of the first two; \code{"est"} reproduces templates
-that carry separate mean-recruitment and unfished-recruitment parameters,
+that have separate mean-recruitment and unfished-recruitment parameters,
 and \code{"rinit"} reproduces those that use the unfished recruitment in
 both places, which is the usual ADMB arrangement.}
 
@@ -507,6 +504,24 @@ share the last estimated deviation, e.g.
 \code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
 42 free parameters. When \code{NULL} (default), age sharing follows the
 standard behavior determined by \code{equil_init_age_strc} alone.}
+
+\item{R0_blocks}{Character vector giving time blocks for \code{R0}, one entry
+per population, in the same vocabulary as the selectivity blocks:
+\code{"none_Pop_<p>"}, \code{"Block_<b>_Year_<a>-<e>_Pop_<p>"} (1-based year
+indices, \code{"terminal"} allowed for the end year).
+Under \code{rec_model = "mean_rec"} \code{R0} IS mean recruitment, so a block
+is a productivity regime. Under a stock-recruit form it is the curve's scale, so
+blocking it makes the curve time-varying: \code{S0} moves with the block, and
+depletion and any reference point built on the curve step at its boundary. A
+curve fitted as a penalty instead (\code{sr_penalty} with
+\code{sr_R0_spec = "shared"}) takes its scale from \code{R0_ref_block} and
+stays put. Default \code{NULL}, a single block.}
+
+\item{R0_ref_block}{Integer, the block whose \code{R0} is used everywhere a single
+value is needed rather than a year's value: the initial age structure, the
+regional apportionment, the \code{R0} prior, the \code{ln_rinit} penalty and the
+stock-recruit scale when \code{sr_R0_spec = "shared"}. Default 1. Only the
+recruitment computed each year uses that year's block.}
 
 \item{use_r0_prior}{Integer (0/1). Whether to apply a lognormal prior on R0 for any populations. Default 0.}
 

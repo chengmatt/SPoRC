@@ -1,13 +1,9 @@
 # The generated half of the options documentation.
 #
-# vignettes/ta_option_reference.Rmd is built by reading the package rather than by
-# describing it, which is what makes it complete. That only holds while the
-# reading works: a change to how arguments or help pages are structured could
-# leave it silently returning fewer rows, or rows with nothing in them, and the
-# vignette would still build and still look like a reference.
+# ta_option_reference.Rmd is built by reading the package rather than describing it, which is what makes it
+# complete. A change to how arguments or help pages are structured could leave it returning fewer rows.
 #
-# These check the two properties the vignette depends on. Every argument is
-# present, and every argument says something.
+# These check that every argument is present and that every argument says something.
 
 test_that("the reference covers every argument of every setup stage", {
   ref <- option_reference()
@@ -21,7 +17,7 @@ test_that("the reference covers every argument of every setup stage", {
 })
 
 
-test_that("every argument carries its own documentation", {
+test_that("every argument has its own documentation", {
   # The description comes from the function's help page, so an empty one means
   # either an undocumented argument or a change in how the Rd is being read.
   # Either way the vignette would render a blank column rather than fail.
@@ -59,7 +55,7 @@ test_that("the reference reports which settings the written guide also discusses
 test_that("the stages are listed in the order a model is built", {
   # The vignette groups by this order, and a reader following it top to bottom is
   # following the pipeline. Dimensions first and weighting last are the two ends
-  # that carry meaning.
+  # that have meaning.
   o <- setup_stage_order()
 
   expect_equal(o[1], "Setup_Mod_Dim")

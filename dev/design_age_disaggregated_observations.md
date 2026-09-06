@@ -45,7 +45,7 @@ So the population dynamics, selectivity, catchability and mortality all stay
 exactly as they are. What is missing is only the ability to *observe* those
 arrays. This is an observation-layer feature, not a dynamics one.
 
-Age-specific catchability needs no new machinery either. A free catchability per
+Age-specific catchability needs no new routines either. A free catchability per
 age is the same statement as one catchability times a non-parametric selectivity
 at age, and `SPoRC` already estimates both. The aggregation is what removes the
 age resolution, not the parameterization.
@@ -81,7 +81,7 @@ alongside the key matrix rather than as part of it.
 
 ### Catch at age
 
-A fleet carries either aggregated catch with compositions, or catch at age. Not
+A fleet has either aggregated catch with compositions, or catch at age. Not
 both: they are the same information stated twice, and fitting both double counts
 it. This should be an error at setup, not a warning.
 
@@ -94,9 +94,9 @@ it. This should be an error at setup, not a warning.
       sigmaCAA_spec        # "fix", "est", or "concentrated"
     )
 
-`catch_units` already exists and carries over. `UseCatchAA` governs which cells
+`catch_units` already exists and is reused. `UseCatchAA` governs which cells
 are fished, replacing the `UseCatch` role, and the closure logic in
-`model_population_dynamics.R:104` needs to read whichever stream the fleet uses.
+`model_population_dynamics.R:104` needs to read whichever data source the fleet uses.
 
 ### Index at age
 
@@ -117,7 +117,7 @@ is unidentified in a way nothing downstream will report.
 ### Correlation across ages
 
 SAM's `obsCorStruct` is per fleet, one of independent, AR(1) across ages, or
-unstructured. `SPoRC` already carries `SrvIdx_LikeType` with an `"mvn"` option
+unstructured. `SPoRC` already has `SrvIdx_LikeType` with an `"mvn"` option
 and a supplied covariance, so the vocabulary exists; what is missing is an
 *estimated* AR(1) across ages rather than a fixed matrix. Worth doing, but it is
 separable from the rest and should come second. Independent first.
@@ -172,7 +172,7 @@ Ordered so that each step is testable on the sandeel bridge before the next.
 5. Effort-driven fishing mortality.
 6. AR(1) across ages, if wanted.
 
-Every step carries the usual: roxygen on each argument with the allowed values
+Every step holds the usual: roxygen on each argument with the allowed values
 described, a section in `t_model_options.Rmd`, tests, simulation routing through
 `sim_observations.R`, and `globals.R` for any new name.
 
@@ -201,7 +201,7 @@ reproduce what the workaround achieves, something in it is wrong.
 
 - Should catch at age accept a total as well, so that a fleet can be fit at age
   while still reporting an aggregate for reference points? Reference points read
-  catch, and if only the at-age stream is supplied they need to sum it.
+  catch, and if only the at-age data source is supplied they need to sum it.
 - `smsR` applies fishing mortality to every age whether or not that age has a
   recorded catch, whereas a per-age observation naturally treats a missing cell
   as unfished. That difference is worth two cells on the sandeel bridge. The key
@@ -214,13 +214,13 @@ reproduce what the workaround achieves, something in it is wrong.
 
 ## Addendum, 2026-08-27
 
-The shapes above are as this note was first written. The streams were since
-generalized: every array carries a sex margin, and each fleet names the margins
+The shapes above are as this note was first written. The data sources were since
+generalized: every array has a sex dim, and each fleet names the dims
 it sums over through `CatchAA_Type` and its counterparts, using the composition
 vocabulary. Nothing promotes a short array; the declared shape is the only one
 accepted. Reported standard errors, the choice of lognormal or normal, and where
 the observation error comes from are all per fleet, matching what the aggregated
-index streams already allowed. The correlation options gained `"us"` and
+index data sources already allowed. The correlation options gained `"us"` and
 `"2dar1"` alongside `"iid"` and `"1dar1"`, are chosen per fleet, and the
-population-specific streams carry their own. See `vignette("t_model_options")`
+population-specific data sources have their own. See `vignette("t_model_options")`
 and `vignette("ai_ices_style_assessments")` for the current interface.

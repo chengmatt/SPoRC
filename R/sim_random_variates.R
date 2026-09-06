@@ -1,8 +1,9 @@
 # Operating model
 #
-# Random variate generators the operating model needs that base R does not
-# supply: logistic normal, Dirichlet multinomial and inverse Gaussian
-# recruitment.
+# Random variate generators the operating model needs that base R does not supply: logistic normal,
+# Dirichlet multinomial and inverse Gaussian recruitment.
+
+# Composition Variates ------------------------------------------------------
 
 #' Simulate from a logistic-normal distribution
 #'
@@ -126,6 +127,8 @@ rdirM <- function(n, N, alpha) {
 
   return(result)
 }
+
+# Recruitment Variates ------------------------------------------------------
 
 #' Sample recruitment from an inverse-Gaussian distribution
 #'

@@ -87,17 +87,17 @@ No default; must be provided.}
 array \code{[n_regions × n_yrs × n_seas × n_srv_fleets]}. Default: 0.2.}
 
 \item{ln_sigmaSrvIdxAA}{Log-scale observation error for the index at age,
-`n_ages x n_sexes x n_srv_fleets`. The sex margin is required.}
+`n_ages x n_sexes x n_srv_fleets`. The sex dim is required.}
 
 \item{UseSrvIdxAA}{Integer array
 `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_srv_fleets`, `1` where a
-survey index at age is drawn. The sex margin is required: a stream summed
-over sexes carries its flag in sex slot one.}
+survey index at age is drawn. The sex dim is required: a data source summed
+over sexes has its flag in sex slot one.}
 
 \item{ObsSrvIdxAA_SE}{Reported standard errors shaped like `UseSrvIdxAA`, read
 only when `SrvIdxAA_sigma_form` asks for them.}
 
-\item{SrvIdxAA_Type}{Which margins each fleet reports separately: `"agg"`,
+\item{SrvIdxAA_Type}{Which dims each fleet reports separately: `"agg"`,
 `"spltRaggS"` (default), `"aggRspltS"` or `"spltRspltS"`.}
 
 \item{SrvIdxAA_LikeType}{`"lognormal"` (default) or `"normal"`, per fleet.}
@@ -126,7 +126,7 @@ Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
 \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
 \code{SrvIdx_LikeType}. An mvn fleet draws from \code{SrvIdx_Cov} through
 a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
-\code{ObsSrvIdx_SE}, and its population-specific stream stays lognormal.
+\code{ObsSrvIdx_SE}, and its population-specific data source stays lognormal.
 Default: lognormal for every fleet.}
 
 \item{SrvIdx_Cov}{List with one element per survey fleet holding the fixed

@@ -27,7 +27,7 @@ season 1, matching the smoothness penalties.}
 
 \item{sel_l}{Array \code{[region, year, len, sex, fleet]} of realized
 length-based selectivity, read by \code{"value"} rows instead of
-\code{sel} when the stream is length-based.}
+\code{sel} when the data source is length-based.}
 
 \item{selex_type}{Integer. \code{0} reads \code{sel}, \code{1} reads
 \code{sel_l}.}
@@ -54,7 +54,7 @@ prior, and its optional \code{type} column selects what the row constrains:
   \item{\code{"value"}}{A normal prior on the realized selectivity value at
     one bin, \code{dnorm(sel[bin], mu, sd)}, with both hyperparameters on
     the natural scale. \code{par} instead names the bin, on the grid the
-    stream's selectivity is parameterized on (ages or lengths per its
+    data source's selectivity is parameterized on (ages or lengths per its
     selectivity type), and the value is read at the first model year of
     \code{block} (blocked and time-invariant selectivity are constant within
     a block). This is a constraint on a derived quantity rather than on the

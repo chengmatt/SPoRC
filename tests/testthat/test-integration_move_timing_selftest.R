@@ -5,7 +5,7 @@ library(Matrix)
 # Self-consistency checks for continuous movement (move_timing = 2).
 #
 # The end-to-end shape guards live in test-move-timing-end-to-end.R. What this file
-# checks is that the continuous-movement machinery is internally coherent:
+# checks is that the continuous-movement routines is internally coherent:
 #
 #   1. reference points computed under move_timing = 2 are an actual fixed point of the
 #      timing-2 projection (fishing at F_ref holds SSB at B_ref indefinitely);
@@ -38,7 +38,7 @@ test_that("equilibrium SSB is a fixed point of the seasonal operator under every
     Qv[, , s] <- t(D)
     Mv[, , s] <- t(as.matrix(Matrix::expm(D * seasdur[s])))
   }
-  # region-varying mortality, so the three timings genuinely differ
+  # region-varying mortality, so the three timings differ
   Z <- outer(c(0.25, 0.45, 0.15), seasdur)   # [region, season]
   R <- c(1000, 0, 0)
 
@@ -92,7 +92,7 @@ test_that("equilibrium SSB is a fixed point of the seasonal operator under every
 test_that("the analytic plus group agrees with brute-force iteration under every timing", {
   # solve_plus_group's geometric series is what reference points rely on. It must equal
   # simply iterating the plus-group recursion many times, for each timing -- this is the
-  # link between the reference point machinery and the projection dynamics.
+  # link between the reference point routines and the projection dynamics.
   set.seed(99)
   n <- 3; n_seas <- 2
   seasdur <- c(0.35, 0.65)
@@ -102,17 +102,27 @@ test_that("the analytic plus group agrees with brute-force iteration under every
     diag(D) <- 0; diag(D) <- -colSums(D)
     Qv[, , s] <- t(D); Mv[, , s] <- t(as.matrix(Matrix::expm(D * seasdur[s])))
   }
-  M_pen <- c(0.12, 0.2, 0.09); M_plus <- c(0.13, 0.22, 0.1)
+  # M per region and season, same shape as F below
+  M_pen <- matrix(c(0.12, 0.2, 0.09), n, n_seas); M_plus <- matrix(c(0.13, 0.22, 0.1), n, n_seas)
   F_pen <- matrix(stats::runif(n * n_seas, 0.02, 0.25), n, n_seas)
   F_plus <- matrix(stats::runif(n * n_seas, 0.02, 0.25), n, n_seas)
   N_penult <- c(50, 20, 35)
 
   for (tm in 0:2) {
-    Ts <- build_plus_group_T(M_penult = M_pen, M_plus = M_plus,
-                             F_penult = F_pen, F_plus = F_plus,
-                             Mov_penult = Mv, Mov_plus = Mv,
-                             n_regions = n, n_seas = n_seas, seasdur = seasdur,
-                             Mrate_penult = Qv, Mrate_plus = Qv, move_timing = tm)
+    Ts <- build_plus_group_T(
+      M_penult = M_pen,
+      M_plus = M_plus,
+      F_penult = F_pen,
+      F_plus = F_plus,
+      Mov_penult = Mv,
+      Mov_plus = Mv,
+      n_regions = n,
+      n_seas = n_seas,
+      seasdur = seasdur,
+      Mrate_penult = Qv,
+      Mrate_plus = Qv,
+      move_timing = tm
+    )
 
     analytic <- as.vector(solve_plus_group(Ts, N_penult, N_penult, n)$fished)
 
@@ -130,12 +140,12 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
   # The end-to-end version of the fixed-point property, through the real pipeline:
   # global_SPR (reference points) -> Do_Population_Projection (forward dynamics).
   # Fishing at F40% forever must drive SSB to exactly the B40% the reference point
-  # machinery reports, for every timing. This is the strongest available check that
+  # routines reports, for every timing. This is the strongest available check that
   # the per-recruit equilibrium, the plus-group solve, spawn_state and the projection
   # dynamics all implement the same seasonal operator -- a mismatch in any one of them
   # shows up here as a projection that settles somewhere other than B40%.
   #
-  # Natural mortality varies by region so the three timings genuinely differ; with a
+  # Natural mortality varies by region so the three timings differ; with a
   # region-invariant Z they would coincide and the test would be vacuous.
   n_pop <- 1; n_regions <- 3; n_seas <- 1; n_sexes <- 1; n_ages <- 20; n_flt <- 1
   seasdur <- rep(1 / n_seas, n_seas); ages <- seq_len(n_ages)
@@ -146,18 +156,39 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
   M_r <- c(0.12, 0.20, 0.35)
 
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
-  ctmc_dat <- expand.grid(pop = 1, regions = seq_len(n_regions), years = 1,
-                          seas = seq_len(n_seas), ages = ages, sexes = 1)
+  ctmc_dat <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = 1,
+    seas = seq_len(n_seas),
+    ages = ages,
+    sexes = 1
+  )
   mv <- Get_Movement(
-    move_type = 1, do_recruits_move = 0, n_pop = 1, n_regions = n_regions, n_yrs = 1,
-    n_proj_yrs_devs = 0, n_ages = n_ages, n_sexes = 1, n_seas = n_seas,
+    move_type = 1,
+    do_recruits_move = 0,
+    n_pop = 1,
+    n_regions = n_regions,
+    n_yrs = 1,
+    n_proj_yrs_devs = 0,
+    n_ages = n_ages,
+    n_sexes = 1,
+    n_seas = n_seas,
     move_pars = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, n_ages, 1)),
     move_devs = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, n_ages, 1)),
-    use_fixed_movement = 0, Fixed_Movement = NULL, ctmc_move_dat = ctmc_dat,
-    preference_formula = ~ 1, diffusion_formula = ~ 1,
-    log_move_diffusion_pars = log(0.35), move_preference_pars = 0,
-    area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-    seasdur = seasdur, ctmc_scale_by_seasdur = 1)
+    use_fixed_movement = 0,
+    Fixed_Movement = NULL,
+    ctmc_move_dat = ctmc_dat,
+    preference_formula = ~ 1,
+    diffusion_formula = ~ 1,
+    log_move_diffusion_pars = log(0.35),
+    move_preference_pars = 0,
+    area_r = rep(1, n_regions),
+    adjacency_mat = adj,
+    ctmc_diffusion_bounds = 0,
+    seasdur = seasdur,
+    ctmc_scale_by_seasdur = 1
+  )
   Mov1 <- mv$Movement[1, , , 1, 1, , 1]; Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
 
   sel <- 1 / (1 + exp(-1.2 * (ages - 5)))
@@ -165,24 +196,33 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
   mat <- 1 / (1 + exp(-0.9 * (ages - 6)))
 
   spr_data <- function(tm) list(
-    t_spawn = t_spawn, n_seas = n_seas, seasdur = seasdur, spawn_seas = spawn_seas,
-    n_pop = n_pop, n_ages = n_ages, n_regions = n_regions,
+    t_spawn = t_spawn,
+    n_seas = n_seas,
+    seasdur = seasdur,
+    spawn_seas = spawn_seas,
+    n_pop = n_pop,
+    n_ages = n_ages,
+    n_regions = n_regions,
     F_fract_flt = array(1, dim = c(n_regions, n_seas, n_flt)),
     dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
     fish_sel = array(rep(sel, each = n_pop * n_regions * n_seas), dim = c(n_pop, n_regions, n_seas, n_ages, n_flt)),
     ret_sel = array(1, dim = c(n_pop, n_regions, n_seas, n_ages, n_flt)),
-    natmort = array(rep(M_r, times = n_ages), dim = c(n_pop, n_regions, n_ages)),
+    natmort = array(rep(M_r, times = n_seas * n_ages), dim = c(n_pop, n_regions, n_seas, n_ages)),
     WAA = array(rep(waa, each = n_pop * n_regions * n_seas), dim = c(n_pop, n_regions, n_seas, n_ages)),
     MatAA = array(rep(mat, each = n_pop * n_regions * n_seas), dim = c(n_pop, n_regions, n_seas, n_ages)),
     Movement = array(Mov1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
     Mrate = array(Mra1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-    move_timing = tm, do_recruits_move = 0,
+    move_timing = tm,
+    do_recruits_move = 0,
     sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
     rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
     stray_rate = array(0, dim = n_pop),
     sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages), dim = c(n_pop, n_regions, n_regions, n_ages)),
-    natal_region = 1, n_pop_in_region = array(1, dim = n_regions),
-    SPR_x = 0.40, rec_region_prop = array(rec_prop, dim = c(n_pop, n_regions)))
+    natal_region = 1,
+    n_pop_in_region = array(1, dim = n_regions),
+    SPR_x = 0.40,
+    rec_region_prop = array(rec_prop, dim = c(n_pop, n_regions))
+  )
 
   project <- function(tm, Fval) {
     six <- function(v) array(rep(v, each = n_pop * n_regions * NY * n_seas),
@@ -199,22 +239,42 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
     tNAA <- array(0, c(n_pop, n_regions, n_seas, n_ages, n_sexes)); tNAA[1, , 1, , 1] <- 10
 
     Do_Population_Projection(
-      n_proj_yrs = NY, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
+      n_proj_yrs = NY,
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_ages = n_ages,
+      n_sexes = n_sexes,
       sexratio = array(1, dim = c(n_pop, n_regions, NY, n_sexes)),
-      n_fish_fleets = n_flt, do_recruits_move = 0,
+      n_fish_fleets = n_flt,
+      do_recruits_move = 0,
       recruitment = array(rep(R_tot * rec_prop, each = n_pop), dim = c(n_pop, n_regions, NY)),
-      terminal_NAA = tNAA, terminal_NAA0 = tNAA,
+      terminal_NAA = tNAA,
+      terminal_NAA0 = tNAA,
       terminal_F = array(Fval, dim = c(n_regions, n_seas, n_flt)),
       dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
-      natmort = array(rep(M_r, times = NY * n_ages), dim = c(n_pop, n_regions, NY, n_ages, n_sexes)),
-      natal_region = 1, WAA = six(waa), MatAA = six(mat), WAA_fish = svn(waa),
-      fish_sel = svn(sel), ret_sel = array(1, dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes, n_flt)),
-      Movement = Mov, sgl_seas_spawning_movement = sgl, stray_rate = array(0, dim = c(n_pop, NY)),
-      f_ref_pt = array(Fval, dim = c(n_regions, NY)), b_ref_pt = NULL, HCR_function = NULL,
-      recruitment_opt = "mean_rec", fmort_opt = "Input", t_spawn = t_spawn,
-      n_seas = n_seas, seasdur = seasdur, spawn_seas = spawn_seas,
+      natmort = array(rep(M_r, times = NY * n_seas * n_ages), dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes)),
+      natal_region = 1,
+      WAA = six(waa),
+      MatAA = six(mat),
+      WAA_fish = svn(waa),
+      fish_sel = svn(sel),
+      ret_sel = array(1, dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes, n_flt)),
+      Movement = Mov,
+      sgl_seas_spawning_movement = sgl,
+      stray_rate = array(0, dim = c(n_pop, NY)),
+      f_ref_pt = array(Fval, dim = c(n_regions, NY)),
+      b_ref_pt = NULL,
+      HCR_function = NULL,
+      recruitment_opt = "mean_rec",
+      fmort_opt = "Input",
+      t_spawn = t_spawn,
+      n_seas = n_seas,
+      seasdur = seasdur,
+      spawn_seas = spawn_seas,
       rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
-      Mrate = Mra, move_timing = tm)
+      Mrate = Mra,
+      move_timing = tm
+    )
   }
 
   F40 <- numeric(3); B40 <- numeric(3)
@@ -240,7 +300,7 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
     expect_equal(as.vector(pj40$proj_SSB[1, , NY]), as.vector(rp$rep$SB[1, ]) * R_tot,
                  tolerance = 1e-8,
                  label = sprintf("region-wise SSB == B40%% by region, move_timing = %d", tm))
-    # genuinely at equilibrium rather than still drifting
+    # at equilibrium rather than still settling
     expect_equal(sum(pj40$proj_SSB[, , NY]), sum(pj40$proj_SSB[, , NY - 1]), tolerance = 1e-8)
   }
 
@@ -266,18 +326,39 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
   Fv <- 0.2
 
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
-  ctmc <- expand.grid(pop = 1, regions = seq_len(n_regions), years = 1,
-                      seas = seq_len(n_seas), ages = ages, sexes = 1)
+  ctmc <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = 1,
+    seas = seq_len(n_seas),
+    ages = ages,
+    sexes = 1
+  )
   mv <- Get_Movement(
-    move_type = 1, do_recruits_move = 0, n_pop = 1, n_regions = n_regions, n_yrs = 1,
-    n_proj_yrs_devs = 0, n_ages = n_ages, n_sexes = 1, n_seas = n_seas,
+    move_type = 1,
+    do_recruits_move = 0,
+    n_pop = 1,
+    n_regions = n_regions,
+    n_yrs = 1,
+    n_proj_yrs_devs = 0,
+    n_ages = n_ages,
+    n_sexes = 1,
+    n_seas = n_seas,
     move_pars = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, n_ages, 1)),
     move_devs = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, n_ages, 1)),
-    use_fixed_movement = 0, Fixed_Movement = NULL, ctmc_move_dat = ctmc,
-    preference_formula = ~ 1, diffusion_formula = ~ 1,
-    log_move_diffusion_pars = log(0.35), move_preference_pars = 0,
-    area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-    seasdur = seasdur, ctmc_scale_by_seasdur = 1)
+    use_fixed_movement = 0,
+    Fixed_Movement = NULL,
+    ctmc_move_dat = ctmc,
+    preference_formula = ~ 1,
+    diffusion_formula = ~ 1,
+    log_move_diffusion_pars = log(0.35),
+    move_preference_pars = 0,
+    area_r = rep(1, n_regions),
+    adjacency_mat = adj,
+    ctmc_diffusion_bounds = 0,
+    seasdur = seasdur,
+    ctmc_scale_by_seasdur = 1
+  )
   Mov1 <- mv$Movement[1, , , 1, 1, , 1]; Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
 
   sel <- 1 / (1 + exp(-1.2 * (ages - 5)))
@@ -285,43 +366,62 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
   mat <- 1 / (1 + exp(-0.9 * (ages - 6)))
 
   msy_data <- function(tm) list(
-    t_spawn = t_spawn, n_seas = n_seas, seasdur = seasdur, spawn_seas = spawn_seas,
-    n_ages = n_ages, n_regions = n_regions,
+    t_spawn = t_spawn,
+    n_seas = n_seas,
+    seasdur = seasdur,
+    spawn_seas = spawn_seas,
+    n_ages = n_ages,
+    n_regions = n_regions,
     F_fract_flt = array(1, dim = c(n_regions, n_seas, n_flt)),
     dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
     fish_sel = array(rep(sel, each = n_regions * n_seas), dim = c(1, n_regions, n_seas, n_ages, n_flt)),
     ret_sel = array(1, dim = c(1, n_regions, n_seas, n_ages, n_flt)),
     Movement = array(Mov1, dim = c(n_regions, n_regions, n_seas, n_ages)),
     Mrate = array(Mra1, dim = c(n_regions, n_regions, n_seas, n_ages)),
-    move_timing = tm, do_recruits_move = 0,
-    natmort = array(rep(M_r, times = n_ages), dim = c(n_regions, n_ages)),
+    move_timing = tm,
+    do_recruits_move = 0,
+    natmort = array(rep(M_r, times = n_seas * n_ages), dim = c(n_regions, n_seas, n_ages)),
     WAA = array(rep(waa, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
     WAA_fish = array(rep(waa, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
     MatAA = array(rep(mat, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
-    sex_ratio_f = array(0.5, dim = n_regions), rec_seas_prop = array(1 / n_seas, dim = n_seas),
+    sex_ratio_f = array(0.5, dim = n_regions),
+    rec_seas_prop = array(1 / n_seas, dim = n_seas),
     rec_region_prop = array(rec_prop, dim = n_regions),
     is_discard_fleet = array(0, dim = n_flt),
-    SR_type = 1, h = 0.7, R0 = 100, ln_global_R0 = log(100))
+    SR_type = 1,
+    h = 0.7,
+    R0 = 100,
+    ln_global_R0 = log(100)
+  )
 
   spr_data <- function(tm) list(
-    t_spawn = t_spawn, n_seas = n_seas, seasdur = seasdur, spawn_seas = spawn_seas,
-    n_pop = 1, n_ages = n_ages, n_regions = n_regions,
+    t_spawn = t_spawn,
+    n_seas = n_seas,
+    seasdur = seasdur,
+    spawn_seas = spawn_seas,
+    n_pop = 1,
+    n_ages = n_ages,
+    n_regions = n_regions,
     F_fract_flt = array(1, dim = c(n_regions, n_seas, n_flt)),
     dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
     fish_sel = array(rep(sel, each = n_regions * n_seas), dim = c(1, n_regions, n_seas, n_ages, n_flt)),
     ret_sel = array(1, dim = c(1, n_regions, n_seas, n_ages, n_flt)),
-    natmort = array(rep(M_r, times = n_ages), dim = c(1, n_regions, n_ages)),
+    natmort = array(rep(M_r, times = n_seas * n_ages), dim = c(1, n_regions, n_seas, n_ages)),
     WAA = array(rep(waa, each = n_regions * n_seas), dim = c(1, n_regions, n_seas, n_ages)),
     MatAA = array(rep(mat, each = n_regions * n_seas), dim = c(1, n_regions, n_seas, n_ages)),
     Movement = array(Mov1, dim = c(1, n_regions, n_regions, n_seas, n_ages)),
     Mrate = array(Mra1, dim = c(1, n_regions, n_regions, n_seas, n_ages)),
-    move_timing = tm, do_recruits_move = 0,
+    move_timing = tm,
+    do_recruits_move = 0,
     sex_ratio_f = array(0.5, dim = c(1, n_regions)),
     rec_seas_prop = array(1 / n_seas, dim = c(1, n_seas)),
     stray_rate = array(0, dim = 1),
     sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages), dim = c(1, n_regions, n_regions, n_ages)),
-    natal_region = 1, n_pop_in_region = array(1, dim = n_regions),
-    SPR_x = 0.40, rec_region_prop = array(rec_prop, dim = c(1, n_regions)))
+    natal_region = 1,
+    n_pop_in_region = array(1, dim = n_regions),
+    SPR_x = 0.40,
+    rec_region_prop = array(rec_prop, dim = c(1, n_regions))
+  )
 
   ev <- function(fn, dat, parname, val) {
     p <- list(); p[[parname]] <- log(val)
@@ -342,7 +442,7 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
                  label = sprintf("SPR agrees, move_timing = %d", tm))
   }
 
-  # Vacuity guard: the per-recruit biology must genuinely depend on move_timing here,
+  # Vacuity guard: the per-recruit biology must depend on move_timing here,
   # otherwise a routine that ignored the flag entirely would still pass the checks above.
   expect_gt(diff(range(spr_sb0)) / mean(spr_sb0), 1e-3)
 })
@@ -351,7 +451,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   # The MSY analog of the F40% fixed-point test above, and the sharper version of it:
   # here recruitment is not pinned, it is regenerated each year from the Beverton-Holt
   # curve, so the per-recruit biology, the catch equation, the plus group and the
-  # stock-recruit machinery all have to agree for the loop to settle on Bmsy.
+  # stock-recruit routines all have to agree for the loop to settle on Bmsy.
   #
   # Two things this pins that were previously broken:
   #   1. Get_Det_Recruitment's global density-dependence branch skipped the spawning-season
@@ -374,18 +474,39 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   R0 <- 100; h <- 0.7
 
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
-  ctmc <- expand.grid(pop = 1, regions = seq_len(n_regions), years = 1,
-                      seas = seq_len(n_seas), ages = ages, sexes = 1)
+  ctmc <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = 1,
+    seas = seq_len(n_seas),
+    ages = ages,
+    sexes = 1
+  )
   mv <- Get_Movement(
-    move_type = 1, do_recruits_move = 0, n_pop = 1, n_regions = n_regions, n_yrs = 1,
-    n_proj_yrs_devs = 0, n_ages = n_ages, n_sexes = 1, n_seas = n_seas,
+    move_type = 1,
+    do_recruits_move = 0,
+    n_pop = 1,
+    n_regions = n_regions,
+    n_yrs = 1,
+    n_proj_yrs_devs = 0,
+    n_ages = n_ages,
+    n_sexes = 1,
+    n_seas = n_seas,
     move_pars = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, n_ages, 1)),
     move_devs = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, n_ages, 1)),
-    use_fixed_movement = 0, Fixed_Movement = NULL, ctmc_move_dat = ctmc,
-    preference_formula = ~ 1, diffusion_formula = ~ 1,
-    log_move_diffusion_pars = log(0.35), move_preference_pars = 0,
-    area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-    seasdur = seasdur, ctmc_scale_by_seasdur = 1)
+    use_fixed_movement = 0,
+    Fixed_Movement = NULL,
+    ctmc_move_dat = ctmc,
+    preference_formula = ~ 1,
+    diffusion_formula = ~ 1,
+    log_move_diffusion_pars = log(0.35),
+    move_preference_pars = 0,
+    area_r = rep(1, n_regions),
+    adjacency_mat = adj,
+    ctmc_diffusion_bounds = 0,
+    seasdur = seasdur,
+    ctmc_scale_by_seasdur = 1
+  )
   Mov1 <- mv$Movement[1, , , 1, 1, , 1]; Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
 
   sel <- 1 / (1 + exp(-1.2 * (ages - 5)))
@@ -393,22 +514,33 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   mat <- 1 / (1 + exp(-0.9 * (ages - 6)))
 
   msy_data <- function(tm) list(
-    t_spawn = t_spawn, n_seas = n_seas, seasdur = seasdur, spawn_seas = spawn_seas,
-    n_ages = n_ages, n_regions = n_regions,
+    t_spawn = t_spawn,
+    n_seas = n_seas,
+    seasdur = seasdur,
+    spawn_seas = spawn_seas,
+    n_ages = n_ages,
+    n_regions = n_regions,
     F_fract_flt = array(1, dim = c(n_regions, n_seas, n_flt)),
     dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
     fish_sel = array(rep(sel, each = n_regions * n_seas), dim = c(1, n_regions, n_seas, n_ages, n_flt)),
     ret_sel = array(1, dim = c(1, n_regions, n_seas, n_ages, n_flt)),
     Movement = array(Mov1, dim = c(n_regions, n_regions, n_seas, n_ages)),
     Mrate = array(Mra1, dim = c(n_regions, n_regions, n_seas, n_ages)),
-    move_timing = tm, do_recruits_move = 0,
-    natmort = array(rep(M_r, times = n_ages), dim = c(n_regions, n_ages)),
+    move_timing = tm,
+    do_recruits_move = 0,
+    natmort = array(rep(M_r, times = n_seas * n_ages), dim = c(n_regions, n_seas, n_ages)),
     WAA = array(rep(waa, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
     WAA_fish = array(rep(waa, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
     MatAA = array(rep(mat, each = n_regions * n_seas), dim = c(n_regions, n_seas, n_ages)),
-    sex_ratio_f = array(0.5, dim = n_regions), rec_seas_prop = array(1 / n_seas, dim = n_seas),
+    sex_ratio_f = array(0.5, dim = n_regions),
+    rec_seas_prop = array(1 / n_seas, dim = n_seas),
     rec_region_prop = array(rec_prop, dim = n_regions),
-    is_discard_fleet = array(0, dim = n_flt), SR_type = 1, h = h, R0 = R0, ln_global_R0 = log(R0))
+    is_discard_fleet = array(0, dim = n_flt),
+    SR_type = 1,
+    h = h,
+    R0 = R0,
+    ln_global_R0 = log(R0)
+  )
 
   six <- function(v) array(rep(v, each = n_pop * n_regions * NY * n_seas),
                            dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes))
@@ -425,44 +557,69 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
     }
     tNAA <- array(0, c(n_pop, n_regions, n_seas, n_ages, n_sexes)); tNAA[1, , 1, , 1] <- 10
 
-    bh <- list(R0 = R0, h = array(h, dim = c(n_pop, n_regions)),
-               rec_region_prop = array(rec_prop, dim = c(n_pop, n_regions)),
-               rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
-               SSB = array(1, dim = c(n_pop, n_regions, 1)),
-               WAA = array(rep(waa, each = n_pop * n_regions * n_seas), dim = c(n_pop, n_regions, n_seas, n_ages)),
-               MatAA = array(rep(mat, each = n_pop * n_regions * n_seas), dim = c(n_pop, n_regions, n_seas, n_ages)),
-               natmort = array(rep(M_r, times = n_ages), dim = c(n_pop, n_regions, n_ages)),
-               Movement = array(Mov1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-               Mrate = array(Mra1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-               sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages),
+    bh <- list(
+      R0 = R0,
+      h = array(h, dim = c(n_pop, n_regions)),
+      rec_region_prop = array(rec_prop, dim = c(n_pop, n_regions)),
+      rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
+      SSB = array(1, dim = c(n_pop, n_regions, 1)),
+      WAA = array(rep(waa, each = n_pop * n_regions * n_seas), dim = c(n_pop, n_regions, n_seas, n_ages)),
+      MatAA = array(rep(mat, each = n_pop * n_regions * n_seas), dim = c(n_pop, n_regions, n_seas, n_ages)),
+      natmort = array(rep(M_r, times = n_seas * n_ages), dim = c(n_pop, n_regions, n_seas, n_ages)),
+      Movement = array(Mov1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+      Mrate = array(Mra1, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+      sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages),
                                                   dim = c(n_pop, n_regions, n_regions, n_ages)),
-               stray_rate = array(0, dim = n_pop),
-               init_F = array(0, dim = c(n_regions, n_seas, n_flt)),
-               fish_sel = array(rep(sel, each = n_pop * n_regions * n_seas),
+      stray_rate = array(0, dim = n_pop),
+      init_F = array(0, dim = c(n_regions, n_seas, n_flt)),
+      fish_sel = array(rep(sel, each = n_pop * n_regions * n_seas),
                                 dim = c(n_pop, n_regions, n_seas, n_ages, n_flt)),
-               ret_sel = array(1, dim = c(n_pop, n_regions, n_seas, n_ages, n_flt)),
-               dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
-               sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
-               rec_dd = 1, rec_lag = 1)   # rec_dd = 1: global DD, matching global_Fmsy
+      ret_sel = array(1, dim = c(n_pop, n_regions, n_seas, n_ages, n_flt)),
+      dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
+      sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
+      rec_dd = 1,
+      rec_lag = 1
+    )   # rec_dd = 1: global DD, matching global_Fmsy
 
     Do_Population_Projection(
-      n_proj_yrs = NY, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
-      sexratio = array(1, dim = c(n_pop, n_regions, NY, n_sexes)), n_fish_fleets = n_flt,
+      n_proj_yrs = NY,
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_ages = n_ages,
+      n_sexes = n_sexes,
+      sexratio = array(1, dim = c(n_pop, n_regions, NY, n_sexes)),
+      n_fish_fleets = n_flt,
       do_recruits_move = 0,
       recruitment = array(rep(if (is.null(Rconst)) R0 * rec_prop else Rconst * rec_prop, each = n_pop),
                           dim = c(n_pop, n_regions, NY)),
-      terminal_NAA = tNAA, terminal_NAA0 = tNAA,
+      terminal_NAA = tNAA,
+      terminal_NAA0 = tNAA,
       terminal_F = array(Fval, dim = c(n_regions, n_seas, n_flt)),
       dmr = array(0, dim = c(n_regions, n_seas, n_flt)),
-      natmort = array(rep(M_r, times = NY * n_ages), dim = c(n_pop, n_regions, NY, n_ages, n_sexes)),
-      natal_region = 1, WAA = six(waa), MatAA = six(mat), WAA_fish = svn(waa),
-      fish_sel = svn(sel), ret_sel = array(1, dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes, n_flt)),
-      Movement = Mov, sgl_seas_spawning_movement = sgl, stray_rate = array(0, dim = c(n_pop, NY)),
-      f_ref_pt = array(Fval, dim = c(n_regions, NY)), b_ref_pt = NULL, HCR_function = NULL,
-      recruitment_opt = rec_mode, srr_opt = if (rec_mode == "bh_rec") bh else NULL,
-      fmort_opt = "Input", t_spawn = t_spawn, n_seas = n_seas, seasdur = seasdur,
-      spawn_seas = spawn_seas, rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
-      Mrate = Mra, move_timing = tm)
+      natmort = array(rep(M_r, times = NY * n_seas * n_ages), dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes)),
+      natal_region = 1,
+      WAA = six(waa),
+      MatAA = six(mat),
+      WAA_fish = svn(waa),
+      fish_sel = svn(sel),
+      ret_sel = array(1, dim = c(n_pop, n_regions, NY, n_seas, n_ages, n_sexes, n_flt)),
+      Movement = Mov,
+      sgl_seas_spawning_movement = sgl,
+      stray_rate = array(0, dim = c(n_pop, NY)),
+      f_ref_pt = array(Fval, dim = c(n_regions, NY)),
+      b_ref_pt = NULL,
+      HCR_function = NULL,
+      recruitment_opt = rec_mode,
+      srr_opt = if (rec_mode == "bh_rec") bh else NULL,
+      fmort_opt = "Input",
+      t_spawn = t_spawn,
+      n_seas = n_seas,
+      seasdur = seasdur,
+      spawn_seas = spawn_seas,
+      rec_seas_prop = array(1 / n_seas, dim = c(n_pop, n_seas)),
+      Mrate = Mra,
+      move_timing = tm
+    )
   }
 
   Bmsy_all <- numeric(3)
@@ -488,7 +645,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
     #     female recruit while the projection puts the whole Req into the population.
     expect_equal(sum(pjA$proj_Catch[, , NY, , ]), 2 * rp$rep$Yield, tolerance = 1e-10,
                  label = sprintf("projected yield == 2 x MSY, move_timing = %d", tm))
-    # genuinely at equilibrium rather than still drifting
+    # at equilibrium rather than still settling
     expect_equal(sum(pjB$proj_SSB[, , NY]), sum(pjB$proj_SSB[, , NY - 1]), tolerance = 1e-8)
   }
 
@@ -503,7 +660,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
   # in the second, so the seasonal operators compose and the "advance into spawning
   # season" branches actually execute).
   #
-  # Two harness details that matter and are easy to get wrong:
+  # Two details of this test that are easy to get wrong:
   #   - srr_opt$rec_dd must be 0 (local) to match local_Fmsy_sglpop.
   #   - terminal_NAA must be seeded across ALL seasons. Projection year 1 IS the terminal
   #     data year (proj_NAA[,,1,,,] <- terminal_NAA, and the real caller passes
@@ -518,18 +675,39 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
   R0 <- 100; h <- 0.7
 
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
-  ctmc <- expand.grid(pop = 1, regions = seq_len(n_regions), years = 1,
-                      seas = seq_len(NS), ages = ages, sexes = 1)
+  ctmc <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = 1,
+    seas = seq_len(NS),
+    ages = ages,
+    sexes = 1
+  )
   mv <- Get_Movement(
-    move_type = 1, do_recruits_move = 0, n_pop = 1, n_regions = n_regions, n_yrs = 1,
-    n_proj_yrs_devs = 0, n_ages = n_ages, n_sexes = 1, n_seas = NS,
+    move_type = 1,
+    do_recruits_move = 0,
+    n_pop = 1,
+    n_regions = n_regions,
+    n_yrs = 1,
+    n_proj_yrs_devs = 0,
+    n_ages = n_ages,
+    n_sexes = 1,
+    n_seas = NS,
     move_pars = array(0, c(1, n_regions, n_regions - 1, 1, NS, n_ages, 1)),
     move_devs = array(0, c(1, n_regions, n_regions - 1, 1, NS, n_ages, 1)),
-    use_fixed_movement = 0, Fixed_Movement = NULL, ctmc_move_dat = ctmc,
-    preference_formula = ~ 1, diffusion_formula = ~ 1,
-    log_move_diffusion_pars = log(0.35), move_preference_pars = 0,
-    area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-    seasdur = seasdur, ctmc_scale_by_seasdur = 1)
+    use_fixed_movement = 0,
+    Fixed_Movement = NULL,
+    ctmc_move_dat = ctmc,
+    preference_formula = ~ 1,
+    diffusion_formula = ~ 1,
+    log_move_diffusion_pars = log(0.35),
+    move_preference_pars = 0,
+    area_r = rep(1, n_regions),
+    adjacency_mat = adj,
+    ctmc_diffusion_bounds = 0,
+    seasdur = seasdur,
+    ctmc_scale_by_seasdur = 1
+  )
   Mov1 <- array(mv$Movement[1, , , 1, , , 1], c(n_regions, n_regions, NS, n_ages))
   Mra1 <- array(mv$Mrate[1, , , 1, , , 1],    c(n_regions, n_regions, NS, n_ages))
 
@@ -540,20 +718,38 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
   r5 <- function(v) array(rep(v, each = n_regions * NS), dim = c(1, n_regions, NS, n_ages, n_flt))
 
   msy_l <- function(tm) list(
-    t_spawn = t_spawn, n_seas = NS, seasdur = seasdur, spawn_seas = SPAWN,
-    n_ages = n_ages, n_regions = n_regions, n_pop = 1,
+    t_spawn = t_spawn,
+    n_seas = NS,
+    seasdur = seasdur,
+    spawn_seas = SPAWN,
+    n_ages = n_ages,
+    n_regions = n_regions,
+    n_pop = 1,
     F_fract_flt = array(1 / NS, dim = c(n_regions, NS, n_flt)),
     dmr = array(0, dim = c(n_regions, NS, n_flt)),
-    fish_sel = r5(sel), ret_sel = array(1, dim = c(1, n_regions, NS, n_ages, n_flt)),
-    Movement = Mov1, Mrate = Mra1, move_timing = tm, do_recruits_move = 0,
-    natmort = array(rep(M_r, times = n_ages), dim = c(n_regions, n_ages)),
-    WAA = r4(waa), WAA_fish = r4(waa), MatAA = r4(mat),
-    rec_seas_prop = array(1 / NS, dim = NS), is_discard_fleet = array(0, dim = n_flt),
-    sex_ratio_f = array(0.5, dim = n_regions), rec_region_prop = array(rec_prop, dim = n_regions),
-    h = array(h, dim = n_regions), R0 = R0, newton_steps = 200, natal_region = 1,
-    n_pop_in_region = array(1, dim = n_regions), stray_rate = array(0, dim = 1),
+    fish_sel = r5(sel),
+    ret_sel = array(1, dim = c(1, n_regions, NS, n_ages, n_flt)),
+    Movement = Mov1,
+    Mrate = Mra1,
+    move_timing = tm,
+    do_recruits_move = 0,
+    natmort = array(rep(M_r, times = NS * n_ages), dim = c(n_regions, NS, n_ages)),
+    WAA = r4(waa),
+    WAA_fish = r4(waa),
+    MatAA = r4(mat),
+    rec_seas_prop = array(1 / NS, dim = NS),
+    is_discard_fleet = array(0, dim = n_flt),
+    sex_ratio_f = array(0.5, dim = n_regions),
+    rec_region_prop = array(rec_prop, dim = n_regions),
+    h = array(h, dim = n_regions),
+    R0 = R0,
+    newton_steps = 200,
+    natal_region = 1,
+    n_pop_in_region = array(1, dim = n_regions),
+    stray_rate = array(0, dim = 1),
     sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages),
-                                       dim = c(1, n_regions, n_regions, n_ages)))
+                                       dim = c(1, n_regions, n_regions, n_ages))
+  )
 
   six <- function(v) array(rep(v, each = n_pop * n_regions * NY * NS),
                            dim = c(n_pop, n_regions, NY, NS, n_ages, n_sexes))
@@ -572,40 +768,67 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
     }
     tNAA <- array(10, c(n_pop, n_regions, NS, n_ages, n_sexes))  # ALL seasons; see note above
 
-    bh <- list(R0 = R0, h = array(h, dim = c(n_pop, n_regions)),
-               rec_region_prop = array(rec_prop, dim = c(n_pop, n_regions)),
-               rec_seas_prop = array(1 / NS, dim = c(n_pop, NS)),
-               SSB = array(1, dim = c(n_pop, n_regions, 1)),
-               WAA = array(r4(waa), c(n_pop, n_regions, NS, n_ages)),
-               MatAA = array(r4(mat), c(n_pop, n_regions, NS, n_ages)),
-               natmort = array(rep(M_r, times = n_ages), dim = c(n_pop, n_regions, n_ages)),
-               Movement = array(Mov1, c(n_pop, n_regions, n_regions, NS, n_ages)),
-               Mrate = array(Mra1, c(n_pop, n_regions, n_regions, NS, n_ages)),
-               sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages),
+    bh <- list(
+      R0 = R0,
+      h = array(h, dim = c(n_pop, n_regions)),
+      rec_region_prop = array(rec_prop, dim = c(n_pop, n_regions)),
+      rec_seas_prop = array(1 / NS, dim = c(n_pop, NS)),
+      SSB = array(1, dim = c(n_pop, n_regions, 1)),
+      WAA = array(r4(waa), c(n_pop, n_regions, NS, n_ages)),
+      MatAA = array(r4(mat), c(n_pop, n_regions, NS, n_ages)),
+      natmort = array(rep(M_r, times = NS * n_ages), dim = c(n_pop, n_regions, NS, n_ages)),
+      Movement = array(Mov1, c(n_pop, n_regions, n_regions, NS, n_ages)),
+      Mrate = array(Mra1, c(n_pop, n_regions, n_regions, NS, n_ages)),
+      sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages),
                                                   dim = c(n_pop, n_regions, n_regions, n_ages)),
-               stray_rate = array(0, dim = n_pop), init_F = array(0, dim = c(n_regions, NS, n_flt)),
-               fish_sel = array(r5(sel), c(n_pop, n_regions, NS, n_ages, n_flt)),
-               ret_sel = array(1, dim = c(n_pop, n_regions, NS, n_ages, n_flt)),
-               dmr = array(0, dim = c(n_regions, NS, n_flt)),
-               sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
-               rec_dd = 0, rec_lag = 1)   # rec_dd = 0: local DD, matching local_Fmsy_sglpop
+      stray_rate = array(0, dim = n_pop),
+      init_F = array(0, dim = c(n_regions, NS, n_flt)),
+      fish_sel = array(r5(sel), c(n_pop, n_regions, NS, n_ages, n_flt)),
+      ret_sel = array(1, dim = c(n_pop, n_regions, NS, n_ages, n_flt)),
+      dmr = array(0, dim = c(n_regions, NS, n_flt)),
+      sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
+      rec_dd = 0,
+      rec_lag = 1
+    )   # rec_dd = 0: local DD, matching local_Fmsy_sglpop
 
     Do_Population_Projection(
-      n_proj_yrs = NY, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes,
-      sexratio = array(1, dim = c(n_pop, n_regions, NY, n_sexes)), n_fish_fleets = n_flt,
+      n_proj_yrs = NY,
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_ages = n_ages,
+      n_sexes = n_sexes,
+      sexratio = array(1, dim = c(n_pop, n_regions, NY, n_sexes)),
+      n_fish_fleets = n_flt,
       do_recruits_move = 0,
       recruitment = array(rep(R0 * rec_prop, each = n_pop), dim = c(n_pop, n_regions, NY)),
-      terminal_NAA = tNAA, terminal_NAA0 = tNAA,
+      terminal_NAA = tNAA,
+      terminal_NAA0 = tNAA,
       terminal_F = array(rep(Fvec / NS, NS * n_flt), dim = c(n_regions, NS, n_flt)),
       dmr = array(0, dim = c(n_regions, NS, n_flt)),
-      natmort = array(rep(M_r, times = NY * n_ages), dim = c(n_pop, n_regions, NY, n_ages, n_sexes)),
-      natal_region = 1, WAA = six(waa), MatAA = six(mat), WAA_fish = svn(waa),
-      fish_sel = svn(sel), ret_sel = array(1, dim = c(n_pop, n_regions, NY, NS, n_ages, n_sexes, n_flt)),
-      Movement = Mov, sgl_seas_spawning_movement = sgl, stray_rate = array(0, dim = c(n_pop, NY)),
-      f_ref_pt = matrix(Fvec, n_regions, NY), b_ref_pt = NULL, HCR_function = NULL,
-      recruitment_opt = "bh_rec", srr_opt = bh, fmort_opt = "Input", t_spawn = t_spawn,
-      n_seas = NS, seasdur = seasdur, spawn_seas = SPAWN,
-      rec_seas_prop = array(1 / NS, dim = c(n_pop, NS)), Mrate = Mra, move_timing = tm)
+      natmort = array(rep(M_r, times = NY * NS * n_ages), dim = c(n_pop, n_regions, NY, NS, n_ages, n_sexes)),
+      natal_region = 1,
+      WAA = six(waa),
+      MatAA = six(mat),
+      WAA_fish = svn(waa),
+      fish_sel = svn(sel),
+      ret_sel = array(1, dim = c(n_pop, n_regions, NY, NS, n_ages, n_sexes, n_flt)),
+      Movement = Mov,
+      sgl_seas_spawning_movement = sgl,
+      stray_rate = array(0, dim = c(n_pop, NY)),
+      f_ref_pt = matrix(Fvec, n_regions, NY),
+      b_ref_pt = NULL,
+      HCR_function = NULL,
+      recruitment_opt = "bh_rec",
+      srr_opt = bh,
+      fmort_opt = "Input",
+      t_spawn = t_spawn,
+      n_seas = NS,
+      seasdur = seasdur,
+      spawn_seas = SPAWN,
+      rec_seas_prop = array(1 / NS, dim = c(n_pop, NS)),
+      Mrate = Mra,
+      move_timing = tm
+    )
   }
 
   Btot <- numeric(3)
@@ -622,12 +845,12 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
     expect_equal(ssb, Btgt, tolerance = 1e-8,
                  label = sprintf("two-season local Bmsy by region, move_timing = %d", tm))
     expect_equal(sum(ssb), sum(Btgt), tolerance = 1e-8)
-    # genuinely settled rather than still drifting
+    # settled rather than still settling
     expect_equal(sum(pj$proj_SSB[1, , NY]), sum(pj$proj_SSB[1, , NY - 1]), tolerance = 1e-8)
     expect_true(all(ssb > 0))   # guards the all-zero collapse mode described above
   }
 
-  # Vacuity guard: the timings must genuinely disagree on Bmsy in this configuration
+  # Vacuity guard: the timings must disagree on Bmsy in this configuration
   expect_gt(diff(range(Btot)) / mean(Btot), 1e-3)
 })
 
@@ -647,18 +870,39 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
   Fv <- 0.2
 
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
-  ctmc <- expand.grid(pop = 1, regions = seq_len(n_regions), years = 1,
-                      seas = seq_len(NS), ages = ages, sexes = 1)
+  ctmc <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = 1,
+    seas = seq_len(NS),
+    ages = ages,
+    sexes = 1
+  )
   mv <- Get_Movement(
-    move_type = 1, do_recruits_move = 0, n_pop = 1, n_regions = n_regions, n_yrs = 1,
-    n_proj_yrs_devs = 0, n_ages = n_ages, n_sexes = 1, n_seas = NS,
+    move_type = 1,
+    do_recruits_move = 0,
+    n_pop = 1,
+    n_regions = n_regions,
+    n_yrs = 1,
+    n_proj_yrs_devs = 0,
+    n_ages = n_ages,
+    n_sexes = 1,
+    n_seas = NS,
     move_pars = array(0, c(1, n_regions, n_regions - 1, 1, NS, n_ages, 1)),
     move_devs = array(0, c(1, n_regions, n_regions - 1, 1, NS, n_ages, 1)),
-    use_fixed_movement = 0, Fixed_Movement = NULL, ctmc_move_dat = ctmc,
-    preference_formula = ~ 1, diffusion_formula = ~ 1,
-    log_move_diffusion_pars = log(0.35), move_preference_pars = 0,
-    area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-    seasdur = seasdur, ctmc_scale_by_seasdur = 1)
+    use_fixed_movement = 0,
+    Fixed_Movement = NULL,
+    ctmc_move_dat = ctmc,
+    preference_formula = ~ 1,
+    diffusion_formula = ~ 1,
+    log_move_diffusion_pars = log(0.35),
+    move_preference_pars = 0,
+    area_r = rep(1, n_regions),
+    adjacency_mat = adj,
+    ctmc_diffusion_bounds = 0,
+    seasdur = seasdur,
+    ctmc_scale_by_seasdur = 1
+  )
   Mov1 <- array(mv$Movement[1, , , 1, , , 1], c(n_regions, n_regions, NS, n_ages))
   Mra1 <- array(mv$Mrate[1, , , 1, , , 1],    c(n_regions, n_regions, NS, n_ages))
 
@@ -669,20 +913,36 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
   r5 <- function(v) array(rep(v, each = n_regions * NS), dim = c(1, n_regions, NS, n_ages, n_flt))
 
   shared <- function(tm) list(
-    t_spawn = t_spawn, n_seas = NS, seasdur = seasdur, spawn_seas = SPAWN,
-    n_ages = n_ages, n_regions = n_regions,
+    t_spawn = t_spawn,
+    n_seas = NS,
+    seasdur = seasdur,
+    spawn_seas = SPAWN,
+    n_ages = n_ages,
+    n_regions = n_regions,
     F_fract_flt = array(1 / NS, dim = c(n_regions, NS, n_flt)),
     dmr = array(0, dim = c(n_regions, NS, n_flt)),
-    fish_sel = r5(sel), ret_sel = array(1, dim = c(1, n_regions, NS, n_ages, n_flt)),
-    Movement = Mov1, Mrate = Mra1, move_timing = tm, do_recruits_move = 0,
-    WAA = r4(waa), WAA_fish = r4(waa), MatAA = r4(mat),
-    is_discard_fleet = array(0, dim = n_flt))
+    fish_sel = r5(sel),
+    ret_sel = array(1, dim = c(1, n_regions, NS, n_ages, n_flt)),
+    Movement = Mov1,
+    Mrate = Mra1,
+    move_timing = tm,
+    do_recruits_move = 0,
+    WAA = r4(waa),
+    WAA_fish = r4(waa),
+    MatAA = r4(mat),
+    is_discard_fleet = array(0, dim = n_flt)
+  )
 
   msy_data <- function(tm) c(shared(tm), list(
-    natmort = array(rep(M_r, times = n_ages), dim = c(n_regions, n_ages)),
-    rec_seas_prop = array(1 / NS, dim = NS), sex_ratio_f = array(0.5, dim = n_regions),
+    natmort = array(rep(M_r, times = NS * n_ages), dim = c(n_regions, NS, n_ages)),
+    rec_seas_prop = array(1 / NS, dim = NS),
+    sex_ratio_f = array(0.5, dim = n_regions),
     rec_region_prop = array(rec_prop, dim = n_regions),
-    SR_type = 1, h = 0.7, R0 = 100, ln_global_R0 = log(100)))
+    SR_type = 1,
+    h = 0.7,
+    R0 = 100,
+    ln_global_R0 = log(100)
+  ))
 
   # the population-shaped arrays below supersede the region-shaped ones shared()
   # supplies for global_Fmsy. Dropping them first keeps the concatenated list free
@@ -692,18 +952,22 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
     base <- shared(tm)
     c(base[setdiff(names(base), c("WAA", "MatAA", "Movement", "Mrate"))],
       list(
-    n_pop = 1,
-    natmort = array(rep(M_r, times = n_ages), dim = c(1, n_regions, n_ages)),
-    WAA = array(r4(waa), c(1, n_regions, NS, n_ages)),
-    MatAA = array(r4(mat), c(1, n_regions, NS, n_ages)),
-    Movement = array(Mov1, c(1, n_regions, n_regions, NS, n_ages)),
-    Mrate = array(Mra1, c(1, n_regions, n_regions, NS, n_ages)),
-    sex_ratio_f = array(0.5, dim = c(1, n_regions)),
-    rec_seas_prop = array(1 / NS, dim = c(1, NS)), stray_rate = array(0, dim = 1),
-    sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages),
+        n_pop = 1,
+        natmort = array(rep(M_r, times = NS * n_ages), dim = c(1, n_regions, NS, n_ages)),
+        WAA = array(r4(waa), c(1, n_regions, NS, n_ages)),
+        MatAA = array(r4(mat), c(1, n_regions, NS, n_ages)),
+        Movement = array(Mov1, c(1, n_regions, n_regions, NS, n_ages)),
+        Mrate = array(Mra1, c(1, n_regions, n_regions, NS, n_ages)),
+        sex_ratio_f = array(0.5, dim = c(1, n_regions)),
+        rec_seas_prop = array(1 / NS, dim = c(1, NS)),
+        stray_rate = array(0, dim = 1),
+        sgl_seas_spawning_movement = array(rep(diag(n_regions), n_ages),
                                        dim = c(1, n_regions, n_regions, n_ages)),
-    natal_region = 1, n_pop_in_region = array(1, dim = n_regions), SPR_x = 0.40,
-    rec_region_prop = array(rec_prop, dim = c(1, n_regions))))
+        natal_region = 1,
+        n_pop_in_region = array(1, dim = n_regions),
+        SPR_x = 0.40,
+        rec_region_prop = array(rec_prop, dim = c(1, n_regions))
+      ))
   }
 
   ev <- function(fn, dat, parname, val) {
@@ -732,22 +996,41 @@ test_that("CTMC diffusion parameter is recoverable from continuous movement frac
   # consistent -- if the two disagreed, the recovered value would be biased.
   n_regions <- 3; n_ages <- 3; n_sexes <- 1; n_yrs <- 2; n_seas <- 2
   seasdur <- c(0.3, 0.7)
-  dat <- expand.grid(pop = 1, regions = seq_len(n_regions), years = seq_len(n_yrs),
-                     seas = seq_len(n_seas), ages = seq_len(n_ages), sexes = seq_len(n_sexes))
+  dat <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = seq_len(n_yrs),
+    seas = seq_len(n_seas),
+    ages = seq_len(n_ages),
+    sexes = seq_len(n_sexes)
+  )
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
 
   get_move <- function(log_theta) {
     Get_Movement(
-      move_type = 1, do_recruits_move = 1,
-      n_pop = 1, n_regions = n_regions, n_yrs = n_yrs, n_proj_yrs_devs = 0,
-      n_ages = n_ages, n_sexes = n_sexes, n_seas = n_seas,
+      move_type = 1,
+      do_recruits_move = 1,
+      n_pop = 1,
+      n_regions = n_regions,
+      n_yrs = n_yrs,
+      n_proj_yrs_devs = 0,
+      n_ages = n_ages,
+      n_sexes = n_sexes,
+      n_seas = n_seas,
       move_pars = array(0, c(1, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes)),
       move_devs = array(0, c(1, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes)),
-      use_fixed_movement = 0, Fixed_Movement = NULL,
-      ctmc_move_dat = dat, preference_formula = ~ 1, diffusion_formula = ~ 1,
-      log_move_diffusion_pars = log_theta, move_preference_pars = 0,
-      area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-      seasdur = seasdur, ctmc_scale_by_seasdur = 1
+      use_fixed_movement = 0,
+      Fixed_Movement = NULL,
+      ctmc_move_dat = dat,
+      preference_formula = ~ 1,
+      diffusion_formula = ~ 1,
+      log_move_diffusion_pars = log_theta,
+      move_preference_pars = 0,
+      area_r = rep(1, n_regions),
+      adjacency_mat = adj,
+      ctmc_diffusion_bounds = 0,
+      seasdur = seasdur,
+      ctmc_scale_by_seasdur = 1
     )
   }
 
@@ -767,21 +1050,40 @@ test_that("season-duration scaling is identifiable, not absorbed by the diffusio
   # If the seasdur scaling were dropped, no diffusion value could reproduce both.
   n_regions <- 3; n_seas <- 2
   seasdur <- c(0.25, 0.75)
-  dat <- expand.grid(pop = 1, regions = seq_len(n_regions), years = 1,
-                     seas = seq_len(n_seas), ages = 1:2, sexes = 1)
+  dat <- expand.grid(
+    pop = 1,
+    regions = seq_len(n_regions),
+    years = 1,
+    seas = seq_len(n_seas),
+    ages = 1:2,
+    sexes = 1
+  )
   adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
 
   res <- Get_Movement(
-    move_type = 1, do_recruits_move = 1,
-    n_pop = 1, n_regions = n_regions, n_yrs = 1, n_proj_yrs_devs = 0,
-    n_ages = 2, n_sexes = 1, n_seas = n_seas,
+    move_type = 1,
+    do_recruits_move = 1,
+    n_pop = 1,
+    n_regions = n_regions,
+    n_yrs = 1,
+    n_proj_yrs_devs = 0,
+    n_ages = 2,
+    n_sexes = 1,
+    n_seas = n_seas,
     move_pars = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, 2, 1)),
     move_devs = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, 2, 1)),
-    use_fixed_movement = 0, Fixed_Movement = NULL,
-    ctmc_move_dat = dat, preference_formula = ~ 1, diffusion_formula = ~ 1,
-    log_move_diffusion_pars = log(0.4), move_preference_pars = 0,
-    area_r = rep(1, n_regions), adjacency_mat = adj, ctmc_diffusion_bounds = 0,
-    seasdur = seasdur, ctmc_scale_by_seasdur = 1
+    use_fixed_movement = 0,
+    Fixed_Movement = NULL,
+    ctmc_move_dat = dat,
+    preference_formula = ~ 1,
+    diffusion_formula = ~ 1,
+    log_move_diffusion_pars = log(0.4),
+    move_preference_pars = 0,
+    area_r = rep(1, n_regions),
+    adjacency_mat = adj,
+    ctmc_diffusion_bounds = 0,
+    seasdur = seasdur,
+    ctmc_scale_by_seasdur = 1
   )
 
   short <- res$Movement[1, , , 1, 1, 2, 1]
@@ -829,7 +1131,7 @@ test_that("continuous movement reproduces SSB when stepped as one season or seve
 
 test_that("spawning state is consistent between partial and full propagation", {
   # spawn_state at t_spawn then the remaining fraction must equal a full seasonal step,
-  # which is what keeps SSB consistent with the numbers-at-age carried forward.
+  # which is what keeps SSB consistent with the numbers-at-age advanced forward.
   set.seed(52)
   n <- 3
   D <- matrix(stats::runif(n * n, 0.05, 0.4), n, n)

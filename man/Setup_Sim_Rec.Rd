@@ -31,6 +31,7 @@ Setup_Sim_Rec(
   spawn_seas = 1,
   t_spawn = 0,
   rec_lag = 1,
+  SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
   InitDevs_sex_spec = "est_shared_s"
@@ -151,6 +152,10 @@ Because that SSB isn't known until \code{spawn_seas} is reached, age-0
 recruits may only enter in \code{spawn_seas} itself or a later season in
 the same year; \code{rec_seas_prop_input} must be zero for every season
 before \code{spawn_seas} when \code{rec_lag = 0}.}
+
+\item{SR_ref_yr}{Integer year index supplying the biological inputs to unfished
+spawning biomass per recruit, and so the scale of the stock-recruit curve.
+Matches the estimation model's \code{SR_ref_yr}. Default \code{1}.}
 
 \item{Rec_input}{External recruitment array
 \code{[n_pop x n_regions x n_yrs x n_sims]}. Required when

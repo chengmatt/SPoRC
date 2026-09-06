@@ -31,7 +31,7 @@ test_that("expm_nsub = 0 is bit-for-bit the exact matrix exponential", {
 
 test_that("expm_nsub = 1 is exactly solve(I - A)", {
   # This is the plain backward Euler step the option was asked for; the substep
-  # machinery must degenerate to it with no extra matrix products.
+  # routines must degenerate to it with no extra matrix products.
   n <- 5
   Z <- stats::runif(n, 0.05, 0.6)
   m <- make_A(n, Z, seed = 11)
@@ -86,7 +86,7 @@ test_that("implicit movement fractions are exactly column-stochastic without mor
 test_that("the fused operator and integral conserve abundance exactly under the implicit scheme", {
   # get_population_projection takes survivors from T and catch from Integral. Under the
   # exponential these balance by construction; under backward Euler they still do,
-  # because 1'(I - A/n) = 1' + z'/n. Without that, catch and numbers at age would drift
+  # because 1'(I - A/n) = 1' + z'/n. Without that, catch and numbers at age would diverge
   # apart by the discretization error rather than agreeing to machine precision.
   for (nsub in c(1, 4, 32)) {
     for (dur in c(1, 0.4)) {
@@ -191,15 +191,26 @@ test_that("build_plus_group_T threads expm_nsub into the reference point operato
 
   Mrate <- array(rep(Q_row, n_seas), dim = c(n, n, n_seas))
   Mov <- array(rep(diag(n), n_seas), dim = c(n, n, n_seas))
-  M_penult <- rep(0.2, n)   # natural mortality is a per-region vector
-  M_plus <- rep(0.25, n)
+  # M per region and season, same shape as F below
+  M_penult <- matrix(0.2, n, n_seas)
+  M_plus <- matrix(0.25, n, n_seas)
   F_penult <- matrix(0.1, n, n_seas)
   F_plus <- matrix(0.12, n, n_seas)
 
-  args <- list(M_penult = M_penult, M_plus = M_plus, F_penult = F_penult, F_plus = F_plus,
-               Mov_penult = Mov, Mov_plus = Mov, n_regions = n, n_seas = n_seas,
-               seasdur = seasdur, Mrate_penult = Mrate, Mrate_plus = Mrate,
-               move_timing = 2)
+  args <- list(
+    M_penult = M_penult,
+    M_plus = M_plus,
+    F_penult = F_penult,
+    F_plus = F_plus,
+    Mov_penult = Mov,
+    Mov_plus = Mov,
+    n_regions = n,
+    n_seas = n_seas,
+    seasdur = seasdur,
+    Mrate_penult = Mrate,
+    Mrate_plus = Mrate,
+    move_timing = 2
+  )
 
   exact <- do.call(SPoRC:::build_plus_group_T, c(args, list(expm_nsub = 0)))
   impl1 <- do.call(SPoRC:::build_plus_group_T, c(args, list(expm_nsub = 1)))
@@ -207,25 +218,49 @@ test_that("build_plus_group_T threads expm_nsub into the reference point operato
 
   # the flag must actually change the operator, then converge back onto the exact one
   expect_false(isTRUE(all.equal(exact, impl1)))
-  for (nm in names(exact)) {
-    expect_equal(impl512[[nm]], exact[[nm]], tolerance = 1e-3, label = nm)
-    expect_gt(max(abs(impl1[[nm]] - exact[[nm]])), max(abs(impl512[[nm]] - exact[[nm]])))
-  } # end nm loop
+  for (quant_name in names(exact)) {
+    expect_equal(impl512[[quant_name]], exact[[quant_name]], tolerance = 1e-3, label = quant_name)
+    expect_gt(max(abs(impl1[[quant_name]] - exact[[quant_name]])), max(abs(impl512[[quant_name]] - exact[[quant_name]])))
+  } # end quant_name loop
 })
 
 test_that("Setup_Mod_Movement rejects a substep count that is not a power of two", {
   # Substeps are applied by repeated squaring, so anything else would silently be rounded
   # to a different scheme than the user asked for. Reject it at setup instead.
-  il <- Setup_Mod_Dim(years = 1:5, ages = 1:6, lens = NULL, n_regions = 3, n_sexes = 1,
-                      n_fish_fleets = 1, n_srv_fleets = 1, n_seas = 1, n_pop = 1,
-                      verbose = FALSE)
+  il <- Setup_Mod_Dim(
+    years = 1:5,
+    ages = 1:6,
+    lens = NULL,
+    n_regions = 3,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_seas = 1,
+    n_pop = 1,
+    verbose = FALSE
+  )
   adj <- matrix(1L, 3, 3); diag(adj) <- 0L
   mv <- function(nsub) Setup_Mod_Movement(
-    input_list = il, move_type = 1, do_recruits_move = 0, use_fixed_movement = 0,
-    ctmc_move_dat = expand.grid(pop = 1, regions = 1:3, years = 1:5, seas = 1,
-                                ages = 1:6, sexes = 1),
-    adjacency_mat = adj, area_r = rep(1, 3), diffusion_formula = ~ 1,
-    preference_formula = ~ 0, move_timing = 2, move_expm_nsub = nsub, verbose = FALSE)
+    input_list = il,
+    move_type = 1,
+    do_recruits_move = 0,
+    use_fixed_movement = 0,
+    ctmc_move_dat = expand.grid(
+      pop = 1,
+      regions = 1:3,
+      years = 1:5,
+      seas = 1,
+      ages = 1:6,
+      sexes = 1
+    ),
+    adjacency_mat = adj,
+    area_r = rep(1, 3),
+    diffusion_formula = ~ 1,
+    preference_formula = ~ 0,
+    move_timing = 2,
+    move_expm_nsub = nsub,
+    verbose = FALSE
+  )
 
   for (good in c(0, 1, 2, 4, 8, 512)) {
     expect_equal(mv(good)$data$move_expm_nsub, as.integer(good))

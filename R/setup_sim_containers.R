@@ -1,7 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Allocates the arrays the operating model fills in. Called early in the
-# Setup_Sim_* chain so the later stages have somewhere to write.
+# Allocates the arrays the operating model fills in. Called early in the Setup_Sim_* chain so the
+# later stages have somewhere to write.
 
 #' Initialize output containers for the operating model simulation
 #'
@@ -153,7 +153,7 @@ Setup_Sim_Containers <- function(sim_list) {
   sim_list$ObsCatch <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$TrueCatch <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
 
-  # At-age observation streams. Allocated always so the simulator can write into
+  # At-age data sources. Allocated always so the simulator can write into
   # them whenever a fleet is configured for catch at age or an index at age.
   aa_fish <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
                sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)

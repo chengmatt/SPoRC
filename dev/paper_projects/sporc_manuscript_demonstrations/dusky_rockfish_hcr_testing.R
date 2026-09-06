@@ -245,8 +245,9 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
   )
 
   tmp_natmort <- array(
-    rep(obj$rep$natmort[,, y, , ], each = n_proj),
-    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, length(asmt_data$ages), asmt_data$n_sexes)
+    rep(obj$rep$natmort[,, y, , , ], each = n_proj),
+    dim = c(asmt_data$n_pop, asmt_data$n_regions, n_proj, asmt_data$n_seas,
+            length(asmt_data$ages), asmt_data$n_sexes)
   )
 
   # Extract terminal fishing mortality
@@ -356,7 +357,7 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
         catch = tmp_TAC[1, r, tac_year_index, 1, f],
         NAA = sim_env$NAA[1, r, y + 1, 1, , , sim],
         WAA = sim_env$WAA[1, r, y + 1, 1, , , sim],
-        natmort = sim_env$natmort[1, r, y + 1, , , sim],
+        natmort = sim_env$natmort[1, r, y + 1, , , , sim],
         fish_sel = sim_env$fish_sel[1,r, y + 1, 1, , , f, sim]
       )
     },
@@ -437,8 +438,12 @@ run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
           # Fit assessment model with error handling
           fit_result <- tryCatch({
             SPoRC::fit_model(
-              asmt_data, parameters, mapping,
-              random = NULL, newton_loops = 1, silent = TRUE
+              asmt_data,
+              parameters,
+              mapping,
+              random = NULL,
+              newton_loops = 1,
+              silent = TRUE
             )
           }, error = function(e) {
             message(sprintf("Model fit failed for replicate %d in year %d: %s",
@@ -740,8 +745,7 @@ mp_list <- list(
   ),
 
   # 2. F40% with B40% threshold
-  # The assessment is performed and reference points are calculated based on an SPR of 40%.
-  # A threshold rule (B40%) is applied, where F declines linearly as biomass drops below 40% of B_SPR.
+  # reference points at SPR 40%, with F declining linearly below 40% of B_SPR
   f40_thresh = list(
     skip_assessment = FALSE,
     reference_points_opt = list(
@@ -764,8 +768,7 @@ mp_list <- list(
   ),
 
   # 3. F40% constant
-  # Similar to f40_thresh, but no biomass threshold is applied.
-  # Fishing mortality remains constant at F40%, regardless of biomass status.
+  # as f40_thresh but with no biomass threshold, so F stays at F40% regardless of status
   f40_const = list(
     skip_assessment = FALSE,
     reference_points_opt = list(
@@ -787,10 +790,8 @@ mp_list <- list(
     catch_opt = function(catch, prev_catch = NULL, catch_cap = NULL) catch
   ),
 
-  # 4. F40% hybrid: B60% threshold with 3k ton catch cap
-  # Combines a precautionary threshold (B60%) with a hard catch cap (3,000 tons).
-  # This MP reduces F more aggressively at lower biomass and constrains annual catches
-  # to prevent excessive harvest in high-recruitment years.
+  # 4. F40% hybrid: B60% threshold with a 3,000 ton catch cap
+  # cuts F harder at low biomass and caps annual catch in high-recruitment years
   f40_hybrid = list(
     skip_assessment = FALSE,
     reference_points_opt = list(
@@ -972,13 +973,20 @@ period_summary <- ssb_results %>%
 
 # plot time series (without legend)
 lineplot_no_legend <- ggplot() +
-  geom_ribbon(sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
-              mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
-              alpha = 0.25, color = NA) +
+  geom_ribbon(
+    sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
+    mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
+    alpha = 0.25,
+    color = NA
+  ) +
   geom_line(sumry %>% filter(!Type %in% c('Fishing Mortality', "Recruitment")),
             mapping = aes(x = Year, y = median, color = MP, linetype = MP), lwd = 1.1) +
-  geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment")),
-            mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
+  geom_line(
+    sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment")),
+    mapping = aes(x = Year, y = median),
+    lwd = 1.1,
+    color = 'black'
+  ) +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
   scale_color_manual(values = cols) +
   scale_fill_manual(values = cols) +
@@ -986,7 +994,12 @@ lineplot_no_legend <- ggplot() +
   ggh4x::facet_grid2(Scenario ~ Type, scales = "free", independent = "y") +
   theme_bw(base_size = 17) +
   theme(legend.position = "none") +  # Remove legend from main plot
-  labs(x = "Year", y = "Median Value", color = "Management Procedure", lty = "Management Procedure") +
+  labs(
+    x = "Year",
+    y = "Median Value",
+    color = "Management Procedure",
+    lty = "Management Procedure"
+  ) +
   theme(
     plot.background = element_rect(fill = NA, color = NA),
     panel.background = element_rect(fill = NA, color = NA)
@@ -994,13 +1007,20 @@ lineplot_no_legend <- ggplot() +
 
 # Extract legend
 lineplot_with_legend <- ggplot() +
-  geom_ribbon(sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
-              mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
-              alpha = 0.25, color = NA) +
+  geom_ribbon(
+    sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
+    mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
+    alpha = 0.25,
+    color = NA
+  ) +
   geom_line(sumry %>% filter(!Type %in% c('Fishing Mortality', "Recruitment")),
             mapping = aes(x = Year, y = median, color = MP, linetype = MP), lwd = 1.1) +
-  geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment")),
-            mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
+  geom_line(
+    sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment")),
+    mapping = aes(x = Year, y = median),
+    lwd = 1.1,
+    color = 'black'
+  ) +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
   scale_color_manual(values = cols) +
   scale_fill_manual(values = cols) +
@@ -1018,13 +1038,20 @@ legend <- cowplot::get_legend(lineplot_with_legend)
 
 # Filter to three HCRs for presentations
 lineplot_pres <- ggplot() +
-  geom_ribbon(sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
-              mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
-              alpha = 0.25, color = NA) +
+  geom_ribbon(
+    sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
+    mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
+    alpha = 0.25,
+    color = NA
+  ) +
   geom_line(sumry %>% filter(!Type %in% c('Fishing Mortality', "Recruitment"), MP %in% c("f40_thresh", "f40_hybrid", "f40_const")),
             mapping = aes(x = Year, y = median, color = MP, linetype = MP), lwd = 1.1) +
-  geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment")),
-            mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
+  geom_line(
+    sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment")),
+    mapping = aes(x = Year, y = median),
+    lwd = 1.1,
+    color = 'black'
+  ) +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
   scale_color_manual(values = cols) +
   scale_fill_manual(values = cols) +
@@ -1110,7 +1137,9 @@ main_plots <- cowplot::plot_grid(
 ggsave(
   here("vignettes", "figures", "p_dusky_closed_loop.png"),
   main_plots,
-  height = 15, width = 29, bg = 'transparent'
+  height = 15,
+  width = 29,
+  bg = 'transparent'
 )
 
 ggsave(
@@ -1121,13 +1150,20 @@ ggsave(
 
 # plot time series (without legend)
 lineplot_no_legend_filt <- ggplot() +
-  geom_ribbon(sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
-              mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
-              alpha = 0.25, color = NA) +
+  geom_ribbon(
+    sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
+    mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
+    alpha = 0.25,
+    color = NA
+  ) +
   geom_line(sumry %>% filter(!Type %in% c('Fishing Mortality', "Recruitment" ),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
             mapping = aes(x = Year, y = median, color = MP, linetype = MP), lwd = 1.1) +
-  geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment"),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
-            mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
+  geom_line(
+    sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment"),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
+    mapping = aes(x = Year, y = median),
+    lwd = 1.1,
+    color = 'black'
+  ) +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
   scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
   scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
@@ -1135,7 +1171,12 @@ lineplot_no_legend_filt <- ggplot() +
   ggh4x::facet_grid2(Scenario ~ Type, scales = "free", independent = "y") +
   theme_bw(base_size = 17) +
   theme(legend.position = "none") +  # Remove legend from main plot
-  labs(x = "Year", y = "Median Value", color = "Management Procedure", lty = "Management Procedure") +
+  labs(
+    x = "Year",
+    y = "Median Value",
+    color = "Management Procedure",
+    lty = "Management Procedure"
+  ) +
   theme(
     plot.background = element_rect(fill = NA, color = NA),
     panel.background = element_rect(fill = NA, color = NA)
@@ -1143,13 +1184,20 @@ lineplot_no_legend_filt <- ggplot() +
 
 # Extract legend
 lineplot_with_legend_filt <- ggplot() +
-  geom_ribbon(sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
-              mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
-              alpha = 0.25, color = NA) +
+  geom_ribbon(
+    sumry %>% filter(Year > 2024, !Type %in% c('Fishing Mortality', "Recruitment"), MP == 'f40_thresh'),
+    mapping = aes(x = Year, y = median, ymin = lwr, ymax = upr),
+    alpha = 0.25,
+    color = NA
+  ) +
   geom_line(sumry %>% filter(!Type %in% c('Fishing Mortality', "Recruitment" ),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
             mapping = aes(x = Year, y = median, color = MP, linetype = MP), lwd = 1.1) +
-  geom_line(sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment"),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
-            mapping = aes(x = Year, y = median), lwd = 1.1, color = 'black') +
+  geom_line(
+    sumry %>% filter(Year < 2025, !Type %in% c('Fishing Mortality', "Recruitment"),  MP %in% c("f0", "f40_const", "f40_thresh", "f40_hybrid")),
+    mapping = aes(x = Year, y = median),
+    lwd = 1.1,
+    color = 'black'
+  ) +
   geom_vline(xintercept = 2024.5, lty = 2, lwd = 1) +
   scale_color_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
   scale_fill_manual(values = c("#E69F00", "#56B4E9", "#009E73", "#0072B2")) +
@@ -1238,7 +1286,9 @@ main_plots_filt <- cowplot::plot_grid(
 ggsave(
   here("dev", "paper_projects", "sporc_manuscript_demonstrations", "figs", "dusky_closedloop.png"),
   main_plots_filt,
-  height = 8, width = 16, bg = 'transparent'
+  height = 8,
+  width = 16,
+  bg = 'transparent'
 )
 
 
@@ -1294,9 +1344,12 @@ hcr_plot <- ggplot(df %>%
                    aes(x = biomass, y = f_ratio, color = scenario, lty = scenario)) +
   geom_line(linewidth = 2) +
   scale_color_manual(values = cols) +
-  labs(x = "Spawning Stock Biomass",
-       y = "Fishing Mortality Rate",
-       color = "MP", lty = 'MP') +
+  labs(
+    x = "Spawning Stock Biomass",
+    y = "Fishing Mortality Rate",
+    color = "MP",
+    lty = 'MP'
+  ) +
   theme_bw(base_size = 20) +
   theme(legend.position = "top")
 

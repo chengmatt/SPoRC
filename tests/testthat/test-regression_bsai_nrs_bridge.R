@@ -1,10 +1,5 @@
-# Self-validating bridge test. The expectations are not stored SPoRC output: they are
-# the 2024 BSAI northern rock sole assessment's own reported quantities, shipped in
-# sgl_rg_bsai_nrs_data$fm. Every parameter is set to the assessment's maximum likelihood
-# estimate and the model is evaluated there without optimizing, so a failure means the
-# population dynamics, a likelihood, or a selectivity form no longer reproduces the
-# assessment at a point where it is known to. Do not loosen the tolerances to make this
-# pass. See the BSAI northern rock sole case study vignette.
+# Self-validating bridge test: the expectations are the 2024 BSAI northern rock sole assessment's own
+# reported quantities in sgl_rg_bsai_nrs_data$fm, evaluated at its estimate without optimizing.
 
 library(SPoRC)
 library(testthat)
@@ -24,9 +19,18 @@ test_that("BSAI northern rock sole bridges to the 2024 ADMB assessment at its ow
   inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
 
   input_list <- Setup_Mod_Dim(
-    years = yrs, ages = dat$ages, lens = NA, n_regions = dat$n_regions, n_sexes = n_sexes,
-    n_fish_fleets = dat$n_fish_fleets, n_srv_fleets = n_srv, n_seas = dat$n_seas,
-    n_pop = dat$n_pop, natal_region = dat$natal_region, verbose = FALSE)
+    years = yrs,
+    ages = dat$ages,
+    lens = NA,
+    n_regions = dat$n_regions,
+    n_sexes = n_sexes,
+    n_fish_fleets = dat$n_fish_fleets,
+    n_srv_fleets = n_srv,
+    n_seas = dat$n_seas,
+    n_pop = dat$n_pop,
+    natal_region = dat$natal_region,
+    verbose = FALSE
+  )
 
   # the assessment's Ricker, R = A S exp(-B S), in SPoRC's depletion form
   Nspr <- numeric(n_ages)
@@ -38,90 +42,164 @@ test_that("BSAI northern rock sole bridges to the 2024 ADMB assessment at its ow
   h_sr <- exp(a_sr) / (4 + exp(a_sr))
 
   input_list <- Setup_Mod_Rec(
-    input_list = input_list, rec_model = "mean_rec", rec_lag = 1, SR_ref_yr = n_yrs,
-    sr_penalty = "ricker", sr_pen_sigma = dat$sr_pen_sigma, sr_pen_yrs = dat$sr_pen_yrs,
-    sr_R0_spec = "est", steepness_h = array(inv_steepness(h_sr), dim = c(1, 1)),
-    h_spec = "est_shared_pop_r", ln_sr_R0 = array(log(a_sr / (exp(mle$R_logbeta) * phi0)), dim = 1),
-    do_rec_bias_ramp = 1, bias_year = rep(n_yrs + 1, 4), sigmaR_switch = 1, sigmaR_spec = "fix",
+    input_list = input_list,
+    rec_model = "mean_rec",
+    rec_lag = 1,
+    SR_ref_yr = n_yrs,
+    sr_penalty = "ricker",
+    sr_pen_sigma = dat$sr_pen_sigma,
+    sr_pen_yrs = dat$sr_pen_yrs,
+    sr_R0_spec = "est",
+    steepness_h = array(inv_steepness(h_sr), dim = c(1, 1)),
+    h_spec = "est_shared_pop_r",
+    ln_sr_R0 = array(log(a_sr / (exp(mle$R_logbeta) * phi0)), dim = 1),
+    do_rec_bias_ramp = 1,
+    bias_year = rep(n_yrs + 1, 4),
+    sigmaR_switch = 1,
+    sigmaR_spec = "fix",
     ln_sigmaR = array(log(dat$sigmaR), dim = c(2, 1, 1)),
-    RecDevs_pen_center = "fixed", dont_est_recdev_last = 0,
-    init_age_strc = 4, equil_init_age_strc = 2, InitDevs_spec = NULL,
-    InitDevs_sex_spec = "est_all", InitDevs_pen_center = "own_mean",
-    Use_init_sex_pen = 1, init_sex_pen_sigma = dat$sigmaR,
-    ln_global_R0 = mle$mean_log_rec, t_spawn = dat$t_spawn, use_rinit = 0)
+    RecDevs_pen_center = "fixed",
+    dont_est_recdev_last = 0,
+    init_age_strc = 4,
+    equil_init_age_strc = 2,
+    InitDevs_spec = NULL,
+    InitDevs_sex_spec = "est_all",
+    InitDevs_pen_center = "own_mean",
+    Use_init_sex_pen = 1,
+    init_sex_pen_sigma = dat$sigmaR,
+    ln_global_R0 = mle$mean_log_rec,
+    t_spawn = dat$t_spawn,
+    use_rinit = 0
+  )
 
   input_list <- Setup_Mod_Biologicals(
-    input_list = input_list, WAA = dat$WAA, WAA_fish = dat$WAA_fish, WAA_srv = dat$WAA_srv,
-    MatAA = dat$MatAA, AgeingError = dat$AgeingError, fit_lengths = 0, M_spec = "est_ln_M",
-    M_popblk_spec = list(1), M_regionblk_spec = list(1), M_yearblk_spec = list(1:n_yrs),
-    M_ageblk_spec = list(1:n_ages), M_sexblk_spec = list(1, 2), Use_M_prior = 1,
-    M_prior = data.frame(popblk = 1, regionblk = 1, yearblk = 1, ageblk = 1, sexblk = 1,
-                         mu = dat$m_prior$mu, sd = dat$m_prior$sd),
-    addtocomp = 1e-3, comp_const_obs = 1, addtosrvidx = 0, addtofishidx = 0)
+    input_list = input_list,
+    WAA = dat$WAA,
+    WAA_fish = dat$WAA_fish,
+    WAA_srv = dat$WAA_srv,
+    MatAA = dat$MatAA,
+    AgeingError = dat$AgeingError,
+    fit_lengths = 0,
+    M_spec = "est_ln_M",
+    M_popblk_spec = list(1),
+    M_regionblk_spec = list(1),
+    M_yearblk_spec = list(1:n_yrs),
+    M_ageblk_spec = list(1:n_ages),
+    M_sexblk_spec = list(1, 2),
+    Use_M_prior = 1,
+    M_prior = data.frame(
+      popblk = 1,
+      regionblk = 1,
+      yearblk = 1,
+      ageblk = 1,
+      sexblk = 1,
+      mu = dat$m_prior$mu,
+      sd = dat$m_prior$sd
+    ),
+    addtocomp = 1e-3,
+    comp_const_obs = 1,
+    addtosrvidx = 0,
+    addtofishidx = 0
+  )
 
-  input_list <- Setup_Mod_Movement(input_list = input_list, use_fixed_movement = 1,
-                                   Fixed_Movement = NA, do_recruits_move = 0)
+  input_list <- Setup_Mod_Movement(
+    input_list = input_list,
+    use_fixed_movement = 1,
+    Fixed_Movement = NA,
+    do_recruits_move = 0
+  )
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   suppressWarnings(input_list <- Setup_Mod_Catch_and_F(
-    input_list = input_list, ObsCatch = dat$ObsCatch, UseCatch = dat$UseCatch,
-    Use_F_pen = 0, ln_F_mean_spec = "fix", sigmaC_spec = "fix",
-    ln_sigmaC = array(log(dat$sigmaC), dim = c(1, n_yrs, 1, 1))))
+    input_list = input_list,
+    ObsCatch = dat$ObsCatch,
+    UseCatch = dat$UseCatch,
+    Use_F_pen = 0,
+    ln_F_mean_spec = "fix",
+    sigmaC_spec = "fix",
+    ln_sigmaC = array(log(dat$sigmaC), dim = c(1, n_yrs, 1, 1))
+  ))
 
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = array(NA_real_, dim = c(1, n_yrs, 1, 1)),
     ObsFishIdx_SE = array(NA_real_, dim = c(1, n_yrs, 1, 1)),
     UseFishIdx = array(0, dim = c(1, n_yrs, 1, 1)),
-    ObsFishAgeComps = dat$ObsFishAgeComps, UseFishAgeComps = dat$UseFishAgeComps,
+    ObsFishAgeComps = dat$ObsFishAgeComps,
+    UseFishAgeComps = dat$UseFishAgeComps,
     ISS_FishAgeComps = dat$ISS_FishAgeComps,
     ObsFishLenComps = array(NA_real_, dim = c(1, n_yrs, 1, length(input_list$data$lens), n_sexes, 1)),
     UseFishLenComps = array(0, dim = c(1, n_yrs, 1, 1)),
     ISS_FishLenComps = array(0, dim = c(1, n_yrs, 1, n_sexes, 1)),
-    fish_idx_type = "none", FishIdx_LikeType = "lognormal",
-    FishAgeComps_LikeType = "Multinomial", FishLenComps_LikeType = "none",
+    fish_idx_type = "none",
+    FishIdx_LikeType = "lognormal",
+    FishAgeComps_LikeType = "Multinomial",
+    FishLenComps_LikeType = "none",
     FishAgeComps_Type = "spltRjntS_Year_1-terminal_Fleet_1",
-    FishLenComps_Type = "none_Year_1-terminal_Fleet_1")
+    FishLenComps_Type = "none_Year_1-terminal_Fleet_1"
+  )
 
   input_list <- Setup_Mod_SrvIdx_and_Comps(
-    input_list = input_list, ObsSrvIdx = dat$ObsSrvIdx, ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
-    UseSrvIdx = dat$UseSrvIdx, ObsSrvAgeComps = dat$ObsSrvAgeComps,
-    UseSrvAgeComps = dat$UseSrvAgeComps, ISS_SrvAgeComps = dat$ISS_SrvAgeComps,
+    input_list = input_list,
+    ObsSrvIdx = dat$ObsSrvIdx,
+    ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
+    UseSrvIdx = dat$UseSrvIdx,
+    ObsSrvAgeComps = dat$ObsSrvAgeComps,
+    UseSrvAgeComps = dat$UseSrvAgeComps,
+    ISS_SrvAgeComps = dat$ISS_SrvAgeComps,
     ObsSrvLenComps = array(NA_real_, dim = c(1, n_yrs, 1, length(input_list$data$lens), n_sexes, n_srv)),
     UseSrvLenComps = array(0, dim = c(1, n_yrs, 1, n_srv)),
     ISS_SrvLenComps = array(0, dim = c(1, n_yrs, 1, n_sexes, n_srv)),
-    srv_idx_type = c("biom", "none"), SrvIdx_LikeType = rep("lognormal", n_srv),
-    SrvAgeComps_LikeType = c("none", "Multinomial"), SrvLenComps_LikeType = rep("none", n_srv),
+    srv_idx_type = c("biom", "none"),
+    SrvIdx_LikeType = rep("lognormal", n_srv),
+    SrvAgeComps_LikeType = c("none", "Multinomial"),
+    SrvLenComps_LikeType = rep("none", n_srv),
     SrvAgeComps_Type = c("none_Year_1-terminal_Fleet_1", "spltRjntS_Year_1-terminal_Fleet_2"),
     SrvLenComps_Type = paste0("none_Year_1-terminal_Fleet_", 1:n_srv),
-    t_srv = array(dat$t_srv, dim = c(1, 1, n_srv)))
+    t_srv = array(dat$t_srv, dim = c(1, 1, n_srv))
+  )
 
   input_list <- Setup_Mod_Fishsel_and_Q(
     input_list = input_list,
     fish_sel_model = paste0("logist1_Fleet_1_NSelBins_", dat$nselages),
-    cont_tv_fish_sel = "iid_Fleet_1", fish_sel_blocks = "none_Fleet_1",
-    fish_q_blocks = "none_Fleet_1", fish_fixed_sel_pars_spec = "est_all",
-    fish_sel_devs_spec = "est_all", fish_sel_sex_offset = "scale",
-    fishsel_pe_pars_spec = "fix", fish_q_spec = "fix")
+    cont_tv_fish_sel = "iid_Fleet_1",
+    fish_sel_blocks = "none_Fleet_1",
+    fish_q_blocks = "none_Fleet_1",
+    fish_fixed_sel_pars_spec = "est_all",
+    fish_sel_devs_spec = "est_all",
+    fish_sel_sex_offset = "scale",
+    fishsel_pe_pars_spec = "fix",
+    fish_q_spec = "fix"
+  )
 
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
     srv_sel_model = paste0("logist1_Fleet_", 1:n_srv, "_NSelBins_", dat$nselages),
     cont_tv_srv_sel = paste0("none_Fleet_", 1:n_srv),
-    srv_sel_blocks = paste0("none_Fleet_", 1:n_srv), srv_q_blocks = paste0("none_Fleet_", 1:n_srv),
+    srv_sel_blocks = paste0("none_Fleet_", 1:n_srv),
+    srv_q_blocks = paste0("none_Fleet_", 1:n_srv),
     srv_fixed_sel_pars_spec = c("est_all", "est_shared_f_1"),
-    srv_sel_sex_offset = rep("par", n_srv), srv_q_spec = c("est_all", "fix"),
+    srv_sel_sex_offset = rep("par", n_srv),
+    srv_q_spec = c("est_all", "fix"),
     Use_srv_q_prior = 1,
     srv_q_prior = data.frame(region = 1, fleet = 1, block = 1, mu = dat$q_prior$mu, sd = dat$q_prior$sd),
-    t_srv = array(dat$t_srv, dim = c(1, 1, n_srv)))
+    t_srv = array(dat$t_srv, dim = c(1, 1, n_srv))
+  )
 
   input_list <- Setup_Mod_Weighting(
-    input_list = input_list, Wt_Catch = 1, Wt_FishIdx = 0, Wt_SrvIdx = 1, Wt_Rec = 1,
-    Wt_Init_Rec = 1, Wt_F = 1, Wt_Tagging = 0,
+    input_list = input_list,
+    Wt_Catch = 1,
+    Wt_FishIdx = 0,
+    Wt_SrvIdx = 1,
+    Wt_Rec = 1,
+    Wt_Init_Rec = 1,
+    Wt_F = 1,
+    Wt_Tagging = 0,
     Wt_FishAgeComps = array(1, dim = c(1, n_yrs, 1, n_sexes, 1)),
     Wt_FishLenComps = array(1, dim = c(1, n_yrs, 1, n_sexes, 1)),
     Wt_SrvAgeComps = array(1, dim = c(1, n_yrs, 1, n_sexes, n_srv)),
-    Wt_SrvLenComps = array(1, dim = c(1, n_yrs, 1, n_sexes, n_srv)))
+    Wt_SrvLenComps = array(1, dim = c(1, n_yrs, 1, n_sexes, n_srv))
+  )
 
   data <- input_list$data
   parameters <- input_list$par

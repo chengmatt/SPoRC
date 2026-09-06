@@ -25,7 +25,7 @@ single index. \code{"none"} maps all deviations to \code{NA}.}
 \item{Movement_cont_pe_pars_spec}{Character string controlling estimation of
 the process-error variance for movement deviations. One of:
 \describe{
-  \item{\code{"none"} or \code{"fix"}}{All \code{move_pe_pars} held fixed
+  \item{\code{"none"} or \code{"fix"}}{All \code{move_pe_pars} kept fixed
     (mapped to \code{NA} or at starting values).}
   \item{\code{"est_shared"}}{Single variance parameter shared across all
     dimensions (all elements mapped to index 1).}

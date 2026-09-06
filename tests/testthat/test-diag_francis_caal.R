@@ -1,7 +1,5 @@
-# Francis weighting for conditional age-at-length. A CAAL row is the age
-# composition of the fish aged from one length bin, so a fleet's samples are the
-# (year, season, length bin) rows and the weight pools the standardized mean-age
-# residuals over all of them.
+# Francis weighting for conditional age-at-length. A CAAL row is the age composition of the fish aged from
+# one length bin, so a fleet's samples are its (year, season, length bin) rows, pooled into one weight.
 
 library(SPoRC)
 library(testthat)
@@ -46,12 +44,19 @@ test_that("the CAAL weight is one pooled inverse variance per fleet, region and 
   wts <- input_list$data$Wt_Srv_caal
   wts[] <- NA
   info <- get_francis_weights_caal(
-    n_regions = input_list$data$n_regions, n_sexes = input_list$data$n_sexes,
-    n_fleets = input_list$data$n_srv_fleets, n_years = length(input_list$data$years),
-    n_seas = input_list$data$n_seas, n_lens = dim(input_list$data$UseSrv_caal)[4],
-    Use = input_list$data$UseSrv_caal, ISS = input_list$data$ISS_Srv_caal,
-    Pred_array = props$Pred_Srv_caal, Obs_array = props$Obs_Srv_caal,
-    weights = wts, bins = seq_len(n_bins), comp_type = input_list$data$Srv_caal_Type
+    n_regions = input_list$data$n_regions,
+    n_sexes = input_list$data$n_sexes,
+    n_fleets = input_list$data$n_srv_fleets,
+    n_years = length(input_list$data$years),
+    n_seas = input_list$data$n_seas,
+    n_lens = dim(input_list$data$UseSrv_caal)[4],
+    Use = input_list$data$UseSrv_caal,
+    ISS = input_list$data$ISS_Srv_caal,
+    Pred_array = props$Pred_Srv_caal,
+    Obs_array = props$Obs_Srv_caal,
+    weights = wts,
+    bins = seq_len(n_bins),
+    comp_type = input_list$data$Srv_caal_Type
   )
 
   # these compositions are split by region and sex, so the weight is constant
@@ -64,7 +69,7 @@ test_that("the CAAL weight is one pooled inverse variance per fleet, region and 
   has_caal <- which(apply(input_list$data$UseSrv_caal, 5, sum) > 0)
   expect_gt(length(has_caal), 0)
 
-  # a cell that aged fish carries one weight across every year and length bin
+  # a cell that aged fish has one weight across every year and length bin
   for(f in has_caal) {
     any_cell <- FALSE
     for(r in 1:input_list$data$n_regions) {
@@ -133,9 +138,13 @@ test_that("do_francis_reweighting returns CAAL weights alongside the rest", {
   fit <- fit_model(input_list$data, input_list$par, input_list$map, do_optim = FALSE, silent = TRUE)
 
   n_obs_ages <- dim(input_list$data$ObsSrvAgeComps)[4]
-  wts <- do_francis_reweighting(data = input_list$data, rep = fit$rep,
-                                age_labels = 1:n_obs_ages, len_labels = input_list$data$lens,
-                                year_labels = input_list$data$years)
+  wts <- do_francis_reweighting(
+    data = input_list$data,
+    rep = fit$rep,
+    age_labels = 1:n_obs_ages,
+    len_labels = input_list$data$lens,
+    year_labels = input_list$data$years
+  )
 
   expect_true("new_srv_caal_wts" %in% names(wts))
   expect_true("new_fish_caal_wts" %in% names(wts))

@@ -1,8 +1,4 @@
-# Purpose: Build sgl_rg_goa_nork_data, the container for the GOA northern
-#          rockfish case study. Everything the case study and its regression
-#          tests need lives in the object: model inputs, the ADMB maximum
-#          likelihood estimate used as a seed, and the ADMB output the bridge
-#          is compared against.
+# Purpose: Build sgl_rg_goa_nork_data, the inputs, ADMB seed, and ADMB output for the GOA northern rockfish case study
 # Creator: Matthew LH. Cheng
 # Date Created: 8/7/26
 #
@@ -17,9 +13,7 @@ dat <- readRDS(here("dev", "dev_data", "goa_northern_dat.RDS"))
 m24 <- readRDS(here("dev", "dev_data", "goa_northern_model.rds"))
 
 # Dimensions -------------------------------------------------------------------
-# The model carries 50 age classes (2 to 51) while the compositions are
-# reported over 44 (2 to 45), so the ageing error matrix maps the model ages
-# onto the shorter observed range.
+# 50 model ages (2 to 51) against 44 observed (2 to 45): the ageing error matrix maps between them
 n_pop <- 1
 n_regions <- 1
 n_seas <- 1
@@ -43,9 +37,8 @@ stopifnot(length(dat$waa) == n_ages, n_obs_ages == 44, n_lens == 31)
 WAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 WAA[1, 1, , 1, , 1] <- matrix(rep(dat$waa, each = n_yrs), nrow = n_yrs)
 
-# Maturity is estimated inside the ADMB template from the binomial maturity
-# data rather than read from the inputs, so the fitted ogive is carried over
-# and held fixed in SPoRC.
+# maturity is estimated inside the ADMB template from the binomial maturity data rather than read
+# from the inputs, so the fitted ogive is reused and fixed in SPoRC
 MatAA <- array(NA_real_, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 MatAA[1, 1, , 1, , 1] <- matrix(rep(m24$maa, each = n_yrs), nrow = n_yrs)
 
@@ -58,18 +51,16 @@ AgeingError <- array(NA_real_, dim = c(n_yrs, n_ages, n_obs_ages))
 for(y in seq_len(n_yrs)) AgeingError[y, , ] <- dat$age_error
 
 # Catch ------------------------------------------------------------------------
-# The assessment down weights the reconstructed early catches (1961 to 1977) at
-# a sum of squares weight of 5 and holds the modern series at 50. The weights
-# are carried to SPoRC as fixed lognormal catch standard deviations.
+# the reconstructed early catches (1961 to 1977) carry a sum of squares weight of 5 against the
+# modern series' 50, kept to SPoRC as fixed lognormal catch standard deviations
 ObsCatch <- array(dat$catch_obs, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 UseCatch <- array(dat$catch_ind, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 ln_sigmaC <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 ln_sigmaC[1, , 1, 1] <- log(sqrt(1 / (2 * dat$catch_wt)))
 
 # Survey index -----------------------------------------------------------------
-# The GOA bottom trawl survey is the only index. The reported standard
-# deviation is on the arithmetic scale and is converted to the exact lognormal
-# sigma.
+# the GOA bottom trawl survey is the only index. its reported standard deviation is arithmetic
+# scale, converted to the exact lognormal sigma
 srv_ind <- dat$srv_ind
 ObsSrvIdx <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
 ObsSrvIdx_SE <- array(NA_real_, dim = c(n_regions, n_yrs, n_seas, n_srv_fleets))
@@ -108,7 +99,7 @@ make_iss_comp <- function(iss_vec, ind_vec, n_fl) {
 }
 
 # Compositions -----------------------------------------------------------------
-# Every composition source carries the assessment's fixed weight of 0.5, which
+# Every composition source holds the assessment's fixed weight of 0.5, which
 # is applied over the whole weight array rather than only the observed years.
 ObsFishAgeComps <- make_obs_comp(dat$fish_age_obs, dat$fish_age_ind, n_obs_ages, n_fish_fleets)
 UseFishAgeComps <- make_use_comp(dat$fish_age_ind, n_fish_fleets)
@@ -132,10 +123,8 @@ ISS_SrvLenComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fle
 Wt_SrvLenComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets))
 
 # ADMB maximum likelihood estimate ---------------------------------------------
-# The initial age structure deviations are back derived from the ADMB numbers
-# at age in the first year against the unfished geometric series, so seeding
-# SPoRC's ln_InitDevs with them reproduces the ADMB starting conditions
-# exactly.
+# initial age deviations are back derived from the ADMB first year numbers at age against the
+# unfished geometric series, so seeding ln_InitDevs with them reproduces ADMB's start exactly
 M <- m24$M
 R0 <- exp(m24$log_mean_R)
 NAA_equil <- R0 * exp(-(1:(n_ages - 1)) * M)

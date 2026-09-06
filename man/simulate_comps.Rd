@@ -134,7 +134,7 @@ Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
 optionally applied post-draw. Three composition aggregation structures are
 handled: sex-split (\code{comp_type = 1}), joint across sexes
 (\code{comp_type = 2}), and spatially aggregated across all regions
-(\code{comp_type = 0}). The sentinel value \code{comp_type = 999} or
+(\code{comp_type = 0}). The flag value \code{comp_type = 999} or
 \code{comp_like = 999} causes the function to return \code{Obs} unchanged.
 }
 \details{

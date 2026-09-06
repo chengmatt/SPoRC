@@ -1,21 +1,9 @@
 # Stage 2 of 3: objective function
 #
-# Parametric growth. Builds mean length at age and its spread from von
-# Bertalanffy parameters in the Schnute form (length at a young reference age,
-# length at an old reference age, K) or from the Richards generalization of that
-# curve, turns them into the size-age transition matrix that length compositions,
-# conditional age-at-length and length-based selectivity read, and optionally
-# into weight at age through a weight-length relationship and into maturity at
-# age through a maturity-at-length curve. Growth is linear from L0 at age zero up
-# to L1 at A1, the CV interpolates between the two reference lengths, the
-# plus-group mean size is adjusted for fish older than the accumulator age, and
-# the age-length key is a binned normal with the tails accumulated into the end
-# bins. Any growth parameter can vary over time through deviations, and the
-# resulting size at age can either be read off each year's curve or carried
-# cohort by cohort, where every cohort grows by the increment the current year's
-# parameters imply. The cohort form runs one year at a time from the year loop
-# of the population dynamics, because the plus group blends the cohort entering
-# it with the fish already there by their numbers.
+# Parametric growth: mean length at age and its spread from Schnute or Richards parameters, the
+# size-age transition matrix built from them, and optionally weight and maturity at age.
+
+# Growth Curve and Size-Age Key ---------------------------------------------
 
 #' Mean length and its spread at a set of real ages
 #'
@@ -70,16 +58,30 @@
 #'
 #' @keywords internal
 #' @import RTMB
-get_laa_curve = function(x, L0, L1, L2, K, CV1, CV2, A1, A2, cv_type = 0, sd_type = 0, A2_cv = NULL, rho = 1, cv_ref = NULL,
-                         L2_asymptote = 0) {
+get_laa_curve = function(
+  x,
+  L0,
+  L1,
+  L2,
+  K,
+  CV1,
+  CV2,
+  A1,
+  A2,
+  cv_type = 0,
+  sd_type = 0,
+  A2_cv = NULL,
+  rho = 1,
+  cv_ref = NULL,
+  L2_asymptote = 0
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   if(is.null(A2_cv)) A2_cv = A2
-  # the asymptote, on the power scale for the Richards form. Under
-  # L2_asymptote the second reference length is the asymptote itself, so there
-  # is no reference age to solve it from
+  # the asymptote, on the power scale for the Richards form. under L2_asymptote the second
+  # reference length is the asymptote itself, so there is no reference age to solve it from
   LinfR = if(L2_asymptote == 1) L2^rho else L1^rho + (L2^rho - L1^rho) / (1 - exp(-K * (A2 - A1)))
   Linf = LinfR^(1 / rho)
 
@@ -106,7 +108,7 @@ get_laa_curve = function(x, L0, L1, L2, K, CV1, CV2, A1, A2, cv_type = 0, sd_typ
 #' \deqn{L(t + e)^\rho = L_\infty^\rho + (L^\rho - L_\infty^\rho) e^{-K e}}
 #' Applied to a length that sits on the curve it returns the curve's value
 #' \code{e} later, so splitting a year into seasons changes nothing; applied to a
-#' length carried from an earlier year's parameters it is how a cohort keeps its
+#' length kept from an earlier year's parameters it is how a cohort keeps its
 #' own history.
 #'
 #' @param L Mean length(s) at the start, possibly AD.
@@ -166,6 +168,7 @@ get_alk = function(len_lower, mu, sd, dist = 0) {
   n_lens = length(len_lower)
   n_ages = length(mu)
   alk = matrix(0, nrow = n_lens, ncol = n_ages)
+
   for(a in 1:n_ages) {
     z = if(dist == 0) (len_lower - mu[a]) / sd[a] else (log(len_lower) - (log(mu[a]) - 0.5 * sd[a]^2)) / sd[a]
     cdf = RTMB::pnorm(z)
@@ -173,8 +176,11 @@ get_alk = function(len_lower, mu, sd, dist = 0) {
     col[1] = col[1] + cdf[1] # lower tail accumulates into the first bin
     alk[,a] = col
   } # end a loop
+
   return(alk)
 }
+
+# Year and Cohort State -----------------------------------------------------
 
 #' Growth parameters in effect in one year
 #'
@@ -197,7 +203,7 @@ get_alk = function(len_lower, mu, sd, dist = 0) {
 #' @param y Year index.
 #'
 #' @return Natural-scale parameter vector for the year, with a seventh element
-#'   \code{rho} of one when the base carries five parameters.
+#'   \code{rho} of one when the base has five parameters.
 #'
 #' @keywords internal
 get_growth_pars_year = function(ln_pars, ln_devs, tv_model, tv_link, bounds, y) {
@@ -205,21 +211,24 @@ get_growth_pars_year = function(ln_pars, ln_devs, tv_model, tv_link, bounds, y) 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  gp = exp(ln_pars)
+  growth_pars = exp(ln_pars)
   n_gpars = length(ln_pars)
+
   for(k in 1:n_gpars) {
     if(tv_model[k] == 0) next
     dev = ln_devs[y, k]
-    if(tv_link == 0) gp[k] = gp[k] * exp(dev)
+    if(tv_link == 0) growth_pars[k] = growth_pars[k] * exp(dev)
     else {
       lo = bounds[k, 1]; hi = bounds[k, 2]
       # the 1e-7 keeps the logit finite at a bound
-      base_logit = log((gp[k] - lo + 1e-7) / (hi - gp[k] + 1e-7))
-      gp[k] = lo + (hi - lo) / (1 + exp(-base_logit - dev))
+      base_logit = log((growth_pars[k] - lo + 1e-7) / (hi - growth_pars[k] + 1e-7))
+      growth_pars[k] = lo + (hi - lo) / (1 + exp(-base_logit - dev))
     }
   } # end k loop
-  if(n_gpars == 5) gp = c(gp, 1) # von Bertalanffy: Richards coefficient of one
-  return(gp)
+
+  if(n_gpars == 5) growth_pars = c(growth_pars, 1) # von Bertalanffy: Richards coefficient of one
+
+  return(growth_pars)
 }
 
 #' Selection-weighted weight at age
@@ -245,21 +254,33 @@ get_selected_waa = function(key, sel_l, w_len) {
 #'
 #' Evaluates the curve a stratum starts from and the quantities that stay fixed
 #' over the years: the mean length at the start of every age in the first year
-#' (the plus group adjusted), the CV at age and timing when it is held at the
+#' (the plus group adjusted), the CV at age and timing when it is kept at the
 #' first year's sizes, and the asymptote.
 #'
 #' @keywords internal
-growth_start_state = function(gp, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type,
+growth_start_state = function(growth_pars, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type,
                               growth_plus_group, growth_L2_asymptote = 0) {
 
   n_ages = length(ages); n_acc = max(ages)
-  L1 = gp[1]; L2 = gp[2]; K = gp[3]; CV1 = gp[4]; CV2 = gp[5]; rho = gp[6]
-  crv = get_laa_curve(x = ages, L0 = growth_L0, L1 = L1, L2 = L2, K = K, CV1 = CV1, CV2 = CV2,
-                      A1 = growth_A1, A2 = growth_A2, cv_type = growth_cv_type, sd_type = growth_sd_type, rho = rho,
-                      L2_asymptote = growth_L2_asymptote)
-  L_beg = crv$L
-  L_beg[n_ages] = if(growth_plus_group == 1) plus_group_size(crv$L[n_ages], crv$Linf, n_acc) else crv$L[n_ages]
-  return(list(L_beg = L_beg, Linf = crv$Linf))
+  L1 = growth_pars[1]; L2 = growth_pars[2]; K = growth_pars[3]; CV1 = growth_pars[4]; CV2 = growth_pars[5]; rho = growth_pars[6]
+  curve = get_laa_curve(
+    x = ages,
+    L0 = growth_L0,
+    L1 = L1,
+    L2 = L2,
+    K = K,
+    CV1 = CV1,
+    CV2 = CV2,
+    A1 = growth_A1,
+    A2 = growth_A2,
+    cv_type = growth_cv_type,
+    sd_type = growth_sd_type,
+    rho = rho,
+    L2_asymptote = growth_L2_asymptote
+  )
+  L_beg = curve$L
+  L_beg[n_ages] = if(growth_plus_group == 1) plus_group_size(curve$L[n_ages], curve$Linf, n_acc) else curve$L[n_ages]
+  return(list(L_beg = L_beg, Linf = curve$Linf))
 }
 
 #' Mean length and spread of every age at one point in a year
@@ -272,26 +293,42 @@ growth_start_state = function(gp, ages, growth_A1, growth_A2, growth_L0, growth_
 #' still in the linear phase take the length at \code{A1} their own cohort was
 #' born with; and the first integer age past \code{A1} sits on the current
 #' year's curve, which is where the propagation picks it up. The CV at age is
-#' that of the year's own curve under curve growth and is held at the first
+#' that of the year's own curve under curve growth and is kept at the first
 #' year's sizes under cohort growth.
 #'
 #' @param len_devs Optional vector of log deviations on mean length at age, one
 #'   per age, or \code{NULL} for a purely parametric curve.
 #' @keywords internal
-growth_laa_at = function(e, gp, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type,
+growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type,
                          cohort, L_beg, L1_birth, cv_ref, a_prop, len_devs = NULL, growth_L2_asymptote = 0) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_ages = length(ages)
-  L1 = gp[1]; L2 = gp[2]; K = gp[3]; CV1 = gp[4]; CV2 = gp[5]; rho = gp[6]
+  L1 = growth_pars[1]; L2 = growth_pars[2]; K = growth_pars[3]; CV1 = growth_pars[4]; CV2 = growth_pars[5]; rho = growth_pars[6]
   x = ages + e
-  crv = get_laa_curve(x = x, L0 = growth_L0, L1 = L1, L2 = L2, K = K, CV1 = CV1, CV2 = CV2,
-                      A1 = growth_A1, A2 = growth_A2, cv_type = growth_cv_type, sd_type = growth_sd_type,
-                      A2_cv = growth_A2, rho = rho, cv_ref = cv_ref, L2_asymptote = growth_L2_asymptote)
-  Linf = crv$Linf
-  L = crv$L
+
+  curve = get_laa_curve(
+    x = x,
+    L0 = growth_L0,
+    L1 = L1,
+    L2 = L2,
+    K = K,
+    CV1 = CV1,
+    CV2 = CV2,
+    A1 = growth_A1,
+    A2 = growth_A2,
+    cv_type = growth_cv_type,
+    sd_type = growth_sd_type,
+    A2_cv = growth_A2,
+    rho = rho,
+    cv_ref = cv_ref,
+    L2_asymptote = growth_L2_asymptote
+  )
+
+  Linf = curve$Linf
+  L = curve$L
 
   if(cohort == 0) {
     # the plus group grows from its adjusted size rather than from the curve
@@ -306,9 +343,8 @@ growth_laa_at = function(e, gp, ages, growth_A1, growth_A2, growth_L0, growth_cv
     } # end i loop
   }
 
-  # Semi-parametric growth: the parametric mean at age times a year-by-age
-  # deviation surface. Applied after the curve and any cohort propagation, so
-  # the deviations describe departures from paraemtric growth
+  # semi-parametric growth: the parametric mean at age times a year-by-age deviation surface,
+  # applied after the curve so the deviations are departures from parametric growth
   if(!is.null(len_devs)) L = L * exp(len_devs)
 
   # the spread follows the CV rule at the size reached, or the first year's CV at age
@@ -316,13 +352,15 @@ growth_laa_at = function(e, gp, ages, growth_A1, growth_A2, growth_L0, growth_cv
     above = as.numeric(x >= growth_A2)
     below = as.numeric(x < growth_A1)
     mid = 1 - above - below
-    cv_mid = if(growth_cv_type == 0) CV1 + (L - L1) * (CV2 - CV1) / (L2 - L1) else crv$cv
+    cv_mid = if(growth_cv_type == 0) CV1 + (L - L1) * (CV2 - CV1) / (L2 - L1) else curve$cv
     cv = CV1 * below + CV2 * above + cv_mid * mid
   } else cv = cv_ref
   sd = if(growth_sd_type == 0) cv * L else cv
 
   return(list(L = L, sd = sd, cv = cv, Linf = Linf))
 }
+
+# Growth Surface ------------------------------------------------------------
 
 #' Growth module
 #'
@@ -336,7 +374,7 @@ growth_laa_at = function(e, gp, ages, growth_A1, growth_A2, growth_L0, growth_cv
 #' With no deviations the key is built once and broadcast over the years. With
 #' deviations on any parameter and \code{growth_tv_type = 0} ("curve") every
 #' year's sizes are read from that year's own curve. Under
-#' \code{growth_tv_type = 1} ("cohort") the sizes are carried forward cohort by
+#' \code{growth_tv_type = 1} ("cohort") the sizes are advanced cohort by
 #' cohort from \code{growth_cohort_styr} on, which needs the numbers at age of
 #' each year to blend the plus group; that form is run one year at a time from
 #' the population dynamics through \code{\link{Get_Growth_Year}}, and this
@@ -359,7 +397,7 @@ growth_laa_at = function(e, gp, ages, growth_A1, growth_A2, growth_L0, growth_cv
 #' and weight at that fleet's own timing, \code{t_fish} or \code{t_srv}, so a
 #' composition and the weight behind an index are formed at the point in the
 #' season the observation is taken. Fleets that share a timing share one
-#' evaluation. Seasonal multipliers on \eqn{K} are not carried.
+#' evaluation. Seasonal multipliers on \eqn{K} are not kept.
 #'
 #' @param ln_growth_pars Array \code{[pop, region, sex, n_gpars]} of log growth
 #'   parameters in the order L1, L2, K, CV1, CV2 and, for the Richards form, rho.
@@ -376,11 +414,11 @@ growth_laa_at = function(e, gp, ages, growth_A1, growth_A2, growth_L0, growth_cv
 #' @param ln_growth_semipar_devs Array \code{[pop, region, year, age, sex]} of
 #'   log deviations on mean length at age, or \code{NULL} for none. Multiplies
 #'   the parametric mean at age, so the curve stays the parametric part and the
-#'   deviations carry departures from it; the spread at age follows the deviated
+#'   deviations have departures from it; the spread at age follows the deviated
 #'   mean, leaving the coefficient of variation at age alone.
 #' @param growth_semipar Integer process error code for those deviations,
 #'   \code{0} for none. Only its being nonzero is read here; the structure is
-#'   scored in the objective.
+#'   penalized in the objective.
 #' @param growth_cohort_styr Year index the cohort propagation starts from.
 #' @param growth_A1,growth_A2 Reference ages; see \code{\link{get_laa_curve}}.
 #' @param growth_L0 Length at age zero.
@@ -417,14 +455,42 @@ growth_laa_at = function(e, gp, ages, growth_A1, growth_A2, growth_L0, growth_cv
 #'
 #' @keywords internal
 #' @import RTMB
-Get_Growth = function(ln_growth_pars, growth_A1, growth_A2, growth_L0, growth_len_lower,
-                      growth_cv_type, growth_sd_type, growth_dist, growth_plus_group, growth_L2_asymptote = 0,
-                      derive_waa, wt_len_pars, ages, seasdur, spawn_seas, t_spawn,
-                      n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets, n_srv_fleets,
-                      t_fish, t_srv,
-                      ln_growth_devs = NULL, growth_tv_model = NULL, growth_tv_link = 0, growth_par_bounds = NULL,
-                      growth_tv_type = 0, growth_cohort_styr = 1, years_eval = NULL,
-                      ln_growth_semipar_devs = NULL, growth_semipar = 0) {
+Get_Growth = function(
+  ln_growth_pars,
+  growth_A1,
+  growth_A2,
+  growth_L0,
+  growth_len_lower,
+  growth_cv_type,
+  growth_sd_type,
+  growth_dist,
+  growth_plus_group,
+  growth_L2_asymptote = 0,
+  derive_waa,
+  wt_len_pars,
+  ages,
+  seasdur,
+  spawn_seas,
+  t_spawn,
+  n_pop,
+  n_regions,
+  n_yrs,
+  n_seas,
+  n_sexes,
+  n_fish_fleets,
+  n_srv_fleets,
+  t_fish,
+  t_srv,
+  ln_growth_devs = NULL,
+  growth_tv_model = NULL,
+  growth_tv_link = 0,
+  growth_par_bounds = NULL,
+  growth_tv_type = 0,
+  growth_cohort_styr = 1,
+  years_eval = NULL,
+  ln_growth_semipar_devs = NULL,
+  growth_semipar = 0
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -448,22 +514,50 @@ Get_Growth = function(ln_growth_pars, growth_A1, growth_A2, growth_L0, growth_le
         devs_prs = if(is.null(ln_growth_devs)) matrix(0, n_yrs, n_gpars) else matrix(ln_growth_devs[p,r,,,s], n_yrs, n_gpars)
         # parameters of the first year set the state every year starts from under
         # constant or curve growth, and the first year's CV under cohort growth
-        gp_1 = get_growth_pars_year(ln_growth_pars[p,r,s,], devs_prs, growth_tv_model, growth_tv_link, growth_par_bounds, 1)
-        start = growth_start_state(gp_1, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type, growth_plus_group, growth_L2_asymptote)
+        growth_pars_1 = get_growth_pars_year(ln_growth_pars[p,r,s,], devs_prs, growth_tv_model, growth_tv_link, growth_par_bounds, 1)
+        start = growth_start_state(growth_pars_1, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type, growth_plus_group, growth_L2_asymptote)
         w_mid = wt_len_pars[p,r,s,1] * growth_len_mid(growth_len_lower)^wt_len_pars[p,r,s,2] # weight at the bin midpoints
 
         # years that share one curve are evaluated once and propagated out; a
         # deviation surface on mean length at age makes every year its own
         constant = (!tv_any || growth_tv_type == 1) && !semipar
         for(y in years_eval) {
-          gp_y = if(constant) gp_1 else get_growth_pars_year(ln_growth_pars[p,r,s,], devs_prs, growth_tv_model, growth_tv_link, growth_par_bounds, y)
-          st_y = if(constant) start else growth_start_state(gp_y, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type, growth_plus_group, growth_L2_asymptote)
+
+          growth_pars_yr = if(constant) growth_pars_1 else get_growth_pars_year(ln_growth_pars[p,r,s,], devs_prs, growth_tv_model, growth_tv_link, growth_par_bounds, y)
+          start_yr = if(constant) start else growth_start_state(growth_pars_yr, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type, growth_plus_group, growth_L2_asymptote)
           fill_yrs = if(constant) years_eval else y
-          out = growth_fill_year(out, p, r, s, fill_yrs, gp_y, st_y$L_beg, L1_birth = NULL, cv_ref_fn = NULL, a_prop = NULL, cohort = 0,
-                                 ages, growth_A1, growth_A2, growth_L0, growth_len_lower, growth_cv_type, growth_sd_type, growth_dist,
-                                 derive_waa, w_mid, seasdur, spawn_seas, t_spawn, n_seas, t_fish, t_srv,
-                                 len_devs = if(semipar) ln_growth_semipar_devs[p,r,y,,s] else NULL,
-                                 growth_L2_asymptote = growth_L2_asymptote)
+
+          out = growth_fill_year(
+            out,
+            p,
+            r,
+            s,
+            fill_yrs,
+            growth_pars_yr,
+            start_yr$L_beg,
+            L1_birth = NULL,
+            cv_ref_fn = NULL,
+            a_prop = NULL,
+            cohort = 0,
+            ages,
+            growth_A1,
+            growth_A2,
+            growth_L0,
+            growth_len_lower,
+            growth_cv_type,
+            growth_sd_type,
+            growth_dist,
+            derive_waa,
+            w_mid,
+            seasdur,
+            spawn_seas,
+            t_spawn,
+            n_seas,
+            t_fish,
+            t_srv,
+            len_devs = if(semipar) ln_growth_semipar_devs[p,r,y,,s] else NULL,
+            growth_L2_asymptote = growth_L2_asymptote
+          )
           if(constant) break
         } # end y loop
 
@@ -473,6 +567,8 @@ Get_Growth = function(ln_growth_pars, growth_A1, growth_A2, growth_L0, growth_le
 
   return(out)
 }
+
+# Year by Year Growth -------------------------------------------------------
 
 #' Bin midpoints from lower edges, the last bin taking the width of the one before
 #' @keywords internal
@@ -514,7 +610,7 @@ growth_containers = function(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_
 #' named, which all share the state handed in.
 #'
 #' @keywords internal
-growth_fill_year = function(out, p, r, s, fill_yrs, gp, L_beg, L1_birth, cv_ref_fn, a_prop, cohort,
+growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth, cv_ref_fn, a_prop, cohort,
                             ages, growth_A1, growth_A2, growth_L0, growth_len_lower, growth_cv_type, growth_sd_type, growth_dist,
                             derive_waa, w_mid, seasdur, spawn_seas, t_spawn, n_seas, t_fish, t_srv, len_devs = NULL,
                             growth_L2_asymptote = 0) {
@@ -527,33 +623,44 @@ growth_fill_year = function(out, p, r, s, fill_yrs, gp, L_beg, L1_birth, cv_ref_
   cum_before = c(0, cumsum(seasdur))[1:n_seas] # fraction of the year elapsed at each season start
   rep_yrs = function(x) rep(x, each = n_yr_fill) # lays the years fastest for a [years, ...] block
 
-  for(y in fill_yrs) { out$L_beg[p,r,y,,s] = L_beg; out$growth_pars_y[p,r,y,,s] = gp }
+  for(y in fill_yrs) { out$L_beg[p,r,y,,s] = L_beg; out$growth_pars_y[p,r,y,,s] = growth_pars }
 
   for(seas in 1:n_seas) {
 
-    # Every point in the season something is read at: each fishery fleet's key
-    # and weight at its t_fish, each survey's at its t_srv, and the spawning
-    # weight at t_spawn in the spawning season. Each distinct point is
-    # evaluated once.
+    # every point in the season something is read at: each fishery fleet at its t_fish, each survey
+    # at its t_srv, and the spawning weight at t_spawn. each distinct point is evaluated once
     t_fish_seas = as.vector(t_fish[r, seas, ]); t_srv_seas = as.vector(t_srv[r, seas, ])
     t_unique = unique(c(t_fish_seas, t_srv_seas, if(seas == spawn_seas) t_spawn))
 
     for(k in seq_along(t_unique)) {
 
-      tk = t_unique[k]
-      elapsed = cum_before[seas] + tk * seasdur[seas] # real age offset of every age class at this point
+      timing = t_unique[k]
+      elapsed = cum_before[seas] + timing * seasdur[seas] # real age offset of every age class at this point
       cv_ref = if(is.null(cv_ref_fn)) NULL else cv_ref_fn(elapsed)
-      laa = growth_laa_at(e = elapsed, gp = gp, ages = ages, growth_A1 = growth_A1, growth_A2 = growth_A2, growth_L0 = growth_L0,
-                          growth_cv_type = growth_cv_type, growth_sd_type = growth_sd_type, cohort = cohort,
-                          L_beg = L_beg, L1_birth = L1_birth, cv_ref = cv_ref, a_prop = a_prop, len_devs = len_devs,
-                          growth_L2_asymptote = growth_L2_asymptote)
-      L = laa$L; sd = laa$sd
-      for(y in fill_yrs) out$Linf[p,r,y,s] = laa$Linf
+      laa_at = growth_laa_at(
+        e = elapsed,
+        growth_pars = growth_pars,
+        ages = ages,
+        growth_A1 = growth_A1,
+        growth_A2 = growth_A2,
+        growth_L0 = growth_L0,
+        growth_cv_type = growth_cv_type,
+        growth_sd_type = growth_sd_type,
+        cohort = cohort,
+        L_beg = L_beg,
+        L1_birth = L1_birth,
+        cv_ref = cv_ref,
+        a_prop = a_prop,
+        len_devs = len_devs,
+        growth_L2_asymptote = growth_L2_asymptote
+      )
+      L = laa_at$L; sd = laa_at$sd
+      for(y in fill_yrs) out$Linf[p,r,y,s] = laa_at$Linf
       alk = get_alk(growth_len_lower, L, sd, dist = growth_dist) # n_lens x n_ages (get alk for sizeage)
       waa = if(derive_waa == 1) as.vector(t(alk) %*% w_mid) else NULL
 
       # get fishery
-      for(f in which(t_fish_seas == tk)) {
+      for(f in which(t_fish_seas == timing)) {
         out$SizeAgeTrans_fish[p,r,fill_yrs,seas,,,s,f] = rep_yrs(alk)
         out$mean_LAA_fish[p,r,fill_yrs,seas,,s,f] = rep_yrs(L)
         out$sd_LAA_fish[p,r,fill_yrs,seas,,s,f] = rep_yrs(sd)
@@ -561,7 +668,7 @@ growth_fill_year = function(out, p, r, s, fill_yrs, gp, L_beg, L1_birth, cv_ref_
       } # end f loop
 
       # get survey
-      for(sf in which(t_srv_seas == tk)) {
+      for(sf in which(t_srv_seas == timing)) {
         out$SizeAgeTrans_srv[p,r,fill_yrs,seas,,,s,sf] = rep_yrs(alk)
         out$mean_LAA_srv[p,r,fill_yrs,seas,,s,sf] = rep_yrs(L)
         out$sd_LAA_srv[p,r,fill_yrs,seas,,s,sf] = rep_yrs(sd)
@@ -569,7 +676,7 @@ growth_fill_year = function(out, p, r, s, fill_yrs, gp, L_beg, L1_birth, cv_ref_
       } # end sf loop
 
       # get spawning
-      if(seas == spawn_seas && tk == t_spawn) {
+      if(seas == spawn_seas && timing == t_spawn) {
         out$SizeAgeTrans_spawn[p,r,fill_yrs,,,s] = rep_yrs(alk)
         out$mean_LAA_spawn[p,r,fill_yrs,seas,,s] = rep_yrs(L)
         out$sd_LAA_spawn[p,r,fill_yrs,seas,,s] = rep_yrs(sd)
@@ -586,7 +693,7 @@ growth_fill_year = function(out, p, r, s, fill_yrs, gp, L_beg, L1_birth, cv_ref_
 #'
 #' The year-loop companion of \code{\link{Get_Growth}} under cohort
 #' propagation. For year \code{y} it builds every key, length, weight and
-#' weight of the year from the start-of-year state, and carries the state to
+#' weight of the year from the start-of-year state, and holds the state to
 #' the next year with the year's parameters: each propagated age grows by the
 #' year's increment, the first propagated age is placed on the year's curve, the
 #' ages in the linear phase keep the length at \code{A1} their cohort was born
@@ -594,9 +701,9 @@ growth_fill_year = function(out, p, r, s, fill_yrs, gp, L_beg, L1_birth, cv_ref_
 #' the fish already there by their numbers at the start of this year,
 #' \deqn{\bar L_{+,y+1} = \frac{(N_{n-1} + 0.01)\, g(L_{n-1}) + (N_{n} + 0.01)\, g(L_{+})}{N_{n-1} + N_n + 0.02}}
 #' with \eqn{g} the year's increment and \eqn{N} the start-of-year numbers of
-#' the stratum. The CV at age is held at the first year's sizes.
+#' the stratum. The CV at age is kept at the first year's sizes.
 #'
-#' @param growth The list \code{\link{Get_Growth}} returned, carrying the
+#' @param growth The list \code{\link{Get_Growth}} returned, with the
 #'   output containers and the years before the propagation started.
 #' @param y Year index to evaluate.
 #' @param NAA_y Numbers at age at the start of year \code{y}, array
@@ -615,18 +722,46 @@ growth_fill_year = function(out, p, r, s, fill_yrs, gp, L_beg, L1_birth, cv_ref_
 #'
 #' @keywords internal
 #' @import RTMB
-Get_Growth_Year = function(growth, y, NAA_y, ln_growth_pars, ln_growth_devs, growth_tv_model, growth_tv_link, growth_par_bounds,
-                           growth_A1, growth_A2, growth_L0, growth_len_lower, growth_cv_type, growth_sd_type, growth_dist,
-                           growth_plus_group, growth_L2_asymptote = 0, derive_waa, wt_len_pars, ages, seasdur, spawn_seas, t_spawn,
-                           n_pop, n_regions, n_seas, n_sexes, t_fish, t_srv,
-                           ln_growth_semipar_devs = NULL, growth_semipar = 0) {
+Get_Growth_Year = function(
+  growth,
+  y,
+  NAA_y,
+  ln_growth_pars,
+  ln_growth_devs,
+  growth_tv_model,
+  growth_tv_link,
+  growth_par_bounds,
+  growth_A1,
+  growth_A2,
+  growth_L0,
+  growth_len_lower,
+  growth_cv_type,
+  growth_sd_type,
+  growth_dist,
+  growth_plus_group,
+  growth_L2_asymptote = 0,
+  derive_waa,
+  wt_len_pars,
+  ages,
+  seasdur,
+  spawn_seas,
+  t_spawn,
+  n_pop,
+  n_regions,
+  n_seas,
+  n_sexes,
+  t_fish,
+  t_srv,
+  ln_growth_semipar_devs = NULL,
+  growth_semipar = 0
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_ages = length(ages); n_acc = max(ages); n_yrs = dim(growth$L_beg)[3]
   n_gpars = dim(ln_growth_pars)[4]
-  # the first integer age whose start-of-year size is carried forward; the age
+  # the first integer age whose start-of-year size is advanced; the age
   # before it sits on the current year's curve
   a_prop = ceiling(growth_A1) + 1
   cum_before = c(0, cumsum(seasdur))[1:n_seas]
@@ -637,8 +772,8 @@ Get_Growth_Year = function(growth, y, NAA_y, ln_growth_pars, ln_growth_devs, gro
 
         devs_prs = if(is.null(ln_growth_devs)) matrix(0, n_yrs, n_gpars) else matrix(ln_growth_devs[p,r,,,s], n_yrs, n_gpars)
         pars_at = function(yy) get_growth_pars_year(ln_growth_pars[p,r,s,], devs_prs, growth_tv_model, growth_tv_link, growth_par_bounds, yy)
-        gp_1 = pars_at(1)
-        gp_y = pars_at(y)
+        growth_pars_1 = pars_at(1)
+        growth_pars_yr = pars_at(y)
         w_mid = wt_len_pars[p,r,s,1] * growth_len_mid(growth_len_lower)^wt_len_pars[p,r,s,2]
 
         # the length at A1 each cohort was born with: its birth year's L1, or the
@@ -646,29 +781,78 @@ Get_Growth_Year = function(growth, y, NAA_y, ln_growth_pars, ln_growth_devs, gro
         L1_birth = rep(0, n_ages)
         for(i in 1:n_ages) L1_birth[i] = pars_at(max(1, y - ages[i]))[1]
 
-        # The spread at age is held at the first year's, evaluated from that
-        # year's own curve and parameters at each timing, and then carried
-        # unchanged while the mean moves.
-        start = growth_start_state(gp_1, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type, growth_plus_group, growth_L2_asymptote)
-        cv_ref_fn = function(elapsed) growth_laa_at(e = elapsed, gp = gp_1, ages = ages, growth_A1 = growth_A1, growth_A2 = growth_A2,
-                                                    growth_L0 = growth_L0, growth_cv_type = growth_cv_type, growth_sd_type = growth_sd_type,
-                                                    cohort = 0, L_beg = start$L_beg, L1_birth = NULL, cv_ref = NULL, a_prop = a_prop,
-                                                    growth_L2_asymptote = growth_L2_asymptote)$cv
+        # the spread at age comes from the first year's own curve at each timing and stays there
+        # while the mean moves
+        start = growth_start_state(growth_pars_1, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type, growth_plus_group, growth_L2_asymptote)
+        cv_ref_fn = function(elapsed) growth_laa_at(
+          e = elapsed,
+          growth_pars = growth_pars_1,
+          ages = ages,
+          growth_A1 = growth_A1,
+          growth_A2 = growth_A2,
+          growth_L0 = growth_L0,
+          growth_cv_type = growth_cv_type,
+          growth_sd_type = growth_sd_type,
+          cohort = 0,
+          L_beg = start$L_beg,
+          L1_birth = NULL,
+          cv_ref = NULL,
+          a_prop = a_prop,
+          growth_L2_asymptote = growth_L2_asymptote
+        )$cv
 
         L_beg = growth$L_beg[p,r,y,,s]
-        growth = growth_fill_year(growth, p, r, s, y, gp_y, L_beg, L1_birth, cv_ref_fn, a_prop, cohort = 1,
-                                  ages, growth_A1, growth_A2, growth_L0, growth_len_lower, growth_cv_type, growth_sd_type, growth_dist,
-                                  derive_waa, w_mid, seasdur, spawn_seas, t_spawn, n_seas, t_fish, t_srv,
-                                  len_devs = if(growth_semipar > 0 && !is.null(ln_growth_semipar_devs)) ln_growth_semipar_devs[p,r,y,,s] else NULL,
-                                  growth_L2_asymptote = growth_L2_asymptote)
+        growth = growth_fill_year(
+          growth,
+          p,
+          r,
+          s,
+          y,
+          growth_pars_yr,
+          L_beg,
+          L1_birth,
+          cv_ref_fn,
+          a_prop,
+          cohort = 1,
+          ages,
+          growth_A1,
+          growth_A2,
+          growth_L0,
+          growth_len_lower,
+          growth_cv_type,
+          growth_sd_type,
+          growth_dist,
+          derive_waa,
+          w_mid,
+          seasdur,
+          spawn_seas,
+          t_spawn,
+          n_seas,
+          t_fish,
+          t_srv,
+          len_devs = if(growth_semipar > 0 && !is.null(ln_growth_semipar_devs)) ln_growth_semipar_devs[p,r,y,,s] else NULL,
+          growth_L2_asymptote = growth_L2_asymptote
+        )
 
-        # carry the state to next year with this year's increment
+        # hold the state to next year with this year's increment
         if(y < n_yrs) {
-          K = gp_y[3]; rho = gp_y[6]; Linf = growth$Linf[p,r,y,s]
-          L_next = growth_laa_at(e = 0, gp = gp_y, ages = ages, growth_A1 = growth_A1, growth_A2 = growth_A2, growth_L0 = growth_L0,
-                                 growth_cv_type = growth_cv_type, growth_sd_type = growth_sd_type, cohort = 0,
-                                 L_beg = L_beg, L1_birth = NULL, cv_ref = NULL, a_prop = a_prop,
-                                 growth_L2_asymptote = growth_L2_asymptote)$L # the year's curve at integer ages
+          K = growth_pars_yr[3]; rho = growth_pars_yr[6]; Linf = growth$Linf[p,r,y,s]
+          L_next = growth_laa_at(
+            e = 0,
+            growth_pars = growth_pars_yr,
+            ages = ages,
+            growth_A1 = growth_A1,
+            growth_A2 = growth_A2,
+            growth_L0 = growth_L0,
+            growth_cv_type = growth_cv_type,
+            growth_sd_type = growth_sd_type,
+            cohort = 0,
+            L_beg = L_beg,
+            L1_birth = NULL,
+            cv_ref = NULL,
+            a_prop = a_prop,
+            growth_L2_asymptote = growth_L2_asymptote
+          )$L # the year's curve at integer ages
           grown = grow_increment(L_beg, 1, K, Linf, rho) # every age one year later
           for(i in 1:n_ages) {
             a = ages[i]
@@ -691,28 +875,7 @@ Get_Growth_Year = function(growth, y, NAA_y, ln_growth_pars, ln_growth_devs, gro
 }
 
 
-#' Assemble the growth module's arguments from the model's data and parameters
-#'
-#' The growth settings are the same for every call, whether the whole series is
-#' built up front or one year at a time from inside the population loop, so they
-#' are gathered once here rather than written out at each call site.
-#'
-#' @param env Environment holding the unpacked data and parameters, i.e. the
-#'   \code{SPoRC_rtmb} frame after \code{RTMB::getAll}. Defaults to the caller.
-#'
-#' @return A named list of arguments for \code{\link{Get_Growth}} and
-#'   \code{\link{Get_Growth_Year}}.
-#'
-#' @keywords internal
-growth_args_from_model = function(env = parent.frame()) {
-  nm = c("ln_growth_pars", "growth_A1", "growth_A2", "growth_L0", "growth_len_lower",
-         "growth_cv_type", "growth_sd_type", "growth_dist", "growth_plus_group", "growth_L2_asymptote",
-         "derive_waa", "wt_len_pars", "ages", "seasdur", "spawn_seas", "t_spawn",
-         "n_pop", "n_regions", "n_seas", "n_sexes", "t_fish", "t_srv",
-         "ln_growth_devs", "growth_tv_model", "growth_tv_link", "growth_par_bounds",
-         "ln_growth_semipar_devs", "growth_semipar")
-  stats::setNames(lapply(nm, function(x) get(x, envir = env)), nm)
-}
+# Model Interface Helpers ---------------------------------------------------
 
 #' Copy one year of the growth module's output into the model's own arrays
 #'

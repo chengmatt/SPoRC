@@ -58,8 +58,13 @@ test_that("AR(1) and logistic-normal covariance utilities produce correct output
   })
 
   test_that("get_logistN_Sigma comp_like = 3 (AR1 bins) scales correctly", {
-    Sigma <- get_logistN_Sigma(comp_like = 3, n_bins = 4, n_sexes = NULL,
-                               theta = 2, corr_b = 0.5)
+    Sigma <- get_logistN_Sigma(
+      comp_like = 3,
+      n_bins = 4,
+      n_sexes = NULL,
+      theta = 2,
+      corr_b = 0.5
+    )
     expect_equal(dim(Sigma), c(4, 4))
     # diagonal should be theta^2
     expect_equal(diag(Sigma), rep(4, 4))
@@ -71,15 +76,27 @@ test_that("AR(1) and logistic-normal covariance utilities produce correct output
 
   test_that("get_logistN_Sigma comp_like = 4 (AR1 bins x constant sexes) has correct dimensions and structure", {
     n_bins <- 3; n_sexes <- 2; theta <- 1; corr_b <- 0.4; corr_s <- 0.7
-    Sigma <- get_logistN_Sigma(comp_like = 4, n_bins = n_bins, n_sexes = n_sexes,
-                               theta = theta, corr_b = corr_b, corr_s = corr_s)
+    Sigma <- get_logistN_Sigma(
+      comp_like = 4,
+      n_bins = n_bins,
+      n_sexes = n_sexes,
+      theta = theta,
+      corr_b = corr_b,
+      corr_s = corr_s
+    )
     expect_equal(dim(Sigma), c(n_bins * n_sexes, n_bins * n_sexes))
     expect_equal(Sigma, t(Sigma))   # symmetric
     # diagonal should all be theta^2
     expect_equal(diag(Sigma), rep(theta^2, n_bins * n_sexes))
     # corr_s = 0 and corr_b = 0 should give identity (scaled by theta^2)
-    Sigma_indep <- get_logistN_Sigma(comp_like = 4, n_bins = 3, n_sexes = 2,
-                                     theta = 1, corr_b = 0, corr_s = 0)
+    Sigma_indep <- get_logistN_Sigma(
+      comp_like = 4,
+      n_bins = 3,
+      n_sexes = 2,
+      theta = 1,
+      corr_b = 0,
+      corr_s = 0
+    )
     expect_equal(Sigma_indep, diag(6))
   })
 

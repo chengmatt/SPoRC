@@ -44,7 +44,7 @@ Get_PE_loglik(
 
 \item{map_sel_devs}{Integer array dimensioned \code{[fleet, year, bin, sex]}
 mapping deviations to unique estimated parameters. Shared deviations
-carry the same integer value; \code{NA} entries are treated as fixed
+hold the same integer value; \code{NA} entries are treated as fixed
 and excluded from likelihood evaluation.}
 
 \item{min_sel_devs_shared_bins}{Integer vector. Indices of the reference (minimum) bin

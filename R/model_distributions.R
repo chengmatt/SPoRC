@@ -1,9 +1,9 @@
 # Stage 2 of 3: objective function
 #
-# Density functions RTMB needs that base R does not provide, or does not provide
-# in a form that differentiates cleanly: symmetric beta, Dirichlet, Dirichlet
-# multinomial, logistic normal, and the count distributions used for tag
-# recaptures.
+# Densities RTMB needs that base R does not differentiate cleanly: symmetric beta, Dirichlet,
+# Dirichlet multinomial, logistic normal, and the counts used for tag recaptures.
+
+# Prior Densities -----------------------------------------------------------
 
 #' Evaluate a symmetric beta log-density
 #'
@@ -64,6 +64,8 @@ ddirichlet <- function(x, alpha, log = TRUE) {
   logres = lgamma(sum(alpha)) - sum(lgamma(alpha)) + sum((alpha - 1) * log(x))
   if(log == TRUE) return(logres) else return(exp(logres))
 } # end function
+
+# Composition Densities -----------------------------------------------------
 
 #' Evaluate a Dirichlet-multinomial log-likelihood
 #'
@@ -140,9 +142,11 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
   return(res)
 }
 
+# At-Age Densities ----------------------------------------------------------
+
 #' Evaluate an age-disaggregated observation likelihood
 #'
-#' Every at-age observation stream in the model routes through here: retained
+#' Every at-age data source in the model routes through here: retained
 #' catch at age, discard catch at age, and the survey index at age, each in an
 #' aggregated and a population-specific form. They differ only in
 #' which array supplies the prediction and which parameter supplies the standard
@@ -176,8 +180,15 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
 #'   likelihood contribution of each age.
 #'
 #' @keywords internal
-get_at_age_nLL = function(obs_t, pred_t, sigma, corr_type = 0, rho = 0,
-                          ages = NULL, corr_mat = NULL) {
+get_at_age_nLL = function(
+  obs_t,
+  pred_t,
+  sigma,
+  corr_type = 0,
+  rho = 0,
+  ages = NULL,
+  corr_mat = NULL
+) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -185,7 +196,7 @@ get_at_age_nLL = function(obs_t, pred_t, sigma, corr_type = 0, rho = 0,
   n = length(obs_t)
   nLL = rep(0, n)
 
-  # a single observation carries no correlation to describe
+  # a single observation has no correlation to describe
   if(corr_type == 0 || n == 1) {
     nLL = -1 * RTMB::dnorm(obs_t, pred_t, sigma, TRUE)
     return(nLL)
@@ -236,13 +247,15 @@ get_at_age_2dar1_nLL = function(resid, sigma, trans_rho_age, trans_rho_year) {
   rho_year = rho_trans(trans_rho_year)
   f_year = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_year, log = TRUE)
   f_age = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_age, log = TRUE)
-  ll = RTMB::dseparable(f_year, f_age)(z) - sum(log(sigma))
-  return(-1 * ll)
+  loglik = RTMB::dseparable(f_year, f_age)(z) - sum(log(sigma))
+  return(-1 * loglik)
 }
+
+# Index Error and Densities -------------------------------------------------
 
 #' Combine reported index standard errors with an estimated component
 #'
-#' An index observation carries a standard error from its own survey design, and
+#' An index observation has a standard error from its own survey design, and
 #' an assessment may additionally estimate a component covering everything that
 #' design does not. This returns the total standard deviation the index likelihood should use.
 #'
@@ -270,7 +283,7 @@ combine_idx_sd = function(se, extra, form) {
 #' Applies \code{\link{combine_idx_sd}} fleet by fleet, where the fleet is the
 #' last dimension of \code{se}. Handles both the aggregated arrays, indexed
 #' region by year by season by fleet, and the population-specific arrays, which
-#' carry a leading population dimension.
+#' have a leading population dimension.
 #'
 #' @param se Reported standard errors, with fleet as the last dimension.
 #' @param ln_sigma Log-scale estimated component, one value per fleet.
@@ -350,6 +363,8 @@ get_index_nLL = function(obs, pred, sigma, like_type, Sigma = NULL, const = 0) {
   return(nLL)
 }
 
+# Count Densities -----------------------------------------------------------
+
 #' Evaluate a robust negative binomial log-likelihood
 #'
 #' Computes the negative binomial log-likelihood using a
@@ -396,6 +411,8 @@ dpois_noint <- function(x, pred, give_log = TRUE) {
   logres <- -pred + x*log(pred) - lgamma(x+1)
   if(give_log == TRUE) return(logres) else return(exp(logres))
 }
+
+# Prior Parameter Helpers ---------------------------------------------------
 
 #' Compute shape parameters for a scaled beta distribution
 #'

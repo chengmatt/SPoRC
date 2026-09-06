@@ -30,7 +30,7 @@ constraint than fixing a bin outright.
 \details{
 Each row of the table names one set, so the penalty applies to the group
 jointly rather than to each parameter separately. Because the expression
-averages on the natural scale, it is meant for parameter sets held on the log
+averages on the natural scale, it is meant for parameter sets kept on the log
 scale; a set stored on the logit scale (the non-parametric form, or the
 asymptote of the asymptotic logistic forms) would not average to anything
 interpretable as selectivity.

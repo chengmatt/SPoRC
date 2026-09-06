@@ -19,7 +19,7 @@ combine_idx_sd(se, extra, form)
 The total standard deviation, shaped like \code{se}.
 }
 \description{
-An index observation carries a standard error from its own survey design, and
+An index observation has a standard error from its own survey design, and
 an assessment may additionally estimate a component covering everything that
 design does not. This returns the total standard deviation the index likelihood should use.
 }

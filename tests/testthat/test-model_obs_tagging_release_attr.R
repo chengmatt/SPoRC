@@ -5,10 +5,17 @@ library(testthat)
 # Dimensions: NAA[n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes]
 #             fish_sel[n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]
 #             srv_sel [n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets]
-make_arrays <- function(n_pop = 2, n_ages = 3, n_sexes = 2,
-                        n_regions = 2, n_yrs = 5, n_seas = 1,
-                        n_fish_fleets = 1, n_srv_fleets = 1,
-                        naa_values = NULL) {
+make_arrays <- function(
+  n_pop = 2,
+  n_ages = 3,
+  n_sexes = 2,
+  n_regions = 2,
+  n_yrs = 5,
+  n_seas = 1,
+  n_fish_fleets = 1,
+  n_srv_fleets = 1,
+  naa_values = NULL
+) {
   naa_dim  <- c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)
   fsel_dim <- c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)
   ssel_dim <- c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets)
@@ -17,8 +24,14 @@ make_arrays <- function(n_pop = 2, n_ages = 3, n_sexes = 2,
     array(naa_values, dim = naa_dim)
   fish_sel <- array(1, dim = fsel_dim)
   srv_sel  <- array(1, dim = ssel_dim)
-  list(NAA = NAA, fish_sel = fish_sel, srv_sel = srv_sel,
-       n_pop = n_pop, n_ages = n_ages, n_sexes = n_sexes)
+  list(
+    NAA = NAA,
+    fish_sel = fish_sel,
+    srv_sel = srv_sel,
+    n_pop = n_pop,
+    n_ages = n_ages,
+    n_sexes = n_sexes
+  )
 }
 
 test_that("release_conv_tag_attr: p_a_s returns tagged_fish unchanged", {
@@ -33,8 +46,12 @@ test_that("release_conv_tag_attr: p_a_s returns tagged_fish unchanged", {
     srv_sel              = arrs$srv_sel,
     fish_sel             = arrs$fish_sel,
     NAA                  = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
 
   expect_equal(result, array(tagged_fish, dim = c(arrs$n_pop, arrs$n_ages, arrs$n_sexes)))
@@ -63,8 +80,12 @@ test_that("release_conv_tag_attr: output sums match input totals for all tag_att
       srv_sel              = arrs$srv_sel,
       fish_sel             = arrs$fish_sel,
       NAA                  = arrs$NAA,
-      ty = 1, tseas = 1, tr = 1,
-      n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+      ty = 1,
+      tseas = 1,
+      tr = 1,
+      n_pop = arrs$n_pop,
+      n_ages = arrs$n_ages,
+      n_sexes = arrs$n_sexes
     )
     expect_equal(sum(result), total_tags, tolerance = 1e-10,
                  label = paste("total preserved for tag_attr =", cfg$attr))
@@ -81,11 +102,18 @@ test_that("release_conv_tag_attr: marginals along attended dims are preserved", 
   tagged_p[1, 1, 1] <- 30
   tagged_p[2, 1, 1] <- 70
   result_p <- release_conv_tag_attr(
-    tagged_fish = tagged_p, tag_attr = "p",
+    tagged_fish = tagged_p,
+    tag_attr = "p",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   # Sum across age and sex for each pop should equal input
   expect_equal(sum(result_p[1, , ]), 30, tolerance = 1e-10)
@@ -97,11 +125,18 @@ test_that("release_conv_tag_attr: marginals along attended dims are preserved", 
   tagged_a[1, 2, 1] <- 40
   tagged_a[1, 3, 1] <- 50
   result_a <- release_conv_tag_attr(
-    tagged_fish = tagged_a, tag_attr = "a",
+    tagged_fish = tagged_a,
+    tag_attr = "a",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   expect_equal(sum(result_a[, 1, ]), 10, tolerance = 1e-10)
   expect_equal(sum(result_a[, 2, ]), 40, tolerance = 1e-10)
@@ -112,11 +147,18 @@ test_that("release_conv_tag_attr: marginals along attended dims are preserved", 
   tagged_s[1, 1, 1] <- 60
   tagged_s[1, 1, 2] <- 40
   result_s <- release_conv_tag_attr(
-    tagged_fish = tagged_s, tag_attr = "s",
+    tagged_fish = tagged_s,
+    tag_attr = "s",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   expect_equal(sum(result_s[, , 1]), 60, tolerance = 1e-10)
   expect_equal(sum(result_s[, , 2]), 40, tolerance = 1e-10)
@@ -124,11 +166,18 @@ test_that("release_conv_tag_attr: marginals along attended dims are preserved", 
   # tag_attr = "p_a": both pop and age attended; check each [p, a] marginal
   tagged_pa <- array(1:6, dim = c(2, 3, 1))
   result_pa <- release_conv_tag_attr(
-    tagged_fish = tagged_pa, tag_attr = "p_a",
+    tagged_fish = tagged_pa,
+    tag_attr = "p_a",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   for (p in 1:2) for (a in 1:3) {
     expect_equal(sum(result_pa[p, a, ]), tagged_pa[p, a, 1], tolerance = 1e-10,
@@ -144,11 +193,17 @@ test_that("release_conv_tag_attr: uniform weights distribute evenly", {
   tagged_none <- array(total_tags, dim = c(1, 1, 1))
   result <- release_conv_tag_attr(
     tagged_fish          = tagged_none,
-    tag_attr             = "",           # no attended dims
+    tag_attr             = "", # no attended dims
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   n_cells <- arrs$n_pop * arrs$n_ages * arrs$n_sexes   # 12
   expected_per_cell <- total_tags / n_cells
@@ -162,9 +217,15 @@ test_that("release_conv_tag_attr: output has correct dimensions", {
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   expect_equal(dim(result), c(3, 4, 2))
 })
@@ -181,9 +242,15 @@ test_that("release_conv_tag_attr: platform = 'fishery' uses fish_sel weights", {
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("fishery", "1"),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   # All tags should be in pop 2
   expect_equal(sum(result[1, , ]), 0,   tolerance = 1e-10)
@@ -201,9 +268,15 @@ test_that("release_conv_tag_attr: platform = 'survey' uses srv_sel weights", {
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("survey", "1"),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   expect_equal(sum(result[1, , ]), 0,   tolerance = 1e-10)
   expect_equal(sum(result[2, , ]), 100, tolerance = 1e-10)
@@ -223,9 +296,15 @@ test_that("release_conv_tag_attr: non-uniform NAA allocates proportionally", {
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = 1, n_ages = 3, n_sexes = 1
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = 1,
+    n_ages = 3,
+    n_sexes = 1
   )
   # Expected shares: 1/6, 2/6, 3/6 of total
   expect_equal(result[1, 1, 1], 60 * 1/6, tolerance = 1e-10)
@@ -240,9 +319,15 @@ test_that("release_conv_tag_attr: n_sexes = 1 does not error", {
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = 2, n_ages = 3, n_sexes = 1
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = 2,
+    n_ages = 3,
+    n_sexes = 1
   )
   expect_equal(dim(result), c(2, 3, 1))
   expect_equal(sum(result), 50, tolerance = 1e-10)
@@ -259,9 +344,15 @@ test_that("release_conv_tag_attr: NAA = 0 for some cells yields 0 in those cells
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = 2, n_ages = 3, n_sexes = 2
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = 2,
+    n_ages = 3,
+    n_sexes = 2
   )
   expect_true(all(result[1, , ] == 0))
   expect_equal(sum(result[2, , ]), 100, tolerance = 1e-10)
@@ -274,9 +365,15 @@ test_that("release_conv_tag_attr: all output values are non-negative", {
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = 2, n_ages = 5, n_sexes = 2
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = 2,
+    n_ages = 5,
+    n_sexes = 2
   )
   expect_true(all(result >= 0))
 })
@@ -288,9 +385,15 @@ test_that("release_conv_tag_attr: result is array with correct type", {
     tagged_fish          = tagged_fish,
     tag_attr             = "",
     tag_release_platform = c("population", NA),
-    srv_sel = arrs$srv_sel, fish_sel = arrs$fish_sel, NAA = arrs$NAA,
-    ty = 1, tseas = 1, tr = 1,
-    n_pop = arrs$n_pop, n_ages = arrs$n_ages, n_sexes = arrs$n_sexes
+    srv_sel = arrs$srv_sel,
+    fish_sel = arrs$fish_sel,
+    NAA = arrs$NAA,
+    ty = 1,
+    tseas = 1,
+    tr = 1,
+    n_pop = arrs$n_pop,
+    n_ages = arrs$n_ages,
+    n_sexes = arrs$n_sexes
   )
   expect_true(is.array(result))
   expect_true(is.numeric(result))

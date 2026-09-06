@@ -1,14 +1,10 @@
-# What the setup functions say when an argument is wrong.
+# What the setup functions say when an argument is wrong, since an error message is part of the interface.
 #
-# An error message is part of the interface. These two were each wrong in a way
-# that sent the reader somewhere unhelpful: a per-fleet setting given as a scalar
-# was reported as an invalid value, and the value named in that report was one the
-# same message listed as valid; and a composition type given in the form its own
-# error listed was then rejected for its fleet. Both cost more time than the
-# mistakes deserved, so both are pinned here.
+# Two were wrong in a way that sent the reader somewhere unhelpful: a per-fleet setting given as a scalar was
+# reported as invalid, and a composition type given in the form its own error listed was rejected anyway.
 #
-# These check the message a caller actually sees, so they are written against the
-# exported functions rather than against the internal validators.
+# Written against the exported functions rather than the internal validators, so they check the message
+# a caller actually sees.
 
 err_msg <- function(expr) {
   tryCatch({ force(expr); NA_character_ }, error = function(e) conditionMessage(e))
@@ -18,7 +14,7 @@ fleet_spec_input <- function() sweep_input(stop_after = "srvidx")
 
 
 test_that("a per-fleet setting given once says so, rather than blaming its value", {
-  # sweep_dims carries five fishery fleets, so a scalar is short by four.
+  # sweep_dims has five fishery fleets, so a scalar is short by four.
   il <- fleet_spec_input()
   n <- il$data$n_fish_fleets
   base <- list(input_list = il, fish_sel_model = paste0("logist1_Fleet_", seq_len(n)))
@@ -27,7 +23,7 @@ test_that("a per-fleet setting given once says so, rather than blaming its value
     fish_q_spec = "est_all", fish_fixed_sel_pars_spec = rep("est_all", n)))))
 
   expect_match(msg, "fish_q_spec has 1 entry for 5 fleets")
-  # the message carries the call that fixes it, not just the diagnosis
+  # the message holds the call that fixes it, not just the diagnosis
   expect_match(msg, 'rep\\("est_all", 5\\)', fixed = FALSE)
   # and it must not repeat the old mistake of listing the value as unrecognized
   expect_false(grepl("not correctly specified", msg))
@@ -37,8 +33,11 @@ test_that("a per-fleet setting given once says so, rather than blaming its value
 test_that("the length message covers the selectivity settings too", {
   il <- fleet_spec_input()
   n <- il$data$n_fish_fleets
-  base <- list(input_list = il, fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
-               fish_q_spec = rep("fix", n))
+  base <- list(
+    input_list = il,
+    fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
+    fish_q_spec = rep("fix", n)
+  )
 
   for(arg in c("fish_fixed_sel_pars_spec", "fish_sel_devs_spec", "fishsel_pe_pars_spec")) {
     msg <- err_msg(do.call(Setup_Mod_Fishsel_and_Q,
@@ -55,8 +54,11 @@ test_that("a genuinely unrecognized setting is still reported as one", {
   n <- il$data$n_fish_fleets
 
   msg <- err_msg(Setup_Mod_Fishsel_and_Q(
-    il, fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
-    fish_q_spec = rep("fix", n), fish_fixed_sel_pars_spec = rep("not_a_setting", n)))
+    il,
+    fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
+    fish_q_spec = rep("fix", n),
+    fish_fixed_sel_pars_spec = rep("not_a_setting", n)
+  ))
 
   expect_match(msg, "fish_fixed_sel_pars_spec not correctly specified")
   expect_match(msg, "est_shared_r_s")
@@ -69,16 +71,19 @@ test_that("a correctly specified per-fleet setting is accepted", {
   n <- il$data$n_fish_fleets
 
   expect_no_error(Setup_Mod_Fishsel_and_Q(
-    il, fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
-    fish_q_spec = rep("fix", n), fish_fixed_sel_pars_spec = rep("est_all", n)))
+    il,
+    fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
+    fish_q_spec = rep("fix", n),
+    fish_fixed_sel_pars_spec = rep("est_all", n)
+  ))
 })
 
 
 test_that("a composition type names the whole form it has to be given in", {
   # The old message listed 'agg' among the valid settings, so a caller who passed
-  # exactly that was then told their fleet was invalid. Either message now carries
+  # exactly that was then told their fleet was invalid. Either message now has
   # the full form. The form is named generically because one parser serves both
-  # the composition streams and the at-age ones, which have different vocabularies
+  # the composition data sources and the at-age ones, which have different vocabularies
   # and are each listed by the message that raises them.
   n <- sweep_dims$n_fish_fleets
 
@@ -104,7 +109,7 @@ test_that("a composition type given as a bare setting names the form too", {
 })
 
 
-test_that("no setup message still carries the old misspelling", {
+test_that("no setup message still holds the old misspelling", {
   # 'specfied' appeared in five messages. It is the kind of thing a reader
   # searching the source for their error will not find.
   r_dir <- testthat::test_path("..", "..", "R")
@@ -133,8 +138,13 @@ test_that("a plot destination that resolves to nothing is refused", {
   # and the file was committed three separate times before anyone noticed.
   for(bad in list(NULL, NA, character(0), c("a", "b"))) {
     expect_error(
-      plot_all_basic(data = list(), rep = list(), sd_rep = list(),
-                     model_names = "x", out_path = bad),
+      plot_all_basic(
+        data = list(),
+        rep = list(),
+        sd_rep = list(),
+        model_names = "x",
+        out_path = bad
+      ),
       "out_path must be a single directory",
       label = sprintf("out_path = %s", paste(deparse(bad), collapse = "")))
   }
@@ -144,12 +154,12 @@ test_that("a plot destination that resolves to nothing is refused", {
 test_that("a starting value of the wrong shape is refused where it is given", {
   # Starting values arrive through ... and were substituted for the model's own
   # default without being measured against it. A value of the wrong shape is not
-  # rejected by that: it is carried into the objective, read position by
+  # rejected by that: it is passed into the objective, read position by
   # position, and indexes past its own end somewhere else entirely. What comes
   # back is RTMB's "'*this' is not a valid 'advector'", which names nothing the
   # caller wrote.
   #
-  # The default carries the shape the model expects, so it is what the supplied
+  # The default holds the shape the model expects, so it is what the supplied
   # value is now checked against.
   expect_error(sweep_input(biol = list(M_spec = "est_ln_M", ln_M = rep(log(0.2), 7))),
                "starting value for ln_M is length 7")
@@ -213,8 +223,11 @@ test_that("the per-fleet and starting-value guards stay distinct", {
   n <- il$data$n_fish_fleets
 
   fleet_setting <- err_msg(Setup_Mod_Fishsel_and_Q(
-    il, fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
-    fish_q_spec = "est_all", fish_fixed_sel_pars_spec = rep("est_all", n)))
+    il,
+    fish_sel_model = paste0("logist1_Fleet_", seq_len(n)),
+    fish_q_spec = "est_all",
+    fish_fixed_sel_pars_spec = rep("est_all", n)
+  ))
   expect_match(fleet_setting, "fish_q_spec has 1 entry for 5 fleets")
 
   starting_value <- err_msg(sweep_input(fishsel = list(ln_fish_q = 0)))

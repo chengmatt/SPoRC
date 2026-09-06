@@ -20,6 +20,6 @@ An array shaped like \code{se}.
 Applies \code{\link{combine_idx_sd}} fleet by fleet, where the fleet is the
 last dimension of \code{se}. Handles both the aggregated arrays, indexed
 region by year by season by fleet, and the population-specific arrays, which
-carry a leading population dimension.
+have a leading population dimension.
 }
 \keyword{internal}

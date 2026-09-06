@@ -19,9 +19,16 @@ make_devs <- function(vals, region = 1, year = 2, sex = 1) {
 }
 
 selex <- function(model, pars, devs, tv = 1, year = 2, region = 1, sex = 1) {
-  SPoRC:::Get_Selex(Selex_Model = model, TimeVary_Model = tv, pars = pars,
-                    ln_seldevs = devs, Region = region, Year = year,
-                    Bin = bins, Sex = sex)
+  SPoRC:::Get_Selex(
+    Selex_Model = model,
+    TimeVary_Model = tv,
+    pars = pars,
+    ln_seldevs = devs,
+    Region = region,
+    Year = year,
+    Bin = bins,
+    Sex = sex
+  )
 }
 
 test_that("deviations on log-scale parameters shift the parameters directly", {
@@ -133,8 +140,11 @@ test_that("random walk deviations behave identically to iid deviations", {
     list(model = 0, pars = log(c(10, 0.5)), devs = c(0.15, -0.2)),
     list(model = 1, pars = log(c(12, 3)),   devs = c(0.1, 0.25)),
     list(model = 2, pars = log(0.5),        devs = 0.3),
-    list(model = 4, pars = c(0, 0, log(5), log(5), -1, -1),
-         devs = c(0.1, 0.2, 0.3, -0.1, 0.25, -0.15)),
+    list(
+      model = 4,
+      pars = c(0, 0, log(5), log(5), -1, -1),
+      devs = c(0.1, 0.2, 0.3, -0.1, 0.25, -0.15)
+    ),
     list(model = 6, pars = c(-0.5, log(10), log(0.5)), devs = c(-0.2, 0.15, 0.1)),
     list(model = 7, pars = c(-0.5, log(10), log(15)),  devs = c(-0.2, 0.15, 0.1))
   )

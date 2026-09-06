@@ -4,16 +4,22 @@ library(testthat)
 # ── mapping a deviation off by hand removes its penalty ─────────────────────
 #
 # The map is applied by RTMB::MakeADFun and is invisible inside the objective,
-# so the F and dmr deviation penalties read a mirror of it carried in the data
+# so the F and dmr deviation penalties read a mirror of it kept in the data
 # list. fit_model() refreshes those mirrors from the map it is about to hand to
 # MakeADFun, which is what makes a hand edit to the map take effect on the
 # penalty as well as on what is estimated.
 
-build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))
+build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
 fit_no_optim <- function(input) {
-  fit_model(data = input$data, parameters = input$par, mapping = input$map,
-            random = NULL, do_optim = FALSE, silent = TRUE)
+  fit_model(
+    data = input$data,
+    parameters = input$par,
+    mapping = input$map,
+    random = NULL,
+    do_optim = FALSE,
+    silent = TRUE
+  )
 }
 
 map_off_years <- function(input, par_nm, yrs) {
@@ -80,7 +86,7 @@ test_that("a dmr deviation mapped off stays at a non-zero starting value rather 
   expect_false(isTRUE(all.equal(fit$rep$dmr[1, 12, 1, 1], stats::plogis(logit_mean))))
 })
 
-test_that("an input list carrying no map mirrors falls back on the fished set", {
+test_that("an input list with no map mirrors falls back on the fished set", {
   # maintain_backwards_compatibility() rebuilds the set the penalties used to
   # compute for themselves, so input lists saved by older SPoRC versions still
   # evaluate to the same penalties

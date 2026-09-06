@@ -13,7 +13,7 @@ bins_or_null(x)
 \code{x}, or \code{NULL} if it is absent or selects every bin.
 }
 \description{
-The composition machinery treats \code{NULL} as "fit every bin", which lets
+The composition routines treats \code{NULL} as "fit every bin", which lets
 the likelihood and the OSA packers skip the restriction entirely and lets a
 backwards-compatible all-ones array of the wrong length never be indexed
 into. Both the objective and \code{\link{get_osa}} decide that here, so they

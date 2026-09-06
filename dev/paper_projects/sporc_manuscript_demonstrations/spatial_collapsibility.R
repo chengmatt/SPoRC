@@ -85,30 +85,31 @@ sgl_catch_proj <- array(0, dim = c(n_regions, n_proj_yrs, n_fish_fleets, n_sims)
 for(sim in 1:n_sims) {
 
   # do projection
-  out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs,
-                                  n_regions = n_regions,
-                                  n_ages = n_ages,
-                                  n_sexes = n_sexes,
-                                  sexratio = sexratio,
-                                  n_fish_fleets = n_fish_fleets,
-                                  do_recruits_move = do_recruits_move,
-                                  recruitment = recruitment,
-                                  terminal_NAA = terminal_NAA,
-                                  terminal_NAA0 = terminal_NAA0,
-                                  terminal_F = terminal_F,
-                                  natmort = natmort,
-                                  WAA = WAA,
-                                  n_pop = n_pop,
-                                  WAA_fish = WAA_fish,
-                                  MatAA = MatAA,
-                                  fish_sel = fish_sel,
-                                  Movement = Movement,
-                                  f_ref_pt = array(sgl_ref_pt$f_ref_pt, dim = c(sgl_dat$n_regions, n_proj_yrs)),
-                                  b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(sgl_dat$n_pop, sgl_dat$n_regions, n_proj_yrs)),
-                                  HCR_function = HCR_function,
-                                  recruitment_opt = "mean_rec",
-                                  fmort_opt = "HCR",
-                                  t_spawn = t_spawn
+  out <- Do_Population_Projection(
+    n_proj_yrs = n_proj_yrs,
+    n_regions = n_regions,
+    n_ages = n_ages,
+    n_sexes = n_sexes,
+    sexratio = sexratio,
+    n_fish_fleets = n_fish_fleets,
+    do_recruits_move = do_recruits_move,
+    recruitment = recruitment,
+    terminal_NAA = terminal_NAA,
+    terminal_NAA0 = terminal_NAA0,
+    terminal_F = terminal_F,
+    natmort = natmort,
+    WAA = WAA,
+    n_pop = n_pop,
+    WAA_fish = WAA_fish,
+    MatAA = MatAA,
+    fish_sel = fish_sel,
+    Movement = Movement,
+    f_ref_pt = array(sgl_ref_pt$f_ref_pt, dim = c(sgl_dat$n_regions, n_proj_yrs)),
+    b_ref_pt = array(sgl_ref_pt$b_ref_pt, dim = c(sgl_dat$n_pop, sgl_dat$n_regions, n_proj_yrs)),
+    HCR_function = HCR_function,
+    recruitment_opt = "mean_rec",
+    fmort_opt = "HCR",
+    t_spawn = t_spawn
   )
 
   sgl_ssb_proj[,,sim] <- out$proj_SSB
@@ -465,13 +466,26 @@ three_ssb_plot <- ggplot() +
 
 # aggregated plot
 all_ssb_plot <- ggplot() +
-  geom_line(all_rg_ssb %>% filter(Type_Period == 'Historical'),
-            mapping = aes(x = Year, y = value, color = Type), lty = 1, lwd = 1.3) +
-  geom_ribbon(all_rg_ssb %>% filter(Type_Period == 'Historical'),
-              mapping = aes(x = Year, y = value, ymin = exp(log(value) - 1.96 * log_se),
-                            ymax = exp(log(value) + 1.96 * log_se), fill = Type), alpha = 0.25, color = NA) +
-  geom_line(all_rg_ssb %>% filter(Type_Period == 'Projection'),
-            mapping = aes(x = Year, y = value, group = interaction(Sim, Type), color = Type), lty = 1, lwd = 1.3, alpha = 1) +
+  geom_line(
+    all_rg_ssb %>% filter(Type_Period == 'Historical'),
+    mapping = aes(x = Year, y = value, color = Type),
+    lty = 1,
+    lwd = 1.3
+  ) +
+  geom_ribbon(
+    all_rg_ssb %>% filter(Type_Period == 'Historical'),
+    mapping = aes(x = Year, y = value, ymin = exp(log(value) - 1.96 * log_se),
+                            ymax = exp(log(value) + 1.96 * log_se), fill = Type),
+    alpha = 0.25,
+    color = NA
+  ) +
+  geom_line(
+    all_rg_ssb %>% filter(Type_Period == 'Projection'),
+    mapping = aes(x = Year, y = value, group = interaction(Sim, Type), color = Type),
+    lty = 1,
+    lwd = 1.3,
+    alpha = 1
+  ) +
   geom_hline(all_rg_ssb, mapping = aes(yintercept = b40, color = Type), lty = 2, lwd = 1) +
   geom_vline(xintercept = 2021, lty = 2) +
   coord_cartesian(ylim = c(0, NA)) +
@@ -484,14 +498,26 @@ all_ssb_plot <- ggplot() +
 
 
 # combine plots
-multi_ssb_plots <- cowplot::plot_grid(three_ssb_plot, five_ssb_plot, ncol = 2,
-                                      labels = c("B", "C"), label_size = 30, label_x = 0.03)
+multi_ssb_plots <- cowplot::plot_grid(
+  three_ssb_plot,
+  five_ssb_plot,
+  ncol = 2,
+  labels = c("B", "C"),
+  label_size = 30,
+  label_x = 0.03
+)
 
 ggsave(
   here("dev", "paper_projects", "sporc_manuscript_demonstrations", "figs", "spatial_proj.png"),
   print(
-    cowplot::plot_grid(all_ssb_plot, multi_ssb_plots, rel_heights = c(0.6, 1), nrow = 2,
-                       labels = c("A", ""), label_size = 30)
+    cowplot::plot_grid(
+      all_ssb_plot,
+      multi_ssb_plots,
+      rel_heights = c(0.6, 1),
+      nrow = 2,
+      labels = c("A", ""),
+      label_size = 30
+    )
   ),
   width = 14, height = 20
 )
@@ -591,9 +617,16 @@ rec_five_area_plot <- ggplot(five_rg_rec, aes(x = Year, y = value,
 ggsave(
   here("dev", "paper_projects", "sporc_manuscript_demonstrations", "figs", "move_proj.png"),
   print(
-    cowplot::plot_grid(rec_three_area_plot, cohort_three_area_plot, rec_five_area_plot,
-                       cohort_five_area_plot,
-                       ncol = 2, labels = c("A", "B", "C", "D"), label_size = 25, label_x = 0.)
+    cowplot::plot_grid(
+      rec_three_area_plot,
+      cohort_three_area_plot,
+      rec_five_area_plot,
+      cohort_five_area_plot,
+      ncol = 2,
+      labels = c("A", "B", "C", "D"),
+      label_size = 25,
+      label_x = 0.
+    )
   ),
   width = 10, height = 16
 )

@@ -57,7 +57,7 @@ data.frame identifying the origin (pop, region, year, season, fleet, sex,
 bin, comp_type, likelihood_type, family, last_in_group) of every entry in
 the tracked vector, in the same order. Intended for post-hoc relabeling of
 \code{TMB::oneStepPredict()} residuals (see [get_osa()]); left \code{FALSE}
-(default) inside the model itself to avoid the extra bookkeeping cost.}
+(default) inside the model itself to avoid the extra residual tracking cost.}
 
 \item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 observed bins each fleet is fitted over, or \code{NULL} (default) for all

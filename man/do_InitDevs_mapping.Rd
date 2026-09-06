@@ -66,7 +66,7 @@ standard behavior determined by \code{equil_init_age_strc} alone.}
 \item{InitDevs_sex_spec}{Character. \code{"est_shared_s"} (default) maps
 every sex onto one shared age curve (the pre-sex-dimension behavior,
 penalized once); \code{"est_all"} offsets the factor levels per sex so
-each sex carries its own curve, each penalized. Also builds
+each sex has its own curve, each penalized. Also builds
 \code{data$init_devs_pen_use}, which flags exactly one penalized copy of
 every estimated parameter.}
 }

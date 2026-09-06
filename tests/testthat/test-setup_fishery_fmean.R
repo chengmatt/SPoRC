@@ -1,14 +1,23 @@
 library(SPoRC)
 library(testthat)
 
-# Minimal input_list carrying only what do_Fmort_mapping reads
+# Minimal input_list with only what do_Fmort_mapping reads
 mk_input <- function(UseCatch, ObsCatch, UseCatch_pop = NULL) {
   d <- dim(UseCatch)
   if (is.null(UseCatch_pop)) UseCatch_pop <- array(0, dim = c(1, d))
-  list(data = list(n_regions = d[1], years = seq_len(d[2]), n_seas = d[3],
-                   n_fish_fleets = d[4], UseCatch = UseCatch,
-                   UseCatch_pop = UseCatch_pop, ObsCatch = ObsCatch),
-       par = list(), map = list())
+  list(
+    data = list(
+      n_regions = d[1],
+      years = seq_len(d[2]),
+      n_seas = d[3],
+      n_fish_fleets = d[4],
+      UseCatch = UseCatch,
+      UseCatch_pop = UseCatch_pop,
+      ObsCatch = ObsCatch
+    ),
+    par = list(),
+    map = list()
+  )
 }
 
 test_that("ln_F_mean is estimated only where a cell is fished in some year", {

@@ -8,7 +8,7 @@ library(testthat)
 
 n_lens_test <- 8
 
-build <- function(...) suppressWarnings(suppressMessages(objective_fixture_input(...)))
+build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
 length_based <- function() build(n_lens = n_lens_test, fishsel = list(ret_selex_type = "length"))
 age_based <- function() build(n_lens = n_lens_test)
@@ -24,7 +24,7 @@ test_that("length based retention selectivity is estimated over length bins", {
   expect_false(is.null(model$rep$ret_sel_l))
   expect_equal(dim(model$rep$ret_sel_l)[3], n_lens_test)
 
-  # the same fixture with age-based retention reports no length-based retention curve
+  # the same test setup with age-based retention reports no length-based retention curve
   age_model <- evaluate_input(age_based())
   expect_equal(age_model$data$ret_selex_type, 0)
   expect_null(age_model$rep$ret_sel_l)

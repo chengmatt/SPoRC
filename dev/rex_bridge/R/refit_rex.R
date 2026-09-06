@@ -11,7 +11,14 @@ est <- fit_model(input$data, input$par, input$map, do_optim = TRUE, newton_loops
 cat("objective after refit:", est$optim$objective, " max|grad|:", max(abs(est$gr(est$optim$par))), " in", round(as.numeric(Sys.time() - t0, units = "mins"), 1), "min\n")
 est$sdrep <- RTMB::sdreport(est, hessian.fixed = est$he(est$optim$par))
 cat("pdHess:", est$sdrep$pdHess, "\n")
-saveRDS(list(input = input, seed_rep = seed$rep, seed_obj = seed$fn(seed$par), est_rep = est$rep, optim = est$optim,
-             sdrep_summary = summary(est$sdrep), par_names = names(est$optim$par)),
+saveRDS(list(
+  input = input,
+  seed_rep = seed$rep,
+  seed_obj = seed$fn(seed$par),
+  est_rep = est$rep,
+  optim = est$optim,
+  sdrep_summary = summary(est$sdrep),
+  par_names = names(est$optim$par)
+),
         "dev/rex_bridge/output/rex_sporc_refit.rds")
 cat("saved\n")

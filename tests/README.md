@@ -22,7 +22,7 @@ These check a property rather than a stored number, so a failure tells you what 
   mapping. A failure means a setup function accepts something it should reject, or rejects
   something it should accept.
 - `test-model_population_dynamics.R` writes its expectations as arithmetic, for example
-  `40 * exp(-0.3)`, so each assertion carries its own derivation.
+  `40 * exp(-0.3)`, so each assertion has its own derivation.
 
 
 ## Pinned regression tests

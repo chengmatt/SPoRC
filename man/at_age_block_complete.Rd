@@ -7,7 +7,7 @@
 at_age_block_complete(use_arr, f, nd, i_y, i_a)
 }
 \arguments{
-\item{use_arr}{Use array for the stream.}
+\item{use_arr}{Use array for the data source.}
 
 \item{f}{Fleet index.}
 

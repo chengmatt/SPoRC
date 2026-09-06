@@ -15,12 +15,12 @@ get_caal_fits(data, rep)
 A data frame with one row per region, year, season, length bin, sex
   and fleet that aged fish, holding \code{obs} and \code{pred} mean age, the
   predicted standard deviation of age within the bin (\code{sd_pred}) and the
-  number aged (\code{ISS}). Empty when the model carries no conditional
+  number aged (\code{ISS}). Empty when the model has no conditional
   age-at-length data.
 }
 \description{
 A conditional age-at-length observation is an age composition within one
-length bin, and a model can carry thousands of them, so the composition
+length bin, and a model can have thousands of them, so the composition
 itself is not something to plot row by row. The mean age within each length
 bin is the summary that reads: it is what the data say about growth, and it
 is the statistic Francis reweighting penalizes the fit against. Returned observed

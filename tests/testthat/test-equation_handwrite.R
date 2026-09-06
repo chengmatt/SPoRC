@@ -1,19 +1,12 @@
 # The model against the equations it is documented by.
 #
-# vignettes/c_model_equations.Rmd states what SPoRC computes. Nothing checks that
-# it does. A regression test pins the number the code produces, so a model that is
-# internally consistent but computing something other than the documented equation
-# passes forever, and the vignette quietly becomes fiction.
+# c_model_equations.Rmd states what SPoRC computes and nothing checks that it does. A regression test fixes
+# the number the code produces, so a model computing something else passes forever.
 #
-# helper-equation_oracle.R holds a second implementation written from the
-# vignette rather than from R/. Where the two disagree, either the code has
-# drifted from its documentation or the documentation is wrong about the code, and
-# both are worth knowing.
-#
-# The fixtures carry one population, region, season, sex and fleet, matching the
-# subscript-free form the equations are printed in.
+# helper-equation_handwrite.R holds a second implementation written from the vignette. Where the two
+# disagree, either the code has diverged from its documentation or the documentation is wrong.
 
-oracle_fixture <- function(t_spawn = 0, n_yrs = 10, n_ages = 6) {
+oracle_setup <- function(t_spawn = 0, n_yrs = 10, n_ages = 6) {
   il <- collapse_input(nr = 1, nx = 1, nf = 1)
   if(t_spawn != 0) il$data$t_spawn <- t_spawn
   fit <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
@@ -22,7 +15,7 @@ oracle_fixture <- function(t_spawn = 0, n_yrs = 10, n_ages = 6) {
 
 
 test_that("total mortality is natural mortality plus fishing mortality at age", {
-  fx <- oracle_fixture()
+  fx <- oracle_setup()
   Z <- oracle_ya(fx$rep$ZAA, fx$n_yrs, fx$n_ages)
   M <- oracle_ya(fx$rep$natmort, fx$n_yrs, fx$n_ages)
   FAA <- oracle_ya(fx$rep$tot_FAA, fx$n_yrs, fx$n_ages)
@@ -34,7 +27,7 @@ test_that("total mortality is natural mortality plus fishing mortality at age", 
 test_that("numbers at age follow the documented projection and plus group", {
   # N[y+1, a+1] = N[y, a] exp(-Z[y, a]), with the plus group taking survivors of
   # both the last true age and of itself.
-  fx <- oracle_fixture()
+  fx <- oracle_setup()
   Z <- oracle_ya(fx$rep$ZAA, fx$n_yrs, fx$n_ages)
   N <- drop(fx$rep$NAA)
 
@@ -48,7 +41,7 @@ test_that("the plus group conserves the fish entering it", {
   # Stated separately from the projection because it is the line most often
   # written as a plain assignment rather than an accumulation, and a model that
   # drops the second term still projects every other age correctly.
-  fx <- oracle_fixture()
+  fx <- oracle_setup()
   Z <- oracle_ya(fx$rep$ZAA, fx$n_yrs, fx$n_ages)
   N <- drop(fx$rep$NAA)
   A <- fx$n_ages
@@ -63,7 +56,7 @@ test_that("the plus group conserves the fish entering it", {
 
 
 test_that("catch at age follows Baranov's equation", {
-  fx <- oracle_fixture()
+  fx <- oracle_setup()
   Z <- oracle_ya(fx$rep$ZAA, fx$n_yrs, fx$n_ages)
   N <- drop(fx$rep$NAA)[seq_len(fx$n_yrs), ]
   retF <- oracle_ya(fx$rep$ret_FAA, fx$n_yrs, fx$n_ages)
@@ -74,11 +67,11 @@ test_that("catch at age follows Baranov's equation", {
 
 
 test_that("spawning biomass weighs the population propagated to spawning", {
-  # t_spawn = 0 leaves the population where it is; a non-zero value carries it
+  # t_spawn = 0 leaves the population where it is; a non-zero value has it
   # into the season first. Both are checked, because a model that ignores the
   # timing agrees with the reference at zero and only differs away from it.
   for(t_spawn in c(0, 0.35)) {
-    fx <- oracle_fixture(t_spawn = t_spawn)
+    fx <- oracle_setup(t_spawn = t_spawn)
     Z <- oracle_ya(fx$rep$ZAA, fx$n_yrs, fx$n_ages)
     N <- drop(fx$rep$NAA)[seq_len(fx$n_yrs), ]
     WAA <- oracle_ya(fx$il$data$WAA, fx$n_yrs, fx$n_ages)
@@ -97,8 +90,8 @@ test_that("spawning biomass weighs the population propagated to spawning", {
 test_that("the spawning timing check is sensitive to the timing", {
   # If SSB ignored t_spawn the test above would still pass at t_spawn = 0 and
   # against a reference that also ignored it. The two values have to differ.
-  a <- oracle_y(oracle_fixture(t_spawn = 0)$rep$SSB, collapse_cfg$n_yrs)
-  b <- oracle_y(oracle_fixture(t_spawn = 0.35)$rep$SSB, collapse_cfg$n_yrs)
+  a <- oracle_y(oracle_setup(t_spawn = 0)$rep$SSB, collapse_cfg$n_yrs)
+  b <- oracle_y(oracle_setup(t_spawn = 0.35)$rep$SSB, collapse_cfg$n_yrs)
 
   expect_gt(max(abs(a - b) / pmax(abs(a), 1e-30)), 0.01)
 })
@@ -111,9 +104,16 @@ test_that("logistic selectivity matches the documented form", {
   # slope), which the vignette does not say.
   bins <- 1:12
   for(pars in list(c(4, 1.2), c(7, 0.4), c(2, 3))) {
-    got <- Get_Selex(Selex_Model = 0, Bin = bins, pars = log(pars),
-                     TimeVary_Model = 0, ln_seldevs = array(0, c(1, 1, 6, 1, 1)),
-                     Region = 1, Year = 1, Sex = 1)
+    got <- Get_Selex(
+      Selex_Model = 0,
+      Bin = bins,
+      pars = log(pars),
+      TimeVary_Model = 0,
+      ln_seldevs = array(0, c(1, 1, 6, 1, 1)),
+      Region = 1,
+      Year = 1,
+      Sex = 1
+    )
     expect_equal(as.numeric(got), oracle_selex("logist1", bins, pars), tolerance = 1e-10,
                  label = sprintf("logist1 at b50=%g slope=%g", pars[1], pars[2]))
   }
@@ -126,9 +126,16 @@ test_that("gamma selectivity squares the peak inside the root", {
   # so the vignette can be corrected against a test rather than against a reading.
   bins <- 1:12
   for(pars in list(c(5, 2), c(8, 1.5))) {
-    got <- Get_Selex(Selex_Model = 1, Bin = bins, pars = log(pars),
-                     TimeVary_Model = 0, ln_seldevs = array(0, c(1, 1, 6, 1, 1)),
-                     Region = 1, Year = 1, Sex = 1)
+    got <- Get_Selex(
+      Selex_Model = 1,
+      Bin = bins,
+      pars = log(pars),
+      TimeVary_Model = 0,
+      ln_seldevs = array(0, c(1, 1, 6, 1, 1)),
+      Region = 1,
+      Year = 1,
+      Sex = 1
+    )
     expect_equal(as.numeric(got), oracle_selex("gamma", bins, pars), tolerance = 1e-10,
                  label = sprintf("gamma at bmax=%g delta=%g", pars[1], pars[2]))
 
@@ -146,11 +153,17 @@ test_that("gamma selectivity squares the peak inside the root", {
 test_that("the multinomial composition likelihood matches the documented form", {
   # -l = ESS sum_b (O_b + c) [log(O_b + c) - log(E_b + c)]
   #
-  # The sweep fixture is used rather than the collapse one because it fits
-  # compositions; the collapse fixture switches every observation stream off.
+  # The sweep test setup is used rather than the collapse one because it fits
+  # compositions; the collapse test setup switches every data source off.
   n_yrs <- 8; n_ages <- 5
-  il <- sweep_input(dims = list(n_regions = 1, n_sexes = 1, n_fish_fleets = 1,
-                                n_srv_fleets = 1, n_yrs = n_yrs, n_ages = n_ages))
+  il <- sweep_input(dims = list(
+    n_regions = 1,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_yrs = n_yrs,
+    n_ages = n_ages
+  ))
   # observed proportions that are not flat, so a likelihood ignoring either
   # argument is distinguishable from one reading both
   set.seed(42)
@@ -172,7 +185,7 @@ test_that("the multinomial composition likelihood matches the documented form", 
 
   reported <- drop(rep$FishAgeComps_nLL)
   # expected proportions come from catch at age, which is what the compositions
-  # are predicted from; PredCatchAA is the separate at-age observation stream
+  # are predicted from; PredCatchAA is the separate at-age data source
   pred <- drop(rep$CAA)
   iss <- drop(il$data$ISS_FishAgeComps)
   const <- il$data$addtocomp

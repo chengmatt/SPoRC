@@ -576,16 +576,27 @@ final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Pop = Var1, Region
 png(here("vignettes", "figures", "o_jiter_ts.png"), width = 1000, height = 800)
 ggplot() +
   geom_line(jitter_res, mapping = aes(x = Year + 1976, y = value, group = jitter, color = Hessian), lwd = 1) +
-  geom_line(final_mod, mapping = aes(x = Year + 1976, y = value), color = "black", lwd = 1.3 , lty = 2) +
+  geom_line(
+    final_mod,
+    mapping = aes(x = Year + 1976, y = value),
+    color = "black",
+    lwd = 1.3,
+    lty = 2
+  ) +
   facet_grid(Type~Region, scales = 'free',
              labeller = labeller(Region = function(x) paste0("Region ", x),
                                  Type = c("Recruitment" = "Age 2 Recruitment (millions)", "SSB" = 'SSB (kt)'))) +
   labs(x = "Year", y = "Value") +
   theme_bw(base_size = 20) +
   scale_color_manual(values = c("red", 'gray')) +
-  geom_text(data = jitter_res %>% filter(Type == 'SSB', Year == 1, jitter == 1),
-            aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
-            hjust = 1.1, vjust = 1.9, size = 6, color = "black")
+  geom_text(
+    data = jitter_res %>% filter(Type == 'SSB', Year == 1, jitter == 1),
+    aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
+    hjust = 1.1,
+    vjust = 1.9,
+    size = 6,
+    color = "black"
+  )
 dev.off()
 
 # compare jitter of max gradient and hessian PD
@@ -601,9 +612,14 @@ ggplot(jitter_res, aes(x = jitter, y = jnLL, color = Max_Gradient, shape = Hessi
   theme(legend.position = "bottom") +
   guides(color = guide_colorbar(barwidth = 15, barheight = 0.5)) +
   labs(x = 'Jitter') +
-  geom_text(data = jitter_res %>% filter(Hessian == TRUE, Year == 1, jitter == 1),
-            aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
-            hjust = 1.1, vjust = 1.9, size = 6, color = "black")
+  geom_text(
+    data = jitter_res %>% filter(Hessian == TRUE, Year == 1, jitter == 1),
+    aes(x = Inf, y = Inf, label = paste("Proportion Converged: ", round(prop_converged$prop_conv, 3))),
+    hjust = 1.1,
+    vjust = 1.9,
+    size = 6,
+    color = "black"
+  )
 dev.off()
 
 # MCMC --------------------------------------------------------------------
@@ -644,7 +660,13 @@ ssb_summry <- mcmc_ts_plot$SSB %>%
 ggplot() +
   geom_line(ssb_summry, mapping = aes(x = Var3, y = median)) +
   geom_ribbon(ssb_summry, mapping = aes(x = Var3, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
-  geom_line(reshape2::melt(francis_model$rep$SSB), mapping = aes(x = Var3, y = value), col = 'red', lwd = 1.3, lty = 2) +
+  geom_line(
+    reshape2::melt(francis_model$rep$SSB),
+    mapping = aes(x = Var3, y = value),
+    col = 'red',
+    lwd = 1.3,
+    lty = 2
+  ) +
   coord_cartesian(ylim = c(0, NA)) +
   labs(x = 'Year', y = 'Spawning Stock Biomass') +
   theme_bw(base_size = 15)
@@ -660,7 +682,13 @@ rec_summry <- mcmc_ts_plot$Rec %>%
 ggplot() +
   geom_line(rec_summry, mapping = aes(x = Var3, y = median)) +
   geom_ribbon(rec_summry, mapping = aes(x = Var3, y = median, ymin = lwr, ymax = upr), alpha = 0.3) +
-  geom_line(reshape2::melt(francis_model$rep$Rec), mapping = aes(x = Var3, y = value), col = 'red', lwd = 1.3, lty = 2) +
+  geom_line(
+    reshape2::melt(francis_model$rep$Rec),
+    mapping = aes(x = Var3, y = value),
+    col = 'red',
+    lwd = 1.3,
+    lty = 2
+  ) +
   coord_cartesian(ylim = c(0, NA)) +
   labs(x = 'Year', y = 'Recruitment') +
   theme_bw(base_size = 15)
@@ -683,23 +711,29 @@ spr_35 <- Get_Reference_Points(data = francis_data,
                                calc_rec_st_yr = 3,
                                rec_age = 4)
 
-spr_40 <- Get_Reference_Points(data = francis_data,
-                               rep = francis_model$rep,
-                               type = "single_region",
-                               what = 'SPR',
-                               SPR_x = 0.4,
-                               t_spawn = 0,
-                               sex_ratio_f = 0.5,
-                               calc_rec_st_yr = 3, rec_age = 4)
+spr_40 <- Get_Reference_Points(
+  data = francis_data,
+  rep = francis_model$rep,
+  type = "single_region",
+  what = 'SPR',
+  SPR_x = 0.4,
+  t_spawn = 0,
+  sex_ratio_f = 0.5,
+  calc_rec_st_yr = 3,
+  rec_age = 4
+)
 
-spr_60 <- Get_Reference_Points(data = francis_data,
-                               rep = francis_model$rep,
-                               type = "single_region",
-                               what = 'SPR',
-                               SPR_x = 0.6,
-                               t_spawn = 0,
-                               sex_ratio_f = 0.5,
-                               calc_rec_st_yr = 3, rec_age = 4)
+spr_60 <- Get_Reference_Points(
+  data = francis_data,
+  rep = francis_model$rep,
+  type = "single_region",
+  what = 'SPR',
+  SPR_x = 0.6,
+  t_spawn = 0,
+  sex_ratio_f = 0.5,
+  calc_rec_st_yr = 3,
+  rec_age = 4
+)
 
 # Extract reference points
 b40 <- spr_40$b_ref_pt
@@ -742,7 +776,7 @@ MatAA <- array(rep(francis_data$MatAA[,,length(francis_data$years),,,], each = n
 fish_sel <- array(rep(francis_model$rep$fish_sel[,,length(francis_data$years),,,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
 Movement <- array(rep(francis_model$rep$Movement[,,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # movement - not used
 terminal_F <- array(francis_model$rep$Fmort[,length(francis_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortaility
+natmort <- array(rep(francis_model$rep$natmort[,,length(francis_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # natural mortality, a rate per year in each season
 recruitment <- array(francis_model$rep$Rec[,,3:(length(francis_data$years) - 4)], dim = c(n_pop, n_regions, length(3:(length(francis_data$years) - 4)))) # recruitment from years 3 - terminal (corresponds to 1979)
 sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 rec_seas_prop <- array(1, dim = c(1,1)) # recruitment seasonal apportionment

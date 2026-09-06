@@ -3,7 +3,7 @@
 SPoRC rebuilt from the 2024 eastern Bering Sea Pacific cod assessment (Stock
 Synthesis Model 24.1, Barbeaux et al. 2024) and evaluated at the assessment's own
 maximum likelihood estimate. One area, one sex, ages 0-20, 1977-2024, with
-time-varying growth carried cohort by cohort, length-based double normal
+time-varying growth kept cohort by cohort, length-based double normal
 selectivity on 121 population length bins fit to 24 five-centimeter data bins,
 and annual deviations on the survey's ascending width.
 
@@ -92,7 +92,7 @@ mortality and the survey's extra standard deviation.
 | Initial equilibrium offset | `SR_regime` 1 | `ln_rinit` 1 |
 | Survey catchability | 1 | `ln_srv_q` 1 |
 | Survey extra SD | 1 | folded into the index standard error, 0 |
-| Initial fishing mortality | 1 | held at the assessment's value, 0 |
+| Initial fishing mortality | 1 | kept at the assessment's value, 0 |
 | Growth curve (`L1`, `L2`, `K`, Richards) | 4 | `ln_growth_pars` 4 |
 | Growth deviations (`L1` and `K`, 2000-2024) | 50 | `ln_growth_devs` 50 |
 | Survey ascending-width deviations | 43 | `ln_srvsel_devs` 43 |
@@ -105,7 +105,7 @@ mortality and the survey's extra standard deviation.
 `174 + 48 - 1 - 1 = 220`. The 48 are the whole difference in kind: the
 assessment conditions fishing mortality on the catch with its hybrid solver, so
 F costs it no parameters, while SPoRC estimates a deviation per year against a
-soft catch likelihood. The other two are held rather than dropped.
+soft catch likelihood. The other two are kept rather than dropped.
 
 ## Refit
 
@@ -145,7 +145,7 @@ and their mean slide together: on refit the mean deviation is -0.110 and ln R0
 falls 0.106, from 13.341 to 13.235, leaving their product essentially unchanged.
 That is the same convention difference recorded on the GOA rex sole and BSAI
 northern rockfish bridges, and it is deliberate -- dev_vectors are a legacy
-identifiability device rather than statistical practice the package carries.
+identifiability device rather than statistical practice the package has.
 
 The gradient at the assessment's estimate is large on the growth parameters
 (11.6), the recruitment deviations (10.4) and the fishing mortality deviations
@@ -157,13 +157,13 @@ stands in for the exact solve.
 ## SS3 conventions that fail silently
 
 Each of these was found by a component that would not reproduce, and each is
-worth carrying to the next Stock Synthesis bridge.
+worth with to the next Stock Synthesis bridge.
 
 - **A fishing fleet's compositions are assigned to MID SEASON whatever month the
   data file records.** `get_data_timing()` in `SS_global.tpl` sends any fleet
   with `surveytiming < 0` and no explicit timing down an "assign to midseason"
   branch that overwrites both the sub-season index and the timing fraction with
-  the mid-season ones. The fishery length compositions here carry month 1, and
+  the mid-season ones. The fishery length compositions here have month 1, and
   reading them at the start of the year (as the month says) leaves the fishery
   length likelihood at 198.6 against the assessment's 119.4. On the mid-season
   key it is 119.3649. The numbers behind them are still the season-long Baranov
@@ -216,8 +216,8 @@ worth carrying to the next Stock Synthesis bridge.
   ratio; a one-sex SS3 model's spawning output counts every mature fish. The two
   differ by exactly two, and since steepness is one here spawning biomass enters
   no likelihood, so nothing else moves. The bridge compares `2 * SSB`.
-- **Normal constants in the deviation penalties.** SPoRC carries
-  `log(sigma) + 0.5 log(2 pi)` per deviation; SS3 carries only the bias-ramp
+- **Normal constants in the deviation penalties.** SPoRC has
+  `log(sigma) + 0.5 log(2 pi)` per deviation; SS3 has only the bias-ramp
   share of `log(sigma)`. With every deviation standard deviation fixed, as here,
   that is a constant.
 - **The bias ramp on `log(sigmaR)`.** SPoRC applies half the ramp to the
@@ -226,12 +226,12 @@ worth carrying to the next Stock Synthesis bridge.
   `sd_offset_rec` the summed bias adjuster). A constant while sigmaR is fixed;
   the two would disagree materially if it were estimated.
 - **The survey's extra standard deviation is added, not estimated.** SS3 fits it
-  as a free parameter, so how much weight the index carries is decided with
-  everything else; here it is added to `ObsSrvIdx_SE` and held. Identical at the
+  as a free parameter, so how much weight the index has is decided with
+  everything else; here it is added to `ObsSrvIdx_SE` and kept. Identical at the
   assessment's estimate, since the total standard error is the same and the index
   likelihood reproduces to six digits, but on refitting SS3 can rescale the
-  index's influence and the bridge cannot. One of the two parameters held rather
+  index's influence and the bridge cannot. One of the two parameters kept rather
   than estimated in the count above.
 - **Equilibrium catch (1.7e-4) and soft bounds (4.2e-3).** SPoRC has neither;
-  initial fishing mortality is held at the assessment's estimate rather than
+  initial fishing mortality is kept at the assessment's estimate rather than
   fit to the equilibrium catch.

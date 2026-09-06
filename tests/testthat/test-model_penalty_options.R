@@ -99,15 +99,25 @@ test_that("a deviation-specific Wt_Rec excludes years from the recruitment penal
 
   run <- function(map = NULL) {
     SPoRC:::get_recruitment_penalty(
-      n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_est_rec_devs = n_dev,
-      rec_dd = 0, natal_region = 1, rec_region_prop_spec = 0,
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_ages = n_ages,
+      n_est_rec_devs = n_dev,
+      rec_dd = 0,
+      natal_region = 1,
+      rec_region_prop_spec = 0,
       rec_region_prop = array(1, dim = c(n_pop, n_regions)),
-      equil_init_age_strc = 2, ln_InitDevs = ln_InitDevs, init_age_devs_shared = NULL,
+      equil_init_age_strc = 2,
+      ln_InitDevs = ln_InitDevs,
+      init_age_devs_shared = NULL,
       ln_sigmaR = array(log(0.6), dim = c(2, n_pop, n_regions)),
-      bias_ramp = rep(0, n_dev), sigmaR_switch = 1, ln_RecDevs = ln_RecDevs,
+      bias_ramp = rep(0, n_dev),
+      sigmaR_switch = 1,
+      ln_RecDevs = ln_RecDevs,
       sigmaR2_early = array(0.36, dim = c(n_pop, n_regions)),
       sigmaR2_late = array(0.36, dim = c(n_pop, n_regions)),
-      do_rec_bias_ramp = 0, map_ln_RecDevs = map
+      do_rec_bias_ramp = 0,
+      map_ln_RecDevs = map
     )
   }
 
@@ -140,9 +150,18 @@ test_that("a deviation-specific Wt_Rec excludes years from the recruitment penal
 
 test_that("Setup_Mod_Weighting validates the recruitment weight shapes", {
 
-  base_list <- Setup_Mod_Dim(years = 1:10, ages = 1:5, lens = NA, n_regions = 1, n_sexes = 1,
-                             n_fish_fleets = 1, n_srv_fleets = 1, n_seas = 1, n_pop = 1,
-                             natal_region = 1)
+  base_list <- Setup_Mod_Dim(
+    years = 1:10,
+    ages = 1:5,
+    lens = NA,
+    n_regions = 1,
+    n_sexes = 1,
+    n_fish_fleets = 1,
+    n_srv_fleets = 1,
+    n_seas = 1,
+    n_pop = 1,
+    natal_region = 1
+  )
   base_list <- Setup_Mod_Rec(input_list = base_list, rec_model = "mean_rec")
 
   rec_dim <- dim(base_list$par$ln_RecDevs)
@@ -156,8 +175,11 @@ test_that("Setup_Mod_Weighting validates the recruitment weight shapes", {
 
   test_that("an array Wt_Rec is accepted at the deviation array's shape", {
     wt <- array(1, dim = rec_dim); wt[1,1,rec_dim[3]] <- 0
-    out <- Setup_Mod_Weighting(input_list = base_list, Wt_Rec = wt,
-                               Wt_Init_Rec = array(1, dim = init_dim))
+    out <- Setup_Mod_Weighting(
+      input_list = base_list,
+      Wt_Rec = wt,
+      Wt_Init_Rec = array(1, dim = init_dim)
+    )
     expect_equal(dim(out$data$Wt_Rec), rec_dim)
   })
 
@@ -166,10 +188,16 @@ test_that("Setup_Mod_Weighting validates the recruitment weight shapes", {
   })
 
   test_that("a wrongly shaped weight is refused rather than silently recycled", {
-    expect_error(Setup_Mod_Weighting(input_list = base_list, Wt_Rec = array(1, dim = c(1, 1, rec_dim[3] + 3)),
-                                     Wt_Init_Rec = 1))
-    expect_error(Setup_Mod_Weighting(input_list = base_list, Wt_Rec = 1,
-                                     Wt_Init_Rec = array(1, dim = c(1, 1, init_dim[3] + 2))))
+    expect_error(Setup_Mod_Weighting(
+      input_list = base_list,
+      Wt_Rec = array(1, dim = c(1, 1, rec_dim[3] + 3)),
+      Wt_Init_Rec = 1
+    ))
+    expect_error(Setup_Mod_Weighting(
+      input_list = base_list,
+      Wt_Rec = 1,
+      Wt_Init_Rec = array(1, dim = c(1, 1, init_dim[3] + 2))
+    ))
   })
 
 })

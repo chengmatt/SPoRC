@@ -1,15 +1,9 @@
-# Purpose: Fit the five-region spatial Alaska sablefish model and render the
-#          spatial case study figures. This model has no operational
-#          counterpart, so nothing here is a bridge: the figures show regional
-#          spawning biomass and recruitment, and the estimated age-blocked
-#          movement matrix that produces them.
-#
-#          Slow. Most of the runtime is MakeADFun tape construction rather than
-#          optimization, and that cost scales with the number of tag cohorts
-#          times the maximum tag liberty. Tag cohorts are release EVENTS, not
-#          release groups.
+# Purpose: Fit the five-region spatial Alaska sablefish model and render the spatial case study figures
 # Creator: Matthew LH. Cheng
 # Date Created: 8/7/26
+#
+# no operational counterpart, so nothing here is a bridge. slow: most of the runtime is MakeADFun
+# tape construction, which scales with tag cohorts times maximum tag liberty. cohorts are release EVENTS
 
 library(here)
 library(dplyr)
@@ -45,10 +39,8 @@ input_list <- Setup_Mod_Rec(
   sigmaR_switch = 16,
   dont_est_recdev_last = 1,
   sigmaR_spec = "fix",
-  # Initial deviations shared across regions. Estimating both these and regional
-  # recruitment deviations leaves the initial condition underdetermined, since
-  # nothing before year 1 separates a regional difference in initial age
-  # structure from a regional difference in early recruitment.
+  # initial deviations shared across regions: estimating both these and regional recruitment
+  # deviations leaves the initial condition underdetermined, since nothing before year 1 separates them
   InitDevs_spec = "est_shared_r",
   ln_sigmaR = array(log(c(0.4, 1.2)), dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
   ln_global_R0 = log(20),
@@ -75,9 +67,8 @@ input_list <- Setup_Mod_Biologicals(
 )
 
 # Movement -------------------------------------------------------------------
-# One prior row per origin region, per age block (represented by one age inside
-# each block), per sex. I() keeps expand.grid from splitting the alpha list
-# across rows.
+# one prior row per origin region, age block (one age standing for each block) and sex.
+# I() keeps expand.grid from splitting the alpha list across rows
 Movement_prior <- expand.grid(
   pop = 1,
   region_from = 1:5,
@@ -107,7 +98,7 @@ tag_prior <- data.frame(
   region = 1,
   block = c(1, 2),
   fleet = 1,
-  mu = NA,  # symmetric beta carries no mean
+  mu = NA,  # symmetric beta has no mean
   sd = 5,
   type = 0
 )
@@ -162,9 +153,8 @@ input_list <- Setup_Mod_Catch_and_F(
 # the ln_F_mean_spec formal, so the starting value is assigned post-hoc.
 input_list$par$ln_F_mean[] <- -2
 
-# spltRjntS: each region's compositions sum to one across BOTH sexes together,
-# so they carry sex-ratio information within a region but say nothing about
-# relative abundance BETWEEN regions. That is left to the indices and the tags.
+# spltRjntS: each region's compositions sum to one across both sexes, so they hold sex-ratio
+# information within a region but say nothing about relative abundance between regions
 input_list <- Setup_Mod_FishIdx_and_Comps(
   input_list = input_list,
   ObsFishIdx = dat$ObsFishIdx,
@@ -239,8 +229,12 @@ map_fish_fixed[, 2, 1, 2, 1] <- map_fish_fixed[, 2, 1, 1, 1] # fixed-gear delta 
 map_fish_fixed[, 1, 1, 2, 2] <- map_fish_fixed[, 1, 1, 1, 2] # trawl bmax across sexes
 input_list$map$fish_fixed_sel_pars <- factor(map_fish_fixed)
 
-srv_selex_prior <- cbind(region = 1, merge(data.frame(fleet = c(1, 2), block = c(1, 1)), sex_par),
-                         mu = 1, sd = 5) %>%
+srv_selex_prior <- cbind(
+  region = 1,
+  merge(data.frame(fleet = c(1, 2), block = c(1, 1)), sex_par),
+  mu = 1,
+  sd = 5
+) %>%
   dplyr::filter(!(fleet == 2 & par == 2 & sex == 2)) %>%
   dplyr::mutate(mu = ifelse(fleet == 2, 2, mu),
                 sd = ifelse(fleet == 2, 3, sd))
@@ -328,8 +322,13 @@ p_ts <- ggplot2::ggplot(ts_df, ggplot2::aes(x = Year, y = value, color = Region)
   ggplot2::theme_bw(base_size = 13) +
   ggplot2::theme(legend.position = 'none')
 
-ggplot2::ggsave(here("vignettes", "figures", "g_ts_comparison.png"),
-                p_ts, width = 12, height = 5.5, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "g_ts_comparison.png"),
+  p_ts,
+  width = 12,
+  height = 5.5,
+  dpi = 150
+)
 
 # Movement -------------------------------------------------------------------
 # Movement is [pop, from, to, year, season, age, sex]; year and sex are constant
@@ -349,8 +348,13 @@ p_move <- ggplot2::ggplot(move_df, ggplot2::aes(x = To, y = From, fill = value))
   ggplot2::labs(x = "To region", y = "From region", fill = "Movement\nprobability") +
   ggplot2::theme_bw(base_size = 13)
 
-ggplot2::ggsave(here("vignettes", "figures", "g_movement.png"),
-                p_move, width = 12, height = 4.5, dpi = 150)
+ggplot2::ggsave(
+  here("vignettes", "figures", "g_movement.png"),
+  p_move,
+  width = 12,
+  height = 4.5,
+  dpi = 150
+)
 
 cat("\n=== Regional recruitment apportionment ===\n")
 print(data.frame(Region = region_lvl,
@@ -364,6 +368,12 @@ print(move_df %>%
         tidyr::pivot_wider(names_from = Age, values_from = residency),
       row.names = FALSE, digits = 3)
 
-saveRDS(list(rep = rep, sdrep = est$sd_rep, opt = est$optim,
-             data = data, parameters = parameters, mapping = mapping),
+saveRDS(list(
+  rep = rep,
+  sdrep = est$sd_rep,
+  opt = est$optim,
+  data = data,
+  parameters = parameters,
+  mapping = mapping
+),
         here("dev", "dev_output", "mlt_rg_sablefish_fit.rds"))

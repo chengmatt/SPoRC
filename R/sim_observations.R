@@ -1,9 +1,11 @@
-#' Draw one at-age observation stream for one region, year, season and fleet
+# At-Age Observation Draws --------------------------------------------------
+
+#' Draw one at-age data source for one region, year, season and fleet
 #'
 #' The operating model states an at-age observation the way the estimation model
 #' reads it: summed over whichever of regions and sexes the fleet reports
 #' together, with the fleet's own density and its own standard deviation. A
-#' stream summed over regions is one number, so it is drawn once, when the region
+#' data source summed over regions is one number, so it is drawn once, when the region
 #' loop reaches region one.
 #'
 #' @param numbers Array \code{[n_pop, n_regions, n_ages, n_sexes]} of the
@@ -54,24 +56,26 @@ sim_at_age_cell <- function(numbers, weight, use, se, ln_sigma, type_code, like_
 #' Write a simulated at-age cell into its true and observed containers
 #'
 #' @param sim_env Environment holding the simulation containers.
-#' @param stream Stream tag, e.g. \code{"CatchAA"}.
+#' @param data_source Data source tag, e.g. \code{"CatchAA"}.
 #' @param drawn List returned by \code{\link{sim_at_age_cell}}.
 #' @param r,y,seas,f,sim Region, year, season, fleet and replicate.
 #'
 #' @return \code{invisible(NULL)}, called for its side effect.
 #'
 #' @keywords internal
-store_at_age_cell <- function(sim_env, stream, drawn, r, y, seas, f, sim) {
+store_at_age_cell <- function(sim_env, data_source, drawn, r, y, seas, f, sim) {
 
-  got <- which(!is.na(drawn$true), arr.ind = TRUE)
-  for(k in seq_len(nrow(got))) {
-    a <- got[k,1]; s <- got[k,2]
-    sim_env[[paste0("True", stream)]][r,y,seas,a,s,f,sim] <- drawn$true[a,s]
-    sim_env[[paste0("Obs", stream)]][r,y,seas,a,s,f,sim] <- drawn$obs[a,s]
+  drawn_cells <- which(!is.na(drawn$true), arr.ind = TRUE)
+  for(k in seq_len(nrow(drawn_cells))) {
+    a <- drawn_cells[k,1]; s <- drawn_cells[k,2]
+    sim_env[[paste0("True", data_source)]][r,y,seas,a,s,f,sim] <- drawn$true[a,s]
+    sim_env[[paste0("Obs", data_source)]][r,y,seas,a,s,f,sim] <- drawn$obs[a,s]
   } # end k loop
 
   return(invisible(NULL))
 }
+
+# Index Error Structures ----------------------------------------------------
 
 #' Convert an index covariance matrix to common-factor parameters
 #'
@@ -134,8 +138,13 @@ build_idx_factor <- function(cov_list, like_type_vals, use_arr, n_fleets, what) 
     use_f <- array(use_arr[,,,f], dim = dim(use_arr)[1:3])
     row_arr <- array(NA_real_, dim = dim(use_f))
     row_arr[which(use_f == 1)] <- seq_len(sum(use_f == 1))
-    out[[f]] <- list(d = fac$d, lambda = fac$lambda, row = row_arr,
-                     d_mean = mean(fac$d), lambda_mean = mean(fac$lambda))
+    out[[f]] <- list(
+      d = fac$d,
+      lambda = fac$lambda,
+      row = row_arr,
+      d_mean = mean(fac$d),
+      lambda_mean = mean(fac$lambda)
+    )
   } # end f loop
   return(out)
 }
@@ -175,7 +184,7 @@ resolve_idx_factor <- function(mvn, r, y, seas) {
 #' @param like_type 0 lognormal, 1 normal, 2 multivariate normal.
 #' @param d,lambda Common-factor scale and loading for this observation, from
 #'   \code{\link{cov_to_factor}}. MVN only.
-#' @param u Shared factor draw for this fleet and replicate, held constant across
+#' @param u Shared factor draw for this fleet and replicate, kept constant across
 #'   years. MVN only.
 #' @keywords internal
 draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u = NULL) {
@@ -196,9 +205,10 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
 
 # Operating model
 #
-# Generates the data an assessment would actually see from the operating model's
-# true state: catch and survey compositions and indices, and tag releases and
-# recaptures, each with its own sampling error.
+# Generates the data an assessment would see from the operating model's true state: catch and
+# survey compositions and indices, and tag releases and recaptures, each with its own error.
+
+# Composition and Age-at-Length Draws ---------------------------------------
 
 #' Simulate age or length compositions
 #'
@@ -208,7 +218,7 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
 #' optionally applied post-draw. Three composition aggregation structures are
 #' handled: sex-split (\code{comp_type = 1}), joint across sexes
 #' (\code{comp_type = 2}), and spatially aggregated across all regions
-#' (\code{comp_type = 0}). The sentinel value \code{comp_type = 999} or
+#' (\code{comp_type = 0}). The flag value \code{comp_type = 999} or
 #' \code{comp_like = 999} causes the function to return \code{Obs} unchanged.
 #'
 #' When \code{pop_specific = TRUE}, compositions are simulated separately for
@@ -705,6 +715,8 @@ simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingEr
   return(Obs)
 }
 
+# Tag Recapture Draws -------------------------------------------------------
+
 #' Simulate conventional tag recaptures for fishery fleets
 #'
 #' Draws observed tag recapture counts for a single liberty-season-cohort cell
@@ -916,6 +928,8 @@ marginalize_conv_fish_tags <- function(vals,
   return(tmp)
 }
 
+# Annual Observation Generators ---------------------------------------------
+
 #' Generate fishery catches, compositions, and indices in simulation
 #'
 #' Applies Baranov's catch equation to compute retained catch-at-age
@@ -1030,9 +1044,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           if(catch_units[f] == 1) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim] * WAA_fish[,r,y,seas,,,f,sim]) # biomass
           sim_env$ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
 
-          # Catch and discards at age, drawn per age and sex from their own
-          # standard deviations and summed over whichever margins the fleet
-          # reports together.
+          # catch and discards at age, drawn per age and sex from their own standard deviations and
+          # summed over whichever dims the fleet reports together
           aa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
           aa_wt <- array(WAA_fish[,,y,seas,,,f,sim], dim = aa_dim)
 
@@ -1108,21 +1121,26 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(tmp_expl_abd) # True Fishery Index (abundance)
           if(fish_idx_type[f] == 1) sim_env$TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(tmp_expl_biom) # True Fishery Index (biomass)
 
-          # Observed fishery index. An mvn fleet takes its scale from the covariance's
-          # factor decomposition rather than the SE array, with one factor draw shared
-          # across the fleet's whole series within a replicate.
+          # observed index. an mvn fleet takes its scale from the covariance's factor decomposition
+          # rather than the SE array, with one factor draw shared across its series per replicate
           fidx_like <- if(exists("FishIdx_LikeType")) FishIdx_LikeType[f] else 0
           if(fidx_like == 2) {
             if(is.na(fish_idx_u[f,sim])) sim_env$fish_idx_u[f,sim] <- stats::rnorm(1)
             fidx_fac <- resolve_idx_factor(fish_idx_mvn[[f]], r, y, seas)
-            sim_env$ObsFishIdx[r,y,seas,f,sim] <- draw_index_obs(TrueFishIdx[r,y,seas,f,sim], NA, 2, d = fidx_fac$d, lambda = fidx_fac$lambda, u = fish_idx_u[f,sim])
+            sim_env$ObsFishIdx[r,y,seas,f,sim] <- draw_index_obs(
+              TrueFishIdx[r,y,seas,f,sim],
+              NA,
+              2,
+              d = fidx_fac$d,
+              lambda = fidx_fac$lambda,
+              u = fish_idx_u[f,sim]
+            )
           } else {
             sim_env$ObsFishIdx[r,y,seas,f,sim] <- draw_index_obs(TrueFishIdx[r,y,seas,f,sim], ObsFishIdx_SE[r,y,seas,f], fidx_like)
           }
 
-          # Population-specific Fishery Index. The covariance describes the regional
-          # series only, so an mvn fleet's population stream keeps lognormal error,
-          # mirroring the estimation model.
+          # population-specific index. the covariance describes the regional series only, so an mvn
+          # fleet's population data source keeps lognormal error, mirroring the estimation model
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_abd[,1,1,1,,,1, drop = FALSE], 1, sum)  # abundance
           if(fish_idx_type[f] == 1) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_biom[,1,1,1,,,1, drop = FALSE], 1, sum)  # biomass
           sim_env$ObsFishIdx_pop[,r,y,seas,f,sim] <- draw_index_obs(sim_env$TrueFishIdx_pop[,r,y,seas,f,sim], ObsFishIdx_pop_SE[,r,y,seas,f], if(fidx_like == 1) 1 else 0)
@@ -1136,9 +1154,14 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
               sim_env$ISS_FishAgeComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishAgeComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
             }
             if(exists("ISS_FishAgeComps_pop_fill") && isTRUE(ISS_FishAgeComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
-              for(p in 1:n_pop) sim_env$ISS_FishAgeComps_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = array(ISS_FishAgeComps_pop[p,,1:y,,,,sim],
+              for(p in 1:n_pop) sim_env$ISS_FishAgeComps_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
+                ISS_FishComps = array(ISS_FishAgeComps_pop[p,,1:y,,,,sim],
                                                                                                                                     dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),
-                                                                                                              Fmort = Fmort, y = y, sim = sim, seas = seas)
+                Fmort = Fmort,
+                y = y,
+                sim = sim,
+                seas = seas
+              )
             }
 
             # Length Compositions (Dynamic ISS based on feedback fishing mortality)
@@ -1146,9 +1169,14 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
               sim_env$ISS_FishLenComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishLenComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
             }
             if(exists("ISS_FishLenComps_pop_fill") && isTRUE(ISS_FishLenComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
-              for(p in 1:n_pop) sim_env$ISS_FishLenComps_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = array(ISS_FishLenComps_pop[p,,1:y,,,,sim],
+              for(p in 1:n_pop) sim_env$ISS_FishLenComps_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
+                ISS_FishComps = array(ISS_FishLenComps_pop[p,,1:y,,,,sim],
                                                                                                                                     dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),
-                                                                                                              Fmort = Fmort, y = y, sim = sim, seas = seas)
+                Fmort = Fmort,
+                y = y,
+                sim = sim,
+                seas = seas
+              )
             }
 
             # Sample fishery ages (non-population specific, retained compositions)
@@ -1242,19 +1270,28 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                             pop_specific = TRUE,
                                                             age_or_len = 1)
 
-              # Sample fishery conditional age-at-length. The joint of length and
-              # age is formed inside the sampler from SizeAgeTrans and CAA, so no
-              # joint array is carried per replicate.
+              # sample fishery conditional age-at-length. the joint of length and age is formed inside
+              # the sampler from SizeAgeTrans and CAA, so no joint array is kept per replicate
               if(exists("do_fish_caal") && isTRUE(do_fish_caal)) {
-                sim_env$ObsFish_caal <- simulate_caal(r = r, y = y, f = f, seas = seas, sim = sim,
-                                                      SizeAgeTrans = if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) array(SizeAgeTrans_fish[,,,,,,,f,], dim = dim(SizeAgeTrans_fish)[-8]) else SizeAgeTrans, AtAge = CAA,
-                                                      ISS = ISS_Fish_caal, AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
-                                                      comp_like = comp_fish_caal_like,
-                                                      ln_theta = ln_Fish_caal_theta,
-                                                      ln_theta_agg = ln_Fish_caal_theta_agg,
-                                                      comp_type = Fish_caal_Type,
-                                                      n_sexes = n_sexes, n_regions = n_regions, n_lens = n_lens,
-                                                      Obs = ObsFish_caal)
+                sim_env$ObsFish_caal <- simulate_caal(
+                  r = r,
+                  y = y,
+                  f = f,
+                  seas = seas,
+                  sim = sim,
+                  SizeAgeTrans = if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) array(SizeAgeTrans_fish[,,,,,,,f,], dim = dim(SizeAgeTrans_fish)[-8]) else SizeAgeTrans,
+                  AtAge = CAA,
+                  ISS = ISS_Fish_caal,
+                  AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
+                  comp_like = comp_fish_caal_like,
+                  ln_theta = ln_Fish_caal_theta,
+                  ln_theta_agg = ln_Fish_caal_theta_agg,
+                  comp_type = Fish_caal_Type,
+                  n_sexes = n_sexes,
+                  n_regions = n_regions,
+                  n_lens = n_lens,
+                  Obs = ObsFish_caal
+                )
               } # end fishery caal
 
             } # end if size age transition if availiable
@@ -1267,9 +1304,14 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                 sim_env$ISS_FishAgeComps_discard[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishAgeComps_discard, Fmort = Fmort, y = y, sim = sim, seas = seas)
               }
               if(exists("ISS_FishAgeComps_pop_discard_fill") && isTRUE(ISS_FishAgeComps_pop_discard_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
-                for(p in 1:n_pop) sim_env$ISS_FishAgeComps_discard_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = array(ISS_FishAgeComps_discard_pop[p,,1:y,,,,sim],
+                for(p in 1:n_pop) sim_env$ISS_FishAgeComps_discard_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
+                  ISS_FishComps = array(ISS_FishAgeComps_discard_pop[p,,1:y,,,,sim],
                                                                                                                                               dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),
-                                                                                                                        Fmort = Fmort, y = y, sim = sim, seas = seas)
+                  Fmort = Fmort,
+                  y = y,
+                  sim = sim,
+                  seas = seas
+                )
               }
 
               # Length Compositions (Dynamic ISS based on feedback fishing mortality)
@@ -1277,9 +1319,14 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                 sim_env$ISS_FishLenComps_discard[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishLenComps_discard, Fmort = Fmort, y = y, sim = sim, seas = seas)
               }
               if(exists("ISS_FishLenComps_pop_discard_fill") && isTRUE(ISS_FishLenComps_pop_discard_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
-                for(p in 1:n_pop) sim_env$ISS_FishLenComps_discard_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = array(ISS_FishLenComps_discard_pop[p,,1:y,,,,sim],
+                for(p in 1:n_pop) sim_env$ISS_FishLenComps_discard_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
+                  ISS_FishComps = array(ISS_FishLenComps_discard_pop[p,,1:y,,,,sim],
                                                                                                                                               dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),
-                                                                                                                        Fmort = Fmort, y = y, sim = sim, seas = seas)
+                  Fmort = Fmort,
+                  y = y,
+                  sim = sim,
+                  seas = seas
+                )
               }
 
               # Sample fishery lengths (non-population specific, discard compositions)
@@ -1430,10 +1477,8 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 
     for(seas in 1:n_seas) {
 
-      # Numbers at survey timing. A survey index is a snapshot inside the season, so under
-      # continuous movement it needs partial propagation under the combined movement-mortality
-      # generator rather than an elementwise exp(-t_srv * Z), which would hold fish in place
-      # while they are diffusing. Precomputed across regions because propagation couples them.
+      # numbers at survey timing. a survey index is a snapshot inside the season, so continuous
+      # movement needs partial propagation under the combined movement-mortality generator
       if(move_timing == 2) {
         SrvN_sim <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes, n_srv_fleets))
         for(p in 1:n_pop) for(sf in 1:n_srv_fleets) for(a in 1:n_ages) for(s in 1:n_sexes) {
@@ -1459,19 +1504,24 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
           # Survey Index - Regional
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim]) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim] * WAA_srv[,r,y,seas,,,sf,sim]) # True Survey Index (biomass)
-          # A year class strength index reads the recruitment deviation rather
-          # than the population. The operating model draws that deviation about
-          # zero and carries the bias correction in the recruitment itself
+          # a year class strength index reads the recruitment deviation rather than the population.
+          # the operating model draws that deviation about zero, with bias correction in recruitment
           if(srv_idx_type[sf] == 2) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(ln_RecDevs[,r,y,sim]) # True Survey Index (recruitment deviations)
 
-          # Observed survey index. An mvn fleet takes its scale from the covariance's
-          # factor decomposition rather than the SE array, with one factor draw shared
-          # across the fleet's whole series within a replicate.
+          # observed index. an mvn fleet takes its scale from the covariance's factor decomposition
+          # rather than the SE array, with one factor draw shared across its series per replicate
           sidx_like <- if(exists("SrvIdx_LikeType")) SrvIdx_LikeType[sf] else 0
           if(sidx_like == 2) {
             if(is.na(srv_idx_u[sf,sim])) sim_env$srv_idx_u[sf,sim] <- stats::rnorm(1)
             sidx_fac <- resolve_idx_factor(srv_idx_mvn[[sf]], r, y, seas)
-            sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], NA, 2, d = sidx_fac$d, lambda = sidx_fac$lambda, u = srv_idx_u[sf,sim])
+            sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(
+              TrueSrvIdx[r,y,seas,sf,sim],
+              NA,
+              2,
+              d = sidx_fac$d,
+              lambda = sidx_fac$lambda,
+              u = srv_idx_u[sf,sim]
+            )
           } else {
             sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], ObsSrvIdx_SE[r,y,seas,sf], sidx_like)
           }
@@ -1491,9 +1541,8 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                               r, y, seas, sf, sim)
           }
 
-          # Survey Index - Population-Specific. The covariance describes the regional
-          # series only, so an mvn fleet's population stream keeps lognormal error,
-          # mirroring the estimation model.
+          # population-specific index. the covariance describes the regional series only, so an mvn
+          # fleet's population data source keeps lognormal error, mirroring the estimation model
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE] * WAA_srv[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (biomass)
           sim_env$ObsSrvIdx_pop[,r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx_pop[,r,y,seas,sf,sim], ObsSrvIdx_pop_SE[,r,y,seas,sf], if(sidx_like == 1) 1 else 0)
@@ -1590,15 +1639,25 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 
             # Sample survey conditional age-at-length
             if(exists("do_srv_caal") && isTRUE(do_srv_caal)) {
-              sim_env$ObsSrv_caal <- simulate_caal(r = r, y = y, f = sf, seas = seas, sim = sim,
-                                                   SizeAgeTrans = if(exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv)) array(SizeAgeTrans_srv[,,,,,,,sf,], dim = dim(SizeAgeTrans_srv)[-8]) else SizeAgeTrans, AtAge = SrvIAA,
-                                                   ISS = ISS_Srv_caal, AgeingError = array(AgeingError_srv[,,,sf,], dim = dim(AgeingError)),
-                                                   comp_like = comp_srv_caal_like,
-                                                   ln_theta = ln_Srv_caal_theta,
-                                                   ln_theta_agg = ln_Srv_caal_theta_agg,
-                                                   comp_type = Srv_caal_Type,
-                                                   n_sexes = n_sexes, n_regions = n_regions, n_lens = n_lens,
-                                                   Obs = ObsSrv_caal)
+              sim_env$ObsSrv_caal <- simulate_caal(
+                r = r,
+                y = y,
+                f = sf,
+                seas = seas,
+                sim = sim,
+                SizeAgeTrans = if(exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv)) array(SizeAgeTrans_srv[,,,,,,,sf,], dim = dim(SizeAgeTrans_srv)[-8]) else SizeAgeTrans,
+                AtAge = SrvIAA,
+                ISS = ISS_Srv_caal,
+                AgeingError = array(AgeingError_srv[,,,sf,], dim = dim(AgeingError)),
+                comp_like = comp_srv_caal_like,
+                ln_theta = ln_Srv_caal_theta,
+                ln_theta_agg = ln_Srv_caal_theta_agg,
+                comp_type = Srv_caal_Type,
+                n_sexes = n_sexes,
+                n_regions = n_regions,
+                n_lens = n_lens,
+                Obs = ObsSrv_caal
+              )
             } # end survey caal
 
           } # end if size age transition if availiable
@@ -1802,19 +1861,22 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 
       for(rseas in 1:n_seas) {
 
-        # Mortality is the same for every cohort at liberty in this year and season,
-        # so it is worked out once here. The simulation dimension is dropped so the
-        # arrays match what the estimation model passes in.
+        # mortality is the same for every cohort at liberty in this year and season, so work it out
+        # once here. the simulation dim is dropped so the arrays match the estimation model's
         tag_mort <- get_tag_mort(
-          y = y, rseas = rseas,
-          n_pop = n_pop, n_regions = n_regions, n_ages = n_ages,
-          n_sexes = n_sexes, n_fish_fleets = n_fish_fleets,
+          y = y,
+          rseas = rseas,
+          n_pop = n_pop,
+          n_regions = n_regions,
+          n_ages = n_ages,
+          n_sexes = n_sexes,
+          n_fish_fleets = n_fish_fleets,
           use_conv_fish_tagging = use_conv_fish_tagging,
           Fmort = array(Fmort[,,,,sim], dim = dim(Fmort)[1:4]),
           fish_sel = array(fish_sel[,,,,,,,sim], dim = dim(fish_sel)[1:7]),
           ret_sel = array(ret_sel[,,,,,,,sim], dim = dim(ret_sel)[1:7]),
           dmr = array(dmr[,,,,sim], dim = dim(dmr)[1:4]),
-          natmort = array(natmort[,,,,,sim], dim = dim(natmort)[1:5]),
+          natmort = array(natmort[,,,,,,sim], dim = dim(natmort)[1:6]),
           seasdur = seasdur
         )
 
@@ -1830,7 +1892,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           ry <- y - ty + 1 # get tag liberty
           if(ry > conv_tag_max_liberty) next # skip if max liberty
 
-          # Cohort specific containers, carrying in what earlier years at liberty
+          # Cohort specific containers, with in what earlier years at liberty
           # already recorded for this cohort
           avail_tc <- array(conv_tag_fish_avail[, , tc, , , , , sim],
                             dim = c(conv_tag_max_liberty + 1, n_seas, n_pop, n_regions, n_ages, n_sexes))
@@ -1849,11 +1911,8 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           tag_frac <- if(ry == 1 && rseas == tseas) conv_tag_t_tagging[tc] else 1
           tag_dur <- seasdur[rseas] * tag_frac
 
-          # Discount with tagging time (conv_tag_t_tagging) if it doesn't happen at the start of the
-          # season / year. Must match get_tagging_observation_model(): every mortality component is
-          # scaled, not just the total, so Baranov's F/Z stays the fraction of deaths owing to
-          # fishing. Scaling Z alone would give F/(Z * t_tag), which exceeds 1 whenever
-          # t_tag < F/Z and predicts more recaptures than there are dead tags.
+          # discount by tagging time when tagging is not at the start of the season. must match
+          # get_tagging_observation_model(): scale F and Z together so F/Z stays a fraction
           if(tag_frac != 1) {
             tmp_ZAA      <- tmp_ZAA      * tag_frac
             tmp_FAA      <- tmp_FAA      * tag_frac
@@ -1871,7 +1930,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
           tag_moves <- (conv_tag_t_tagging[tc] == 1 || ry != 1 || rseas != tseas)
 
           # Move tagged fish around (skip only in first release year + tagging season when tagging occurs mid-season).
-          # Under move_timing 1 and 2 movement is carried by the transition operator below instead.
+          # Under move_timing 1 and 2 movement is set by the transition operator below instead.
           if(move_timing == 0 && tag_moves) {
             for(p in 1:n_pop) {
               # Movement of tag cohorts
@@ -1983,6 +2042,9 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
       } # end rseas loop
   })
 }
+
+# Sample Size Prediction ----------------------------------------------------
+
 #' Predict fishery and discarded ISS under projected fishing mortality
 #'
 #' Scales fishery input sample sizes for the projection year \code{y} based
@@ -1995,7 +2057,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 #' historical observations exist for a cell, ISS is set to zero. If
 #' conditions for scaling are not met (e.g., maximum historical \eqn{F = 0}),
 #' the mean historical ISS is used as a fallback. All prior years
-#' (\code{1:(y-1)}) are carried over unchanged from \code{ISS_FishComps}.
+#' (\code{1:(y-1)}) are reused unchanged from \code{ISS_FishComps}.
 #'
 #' @param ISS_FishComps Array of fishery ISS values
 #'   \code{[n_regions × n_yrs × n_seas × n_sexes × n_fish_fleets × n_sims]}.

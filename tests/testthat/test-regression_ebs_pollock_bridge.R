@@ -1,10 +1,5 @@
-# Self-validating bridge test. The expectations are not stored SPoRC output: they are
-# the 2024 EBS walleye pollock assessment's own reported quantities, shipped in
-# sgl_rg_ebswp_data$admb. Every parameter is set to the assessment's maximum likelihood
-# estimate and the model is evaluated there without optimizing, so a failure means the
-# population dynamics, a likelihood, or a selectivity form no longer reproduces the
-# assessment at a point where it is known to. Do not loosen the tolerances to make this
-# pass. See tests/README.md and the EBS pollock case study vignette.
+# Self-validating bridge test: the expectations are the 2024 EBS walleye pollock assessment's own
+# reported quantities in sgl_rg_ebswp_data$admb, evaluated at its estimate without optimizing.
 
 library(SPoRC)
 library(testthat)
@@ -98,7 +93,7 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
     do_recruits_move = 0
   )
 
-  # Catch and F: no mean F parameter, so the deviations carry all of log F and
+  # Catch and F: no mean F parameter, so the deviations have all of log F and
   # are penalized about their own mean.
   suppressWarnings(
     input_list <- Setup_Mod_Catch_and_F(
@@ -226,9 +221,13 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   rw_wt <- rep(0, n_yrs)
   rw_wt[match(yrs_ch_f, yrs)] <- 1 / (2 * sig_ch^2)
 
-  fish_pen_wts <- list(smooth_bin_diff = 3, smooth_bin_curve = curve_wt,
-                       smooth_yr_diff = rw_wt, normalize = FALSE,
-                       bin_range = list(smooth_bin_diff = c(6, 12)))
+  fish_pen_wts <- list(
+    smooth_bin_diff = 3,
+    smooth_bin_curve = curve_wt,
+    smooth_yr_diff = rw_wt,
+    normalize = FALSE,
+    bin_range = list(smooth_bin_diff = c(6, 12))
+  )
 
   bts_rw <- rep(0, n_yrs)
   bts_rw[match(1982:2024, yrs)] <- 2
@@ -241,11 +240,19 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   ats_shape[match(1994:2024, yrs)] <- 1
 
   srv_pen_wts <- list(
-    list(smooth_yr_diff = bts_rw, normalize = FALSE, yr_diff_ref = 0,
-         bin_range = list(smooth_yr_diff = c(3, 14))),
-    list(smooth_bin_diff = ats_shape, smooth_bin_curve = ats_curve,
-         smooth_yr_diff = ats_rw, normalize = FALSE,
-         bin_range = list(smooth_bin_diff = c(5, 8))),
+    list(
+      smooth_yr_diff = bts_rw,
+      normalize = FALSE,
+      yr_diff_ref = 0,
+      bin_range = list(smooth_yr_diff = c(3, 14))
+    ),
+    list(
+      smooth_bin_diff = ats_shape,
+      smooth_bin_curve = ats_curve,
+      smooth_yr_diff = ats_rw,
+      normalize = FALSE,
+      bin_range = list(smooth_bin_diff = c(5, 8))
+    ),
     list(),
     list()
   )
@@ -273,7 +280,7 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
 
   # Mapping. SPoRC parameterizes selectivity deviations as levels while the
   # assessment uses increments, so the first year's level is redundant with the
-  # coefficients and is held at zero, and bins within a group move together.
+  # coefficients and is kept at zero, and bins within a group move together.
   i_bts_all <- which(yrs >= 1982)
   map_srvdev <- array(as.numeric(mapping$ln_srvsel_devs), dim = dim(parameters$ln_srvsel_devs))
   map_srvdev[1, -i_bts_all, , 1, 1] <- NA
@@ -359,7 +366,7 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   # surfaces is a check on the forms rather than on the data.
   expect_equal(obj$rep$fish_sel[1, 1, 1:n_yrs, 1, , 1, 1], dat$admb$sel_fsh,
                tolerance = 1e-10, ignore_attr = TRUE)
-  # sel_bts carries one row per year from 1982 to 2024, while there are only 42
+  # sel_bts has one row per year from 1982 to 2024, while there are only 42
   # survey years, because 2020 has no trawl survey.
   bts_rows <- match(yrs[i_bts], 1982:2024)
   expect_equal(obj$rep$srv_sel[1, 1, i_bts, 1, , 1, 1], dat$admb$sel_bts[bts_rows, ],

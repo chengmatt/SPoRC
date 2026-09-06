@@ -78,7 +78,7 @@ region-year-season, recovery year/season, fleet, region, pop/age/sex pool,
 is_tail, last_in_group) of every entry in \code{vec}, in the same order.
 Intended for post-hoc relabeling of \code{TMB::oneStepPredict()} residuals
 (see [get_osa()]); left \code{FALSE} (default) inside the model itself to
-avoid the extra bookkeeping cost.}
+avoid the extra residual tracking cost.}
 }
 \value{
 A list with components:

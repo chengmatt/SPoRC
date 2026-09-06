@@ -1,7 +1,8 @@
 # Stage 3 of 3: post fit
 #
-# Likelihood profile over a fixed parameter, showing which data source pulls the
-# estimate where.
+# Likelihood profile over a fixed parameter, showing which data source pulls the estimate where.
+
+# Profile Guards ------------------------------------------------------------
 
 #' Refuse a catchability profile when the model solves q analytically
 #'
@@ -29,7 +30,7 @@ check_analytic_q <- function(data, parameters, what, idx) {
   if(is.null(q_type) || all(q_type == 0)) return(invisible(NULL))
 
   # `idx` holds linear indices into an array dimensioned [region, block, fleet], so the
-  # fleets a profile touches come off the third margin
+  # fleets a profile touches come off the third dim
   par_dim <- dim(parameters[[what]])
   if(is.null(idx) || length(par_dim) < 3) fleets <- seq_along(q_type)
   else fleets <- sort(unique(arrayInd(unlist(idx), .dim = par_dim)[,3]))
@@ -52,7 +53,7 @@ check_analytic_q <- function(data, parameters, what, idx) {
 #' Build the map for a profiled parameter, but keep the fitted map structure
 #'
 #' A profile fixes the targeted positions and leaves every other position with the role it
-#' held in the fitted model: positions the fitted map fixed stay fixed, and positions that
+#' kept in the fitted model: positions the fitted map fixed stay fixed, and positions that
 #' shared a level keep sharing it. Renumbering every position uniquely instead would give
 #' the profile more free parameters than the model being profiled, which lowers the
 #' likelihood at every grid value and leaves the difference from the MLE uncomparable.
@@ -117,15 +118,17 @@ check_profile_mirrors <- function(par, map, what, idx) {
   invisible(NULL)
 }
 
+# Component Weighting -------------------------------------------------------
+
 #' Weight an at-age likelihood component down to the weight's own dimensions
 #'
 #' An at-age component is reported over age and sex, and its weight is not, so
-#' both margins are summed within a cell before the weight is applied. This is
+#' both dims are summed within a cell before the weight is applied. This is
 #' what the objective does when it forms \code{jnLL}, and the profile has to
 #' match it or the components it reports will not add up to the total.
 #'
 #' @param component An at-age likelihood array, or \code{NULL}.
-#' @param weight The stream's weight.
+#' @param weight The data source's weight.
 #'
 #' @return The weighted component with age and sex summed out, or \code{NULL}.
 #'
@@ -136,6 +139,8 @@ weight_over_ages <- function(component, weight) {
   return(weight * apply(component, seq_len(n_dim)[-c(n_dim - 2, n_dim - 1)], sum))
 }
 
+# Profile Driver ------------------------------------------------------------
+
 #' Run Likelihood Profile
 #'
 #' Profiles the joint negative log-likelihood and all individual likelihood
@@ -145,7 +150,7 @@ weight_over_ages <- function(component, weight) {
 #' @param data Data list from the fitted model.
 #' @param parameters Parameter list from the fitted model.
 #' @param mapping Mapping list from the fitted model. The profile keeps this map for
-#'   every position other than the ones it fixes, so positions the fitted model held
+#'   every position other than the ones it fixes, so positions the fitted model kept
 #'   fixed stay fixed and positions it estimated as one shared parameter stay shared,
 #'   leaving the profile with the same free parameters as the model being profiled.
 #' @param random Character vector of random effects to estimate. Default
@@ -173,7 +178,7 @@ weight_over_ages <- function(component, weight) {
 #'     \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df}
 #'       (the recruitment, initial age, initial-age sex tie, recruitment
 #'       level, and stock-recruit penalties together, each with its weight),
-#'       \code{M_nLL_df}, \code{sel_nLL_df}, \code{rec_prop_nLL_df},
+#'       \code{M_nLL_df}, \code{sel_nLL_df}, \code{srv_sel_block_nLL_df}, \code{srv_q_block_nLL_df}, \code{fish_sel_block_nLL_df}, \code{fish_q_block_nLL_df}, \code{rec_prop_nLL_df},
 #'       \code{Movement_nLL_df}, \code{h_nLL_df}, \code{R0_nLL_df}, \code{TagRep_nLL_df},
 #'       \code{NAA_state_nLL_df},
 #'       \code{Fmort_nLL_df}, \code{fish_q_nLL_df}, \code{srv_q_nLL_df}.}
@@ -239,6 +244,10 @@ do_likelihood_profile <- function(data,
   jnLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   rec_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   sel_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  srv_sel_block_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  srv_q_block_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  fish_sel_block_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  fish_q_block_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   M_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   rec_prop_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   h_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
@@ -296,7 +305,13 @@ do_likelihood_profile <- function(data,
       }
 
       # make adfun
-      SPoRC_rtmb_model <- RTMB::MakeADFun(cmb(SPoRC_rtmb, data), parameters = parameters, map = mapping, random = random, silent = TRUE)
+      SPoRC_rtmb_model <- RTMB::MakeADFun(
+        cmb(SPoRC_rtmb, data),
+        parameters = parameters,
+        map = mapping,
+        random = random,
+        silent = TRUE
+      )
 
       # Within loop
       tryCatch({
@@ -311,6 +326,10 @@ do_likelihood_profile <- function(data,
         rec_nLL[j,1] <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL, safe_extract(report, "Init_Sex_nLL"), safe_extract(report, "Rec_level_nLL"), safe_extract(report, "SR_pen_nLL"))
         M_nLL[j,1] <- report$M_nLL
         sel_nLL[j,1] <- report$sel_nLL
+        srv_sel_block_nLL[j,1] <- if(is.null(report$srv_sel_block_nLL)) NA else report$srv_sel_block_nLL
+        srv_q_block_nLL[j,1] <- if(is.null(report$srv_q_block_nLL)) NA else report$srv_q_block_nLL
+        fish_sel_block_nLL[j,1] <- if(is.null(report$fish_sel_block_nLL)) NA else report$fish_sel_block_nLL
+        fish_q_block_nLL[j,1] <- if(is.null(report$fish_q_block_nLL)) NA else report$fish_q_block_nLL
         rec_prop_nLL[j,1] <- report$rec_prop_nLL
         Movement_nLL[j,1] <- report$Movement_nLL
         h_nLL[j,1] <- report$h_nLL
@@ -385,6 +404,10 @@ do_likelihood_profile <- function(data,
           rec_nLL = NA,
           M_nLL = NA,
           sel_nLL = NA,
+          srv_sel_block_nLL = NA,
+          srv_q_block_nLL = NA,
+          fish_sel_block_nLL = NA,
+          fish_q_block_nLL = NA,
           rec_prop_nLL = NA,
           Movement_nLL = NA,
           h_nLL = NA,
@@ -433,8 +456,13 @@ do_likelihood_profile <- function(data,
         # make adfun. The handler's assignments live in its own frame, so both
         # branches hand the result back rather than writing into the enclosing one
         result <- tryCatch({
-          SPoRC_rtmb_model <- RTMB::MakeADFun(cmb(SPoRC_rtmb, local_data), parameters = local_parameters, map = local_mapping,
-                                              random = local_random, silent = TRUE)
+          SPoRC_rtmb_model <- RTMB::MakeADFun(
+            cmb(SPoRC_rtmb, local_data),
+            parameters = local_parameters,
+            map = local_mapping,
+            random = local_random,
+            silent = TRUE
+          )
 
           SPoRC_optim <- stats::nlminb(SPoRC_rtmb_model$par, SPoRC_rtmb_model$fn, SPoRC_rtmb_model$gr,
                                        control = list(iter.max = 1e6, eval.max = 1e6, rel.tol = 1e-15))
@@ -448,6 +476,10 @@ do_likelihood_profile <- function(data,
                                 safe_extract(report, "Init_Sex_nLL"), safe_extract(report, "Rec_level_nLL"), safe_extract(report, "SR_pen_nLL"))
           result$M_nLL <- report$M_nLL
           result$sel_nLL <- report$sel_nLL
+          result$srv_sel_block_nLL <- if(is.null(report$srv_sel_block_nLL)) NA else report$srv_sel_block_nLL
+          result$srv_q_block_nLL <- if(is.null(report$srv_q_block_nLL)) NA else report$srv_q_block_nLL
+          result$fish_sel_block_nLL <- if(is.null(report$fish_sel_block_nLL)) NA else report$fish_sel_block_nLL
+          result$fish_q_block_nLL <- if(is.null(report$fish_q_block_nLL)) NA else report$fish_q_block_nLL
           result$rec_prop_nLL <- report$rec_prop_nLL
           result$Movement_nLL <- report$Movement_nLL
           result$h_nLL <- report$h_nLL
@@ -458,7 +490,7 @@ do_likelihood_profile <- function(data,
           result$dmr_nLL <- sum(data$Wt_D * report$dmr_nLL)
           result$conv_fish_tag_nLL <- reshape2::melt(data$Wt_Tagging * report$conv_fish_tag_nLL) %>% dplyr::mutate(prof_val = vals[j])
           result$Catch_nLL <- reshape2::melt(data$Wt_Catch * report$Catch_nLL) %>% dplyr::mutate(prof_val = vals[j])
-          # the at-age streams, collapsed the way the serial path does
+          # the at-age data sources, collapsed the way the serial path does
           result$CatchAA_nLL <- reshape2::melt(weight_over_ages(report$CatchAA_nLL, data$Wt_Catch)) %>% dplyr::mutate(prof_val = vals[j])
           result$DiscardAA_nLL <- reshape2::melt(weight_over_ages(report$DiscardAA_nLL, data$Wt_Discard)) %>% dplyr::mutate(prof_val = vals[j])
           result$SrvIdxAA_nLL <- reshape2::melt(weight_over_ages(report$SrvIdxAA_nLL, data$Wt_SrvIdx)) %>% dplyr::mutate(prof_val = vals[j])
@@ -513,6 +545,10 @@ do_likelihood_profile <- function(data,
         rec_nLL[j,1] <- res$rec_nLL
         M_nLL[j,1] <- res$M_nLL
         sel_nLL[j,1] <- res$sel_nLL
+        srv_sel_block_nLL[j,1] <- if(is.null(res$srv_sel_block_nLL)) NA else res$srv_sel_block_nLL
+        srv_q_block_nLL[j,1] <- if(is.null(res$srv_q_block_nLL)) NA else res$srv_q_block_nLL
+        fish_sel_block_nLL[j,1] <- if(is.null(res$fish_sel_block_nLL)) NA else res$fish_sel_block_nLL
+        fish_q_block_nLL[j,1] <- if(is.null(res$fish_q_block_nLL)) NA else res$fish_q_block_nLL
         rec_prop_nLL[j,1] <- res$rec_prop_nLL
         Movement_nLL[j,1] <- res$Movement_nLL
         h_nLL[j,1] <- res$h_nLL
@@ -670,10 +706,378 @@ do_likelihood_profile <- function(data,
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(type = 'SrvLenPop')
 
+  srv_sel_block_nLL_df <- reshape2::melt(srv_sel_block_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Selex Pen')
+  Movement_nLL_df <- reshape2::melt(Movement_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Move Prior')
+  h_nLL_df <- reshape2::melt(h_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'h Prior')
+  NAA_state_nLL_df <- reshape2::melt(NAA_state_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'NAA State')
+  R0_nLL_df <- reshape2::melt(R0_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'R0 Prior')
+  TagRep_nLL_df <- reshape2::melt(TagRep_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'TagRep Prior')
+  Fmort_nLL_df <- reshape2::melt(Fmort_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'FmortPen')
+  dmr_nLL_df <- reshape2::melt(dmr_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'dmrPen')
+  Catch_nLL_df <- Catch_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Catch')
+  Discard_nLL_df <- Discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Discard')
+  FishAge_nLL_df <- FishAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAge')
+  FishAgeComps_discard_nLL_df <- FishAgeComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAgeDiscard')
+  SrvAge_nLL_df <- SrvAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvAge')
+  FishLen_nLL_df <- FishLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLen')
+  FishLenComps_discard_nLL_df <- FishLenComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLenDiscard')
+  SrvLen_nLL_df <- SrvLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvLen')
+  FishIdx_nLL_df <- FishIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'FishIdx')
+  SrvIdx_nLL_df <- SrvIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'SrvIdx')
+  conv_fish_tag_nLL_df <- conv_fish_tag_nLL %>%
+    dplyr::rename(Recap_Year = Var1, Recap_Seas = Var2, Tag_Cohort = Var3, Region = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'Tagging')
+  fish_q_nLL_df <- reshape2::melt(fish_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'FishQ Prior')
+  srv_q_nLL_df <- reshape2::melt(srv_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'SrvQ Prior')
+  Catch_pop_nLL_df <- Catch_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'CatchPop')
+  Discard_pop_nLL_df <- Discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'DiscardPop')
+  FishIdx_pop_nLL_df <- FishIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishIdxPop')
+  SrvIdx_pop_nLL_df <- SrvIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvIdxPop')
+  FishAge_pop_nLL_df <- FishAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgePop')
+  FishAge_discard_pop_nLL_df <- FishAge_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgeDiscardPop')
+  FishLen_pop_nLL_df <- FishLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenPop')
+  FishLen_discard_pop_nLL_df <- FishLen_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenDiscardPop')
+  SrvAge_pop_nLL_df <- SrvAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvAgePop')
+  SrvLen_pop_nLL_df <- SrvLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvLenPop')
+
+  srv_q_block_nLL_df <- reshape2::melt(srv_q_block_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Selex Pen')
+  Movement_nLL_df <- reshape2::melt(Movement_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Move Prior')
+  h_nLL_df <- reshape2::melt(h_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'h Prior')
+  NAA_state_nLL_df <- reshape2::melt(NAA_state_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'NAA State')
+  R0_nLL_df <- reshape2::melt(R0_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'R0 Prior')
+  TagRep_nLL_df <- reshape2::melt(TagRep_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'TagRep Prior')
+  Fmort_nLL_df <- reshape2::melt(Fmort_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'FmortPen')
+  dmr_nLL_df <- reshape2::melt(dmr_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'dmrPen')
+  Catch_nLL_df <- Catch_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Catch')
+  Discard_nLL_df <- Discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Discard')
+  FishAge_nLL_df <- FishAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAge')
+  FishAgeComps_discard_nLL_df <- FishAgeComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAgeDiscard')
+  SrvAge_nLL_df <- SrvAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvAge')
+  FishLen_nLL_df <- FishLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLen')
+  FishLenComps_discard_nLL_df <- FishLenComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLenDiscard')
+  SrvLen_nLL_df <- SrvLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvLen')
+  FishIdx_nLL_df <- FishIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'FishIdx')
+  SrvIdx_nLL_df <- SrvIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'SrvIdx')
+  conv_fish_tag_nLL_df <- conv_fish_tag_nLL %>%
+    dplyr::rename(Recap_Year = Var1, Recap_Seas = Var2, Tag_Cohort = Var3, Region = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'Tagging')
+  fish_q_nLL_df <- reshape2::melt(fish_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'FishQ Prior')
+  srv_q_nLL_df <- reshape2::melt(srv_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'SrvQ Prior')
+  Catch_pop_nLL_df <- Catch_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'CatchPop')
+  Discard_pop_nLL_df <- Discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'DiscardPop')
+  FishIdx_pop_nLL_df <- FishIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishIdxPop')
+  SrvIdx_pop_nLL_df <- SrvIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvIdxPop')
+  FishAge_pop_nLL_df <- FishAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgePop')
+  FishAge_discard_pop_nLL_df <- FishAge_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgeDiscardPop')
+  FishLen_pop_nLL_df <- FishLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenPop')
+  FishLen_discard_pop_nLL_df <- FishLen_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenDiscardPop')
+  SrvAge_pop_nLL_df <- SrvAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvAgePop')
+  SrvLen_pop_nLL_df <- SrvLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvLenPop')
+
+  fish_sel_block_nLL_df <- reshape2::melt(fish_sel_block_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Selex Pen')
+  Movement_nLL_df <- reshape2::melt(Movement_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Move Prior')
+  h_nLL_df <- reshape2::melt(h_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'h Prior')
+  NAA_state_nLL_df <- reshape2::melt(NAA_state_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'NAA State')
+  R0_nLL_df <- reshape2::melt(R0_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'R0 Prior')
+  TagRep_nLL_df <- reshape2::melt(TagRep_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'TagRep Prior')
+  Fmort_nLL_df <- reshape2::melt(Fmort_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'FmortPen')
+  dmr_nLL_df <- reshape2::melt(dmr_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'dmrPen')
+  Catch_nLL_df <- Catch_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Catch')
+  Discard_nLL_df <- Discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Discard')
+  FishAge_nLL_df <- FishAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAge')
+  FishAgeComps_discard_nLL_df <- FishAgeComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAgeDiscard')
+  SrvAge_nLL_df <- SrvAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvAge')
+  FishLen_nLL_df <- FishLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLen')
+  FishLenComps_discard_nLL_df <- FishLenComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLenDiscard')
+  SrvLen_nLL_df <- SrvLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvLen')
+  FishIdx_nLL_df <- FishIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'FishIdx')
+  SrvIdx_nLL_df <- SrvIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'SrvIdx')
+  conv_fish_tag_nLL_df <- conv_fish_tag_nLL %>%
+    dplyr::rename(Recap_Year = Var1, Recap_Seas = Var2, Tag_Cohort = Var3, Region = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'Tagging')
+  fish_q_nLL_df <- reshape2::melt(fish_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'FishQ Prior')
+  srv_q_nLL_df <- reshape2::melt(srv_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'SrvQ Prior')
+  Catch_pop_nLL_df <- Catch_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'CatchPop')
+  Discard_pop_nLL_df <- Discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'DiscardPop')
+  FishIdx_pop_nLL_df <- FishIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishIdxPop')
+  SrvIdx_pop_nLL_df <- SrvIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvIdxPop')
+  FishAge_pop_nLL_df <- FishAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgePop')
+  FishAge_discard_pop_nLL_df <- FishAge_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgeDiscardPop')
+  FishLen_pop_nLL_df <- FishLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenPop')
+  FishLen_discard_pop_nLL_df <- FishLen_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenDiscardPop')
+  SrvAge_pop_nLL_df <- SrvAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvAgePop')
+  SrvLen_pop_nLL_df <- SrvLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvLenPop')
+
+  fish_q_block_nLL_df <- reshape2::melt(fish_q_block_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Selex Pen')
+  Movement_nLL_df <- reshape2::melt(Movement_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Move Prior')
+  h_nLL_df <- reshape2::melt(h_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'h Prior')
+  NAA_state_nLL_df <- reshape2::melt(NAA_state_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'NAA State')
+  R0_nLL_df <- reshape2::melt(R0_nLL) %>% dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'R0 Prior')
+  TagRep_nLL_df <- reshape2::melt(TagRep_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'TagRep Prior')
+  Fmort_nLL_df <- reshape2::melt(Fmort_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'FmortPen')
+  dmr_nLL_df <- reshape2::melt(dmr_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'dmrPen')
+  Catch_nLL_df <- Catch_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Catch')
+  Discard_nLL_df <- Discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'Discard')
+  FishAge_nLL_df <- FishAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAge')
+  FishAgeComps_discard_nLL_df <- FishAgeComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishAgeDiscard')
+  SrvAge_nLL_df <- SrvAge_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvAge')
+  FishLen_nLL_df <- FishLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLen')
+  FishLenComps_discard_nLL_df <- FishLenComps_discard_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishLenDiscard')
+  SrvLen_nLL_df <- SrvLen_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Sex = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvLen')
+  FishIdx_nLL_df <- FishIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'FishIdx')
+  SrvIdx_nLL_df <- SrvIdx_nLL %>%
+    dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4) %>%
+    dplyr::mutate(type = 'SrvIdx')
+  conv_fish_tag_nLL_df <- conv_fish_tag_nLL %>%
+    dplyr::rename(Recap_Year = Var1, Recap_Seas = Var2, Tag_Cohort = Var3, Region = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'Tagging')
+  fish_q_nLL_df <- reshape2::melt(fish_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'FishQ Prior')
+  srv_q_nLL_df <- reshape2::melt(srv_q_nLL) %>%
+    dplyr::select(-Var2) %>% dplyr::rename(prof_val = Var1) %>% dplyr::mutate(type = 'SrvQ Prior')
+  Catch_pop_nLL_df <- Catch_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'CatchPop')
+  Discard_pop_nLL_df <- Discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'DiscardPop')
+  FishIdx_pop_nLL_df <- FishIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'FishIdxPop')
+  SrvIdx_pop_nLL_df <- SrvIdx_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Fleet = Var5) %>%
+    dplyr::mutate(type = 'SrvIdxPop')
+  FishAge_pop_nLL_df <- FishAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgePop')
+  FishAge_discard_pop_nLL_df <- FishAge_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishAgeDiscardPop')
+  FishLen_pop_nLL_df <- FishLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenPop')
+  FishLen_discard_pop_nLL_df <- FishLen_discard_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'FishLenDiscardPop')
+  SrvAge_pop_nLL_df <- SrvAge_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvAgePop')
+  SrvLen_pop_nLL_df <- SrvLen_pop_nLL %>%
+    dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
+    dplyr::mutate(type = 'SrvLenPop')
+
   # Get likelihoods aggregated across all dimensions
   agg_nLL <- rbind(jnLL_df, rec_nLL_df, M_nLL_df, rec_prop_nLL_df, Movement_nLL_df, h_nLL_df, R0_nLL_df,
                    NAA_state_nLL_df,
                    TagRep_nLL_df,Fmort_nLL_df, dmr_nLL_df, sel_nLL_df,
+                   srv_sel_block_nLL_df,
+                   srv_q_block_nLL_df,
+                   fish_sel_block_nLL_df,
+                   fish_q_block_nLL_df,
                    Catch_nLL_df %>% dplyr::group_by(prof_val, type) %>%
                      dplyr::summarize(value = sum(value)),
                    Discard_nLL_df %>% dplyr::group_by(prof_val, type) %>%
@@ -710,46 +1114,53 @@ do_likelihood_profile <- function(data,
                    SrvLen_pop_nLL_df  %>% dplyr::group_by(prof_val, type) %>% dplyr::summarize(value = sum(value, na.rm = T))
   )
 
-  profile_list <- list(jnLL_df = jnLL_df,
-                       rec_nLL_df = rec_nLL_df,
-                       M_nLL_df = M_nLL_df,
-                       sel_nLL_df = sel_nLL_df,
-                       rec_prop_nLL_df = rec_prop_nLL_df,
-                       Movement_nLL_df = Movement_nLL_df,
-                       h_nLL_df = h_nLL_df,
-                       NAA_state_nLL_df = NAA_state_nLL_df,
-                       R0_nLL_df = R0_nLL_df,
-                       TagRep_nLL_df = TagRep_nLL_df,
-                       Fmort_nLL_df = Fmort_nLL_df,
-                       dmr_nLL_df = dmr_nLL_df,
-                       Catch_nLL_df = Catch_nLL_df,
-                       CatchAA_nLL_df = CatchAA_nLL, DiscardAA_nLL_df = DiscardAA_nLL,
-                       SrvIdxAA_nLL_df = SrvIdxAA_nLL,
-                       CatchAA_pop_nLL_df = CatchAA_pop_nLL, DiscardAA_pop_nLL_df = DiscardAA_pop_nLL,
-                       SrvIdxAA_pop_nLL_df = SrvIdxAA_pop_nLL,
-                       Discard_nLL_df = Discard_nLL_df,
-                       conv_fish_tag_nLL_df = conv_fish_tag_nLL_df,
-                       FishAge_nLL_df = FishAge_nLL_df,
-                       FishAgeComps_discard_nLL_df = FishAgeComps_discard_nLL_df,
-                       SrvAge_nLL_df = SrvAge_nLL_df,
-                       FishLen_nLL_df = FishLen_nLL_df,
-                       FishLenComps_discard_nLL_df = FishLenComps_discard_nLL_df,
-                       SrvLen_nLL_df = SrvLen_nLL_df,
-                       FishIdx_nLL_df = FishIdx_nLL_df,
-                       SrvIdx_nLL_df = SrvIdx_nLL_df,
-                       agg_nLL = agg_nLL,
-                       fish_q_nLL_df    = fish_q_nLL_df,
-                       srv_q_nLL_df     = srv_q_nLL_df,
-                       Catch_pop_nLL_df   = Catch_pop_nLL_df,
-                       Discard_pop_nLL_df   = Discard_pop_nLL_df,
-                       FishIdx_pop_nLL_df = FishIdx_pop_nLL_df,
-                       SrvIdx_pop_nLL_df  = SrvIdx_pop_nLL_df,
-                       FishAge_pop_nLL_df = FishAge_pop_nLL_df,
-                       FishLen_pop_nLL_df = FishLen_pop_nLL_df,
-                       FishAge_discard_pop_nLL_df = FishAge_discard_pop_nLL_df,
-                       FishLen_discard_pop_nLL_df = FishLen_discard_pop_nLL_df,
-                       SrvAge_pop_nLL_df  = SrvAge_pop_nLL_df,
-                       SrvLen_pop_nLL_df  = SrvLen_pop_nLL_df
+  profile_list <- list(
+    jnLL_df = jnLL_df,
+    rec_nLL_df = rec_nLL_df,
+    M_nLL_df = M_nLL_df,
+    sel_nLL_df = sel_nLL_df,
+    srv_sel_block_nLL_df = srv_sel_block_nLL_df,
+    srv_q_block_nLL_df = srv_q_block_nLL_df,
+    fish_sel_block_nLL_df = fish_sel_block_nLL_df,
+    fish_q_block_nLL_df = fish_q_block_nLL_df,
+    rec_prop_nLL_df = rec_prop_nLL_df,
+    Movement_nLL_df = Movement_nLL_df,
+    h_nLL_df = h_nLL_df,
+    NAA_state_nLL_df = NAA_state_nLL_df,
+    R0_nLL_df = R0_nLL_df,
+    TagRep_nLL_df = TagRep_nLL_df,
+    Fmort_nLL_df = Fmort_nLL_df,
+    dmr_nLL_df = dmr_nLL_df,
+    Catch_nLL_df = Catch_nLL_df,
+    CatchAA_nLL_df = CatchAA_nLL,
+    DiscardAA_nLL_df = DiscardAA_nLL,
+    SrvIdxAA_nLL_df = SrvIdxAA_nLL,
+    CatchAA_pop_nLL_df = CatchAA_pop_nLL,
+    DiscardAA_pop_nLL_df = DiscardAA_pop_nLL,
+    SrvIdxAA_pop_nLL_df = SrvIdxAA_pop_nLL,
+    Discard_nLL_df = Discard_nLL_df,
+    conv_fish_tag_nLL_df = conv_fish_tag_nLL_df,
+    FishAge_nLL_df = FishAge_nLL_df,
+    FishAgeComps_discard_nLL_df = FishAgeComps_discard_nLL_df,
+    SrvAge_nLL_df = SrvAge_nLL_df,
+    FishLen_nLL_df = FishLen_nLL_df,
+    FishLenComps_discard_nLL_df = FishLenComps_discard_nLL_df,
+    SrvLen_nLL_df = SrvLen_nLL_df,
+    FishIdx_nLL_df = FishIdx_nLL_df,
+    SrvIdx_nLL_df = SrvIdx_nLL_df,
+    agg_nLL = agg_nLL,
+    fish_q_nLL_df    = fish_q_nLL_df,
+    srv_q_nLL_df     = srv_q_nLL_df,
+    Catch_pop_nLL_df   = Catch_pop_nLL_df,
+    Discard_pop_nLL_df   = Discard_pop_nLL_df,
+    FishIdx_pop_nLL_df = FishIdx_pop_nLL_df,
+    SrvIdx_pop_nLL_df  = SrvIdx_pop_nLL_df,
+    FishAge_pop_nLL_df = FishAge_pop_nLL_df,
+    FishLen_pop_nLL_df = FishLen_pop_nLL_df,
+    FishAge_discard_pop_nLL_df = FishAge_discard_pop_nLL_df,
+    FishLen_discard_pop_nLL_df = FishLen_discard_pop_nLL_df,
+    SrvAge_pop_nLL_df  = SrvAge_pop_nLL_df,
+    SrvLen_pop_nLL_df  = SrvLen_pop_nLL_df
   )
 
   return(profile_list)

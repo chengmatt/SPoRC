@@ -74,6 +74,8 @@ test_that("Multi Region Global SPR Reference Points Sablefish Model Converges to
   # Natural Mortality
   natmort_slice <- mlt_rg_sable_rep$natmort[,, length(mlt_rg_sable_data$years), , ]  # [n_pop, n_regions, n_ages, n_sexes]
   natmort <- array(rep(natmort_slice, each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
+  # packaged report predates seasonal M, hold it across seasons
+  natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
 
   # Recruitment
   recruitment <- array(mlt_rg_sable_rep$Rec[,,20:(length(mlt_rg_sable_data$years) - 2)],
@@ -83,32 +85,33 @@ test_that("Multi Region Global SPR Reference Points Sablefish Model Converges to
   sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
   # do projection
-  out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs,
-                                  n_regions = n_regions,
-                                  n_ages = n_ages,
-                                  n_sexes = n_sexes,
-                                  sexratio = sexratio,
-                                  n_fish_fleets = n_fish_fleets,
-                                  do_recruits_move = do_recruits_move,
-                                  recruitment = recruitment,
-                                  terminal_NAA = terminal_NAA,
-                                  terminal_NAA0 = terminal_NAA0,
-                                  terminal_F = terminal_F,
-                                  dmr = terminal_dmr,
-                                  natmort = natmort,
-                                  WAA = WAA,
-                                  n_pop = n_pop,
-                                  WAA_fish = WAA_fish,
-                                  MatAA = MatAA,
-                                  fish_sel = fish_sel,
-                                  ret_sel = ret_sel,
-                                  Movement = Movement,
-                                  f_ref_pt = array(ref_pt$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
-                                  b_ref_pt = array(ref_pt$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs)),
-                                  HCR_function = HCR_function,
-                                  recruitment_opt = "mean_rec",
-                                  fmort_opt = "HCR",
-                                  t_spawn = t_spawn
+  out <- Do_Population_Projection(
+    n_proj_yrs = n_proj_yrs,
+    n_regions = n_regions,
+    n_ages = n_ages,
+    n_sexes = n_sexes,
+    sexratio = sexratio,
+    n_fish_fleets = n_fish_fleets,
+    do_recruits_move = do_recruits_move,
+    recruitment = recruitment,
+    terminal_NAA = terminal_NAA,
+    terminal_NAA0 = terminal_NAA0,
+    terminal_F = terminal_F,
+    dmr = terminal_dmr,
+    natmort = natmort,
+    WAA = WAA,
+    n_pop = n_pop,
+    WAA_fish = WAA_fish,
+    MatAA = MatAA,
+    fish_sel = fish_sel,
+    ret_sel = ret_sel,
+    Movement = Movement,
+    f_ref_pt = array(ref_pt$f_ref_pt, dim = c(n_regions, n_proj_yrs)),
+    b_ref_pt = array(ref_pt$b_ref_pt, dim = c(n_pop, n_regions, n_proj_yrs)),
+    HCR_function = HCR_function,
+    recruitment_opt = "mean_rec",
+    fmort_opt = "HCR",
+    t_spawn = t_spawn
   )
 
 

@@ -1,8 +1,8 @@
-# The sharing specs anchored on region one and copied fleet maps region blind,
-# which silently mapped selectivity off for any fleet whose data sit in a later
-# region. These lock the fixed behavior: sharing anchors on a fleet's first
-# region with data, and a fleet-sharing copy lands the reference's parameters in
-# the sharing fleet's own regions.
+# The sharing specs anchored on region one and copied fleet maps region blind, which silently mapped
+# selectivity off for any fleet whose data sit in a later region.
+#
+# Sharing now anchors on a fleet's first region with data, and a fleet-sharing copy lands the
+# reference's parameters in the sharing fleet's own regions.
 
 # a fleet's catch confined to one region: fleet 1 in region 1, fleet 2 in region 2
 region_split_catch <- function() {
@@ -39,10 +39,18 @@ test_that("est_shared_r anchors on the fleet's first region with data", {
   expect_true(all(!is.na(m[2, 1:2, 1, , 2])))
 })
 
-test_that("sigmaR specs resolve and share the region margin", {
-  fake <- list(data = list(n_pop = 1, n_regions = 3, rec_dd = 1,
-                           rec_region_prop_spec = 0, natal_region = 1),
-               par = list(ln_sigmaR = array(0, dim = c(2, 1, 3))), map = list())
+test_that("sigmaR specs resolve and share the region dim", {
+  fake <- list(
+    data = list(
+      n_pop = 1,
+      n_regions = 3,
+      rec_dd = 1,
+      rec_region_prop_spec = 0,
+      natal_region = 1
+    ),
+    par = list(ln_sigmaR = array(0, dim = c(2, 1, 3))),
+    map = list()
+  )
 
   n_est <- function(spec) nlevels(SPoRC:::do_sigmaR_mapping(fake, spec)$map$ln_sigmaR)
   expect_equal(n_est("est_all"), 6)            # every period and region
@@ -53,9 +61,17 @@ test_that("sigmaR specs resolve and share the region margin", {
 })
 
 test_that("sigmaR slots without recruits stay off under natal homing", {
-  fake <- list(data = list(n_pop = 2, n_regions = 3, rec_dd = 1,
-                           rec_region_prop_spec = 1, natal_region = c(1, 2)),
-               par = list(ln_sigmaR = array(0, dim = c(2, 2, 3))), map = list())
+  fake <- list(
+    data = list(
+    n_pop = 2,
+    n_regions = 3,
+    rec_dd = 1,
+    rec_region_prop_spec = 1,
+    natal_region = c(1, 2)
+  ),
+    par = list(ln_sigmaR = array(0, dim = c(2, 2, 3))),
+    map = list()
+  )
 
   m <- array(as.integer(SPoRC:::do_sigmaR_mapping(fake, "est_all")$map$ln_sigmaR),
              dim = c(2, 2, 3))

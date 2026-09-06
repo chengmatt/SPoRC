@@ -25,11 +25,11 @@ Array \code{[n_years x n_ages x n_obs_ages x n_fleets]}.
 Ageing error is a property of the sampling program, so a fishery that ages
 its catch from otoliths and a survey that reads scales do not misclassify the
 same way. \code{AgeingError_fish} and \code{AgeingError_srv} let each fleet
-carry its own matrix, defaulting to the shared \code{AgeingError} so a model
+have its own matrix, defaulting to the shared \code{AgeingError} so a model
 written before they existed behaves exactly as it did.
 }
 \details{
 Every fleet must land on the same observed age bins, because the observed
-composition arrays carry a single age dimension shared across fleets.
+composition arrays have a single age dimension shared across fleets.
 }
 \keyword{internal}

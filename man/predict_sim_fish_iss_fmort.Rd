@@ -35,6 +35,6 @@ interpolation between those bounds using the ratio of projected
 historical observations exist for a cell, ISS is set to zero. If
 conditions for scaling are not met (e.g., maximum historical \eqn{F = 0}),
 the mean historical ISS is used as a fallback. All prior years
-(\code{1:(y-1)}) are carried over unchanged from \code{ISS_FishComps}.
+(\code{1:(y-1)}) are reused unchanged from \code{ISS_FishComps}.
 }
 \keyword{internal}

@@ -1,8 +1,7 @@
 # Shared helpers
 #
-# Numerical helpers used inside the objective function and the operating model:
-# correlation matrices, natural cubic spline weights, the correlation transform,
-# and the logistic normal covariance.
+# Numerical helpers used inside the objective and the operating model: correlation matrices, natural
+# cubic spline weights, the correlation transform, and the logistic normal covariance.
 
 #' Construct an AR(1) correlation matrix
 #'
@@ -207,17 +206,17 @@ build_us_corr <- function(pars, n) {
 #'
 #' The factor behind \code{\link{build_us_corr}}, returned in its own right for
 #' callers that need to whiten rather than to form the correlation. Whitening a
-#' margin, \eqn{z = L^{-1} x}, is what lets a correlation over one margin compose
-#' with an arbitrary structure over the others: the transformed margin is
-#' independent, so each slice can then be scored by whatever density the
-#' remaining margins call for, separable or not.
+#' dim, \eqn{z = L^{-1} x}, is what lets a correlation over one dim compose
+#' with an arbitrary structure over the others: the transformed dim is
+#' independent, so each slice can then be evaluated by whatever density the
+#' remaining dims call for, separable or not.
 #'
 #' Rows are normalized to unit length, which makes the lower triangular matrix a
 #' Cholesky factor of a correlation matrix for any parameter values, so no
 #' positive-definiteness constraint is needed on the parameters themselves.
 #'
 #' @param pars Numeric vector of length \eqn{n(n-1)/2}, unconstrained.
-#' @param n Dimension of the margin.
+#' @param n Dimension of the dim.
 #'
 #' @return An \eqn{n 	imes n} lower triangular matrix with unit-length rows.
 #'
@@ -363,4 +362,3 @@ mat_exp <- function(A, expm_nsub = 0) {
 
   out
 }
-

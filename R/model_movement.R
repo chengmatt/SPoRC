@@ -1,8 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# Turns movement parameters into the movement arrays the dynamics use, for both
-# the unstructured and the continuous time parameterizations.
-# get_movement_dp_design_matrix and get_ctmc_bound_form are shared with setup_movement.R.
+# Turns movement parameters into the movement arrays the dynamics use, for both the unstructured and
+# the continuous time parameterizations. Two helpers are shared with setup_movement.R.
 
 #' Names for the CTMC generator bound forms
 #'
@@ -119,10 +118,10 @@ get_movement_dp_design_matrix <- function(data,
 #'       only where diffusion outweighs taxis everywhere.}
 #'     \item{\code{"softplus"} (or \code{1})}{softplus of \eqn{\theta_j + d} with
 #'       width \code{ctmc_diffusion_eps}. Smooth, but an edge where taxis cancels
-#'       diffusion carries a floor of \code{eps * log(2)}, so the width is a
+#'       diffusion has a floor of \code{eps * log(2)}, so the width is a
 #'       minimum exchange rate and not only a smoothing constant.}
 #'     \item{\code{"upwind"} (or \code{2})}{discontinuous Galerkin / finite volume upwind flux,
-#'       \eqn{q = \theta_j + \max(d, 0)}: diffusion is carried whole and only the
+#'       \eqn{q = \theta_j + \max(d, 0)}: diffusion is kept whole and only the
 #'       down-gradient half of the taxis flux is added, so positivity never depends
 #'       on the two cancelling. }
 #'   }
@@ -267,9 +266,8 @@ Get_Movement <- function(move_type,
     loop = expand.grid(dims[-(2:3)]) # get pop, year, age, and sexes to loop through
     if(do_recruits_move == 0) loop = loop[-which(loop$ages == 1),] # remove age 1, if recruits don't move
 
-    # ctmc_move_dat holds one row per pop, region, year, season, age and sex, so its
-    # rows can be found by position. The year axis is sized to whatever the covariates
-    # carry, since ctmc_move_dat is allowed to hold projection year rows
+    # ctmc_move_dat holds one row per pop, region, year, season, age and sex, so rows are found
+    # by position. the year axis is sized to the covariates, which may include projection years
     ctmc_key = sapply(c('pop','regions','years','seas','ages','sexes'), function(v) as.integer(ctmc_move_dat[,v])) # convert ctmc dataframe to matrix
     ctmc_row = array(NA_integer_, dim = pmax(c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes), apply(ctmc_key, 2, max))) # pmax to get projection year if there are any
     ctmc_row[ctmc_key] = seq_len(nrow(ctmc_move_dat))
@@ -284,9 +282,8 @@ Get_Movement <- function(move_type,
     theta_z = (X_zk %*% theta_k)[,1] # multiply diffusion parameter by design matrix
     theta_z = theta_z/area_r[ctmc_move_dat[,'regions']]  # scale diffusion matrix by area
 
-    # preference for each region. A formula with no terms (e.g. ~ 0) yields a zero-column
-    # design matrix, which is the natural way to request pure diffusion with no taxis;
-    # treat it as zero preference everywhere rather than indexing an empty object
+    # preference for each region. a formula with no terms (~ 0) gives a zero-column design matrix,
+    # which is how pure diffusion is requested, so treat it as zero preference everywhere
     gamma_k = move_preference_pars # get preference parameters
     if(design_mat$n_gamma == 0) gamma_z = rep(0, nrow(ctmc_move_dat))
     else gamma_z = (W_zk %*% gamma_k)[,1] # multiply preference parameters by design matrix
@@ -294,11 +291,8 @@ Get_Movement <- function(move_type,
     # ridge on the preference coefficients, applied once; pins both level and spread
     move_pen = move_pen + sum(gamma_k^2)
 
-    # Generator edges, held as the (destination, origin) pairs the adjacency allows.
-    # Every flow transform below runs on this value slot rather than on the full
-    # n_regions x n_regions matrix, so a non-edge stays exactly zero by construction
-    # rather than by cancellation, and the elementwise work scales with the number of
-    # edges instead of with n_regions^2.
+    # generator edges, as the (destination, origin) pairs the adjacency allows. every flow transform
+    # runs on this value slot, so a non-edge stays exactly zero and work scales with edge count
     bound_form = get_ctmc_bound_form(ctmc_diffusion_bounds)
     edge_ij = which(adjacency_mat == 1 & diag(1, n_regions) == 0, arr.ind = TRUE)
     edge_to = edge_ij[,1] # destination region
@@ -328,18 +322,16 @@ Get_Movement <- function(move_type,
       # rows of ctmc_move_dat holding this stratum, one per region in region order
       which_index = ctmc_row[cbind(pop_idx, 1:n_regions, y_lookup, seas_idx, a_idx, s_idx)]
 
-      # preference and diffusion for each strata, year, age, sex combination,
-      # gathered onto the edges: d_e is the preference gradient along the edge and
-      # t_e the diffusion rate out of its origin region
+      # preference and diffusion per strata, year, age and sex, gathered onto the edges: d_e is the
+      # preference gradient along the edge, t_e the diffusion rate out of its origin region
       pref_s = gamma_z[which_index] # get corresponding gammas
       theta_base = theta_z[which_index]
 
       d_e = pref_s[edge_to] - pref_s[edge_from]
       t_e = theta_base[edge_from]
 
-      # Deviations scale the diffusion rate of their edge, before the flow transform.
-      # move_devs is indexed as [origin_region, counter, year, seas, age, sex] where
-      # counter goes through non-diagonal destinations for that origin
+      # deviations scale their edge's diffusion rate before the flow transform. move_devs is indexed
+      # [origin_region, counter, year, seas, age, sex], counter running over non-diagonal destinations
       for(e in seq_along(edge_lin)) {
         t_e[e] = t_e[e] * exp(move_devs[pop_idx, edge_from[e], edge_dev[e], y_idx, seas_idx, a_idx, s_idx])
       } # end e loop
@@ -351,10 +343,8 @@ Get_Movement <- function(move_type,
         eps = ctmc_diffusion_eps # softplus width; softplus(0) = eps * log(2)
         q_e = (u_e + abs(u_e)) / 2 + eps * log(1 + exp(-abs(u_e) / eps))
       }
-      # discontinuous Galerkin (upwind) flux: diffusion is carried whole and only the
-      # down-gradient half of the taxis flux is added, so the two never cancel and a
-      # down-gradient edge carries theta exactly. (d + abs(d)) / 2 is the positive part
-      # written branch-free, since a branch would freeze at its tape-build value
+      # discontinuous Galerkin (upwind) flux: diffusion whole, only the down-gradient half of the taxis
+      # flux added. (d + abs(d)) / 2 is the positive part branch-free, since a branch would freeze
       if(bound_form == "upwind") q_e = t_e + (d_e + abs(d_e)) / 2
 
       # scatter the edge flows back and conserve abundance
@@ -370,8 +360,6 @@ Get_Movement <- function(move_type,
       # populate matrices
       Movement[pop_idx,,,y_idx,seas_idx,a_idx,s_idx] = t(M_ss)
       Mrate[pop_idx,,,y_idx,seas_idx,a_idx,s_idx] = t(as.matrix(Q_ss))
-
-      # return penalty (Lagrange multiplier)
 
     } # end index loop
   }

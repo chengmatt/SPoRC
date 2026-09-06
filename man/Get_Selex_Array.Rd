@@ -83,7 +83,7 @@ on the first sex's stored parameters, evaluated as
 Because most forms exponentiate their parameters, an offset of \eqn{\delta}
 makes the sex-\eqn{s} natural-scale parameter the first sex's value times
 \eqn{e^{\delta}}, which is the male-offset convention several existing
-assessments use. An offset held at zero reproduces sex-shared parameters.}
+assessments use. An offset kept at zero reproduces sex-shared parameters.}
 
 \item{sex_scale_offset}{Integer vector of length \code{n_fleets} (0/1), or
 \code{NULL} for all zero. For a fleet flagged 1, the realized selectivity
@@ -108,7 +108,7 @@ flagged.}
 
 \item{nselbins}{Integer array \code{n_regions x n_yrs x n_fleets} naming
 each cell's plateau bin (\code{0} = none), or \code{NULL}. Bins beyond it
-are held at its value for the parametric forms (see \code{n_sel_bins} in
+are kept at its value for the parametric forms (see \code{n_sel_bins} in
 \code{\link{Get_Selex}}); the bicubic form's own setup-built plateau is
 unaffected.}
 

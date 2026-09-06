@@ -2,7 +2,7 @@ library(SPoRC)
 library(testthat)
 
 # check_sim_dimensions() is the operating-model counterpart to
-# check_data_dimensions(). Simulation inputs carry a trailing n_sims axis, so
+# check_data_dimensions(). Simulation inputs have a trailing n_sims axis, so
 # these tests also confirm that axis is actually validated rather than ignored.
 #
 # Sizes are all distinct so a transposed array cannot satisfy a check.
@@ -163,7 +163,7 @@ test_that("a wrong leading dimension is rejected", {
 
 test_that("a wrong trailing dimension is rejected", {
   # For most simulation inputs this is the n_sims axis, so this also confirms
-  # the simulation dimension is genuinely checked.
+  # the simulation dimension is checked.
   for(case in array_cases) {
     bad <- case$d
     n <- length(bad)

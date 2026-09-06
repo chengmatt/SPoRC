@@ -1,18 +1,10 @@
 # The same population, described at two resolutions.
 #
-# A model split across regions, sexes, seasons or fleets that are all identical
-# describes exactly the population a model with one of each describes. Where the
-# two disagree, an index is walking a margin it should not, or a quantity is
-# being summed on the wrong side of an operation.
+# A model split across identical regions, sexes, seasons or fleets describes exactly the population a
+# model with one of each describes. Where they disagree, an index is walking a dim it should not.
 #
-# This is the check a stored value cannot make. A stride that reads the wrong
-# margin still returns a stable number, and a regression test pinned to that
-# number passes forever. The relations below are true of the model regardless of
-# what it currently computes, so nothing about them can be pinned wrong.
-#
-# The fixture dimensions are deliberately unequal (see helper-sweep_fixture.R):
-# when two dimensions have the same extent, a transposition between them is
-# invisible.
+# A stored value cannot make this check: a stride reading the wrong dim still returns a stable number a
+# regression test would accept forever. Test setup dims are unequal, since equal extents hide transposes.
 
 
 test_that("regions that mix completely describe one region", {
@@ -49,16 +41,16 @@ test_that("fleets sharing a selectivity describe one fleet", {
 })
 
 
-test_that("the collapse fixture is actually sensitive to the dynamics", {
+test_that("the collapse test setup is actually sensitive to the dynamics", {
   # A relation that holds because both sides are trivially equal proves nothing.
   # Changing the fishing mortality has to move the very quantities the collapse
   # tests compare, or those tests would pass against a broken model.
   base <- collapse_rep(nr = 1)
   harder <- collapse_rep(nr = 1, f_scale = 4)
 
-  moved <- vapply(c("NAA", "SSB", "Total_Biom"), function(nm)
-    max(abs(apply(base[[nm]], 3, sum) - apply(harder[[nm]], 3, sum))) /
-      max(abs(apply(base[[nm]], 3, sum))), numeric(1))
+  moved <- vapply(c("NAA", "SSB", "Total_Biom"), function(quant_name)
+    max(abs(apply(base[[quant_name]], 3, sum) - apply(harder[[quant_name]], 3, sum))) /
+      max(abs(apply(base[[quant_name]], 3, sum))), numeric(1))
 
   expect_true(all(moved > 0.05))
 })
@@ -66,7 +58,7 @@ test_that("the collapse fixture is actually sensitive to the dynamics", {
 
 test_that("splitting a region does not change what is predicted for the fishery", {
   # The population collapsing is one claim; the observation layer reading that
-  # population on the right margins is another. Predicted catch at age is where
+  # population on the right dims is another. Predicted catch at age is where
   # the two meet, so it is compared across the same splits.
   one <- collapse_rep(nr = 1)
 
@@ -82,10 +74,10 @@ test_that("seasons that share the year's fishing describe one season", {
   # A year cut into k seasons, each taking 1/k of the fishing mortality, removes
   # over the year exactly what a single season taking all of it removes.
   #
-  # Numbers at age carry a season margin and are recorded within each season, so
-  # the same fish appear once per season and summing over that margin counts them
+  # Numbers at age have a season dim and are recorded within each season, so
+  # the same fish appear once per season and summing over that dim counts them
   # k times. The comparison is made in the first season, where both models are at
-  # the same point in the year. The annual quantities have no season margin and
+  # the same point in the year. The annual quantities have no season dim and
   # are compared whole.
   one <- collapse_rep(ns = 1)
 

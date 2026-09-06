@@ -7,7 +7,7 @@ test_that("resolve_sel_pen_wts works", {
   # six terms plus bin_range and normalize.
   term_names <- c("smooth_bin_curve", "smooth_bin_diff", "smooth_yr_diff", "smooth_yr_curve", "smooth_dome", "smooth_mean_center")
 
-  test_that("yr_diff_ref defaults to NULL and is carried through when given", {
+  test_that("yr_diff_ref defaults to NULL and is passed through when given", {
     expect_null(resolve_sel_pen_wts(list(smooth_yr_diff = 1), n_fleets = 1)[[1]]$yr_diff_ref)
     expect_equal(resolve_sel_pen_wts(list(smooth_yr_diff = 1, yr_diff_ref = 0), n_fleets = 1)[[1]]$yr_diff_ref, 0)
   })
@@ -25,21 +25,40 @@ test_that("resolve_sel_pen_wts works", {
   test_that("explicit pen_wts overrides named terms and zeroes unnamed ones", {
     out <- resolve_sel_pen_wts(list(smooth_bin_curve = 5), n_fleets = 1)[[1]]
     expect_equal(unlist(out[term_names]),
-                 c(smooth_bin_curve = 5, smooth_bin_diff = 0, smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
+                 c(
+                   smooth_bin_curve = 5,
+                   smooth_bin_diff = 0,
+                   smooth_yr_diff = 0,
+                   smooth_yr_curve = 0,
+                   smooth_dome = 0,
+                   smooth_mean_center = 0
+                 ))
   })
 
   test_that("explicit pen_wts can set multiple terms independently", {
     out <- resolve_sel_pen_wts(list(smooth_yr_diff = 1, smooth_dome = 30, smooth_mean_center = 10000), n_fleets = 1)[[1]]
     expect_equal(unlist(out[term_names]),
-                 c(smooth_bin_curve = 0, smooth_bin_diff = 0,
-                   smooth_yr_diff = 1, smooth_yr_curve = 0, smooth_dome = 30, smooth_mean_center = 10000))
+                 c(
+                   smooth_bin_curve = 0,
+                   smooth_bin_diff = 0,
+                   smooth_yr_diff = 1,
+                   smooth_yr_curve = 0,
+                   smooth_dome = 30,
+                   smooth_mean_center = 10000
+                 ))
   })
 
   test_that("explicit pen_wts can set the smooth_bin_diff term independently of the other smooth_* terms", {
     out <- resolve_sel_pen_wts(list(smooth_bin_diff = 7), n_fleets = 1)[[1]]
     expect_equal(unlist(out[term_names]),
-                 c(smooth_bin_curve = 0, smooth_bin_diff = 7,
-                   smooth_yr_diff = 0, smooth_yr_curve = 0, smooth_dome = 0, smooth_mean_center = 0))
+                 c(
+                   smooth_bin_curve = 0,
+                   smooth_bin_diff = 7,
+                   smooth_yr_diff = 0,
+                   smooth_yr_curve = 0,
+                   smooth_dome = 0,
+                   smooth_mean_center = 0
+                 ))
   })
 
   test_that("a single named specification is shared across fleets", {
@@ -56,7 +75,7 @@ test_that("resolve_sel_pen_wts works", {
     expect_equal(out[[2]]$smooth_bin_curve, 0)
   })
 
-  test_that("per-year weights, bin_range, and normalize are carried through", {
+  test_that("per-year weights, bin_range, and normalize are passed through", {
     out <- resolve_sel_pen_wts(list(smooth_yr_diff = c(0, 1, 4), bin_range = c(3, 8), normalize = FALSE), n_fleets = 1)[[1]]
     expect_equal(out$smooth_yr_diff, c(0, 1, 4))
     expect_equal(out$bin_range, c(3, 8))
@@ -99,9 +118,13 @@ test_that("Get_Selex_Smoothness_Penalty honors per-year weights and bin ranges",
   })
 
   test_that("bin_range and normalize can differ between terms", {
-    pen_both <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_diff = 1, wt_yr_diff = 1,
-                                             normalize = list(smooth_bin_diff = FALSE, smooth_yr_diff = TRUE),
-                                             bin_range = list(smooth_bin_diff = c(2, 4)))
+    pen_both <- Get_Selex_Smoothness_Penalty(
+      sel_vals,
+      wt_bin_diff = 1,
+      wt_yr_diff = 1,
+      normalize = list(smooth_bin_diff = FALSE, smooth_yr_diff = TRUE),
+      bin_range = list(smooth_bin_diff = c(2, 4))
+    )
     pen_bin <- Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_diff = 1, normalize = FALSE, bin_range = c(2, 4))
     pen_yr <- Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = TRUE)
     expect_equal(pen_both, pen_bin + pen_yr, tolerance = 1e-12)

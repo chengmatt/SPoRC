@@ -110,7 +110,7 @@ test_that("the multivariate normal index likelihood agrees with a hand-computed 
   obs <- rnorm(n, 10, 2)
   pred <- rnorm(n, 10, 2)
 
-  test_that("RTMB's dmvnorm carries the 2*pi constant, so no offset is needed", {
+  test_that("RTMB's dmvnorm holds the 2*pi constant, so no offset is needed", {
     resid <- obs - pred
     full <- -0.5 * (n * log(2 * pi) + determinant(Sigma, logarithm = TRUE)$modulus[1] +
                       sum(resid * solve(Sigma, resid)))
@@ -148,18 +148,35 @@ test_that("the survey observation model honors age subsets and analytic catchabi
 
   run <- function(srv_idx_ages = NULL, srv_q_type = NULL, ObsSrvIdx = NULL, UseSrvIdx = NULL, ln_q = 0) {
     get_survey_observation_model(
-      n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas,
-      n_srv_fleets = n_srv, n_sexes = n_sexes,
+      n_pop = n_pop,
+      n_regions = n_regions,
+      n_yrs = n_yrs,
+      n_seas = n_seas,
+      n_srv_fleets = n_srv,
+      n_sexes = n_sexes,
       srv_q_blocks = array(1, dim = c(n_regions, n_yrs, n_srv)),
       ln_srv_q = array(ln_q, dim = c(n_regions, 1, n_srv)),
       srv_q = array(0, dim = c(n_regions, n_yrs, n_srv)),
-      do_srv_q_cov = 0, srv_q_cov = NULL, srv_q_coeff = NULL,
-      srv_selex_type = 0, srv_sel = srv_sel, srv_sel_l = NULL, SizeAgeTrans = NULL,
-      NAA = NAA, ZAA = ZAA, t_srv = array(0, dim = c(n_regions, n_seas, n_srv)),
-      SrvIAA = SrvIAA, fit_lengths = 0, SrvIAL = NULL,
-      srv_idx_type = c(0, 1), WAA_srv = WAA_srv, PredSrvIdx = PredSrvIdx,
-      srv_idx_ages = srv_idx_ages, srv_q_type = srv_q_type,
-      ObsSrvIdx = ObsSrvIdx, UseSrvIdx = UseSrvIdx
+      do_srv_q_cov = 0,
+      srv_q_cov = NULL,
+      srv_q_coeff = NULL,
+      srv_selex_type = 0,
+      srv_sel = srv_sel,
+      srv_sel_l = NULL,
+      SizeAgeTrans = NULL,
+      NAA = NAA,
+      ZAA = ZAA,
+      t_srv = array(0, dim = c(n_regions, n_seas, n_srv)),
+      SrvIAA = SrvIAA,
+      fit_lengths = 0,
+      SrvIAL = NULL,
+      srv_idx_type = c(0, 1),
+      WAA_srv = WAA_srv,
+      PredSrvIdx = PredSrvIdx,
+      srv_idx_ages = srv_idx_ages,
+      srv_q_type = srv_q_type,
+      ObsSrvIdx = ObsSrvIdx,
+      UseSrvIdx = UseSrvIdx
     )
   }
 

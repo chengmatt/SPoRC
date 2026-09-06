@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_mapping.R
 \name{at_age_n_sexes}
 \alias{at_age_n_sexes}
-\title{How many sexes an input list carries}
+\title{How many sexes an input list has}
 \usage{
 at_age_n_sexes(input_list)
 }
@@ -14,7 +14,6 @@ An integer.
 }
 \description{
 A list assembled without \code{\link{Setup_Mod_Dim}}, as the mapping unit
-tests do, has no sex dimension to read. One sex is what such a list means, and
-is what the at-age arrays were shaped as before the margin existed.
+tests do, has no sex dimension to read. One sex is what such a list means.
 }
 \keyword{internal}

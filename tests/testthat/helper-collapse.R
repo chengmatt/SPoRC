@@ -1,10 +1,8 @@
-# Fixtures for the collapse tests: the same population described at two different
-# resolutions, so the finer description must reproduce the coarser one.
+# Test setups for the collapse tests: the same population described at two resolutions, so the finer
+# description must reproduce the coarser one.
 #
-# The observation streams are switched off here. A finer model carries more
-# observations than a coarser one and its likelihood is a different number by
-# construction, so what has to agree is the population the two describe and the
-# quantities predicted from it, not the joint negative log likelihood.
+# The likelihoods are switched off. A finer model has more observations and a different jnLL by
+# construction, so what has to agree is the population and the quantities predicted from it.
 
 collapse_cfg <- list(n_yrs = 10, n_ages = 6)
 
@@ -16,7 +14,7 @@ collapse_cfg <- list(n_yrs = 10, n_ages = 6)
 #' @param nr,nx,nf,ns Regions, sexes, fishery fleets, seasons.
 #' @param catch_tot Total catch, divided evenly across region and fleet cells.
 #' @param f_scale Multiplier on the mean fishing mortality. At fixed parameters
-#'   every fleet carries its own F, so a model split into k fleets fishes k times
+#'   every fleet has its own F, so a model split into k fleets fishes k times
 #'   as hard unless each fleet is set to 1/k of the rate.
 #'
 #' @keywords internal
@@ -26,38 +24,54 @@ collapse_input <- function(nr = 1, nx = 1, nf = 1, ns = 1, catch_tot = 1e4, f_sc
   off_s <- array(0, dim = c(nr, NY, ns, 1))
 
   il <- sweep_input(
-    dims = list(n_regions = nr, n_sexes = nx, n_fish_fleets = nf, n_srv_fleets = 1,
-                n_seas = ns, n_yrs = NY, n_ages = NAG),
+    dims = list(
+      n_regions = nr,
+      n_sexes = nx,
+      n_fish_fleets = nf,
+      n_srv_fleets = 1,
+      n_seas = ns,
+      n_yrs = NY,
+      n_ages = NAG
+    ),
     catch = list(ObsCatch = array(catch_tot / (nr * nf * ns), dim = c(nr, NY, ns, nf)),
                  UseCatch = array(1, dim = c(nr, NY, ns, nf))),
     fishidx = list(
       ObsFishIdx = array(1e5, dim = c(nr, NY, ns, nf)),
       ObsFishIdx_SE = array(0.2, dim = c(nr, NY, ns, nf)),
-      UseFishIdx = off_f, fish_idx_type = rep("none", nf),
+      UseFishIdx = off_f,
+      fish_idx_type = rep("none", nf),
       ObsFishAgeComps = array(1 / NAG, dim = c(nr, NY, ns, NAG, nx, nf)),
-      UseFishAgeComps = off_f, ISS_FishAgeComps = array(100, dim = c(nr, NY, ns, nx, nf)),
+      UseFishAgeComps = off_f,
+      ISS_FishAgeComps = array(100, dim = c(nr, NY, ns, nx, nf)),
       FishAgeComps_LikeType = rep("none", nf),
       ObsFishLenComps = array(0, dim = c(nr, NY, ns, 1, nx, nf)),
-      UseFishLenComps = off_f, ISS_FishLenComps = array(0, dim = c(nr, NY, ns, nx, nf))),
+      UseFishLenComps = off_f,
+      ISS_FishLenComps = array(0, dim = c(nr, NY, ns, nx, nf))
+    ),
     srvidx = list(
       ObsSrvIdx = array(1e5, dim = c(nr, NY, ns, 1)),
       ObsSrvIdx_SE = array(0.2, dim = c(nr, NY, ns, 1)),
-      UseSrvIdx = off_s, srv_idx_type = "none",
+      UseSrvIdx = off_s,
+      srv_idx_type = "none",
       ObsSrvAgeComps = array(1 / NAG, dim = c(nr, NY, ns, NAG, nx, 1)),
-      UseSrvAgeComps = off_s, ISS_SrvAgeComps = array(100, dim = c(nr, NY, ns, nx, 1)),
+      UseSrvAgeComps = off_s,
+      ISS_SrvAgeComps = array(100, dim = c(nr, NY, ns, nx, 1)),
       SrvAgeComps_LikeType = "none",
       ObsSrvLenComps = array(0, dim = c(nr, NY, ns, 1, nx, 1)),
-      UseSrvLenComps = off_s, ISS_SrvLenComps = array(0, dim = c(nr, NY, ns, nx, 1))),
+      UseSrvLenComps = off_s,
+      ISS_SrvLenComps = array(0, dim = c(nr, NY, ns, nx, 1))
+    ),
     wt = list(Wt_FishAgeComps = array(0, dim = c(nr, NY, ns, nx, nf)),
               Wt_FishLenComps = array(0, dim = c(nr, NY, ns, nx, nf)),
               Wt_SrvAgeComps = array(0, dim = c(nr, NY, ns, nx, 1)),
-              Wt_SrvLenComps = array(0, dim = c(nr, NY, ns, nx, 1))))
+              Wt_SrvLenComps = array(0, dim = c(nr, NY, ns, nx, 1)))
+  )
 
   if(f_scale != 1) il$par$ln_F_mean <- il$par$ln_F_mean + log(f_scale)
   il
 }
 
-#' Report from a collapse fixture, evaluated rather than fitted
+#' Report from a collapse test setup, evaluated rather than fitted
 #'
 #' @keywords internal
 collapse_rep <- function(...) {
@@ -68,7 +82,7 @@ collapse_rep <- function(...) {
 #' Assert two reports describe the same population
 #'
 #' Every reported array is laid out population by region by year, so summing over
-#' everything but the year margin gives the total the two resolutions must agree
+#' everything but the year dim gives the total the two resolutions must agree
 #' on.
 #'
 #' @param coarse,fine Reports from \code{collapse_rep}.
@@ -82,12 +96,12 @@ collapse_rep <- function(...) {
 expect_collapses <- function(coarse, fine, label,
                              what = c("NAA", "SSB", "Total_Biom", "Rec", "CAA"),
                              tolerance = 1e-10) {
-  for(nm in what) {
-    if(is.null(coarse[[nm]]) || is.null(fine[[nm]])) next
-    a <- apply(coarse[[nm]], 3, sum)
-    b <- apply(fine[[nm]], 3, sum)
+  for(quant_name in what) {
+    if(is.null(coarse[[quant_name]]) || is.null(fine[[quant_name]])) next
+    a <- apply(coarse[[quant_name]], 3, sum)
+    b <- apply(fine[[quant_name]], 3, sum)
     testthat::expect_equal(as.numeric(b), as.numeric(a), tolerance = tolerance,
-                           label = sprintf("%s: %s", label, nm))
+                           label = sprintf("%s: %s", label, quant_name))
   }
 }
 
@@ -114,9 +128,16 @@ fitted_small_model <- local({
     key <- paste(nr, nx, nf, n_yrs, n_ages, np, sep = "-")
     if(!is.null(cache[[key]])) return(cache[[key]])
 
-    il <- sweep_input(dims = list(n_regions = nr, n_sexes = nx, n_fish_fleets = nf,
-                                  n_srv_fleets = 1, n_yrs = n_yrs, n_ages = n_ages,
-                                  n_pop = np, natal_region = if(np > 1) rep(1, np) else NA),
+    il <- sweep_input(dims = list(
+      n_regions = nr,
+      n_sexes = nx,
+      n_fish_fleets = nf,
+      n_srv_fleets = 1,
+      n_yrs = n_yrs,
+      n_ages = n_ages,
+      n_pop = np,
+      natal_region = if(np > 1) rep(1, np) else NA
+    ),
                       # populations recruit under local density dependence
                       rec = if(np > 1) list(rec_dd = "local") else list())
     fit <- fit_model(il$data, il$par, il$map, do_optim = TRUE, silent = TRUE, newton_loops = 0)
@@ -127,9 +148,9 @@ fitted_small_model <- local({
 })
 
 
-#' Fit a small model carrying at-age catch observations
+#' Fit a small model with at-age catch observations
 #'
-#' The at-age streams replace the aggregated catch for a fleet rather than
+#' The at-age data sources replace the aggregated catch for a fleet rather than
 #' joining it, so switching them on means switching \code{UseCatch} off. The type
 #' is sex-split because the default sums over sexes, which a two-sex model of
 #' observations cannot do.
@@ -145,11 +166,20 @@ fitted_at_age_model <- local({
 
     aa <- c(nr, n_yrs, 1, n_ages, nx, 1)
     il <- sweep_input(
-      dims = list(n_regions = nr, n_sexes = nx, n_fish_fleets = 1, n_srv_fleets = 1,
-                  n_yrs = n_yrs, n_ages = n_ages),
-      catch = list(ObsCatchAA = array(100, dim = aa), UseCatchAA = array(1, dim = aa),
-                   CatchAA_Type = "spltRspltS",
-                   UseCatch = array(0, dim = c(nr, n_yrs, 1, 1))))
+      dims = list(
+        n_regions = nr,
+        n_sexes = nx,
+        n_fish_fleets = 1,
+        n_srv_fleets = 1,
+        n_yrs = n_yrs,
+        n_ages = n_ages
+      ),
+      catch = list(
+        ObsCatchAA = array(100, dim = aa),
+        UseCatchAA = array(1, dim = aa),
+        CatchAA_Type = "spltRspltS",
+        UseCatch = array(0, dim = c(nr, n_yrs, 1, 1))
+      ))
     fit <- fit_model(il$data, il$par, il$map, do_optim = TRUE, silent = TRUE, newton_loops = 0)
     sdrep <- RTMB::sdreport(fit, getJointPrecision = FALSE)
     cache[[key]] <<- list(il = il, fit = fit, sdrep = sdrep, n_yrs = n_yrs, n_ages = n_ages)

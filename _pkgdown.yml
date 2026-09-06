@@ -44,8 +44,6 @@ navbar:
           href: articles/ae_ebs_pacific_cod_case_study.html
         - text: "North Sea Sand Eel"
           href: articles/ah_north_sea_sandeel_case_study.html
-        - text: "ICES-style Assessments"
-          href: articles/ai_ices_style_assessments.html
 
 articles:
   - title: "Getting Started"
@@ -78,7 +76,6 @@ articles:
       - ad_goa_rex_sole_case_study
       - ae_ebs_pacific_cod_case_study
       - ah_north_sea_sandeel_case_study
-      - ai_ices_style_assessments
 
   - title: "Simulation and Projections"
     contents:
@@ -87,7 +84,6 @@ articles:
       - i_reference_points
       - l_simulation_testing
       - m_simulation_dimensions
-      - ag_yft_selectivity_prior_self_test
 
   - title: "Advanced: Setup"
     contents:

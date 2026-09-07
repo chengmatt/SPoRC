@@ -1,4 +1,4 @@
-# Projection inputs for the reference point invariants, written once so a test can say which fishing
+# Projection inputs for the reference point checks, written once so a test can say which fishing
 # mortality it wants and nothing else.
 #
 # Everything is kept at its terminal-year value, which is the constant-biology, constant-F setting the

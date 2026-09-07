@@ -1,7 +1,7 @@
 library(SPoRC)
 library(testthat)
 
-# post_optim_sanity_checks() is the gate that decides whether a fit is reported
+# post_optim_sanity_checks() is the check that decides whether a fit is reported
 # as converged. Its four criteria only ever fire on a bad fit, so they are
 # driven here with hand-built sdreport stand-ins rather than a real model.
 
@@ -63,7 +63,7 @@ test_that("a non-positive-definite Hessian fails the check", {
 })
 
 test_that("non-finite standard errors fail the check", {
-  # A negative variance yields NaN under sqrt(), which is the signature of a
+  # A negative variance yields NaN under sqrt(), which is what you see with a
   # covariance matrix that could not be inverted properly.
   sd_rep <- make_sd_rep(cov = diag(c(0.04, -1)))
   expect_false(suppressMessages(

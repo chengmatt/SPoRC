@@ -2,7 +2,7 @@
 # assessment may additionally estimate a component covering everything that design does not.
 #
 # Checks the three ways the two combine, the separation of the aggregated and population-specific
-# sources, and two guard rails: a spec that cannot be identified, and one on a likelihood with no SD.
+# sources, and two rejected specs: one that cannot be identified, and one on a likelihood with no SD.
 
 library(SPoRC)
 library(testthat)

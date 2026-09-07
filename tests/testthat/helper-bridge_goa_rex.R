@@ -92,7 +92,9 @@ build_goa_rex_input <- function(dat) {
   mat_f <- 1 / (1 + exp(dat$mat$slope * (ages - dat$mat$a50)))
   mat_f[ages < dat$mat$first_mature_age] <- 0
   for(r in 1:n_reg) for(y in 1:n_yrs) MatAA[1, r, y, 1, , 1] <- mat_f
-  growth_start <- dat$mle$growth # [1, area, sex, 5]
+  # unname: the SS3 growth table has dimnames, and a parameter array that keeps them stops
+  # matching the make script, which starts from a bare array
+  growth_start <- unname(dat$mle$growth) # [1, area, sex, 5]
   wl <- array(NA_real_, dim = c(1, n_reg, n_sex, 2))
   for(r in 1:n_reg) { wl[1, r, 1, ] <- dat$wtlen$fem; if(n_sex > 1) wl[1, r, 2, ] <- dat$wtlen$mal }
 

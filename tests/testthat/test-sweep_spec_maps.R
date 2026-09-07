@@ -221,7 +221,7 @@ test_that("two different sharing specs do not collapse the same dim", {
   # est_shared_r and est_shared_s name different dimensions, so on a model whose
   # dimensions all differ they must collapse different dims of the parameter.
   # Identical collapse means at least one of them is wired to the wrong dim,
-  # which no pinned map detects as long as the pin was taken from the same wiring.
+  # which a stored map cannot detect, since it came from the same wiring.
   problems <- character()
 
   for(entry in sweep_spec_catalog) {
@@ -240,7 +240,7 @@ test_that("two different sharing specs do not collapse the same dim", {
       if(inherits(alt, "condition")) next
       blocks <- sweep_diff(sweep_signature(est), sweep_signature(alt))$map
       prof <- spec_block_profile(alt, blocks)
-      # signature of which dims this spec collapsed, per block
+      # which dims this spec collapsed, per block
       seen[[v]] <- paste(vapply(blocks, function(b)
         paste(b, paste(which(prof[[b]]$shared %in% TRUE), collapse = "/"), sep = ":"),
         character(1)), collapse = " ")

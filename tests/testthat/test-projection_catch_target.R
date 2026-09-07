@@ -6,7 +6,7 @@ library(testthat)
 # The central test is a round trip. Run the projection at a known input F, take
 # the realized catch as the target, and re-run under fmort_opt = "Catch". The
 # solver has to recover the original F and reproduce every other projected
-# quantity, which pins down the whole seasonal and spatial catch calculation
+# quantity, which determines the whole seasonal and spatial catch calculation
 # rather than just checking that some F produces some catch.
 
 # Builds a small but non-degenerate projection: multi-region, multi-season,

@@ -453,7 +453,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   # curve, so the per-recruit biology, the catch equation, the plus group and the
   # stock-recruit routines all have to agree for the loop to settle on Bmsy.
   #
-  # Two things this pins that were previously broken:
+  # Two things this checks that were previously broken:
   #   1. Get_Det_Recruitment's global density-dependence branch skipped the spawning-season
   #      movement on the plus group ("mortality, no movement" = move_timing 1 semantics
   #      hard-coded), so timings 0 and 2 settled slightly off Bmsy while 1 was exact.

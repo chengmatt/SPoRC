@@ -601,6 +601,23 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   element is a vector of ages or \code{NULL} for all ages, or an array
 #'   \code{[n_ages x n_fish_fleets]} of 0/1 weights. Default \code{NULL} uses
 #'   every age for every fleet. The fleet's compositions are unaffected.
+#' @param FishIdx_seas_Type,FishIdx_pop_seas_Type,FishAgeComps_seas_Type,FishAgeComps_pop_seas_Type,FishLenComps_seas_Type,FishLenComps_pop_seas_Type,FishAgeComps_discard_seas_Type,FishAgeComps_discard_pop_seas_Type,FishLenComps_discard_seas_Type,FishLenComps_discard_pop_seas_Type
+#'   Whether a seasonal model reports this data source once a season or once a
+#'   year. One value for every fleet or one per fleet.
+#'   \describe{
+#'     \item{\code{"spltSeas"}}{Fit the observation against the prediction for the
+#'       season it sits in. This is the default and what every data source did
+#'       before this setting existed.}
+#'     \item{\code{"aggSeas"}}{Sum the prediction over every season of the year
+#'       and fit it against a single observation.}
+#'   }
+#'   Under \code{"aggSeas"} the observation still lives in whichever season it was
+#'   placed in, and exactly one season per region and year may be turned on in the
+#'   matching \code{Use} array. The likelihood and the reported negative log
+#'   likelihood land in that season. An index measured at a point in time belongs
+#'   in its own season rather than aggregated; this setting is for a data source
+#'   that accumulates across the year.
+#'
 #' @param FishIdx_LikeType Character vector \code{[n_fish_fleets]} giving the
 #'   error structure of each fishery index. Options are \code{"lognormal"}
 #'   (default, the observation standard errors are on the log scale),
@@ -987,6 +1004,16 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         FishAgeComps_pop_bins = NULL,
                                         FishLenComps_pop_bins = NULL,
                                         FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
+                                        FishIdx_seas_Type = NULL,
+                                        FishIdx_pop_seas_Type = NULL,
+                                        FishAgeComps_seas_Type = NULL,
+                                        FishAgeComps_pop_seas_Type = NULL,
+                                        FishLenComps_seas_Type = NULL,
+                                        FishLenComps_pop_seas_Type = NULL,
+                                        FishAgeComps_discard_seas_Type = NULL,
+                                        FishAgeComps_discard_pop_seas_Type = NULL,
+                                        FishLenComps_discard_seas_Type = NULL,
+                                        FishLenComps_discard_pop_seas_Type = NULL,
                                         FishIdx_Cov = NULL,
 
                                         # Conditional Age-at-Length
@@ -1446,6 +1473,33 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   input_list$data$ObsFishIdx_pop_SE <- ObsFishIdx_pop_SE
   input_list$data$UseFishIdx_pop <- UseFishIdx_pop
   input_list$data$fish_idx_type <- fish_idx_type_vals
+
+  # whether each data source is fit once a season or once a year as a season total
+  n_fish <- input_list$data$n_fish_fleets
+  input_list$data$FishIdx_seas_Type <- parse_seas_agg_spec(FishIdx_seas_Type, "FishIdx_seas_Type", n_fish)
+  input_list$data$FishIdx_pop_seas_Type <- parse_seas_agg_spec(FishIdx_pop_seas_Type, "FishIdx_pop_seas_Type", n_fish)
+  input_list$data$FishAgeComps_seas_Type <- parse_seas_agg_spec(FishAgeComps_seas_Type, "FishAgeComps_seas_Type", n_fish)
+  input_list$data$FishAgeComps_pop_seas_Type <- parse_seas_agg_spec(FishAgeComps_pop_seas_Type, "FishAgeComps_pop_seas_Type", n_fish)
+  input_list$data$FishLenComps_seas_Type <- parse_seas_agg_spec(FishLenComps_seas_Type, "FishLenComps_seas_Type", n_fish)
+  input_list$data$FishLenComps_pop_seas_Type <- parse_seas_agg_spec(FishLenComps_pop_seas_Type, "FishLenComps_pop_seas_Type", n_fish)
+  input_list$data$FishAgeComps_discard_seas_Type <- parse_seas_agg_spec(FishAgeComps_discard_seas_Type, "FishAgeComps_discard_seas_Type", n_fish)
+  input_list$data$FishAgeComps_discard_pop_seas_Type <- parse_seas_agg_spec(FishAgeComps_discard_pop_seas_Type, "FishAgeComps_discard_pop_seas_Type", n_fish)
+  input_list$data$FishLenComps_discard_seas_Type <- parse_seas_agg_spec(FishLenComps_discard_seas_Type, "FishLenComps_discard_seas_Type", n_fish)
+  input_list$data$FishLenComps_discard_pop_seas_Type <- parse_seas_agg_spec(FishLenComps_discard_pop_seas_Type, "FishLenComps_discard_pop_seas_Type", n_fish)
+
+  # an aggregated observation is compared against the whole year, so only one season may be fit
+  check_seas_agg_use(UseFishIdx, input_list$data$FishIdx_seas_Type, "UseFishIdx")
+  check_seas_agg_use(UseFishIdx_pop, input_list$data$FishIdx_pop_seas_Type, "UseFishIdx_pop")
+  check_seas_agg_use(UseFishAgeComps, input_list$data$FishAgeComps_seas_Type, "UseFishAgeComps")
+  check_seas_agg_use(UseFishAgeComps_pop, input_list$data$FishAgeComps_pop_seas_Type, "UseFishAgeComps_pop")
+  check_seas_agg_use(UseFishLenComps, input_list$data$FishLenComps_seas_Type, "UseFishLenComps")
+  check_seas_agg_use(UseFishLenComps_pop, input_list$data$FishLenComps_pop_seas_Type, "UseFishLenComps_pop")
+
+  for(f in 1:n_fish) {
+    if(input_list$data$FishIdx_seas_Type[f] == 1) collect_message("Fishery index for fishery fleet ", f, " is fit as a season total")
+    if(input_list$data$FishAgeComps_seas_Type[f] == 1) collect_message("Fishery age compositions for fishery fleet ", f, " are fit as a season total")
+    if(input_list$data$FishLenComps_seas_Type[f] == 1) collect_message("Fishery length compositions for fishery fleet ", f, " are fit as a season total")
+  } # end f loop
 
   ## Index age selection and error structure --------------------------------
   if(!all(FishIdx_LikeType %in% c("lognormal", "normal", "mvn"))) stop("Invalid specification for FishIdx_LikeType. Should be lognormal, normal, or mvn")

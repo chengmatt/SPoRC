@@ -850,6 +850,85 @@ test_that("do_retrospective() zeros the correct lagged columns of UseFishAgeComp
 })
 
 
+
+## Test 6: parallel loop collates the same peel/year rows the sequential loop does
+test_that("do_retrospective() (parallel) returns a long data.frame with a peel column", {
+
+  skip_if_not(testthat_supports_mocking, "testthat >= 3.2.0 with 3rd edition required for local_mocked_bindings()")
+  skip_if_not_installed("reshape2")
+  skip_if_not_installed("dplyr")
+  skip_if_not_installed("future.apply")
+  skip_if_not_installed("progressr")
+
+  inp <- make_minimal_retro_inputs(n_yrs = 6)
+  log_env <- new.env()
+  log_env$calls <- list()
+
+  local_mocked_bindings(fit_model = make_mock_fit_model(log_env, n_pop = 1, n_regions = 1))
+  # run the parallel branch in this process, so the mocked fit_model is visible to it
+  local_mocked_bindings(plan = function(...) invisible(NULL), .package = "future")
+  local_mocked_bindings(future_lapply = function(X, FUN, ...) lapply(X, FUN),
+                        .package = "future.apply")
+
+  result <- do_retrospective(
+    n_retro = 2,
+    data = inp$data,
+    parameters = inp$parameters,
+    mapping = inp$mapping,
+    do_par = TRUE,
+    n_cores = 1
+  )
+
+  expect_s3_class(result, "data.frame")
+  expect_true("peel" %in% names(result)) # the collation used to drop every column
+  expect_setequal(unique(result$peel), c(0, 1, 2))
+  expect_setequal(unique(result$Type), c("SSB", "Recruitment"))
+
+  # peel j should have (6 - j) years represented for each Type
+  for(j in 0:2) {
+    peel_rows <- result[result$peel == j & result$Type == "SSB", ]
+    expect_equal(nrow(peel_rows), 6 - j)
+  }
+
+  expect_equal(length(log_env$calls), 3) # one fit_model() call per peel (0, 1, 2)
+})
+
+## Test 7: parallel loop with return_models = TRUE
+test_that("do_retrospective() (parallel) with return_models = TRUE returns the data.frame and the per-peel models", {
+
+  skip_if_not(testthat_supports_mocking, "testthat >= 3.2.0 with 3rd edition required for local_mocked_bindings()")
+  skip_if_not_installed("reshape2")
+  skip_if_not_installed("dplyr")
+  skip_if_not_installed("future.apply")
+  skip_if_not_installed("progressr")
+
+  inp <- make_minimal_retro_inputs(n_yrs = 5)
+  log_env <- new.env()
+  log_env$calls <- list()
+
+  local_mocked_bindings(fit_model = make_mock_fit_model(log_env, n_pop = 1, n_regions = 1))
+  local_mocked_bindings(plan = function(...) invisible(NULL), .package = "future")
+  local_mocked_bindings(future_lapply = function(X, FUN, ...) lapply(X, FUN),
+                        .package = "future.apply")
+
+  result <- do_retrospective(
+    n_retro = 1,
+    data = inp$data,
+    parameters = inp$parameters,
+    mapping = inp$mapping,
+    do_par = TRUE,
+    n_cores = 1,
+    return_models = TRUE
+  )
+
+  expect_named(result, c("retro_df", "retro_models"))
+  expect_setequal(unique(result$retro_df$peel), c(0, 1))
+  expect_named(result$retro_models, c("peel_0", "peel_1"))
+  expect_equal(dim(result$retro_models$peel_0$rep$SSB)[3], 5)
+  expect_equal(dim(result$retro_models$peel_1$rep$SSB)[3], 4)
+})
+
+
 make_retro_df <- function() {
   data.frame(
     Pop = 1,

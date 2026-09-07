@@ -86,7 +86,7 @@ test_that("the p-value is rounded to three decimals", {
 test_that("a two-element series returns a NaN p-value", {
   # randtests::runs.test cannot compute a variance from a single run, and the
   # NA guard inside do_runs_test assigns to `p.value` while the returned value
-  # is built from `pvalue`, so the guard does not take effect. Pinned as-is:
+  # is built from `pvalue`, so the guard does not take effect. Checked as-is:
   # callers must treat p.runs as possibly non-finite for very short series.
   out <- SPoRC::do_runs_test(c(1, -1))
   expect_true(is.nan(out$p.runs))

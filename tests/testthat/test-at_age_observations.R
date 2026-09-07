@@ -1,7 +1,7 @@
 # Age-disaggregated observations: retained catch, discards, and the fishery and survey indices, each
 # aggregated and population-specific.
 #
-# Checks the key matrix convention, the guard rails, the equivalence with the aggregated statement
+# Checks the key matrix convention, the rejected inputs, the equivalence with the aggregated statement
 # where the two agree, and the correlation across ages.
 
 library(SPoRC)

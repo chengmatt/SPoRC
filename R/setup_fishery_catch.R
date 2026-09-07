@@ -894,6 +894,26 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   Reported standard errors shaped like their observation array, read only when
 #'   the data source's \code{sigma_form} asks for them.
 #'
+#' @param Catch_seas_Type,Catch_pop_seas_Type,Discard_seas_Type,Discard_pop_seas_Type,CatchAA_seas_Type,CatchAA_pop_seas_Type,DiscardAA_seas_Type,DiscardAA_pop_seas_Type
+#'   Whether a seasonal model reports this data source once a season or once a
+#'   year. One value for every fleet or one per fleet.
+#'   \describe{
+#'     \item{\code{"spltSeas"}}{Fit the observation against the prediction for the
+#'       season it sits in. This is the default and what every data source did
+#'       before this setting existed.}
+#'     \item{\code{"aggSeas"}}{Sum the prediction over every season of the year
+#'       and fit it against a single observation, which is how a fleet that lands
+#'       catch all year but reports one annual total is usually recorded.}
+#'   }
+#'   Under \code{"aggSeas"} the observation still lives in whichever season it was
+#'   placed in, and exactly one season per region and year may be turned on in the
+#'   matching \code{Use} array; more than one is an error, because each would be
+#'   fit against the same year total. The likelihood and the reported negative log
+#'   likelihood land in that season. Fishing mortality is still estimated season by
+#'   season, so a fleet with one annual observation and free seasonal deviations
+#'   leaves the split between seasons unidentified: share the deviations or fix
+#'   the seasonal pattern.
+#'
 #' @param CatchAA_Type,DiscardAA_Type,CatchAA_pop_Type,DiscardAA_pop_Type
 #'   Which dims the fleet reports separately, following the composition
 #'   vocabulary. Give it as one setting for every fleet, one per fleet, or as
@@ -944,6 +964,14 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   CatchAA_pop_Type = "spltRaggS",
                                   DiscardAA_Type = "spltRaggS",
                                   DiscardAA_pop_Type = "spltRaggS",
+                                  Catch_seas_Type = NULL,
+                                  Catch_pop_seas_Type = NULL,
+                                  Discard_seas_Type = NULL,
+                                  Discard_pop_seas_Type = NULL,
+                                  CatchAA_seas_Type = NULL,
+                                  CatchAA_pop_seas_Type = NULL,
+                                  DiscardAA_seas_Type = NULL,
+                                  DiscardAA_pop_seas_Type = NULL,
                                   CatchAA_LikeType = "lognormal",
                                   CatchAA_pop_LikeType = "lognormal",
                                   DiscardAA_LikeType = "lognormal",
@@ -1165,6 +1193,34 @@ Setup_Mod_Catch_and_F <- function(input_list,
 
   input_list$data$use_catch_aa <- use_catch_aa
   input_list$data$use_discard_aa <- use_discard_aa
+
+  # whether each data source is fit once a season or once a year as a season total
+  n_fish <- input_list$data$n_fish_fleets
+  input_list$data$Catch_seas_Type <- parse_seas_agg_spec(Catch_seas_Type, "Catch_seas_Type", n_fish)
+  input_list$data$Catch_pop_seas_Type <- parse_seas_agg_spec(Catch_pop_seas_Type, "Catch_pop_seas_Type", n_fish)
+  input_list$data$Discard_seas_Type <- parse_seas_agg_spec(Discard_seas_Type, "Discard_seas_Type", n_fish)
+  input_list$data$Discard_pop_seas_Type <- parse_seas_agg_spec(Discard_pop_seas_Type, "Discard_pop_seas_Type", n_fish)
+  input_list$data$CatchAA_seas_Type <- parse_seas_agg_spec(CatchAA_seas_Type, "CatchAA_seas_Type", n_fish)
+  input_list$data$CatchAA_pop_seas_Type <- parse_seas_agg_spec(CatchAA_pop_seas_Type, "CatchAA_pop_seas_Type", n_fish)
+  input_list$data$DiscardAA_seas_Type <- parse_seas_agg_spec(DiscardAA_seas_Type, "DiscardAA_seas_Type", n_fish)
+  input_list$data$DiscardAA_pop_seas_Type <- parse_seas_agg_spec(DiscardAA_pop_seas_Type, "DiscardAA_pop_seas_Type", n_fish)
+
+  # an aggregated observation is compared against the whole year, so only one season may be fit
+  check_seas_agg_use(UseCatch, input_list$data$Catch_seas_Type, "UseCatch")
+  check_seas_agg_use(UseCatch_pop, input_list$data$Catch_pop_seas_Type, "UseCatch_pop")
+  check_seas_agg_use(UseDiscard, input_list$data$Discard_seas_Type, "UseDiscard")
+  check_seas_agg_use(UseDiscard_pop, input_list$data$Discard_pop_seas_Type, "UseDiscard_pop")
+  check_seas_agg_use(input_list$data$UseCatchAA, input_list$data$CatchAA_seas_Type, "UseCatchAA")
+  check_seas_agg_use(input_list$data$UseCatchAA_pop, input_list$data$CatchAA_pop_seas_Type, "UseCatchAA_pop")
+  check_seas_agg_use(input_list$data$UseDiscardAA, input_list$data$DiscardAA_seas_Type, "UseDiscardAA")
+  check_seas_agg_use(input_list$data$UseDiscardAA_pop, input_list$data$DiscardAA_pop_seas_Type, "UseDiscardAA_pop")
+
+  for(f in 1:n_fish) {
+    if(input_list$data$Catch_seas_Type[f] == 1) collect_message("Aggregate catch for fishery fleet ", f, " is fit as a season total")
+    if(input_list$data$CatchAA_seas_Type[f] == 1) collect_message("Catch at age for fishery fleet ", f, " is fit as a season total")
+    if(input_list$data$Discard_seas_Type[f] == 1) collect_message("Discards for fishery fleet ", f, " is fit as a season total")
+    if(input_list$data$DiscardAA_seas_Type[f] == 1) collect_message("Discards at age for fishery fleet ", f, " is fit as a season total")
+  } # end f loop
 
   # how each data source is reported, what density it uses, and where its error comes from
   input_list <- do_at_age_type_setup(input_list, CatchAA_Type, "CatchAA", "n_fish_fleets", "UseCatchAA")

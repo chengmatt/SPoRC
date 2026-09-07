@@ -60,7 +60,7 @@ test_that("Single-region GOA northern rockfish RTMB model produces expected resu
   expect_true(goa_nork_rtmb_model$sdrep$pdHess)
   expect_jnLL_decomposes(goa_nork_rtmb_model)
 
-  # The refit stays on the assessment. This is not a pinned number: it is the
+  # The refit stays on the assessment. This is not a stored number: it is the
   # assessment's own spawning biomass, so it holds the refit to the bridge.
   expect_lt(max(abs(as.vector(goa_nork_rtmb_model$rep$SSB)[1:n_yrs] / dat$admb$SSB - 1)), 1e-2)
 })

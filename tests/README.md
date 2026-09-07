@@ -25,7 +25,7 @@ These check a property rather than a stored number, so a failure tells you what 
   `40 * exp(-0.3)`, so each assertion has its own derivation.
 
 
-## Pinned regression tests
+## Regression tests
 
 These assert against stored numeric vectors:
 
@@ -52,12 +52,12 @@ When one fails:
    exactly what a real bug looks like.
 
 If a failure appears on one platform only and sits in the last digit or two, that is
-optimizer or BLAS sensitivity rather than a code change. Give a pinned comparison enough
+optimizer or BLAS sensitivity rather than a code change. Give a stored comparison enough
 tolerance to absorb that, and do not tighten one to `tolerance = 0`.
 
 ## Adding a new model or assessment
 
-Prefer a self-test or a parity check over a new pinned vector. Pin a fit only when the point
+Prefer a self-test or a parity check over a new stored vector. Pin a fit only when the point
 of the test is that this specific configuration keeps producing this specific answer. If you
 do pin one, add a header comment saying where the values came from and add the file to the
 list above.

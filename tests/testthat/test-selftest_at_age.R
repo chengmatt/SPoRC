@@ -283,7 +283,7 @@ at_age_fit <- function(il) {
 
 test_that("selectivity is estimated for a fleet fitting catch at age", {
 
-  # the mapping gates on whether a fleet has data, and a catch-at-age fleet has
+  # the mapping keys on whether a fleet has data, and a catch-at-age fleet has
   # none in the aggregated array; holding selectivity fixed here took the
   # recovery below from 1.3% error to 25%
   il <- at_age_em(at_age_om())

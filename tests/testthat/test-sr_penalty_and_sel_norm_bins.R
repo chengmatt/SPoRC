@@ -4,7 +4,7 @@ library(testthat)
 # Two settings added together: a stock-recruit curve fitted as a penalty on the
 # recruitment residual rather than generating recruitment, and a standardization
 # window for non-parametric log-scale selectivity. Both default to the previous
-# behavior, so the defaults are pinned alongside the new paths.
+# behavior, so the defaults are checked alongside the new paths.
 
 test_that("get_sr_penalty is a normal density on the log residual over the named years", {
 

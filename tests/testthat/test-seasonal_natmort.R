@@ -192,7 +192,7 @@ test_that("splitting an annual rate between seasons leaves the start of year num
 })
 
 
-# Guard rails ---------------------------------------------------------------
+# Rejected inputs ------------------------------------------------------------
 
 test_that("season blocks warn on a single season model, where they cannot do anything", {
 

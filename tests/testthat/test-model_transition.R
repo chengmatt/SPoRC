@@ -354,7 +354,7 @@ test_that("right-composing seasons is not equivalent to left-composing", {
   expect_false(isTRUE(all.equal(left, right)))
 })
 
-# Guard rails -----------------------------------------------------------------
+# Rejected inputs --------------------------------------------------------------
 
 test_that("build_seas_operator rejects an unknown move_timing", {
   m <- make_move(3, seed = 14)

@@ -22,7 +22,7 @@ rather than reading it off each year's curve.
 - `tests/testthat/helper-bridge_ebs_pcod.R` builds the SPoRC input list
   (`build_ebs_pcod_input()`) and seeds every parameter at the assessment's
   estimate (`seed_ebs_pcod_mle()`).
-- `tests/testthat/test-regression_ebs_pcod_bridge.R` is the regression gate,
+- `tests/testthat/test-regression_ebs_pcod_bridge.R` is the regression test,
   57 assertions against the assessment's own reported quantities.
 - `vignettes/ae_ebs_pacific_cod_case_study.Rmd` is the walkthrough: one section
   per `Setup_Mod_*` call in the order the helper makes them, with the reason for
@@ -137,7 +137,7 @@ Choosing the option at setup rather than patching the map afterwards leaves all
 twenty estimated and penalized, the smallest initial-deviation curvature at 2.16,
 and the refit converging to 1.3e-9.
 
-The drift is the recruitment convention, not a specification error. The
+The difference is the recruitment convention, not a specification error. The
 assessment declares `do_recdev = 1`, an ADMB `dev_vector` constrained to sum to
 zero, so its R0 is the geometric mean recruitment by construction (its main
 deviations sum to -5e-14). SPoRC's deviations are free under the penalty, so R0

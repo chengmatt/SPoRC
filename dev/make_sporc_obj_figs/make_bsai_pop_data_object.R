@@ -110,7 +110,7 @@ lam_mean_ctr <- 10000
 
 # Biologicals ------------------------------------------------------------------
 # one weight at age vector broadcast across years. the .dat's "(ages 3 - 25)" note is stale:
-# both rows carry all 44 ages, and population and fishery are identical here
+# both rows hold all 44 ages, and population and fishery are identical here
 pop_waa <- read_nums(lines[318])
 fish_waa <- read_nums(lines[320])
 stopifnot(length(pop_waa) == n_ages, length(fish_waa) == n_ages)

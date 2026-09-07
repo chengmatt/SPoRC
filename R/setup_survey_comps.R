@@ -147,6 +147,23 @@
 #'   into an index of that age alone, which is how an age-1 acoustic index is
 #'   specified; the fleet's compositions are unaffected because the
 #'   restriction applies to the index sum rather than to selectivity.
+#' @param SrvIdx_seas_Type,SrvIdx_pop_seas_Type,SrvIdxAA_seas_Type,SrvIdxAA_pop_seas_Type,SrvAgeComps_seas_Type,SrvAgeComps_pop_seas_Type,SrvLenComps_seas_Type,SrvLenComps_pop_seas_Type
+#'   Whether a seasonal model reports this data source once a season or once a
+#'   year. One value for every fleet or one per fleet.
+#'   \describe{
+#'     \item{\code{"spltSeas"}}{Fit the observation against the prediction for the
+#'       season it sits in. This is the default and what every data source did
+#'       before this setting existed.}
+#'     \item{\code{"aggSeas"}}{Sum the prediction over every season of the year
+#'       and fit it against a single observation.}
+#'   }
+#'   Under \code{"aggSeas"} the observation still lives in whichever season it was
+#'   placed in, and exactly one season per region and year may be turned on in the
+#'   matching \code{Use} array. The likelihood and the reported negative log
+#'   likelihood land in that season. A survey measured at a point in time belongs
+#'   in its own season with its own timing rather than aggregated; this setting is
+#'   for a data source that accumulates across the year.
+#'
 #' @param SrvIdx_LikeType Character vector \code{[n_srv_fleets]} giving the
 #'   error structure of each survey index. Options are \code{"lognormal"}
 #'   (default, the observation standard errors are on the log scale),
@@ -399,6 +416,14 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        SrvAgeComps_pop_bins = NULL,
                                        SrvLenComps_pop_bins = NULL,
                                        SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+                                       SrvIdx_seas_Type = NULL,
+                                       SrvIdx_pop_seas_Type = NULL,
+                                       SrvIdxAA_seas_Type = NULL,
+                                       SrvIdxAA_pop_seas_Type = NULL,
+                                       SrvAgeComps_seas_Type = NULL,
+                                       SrvAgeComps_pop_seas_Type = NULL,
+                                       SrvLenComps_seas_Type = NULL,
+                                       SrvLenComps_pop_seas_Type = NULL,
                                        SrvLenComps_sel = rep("age", input_list$data$n_srv_fleets),
                                        srv_waa_selected = rep(0, input_list$data$n_srv_fleets),
                                        SrvIdx_Cov = NULL,
@@ -822,6 +847,31 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   input_list$data$ISS_SrvLenComps <- ISS_SrvLenComps
   input_list$data$ISS_SrvAgeComps_pop <- ISS_SrvAgeComps_pop
   input_list$data$ISS_SrvLenComps_pop <- ISS_SrvLenComps_pop
+
+  # whether each data source is fit once a season or once a year as a season total
+  n_srv <- input_list$data$n_srv_fleets
+  input_list$data$SrvIdx_seas_Type <- parse_seas_agg_spec(SrvIdx_seas_Type, "SrvIdx_seas_Type", n_srv)
+  input_list$data$SrvIdx_pop_seas_Type <- parse_seas_agg_spec(SrvIdx_pop_seas_Type, "SrvIdx_pop_seas_Type", n_srv)
+  input_list$data$SrvIdxAA_seas_Type <- parse_seas_agg_spec(SrvIdxAA_seas_Type, "SrvIdxAA_seas_Type", n_srv)
+  input_list$data$SrvIdxAA_pop_seas_Type <- parse_seas_agg_spec(SrvIdxAA_pop_seas_Type, "SrvIdxAA_pop_seas_Type", n_srv)
+  input_list$data$SrvAgeComps_seas_Type <- parse_seas_agg_spec(SrvAgeComps_seas_Type, "SrvAgeComps_seas_Type", n_srv)
+  input_list$data$SrvAgeComps_pop_seas_Type <- parse_seas_agg_spec(SrvAgeComps_pop_seas_Type, "SrvAgeComps_pop_seas_Type", n_srv)
+  input_list$data$SrvLenComps_seas_Type <- parse_seas_agg_spec(SrvLenComps_seas_Type, "SrvLenComps_seas_Type", n_srv)
+  input_list$data$SrvLenComps_pop_seas_Type <- parse_seas_agg_spec(SrvLenComps_pop_seas_Type, "SrvLenComps_pop_seas_Type", n_srv)
+
+  # an aggregated observation is compared against the whole year, so only one season may be fit
+  check_seas_agg_use(UseSrvIdx, input_list$data$SrvIdx_seas_Type, "UseSrvIdx")
+  check_seas_agg_use(UseSrvIdx_pop, input_list$data$SrvIdx_pop_seas_Type, "UseSrvIdx_pop")
+  check_seas_agg_use(UseSrvAgeComps, input_list$data$SrvAgeComps_seas_Type, "UseSrvAgeComps")
+  check_seas_agg_use(UseSrvAgeComps_pop, input_list$data$SrvAgeComps_pop_seas_Type, "UseSrvAgeComps_pop")
+  check_seas_agg_use(UseSrvLenComps, input_list$data$SrvLenComps_seas_Type, "UseSrvLenComps")
+  check_seas_agg_use(UseSrvLenComps_pop, input_list$data$SrvLenComps_pop_seas_Type, "UseSrvLenComps_pop")
+
+  for(sf in 1:n_srv) {
+    if(input_list$data$SrvIdx_seas_Type[sf] == 1) collect_message("Survey index for survey fleet ", sf, " is fit as a season total")
+    if(input_list$data$SrvAgeComps_seas_Type[sf] == 1) collect_message("Survey age compositions for survey fleet ", sf, " are fit as a season total")
+    if(input_list$data$SrvLenComps_seas_Type[sf] == 1) collect_message("Survey length compositions for survey fleet ", sf, " are fit as a season total")
+  } # end sf loop
   # Survey index at age. A fleet fits this or the aggregated index, never both.
   input_list <- do_at_age_data_setup(input_list, ObsSrvIdxAA, UseSrvIdxAA, ObsSrvIdxAA_SE,
                                      "SrvIdxAA", "n_srv_fleets")
@@ -840,6 +890,9 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     }
   } # end sf loop
   input_list$data$use_srv_idx_aa <- use_srv_idx_aa
+
+  check_seas_agg_use(input_list$data$UseSrvIdxAA, input_list$data$SrvIdxAA_seas_Type, "UseSrvIdxAA")
+  check_seas_agg_use(input_list$data$UseSrvIdxAA_pop, input_list$data$SrvIdxAA_pop_seas_Type, "UseSrvIdxAA_pop")
 
   # at-age observation error for both data sources. Catchability at age is not set
   # here; it lives in selectivity, through the "nonparfree" form.

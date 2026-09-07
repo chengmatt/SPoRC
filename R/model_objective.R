@@ -68,6 +68,24 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   has <- function(x) exists(x, envir = env, inherits = FALSE)
   set <- function(x, value) assign(x, value, envir = env)
 
+  # Seasonal aggregation of observations. Zero for every fleet is the season by season fit
+  # every data source did before the setting existed
+  for(seas_name in c("Catch_seas_Type", "Catch_pop_seas_Type", "Discard_seas_Type", "Discard_pop_seas_Type",
+                     "CatchAA_seas_Type", "CatchAA_pop_seas_Type", "DiscardAA_seas_Type", "DiscardAA_pop_seas_Type",
+                     "FishIdx_seas_Type", "FishIdx_pop_seas_Type",
+                     "FishAgeComps_seas_Type", "FishAgeComps_pop_seas_Type",
+                     "FishLenComps_seas_Type", "FishLenComps_pop_seas_Type",
+                     "FishAgeComps_discard_seas_Type", "FishAgeComps_discard_pop_seas_Type",
+                     "FishLenComps_discard_seas_Type", "FishLenComps_discard_pop_seas_Type")) {
+    if(!has(seas_name)) set(seas_name, rep(0L, get("n_fish_fleets", envir = env)))
+  } # end seas_name loop
+
+  for(seas_name in c("SrvIdx_seas_Type", "SrvIdx_pop_seas_Type", "SrvIdxAA_seas_Type", "SrvIdxAA_pop_seas_Type",
+                     "SrvAgeComps_seas_Type", "SrvAgeComps_pop_seas_Type",
+                     "SrvLenComps_seas_Type", "SrvLenComps_pop_seas_Type")) {
+    if(!has(seas_name)) set(seas_name, rep(0L, get("n_srv_fleets", envir = env)))
+  } # end seas_name loop
+
   # Movement timing options.
   if(!has("move_timing")) set("move_timing", 0)
   if(!has("move_expm_nsub")) set("move_expm_nsub", 0)

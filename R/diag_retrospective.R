@@ -998,7 +998,7 @@ do_retrospective <- function(
         if(return_models) out$model <- SPoRC_rtmb_model
         out
 
-      }, future.seed = TRUE) %>% bind_rows() # bine rows to combine results
+      }, future.seed = TRUE)
 
       future::plan(future::sequential)  # Reset
     })

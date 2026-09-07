@@ -2,7 +2,7 @@ library(SPoRC)
 library(testthat)
 
 # A minimal 1-pop, 1-region, 2-season, 3-age test setup. n_regions = 1 means the
-# movement step is a structural no-op (gated by n_regions > 1), so this
+# movement step is a structural no-op (only runs when n_regions > 1), so this
 # isolates the mortality/ageing/recruitment mechanics without also depending
 # on Get_Movement()'s correctness. rec_model = 0 (mean recruitment) is used
 # because it's a fully deterministic, trivial formula

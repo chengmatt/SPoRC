@@ -331,7 +331,7 @@ osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = 
 #' \code{do_internal_comp_osa = TRUE} in \code{\link{Setup_Mod_Dim}}), and
 #' relabels the resulting residuals using \code{\link{pack_comp_osa}}'s
 #' \code{return_labels = TRUE} output so the result matches the same
-#' \code{res} schema produced by the external path.
+#' \code{res} columns produced by the external path.
 #'
 #' @param model A fitted RTMB model object from \code{\link{fit_model}}, built
 #'   with \code{do_internal_comp_osa = TRUE}.
@@ -356,7 +356,7 @@ osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = 
 #'   Note that if data are discrete, the only valid option is \code{"oneStepGeneric"}.
 #'
 #' @return A list with one element \code{res}, matching \code{\link{get_osa}}'s
-#'   external-mode schema (columns \code{fleet}, \code{index_label}, \code{year},
+#'   external-mode columns (\code{fleet}, \code{index_label}, \code{year},
 #'   \code{index}, \code{resid}, \code{region}, \code{sex}, \code{seas},
 #'   \code{comp_type}) plus a \code{pop} column (population index; always 1 for
 #'   \code{pop = FALSE} sources), or \code{NULL} if no data of the requested
@@ -455,7 +455,7 @@ run_internal_comp_osa <- function(
 #' @param parallel Logical, passed to \code{oneStepPredict}.
 #'
 #' @return A list with one element \code{res}, matching
-#'   \code{\link{run_internal_comp_osa}}'s schema plus a \code{len} column.
+#'   \code{\link{run_internal_comp_osa}}'s columns plus a \code{len} column.
 #'
 #' @keywords internal
 run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,

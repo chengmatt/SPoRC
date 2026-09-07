@@ -24,9 +24,6 @@ input_list <- seed_ebs_pcod_mle(suppressWarnings(suppressMessages(build_ebs_pcod
 at_mle <- fit_model(input_list$data, input_list$par, input_list$map, do_optim = FALSE, silent = TRUE)
 r <- at_mle$rep
 
-library(Matrix)
-image(at_mle$env$spHess(random = T))
-
 pct <- function(a, b) 100 * max(abs(a / b - 1), na.rm = TRUE)
 yr_row <- function(m, y) { rr <- as.integer(rownames(m)); m[as.character(max(rr[rr <= y])), ] }
 

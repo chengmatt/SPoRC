@@ -51,7 +51,7 @@ AgeingError <- array(NA_real_, dim = c(n_yrs, n_ages, n_obs_ages))
 for(y in seq_len(n_yrs)) AgeingError[y, , ] <- dat$age_error
 
 # Catch ------------------------------------------------------------------------
-# the reconstructed early catches (1961 to 1977) carry a sum of squares weight of 5 against the
+# the reconstructed early catches (1961 to 1977) take a sum of squares weight of 5 against the
 # modern series' 50, kept to SPoRC as fixed lognormal catch standard deviations
 ObsCatch <- array(dat$catch_obs, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
 UseCatch <- array(dat$catch_ind, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))

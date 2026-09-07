@@ -5,7 +5,7 @@ library(testthat)
 # from Get_Reference_Points' equilibrium solve, and a long deterministic
 # projection at Fmsy must equilibrate at exactly Bmsy. The two go through
 # different code paths (the analytic equilibrium against the year-loop
-# projection), so agreement pins both. Routines shared through
+# projection), so agreement checks both. Routines shared through
 # helper-selftest_features.R.
 
 test_that("a 500-year projection at the Ricker Fmsy equilibrates at Bmsy", {

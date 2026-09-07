@@ -34,7 +34,7 @@ selex <- function(model, pars, devs, tv = 1, year = 2, region = 1, sex = 1) {
 test_that("deviations on log-scale parameters shift the parameters directly", {
   # For forms whose parameters are all exp()-transformed, multiplying by
   # exp(dev) is identical to adding the deviation on the log scale. That
-  # equivalence pins the deviation wiring without restating each formula.
+  # equivalence checks the deviation wiring without restating each formula.
   cases <- list(
     list(model = 0, pars = log(c(10, 0.5)), devs = c(0.15, -0.2)),  # logistic b50/slope
     list(model = 1, pars = log(c(12, 3)),   devs = c(0.1, 0.25)),   # gamma dome

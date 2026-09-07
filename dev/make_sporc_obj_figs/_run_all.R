@@ -27,12 +27,13 @@ tier_data <- c(
   "make_ebs_pollock_data_object.R",
   "make_bsai_atka_data_object.R",
   "make_bsai_nrs_data_object.R",
+  "make_wc_sablefish_data_object.R",
   "make_three_rg_sablefish_data_spt_comparison.R",
   "make_five_rg_sablefish_data_spt_comparison.R",
   "make_refpt_uncertainty_fig.R"
 )
 
-# bridge: single region fits against an ADMB target, writes vignettes/figures
+# bridge: fits bridged against an external assessment, writes vignettes/figures
 tier_bridge <- c(
   "make_sgl_rg_sablefish_bridge_figs.R",
   "make_goa_dusky_bridge_figs.R",
@@ -43,17 +44,22 @@ tier_bridge <- c(
   "make_ebs_pollock_bridge_figs.R",
   "make_bsai_atka_bridge_figs.R",
   "make_bsai_nrs_bridge_figs.R",
-  "make_north_sea_sandeel_bridge_figs.R"
+  "make_north_sea_sandeel_bridge_figs.R",
+  "make_ebs_pcod_bridge_figs.R",
+  "make_goa_rex_bridge_figs.R",
+  "make_wc_sablefish_bridge_figs.R"
 )
 
-# objects: multi region and spatial fits, writes data/*.rda and dev/dev_output
+# objects: multi region, spatial and growth fits, writes data/*.rda, dev/dev_output
+# and vignettes/figures
 tier_objects <- c(
   "make_sgl_rg_sablefish_bridge_objects.R",
   "make_sgl_rg_sablefish_data_spt_comparison.R",
   "make_three_rg_sablefish_spt_comparison.R",
   "make_five_rg_sablefish_spt_comparison.R",
   "make_spatial_sablefish_figs.R",
-  "make_dusky_2024_model_object.R"
+  "make_dusky_2024_model_object.R",
+  "make_growth_options_figs.R"
 )
 
 # all: examples and simulation studies, hours of runtime
@@ -83,6 +89,11 @@ root <- here::here()
 script_dir <- file.path(root, "dev", "make_sporc_obj_figs")
 log_dir <- file.path(root, "dev", "scratch", "make_logs")
 dir.create(log_dir, recursive = TRUE, showWarnings = FALSE)
+
+# A script in no tier never runs, so it rots unnoticed. Name the orphans here
+# rather than letting the directory and the tiers fall out of step in silence.
+orphans <- setdiff(list.files(script_dir, pattern = "^make_.*[.]R$"), unlist(tiers))
+if(length(orphans) > 0) message("In no tier, never run: ", paste(orphans, collapse = ", "))
 
 # Run ------------------------------------------------------------------------
 # A script that fails does not stop the run. The failures are collected and

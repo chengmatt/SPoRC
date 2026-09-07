@@ -47,6 +47,8 @@ Imports:
 Suggests: 
     igraph,
     knitr,
+    mvtnorm,
+    numDeriv,
     pkgdown,
     purrr,
     rmarkdown,

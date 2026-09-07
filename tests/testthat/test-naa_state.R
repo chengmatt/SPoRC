@@ -452,7 +452,7 @@ test_that("1dar1_y estimates the year correlation slot and leaves the others kep
 
 test_that("a retrospective peel truncates the state, its map and its active years", {
   # The penalty slices ln_NAA with naa_re_yrs, so an untruncated index vector reads past the end of
-  # the shortened array, and n_est_naa_re gates both the dynamics hook and the penalty. Neither can
+  # the shortened array, and n_est_naa_re switches on both the dynamics hook and the penalty. Neither can
   # be reused from the full model.
   il <- naa_on("iid")
   n_yrs <- length(il$data$years)

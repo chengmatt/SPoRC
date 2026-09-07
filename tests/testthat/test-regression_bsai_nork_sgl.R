@@ -61,7 +61,7 @@ test_that("Single-region BSAI northern rockfish RTMB model produces expected res
   expect_true(bsai_nork_rtmb_model$sdrep$pdHess)
   expect_jnLL_decomposes(bsai_nork_rtmb_model)
 
-  # The refit stays on the assessment. This is not a pinned number: it is the
+  # The refit stays on the assessment. This is not a stored number: it is the
   # assessment's own spawning biomass, so it holds the refit to the bridge.
   ssb_fit <- as.vector(bsai_nork_rtmb_model$rep$SSB)[1:n_yrs]
   expect_lt(max(abs(ssb_fit / dat$admb$SSB - 1)), 2e-2)

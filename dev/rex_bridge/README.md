@@ -18,7 +18,7 @@ age-at-length, an ageing error matrix.
   comparison: growth tables, age-length key, selectivity, numbers at age, spawning
   biomass, recruitment, total biomass, catch, indices, likelihood components and the
   gradient at the estimate.
-- `tests/testthat/test-regression_goa_rex_bridge.R` is the regression gate.
+- `tests/testthat/test-regression_goa_rex_bridge.R` is the regression test.
 
 ## Running SS3
 

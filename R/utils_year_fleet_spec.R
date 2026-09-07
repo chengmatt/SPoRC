@@ -151,3 +151,87 @@ at_age_type_matrix <- function(type, n_fleets, n_yrs, arg_name = "at-age Type") 
 
   base::matrix(rep(unname(codes_map[type]), each = n_yrs), nrow = n_yrs)
 }
+
+# Seasonal Aggregation of Observations ---------------------------------------
+
+#' Parse a per-fleet seasonal aggregation specification
+#'
+#' Seasonal models can report an observation once a year rather than once a
+#' season. \code{"spltSeas"} fits the observation in the season it sits in, which
+#' is what every data source did before this setting existed.
+#' \code{"aggSeas"} sums the model prediction over every season of the year and
+#' fits it against a single observation.
+#'
+#' Under \code{"aggSeas"} the observation still lives in the season it was placed
+#' in, so exactly one season per region and year may be turned on in the matching
+#' \code{Use} array. That season is where the likelihood, the residual and the
+#' reported negative log likelihood all land; the prediction it is compared
+#' against is the whole year.
+#'
+#' @param spec Character vector of length \code{n_fleets}, or a single value
+#'   given to every fleet. \code{NULL} leaves every fleet at \code{"spltSeas"}.
+#' @param arg_name Name of the argument being parsed, used in error messages.
+#' @param n_fleets Number of fleets the vector must cover.
+#'
+#' @return Integer vector of length \code{n_fleets}, \code{0} for
+#'   \code{"spltSeas"} and \code{1} for \code{"aggSeas"}.
+#'
+#' @keywords internal
+parse_seas_agg_spec <- function(spec, arg_name, n_fleets) {
+
+  codes <- c(spltSeas = 0L, aggSeas = 1L)
+
+  if(is.null(spec)) return(rep(0L, n_fleets)) # nothing supplied leaves every fleet seasonal
+
+  if(length(spec) == 1) spec <- rep(spec, n_fleets) # one value covers every fleet
+
+  if(length(spec) != n_fleets)
+    stop(arg_name, " has ", length(spec), " entries for ", n_fleets, " fleets. Give one value per fleet, ",
+         "or a single value for every fleet. Valid values: ", paste(names(codes), collapse = ", "), ".")
+
+  bad <- setdiff(as.character(spec), names(codes))
+  if(length(bad))
+    stop(arg_name, " has invalid value(s): ", paste(bad, collapse = ", "), ". Valid values are 'spltSeas', ",
+         "which fits the observation in the season it sits in, and 'aggSeas', which sums the prediction ",
+         "over every season and fits it against one observation for the year.")
+
+  as.integer(codes[as.character(spec)])
+
+} # end parse_seas_agg_spec
+
+#' Check that a seasonally aggregated data source has one observation per year
+#'
+#' Under \code{"aggSeas"} the prediction is a year total, so more than one season
+#' turned on in a region and year would fit that same total twice.
+#'
+#' @param use_arr Use array with region, year, season and fleet in its last four
+#'   dims. A population-specific array is allowed to have a leading dim.
+#' @param seas_agg Integer vector from \code{\link{parse_seas_agg_spec}}.
+#' @param arg_name Name of the \code{Use} argument, used in error messages.
+#'
+#' @return \code{NULL}, invisibly. Called for the error it raises.
+#'
+#' @keywords internal
+check_seas_agg_use <- function(use_arr, seas_agg, arg_name) {
+
+  if(is.null(use_arr) || !any(seas_agg == 1)) return(invisible(NULL))
+
+  n_dims <- length(dim(use_arr))
+  seas_dim <- n_dims - 1 # season always sits just before fleet
+
+  for(f in which(seas_agg == 1)) {
+
+    # count the seasons fit in each region and year for this fleet
+    slice <- if(n_dims == 5) use_arr[, , , , f, drop = FALSE] else use_arr[, , , f, drop = FALSE]
+    per_year <- apply(slice, seq_len(n_dims)[-seas_dim], sum)
+
+    if(any(per_year > 1))
+      stop(arg_name, " turns on more than one season in a region and year for fleet ", f,
+           ", which is set to 'aggSeas'. An aggregated observation is compared against the whole ",
+           "year's prediction, so put it in one season and leave the rest at zero.")
+
+  } # end f loop
+
+  invisible(NULL)
+
+} # end check_seas_agg_use

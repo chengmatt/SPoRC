@@ -43,7 +43,7 @@ fleet_names <- replist$FleetNames
 
 # Fleets ----------------------------------------------------------------------
 # SS3 fleets 1-6 are catch (three gears plus discards), 7-10 trawl surveys, 11 the recruitment index.
-# trawl fishery and bottom trawl survey each carry two comp sources, so each gets a duplicate fleet
+# trawl fishery and bottom trawl survey each have two comp sources, so each gets a duplicate fleet
 n_fish <- 7
 n_srv <- 6
 fish_src <- c(1:6, 1) # the Stock Synthesis fleet each SPoRC fishery fleet draws from

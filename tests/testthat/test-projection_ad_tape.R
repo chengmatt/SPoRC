@@ -35,7 +35,7 @@ sable_srr_opt <- function() {
     sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = n_pop),
-    # the packaged report predates seasonal M, so it has no season margin to slice
+    # the packaged report predates seasonal M, so it has no season dim to slice
     natmort = array(rp$natmort[,,ny,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     fish_sel = array(rp$fish_sel[,,ny,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     ret_sel = array(rp$ret_sel[,,ny,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
@@ -84,6 +84,9 @@ test_that("bind_proj_SSB keeps the AD class that abind drops", {
   seen <- new.env()
 
   RTMB::MakeTape(function(x) {
+    # proj has to be built with the AD [<-, as the projection itself does. base's
+    # [<- drops the class, which would leave nothing for bind_proj_SSB to keep
+    "[<-" <- RTMB::ADoverload("[<-")
     proj <- array(0, dim = c(1, 1, 2))
     proj[1,1,] <- c(x, x)
     seen$kept <- inherits(SPoRC:::bind_proj_SSB(hist, proj), "advector")

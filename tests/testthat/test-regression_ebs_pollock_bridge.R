@@ -407,7 +407,7 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   # too. A specification difference shows up here before it shows up in SSB.
   expect_lt(max(abs(obj$gr(free))), 1e-3)
 
-  # Pinned only because the assessment and SPoRC drop different normalizing constants, so
+  # Stored only because the assessment and SPoRC drop different normalizing constants, so
   # the totals differ by a constant rather than matching outright.
   expect_equal(obj$fn(free), 1547.851, tolerance = 1e-5)
 

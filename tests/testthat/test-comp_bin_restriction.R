@@ -1,7 +1,7 @@
 library(SPoRC)
 library(testthat)
 
-# Composition bin restriction (the *_bins arguments). The invariant the whole
+# Composition bin restriction (the *_bins arguments). The rule the whole
 # feature rests on: fitting a data source over a subset of its observed bins must give
 # exactly the likelihood you would get by handing in only those bins in the first
 # place, renormalized within them. That has to hold for every composition type,

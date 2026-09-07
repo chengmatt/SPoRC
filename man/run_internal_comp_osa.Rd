@@ -51,7 +51,7 @@ Note that if data are discrete, the only valid option is \code{"oneStepGeneric"}
 }
 \value{
 A list with one element \code{res}, matching \code{\link{get_osa}}'s
-  external-mode schema (columns \code{fleet}, \code{index_label}, \code{year},
+  external-mode columns (\code{fleet}, \code{index_label}, \code{year},
   \code{index}, \code{resid}, \code{region}, \code{sex}, \code{seas},
   \code{comp_type}) plus a \code{pop} column (population index; always 1 for
   \code{pop = FALSE} sources), or \code{NULL} if no data of the requested
@@ -65,6 +65,6 @@ the model's internally tracked OSA vector (built via
 \code{do_internal_comp_osa = TRUE} in \code{\link{Setup_Mod_Dim}}), and
 relabels the resulting residuals using \code{\link{pack_comp_osa}}'s
 \code{return_labels = TRUE} output so the result matches the same
-\code{res} schema produced by the external path.
+\code{res} columns produced by the external path.
 }
 \keyword{internal}

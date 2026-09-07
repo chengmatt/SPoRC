@@ -23,7 +23,7 @@ Scalar (log-)density contribution.
 Conditional beta-binomial decomposition of an \eqn{A}-bin
 Dirichlet-multinomial for \code{\link[RTMB]{oneStepPredict}}, following
 Trijoulet et al. (2023). Each of the first \eqn{A-1} bins is a beta-binomial
-conditional on the running remainder, gated by its \code{keep} element; the
+conditional on the running remainder, selected by its \code{keep} element; the
 analytic conditional beta-binomial CDF is accumulated through
 \code{cdf_lower} / \code{cdf_upper}, so this density supports \strong{both}
 \code{method = "cdf"} and \code{method = "oneStepGeneric"}.

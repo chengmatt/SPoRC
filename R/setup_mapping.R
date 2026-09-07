@@ -636,7 +636,7 @@ do_age_corr_setup <- function(
   }
   input_list$map[[us_name]] <- factor(us_map)
 
-  # guard rails: an unstructured correlation grows with the square of the ages,
+  # limits: an unstructured correlation grows with the square of the ages,
   # and a separable one needs a complete grid
   if(any(codes %in% c(2, 3))) {
     cell_dims <- setdiff(seq_len(nd), i_a)

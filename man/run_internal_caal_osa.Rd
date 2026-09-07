@@ -33,7 +33,7 @@ observed bin number, so a subset here shifts every label.}
 }
 \value{
 A list with one element \code{res}, matching
-  \code{\link{run_internal_comp_osa}}'s schema plus a \code{len} column.
+  \code{\link{run_internal_comp_osa}}'s columns plus a \code{len} column.
 }
 \description{
 Internal counterpart to \code{\link{run_internal_comp_osa}} for CAAL data

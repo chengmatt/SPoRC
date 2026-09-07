@@ -14,7 +14,7 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
 
   # The survey curve is supplied as a fixed input with the assessment's age 30 edge
   # hold applied, which SPoRC's logist1 form cannot express. That isolates the
-  # likelihoods from the selectivity form; the companion pinned test refits the
+  # likelihoods from the selectivity form; the companion regression test refits the
   # uncapped logistic instead.
   input_list <- seed_bsai_nork_mle(build_bsai_nork_input(dat), dat)
   input_list$data <- cap_bsai_nork_srv_sel(input_list$data, dat)

@@ -107,7 +107,7 @@ osa_pbinom <- function(x, n, prob) {
 #' Conditional-binomial decomposition of an \eqn{A}-bin multinomial for
 #' \code{\link[RTMB]{oneStepPredict}}, following Trijoulet et al. (2023). Each
 #' of the first \eqn{A-1} bins is a binomial conditional on the running
-#' remainder, gated by its \code{keep} element; the final bin is fixed by the
+#' remainder, selected by its \code{keep} element; the final bin is fixed by the
 #' sum-to-\eqn{N} constraint. In addition to the density term, the analytic
 #' conditional binomial CDF is accumulated through the \code{cdf_lower} /
 #' \code{cdf_upper} indicators, so this density supports \strong{both}
@@ -204,7 +204,7 @@ osa_pbetabinom <- function(x, N, alpha, beta) {
 #' Conditional beta-binomial decomposition of an \eqn{A}-bin
 #' Dirichlet-multinomial for \code{\link[RTMB]{oneStepPredict}}, following
 #' Trijoulet et al. (2023). Each of the first \eqn{A-1} bins is a beta-binomial
-#' conditional on the running remainder, gated by its \code{keep} element; the
+#' conditional on the running remainder, selected by its \code{keep} element; the
 #' analytic conditional beta-binomial CDF is accumulated through
 #' \code{cdf_lower} / \code{cdf_upper}, so this density supports \strong{both}
 #' \code{method = "cdf"} and \code{method = "oneStepGeneric"}.

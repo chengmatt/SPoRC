@@ -387,7 +387,7 @@ ssb_rel_err <- function(om, move_timing, nsub) {
 test_that("the implicit solve leaves SSB alone at nsub = 0 and converges back to it", {
   # nsub = 0 has to be the exact exponential, so this is the same agreement the
   # move_timing test asserts. nsub = 1 is plain solve(I - A) and is expected to be badly
-  # off -- pinned here so that a future change cannot quietly make it look harmless.
+  # off -- checked here so that a future change cannot quietly make it look harmless.
   err <- vapply(c(0, 1, 8, 512), function(n) ssb_rel_err(oms[["2"]], 2, n), numeric(1))
 
   expect_lt(err[1], 1e-3)                       # exact

@@ -453,7 +453,7 @@ do_likelihood_profile <- function(data,
           local_mapping[[what]] <- factor(NA)
         }
 
-        # make adfun. The handler's assignments live in its own frame, so both
+        # make adfun. Its assignments live in its own frame, so both
         # branches hand the result back rather than writing into the enclosing one
         result <- tryCatch({
           SPoRC_rtmb_model <- RTMB::MakeADFun(

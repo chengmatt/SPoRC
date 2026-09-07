@@ -41,7 +41,7 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
   h <- 0.7
 
   # Arbitrary starting age structure with age index 1 (age-0) empty, matching
-  # the invariant maintained by the rec_lag = 0 population loop. terminal_NAA
+  # the rule the rec_lag = 0 population loop maintains. terminal_NAA
   # is season-specific, so both seasons of the terminal year need values.
   terminal_NAA <- array(0, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   terminal_NAA[1,1,1,2:n_ages,1] <- c(800, 600, 400, 250, 600)

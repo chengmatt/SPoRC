@@ -7,6 +7,7 @@
 
 library(here)
 library(dplyr)
+devtools::load_all(here())
 source(here("tests", "testthat", "helper-bridge_goa_dusky.R"))
 source(here("dev", "make_sporc_obj_figs", "helper-bridge_figs.R"))
 
@@ -58,8 +59,6 @@ stopifnot(length(admb$SSB) == n_yrs,
 
 # Optimize ----------------------------------------------------------------------
 input_list <- build_goa_dusky_input(dat)
-
-devtools::load_all(here('R'))
 
 est <- fit_model(
   input_list$data,

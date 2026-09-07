@@ -65,7 +65,7 @@ test_that("Single-region BSAI Pacific ocean perch RTMB model produces expected r
   expect_true(bsai_pop_rtmb_model$sdrep$pdHess)
   expect_jnLL_decomposes(bsai_pop_rtmb_model)
 
-  # The refit stays on the assessment. These are not pinned numbers: they are the
+  # The refit stays on the assessment. These are not stored numbers: they are the
   # assessment's own estimates, so they hold the refit to the bridge. The initial
   # equilibrium recruitment, the mean F and both catchabilities are recovered to
   # better than 0.05 percent, and spawning biomass to better than 0.2 percent over

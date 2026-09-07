@@ -30,6 +30,9 @@ Setup_Sim_Survey(
   t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
   SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+  SrvIdx_seas_Type = NULL,
+  SrvIdx_pop_seas_Type = NULL,
+  SrvAgeComps_seas_Type = NULL,
   SrvIdx_Cov = NULL,
   UseSrvIdx = NULL,
   comp_srv_caal_like = rep(999, sim_list$n_srv_fleets),
@@ -167,6 +170,17 @@ Setup_Sim_Survey(
   [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md))
   instead of `ObsSrvIdx_SE`, and its population-specific data source
   stays lognormal. Default: lognormal for every fleet.
+
+- SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvAgeComps_seas_Type:
+
+  Whether the operating model reports a survey data source once a season
+  (`"spltSeas"`, the default) or once a year as a season total
+  (`"aggSeas"`). One value for every survey or one per survey. An annual
+  total is written into season one with the other seasons left at zero,
+  and the observation error is applied once to that total, so an
+  estimation model reading it should mark season one in its `Use` array
+  and set the matching argument in
+  [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
 
 - SrvIdx_Cov:
 

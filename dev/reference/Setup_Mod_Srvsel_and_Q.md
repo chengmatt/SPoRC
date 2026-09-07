@@ -49,6 +49,7 @@ Setup_Mod_Srvsel_and_Q(
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
   srv_sel_input = NULL,
   srv_sel_nonpar_est_bins = NULL,
+  srvsel_dont_est_dev_first = rep(0, input_list$data$n_srv_fleets),
   srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
   srv_sel_dbnrml_raw = NULL,
   srv_sel_dbnrml_startbin = NULL,
@@ -409,6 +410,20 @@ Setup_Mod_Srvsel_and_Q(
   share a single estimated selectivity parameter. Indices must
   correspond to the bin dimension defined by the survey selectivity type
   (age or length).
+
+- srvsel_dont_est_dev_first:
+
+  Integer vector of length `n_srv_fleets` of 0/1, default `0`. Where
+  `1`, that fleet's deviations start in year two and the fixed
+  selectivity parameters hold year one. A non-parametric form
+  (`"nonpar"`, `"nonparlog"`, `"nonparfree"`) has one free base
+  parameter per bin, so year one's deviation is that same value written
+  twice and only `srvsel_rw_init_sigma` separates them, as a prior on a
+  level that is usually meant to be free. Dropping it removes the
+  redundant parameter and that prior, and leaves the walk a sum of
+  differences. Refused for the GMRF and 2D AR1 forms, whose deviations
+  are a field over years and bins rather than a walk anchored at year
+  one.
 
 - srv_sel_sex_offset:
 

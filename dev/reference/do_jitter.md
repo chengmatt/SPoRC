@@ -18,7 +18,8 @@ do_jitter(
   n_newton_loops = 0,
   do_par,
   n_cores,
-  par_vec = NULL
+  par_vec = NULL,
+  jitter_random = FALSE
 )
 ```
 
@@ -68,10 +69,21 @@ do_jitter(
 
 - par_vec:
 
-  Optional numeric vector of parameter values used as the starting point
-  for jittering. If `NULL`, the model's default starting parameter
-  vector is jittered. If provided, jittering is applied to this vector
-  (for example, the maximum likelihood estimates).
+  Optional numeric vector of starting values to jitter. Accepts either
+  the fixed-effect vector (`length(obj$par)`, for example
+  `fit$optim$par`) or the joint fixed and random vector
+  (`length(obj$env$par)`, for example `fit$env$last.par.best`). Any
+  other length is an error. `NULL` uses the model's own start.
+
+- jitter_random:
+
+  Logical indicating whether the random effects are perturbed alongside
+  the fixed effects. Only the fixed effects are searched by
+  [`nlminb()`](https://rdrr.io/r/stats/nlminb.html), so the random draws
+  move the starting point of the inner Laplace solve and check whether
+  it settles on the same modes. Either way the inner solve starts from
+  the random values in `par_vec`, or from the model's own start when
+  `par_vec` holds no random effects. Default is `FALSE`.
 
 ## Value
 
@@ -91,7 +103,8 @@ diagnostic information for each jitter run, including:
 
 Each jitter iteration:
 
-- Perturbs the starting parameter vector with random normal noise.
+- Perturbs the fixed effects with additive normal noise, and the random
+  effects too when `jitter_random = TRUE`.
 
 - Optimizes the objective function using
   [`stats::nlminb()`](https://rdrr.io/r/stats/nlminb.html).

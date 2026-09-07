@@ -27,7 +27,8 @@ do_NAAstate_mapping(
   NAA_pe_spec = "est_all",
   NAA_re_seasons = "annual",
   NAA_re_season = "iid",
-  NAA_re_season_spec = "est_all"
+  NAA_re_season_spec = "est_all",
+  NAA_re_where = NULL
 )
 ```
 
@@ -83,6 +84,16 @@ do_NAAstate_mapping(
 
   Character sharing spec for the season correlations, taking the same
   values as `NAA_re_region_spec`.
+
+- NAA_re_where:
+
+  Integer matrix `[population, region]`, `1` where the numbers at age
+  state runs and `0` where a population never occupies that region.
+  `NULL` (default) gives every cell a state. A natal homing population
+  that never reaches a region holds no fish there, so a lognormal state
+  on that cell is undefined and the penalty would take the logarithm of
+  zero. Cells set to `0` are dropped from the map as well as from the
+  penalty, and they need the region and population correlations off.
 
 ## Value
 

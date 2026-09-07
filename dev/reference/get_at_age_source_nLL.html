@@ -78,7 +78,8 @@ registered through <code><a href="https://rdrr.io/pkg/RTMB/man/TMB-interface.htm
 <span>  trans_rho <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  trans_rho_year <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  us_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  aa_type <span class="op">=</span> <span class="fl">1</span></span>
+<span>  aa_type <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  seas_agg <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -155,6 +156,12 @@ of <code>trans_rho</code>, read under <code>"us"</code>.</p></dd>
 <dd><p>Integer codes naming the split dims, as a matrix over year
 by fleet or a vector per fleet standing for every year, see
 <code><a href="at_age_split.html">at_age_split</a></code>.</p></dd>
+
+
+<dt id="arg-seas-agg">seas_agg<a class="anchor" aria-label="anchor" href="#arg-seas-agg"></a></dt>
+<dd><p>Integer vector, one per fleet. <code>1</code> compares the
+observation against every season of the year summed together, <code>0</code>
+against the season it sits in.</p></dd>
 
 </dl></div>
     <div class="section level2">

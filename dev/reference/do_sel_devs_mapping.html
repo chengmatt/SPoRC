@@ -3,17 +3,19 @@
 deviations (ln_fishsel_devs, ln_retsel_devs, or
 ln_srvsel_devs) across region, year, bin, sex, and fleet. For
 iid/random-walk forms, active bins are governed by the fitted selectivity
-model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active,
-optionally shared via sel_devs_shared_bins groupings
-(&quot;est_shared_b&quot; and its combinations). Fleet sharing
-(&quot;est_shared_f_x&quot;) is handled in a second pass."><meta property="og:description" content="Constructs the factor map for continuous time-varying selectivity
+model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active.
+Bin groupings (sel_devs_shared_bins, used by &quot;est_shared_b&quot; and
+its combinations) apply wherever the deviations are indexed by bin: the GMRF
+and AR1 forms, and the non-parametric selectivity forms under iid or a random
+walk. Fleet sharing (&quot;est_shared_f_x&quot;) is handled in a second pass."><meta property="og:description" content="Constructs the factor map for continuous time-varying selectivity
 deviations (ln_fishsel_devs, ln_retsel_devs, or
 ln_srvsel_devs) across region, year, bin, sex, and fleet. For
 iid/random-walk forms, active bins are governed by the fitted selectivity
-model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active,
-optionally shared via sel_devs_shared_bins groupings
-(&quot;est_shared_b&quot; and its combinations). Fleet sharing
-(&quot;est_shared_f_x&quot;) is handled in a second pass."><meta name="robots" content="noindex"></head><body>
+model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active.
+Bin groupings (sel_devs_shared_bins, used by &quot;est_shared_b&quot; and
+its combinations) apply wherever the deviations are indexed by bin: the GMRF
+and AR1 forms, and the non-parametric selectivity forms under iid or a random
+walk. Fleet sharing (&quot;est_shared_f_x&quot;) is handled in a second pass."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -70,10 +72,11 @@ optionally shared via sel_devs_shared_bins groupings
 deviations (<code>ln_fishsel_devs</code>, <code>ln_retsel_devs</code>, or
 <code>ln_srvsel_devs</code>) across region, year, bin, sex, and fleet. For
 iid/random-walk forms, active bins are governed by the fitted selectivity
-model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active,
-optionally shared via <code>sel_devs_shared_bins</code> groupings
-(<code>"est_shared_b"</code> and its combinations). Fleet sharing
-(<code>"est_shared_f_x"</code>) is handled in a second pass.</p>
+model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active.
+Bin groupings (<code>sel_devs_shared_bins</code>, used by <code>"est_shared_b"</code> and
+its combinations) apply wherever the deviations are indexed by bin: the GMRF
+and AR1 forms, and the non-parametric selectivity forms under iid or a random
+walk. Fleet sharing (<code>"est_shared_f_x"</code>) is handled in a second pass.</p>
     </div>
 
     <div class="section level2">
@@ -83,6 +86,7 @@ optionally shared via <code>sel_devs_shared_bins</code> groupings
 <span>  <span class="va">sel_devs_spec</span>,</span>
 <span>  <span class="va">sel_devs_shared_bins</span>,</span>
 <span>  <span class="va">bins</span>,</span>
+<span>  dont_est_dev_first <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">prefix</span>,</span>
 <span>  <span class="va">fleet_field</span>,</span>
 <span>  <span class="va">use_field</span>,</span>
@@ -115,6 +119,14 @@ of bins that share a single estimated deviation. Required when
 
 <dt id="arg-bins">bins<a class="anchor" aria-label="anchor" href="#arg-bins"></a></dt>
 <dd><p>Number of selectivity bins.</p></dd>
+
+
+<dt id="arg-dont-est-dev-first">dont_est_dev_first<a class="anchor" aria-label="anchor" href="#arg-dont-est-dev-first"></a></dt>
+<dd><p>Integer vector <code>[n_&lt;fleet_field&gt;]</code> of 0/1, or
+<code>NULL</code>. Where <code>1</code>, the deviations of year one are dropped from
+the map so the walk starts in year two and the fixed selectivity parameters
+hold year one. Refused for the GMRF and 2D AR1 forms, whose deviations are a
+field rather than a walk anchored at year one.</p></dd>
 
 
 <dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>

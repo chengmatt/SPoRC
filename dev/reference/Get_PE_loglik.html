@@ -77,6 +77,7 @@ The argument names still read <code>bin</code> for that second dimension.</p>
 <span>  <span class="va">PE_pars</span>,</span>
 <span>  <span class="va">ln_devs</span>,</span>
 <span>  <span class="va">map_sel_devs</span>,</span>
+<span>  <span class="va">map_sel_devs_full</span>,</span>
 <span>  <span class="va">min_sel_devs_shared_bins</span>,</span>
 <span>  rw_init_sigma <span class="op">=</span> <span class="fl">5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -121,6 +122,17 @@ The argument names still read <code>bin</code> for that second dimension.</p>
 mapping deviations to unique estimated parameters. Shared deviations
 hold the same integer value; <code>NA</code> entries are treated as fixed
 and excluded from likelihood evaluation.</p></dd>
+
+
+<dt id="arg-map-sel-devs-full">map_sel_devs_full<a class="anchor" aria-label="anchor" href="#arg-map-sel-devs-full"></a></dt>
+<dd><p>The same map across every unit this penalty is
+evaluated over, that unit being the first dim: regions for selectivity,
+populations by region for growth. A deviation shared over those units is
+one parameter appearing in each of their slices, and this function runs one
+unit at a time, so its contribution is divided by the number holding it.
+Without the split, a series shared over <code>n</code> units is penalized
+<code>n</code> times, an implicit \(\sigma / \sqrt{n}\). A deviation that is
+not shared appears once, divides by one, and is unaffected.</p></dd>
 
 
 <dt id="arg-min-sel-devs-shared-bins">min_sel_devs_shared_bins<a class="anchor" aria-label="anchor" href="#arg-min-sel-devs-shared-bins"></a></dt>

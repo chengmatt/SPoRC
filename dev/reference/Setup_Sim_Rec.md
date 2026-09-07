@@ -41,7 +41,9 @@ rec_seas_prop[, 1, ] <- 1
   SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
-  InitDevs_sex_spec = "est_shared_s"
+  InitDevs_sex_spec = "est_shared_s",
+  RecDevs_model = "iid",
+  RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
 )
 ```
 
@@ -251,6 +253,21 @@ rec_seas_prop[, 1, ] <- 1
   [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md),
   so an operating model and the estimation model fitted to it can be set
   the same way.
+
+- RecDevs_model:
+
+  Character. Process error the recruitment deviations are drawn under:
+  `"iid"` (default) independent draws, `"rw"` a random walk from the
+  previous year's deviation, or `"ar1"` reverting toward zero at rate
+  `RecDevs_rho`. The first year is an independent draw under every
+  option. Matches `RecDevs_model` in
+  [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md),
+  so a self test can simulate and estimate under the same process.
+
+- RecDevs_rho:
+
+  Matrix `[n_pop x n_regions]` of AR1 correlations on the natural scale,
+  in \\(-1, 1)\\. Only read when `RecDevs_model = "ar1"`. Default zero.
 
 ## Value
 

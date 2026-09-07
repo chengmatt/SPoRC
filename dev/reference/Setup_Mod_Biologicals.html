@@ -130,6 +130,7 @@ block structure and mapping. Called after <code><a href="Setup_Mod_Dim.html">Set
 <span>  NAA_re_seasons <span class="op">=</span> <span class="st">"annual"</span>,</span>
 <span>  NAA_re_season <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  NAA_re_season_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
+<span>  NAA_re_where <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  NAA_pe_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
 <span>  NAA_sigma_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
 <span>  NAA_re_region <span class="op">=</span> <span class="st">"iid"</span>,</span>
@@ -678,6 +679,16 @@ unstructured correlation, \(n_k(n_k-1)/2\) parameters over the
 <dt id="arg-naa-re-season-spec">NAA_re_season_spec<a class="anchor" aria-label="anchor" href="#arg-naa-re-season-spec"></a></dt>
 <dd><p>Character controlling how the season correlations
 are shared, taking the same values as <code>NAA_re_region_spec</code>.</p></dd>
+
+
+<dt id="arg-naa-re-where">NAA_re_where<a class="anchor" aria-label="anchor" href="#arg-naa-re-where"></a></dt>
+<dd><p>Integer matrix <code>[population, region]</code>, <code>1</code> where
+the numbers at age state runs and <code>0</code> where a population never occupies
+that region. <code>NULL</code> (default) gives every cell a state. A natal homing
+population that never reaches a region holds no fish there, so a lognormal
+state on that cell is undefined and the penalty would take the logarithm of
+zero. Cells set to <code>0</code> are dropped from the map as well as from the
+penalty, and they need the region and population correlations off.</p></dd>
 
 
 <dt id="arg-naa-pe-spec">NAA_pe_spec<a class="anchor" aria-label="anchor" href="#arg-naa-pe-spec"></a></dt>

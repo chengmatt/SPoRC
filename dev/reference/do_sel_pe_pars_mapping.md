@@ -18,6 +18,8 @@ do_sel_pe_pars_mapping(
   pe_pars_spec,
   corr_opt_semipar,
   bins,
+  sel_devs_spec,
+  sel_devs_shared_bins,
   prefix,
   fleet_field,
   use_field,
@@ -34,8 +36,11 @@ do_sel_pe_pars_mapping(
 - pe_pars_spec:
 
   Character vector of length `n_<fleet_field>`. Options: `"est_all"`,
-  `"est_shared_r"`, `"est_shared_s"`, `"est_shared_r_s"`,
-  `"fix"`/`"none"`, or `"est_shared_f_x"`.
+  `"est_shared_r"`, `"est_shared_s"`, `"est_shared_r_s"`, the same four
+  with `_b` added (`"est_shared_b"`, `"est_shared_r_b"`,
+  `"est_shared_b_s"`, `"est_shared_r_b_s"`), which put one standard
+  deviation across every bin the fleet reads, `"fix"`/`"none"`, or
+  `"est_shared_f_x"`.
 
 - corr_opt_semipar:
 
@@ -48,6 +53,21 @@ do_sel_pe_pars_mapping(
 - bins:
 
   Number of selectivity bins.
+
+- sel_devs_spec:
+
+  Character vector of length `n_<fleet_field>`, the deviation
+  specification passed to
+  [`do_sel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_devs_mapping.md).
+  Read only to recognize which dimensions the deviations are shared
+  over. `"est_shared_f_x"` resolves to the referenced fleet's
+  specification.
+
+- sel_devs_shared_bins:
+
+  List of integer vectors grouping bins that share a single estimated
+  deviation, as passed to
+  [`do_sel_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_devs_mapping.md).
 
 - prefix:
 
@@ -80,6 +100,14 @@ The input `input_list` with `$map$<prefix>sel_pe_pars` set to a factor
 vector.
 
 ## Details
+
+The hyperparameters have to match the deviation series the likelihood
+actually evaluates, which is one per shared group, read at the group's
+lowest bin and first sex. Under iid or a random walk on a non-parametric
+fleet the log-sigmas are indexed by bin, so `"est_shared_b"` leaves one
+log-sigma per bin group. Sharing deviations across sexes
+(`"est_shared_s"` and its combinations) leaves one set for the first
+sex, under every time-variation form. The rest are fixed.
 
 Serves fishery, retention, and survey selectivity, selected by `prefix`
 exactly as in

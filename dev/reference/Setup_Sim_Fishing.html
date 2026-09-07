@@ -101,6 +101,11 @@ and age- and length-composition parameters for both aggregate and population-spe
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  fish_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  FishIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
+<span>  Catch_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Catch_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishIdx_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishIdx_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  t_fish <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -325,6 +330,17 @@ Error structure each fleet's index is drawn under: <code>"lognormal"</code> (0),
 a common-factor decomposition (see <code><a href="cov_to_factor.html">cov_to_factor</a></code>) instead of
 <code>ObsFishIdx_SE</code>, and its population-specific data source stays lognormal.
 Default: lognormal for every fleet.</p></dd>
+
+
+<dt id="arg-catch-seas-type-catch-pop-seas-type-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type">Catch_seas_Type, Catch_pop_seas_Type, FishIdx_seas_Type, FishIdx_pop_seas_Type, FishAgeComps_seas_Type<a class="anchor" aria-label="anchor" href="#arg-catch-seas-type-catch-pop-seas-type-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type"></a></dt>
+<dd><p>Whether the operating model reports a data source once a season
+(<code>"spltSeas"</code>, the default) or once a year as a season total
+(<code>"aggSeas"</code>). One value for every fleet or one per fleet. An annual
+total is written into season one with the other seasons left at zero, and the
+observation error is applied once to that total rather than to each season,
+so an estimation model reading it should mark season one in its <code>Use</code>
+array and set the matching argument in <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>
+or <code><a href="Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></code>.</p></dd>
 
 
 <dt id="arg-fishidx-cov">FishIdx_Cov<a class="anchor" aria-label="anchor" href="#arg-fishidx-cov"></a></dt>

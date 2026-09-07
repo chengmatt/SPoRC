@@ -3,19 +3,21 @@
 FishAge_corr_pars, region- and sex-specific AR1/sex correlation) and
 its aggregated counterpart (e.g. FishAge_corr_pars_agg) for 1D and
 2D logistic-normal composition likelihoods. Parameters are activated only
-when the corresponding LikeType is in c(3, 4) (1D / 2D
-logistic-normal); all other likelihoods, or fleets with no observed
+when the corresponding LikeType is in c(3, 4, 6, 7) (1D and 2D
+logistic-normal, and the same two with the zeros dropped); all other
+likelihoods, or fleets with no observed
 compositions, map correlation parameters to NA. For the 2D
-logistic-normal (LikeType == 4), both trailing elements of the
+logistic-normal (LikeType == 4 or 7), both trailing elements of the
 [...,2] slice are activated: element 1 for the AR1 coefficient and
 element 2 for the sex correlation (skipped when n_sexes == 1)."><meta property="og:description" content="Constructs factor maps for a composition correlation-parameter array (e.g.
 FishAge_corr_pars, region- and sex-specific AR1/sex correlation) and
 its aggregated counterpart (e.g. FishAge_corr_pars_agg) for 1D and
 2D logistic-normal composition likelihoods. Parameters are activated only
-when the corresponding LikeType is in c(3, 4) (1D / 2D
-logistic-normal); all other likelihoods, or fleets with no observed
+when the corresponding LikeType is in c(3, 4, 6, 7) (1D and 2D
+logistic-normal, and the same two with the zeros dropped); all other
+likelihoods, or fleets with no observed
 compositions, map correlation parameters to NA. For the 2D
-logistic-normal (LikeType == 4), both trailing elements of the
+logistic-normal (LikeType == 4 or 7), both trailing elements of the
 [...,2] slice are activated: element 1 for the AR1 coefficient and
 element 2 for the sex correlation (skipped when n_sexes == 1)."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -74,10 +76,11 @@ element 2 for the sex correlation (skipped when n_sexes == 1)."><meta name="robo
 <code>FishAge_corr_pars</code>, region- and sex-specific AR1/sex correlation) and
 its aggregated counterpart (e.g. <code>FishAge_corr_pars_agg</code>) for 1D and
 2D logistic-normal composition likelihoods. Parameters are activated only
-when the corresponding <code>LikeType</code> is in <code>c(3, 4)</code> (1D / 2D
-logistic-normal); all other likelihoods, or fleets with no observed
+when the corresponding <code>LikeType</code> is in <code>c(3, 4, 6, 7)</code> (1D and 2D
+logistic-normal, and the same two with the zeros dropped); all other
+likelihoods, or fleets with no observed
 compositions, map correlation parameters to <code>NA</code>. For the 2D
-logistic-normal (<code>LikeType == 4</code>), both trailing elements of the
+logistic-normal (<code>LikeType == 4</code> or <code>7</code>), both trailing elements of the
 <code>[...,2]</code> slice are activated: element 1 for the AR1 coefficient and
 element 2 for the sex correlation (skipped when <code>n_sexes == 1</code>).</p>
     </div>

@@ -41,7 +41,8 @@ get_comp_source_nLL(
   comp_const_obs = 1,
   do_internal_comp_osa = FALSE,
   tracked_discrete = NULL,
-  tracked_continuous = NULL
+  tracked_continuous = NULL,
+  seas_agg = 0
 )
 ```
 
@@ -150,6 +151,12 @@ get_comp_source_nLL(
 
   Registered observation vectors, read only on the OSA route and `NULL`
   where no fleet uses that family.
+
+- seas_agg:
+
+  Integer vector, one per fleet. `1` builds the predicted composition
+  from every season of the year summed together, `0` from the season the
+  observation sits in.
 
 ## Value
 

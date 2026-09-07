@@ -155,6 +155,14 @@ before model compilation.</p>
 <span>  SrvAgeComps_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvLenComps_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"lognormal"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
+<span>  SrvIdx_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvIdx_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvIdxAA_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvIdxAA_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvAgeComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvAgeComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvLenComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvLenComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvLenComps_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  srv_waa_selected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  SrvIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -416,11 +424,25 @@ derivation from <code>ObsSrvLenComps</code>.</p></dd>
 
 <dt id="arg-srvagecomps-liketype">SrvAgeComps_LikeType<a class="anchor" aria-label="anchor" href="#arg-srvagecomps-liketype"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code>
-specifying the likelihood for survey age compositions. One of
-<code>"none"</code>, <code>"Multinomial"</code>, <code>"Dirichlet-Multinomial"</code>,
-<code>"iid-Logistic-Normal"</code>, <code>"1d-Logistic-Normal"</code>,
-<code>"2d-Logistic-Normal"</code>. Converted to integer codes
-(<code>999</code>, <code>0</code>-<code>4</code>) before storage.</p></dd>
+  specifying the likelihood for survey age compositions. One of
+  <code>"none"</code>, <code>"Multinomial"</code>, <code>"Dirichlet-Multinomial"</code>,
+  <code>"iid-Logistic-Normal"</code>, <code>"1d-Logistic-Normal"</code>,
+  <code>"2d-Logistic-Normal"</code>, <code>"iid-Logistic-Normal-miss0"</code>,
+  <code>"1d-Logistic-Normal-miss0"</code>, <code>"2d-Logistic-Normal-miss0"</code>.
+  Converted to integer codes (<code>999</code>, <code>0</code>-<code>7</code>) before storage.</p>
+<p>The two <code>miss0</code> forms drop the empty bins and renormalize the expected
+  proportions over the bins that remain, rather than adding
+  <code>addtocomp</code> to the zeros and keeping every bin. Their standard
+  deviation is divided by the square root of the input sample size, so the
+  parameter is a per fish quantity and a year sampled harder is fit more
+  tightly, and the change of variables from the log ratio is taken off so the
+  result is a density on the composition itself. Their correlations run
+  through the logistic function and are therefore positive, matching the
+  autoregression they mirror, where the other logistic normal forms allow
+  either sign. The <code>2d</code> form needs a composition joint across sexes, the
+  same as <code>"2d-Logistic-Normal"</code>. One step ahead residuals are not
+  available for any of the three, since the number of observations in a cell
+  changes with the number of empty bins.</p></dd>
 
 
 <dt id="arg-srvlencomps-liketype">SrvLenComps_LikeType<a class="anchor" aria-label="anchor" href="#arg-srvlencomps-liketype"></a></dt>
@@ -595,6 +617,26 @@ lognormal fleets. A fleet's population-specific index data source follows the
 same choice for <code>"lognormal"</code> and <code>"normal"</code>, but stays
 lognormal under <code>"mvn"</code>, whose covariance describes the regional
 series only.</p></dd>
+
+
+<dt id="arg-srvidx-seas-type-srvidx-pop-seas-type-srvidxaa-seas-type-srvidxaa-pop-seas-type-srvagecomps-seas-type-srvagecomps-pop-seas-type-srvlencomps-seas-type-srvlencomps-pop-seas-type">SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvIdxAA_seas_Type, SrvIdxAA_pop_seas_Type, SrvAgeComps_seas_Type, SrvAgeComps_pop_seas_Type, SrvLenComps_seas_Type, SrvLenComps_pop_seas_Type<a class="anchor" aria-label="anchor" href="#arg-srvidx-seas-type-srvidx-pop-seas-type-srvidxaa-seas-type-srvidxaa-pop-seas-type-srvagecomps-seas-type-srvagecomps-pop-seas-type-srvlencomps-seas-type-srvlencomps-pop-seas-type"></a></dt>
+<dd><p>Whether a seasonal model reports this data source once a season or once a
+year. One value for every fleet or one per fleet.</p><dl><dt><code>"spltSeas"</code></dt>
+<dd><p>Fit the observation against the prediction for the
+    season it sits in. This is the default and what every data source did
+    before this setting existed.</p></dd>
+
+  <dt><code>"aggSeas"</code></dt>
+<dd><p>Sum the prediction over every season of the year
+    and fit it against a single observation.</p></dd>
+
+
+</dl><p>Under <code>"aggSeas"</code> the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on in the
+matching <code>Use</code> array. The likelihood and the reported negative log
+likelihood land in that season. A survey measured at a point in time belongs
+in its own season with its own timing rather than aggregated; this setting is
+for a data source that accumulates across the year.</p></dd>
 
 
 <dt id="arg-srvlencomps-sel">SrvLenComps_sel<a class="anchor" aria-label="anchor" href="#arg-srvlencomps-sel"></a></dt>

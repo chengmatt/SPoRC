@@ -33,8 +33,9 @@ do_rec_region_prop_mapping(input_list, rec_region_prop_spec)
       values for `rec_region_prop_pars` are overwritten with
       large-magnitude values (`-20` for non-natal regions, `+20` for the
       natal region when `natal_region > 1`), and all elements are mapped
-      to `NA` so the parameters are not estimated. Requires `n_pop > 1`
-      and `n_regions > 1`.
+      to `NA` so the parameters are not estimated. Requires
+      `n_regions > 1`; a single population apportioned over several
+      regions is allowed.
 
   `NULL`
 

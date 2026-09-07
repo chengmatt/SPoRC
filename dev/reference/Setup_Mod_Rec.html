@@ -122,6 +122,7 @@ before model compilation.</p>
 <span>  max_bias_ramp_fct <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  sigmaR_switch <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  dont_est_recdev_last <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  dont_pen_recdev_first <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  init_age_strc <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  equil_init_age_strc <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  init_F_prop <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
@@ -132,6 +133,9 @@ before model compilation.</p>
 <span>  InitDevs_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  InitDevs_sex_spec <span class="op">=</span> <span class="st">"est_shared_s"</span>,</span>
 <span>  RecDevs_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  RecDevs_model <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  RecDevs_rho_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  RecDevs_rw_init_sigma <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  RecDevs_pen_center <span class="op">=</span> <span class="st">"fixed"</span>,</span>
 <span>  Use_rec_level_pen <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  rec_level_pen_sigma <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -171,7 +175,8 @@ before model compilation.</p>
 <span>  r0_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_rinit_pen <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  rinit_pen_sd <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  <span class="va">...</span></span>
+<span>  <span class="va">...</span>,</span>
+<span>  ln_global_R0_spec <span class="op">=</span> <span class="st">"est"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -342,6 +347,23 @@ deviation years are penalized toward the mean and are effectively
 estimated regardless. Default <code>0</code>.</p></dd>
 
 
+<dt id="arg-dont-pen-recdev-first">dont_pen_recdev_first<a class="anchor" aria-label="anchor" href="#arg-dont-pen-recdev-first"></a></dt>
+<dd><p>Integer. How many leading years of recruitment
+  deviations are estimated but left out of the recruitment penalty. <code>0</code>
+  (default) penalizes every year.</p>
+<p>The first year's recruitment is the first year's age one abundance, which in
+  an equilibrium initialization belongs to the initial condition rather than to
+  the recruitment process. WHAM keeps it as a separate initial numbers at age
+  parameter and gives it no process error at all, and setting this to <code>1</code>
+  is the same statement: the deviation is still estimated, so the data set the
+  first year's recruitment freely, but it takes no prior from
+  <code>ln_sigmaR</code>. Mapping the deviation off instead would fix it at its
+  starting value rather than leave it free.</p>
+<p>Leaving years out only removes their penalty, never their estimation, so this
+  is separate from <code>dont_est_recdev_last</code>, which does the opposite at the
+  other end of the series.</p></dd>
+
+
 <dt id="arg-init-age-strc">init_age_strc<a class="anchor" aria-label="anchor" href="#arg-init-age-strc"></a></dt>
 <dd><p>Initialization method. Default <code>2</code>. Options
 <code>0</code>/<code>"iterative"</code>, <code>1</code>/<code>"scalar_no_move"</code>,
@@ -401,8 +423,20 @@ initialization. Default <code>1</code>.</p><dl><dt><code>0</code>/<code>"equil"<
     repeating that index (e.g. <code>c(1:42, rep(42, 9))</code>). Requires
     <code>init_age_devs_shared</code> to be non-<code>NULL</code>.</p></dd>
 
+  <dt><code>4</code>/<code>"stoch_all_no_pen"</code></dt>
+<dd><p>Deviations estimated for all
+    ages including the plus group, and none of them penalized. The same
+    cells <code>"stoch_all"</code> estimates, with no prior on any of them.
+    Pair it with <code>init_age_strc = "free"</code>, where the deviations are
+    the initial log numbers at age rather than departures from an
+    equilibrium, so a penalty on them would be a prior on initial
+    abundance rather than on the shape of the age structure. This is what
+    ICES assessments in the SAM family do with their first year.</p></dd>
 
-</dl></dd>
+
+</dl><p><code>"equil"</code> means both no penalty and no estimation, which are the same
+statement about an equilibrium age structure and two different ones about a
+free age structure. <code>"stoch_all_no_pen"</code> is the second of them.</p></dd>
 
 
 <dt id="arg-init-f-prop">init_F_prop<a class="anchor" aria-label="anchor" href="#arg-init-f-prop"></a></dt>
@@ -480,6 +514,56 @@ mean-log-initial and sex-specific deviations are written. Requires
 recruitment deviations <code>ln_RecDevs</code> <code>[n_pop x n_regions x
 n_years]</code>. Default <code>NULL</code> (estimate all independently). See
 <code><a href="do_RecDevs_mapping.html">do_RecDevs_mapping</a></code> for full option descriptions.</p></dd>
+
+
+<dt id="arg-recdevs-model">RecDevs_model<a class="anchor" aria-label="anchor" href="#arg-recdevs-model"></a></dt>
+<dd><p>Character string giving the process error structure on
+the recruitment deviations <code>ln_RecDevs</code>. The same three forms
+<code>Fdev_model</code> offers:</p><dl><dt><code>"iid"</code></dt>
+<dd><p>Default. Independent deviations about the prior mean
+    set by <code>RecDevs_pen_center</code>, which is the classic mean recruitment
+    with lognormal deviations.</p></dd>
+
+  <dt><code>"rw"</code></dt>
+<dd><p>Random walk. Each deviation is centered on the previous
+    estimated one, so recruitment is free to move but not to jump, which is
+    the state-space recruitment SAM fits by default. The first estimated
+    deviation is given a diffuse normal, so the level of the series is set
+    by <code>R0</code> and the data rather than by the penalty.</p></dd>
+
+  <dt><code>"ar1"</code></dt>
+<dd><p>AR1. As the walk, but each deviation reverts toward
+    zero at rate <code>RecDevs_rho</code>, and the first estimated deviation is
+    drawn from the stationary marginal distribution.</p></dd>
+
+
+</dl><p>A step spans the gap between estimated years rather than calendar years, so
+mapping deviations off through <code>RecDevs_spec</code> or
+<code>dont_est_recdev_last</code> closes the gap rather than splitting the series.
+The walk and the AR1 center each deviation on the previous one, so neither
+can be combined with <code>do_rec_bias_ramp = 1</code> or
+<code>RecDevs_pen_center = "own_mean"</code>, both of which assert a mean about
+zero; each combination is rejected. <code>sigmaR_switch</code> still applies, so
+the walk can take one standard deviation early and another late.</p></dd>
+
+
+<dt id="arg-recdevs-rho-spec">RecDevs_rho_spec<a class="anchor" aria-label="anchor" href="#arg-recdevs-rho-spec"></a></dt>
+<dd><p>Character string specifying the sharing structure for
+the AR1 correlation parameter <code>RecDevs_rho</code> <code>[n_pop x
+n_regions]</code>: one of <code>"est_all"</code>, <code>"est_shared_pop"</code>,
+<code>"est_shared_r"</code>, <code>"est_shared_pop_r"</code>, or <code>"fix"</code>
+(default). Only read when <code>RecDevs_model = "ar1"</code>; every other
+<code>RecDevs_model</code> maps the parameter off. See
+<code><a href="do_RecDevs_rho_mapping.html">do_RecDevs_rho_mapping</a></code>.</p></dd>
+
+
+<dt id="arg-recdevs-rw-init-sigma">RecDevs_rw_init_sigma<a class="anchor" aria-label="anchor" href="#arg-recdevs-rw-init-sigma"></a></dt>
+<dd><p>Numeric. Standard deviation given to year one of
+a random walk, which is what sets the level of the recruitment series.
+Default <code>5</code>, wide enough that the level is decided by <code>R0</code> and
+the data. <code>NA</code> instead starts the walk at zero under its own sigma,
+which pulls the first year toward mean recruitment. Only read when
+<code>RecDevs_model = "rw"</code>.</p></dd>
 
 
 <dt id="arg-recdevs-pen-center-initdevs-pen-center">RecDevs_pen_center, InitDevs_pen_center<a class="anchor" aria-label="anchor" href="#arg-recdevs-pen-center-initdevs-pen-center"></a></dt>
@@ -792,6 +876,26 @@ age of the stock, is a reasonable choice. Default 0.</p></dd>
 <code>sexratio_pars</code> <code>[n_pop x n_regions x n_blocks]</code>.
 Unspecified parameters use internal defaults.</p></dd>
 
+
+<dt id="arg-ln-global-r-spec">ln_global_R0_spec<a class="anchor" aria-label="anchor" href="#arg-ln-global-r-spec"></a></dt>
+<dd><p>Character string, <code>"est"</code> (default) or
+  <code>"fix"</code>. <code>"fix"</code> maps <code>ln_global_R0</code> off at its starting
+  value, so the recruitment deviations hold log recruitment outright rather
+  than as departures from a level. That is how SAM writes recruitment, where
+  the first year's log numbers at age are the recruitment itself and there is
+  no separate level parameter. The recruitment counterpart of
+  <code>ln_F_mean_spec</code> in <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code>.</p>
+<p>Under <code>rec_model = "mean_rec"</code> the level and the deviations are only
+  both estimable when something reads the deviations' level. An <code>"iid"</code>
+  or <code>"ar1"</code> penalty does; a random walk does not, since it penalizes
+  only the change from one deviation to the next. Combining a walk with
+  <code>dont_pen_recdev_first &gt;= 1</code>, which removes the first year's term,
+  leaves the two exactly unidentified, and that combination is rejected rather
+  than fitted: it converges to a singular Hessian and standard errors of
+  <code>NA</code>. A walk with the first year still penalized is accepted with a
+  warning, since the level is then readable only through that one term and its
+  standard error comes back near <code>RecDevs_rw_init_sigma</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -799,7 +903,8 @@ Unspecified parameters use internal defaults.</p></dd>
   populated in <code>$data</code> and <code>$par</code>, and factor maps constructed
   in <code>$map</code> for: <code>rec_region_prop_pars</code>, <code>rec_seas_prop_pars</code>,
   <code>ln_sigmaR</code>, <code>ln_InitDevs</code>, <code>ln_RecDevs</code>,
-  <code>steepness_h</code>, <code>sexratio_pars</code>, and <code>stray_rate_pars</code>. Character-coded inputs
+  <code>RecDevs_rho</code>, <code>steepness_h</code>, <code>sexratio_pars</code>, and
+  <code>stray_rate_pars</code>. Character-coded inputs
   for <code>init_age_strc</code> and <code>equil_init_age_strc</code> are converted to
   integer codes before storage.</p>
     </div>

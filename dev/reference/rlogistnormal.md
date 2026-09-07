@@ -11,7 +11,7 @@ controlled by `comp_like`.
 ## Usage
 
 ``` r
-rlogistnormal(exp, pars, comp_like, n_sexes)
+rlogistnormal(exp, pars, comp_like, n_sexes, ISS = NULL)
 ```
 
 ## Arguments

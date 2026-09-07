@@ -121,6 +121,16 @@ and mappings. Must be called after <code><a href="Setup_Mod_Catch_and_F.html">Se
 <span>  FishAgeComps_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishLenComps_pop_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"lognormal"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
+<span>  FishIdx_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishIdx_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_discard_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_discard_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_discard_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_discard_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsFish_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseFish_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -366,7 +376,9 @@ If <code>NULL</code> (default), derived automatically from <code>ObsFishLenComps
 specifying the likelihood for fishery age compositions. Options:
 <code>"Multinomial"</code>, <code>"Dirichlet-Multinomial"</code>,
 <code>"iid-Logistic-Normal"</code>, <code>"1d-Logistic-Normal"</code>,
-<code>"2d-Logistic-Normal"</code>, <code>"none"</code>.</p></dd>
+<code>"2d-Logistic-Normal"</code>, <code>"iid-Logistic-Normal-miss0"</code>,
+<code>"1d-Logistic-Normal-miss0"</code>, <code>"2d-Logistic-Normal-miss0"</code>,
+<code>"none"</code>.</p></dd>
 
 
 <dt id="arg-fishlencomps-liketype">FishLenComps_LikeType<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-liketype"></a></dt>
@@ -537,6 +549,26 @@ lognormal under <code>"mvn"</code>, whose covariance describes the regional
 series only.</p></dd>
 
 
+<dt id="arg-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type-fishagecomps-pop-seas-type-fishlencomps-seas-type-fishlencomps-pop-seas-type-fishagecomps-discard-seas-type-fishagecomps-discard-pop-seas-type-fishlencomps-discard-seas-type-fishlencomps-discard-pop-seas-type">FishIdx_seas_Type, FishIdx_pop_seas_Type, FishAgeComps_seas_Type, FishAgeComps_pop_seas_Type, FishLenComps_seas_Type, FishLenComps_pop_seas_Type, FishAgeComps_discard_seas_Type, FishAgeComps_discard_pop_seas_Type, FishLenComps_discard_seas_Type, FishLenComps_discard_pop_seas_Type<a class="anchor" aria-label="anchor" href="#arg-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type-fishagecomps-pop-seas-type-fishlencomps-seas-type-fishlencomps-pop-seas-type-fishagecomps-discard-seas-type-fishagecomps-discard-pop-seas-type-fishlencomps-discard-seas-type-fishlencomps-discard-pop-seas-type"></a></dt>
+<dd><p>Whether a seasonal model reports this data source once a season or once a
+year. One value for every fleet or one per fleet.</p><dl><dt><code>"spltSeas"</code></dt>
+<dd><p>Fit the observation against the prediction for the
+    season it sits in. This is the default and what every data source did
+    before this setting existed.</p></dd>
+
+  <dt><code>"aggSeas"</code></dt>
+<dd><p>Sum the prediction over every season of the year
+    and fit it against a single observation.</p></dd>
+
+
+</dl><p>Under <code>"aggSeas"</code> the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on in the
+matching <code>Use</code> array. The likelihood and the reported negative log
+likelihood land in that season. An index measured at a point in time belongs
+in its own season rather than aggregated; this setting is for a data source
+that accumulates across the year.</p></dd>
+
+
 <dt id="arg-fishidx-cov">FishIdx_Cov<a class="anchor" aria-label="anchor" href="#arg-fishidx-cov"></a></dt>
 <dd><p>List with one element per fishery fleet holding the fixed
 covariance matrix for fleets using <code>"mvn"</code>, and <code>NULL</code>
@@ -632,6 +664,16 @@ Options:</p><dl><dt><code>"Multinomial"</code></dt>
 
   <dt><code>"2d-Logistic-Normal"</code></dt>
 <dd><p>2D correlated logistic-normal</p></dd>
+
+  <dt><code>"iid-Logistic-Normal-miss0"</code></dt>
+<dd><p>Logistic-normal with the empty
+    bins dropped and the standard deviation scaled by the input sample size</p></dd>
+
+  <dt><code>"1d-Logistic-Normal-miss0"</code></dt>
+<dd><p>The same, correlated across bins</p></dd>
+
+  <dt><code>"2d-Logistic-Normal-miss0"</code></dt>
+<dd><p>The same, correlated across bins and sexes</p></dd>
 
   <dt><code>"none"</code></dt>
 <dd><p>No discard age composition likelihood</p></dd>

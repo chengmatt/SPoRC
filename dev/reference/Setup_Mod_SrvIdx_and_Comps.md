@@ -84,6 +84,14 @@ Setup_Mod_SrvIdx_and_Comps(
   SrvAgeComps_pop_bins = NULL,
   SrvLenComps_pop_bins = NULL,
   SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+  SrvIdx_seas_Type = NULL,
+  SrvIdx_pop_seas_Type = NULL,
+  SrvIdxAA_seas_Type = NULL,
+  SrvIdxAA_pop_seas_Type = NULL,
+  SrvAgeComps_seas_Type = NULL,
+  SrvAgeComps_pop_seas_Type = NULL,
+  SrvLenComps_seas_Type = NULL,
+  SrvLenComps_pop_seas_Type = NULL,
   SrvLenComps_sel = rep("age", input_list$data$n_srv_fleets),
   srv_waa_selected = rep(0, input_list$data$n_srv_fleets),
   SrvIdx_Cov = NULL,
@@ -354,8 +362,24 @@ Setup_Mod_SrvIdx_and_Comps(
   Character vector `[n_srv_fleets]` specifying the likelihood for survey
   age compositions. One of `"none"`, `"Multinomial"`,
   `"Dirichlet-Multinomial"`, `"iid-Logistic-Normal"`,
-  `"1d-Logistic-Normal"`, `"2d-Logistic-Normal"`. Converted to integer
-  codes (`999`, `0`-`4`) before storage.
+  `"1d-Logistic-Normal"`, `"2d-Logistic-Normal"`,
+  `"iid-Logistic-Normal-miss0"`, `"1d-Logistic-Normal-miss0"`,
+  `"2d-Logistic-Normal-miss0"`. Converted to integer codes (`999`,
+  `0`-`7`) before storage.
+
+  The two `miss0` forms drop the empty bins and renormalize the expected
+  proportions over the bins that remain, rather than adding `addtocomp`
+  to the zeros and keeping every bin. Their standard deviation is
+  divided by the square root of the input sample size, so the parameter
+  is a per fish quantity and a year sampled harder is fit more tightly,
+  and the change of variables from the log ratio is taken off so the
+  result is a density on the composition itself. Their correlations run
+  through the logistic function and are therefore positive, matching the
+  autoregression they mirror, where the other logistic normal forms
+  allow either sign. The `2d` form needs a composition joint across
+  sexes, the same as `"2d-Logistic-Normal"`. One step ahead residuals
+  are not available for any of the three, since the number of
+  observations in a cell changes with the number of empty bins.
 
 - SrvLenComps_LikeType:
 
@@ -526,6 +550,33 @@ Setup_Mod_SrvIdx_and_Comps(
   index data source follows the same choice for `"lognormal"` and
   `"normal"`, but stays lognormal under `"mvn"`, whose covariance
   describes the regional series only.
+
+- SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvIdxAA_seas_Type,
+  SrvIdxAA_pop_seas_Type, SrvAgeComps_seas_Type,
+  SrvAgeComps_pop_seas_Type, SrvLenComps_seas_Type,
+  SrvLenComps_pop_seas_Type:
+
+  Whether a seasonal model reports this data source once a season or
+  once a year. One value for every fleet or one per fleet.
+
+  `"spltSeas"`
+
+  :   Fit the observation against the prediction for the season it sits
+      in. This is the default and what every data source did before this
+      setting existed.
+
+  `"aggSeas"`
+
+  :   Sum the prediction over every season of the year and fit it
+      against a single observation.
+
+  Under `"aggSeas"` the observation still lives in whichever season it
+  was placed in, and exactly one season per region and year may be
+  turned on in the matching `Use` array. The likelihood and the reported
+  negative log likelihood land in that season. A survey measured at a
+  point in time belongs in its own season with its own timing rather
+  than aggregated; this setting is for a data source that accumulates
+  across the year.
 
 - SrvLenComps_sel:
 

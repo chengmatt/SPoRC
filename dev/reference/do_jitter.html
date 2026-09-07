@@ -76,7 +76,8 @@ resulting time series and diagnostic metrics.</p>
 <span>  n_newton_loops <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  <span class="va">do_par</span>,</span>
 <span>  <span class="va">n_cores</span>,</span>
-<span>  par_vec <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  par_vec <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  jitter_random <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -128,10 +129,21 @@ when <code>do_par = TRUE</code>.</p></dd>
 
 
 <dt id="arg-par-vec">par_vec<a class="anchor" aria-label="anchor" href="#arg-par-vec"></a></dt>
-<dd><p>Optional numeric vector of parameter values used as the
-starting point for jittering. If <code>NULL</code>, the model's default starting
-parameter vector is jittered. If provided, jittering is applied to this
-vector (for example, the maximum likelihood estimates).</p></dd>
+<dd><p>Optional numeric vector of starting values to jitter. Accepts
+either the fixed-effect vector (<code>length(obj$par)</code>, for example
+<code>fit$optim$par</code>) or the joint fixed and random vector
+(<code>length(obj$env$par)</code>, for example <code>fit$env$last.par.best</code>).
+Any other length is an error. <code>NULL</code> uses the model's own start.</p></dd>
+
+
+<dt id="arg-jitter-random">jitter_random<a class="anchor" aria-label="anchor" href="#arg-jitter-random"></a></dt>
+<dd><p>Logical indicating whether the random effects are
+perturbed alongside the fixed effects. Only the fixed effects are searched
+by <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">nlminb()</a></code>, so the random draws move the starting point of the
+inner Laplace solve and check whether it settles on the same modes. Either
+way the inner solve starts from the random values in <code>par_vec</code>, or
+from the model's own start when <code>par_vec</code> holds no random effects.
+Default is <code>FALSE</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -145,7 +157,8 @@ along with diagnostic information for each jitter run, including:</p><ul><li><p>
 </ul></div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Each jitter iteration:</p><ul><li><p>Perturbs the starting parameter vector with random normal noise.</p></li>
+    <p>Each jitter iteration:</p><ul><li><p>Perturbs the fixed effects with additive normal noise, and the
+  random effects too when <code>jitter_random = TRUE</code>.</p></li>
 <li><p>Optimizes the objective function using <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb()</a></code>.</p></li>
 <li><p>Optionally performs additional Newton steps to refine the solution.</p></li>
 <li><p>Extracts reported quantities (e.g., spawning biomass and recruitment)

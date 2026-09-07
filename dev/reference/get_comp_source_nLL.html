@@ -102,7 +102,8 @@ regional and the population-specific data source of each.</p>
 <span>  comp_const_obs <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  do_internal_comp_osa <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  tracked_discrete <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  tracked_continuous <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  tracked_continuous <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seas_agg <span class="op">=</span> <span class="fl">0</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -210,6 +211,12 @@ have a leading population dimension and are never summed over populations.</p></
 <dt id="arg-tracked-discrete-tracked-continuous">tracked_discrete, tracked_continuous<a class="anchor" aria-label="anchor" href="#arg-tracked-discrete-tracked-continuous"></a></dt>
 <dd><p>Registered observation vectors, read
 only on the OSA route and <code>NULL</code> where no fleet uses that family.</p></dd>
+
+
+<dt id="arg-seas-agg">seas_agg<a class="anchor" aria-label="anchor" href="#arg-seas-agg"></a></dt>
+<dd><p>Integer vector, one per fleet. <code>1</code> builds the predicted
+composition from every season of the year summed together, <code>0</code> from the
+season the observation sits in.</p></dd>
 
 </dl></div>
     <div class="section level2">

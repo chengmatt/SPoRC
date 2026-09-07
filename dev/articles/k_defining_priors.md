@@ -106,10 +106,13 @@ input_list <- Setup_Mod_Rec(
 #> Initial Age Structure is: Movement and Matrix Geometric Series
 #> Recruitment deviations for every year are estimated
 #> Spawning season occurs in season 1
+#> RecDevs_model is specified as: iid
+#> ln_global_R0 is specified as: est
 #> Recruitment deviation penalty is centered on: fixed
 #> Recruitment Variability is specified as: est_all
 #> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
 #> Recruitment Deviations is estimated for all dimensions
+#> RecDevs_rho is specified as: fix
 #> Steepness is specified as: est_shared_pop_r
 #> Sex ratio is specified as: fix
 #> Stray rates fixed (n_pop == 1, straying not applicable).
@@ -621,10 +624,13 @@ input_list <- Setup_Mod_Rec(
 #> Initial Age Structure is: Movement and Matrix Geometric Series
 #> Recruitment deviations for every year are estimated
 #> Spawning season occurs in season 1
+#> RecDevs_model is specified as: iid
+#> ln_global_R0 is specified as: est
 #> Recruitment deviation penalty is centered on: fixed
 #> Recruitment Variability is specified as: est_all
 #> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
 #> Recruitment Deviations is estimated for all dimensions
+#> RecDevs_rho is specified as: fix
 #> Sex ratio is specified as: fix
 #> Stray rates fixed (n_pop == 1, straying not applicable).
 ```
@@ -678,10 +684,13 @@ input_list <- Setup_Mod_Rec(
 #> Initial Age Structure is: Movement and Matrix Geometric Series
 #> Recruitment deviations for every year are estimated
 #> Spawning season occurs in season 1
+#> RecDevs_model is specified as: iid
+#> ln_global_R0 is specified as: est
 #> Recruitment deviation penalty is centered on: fixed
 #> Recruitment Variability is specified as: est_all
 #> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
 #> Recruitment Deviations is estimated for all dimensions
+#> RecDevs_rho is specified as: fix
 #> Sex ratio is specified as: fix
 #> Stray rates fixed (n_pop == 1, straying not applicable).
 ```

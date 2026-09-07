@@ -4,12 +4,13 @@ Constructs factor maps for a composition correlation-parameter array
 (e.g. `FishAge_corr_pars`, region- and sex-specific AR1/sex correlation)
 and its aggregated counterpart (e.g. `FishAge_corr_pars_agg`) for 1D and
 2D logistic-normal composition likelihoods. Parameters are activated
-only when the corresponding `LikeType` is in `c(3, 4)` (1D / 2D
-logistic-normal); all other likelihoods, or fleets with no observed
-compositions, map correlation parameters to `NA`. For the 2D
-logistic-normal (`LikeType == 4`), both trailing elements of the
-`[...,2]` slice are activated: element 1 for the AR1 coefficient and
-element 2 for the sex correlation (skipped when `n_sexes == 1`).
+only when the corresponding `LikeType` is in `c(3, 4, 6, 7)` (1D and 2D
+logistic-normal, and the same two with the zeros dropped); all other
+likelihoods, or fleets with no observed compositions, map correlation
+parameters to `NA`. For the 2D logistic-normal (`LikeType == 4` or `7`),
+both trailing elements of the `[...,2]` slice are activated: element 1
+for the AR1 coefficient and element 2 for the sex correlation (skipped
+when `n_sexes == 1`).
 
 ## Usage
 

@@ -28,6 +28,9 @@ get_recruitment_penalty(
   sigmaR2_late,
   do_rec_bias_ramp,
   map_ln_RecDevs = NULL,
+  RecDevs_model = 1,
+  RecDevs_rho = NULL,
+  RecDevs_rw_init_sigma = 5,
   RecDevs_pen_center = 0,
   InitDevs_pen_center = 0,
   init_devs_pen_use = NULL,
@@ -110,6 +113,24 @@ get_recruitment_penalty(
   Array `[pop, region, year]` mirroring `map$ln_RecDevs`; cells that are
   `NA` are fixed rather than estimated and are left unpenalized. `NULL`
   penalizes every cell.
+
+- RecDevs_model:
+
+  Integer process error structure for the recruitment deviations: `1`
+  independent, `2` random walk, `3` AR1. The bias ramp and the own-mean
+  center are only read under `1`, since a walk's mean is the previous
+  deviation rather than zero.
+
+- RecDevs_rho:
+
+  Array `[pop, region]` of unconstrained AR1 correlations, transformed
+  to \\(-1, 1)\\ in the penalty. Only read when `RecDevs_model = 3`.
+
+- RecDevs_rw_init_sigma:
+
+  Standard deviation given to year one of a random walk. Default `5`,
+  which leaves the level of the series effectively free. `NA` starts the
+  walk at zero under its own sigma. Only read when `RecDevs_model = 2`.
 
 - init_devs_pen_use:
 

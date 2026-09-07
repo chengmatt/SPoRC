@@ -76,7 +76,7 @@ Setup_Mod_Discard_Comps(
 
   Character vector (length n_fish_fleets) specifying likelihood type:
   one of
-  `c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal","1d-Logistic-Normal","2d-Logistic-Normal")`
+  `c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal","1d-Logistic-Normal","2d-Logistic-Normal","iid-Logistic-Normal-miss0","1d-Logistic-Normal-miss0","2d-Logistic-Normal-miss0")`
 
 - FishLenComps_discard_LikeType:
 

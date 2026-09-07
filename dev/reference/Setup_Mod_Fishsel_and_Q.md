@@ -32,6 +32,7 @@ Setup_Mod_Fishsel_and_Q(
   fish_sel_bin_dev_bins = NULL,
   fishsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   fishsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
+  fishsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
   cont_tv_fishsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
   fish_selex_penalty = NULL,
   fishsel_devs_shared_bins = NULL,
@@ -54,6 +55,7 @@ Setup_Mod_Fishsel_and_Q(
   retsel_devs_shared_bins = NULL,
   retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
+  retsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
   ret_selex_type = "age",
   use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
   ret_sel_input = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions,
@@ -355,6 +357,20 @@ Setup_Mod_Fishsel_and_Q(
   zero under the walk's own estimated sigma, making the first year as
   smooth as every later step. Appropriate when the base parametric curve
   already describes the first year well.
+
+- fishsel_dont_est_dev_first:
+
+  Integer vector of length `n_fish_fleets` of 0/1, default `0`. Where
+  `1`, that fleet's deviations start in year two and the fixed
+  selectivity parameters hold year one. A non-parametric form
+  (`"nonpar"`, `"nonparlog"`, `"nonparfree"`) has one free base
+  parameter per bin, so year one's deviation is that same value written
+  twice and only `fishsel_rw_init_sigma` separates them, as a prior on a
+  level that is usually meant to be free. Dropping it removes the
+  redundant parameter and that prior, and leaves the walk a sum of
+  differences. Refused for the GMRF and 2D AR1 forms, whose deviations
+  are a field over years and bins rather than a walk anchored at year
+  one.
 
 - cont_tv_fishsel_bin_devs:
 
@@ -667,6 +683,20 @@ Setup_Mod_Fishsel_and_Q(
   the first year of an `"rw"` retention deviation series, the retention
   counterpart of `fishsel_rw_init_sigma`. Default `5`; `NA` instead
   starts the walk at zero under the walk's own estimated sigma.
+
+- retsel_dont_est_dev_first:
+
+  Integer vector of length `n_fish_fleets` of 0/1, default `0`. Where
+  `1`, that fleet's deviations start in year two and the fixed
+  selectivity parameters hold year one. A non-parametric form
+  (`"nonpar"`, `"nonparlog"`, `"nonparfree"`) has one free base
+  parameter per bin, so year one's deviation is that same value written
+  twice and only `retsel_rw_init_sigma` separates them, as a prior on a
+  level that is usually meant to be free. Dropping it removes the
+  redundant parameter and that prior, and leaves the walk a sum of
+  differences. Refused for the GMRF and 2D AR1 forms, whose deviations
+  are a field over years and bins rather than a walk anchored at year
+  one.
 
 - ret_selex_type:
 

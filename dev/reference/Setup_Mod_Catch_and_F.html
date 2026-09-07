@@ -105,6 +105,14 @@ Must be called after <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biolog
 <span>  CatchAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
 <span>  DiscardAA_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
 <span>  DiscardAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  Catch_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Catch_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Discard_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Discard_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CatchAA_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CatchAA_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  DiscardAA_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  DiscardAA_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  CatchAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
 <span>  CatchAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
 <span>  DiscardAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
@@ -202,13 +210,15 @@ the data source's <code>sigma_form</code> asks for them.</p></dd>
 
 
 <dt id="arg-sigmacaa-key">sigmaCAA_key<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-key"></a></dt>
-<dd><p>Integer matrix <code>[n_ages, n_fish_fleets]</code> coupling the
-catch at age observation error, an integer key matrix, the convention ICES assessments use. Equal
-entries share a parameter and <code>NA</code> excludes one. This single structure
-covers every sharing pattern: <code>1 2 3 4 5</code> gives one standard deviation
-per age, <code>1 1 2 2 2</code> gives standard deviations by age group as several ICES assessments do, and <code>1 1 1 1 1</code> gives one for the fleet. Defaults to
-one parameter per fleet, shared across ages. A parameter informed by fewer
-than two observations is refused, since an observation error standard
+<dd><p>Integer array <code>[n_ages, n_sexes, n_fish_fleets]</code>
+coupling the catch at age observation error, the key matrix convention ICES
+assessments use. Equal entries share a parameter and <code>NA</code> excludes one.
+The sex dim is required; a key coupling the sexes repeats its entries across
+them. Along the age dim, <code>1 2 3 4 5</code> gives one standard deviation per
+age, <code>1 1 2 2 2</code> gives standard deviations by age group as several ICES
+assessments do, and <code>1 1 1 1 1</code> gives one for the fleet. Defaults to one
+parameter per fleet, shared across ages and sexes. A parameter informed by
+fewer than two observations is refused, since an observation error standard
 deviation with a single observation drives the likelihood to negative
 infinity rather than failing outright.</p></dd>
 
@@ -230,10 +240,12 @@ shaped like <code>ObsCatchAA</code>. The discard counterpart of catch at age.</p
 
 
 <dt id="arg-sigmacaa-pop-key-sigmadaa-key-sigmadaa-pop-key">sigmaCAA_pop_key, sigmaDAA_key, sigmaDAA_pop_key<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-pop-key-sigmadaa-key-sigmadaa-pop-key"></a></dt>
-<dd><p>Integer matrices
-<code>[n_ages, n_fish_fleets]</code> coupling the observation error for the
-population-specific catch, the discards, and the population-specific
-discards, following the same convention as <code>sigmaCAA_key</code>.</p></dd>
+<dd><p>Integer arrays coupling
+the observation error for the population-specific catch, the discards, and
+the population-specific discards, following the same convention as
+<code>sigmaCAA_key</code>. <code>sigmaDAA_key</code> is shaped
+<code>[n_ages, n_sexes, n_fish_fleets]</code>; the two population-specific keys
+take a leading population dim, <code>[n_pop, n_ages, n_sexes, n_fish_fleets]</code>.</p></dd>
 
 
 <dt id="arg-sigmacaa-pop-spec-sigmadaa-spec-sigmadaa-pop-spec">sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-pop-spec-sigmadaa-spec-sigmadaa-pop-spec"></a></dt>
@@ -250,6 +262,29 @@ through the series. <code>"agg"</code> sums over
 regions and sexes, <code>"spltRaggS"</code> (default) splits regions and sums over
 sexes, <code>"aggRspltS"</code> does the reverse, and <code>"spltRspltS"</code> splits
 both. An observation summed over a dim belongs in slot one of it.</p></dd>
+
+
+<dt id="arg-catch-seas-type-catch-pop-seas-type-discard-seas-type-discard-pop-seas-type-catchaa-seas-type-catchaa-pop-seas-type-discardaa-seas-type-discardaa-pop-seas-type">Catch_seas_Type, Catch_pop_seas_Type, Discard_seas_Type, Discard_pop_seas_Type, CatchAA_seas_Type, CatchAA_pop_seas_Type, DiscardAA_seas_Type, DiscardAA_pop_seas_Type<a class="anchor" aria-label="anchor" href="#arg-catch-seas-type-catch-pop-seas-type-discard-seas-type-discard-pop-seas-type-catchaa-seas-type-catchaa-pop-seas-type-discardaa-seas-type-discardaa-pop-seas-type"></a></dt>
+<dd><p>Whether a seasonal model reports this data source once a season or once a
+year. One value for every fleet or one per fleet.</p><dl><dt><code>"spltSeas"</code></dt>
+<dd><p>Fit the observation against the prediction for the
+    season it sits in. This is the default and what every data source did
+    before this setting existed.</p></dd>
+
+  <dt><code>"aggSeas"</code></dt>
+<dd><p>Sum the prediction over every season of the year
+    and fit it against a single observation, which is how a fleet that lands
+    catch all year but reports one annual total is usually recorded.</p></dd>
+
+
+</dl><p>Under <code>"aggSeas"</code> the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on in the
+matching <code>Use</code> array; more than one is an error, because each would be
+fit against the same year total. The likelihood and the reported negative log
+likelihood land in that season. Fishing mortality is still estimated season by
+season, so a fleet with one annual observation and free seasonal deviations
+leaves the split between seasons unidentified: share the deviations or fix
+the seasonal pattern.</p></dd>
 
 
 <dt id="arg-catchaa-liketype-discardaa-liketype-catchaa-pop-liketype-discardaa-pop-liketype">CatchAA_LikeType, DiscardAA_LikeType, CatchAA_pop_LikeType, DiscardAA_pop_LikeType<a class="anchor" aria-label="anchor" href="#arg-catchaa-liketype-discardaa-liketype-catchaa-pop-liketype-discardaa-pop-liketype"></a></dt>

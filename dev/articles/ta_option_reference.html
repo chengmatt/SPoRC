@@ -86,18 +86,18 @@ what a setting is. Read <a href="t_model_options.html">Overview of Model
 Options</a> to find out why it exists and which to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 526 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 535 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (15)</option>
-<option value="Rec">Rec (60)</option>
-<option value="Biologicals">Biologicals (71)</option>
+<option value="Rec">Rec (65)</option>
+<option value="Biologicals">Biologicals (72)</option>
 <option value="Movement">Movement (23)</option>
 <option value="Tagging">Tagging (19)</option>
 <option value="Catch_and_F">Catch_and_F (72)</option>
 <option value="FishIdx_and_Comps">FishIdx_and_Comps (77)</option>
 <option value="SrvIdx_and_Comps">SrvIdx_and_Comps (74)</option>
-<option value="Fishsel_and_Q">Fishsel_and_Q (48)</option>
-<option value="Srvsel_and_Q">Srvsel_and_Q (32)</option>
+<option value="Fishsel_and_Q">Fishsel_and_Q (50)</option>
+<option value="Srvsel_and_Q">Srvsel_and_Q (33)</option>
 <option value="Weighting">Weighting (35)</option></select><span id="optref-tally"></span></p>
 </div>
 <section class="optref-stage" data-stage="Dim"><h3>
@@ -310,7 +310,7 @@ Logical. If TRUE, stores configuration of the model. Default is FALSE
 Setup_Mod_Rec
 </h3>
 <p class="optref-n">
-60 arguments
+65 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -541,15 +541,38 @@ n_proj_yrs_devs &gt; 0, since projected deviation years are penalized
 toward the mean and are effectively estimated regardless. Default 0.
 </td>
 </tr>
+<tr data-k="dont_pen_recdev_first 0 integer. how many leading years of recruitment deviations are estimated but left out of the recruitment penalty. 0 (default) penalizes every year. the first year's recruitment is the first year's age one abundance, which in an equilibrium initialization belongs to the initial condition rather than to the recruitment process. wham keeps it as a separate initial numbers at age parameter and gives it no process error at all, and setting this to 1 is the same statement: the deviation is still estimated, so the data set the first year's recruitment freely, but it takes no prior from ln_sigmar. mapping the deviation off instead would fix it at its starting value rather than leave it free. leaving years out only removes their penalty, never their estimation, so this is separate from dont_est_recdev_last, which does the opposite at the other end of the series.">
+<td>
+<code class="optref-arg">dont_pen_recdev_first</code>
+</td>
+<td>
+<code>0</code>
+</td>
+<td>
+Integer. How many leading years of recruitment deviations are estimated
+but left out of the recruitment penalty. 0 (default) penalizes every
+year. The first year’s recruitment is the first year’s age one
+abundance, which in an equilibrium initialization belongs to the initial
+condition rather than to the recruitment process. WHAM keeps it as a
+separate initial numbers at age parameter and gives it no process error
+at all, and setting this to 1 is the same statement: the deviation is
+still estimated, so the data set the first year’s recruitment freely,
+but it takes no prior from ln_sigmaR. Mapping the deviation off instead
+would fix it at its starting value rather than leave it free. Leaving
+years out only removes their penalty, never their estimation, so this is
+separate from dont_est_recdev_last, which does the opposite at the other
+end of the series.
+</td>
+</tr>
 <tr data-k="init_age_strc 2 initialization method. default 2. options 0/" iterative and all project an equilibrium age structure forward from r0 treat ln_initdevs as multiplicative deviations it. projects no at all: the numbers older are exp outright apportioned by sex ratio with still taken recruitment. use it when initial has information about should not be pulled toward equilibrium. note that under on scale of rather than log ratios so penalty applied through equil_init_age_strc is a prior abundance pair if such wanted. population to approximate slowest but most general. geometric series assuming movement. incorporating recommended default for spatial models. movement only in plus group.>
 <td><code class="optref-arg">init_age_strc</code></td>
 <td><code>2</code></td>
 <td>Initialization method. Default 2. Options 0/"iterative", 1/"scalar_no_move", 2/"matrix", and 3/"scalar_plus_only" all project an equilibrium age structure forward from R0 and treat ln_InitDevs as multiplicative deviations from it. 4/"free" projects no equilibrium at all: the numbers at age 2 and older are exp(ln_InitDevs) outright, apportioned by sex ratio, with age 1 still taken from recruitment. Use it when the initial age structure has no information about R0 and should not be pulled toward an equilibrium. Note that under 4 the deviations are on the scale of numbers rather than of log ratios, so the penalty applied through equil_init_age_strc is a prior on log abundance; pair it with equil_init_age_strc = 0 if no such prior is wanted. 0/"iterative"Iterates the population to approximate equilibrium. Slowest but most general. 1/"scalar_no_move"Scalar geometric series assuming no movement. 2/"matrix"Matrix geometric series incorporating movement. Recommended default for spatial models. 3/"scalar_plus_only"Scalar geometric series with movement only in the plus group.</td>
 </tr>
-<tr data-k="equil_init_age_strc 1 plus-group treatment during stochastic initialization. default 1. 0/" equil equilibrium no ln_initdevs are estimated. deviations for all ages except the plus group. including with user-defined age sharing via init_age_devs_shared. estimated independently across populations and regions but same value in init_age_devs_shared constrained to a single parameter. group is not automatically fixed include an na at plus-group position fix it or share preceding by repeating that index c rep requires be non-null.>
+<tr data-k="equil_init_age_strc 1 plus-group treatment during stochastic initialization. default 1. 0/" equil equilibrium no ln_initdevs are estimated. deviations for all ages except the plus group. including with user-defined age sharing via init_age_devs_shared. estimated independently across populations and regions but same value in init_age_devs_shared constrained to a single parameter. group is not automatically fixed include an na at plus-group position fix it or share preceding by repeating that index c rep requires be non-null. none of them penalized. cells estimates prior on any them. pair init_age_strc="free" where initial log numbers rather than departures from so penalty would abundance shape structure. this what ices assessments sam family do their first year. means both estimation which statement about structure two different ones free second>
 <td><code class="optref-arg">equil_init_age_strc</code></td>
 <td><code>1</code></td>
-<td>Plus-group treatment during stochastic initialization. Default 1. 0/"equil"Deterministic equilibrium; no ln_InitDevs are estimated. 1/"stoch_no_plus"Stochastic deviations for all ages except the plus group. 2/"stoch_all"Stochastic deviations for all ages including the plus group. 3/"stoch_shared_ages"Stochastic deviations with user-defined age sharing via init_age_devs_shared. Deviations are estimated independently across all populations and regions, but ages sharing the same value in init_age_devs_shared are constrained to a single parameter. The plus group is not automatically fixed; include an NA in init_age_devs_shared at the plus-group position to fix it, or share it with the preceding age by repeating that index (e.g. c(1:42, rep(42, 9))). Requires init_age_devs_shared to be non-NULL.</td>
+<td>Plus-group treatment during stochastic initialization. Default 1. 0/"equil"Deterministic equilibrium; no ln_InitDevs are estimated. 1/"stoch_no_plus"Stochastic deviations for all ages except the plus group. 2/"stoch_all"Stochastic deviations for all ages including the plus group. 3/"stoch_shared_ages"Stochastic deviations with user-defined age sharing via init_age_devs_shared. Deviations are estimated independently across all populations and regions, but ages sharing the same value in init_age_devs_shared are constrained to a single parameter. The plus group is not automatically fixed; include an NA in init_age_devs_shared at the plus-group position to fix it, or share it with the preceding age by repeating that index (e.g. c(1:42, rep(42, 9))). Requires init_age_devs_shared to be non-NULL. 4/"stoch_all_no_pen"Deviations estimated for all ages including the plus group, and none of them penalized. The same cells "stoch_all" estimates, with no prior on any of them. Pair it with init_age_strc = "free", where the deviations are the initial log numbers at age rather than departures from an equilibrium, so a penalty on them would be a prior on initial abundance rather than on the shape of the age structure. This is what ICES assessments in the SAM family do with their first year. "equil" means both no penalty and no estimation, which are the same statement about an equilibrium age structure and two different ones about a free age structure. "stoch_all_no_pen" is the second of them.</td>
 </tr>
 <tr data-k="init_f_prop array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,      input_list$data$n_fish_fleets)) numeric array [n_regions x n_seas x n_fish_fleets]. legacy interface, retained for backwards compatibility. a fixed proportion of the estimated mean f applied during equilibrium initialization. when supplied non-zero (and init_f_par is not given) it is converted to ln_init_f = log(init_f_prop) with init_f_form = " prop which reproduces the previous behavior exactly. prefer init_f_par. default: zero for all seasons and fleets.>
 <td><code class="optref-arg">init_F_prop</code></td>
@@ -602,6 +625,21 @@ Character or NULL. Sharing structure for annual recruitment deviations
 ln_RecDevs [n_pop x n_regions x n_years]. Default NULL (estimate all
 independently). See do_RecDevs_mapping for full option descriptions.
 </td>
+</tr>
+<tr data-k="recdevs_model " iid character string giving the process error structure on recruitment deviations ln_recdevs. same three forms fdev_model offers: independent about prior mean set by recdevs_pen_center which is classic with lognormal deviations. walk. each deviation centered previous estimated one so free to move but not jump state-space sam fits default. first given a diffuse normal level of series r0 and data rather than penalty. as walk reverts toward zero at rate recdevs_rho drawn from stationary marginal distribution. step spans gap between years calendar mapping off through recdevs_spec or dont_est_recdev_last closes splitting series. ar1 center neither can be combined do_rec_bias_ramp="1" both assert combination rejected. sigmar_switch still applies take standard early another late.>
+<td><code class="optref-arg">RecDevs_model</code></td>
+<td><code>"iid"</code></td>
+<td>Character string giving the process error structure on the recruitment deviations ln_RecDevs. The same three forms Fdev_model offers: "iid"Default. Independent deviations about the prior mean set by RecDevs_pen_center, which is the classic mean recruitment with lognormal deviations. "rw"Random walk. Each deviation is centered on the previous estimated one, so recruitment is free to move but not to jump, which is the state-space recruitment SAM fits by default. The first estimated deviation is given a diffuse normal, so the level of the series is set by R0 and the data rather than by the penalty. "ar1"AR1. As the walk, but each deviation reverts toward zero at rate RecDevs_rho, and the first estimated deviation is drawn from the stationary marginal distribution. A step spans the gap between estimated years rather than calendar years, so mapping deviations off through RecDevs_spec or dont_est_recdev_last closes the gap rather than splitting the series. The walk and the AR1 center each deviation on the previous one, so neither can be combined with do_rec_bias_ramp = 1 or RecDevs_pen_center = "own_mean", both of which assert a mean about zero; each combination is rejected. sigmaR_switch still applies, so the walk can take one standard deviation early and another late.</td>
+</tr>
+<tr data-k="recdevs_rho_spec " fix character string specifying the sharing structure for ar1 correlation parameter recdevs_rho x n_regions one of or only read when recdevs_model="ar1" every other maps off. see do_recdevs_rho_mapping.>
+<td><code class="optref-arg">RecDevs_rho_spec</code></td>
+<td><code>"fix"</code></td>
+<td>Character string specifying the sharing structure for the AR1 correlation parameter RecDevs_rho [n_pop x n_regions]: one of "est_all", "est_shared_pop", "est_shared_r", "est_shared_pop_r", or "fix" (default). Only read when RecDevs_model = "ar1"; every other RecDevs_model maps the parameter off. See do_RecDevs_rho_mapping.</td>
+</tr>
+<tr data-k="recdevs_rw_init_sigma 5 numeric. standard deviation given to year one of a random walk, which is what sets the level of the recruitment series. default 5, wide enough that the level is decided by r0 and the data. na instead starts the walk at zero under its own sigma, which pulls the first year toward mean recruitment. only read when recdevs_model = " rw>
+<td><code class="optref-arg">RecDevs_rw_init_sigma</code></td>
+<td><code>5</code></td>
+<td>Numeric. Standard deviation given to year one of a random walk, which is what sets the level of the recruitment series. Default 5, wide enough that the level is decided by R0 and the data. NA instead starts the walk at zero under its own sigma, which pulls the first year toward mean recruitment. Only read when RecDevs_model = "rw".</td>
 </tr>
 <tr data-k="recdevs_pen_center " fixed where the recruitment and initial age deviation penalties are centered. centers on asserted prior mean zero or bias-corrected which constrains both level spread of deviations. estimated deviations themselves so only their is penalized left free that what a sum squares about series own amounts to. being unpenalized means it must be pinned elsewhere by r0 fixing likelihood flat along it. cannot combined with do_rec_bias_ramp="1," whose offset meaningless once rather than asserted.>
 <td><code class="optref-arg">RecDevs_pen_center</code></td>
@@ -911,12 +949,17 @@ is a reasonable choice. Default 0.
 Standard deviation of that penalty, log scale. Default 1.
 </td>
 </tr>
+<tr data-k="ln_global_r0_spec " est character string or maps ln_global_r0 off at its starting value so the recruitment deviations hold log outright rather than as departures from a level. that is how sam writes where first year numbers age are itself and there no separate level parameter. counterpart of ln_f_mean_spec in setup_mod_catch_and_f. under rec_model="mean_rec" only both estimable when something reads an penalty does random walk not since it penalizes change one deviation to next. combining with dont_pen_recdev_first which removes term leaves two exactly unidentified combination rejected fitted: converges singular hessian standard errors na. still penalized accepted warning then readable through error comes back near recdevs_rw_init_sigma.>
+<td><code class="optref-arg">ln_global_R0_spec</code></td>
+<td><code>"est"</code></td>
+<td>Character string, "est" (default) or "fix". "fix" maps ln_global_R0 off at its starting value, so the recruitment deviations hold log recruitment outright rather than as departures from a level. That is how SAM writes recruitment, where the first year's log numbers at age are the recruitment itself and there is no separate level parameter. The recruitment counterpart of ln_F_mean_spec in Setup_Mod_Catch_and_F. Under rec_model = "mean_rec" the level and the deviations are only both estimable when something reads the deviations' level. An "iid" or "ar1" penalty does; a random walk does not, since it penalizes only the change from one deviation to the next. Combining a walk with dont_pen_recdev_first &gt;= 1, which removes the first year's term, leaves the two exactly unidentified, and that combination is rejected rather than fitted: it converges to a singular Hessian and standard errors of NA. A walk with the first year still penalized is accepted with a warning, since the level is then readable only through that one term and its standard error comes back near RecDevs_rw_init_sigma.</td>
+</tr>
 </tbody>
 </table></section><section class="optref-stage" data-stage="Biologicals"><h3>
 Setup_Mod_Biologicals
 </h3>
 <p class="optref-n">
-71 arguments
+72 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -1505,6 +1548,23 @@ contiguous run.
 <td><code class="optref-arg">NAA_re_season_spec</code></td>
 <td><code>"est_all"</code></td>
 <td>Character controlling how the season correlations are shared, taking the same values as NAA_re_region_spec.</td>
+</tr>
+<tr data-k="naa_re_where null integer matrix [population, region], 1 where the numbers at age state runs and 0 where a population never occupies that region. null (default) gives every cell a state. a natal homing population that never reaches a region holds no fish there, so a lognormal state on that cell is undefined and the penalty would take the logarithm of zero. cells set to 0 are dropped from the map as well as from the penalty, and they need the region and population correlations off.">
+<td>
+<code class="optref-arg">NAA_re_where</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer matrix [population, region], 1 where the numbers at age state
+runs and 0 where a population never occupies that region. NULL (default)
+gives every cell a state. A natal homing population that never reaches a
+region holds no fish there, so a lognormal state on that cell is
+undefined and the penalty would take the logarithm of zero. Cells set to
+0 are dropped from the map as well as from the penalty, and they need
+the region and population correlations off.
+</td>
 </tr>
 <tr data-k="naa_pe_spec " est_all character controlling how the age year and cohort correlations in naa_pe_pars are shared following package spec strings. default gives a free set per population region sex which for three model under is six correlations. share one dim two whole model. holds them all at their starting values zero correlation unless passed through starting_values. sharing not same as correlating innovations: regions that still get independent shocks whereas naa_re_region="us" makes themselves covary. never changes cells estimated only many hyperparameters they draw on.>
 <td><code class="optref-arg">NAA_pe_spec</code></td>
@@ -2120,7 +2180,7 @@ Reported standard errors shaped like their observation array, read only
 when the data source’s sigma_form asks for them.
 </td>
 </tr>
-<tr data-k="sigmacaa_key null integer matrix [n_ages, n_fish_fleets] coupling the catch at age observation error, an integer key matrix, the convention ices assessments use. equal entries share a parameter and na excludes one. this single structure covers every sharing pattern: 1 2 3 4 5 gives one standard deviation per age, 1 1 2 2 2 gives standard deviations by age group as several ices assessments do, and 1 1 1 1 1 gives one for the fleet. defaults to one parameter per fleet, shared across ages. a parameter informed by fewer than two observations is refused, since an observation error standard deviation with a single observation drives the likelihood to negative infinity rather than failing outright.">
+<tr data-k="sigmacaa_key null integer array [n_ages, n_sexes, n_fish_fleets] coupling the catch at age observation error, the key matrix convention ices assessments use. equal entries share a parameter and na excludes one. the sex dim is required; a key coupling the sexes repeats its entries across them. along the age dim, 1 2 3 4 5 gives one standard deviation per age, 1 1 2 2 2 gives standard deviations by age group as several ices assessments do, and 1 1 1 1 1 gives one for the fleet. defaults to one parameter per fleet, shared across ages and sexes. a parameter informed by fewer than two observations is refused, since an observation error standard deviation with a single observation drives the likelihood to negative infinity rather than failing outright.">
 <td>
 <code class="optref-arg">sigmaCAA_key</code>
 </td>
@@ -2128,16 +2188,17 @@ when the data source’s sigma_form asks for them.
 <code>NULL</code>
 </td>
 <td>
-Integer matrix [n_ages, n_fish_fleets] coupling the catch at age
-observation error, an integer key matrix, the convention ICES
-assessments use. Equal entries share a parameter and NA excludes one.
-This single structure covers every sharing pattern: 1 2 3 4 5 gives one
-standard deviation per age, 1 1 2 2 2 gives standard deviations by age
-group as several ICES assessments do, and 1 1 1 1 1 gives one for the
-fleet. Defaults to one parameter per fleet, shared across ages. A
-parameter informed by fewer than two observations is refused, since an
-observation error standard deviation with a single observation drives
-the likelihood to negative infinity rather than failing outright.
+Integer array [n_ages, n_sexes, n_fish_fleets] coupling the catch at age
+observation error, the key matrix convention ICES assessments use. Equal
+entries share a parameter and NA excludes one. The sex dim is required;
+a key coupling the sexes repeats its entries across them. Along the age
+dim, 1 2 3 4 5 gives one standard deviation per age, 1 1 2 2 2 gives
+standard deviations by age group as several ICES assessments do, and 1 1
+1 1 1 gives one for the fleet. Defaults to one parameter per fleet,
+shared across ages and sexes. A parameter informed by fewer than two
+observations is refused, since an observation error standard deviation
+with a single observation drives the likelihood to negative infinity
+rather than failing outright.
 </td>
 </tr>
 <tr data-k="sigmacaa_spec " est character string to estimate the coupled standard deviations or hold them at their starting values. values are supplied through ... as ln_sigmacaa.>
@@ -2249,7 +2310,7 @@ Reported standard errors shaped like their observation array, read only
 when the data source’s sigma_form asks for them.
 </td>
 </tr>
-<tr data-k="sigmacaa_pop_key null integer matrices [n_ages, n_fish_fleets] coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key.">
+<tr data-k="sigmacaa_pop_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_ages, n_sexes, n_fish_fleets].">
 <td>
 <code class="optref-arg">sigmaCAA_pop_key</code>
 </td>
@@ -2257,10 +2318,12 @@ when the data source’s sigma_form asks for them.
 <code>NULL</code>
 </td>
 <td>
-Integer matrices [n_ages, n_fish_fleets] coupling the observation error
-for the population-specific catch, the discards, and the
-population-specific discards, following the same convention as
-sigmaCAA_key.
+Integer arrays coupling the observation error for the
+population-specific catch, the discards, and the population-specific
+discards, following the same convention as sigmaCAA_key. sigmaDAA_key is
+shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific
+keys take a leading population dim, [n_pop, n_ages, n_sexes,
+n_fish_fleets].
 </td>
 </tr>
 <tr data-k="sigmacaa_pop_spec " est or>
@@ -2268,7 +2331,7 @@ sigmaCAA_key.
 <td><code>"est"</code></td>
 <td>"est" or "fix".</td>
 </tr>
-<tr data-k="sigmadaa_key null integer matrices [n_ages, n_fish_fleets] coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key.">
+<tr data-k="sigmadaa_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_ages, n_sexes, n_fish_fleets].">
 <td>
 <code class="optref-arg">sigmaDAA_key</code>
 </td>
@@ -2276,10 +2339,12 @@ sigmaCAA_key.
 <code>NULL</code>
 </td>
 <td>
-Integer matrices [n_ages, n_fish_fleets] coupling the observation error
-for the population-specific catch, the discards, and the
-population-specific discards, following the same convention as
-sigmaCAA_key.
+Integer arrays coupling the observation error for the
+population-specific catch, the discards, and the population-specific
+discards, following the same convention as sigmaCAA_key. sigmaDAA_key is
+shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific
+keys take a leading population dim, [n_pop, n_ages, n_sexes,
+n_fish_fleets].
 </td>
 </tr>
 <tr data-k="sigmadaa_spec " est or>
@@ -2287,7 +2352,7 @@ sigmaCAA_key.
 <td><code>"est"</code></td>
 <td>"est" or "fix".</td>
 </tr>
-<tr data-k="sigmadaa_pop_key null integer matrices [n_ages, n_fish_fleets] coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key.">
+<tr data-k="sigmadaa_pop_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_ages, n_sexes, n_fish_fleets].">
 <td>
 <code class="optref-arg">sigmaDAA_pop_key</code>
 </td>
@@ -2295,10 +2360,12 @@ sigmaCAA_key.
 <code>NULL</code>
 </td>
 <td>
-Integer matrices [n_ages, n_fish_fleets] coupling the observation error
-for the population-specific catch, the discards, and the
-population-specific discards, following the same convention as
-sigmaCAA_key.
+Integer arrays coupling the observation error for the
+population-specific catch, the discards, and the population-specific
+discards, following the same convention as sigmaCAA_key. sigmaDAA_key is
+shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific
+keys take a leading population dim, [n_pop, n_ages, n_sexes,
+n_fish_fleets].
 </td>
 </tr>
 <tr data-k="sigmadaa_pop_spec " est or>
@@ -2326,85 +2393,45 @@ sigmaCAA_key.
 <td><code>"spltRaggS"</code></td>
 <td>Which dims the fleet reports separately, following the composition vocabulary. Give it as one setting for every fleet, one per fleet, or as year and fleet specifications such as "spltRaggS_Year_1-20_Fleet_1" when the setting changes part way through the series. "agg" sums over regions and sexes, "spltRaggS" (default) splits regions and sums over sexes, "aggRspltS" does the reverse, and "spltRspltS" splits both. An observation summed over a dim belongs in slot one of it.</td>
 </tr>
-<tr data-k="catch_seas_type null ">
-<td>
-<code class="optref-arg">Catch_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="catch_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">Catch_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
-<tr data-k="catch_pop_seas_type null ">
-<td>
-<code class="optref-arg">Catch_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="catch_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">Catch_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
-<tr data-k="discard_seas_type null ">
-<td>
-<code class="optref-arg">Discard_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="discard_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">Discard_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
-<tr data-k="discard_pop_seas_type null ">
-<td>
-<code class="optref-arg">Discard_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="discard_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">Discard_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
-<tr data-k="catchaa_seas_type null ">
-<td>
-<code class="optref-arg">CatchAA_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="catchaa_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">CatchAA_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
-<tr data-k="catchaa_pop_seas_type null ">
-<td>
-<code class="optref-arg">CatchAA_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="catchaa_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">CatchAA_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
-<tr data-k="discardaa_seas_type null ">
-<td>
-<code class="optref-arg">DiscardAA_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="discardaa_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">DiscardAA_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
-<tr data-k="discardaa_pop_seas_type null ">
-<td>
-<code class="optref-arg">DiscardAA_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="discardaa_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single which how fleet that lands catch all but reports one annual total usually recorded. under still lives in whichever was placed exactly per region may be turned on matching use array more than an error because each would same total. likelihood reported negative log land season. fishing mortality estimated by so with free seasonal deviations leaves split between seasons unidentified: share or fix pattern.>
+<td><code class="optref-arg">DiscardAA_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation, which is how a fleet that lands catch all year but reports one annual total is usually recorded. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array; more than one is an error, because each would be fit against the same year total. The likelihood and the reported negative log likelihood land in that season. Fishing mortality is still estimated season by season, so a fleet with one annual observation and free seasonal deviations leaves the split between seasons unidentified: share the deviations or fix the seasonal pattern.</td>
 </tr>
 <tr data-k="catchaa_liketype " lognormal or one setting for every fleet per fleet.>
 <td><code class="optref-arg">CatchAA_LikeType</code></td>
@@ -2948,7 +2975,7 @@ automatically from ObsFishLenComps.
 <tr data-k="fishagecomps_liketype required character vector of length n_fish_fleets specifying the likelihood for fishery age compositions. options: " multinomial>
 <td><code class="optref-arg">FishAgeComps_LikeType</code></td>
 <td><em class="optref-req">required</em></td>
-<td>Character vector of length n_fish_fleets specifying the likelihood for fishery age compositions. Options: "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "none".</td>
+<td>Character vector of length n_fish_fleets specifying the likelihood for fishery age compositions. Options: "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0", "none".</td>
 </tr>
 <tr data-k="fishlencomps_liketype required same as fishagecomps_liketype but for length compositions.">
 <td>
@@ -3185,105 +3212,55 @@ composition is fitted over, in the same format as FishAgeComps_bins.
 <td><code>rep("lognormal", input_list$data$n_fish_fleets)</code></td>
 <td>Character vector [n_fish_fleets] giving the error structure of each fishery index. Options are "lognormal" (default, the observation standard errors are on the log scale), "normal" (arithmetic scale), and "mvn" (multivariate normal on the arithmetic scale using a fixed covariance supplied through FishIdx_Cov). One-step-ahead residuals are available only for lognormal fleets. A fleet's population-specific index data source follows the same choice for "lognormal" and "normal", but stays lognormal under "mvn", whose covariance describes the regional series only.</td>
 </tr>
-<tr data-k="fishidx_seas_type null ">
-<td>
-<code class="optref-arg">FishIdx_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishidx_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishIdx_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishidx_pop_seas_type null ">
-<td>
-<code class="optref-arg">FishIdx_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishidx_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishIdx_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishagecomps_seas_type null ">
-<td>
-<code class="optref-arg">FishAgeComps_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishagecomps_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishAgeComps_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishagecomps_pop_seas_type null ">
-<td>
-<code class="optref-arg">FishAgeComps_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishagecomps_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishAgeComps_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishlencomps_seas_type null ">
-<td>
-<code class="optref-arg">FishLenComps_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishlencomps_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishLenComps_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishlencomps_pop_seas_type null ">
-<td>
-<code class="optref-arg">FishLenComps_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishlencomps_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishLenComps_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishagecomps_discard_seas_type null ">
-<td>
-<code class="optref-arg">FishAgeComps_discard_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishagecomps_discard_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishAgeComps_discard_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishagecomps_discard_pop_seas_type null ">
-<td>
-<code class="optref-arg">FishAgeComps_discard_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishagecomps_discard_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishAgeComps_discard_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishlencomps_discard_seas_type null ">
-<td>
-<code class="optref-arg">FishLenComps_discard_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishlencomps_discard_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishLenComps_discard_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
-<tr data-k="fishlencomps_discard_pop_seas_type null ">
-<td>
-<code class="optref-arg">FishLenComps_discard_pop_seas_Type</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fishlencomps_discard_pop_seas_type null whether a seasonal model reports this data source once a season or once a year. one value for every fleet or one per fleet. " spltseas the observation against prediction for season it sits in. this is default and what every data source did before setting existed. over of year fit a single observation. under still lives in whichever was placed exactly one per region may be turned on matching use array. likelihood reported negative log land that season. an index measured at point time belongs its own rather than aggregated accumulates across year.>
+<td><code class="optref-arg">FishLenComps_discard_pop_seas_Type</code></td>
+<td><code>NULL</code></td>
+<td>Whether a seasonal model reports this data source once a season or once a year. One value for every fleet or one per fleet. "spltSeas"Fit the observation against the prediction for the season it sits in. This is the default and what every data source did before this setting existed. "aggSeas"Sum the prediction over every season of the year and fit it against a single observation. Under "aggSeas" the observation still lives in whichever season it was placed in, and exactly one season per region and year may be turned on in the matching Use array. The likelihood and the reported negative log likelihood land in that season. An index measured at a point in time belongs in its own season rather than aggregated; this setting is for a data source that accumulates across the year.</td>
 </tr>
 <tr data-k="fishidx_cov null list with one element per fishery fleet holding the fixed covariance matrix for fleets using " mvn and null otherwise. each matrix must be square with one row per observation the fleet fits ordered as observations appear when scanning that usefishidx slice in array order.>
 <td><code class="optref-arg">FishIdx_Cov</code></td>
@@ -3440,10 +3417,10 @@ n_years × n_seas × n_sexes × n_fish_fleets]. If NULL, derived
 automatically from ObsFishLenComps_discard.
 </td>
 </tr>
-<tr data-k="fishagecomps_discard_liketype rep(" none input_list character vector of length n_fish_fleets specifying likelihood type for discard age compositions. options: multinomial logistic-normal correlated composition>
+<tr data-k="fishagecomps_discard_liketype rep(" none input_list character vector of length n_fish_fleets specifying likelihood type for discard age compositions. options: multinomial logistic-normal correlated with the empty bins dropped and standard deviation scaled by input sample size same across sexes composition>
 <td><code class="optref-arg">FishAgeComps_discard_LikeType</code></td>
 <td><code>rep("none", input_list$data$n_fish_fleets)</code></td>
-<td>Character vector of length n_fish_fleets specifying likelihood type for discard age compositions. Options: "Multinomial"Standard multinomial likelihood "Dirichlet-Multinomial"Overdispersed multinomial "iid-Logistic-Normal"Independent logistic-normal "1d-Logistic-Normal"1D correlated logistic-normal "2d-Logistic-Normal"2D correlated logistic-normal "none"No discard age composition likelihood</td>
+<td>Character vector of length n_fish_fleets specifying likelihood type for discard age compositions. Options: "Multinomial"Standard multinomial likelihood "Dirichlet-Multinomial"Overdispersed multinomial "iid-Logistic-Normal"Independent logistic-normal "1d-Logistic-Normal"1D correlated logistic-normal "2d-Logistic-Normal"2D correlated logistic-normal "iid-Logistic-Normal-miss0"Logistic-normal with the empty bins dropped and the standard deviation scaled by the input sample size "1d-Logistic-Normal-miss0"The same, correlated across bins "2d-Logistic-Normal-miss0"The same, correlated across bins and sexes "none"No discard age composition likelihood</td>
 </tr>
 <tr data-k="fishlencomps_discard_liketype rep(" none input_list same specification as fishagecomps_discard_liketype but for discard length compositions.>
 <td><code class="optref-arg">FishLenComps_discard_LikeType</code></td>
@@ -3934,16 +3911,42 @@ ObsSrvLenComps.&lt;/td&gt;&lt;/tr&gt;
 &lt;tr data-k="srvagecomps_liketype required character vector
 [n_srv_fleets] specifying the likelihood for survey age compositions.
 one of "none", "multinomial", "dirichlet-multinomial",
-"iid-logistic-normal", "1d-logistic-normal", "2d-logistic-normal".
-converted to integer codes (999, 0-4) before
-storage."&gt;&lt;td&gt;&lt;code
+"iid-logistic-normal", "1d-logistic-normal", "2d-logistic-normal",
+"iid-logistic-normal-miss0", "1d-logistic-normal-miss0",
+"2d-logistic-normal-miss0". converted to integer codes (999, 0-7) before
+storage. the two miss0 forms drop the empty bins and renormalize the
+expected proportions over the bins that remain, rather than adding
+addtocomp to the zeros and keeping every bin. their standard deviation
+is divided by the square root of the input sample size, so the parameter
+is a per fish quantity and a year sampled harder is fit more tightly,
+and the change of variables from the log ratio is taken off so the
+result is a density on the composition itself. their correlations run
+through the logistic function and are therefore positive, matching the
+autoregression they mirror, where the other logistic normal forms allow
+either sign. the 2d form needs a composition joint across sexes, the
+same as "2d-logistic-normal". one step ahead residuals are not available
+for any of the three, since the number of observations in a cell changes
+with the number of empty bins."&gt;&lt;td&gt;&lt;code
 class="optref-arg"&gt;SrvAgeComps_LikeType&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;em
 class="optref-req"&gt;required&lt;/em&gt;&lt;/td&gt;&lt;td&gt;Character
 vector [n_srv_fleets] specifying the likelihood for survey age
 compositions. One of "none", "Multinomial", "Dirichlet-Multinomial",
-"iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal".
-Converted to integer codes (999, 0-4) before
-storage.&lt;/td&gt;&lt;/tr&gt;
+"iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal",
+"iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0",
+"2d-Logistic-Normal-miss0". Converted to integer codes (999, 0-7) before
+storage. The two miss0 forms drop the empty bins and renormalize the
+expected proportions over the bins that remain, rather than adding
+addtocomp to the zeros and keeping every bin. Their standard deviation
+is divided by the square root of the input sample size, so the parameter
+is a per fish quantity and a year sampled harder is fit more tightly,
+and the change of variables from the log ratio is taken off so the
+result is a density on the composition itself. Their correlations run
+through the logistic function and are therefore positive, matching the
+autoregression they mirror, where the other logistic normal forms allow
+either sign. The 2d form needs a composition joint across sexes, the
+same as "2d-Logistic-Normal". One step ahead residuals are not available
+for any of the three, since the number of observations in a cell changes
+with the number of empty bins.&lt;/td&gt;&lt;/tr&gt;
 &lt;tr data-k="srvlencomps_liketype required character vector
 [n_srv_fleets] specifying the likelihood for survey length compositions.
 same options as srvagecomps_liketype."&gt;&lt;td&gt;&lt;code
@@ -4193,22 +4196,214 @@ fleets. A fleet's population-specific index data source follows the same
 choice for "lognormal" and "normal", but stays lognormal under "mvn",
 whose covariance describes the regional series
 only.&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvidx_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvIdx_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvidx_pop_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvIdx_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvidxaa_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvIdxAA_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvidxaa_pop_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvIdxAA_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvagecomps_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvAgeComps_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvagecomps_pop_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvAgeComps_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvlencomps_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvLenComps_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
-&lt;tr data-k="srvlencomps_pop_seas_type null "&gt;&lt;td&gt;&lt;code
-class="optref-arg"&gt;SrvLenComps_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidx_seas_type null whether a seasonal model reports
+this data source once a season or once a year. one value for every fleet
+or one per fleet. "spltseas"fit the observation against the prediction
+for the season it sits in. this is the default and what every data
+source did before this setting existed. "aggseas"sum the prediction over
+every season of the year and fit it against a single observation. under
+"aggseas" the observation still lives in whichever season it was placed
+in, and exactly one season per region and year may be turned on in the
+matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdx_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidx_pop_seas_type null whether a seasonal model
+reports this data source once a season or once a year. one value for
+every fleet or one per fleet. "spltseas"fit the observation against the
+prediction for the season it sits in. this is the default and what every
+data source did before this setting existed. "aggseas"sum the prediction
+over every season of the year and fit it against a single observation.
+under "aggseas" the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on
+in the matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdx_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidxaa_seas_type null whether a seasonal model reports
+this data source once a season or once a year. one value for every fleet
+or one per fleet. "spltseas"fit the observation against the prediction
+for the season it sits in. this is the default and what every data
+source did before this setting existed. "aggseas"sum the prediction over
+every season of the year and fit it against a single observation. under
+"aggseas" the observation still lives in whichever season it was placed
+in, and exactly one season per region and year may be turned on in the
+matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdxAA_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidxaa_pop_seas_type null whether a seasonal model
+reports this data source once a season or once a year. one value for
+every fleet or one per fleet. "spltseas"fit the observation against the
+prediction for the season it sits in. this is the default and what every
+data source did before this setting existed. "aggseas"sum the prediction
+over every season of the year and fit it against a single observation.
+under "aggseas" the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on
+in the matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdxAA_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvagecomps_seas_type null whether a seasonal model
+reports this data source once a season or once a year. one value for
+every fleet or one per fleet. "spltseas"fit the observation against the
+prediction for the season it sits in. this is the default and what every
+data source did before this setting existed. "aggseas"sum the prediction
+over every season of the year and fit it against a single observation.
+under "aggseas" the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on
+in the matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvAgeComps_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvagecomps_pop_seas_type null whether a seasonal model
+reports this data source once a season or once a year. one value for
+every fleet or one per fleet. "spltseas"fit the observation against the
+prediction for the season it sits in. this is the default and what every
+data source did before this setting existed. "aggseas"sum the prediction
+over every season of the year and fit it against a single observation.
+under "aggseas" the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on
+in the matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvAgeComps_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvlencomps_seas_type null whether a seasonal model
+reports this data source once a season or once a year. one value for
+every fleet or one per fleet. "spltseas"fit the observation against the
+prediction for the season it sits in. this is the default and what every
+data source did before this setting existed. "aggseas"sum the prediction
+over every season of the year and fit it against a single observation.
+under "aggseas" the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on
+in the matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvLenComps_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvlencomps_pop_seas_type null whether a seasonal model
+reports this data source once a season or once a year. one value for
+every fleet or one per fleet. "spltseas"fit the observation against the
+prediction for the season it sits in. this is the default and what every
+data source did before this setting existed. "aggseas"sum the prediction
+over every season of the year and fit it against a single observation.
+under "aggseas" the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on
+in the matching use array. the likelihood and the reported negative log
+likelihood land in that season. a survey measured at a point in time
+belongs in its own season with its own timing rather than aggregated;
+this setting is for a data source that accumulates across the
+year."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvLenComps_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Whether
+a seasonal model reports this data source once a season or once a year.
+One value for every fleet or one per fleet. "spltSeas"Fit the
+observation against the prediction for the season it sits in. This is
+the default and what every data source did before this setting existed.
+"aggSeas"Sum the prediction over every season of the year and fit it
+against a single observation. Under "aggSeas" the observation still
+lives in whichever season it was placed in, and exactly one season per
+region and year may be turned on in the matching Use array. The
+likelihood and the reported negative log likelihood land in that season.
+A survey measured at a point in time belongs in its own season with its
+own timing rather than aggregated; this setting is for a data source
+that accumulates across the year.&lt;/td&gt;&lt;/tr&gt;
 &lt;tr data-k="srvlencomps_sel rep("age", input_list$</span>data<span class="math inline">$n_srv_fleets) character vector [n_srv_fleets],
 whether a length-based selectivity is applied before or after the fish
 are spread over lengths. "age" (default) selects the index at age and
@@ -4304,7 +4499,7 @@ compositions.&lt;/td&gt;&lt;/tr&gt;
 &lt;/section&gt;
 &lt;section class="optref-stage" data-stage="Fishsel_and_Q"&gt;
 &lt;h3&gt;Setup_Mod_Fishsel_and_Q&lt;/h3&gt;
-&lt;p class="optref-n"&gt;48 arguments&lt;/p&gt;
+&lt;p class="optref-n"&gt;50 arguments&lt;/p&gt;
 &lt;table class="optref-table"&gt;
 &lt;thead&gt;&lt;tr&gt;&lt;th&gt;Argument&lt;/th&gt;&lt;th&gt;Default&lt;/th&gt;&lt;th&gt;Description&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
 &lt;tbody&gt;
@@ -4669,6 +4864,30 @@ effectively free. NA instead starts the walk at zero under the walk's
 own estimated sigma, making the first year as smooth as every later
 step. Appropriate when the base parametric curve already describes the
 first year well.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="fishsel_dont_est_dev_first rep(0,
+input_list$</span>data<span class="math inline">$n_fish_fleets) integer
+vector of length n_fish_fleets of 0/1, default 0. where 1, that fleet's
+deviations start in year two and the fixed selectivity parameters hold
+year one. a non-parametric form ("nonpar", "nonparlog", "nonparfree")
+has one free base parameter per bin, so year one's deviation is that
+same value written twice and only fishsel_rw_init_sigma separates them,
+as a prior on a level that is usually meant to be free. dropping it
+removes the redundant parameter and that prior, and leaves the walk a
+sum of differences. refused for the gmrf and 2d ar1 forms, whose
+deviations are a field over years and bins rather than a walk anchored
+at year one."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;fishsel_dont_est_dev_first&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;rep(0,
+input_list$</span>data<span class="math inline">$n_fish_fleets)&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Integer
+vector of length n_fish_fleets of 0/1, default 0. Where 1, that fleet's
+deviations start in year two and the fixed selectivity parameters hold
+year one. A non-parametric form ("nonpar", "nonparlog", "nonparfree")
+has one free base parameter per bin, so year one's deviation is that
+same value written twice and only fishsel_rw_init_sigma separates them,
+as a prior on a level that is usually meant to be free. Dropping it
+removes the redundant parameter and that prior, and leaves the walk a
+sum of differences. Refused for the GMRF and 2D AR1 forms, whose
+deviations are a field over years and bins rather than a walk anchored
+at year one.&lt;/td&gt;&lt;/tr&gt;
 &lt;tr data-k="cont_tv_fishsel_bin_devs rep("none",
 input_list$</span>data<span class="math inline">$n_fish_fleets)
 character vector of length n_fish_fleets giving the process error on the
@@ -5033,6 +5252,30 @@ vector of length n_fish_fleets. Standard deviation given to the first
 year of an "rw" retention deviation series, the retention counterpart of
 fishsel_rw_init_sigma. Default 5; NA instead starts the walk at zero
 under the walk's own estimated sigma.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="retsel_dont_est_dev_first rep(0,
+input_list$</span>data<span class="math inline">$n_fish_fleets) integer
+vector of length n_fish_fleets of 0/1, default 0. where 1, that fleet's
+deviations start in year two and the fixed selectivity parameters hold
+year one. a non-parametric form ("nonpar", "nonparlog", "nonparfree")
+has one free base parameter per bin, so year one's deviation is that
+same value written twice and only retsel_rw_init_sigma separates them,
+as a prior on a level that is usually meant to be free. dropping it
+removes the redundant parameter and that prior, and leaves the walk a
+sum of differences. refused for the gmrf and 2d ar1 forms, whose
+deviations are a field over years and bins rather than a walk anchored
+at year one."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;retsel_dont_est_dev_first&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;rep(0,
+input_list$</span>data<span class="math inline">$n_fish_fleets)&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Integer
+vector of length n_fish_fleets of 0/1, default 0. Where 1, that fleet's
+deviations start in year two and the fixed selectivity parameters hold
+year one. A non-parametric form ("nonpar", "nonparlog", "nonparfree")
+has one free base parameter per bin, so year one's deviation is that
+same value written twice and only retsel_rw_init_sigma separates them,
+as a prior on a level that is usually meant to be free. Dropping it
+removes the redundant parameter and that prior, and leaves the walk a
+sum of differences. Refused for the GMRF and 2D AR1 forms, whose
+deviations are a field over years and bins rather than a walk anchored
+at year one.&lt;/td&gt;&lt;/tr&gt;
 &lt;tr data-k="ret_selex_type "age" character scalar specifying whether
 retained selectivity is age- or length-based. options: "age"selectivity
 is defined over age bins. "length"selectivity is defined over length
@@ -5086,7 +5329,7 @@ where the scaled curve stays at or below one.&lt;/td&gt;&lt;/tr&gt;
 &lt;/section&gt;
 &lt;section class="optref-stage" data-stage="Srvsel_and_Q"&gt;
 &lt;h3&gt;Setup_Mod_Srvsel_and_Q&lt;/h3&gt;
-&lt;p class="optref-n"&gt;32 arguments&lt;/p&gt;
+&lt;p class="optref-n"&gt;33 arguments&lt;/p&gt;
 &lt;table class="optref-table"&gt;
 &lt;thead&gt;&lt;tr&gt;&lt;th&gt;Argument&lt;/th&gt;&lt;th&gt;Default&lt;/th&gt;&lt;th&gt;Description&lt;/th&gt;&lt;/tr&gt;&lt;/thead&gt;
 &lt;tbody&gt;
@@ -5527,6 +5770,30 @@ integer vectors. Each vector defines a group of bins that share a single
 estimated selectivity parameter. Indices must correspond to the bin
 dimension defined by the survey selectivity type (age or
 length).&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvsel_dont_est_dev_first rep(0,
+input_list$</span>data<span class="math inline">$n_srv_fleets) integer
+vector of length n_srv_fleets of 0/1, default 0. where 1, that fleet's
+deviations start in year two and the fixed selectivity parameters hold
+year one. a non-parametric form ("nonpar", "nonparlog", "nonparfree")
+has one free base parameter per bin, so year one's deviation is that
+same value written twice and only srvsel_rw_init_sigma separates them,
+as a prior on a level that is usually meant to be free. dropping it
+removes the redundant parameter and that prior, and leaves the walk a
+sum of differences. refused for the gmrf and 2d ar1 forms, whose
+deviations are a field over years and bins rather than a walk anchored
+at year one."&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;srvsel_dont_est_dev_first&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;rep(0,
+input_list$</span>data<span class="math inline">$n_srv_fleets)&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Integer
+vector of length n_srv_fleets of 0/1, default 0. Where 1, that fleet's
+deviations start in year two and the fixed selectivity parameters hold
+year one. A non-parametric form ("nonpar", "nonparlog", "nonparfree")
+has one free base parameter per bin, so year one's deviation is that
+same value written twice and only srvsel_rw_init_sigma separates them,
+as a prior on a level that is usually meant to be free. Dropping it
+removes the redundant parameter and that prior, and leaves the walk a
+sum of differences. Refused for the GMRF and 2D AR1 forms, whose
+deviations are a field over years and bins rather than a walk anchored
+at year one.&lt;/td&gt;&lt;/tr&gt;
 &lt;tr data-k="srv_sel_sex_offset rep("none",
 input_list$</span>data<span class="math inline">$n_srv_fleets) character
 vector of length n_srv_fleets linking the sexes of a fleet's

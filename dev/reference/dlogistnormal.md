@@ -10,7 +10,7 @@ covariance matrix). The ALR mean vector is \\\mu_k = \log(\hat{p}\_k /
 ## Usage
 
 ``` r
-dlogistnormal(obs, pred, Sigma, give_log = TRUE)
+dlogistnormal(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE)
 ```
 
 ## Arguments

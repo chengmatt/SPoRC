@@ -86,6 +86,8 @@ selectively suppressed via <code>corr_opt_semipar</code>. Fleet sharing
 <span>  <span class="va">pe_pars_spec</span>,</span>
 <span>  <span class="va">corr_opt_semipar</span>,</span>
 <span>  <span class="va">bins</span>,</span>
+<span>  <span class="va">sel_devs_spec</span>,</span>
+<span>  <span class="va">sel_devs_shared_bins</span>,</span>
 <span>  <span class="va">prefix</span>,</span>
 <span>  <span class="va">fleet_field</span>,</span>
 <span>  <span class="va">use_field</span>,</span>
@@ -105,7 +107,10 @@ sublists.</p></dd>
 <dt id="arg-pe-pars-spec">pe_pars_spec<a class="anchor" aria-label="anchor" href="#arg-pe-pars-spec"></a></dt>
 <dd><p>Character vector of length <code>n_&lt;fleet_field&gt;</code>.
 Options: <code>"est_all"</code>, <code>"est_shared_r"</code>, <code>"est_shared_s"</code>,
-<code>"est_shared_r_s"</code>, <code>"fix"</code>/<code>"none"</code>, or
+<code>"est_shared_r_s"</code>, the same four with <code>_b</code> added
+(<code>"est_shared_b"</code>, <code>"est_shared_r_b"</code>, <code>"est_shared_b_s"</code>,
+<code>"est_shared_r_b_s"</code>), which put one standard deviation across every
+bin the fleet reads, <code>"fix"</code>/<code>"none"</code>, or
 <code>"est_shared_f_x"</code>.</p></dd>
 
 
@@ -120,6 +125,19 @@ only valid for 3D GMRF forms.</p></dd>
 
 <dt id="arg-bins">bins<a class="anchor" aria-label="anchor" href="#arg-bins"></a></dt>
 <dd><p>Number of selectivity bins.</p></dd>
+
+
+<dt id="arg-sel-devs-spec">sel_devs_spec<a class="anchor" aria-label="anchor" href="#arg-sel-devs-spec"></a></dt>
+<dd><p>Character vector of length <code>n_&lt;fleet_field&gt;</code>, the
+deviation specification passed to <code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code>. Read
+only to recognize which dimensions the deviations are shared over.
+<code>"est_shared_f_x"</code> resolves to the referenced fleet's specification.</p></dd>
+
+
+<dt id="arg-sel-devs-shared-bins">sel_devs_shared_bins<a class="anchor" aria-label="anchor" href="#arg-sel-devs-shared-bins"></a></dt>
+<dd><p>List of integer vectors grouping bins that share
+a single estimated deviation, as passed to
+<code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code>.</p></dd>
 
 
 <dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>
@@ -154,7 +172,14 @@ counterpart <code>Use&lt;use_field&gt;AA</code>, each with a <code>_pop</code> v
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Serves fishery, retention, and survey selectivity, selected by
+    <p>The hyperparameters have to match the deviation series the likelihood
+actually evaluates, which is one per shared group, read at the group's lowest
+bin and first sex. Under iid or a random walk on a non-parametric fleet the
+log-sigmas are indexed by bin, so <code>"est_shared_b"</code> leaves one log-sigma
+per bin group. Sharing deviations across sexes (<code>"est_shared_s"</code> and its
+combinations) leaves one set for the first sex, under every time-variation
+form. The rest are fixed.</p>
+<p>Serves fishery, retention, and survey selectivity, selected by
 <code>prefix</code> exactly as in <code><a href="do_fixed_sel_pars_mapping.html">do_fixed_sel_pars_mapping</a></code>.</p>
     </div>
 

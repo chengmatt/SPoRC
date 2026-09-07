@@ -16,6 +16,7 @@ Get_PE_loglik(
   PE_pars,
   ln_devs,
   map_sel_devs,
+  map_sel_devs_full,
   min_sel_devs_shared_bins,
   rw_init_sigma = 5
 )
@@ -67,6 +68,17 @@ Get_PE_loglik(
   to unique estimated parameters. Shared deviations hold the same
   integer value; `NA` entries are treated as fixed and excluded from
   likelihood evaluation.
+
+- map_sel_devs_full:
+
+  The same map across every unit this penalty is evaluated over, that
+  unit being the first dim: regions for selectivity, populations by
+  region for growth. A deviation shared over those units is one
+  parameter appearing in each of their slices, and this function runs
+  one unit at a time, so its contribution is divided by the number
+  holding it. Without the split, a series shared over `n` units is
+  penalized `n` times, an implicit \\\sigma / \sqrt{n}\\. A deviation
+  that is not shared appears once, divides by one, and is unaffected.
 
 - min_sel_devs_shared_bins:
 

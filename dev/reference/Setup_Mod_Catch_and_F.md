@@ -39,6 +39,14 @@ Setup_Mod_Catch_and_F(
   CatchAA_pop_Type = "spltRaggS",
   DiscardAA_Type = "spltRaggS",
   DiscardAA_pop_Type = "spltRaggS",
+  Catch_seas_Type = NULL,
+  Catch_pop_seas_Type = NULL,
+  Discard_seas_Type = NULL,
+  Discard_pop_seas_Type = NULL,
+  CatchAA_seas_Type = NULL,
+  CatchAA_pop_seas_Type = NULL,
+  DiscardAA_seas_Type = NULL,
+  DiscardAA_pop_seas_Type = NULL,
   CatchAA_LikeType = "lognormal",
   CatchAA_pop_LikeType = "lognormal",
   DiscardAA_LikeType = "lognormal",
@@ -136,17 +144,17 @@ Setup_Mod_Catch_and_F(
 
 - sigmaCAA_key:
 
-  Integer matrix `[n_ages, n_fish_fleets]` coupling the catch at age
-  observation error, an integer key matrix, the convention ICES
-  assessments use. Equal entries share a parameter and `NA` excludes
-  one. This single structure covers every sharing pattern: `1 2 3 4 5`
-  gives one standard deviation per age, `1 1 2 2 2` gives standard
-  deviations by age group as several ICES assessments do, and
-  `1 1 1 1 1` gives one for the fleet. Defaults to one parameter per
-  fleet, shared across ages. A parameter informed by fewer than two
-  observations is refused, since an observation error standard deviation
-  with a single observation drives the likelihood to negative infinity
-  rather than failing outright.
+  Integer array `[n_ages, n_sexes, n_fish_fleets]` coupling the catch at
+  age observation error, the key matrix convention ICES assessments use.
+  Equal entries share a parameter and `NA` excludes one. The sex dim is
+  required; a key coupling the sexes repeats its entries across them.
+  Along the age dim, `1 2 3 4 5` gives one standard deviation per age,
+  `1 1 2 2 2` gives standard deviations by age group as several ICES
+  assessments do, and `1 1 1 1 1` gives one for the fleet. Defaults to
+  one parameter per fleet, shared across ages and sexes. A parameter
+  informed by fewer than two observations is refused, since an
+  observation error standard deviation with a single observation drives
+  the likelihood to negative infinity rather than failing outright.
 
 - sigmaCAA_spec:
 
@@ -165,10 +173,12 @@ Setup_Mod_Catch_and_F(
 
 - sigmaCAA_pop_key, sigmaDAA_key, sigmaDAA_pop_key:
 
-  Integer matrices `[n_ages, n_fish_fleets]` coupling the observation
-  error for the population-specific catch, the discards, and the
-  population-specific discards, following the same convention as
-  `sigmaCAA_key`.
+  Integer arrays coupling the observation error for the
+  population-specific catch, the discards, and the population-specific
+  discards, following the same convention as `sigmaCAA_key`.
+  `sigmaDAA_key` is shaped `[n_ages, n_sexes, n_fish_fleets]`; the two
+  population-specific keys take a leading population dim,
+  `[n_pop, n_ages, n_sexes, n_fish_fleets]`.
 
 - sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec:
 
@@ -184,6 +194,35 @@ Setup_Mod_Catch_and_F(
   (default) splits regions and sums over sexes, `"aggRspltS"` does the
   reverse, and `"spltRspltS"` splits both. An observation summed over a
   dim belongs in slot one of it.
+
+- Catch_seas_Type, Catch_pop_seas_Type, Discard_seas_Type,
+  Discard_pop_seas_Type, CatchAA_seas_Type, CatchAA_pop_seas_Type,
+  DiscardAA_seas_Type, DiscardAA_pop_seas_Type:
+
+  Whether a seasonal model reports this data source once a season or
+  once a year. One value for every fleet or one per fleet.
+
+  `"spltSeas"`
+
+  :   Fit the observation against the prediction for the season it sits
+      in. This is the default and what every data source did before this
+      setting existed.
+
+  `"aggSeas"`
+
+  :   Sum the prediction over every season of the year and fit it
+      against a single observation, which is how a fleet that lands
+      catch all year but reports one annual total is usually recorded.
+
+  Under `"aggSeas"` the observation still lives in whichever season it
+  was placed in, and exactly one season per region and year may be
+  turned on in the matching `Use` array; more than one is an error,
+  because each would be fit against the same year total. The likelihood
+  and the reported negative log likelihood land in that season. Fishing
+  mortality is still estimated season by season, so a fleet with one
+  annual observation and free seasonal deviations leaves the split
+  between seasons unidentified: share the deviations or fix the seasonal
+  pattern.
 
 - CatchAA_LikeType, DiscardAA_LikeType, CatchAA_pop_LikeType,
   DiscardAA_pop_LikeType:

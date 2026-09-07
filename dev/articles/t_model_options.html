@@ -985,6 +985,55 @@ periods</td>
 <td>Number of terminal-year recruitment deviations to fix at zero</td>
 </tr>
 <tr class="odd">
+<td><code>equil_init_age_strc</code></td>
+<td>Which initial age deviations are estimated and penalized:
+<code>"equil"</code> (neither), <code>"stoch_no_plus"</code>,
+<code>"stoch_all"</code>, <code>"stoch_shared_ages"</code>, or
+<code>"stoch_all_no_pen"</code> (every age estimated, none penalized).
+The last is for <code>init_age_strc = "free"</code>, where the
+deviations are the initial log numbers at age rather than departures
+from an equilibrium, so a penalty on them is a prior on initial
+abundance</td>
+</tr>
+<tr class="even">
+<td><code>dont_pen_recdev_first</code></td>
+<td>Number of leading recruitment deviations that stay estimated but
+take no penalty, because the first years belong to the initial condition
+rather than to the recruitment process. <code>0</code> (default)
+penalizes every year</td>
+</tr>
+<tr class="odd">
+<td><code>RecDevs_model</code></td>
+<td>Process error on the recruitment deviations: <code>"iid"</code>
+(default), <code>"rw"</code>, or <code>"ar1"</code>. See <a href="#recruitment-process-error-recdevs_model">Recruitment process
+error (<code>RecDevs_model</code>)</a>
+</td>
+</tr>
+<tr class="even">
+<td><code>RecDevs_rho_spec</code></td>
+<td>Sharing structure for the AR1 correlation <code>RecDevs_rho</code>;
+only active under <code>RecDevs_model = "ar1"</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>RecDevs_rw_init_sigma</code></td>
+<td>Standard deviation on the first estimated deviation of a random
+walk, which is what sets the level of the series. Default 5;
+<code>NA</code> starts the walk at zero under the estimated
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>R</mi></msub><annotation encoding="application/x-tex">\sigma_R</annotation></semantics></math>
+</td>
+</tr>
+<tr class="even">
+<td><code>ln_global_R0_spec</code></td>
+<td>
+<code>"est"</code> (default) or <code>"fix"</code>.
+<code>"fix"</code> maps <code>ln_global_R0</code> off so the recruitment
+deviations hold log recruitment outright rather than as departures from
+a level, which is how SAM writes it. The recruitment counterpart of
+<code>ln_F_mean_spec</code>
+</td>
+</tr>
+<tr class="odd">
 <td><code>init_age_devs_shared</code></td>
 <td>Integer vector of length <code>n_ages - 1</code> specifying
 age-sharing for <code>ln_InitDevs</code>. Positions with the same value
@@ -1059,6 +1108,109 @@ the first model year; <code>bias_year</code> can therefore be
 negative.</p>
 </div>
 <div class="section level4">
+<h4 id="recruitment-process-error-recdevs_model">Recruitment process error (<code>RecDevs_model</code>)<a class="anchor" aria-label="anchor" href="#recruitment-process-error-recdevs_model"></a>
+</h4>
+<p><code>ln_RecDevs</code> can follow the same three process-error
+structures as <code>ln_F_devs</code> can, specified via
+<code>RecDevs_model</code>:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>String</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"iid"</code></td>
+<td>Independent annual deviations about the mean (default)</td>
+</tr>
+<tr class="even">
+<td><code>"rw"</code></td>
+<td>Random walk: each deviation is centered on the previous year’s</td>
+</tr>
+<tr class="odd">
+<td><code>"ar1"</code></td>
+<td>First-order autoregressive, reverting toward zero at rate
+<code>RecDevs_rho</code>
+</td>
+</tr>
+</tbody>
+</table>
+<p>The independent form is the standard mean recruitment with lognormal
+deviations, and the walk is a state-space version of recruitment. The
+difference between iid and random walk or ar1 matters most in the
+terminal years and in data-poor stretches: independent deviations pull
+recruitment back to
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+wherever the data are sparse, while a walk or ar1 holds it near the last
+year the data did inform.</p>
+<p>Under <code>"rw"</code> and <code>"ar1"</code> the penalty is a
+statement about the change in recruitment rather than its level, so
+neither can be combined with <code>do_rec_bias_ramp = 1</code> or
+<code>RecDevs_pen_center = "own_mean"</code>, both of which assert a
+mean about zero; setup rejects both combinations. The level of the
+series is set instead by year one, which takes a normal of standard
+deviation <code>RecDevs_rw_init_sigma</code> (default 5, wide enough
+that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
+and the data decide it), or by nothing at all under
+<code>dont_pen_recdev_first = 1</code>, which is the flat prior SAM
+places on its first year. <code>NA</code> starts the walk at zero under
+its own
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>R</mi></msub><annotation encoding="application/x-tex">\sigma_R</annotation></semantics></math>
+instead, which pulls the first year toward mean recruitment.
+<code>sigmaR_switch</code> still applies, so a walk can take one
+standard deviation early and another late, and a step reads the standard
+deviation of the year it lands on.</p>
+<p>Under <code>rec_model = "mean_rec"</code>, log recruitment is
+<code>ln_global_R0</code> plus a deviation, and the two are only both
+estimable when something reads the deviations’ level. An
+<code>"iid"</code> or <code>"ar1"</code> penalty does; a random walk
+does not, since it penalizes only the change from one deviation to the
+next. A walk combined with <code>dont_pen_recdev_first &gt;= 1</code>,
+which removes the one remaining term that read the level, leaves the two
+<strong>exactly</strong> unidentified: the fit converges, the Hessian is
+singular, and every standard error comes back <code>NA</code>. Setup
+rejects that combination and points at
+<code>ln_global_R0_spec = "fix"</code>. A walk with the first year still
+penalized is accepted with a warning, since the level is then held only
+by that one term and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>’s
+standard error comes back near <code>RecDevs_rw_init_sigma</code>.</p>
+<p><code>RecDevs_rho_spec</code> controls the AR1 correlation parameter
+(<code>RecDevs_rho</code>, dimensioned as population by region) using
+the same <code>"est_all"</code> / <code>"est_shared_&lt;dims&gt;"</code>
+/ <code>"fix"</code> convention as everywhere else, and is only used
+under <code>"ar1"</code>; the other two recruitment options map it to
+<code>NA</code> regardless of what is supplied.</p>
+<p>The first year’s recruitment is the first year’s age one abundance.
+Under an equilibrium initialization that abundance belongs to the
+initial condition, and giving it a recruitment penalty as well prices it
+twice. WHAM keeps it as a separate initial numbers at age parameter with
+no process error, and <code>dont_pen_recdev_first = 1</code> is the same
+statement in SPoRC: the deviation is still estimated, so the data set
+the first year’s recruitment freely, but it takes no prior from
+<code>ln_sigmaR</code>.</p>
+<p>Mapping the deviation off through <code>RecDevs_spec</code> is a
+different thing. That fixes it at its starting value, which is not the
+same as leaving it free with no prior.</p>
+<p>Every year has a recruitment, so a year left out of the penalty is a
+year the walk passes through rather than a gap in the series. The step
+into year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>y</mi><annotation encoding="application/x-tex">y</annotation></semantics></math>
+always reads year
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">y-1</annotation></semantics></math>,
+whether or not that year is penalized, and a year left out contributes
+no term of its own. Two consequences follow.
+<code>dont_pen_recdev_first</code> frees the level of the series without
+breaking it, since year two still anchors on year one. And
+<code>dont_est_recdev_last</code> removes the terminal terms without
+pulling the last penalized deviation toward zero.</p>
+</div>
+<div class="section level4">
 <h4 id="deviation-penalty-centering-recdevs_pen_center-initdevs_pen_center-fdev_pen_center">Deviation penalty centering (<code>RecDevs_pen_center</code>,
 <code>InitDevs_pen_center</code>, <code>Fdev_pen_center</code>)<a class="anchor" aria-label="anchor" href="#deviation-penalty-centering-recdevs_pen_center-initdevs_pen_center-fdev_pen_center"></a>
 </h4>
@@ -1101,7 +1253,7 @@ primarily a <em>bridging</em> device: it reproduces assessments where
 the mean parameter (<code>ln_global_R0</code>, <code>ln_F_mean</code>)
 holds the level and the deviations have only shape, so the level is not
 penalized twice. Two cautions: under <code>"own_mean"</code> the
-deviations’ level must be pinned elsewhere (an
+deviations’ level must be fixed elsewhere (an
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>R</mi><mn>0</mn></msub><annotation encoding="application/x-tex">R_0</annotation></semantics></math>
 prior, a fixed deviation, or informative data) or the likelihood is flat
 along it, and <code>RecDevs_pen_center = "own_mean"</code> cannot be
@@ -1899,7 +2051,25 @@ indexed by bin: any GMRF/AR1 form, or
 (<code>"nonpar"</code>/<code>"nonparlog"</code>, where each deviation
 already belongs to one bin); <code>"iid"</code>/<code>"rw"</code> on a
 parametric form indexes deviations by <em>parameter</em> and is
-rejected.</p>
+rejected. The hyperparameters follow whatever the deviations are shared
+over, since only one series per shared group is fit. Under
+<code>"iid"</code>/<code>"rw"</code> the process error standard
+deviations are indexed by bin too, so a bin group leaves one standard
+deviation to estimate at the group’s lowest bin; sharing deviations
+across sexes leaves one set for the first sex under any form. The rest
+are fixed, so the number of hyperparameters reported as estimated is the
+number the fit can actually move.</p>
+<p><code>fishsel_pe_pars_spec</code> takes the same four <code>_b</code>
+spellings, where they mean something related but distinct: one process
+error standard deviation across every bin the fleet reads, rather than
+one deviation series per bin group. That is the key matrix ICES
+assessments write for the fishing mortality process, with a single
+group. It needs a non-parametric form, since on a parametric one the
+slots are curve parameters on unrelated scales, and it needs
+<code>"iid"</code> or <code>"rw"</code>, since the GMRF and AR1 forms
+hold correlations and a single standard deviation rather than one per
+bin. Grouped standard deviations, where some ages share one and others
+share another, are not available.</p>
 <p>Three further controls tune the process-error penalty itself:</p>
 <table class="table">
 <colgroup>
@@ -2741,6 +2911,12 @@ contiguous run, because the penalty compares the likelihood for one
 rectangular matrix</td>
 </tr>
 <tr class="odd">
+<td><code>NAA_re_where</code></td>
+<td>Population by region matrix, <code>1</code> where the state runs and
+<code>0</code> where a population never occupies that region.
+<code>NULL</code> (default) gives every cell a state</td>
+</tr>
+<tr class="even">
 <td><code>NAA_re_seasons</code></td>
 <td>Seasons the state covers. <code>"annual"</code> (default) puts a
 state at season one only, so the numbers within a year stay
@@ -2748,7 +2924,7 @@ deterministic and the innovation is purely annual; <code>"all"</code>
 puts one at the start of every season; an integer vector selects
 specific seasons and need not be contiguous</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>NAA_sigma_spec</code></td>
 <td>
 <code>"est"</code> (default) or <code>"fix"</code>, whether the
@@ -2757,6 +2933,26 @@ are always estimated</td>
 </tr>
 </tbody>
 </table>
+</div>
+<div class="section level4">
+<h4 id="a-population-that-never-reaches-a-region">A population that never reaches a region<a class="anchor" aria-label="anchor" href="#a-population-that-never-reaches-a-region"></a>
+</h4>
+<p>Under natal homing a population can be absent from a region entirely:
+the southern black sea bass component never enters the north, so its
+numbers there are zero in every year and age. A lognormal state on such
+a cell is undefined, and the penalty would take the logarithm of zero
+and return an infinite likelihood. <code>NAA_re_where</code> says which
+population and region cells hold a state:</p>
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># two populations, two regions, the second homing to region two and never leaving it</span></span>
+<span><span class="va">NAA_re_where</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">0</span>,</span>
+<span>                        <span class="fl">1</span>, <span class="fl">1</span><span class="op">)</span>, nrow <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
+<p>Cells set to <code>0</code> are dropped from the map, so they are not
+estimated, and from the penalty, so they contribute nothing. They are
+refused when the state correlates across regions or populations, since a
+dropped cell would otherwise sit inside a joint density it is being left
+out of. Leave the argument alone for a single population, or wherever
+every population can reach every region.</p>
 <p>A cell of the state is the log numbers at the <strong>start</strong>
 of its season, so season one is the year boundary, after ageing and the
 plus group, and later seasons sit on the within-year survival and
@@ -3476,6 +3672,21 @@ reads the mean. Note also that the default iid penalty with
 <code>"fixed"</code> centering acts as a hidden “biomass tracks catch”
 prior when catch trends strongly; <code>Fdev_model = "rw"</code> is
 usually the better remedy for that than re-centering.</p>
+<p><code>fishsel_dont_est_dev_first</code>, and its <code>retsel_</code>
+and <code>srvsel_</code> siblings, start a selectivity walk in year two
+so the fixed selectivity parameters hold year one. It matters for the
+non-parametric forms (<code>"nonpar"</code>, <code>"nonparlog"</code>,
+<code>"nonparfree"</code>), which have one free base parameter per bin:
+year one’s deviation is then that same value written twice, and the
+walk’s first-year normal, <code>*_rw_init_sigma</code>, is the only
+thing separating them. That normal is a prior on a level usually meant
+to be free, and it costs
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mtext mathvariant="normal">bins</mtext></msub><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>σ</mi><mn>0</mn></msub><msqrt><mrow><mn>2</mn><mi>π</mi></mrow></msqrt><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">n_{\text{bins}} \log(\sigma_0\sqrt{2\pi})</annotation></semantics></math>
+at the optimum, where the deviation sits at zero and the base parameter
+has absorbed the level. Default <code>0</code> for every fleet, since
+turning it on shifts a model’s reported likelihood by that constant.
+Refused for the GMRF and 2D AR1 forms, whose deviations are a field over
+years and bins rather than a walk anchored at year one.</p>
 <p><code>ln_F_mean_spec</code> (<code>"est"</code>, the default, or
 <code>"fix"</code>) chooses the fishing mortality parameterization.
 <code>"est"</code> is the mean-plus-deviations form. <code>"fix"</code>
@@ -3621,7 +3832,7 @@ the catch indicators or the deviation index ranges.
 <code><a href="../reference/fit_model.html">fit_model()</a></code> refreshes those mirrors from the map
 immediately before building the model, so a deviation mapped off by hand
 after setup is neither estimated nor penalized:</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># drop dmr deviations for a stretch of years, penalty included</span></span>
 <span><span class="va">mp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">logit_dmr_devs</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">logit_dmr_devs</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">mp</span><span class="op">[</span>, <span class="fl">10</span><span class="op">:</span><span class="fl">20</span>, , <span class="op">]</span> <span class="op">&lt;-</span> <span class="cn">NA</span></span>
@@ -4090,6 +4301,112 @@ index of the recruitment deviations themselves</td>
 </table>
 </div>
 <div class="section level4">
+<h4 id="reporting-once-a-year-in-a-seasonal-model">Reporting once a year in a seasonal model<a class="anchor" aria-label="anchor" href="#reporting-once-a-year-in-a-seasonal-model"></a>
+</h4>
+<p>A season is a step in the population dynamics, not necessarily a
+reporting period. Many seasonal assessments run the dynamics in months
+or quarters but land one catch figure and one age composition per fleet
+per year, and an index is often a snapshot taken at one point in a
+season. Every data source therefore has a <code>_seas_Type</code> saying
+which of the two it is.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Value</th>
+<th>What it does</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>"spltSeas"</code></td>
+<td>Fit the observation against the prediction for the season it sits
+in. The default, and what every data source did before this setting
+existed</td>
+</tr>
+<tr class="even">
+<td><code>"aggSeas"</code></td>
+<td>Sum the prediction over every season of the year and fit it against
+one observation</td>
+</tr>
+</tbody>
+</table>
+<p>The observation still lives in whichever season it was placed in, and
+exactly one season per region and year may be turned on in the matching
+<code>Use</code> array. More than one is an error, because each would be
+fit against the same year total. The likelihood, the one-step-ahead
+residual and the reported negative log likelihood all land in that
+season, and the other seasons stay at zero.</p>
+<p>The settings are per fleet, one for each data source:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Function</th>
+<th>Arguments</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F()</a></code></td>
+<td>
+<code>Catch_seas_Type</code>, <code>Discard_seas_Type</code>,
+<code>CatchAA_seas_Type</code>, <code>DiscardAA_seas_Type</code>, and
+their <code>_pop</code> counterparts</td>
+</tr>
+<tr class="even">
+<td><code><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps()</a></code></td>
+<td>
+<code>FishIdx_seas_Type</code>, <code>FishAgeComps_seas_Type</code>,
+<code>FishLenComps_seas_Type</code>, the discard versions, and their
+<code>_pop</code> counterparts</td>
+</tr>
+<tr class="odd">
+<td><code><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps()</a></code></td>
+<td>
+<code>SrvIdx_seas_Type</code>, <code>SrvIdxAA_seas_Type</code>,
+<code>SrvAgeComps_seas_Type</code>, <code>SrvLenComps_seas_Type</code>,
+and their <code>_pop</code> counterparts</td>
+</tr>
+</tbody>
+</table>
+<p>A composition set to <code>"aggSeas"</code> is built from the numbers
+at age summed over the year before they are turned into proportions,
+which is not the same as averaging the seasonal compositions: a season
+with more catch in it counts for more.</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># a fleet that lands catch all year but reports one annual total and one annual</span></span>
+<span><span class="co"># age composition, both placed in season 1</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
+<span>  <span class="va">input_list</span>,</span>
+<span>  ObsCatch <span class="op">=</span> <span class="va">ObsCatch</span>,          <span class="co"># the year's total sitting in season 1, zero elsewhere</span></span>
+<span>  UseCatch <span class="op">=</span> <span class="va">UseCatch</span>,          <span class="co"># 1 in season 1 only</span></span>
+<span>  Catch_seas_Type <span class="op">=</span> <span class="st">"aggSeas"</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>Two things follow from the fleet still fishing all year. Fishing
+mortality stays estimated season by season, so one annual observation
+cannot tell the seasons apart: share the deviations across seasons, or
+fix the seasonal pattern, or the split rides on whatever else in the
+model happens to constrain it. And the fleet is treated as open in every
+season of a year it reports in, so the initial fishing mortality and the
+closure logic both read the year rather than the single season the
+observation sits in.</p>
+<p>An index measured at a point in time belongs in its own season with
+its own <code>t_srv</code>, not aggregated. Use <code>"aggSeas"</code>
+for a data source that accumulates across the year, such as a fishery
+index built from a whole year of effort.</p>
+<p>An operating model reports the same way through
+<code><a href="../reference/Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code> and <code><a href="../reference/Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,
+which take the same argument names. There the annual total is written
+into season one by convention, with the observation error applied once
+to that total rather than to each season and then added up. A
+multivariate normal index cannot be aggregated, since it is drawn once
+over a covariance the season layout defines.</p>
+</div>
+<div class="section level4">
 <h4 id="age-disaggregated-observations">Age-disaggregated observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
 </h4>
 <p><code>SPoRC</code> fits catch as an aggregate with a composition, and
@@ -4181,7 +4498,7 @@ and combined later is kept to each rule in the years where it
 applies.</p>
 <p>A fleet whose reporting changed part way through the series states it
 directly:</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">CatchAA_Type</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"spltRspltS_Year_1-20_Fleet_1"</span>,</span>
 <span>                 <span class="st">"spltRaggS_Year_21-terminal_Fleet_1"</span><span class="op">)</span></span></code></pre></div>
 <p>One combination is refused. A fleet fitting <code>"2dar1"</code>
@@ -4789,7 +5106,7 @@ or <code>LenBinMap</code>. Default <code>NULL</code> fits every bin.</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the acoustic survey resolves ages 2-15 only; every other fleet fits all ages</span></span>
 <span><span class="va">SrvAgeComps_bins</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">15</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
 <p>Every fleet must keep at least two bins. A composition fitted over
@@ -4911,40 +5228,62 @@ took:</p>
 <div class="section level4">
 <h4 id="composition-likelihood-families">Composition likelihood families<a class="anchor" aria-label="anchor" href="#composition-likelihood-families"></a>
 </h4>
-<p>Age and length compositions each accept one of five likelihood
+<p>Age and length compositions each accept one of eight likelihood
 families:</p>
 <table class="table">
 <colgroup>
-<col width="50%">
-<col width="50%">
+<col width="33%">
+<col width="33%">
+<col width="33%">
 </colgroup>
 <thead><tr class="header">
 <th>Value</th>
+<th>Name</th>
 <th>Likelihood</th>
 </tr></thead>
 <tbody>
 <tr class="odd">
 <td>0</td>
+<td><code>"Multinomial"</code></td>
 <td>Multinomial</td>
 </tr>
 <tr class="even">
 <td>1</td>
+<td><code>"Dirichlet-Multinomial"</code></td>
 <td>Dirichlet-multinomial (overdispersion parameter
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
 estimated per fleet)</td>
 </tr>
 <tr class="odd">
 <td>2</td>
+<td><code>"iid-Logistic-Normal"</code></td>
 <td>Logistic-normal, independent bins</td>
 </tr>
 <tr class="even">
 <td>3</td>
+<td><code>"1d-Logistic-Normal"</code></td>
 <td>Logistic-normal with AR(1) correlation across bins</td>
 </tr>
 <tr class="odd">
 <td>4</td>
+<td><code>"2d-Logistic-Normal"</code></td>
 <td>Logistic-normal with AR(1) bin correlation and constant cross-sex
 correlation</td>
+</tr>
+<tr class="even">
+<td>5</td>
+<td><code>"iid-Logistic-Normal-miss0"</code></td>
+<td>Logistic-normal on the bins that were seen, independent</td>
+</tr>
+<tr class="odd">
+<td>6</td>
+<td><code>"1d-Logistic-Normal-miss0"</code></td>
+<td>The same, correlated across bins</td>
+</tr>
+<tr class="even">
+<td>7</td>
+<td><code>"2d-Logistic-Normal-miss0"</code></td>
+<td>The same, correlated across bins and sexes</td>
 </tr>
 </tbody>
 </table>
@@ -4952,6 +5291,54 @@ correlation</td>
 <code>comp_fishlen_like</code>, <code>comp_srvage_like</code>,
 <code>comp_srvlen_like</code>, and their <code>_pop</code> and
 <code>_discard</code> variants.</p>
+<div class="section level5">
+<h5 id="two-ways-to-handle-an-empty-bin">Two ways to handle an empty bin<a class="anchor" aria-label="anchor" href="#two-ways-to-handle-an-empty-bin"></a>
+</h5>
+<p>A logistic normal takes a log ratio, so a bin with nothing in it has
+to be dealt with before the likelihood can be written. Forms 2 to 4 add
+<code>addtocomp</code> to every bin and keep the composition at its full
+length. Forms 5 to 7 drop the empty bins instead and renormalize the
+expected proportions over the bins that remain, so the density is the
+one the part of the composition that was actually seen has. This is the
+treatment WHAM calls <code>logistic-normal-miss0</code>, and it is the
+one to use when bridging an assessment written that way.</p>
+<p>Three things follow from it:</p>
+<ul>
+<li>The standard deviation is divided by the square root of the input
+sample size,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo>=</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mi>θ</mi><mo stretchy="false" form="postfix">)</mo><mi>/</mi><msub><mi>N</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">\sigma^2_{y} = \exp(2\theta) / N_{y}</annotation></semantics></math>,
+so
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+is a per fish quantity and a year sampled harder is fit more tightly.
+The other logistic normal forms read
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>
+as the standard deviation outright and ignore the sample size.</li>
+<li>The change of variables from the log ratio is subtracted, so the
+result is a density on the composition rather than on its transform.
+That does not move the maximum, since it does not involve any parameter,
+but it does change the value, so do not compare an AIC across the two
+treatments.</li>
+<li>Forms 6 and 7 put their correlations through the logistic function,
+so they are positive. Forms 3 and 4 allow either sign, and also scale
+the marginal variance by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>ρ</mi><mn>2</mn></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">1/(1-\rho^2)</annotation></semantics></math>,
+which forms 6 and 7 do not. The lag is measured in bins, so a
+composition fit over a restricted or gapped bin range spaces the
+autoregression by the bins themselves rather than by position in the
+vector.</li>
+<li>Form 7 correlates bins with sexes through the same separable
+structure form 4 uses, so it needs a composition joint across sexes.
+Setup refuses it with <code>"agg"</code> or <code>"spltRspltS"</code>,
+which have no bin by sex stack to correlate over, and refuses form 4
+there too rather than silently returning nothing.</li>
+</ul>
+<p>A cell with fewer than two bins seen has no log ratio to take and
+contributes nothing. One-step-ahead residuals are not available for
+these two forms, because the number of observations in a cell changes
+with the number of empty bins while the residual packing needs a fixed
+length; setup refuses the combination rather than computing something
+else.</p>
+</div>
 </div>
 <div class="section level4">
 <h4 id="composition-structure-types">Composition structure types<a class="anchor" aria-label="anchor" href="#composition-structure-types"></a>
@@ -4990,7 +5377,7 @@ information</td>
 </table>
 <p>A fishery that began sexing its samples in the eighth year of the
 series reads:</p>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">FishAgeComps_Type</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-7_Fleet_1"</span>,</span>
 <span>                      <span class="st">"spltRjntS_Year_8-terminal_Fleet_1"</span><span class="op">)</span></span></code></pre></div>
 <p><code>"agg"</code> is refused where the likelihood is the 2d logistic

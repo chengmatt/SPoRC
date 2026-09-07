@@ -92,6 +92,7 @@ catchability blocks and estimation structure. Must be called after
 <span>  fish_sel_bin_dev_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fishsel_pe_wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fishsel_rw_init_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">5</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
+<span>  fishsel_dont_est_dev_first <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  cont_tv_fishsel_bin_devs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fish_selex_penalty <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fishsel_devs_shared_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -114,6 +115,7 @@ catchability blocks and estimation structure. Must be called after
 <span>  retsel_devs_shared_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  retsel_pe_wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  retsel_rw_init_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">5</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
+<span>  retsel_dont_est_dev_first <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  ret_selex_type <span class="op">=</span> <span class="st">"age"</span>,</span>
 <span>  use_fixed_ret_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  ret_sel_input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
@@ -392,6 +394,20 @@ series. Default <code>5</code>, which leaves that year effectively free.
 <code>NA</code> instead starts the walk at zero under the walk's own estimated
 sigma, making the first year as smooth as every later step. Appropriate when
 the base parametric curve already describes the first year well.</p></dd>
+
+
+<dt id="arg-fishsel-dont-est-dev-first">fishsel_dont_est_dev_first<a class="anchor" aria-label="anchor" href="#arg-fishsel-dont-est-dev-first"></a></dt>
+<dd><p>Integer vector of length <code>n_fish_fleets</code> of
+0/1, default <code>0</code>. Where <code>1</code>, that fleet's deviations start in
+year two and the fixed selectivity parameters hold year one. A
+non-parametric form (<code>"nonpar"</code>, <code>"nonparlog"</code>,
+<code>"nonparfree"</code>) has one free base parameter per bin, so year one's
+deviation is that same value written twice and only
+<code>fishsel_rw_init_sigma</code> separates them, as a prior on a level
+that is usually meant to be free. Dropping it removes the redundant
+parameter and that prior, and leaves the walk a sum of differences. Refused
+for the GMRF and 2D AR1 forms, whose deviations are a field over years and
+bins rather than a walk anchored at year one.</p></dd>
 
 
 <dt id="arg-cont-tv-fishsel-bin-devs">cont_tv_fishsel_bin_devs<a class="anchor" aria-label="anchor" href="#arg-cont-tv-fishsel-bin-devs"></a></dt>
@@ -673,6 +689,20 @@ Standard deviation given to the first year of an <code>"rw"</code> retention
 deviation series, the retention counterpart of
 <code>fishsel_rw_init_sigma</code>. Default <code>5</code>; <code>NA</code> instead starts
 the walk at zero under the walk's own estimated sigma.</p></dd>
+
+
+<dt id="arg-retsel-dont-est-dev-first">retsel_dont_est_dev_first<a class="anchor" aria-label="anchor" href="#arg-retsel-dont-est-dev-first"></a></dt>
+<dd><p>Integer vector of length <code>n_fish_fleets</code> of
+0/1, default <code>0</code>. Where <code>1</code>, that fleet's deviations start in
+year two and the fixed selectivity parameters hold year one. A
+non-parametric form (<code>"nonpar"</code>, <code>"nonparlog"</code>,
+<code>"nonparfree"</code>) has one free base parameter per bin, so year one's
+deviation is that same value written twice and only
+<code>retsel_rw_init_sigma</code> separates them, as a prior on a level
+that is usually meant to be free. Dropping it removes the redundant
+parameter and that prior, and leaves the walk a sum of differences. Refused
+for the GMRF and 2D AR1 forms, whose deviations are a field over years and
+bins rather than a walk anchored at year one.</p></dd>
 
 
 <dt id="arg-ret-selex-type">ret_selex_type<a class="anchor" aria-label="anchor" href="#arg-ret-selex-type"></a></dt>

@@ -37,7 +37,8 @@ eval_comp_source_osa(
   n_fleets,
   n_sexes,
   pop = FALSE,
-  addtocomp = 0
+  addtocomp = 0,
+  seas_agg = 0
 )
 ```
 
@@ -126,6 +127,12 @@ eval_comp_source_osa(
 - addtocomp:
 
   Small constant added to a composition.
+
+- seas_agg:
+
+  Integer vector, one per fleet. `1` builds the predicted composition
+  from every season of the year summed together, `0` from the season the
+  observation sits in.
 
 ## Value
 

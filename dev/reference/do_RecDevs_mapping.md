@@ -9,7 +9,7 @@ annual recruitment deviations. The `ln_RecDevs` array has dimensions
 ## Usage
 
 ``` r
-do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd)
+do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd, dont_pen_recdev_first = 0)
 ```
 
 ## Arguments

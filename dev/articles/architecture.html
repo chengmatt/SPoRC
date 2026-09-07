@@ -365,7 +365,7 @@ one file.</p>
 <tr class="odd">
 <td><code>setup_checks.R</code></td>
 <td>
-<code>check_data_dimensions</code>,
+<code>check_data_dimensions</code>, <code>check_miss0_osa</code>,
 <code>check_sim_dimensions</code>
 </td>
 <td>nothing</td>
@@ -478,6 +478,7 @@ one file.</p>
 <code>do_h_mapping</code>, <code>do_InitDevs_mapping</code>,
 <code>do_rec_region_prop_mapping</code>,
 <code>do_rec_seas_prop_mapping</code>, <code>do_RecDevs_mapping</code>,
+<code>do_RecDevs_rho_mapping</code>,
 <code>do_sexratio_pars_mapping</code>, <code>do_sigmaR_mapping</code>,
 <code>do_stray_rate_mapping</code>, <code>Setup_Mod_Rec</code>,
 <code>Setup_Sim_Rec</code>
@@ -593,7 +594,9 @@ one file.</p>
 <code>ddirmult</code>, <code>dlogistnormal</code>,
 <code>dnbinom_robust_noint</code>, <code>dpois_noint</code>,
 <code>get_at_age_2dar1_nLL</code>, <code>get_at_age_nLL</code>,
-<code>get_beta_scaled_pars</code>, <code>get_index_nLL</code>
+<code>get_beta_scaled_pars</code>, <code>get_index_nLL</code>,
+<code>get_logistnormal_miss0_nLL</code>, <code>get_seas_pred</code>,
+<code>get_seas_pred_pop</code>
 </td>
 <td><code>utils_math.R</code></td>
 <td>
@@ -680,7 +683,8 @@ one file.</p>
 <code>eval_comp_osa</code>, <code>eval_comp_source_osa</code>,
 <code>Get_Comp_Likelihoods</code>,
 <code>Get_Comp_Likelihoods_OSA</code>, <code>get_comp_source_nLL</code>,
-<code>pack_comp_osa</code>, <code>pack_comp_source_osa</code>
+<code>get_seas_comp_exp</code>, <code>pack_comp_osa</code>,
+<code>pack_comp_source_osa</code>
 </td>
 <td>
 <code>model_distributions.R</code>, <code>model_osa.R</code>,
@@ -802,7 +806,7 @@ one file.</p>
 <code>Get_NAA_state_penalty</code>, <code>get_natmort_prior</code>,
 <code>Get_PE_loglik</code>, <code>get_q_prior</code>,
 <code>get_r0_prior</code>, <code>get_rec_level_penalty</code>,
-<code>get_recruitment_penalty</code>,
+<code>get_recdev_pe_nLL</code>, <code>get_recruitment_penalty</code>,
 <code>get_recruitment_proportion_priors</code>,
 <code>get_selex_fixed_penalty</code>, <code>get_selex_prior</code>,
 <code>Get_Selex_Smoothness_Penalty</code>, <code>get_sr_penalty</code>,
@@ -989,7 +993,8 @@ one file.</p>
 <tr class="odd">
 <td><code>sim_observations.R</code></td>
 <td>
-<code>build_idx_factor</code>, <code>cov_to_factor</code>,
+<code>build_idx_factor</code>, <code>collapse_seas_at_age</code>,
+<code>collapse_seas_obs</code>, <code>cov_to_factor</code>,
 <code>draw_index_obs</code>,
 <code>generate_fishery_catch_comp_idx</code>,
 <code>generate_fishery_conv_tags_recap</code>,
@@ -1004,7 +1009,7 @@ one file.</p>
 <td>
 <code>model_lik_at_age.R</code>, <code>model_obs_tagging.R</code>,
 <code>model_transition.R</code>, <code>sim_random_variates.R</code>,
-<code>utils_math.R</code>, <code>utils_setup.R</code>
+<code>utils_setup.R</code>
 </td>
 <td>
 <code>setup_sim_fleets.R</code>, <code>sim_population.R</code>
@@ -1028,8 +1033,8 @@ one file.</p>
 <tr class="odd">
 <td><code>sim_random_variates.R</code></td>
 <td>
-<code>rdirM</code>, <code>rinvgauss_rec</code>,
-<code>rlogistnormal</code>
+<code>comp_corr_natural</code>, <code>rdirM</code>,
+<code>rinvgauss_rec</code>, <code>rlogistnormal</code>
 </td>
 <td><code>utils_math.R</code></td>
 <td>
@@ -1048,7 +1053,8 @@ one file.</p>
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
 <code>setup_tagging.R</code>, <code>sim_population.R</code>,
-<code>utils_postfit.R</code>, <code>utils_setup.R</code>
+<code>utils_math.R</code>, <code>utils_postfit.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td><code>sim_closed_loop.R</code></td>
 </tr>
@@ -1104,7 +1110,9 @@ one file.</p>
 </tr>
 <tr class="odd">
 <td><code>diag_jitter.R</code></td>
-<td><code>do_jitter</code></td>
+<td>
+<code>do_jitter</code>, <code>jitter_start_values</code>
+</td>
 <td><code>model_fit.R</code></td>
 <td></td>
 </tr>
@@ -1228,7 +1236,7 @@ one file.</p>
 <code>model_priors_penalties.R</code>, <code>model_transition.R</code>,
 <code>setup_fishery_selectivity.R</code>,
 <code>setup_survey_selectivity.R</code>, <code>sim_closed_loop.R</code>,
-<code>sim_observations.R</code>, <code>sim_random_variates.R</code>
+<code>sim_random_variates.R</code>, <code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -1665,7 +1673,7 @@ test setup happens to use.</p>
 <tbody>
 <tr class="odd">
 <td><code>test-setup_*</code></td>
-<td>18</td>
+<td>21</td>
 <td>Input building: the <code>map</code> factor builders and the
 <code>Setup_Mod_*</code> validation</td>
 </tr>
@@ -1697,7 +1705,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-diag_*</code></td>
-<td>14</td>
+<td>15</td>
 <td>Post fit diagnostics: retrospectives and OSA residuals</td>
 </tr>
 <tr class="even">
@@ -1714,7 +1722,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 157 test files in total.</p>
+<p>That is 166 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

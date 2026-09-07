@@ -176,6 +176,12 @@ Get_Comp_Likelihoods(
   of the likelihood is exactly `p = obs`. `0` weights by the raw
   observed proportions.
 
+- seas_agg:
+
+  Integer vector, one per fleet. `1` builds the predicted composition
+  from every season of the year summed together, `0` from the season the
+  observation sits in.
+
 ## Details
 
 Expected and observed compositions are provided as arrays indexed by

@@ -102,7 +102,9 @@ called after <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></code>.</p>
 <span>  SR_ref_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Rec_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ln_InitDevs_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  InitDevs_sex_spec <span class="op">=</span> <span class="st">"est_shared_s"</span></span>
+<span>  InitDevs_sex_spec <span class="op">=</span> <span class="st">"est_shared_s"</span>,</span>
+<span>  RecDevs_model <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  RecDevs_rho <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -313,6 +315,21 @@ mortality the two sexes need not have departed by the same amount, which is
 the case <code>"est_all"</code> covers. The names match
 <code>InitDevs_sex_spec</code> in <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>, so an operating
 model and the estimation model fitted to it can be set the same way.</p></dd>
+
+
+<dt id="arg-recdevs-model">RecDevs_model<a class="anchor" aria-label="anchor" href="#arg-recdevs-model"></a></dt>
+<dd><p>Character. Process error the recruitment deviations are
+drawn under: <code>"iid"</code> (default) independent draws, <code>"rw"</code> a random
+walk from the previous year's deviation, or <code>"ar1"</code> reverting toward
+zero at rate <code>RecDevs_rho</code>. The first year is an independent draw under
+every option. Matches <code>RecDevs_model</code> in <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>,
+so a self test can simulate and estimate under the same process.</p></dd>
+
+
+<dt id="arg-recdevs-rho">RecDevs_rho<a class="anchor" aria-label="anchor" href="#arg-recdevs-rho"></a></dt>
+<dd><p>Matrix <code>[n_pop x n_regions]</code> of AR1 correlations on
+the natural scale, in \((-1, 1)\). Only read when
+<code>RecDevs_model = "ar1"</code>. Default zero.</p></dd>
 
 </dl></div>
     <div class="section level2">

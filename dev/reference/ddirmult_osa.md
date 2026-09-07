@@ -4,10 +4,10 @@ Conditional beta-binomial decomposition of an \\A\\-bin
 Dirichlet-multinomial for
 [`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html),
 following Trijoulet et al. (2023). Each of the first \\A-1\\ bins is a
-beta-binomial conditional on the running remainder, gated by its `keep`
-element; the analytic conditional beta-binomial CDF is accumulated
-through `cdf_lower` / `cdf_upper`, so this density supports **both**
-`method = "cdf"` and `method = "oneStepGeneric"`.
+beta-binomial conditional on the running remainder, selected by its
+`keep` element; the analytic conditional beta-binomial CDF is
+accumulated through `cdf_lower` / `cdf_upper`, so this density supports
+**both** `method = "cdf"` and `method = "oneStepGeneric"`.
 
 ## Usage
 

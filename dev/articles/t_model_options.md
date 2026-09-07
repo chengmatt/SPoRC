@@ -2027,17 +2027,14 @@ decomposition of its covariance:
 | `"normal"` | Normal on the arithmetic scale; SEs are arithmetic standard deviations |
 | `"mvn"` | Multivariate normal on the arithmetic scale with a fixed covariance supplied via `FishIdx_Cov` / `SrvIdx_Cov` (one matrix per `"mvn"` fleet, square with one row per fitted observation, ordered as observations appear scanning the fleet’s use flags in array order). Validated at setup for symmetry and positive definiteness |
 
-Recommendations. `"lognormal"` is right for almost all abundance indices
-(positive, multiplicative errors). Use `"mvn"` when the index provider
-supplies a covariance across years (e.g., a model-based index from VAST
-or sdmTMB whose inter-annual correlations are real information a
+Recommendations. `"lognormal"` is recommended for almost all abundance
+indices (positive, multiplicative errors). Use `"mvn"` when the index
+comes with a covariance across years (e.g., a model-based index from
+VAST or sdmTMB whose inter-annual correlations are real information a
 diagonal likelihood would double-count). Use `"normal"` only for series
-that can legitimately go near zero or negative, or when bridging an
-assessment that fits on the arithmetic scale. Two caveats: OSA residuals
-are only available for `"lognormal"` fleets, and the MVN density
-includes the $`-\tfrac{n}{2}\log(2\pi)`$ constant that some other
-implementations omit, so absolute likelihood values are not directly
-comparable across implementations even when fits match.
+that can legitimately go near zero or negative (e.g., recruitment
+indices), or when bridging an assessment that fits on the arithmetic
+scale.
 
 #### Index timing and age restriction
 

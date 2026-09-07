@@ -3,7 +3,7 @@
 Conditional-binomial decomposition of an \\A\\-bin multinomial for
 [`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html),
 following Trijoulet et al. (2023). Each of the first \\A-1\\ bins is a
-binomial conditional on the running remainder, gated by its `keep`
+binomial conditional on the running remainder, selected by its `keep`
 element; the final bin is fixed by the sum-to-\\N\\ constraint. In
 addition to the density term, the analytic conditional binomial CDF is
 accumulated through the `cdf_lower` / `cdf_upper` indicators, so this

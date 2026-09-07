@@ -22,7 +22,7 @@
   `Setup_Mod_Biologicals` and `Setup_Sim_NAA_state`. The log numbers
   themselves become random effects for ages two and older including the
   plus group, with the deterministic mortality and ageing step as the
-  prediction they are scored against. Forms are `"iid"`, `"1dar1_a"`,
+  prediction they are evaluated against. Forms are `"iid"`, `"1dar1_a"`,
   `"1dar1_y"`, `"2dar1"`, `"3dcond"` and `"3dmarg"` over the age-year
   grid, composable with unstructured correlations across populations,
   regions, seasons and sexes.
@@ -31,18 +31,18 @@
   only, so the numbers within a year stay deterministic and the
   innovation is purely annual), `"all"`, or an arbitrary set of season
   indices, which need not be contiguous so that states can be placed
-  only in the seasons carrying observations. `NAA_re_season` adds an
+  only in the seasons with observations. `NAA_re_season` adds an
   unstructured correlation across the active seasons, and
   `NAA_sigma_seasblk_spec` blocks the process error standard deviation
   over them. `ln_NAA`, `ln_sigmaNAA`, `naa_sigma_blocks`, `NAA_pred` and
-  `NAA_scalar` all carry the season margin between year and age; saved
-  input lists without it are promoted and hold the state at season one.
+  `NAA_scalar` all have the season dim between year and age; saved input
+  lists without it are promoted and hold the state at season one.
 - The state-space numbers at age are not projected.
   [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
   advances projected numbers deterministically from the terminal year
   with recruitment the only stochastic element, so a forecast from a
   state-space fit omits that process error. The closed loop operating
-  model does carry the state forward.
+  model does advance the state forward.
 - Fixed the tag cohort rescale under a state-space fit: it indexed the
   state factor by years at liberty rather than by calendar year, so it
   was correct only for cohorts released in the first model year.
@@ -64,7 +64,7 @@
   `"est_shared"`, or `"est_all"`.
 - Added internal OSA residuals for catch, indices, compositions, and
   tagging data.
-- Added support for at-age data streams (e.g., ICES-style stock
+- Added support for at-age data sources (e.g., ICES-style stock
   assessments).
 - Survey fleets can observe recruitment deviations directly via
   `srv_idx_type = "recdev"`, reported as `RecDev_anom`.
@@ -153,7 +153,7 @@
   biomass alone; rules without that argument are called exactly as
   before. Catch at age is now returned as `proj_CAA`.
 - [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
-  can now be differentiated through. The projection call chain carries
+  can now be differentiated through. The projection call chain uses
   RTMB’s replacement operators, so a projection can be taped with
   [`MakeTape()`](https://rdrr.io/pkg/RTMB/man/Tape.html) or
   `MakeADFun()` and handed to an optimizer with an exact gradient, which
@@ -188,7 +188,7 @@
   `sigmaC_spec`, `sigmaR_spec`, `Fdev_rho_spec`, and `do_Fmort_mapping`
   onto it (for developers).
 - Refactored movement’s continuous process-error map and log-likelihood
-  onto the same shared machinery (for developers).
+  onto the same shared code (for developers).
 - Newton refinement in `fit_model` now takes its Hessian from the AD
   tape (`obj$he`) instead of finite-differencing, and stops early on a
   non-finite Hessian.

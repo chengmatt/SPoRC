@@ -6,14 +6,14 @@ the model's internally tracked OSA vector (built via
 do_internal_comp_osa = TRUE in Setup_Mod_Dim), and
 relabels the resulting residuals using pack_comp_osa's
 return_labels = TRUE output so the result matches the same
-res schema produced by the external path."><meta property="og:description" content="Internal counterpart to run_external_comp_osa's external (post-hoc,
+res columns produced by the external path."><meta property="og:description" content="Internal counterpart to run_external_comp_osa's external (post-hoc,
 compResidual-based) path, called by get_osa when a fitted
 model is supplied. Calls RTMB::oneStepPredict() directly on
 the model's internally tracked OSA vector (built via
 do_internal_comp_osa = TRUE in Setup_Mod_Dim), and
 relabels the resulting residuals using pack_comp_osa's
 return_labels = TRUE output so the result matches the same
-res schema produced by the external path."><meta name="robots" content="noindex"></head><body>
+res columns produced by the external path."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -73,7 +73,7 @@ the model's internally tracked OSA vector (built via
 <code>do_internal_comp_osa = TRUE</code> in <code><a href="Setup_Mod_Dim.html">Setup_Mod_Dim</a></code>), and
 relabels the resulting residuals using <code><a href="pack_comp_osa.html">pack_comp_osa</a></code>'s
 <code>return_labels = TRUE</code> output so the result matches the same
-<code>res</code> schema produced by the external path.</p>
+<code>res</code> columns produced by the external path.</p>
     </div>
 
     <div class="section level2">
@@ -150,7 +150,7 @@ Note that if data are discrete, the only valid option is <code>"oneStepGeneric"<
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list with one element <code>res</code>, matching <code><a href="get_osa.html">get_osa</a></code>'s
-  external-mode schema (columns <code>fleet</code>, <code>index_label</code>, <code>year</code>,
+  external-mode columns (<code>fleet</code>, <code>index_label</code>, <code>year</code>,
   <code>index</code>, <code>resid</code>, <code>region</code>, <code>sex</code>, <code>seas</code>,
   <code>comp_type</code>) plus a <code>pop</code> column (population index; always 1 for
   <code>pop = FALSE</code> sources), or <code>NULL</code> if no data of the requested

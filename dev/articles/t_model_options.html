@@ -4602,20 +4602,14 @@ definiteness</td>
 </tr>
 </tbody>
 </table>
-<p>Recommendations. <code>"lognormal"</code> is right for almost all
-abundance indices (positive, multiplicative errors). Use
-<code>"mvn"</code> when the index provider supplies a covariance across
-years (e.g., a model-based index from VAST or sdmTMB whose inter-annual
+<p>Recommendations. <code>"lognormal"</code> is recommended for almost
+all abundance indices (positive, multiplicative errors). Use
+<code>"mvn"</code> when the index comes with a covariance across years
+(e.g., a model-based index from VAST or sdmTMB whose inter-annual
 correlations are real information a diagonal likelihood would
 double-count). Use <code>"normal"</code> only for series that can
-legitimately go near zero or negative, or when bridging an assessment
-that fits on the arithmetic scale. Two caveats: OSA residuals are only
-available for <code>"lognormal"</code> fleets, and the MVN density
-includes the
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mstyle displaystyle="false"><mfrac><mi>n</mi><mn>2</mn></mfrac></mstyle><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>2</mn><mi>π</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">-\tfrac{n}{2}\log(2\pi)</annotation></semantics></math>
-constant that some other implementations omit, so absolute likelihood
-values are not directly comparable across implementations even when fits
-match.</p>
+legitimately go near zero or negative (e.g., recruitment indices), or
+when bridging an assessment that fits on the arithmetic scale.</p>
 </div>
 <div class="section level4">
 <h4 id="index-timing-and-age-restriction">Index timing and age restriction<a class="anchor" aria-label="anchor" href="#index-timing-and-age-restriction"></a>

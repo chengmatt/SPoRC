@@ -12,7 +12,7 @@ directly on the model's internally tracked OSA vector (built via
 and relabels the resulting residuals using
 [`pack_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.md)'s
 `return_labels = TRUE` output so the result matches the same `res`
-schema produced by the external path.
+columns produced by the external path.
 
 ## Usage
 
@@ -92,7 +92,7 @@ run_internal_comp_osa(
 
 A list with one element `res`, matching
 [`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)'s
-external-mode schema (columns `fleet`, `index_label`, `year`, `index`,
-`resid`, `region`, `sex`, `seas`, `comp_type`) plus a `pop` column
-(population index; always 1 for `pop = FALSE` sources), or `NULL` if no
-data of the requested family/source is present.
+external-mode columns (`fleet`, `index_label`, `year`, `index`, `resid`,
+`region`, `sex`, `seas`, `comp_type`) plus a `pop` column (population
+index; always 1 for `pop = FALSE` sources), or `NULL` if no data of the
+requested family/source is present.

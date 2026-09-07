@@ -86,16 +86,16 @@ what a setting is. Read <a href="t_model_options.html">Overview of Model
 Options</a> to find out why it exists and which to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 500 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 526 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (15)</option>
 <option value="Rec">Rec (60)</option>
 <option value="Biologicals">Biologicals (71)</option>
 <option value="Movement">Movement (23)</option>
 <option value="Tagging">Tagging (19)</option>
-<option value="Catch_and_F">Catch_and_F (64)</option>
-<option value="FishIdx_and_Comps">FishIdx_and_Comps (67)</option>
-<option value="SrvIdx_and_Comps">SrvIdx_and_Comps (66)</option>
+<option value="Catch_and_F">Catch_and_F (72)</option>
+<option value="FishIdx_and_Comps">FishIdx_and_Comps (77)</option>
+<option value="SrvIdx_and_Comps">SrvIdx_and_Comps (74)</option>
 <option value="Fishsel_and_Q">Fishsel_and_Q (48)</option>
 <option value="Srvsel_and_Q">Srvsel_and_Q (32)</option>
 <option value="Weighting">Weighting (35)</option></select><span id="optref-tally"></span></p>
@@ -2041,7 +2041,7 @@ Setup_Sim_Tagging. Default NULL.
 Setup_Mod_Catch_and_F
 </h3>
 <p class="optref-n">
-64 arguments
+72 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -2326,6 +2326,86 @@ sigmaCAA_key.
 <td><code>"spltRaggS"</code></td>
 <td>Which dims the fleet reports separately, following the composition vocabulary. Give it as one setting for every fleet, one per fleet, or as year and fleet specifications such as "spltRaggS_Year_1-20_Fleet_1" when the setting changes part way through the series. "agg" sums over regions and sexes, "spltRaggS" (default) splits regions and sums over sexes, "aggRspltS" does the reverse, and "spltRspltS" splits both. An observation summed over a dim belongs in slot one of it.</td>
 </tr>
+<tr data-k="catch_seas_type null ">
+<td>
+<code class="optref-arg">Catch_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="catch_pop_seas_type null ">
+<td>
+<code class="optref-arg">Catch_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="discard_seas_type null ">
+<td>
+<code class="optref-arg">Discard_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="discard_pop_seas_type null ">
+<td>
+<code class="optref-arg">Discard_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="catchaa_seas_type null ">
+<td>
+<code class="optref-arg">CatchAA_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="catchaa_pop_seas_type null ">
+<td>
+<code class="optref-arg">CatchAA_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="discardaa_seas_type null ">
+<td>
+<code class="optref-arg">DiscardAA_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="discardaa_pop_seas_type null ">
+<td>
+<code class="optref-arg">DiscardAA_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
 <tr data-k="catchaa_liketype " lognormal or one setting for every fleet per fleet.>
 <td><code class="optref-arg">CatchAA_LikeType</code></td>
 <td><code>"lognormal"</code></td>
@@ -2608,7 +2688,7 @@ observations).
 Setup_Mod_FishIdx_and_Comps
 </h3>
 <p class="optref-n">
-67 arguments
+77 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -3105,6 +3185,106 @@ composition is fitted over, in the same format as FishAgeComps_bins.
 <td><code>rep("lognormal", input_list$data$n_fish_fleets)</code></td>
 <td>Character vector [n_fish_fleets] giving the error structure of each fishery index. Options are "lognormal" (default, the observation standard errors are on the log scale), "normal" (arithmetic scale), and "mvn" (multivariate normal on the arithmetic scale using a fixed covariance supplied through FishIdx_Cov). One-step-ahead residuals are available only for lognormal fleets. A fleet's population-specific index data source follows the same choice for "lognormal" and "normal", but stays lognormal under "mvn", whose covariance describes the regional series only.</td>
 </tr>
+<tr data-k="fishidx_seas_type null ">
+<td>
+<code class="optref-arg">FishIdx_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishidx_pop_seas_type null ">
+<td>
+<code class="optref-arg">FishIdx_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishagecomps_seas_type null ">
+<td>
+<code class="optref-arg">FishAgeComps_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishagecomps_pop_seas_type null ">
+<td>
+<code class="optref-arg">FishAgeComps_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishlencomps_seas_type null ">
+<td>
+<code class="optref-arg">FishLenComps_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishlencomps_pop_seas_type null ">
+<td>
+<code class="optref-arg">FishLenComps_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishagecomps_discard_seas_type null ">
+<td>
+<code class="optref-arg">FishAgeComps_discard_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishagecomps_discard_pop_seas_type null ">
+<td>
+<code class="optref-arg">FishAgeComps_discard_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishlencomps_discard_seas_type null ">
+<td>
+<code class="optref-arg">FishLenComps_discard_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
+<tr data-k="fishlencomps_discard_pop_seas_type null ">
+<td>
+<code class="optref-arg">FishLenComps_discard_pop_seas_Type</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+</td>
+</tr>
 <tr data-k="fishidx_cov null list with one element per fishery fleet holding the fixed covariance matrix for fleets using " mvn and null otherwise. each matrix must be square with one row per observation the fleet fits ordered as observations appear when scanning that usefishidx slice in array order.>
 <td><code class="optref-arg">FishIdx_Cov</code></td>
 <td><code>NULL</code></td>
@@ -3389,7 +3569,7 @@ n_fish_fleets]. If NULL, derived from ObsFishLenComps_discard_pop.
 Setup_Mod_SrvIdx_and_Comps
 </h3>
 <p class="optref-n">
-66 arguments
+74 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -4013,6 +4193,22 @@ fleets. A fleet's population-specific index data source follows the same
 choice for "lognormal" and "normal", but stays lognormal under "mvn",
 whose covariance describes the regional series
 only.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidx_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdx_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidx_pop_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdx_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidxaa_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdxAA_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvidxaa_pop_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvIdxAA_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvagecomps_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvAgeComps_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvagecomps_pop_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvAgeComps_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvlencomps_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvLenComps_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="srvlencomps_pop_seas_type null "&gt;&lt;td&gt;&lt;code
+class="optref-arg"&gt;SrvLenComps_pop_seas_Type&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;code&gt;NULL&lt;/code&gt;&lt;/td&gt;&lt;td&gt;&lt;/td&gt;&lt;/tr&gt;
 &lt;tr data-k="srvlencomps_sel rep("age", input_list$</span>data<span class="math inline">$n_srv_fleets) character vector [n_srv_fleets],
 whether a length-based selectivity is applied before or after the fish
 are spread over lengths. "age" (default) selects the index at age and

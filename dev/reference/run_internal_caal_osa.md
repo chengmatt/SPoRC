@@ -64,4 +64,4 @@ run_internal_caal_osa(
 
 A list with one element `res`, matching
 [`run_internal_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/run_internal_comp_osa.md)'s
-schema plus a `len` column.
+columns plus a `len` column.

@@ -61,10 +61,18 @@ compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex
                           UseCatch, UseCatch_pop, missing_catch, UseCatchAA, UseCatchAA_pop, use_catch_aa,
                           ln_F_mean, ln_F_devs, logit_dmr_mean, logit_dmr_devs,
                           SizeAgeTrans, natmort, seasdur,
-                          n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets) {
+                          n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets,
+                          catch_seas_agg = NULL, catch_pop_seas_agg = NULL,
+                          catch_aa_seas_agg = NULL, catch_aa_pop_seas_agg = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
+
+  # an objective saved before seasonal reporting existed calls this without those settings
+  if(is.null(catch_seas_agg)) catch_seas_agg = rep(0L, n_fish_fleets)
+  if(is.null(catch_pop_seas_agg)) catch_pop_seas_agg = rep(0L, n_fish_fleets)
+  if(is.null(catch_aa_seas_agg)) catch_aa_seas_agg = rep(0L, n_fish_fleets)
+  if(is.null(catch_aa_pop_seas_agg)) catch_aa_pop_seas_agg = rep(0L, n_fish_fleets)
 
   # get mortality values kept in from the previous year
   Fmort = state$Fmort
@@ -99,11 +107,20 @@ compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex
       for(f in 1:n_fish_fleets) {
 
         # A cell is a true closure only when no catch is fit
+        # A fleet reporting one annual total fishes every season of a year it reports in
+        catch_open = if(catch_seas_agg[f] == 1) any(UseCatch[r,y,,f] == 1) else UseCatch[r,y,seas,f] == 1
+        catch_pop_open = if(catch_pop_seas_agg[f] == 1) any(UseCatch_pop[,r,y,,f] == 1) else any(UseCatch_pop[,r,y,seas,f] == 1)
+
         # A fleet fitting catch at age is fished wherever any age is fit there
-        caa_open = if(use_catch_aa[f] == 1) any(UseCatchAA[r,y,seas,,,f] == 1) ||
-                                            any(UseCatchAA_pop[,r,y,seas,,,f] == 1) else FALSE
-        is_closed = (UseCatch[r,y,seas,f] == 0) && all(UseCatch_pop[,r,y,seas,f] == 0) &&
-          !missing_catch[r,y,seas,f] && !caa_open
+        caa_open = if(use_catch_aa[f] == 1) {
+          if(catch_aa_seas_agg[f] == 1) any(UseCatchAA[r,y,,,,f] == 1) else any(UseCatchAA[r,y,seas,,,f] == 1)
+        } else FALSE
+
+        caa_pop_open = if(use_catch_aa[f] == 1) {
+          if(catch_aa_pop_seas_agg[f] == 1) any(UseCatchAA_pop[,r,y,,,,f] == 1) else any(UseCatchAA_pop[,r,y,seas,,,f] == 1)
+        } else FALSE
+
+        is_closed = !catch_open && !catch_pop_open && !missing_catch[r,y,seas,f] && !caa_open && !caa_pop_open
 
         if(is_closed) {
           Fmort[r,y,seas,f] = 0

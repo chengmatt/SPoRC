@@ -4,7 +4,7 @@
 \alias{rlogistnormal}
 \title{Simulate from a logistic-normal distribution}
 \usage{
-rlogistnormal(exp, pars, comp_like, n_sexes)
+rlogistnormal(exp, pars, comp_like, n_sexes, ISS = NULL)
 }
 \arguments{
 \item{exp}{Numeric vector of length \eqn{K}. Expected (predicted) composition

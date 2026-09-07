@@ -173,6 +173,7 @@ Setup_Mod_Retsel <- function(
   cont_tv_retsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
   retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
+  retsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
   ret_sel_nonpar_est_bins,
   ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
   ...
@@ -193,6 +194,8 @@ Setup_Mod_Retsel <- function(
   # silently becomes NA rather than being recycled.
   check_fleet_spec_length(retsel_pe_wt, input_list$data$n_fish_fleets, "retsel_pe_wt")
   check_fleet_spec_length(retsel_rw_init_sigma, input_list$data$n_fish_fleets, "retsel_rw_init_sigma")
+  check_fleet_spec_length(retsel_dont_est_dev_first, input_list$data$n_fish_fleets, "retsel_dont_est_dev_first")
+  if(!all(retsel_dont_est_dev_first %in% c(0, 1))) stop("retsel_dont_est_dev_first must be 0 or 1 for every fleet")
 
   # Selectivity Priors
   if(!Use_ret_selex_prior %in% c(0,1)) stop("Values for Use_ret_selex_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -565,6 +568,8 @@ Setup_Mod_Retsel <- function(
     retsel_pe_pars_spec,
     ret_sel_corr_opt_semipar,
     bins,
+    sel_devs_spec = ret_sel_devs_spec,
+    sel_devs_shared_bins = retsel_devs_shared_bins,
     prefix = "ret",
     fleet_field = "n_fish_fleets",
     use_field = "Catch",
@@ -575,6 +580,7 @@ Setup_Mod_Retsel <- function(
     ret_sel_devs_spec,
     retsel_devs_shared_bins,
     bins,
+    dont_est_dev_first = retsel_dont_est_dev_first,
     prefix = "ret",
     fleet_field = "n_fish_fleets",
     use_field = "Catch",
@@ -760,6 +766,17 @@ Setup_Mod_Retsel <- function(
 #'   deviations for each fleet: \code{"none"} (default), \code{"iid"}, or
 #'   \code{"rw"}. A random walk has its own estimated sigma per bin, with
 #'   \code{fishsel_bin_devs_rw_init_sigma} governing its first year.
+#' @param fishsel_dont_est_dev_first Integer vector of length \code{n_fish_fleets} of
+#'   0/1, default \code{0}. Where \code{1}, that fleet's deviations start in
+#'   year two and the fixed selectivity parameters hold year one. A
+#'   non-parametric form (\code{"nonpar"}, \code{"nonparlog"},
+#'   \code{"nonparfree"}) has one free base parameter per bin, so year one's
+#'   deviation is that same value written twice and only
+#'   \code{fishsel_rw_init_sigma} separates them, as a prior on a level
+#'   that is usually meant to be free. Dropping it removes the redundant
+#'   parameter and that prior, and leaves the walk a sum of differences. Refused
+#'   for the GMRF and 2D AR1 forms, whose deviations are a field over years and
+#'   bins rather than a walk anchored at year one.
 #' @param Use_fish_q_prior Integer flag. \code{1} = apply lognormal priors to
 #'   catchability; \code{0} = no priors (default). Requires \code{fish_q_prior}.
 #' @param fish_q_prior Data frame of catchability prior hyperparameters. Required
@@ -881,6 +898,18 @@ Setup_Mod_Retsel <- function(
 #'   deviation series, the retention counterpart of
 #'   \code{fishsel_rw_init_sigma}. Default \code{5}; \code{NA} instead starts
 #'   the walk at zero under the walk's own estimated sigma.
+#'
+#' @param retsel_dont_est_dev_first Integer vector of length \code{n_fish_fleets} of
+#'   0/1, default \code{0}. Where \code{1}, that fleet's deviations start in
+#'   year two and the fixed selectivity parameters hold year one. A
+#'   non-parametric form (\code{"nonpar"}, \code{"nonparlog"},
+#'   \code{"nonparfree"}) has one free base parameter per bin, so year one's
+#'   deviation is that same value written twice and only
+#'   \code{retsel_rw_init_sigma} separates them, as a prior on a level
+#'   that is usually meant to be free. Dropping it removes the redundant
+#'   parameter and that prior, and leaves the walk a sum of differences. Refused
+#'   for the GMRF and 2D AR1 forms, whose deviations are a field over years and
+#'   bins rather than a walk anchored at year one.
 #'
 #' @param ret_sel_corr_opt_semipar Character vector of length \code{n_fish_fleets}
 #'   controlling which correlation components to suppress in semi-parametric
@@ -1017,6 +1046,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     fish_sel_bin_dev_bins = NULL,
                                     fishsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
                                     fishsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
+                                    fishsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
                                     cont_tv_fishsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
                                     fish_selex_penalty = NULL,
                                     fishsel_devs_shared_bins = NULL,
@@ -1041,6 +1071,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     retsel_devs_shared_bins = NULL,
                                     retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
                                     retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
+                                    retsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
                                     ret_selex_type = 'age',
                                     use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
                                     ret_sel_input = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets )),
@@ -1065,6 +1096,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   # silently becomes NA rather than being recycled.
   check_fleet_spec_length(fishsel_pe_wt, input_list$data$n_fish_fleets, "fishsel_pe_wt")
   check_fleet_spec_length(fishsel_rw_init_sigma, input_list$data$n_fish_fleets, "fishsel_rw_init_sigma")
+  check_fleet_spec_length(fishsel_dont_est_dev_first, input_list$data$n_fish_fleets, "fishsel_dont_est_dev_first")
+  if(!all(fishsel_dont_est_dev_first %in% c(0, 1))) stop("fishsel_dont_est_dev_first must be 0 or 1 for every fleet")
 
   # Catchability Priors
   if(!Use_fish_q_prior %in% c(0,1)) stop("Values for Use_fish_q_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -1578,6 +1611,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     fishsel_pe_pars_spec,
     corr_opt_semipar,
     bins,
+    sel_devs_spec = fish_sel_devs_spec,
+    sel_devs_shared_bins = fishsel_devs_shared_bins,
     prefix = "fish",
     fleet_field = "n_fish_fleets",
     use_field = "Catch",
@@ -1588,6 +1623,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     fish_sel_devs_spec,
     fishsel_devs_shared_bins,
     bins,
+    dont_est_dev_first = fishsel_dont_est_dev_first,
     prefix = "fish",
     fleet_field = "n_fish_fleets",
     use_field = "Catch",
@@ -1609,6 +1645,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                  retsel_devs_shared_bins = retsel_devs_shared_bins,
                                  retsel_pe_wt = retsel_pe_wt,
                                  retsel_rw_init_sigma = retsel_rw_init_sigma,
+                                 retsel_dont_est_dev_first = retsel_dont_est_dev_first,
                                  ret_selex_type = ret_selex_type,
                                  use_fixed_ret_sel = use_fixed_ret_sel,
                                  ret_sel_input = ret_sel_input,

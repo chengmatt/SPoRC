@@ -4,6 +4,23 @@
 # Dirichlet multinomial and inverse Gaussian recruitment.
 
 # Composition Variates ------------------------------------------------------
+#' Put a composition correlation parameter on its natural scale
+#'
+#' The logistic normal forms that keep every bin take a correlation anywhere in
+#' \eqn{(-1, 1)}; the forms that drop the zeros take a positive one, matching the
+#' autoregression they mirror. One place decides which, so an operating model
+#' draws on the same scale the estimation model fits on.
+#'
+#' @param pars Unconstrained correlation parameters.
+#' @param comp_like Integer likelihood code for the fleet.
+#'
+#' @return The correlations on the natural scale.
+#'
+#' @keywords internal
+comp_corr_natural <- function(pars, comp_like) {
+  if(comp_like %in% c(5, 6, 7)) stats::plogis(pars) else rho_trans(pars)
+} # end comp_corr_natural
+
 
 #' Simulate from a logistic-normal distribution
 #'
@@ -50,7 +67,8 @@
 rlogistnormal <- function(exp,
                           pars,
                           comp_like,
-                          n_sexes
+                          n_sexes,
+                          ISS = NULL
                           ) {
   # set up expected value vector
   mu <- log(exp[-length(exp)]) # remove last bin since it's known
@@ -73,6 +91,19 @@ rlogistnormal <- function(exp,
     Sigma <- kronecker(get_Constant_CorrMat(n_sexes, pars[3]), get_AR1_CorrMat(length(exp) / n_sexes, pars[2])) * (pars[1]^2 / (1 - pars[2]^2) / (1 - pars[3]^2))
     Sigma <- Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
   }
+
+  # the zeros dropped forms scale the variance by the sample size and take the correlation
+  # positive, so the operating model draws on the same terms the estimation model fits on
+  if(comp_like %in% c(5, 6, 7)) {
+    var_bin <- pars[1]^2 / ISS
+    n_tr <- length(exp) - 1
+    if(comp_like == 5) Sigma <- diag(rep(var_bin, n_tr))
+    if(comp_like == 6) Sigma <- get_AR1_CorrMat(length(exp), pars[2])[-length(exp), -length(exp)] * var_bin
+    if(comp_like == 7) {
+      full <- kronecker(get_Constant_CorrMat(n_sexes, pars[3]), get_AR1_CorrMat(length(exp) / n_sexes, pars[2]))
+      Sigma <- full[-length(exp), -length(exp)] * var_bin
+    }
+  } # end if zeros dropped
 
   x <- MASS::mvrnorm(1, mu, Sigma) # simulate from mvnorm (does not sum to 1) and length k
   p <- exp(x)/(1 + sum(exp(x))) # do additive transformation length k and does not sum to 1

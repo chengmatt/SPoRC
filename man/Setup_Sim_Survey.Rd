@@ -25,6 +25,9 @@ Setup_Sim_Survey(
   t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
   SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+  SrvIdx_seas_Type = NULL,
+  SrvIdx_pop_seas_Type = NULL,
+  SrvAgeComps_seas_Type = NULL,
   SrvIdx_Cov = NULL,
   UseSrvIdx = NULL,
   comp_srv_caal_like = rep(999, sim_list$n_srv_fleets),
@@ -128,6 +131,14 @@ Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
 a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
 \code{ObsSrvIdx_SE}, and its population-specific data source stays lognormal.
 Default: lognormal for every fleet.}
+
+\item{SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvAgeComps_seas_Type}{Whether the operating model reports a survey data source once a season
+(\code{"spltSeas"}, the default) or once a year as a season total
+(\code{"aggSeas"}). One value for every survey or one per survey. An annual
+total is written into season one with the other seasons left at zero, and the
+observation error is applied once to that total, so an estimation model
+reading it should mark season one in its \code{Use} array and set the
+matching argument in \code{\link{Setup_Mod_SrvIdx_and_Comps}}.}
 
 \item{SrvIdx_Cov}{List with one element per survey fleet holding the fixed
 covariance over that fleet's fitted index observations, ordered by scanning

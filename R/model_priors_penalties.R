@@ -254,6 +254,14 @@ Get_Selex_Smoothness_Penalty <- function(
 #'   hold the same integer value; \code{NA} entries are treated as fixed
 #'   and excluded from likelihood evaluation.
 #'
+#' @param map_sel_devs_full The same map across every unit this penalty is
+#'   evaluated over, that unit being the first dim: regions for selectivity,
+#'   populations by region for growth. A deviation shared over those units is
+#'   one parameter appearing in each of their slices, and this function runs one
+#'   unit at a time, so its contribution is divided by the number holding it.
+#'   Without the split, a series shared over \code{n} units is penalized
+#'   \code{n} times, an implicit \eqn{\sigma / \sqrt{n}}. A deviation that is
+#'   not shared appears once, divides by one, and is unaffected.
 #' @param rw_init_sigma Standard deviation given to the first year of a random
 #'   walk. A number (5 by default) leaves that year effectively unconstrained;
 #'   \code{NA} starts the walk at zero under its own sigma instead.
@@ -271,6 +279,7 @@ Get_PE_loglik <- function(PE_model,
                               PE_pars,
                               ln_devs,
                               map_sel_devs,
+                              map_sel_devs_full,
                               min_sel_devs_shared_bins,
                               rw_init_sigma = 5
                               ) {
@@ -292,6 +301,13 @@ Get_PE_loglik <- function(PE_model,
   n_bins = dim(map_sel_devs)[3] # get bins / pars for indexing
   n_sexes = dim(map_sel_devs)[4] # get sexes for indexing
 
+  # a shared deviation is one parameter appearing in every sharing unit's slice, and this runs one
+  # unit at a time, so its penalty is split over the units holding it. dim 1 is the unit
+  unit_of = slice.index(map_sel_devs_full, 1) # unit index of every cell
+  is_est = !is.na(map_sel_devs_full)
+  n_units_sharing = tapply(unit_of[is_est], map_sel_devs_full[is_est],
+                           function(x) length(unique(x)))
+
   if(PE_model %in% c(1, 2)) {
 
     for(dev_idx in 1:length(unique_sel_devs)) {
@@ -301,9 +317,10 @@ Get_PE_loglik <- function(PE_model,
       y = idx[2] # get unique year index
       i = idx[3] # get unique age or parmeter index
       s = idx[4] # get unique sex index
+      share = as.numeric(n_units_sharing[as.character(unique_sel_devs[dev_idx])]) # units holding it
 
       if(PE_model == 1) {
-        if(y >= 1) loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, exp(PE_pars[1,i,s,1]), TRUE)
+        if(y >= 1) loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, exp(PE_pars[1,i,s,1]), TRUE) / share
       } # iid process error
 
       if(PE_model == 2) {
@@ -311,9 +328,9 @@ Get_PE_loglik <- function(PE_model,
         # NA starts the walk at zero under its own sigma
         if(y == 1) {
           init_sd = if(is.na(rw_init_sigma)) exp(PE_pars[1,i,s,1]) else rw_init_sigma
-          loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, init_sd, TRUE)
+          loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, init_sd, TRUE) / share
         }
-        else loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], ln_devs[1,y-1,i,s,1], exp(PE_pars[1,i,s,1]), TRUE)
+        else loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], ln_devs[1,y-1,i,s,1], exp(PE_pars[1,i,s,1]), TRUE) / share
       } # end random walk process error
 
     } # end dev_idx loop
@@ -337,6 +354,11 @@ Get_PE_loglik <- function(PE_model,
 
       s = unique_s[idx] # get sex index
 
+      # the whole density is evaluated once per unit holding these deviations, so split it as the
+      # iid and walk forms do. sharing is set per fleet, so the levels here all share alike
+      s_levels = unique_sel_devs[unique_comb[4,] == s] # levels this sex evaluates
+      share = max(as.numeric(n_units_sharing[as.character(s_levels)])) # units holding them
+
       # Construct precision matrix for 3d gmrf
       if(PE_model %in% c(3,4)) {
         # the precision matrix spans the bins the deviations are actually evaluated
@@ -352,7 +374,7 @@ Get_PE_loglik <- function(PE_model,
 
         # apply gmrf likelihood
         eps_ay = as.vector(t(ln_devs[1,,min_sel_devs_shared_bins,s,1])) # convert to vector
-        loglik = loglik + RTMB::dgmrf(x = eps_ay, mu = 0, Q = Q, log = TRUE)
+        loglik = loglik + RTMB::dgmrf(x = eps_ay, mu = 0, Q = Q, log = TRUE) / share
       } # end if
 
       # 2dar1 model
@@ -372,7 +394,7 @@ Get_PE_loglik <- function(PE_model,
         # Define ar1 separable functions
         f1 = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_y, log = TRUE)
         f2 = function(x) RTMB::dautoreg(x, mu = 0, phi = rho_b, log = TRUE)
-        loglik = loglik + RTMB::dseparable(f1, f2)(eps_ya, scale = scale)
+        loglik = loglik + RTMB::dseparable(f1, f2)(eps_ya, scale = scale) / share
       } # end if
     } # end idx loop
 
@@ -824,6 +846,79 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 
 # Recruitment Penalties -----------------------------------------------------
 
+#' Process error density for one series of recruitment deviations
+#'
+#' The recruitment deviations of one population and region are either
+#' independent draws about a supplied mean, a random walk, or an AR1 process.
+#' The walk and the AR1 always step from the previous year, whether or not that
+#' year's deviation is estimated: every year has a recruitment, so a deviation
+#' fixed at a value is a year the walk passes through rather than a gap in the
+#' series. A year whose own deviation is fixed contributes no density.
+#'
+#' A walk has no stationary distribution to start from, so year one is given a
+#' diffuse normal. An AR1 starts from its stationary marginal standard deviation
+#' \eqn{\sigma / \sqrt{1 - \rho^2}}. Fixing year one instead leaves the series
+#' with no penalty on its level at all, which is what SAM's flat prior on the
+#' first year amounts to.
+#'
+#' @param devs Numeric vector of deviations for one population and region, by year.
+#' @param is_est Numeric vector the same length, \code{1} where the deviation is
+#'   estimated and \code{0} where it is fixed.
+#' @param sigma Numeric vector the same length of standard deviations, so the
+#'   early and late regimes can differ. A step reads the standard deviation of
+#'   the year it lands on.
+#' @param dev_mu Numeric vector the same length of prior means. Only read when
+#'   \code{PE_model = 1}, since a walk's mean is the previous deviation.
+#' @param PE_model Integer. \code{1} independent, \code{2} random walk,
+#'   \code{3} AR1.
+#' @param rho AR1 correlation, already on the natural scale. Only read when
+#'   \code{PE_model = 3}.
+#' @param init_sd Standard deviation given to year one of a random walk. Default
+#'   \code{5}, which leaves the level effectively free. \code{NA} instead starts
+#'   the walk at zero under its own sigma.
+#'
+#' @return Numeric vector of negative log-likelihood contributions, zero where
+#'   the deviation is fixed.
+#'
+#' @keywords internal
+#' @import RTMB
+get_recdev_pe_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init_sd = 5) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  n_yrs <- length(devs)
+  nLL <- rep(0, n_yrs) * devs[1] # keep the AD type of the deviations
+
+  for(y in 1:n_yrs) {
+
+    if(is_est[y] == 0) next # skip cells whose deviation is fixed
+
+    if(PE_model == 1) { # independent
+      nLL[y] <- -RTMB::dnorm(devs[y], dev_mu[y], sigma[y], TRUE)
+    }
+
+    if(PE_model == 2) { # random walk
+      if(y == 1) {
+        # the walk needs a distribution for year one. a wide sigma leaves the level of the
+        # series effectively free; NA starts the walk at zero under its own sigma
+        first_sd <- if(is.na(init_sd)) sigma[y] else init_sd
+        nLL[y] <- -RTMB::dnorm(devs[y], 0, first_sd, TRUE)
+      }
+      else nLL[y] <- -RTMB::dnorm(devs[y], devs[y-1], sigma[y], TRUE)
+    }
+
+    if(PE_model == 3) { # ar1
+      if(y == 1) nLL[y] <- -RTMB::dnorm(devs[y], 0, sigma[y] / sqrt(1 - rho^2), TRUE) # stationary marginal sd
+      else nLL[y] <- -RTMB::dnorm(devs[y], rho * devs[y-1], sigma[y], TRUE)
+    }
+
+  } # end y loop
+
+  return(nLL)
+}
+
+
 #' Recruitment and initial age deviation penalties
 #'
 #' Population/region-specific IID penalties on initial age deviations
@@ -877,6 +972,17 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #' @param map_ln_RecDevs Array \code{[pop, region, year]} mirroring
 #'   \code{map$ln_RecDevs}; cells that are \code{NA} are fixed rather than
 #'   estimated and are left unpenalized. \code{NULL} penalizes every cell.
+#' @param RecDevs_model Integer process error structure for the recruitment
+#'   deviations: \code{1} independent, \code{2} random walk, \code{3} AR1.
+#'   The bias ramp and the own-mean center are only read under \code{1}, since
+#'   a walk's mean is the previous deviation rather than zero.
+#' @param RecDevs_rho Array \code{[pop, region]} of unconstrained AR1
+#'   correlations, transformed to \eqn{(-1, 1)} in the penalty. Only read when
+#'   \code{RecDevs_model = 3}.
+#' @param RecDevs_rw_init_sigma Standard deviation given to year one of a random
+#'   walk. Default \code{5}, which leaves the level of the series effectively
+#'   free. \code{NA} starts the walk at zero under its own sigma. Only read when
+#'   \code{RecDevs_model = 2}.
 #'
 #' @return List with elements \code{Init_Rec_nLL} (array \code{[pop, region,
 #'   age, sex]}), \code{Init_Sex_nLL} (the same layout, the between-sex tie,
@@ -906,6 +1012,9 @@ get_recruitment_penalty <- function(
   sigmaR2_late,
   do_rec_bias_ramp,
   map_ln_RecDevs = NULL,
+  RecDevs_model = 1,
+  RecDevs_rho = NULL,
+  RecDevs_rw_init_sigma = 5,
   RecDevs_pen_center = 0,
   InitDevs_pen_center = 0,
   init_devs_pen_use = NULL,
@@ -942,6 +1051,7 @@ get_recruitment_penalty <- function(
     array(w, dim = dims)
   }
   rec_wt <- share_wt(map_ln_RecDevs, dim(ln_RecDevs))
+
   init_map_active <- map_ln_InitDevs
   if(!is.null(init_map_active)) {
     if(!is.null(init_devs_pen_use)) init_map_active[init_devs_pen_use == 0] <- NA
@@ -990,19 +1100,46 @@ get_recruitment_penalty <- function(
         }
       }
 
-      # Early recruitment deviations
-      if(sigmaR_switch > 1) {
-        e_idx <- 1:(sigmaR_switch-1)
-        e_mu <- if(RecDevs_pen_center == 1) own_mean(ln_RecDevs[p,r,e_idx], is_est[p,r,e_idx]) else -sigmaR2_early[p,sigma_idx]/2 * bias_ramp[e_idx]
-        Rec_nLL[p,r,e_idx] <- -RTMB::dnorm(ln_RecDevs[p,r,e_idx], e_mu, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
-        if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,1:(sigmaR_switch-1)] <- Rec_nLL[p,r,1:(sigmaR_switch-1)] - (1 - 0.5 * bias_ramp[1:(sigmaR_switch-1)]) * ln_sigmaR[1,p,sigma_idx] # adjust w/ bias correction
-      }
+      if(RecDevs_model == 1) {
 
-      # Late recruitment deviations
-      l_idx <- sigmaR_switch:n_est_rec_devs
-      l_mu <- if(RecDevs_pen_center == 1) own_mean(ln_RecDevs[p,r,l_idx], is_est[p,r,l_idx]) else -sigmaR2_late[p,sigma_idx]/2 * bias_ramp[l_idx]
-      Rec_nLL[p,r,l_idx] <- -RTMB::dnorm(ln_RecDevs[p,r,l_idx], l_mu, exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
-      if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] <- Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
+        # Early recruitment deviations
+        if(sigmaR_switch > 1) {
+          e_idx <- 1:(sigmaR_switch-1)
+          e_mu <- if(RecDevs_pen_center == 1) own_mean(ln_RecDevs[p,r,e_idx], is_est[p,r,e_idx]) else -sigmaR2_early[p,sigma_idx]/2 * bias_ramp[e_idx]
+          Rec_nLL[p,r,e_idx] <- -RTMB::dnorm(ln_RecDevs[p,r,e_idx], e_mu, exp(ln_sigmaR[1,p,sigma_idx]), TRUE)
+          if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,1:(sigmaR_switch-1)] <- Rec_nLL[p,r,1:(sigmaR_switch-1)] - (1 - 0.5 * bias_ramp[1:(sigmaR_switch-1)]) * ln_sigmaR[1,p,sigma_idx] # adjust w/ bias correction
+        }
+
+        # Late recruitment deviations
+        l_idx <- sigmaR_switch:n_est_rec_devs
+        l_mu <- if(RecDevs_pen_center == 1) own_mean(ln_RecDevs[p,r,l_idx], is_est[p,r,l_idx]) else -sigmaR2_late[p,sigma_idx]/2 * bias_ramp[l_idx]
+        Rec_nLL[p,r,l_idx] <- -RTMB::dnorm(ln_RecDevs[p,r,l_idx], l_mu, exp(ln_sigmaR[2,p,sigma_idx]), TRUE)
+        if(do_rec_bias_ramp == 1 && any(bias_ramp != 0)) Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] <- Rec_nLL[p,r,sigmaR_switch:n_est_rec_devs] - (1 - 0.5 * bias_ramp[sigmaR_switch:n_est_rec_devs]) * ln_sigmaR[2,p,sigma_idx] # adjust w/ bias correction
+
+      } # end independent recruitment deviations
+
+      else {
+
+        # a walk still reads the early and late sigma, so a regime switch stays available.
+        # a step takes the sigma of the year it lands on
+        pen_idx <- 1:n_est_rec_devs
+        n_early <- max(0, sigmaR_switch - 1)
+        sigma_yr <- exp(ln_sigmaR[2,p,sigma_idx]) * rep(1, n_est_rec_devs)
+        if(n_early > 0) sigma_yr[1:n_early] <- exp(ln_sigmaR[1,p,sigma_idx])
+
+        rho <- if(RecDevs_model == 3) 2 / (1 + exp(-2 * RecDevs_rho[p,r])) - 1 else 0 # constrain to (-1, 1)
+
+        Rec_nLL[p,r,pen_idx] <- get_recdev_pe_nLL(
+          devs = ln_RecDevs[p,r,pen_idx],   # the deviations themselves
+          is_est = is_est[p,r,pen_idx],     # only estimated years are stepped through
+          sigma = sigma_yr,                 # early or late sigma, by year
+          dev_mu = rep(0, n_est_rec_devs),  # unused by a walk, whose mean is the previous deviation
+          PE_model = RecDevs_model,         # 2 random walk, 3 ar1
+          rho = rho,                        # ar1 correlation, natural scale
+          init_sd = RecDevs_rw_init_sigma   # sd on the first estimated year of a walk
+        )
+
+      } # end random walk or ar1 recruitment deviations
 
       # drop the penalty on deviations that are fixed rather than estimated, and
       # give a deviation shared across cells its share of one penalty
@@ -1537,7 +1674,8 @@ Get_NAA_state_penalty <- function(
   NAA_re_sex = 0,
   NAA_sex_corr_pars = NULL,
   NAA_re_season = 0,
-  NAA_season_corr_pars = NULL
+  NAA_season_corr_pars = NULL,
+  naa_re_where = NULL
 ) {
 
   "c" <- RTMB::ADoverload("c")
@@ -1547,13 +1685,28 @@ Get_NAA_state_penalty <- function(
   n_pop <- d[1]; n_regions <- d[2]; n_sexes <- d[6]
   ny <- length(naa_re_yrs); na <- length(naa_re_ages); nk <- length(naa_re_seas)
 
+  # a population that never occupies a region holds no fish there, so it has no state to
+  # penalize and the logarithm below would be taken on a structural zero
+  if(is.null(naa_re_where)) naa_re_where <- base::matrix(1, n_pop, n_regions)
+  keep <- array(rep(as.vector(naa_re_where), times = ny * nk * na * n_sexes), dim = c(n_pop, n_regions, ny, nk, na, n_sexes))
+
+  pred <- NAA_pred[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE]
+  pred[keep == 0] <- 1 # never read, and it keeps the logarithm and value finite
+
   # compute the epsilon
-  eta <- ln_NAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] - log(NAA_pred[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE])
+  eta <- ln_NAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] - log(pred)
+  eta[keep == 0] <- 0
   sig <- sigmaNAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] # get sigma NAA
 
   # Compute nLL for independent deviatiosn on every dimension
   if(NAA_re == 1 && NAA_re_region == 0 && NAA_re_pop == 0 && NAA_re_sex == 0 && NAA_re_season == 0)
-    return(-sum(RTMB::dnorm(as.vector(eta), 0, as.vector(sig), TRUE)))
+    return(-sum(RTMB::dnorm(as.vector(eta), 0, as.vector(sig), TRUE) * as.vector(keep)))
+
+  if(any(naa_re_where == 0) && (NAA_re_region > 0 || NAA_re_pop > 0))
+    stop("naa_re_where drops a population and region cell while the numbers at age state correlates ",
+         "across regions or populations. A dropped cell sits inside that joint density, so it cannot ",
+         "be left out of it. Give the state every region, or turn the region and population ",
+         "correlations off.")
 
   # initialize nll for other cases (beyond independent cases)
   nll <- 0
@@ -1600,6 +1753,7 @@ Get_NAA_state_penalty <- function(
       }
 
       for(r in 1:n_regions) {
+        if(naa_re_where[p,r] == 0) next # no state in a region this population never occupies
         for(k in 1:nk) {
           sd_prsk <- sig[p,r,1,k,1,s]
           eps_ya <- array(eps[r,,k,], dim = c(ny, na)) # year by age, matching the deviation surfaces

@@ -30,7 +30,8 @@ eval_comp_source_osa(
   n_fleets,
   n_sexes,
   pop = FALSE,
-  addtocomp = 0
+  addtocomp = 0,
+  seas_agg = 0
 )
 }
 \arguments{
@@ -80,6 +81,10 @@ observed bin map, read only for length compositions.}
 have a leading population dimension and are never summed over populations.}
 
 \item{addtocomp}{Small constant added to a composition.}
+
+\item{seas_agg}{Integer vector, one per fleet. \code{1} builds the predicted
+composition from every season of the year summed together, \code{0} from the
+season the observation sits in.}
 }
 \value{
 \code{nLL_arr}, filled in.

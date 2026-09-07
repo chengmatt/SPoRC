@@ -65,6 +65,7 @@ Setup_Mod_Biologicals(
   NAA_re_seasons = "annual",
   NAA_re_season = "iid",
   NAA_re_season_spec = "est_all",
+  NAA_re_where = NULL,
   NAA_pe_spec = "est_all",
   NAA_sigma_spec = "est",
   NAA_re_region = "iid",
@@ -484,6 +485,14 @@ unstructured correlation, \eqn{n_k(n_k-1)/2} parameters over the
 
 \item{NAA_re_season_spec}{Character controlling how the season correlations
 are shared, taking the same values as \code{NAA_re_region_spec}.}
+
+\item{NAA_re_where}{Integer matrix \code{[population, region]}, \code{1} where
+the numbers at age state runs and \code{0} where a population never occupies
+that region. \code{NULL} (default) gives every cell a state. A natal homing
+population that never reaches a region holds no fish there, so a lognormal
+state on that cell is undefined and the penalty would take the logarithm of
+zero. Cells set to \code{0} are dropped from the map as well as from the
+penalty, and they need the region and population correlations off.}
 
 \item{NAA_pe_spec}{Character controlling how the age, year and cohort
 correlations in \code{NAA_pe_pars} are shared, following the package's spec

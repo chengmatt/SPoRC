@@ -69,6 +69,14 @@ Setup_Mod_SrvIdx_and_Comps(
   SrvAgeComps_pop_bins = NULL,
   SrvLenComps_pop_bins = NULL,
   SrvIdx_LikeType = rep("lognormal", input_list$data$n_srv_fleets),
+  SrvIdx_seas_Type = NULL,
+  SrvIdx_pop_seas_Type = NULL,
+  SrvIdxAA_seas_Type = NULL,
+  SrvIdxAA_pop_seas_Type = NULL,
+  SrvAgeComps_seas_Type = NULL,
+  SrvAgeComps_pop_seas_Type = NULL,
+  SrvLenComps_seas_Type = NULL,
+  SrvLenComps_pop_seas_Type = NULL,
   SrvLenComps_sel = rep("age", input_list$data$n_srv_fleets),
   srv_waa_selected = rep(0, input_list$data$n_srv_fleets),
   SrvIdx_Cov = NULL,
@@ -256,11 +264,26 @@ same structure as \code{ISS_SrvAgeComps}, or \code{NULL} for automatic
 derivation from \code{ObsSrvLenComps}.}
 
 \item{SrvAgeComps_LikeType}{Character vector \code{[n_srv_fleets]}
-specifying the likelihood for survey age compositions. One of
-\code{"none"}, \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
-\code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
-\code{"2d-Logistic-Normal"}. Converted to integer codes
-(\code{999}, \code{0}-\code{4}) before storage.}
+  specifying the likelihood for survey age compositions. One of
+  \code{"none"}, \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
+  \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
+  \code{"2d-Logistic-Normal"}, \code{"iid-Logistic-Normal-miss0"},
+  \code{"1d-Logistic-Normal-miss0"}, \code{"2d-Logistic-Normal-miss0"}.
+  Converted to integer codes (\code{999}, \code{0}-\code{7}) before storage.
+
+  The two \code{miss0} forms drop the empty bins and renormalize the expected
+  proportions over the bins that remain, rather than adding
+  \code{addtocomp} to the zeros and keeping every bin. Their standard
+  deviation is divided by the square root of the input sample size, so the
+  parameter is a per fish quantity and a year sampled harder is fit more
+  tightly, and the change of variables from the log ratio is taken off so the
+  result is a density on the composition itself. Their correlations run
+  through the logistic function and are therefore positive, matching the
+  autoregression they mirror, where the other logistic normal forms allow
+  either sign. The \code{2d} form needs a composition joint across sexes, the
+  same as \code{"2d-Logistic-Normal"}. One step ahead residuals are not
+  available for any of the three, since the number of observations in a cell
+  changes with the number of empty bins.}
 
 \item{SrvLenComps_LikeType}{Character vector \code{[n_srv_fleets]}
 specifying the likelihood for survey length compositions. Same options
@@ -389,6 +412,22 @@ lognormal fleets. A fleet's population-specific index data source follows the
 same choice for \code{"lognormal"} and \code{"normal"}, but stays
 lognormal under \code{"mvn"}, whose covariance describes the regional
 series only.}
+
+\item{SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvIdxAA_seas_Type, SrvIdxAA_pop_seas_Type, SrvAgeComps_seas_Type, SrvAgeComps_pop_seas_Type, SrvLenComps_seas_Type, SrvLenComps_pop_seas_Type}{Whether a seasonal model reports this data source once a season or once a
+year. One value for every fleet or one per fleet.
+\describe{
+  \item{\code{"spltSeas"}}{Fit the observation against the prediction for the
+    season it sits in. This is the default and what every data source did
+    before this setting existed.}
+  \item{\code{"aggSeas"}}{Sum the prediction over every season of the year
+    and fit it against a single observation.}
+}
+Under \code{"aggSeas"} the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on in the
+matching \code{Use} array. The likelihood and the reported negative log
+likelihood land in that season. A survey measured at a point in time belongs
+in its own season with its own timing rather than aggregated; this setting is
+for a data source that accumulates across the year.}
 
 \item{SrvLenComps_sel}{Character vector \code{[n_srv_fleets]}, whether a
 length-based selectivity is applied before or after the fish are spread

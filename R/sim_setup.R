@@ -81,6 +81,10 @@ Setup_sim_env <- function(sim_list) {
   # season one alone is the annual state, which is what a list without the field describes
   if(is.null(sim_list$naa_re_seas)) sim_list$naa_re_seas <- 1L
 
+  # recruitment deviation process error; lists built before the option existed drew independently
+  if(is.null(sim_list$RecDevs_model)) sim_list$RecDevs_model <- 1
+  if(is.null(sim_list$RecDevs_rho)) sim_list$RecDevs_rho <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
+
   # output into simulation environment
   list2env(sim_list, envir = sim_env)
 

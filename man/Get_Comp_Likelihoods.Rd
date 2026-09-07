@@ -124,6 +124,10 @@ age-at-length above all) potentially bias \eqn{\theta} upward under \code{1}. Us
 logarithms. \code{1} (default) is the unbiased choice: the stationary point
 of the likelihood is exactly \code{p = obs}. \code{0} weights by the raw
 observed proportions.}
+
+\item{seas_agg}{Integer vector, one per fleet. \code{1} builds the predicted
+composition from every season of the year summed together, \code{0} from the
+season the observation sits in.}
 }
 \description{
 Computes the negative log-likelihood contribution for composition data

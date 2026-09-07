@@ -39,10 +39,11 @@ Constructs factor maps for a composition correlation-parameter array (e.g.
 \code{FishAge_corr_pars}, region- and sex-specific AR1/sex correlation) and
 its aggregated counterpart (e.g. \code{FishAge_corr_pars_agg}) for 1D and
 2D logistic-normal composition likelihoods. Parameters are activated only
-when the corresponding \code{LikeType} is in \code{c(3, 4)} (1D / 2D
-logistic-normal); all other likelihoods, or fleets with no observed
+when the corresponding \code{LikeType} is in \code{c(3, 4, 6, 7)} (1D and 2D
+logistic-normal, and the same two with the zeros dropped); all other
+likelihoods, or fleets with no observed
 compositions, map correlation parameters to \code{NA}. For the 2D
-logistic-normal (\code{LikeType == 4}), both trailing elements of the
+logistic-normal (\code{LikeType == 4} or \code{7}), both trailing elements of the
 \code{[...,2]} slice are activated: element 1 for the AR1 coefficient and
 element 2 for the sex correlation (skipped when \code{n_sexes == 1}).
 }

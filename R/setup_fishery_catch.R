@@ -193,6 +193,20 @@ do_Fmort_mapping <- function(input_list) {
     has_catch <- has_catch | apply(input_list$data$UseCatchAA_pop == 1, c(2,3,4,7), any)
   }
 
+  # a fleet reporting one annual total still fishes every season of a year it reports in, so
+  # spread that year's observation across the seasons rather than leaving the rest unfished
+  # an input list built by hand, or by an older version, has no seasonal reporting fields
+  or_seasonal <- function(x) if(is.null(x)) rep(0, dims[["fleet"]]) else x
+  seas_agg <- rbind(or_seasonal(input_list$data$Catch_seas_Type),
+                    or_seasonal(input_list$data$Catch_pop_seas_Type),
+                    or_seasonal(input_list$data$CatchAA_seas_Type),
+                    or_seasonal(input_list$data$CatchAA_pop_seas_Type))
+
+  for(f in which(apply(seas_agg == 1, 2, any))) {
+    fished_year <- apply(has_catch[,,,f, drop = FALSE], c(1,2), any) # region by year
+    for(seas in seq_len(dims[["season"]])) has_catch[,,seas,f] <- fished_year
+  } # end f loop
+
   F_dev_map <- build_pe_map(dims, share_over = character(0))
   F_dev_map[!has_catch] <- NA
 
@@ -838,13 +852,15 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   not fished, so this governs closures the way \code{UseCatch} does for the
 #'   aggregated data source.
 #'
-#' @param sigmaCAA_key Integer matrix \code{[n_ages, n_fish_fleets]} coupling the
-#'   catch at age observation error, an integer key matrix, the convention ICES assessments use. Equal
-#'   entries share a parameter and \code{NA} excludes one. This single structure
-#'   covers every sharing pattern: \code{1 2 3 4 5} gives one standard deviation
-#'   per age, \code{1 1 2 2 2} gives standard deviations by age group as several ICES assessments do, and \code{1 1 1 1 1} gives one for the fleet. Defaults to
-#'   one parameter per fleet, shared across ages. A parameter informed by fewer
-#'   than two observations is refused, since an observation error standard
+#' @param sigmaCAA_key Integer array \code{[n_ages, n_sexes, n_fish_fleets]}
+#'   coupling the catch at age observation error, the key matrix convention ICES
+#'   assessments use. Equal entries share a parameter and \code{NA} excludes one.
+#'   The sex dim is required; a key coupling the sexes repeats its entries across
+#'   them. Along the age dim, \code{1 2 3 4 5} gives one standard deviation per
+#'   age, \code{1 1 2 2 2} gives standard deviations by age group as several ICES
+#'   assessments do, and \code{1 1 1 1 1} gives one for the fleet. Defaults to one
+#'   parameter per fleet, shared across ages and sexes. A parameter informed by
+#'   fewer than two observations is refused, since an observation error standard
 #'   deviation with a single observation drives the likelihood to negative
 #'   infinity rather than failing outright.
 #'
@@ -857,10 +873,12 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   shaped like \code{ObsCatchAA}. The discard counterpart of catch at age.
 #' @param ObsDiscardAA_pop,UseDiscardAA_pop,ObsCatchAA_pop,UseCatchAA_pop
 #'   Population-specific counterparts, with a leading population dimension.
-#' @param sigmaCAA_pop_key,sigmaDAA_key,sigmaDAA_pop_key Integer matrices
-#'   \code{[n_ages, n_fish_fleets]} coupling the observation error for the
-#'   population-specific catch, the discards, and the population-specific
-#'   discards, following the same convention as \code{sigmaCAA_key}.
+#' @param sigmaCAA_pop_key,sigmaDAA_key,sigmaDAA_pop_key Integer arrays coupling
+#'   the observation error for the population-specific catch, the discards, and
+#'   the population-specific discards, following the same convention as
+#'   \code{sigmaCAA_key}. \code{sigmaDAA_key} is shaped
+#'   \code{[n_ages, n_sexes, n_fish_fleets]}; the two population-specific keys
+#'   take a leading population dim, \code{[n_pop, n_ages, n_sexes, n_fish_fleets]}.
 #' @param sigmaCAA_pop_spec,sigmaDAA_spec,sigmaDAA_pop_spec \code{"est"} or
 #'   \code{"fix"}.
 #' @param AgeObsCorr_catch,AgeObsCorr_discard,AgeObsCorr_catch_pop,AgeObsCorr_discard_pop

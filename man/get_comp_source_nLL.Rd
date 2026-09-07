@@ -34,7 +34,8 @@ get_comp_source_nLL(
   comp_const_obs = 1,
   do_internal_comp_osa = FALSE,
   tracked_discrete = NULL,
-  tracked_continuous = NULL
+  tracked_continuous = NULL,
+  seas_agg = 0
 )
 }
 \arguments{
@@ -95,6 +96,10 @@ have a leading population dimension and are never summed over populations.}
 
 \item{tracked_discrete, tracked_continuous}{Registered observation vectors, read
 only on the OSA route and \code{NULL} where no fleet uses that family.}
+
+\item{seas_agg}{Integer vector, one per fleet. \code{1} builds the predicted
+composition from every season of the year summed together, \code{0} from the
+season the observation sits in.}
 }
 \value{
 \code{nLL_arr}, filled in.

@@ -3,6 +3,61 @@
 # Jitter analysis: refit from perturbed starting values to check the optimizer is finding the same
 # minimum.
 
+#' Draw jittered starting values for one jitter iteration
+#'
+#' \code{nlminb()} only ever sees the fixed effects, so a jittered random effect
+#' has to reach the model another way. TMB starts the inner Laplace solve from
+#' \code{obj$env$last.par}, so the draws are returned separately and written
+#' there by the caller.
+#'
+#' @param obj An RTMB model object from \code{\link[RTMB]{MakeADFun}}.
+#' @param par_vec Starting values, either the fixed-effect vector
+#'   (\code{length(obj$par)}) or the joint fixed and random vector
+#'   (\code{length(obj$env$par)}), or \code{NULL} for the model's own start.
+#' @param sd Standard deviation of the additive normal draws.
+#' @param jitter_random Whether the random effects are perturbed as well.
+#'
+#' @return A list with \code{fixed}, the jittered fixed-effect vector, and
+#'   \code{random}, the random-effect starting values in \code{obj$env$random}
+#'   order, jittered when \code{jitter_random = TRUE} and taken straight from
+#'   \code{par_vec} otherwise. Length zero when the model has no random effects.
+#' @keywords internal
+#' @importFrom stats rnorm
+jitter_start_values <- function(obj, par_vec, sd, jitter_random) {
+
+  n_fixed <- length(obj$par)
+  n_joint <- length(obj$env$par)
+  rand_idx <- obj$env$random # NULL when the model has no random effects
+
+  # a joint vector splits on the random indices; a fixed-length one leaves the
+  # random effects at whatever start the model was built with
+  if(is.null(par_vec)) {
+    fixed_start <- obj$par
+    rand_start <- if(is.null(rand_idx)) numeric(0) else obj$env$par[rand_idx]
+  } else if(length(par_vec) == n_fixed) {
+    fixed_start <- par_vec
+    rand_start <- if(is.null(rand_idx)) numeric(0) else obj$env$par[rand_idx]
+  } else if(!is.null(rand_idx) && length(par_vec) == n_joint) {
+    fixed_start <- par_vec[-rand_idx]
+    rand_start <- par_vec[rand_idx]
+  } else {
+    stop("par_vec has length ", length(par_vec), ", but this model has ", n_fixed,
+         " fixed effects",
+         if(is.null(rand_idx)) "" else paste0(" and ", n_joint, " joint fixed and random values"),
+         ". Pass a vector of one of those lengths.")
+  }
+
+  fixed <- fixed_start + stats::rnorm(length(fixed_start), 0, sd)
+
+  # the random effects are integrated out, so these only move the starting point of
+  # the inner solve; they are returned jittered or not so the caller always seeds them
+  random <- if(is.null(rand_idx)) numeric(0)
+            else if(isTRUE(jitter_random)) rand_start + stats::rnorm(length(rand_start), 0, sd)
+            else rand_start
+
+  list(fixed = fixed, random = random)
+}
+
 #' Run Jitter Analysis for Model Diagnostics
 #'
 #' Performs a jitter analysis to evaluate sensitivity of model optimization
@@ -12,7 +67,8 @@
 #'
 #' Each jitter iteration:
 #' \itemize{
-#'   \item Perturbs the starting parameter vector with random normal noise.
+#'   \item Perturbs the fixed effects with additive normal noise, and the
+#'   random effects too when \code{jitter_random = TRUE}.
 #'   \item Optimizes the objective function using \code{stats::nlminb()}.
 #'   \item Optionally performs additional Newton steps to refine the solution.
 #'   \item Extracts reported quantities (e.g., spawning biomass and recruitment)
@@ -38,10 +94,18 @@
 #'   executed in parallel.
 #' @param n_cores Integer specifying the number of parallel workers to use
 #'   when \code{do_par = TRUE}.
-#' @param par_vec Optional numeric vector of parameter values used as the
-#'   starting point for jittering. If \code{NULL}, the model's default starting
-#'   parameter vector is jittered. If provided, jittering is applied to this
-#'   vector (for example, the maximum likelihood estimates).
+#' @param par_vec Optional numeric vector of starting values to jitter. Accepts
+#'   either the fixed-effect vector (\code{length(obj$par)}, for example
+#'   \code{fit$optim$par}) or the joint fixed and random vector
+#'   (\code{length(obj$env$par)}, for example \code{fit$env$last.par.best}).
+#'   Any other length is an error. \code{NULL} uses the model's own start.
+#' @param jitter_random Logical indicating whether the random effects are
+#'   perturbed alongside the fixed effects. Only the fixed effects are searched
+#'   by \code{nlminb()}, so the random draws move the starting point of the
+#'   inner Laplace solve and check whether it settles on the same modes. Either
+#'   way the inner solve starts from the random values in \code{par_vec}, or
+#'   from the model's own start when \code{par_vec} holds no random effects.
+#'   Default is \code{FALSE}.
 #'
 #' @return A \code{data.frame} containing jitter iteration results. The output
 #' includes time series of spawning stock biomass (SSB) and recruitment,
@@ -72,7 +136,8 @@ do_jitter <- function(data,
                       n_newton_loops = 0,
                       do_par,
                       n_cores,
-                      par_vec = NULL
+                      par_vec = NULL,
+                      jitter_random = FALSE
                       ) {
 
   jitter_all <- data.frame()
@@ -86,14 +151,29 @@ do_jitter <- function(data,
   )
 
   if(do_par == FALSE) {
+
+    par_start <- obj$env$par # the model's own start, before any iteration moves the tape
+
     for(i in 1:n_jitter) {
 
-      # jitter original parameters (additive normal draws)
-      if(is.null(par_vec)) jitter_pars <- obj$par + stats::rnorm(length(obj$par), 0, sd) # if not using mle parameters
-      else jitter_pars <- par_vec + stats::rnorm(length(obj$par), 0, sd) # if using mle parameters
+      # one tape serves every iteration, so its state goes back to the model start each
+      # time; value.best only ever falls, and a stale one repeats the earlier fit's report
+      obj$env$last.par <- par_start
+      obj$env$last.par.best <- par_start
+      obj$env$value.best <- Inf
+
+      # jitter starting values (additive normal draws)
+      jit <- jitter_start_values(obj = obj, par_vec = par_vec, sd = sd, jitter_random = jitter_random)
+
+      # the inner Laplace solve starts from last.par, so the random start goes there,
+      # whether it came from par_vec, the model's own start, or a draw around either
+      if(length(jit$random) > 0) {
+        obj$env$last.par[obj$env$random] <- jit$random
+        obj$env$last.par.best[obj$env$random] <- jit$random
+      }
 
       # Now, optimize the function
-      optim <- stats::nlminb(jitter_pars,
+      optim <- stats::nlminb(jit$fixed,
                              obj$fn,
                              obj$gr,
                              control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15))
@@ -150,12 +230,17 @@ do_jitter <- function(data,
           silent = TRUE
         )
 
-        # Jitter original parameters
-        if(is.null(par_vec)) jitter_pars <- obj$par + stats::rnorm(length(obj$par), 0, sd) # if not using mle parameters
-        else jitter_pars <- par_vec + stats::rnorm(length(obj$par), 0, sd) # if using mle parameters
+        # Jitter starting values
+        jit <- jitter_start_values(obj = obj, par_vec = par_vec, sd = sd, jitter_random = jitter_random)
+
+        # the inner Laplace solve starts from last.par, so the random draws go there
+        if(length(jit$random) > 0) {
+          obj$env$last.par[obj$env$random] <- jit$random
+          obj$env$last.par.best[obj$env$random] <- jit$random
+        }
 
         # Optimize function
-        optim <- stats::nlminb(jitter_pars,
+        optim <- stats::nlminb(jit$fixed,
                                obj$fn,
                                obj$gr,
                                control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15))

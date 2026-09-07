@@ -161,6 +161,11 @@ generate_initial_age_structure <- function(y,
 #' deviations. \code{sigma_idx} selects the natal region's \code{ln_sigmaR}
 #' for the bias-correction term.
 #'
+#' \code{RecDevs_model} sets what the draw is centered on: zero for independent
+#' deviations, the previous year's deviation for a random walk, and
+#' \code{RecDevs_rho} times it for an AR1. Only independent draws are bias
+#' corrected, since a random walk's deviation is not mean zero.
+#'
 #' @param y Integer. Year index for which recruitment is generated.
 #' @param sim Integer. Simulation replicate index.
 #' @param sim_env Simulation environment created by
@@ -265,14 +270,25 @@ generate_recruitment <- function(y,
 
           # get rec devs
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-          tmp_ln_rec_devs <- stats::rnorm(1, 0, exp(ln_sigmaR[2, p, sigma_idx]))
+
+          # a walk draws around the previous year's deviation and an ar1 around a fraction of it,
+          # so the level moves through time rather than resetting every year. year one is always
+          # an independent draw, since there is nothing behind it to walk from
+          dev_mu <- 0
+          if(RecDevs_model != 1 && y > 1) {
+            prev_dev <- sim_env$ln_RecDevs[p,r,y-1,sim]
+            dev_mu <- if(RecDevs_model == 2) prev_dev else RecDevs_rho[p,r] * prev_dev
+          }
+
+          tmp_ln_rec_devs <- stats::rnorm(1, dev_mu, exp(ln_sigmaR[2, p, sigma_idx]))
 
           if(R0[p,r,y,sim] != 0) {
             sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
-          # compute rec
-          tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] - exp(ln_sigmaR[2,p,sigma_idx])^2/2)
+          # compute rec. a walk's deviation is not mean zero, so only iid draws are bias corrected
+          bias_corr <- if(RecDevs_model == 1) exp(ln_sigmaR[2,p,sigma_idx])^2/2 else 0
+          tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] - bias_corr)
         }
 
         # input recruitment into the season it first enters the population
@@ -488,10 +504,10 @@ apply_pop_dy <- function(y, sim, sim_env) {
         tmp_disc_FAA <- apply(sweep(tmp_fish_sel * (1 - tmp_ret_sel), c(1,4), tmp_Fmort * tmp_dmr, "*"), c(1,2,3), sum) # apply Frate and dmr to discarded selectivity
 
         # Get natural mortality
-        tmp_nm  <- array(tmp_natmort[p,,,,drop=FALSE], dim = c(n_regions, n_ages, n_sexes)) # reshape natural mortality
+        tmp_MAA <- array(tmp_natmort[p,,,,drop=FALSE], dim = c(n_regions, n_ages, n_sexes)) # reshape natural mortality
 
         # Get total mortality
-        sim_env$ZAA[p,,y,seas,,,sim] <- tmp_nm + tmp_ret_FAA + tmp_disc_FAA
+        sim_env$ZAA[p,,y,seas,,,sim] <- tmp_MAA + tmp_ret_FAA + tmp_disc_FAA
       }
 
       # Movement

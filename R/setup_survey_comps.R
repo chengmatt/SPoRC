@@ -226,8 +226,23 @@
 #'   specifying the likelihood for survey age compositions. One of
 #'   \code{"none"}, \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
 #'   \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
-#'   \code{"2d-Logistic-Normal"}. Converted to integer codes
-#'   (\code{999}, \code{0}-\code{4}) before storage.
+#'   \code{"2d-Logistic-Normal"}, \code{"iid-Logistic-Normal-miss0"},
+#'   \code{"1d-Logistic-Normal-miss0"}, \code{"2d-Logistic-Normal-miss0"}.
+#'   Converted to integer codes (\code{999}, \code{0}-\code{7}) before storage.
+#'
+#'   The two \code{miss0} forms drop the empty bins and renormalize the expected
+#'   proportions over the bins that remain, rather than adding
+#'   \code{addtocomp} to the zeros and keeping every bin. Their standard
+#'   deviation is divided by the square root of the input sample size, so the
+#'   parameter is a per fish quantity and a year sampled harder is fit more
+#'   tightly, and the change of variables from the log ratio is taken off so the
+#'   result is a density on the composition itself. Their correlations run
+#'   through the logistic function and are therefore positive, matching the
+#'   autoregression they mirror, where the other logistic normal forms allow
+#'   either sign. The \code{2d} form needs a composition joint across sexes, the
+#'   same as \code{"2d-Logistic-Normal"}. One step ahead residuals are not
+#'   available for any of the three, since the number of observations in a cell
+#'   changes with the number of empty bins.
 #' @param SrvLenComps_LikeType Character vector \code{[n_srv_fleets]}
 #'   specifying the likelihood for survey length compositions. Same options
 #'   as \code{SrvAgeComps_LikeType}.
@@ -555,9 +570,9 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(SrvAgeComps_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvAgeComps_LikeType')
   check_data_dimensions(SrvLenComps_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvLenComps_LikeType')
-  if(!all(SrvAgeComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(SrvAgeComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for SrvAgeComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(SrvLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(SrvLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for SrvLenComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
 
   # Survey compositions (population-specific)
@@ -622,9 +637,9 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(SrvAgeComps_pop_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvAgeComps_pop_LikeType')
   check_data_dimensions(SrvLenComps_pop_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvLenComps_pop_LikeType')
-  if(!all(SrvAgeComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(SrvAgeComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for SrvAgeComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(SrvLenComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(SrvLenComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for SrvLenComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
 
   # checking to make sure defaults are not applied
@@ -667,17 +682,22 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     if(SrvAgeComps_LikeType[f] == "iid-Logistic-Normal") comp_srvage_like_vals <- c(comp_srvage_like_vals, 2)
     if(SrvAgeComps_LikeType[f] == "1d-Logistic-Normal") comp_srvage_like_vals <- c(comp_srvage_like_vals, 3)
     if(SrvAgeComps_LikeType[f] == "2d-Logistic-Normal") comp_srvage_like_vals <- c(comp_srvage_like_vals, 4)
+    if(SrvAgeComps_LikeType[f] == "iid-Logistic-Normal-miss0") comp_srvage_like_vals <- c(comp_srvage_like_vals, 5)
+    if(SrvAgeComps_LikeType[f] == "1d-Logistic-Normal-miss0") comp_srvage_like_vals <- c(comp_srvage_like_vals, 6)
+    if(SrvAgeComps_LikeType[f] == "2d-Logistic-Normal-miss0") comp_srvage_like_vals <- c(comp_srvage_like_vals, 7)
     collect_message(paste("Survey Age Composition Likelihoods", "for survey fleet", f, "specified as:" , SrvAgeComps_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_srvage_like_vals, "SrvAgeComps_LikeType")
 
   # Specifying composition type
   SrvAgeComps_Type_Mat <- parse_year_fleet_spec(
     SrvAgeComps_Type, "SrvAgeComps_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_srvage_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_srvage_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -690,17 +710,22 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     if(SrvAgeComps_pop_LikeType[f] == "iid-Logistic-Normal") comp_srvage_pop_like_vals <- c(comp_srvage_pop_like_vals, 2)
     if(SrvAgeComps_pop_LikeType[f] == "1d-Logistic-Normal") comp_srvage_pop_like_vals <- c(comp_srvage_pop_like_vals, 3)
     if(SrvAgeComps_pop_LikeType[f] == "2d-Logistic-Normal") comp_srvage_pop_like_vals <- c(comp_srvage_pop_like_vals, 4)
+    if(SrvAgeComps_pop_LikeType[f] == "iid-Logistic-Normal-miss0") comp_srvage_pop_like_vals <- c(comp_srvage_pop_like_vals, 5)
+    if(SrvAgeComps_pop_LikeType[f] == "1d-Logistic-Normal-miss0") comp_srvage_pop_like_vals <- c(comp_srvage_pop_like_vals, 6)
+    if(SrvAgeComps_pop_LikeType[f] == "2d-Logistic-Normal-miss0") comp_srvage_pop_like_vals <- c(comp_srvage_pop_like_vals, 7)
     collect_message(paste("Population Survey Age Composition Likelihoods", "for survey fleet", f, "specified as:" , SrvAgeComps_pop_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_srvage_pop_like_vals, "SrvAgeComps_pop_LikeType")
 
   # Specifying composition type
   SrvAgeComps_pop_Type_Mat <- parse_year_fleet_spec(
     SrvAgeComps_pop_Type, "SrvAgeComps_pop_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_srvage_pop_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_srvage_pop_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -714,16 +739,21 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     if(SrvLenComps_LikeType[f] == "iid-Logistic-Normal") comp_srvlen_like_vals <- c(comp_srvlen_like_vals, 2)
     if(SrvLenComps_LikeType[f] == "1d-Logistic-Normal") comp_srvlen_like_vals <- c(comp_srvlen_like_vals, 3)
     if(SrvLenComps_LikeType[f] == "2d-Logistic-Normal") comp_srvlen_like_vals <- c(comp_srvlen_like_vals, 4)
+    if(SrvLenComps_LikeType[f] == "iid-Logistic-Normal-miss0") comp_srvlen_like_vals <- c(comp_srvlen_like_vals, 5)
+    if(SrvLenComps_LikeType[f] == "1d-Logistic-Normal-miss0") comp_srvlen_like_vals <- c(comp_srvlen_like_vals, 6)
+    if(SrvLenComps_LikeType[f] == "2d-Logistic-Normal-miss0") comp_srvlen_like_vals <- c(comp_srvlen_like_vals, 7)
     collect_message(paste("Survey Length Composition Likelihoods", "for survey fleet", f, "specified as:" , SrvLenComps_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_srvlen_like_vals, "SrvLenComps_LikeType")
 
   SrvLenComps_Type_Mat <- parse_year_fleet_spec(
     SrvLenComps_Type, "SrvLenComps_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_srvlen_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_srvlen_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -736,17 +766,22 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     if(SrvLenComps_pop_LikeType[f] == "iid-Logistic-Normal") comp_srvlen_pop_like_vals <- c(comp_srvlen_pop_like_vals, 2)
     if(SrvLenComps_pop_LikeType[f] == "1d-Logistic-Normal") comp_srvlen_pop_like_vals <- c(comp_srvlen_pop_like_vals, 3)
     if(SrvLenComps_pop_LikeType[f] == "2d-Logistic-Normal") comp_srvlen_pop_like_vals <- c(comp_srvlen_pop_like_vals, 4)
+    if(SrvLenComps_pop_LikeType[f] == "iid-Logistic-Normal-miss0") comp_srvlen_pop_like_vals <- c(comp_srvlen_pop_like_vals, 5)
+    if(SrvLenComps_pop_LikeType[f] == "1d-Logistic-Normal-miss0") comp_srvlen_pop_like_vals <- c(comp_srvlen_pop_like_vals, 6)
+    if(SrvLenComps_pop_LikeType[f] == "2d-Logistic-Normal-miss0") comp_srvlen_pop_like_vals <- c(comp_srvlen_pop_like_vals, 7)
     collect_message(paste("Population Survey Length Composition Likelihoods", "for survey fleet", f, "specified as:" , SrvLenComps_pop_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_srvlen_pop_like_vals, "SrvLenComps_pop_LikeType")
 
   # Specifying composition type
   SrvLenComps_pop_Type_Mat <- parse_year_fleet_spec(
     SrvLenComps_pop_Type, "SrvLenComps_pop_Type", input_list$data$n_srv_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_srvlen_pop_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_srvlen_pop_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 

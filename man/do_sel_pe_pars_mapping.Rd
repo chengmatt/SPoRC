@@ -9,6 +9,8 @@ do_sel_pe_pars_mapping(
   pe_pars_spec,
   corr_opt_semipar,
   bins,
+  sel_devs_spec,
+  sel_devs_shared_bins,
   prefix,
   fleet_field,
   use_field,
@@ -21,7 +23,10 @@ sublists.}
 
 \item{pe_pars_spec}{Character vector of length \code{n_<fleet_field>}.
 Options: \code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
-\code{"est_shared_r_s"}, \code{"fix"}/\code{"none"}, or
+\code{"est_shared_r_s"}, the same four with \code{_b} added
+(\code{"est_shared_b"}, \code{"est_shared_r_b"}, \code{"est_shared_b_s"},
+\code{"est_shared_r_b_s"}), which put one standard deviation across every
+bin the fleet reads, \code{"fix"}/\code{"none"}, or
 \code{"est_shared_f_x"}.}
 
 \item{corr_opt_semipar}{Character vector of length \code{n_<fleet_field>}
@@ -32,6 +37,15 @@ models (\code{NA}, \code{"corr_zero_y"}, \code{"corr_zero_b"},
 only valid for 3D GMRF forms.}
 
 \item{bins}{Number of selectivity bins.}
+
+\item{sel_devs_spec}{Character vector of length \code{n_<fleet_field>}, the
+deviation specification passed to \code{\link{do_sel_devs_mapping}}. Read
+only to recognize which dimensions the deviations are shared over.
+\code{"est_shared_f_x"} resolves to the referenced fleet's specification.}
+
+\item{sel_devs_shared_bins}{List of integer vectors grouping bins that share
+a single estimated deviation, as passed to
+\code{\link{do_sel_devs_mapping}}.}
 
 \item{prefix}{Character, one of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
 Drives the domain-specific field names: \code{cont_tv_<prefix>_sel},
@@ -66,6 +80,14 @@ selectively suppressed via \code{corr_opt_semipar}. Fleet sharing
 (\code{"est_shared_f_x"}) is handled in a second pass.
 }
 \details{
+The hyperparameters have to match the deviation series the likelihood
+actually evaluates, which is one per shared group, read at the group's lowest
+bin and first sex. Under iid or a random walk on a non-parametric fleet the
+log-sigmas are indexed by bin, so \code{"est_shared_b"} leaves one log-sigma
+per bin group. Sharing deviations across sexes (\code{"est_shared_s"} and its
+combinations) leaves one set for the first sex, under every time-variation
+form. The rest are fixed.
+
 Serves fishery, retention, and survey selectivity, selected by
 \code{prefix} exactly as in \code{\link{do_fixed_sel_pars_mapping}}.
 }

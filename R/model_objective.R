@@ -183,6 +183,14 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     set("map_ln_RecDevs", array(1, dim = dim(get("ln_RecDevs", envir = env))))
   }
 
+  # recruitment deviation process error. older lists have independent deviations and no
+  # correlation parameter, so default to that rather than changing their objective
+  if(!has("RecDevs_model")) set("RecDevs_model", 1)
+  if(!has("RecDevs_rw_init_sigma")) set("RecDevs_rw_init_sigma", 5)
+  if(!has("RecDevs_rho")) {
+    set("RecDevs_rho", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env))))
+  }
+
   # fishery index timing. older input lists have no t_fish and formed the index from
   # start-of-season numbers, so default to zero rather than shifting their predicted index
   if(!has("t_fish")) {
@@ -400,6 +408,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("n_est_naa_re")) set("n_est_naa_re", 0)
   if(!has("naa_re_ages")) set("naa_re_ages", integer(0))
   if(!has("naa_re_yrs")) set("naa_re_yrs", integer(0))
+  if(!has("naa_re_where")) set("naa_re_where", NULL) # every population and region cell
   # Season one alone is what the state was before the season dim existed, so a list without the
   # field is that model. The arrays themselves are promoted below rather than replaced.
   if(!has("naa_re_seas")) set("naa_re_seas", 1L)
@@ -909,6 +918,10 @@ SPoRC_rtmb = function(pars, data) {
     UseCatchAA = UseCatchAA,
     UseCatchAA_pop = UseCatchAA_pop,
     use_catch_aa = use_catch_aa,
+    catch_seas_agg = Catch_seas_Type,
+    catch_pop_seas_agg = Catch_pop_seas_Type,
+    catch_aa_seas_agg = CatchAA_seas_Type,
+    catch_aa_pop_seas_agg = CatchAA_pop_seas_Type,
     ln_F_mean = ln_F_mean,
     ln_F_devs = ln_F_devs,
     logit_dmr_mean = logit_dmr_mean,
@@ -1162,6 +1175,13 @@ SPoRC_rtmb = function(pars, data) {
   catch_flag_pop = apply(UseCatch_pop[,,1,,,drop = FALSE], c(2,4,5), max)
   catch_flag = pmax(catch_flag_base, catch_flag_pop)
 
+  # a fleet reporting once a year is still fish in every season of that year, so the flag allows fishing instead of where the obs is 
+  for(f in seq_len(n_fish_fleets)) {
+    if(Catch_seas_Type[f] == 1 || Catch_pop_seas_Type[f] == 1) {
+      for(r in 1:n_regions) if(any(catch_flag[r,,f] > 0)) catch_flag[r,,f] = 1
+    }
+  } # end f loop
+
   # Set up how initial F is determined; == 0 use proportion of ln_F_mean, otherwise, use absolute value
   init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
   for(r in 1:n_regions) for(seas in 1:n_seas) for(f in 1:n_fish_fleets) {
@@ -1398,7 +1418,8 @@ SPoRC_rtmb = function(pars, data) {
       NAA_re_sex = NAA_re_sex, # correlation across sexes
       NAA_sex_corr_pars = NAA_sex_corr_pars,
       NAA_re_season = NAA_re_season, # correlation across seasons
-      NAA_season_corr_pars = NAA_season_corr_pars
+      NAA_season_corr_pars = NAA_season_corr_pars,
+      naa_re_where = naa_re_where # population by region cells the state runs over
     )
 
   } # end if estimating a state on numbers at age
@@ -1612,7 +1633,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsCatch_map[i, 4]
 
       Catch_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsCatch[i],
-                                               log(sum(PredCatch[,r,y,seas,f])),
+                                               log(get_seas_pred(PredCatch, r, y, seas, f, Catch_seas_Type[f])),
                                                exp(ln_sigmaC[r,y,seas,f]), TRUE)
     }
   }
@@ -1638,7 +1659,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho = trans_rho_catch, # correlation across ages, unconstrained
     trans_rho_year = trans_rho_catch_year, # correlation across years, unconstrained
     us_pars = trans_rho_catch_us, # unstructured correlation parameters
-    aa_type = CatchAA_Type # dims the observations are split by
+    aa_type = CatchAA_Type, # dims the observations are split by
+    seas_agg = CatchAA_seas_Type # whether this source is fit as a season total
   )
 
   CatchAA_nLL = caa$nLL # nLL
@@ -1661,7 +1683,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsCatch_pop_map[i, 5]
 
       Catch_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsCatch_pop[i],
-                                                     log(PredCatch[p,r,y,seas,f]),
+                                                     log(get_seas_pred_pop(PredCatch, p, r, y, seas, f, Catch_pop_seas_Type[f])),
                                                      exp(ln_sigmaC_pop[p,r,y,seas,f]), TRUE)
     }
   }
@@ -1686,7 +1708,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho = trans_rho_catch_pop, # correlation across ages, unconstrained
     trans_rho_year = trans_rho_catch_pop_year, # correlation across years, unconstrained
     us_pars = trans_rho_catch_pop_us, # unstructured correlation parameters
-    aa_type = CatchAA_pop_Type # dims the observations are split by
+    aa_type = CatchAA_pop_Type, # dims the observations are split by
+    seas_agg = CatchAA_pop_seas_Type # whether this source is fit as a season total
   )
 
   CatchAA_pop_nLL = caa_pop$nLL # nLL
@@ -1709,7 +1732,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsDiscard_map[i, 4]
 
       Discard_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard[i],
-                                                 log(sum(PredDiscard[,r,y,seas,f])),
+                                                 log(get_seas_pred(PredDiscard, r, y, seas, f, Discard_seas_Type[f])),
                                                  exp(ln_sigmaD[r,y,seas,f]), TRUE)
     }
   }
@@ -1734,7 +1757,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho = trans_rho_discard, # correlation across ages, unconstrained
     trans_rho_year = trans_rho_discard_year, # correlation across years, unconstrained
     us_pars = trans_rho_discard_us, # unstructured correlation parameters
-    aa_type = DiscardAA_Type # dims the observations are split by
+    aa_type = DiscardAA_Type, # dims the observations are split by
+    seas_agg = DiscardAA_seas_Type # whether this source is fit as a season total
   )
 
   DiscardAA_nLL = daa$nLL # nLL
@@ -1758,7 +1782,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsDiscard_pop_map[i, 5]
 
       Discard_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard_pop[i],
-                                                       log(PredDiscard[p,r,y,seas,f]),
+                                                       log(get_seas_pred_pop(PredDiscard, p, r, y, seas, f, Discard_pop_seas_Type[f])),
                                                        exp(ln_sigmaD_pop[p,r,y,seas,f]), TRUE)
     }
   }
@@ -1783,7 +1807,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho = trans_rho_discard_pop, # correlation across ages, unconstrained
     trans_rho_year = trans_rho_discard_pop_year, # correlation across years, unconstrained
     us_pars = trans_rho_discard_pop_us, # unstructured correlation parameters
-    aa_type = DiscardAA_pop_Type # dims the observations are split by
+    aa_type = DiscardAA_pop_Type, # dims the observations are split by
+    seas_agg = DiscardAA_pop_seas_Type # whether this source is fit as a season total
   )
 
   DiscardAA_pop_nLL = daa_pop$nLL # nLL
@@ -1810,7 +1835,7 @@ SPoRC_rtmb = function(pars, data) {
       seas = obs_map_f[i, 3] # season
       obs_vec_f[i] = ObsFishIdx[r,y,seas,f] # observed index
       se_vec_f[i] = FishIdx_SD[r,y,seas,f] # index standard deviation
-      pred_vec_f[i] = sum(PredFishIdx[,r,y,seas,f]) # predicted index, summed across populations
+      pred_vec_f[i] = get_seas_pred(PredFishIdx, r, y, seas, f, FishIdx_seas_Type[f]) # predicted index, summed across populations
     } # end i loop
 
     # a multivariate normal cannot be split across years, so its total lands in the first cell and the rest stay zero
@@ -1841,7 +1866,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsFishIdx_map[i, 4] # fleet
 
       FishIdx_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx[i],
-                                                 log(sum(PredFishIdx[,r,y,seas,f] + addtofishidx)),
+                                                 log(get_seas_pred(PredFishIdx, r, y, seas, f, FishIdx_seas_Type[f]) + addtofishidx),
                                                  FishIdx_SD[r,y,seas,f], TRUE)
     } # end i loop
   }
@@ -1867,7 +1892,7 @@ SPoRC_rtmb = function(pars, data) {
       seas = obs_map_fp[i, 4] # season
 
       FishIdx_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx_pop[p,r,y,seas,f],
-                                                       PredFishIdx[p,r,y,seas,f],
+                                                       get_seas_pred_pop(PredFishIdx, p, r, y, seas, f, FishIdx_pop_seas_Type[f]),
                                                        FishIdx_pop_SD[p,r,y,seas,f], TRUE)
     } # end i loop
   } # end f loop
@@ -1892,7 +1917,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsFishIdx_pop_map[i, 5] # fleet
 
       FishIdx_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsFishIdx_pop[i],
-                                                       log(PredFishIdx[p,r,y,seas,f] + addtofishidx),
+                                                       log(get_seas_pred_pop(PredFishIdx, p, r, y, seas, f, FishIdx_pop_seas_Type[f]) + addtofishidx),
                                                        FishIdx_pop_SD[p,r,y,seas,f], TRUE)
     } # end i loop
   }
@@ -1951,7 +1976,8 @@ SPoRC_rtmb = function(pars, data) {
     comp_const_obs = comp_const_obs,
     do_internal_comp_osa = do_internal_comp_osa,
     tracked_discrete = ObsFishAgeComps_osa_discrete, # registered discrete observations
-    tracked_continuous = ObsFishAgeComps_osa_continuous # registered continuous observations
+    tracked_continuous = ObsFishAgeComps_osa_continuous, # registered continuous observations
+    seas_agg = FishAgeComps_seas_Type # whether this source is fit as a season total
   )
 
   if(fit_lengths == 1) {
@@ -2010,7 +2036,8 @@ SPoRC_rtmb = function(pars, data) {
       comp_const_obs = comp_const_obs,
       do_internal_comp_osa = do_internal_comp_osa,
       tracked_discrete = ObsFishLenComps_osa_discrete, # registered discrete observations
-      tracked_continuous = ObsFishLenComps_osa_continuous # registered continuous observations
+      tracked_continuous = ObsFishLenComps_osa_continuous, # registered continuous observations
+      seas_agg = FishLenComps_seas_Type # whether this source is fit as a season total
     )
 
   } # end if fitting lengths
@@ -2069,7 +2096,8 @@ SPoRC_rtmb = function(pars, data) {
     comp_const_obs = comp_const_obs,
     do_internal_comp_osa = do_internal_comp_osa,
     tracked_discrete = ObsFishAgeComps_pop_osa_discrete, # registered discrete observations
-    tracked_continuous = ObsFishAgeComps_pop_osa_continuous # registered continuous observations
+    tracked_continuous = ObsFishAgeComps_pop_osa_continuous, # registered continuous observations
+    seas_agg = FishAgeComps_pop_seas_Type # whether this source is fit as a season total
   )
 
   if(fit_lengths == 1) {
@@ -2128,7 +2156,8 @@ SPoRC_rtmb = function(pars, data) {
       comp_const_obs = comp_const_obs,
       do_internal_comp_osa = do_internal_comp_osa,
       tracked_discrete = ObsFishLenComps_pop_osa_discrete, # registered discrete observations
-      tracked_continuous = ObsFishLenComps_pop_osa_continuous # registered continuous observations
+      tracked_continuous = ObsFishLenComps_pop_osa_continuous, # registered continuous observations
+      seas_agg = FishLenComps_pop_seas_Type # whether this source is fit as a season total
     )
 
   } # end if fitting lengths
@@ -2187,7 +2216,8 @@ SPoRC_rtmb = function(pars, data) {
     comp_const_obs = comp_const_obs,
     do_internal_comp_osa = do_internal_comp_osa,
     tracked_discrete = ObsFishAgeComps_discard_osa_discrete, # registered discrete observations
-    tracked_continuous = ObsFishAgeComps_discard_osa_continuous # registered continuous observations
+    tracked_continuous = ObsFishAgeComps_discard_osa_continuous, # registered continuous observations
+    seas_agg = FishAgeComps_discard_seas_Type # whether this source is fit as a season total
   )
 
   if(fit_lengths == 1) {
@@ -2246,7 +2276,8 @@ SPoRC_rtmb = function(pars, data) {
       comp_const_obs = comp_const_obs,
       do_internal_comp_osa = do_internal_comp_osa,
       tracked_discrete = ObsFishLenComps_discard_osa_discrete, # registered discrete observations
-      tracked_continuous = ObsFishLenComps_discard_osa_continuous # registered continuous observations
+      tracked_continuous = ObsFishLenComps_discard_osa_continuous, # registered continuous observations
+      seas_agg = FishLenComps_discard_seas_Type # whether this source is fit as a season total
     )
 
   } # end if fitting lengths
@@ -2305,7 +2336,8 @@ SPoRC_rtmb = function(pars, data) {
     comp_const_obs = comp_const_obs,
     do_internal_comp_osa = do_internal_comp_osa,
     tracked_discrete = ObsFishAgeComps_discard_pop_osa_discrete, # registered discrete observations
-    tracked_continuous = ObsFishAgeComps_discard_pop_osa_continuous # registered continuous observations
+    tracked_continuous = ObsFishAgeComps_discard_pop_osa_continuous, # registered continuous observations
+    seas_agg = FishAgeComps_discard_pop_seas_Type # whether this source is fit as a season total
   )
 
   if(fit_lengths == 1) {
@@ -2364,7 +2396,8 @@ SPoRC_rtmb = function(pars, data) {
       comp_const_obs = comp_const_obs,
       do_internal_comp_osa = do_internal_comp_osa,
       tracked_discrete = ObsFishLenComps_discard_pop_osa_discrete, # registered discrete observations
-      tracked_continuous = ObsFishLenComps_discard_pop_osa_continuous # registered continuous observations
+      tracked_continuous = ObsFishLenComps_discard_pop_osa_continuous, # registered continuous observations
+      seas_agg = FishLenComps_discard_pop_seas_Type # whether this source is fit as a season total
     )
 
   } # end if fitting lengths
@@ -2390,7 +2423,7 @@ SPoRC_rtmb = function(pars, data) {
       seas = obs_map[i, 3] # season
       obs_vec[i] = ObsSrvIdx[r,y,seas,sf] # observed index
       se_vec[i] = SrvIdx_SD[r,y,seas,sf] # index standard deviation
-      pred_vec[i] = sum(PredSrvIdx[,r,y,seas,sf]) # predicted index, summed across populations
+      pred_vec[i] = get_seas_pred(PredSrvIdx, r, y, seas, sf, SrvIdx_seas_Type[sf]) # predicted index, summed across populations
     } # end i loop
 
     # a multivariate normal cannot be split across years, so its total lands in the first cell and the rest stay zero
@@ -2421,7 +2454,7 @@ SPoRC_rtmb = function(pars, data) {
       sf   = ObsSrvIdx_map[i, 4] # fleet
 
       SrvIdx_nLL[r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx[i],
-                                                 log(sum(PredSrvIdx[,r,y,seas,sf] + addtosrvidx)),
+                                                 log(get_seas_pred(PredSrvIdx, r, y, seas, sf, SrvIdx_seas_Type[sf]) + addtosrvidx),
                                                  SrvIdx_SD[r,y,seas,sf], TRUE)
     } # end i loop
   }
@@ -2445,7 +2478,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho = trans_rho_srv_idx, # correlation across ages, unconstrained
     trans_rho_year = trans_rho_srv_idx_year, # correlation across years, unconstrained
     us_pars = trans_rho_srv_idx_us, # unstructured correlation parameters
-    aa_type = SrvIdxAA_Type # dims the observations are split by
+    aa_type = SrvIdxAA_Type, # dims the observations are split by
+    seas_agg = SrvIdxAA_seas_Type # whether this source is fit as a season total
   )
 
   SrvIdxAA_nLL = siaa$nLL # nLL
@@ -2472,7 +2506,7 @@ SPoRC_rtmb = function(pars, data) {
       seas = obs_map_sp[i, 4] # season
 
       SrvIdx_pop_nLL[p,r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx_pop[p,r,y,seas,sf],
-                                                       PredSrvIdx[p,r,y,seas,sf],
+                                                       get_seas_pred_pop(PredSrvIdx, p, r, y, seas, sf, SrvIdx_pop_seas_Type[sf]),
                                                        SrvIdx_pop_SD[p,r,y,seas,sf], TRUE)
     } # end i loop
   } # end sf loop
@@ -2497,7 +2531,7 @@ SPoRC_rtmb = function(pars, data) {
       sf   = ObsSrvIdx_pop_map[i, 5] # fleet
 
       SrvIdx_pop_nLL[p,r,y,seas,sf] = -1 * RTMB::dnorm(ObsSrvIdx_pop[i],
-                                                       log(PredSrvIdx[p,r,y,seas,sf] + addtosrvidx),
+                                                       log(get_seas_pred_pop(PredSrvIdx, p, r, y, seas, sf, SrvIdx_pop_seas_Type[sf]) + addtosrvidx),
                                                        SrvIdx_pop_SD[p,r,y,seas,sf], TRUE)
     } # end i loop
   }
@@ -2521,7 +2555,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho = trans_rho_srv_idx_pop, # correlation across ages, unconstrained
     trans_rho_year = trans_rho_srv_idx_pop_year, # correlation across years, unconstrained
     us_pars = trans_rho_srv_idx_pop_us, # unstructured correlation parameters
-    aa_type = SrvIdxAA_pop_Type # dims the observations are split by
+    aa_type = SrvIdxAA_pop_Type, # dims the observations are split by
+    seas_agg = SrvIdxAA_pop_seas_Type # whether this source is fit as a season total
   )
 
   SrvIdxAA_pop_nLL = siaa_pop$nLL # nLL
@@ -2582,7 +2617,8 @@ SPoRC_rtmb = function(pars, data) {
     comp_const_obs = comp_const_obs,
     do_internal_comp_osa = do_internal_comp_osa,
     tracked_discrete = ObsSrvAgeComps_osa_discrete, # registered discrete observations
-    tracked_continuous = ObsSrvAgeComps_osa_continuous # registered continuous observations
+    tracked_continuous = ObsSrvAgeComps_osa_continuous, # registered continuous observations
+    seas_agg = SrvAgeComps_seas_Type # whether this source is fit as a season total
   )
 
   if(fit_lengths == 1) {
@@ -2641,7 +2677,8 @@ SPoRC_rtmb = function(pars, data) {
       comp_const_obs = comp_const_obs,
       do_internal_comp_osa = do_internal_comp_osa,
       tracked_discrete = ObsSrvLenComps_osa_discrete, # registered discrete observations
-      tracked_continuous = ObsSrvLenComps_osa_continuous # registered continuous observations
+      tracked_continuous = ObsSrvLenComps_osa_continuous, # registered continuous observations
+      seas_agg = SrvLenComps_seas_Type # whether this source is fit as a season total
     )
 
   } # end if fitting lengths
@@ -2700,7 +2737,8 @@ SPoRC_rtmb = function(pars, data) {
     comp_const_obs = comp_const_obs,
     do_internal_comp_osa = do_internal_comp_osa,
     tracked_discrete = ObsSrvAgeComps_pop_osa_discrete, # registered discrete observations
-    tracked_continuous = ObsSrvAgeComps_pop_osa_continuous # registered continuous observations
+    tracked_continuous = ObsSrvAgeComps_pop_osa_continuous, # registered continuous observations
+    seas_agg = SrvAgeComps_pop_seas_Type # whether this source is fit as a season total
   )
 
   if(fit_lengths == 1) {
@@ -2759,7 +2797,8 @@ SPoRC_rtmb = function(pars, data) {
       comp_const_obs = comp_const_obs,
       do_internal_comp_osa = do_internal_comp_osa,
       tracked_discrete = ObsSrvLenComps_pop_osa_discrete, # registered discrete observations
-      tracked_continuous = ObsSrvLenComps_pop_osa_continuous # registered continuous observations
+      tracked_continuous = ObsSrvLenComps_pop_osa_continuous, # registered continuous observations
+      seas_agg = SrvLenComps_pop_seas_Type # whether this source is fit as a season total
     )
 
   } # end if fitting lengths
@@ -3075,6 +3114,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = fishsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_fishsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_fishsel_devs[r,,,,f, drop = FALSE],
+                                                map_sel_devs_full = map_ln_fishsel_devs[,,,,f, drop = FALSE],
                                                 min_sel_devs_shared_bins = fishsel_devs_min_shared_bins,
                                                 rw_init_sigma = fishsel_rw_init_sigma[f]
 
@@ -3088,6 +3128,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = retsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_retsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_retsel_devs[r,,,,f, drop = FALSE],
+                                                map_sel_devs_full = map_ln_retsel_devs[,,,,f, drop = FALSE],
                                                 min_sel_devs_shared_bins = retsel_devs_min_shared_bins,
                                                 rw_init_sigma = retsel_rw_init_sigma[f]
 
@@ -3104,6 +3145,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = srvsel_pe_pars[r,,,sf, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_srvsel_devs[r,,,,sf, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_srvsel_devs[r,,,,sf, drop = FALSE],
+                                                map_sel_devs_full = map_ln_srvsel_devs[,,,,sf, drop = FALSE],
                                                 min_sel_devs_shared_bins = srvsel_devs_min_shared_bins,
                                                 rw_init_sigma = srvsel_rw_init_sigma[sf]
 
@@ -3124,6 +3166,7 @@ SPoRC_rtmb = function(pars, data) {
                                             PE_pars = fishsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
                                             ln_devs = ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
                                             map_sel_devs = map_ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
+                                            map_sel_devs_full = map_ln_fishsel_bin_devs[,,,,f, drop = FALSE],
                                             min_sel_devs_shared_bins = 1:dim(ln_fishsel_bin_devs)[3],
                                             rw_init_sigma = fishsel_bin_devs_rw_init_sigma[f])
       } # end if
@@ -3132,6 +3175,7 @@ SPoRC_rtmb = function(pars, data) {
                                              PE_pars = retsel_bin_devs_pe_pars[r,,,f, drop = FALSE],
                                              ln_devs = ln_retsel_bin_devs[r,,,,f, drop = FALSE],
                                              map_sel_devs = map_ln_retsel_bin_devs[r,,,,f, drop = FALSE],
+                                            map_sel_devs_full = map_ln_retsel_bin_devs[,,,,f, drop = FALSE],
                                              min_sel_devs_shared_bins = 1:dim(ln_retsel_bin_devs)[3],
                                              rw_init_sigma = retsel_bin_devs_rw_init_sigma[f])
       } # end if
@@ -3142,6 +3186,7 @@ SPoRC_rtmb = function(pars, data) {
                                              PE_pars = srvsel_bin_devs_pe_pars[r,,,sf, drop = FALSE],
                                              ln_devs = ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
                                              map_sel_devs = map_ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
+                                            map_sel_devs_full = map_ln_srvsel_bin_devs[,,,,sf, drop = FALSE],
                                              min_sel_devs_shared_bins = 1:dim(ln_srvsel_bin_devs)[3],
                                              rw_init_sigma = srvsel_bin_devs_rw_init_sigma[sf])
       } # end if
@@ -3304,6 +3349,9 @@ SPoRC_rtmb = function(pars, data) {
     sigmaR2_late = sigmaR2_late,
     do_rec_bias_ramp = do_rec_bias_ramp,
     map_ln_RecDevs = map_ln_RecDevs,
+    RecDevs_model = RecDevs_model,
+    RecDevs_rho = RecDevs_rho,
+    RecDevs_rw_init_sigma = RecDevs_rw_init_sigma,
     RecDevs_pen_center = RecDevs_pen_center,
     InitDevs_pen_center = InitDevs_pen_center,
     init_devs_pen_use = init_devs_pen_use,
@@ -3346,6 +3394,7 @@ SPoRC_rtmb = function(pars, data) {
             PE_pars = array(growth_pe_pars[p,r,k,,1], dim = c(1, 1, n_sexes, 1)),
             ln_devs = array(ln_growth_devs[p,r,,k,], dim = c(1, n_yrs, 1, n_sexes, 1)),
             map_sel_devs = array(map_ln_growth_devs[p,r,,k,], dim = c(1, n_yrs, 1, n_sexes)),
+            map_sel_devs_full = array(map_ln_growth_devs[,,,k,], dim = c(n_pop * n_regions, n_yrs, 1, n_sexes)),
             min_sel_devs_shared_bins = 1,
             rw_init_sigma = growth_rw_init_sigma
           )
@@ -3358,6 +3407,7 @@ SPoRC_rtmb = function(pars, data) {
             PE_pars = array(growth_pe_pars[p,r,,,2], dim = c(1, dim(growth_pe_pars)[3], n_sexes, 1)),
             ln_devs = array(ln_growth_semipar_devs[p,r,,,], dim = c(1, n_yrs, n_ages, n_sexes, 1)),
             map_sel_devs = array(map_ln_growth_semipar_devs[p,r,,,], dim = c(1, n_yrs, n_ages, n_sexes)),
+            map_sel_devs_full = array(map_ln_growth_semipar_devs, dim = c(n_pop * n_regions, n_yrs, n_ages, n_sexes)),
             min_sel_devs_shared_bins = if(is.null(growth_semipar_bins)) 1:n_ages else growth_semipar_bins,
             rw_init_sigma = growth_rw_init_sigma
           )

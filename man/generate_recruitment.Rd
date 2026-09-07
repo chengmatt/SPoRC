@@ -46,5 +46,10 @@ per population (\code{n_pop > 1}) or once per region (\code{n_pop = 1},
 local density-dependence). Populations with \code{R0 = 0} receive zero
 deviations. \code{sigma_idx} selects the natal region's \code{ln_sigmaR}
 for the bias-correction term.
+
+\code{RecDevs_model} sets what the draw is centered on: zero for independent
+deviations, the previous year's deviation for a random walk, and
+\code{RecDevs_rho} times it for an AR1. Only independent draws are bias
+corrected, since a random walk's deviation is not mean zero.
 }
 \keyword{internal}

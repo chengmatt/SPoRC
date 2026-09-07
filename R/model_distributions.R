@@ -131,7 +131,7 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
 #' @import RTMB
 #'
 #' @keywords internal
-dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
+dlogistnormal = function(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE) {
   # do logistic transformation on observed values
   tmp_Obs = log(obs[-length(obs)])
   tmp_Obs = tmp_Obs - log(obs[length(obs)])
@@ -139,8 +139,86 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE) {
   mu = log(pred[-length(pred)]) # remove last bin since it's known
   mu = mu - log(pred[length(pred)]) # calculate log ratio
   res = RTMB::dmvnorm(x = as.vector(tmp_Obs), mu = as.vector(mu), Sigma = Sigma, log = give_log)
+  # the log ratio maps the simplex onto one fewer dimension, so a density on the
+  # composition itself needs that change of variables taken off
+  if(jacobian) res = res - sum(log(obs))
   return(res)
 }
+
+#' Evaluate a logistic normal composition with the zeros dropped
+#'
+#' The zeros are dropped rather than nudged with a constant, and the expected
+#' proportions are renormalized over the bins that remain, so the density is the
+#' one the positive part of the composition actually has. The input sample size
+#' scales the variance, which is how a year sampled harder comes to be fit more
+#' tightly than a year sampled lightly, and the change of variables from the log
+#' ratio is taken off so the result is a density on the composition rather than
+#' on its transform.
+#'
+#' A cell with fewer than two positive bins has no log ratio to take and
+#' contributes nothing.
+#'
+#' @param obs Observed proportions in one cell, zeros included.
+#' @param pred Predicted proportions, matching \code{obs}.
+#' @param ln_sigma Log-scale standard deviation before the sample size scaling.
+#' @param ISS Input sample size for this cell.
+#' @param corr_type Integer. \code{0} independent bins, \code{1} first-order
+#'   autoregressive across bins, \code{2} whatever correlation \code{corr_mat}
+#'   states, which is how the separable bin by sex structure is passed in.
+#' @param trans_rho Unconstrained correlation, mapped through the logistic
+#'   function so the correlation is positive.
+#' @param lag_bins Bin number of each element of \code{obs}, so the
+#'   autoregression is spaced by bin rather than by position when the
+#'   composition is fit over a restricted set of bins. Position is assumed when
+#'   this is \code{NULL}. Read only by \code{corr_type = 1}.
+#' @param corr_mat Correlation matrix over the whole of \code{obs}, before any
+#'   bin is dropped. Required by \code{corr_type = 2} and ignored otherwise; it
+#'   is cut down to the bins that were seen here rather than by the caller, so
+#'   the correlation between two bins is the one the full structure gives them.
+#'
+#' @return The negative log likelihood of the cell, a scalar.
+#'
+#' @import RTMB
+#'
+#' @keywords internal
+get_logistnormal_miss0_nLL = function(obs, pred, ln_sigma, ISS, corr_type = 0, trans_rho = 0,
+                                      lag_bins = NULL, corr_mat = NULL) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  # bins with nothing in them are dropped, and both vectors renormalized over the rest
+  pos = which(as.numeric(obs) > 1e-15)
+  n_pos = length(pos)
+  if(n_pos < 2) return(0) # one positive bin leaves no log ratio to take
+
+  obs_pos = obs[pos] / sum(obs[pos])
+  pred_pos = pred[pos] / sum(pred[pos])
+
+  # the sample size enters as a variance scaling, so the parameter is a per fish standard deviation
+  var_pos = exp(2 * ln_sigma) / ISS
+  n_tr = n_pos - 1
+
+  if(corr_type == 0) Sigma = diag(rep(var_pos, n_tr))
+
+  if(corr_type == 1) {
+    lags = if(is.null(lag_bins)) pos else lag_bins[pos] # spacing in bins, not in position
+    rho = RTMB::plogis(trans_rho)
+    Sigma = matrix(0, n_tr, n_tr)
+    for(i in 1:n_tr) {
+      for(j in 1:n_tr) Sigma[i,j] = var_pos * rho^abs(lags[i] - lags[j])
+    } # end j loop, end i loop
+  } # end ar1 across bins
+
+  # a supplied structure is cut to the bins that were seen, then to the transformed length
+  if(corr_type == 2) {
+    keep = pos[seq_len(n_tr)]
+    Sigma = matrix(corr_mat[keep, keep], n_tr, n_tr) * var_pos
+  } # end supplied correlation
+
+  -1 * dlogistnormal(obs = obs_pos, pred = pred_pos, Sigma = Sigma, give_log = TRUE, jacobian = TRUE)
+
+} # end get_logistnormal_miss0_nLL
 
 # At-Age Densities ----------------------------------------------------------
 
@@ -446,3 +524,40 @@ get_beta_scaled_pars <- function(low, high, mu, sigma) {
   b = (1 - mean) * var
   return(c(a,b,low,scale))
 }
+
+# Seasonal Aggregation of Predictions ----------------------------------------
+
+#' Sum a prediction over the seasons a data source is fit against
+#'
+#' A data source set to \code{"aggSeas"} has one observation for the year, so the
+#' prediction it is compared against is the whole year's total. One set to
+#' \code{"spltSeas"} is compared against its own season alone. Populations are
+#' summed over either way, because a regional observation does not see them
+#' separately.
+#'
+#' @param pred Prediction array \code{[pop, region, year, season, fleet]}.
+#' @param r,y,seas,f Region, year, season and fleet of the observation.
+#' @param seas_agg Integer, \code{1} for a season total and \code{0} otherwise.
+#'
+#' @return Scalar prediction.
+#'
+#' @keywords internal
+get_seas_pred = function(pred, r, y, seas, f, seas_agg) {
+  if(seas_agg == 1) sum(pred[,r,y,,f]) else sum(pred[,r,y,seas,f])
+} # end get_seas_pred
+
+#' Sum a population-specific prediction over the seasons a data source is fit against
+#'
+#' The population-specific counterpart of \code{\link{get_seas_pred}}, which
+#' keeps the population it is given rather than summing over them.
+#'
+#' @param pred Prediction array \code{[pop, region, year, season, fleet]}.
+#' @param p,r,y,seas,f Population, region, year, season and fleet of the observation.
+#' @param seas_agg Integer, \code{1} for a season total and \code{0} otherwise.
+#'
+#' @return Scalar prediction.
+#'
+#' @keywords internal
+get_seas_pred_pop = function(pred, p, r, y, seas, f, seas_agg) {
+  if(seas_agg == 1) sum(pred[p,r,y,,f]) else pred[p,r,y,seas,f]
+} # end get_seas_pred_pop

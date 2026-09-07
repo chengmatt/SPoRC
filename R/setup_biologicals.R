@@ -816,6 +816,13 @@ do_growth_mapping <- function(input_list,
 #'   \code{input_list$data$years} by value, not by position, so a model starting
 #'   in 1983 takes \code{1984} and not \code{2} for its first state year.
 #'   \code{NULL} (default) uses \code{years[-1]}. Must be a contiguous run.
+#' @param NAA_re_where Integer matrix \code{[population, region]}, \code{1} where
+#'   the numbers at age state runs and \code{0} where a population never occupies
+#'   that region. \code{NULL} (default) gives every cell a state. A natal homing
+#'   population that never reaches a region holds no fish there, so a lognormal
+#'   state on that cell is undefined and the penalty would take the logarithm of
+#'   zero. Cells set to \code{0} are dropped from the map as well as from the
+#'   penalty, and they need the region and population correlations off.
 #' @param NAA_re_seasons Seasons the state is estimated over. \code{"annual"}
 #'   (the default) puts a state at season one only, so the numbers within a year
 #'   stay deterministic and the state is a purely annual innovation, which is
@@ -1012,6 +1019,7 @@ Setup_Mod_Biologicals <- function(input_list,
                                   NAA_re_seasons = "annual",
                                   NAA_re_season = "iid",
                                   NAA_re_season_spec = "est_all",
+                                  NAA_re_where = NULL,
                                   NAA_pe_spec = "est_all",
                                   NAA_sigma_spec = "est",
                                   NAA_re_region = "iid",
@@ -1566,7 +1574,8 @@ Setup_Mod_Biologicals <- function(input_list,
     NAA_pe_spec = NAA_pe_spec,
     NAA_re_seasons = NAA_re_seasons,
     NAA_re_season = NAA_re_season,
-    NAA_re_season_spec = NAA_re_season_spec
+    NAA_re_season_spec = NAA_re_season_spec,
+    NAA_re_where = NAA_re_where
   )
   if(growth_model_val != 0) input_list <- do_growth_mapping(input_list, growth_spec, growth_fix, tv_vals, tv_active, growth_tv_spec,
                                                             growth_tv_sigma_spec, semipar_val, growth_semipar_spec,
@@ -1614,6 +1623,13 @@ Setup_Mod_Biologicals <- function(input_list,
 #'   \code{NULL} (default) uses every age from the second onward.
 #' @param NAA_re_years Calendar years the state is active over. \code{NULL}
 #'   (default) uses every year from the second onward.
+#' @param NAA_re_where Integer matrix \code{[population, region]}, \code{1} where
+#'   the numbers at age state runs and \code{0} where a population never occupies
+#'   that region. \code{NULL} (default) gives every cell a state. A natal homing
+#'   population that never reaches a region holds no fish there, so a lognormal
+#'   state on that cell is undefined and the penalty would take the logarithm of
+#'   zero. Cells set to \code{0} are dropped from the map as well as from the
+#'   penalty, and they need the region and population correlations off.
 #' @param NAA_re_seasons Seasons the state is active over. \code{"annual"}
 #'   (default) uses season one alone, \code{"all"} every season, or an integer
 #'   vector of season indices.
@@ -1653,7 +1669,8 @@ do_NAAstate_mapping <- function(input_list,
                                 NAA_pe_spec = "est_all",
                                 NAA_re_seasons = "annual",
                                 NAA_re_season = "iid",
-                                NAA_re_season_spec = "est_all") {
+                                NAA_re_season_spec = "est_all",
+                                NAA_re_where = NULL) {
 
   n_pop <- input_list$data$n_pop
   n_regions <- input_list$data$n_regions
@@ -1693,6 +1710,7 @@ do_NAAstate_mapping <- function(input_list,
     input_list$data$naa_re_ages <- integer(0)
     input_list$data$naa_re_yrs <- integer(0)
     input_list$data$naa_re_seas <- integer(0)
+    input_list$data$naa_re_where <- base::matrix(1L, n_pop, n_regions)
     input_list$data$naa_sigma_blocks <- array(1, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
     input_list$par$NAA_pe_pars <- array(0, dim = c(n_pop, n_regions, 3, n_sexes))
     input_list$map$NAA_pe_pars <- factor(rep(NA, length(input_list$par$NAA_pe_pars)))
@@ -1748,10 +1766,20 @@ do_NAAstate_mapping <- function(input_list,
     stop("NAA_re_seasons is read as season indices into 1:", n_seas, ", or the strings ",
          "\"annual\" and \"all\". It was: ", paste(NAA_re_seasons, collapse = ", "))
 
+  # population by region cells the state runs over. a natal homing population holds no fish in a
+  # region it never reaches, so it has no state there and the penalty would take log(0)
+  if(is.null(NAA_re_where)) NAA_re_where <- base::matrix(1L, n_pop, n_regions)
+  NAA_re_where <- base::matrix(as.integer(NAA_re_where), n_pop, n_regions)
+  if(!all(NAA_re_where %in% c(0L, 1L)))
+    stop("NAA_re_where holds values other than 0 and 1. Give a population by region matrix, 1 where ",
+         "the numbers at age state runs and 0 where a population never occupies that region.")
+  input_list$data$naa_re_where <- NAA_re_where
+
   # Map: estimate the active rectangle, hold everything else
   map_naa <- array(NA, dim = dim(input_list$par$ln_NAA))
   n_active <- n_pop * n_regions * length(yr_idx) * length(seas_idx) * length(age_idx) * n_sexes
   map_naa[,,yr_idx,seas_idx,age_idx,] <- seq_len(n_active)
+  for(p in 1:n_pop) for(r in 1:n_regions) if(NAA_re_where[p,r] == 0) map_naa[p,r,,,,] <- NA
   input_list$map$ln_NAA <- factor(map_naa)
   input_list$data$map_ln_NAA <- array(as.numeric(input_list$map$ln_NAA), dim = dim(map_naa))
 

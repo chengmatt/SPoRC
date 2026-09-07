@@ -34,7 +34,9 @@ Setup_Sim_Rec(
   SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
-  InitDevs_sex_spec = "est_shared_s"
+  InitDevs_sex_spec = "est_shared_s",
+  RecDevs_model = "iid",
+  RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
 )
 }
 \arguments{
@@ -183,6 +185,17 @@ mortality the two sexes need not have departed by the same amount, which is
 the case \code{"est_all"} covers. The names match
 \code{InitDevs_sex_spec} in \code{\link{Setup_Mod_Rec}}, so an operating
 model and the estimation model fitted to it can be set the same way.}
+
+\item{RecDevs_model}{Character. Process error the recruitment deviations are
+drawn under: \code{"iid"} (default) independent draws, \code{"rw"} a random
+walk from the previous year's deviation, or \code{"ar1"} reverting toward
+zero at rate \code{RecDevs_rho}. The first year is an independent draw under
+every option. Matches \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}},
+so a self test can simulate and estimate under the same process.}
+
+\item{RecDevs_rho}{Matrix \code{[n_pop x n_regions]} of AR1 correlations on
+the natural scale, in \eqn{(-1, 1)}. Only read when
+\code{RecDevs_model = "ar1"}. Default zero.}
 }
 \value{
 The input \code{sim_list} with recruitment-related fields appended:

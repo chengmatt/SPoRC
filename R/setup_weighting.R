@@ -284,9 +284,9 @@ Setup_Mod_Weighting <- function(input_list,
 
   # Input Validation --------------------------------------------------------
   # Checking to see if sigma is identifiable ...
-  check_sigma_weight_confound <- function(wt, form, arg_name, spec_nm) {
+  check_sigma_weight_confound <- function(wt, form, arg_name, spec_name) {
     if(!is.null(form) && form > 0 && any(wt != 1)) {
-      warning(arg_name, " is not 1 everywhere while ", spec_nm, " estimates the index ",
+      warning(arg_name, " is not 1 everywhere while ", spec_name, " estimates the index ",
               "observation error. A likelihood weight and an estimated standard ",
               "deviation are confounded, so the estimate will absorb the weight. ",
               "Set ", arg_name, " to 1 when estimating, or fix the sigma when weighting.")

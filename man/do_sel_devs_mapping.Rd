@@ -9,6 +9,7 @@ do_sel_devs_mapping(
   sel_devs_spec,
   sel_devs_shared_bins,
   bins,
+  dont_est_dev_first = NULL,
   prefix,
   fleet_field,
   use_field,
@@ -30,6 +31,12 @@ of bins that share a single estimated deviation. Required when
 \code{sel_devs_spec} includes \code{"est_shared_b"} or its variants.}
 
 \item{bins}{Number of selectivity bins.}
+
+\item{dont_est_dev_first}{Integer vector \code{[n_<fleet_field>]} of 0/1, or
+\code{NULL}. Where \code{1}, the deviations of year one are dropped from
+the map so the walk starts in year two and the fixed selectivity parameters
+hold year one. Refused for the GMRF and 2D AR1 forms, whose deviations are a
+field rather than a walk anchored at year one.}
 
 \item{prefix}{Character, one of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
 Drives the domain-specific field names: \code{cont_tv_<prefix>_sel},
@@ -58,10 +65,11 @@ Constructs the factor map for continuous time-varying selectivity
 deviations (\code{ln_fishsel_devs}, \code{ln_retsel_devs}, or
 \code{ln_srvsel_devs}) across region, year, bin, sex, and fleet. For
 iid/random-walk forms, active bins are governed by the fitted selectivity
-model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active,
-optionally shared via \code{sel_devs_shared_bins} groupings
-(\code{"est_shared_b"} and its combinations). Fleet sharing
-(\code{"est_shared_f_x"}) is handled in a second pass.
+model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active.
+Bin groupings (\code{sel_devs_shared_bins}, used by \code{"est_shared_b"} and
+its combinations) apply wherever the deviations are indexed by bin: the GMRF
+and AR1 forms, and the non-parametric selectivity forms under iid or a random
+walk. Fleet sharing (\code{"est_shared_f_x"}) is handled in a second pass.
 }
 \details{
 Serves fishery, retention, and survey selectivity, selected by

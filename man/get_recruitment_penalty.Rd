@@ -24,6 +24,9 @@ get_recruitment_penalty(
   sigmaR2_late,
   do_rec_bias_ramp,
   map_ln_RecDevs = NULL,
+  RecDevs_model = 1,
+  RecDevs_rho = NULL,
+  RecDevs_rw_init_sigma = 5,
   RecDevs_pen_center = 0,
   InitDevs_pen_center = 0,
   init_devs_pen_use = NULL,
@@ -77,6 +80,20 @@ adjustment.}
 \item{map_ln_RecDevs}{Array \code{[pop, region, year]} mirroring
 \code{map$ln_RecDevs}; cells that are \code{NA} are fixed rather than
 estimated and are left unpenalized. \code{NULL} penalizes every cell.}
+
+\item{RecDevs_model}{Integer process error structure for the recruitment
+deviations: \code{1} independent, \code{2} random walk, \code{3} AR1.
+The bias ramp and the own-mean center are only read under \code{1}, since
+a walk's mean is the previous deviation rather than zero.}
+
+\item{RecDevs_rho}{Array \code{[pop, region]} of unconstrained AR1
+correlations, transformed to \eqn{(-1, 1)} in the penalty. Only read when
+\code{RecDevs_model = 3}.}
+
+\item{RecDevs_rw_init_sigma}{Standard deviation given to year one of a random
+walk. Default \code{5}, which leaves the level of the series effectively
+free. \code{NA} starts the walk at zero under its own sigma. Only read when
+\code{RecDevs_model = 2}.}
 
 \item{init_devs_pen_use}{Array of 0/1 matching \code{ln_InitDevs}, naming
 which cells are penalized. Sexes sharing one parameter keep only the first

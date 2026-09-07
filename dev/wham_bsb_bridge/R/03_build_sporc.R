@@ -2,7 +2,7 @@
 # Date Created: 9/7/26
 
 library(here)
-library(SPoRC)
+suppressMessages(pkgload::load_all(here::here(), quiet = TRUE))
 
 out_dir <- here("dev", "wham_bsb_bridge", "output")
 dat <- readRDS(file.path(out_dir, "02_sporc_data.rds"))
@@ -59,13 +59,19 @@ input_list <- Setup_Mod_Biologicals(
   WAA_fish = dat$WAA_fish,
   WAA_srv = dat$WAA_srv,
   MatAA = dat$MatAA * 2, # cancels the single sex halving so ssb matches wham
+  addtofishidx = 0, # wham adds nothing to an index or a composition
+  addtosrvidx = 0,
+  addtocomp = 0,
   fit_lengths = 0,
   M_spec = "fix",
   Fixed_natmort = dat$natmort,
-  NAA_re = "iid",
-  NAA_sigma_spec = "fix",
+  NAA_re = "2dar1",
+  NAA_sigma_spec = "est",
+  NAA_sigma_popblk_spec = list(1, 2), # a deviation scale for each stock
+  NAA_sigma_regionblk_spec = list(1, 2), # and for north fish sitting in the south, which wham fixes near zero
   NAA_re_ages = 2:n_ages,
-  NAA_re_years = dat$dims$years[-1]
+  NAA_re_years = dat$dims$years[-1],
+  NAA_re_where = matrix(c(1, 0, 1, 1), nrow = n_pop, ncol = n_regions) # the south stock never occupies the north
 )
 
 # movement taken from the wham transition matrices, applied after mortality each season
@@ -83,7 +89,8 @@ input_list <- Setup_Mod_Catch_and_F(
   input_list,
   ObsCatch = dat$ObsCatch,
   UseCatch = dat$UseCatch,
-  catch_units = c("biom", "biom"),
+  Catch_seas_Type = "aggSeas", # one annual total per fleet, the way wham reports it
+  catch_units = rep("biom", n_fish),
   Use_F_pen = 0,
   sigmaC_spec = "fix",
   sigmaF_spec = "fix"
@@ -101,13 +108,21 @@ input_list <- Setup_Mod_FishIdx_and_Comps(
   ObsFishLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, 1, n_sexes, n_fish)),
   UseFishLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_fish)),
   ISS_FishLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
-  fish_idx_type = c("none", "none"),
-  FishAgeComps_LikeType = c("none", "none"),
-  FishLenComps_LikeType = c("none", "none"),
-  FishAgeComps_Type = c("none_Year_1-terminal_Fleet_1",
-                        "none_Year_1-terminal_Fleet_2"),
+  fish_idx_type = c("none", "none", "none", "none"),
+  FishAgeComps_seas_Type = "aggSeas", # compositions are annual as well
+  FishAgeComps_LikeType = c("Dirichlet-Multinomial",
+                            "iid-Logistic-Normal-miss0",
+                            "1d-Logistic-Normal-miss0",
+                            "1d-Logistic-Normal-miss0"),
+  FishLenComps_LikeType = c("none", "none", "none", "none"),
+  FishAgeComps_Type = c("spltRjntS_Year_1-terminal_Fleet_1",
+                        "spltRjntS_Year_1-terminal_Fleet_2",
+                        "spltRjntS_Year_1-terminal_Fleet_3",
+                        "spltRjntS_Year_1-terminal_Fleet_4"),
   FishLenComps_Type = c("none_Year_1-terminal_Fleet_1",
-                        "none_Year_1-terminal_Fleet_2")
+                        "none_Year_1-terminal_Fleet_2",
+                        "none_Year_1-terminal_Fleet_3",
+                        "none_Year_1-terminal_Fleet_4")
 )
 
 # survey indices in numbers, each sitting in its own season
@@ -116,19 +131,26 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
   ObsSrvIdx = dat$ObsSrvIdx,
   ObsSrvIdx_SE = dat$ObsSrvIdx_SE,
   UseSrvIdx = dat$UseSrvIdx,
-  srv_idx_type = c("abd", "abd"),
+  srv_idx_type = rep("abd", n_srv),
   ObsSrvAgeComps = dat$ObsSrvAgeComps,
   UseSrvAgeComps = dat$UseSrvAgeComps,
   ISS_SrvAgeComps = dat$ISS_SrvAgeComps,
   ObsSrvLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, 1, n_sexes, n_srv)),
   UseSrvLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_srv)),
   ISS_SrvLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv)),
-  SrvAgeComps_LikeType = c("Multinomial", "Multinomial"),
-  SrvLenComps_LikeType = c("none", "none"),
+  SrvAgeComps_LikeType = c("iid-Logistic-Normal-miss0",
+                           "Dirichlet-Multinomial",
+                           "1d-Logistic-Normal-miss0",
+                           "1d-Logistic-Normal-miss0"),
+  SrvLenComps_LikeType = c("none", "none", "none", "none"),
   SrvAgeComps_Type = c("spltRjntS_Year_1-terminal_Fleet_1",
-                       "spltRjntS_Year_1-terminal_Fleet_2"),
+                       "spltRjntS_Year_1-terminal_Fleet_2",
+                       "spltRjntS_Year_1-terminal_Fleet_3",
+                       "spltRjntS_Year_1-terminal_Fleet_4"),
   SrvLenComps_Type = c("none_Year_1-terminal_Fleet_1",
-                       "none_Year_1-terminal_Fleet_2")
+                       "none_Year_1-terminal_Fleet_2",
+                       "none_Year_1-terminal_Fleet_3",
+                       "none_Year_1-terminal_Fleet_4")
 )
 
 # fishery selectivity at age read straight off the wham blocks
@@ -141,13 +163,13 @@ for(f in 1:length(dat$dims$fleet_region)) {
 
 input_list <- Setup_Mod_Fishsel_and_Q(
   input_list,
-  cont_tv_fish_sel = c("none_Fleet_1", "none_Fleet_2"),
-  fish_sel_model = c("logist1_Fleet_1", "logist1_Fleet_2"),
-  fish_sel_blocks = c("none_Fleet_1", "none_Fleet_2"),
-  fish_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
-  fish_q_spec = c("fix", "fix"),
-  fish_fixed_sel_pars_spec = c("fix_fish_sel_input", "fix_fish_sel_input"),
-  use_fixed_fish_sel = c(1, 1),
+  cont_tv_fish_sel = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3", "none_Fleet_4"),
+  fish_sel_model = c("logist1_Fleet_1", "logist1_Fleet_2", "logist1_Fleet_3", "logist1_Fleet_4"),
+  fish_sel_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3", "none_Fleet_4"),
+  fish_q_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3", "none_Fleet_4"),
+  fish_q_spec = rep("fix", n_fish),
+  fish_fixed_sel_pars_spec = rep("fix_fish_sel_input", n_fish),
+  use_fixed_fish_sel = rep(1, n_fish),
   fish_sel_input = fish_sel_input
 )
 
@@ -161,13 +183,13 @@ for(i in 1:length(dat$dims$index_region)) {
 
 input_list <- Setup_Mod_Srvsel_and_Q(
   input_list,
-  cont_tv_srv_sel = c("none_Fleet_1", "none_Fleet_2"),
-  srv_sel_model = c("logist1_Fleet_1", "logist1_Fleet_2"),
-  srv_sel_blocks = c("none_Fleet_1", "none_Fleet_2"),
-  srv_q_blocks = c("none_Fleet_1", "none_Fleet_2"),
-  srv_q_spec = c("fix", "fix"),
-  srv_fixed_sel_pars_spec = c("fix_srv_sel_input", "fix_srv_sel_input"),
-  use_fixed_srv_sel = c(1, 1),
+  cont_tv_srv_sel = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3", "none_Fleet_4"),
+  srv_sel_model = c("logist1_Fleet_1", "logist1_Fleet_2", "logist1_Fleet_3", "logist1_Fleet_4"),
+  srv_sel_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3", "none_Fleet_4"),
+  srv_q_blocks = c("none_Fleet_1", "none_Fleet_2", "none_Fleet_3", "none_Fleet_4"),
+  srv_q_spec = rep("fix", n_srv),
+  srv_fixed_sel_pars_spec = rep("fix_srv_sel_input", n_srv),
+  use_fixed_srv_sel = rep(1, n_srv),
   srv_sel_input = srv_sel_input,
   t_srv = dat$t_srv
 )
@@ -185,7 +207,7 @@ input_list <- Setup_Mod_Weighting(
   Wt_Rec = 1,
   Wt_F = 0,
   Wt_Tagging = 0,
-  Wt_FishAgeComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
+  Wt_FishAgeComps = array(1, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
   Wt_FishLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish)),
   Wt_SrvAgeComps = array(1, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv)),
   Wt_SrvLenComps = array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_srv))

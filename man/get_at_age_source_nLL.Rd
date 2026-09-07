@@ -19,7 +19,8 @@ get_at_age_source_nLL(
   trans_rho = 0,
   trans_rho_year = 0,
   us_pars = NULL,
-  aa_type = 1
+  aa_type = 1,
+  seas_agg = 0
 )
 }
 \arguments{
@@ -65,6 +66,10 @@ of \code{trans_rho}, read under \code{"us"}.}
 \item{aa_type}{Integer codes naming the split dims, as a matrix over year
 by fleet or a vector per fleet standing for every year, see
 \code{\link{at_age_split}}.}
+
+\item{seas_agg}{Integer vector, one per fleet. \code{1} compares the
+observation against every season of the year summed together, \code{0}
+against the season it sits in.}
 }
 \value{
 A list with \code{nLL} and \code{pred}, both arrays shaped like

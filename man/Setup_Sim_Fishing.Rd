@@ -42,6 +42,11 @@ Setup_Sim_Fishing(
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
   fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
   FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
+  Catch_seas_Type = NULL,
+  Catch_pop_seas_Type = NULL,
+  FishIdx_seas_Type = NULL,
+  FishIdx_pop_seas_Type = NULL,
+  FishAgeComps_seas_Type = NULL,
   FishIdx_Cov = NULL,
   UseFishIdx = NULL,
   t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
@@ -225,6 +230,15 @@ Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
 a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
 \code{ObsFishIdx_SE}, and its population-specific data source stays lognormal.
 Default: lognormal for every fleet.}
+
+\item{Catch_seas_Type, Catch_pop_seas_Type, FishIdx_seas_Type, FishIdx_pop_seas_Type, FishAgeComps_seas_Type}{Whether the operating model reports a data source once a season
+(\code{"spltSeas"}, the default) or once a year as a season total
+(\code{"aggSeas"}). One value for every fleet or one per fleet. An annual
+total is written into season one with the other seasons left at zero, and the
+observation error is applied once to that total rather than to each season,
+so an estimation model reading it should mark season one in its \code{Use}
+array and set the matching argument in \code{\link{Setup_Mod_Catch_and_F}}
+or \code{\link{Setup_Mod_FishIdx_and_Comps}}.}
 
 \item{FishIdx_Cov}{List with one element per fishery fleet holding the fixed
 covariance over that fleet's fitted index observations, ordered by scanning

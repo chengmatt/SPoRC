@@ -20,7 +20,8 @@ Get_NAA_state_penalty(
   NAA_re_sex = 0,
   NAA_sex_corr_pars = NULL,
   NAA_re_season = 0,
-  NAA_season_corr_pars = NULL
+  NAA_season_corr_pars = NULL,
+  naa_re_where = NULL
 )
 }
 \arguments{

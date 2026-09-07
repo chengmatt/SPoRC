@@ -14,7 +14,8 @@ do_jitter(
   n_newton_loops = 0,
   do_par,
   n_cores,
-  par_vec = NULL
+  par_vec = NULL,
+  jitter_random = FALSE
 )
 }
 \arguments{
@@ -43,10 +44,19 @@ executed in parallel.}
 \item{n_cores}{Integer specifying the number of parallel workers to use
 when \code{do_par = TRUE}.}
 
-\item{par_vec}{Optional numeric vector of parameter values used as the
-starting point for jittering. If \code{NULL}, the model's default starting
-parameter vector is jittered. If provided, jittering is applied to this
-vector (for example, the maximum likelihood estimates).}
+\item{par_vec}{Optional numeric vector of starting values to jitter. Accepts
+either the fixed-effect vector (\code{length(obj$par)}, for example
+\code{fit$optim$par}) or the joint fixed and random vector
+(\code{length(obj$env$par)}, for example \code{fit$env$last.par.best}).
+Any other length is an error. \code{NULL} uses the model's own start.}
+
+\item{jitter_random}{Logical indicating whether the random effects are
+perturbed alongside the fixed effects. Only the fixed effects are searched
+by \code{nlminb()}, so the random draws move the starting point of the
+inner Laplace solve and check whether it settles on the same modes. Either
+way the inner solve starts from the random values in \code{par_vec}, or
+from the model's own start when \code{par_vec} holds no random effects.
+Default is \code{FALSE}.}
 }
 \value{
 A \code{data.frame} containing jitter iteration results. The output
@@ -68,7 +78,8 @@ resulting time series and diagnostic metrics.
 \details{
 Each jitter iteration:
 \itemize{
-  \item Perturbs the starting parameter vector with random normal noise.
+  \item Perturbs the fixed effects with additive normal noise, and the
+  random effects too when \code{jitter_random = TRUE}.
   \item Optimizes the objective function using \code{stats::nlminb()}.
   \item Optionally performs additional Newton steps to refine the solution.
   \item Extracts reported quantities (e.g., spawning biomass and recruitment)

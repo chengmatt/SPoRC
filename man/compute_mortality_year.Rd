@@ -37,7 +37,11 @@ compute_mortality_year(
   n_seas,
   n_ages,
   n_sexes,
-  n_fish_fleets
+  n_fish_fleets,
+  catch_seas_agg = NULL,
+  catch_pop_seas_agg = NULL,
+  catch_aa_seas_agg = NULL,
+  catch_aa_pop_seas_agg = NULL
 )
 }
 \arguments{

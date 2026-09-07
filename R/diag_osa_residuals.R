@@ -206,11 +206,11 @@ osa_default_bins <- function(data, comp_source, pop = FALSE, discard = FALSE) {
   is_len <- grepl("Len$", comp_source)
 
   if(is_caal) {
-    obs_nm <- paste0("Obs", comp_source)
-    n_bins <- dim(data[[obs_nm]])[5] # region, year, season, len, AGE, sex, fleet
+    obs_data_field <- paste0("Obs", comp_source)
+    n_bins <- dim(data[[obs_data_field]])[5] # region, year, season, len, AGE, sex, fleet
   } else {
-    obs_nm <- comp_osa_field_map(comp_source, pop = pop, discard = discard)$Obs
-    n_bins <- dim(data[[obs_nm]])[if(pop) 5 else 4]
+    obs_data_field <- comp_osa_field_map(comp_source, pop = pop, discard = discard)$Obs
+    n_bins <- dim(data[[obs_data_field]])[if(pop) 5 else 4]
   }
 
   if(is_len) {
@@ -463,11 +463,11 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
 
   if(!comp_source %in% c("Fish_caal", "Srv_caal")) stop("`comp_source` for CAAL must be one of: Fish_caal, Srv_caal")
 
-  obs_nm <- paste0("Obs", comp_source)
+  obs_data_field <- paste0("Obs", comp_source)
   n_fleets_field <- if(comp_source == "Srv_caal") "n_srv_fleets" else "n_fish_fleets"
 
   packed <- pack_caal_osa(
-    ObsArr = data[[obs_nm]], ISSArr = data[[paste0("ISS_", comp_source)]],
+    ObsArr = data[[obs_data_field]], ISSArr = data[[paste0("ISS_", comp_source)]],
     WtArr = data[[paste0("Wt_", comp_source)]], UseArr = data[[paste0("Use", comp_source)]],
     TypeMat = data[[paste0(comp_source, "_Type")]], LikeTypeVec = data[[paste0(comp_source, "_LikeType")]],
     n_yrs = length(data$years), n_seas = data$n_seas, n_lens = length(data$lens),
@@ -482,7 +482,7 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
     return(NULL)
   }
 
-  tracked_name <- paste0(obs_nm, "_osa")
+  tracked_name <- paste0(obs_data_field, "_osa")
   method <- if(!is.null(osa_method)) osa_method else "oneStepGeneric"
   validate_osa_method(method)
   subset_idx <- osa_keep_subset(packed$labels$last_in_group)

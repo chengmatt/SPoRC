@@ -98,7 +98,9 @@ prep_at_age_obs = function(obs, use, like_type, const = 0) {
 #'   values hold the height of the curve as well as its shape.
 #' @param p_idx,r_idx,s_idx Population, region and sex indices, each either one
 #'   index or the whole extent of that dim.
-#' @param y,seas,a,f Year, season, age and fleet indices.
+#' @param y,seas,a,f Year, season, age and fleet indices. \code{seas} is one
+#'   season, or every season of the year for a data source reported as a season
+#'   total.
 #'
 #' @return The predicted observation, a scalar.
 #'
@@ -146,6 +148,9 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
 #' @param ln_sigma Log-scale observation error, over age by sex by fleet, with a
 #'   leading population dimension when \code{pop} is \code{TRUE}.
 #' @param source,arrays Passed to \code{\link{get_at_age_prediction}}.
+#' @param seas_agg Integer vector, one per fleet. \code{1} compares the
+#'   observation against every season of the year summed together, \code{0}
+#'   against the season it sits in.
 #' @param pop Logical. \code{TRUE} for the population-specific data source, whose
 #'   arrays have a leading population dimension and whose observations are
 #'   never summed over populations.
@@ -187,7 +192,8 @@ get_at_age_source_nLL = function(
   trans_rho = 0,
   trans_rho_year = 0,
   us_pars = NULL,
-  aa_type = 1
+  aa_type = 1,
+  seas_agg = 0
 ) {
 
   "[<-" <- RTMB::ADoverload("[<-")
@@ -203,6 +209,7 @@ get_at_age_source_nLL = function(
   sd_form = rep_len(sd_form, n_fleets)
   like_type = rep_len(like_type, n_fleets)
   corr_type = rep_len(corr_type, n_fleets)
+  seas_agg = rep_len(seas_agg, n_fleets)
 
   i_r = if(pop) 2 else 1        # dimension positions within one fleet's slice
   i_y = i_r + 1; i_seas = i_y + 1; i_a = i_seas + 1; i_s = i_a + 1
@@ -249,6 +256,9 @@ get_at_age_source_nLL = function(
 
     # an unstructured correlation is one matrix per cell the spec keeps apart, built on first use
     # and reused by the cells sharing it. only a fleet asking for one allocates the store
+    # a fleet reporting once a year is compared against every season of the prediction
+    seas_use = if(seas_agg[f] == 1) seq_len(df[i_seas]) else NULL
+
     n_us_pop = if(pop) df[1] else 1
     us_corr = if(corr_type[f] == 2) vector("list", n_us_pop * df[i_r] * df[i_s]) else NULL
 
@@ -298,7 +308,7 @@ get_at_age_source_nLL = function(
         for(ay in seq_along(obs_ages)) {   # column major, matching the slot matrix
           for(yy in seq_along(obs_yrs)) {
             pred[k] = get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx,
-                                            obs_yrs[yy], idx[i_seas], obs_ages[ay], f)
+                                            obs_yrs[yy], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages[ay], f)
             k = k + 1
           } # end yy loop
         } # end ay loop
@@ -331,7 +341,7 @@ get_at_age_source_nLL = function(
       pred = rep(0, length(obs_ages))
       for(age_slot in seq_along(obs_ages)) { # prediction for each observed age
         pred[age_slot] = get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx,
-                                               idx[i_y], idx[i_seas], obs_ages[age_slot], f)
+                                               idx[i_y], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages[age_slot], f)
       } # end age_slot loop
 
       pred_t = if(like_type[f] == 0) log(pred + const) else pred

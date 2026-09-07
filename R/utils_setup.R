@@ -685,37 +685,37 @@ setup_sel_norm_bins <- function(input_list, sel_norm_bins, prefix, n_fleets, bin
 #' @keywords internal
 setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fleets, bins, starting_values = list()) {
 
-  dev_nm <- paste0("ln_", prefix, "sel_bin_devs")
-  pe_nm <- paste0(prefix, "sel_bin_devs_pe_pars")
-  bins_nm <- paste0(prefix, "_sel_bin_dev_bins")
-  pe_data_nm <- paste0("cont_tv_", prefix, "sel_bin_devs")
+  dev_par_name <- paste0("ln_", prefix, "sel_bin_devs")
+  pe_par_name <- paste0(prefix, "sel_bin_devs_pe_pars")
+  dev_bins_field <- paste0(prefix, "_sel_bin_dev_bins")
+  cont_tv_field <- paste0("cont_tv_", prefix, "sel_bin_devs")
 
   n_yrs_dev <- length(input_list$data$years) + input_list$data$n_proj_yrs_devs
 
-  if(!all(pe_model %in% c("none", "iid", "rw"))) stop(pe_data_nm, " must be one of none, iid, or rw")
-  if(length(pe_model) != n_fleets) stop(pe_data_nm, " is not length ", n_fleets)
+  if(!all(pe_model %in% c("none", "iid", "rw"))) stop(cont_tv_field, " must be one of none, iid, or rw")
+  if(length(pe_model) != n_fleets) stop(cont_tv_field, " is not length ", n_fleets)
   pe_vals <- convert_to_numeric(pe_model, list(none = 0, iid = 1, rw = 2))
 
   # 0/1 array of which bins each fleet overrides; no overrides is all zeros
   bins_arr <- array(0, dim = c(bins, n_fleets))
   if(!is.null(bin_dev_bins)) {
-    if(!is.list(bin_dev_bins) || length(bin_dev_bins) != n_fleets) stop(bins_nm, " must be a list with one element per fleet (use NULL for a fleet with no overrides).")
+    if(!is.list(bin_dev_bins) || length(bin_dev_bins) != n_fleets) stop(dev_bins_field, " must be a list with one element per fleet (use NULL for a fleet with no overrides).")
     for(f in seq_len(n_fleets)) {
       if(is.null(bin_dev_bins[[f]])) next
-      if(!all(bin_dev_bins[[f]] %in% seq_len(bins))) stop(bins_nm, " for fleet ", f, " refers to bins outside 1:", bins)
+      if(!all(bin_dev_bins[[f]] %in% seq_len(bins))) stop(dev_bins_field, " for fleet ", f, " refers to bins outside 1:", bins)
       bins_arr[bin_dev_bins[[f]], f] <- 1
     } # end f loop
   }
 
-  if(dev_nm %in% names(starting_values)) input_list$par[[dev_nm]] <- starting_values[[dev_nm]]
-  else input_list$par[[dev_nm]] <- array(0, dim = c(input_list$data$n_regions, n_yrs_dev, bins, input_list$data$n_sexes, n_fleets))
+  if(dev_par_name %in% names(starting_values)) input_list$par[[dev_par_name]] <- starting_values[[dev_par_name]]
+  else input_list$par[[dev_par_name]] <- array(0, dim = c(input_list$data$n_regions, n_yrs_dev, bins, input_list$data$n_sexes, n_fleets))
 
-  if(pe_nm %in% names(starting_values)) input_list$par[[pe_nm]] <- starting_values[[pe_nm]]
-  else input_list$par[[pe_nm]] <- array(0, dim = c(input_list$data$n_regions, bins, input_list$data$n_sexes, n_fleets))
+  if(pe_par_name %in% names(starting_values)) input_list$par[[pe_par_name]] <- starting_values[[pe_par_name]]
+  else input_list$par[[pe_par_name]] <- array(0, dim = c(input_list$data$n_regions, bins, input_list$data$n_sexes, n_fleets))
 
   # Only the named bins are estimated; everything else is fixed at zero and
   # never reaches the selectivity curve, so it costs nothing.
-  map_dev <- array(NA_real_, dim = dim(input_list$par[[dev_nm]]))
+  map_dev <- array(NA_real_, dim = dim(input_list$par[[dev_par_name]]))
   counter <- 1
   for(f in seq_len(n_fleets)) {
     for(r in seq_len(input_list$data$n_regions)) {
@@ -727,11 +727,11 @@ setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fle
       } # end s loop
     } # end r loop
   } # end f loop
-  input_list$map[[dev_nm]] <- factor(map_dev)
+  input_list$map[[dev_par_name]] <- factor(map_dev)
 
   # A process-error hyperparameter only exists where the deviations are both
   # estimated and given a structure to be penalized against.
-  map_pe <- array(NA_real_, dim = dim(input_list$par[[pe_nm]]))
+  map_pe <- array(NA_real_, dim = dim(input_list$par[[pe_par_name]]))
   counter <- 1
   for(f in seq_len(n_fleets)) {
     if(pe_vals[f] == 0) next
@@ -744,11 +744,11 @@ setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fle
       } # end s loop
     } # end r loop
   } # end f loop
-  input_list$map[[pe_nm]] <- factor(map_pe)
+  input_list$map[[pe_par_name]] <- factor(map_pe)
 
-  input_list$data[[bins_nm]] <- bins_arr
-  input_list$data[[pe_data_nm]] <- pe_vals
-  input_list$data[[paste0("map_", dev_nm)]] <- map_dev
+  input_list$data[[dev_bins_field]] <- bins_arr
+  input_list$data[[cont_tv_field]] <- pe_vals
+  input_list$data[[paste0("map_", dev_par_name)]] <- map_dev
 
   return(input_list)
 }
@@ -862,10 +862,10 @@ setup_sel_sex_offset <- function(
   starting_values = list()
 ) {
 
-  scale_nm <- paste0("ln_", prefix, "sel_sex_scale")
-  par_flag_nm <- paste0(prefix, "sel_sex_par_offset")
-  scale_flag_nm <- paste0(prefix, "sel_sex_scale_offset")
-  apical_flag_nm <- paste0(prefix, "sel_sex_apical_offset")
+  sex_scale_par_name <- paste0("ln_", prefix, "sel_sex_scale")
+  sex_par_offset_field <- paste0(prefix, "sel_sex_par_offset")
+  sex_scale_offset_field <- paste0(prefix, "sel_sex_scale_offset")
+  sex_apical_offset_field <- paste0(prefix, "sel_sex_apical_offset")
 
   if(length(sex_offset) != n_fleets) stop(prefix, "_sel_sex_offset is not length ", n_fleets)
   valid <- c("none", "par", "scale", "par_scale", "apical", "par_apical")
@@ -898,12 +898,12 @@ setup_sel_sex_offset <- function(
     if(any(cont_tv_mat[,f] %in% 3:5)) stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a scale offset, but its semi-parametric time variation is mean-standardized, which cancels a constant multiplier. Use the par offset instead.")
   } # end f loop
 
-  if(scale_nm %in% names(starting_values)) input_list$par[[scale_nm]] <- starting_values[[scale_nm]]
-  else input_list$par[[scale_nm]] <- array(0, dim = c(input_list$data$n_regions, max_blks, input_list$data$n_sexes, n_fleets))
+  if(sex_scale_par_name %in% names(starting_values)) input_list$par[[sex_scale_par_name]] <- starting_values[[sex_scale_par_name]]
+  else input_list$par[[sex_scale_par_name]] <- array(0, dim = c(input_list$data$n_regions, max_blks, input_list$data$n_sexes, n_fleets))
 
   # The first sex is the reference and never has a scale or apical offset, and a
   # fleet only has one for the blocks it actually has
-  map_scale <- array(NA_real_, dim = dim(input_list$par[[scale_nm]]))
+  map_scale <- array(NA_real_, dim = dim(input_list$par[[sex_scale_par_name]]))
   counter <- 1
   for(f in seq_len(n_fleets)) {
     if(scale_flag[f] == 0 && apical_flag[f] == 0) next
@@ -917,11 +917,11 @@ setup_sel_sex_offset <- function(
       } # end b loop
     } # end r loop
   } # end f loop
-  input_list$map[[scale_nm]] <- factor(map_scale)
+  input_list$map[[sex_scale_par_name]] <- factor(map_scale)
 
-  input_list$data[[par_flag_nm]] <- par_flag
-  input_list$data[[scale_flag_nm]] <- scale_flag
-  input_list$data[[apical_flag_nm]] <- apical_flag
+  input_list$data[[sex_par_offset_field]] <- par_flag
+  input_list$data[[sex_scale_offset_field]] <- scale_flag
+  input_list$data[[sex_apical_offset_field]] <- apical_flag
   for(f in seq_len(n_fleets)) if(sex_offset[f] != "none") collect_message("Selectivity sex offset for ", fleet_label, " ", f, " is: ", sex_offset[f])
 
   return(input_list)

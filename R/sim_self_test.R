@@ -243,6 +243,12 @@ simulation_self_test <- function(
                                 ln_sigmaD_pop = ln_sigmaD_pop,
                                 catch_units = data$catch_units,
                                 discard_units = data$discard_units,
+                                # data sources the fitted model reports once a year stay annual
+                                Catch_seas_Type = data$Catch_seas_Type,
+                                Catch_pop_seas_Type = data$Catch_pop_seas_Type,
+                                FishIdx_seas_Type = data$FishIdx_seas_Type,
+                                FishIdx_pop_seas_Type = data$FishIdx_pop_seas_Type,
+                                FishAgeComps_seas_Type = data$FishAgeComps_seas_Type,
                                 Fmort_input = replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]),
                                 dmr_input = replicate(n = sim_list$n_sims, rep$dmr[,1:length(data$years),,,drop = FALSE]),
                                 fish_sel_input = replicate(n = sim_list$n_sims, rep$fish_sel[,,1:length(data$years),,,,,drop = FALSE]),
@@ -375,6 +381,10 @@ simulation_self_test <- function(
     SrvIdx_LikeType = if(is.null(data$SrvIdx_LikeType)) rep(0, data$n_srv_fleets) else data$SrvIdx_LikeType,
     SrvIdx_Cov = data$SrvIdx_Cov,
     UseSrvIdx = data$UseSrvIdx,
+    # data sources the fitted model reports once a year stay annual
+    SrvIdx_seas_Type = data$SrvIdx_seas_Type,
+    SrvIdx_pop_seas_Type = data$SrvIdx_pop_seas_Type,
+    SrvAgeComps_seas_Type = data$SrvAgeComps_seas_Type,
     t_srv = data$t_srv,
 
     # survey age composition specifications
@@ -506,7 +516,11 @@ simulation_self_test <- function(
     rec_lag = data$rec_lag,
     # the per-recruit reference year has to match the fit, or the operating model and the
     # estimation model build S0 from different biology and the self test measures that gap
-    SR_ref_yr = if(is.null(data$SR_ref_yr)) 1 else data$SR_ref_yr
+    SR_ref_yr = if(is.null(data$SR_ref_yr)) 1 else data$SR_ref_yr,
+    # the operating model draws recruitment under the process the fit was estimated with
+    RecDevs_model = c("iid", "rw", "ar1")[if(is.null(data$RecDevs_model)) 1 else data$RecDevs_model],
+    RecDevs_rho = if(is.null(optim_parameters_list$RecDevs_rho)) array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
+                  else rho_trans(array(optim_parameters_list$RecDevs_rho, dim = c(sim_list$n_pop, sim_list$n_regions)))
   )
 
   # Setup Tagging -----------------------------------------------------------

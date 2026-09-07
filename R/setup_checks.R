@@ -603,3 +603,29 @@ check_sim_dimensions <- function(x,
   }
 
 }
+
+#' Refuse the internal composition residuals for a zeros dropped logistic normal
+#'
+#' Dropping the zeros leaves a different number of observations in each cell,
+#' while the one step ahead residuals are packed as a fixed length vector per
+#' cell, so the two cannot be combined.
+#'
+#' @param input_list Named list with \code{$data}.
+#' @param like_vals Integer likelihood codes for this data source.
+#' @param arg_name Name of the argument being checked, used in the message.
+#'
+#' @return \code{NULL}, invisibly. Called for the error it raises.
+#'
+#' @keywords internal
+check_miss0_osa <- function(input_list, like_vals, arg_name) {
+
+  if(!isTRUE(input_list$data$do_internal_comp_osa)) return(invisible(NULL))
+  if(!any(like_vals %in% c(5, 6, 7))) return(invisible(NULL))
+
+  stop(arg_name, " asks for a logistic normal with the zeros dropped while do_internal_comp_osa is TRUE. ",
+       "Dropping the zeros leaves a different number of observations in each cell, and the one step ahead ",
+       "residuals are packed as a fixed length vector per cell, so the two cannot be combined. Either fit ",
+       "without the internal composition residuals, or use one of the forms that keeps every bin, ",
+       "which keep every bin and add a small constant to the zeros instead.")
+
+} # end check_miss0_osa

@@ -83,6 +83,9 @@
 #'   the fitted bins. Logistic-normal covariances are built over all observed
 #'   bins and then cut down to the fitted ones, so a gap in \code{comp_bins}
 #'   still counts towards the AR1 lag between the bins on either side of it.
+#' @param seas_agg Integer vector, one per fleet. \code{1} builds the predicted
+#'   composition from every season of the year summed together, \code{0} from the
+#'   season the observation sits in.
 #' @param addtocomp Small constant added to compositions to avoid numerical
 #'   issues when zeros are present.
 #' @param comp_const_obs Integer (0 or 1). Whether \code{addtocomp} is added to
@@ -198,7 +201,7 @@ Get_Comp_Likelihoods = function(Exp,
       zeros = which(tmp_Obs == 0)
 
       # Construct Sigma
-      Sigma = diag(rep(1/exp(ln_theta_agg)^2, length(tmp_Obs)))
+      Sigma = diag(rep(exp(ln_theta_agg)^2, length(tmp_Obs)))
 
       if(length(zeros) > 0) {
         # Remove zeros and renormalize
@@ -238,6 +241,17 @@ Get_Comp_Likelihoods = function(Exp,
       Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
       comp_nLL[1,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (1dar1)
     } # end if logistic normal (1dar1)
+
+    if(Likelihood_Type %in% c(5,6)) {
+      tmp_Obs = Obs[1,,1] / sum(Obs[1,,1]) # normalize observed values
+      comp_nLL[1,1] = get_logistnormal_miss0_nLL(obs = tmp_Obs, # observed proportions, zeros included
+                                                 pred = tmp_Exp, # expected proportions
+                                                 ln_sigma = ln_theta_agg, # standard deviation before the sample size scaling
+                                                 ISS = ISS[1,1], # input sample size
+                                                 corr_type = if(Likelihood_Type == 6) 1 else 0, # iid or ar1 across bins
+                                                 trans_rho = LN_corr_pars_agg, # correlation by age / length
+                                                 lag_bins = fit_bins) # spacing measured over the full bin range
+    } # end if logistic normal with zeros dropped
 
   } # end if aggregated comps across sexes and regions
 
@@ -318,6 +332,17 @@ Get_Comp_Likelihoods = function(Exp,
           Sigma = Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
           comp_nLL[r,s] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (1dar1)
         } # end if logistic normal (1dar1)
+
+        if(Likelihood_Type %in% c(5,6)) {
+          tmp_Obs = Obs[r,,s] / sum(Obs[r,,s]) # normalize observed values
+          comp_nLL[r,s] = get_logistnormal_miss0_nLL(obs = tmp_Obs, # observed proportions, zeros included
+                                                     pred = tmp_Exp, # expected proportions
+                                                     ln_sigma = ln_theta[r,s], # standard deviation before the sample size scaling
+                                                     ISS = ISS[r,s], # input sample size
+                                                     corr_type = if(Likelihood_Type == 6) 1 else 0, # iid or ar1 across bins
+                                                     trans_rho = LN_corr_pars[r,s,1], # correlation by age / length
+                                                     lag_bins = fit_bins) # spacing measured over the full bin range
+        } # end if logistic normal with zeros dropped
 
       } # end r loop
     } # end s loop
@@ -435,6 +460,34 @@ Get_Comp_Likelihoods = function(Exp,
         # likelihood
         comp_nLL[r,1] = -1 * dlogistnormal(obs = tmp_Obs, pred = tmp_Exp, Sigma = Sigma, TRUE) # Logistic Normal likelihood (1dar1 by age, constant corr by sex)
       }
+
+      if(Likelihood_Type == 7) {
+        tmp_Obs = as.vector(Obs[r,,]) / sum(Obs[r,,]) # normalize the whole bin by sex stack
+
+        # separable over bins and sexes, both correlations positive as the other zeros dropped forms are
+        LN_corr_b = RTMB::plogis(LN_corr_pars[r,1,1]) # correlation by age / length
+        LN_corr_s = RTMB::plogis(LN_corr_pars[r,1,2]) # correlation across sexes
+        corr_full = Matrix::kronecker(get_Constant_CorrMat(n_sexes, LN_corr_s), get_AR1_CorrMat(n_obs_bins, LN_corr_b))
+        if(restrict) corr_full = corr_full[fit_bins_joint, fit_bins_joint] # cut to the bins being fit
+
+        comp_nLL[r,1] = get_logistnormal_miss0_nLL(obs = tmp_Obs, # observed proportions, zeros included
+                                                   pred = tmp_Exp, # expected proportions
+                                                   ln_sigma = ln_theta[r,1], # standard deviation before the sample size scaling
+                                                   ISS = ISS[r,1], # input sample size
+                                                   corr_type = 2, # the structure above rather than a lag
+                                                   corr_mat = corr_full) # cut to the bins seen inside
+      } # end if 2d logistic normal with zeros dropped
+
+      if(Likelihood_Type %in% c(5,6)) {
+        tmp_Obs = as.vector(Obs[r,,]) / sum(Obs[r,,]) # normalize the whole bin by sex stack
+        comp_nLL[r,1] = get_logistnormal_miss0_nLL(obs = tmp_Obs, # observed proportions, zeros included
+                                                   pred = tmp_Exp, # expected proportions
+                                                   ln_sigma = ln_theta[r,1], # standard deviation before the sample size scaling
+                                                   ISS = ISS[r,1], # input sample size
+                                                   corr_type = if(Likelihood_Type == 6) 1 else 0, # iid or ar1 across bins
+                                                   trans_rho = LN_corr_pars[r,1,1], # correlation by age / length
+                                                   lag_bins = fit_bins_joint) # spacing runs along the stack
+      } # end if logistic normal with zeros dropped
 
     } # end r loop
   } # end if 'Joint' comps by sex, but 'Split' by region
@@ -1114,6 +1167,34 @@ eval_comp_osa = function(
   nLL_arr
 }
 
+#' Predicted composition numbers for the seasons a data source is fit against
+#'
+#' A composition set to \code{"aggSeas"} has one observation for the year, so the
+#' numbers behind it are summed over every season before they are turned into
+#' proportions. One set to \code{"spltSeas"} reads its own season alone.
+#'
+#' @param ExpArr Prediction array
+#'   \code{[pop, region, year, season, bin, sex, fleet]}.
+#' @param y,seas,f Year, season and fleet of the observation.
+#' @param seas_agg Integer, \code{1} for a season total and \code{0} otherwise.
+#' @param p Population index, or \code{NULL} for a regional data source, which
+#'   sums over populations.
+#'
+#' @return Array of predicted numbers with region, bin and sex left.
+#'
+#' @keywords internal
+get_seas_comp_exp = function(ExpArr, y, seas, f, seas_agg, p = NULL) {
+
+  if(is.null(p)) { # regional, summed across populations
+    if(seas_agg == 1) apply(ExpArr[,,y,,,,f, drop = FALSE], c(2,5,6), sum)
+    else apply(ExpArr[,,y,seas,,,f, drop = FALSE], 2:7, sum)
+  } else {
+    if(seas_agg == 1) apply(ExpArr[p,,y,,,,f, drop = FALSE], c(2,5,6), sum)
+    else ExpArr[p,,y,seas,,,f]
+  }
+
+} # end get_seas_comp_exp
+
 # Composition Data Source Drivers -------------------------------------------
 
 #' Evaluate one composition data source through the direct likelihood
@@ -1159,6 +1240,9 @@ eval_comp_osa = function(
 #' @param do_internal_comp_osa Logical. \code{TRUE} hands the data source to
 #'   \code{\link{eval_comp_source_osa}}, which reads the vectors
 #'   \code{\link{pack_comp_source_osa}} built and the call site registered.
+#' @param seas_agg Integer vector, one per fleet. \code{1} builds the predicted
+#'   composition from every season of the year summed together, \code{0} from the
+#'   season the observation sits in.
 #' @param tracked_discrete,tracked_continuous Registered observation vectors, read
 #'   only on the OSA route and \code{NULL} where no fleet uses that family.
 #'
@@ -1194,7 +1278,8 @@ get_comp_source_nLL = function(
   comp_const_obs = 1,
   do_internal_comp_osa = FALSE,
   tracked_discrete = NULL,
-  tracked_continuous = NULL
+  tracked_continuous = NULL,
+  seas_agg = 0
 ) {
 
   "c" <- RTMB::ADoverload("c")
@@ -1203,6 +1288,8 @@ get_comp_source_nLL = function(
   # a data source with nothing fit never reads its observations, which a model without
   # this data source does not have
   if(!any(UseArr == 1)) return(nLL_arr)
+
+  seas_agg = rep_len(seas_agg, n_fleets) # a single setting stands for every fleet
 
   # observed bins sit one dim later when the data source is population-specific
   n_obs_bins = if(pop) dim(ObsArr)[5] else dim(ObsArr)[4]
@@ -1236,7 +1323,8 @@ get_comp_source_nLL = function(
       n_fleets = n_fleets,
       n_sexes = n_sexes,
       pop = pop, # population-specific or regional
-      addtocomp = addtocomp
+      addtocomp = addtocomp,
+      seas_agg = seas_agg # whether the source is fit as a season total
     )
 
     return(osa_nLL)
@@ -1260,7 +1348,7 @@ get_comp_source_nLL = function(
 
             nLL_arr[p,,y,seas,,f] = Get_Comp_Likelihoods(
               comp_const_obs = comp_const_obs,
-              Exp = ExpArr[p,,y,seas,,,f], # predicted numbers
+              Exp = get_seas_comp_exp(ExpArr, y, seas, f, seas_agg[f], p), # predicted numbers
               Obs = ObsArr[p,,y,seas,,,f], # observed compositions
               ISS = ISSArr[p,,y,seas,,f], # input sample size
               Wt_Mltnml = WtArr[p,,y,seas,,f], # multinomial weight
@@ -1296,7 +1384,7 @@ get_comp_source_nLL = function(
 
           nLL_arr[,y,seas,,f] = Get_Comp_Likelihoods(
             comp_const_obs = comp_const_obs,
-            Exp = apply(ExpArr[,,y,seas,,,f, drop = FALSE], 2:7, sum), # predicted numbers, summed across populations
+            Exp = get_seas_comp_exp(ExpArr, y, seas, f, seas_agg[f]), # predicted numbers, summed across populations
             Obs = ObsArr[,y,seas,,,f], # observed compositions
             ISS = ISSArr[,y,seas,,f], # input sample size
             Wt_Mltnml = WtArr[,y,seas,,f], # multinomial weight
@@ -1445,11 +1533,14 @@ eval_comp_source_osa = function(
   n_fleets,
   n_sexes,
   pop = FALSE,
-  addtocomp = 0
+  addtocomp = 0,
+  seas_agg = 0
 ) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
+
+  seas_agg = rep_len(seas_agg, n_fleets) # a single setting stands for every fleet
 
   # a data source with nothing fit never reads its observations
   if(!any(UseArr == 1)) return(nLL_arr)
@@ -1463,12 +1554,12 @@ eval_comp_source_osa = function(
   # predicted numbers in one cell, summed across populations unless the data source is population-specific
   if(pop) {
     ExpArrFn = function(p, y, seas, f) {
-      e = ExpArr[p,,y,seas,,,f, drop = FALSE]
+      e = get_seas_comp_exp(ExpArr, y, seas, f, seas_agg[f], p)
       dim(e) = c(n_regions, n_model_bins, n_sexes)
       e
     }
   } else {
-    ExpArrFn = function(p, y, seas, f) apply(ExpArr[,,y,seas,,,f, drop = FALSE], 2:7, sum)
+    ExpArrFn = function(p, y, seas, f) get_seas_comp_exp(ExpArr, y, seas, f, seas_agg[f])
   }
 
   # discrete fleets zero the container they fill

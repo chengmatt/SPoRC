@@ -169,7 +169,9 @@ at_age_type_matrix <- function(type, n_fleets, n_yrs, arg_name = "at-age Type") 
 #' against is the whole year.
 #'
 #' @param spec Character vector of length \code{n_fleets}, or a single value
-#'   given to every fleet. \code{NULL} leaves every fleet at \code{"spltSeas"}.
+#'   given to every fleet. The resolved codes \code{0} and \code{1} are also
+#'   taken, so a fitted model's settings can be handed straight back to an
+#'   operating model. \code{NULL} leaves every fleet at \code{"spltSeas"}.
 #' @param arg_name Name of the argument being parsed, used in error messages.
 #' @param n_fleets Number of fleets the vector must cover.
 #'
@@ -182,6 +184,9 @@ parse_seas_agg_spec <- function(spec, arg_name, n_fleets) {
   codes <- c(spltSeas = 0L, aggSeas = 1L)
 
   if(is.null(spec)) return(rep(0L, n_fleets)) # nothing supplied leaves every fleet seasonal
+
+  # the closed loop hands back the codes a fitted model already resolved, so take those as well
+  if(is.numeric(spec)) spec <- names(codes)[match(spec, codes)]
 
   if(length(spec) == 1) spec <- rep(spec, n_fleets) # one value covers every fleet
 

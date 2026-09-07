@@ -35,6 +35,15 @@
 #'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.
 #' @param fish_idx_type Numeric array. Index type (0 = abundance, 1 = biomass),
 #'   dimensions `n_regions x n_fish_fleets`. Default: 1.
+#' @param Catch_seas_Type,Catch_pop_seas_Type,FishIdx_seas_Type,FishIdx_pop_seas_Type,FishAgeComps_seas_Type
+#'   Whether the operating model reports a data source once a season
+#'   (\code{"spltSeas"}, the default) or once a year as a season total
+#'   (\code{"aggSeas"}). One value for every fleet or one per fleet. An annual
+#'   total is written into season one with the other seasons left at zero, and the
+#'   observation error is applied once to that total rather than to each season,
+#'   so an estimation model reading it should mark season one in its \code{Use}
+#'   array and set the matching argument in \code{\link{Setup_Mod_Catch_and_F}}
+#'   or \code{\link{Setup_Mod_FishIdx_and_Comps}}.
 #' @param FishIdx_LikeType Character or numeric vector, length `n_fish_fleets`.
 #'   Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
 #'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
@@ -285,6 +294,11 @@ Setup_Sim_Fishing <- function(sim_list,
                               ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
                               FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
+                              Catch_seas_Type = NULL,
+                              Catch_pop_seas_Type = NULL,
+                              FishIdx_seas_Type = NULL,
+                              FishIdx_pop_seas_Type = NULL,
+                              FishAgeComps_seas_Type = NULL,
                               FishIdx_Cov = NULL,
                               UseFishIdx = NULL,
                               t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
@@ -988,6 +1002,20 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$FishLen_discard_pop_corr_pars_agg <- FishLen_discard_pop_corr_pars_agg
   sim_list$FishLenComps_discard_pop_Type <- FishLenComps_discard_pop_Type
 
+  # whether a data source reports once a season or once a year, the annual total landing in season one
+  n_fish <- sim_list$n_fish_fleets
+  sim_list$Catch_seas_Type <- parse_seas_agg_spec(Catch_seas_Type, "Catch_seas_Type", n_fish)
+  sim_list$Catch_pop_seas_Type <- parse_seas_agg_spec(Catch_pop_seas_Type, "Catch_pop_seas_Type", n_fish)
+  sim_list$FishIdx_seas_Type <- parse_seas_agg_spec(FishIdx_seas_Type, "FishIdx_seas_Type", n_fish)
+  sim_list$FishIdx_pop_seas_Type <- parse_seas_agg_spec(FishIdx_pop_seas_Type, "FishIdx_pop_seas_Type", n_fish)
+  sim_list$FishAgeComps_seas_Type <- parse_seas_agg_spec(FishAgeComps_seas_Type, "FishAgeComps_seas_Type", n_fish)
+
+  # an mvn index is one draw over a covariance the season layout defines, so it cannot be collapsed
+  if(any(sim_list$FishIdx_seas_Type == 1 & FishIdx_LikeType == 2))
+    stop("FishIdx_seas_Type is 'aggSeas' for a fleet whose FishIdx_LikeType is 'mvn'. A multivariate ",
+         "normal index is drawn once over a covariance built from the observed cells, so its seasons ",
+         "cannot be summed after the draw. Use a lognormal or normal index for an annual total.")
+
   return(sim_list)
 }
 
@@ -1013,6 +1041,14 @@ Setup_Sim_Fishing <- function(sim_list,
 #' @param srv_idx_type Integer vector \code{[n_srv_fleets]} specifying survey
 #'   index type. Default: all 1 (biomass). Options: 0/“abd” (abundance),
 #'   1/“biom” (biomass).
+#' @param SrvIdx_seas_Type,SrvIdx_pop_seas_Type,SrvAgeComps_seas_Type
+#'   Whether the operating model reports a survey data source once a season
+#'   (\code{"spltSeas"}, the default) or once a year as a season total
+#'   (\code{"aggSeas"}). One value for every survey or one per survey. An annual
+#'   total is written into season one with the other seasons left at zero, and the
+#'   observation error is applied once to that total, so an estimation model
+#'   reading it should mark season one in its \code{Use} array and set the
+#'   matching argument in \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
 #' @param SrvIdx_LikeType Character or numeric vector, length `n_srv_fleets`.
 #'   Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
 #'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
@@ -1161,6 +1197,9 @@ Setup_Sim_Survey <- function(sim_list,
                              t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
                              srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
                              SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+                             SrvIdx_seas_Type = NULL,
+                             SrvIdx_pop_seas_Type = NULL,
+                             SrvAgeComps_seas_Type = NULL,
                              SrvIdx_Cov = NULL,
                              UseSrvIdx = NULL,
                              comp_srv_caal_like = rep(999, sim_list$n_srv_fleets),
@@ -1515,6 +1554,18 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$SrvLen_pop_corr_pars <- SrvLen_pop_corr_pars
   sim_list$SrvLen_pop_corr_pars_agg <- SrvLen_pop_corr_pars_agg
   sim_list$SrvLenComps_pop_Type <- SrvLenComps_pop_Type
+
+  # whether a data source reports once a season or once a year, the annual total landing in season one
+  n_srv <- sim_list$n_srv_fleets
+  sim_list$SrvIdx_seas_Type <- parse_seas_agg_spec(SrvIdx_seas_Type, "SrvIdx_seas_Type", n_srv)
+  sim_list$SrvIdx_pop_seas_Type <- parse_seas_agg_spec(SrvIdx_pop_seas_Type, "SrvIdx_pop_seas_Type", n_srv)
+  sim_list$SrvAgeComps_seas_Type <- parse_seas_agg_spec(SrvAgeComps_seas_Type, "SrvAgeComps_seas_Type", n_srv)
+
+  # an mvn index is one draw over a covariance the season layout defines, so it cannot be collapsed
+  if(any(sim_list$SrvIdx_seas_Type == 1 & SrvIdx_LikeType == 2))
+    stop("SrvIdx_seas_Type is 'aggSeas' for a survey whose SrvIdx_LikeType is 'mvn'. A multivariate ",
+         "normal index is drawn once over a covariance built from the observed cells, so its seasons ",
+         "cannot be summed after the draw. Use a lognormal or normal index for an annual total.")
 
   return(sim_list)
 

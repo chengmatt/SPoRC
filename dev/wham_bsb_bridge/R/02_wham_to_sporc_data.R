@@ -7,6 +7,7 @@ out_dir <- here("dev", "wham_bsb_bridge", "output")
 wham <- readRDS(file.path(out_dir, "01_wham_fit0.rds"))
 dat <- wham$input$data
 rep <- wham$rep
+par <- wham$parList
 
 # dimensions. wham stocks become SPoRC populations, each homing to its own region
 n_pop <- 2
@@ -15,19 +16,20 @@ n_yrs <- dat$n_years_model
 n_seas <- dat$n_seasons
 n_ages <- dat$n_ages
 n_sexes <- 1
-n_fish <- 2 # commercial, recreational
-n_srv <- 2  # rec cpa, vast
+n_fish <- 4 # north commercial, north recreational, south commercial, south recreational
+n_srv <- 4  # north rec cpa, north vast, south rec cpa, south vast
 
 years <- 1989:2021
 ages <- 1:n_ages
 seasdur <- dat$fracyr_seasons
 natal_region <- c(1, 2)
 
-# wham runs four fleets and four indices as region by gear; SPoRC runs gear across regions
+# each wham fleet and index keeps its own SPoRC fleet, so the composition likelihoods,
+# which are set per fleet, can differ between the north and the south the way wham has them
 fleet_region <- dat$fleet_regions          # 1 1 2 2
-fleet_gear <- c(1, 2, 1, 2)                # commercial, recreational
+fleet_gear <- 1:4
 index_region <- dat$index_regions          # 1 1 2 2
-index_gear <- c(1, 2, 1, 2)                # rec cpa, vast
+index_gear <- 1:4
 
 # selectivity blocks: fleets take 1-4, indices take 5-8
 fleet_block <- 1:4
@@ -93,11 +95,16 @@ for(f in 1:dat$n_fleets) {
   }
 } # end f loop
 
-# aggregate catch. wham fits it annually, so the seasonal split here is only a placeholder
+# aggregate catch. wham fits one annual total per fleet, so it sits in season 1 and is
+# fit against the season total
+obs_seas <- 1
 ObsCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish))
-UseCatch <- array(1, dim = c(n_regions, n_yrs, n_seas, n_fish))
-for(f in 1:dat$n_fleets) for(seas in 1:n_seas) {
-  ObsCatch[fleet_region[f], , seas, fleet_gear[f]] <- dat$agg_catch[, f] * seasdur[seas]
+UseCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish))
+ObsCatch_SE <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish))
+for(f in 1:dat$n_fleets) {
+  ObsCatch[fleet_region[f], , obs_seas, fleet_gear[f]] <- dat$agg_catch[, f]
+  UseCatch[fleet_region[f], , obs_seas, fleet_gear[f]] <- dat$use_agg_catch[, f]
+  ObsCatch_SE[fleet_region[f], , obs_seas, fleet_gear[f]] <- dat$agg_catch_sigma[, f] * exp(par$log_catch_sig_scale[f])
 }
 
 # survey indices sit in one season each, so they map across without reshaping
@@ -107,7 +114,7 @@ UseSrvIdx <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv))
 for(i in 1:dat$n_indices) {
   seas <- dat$index_seasons[i]
   ObsSrvIdx[index_region[i], , seas, index_gear[i]] <- dat$agg_indices[, i]
-  ObsSrvIdx_SE[index_region[i], , seas, index_gear[i]] <- dat$agg_index_sigma[, i]
+  ObsSrvIdx_SE[index_region[i], , seas, index_gear[i]] <- dat$agg_index_sigma[, i] * exp(par$log_index_sig_scale[i])
   UseSrvIdx[index_region[i], , seas, index_gear[i]] <- dat$use_indices[, i]
 }
 
@@ -122,13 +129,14 @@ for(i in 1:dat$n_indices) {
   ISS_SrvAgeComps[index_region[i], , seas, 1, index_gear[i]] <- dat$index_Neff[, i]
 }
 
-# fishery age compositions. wham aggregates these over seasons, so they stay off for now
+# fishery age compositions, also annual, so they sit alongside the catch in season 1
 ObsFishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish))
 UseFishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish))
 ISS_FishAgeComps <- array(0, dim = c(n_regions, n_yrs, n_seas, n_sexes, n_fish))
 for(f in 1:dat$n_fleets) {
-  ObsFishAgeComps[fleet_region[f], , 1, , 1, fleet_gear[f]] <- dat$catch_paa[f, , ]
-  ISS_FishAgeComps[fleet_region[f], , 1, 1, fleet_gear[f]] <- dat$catch_Neff[, f]
+  ObsFishAgeComps[fleet_region[f], , obs_seas, , 1, fleet_gear[f]] <- dat$catch_paa[f, , ]
+  UseFishAgeComps[fleet_region[f], , obs_seas, fleet_gear[f]] <- dat$use_catch_paa[, f]
+  ISS_FishAgeComps[fleet_region[f], , obs_seas, 1, fleet_gear[f]] <- dat$catch_Neff[, f]
 }
 
 # wham quantities the comparison reads back
@@ -145,7 +153,21 @@ wham_targets <- list(
   q = rep$q,
   MAA = rep$MAA,
   NAA_spawn = rep$NAA_spawn,
-  all_NAA = rep$all_NAA
+  all_NAA = rep$all_NAA,
+  nll_agg_catch = rep$nll_agg_catch,
+  nll_agg_indices = rep$nll_agg_indices,
+  nll_catch_acomp = rep$nll_catch_acomp,
+  nll_index_acomp = rep$nll_index_acomp,
+  nll_NAA = rep$nll_NAA,
+  catch_paa_pars = par$catch_paa_pars,
+  index_paa_pars = par$index_paa_pars,
+  catch_paa_model = dat$age_comp_model_fleets,
+  index_paa_model = dat$age_comp_model_indices,
+  mean_rec_pars = par$mean_rec_pars,
+  NAA_sigma = par$log_NAA_sigma,
+  NAA_rho = par$trans_NAA_rho,
+  N1_pars = par$log_N1,
+  sel_repars = par$sel_repars
 )
 
 saveRDS(list(dims = list(n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_seas = n_seas,
@@ -164,7 +186,9 @@ saveRDS(list(dims = list(n_pop = n_pop, n_regions = n_regions, n_yrs = n_yrs, n_
              selAA = selAA,
              F_ann = F_ann,
              t_srv = t_srv,
+             obs_seas = obs_seas,
              ObsCatch = ObsCatch,
+             ObsCatch_SE = ObsCatch_SE,
              UseCatch = UseCatch,
              ObsSrvIdx = ObsSrvIdx,
              ObsSrvIdx_SE = ObsSrvIdx_SE,

@@ -4,7 +4,7 @@
 \alias{dlogistnormal}
 \title{Evaluate a logistic-normal log-likelihood}
 \usage{
-dlogistnormal(obs, pred, Sigma, give_log = TRUE)
+dlogistnormal(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE)
 }
 \arguments{
 \item{obs}{Numeric vector of observed composition values of length

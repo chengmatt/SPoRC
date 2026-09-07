@@ -106,3 +106,31 @@ ssb_table <- data.frame(year = dat$dims$years,
                         SSB_south_wham = wham$SSB[, 2])
 
 write.csv(ssb_table, file.path(out_dir, "05_ssb_by_year.csv"), row.names = FALSE)
+
+# likelihood components, fleet by fleet. wham reports the joint negative log likelihood at the
+# random effects it estimated, which is what the seeded SPoRC run also holds
+likelihoods <- data.frame(component = character(), fleet = integer(),
+                          sporc = numeric(), wham = numeric())
+
+add_like <- function(likelihoods, label, sporc_vals, wham_vals) {
+  rbind(likelihoods, data.frame(component = label,
+                                fleet = seq_along(sporc_vals),
+                                sporc = as.numeric(sporc_vals),
+                                wham = as.numeric(wham_vals)))
+}
+
+likelihoods <- add_like(likelihoods, "aggregate catch",
+                        apply(sporc$Catch_nLL, 4, sum), colSums(wham$nll_agg_catch))
+
+likelihoods <- add_like(likelihoods, "survey index",
+                        apply(sporc$SrvIdx_nLL, 4, sum), colSums(wham$nll_agg_indices))
+
+likelihoods <- add_like(likelihoods, "fishery age compositions",
+                        apply(sporc$FishAgeComps_nLL, 5, sum), colSums(wham$nll_catch_acomp))
+
+likelihoods <- add_like(likelihoods, "survey age compositions",
+                        apply(sporc$SrvAgeComps_nLL, 5, sum), colSums(wham$nll_index_acomp))
+
+likelihoods$difference <- likelihoods$sporc - likelihoods$wham
+
+write.csv(likelihoods, file.path(out_dir, "05_likelihood_components.csv"), row.names = FALSE)

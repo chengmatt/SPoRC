@@ -30,6 +30,7 @@ Setup_Mod_Rec(
   max_bias_ramp_fct = 1,
   sigmaR_switch = 1,
   dont_est_recdev_last = 0,
+  dont_pen_recdev_first = 0,
   init_age_strc = 2,
   equil_init_age_strc = 1,
   init_F_prop = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
@@ -40,6 +41,9 @@ Setup_Mod_Rec(
   InitDevs_spec = NULL,
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_spec = NULL,
+  RecDevs_model = "iid",
+  RecDevs_rho_spec = "fix",
+  RecDevs_rw_init_sigma = 5,
   RecDevs_pen_center = "fixed",
   Use_rec_level_pen = 0,
   rec_level_pen_sigma = 1,
@@ -79,7 +83,8 @@ Setup_Mod_Rec(
   r0_prior = NULL,
   Use_rinit_pen = 0,
   rinit_pen_sd = 1,
-  ...
+  ...,
+  ln_global_R0_spec = "est"
 )
 }
 \arguments{
@@ -198,6 +203,23 @@ overridden to \code{0} if \code{n_proj_yrs_devs > 0}, since projected
 deviation years are penalized toward the mean and are effectively
 estimated regardless. Default \code{0}.}
 
+\item{dont_pen_recdev_first}{Integer. How many leading years of recruitment
+  deviations are estimated but left out of the recruitment penalty. \code{0}
+  (default) penalizes every year.
+
+  The first year's recruitment is the first year's age one abundance, which in
+  an equilibrium initialization belongs to the initial condition rather than to
+  the recruitment process. WHAM keeps it as a separate initial numbers at age
+  parameter and gives it no process error at all, and setting this to \code{1}
+  is the same statement: the deviation is still estimated, so the data set the
+  first year's recruitment freely, but it takes no prior from
+  \code{ln_sigmaR}. Mapping the deviation off instead would fix it at its
+  starting value rather than leave it free.
+
+  Leaving years out only removes their penalty, never their estimation, so this
+  is separate from \code{dont_est_recdev_last}, which does the opposite at the
+  other end of the series.}
+
 \item{init_age_strc}{Initialization method. Default \code{2}. Options
 \code{0}/\code{"iterative"}, \code{1}/\code{"scalar_no_move"},
 \code{2}/\code{"matrix"}, and \code{3}/\code{"scalar_plus_only"} all
@@ -241,7 +263,18 @@ initialization. Default \code{1}.
     plus-group position to fix it, or share it with the preceding age by
     repeating that index (e.g. \code{c(1:42, rep(42, 9))}). Requires
     \code{init_age_devs_shared} to be non-\code{NULL}.}
-}}
+  \item{\code{4}/\code{"stoch_all_no_pen"}}{Deviations estimated for all
+    ages including the plus group, and none of them penalized. The same
+    cells \code{"stoch_all"} estimates, with no prior on any of them.
+    Pair it with \code{init_age_strc = "free"}, where the deviations are
+    the initial log numbers at age rather than departures from an
+    equilibrium, so a penalty on them would be a prior on initial
+    abundance rather than on the shape of the age structure. This is what
+    ICES assessments in the SAM family do with their first year.}
+}
+\code{"equil"} means both no penalty and no estimation, which are the same
+statement about an equilibrium age structure and two different ones about a
+free age structure. \code{"stoch_all_no_pen"} is the second of them.}
 
 \item{init_F_prop}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]}.
 \strong{Legacy interface, retained for backwards compatibility.} A fixed
@@ -310,6 +343,46 @@ mean-log-initial and sex-specific deviations are written. Requires
 recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
 n_years]}. Default \code{NULL} (estimate all independently). See
 \code{\link{do_RecDevs_mapping}} for full option descriptions.}
+
+\item{RecDevs_model}{Character string giving the process error structure on
+the recruitment deviations \code{ln_RecDevs}. The same three forms
+\code{Fdev_model} offers:
+\describe{
+  \item{\code{"iid"}}{Default. Independent deviations about the prior mean
+    set by \code{RecDevs_pen_center}, which is the classic mean recruitment
+    with lognormal deviations.}
+  \item{\code{"rw"}}{Random walk. Each deviation is centered on the previous
+    estimated one, so recruitment is free to move but not to jump, which is
+    the state-space recruitment SAM fits by default. The first estimated
+    deviation is given a diffuse normal, so the level of the series is set
+    by \code{R0} and the data rather than by the penalty.}
+  \item{\code{"ar1"}}{AR1. As the walk, but each deviation reverts toward
+    zero at rate \code{RecDevs_rho}, and the first estimated deviation is
+    drawn from the stationary marginal distribution.}
+}
+A step spans the gap between estimated years rather than calendar years, so
+mapping deviations off through \code{RecDevs_spec} or
+\code{dont_est_recdev_last} closes the gap rather than splitting the series.
+The walk and the AR1 center each deviation on the previous one, so neither
+can be combined with \code{do_rec_bias_ramp = 1} or
+\code{RecDevs_pen_center = "own_mean"}, both of which assert a mean about
+zero; each combination is rejected. \code{sigmaR_switch} still applies, so
+the walk can take one standard deviation early and another late.}
+
+\item{RecDevs_rho_spec}{Character string specifying the sharing structure for
+the AR1 correlation parameter \code{RecDevs_rho} \code{[n_pop x
+n_regions]}: one of \code{"est_all"}, \code{"est_shared_pop"},
+\code{"est_shared_r"}, \code{"est_shared_pop_r"}, or \code{"fix"}
+(default). Only read when \code{RecDevs_model = "ar1"}; every other
+\code{RecDevs_model} maps the parameter off. See
+\code{\link{do_RecDevs_rho_mapping}}.}
+
+\item{RecDevs_rw_init_sigma}{Numeric. Standard deviation given to year one of
+a random walk, which is what sets the level of the recruitment series.
+Default \code{5}, wide enough that the level is decided by \code{R0} and
+the data. \code{NA} instead starts the walk at zero under its own sigma,
+which pulls the first year toward mean recruitment. Only read when
+\code{RecDevs_model = "rw"}.}
 
 \item{RecDevs_pen_center, InitDevs_pen_center}{Where the recruitment and
 initial age deviation penalties are centered. \code{"fixed"} (default)
@@ -548,13 +621,33 @@ age of the stock, is a reasonable choice. Default 0.}
 \code{ln_sigmaR} \code{[2 x n_pop x n_regions]},
 \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
 Unspecified parameters use internal defaults.}
+
+\item{ln_global_R0_spec}{Character string, \code{"est"} (default) or
+  \code{"fix"}. \code{"fix"} maps \code{ln_global_R0} off at its starting
+  value, so the recruitment deviations hold log recruitment outright rather
+  than as departures from a level. That is how SAM writes recruitment, where
+  the first year's log numbers at age are the recruitment itself and there is
+  no separate level parameter. The recruitment counterpart of
+  \code{ln_F_mean_spec} in \code{\link{Setup_Mod_Catch_and_F}}.
+
+  Under \code{rec_model = "mean_rec"} the level and the deviations are only
+  both estimable when something reads the deviations' level. An \code{"iid"}
+  or \code{"ar1"} penalty does; a random walk does not, since it penalizes
+  only the change from one deviation to the next. Combining a walk with
+  \code{dont_pen_recdev_first >= 1}, which removes the first year's term,
+  leaves the two exactly unidentified, and that combination is rejected rather
+  than fitted: it converges to a singular Hessian and standard errors of
+  \code{NA}. A walk with the first year still penalized is accepted with a
+  warning, since the level is then readable only through that one term and its
+  standard error comes back near \code{RecDevs_rw_init_sigma}.}
 }
 \value{
 The input \code{input_list} with all recruitment-related fields
   populated in \code{$data} and \code{$par}, and factor maps constructed
   in \code{$map} for: \code{rec_region_prop_pars}, \code{rec_seas_prop_pars},
   \code{ln_sigmaR}, \code{ln_InitDevs}, \code{ln_RecDevs},
-  \code{steepness_h}, \code{sexratio_pars}, and \code{stray_rate_pars}. Character-coded inputs
+  \code{RecDevs_rho}, \code{steepness_h}, \code{sexratio_pars}, and
+  \code{stray_rate_pars}. Character-coded inputs
   for \code{init_age_strc} and \code{equil_init_age_strc} are converted to
   integer codes before storage.
 }

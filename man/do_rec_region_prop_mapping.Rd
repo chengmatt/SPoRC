@@ -20,8 +20,8 @@ Options when non-\code{NULL}:
     overwritten with large-magnitude values (\code{-20} for non-natal
     regions, \code{+20} for the natal region when
     \code{natal_region > 1}), and all elements are mapped to \code{NA}
-    so the parameters are not estimated. Requires \code{n_pop > 1} and
-    \code{n_regions > 1}.}
+    so the parameters are not estimated. Requires \code{n_regions > 1};
+    a single population apportioned over several regions is allowed.}
   \item{\code{NULL}}{All \code{rec_region_prop_pars} are estimated
     independently. Only available when \code{n_regions > 1}.}
 }}

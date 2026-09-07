@@ -236,6 +236,18 @@
 #'   Each vector defines a group of bins that share a single estimated
 #'   selectivity parameter. Indices must correspond to the bin dimension
 #'   defined by the survey selectivity type (age or length).
+#'
+#' @param srvsel_dont_est_dev_first Integer vector of length \code{n_srv_fleets} of
+#'   0/1, default \code{0}. Where \code{1}, that fleet's deviations start in
+#'   year two and the fixed selectivity parameters hold year one. A
+#'   non-parametric form (\code{"nonpar"}, \code{"nonparlog"},
+#'   \code{"nonparfree"}) has one free base parameter per bin, so year one's
+#'   deviation is that same value written twice and only
+#'   \code{srvsel_rw_init_sigma} separates them, as a prior on a level
+#'   that is usually meant to be free. Dropping it removes the redundant
+#'   parameter and that prior, and leaves the walk a sum of differences. Refused
+#'   for the GMRF and 2D AR1 forms, whose deviations are a field over years and
+#'   bins rather than a walk anchored at year one.
 #' @param srv_sel_dbnrml_startbin \code{NULL} (default) or an integer vector
 #'   \code{[n_srv_fleets]}, the bin each survey's double normal anchors its
 #'   ascending limb at; see \code{fish_sel_dbnrml_startbin} in
@@ -302,6 +314,7 @@ Setup_Mod_Srvsel_and_Q <- function(
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
   srv_sel_input = NULL,
   srv_sel_nonpar_est_bins = NULL,
+  srvsel_dont_est_dev_first = rep(0, input_list$data$n_srv_fleets),
   srv_sel_sex_offset = rep("none", input_list$data$n_srv_fleets),
   srv_sel_dbnrml_raw = NULL,
   srv_sel_dbnrml_startbin = NULL,
@@ -324,6 +337,8 @@ Setup_Mod_Srvsel_and_Q <- function(
   # silently becomes NA rather than being recycled.
   check_fleet_spec_length(srvsel_pe_wt, input_list$data$n_srv_fleets, "srvsel_pe_wt")
   check_fleet_spec_length(srvsel_rw_init_sigma, input_list$data$n_srv_fleets, "srvsel_rw_init_sigma")
+  check_fleet_spec_length(srvsel_dont_est_dev_first, input_list$data$n_srv_fleets, "srvsel_dont_est_dev_first")
+  if(!all(srvsel_dont_est_dev_first %in% c(0, 1))) stop("srvsel_dont_est_dev_first must be 0 or 1 for every fleet")
 
   # Catchability Priors
   if(!Use_srv_q_prior %in% c(0,1)) stop("Values for Use_srv_q_prior are not valid. They are == 0 (don't use prior), or == 1 (use prior)")
@@ -866,6 +881,8 @@ Setup_Mod_Srvsel_and_Q <- function(
     srvsel_pe_pars_spec,
     corr_opt_semipar,
     bins,
+    sel_devs_spec = srv_sel_devs_spec,
+    sel_devs_shared_bins = srvsel_devs_shared_bins,
     prefix = "srv",
     fleet_field = "n_srv_fleets",
     use_field = "SrvIdx",
@@ -876,6 +893,7 @@ Setup_Mod_Srvsel_and_Q <- function(
     srv_sel_devs_spec,
     srvsel_devs_shared_bins,
     bins,
+    dont_est_dev_first = srvsel_dont_est_dev_first,
     prefix = "srv",
     fleet_field = "n_srv_fleets",
     use_field = "SrvIdx",

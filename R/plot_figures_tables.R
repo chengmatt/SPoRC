@@ -897,11 +897,11 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
   valid <- c("CatchAA", "DiscardAA", "SrvIdxAA")
   if(!data_source %in% valid) stop("data source must be one of: ", paste(valid, collapse = ", "))
 
-  obs_nm <- paste0("Obs", data_source)
-  use_nm <- paste0("Use", data_source)
+  obs_data_field <- paste0("Obs", data_source)
+  use_data_field <- paste0("Use", data_source)
 
-  pred_nm <- paste0("Pred", data_source)
-  sigma_nm <- switch(
+  pred_report_field <- paste0("Pred", data_source)
+  sigma_report_field <- switch(
     data_source,
     CatchAA = "ln_sigmaCAA",
     DiscardAA = "ln_sigmaDAA",
@@ -910,7 +910,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
 
   rows <- list()
   for(i in seq_along(rep)) {
-    use_arr <- data[[i]][[use_nm]]
+    use_arr <- data[[i]][[use_data_field]]
     if(is.null(use_arr) || !any(use_arr == 1)) next
 
     fit_cells <- which(use_arr == 1)
@@ -919,9 +919,9 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
 
     # the standard deviation is whatever the fleet's error source says it is,
     # so the intervals shown are the ones the likelihood actually used
-    extra <- exp(rep[[i]][[sigma_nm]])[cbind(idx[, 4], idx[, 5], fleet)]
+    extra <- exp(rep[[i]][[sigma_report_field]])[cbind(idx[, 4], idx[, 5], fleet)]
     form <- data[[i]][[paste0(data_source, "_sigma_form")]]
-    se <- data[[i]][[paste0(obs_nm, "_SE")]]
+    se <- data[[i]][[paste0(obs_data_field, "_SE")]]
     sigma <- extra
     if(!is.null(form) && !is.null(se)) {
       for(f in unique(fleet)) {
@@ -946,8 +946,8 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
       Age = data[[i]]$ages[idx[, 4]],
       Sex = ifelse(split$sex, paste("Sex", idx[, 5]), "All sexes"),
       Fleet = fleet,
-      Obs = data[[i]][[obs_nm]][fit_cells],
-      Pred = rep[[i]][[pred_nm]][fit_cells],
+      Obs = data[[i]][[obs_data_field]][fit_cells],
+      Pred = rep[[i]][[pred_report_field]][fit_cells],
       sigma = sigma,
       lognormal = if(is.null(like)) TRUE else like[fleet] == 0,
       Model = model_names[i]

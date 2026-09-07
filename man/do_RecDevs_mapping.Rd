@@ -4,7 +4,7 @@
 \alias{do_RecDevs_mapping}
 \title{Map annual recruitment deviation parameters}
 \usage{
-do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd)
+do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd, dont_pen_recdev_first = 0)
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}

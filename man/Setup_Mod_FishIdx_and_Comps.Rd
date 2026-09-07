@@ -56,6 +56,16 @@ Setup_Mod_FishIdx_and_Comps(
   FishAgeComps_pop_bins = NULL,
   FishLenComps_pop_bins = NULL,
   FishIdx_LikeType = rep("lognormal", input_list$data$n_fish_fleets),
+  FishIdx_seas_Type = NULL,
+  FishIdx_pop_seas_Type = NULL,
+  FishAgeComps_seas_Type = NULL,
+  FishAgeComps_pop_seas_Type = NULL,
+  FishLenComps_seas_Type = NULL,
+  FishLenComps_pop_seas_Type = NULL,
+  FishAgeComps_discard_seas_Type = NULL,
+  FishAgeComps_discard_pop_seas_Type = NULL,
+  FishLenComps_discard_seas_Type = NULL,
+  FishLenComps_discard_pop_seas_Type = NULL,
   FishIdx_Cov = NULL,
   ObsFish_caal = NULL,
   UseFish_caal = NULL,
@@ -242,7 +252,9 @@ If \code{NULL} (default), derived automatically from \code{ObsFishLenComps}.}
 specifying the likelihood for fishery age compositions. Options:
 \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
 \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
-\code{"2d-Logistic-Normal"}, \code{"none"}.}
+\code{"2d-Logistic-Normal"}, \code{"iid-Logistic-Normal-miss0"},
+\code{"1d-Logistic-Normal-miss0"}, \code{"2d-Logistic-Normal-miss0"},
+\code{"none"}.}
 
 \item{FishLenComps_LikeType}{Same as \code{FishAgeComps_LikeType} but for
 length compositions.}
@@ -366,6 +378,22 @@ same choice for \code{"lognormal"} and \code{"normal"}, but stays
 lognormal under \code{"mvn"}, whose covariance describes the regional
 series only.}
 
+\item{FishIdx_seas_Type, FishIdx_pop_seas_Type, FishAgeComps_seas_Type, FishAgeComps_pop_seas_Type, FishLenComps_seas_Type, FishLenComps_pop_seas_Type, FishAgeComps_discard_seas_Type, FishAgeComps_discard_pop_seas_Type, FishLenComps_discard_seas_Type, FishLenComps_discard_pop_seas_Type}{Whether a seasonal model reports this data source once a season or once a
+year. One value for every fleet or one per fleet.
+\describe{
+  \item{\code{"spltSeas"}}{Fit the observation against the prediction for the
+    season it sits in. This is the default and what every data source did
+    before this setting existed.}
+  \item{\code{"aggSeas"}}{Sum the prediction over every season of the year
+    and fit it against a single observation.}
+}
+Under \code{"aggSeas"} the observation still lives in whichever season it was
+placed in, and exactly one season per region and year may be turned on in the
+matching \code{Use} array. The likelihood and the reported negative log
+likelihood land in that season. An index measured at a point in time belongs
+in its own season rather than aggregated; this setting is for a data source
+that accumulates across the year.}
+
 \item{FishIdx_Cov}{List with one element per fishery fleet holding the fixed
 covariance matrix for fleets using \code{"mvn"}, and \code{NULL}
 otherwise. Each matrix must be square with one row per observation the
@@ -429,6 +457,10 @@ Options:
   \item{\code{"iid-Logistic-Normal"}}{Independent logistic-normal}
   \item{\code{"1d-Logistic-Normal"}}{1D correlated logistic-normal}
   \item{\code{"2d-Logistic-Normal"}}{2D correlated logistic-normal}
+  \item{\code{"iid-Logistic-Normal-miss0"}}{Logistic-normal with the empty
+    bins dropped and the standard deviation scaled by the input sample size}
+  \item{\code{"1d-Logistic-Normal-miss0"}}{The same, correlated across bins}
+  \item{\code{"2d-Logistic-Normal-miss0"}}{The same, correlated across bins and sexes}
   \item{\code{"none"}}{No discard age composition likelihood}
 }}
 

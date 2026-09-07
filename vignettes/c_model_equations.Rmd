@@ -2145,6 +2145,35 @@ $$\lambda_{\text{ObsCatch}_{p,r,y,\tau,f}} \cdot \frac{1}{\sqrt{2\pi\sigma_{\tex
 
 where $\text{Catch}_{p,r,y,\tau,f}$ is the predicted catch for population $p$ only.
 
+#### Reporting Once a Year in a Seasonal Model
+
+The prediction every observation equation above is compared against is written a
+given season $\tau$. A data source can instead report once a year, in which case the
+prediction is the year's total:
+
+$$\text{Catch}^{\text{agg}}_{r,y,f} = \sum_{\tau = 1}^{n_{\tau}} \text{Catch}_{r,y,\tau,f}$$
+
+where $\text{Catch}_{r,y,\tau,f}$ is the predicted catch in season $\tau$ already
+summed over populations, $n_{\tau}$ is the number of seasons, and
+$\text{Catch}^{\text{agg}}_{r,y,f}$ replaces $\text{Catch}_{r,y,\tau^{*},f}$ in the
+lognormal above. Every other season contributes nothing, so
+$\ell\left( \log\left( \text{ObsCatch}_{r,y,\tau,f} \right) \right) = 0$ for
+$\tau \neq \tau^{*}$. The same substitution applies to discards, to fishery and
+survey indices, and to the at-age data sources.
+
+For a composition the sum is taken before the proportions are formed, so the
+expected proportion at age $a$ is
+
+$$\hat{p}_{r,y,a,s,f} = \frac{\sum_{\tau = 1}^{n_{\tau}} \sum_{p} \text{CAA}_{p,r,y,\tau,a,s,f}}
+{\sum_{\tau = 1}^{n_{\tau}} \sum_{p} \sum_{a'} \text{CAA}_{p,r,y,\tau,a',s,f}}$$
+
+where $\text{CAA}_{p,r,y,\tau,a,s,f}$ is the predicted catch at age. This is a
+catch-weighted composition for the year, not the average of the seasonal
+compositions: a season landing more fish counts for more.
+
+Fishing mortality is still estimated season by season, so one annual observation
+does not identify the seasonal split on its own.
+
 ### Fishery Discards
 
 Fishery discards are fit using the same lognormal likelihood form as catches. The
@@ -2371,6 +2400,50 @@ $\mathbf{R}_{C}$ is a $n_{c} \times n_{c}$ lag-1 autoregressive
 correlation structure, where $\rho_{C}^{|i - j|}$ defines the
 correlation across age/length categories. $\mathbf{\bigotimes}$ denotes
 the Kronecker product.
+
+#### Logistic-Normal on Observed Bins
+
+The forms above keep every bin, adding a small constant so the logarithm is
+defined. A second treatment here instead drops the empty bins. Let
+$\mathcal{P}_{r,y,\tau,j} = \left\{ b : O_{r,y,\tau,b,j} > 0 \right\}$ be the bins with
+something in them and $n_{P}$ their number. Both vectors are renormalized over
+that set,
+
+$$\tilde{O}_{r,y,\tau,b,j} = \frac{O_{r,y,\tau,b,j}}{\sum_{b' \in \mathcal{P}} O_{r,y,\tau,b',j}},
+\qquad
+\tilde{E}_{r,y,\tau,b,j} = \frac{E_{r,y,\tau,b,j}}{\sum_{b' \in \mathcal{P}} E_{r,y,\tau,b',j}},
+\qquad b \in \mathcal{P}_{r,y,\tau,j}$$
+
+and the additive logistic transform is taken over the $n_{P}$ bins that remain,
+with the last of them as the reference, giving vectors of length $n_{P} - 1$. The
+covariance is then:
+
+$$\left( \mathbf{\Sigma} \right)_{i,k} = \frac{\exp(2\theta)}{N_{r,y,\tau,j}} \cdot
+\begin{cases}
+1, & i = k \text{ (independent bins)} \\
+\varrho^{\,|b_{i} - b_{k}|}, & \text{(autoregressive across bins)} \\
+\left( \mathbf{R}_{S} \otimes \mathbf{R}_{C} \right)_{i,k}, & \text{(across bins and sexes)}
+\end{cases}$$
+
+where $N_{r,y,\tau,j}$ is the input sample size for that cell, $\theta$ is the
+estimated log-scale standard deviation, $b_{i}$ is the bin number of the $i$th
+element of $\mathcal{P}$, and $\varrho = \left( 1 + e^{-\rho} \right)^{-1}$ is the
+correlation, positive by construction. $\mathbf{R}_{S}$ and $\mathbf{R}_{C}$ are
+the constant cross-sex and autoregressive across-bin correlation matrices defined
+above, with both correlations taken through the same logistic function, and the
+Kronecker product is formed over the whole bin by sex stack and then cut to
+$\mathcal{P}$, so a bin dropped from one sex does not shift the other. Dividing by the sample size makes $\theta$ a
+per fish quantity, so a cell sampled harder is fit more tightly. The lag
+$|b_{i} - b_{k}|$ is measured in bins rather than in position, so a gap left by an
+empty bin, or by a restricted bin range, is the longer lag it actually is.
+
+The log-likelihood is the multivariate normal density above, evaluated on the
+transformed vectors of length $n_{P} - 1$, less the change of variables from the
+transform:
+
+$$\ell\left( \text{ObsCompositionData}_{r,y,\tau,j} \right) =
+\log \mathrm{MVN}\!\left( \tilde{\mathbf{O}}^{'} ; \tilde{\mathbf{E}}^{'}, \mathbf{\Sigma} \right)
+- \sum_{b \in \mathcal{P}_{r,y,\tau,j}} \log\left( \tilde{O}_{r,y,\tau,b,j} \right)$$
 
 All three composition likelihood forms (multinomial, Dirichlet-multinomial, logistic-normal) can be applied to retained fishery, discarded fishery, and survey composition data, as well as to both region-aggregated and population-specific variants. For region-aggregated compositions, expected values $E_{r,y,\tau,b,j}$ are derived from catch-at-age or survey index-at-age quantities summed across populations ($\sum_p$). For population-specific compositions, expected values $E_{p,r,y,\tau,b,j}$ are derived from the quantities for a single population $p$ directly. For discard compositions, expected values are derived from discarded catch-at-age ($D_{p,r,y,\tau,a,s,f}^{a}$) or discarded catch-at-length quantities analogously. Each likelihood form and covariance structure described above applies identically across all composition data types; population-specific likelihoods additionally have separate overdispersion ($\theta_{p,r,j}$) and correlation parameters ($\rho_{p,r,j}$) estimated independently from their region-aggregated counterparts.
 
@@ -2929,6 +3002,49 @@ likelihood is flat along it; it also cannot be combined with the bias
 ramp, whose $-\sigma^2/2$ offset is meaningless once the mean is
 estimated rather than asserted.
 
+`RecDevs_model` specifies the process error the deviations follow, the
+same three structures the fishing mortality deviations offer. The density
+above is the independent case. Under `"rw"` the deviations follow a random
+walk,
+
+$$\ell\left( \epsilon_{p,r,y}^{\text{Rec}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi\sigma_{0}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} \right)^{2}}{2\sigma_{0}^{2}} \right),\ y = 1 \\
+\frac{1}{\sqrt{2\pi\sigma_{\text{Rec}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} - \epsilon_{p,r,y-1}^{\text{Rec}} \right)^{2}}{2\sigma_{\text{Rec}}^{2}} \right),\ y > 1 \\
+\end{matrix} \right.\ $$
+
+and under `"ar1"` they revert toward zero at rate $\rho^{\text{Rec}}$,
+
+$$\ell\left( \epsilon_{p,r,y}^{\text{Rec}} \right) = \left\{ \begin{matrix}
+\frac{1}{\sqrt{2\pi\sigma_{\text{Rec}}^{2}/(1 - (\rho^{\text{Rec}})^{2})}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} \right)^{2}\left( 1 - (\rho^{\text{Rec}})^{2} \right)}{2\sigma_{\text{Rec}}^{2}} \right),\ y = 1 \\
+\frac{1}{\sqrt{2\pi\sigma_{\text{Rec}}^{2}}\,}\exp\left( - \frac{\left( \epsilon_{p,r,y}^{\text{Rec}} - \rho^{\text{Rec}}\epsilon_{p,r,y-1}^{\text{Rec}} \right)^{2}}{2\sigma_{\text{Rec}}^{2}} \right),\ y > 1 \\
+\end{matrix} \right.\ $$
+
+where
+
+- $\epsilon_{p,r,y}^{\text{Rec}}$ is the recruitment deviation for
+  population $p$, region $r$ and year $y$, on the log scale, estimated
+  (`ln_RecDevs`),
+- $\sigma_{\text{Rec}}$ is the recruitment process error standard
+  deviation read at year $y$, so it takes the early value before
+  `sigmaR_switch` and the late value from it onward, estimated
+  (`ln_sigmaR`),
+- $\sigma_{0}$ is the standard deviation on year one,
+  `RecDevs_rw_init_sigma`, data, default 5. It is what sets the level of
+  the recruitment series, since every later term is a difference. Setting
+  it to `NA` uses $\sigma_{\text{Rec}}$ instead, pulling the first year
+  toward mean recruitment; `dont_pen_recdev_first` drops the term
+  altogether, leaving the level to $R_{0}$ and the data,
+- $\rho^{\text{Rec}} \in (-1, 1)$ is the AR1 correlation for population
+  $p$ and region $r$, estimated (`RecDevs_rho`), transformed from the
+  unconstrained scale by $2/(1 + e^{-2x}) - 1$.
+
+Both forms center each deviation on the previous one rather than on an
+asserted mean, so neither reads `RecDevs_pen_center` and neither can be
+combined with the bias ramp; both combinations are rejected at setup. Only
+years the deviation map leaves in contribute a term, and the step into year
+$y$ reads year $y-1$ either way, so a year left out of the penalty is one
+the walk passes through rather than a gap in the series.
+
 Three further refinements act on which deviations are penalized and how
 strongly. First, only estimated deviations are penalized: cells mapped
 off by hand (via `map$ln_RecDevs`) are excluded from the penalty as well
@@ -2968,6 +3084,20 @@ $$\text{Corr}\left( \eta_{p,r,y,a,s},\ \eta_{p',r',y',a',s'} \right)
 with standard deviation $\sigma^{\text{NAA}}$. Each factor is a correlation
 matrix with a unit diagonal, so only $\sigma^{\text{NAA}}$ has scale, and
 setting every factor to the identity recovers independent innovations.
+
+The innovation is defined only where the population has fish. Under natal homing a
+population may never reach a region, so $\hat{N}_{p,r,y,a,s} = 0$ there for every
+year and age and $\eta = \log N - \log \hat{N}$ has no value. Writing
+$w_{p,r} \in \{0, 1\}$ for the cells the state runs on, the prior is taken over
+those cells alone,
+
+$$\ell\left( \boldsymbol{\eta} \right) = \sum_{p,r,y,k,a,s} w_{p,r}\,
+\log \phi\!\left( \eta_{p,r,y,k,a,s} ; 0, \sigma^{\text{NAA}}_{p,r,y,k,a,s} \right)$$
+
+where $\phi$ is the normal density. A cell with $w_{p,r} = 0$ is dropped from the
+parameter map as well, so it is neither estimated nor penalized. Dropping a cell
+requires $C^{\text{pop}}$ and $C^{\text{reg}}$ to be the identity, since a cell
+inside a joint density across populations or regions cannot be left out of it.
 
 **Age and year.** $R^{ay}$ is chosen with `NAA_re`, writing $\rho_a$, $\rho_y$
 and $\rho_c$ for the age, year and cohort correlations:

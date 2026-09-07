@@ -953,11 +953,11 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
   data_stub <- paste0(comp_prefix, "Comps", suffix) # e.g. "FishAgeComps_discard_pop"
   par_stub <- paste0(comp_prefix, suffix) # e.g. "FishAge_discard_pop"
 
-  Type_nm <- paste0(data_stub, "_Type")
-  LikeType_nm <- paste0(data_stub, "_LikeType")
-  Use_nm <- paste0("Use", data_stub)
-  theta_nm <- paste0("ln_", par_stub, "_theta")
-  theta_agg_nm <- paste0("ln_", par_stub, "_theta_agg")
+  comp_type_field <- paste0(data_stub, "_Type")
+  like_type_field <- paste0(data_stub, "_LikeType")
+  use_data_field <- paste0("Use", data_stub)
+  theta_par_name <- paste0("ln_", par_stub, "_theta")
+  theta_agg_par_name <- paste0("ln_", par_stub, "_theta_agg")
   n_fleets <- input_list$data[[fleet_field]]
 
   # setup counters
@@ -965,8 +965,8 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
   counter <- 1
 
   # initialize array to set up mapping
-  map_theta <- input_list$par[[theta_nm]]
-  map_theta_agg <- input_list$par[[theta_agg_nm]]
+  map_theta <- input_list$par[[theta_par_name]]
+  map_theta_agg <- input_list$par[[theta_agg_par_name]]
   map_theta[] <- NA
   map_theta_agg[] <- NA
 
@@ -976,8 +976,8 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
     for(f in 1:n_fleets) {
 
       # get unique fishery comp types (not itself pop-specific, even for the has_pop variants)
-      comp_type <- unique(input_list$data[[Type_nm]][,f])
-      like_type <- input_list$data[[LikeType_nm]][f]
+      comp_type <- unique(input_list$data[[comp_type_field]][,f])
+      like_type <- input_list$data[[like_type_field]][f]
 
       # If aggregated
       if(any(comp_type == 0) && like_type != 0) {
@@ -991,9 +991,9 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
         # a (pop,) region with no active comps for this fleet never contributes to the likelihood,
         # so its theta cell stays NA; otherwise it is a free, unidentifiable parameter
         region_has_data <- if(has_pop) {
-          sum(input_list$data[[Use_nm]][p,r,,,f]) > 0
+          sum(input_list$data[[use_data_field]][p,r,,,f]) > 0
         } else {
-          sum(input_list$data[[Use_nm]][r,,,f]) > 0
+          sum(input_list$data[[use_data_field]][r,,,f]) > 0
         }
 
         for(s in 1:input_list$data$n_sexes) {
@@ -1014,7 +1014,7 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
       } # end r loop
 
       # If we are using a multinomial or there aren't any comps for a given fleet
-      use_sum <- if(has_pop) sum(input_list$data[[Use_nm]][p,,,,f]) else sum(input_list$data[[Use_nm]][,,,f])
+      use_sum <- if(has_pop) sum(input_list$data[[use_data_field]][p,,,,f]) else sum(input_list$data[[use_data_field]][,,,f])
       if(like_type == 0 || use_sum == 0) {
         if(has_pop) {
           map_theta[p,,,f] <- NA
@@ -1029,8 +1029,8 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
   } # end p loop
 
   # Input into mapping list
-  input_list$map[[theta_nm]] <- factor(map_theta)
-  input_list$map[[theta_agg_nm]] <- factor(map_theta_agg)
+  input_list$map[[theta_par_name]] <- factor(map_theta)
+  input_list$map[[theta_agg_par_name]] <- factor(map_theta_agg)
 
   return(input_list)
 }
@@ -1041,10 +1041,11 @@ do_comp_theta_mapping <- function(input_list, comp_prefix, discard = FALSE, has_
 #' \code{FishAge_corr_pars}, region- and sex-specific AR1/sex correlation) and
 #' its aggregated counterpart (e.g. \code{FishAge_corr_pars_agg}) for 1D and
 #' 2D logistic-normal composition likelihoods. Parameters are activated only
-#' when the corresponding \code{LikeType} is in \code{c(3, 4)} (1D / 2D
-#' logistic-normal); all other likelihoods, or fleets with no observed
+#' when the corresponding \code{LikeType} is in \code{c(3, 4, 6, 7)} (1D and 2D
+#' logistic-normal, and the same two with the zeros dropped); all other
+#' likelihoods, or fleets with no observed
 #' compositions, map correlation parameters to \code{NA}. For the 2D
-#' logistic-normal (\code{LikeType == 4}), both trailing elements of the
+#' logistic-normal (\code{LikeType == 4} or \code{7}), both trailing elements of the
 #' \code{[...,2]} slice are activated: element 1 for the AR1 coefficient and
 #' element 2 for the sex correlation (skipped when \code{n_sexes == 1}).
 #'
@@ -1077,11 +1078,11 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
   data_stub <- paste0(comp_prefix, "Comps", suffix) # e.g. "FishAgeComps_discard_pop"
   par_stub <- paste0(comp_prefix, suffix) # e.g. "FishAge_discard_pop"
 
-  Type_nm <- paste0(data_stub, "_Type")
-  LikeType_nm <- paste0(data_stub, "_LikeType")
-  Use_nm <- paste0("Use", data_stub)
-  corr_nm <- paste0(par_stub, "_corr_pars")
-  corr_agg_nm <- paste0(par_stub, "_corr_pars_agg")
+  comp_type_field <- paste0(data_stub, "_Type")
+  like_type_field <- paste0(data_stub, "_LikeType")
+  use_data_field <- paste0("Use", data_stub)
+  corr_par_name <- paste0(par_stub, "_corr_pars")
+  corr_agg_par_name <- paste0(par_stub, "_corr_pars_agg")
   n_fleets <- input_list$data[[fleet_field]]
 
   # setup counters
@@ -1089,8 +1090,8 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
   counter_corr_agg <- 1
 
   # initialize array to set up mapping
-  map_corr <- input_list$par[[corr_nm]]
-  map_corr_agg <- input_list$par[[corr_agg_nm]]
+  map_corr <- input_list$par[[corr_par_name]]
+  map_corr_agg <- input_list$par[[corr_agg_par_name]]
   map_corr[] <- NA
   map_corr_agg[] <- NA
 
@@ -1099,8 +1100,8 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
   for(p in pop_range) {
     for(f in 1:n_fleets) {
 
-      like_type <- input_list$data[[LikeType_nm]][f]
-      use_sum <- if(has_pop) sum(input_list$data[[Use_nm]][p,,,,f]) else sum(input_list$data[[Use_nm]][,,,f])
+      like_type <- input_list$data[[like_type_field]][f]
+      use_sum <- if(has_pop) sum(input_list$data[[use_data_field]][p,,,,f]) else sum(input_list$data[[use_data_field]][,,,f])
 
       # No overdispersion parameters estimated
       if(like_type == 0 || use_sum == 0) {
@@ -1115,11 +1116,11 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
       }
 
       # get unique fishery comp types
-      comp_type <- unique(input_list$data[[Type_nm]][,f])
+      comp_type <- unique(input_list$data[[comp_type_field]][,f])
 
       # Aggregated Correlation Parameters
       if(any(comp_type == 0) && like_type != 0) {
-        if(like_type == 3) {
+        if(like_type %in% c(3, 6)) {
           if(has_pop) map_corr_agg[p,f] <- counter_corr_agg else map_corr_agg[f] <- counter_corr_agg
           counter_corr_agg <- counter_corr_agg + 1 # aggregated
         }
@@ -1131,7 +1132,7 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
 
           # Split by region and sex
           if(any(comp_type == 1) && like_type != 0) {
-            if(like_type == 3) {
+            if(like_type %in% c(3, 6)) {
               if(has_pop) map_corr[p,r,s,f,1] <- counter_corr else map_corr[r,s,f,1] <- counter_corr
               counter_corr <- counter_corr + 1
             }
@@ -1141,13 +1142,13 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
           if(any(comp_type == 2) && like_type != 0 && s == 1) {
 
             # 1dar1 correlation
-            if(like_type == 3) {
+            if(like_type %in% c(3, 6)) {
               if(has_pop) map_corr[p,r,1,f,1] <- counter_corr else map_corr[r,1,f,1] <- counter_corr
               counter_corr <- counter_corr + 1
             }
 
             # 2dar1 correlation
-            if(like_type == 4) {
+            if(like_type %in% c(4, 7)) {
               for(i in 1:2) {
                 if(i == 2 && input_list$data$n_sexes == 1) next # skip if we only have 1 sex
                 if(has_pop) map_corr[p,r,1,f,i] <- counter_corr else map_corr[r,1,f,i] <- counter_corr
@@ -1163,8 +1164,8 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
   } # end p loop
 
   # Input into mapping list
-  input_list$map[[corr_agg_nm]] <- factor(map_corr_agg)
-  input_list$map[[corr_nm]] <- factor(map_corr)
+  input_list$map[[corr_agg_par_name]] <- factor(map_corr_agg)
+  input_list$map[[corr_par_name]] <- factor(map_corr)
 
   return(input_list)
 }
@@ -1208,16 +1209,16 @@ do_comp_corr_pars_mapping <- function(input_list, comp_prefix, discard = FALSE, 
 do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
 
   cap_prefix <- paste0(toupper(substring(prefix, 1, 1)), substring(prefix, 2))
-  q_nm <- paste0("ln_", prefix, "_q")
-  blocks_nm <- paste0(prefix, "_q_blocks")
-  Use_nm <- paste0("Use", cap_prefix, "Idx")
-  Use_pop_nm <- paste0(Use_nm, "_pop")
+  q_par_name <- paste0("ln_", prefix, "_q")
+  q_blocks_field <- paste0(prefix, "_q_blocks")
+  use_data_field <- paste0("Use", cap_prefix, "Idx")
+  use_pop_data_field <- paste0(use_data_field, "_pop")
   n_fleets <- input_list$data[[fleet_field]]
   check_fleet_spec_length(q_spec, n_fleets, paste0(prefix, "_q_spec"), allow_null = TRUE)
 
   # Initialize counter and mapping array for catchability
   q_counter <- 1
-  map_q <- input_list$par[[q_nm]]
+  map_q <- input_list$par[[q_par_name]]
   map_q[] <- NA
 
   for(f in 1:n_fleets) {
@@ -1230,12 +1231,12 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
 
     for(r in 1:input_list$data$n_regions) {
 
-      if(sum(input_list$data[[Use_nm]][r,,,f]) == 0 && sum(input_list$data[[Use_pop_nm]][,r,,,f]) == 0) {
+      if(sum(input_list$data[[use_data_field]][r,,,f]) == 0 && sum(input_list$data[[use_pop_data_field]][,r,,,f]) == 0) {
         map_q[r,,f] <- NA # fix parameters if we are not using indices for these fleets and regions
       } else {
 
         # Extract number of catchability blocks
-        q_blocks_tmp <- unique(as.vector(input_list$data[[blocks_nm]][r,,f]))
+        q_blocks_tmp <- unique(as.vector(input_list$data[[q_blocks_field]][r,,f]))
 
         for(b in 1:length(q_blocks_tmp)) {
 
@@ -1248,7 +1249,7 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
           # Estimate but share q across regions
           if(q_spec[f] == 'est_shared_r' && r == 1) {
             for(rr in 1:input_list$data$n_regions) {
-              if(q_blocks_tmp[b] %in% input_list$data[[blocks_nm]][rr,,f]) {
+              if(q_blocks_tmp[b] %in% input_list$data[[q_blocks_field]][rr,,f]) {
                 map_q[rr, b, f] <- q_counter
               } # end if
             } # end rr loop
@@ -1265,7 +1266,7 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
   } # end f loop
 
   # input into mapping list
-  input_list$map[[q_nm]] <- factor(map_q)
+  input_list$map[[q_par_name]] <- factor(map_q)
 
   return(input_list)
 }
@@ -1322,22 +1323,22 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
 do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpar_est_bins,
                                        prefix, fleet_field, use_field, fleet_label) {
 
-  par_nm <- paste0(prefix, "_fixed_sel_pars")
-  use_fixed_nm <- paste0("use_fixed_", prefix, "_sel")
-  blocks_nm <- paste0(prefix, "_sel_blocks")
-  model_nm <- paste0(prefix, "_sel_model")
-  bicubic_bin_nm <- paste0(prefix, "_sel_bicubic_binnodes")
-  bicubic_yr_nm <- paste0(prefix, "_sel_bicubic_yrnodes")
+  par_name <- paste0(prefix, "_fixed_sel_pars")
+  use_fixed_sel_field <- paste0("use_fixed_", prefix, "_sel")
+  sel_blocks_field <- paste0(prefix, "_sel_blocks")
+  sel_model_field <- paste0(prefix, "_sel_model")
+  bicubic_binnodes_field <- paste0(prefix, "_sel_bicubic_binnodes")
+  bicubic_yrnodes_field <- paste0(prefix, "_sel_bicubic_yrnodes")
   fix_input_valid <- paste0("fix_", prefix, "_sel_input")
   fix_input_check <- paste0("fixed_", prefix, "_sel_input")
-  Use_nm <- paste0("Use", use_field)
-  Use_pop_nm <- paste0(Use_nm, "_pop")
+  use_data_field <- paste0("Use", use_field)
+  use_pop_data_field <- paste0(use_data_field, "_pop")
   n_fleets <- input_list$data[[fleet_field]]
   check_fleet_spec_length(sel_pars_spec, n_fleets, paste0(prefix, "_fixed_sel_pars_spec"), allow_null = TRUE)
 
   # Initialize counter and mapping array for fixed effects selectivity
   sel_pars_counter <- 1
-  map_sel_pars <- input_list$par[[par_nm]]
+  map_sel_pars <- input_list$par[[par_name]]
   map_sel_pars[] <- NA
 
   for(f in 1:n_fleets) {
@@ -1347,10 +1348,10 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
        !stringr::str_detect(sel_pars_spec[f], "est_shared_f_\\d+"))
       stop(prefix, "_fixed_sel_pars_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, fix, or est_shared_f_# (where # is fleet number)")
     # checking fixed selex options
-    if(input_list$data[[use_fixed_nm]][f] == 1 && stringr::str_detect(sel_pars_spec[f], 'est'))
-      stop(use_fixed_nm, " has 1s for a given fleet, but ", prefix, "_fixed_sel_pars_spec is specified at an est variant.")
-    if(input_list$data[[use_fixed_nm]][f] == 0 && sel_pars_spec[f] == fix_input_valid)
-      stop(use_fixed_nm, " has 0s for a given fleet, but ", prefix, "_fixed_sel_pars_spec is specified at ", fix_input_valid)
+    if(input_list$data[[use_fixed_sel_field]][f] == 1 && stringr::str_detect(sel_pars_spec[f], 'est'))
+      stop(use_fixed_sel_field, " has 1s for a given fleet, but ", prefix, "_fixed_sel_pars_spec is specified at an est variant.")
+    if(input_list$data[[use_fixed_sel_field]][f] == 0 && sel_pars_spec[f] == fix_input_valid)
+      stop(use_fixed_sel_field, " has 0s for a given fleet, but ", prefix, "_fixed_sel_pars_spec is specified at ", fix_input_valid)
 
     # Skip fleet sharing specs in first pass
     if(stringr::str_detect(sel_pars_spec[f], "est_shared_f")) next
@@ -1366,13 +1367,13 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
       if(sel_has_data(input_list$data, use_field, r, f)) {
 
         # Extract number of selectivity blocks
-        sel_blocks_tmp <- unique(as.vector(input_list$data[[blocks_nm]][r,,f]))
+        sel_blocks_tmp <- unique(as.vector(input_list$data[[sel_blocks_field]][r,,f]))
 
         for(s in 1:input_list$data$n_sexes) {
           for(b in 1:length(sel_blocks_tmp)) {
 
-            block_years <- which(input_list$data[[blocks_nm]][r,,f] == sel_blocks_tmp[b]) # figure out block years
-            sel_model_this_block <- unique(input_list$data[[model_nm]][r, block_years, f]) # get selectivity form for a given block
+            block_years <- which(input_list$data[[sel_blocks_field]][r,,f] == sel_blocks_tmp[b]) # figure out block years
+            sel_model_this_block <- unique(input_list$data[[sel_model_field]][r, block_years, f]) # get selectivity form for a given block
             if(length(sel_model_this_block) > 1) stop("Block ", sel_blocks_tmp[b], " for fleet ", f, " region ", r, " has multiple selectivity models assigned to it")
 
             # determine maximum selectivity parameters
@@ -1381,8 +1382,8 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
             if(sel_model_this_block == 4) max_sel_pars <- 6 # double normal
             if(sel_model_this_block %in% c(6,7)) max_sel_pars <- 3 # logistic w/ asymptotic selectivity
             if(sel_model_this_block == 8) { # bicubic spline: flattened bin-node x year-node grid (group_bins below reduces to a plain 1:max_sel_pars mapping, same as other parametric forms)
-              n_bin_nodes_this <- unique(input_list$data[[bicubic_bin_nm]][r, block_years, f])
-              n_yr_nodes_this <- unique(input_list$data[[bicubic_yr_nm]][r, block_years, f])
+              n_bin_nodes_this <- unique(input_list$data[[bicubic_binnodes_field]][r, block_years, f])
+              n_yr_nodes_this <- unique(input_list$data[[bicubic_yrnodes_field]][r, block_years, f])
               max_sel_pars <- n_bin_nodes_this * n_yr_nodes_this
             }
 
@@ -1415,7 +1416,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
               # Estimating parameters shared across regions (but unique for each sex, fleet, parameter)
               if(sel_pars_spec[f] == 'est_shared_r' && r == anchor_r) {
                 for(rr in 1:input_list$data$n_regions) {
-                  if(sel_blocks_tmp[b] %in% input_list$data[[blocks_nm]][rr,,f]) {
+                  if(sel_blocks_tmp[b] %in% input_list$data[[sel_blocks_field]][rr,,f]) {
                     for(bi in group_bins) map_sel_pars[rr, bi, b, s, f] <- sel_pars_counter
                   } # end if
                 } # end rr loop
@@ -1434,7 +1435,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
               if(sel_pars_spec[f] == 'est_shared_r_s' && r == anchor_r && s == 1) {
                 for(rr in 1:input_list$data$n_regions) {
                   for(ss in 1:input_list$data$n_sexes) {
-                    if(sel_blocks_tmp[b] %in% input_list$data[[blocks_nm]][rr,,f]) {
+                    if(sel_blocks_tmp[b] %in% input_list$data[[sel_blocks_field]][rr,,f]) {
                       for(bi in group_bins) map_sel_pars[rr, bi, b, ss, f] <- sel_pars_counter
                     } # end if
                   } # end ss loop
@@ -1484,7 +1485,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
   } # end f loop
 
   # input into mapping list
-  input_list$map[[par_nm]] <- factor(map_sel_pars)
+  input_list$map[[par_name]] <- factor(map_sel_pars)
   return(input_list)
 }
 
@@ -1500,6 +1501,14 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #' selectively suppressed via \code{corr_opt_semipar}. Fleet sharing
 #' (\code{"est_shared_f_x"}) is handled in a second pass.
 #'
+#' The hyperparameters have to match the deviation series the likelihood
+#' actually evaluates, which is one per shared group, read at the group's lowest
+#' bin and first sex. Under iid or a random walk on a non-parametric fleet the
+#' log-sigmas are indexed by bin, so \code{"est_shared_b"} leaves one log-sigma
+#' per bin group. Sharing deviations across sexes (\code{"est_shared_s"} and its
+#' combinations) leaves one set for the first sex, under every time-variation
+#' form. The rest are fixed.
+#'
 #' Serves fishery, retention, and survey selectivity, selected by
 #' \code{prefix} exactly as in \code{\link{do_fixed_sel_pars_mapping}}.
 #'
@@ -1507,7 +1516,10 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #'   sublists.
 #' @param pe_pars_spec Character vector of length \code{n_<fleet_field>}.
 #'   Options: \code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
-#'   \code{"est_shared_r_s"}, \code{"fix"}/\code{"none"}, or
+#'   \code{"est_shared_r_s"}, the same four with \code{_b} added
+#'   (\code{"est_shared_b"}, \code{"est_shared_r_b"}, \code{"est_shared_b_s"},
+#'   \code{"est_shared_r_b_s"}), which put one standard deviation across every
+#'   bin the fleet reads, \code{"fix"}/\code{"none"}, or
 #'   \code{"est_shared_f_x"}.
 #' @param corr_opt_semipar Character vector of length \code{n_<fleet_field>}
 #'   specifying which correlation components to suppress for semi-parametric
@@ -1516,6 +1528,13 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #'   \code{"corr_zero_b_c"}, \code{"corr_zero_y_b_c"}). Cohort options are
 #'   only valid for 3D GMRF forms.
 #' @param bins Number of selectivity bins.
+#' @param sel_devs_spec Character vector of length \code{n_<fleet_field>}, the
+#'   deviation specification passed to \code{\link{do_sel_devs_mapping}}. Read
+#'   only to recognize which dimensions the deviations are shared over.
+#'   \code{"est_shared_f_x"} resolves to the referenced fleet's specification.
+#' @param sel_devs_shared_bins List of integer vectors grouping bins that share
+#'   a single estimated deviation, as passed to
+#'   \code{\link{do_sel_devs_mapping}}.
 #' @param prefix Character, one of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
 #'   Drives the domain-specific field names: \code{cont_tv_<prefix>_sel},
 #'   \code{<prefix>_sel_model}, \code{<prefix>_selex_type},
@@ -1536,31 +1555,62 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #' @keywords internal
 #' @importFrom stringr str_detect str_extract_all
 do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, bins,
+                                    sel_devs_spec, sel_devs_shared_bins,
                                     prefix, fleet_field, use_field, fleet_label) {
 
-  par_nm <- paste0(prefix, "sel_pe_pars")
-  cont_tv_nm <- paste0("cont_tv_", prefix, "_sel")
-  model_nm <- paste0(prefix, "_sel_model")
-  selex_type_nm <- paste0(prefix, "_selex_type")
+  par_name <- paste0(prefix, "sel_pe_pars")
+  cont_tv_field <- paste0("cont_tv_", prefix, "_sel")
+  sel_model_field <- paste0(prefix, "_sel_model")
+  selex_type_field <- paste0(prefix, "_selex_type")
   n_fleets <- input_list$data[[fleet_field]]
   check_fleet_spec_length(pe_pars_spec, n_fleets, paste0(prefix, "sel_pe_pars_spec"), allow_null = TRUE)
 
+  # deviation specs that leave one deviation series per bin group, and the lowest bin of each group
+  shared_bin_specs <- c("est_shared_b", "est_shared_r_b", "est_shared_b_s", "est_shared_r_b_s")
+
+  # the same four names on the sigmas themselves, where they mean one standard deviation across
+  # every bin rather than one deviation series per group
+  shared_bin_pe_specs <- shared_bin_specs
+  min_shared_bins <- unlist(lapply(sel_devs_shared_bins, min))
+
+  # deviation specs that leave one series across sexes, which the likelihood reads at the first sex
+  shared_sex_specs <- c("est_shared_s", "est_shared_r_s", "est_shared_b_s", "est_shared_r_b_s")
+
+  # a fleet borrowing another fleet's deviations gets that fleet's bin structure too, so its
+  # sigmas answer to the referenced fleet's spec rather than to its own
+  devs_spec_resolved <- sel_devs_spec
+  if(!is.null(sel_devs_spec)) {
+    for(f in 1:n_fleets) {
+      if(!stringr::str_detect(sel_devs_spec[f], "est_shared_f")) next
+      flt_shared <- as.numeric(unlist(stringr::str_extract_all(sel_devs_spec[f], "\\d+")))
+      if(flt_shared >= 1 && flt_shared <= n_fleets) devs_spec_resolved[f] <- sel_devs_spec[flt_shared]
+    } # end f loop
+  } # end if a deviation spec was given
+
   # Initialize counter and mapping array for process errors
   pe_pars_counter <- 1 # initalize counter
-  map_pe_pars <- input_list$par[[par_nm]] # initalize array
+  map_pe_pars <- input_list$par[[par_name]] # initalize array
   map_pe_pars[] <- NA
 
   for(f in 1:n_fleets) {
 
     # Validate options
     if(!is.null(pe_pars_spec)) {
-      if(!pe_pars_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s") &&
+      if(!pe_pars_spec[f] %in% c("fix", "none", "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s",
+                                 "est_shared_b", "est_shared_r_b", "est_shared_b_s", "est_shared_r_b_s") &&
          !stringr::str_detect(pe_pars_spec[f], "est_shared_f_\\d+"))
-        stop(prefix, "sel_pe_pars_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, fix, or est_shared_f_# (where # is fleet number)")
+        stop(prefix, "sel_pe_pars_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_b_s, est_shared_r_b_s, fix, or est_shared_f_# (where # is fleet number)")
     }
 
     # Skip fleet sharing specs in first pass
     if(!is.null(pe_pars_spec)) if(stringr::str_detect(pe_pars_spec[f], "est_shared_f")) next
+
+    if(!is.null(pe_pars_spec) && pe_pars_spec[f] %in% shared_bin_pe_specs &&
+       any(input_list$data[[cont_tv_field]][,f] %in% c(3,4,5)))
+      stop(prefix, "sel_pe_pars_spec is '", pe_pars_spec[f], "' for ", fleet_label, " ", f,
+           ", but that fleet's process error parameters are correlations and one standard deviation ",
+           "rather than one standard deviation per bin. Sharing across bins is only supported when the ",
+           "deviations are iid or a random walk.")
 
     # sharing anchors on the fleet's first region with data, as for the fixed effects
     data_r <- which(sapply(1:input_list$data$n_regions, function(rr) sel_has_data(input_list$data, use_field, rr, f)))
@@ -1569,23 +1619,68 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
     for(r in 1:input_list$data$n_regions) {
 
       # if no time-variation, then fix all parameters for this fleet
-      if(input_list$data[[cont_tv_nm]][r,f] == 0 || !sel_has_data(input_list$data, use_field, r, f)) {
+      if(input_list$data[[cont_tv_field]][r,f] == 0 || !sel_has_data(input_list$data, use_field, r, f)) {
         map_pe_pars[r,,,f] <- NA
       } else { # if we have time-variation
 
         # Figure out max number of selectivity parameters for a given region and fleet
-        if(unique(input_list$data[[model_nm]][r,,f]) %in% 2) max_sel_pars <- 1 # exponential
-        if(unique(input_list$data[[model_nm]][r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
-        if(unique(input_list$data[[model_nm]][r,,f]) == 4) max_sel_pars <- 6 # double normal
-        if(unique(input_list$data[[model_nm]][r,,f]) %in% c(5,9,10)) max_sel_pars <- bins # non-parametric selectivity
-        if(unique(input_list$data[[model_nm]][r,,f]) %in% c(6,7)) max_sel_pars <- 3 # logistic selectivity w/ asmyptote
+        if(unique(input_list$data[[sel_model_field]][r,,f]) %in% 2) max_sel_pars <- 1 # exponential
+        if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
+        if(unique(input_list$data[[sel_model_field]][r,,f]) == 4) max_sel_pars <- 6 # double normal
+        if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(5,9,10)) max_sel_pars <- bins # non-parametric selectivity
+        if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(6,7)) max_sel_pars <- 3 # logistic selectivity w/ asmyptote
 
-        for(s in 1:input_list$data$n_sexes) {
+        # under iid or a walk the sigmas index bins for a non-parametric fleet, so sharing bins leaves
+        # one deviation series, and one sigma, per group. every other bin's sigma is never read
+        nonpar_fleet <- all(input_list$data[[sel_model_field]][r,,f] %in% c(5,9,10))
+        shares_bins <- !is.null(sel_devs_spec) && devs_spec_resolved[f] %in% shared_bin_specs && nonpar_fleet
+        pe_slots <- if(shares_bins) min_shared_bins else 1:max_sel_pars # sigma slots this fleet reads
+
+        # sharing deviations across sexes leaves one series, which the likelihood evaluates at the
+        # first sex, so every sex above it holds parameters nothing reads. same for every form
+        shares_sexes <- !is.null(sel_devs_spec) && devs_spec_resolved[f] %in% shared_sex_specs
+        pe_sexes <- if(shares_sexes) 1 else 1:input_list$data$n_sexes # sexes this fleet reads
+
+        for(s in pe_sexes) {
 
           # If iid time-variation or random walk for this fleet
-          if(input_list$data[[cont_tv_nm]][r,f] %in% c(1,2)) {
+          if(input_list$data[[cont_tv_field]][r,f] %in% c(1,2)) {
 
-            for(i in 1:max_sel_pars) {
+            # one sigma across every bin the fleet reads, which is a key matrix with a single
+            # group. only meaningful for a non-parametric form, where the slots are bins rather
+            # than curve parameters on unrelated scales
+            if(pe_pars_spec[f] %in% shared_bin_pe_specs) {
+
+              if(!nonpar_fleet)
+                stop(prefix, "sel_pe_pars_spec is '", pe_pars_spec[f], "' for ", fleet_label, " ", f,
+                     ", but that fleet's selectivity is parametric, so its process error slots are curve ",
+                     "parameters rather than bins. Sharing one standard deviation across them would tie ",
+                     "quantities on unrelated scales. Sharing across bins is only supported when the ",
+                     "selectivity form is non-parametric.")
+
+              if(pe_pars_spec[f] == "est_shared_b") {
+                map_pe_pars[r,pe_slots,s,f] <- pe_pars_counter
+                pe_pars_counter <- pe_pars_counter + 1
+              }
+
+              if(pe_pars_spec[f] == "est_shared_r_b" && r == anchor_r) {
+                map_pe_pars[,pe_slots,s,f] <- pe_pars_counter
+                pe_pars_counter <- pe_pars_counter + 1
+              }
+
+              if(pe_pars_spec[f] == "est_shared_b_s" && s == 1) {
+                map_pe_pars[r,pe_slots,,f] <- pe_pars_counter
+                pe_pars_counter <- pe_pars_counter + 1
+              }
+
+              if(pe_pars_spec[f] == "est_shared_r_b_s" && r == anchor_r && s == 1) {
+                map_pe_pars[,pe_slots,,f] <- pe_pars_counter
+                pe_pars_counter <- pe_pars_counter + 1
+              }
+
+            } # end sharing one sigma across bins
+
+            else for(i in pe_slots) {
 
               # either fixing parameters or not used for a given fleet
               if(pe_pars_spec[f] %in% c("none", "fix")) map_pe_pars[r,i,s,f] <- NA
@@ -1618,12 +1713,12 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
           } # end iid or random walk variation
 
           # If 3d gmrf or 2dar1
-          if(input_list$data[[cont_tv_nm]][r,f] %in% c(3,4,5)) {
+          if(input_list$data[[cont_tv_field]][r,f] %in% c(3,4,5)) {
 
             # Set up indexing to loop through
-            if(input_list$data[[cont_tv_nm]][r,f] %in% c(3,4)) idx = 1:4 # 3dgmrf (1 = pcorr_age, 2 = pcorr_year, 3= pcorr_cohort, 4 = log_sigma)
-            if(input_list$data[[cont_tv_nm]][r,f] %in% c(5)) idx = c(1,2,4) # 2dar1 (1 = pcorr_bin, 2 = pcorr_year, 4 = log_sigma)
-            if(input_list$data[[cont_tv_nm]][r,f] %in% c(3,4) && input_list$data[[selex_type_nm]] == 1) stop("Cohort-based selectivity deviations are specified, but selectivity is specified as length-based. Please choose another deviation form!")
+            if(input_list$data[[cont_tv_field]][r,f] %in% c(3,4)) idx = 1:4 # 3dgmrf (1 = pcorr_age, 2 = pcorr_year, 3= pcorr_cohort, 4 = log_sigma)
+            if(input_list$data[[cont_tv_field]][r,f] %in% c(5)) idx = c(1,2,4) # 2dar1 (1 = pcorr_bin, 2 = pcorr_year, 4 = log_sigma)
+            if(input_list$data[[cont_tv_field]][r,f] %in% c(3,4) && input_list$data[[selex_type_field]] == 1) stop("Cohort-based selectivity deviations are specified, but selectivity is specified as length-based. Please choose another deviation form!")
 
             for(i in idx) {
 
@@ -1659,7 +1754,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
             # Options to set correaltions to 0 for 3dgmrf
             if(!is.null(corr_opt_semipar)) {
 
-              opt <- input_list$data[[cont_tv_nm]][r,f] # get random effects options
+              opt <- input_list$data[[cont_tv_field]][r,f] # get random effects options
 
               # Validate options
               if(!corr_opt_semipar[f] %in% c(NA, "corr_zero_y", "corr_zero_b", "corr_zero_y_b", "corr_zero_c", "corr_zero_y_c", "corr_zero_b_c", "corr_zero_y_b_c"))
@@ -1715,7 +1810,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
       map_pe_pars[,,,f] <- map_pe_pars[,,,flt_shared]
       d_pe <- dim(map_pe_pars)
       for(r in 1:input_list$data$n_regions) {
-        if(input_list$data[[cont_tv_nm]][r,f] == 0 || !sel_has_data(input_list$data, use_field, r, f)) next
+        if(input_list$data[[cont_tv_field]][r,f] == 0 || !sel_has_data(input_list$data, use_field, r, f)) next
         for(i in 1:d_pe[2]) {
           for(s in 1:d_pe[3]) {
             if(!is.na(map_pe_pars[r, i, s, f])) next
@@ -1729,7 +1824,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
   } # end f loop
 
   # input into mapping list
-  input_list$map[[par_nm]] <- factor(map_pe_pars)
+  input_list$map[[par_name]] <- factor(map_pe_pars)
 
   return(input_list)
 }
@@ -1740,10 +1835,11 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 #' deviations (\code{ln_fishsel_devs}, \code{ln_retsel_devs}, or
 #' \code{ln_srvsel_devs}) across region, year, bin, sex, and fleet. For
 #' iid/random-walk forms, active bins are governed by the fitted selectivity
-#' model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active,
-#' optionally shared via \code{sel_devs_shared_bins} groupings
-#' (\code{"est_shared_b"} and its combinations). Fleet sharing
-#' (\code{"est_shared_f_x"}) is handled in a second pass.
+#' model's parameter count; for 3D GMRF/2D AR1 forms, every age bin is active.
+#' Bin groupings (\code{sel_devs_shared_bins}, used by \code{"est_shared_b"} and
+#' its combinations) apply wherever the deviations are indexed by bin: the GMRF
+#' and AR1 forms, and the non-parametric selectivity forms under iid or a random
+#' walk. Fleet sharing (\code{"est_shared_f_x"}) is handled in a second pass.
 #'
 #' Serves fishery, retention, and survey selectivity, selected by
 #' \code{prefix} exactly as in \code{\link{do_fixed_sel_pars_mapping}}.
@@ -1758,6 +1854,11 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 #' @param sel_devs_shared_bins List of integer vectors, each defining a group
 #'   of bins that share a single estimated deviation. Required when
 #'   \code{sel_devs_spec} includes \code{"est_shared_b"} or its variants.
+#' @param dont_est_dev_first Integer vector \code{[n_<fleet_field>]} of 0/1, or
+#'   \code{NULL}. Where \code{1}, the deviations of year one are dropped from
+#'   the map so the walk starts in year two and the fixed selectivity parameters
+#'   hold year one. Refused for the GMRF and 2D AR1 forms, whose deviations are a
+#'   field rather than a walk anchored at year one.
 #' @param bins Number of selectivity bins.
 #' @param prefix Character, one of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
 #'   Drives the domain-specific field names: \code{cont_tv_<prefix>_sel},
@@ -1779,18 +1880,18 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 #'
 #' @keywords internal
 #' @importFrom stringr str_detect str_extract_all
-do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins, bins,
+do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins, bins, dont_est_dev_first = NULL,
                                  prefix, fleet_field, use_field, fleet_label) {
 
-  par_nm <- paste0("ln_", prefix, "sel_devs")
-  cont_tv_nm <- paste0("cont_tv_", prefix, "_sel")
-  model_nm <- paste0(prefix, "_sel_model")
+  par_name <- paste0("ln_", prefix, "sel_devs")
+  cont_tv_field <- paste0("cont_tv_", prefix, "_sel")
+  sel_model_field <- paste0(prefix, "_sel_model")
   n_fleets <- input_list$data[[fleet_field]]
   check_fleet_spec_length(sel_devs_spec, n_fleets, paste0(prefix, "_sel_devs_spec"), allow_null = TRUE)
 
   # Initialize counter and mapping array for selectivity deviations
   sel_devs_counter <- 1
-  map_sel_devs <- input_list$par[[par_nm]]
+  map_sel_devs <- input_list$par[[par_name]]
   map_sel_devs[] <- NA
 
   # how many deviation slots a form reads under iid or random walk time variation: its parameter
@@ -1814,9 +1915,9 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
           stop(prefix, "_sel_devs_spec not correctly specified. Should be one of these: est_all, est_shared_r, est_shared_r_s, est_shared_s, est_shared_b, est_shared_r_b, est_shared_r_b_s, est_shared_r_s, fix, or est_shared_f_# (where # is fleet number)")
         # sharing across bins needs the deviations indexed by bin: true for the GMRF and AR1 forms and
         # for non-parametric forms under iid or a walk, not for a parametric form under those
-        nonpar_fleet <- all(input_list$data[[model_nm]][r,,f] %in% c(5,9,10))
+        nonpar_fleet <- all(input_list$data[[sel_model_field]][r,,f] %in% c(5,9,10))
         if(sel_devs_spec[f] %in% c("est_shared_b", "est_shared_r_b", "est_shared_r_b_s", "est_shared_b_s") &&
-           !input_list$data[[cont_tv_nm]][r,f] %in% c(3,4,5) && !nonpar_fleet)
+           !input_list$data[[cont_tv_field]][r,f] %in% c(3,4,5) && !nonpar_fleet)
           stop("Sharing bin deviations is only supported when the deviations are indexed by bin: either a GMRF or AR1 time-varying form, or a non-parametric selectivity form. A parametric form under iid or a random walk indexes its deviations by parameter instead.")
        }
 
@@ -1835,16 +1936,16 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
           dat_ok <- if(shares_r) any(reg_has_dat) else reg_has_dat[r]
 
           # if no time-variation, then fix all parameters for this fleet
-          if(input_list$data[[cont_tv_nm]][r,f] == 0 || !dat_ok) {
+          if(input_list$data[[cont_tv_field]][r,f] == 0 || !dat_ok) {
             map_sel_devs[r,y,,s,f] <- NA
           } else {
 
             # most selectivity parameters for a region and fleet. a fleet changing forms across blocks
             # takes the most any form reads, since the deviation slots are shared across years
-            max_sel_pars <- max(sapply(unique(input_list$data[[model_nm]][r,,f]), sel_dev_slot_count))
+            max_sel_pars <- max(sapply(unique(input_list$data[[sel_model_field]][r,,f]), sel_dev_slot_count))
 
             # If iid or random walk time-variation for this fleet
-            if(input_list$data[[cont_tv_nm]][r,f] %in% c(1,2)) {
+            if(input_list$data[[cont_tv_field]][r,f] %in% c(1,2)) {
 
               for(i in 1:max_sel_pars) {
                 # Estimating all selectivity deviations across regions, sexes, fleets, and parameter
@@ -1872,10 +1973,40 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                 }
 
               } # end i loop
+
+              # bin groups index the deviation slots directly, which under iid or a walk holds for the
+              # non-parametric forms only. one deviation per group per year, as in the gmrf branch
+              for(k in seq_along(sel_devs_shared_bins)) {
+
+                # Estimating one deviation per bin group, across regions and sexes
+                if(sel_devs_spec[f] == 'est_shared_b') {
+                  map_sel_devs[r,y,sel_devs_shared_bins[[k]],s,f] <- sel_devs_counter
+                  sel_devs_counter <- sel_devs_counter + 1
+                }
+
+                # Estimating one deviation per bin group across sexes, but shared across regions
+                if(sel_devs_spec[f] == 'est_shared_r_b' && r == r_anchor) {
+                  map_sel_devs[,y,sel_devs_shared_bins[[k]],s,f] <- sel_devs_counter
+                  sel_devs_counter <- sel_devs_counter + 1
+                }
+
+                # Estimating one deviation per bin group across regions, but shared across sexes
+                if(sel_devs_spec[f] == 'est_shared_b_s' && s == 1) {
+                  map_sel_devs[r,y,sel_devs_shared_bins[[k]],,f] <- sel_devs_counter
+                  sel_devs_counter <- sel_devs_counter + 1
+                }
+
+                # Estimating one deviation per bin group, shared across regions and sexes
+                if(sel_devs_spec[f] == 'est_shared_r_b_s' && r == r_anchor && s == 1) {
+                  map_sel_devs[,y,sel_devs_shared_bins[[k]],,f] <- sel_devs_counter
+                  sel_devs_counter <- sel_devs_counter + 1
+                }
+
+              } # end k loop
             } # end iid or random walk variation
 
             # If 3d gmrf for this fleet
-            if(input_list$data[[cont_tv_nm]][r,f] %in% c(3,4,5)) {
+            if(input_list$data[[cont_tv_field]][r,f] %in% c(3,4,5)) {
 
               for(i in 1:length(input_list$data$ages)) {
                 # Estimating all selectivity deviations across regions, years and bins
@@ -1958,9 +2089,26 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
     } # end if statement
   } # end f loop
 
+  # a non-parametric form has one free base parameter per bin, so year one's deviation is that
+  # same value written twice and only the walk's first-year term separates them. dropping it
+  # leaves the base parameters holding year one with no prior on its level
+  if(!is.null(dont_est_dev_first)) {
+    for(f in 1:n_fleets) {
+      if(dont_est_dev_first[f] != 1) next
+      if(input_list$data[[cont_tv_field]][1,f] %in% c(3,4,5))
+        stop(prefix, "sel_dont_est_dev_first is 1 for ", fleet_label, " ", f, ", but that fleet's deviations are a ",
+             "field over years and bins (3dmarg, 3dcond or 2dar1) rather than a walk anchored at year one. ",
+             "Dropping one year from the map would leave those cells inside a joint density they are no longer ",
+             "estimated in. Starting the walk in year two is only supported when the deviations are iid or a ",
+             "random walk.")
+      map_sel_devs[,1,,,f] <- NA
+      collect_message(prefix, "sel deviations for ", fleet_label, " ", f, " start in year two, so the fixed selectivity parameters hold year one")
+    } # end f loop
+  }
+
   # input into mapping list
-  input_list$map[[par_nm]] <- factor(map_sel_devs)
-  input_list$data[[paste0("map_", par_nm)]] <- array(as.numeric(input_list$map[[par_nm]]), dim = dim(input_list$par[[par_nm]]))
+  input_list$map[[par_name]] <- factor(map_sel_devs)
+  input_list$data[[paste0("map_", par_name)]] <- array(as.numeric(input_list$map[[par_name]]), dim = dim(input_list$par[[par_name]]))
 
   return(input_list)
 }
@@ -1991,11 +2139,17 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
 #' @keywords internal
 sync_dev_map_data <- function(data, mapping) {
 
-  for(par_name in grep("^map_", names(data), value = TRUE)) {
-    par_nm <- sub("^map_", "", par_name)
-    if(is.null(mapping[[par_nm]])) next
-    if(length(mapping[[par_nm]]) != length(data[[par_name]])) next
-    data[[par_name]] <- array(as.numeric(mapping[[par_nm]]), dim = dim(data[[par_name]]))
+  for(mirror_name in grep("^map_", names(data), value = TRUE)) {
+    par_name <- sub("^map_", "", mirror_name)
+    if(is.null(mapping[[par_name]])) next
+    if(length(mapping[[par_name]]) != length(data[[mirror_name]])) next
+    data[[mirror_name]] <- array(as.numeric(mapping[[par_name]]), dim = dim(data[[mirror_name]]))
+  }
+
+  # years deliberately left out of the recruitment penalty are still estimated, so the refresh
+  # above puts them back. re-apply them, otherwise the setting is silently undone here
+  if(!is.null(data$dont_pen_recdev_first) && data$dont_pen_recdev_first > 0 && !is.null(data$map_ln_RecDevs)) {
+    data$map_ln_RecDevs[,,seq_len(data$dont_pen_recdev_first)] <- NA
   }
 
   return(data)

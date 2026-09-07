@@ -495,6 +495,12 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     CatchAA_Type = extend_years(data$CatchAA_Type, closed_loop_yrs, 1, fill = 'last'),
     DiscardAA_Type = extend_years(data$DiscardAA_Type, closed_loop_yrs, 1, fill = 'last'),
     CatchAA_LikeType = data$CatchAA_LikeType, DiscardAA_LikeType = data$DiscardAA_LikeType,
+    # data sources the fitted model reports once a year stay annual in the operating model
+    Catch_seas_Type = data$Catch_seas_Type,
+    Catch_pop_seas_Type = data$Catch_pop_seas_Type,
+    FishIdx_seas_Type = data$FishIdx_seas_Type,
+    FishIdx_pop_seas_Type = data$FishIdx_pop_seas_Type,
+    FishAgeComps_seas_Type = data$FishAgeComps_seas_Type,
     CatchAA_sigma_form = data$CatchAA_sigma_form, DiscardAA_sigma_form = data$DiscardAA_sigma_form,
     ln_sigmaC_pop = ln_sigmaC_pop,
     Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
@@ -686,6 +692,10 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     ObsSrvIdxAA_SE = extend_years(data$ObsSrvIdxAA_SE, closed_loop_yrs, 2, fill = 'last'),
     SrvIdxAA_Type = extend_years(data$SrvIdxAA_Type, closed_loop_yrs, 1, fill = 'last'),
     SrvIdxAA_LikeType = data$SrvIdxAA_LikeType, SrvIdxAA_sigma_form = data$SrvIdxAA_sigma_form,
+    # data sources the fitted model reports once a year stay annual in the operating model
+    SrvIdx_seas_Type = data$SrvIdx_seas_Type,
+    SrvIdx_pop_seas_Type = data$SrvIdx_pop_seas_Type,
+    SrvAgeComps_seas_Type = data$SrvAgeComps_seas_Type,
     ObsSrvIdx_pop_SE = ObsSrvIdx_pop_SE,
     srv_idx_type = data$srv_idx_type,
     t_srv = data$t_srv,
@@ -814,6 +824,11 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   init_dd <- if(!"init_dd" %in% names(args)) data$rec_dd else args$init_dd
   rec_lag <- if(!"rec_lag" %in% names(args)) data$rec_lag else args$rec_lag
   recruitment_opt <- if(!"recruitment_opt" %in% names(args)) data$rec_model else args$recruitment_opt
+  RecDevs_model <- if(!"RecDevs_model" %in% names(args)) c("iid", "rw", "ar1")[if(is.null(data$RecDevs_model)) 1 else data$RecDevs_model] else args$RecDevs_model
+  RecDevs_rho <- if(!"RecDevs_rho" %in% names(args)) {
+    if(is.null(optim_parameters_list$RecDevs_rho)) array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
+    else rho_trans(array(optim_parameters_list$RecDevs_rho, dim = c(sim_list$n_pop, sim_list$n_regions)))
+  } else args$RecDevs_rho
   rec_seas_prop_input <- if(!"rec_seas_prop_input" %in% names(args)) array(replicate(sim_list$n_sims, rep$rec_seas_prop), dim = c(dim(rep$rec_seas_prop), sim_list$n_sims))
   else args$rec_seas_prop_input
 
@@ -837,6 +852,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     init_dd = init_dd,
     rec_lag = rec_lag,
     SR_ref_yr = if(is.null(data$SR_ref_yr)) 1 else data$SR_ref_yr, # match the fit's per-recruit reference year
+    RecDevs_model = RecDevs_model, # recruitment process error the projection draws under
+    RecDevs_rho = RecDevs_rho, # ar1 correlation, natural scale
     stray_rate_input = stray_rate_input,
     rec_seas_prop_input = rec_seas_prop_input
   )

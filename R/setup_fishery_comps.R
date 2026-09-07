@@ -26,7 +26,7 @@
 #'   \code{[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]}
 #'
 #' @param FishAgeComps_discard_LikeType Character vector (length n_fish_fleets) specifying likelihood type:
-#'   one of \code{c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal","1d-Logistic-Normal","2d-Logistic-Normal")}
+#'   one of \code{c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal","1d-Logistic-Normal","2d-Logistic-Normal","iid-Logistic-Normal-miss0","1d-Logistic-Normal-miss0","2d-Logistic-Normal-miss0")}
 #'
 #' @param FishLenComps_discard_LikeType Character vector (length n_fish_fleets) specifying likelihood type
 #'
@@ -191,9 +191,9 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_discard_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_discard_LikeType')
   check_data_dimensions(FishLenComps_discard_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_discard_LikeType')
-  if(!all(FishAgeComps_discard_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishAgeComps_discard_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishAgeComps_discard_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_discard_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishLenComps_discard_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishLenComps_discard_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
 
   # Discard Fishery compositions (population-specific)
@@ -258,9 +258,9 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_discard_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_discard_pop_LikeType')
   check_data_dimensions(FishLenComps_discard_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_discard_pop_LikeType')
-  if(!all(FishAgeComps_discard_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishAgeComps_discard_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishAgeComps_discard_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_discard_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishLenComps_discard_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishLenComps_discard_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
 
   # checking to make sure defaults are not applied
@@ -287,17 +287,22 @@ Setup_Mod_Discard_Comps     <- function(input_list,
     if(FishAgeComps_discard_LikeType[f] == "iid-Logistic-Normal") comp_fishage_discard_like_vals <- c(comp_fishage_discard_like_vals, 2)
     if(FishAgeComps_discard_LikeType[f] == "1d-Logistic-Normal") comp_fishage_discard_like_vals <- c(comp_fishage_discard_like_vals, 3)
     if(FishAgeComps_discard_LikeType[f] == "2d-Logistic-Normal") comp_fishage_discard_like_vals <- c(comp_fishage_discard_like_vals, 4)
+    if(FishAgeComps_discard_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishage_discard_like_vals <- c(comp_fishage_discard_like_vals, 5)
+    if(FishAgeComps_discard_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishage_discard_like_vals <- c(comp_fishage_discard_like_vals, 6)
+    if(FishAgeComps_discard_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishage_discard_like_vals <- c(comp_fishage_discard_like_vals, 7)
     collect_message(paste("Discard Fishery Age Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishAgeComps_discard_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishage_discard_like_vals, "FishAgeComps_discard_LikeType")
 
   # Specifying composition type
   FishAgeComps_discard_Type_Mat <- parse_year_fleet_spec(
     FishAgeComps_discard_Type, "FishAgeComps_discard_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishage_discard_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishage_discard_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -310,17 +315,22 @@ Setup_Mod_Discard_Comps     <- function(input_list,
     if(FishAgeComps_discard_pop_LikeType[f] == "iid-Logistic-Normal") comp_fishage_discard_pop_like_vals <- c(comp_fishage_discard_pop_like_vals, 2)
     if(FishAgeComps_discard_pop_LikeType[f] == "1d-Logistic-Normal") comp_fishage_discard_pop_like_vals <- c(comp_fishage_discard_pop_like_vals, 3)
     if(FishAgeComps_discard_pop_LikeType[f] == "2d-Logistic-Normal") comp_fishage_discard_pop_like_vals <- c(comp_fishage_discard_pop_like_vals, 4)
+    if(FishAgeComps_discard_pop_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishage_discard_pop_like_vals <- c(comp_fishage_discard_pop_like_vals, 5)
+    if(FishAgeComps_discard_pop_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishage_discard_pop_like_vals <- c(comp_fishage_discard_pop_like_vals, 6)
+    if(FishAgeComps_discard_pop_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishage_discard_pop_like_vals <- c(comp_fishage_discard_pop_like_vals, 7)
     collect_message(paste("Discard Population Fishery Age Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishAgeComps_discard_pop_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishage_discard_pop_like_vals, "FishAgeComps_discard_pop_LikeType")
 
   # Specifying composition type
   FishAgeComps_discard_pop_Type_Mat <- parse_year_fleet_spec(
     FishAgeComps_discard_pop_Type, "FishAgeComps_discard_pop_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishage_discard_pop_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishage_discard_pop_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -335,17 +345,22 @@ Setup_Mod_Discard_Comps     <- function(input_list,
     if(FishLenComps_discard_LikeType[f] == "iid-Logistic-Normal") comp_fishlen_discard_like_vals <- c(comp_fishlen_discard_like_vals, 2)
     if(FishLenComps_discard_LikeType[f] == "1d-Logistic-Normal") comp_fishlen_discard_like_vals <- c(comp_fishlen_discard_like_vals, 3)
     if(FishLenComps_discard_LikeType[f] == "2d-Logistic-Normal") comp_fishlen_discard_like_vals <- c(comp_fishlen_discard_like_vals, 4)
+    if(FishLenComps_discard_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishlen_discard_like_vals <- c(comp_fishlen_discard_like_vals, 5)
+    if(FishLenComps_discard_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishlen_discard_like_vals <- c(comp_fishlen_discard_like_vals, 6)
+    if(FishLenComps_discard_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishlen_discard_like_vals <- c(comp_fishlen_discard_like_vals, 7)
     collect_message(paste("Discard Fishery Length Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishLenComps_discard_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishlen_discard_like_vals, "FishLenComps_discard_LikeType")
 
   # Specifying composition type
   FishLenComps_discard_Type_Mat <- parse_year_fleet_spec(
     FishLenComps_discard_Type, "FishLenComps_discard_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishlen_discard_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishlen_discard_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -359,17 +374,22 @@ Setup_Mod_Discard_Comps     <- function(input_list,
     if(FishLenComps_discard_pop_LikeType[f] == "iid-Logistic-Normal") comp_fishlen_discard_pop_like_vals <- c(comp_fishlen_discard_pop_like_vals, 2)
     if(FishLenComps_discard_pop_LikeType[f] == "1d-Logistic-Normal") comp_fishlen_discard_pop_like_vals <- c(comp_fishlen_discard_pop_like_vals, 3)
     if(FishLenComps_discard_pop_LikeType[f] == "2d-Logistic-Normal") comp_fishlen_discard_pop_like_vals <- c(comp_fishlen_discard_pop_like_vals, 4)
+    if(FishLenComps_discard_pop_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishlen_discard_pop_like_vals <- c(comp_fishlen_discard_pop_like_vals, 5)
+    if(FishLenComps_discard_pop_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishlen_discard_pop_like_vals <- c(comp_fishlen_discard_pop_like_vals, 6)
+    if(FishLenComps_discard_pop_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishlen_discard_pop_like_vals <- c(comp_fishlen_discard_pop_like_vals, 7)
     collect_message(paste("Discard Population Fishery Length Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishLenComps_discard_pop_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishlen_discard_pop_like_vals, "FishLenComps_discard_pop_LikeType")
 
   # Specifying composition type
   FishLenComps_discard_pop_Type_Mat <- parse_year_fleet_spec(
     FishLenComps_discard_pop_Type, "FishLenComps_discard_pop_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishlen_discard_pop_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishlen_discard_pop_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -693,7 +713,9 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   specifying the likelihood for fishery age compositions. Options:
 #'   \code{"Multinomial"}, \code{"Dirichlet-Multinomial"},
 #'   \code{"iid-Logistic-Normal"}, \code{"1d-Logistic-Normal"},
-#'   \code{"2d-Logistic-Normal"}, \code{"none"}.
+#'   \code{"2d-Logistic-Normal"}, \code{"iid-Logistic-Normal-miss0"},
+#'   \code{"1d-Logistic-Normal-miss0"}, \code{"2d-Logistic-Normal-miss0"},
+#'   \code{"none"}.
 #' @param FishLenComps_LikeType Same as \code{FishAgeComps_LikeType} but for
 #'   length compositions.
 #' @param FishAgeComps_Type Character vector defining the age composition
@@ -835,6 +857,10 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'     \item{\code{"iid-Logistic-Normal"}}{Independent logistic-normal}
 #'     \item{\code{"1d-Logistic-Normal"}}{1D correlated logistic-normal}
 #'     \item{\code{"2d-Logistic-Normal"}}{2D correlated logistic-normal}
+#'     \item{\code{"iid-Logistic-Normal-miss0"}}{Logistic-normal with the empty
+#'       bins dropped and the standard deviation scaled by the input sample size}
+#'     \item{\code{"1d-Logistic-Normal-miss0"}}{The same, correlated across bins}
+#'     \item{\code{"2d-Logistic-Normal-miss0"}}{The same, correlated across bins and sexes}
 #'     \item{\code{"none"}}{No discard age composition likelihood}
 #'   }
 #'
@@ -1167,9 +1193,9 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_LikeType')
   check_data_dimensions(FishLenComps_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_LikeType')
-  if(!all(FishAgeComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishAgeComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishAgeComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishLenComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
 
    # Fishery compositions (population-specific)
@@ -1234,9 +1260,9 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_pop_LikeType')
   check_data_dimensions(FishLenComps_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_pop_LikeType')
-  if(!all(FishAgeComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishAgeComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishAgeComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal")))
+  if(!all(FishLenComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
     stop("Invalid specification for FishLenComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
 
   # checking to make sure defaults are not applied
@@ -1284,17 +1310,22 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     if(FishAgeComps_LikeType[f] == "iid-Logistic-Normal") comp_fishage_like_vals <- c(comp_fishage_like_vals, 2)
     if(FishAgeComps_LikeType[f] == "1d-Logistic-Normal") comp_fishage_like_vals <- c(comp_fishage_like_vals, 3)
     if(FishAgeComps_LikeType[f] == "2d-Logistic-Normal") comp_fishage_like_vals <- c(comp_fishage_like_vals, 4)
+    if(FishAgeComps_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishage_like_vals <- c(comp_fishage_like_vals, 5)
+    if(FishAgeComps_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishage_like_vals <- c(comp_fishage_like_vals, 6)
+    if(FishAgeComps_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishage_like_vals <- c(comp_fishage_like_vals, 7)
     collect_message(paste("Fishery Age Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishAgeComps_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishage_like_vals, "FishAgeComps_LikeType")
 
   # Specifying composition type
   FishAgeComps_Type_Mat <- parse_year_fleet_spec(
     FishAgeComps_Type, "FishAgeComps_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishage_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishage_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -1307,17 +1338,22 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     if(FishAgeComps_pop_LikeType[f] == "iid-Logistic-Normal") comp_fishage_pop_like_vals <- c(comp_fishage_pop_like_vals, 2)
     if(FishAgeComps_pop_LikeType[f] == "1d-Logistic-Normal") comp_fishage_pop_like_vals <- c(comp_fishage_pop_like_vals, 3)
     if(FishAgeComps_pop_LikeType[f] == "2d-Logistic-Normal") comp_fishage_pop_like_vals <- c(comp_fishage_pop_like_vals, 4)
+    if(FishAgeComps_pop_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishage_pop_like_vals <- c(comp_fishage_pop_like_vals, 5)
+    if(FishAgeComps_pop_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishage_pop_like_vals <- c(comp_fishage_pop_like_vals, 6)
+    if(FishAgeComps_pop_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishage_pop_like_vals <- c(comp_fishage_pop_like_vals, 7)
     collect_message(paste("Population Fishery Age Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishAgeComps_pop_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishage_pop_like_vals, "FishAgeComps_pop_LikeType")
 
   # Specifying composition type
   FishAgeComps_pop_Type_Mat <- parse_year_fleet_spec(
     FishAgeComps_pop_Type, "FishAgeComps_pop_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishage_pop_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishage_pop_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -1332,17 +1368,22 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     if(FishLenComps_LikeType[f] == "iid-Logistic-Normal") comp_fishlen_like_vals <- c(comp_fishlen_like_vals, 2)
     if(FishLenComps_LikeType[f] == "1d-Logistic-Normal") comp_fishlen_like_vals <- c(comp_fishlen_like_vals, 3)
     if(FishLenComps_LikeType[f] == "2d-Logistic-Normal") comp_fishlen_like_vals <- c(comp_fishlen_like_vals, 4)
+    if(FishLenComps_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishlen_like_vals <- c(comp_fishlen_like_vals, 5)
+    if(FishLenComps_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishlen_like_vals <- c(comp_fishlen_like_vals, 6)
+    if(FishLenComps_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishlen_like_vals <- c(comp_fishlen_like_vals, 7)
     collect_message(paste("Fishery Length Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishLenComps_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishlen_like_vals, "FishLenComps_LikeType")
 
   # Specifying composition type
   FishLenComps_Type_Mat <- parse_year_fleet_spec(
     FishLenComps_Type, "FishLenComps_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishlen_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishlen_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 
@@ -1356,17 +1397,22 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     if(FishLenComps_pop_LikeType[f] == "iid-Logistic-Normal") comp_fishlen_pop_like_vals <- c(comp_fishlen_pop_like_vals, 2)
     if(FishLenComps_pop_LikeType[f] == "1d-Logistic-Normal") comp_fishlen_pop_like_vals <- c(comp_fishlen_pop_like_vals, 3)
     if(FishLenComps_pop_LikeType[f] == "2d-Logistic-Normal") comp_fishlen_pop_like_vals <- c(comp_fishlen_pop_like_vals, 4)
+    if(FishLenComps_pop_LikeType[f] == "iid-Logistic-Normal-miss0") comp_fishlen_pop_like_vals <- c(comp_fishlen_pop_like_vals, 5)
+    if(FishLenComps_pop_LikeType[f] == "1d-Logistic-Normal-miss0") comp_fishlen_pop_like_vals <- c(comp_fishlen_pop_like_vals, 6)
+    if(FishLenComps_pop_LikeType[f] == "2d-Logistic-Normal-miss0") comp_fishlen_pop_like_vals <- c(comp_fishlen_pop_like_vals, 7)
     collect_message(paste("Population Fishery Length Composition Likelihoods", "for fishery fleet", f, "specified as:" , FishLenComps_pop_LikeType[f]))
   } # end f loop
+
+  check_miss0_osa(input_list, comp_fishlen_pop_like_vals, "FishLenComps_pop_LikeType")
 
   # Specifying composition type
   FishLenComps_pop_Type_Mat <- parse_year_fleet_spec(
     FishLenComps_pop_Type, "FishLenComps_pop_Type", input_list$data$n_fish_fleets, length(input_list$data$years),
     c(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999),
     check = function(value, fleet) {
-      if(value == "agg" && comp_fishlen_pop_like_vals[fleet] == 4)
-        paste("An aggregated composition is one vector, and the 2d logistic",
-              "normal needs one split by region and sex.")
+      if(value %in% c("agg", "spltRspltS") && comp_fishlen_pop_like_vals[fleet] %in% c(4, 7))
+        paste("The 2d logistic normal correlates bins with sexes, so it needs a",
+              "composition joint across sexes. Use spltRjntS for this fleet.")
       else NULL
     })
 

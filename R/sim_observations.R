@@ -379,14 +379,15 @@ simulate_comps <- function(r,
             )
 
             # logistic normal
-          } else if(comp_like[f] %in% 2:4) {
+          } else if(comp_like[f] %in% 2:7) {
             Obs[r,y,seas,,s,f,sim] <- array(
               apply_error(as.vector(
                 rlogistnormal(
                   exp = get_expected(tmp_prob),
-                  pars = c(exp(ln_theta[r,s,f]), rho_trans(corr_pars[r,s,f,])),
+                  pars = c(exp(ln_theta[r,s,f]), comp_corr_natural(corr_pars[r,s,f,], comp_like[f])),
                   comp_like = comp_like[f],
-                  n_sexes = n_sexes
+                  n_sexes = n_sexes,
+                  ISS = ISS[r,y,seas,s,f,sim]
                 )
               ), age_or_len, age_error_mat),
               dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
@@ -423,14 +424,15 @@ simulate_comps <- function(r,
           )
 
           # logistic normal
-        } else if(comp_like[f] %in% 2:4) {
+        } else if(comp_like[f] %in% 2:7) {
           Obs[r,y,seas,,,f,sim] <- array(
             apply_error(as.vector(
               rlogistnormal(
                 exp = get_expected(tmp_prob),
-                pars = c(exp(ln_theta[r,1,f]), rho_trans(corr_pars[r,1,f,])),
+                pars = c(exp(ln_theta[r,1,f]), comp_corr_natural(corr_pars[r,1,f,], comp_like[f])),
                 comp_like = comp_like[f],
-                n_sexes = n_sexes
+                n_sexes = n_sexes,
+                ISS = ISS[r,y,seas,1,f,sim]
               )
             ), age_or_len, age_error_mat),
             dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
@@ -467,14 +469,15 @@ simulate_comps <- function(r,
           )
 
           # logistic normal
-        } else if(comp_like[f] %in% 2:4) {
+        } else if(comp_like[f] %in% 2:7) {
           Obs[1,y,seas,,1,f,sim] <- array(
             apply_error(as.vector(
               rlogistnormal(
                 exp = get_expected(tmp_prob),
-                pars = c(exp(ln_theta_agg[f]), rho_trans(corr_pars_agg[f])),
+                pars = c(exp(ln_theta_agg[f]), comp_corr_natural(corr_pars_agg[f], comp_like[f])),
                 comp_like = comp_like[f],
-                n_sexes = n_sexes
+                n_sexes = n_sexes,
+                ISS = ISS[1,y,seas,1,f,sim]
               )
             ), age_or_len, age_error_mat),
             dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
@@ -513,14 +516,15 @@ simulate_comps <- function(r,
             )
 
             # logistic normal
-          } else if(pop_comp_like[f] %in% 2:4) {
+          } else if(pop_comp_like[f] %in% 2:7) {
             Obs[p,r,y,seas,,s,f,sim] <- array(
               apply_error(as.vector(
                 rlogistnormal(
                   exp = get_expected(tmp_prob),
-                  pars = c(exp(ln_pop_theta[p,r,s,f]), rho_trans(pop_corr_pars[p,r,s,f,])),
+                  pars = c(exp(ln_pop_theta[p,r,s,f]), comp_corr_natural(pop_corr_pars[p,r,s,f,], pop_comp_like[f])),
                   comp_like = pop_comp_like[f],
-                  n_sexes = n_sexes
+                  n_sexes = n_sexes,
+                  ISS = ISS_pop[p,r,y,seas,s,f,sim]
                 )
               ), age_or_len, age_error_mat),
               dim = dim(Obs[p,r,y,seas,,s,f,sim, drop = FALSE])
@@ -557,14 +561,15 @@ simulate_comps <- function(r,
           )
 
           # logistic normal
-        } else if(pop_comp_like[f] %in% 2:4) {
+        } else if(pop_comp_like[f] %in% 2:7) {
           Obs[p,r,y,seas,,,f,sim] <- array(
             apply_error(as.vector(
               rlogistnormal(
                 exp = get_expected(tmp_prob),
-                pars = c(exp(ln_pop_theta[p,r,1,f]), rho_trans(pop_corr_pars[p,r,1,f,])),
+                pars = c(exp(ln_pop_theta[p,r,1,f]), comp_corr_natural(pop_corr_pars[p,r,1,f,], pop_comp_like[f])),
                 comp_like = pop_comp_like[f],
-                n_sexes = n_sexes
+                n_sexes = n_sexes,
+                ISS = ISS_pop[p,r,y,seas,1,f,sim]
               )
             ), age_or_len, age_error_mat),
             dim = dim(Obs[p,r,y,seas,,,f,sim, drop = FALSE])
@@ -601,14 +606,15 @@ simulate_comps <- function(r,
           )
 
           # logistic normal
-        } else if(pop_comp_like[f] %in% 2:4) {
+        } else if(pop_comp_like[f] %in% 2:7) {
           Obs[p,1,y,seas,,1,f,sim] <- array(
             apply_error(as.vector(
               rlogistnormal(
                 exp = get_expected(tmp_prob),
-                pars = c(exp(ln_pop_theta_agg[p,f]), rho_trans(pop_corr_pars_agg[p,f])),
+                pars = c(exp(ln_pop_theta_agg[p,f]), comp_corr_natural(pop_corr_pars_agg[p,f], pop_comp_like[f])),
                 comp_like = pop_comp_like[f],
-                n_sexes = n_sexes
+                n_sexes = n_sexes,
+                ISS = ISS_pop[p,1,y,seas,1,f,sim]
               )
             ), age_or_len, age_error_mat),
             dim = dim(Obs[p,1,y,seas,,1,f,sim, drop = FALSE])
@@ -1429,10 +1435,149 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
         } # end f loop
       } # end r loop
     } # end seas loop
+
+    # fleets reporting once a year keep the year's total in season one, with the observation
+    # error applied to that total rather than to each season
+    if(n_seas > 1) {
+
+      catch_agg <- collapse_seas_obs(TrueCatch, ObsCatch, exp(ln_sigmaC), Catch_seas_Type,
+                                     rep(0, n_fish_fleets), y, sim, n_seas, n_regions, n_fish_fleets)
+      sim_env$TrueCatch <- catch_agg$true
+      sim_env$ObsCatch <- catch_agg$obs
+
+      catch_pop_agg <- collapse_seas_obs(sim_env$TrueCatch_pop, sim_env$ObsCatch_pop, exp(ln_sigmaC_pop),
+                                         Catch_pop_seas_Type, rep(0, n_fish_fleets), y, sim, n_seas,
+                                         n_regions, n_fish_fleets, pop = TRUE)
+      sim_env$TrueCatch_pop <- catch_pop_agg$true
+      sim_env$ObsCatch_pop <- catch_pop_agg$obs
+
+      fidx_agg <- collapse_seas_obs(sim_env$TrueFishIdx, sim_env$ObsFishIdx, ObsFishIdx_SE,
+                                    FishIdx_seas_Type, FishIdx_LikeType, y, sim, n_seas,
+                                    n_regions, n_fish_fleets)
+      sim_env$TrueFishIdx <- fidx_agg$true
+      sim_env$ObsFishIdx <- fidx_agg$obs
+
+      fidx_pop_agg <- collapse_seas_obs(sim_env$TrueFishIdx_pop, sim_env$ObsFishIdx_pop, ObsFishIdx_pop_SE,
+                                        FishIdx_pop_seas_Type, FishIdx_LikeType, y, sim, n_seas,
+                                        n_regions, n_fish_fleets, pop = TRUE)
+      sim_env$TrueFishIdx_pop <- fidx_pop_agg$true
+      sim_env$ObsFishIdx_pop <- fidx_pop_agg$obs
+
+      # compositions are redrawn from the year's numbers at age rather than from one season's
+      if(any(FishAgeComps_seas_Type == 1)) {
+        CAA_yr <- collapse_seas_at_age(CAA, FishAgeComps_seas_Type, y, sim, n_seas)
+        for(f in which(FishAgeComps_seas_Type == 1)) {
+          for(r in 1:n_regions) {
+            sim_env$ObsFishAgeComps[r,y,-1,,,f,sim] <- 0
+            sim_env$ObsFishAgeComps <- simulate_comps(r = r, y = y, f = f, seas = 1, sim = sim,
+                                                      Exp = CAA_yr,
+                                                      ISS = ISS_FishAgeComps,
+                                                      AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
+                                                      comp_like = comp_fishage_like,
+                                                      ln_theta = ln_FishAge_theta,
+                                                      ln_theta_agg = ln_FishAge_theta_agg,
+                                                      corr_pars = FishAge_corr_pars,
+                                                      corr_pars_agg = FishAge_corr_pars_agg,
+                                                      comp_type = FishAgeComps_Type,
+                                                      n_sexes = n_sexes,
+                                                      n_regions = n_regions,
+                                                      n_cat = n_ages,
+                                                      Obs = sim_env$ObsFishAgeComps,
+                                                      age_or_len = 0)
+          } # end r loop
+        } # end f loop
+      } # end if aggregated fishery age compositions
+
+    } # end if more than one season
   })
 
 }
 
+
+#' Collapse a year's seasonal observations into one annual observation
+#'
+#' A data source set to \code{"aggSeas"} reports once a year rather than once a
+#' season, so the operating model has to draw one observation from the year's
+#' total rather than eleven from its parts. The total is written into season one
+#' by convention and the other seasons are left at zero, which is where the
+#' estimation model's \code{Use} array should mark it.
+#'
+#' The true quantity is summed first and the observation error is applied once to
+#' that sum, so the error is on the annual total the way the observation is
+#' reported, rather than on each season and then added up.
+#'
+#' @param true_arr,obs_arr Arrays \code{[region, year, season, fleet, sim]}, or
+#'   with a leading population dim, of the true quantity and the observation.
+#' @param se_arr Standard deviation array matching \code{true_arr} without the
+#'   simulation dim.
+#' @param seas_agg Integer vector, one per fleet.
+#' @param like_type Integer vector, one per fleet, passed to
+#'   \code{\link{draw_index_obs}}.
+#' @param y,sim Year and replicate being drawn.
+#' @param n_seas,n_regions,n_fleets Dimension sizes.
+#' @param pop Logical, whether the arrays have a leading population dim.
+#'
+#' @return A list with the updated \code{true} and \code{obs} arrays.
+#'
+#' @keywords internal
+collapse_seas_obs <- function(true_arr, obs_arr, se_arr, seas_agg, like_type,
+                              y, sim, n_seas, n_regions, n_fleets, pop = FALSE) {
+
+  if(!any(seas_agg == 1) || n_seas == 1) return(list(true = true_arr, obs = obs_arr))
+
+  for(f in which(seas_agg == 1)) {
+    for(r in 1:n_regions) {
+
+      if(pop) {
+        year_total <- rowSums(matrix(true_arr[,r,y,,f,sim], ncol = n_seas)) # one total per population
+        true_arr[,r,y,,f,sim] <- 0
+        true_arr[,r,y,1,f,sim] <- year_total
+        obs_arr[,r,y,,f,sim] <- 0
+        obs_arr[,r,y,1,f,sim] <- draw_index_obs(year_total, se_arr[,r,y,1,f], like_type[f])
+
+      } else {
+        year_total <- sum(true_arr[r,y,,f,sim])
+        true_arr[r,y,,f,sim] <- 0
+        true_arr[r,y,1,f,sim] <- year_total
+        obs_arr[r,y,,f,sim] <- 0
+        obs_arr[r,y,1,f,sim] <- draw_index_obs(year_total, se_arr[r,y,1,f], like_type[f])
+      }
+
+    } # end r loop
+  } # end f loop
+
+  list(true = true_arr, obs = obs_arr)
+
+} # end collapse_seas_obs
+
+#' Sum an at-age or at-length array over seasons into season one
+#'
+#' The counterpart of \code{\link{collapse_seas_obs}} for compositions, which are
+#' drawn from the numbers behind them rather than from a total. Fleets left at
+#' \code{"spltSeas"} are returned untouched.
+#'
+#' @param arr Array \code{[pop, region, year, season, bin, sex, fleet, sim]} of
+#'   predicted numbers.
+#' @param seas_agg Integer vector, one per fleet.
+#' @param y,sim Year and replicate being drawn.
+#' @param n_seas Number of seasons.
+#'
+#' @return \code{arr} with each aggregated fleet's year summed into season one.
+#'
+#' @keywords internal
+collapse_seas_at_age <- function(arr, seas_agg, y, sim, n_seas) {
+
+  if(!any(seas_agg == 1) || n_seas == 1) return(arr)
+
+  for(f in which(seas_agg == 1)) {
+    year_total <- apply(arr[,,y,,,,f,sim, drop = FALSE], c(1,2,5,6), sum) # pop, region, bin, sex
+    arr[,,y,,,,f,sim] <- 0
+    arr[,,y,1,,,f,sim] <- year_total
+  } # end f loop
+
+  arr
+
+} # end collapse_seas_at_age
 
 #' Generate survey indices and compositions in a simulation
 #'
@@ -1665,6 +1810,48 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
         } # end sf loop
       } # end r loop
     } # end seas loop
+
+    # surveys reporting once a year keep the year's total in season one
+    if(n_seas > 1) {
+
+      sidx_agg <- collapse_seas_obs(sim_env$TrueSrvIdx, sim_env$ObsSrvIdx, ObsSrvIdx_SE,
+                                    SrvIdx_seas_Type, SrvIdx_LikeType, y, sim, n_seas,
+                                    n_regions, n_srv_fleets)
+      sim_env$TrueSrvIdx <- sidx_agg$true
+      sim_env$ObsSrvIdx <- sidx_agg$obs
+
+      sidx_pop_agg <- collapse_seas_obs(sim_env$TrueSrvIdx_pop, sim_env$ObsSrvIdx_pop, ObsSrvIdx_pop_SE,
+                                        SrvIdx_pop_seas_Type, SrvIdx_LikeType, y, sim, n_seas,
+                                        n_regions, n_srv_fleets, pop = TRUE)
+      sim_env$TrueSrvIdx_pop <- sidx_pop_agg$true
+      sim_env$ObsSrvIdx_pop <- sidx_pop_agg$obs
+
+      # compositions are redrawn from the year's numbers at age rather than from one season's
+      if(any(SrvAgeComps_seas_Type == 1)) {
+        SrvIAA_yr <- collapse_seas_at_age(SrvIAA, SrvAgeComps_seas_Type, y, sim, n_seas)
+        for(sf in which(SrvAgeComps_seas_Type == 1)) {
+          for(r in 1:n_regions) {
+            sim_env$ObsSrvAgeComps[r,y,-1,,,sf,sim] <- 0
+            sim_env$ObsSrvAgeComps <- simulate_comps(r = r, y = y, f = sf, seas = 1, sim = sim,
+                                                     Exp = SrvIAA_yr,
+                                                     ISS = ISS_SrvAgeComps,
+                                                     AgeingError = array(AgeingError_srv[,,,sf,], dim = dim(AgeingError)),
+                                                     comp_like = comp_srvage_like,
+                                                     ln_theta = ln_SrvAge_theta,
+                                                     ln_theta_agg = ln_SrvAge_theta_agg,
+                                                     corr_pars = SrvAge_corr_pars,
+                                                     corr_pars_agg = SrvAge_corr_pars_agg,
+                                                     comp_type = SrvAgeComps_Type,
+                                                     n_sexes = n_sexes,
+                                                     n_regions = n_regions,
+                                                     n_cat = n_ages,
+                                                     Obs = sim_env$ObsSrvAgeComps,
+                                                     age_or_len = 0)
+          } # end r loop
+        } # end sf loop
+      } # end if aggregated survey age compositions
+
+    } # end if more than one season
 
   })
 }

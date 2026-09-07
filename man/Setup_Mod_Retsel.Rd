@@ -23,6 +23,7 @@ Setup_Mod_Retsel(
   cont_tv_retsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
   retsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   retsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
+  retsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
   ret_sel_nonpar_est_bins,
   ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
   ...

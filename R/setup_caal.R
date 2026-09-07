@@ -106,13 +106,13 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
   n_fleets <- if(fleet_type == "Fish") input_list$data$n_fish_fleets else input_list$data$n_srv_fleets
 
   stub <- paste0(fleet_type, "_caal")
-  obs_nm <- paste0("Obs", stub)
-  use_nm <- paste0("Use", stub)
-  iss_nm <- paste0("ISS_", stub)
-  type_nm <- paste0(stub, "_Type")
-  like_nm <- paste0(stub, "_LikeType")
-  theta_nm <- paste0("ln_", stub, "_theta")
-  theta_agg_nm <- paste0("ln_", stub, "_theta_agg")
+  obs_data_field <- paste0("Obs", stub)
+  use_data_field <- paste0("Use", stub)
+  iss_data_field <- paste0("ISS_", stub)
+  comp_type_field <- paste0(stub, "_Type")
+  like_type_field <- paste0(stub, "_LikeType")
+  theta_par_name <- paste0("ln_", stub, "_theta")
+  theta_agg_par_name <- paste0("ln_", stub, "_theta_agg")
 
   obs_dim <- c(n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes, n_fleets)
   iss_dim <- c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fleets)
@@ -135,18 +135,18 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
 
   if(any(UseCAAL == 1)) {
     if(input_list$data$fit_lengths != 1)
-      stop(paste0(use_nm, " has observations, but fit_lengths is 0. Conditional age-at-length needs the size-age transition matrix, so set fit_lengths = 1 in Setup_Mod_Biologicals"))
+      stop(paste0(use_data_field, " has observations, but fit_lengths is 0. Conditional age-at-length needs the size-age transition matrix, so set fit_lengths = 1 in Setup_Mod_Biologicals"))
     # The observed age bins need not be the model ages; the ageing error matrix maps
     # one onto the other, as it does for the marginal age compositions
     n_obs_ages <- dim(ObsCAAL)[5]
-    if(is.null(n_obs_ages) || n_obs_ages < 1) stop(paste0(obs_nm, " must have at least one observed age bin"))
-    dim_msg(ObsCAAL, replace(obs_dim, 5, n_obs_ages), obs_nm, c("n_regions", "n_years", "n_seas", "n_lens", "n_obs_ages", "n_sexes", "n_fleets"))
+    if(is.null(n_obs_ages) || n_obs_ages < 1) stop(paste0(obs_data_field, " must have at least one observed age bin"))
+    dim_msg(ObsCAAL, replace(obs_dim, 5, n_obs_ages), obs_data_field, c("n_regions", "n_years", "n_seas", "n_lens", "n_obs_ages", "n_sexes", "n_fleets"))
   }
-  dim_msg(UseCAAL, use_dim, use_nm, c("n_regions", "n_years", "n_seas", "n_lens", "n_fleets"))
+  dim_msg(UseCAAL, use_dim, use_data_field, c("n_regions", "n_years", "n_seas", "n_lens", "n_fleets"))
 
-  if(length(CAAL_LikeType) != n_fleets) stop(paste("Dimensions of", like_nm, "are not correct. Should be a vector of length n_fleets"))
+  if(length(CAAL_LikeType) != n_fleets) stop(paste("Dimensions of", like_type_field, "are not correct. Should be a vector of length n_fleets"))
   if(!all(CAAL_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial")))
-    stop(paste("Invalid specification for", like_nm, ". Should be either none, Multinomial, or Dirichlet-Multinomial. The logistic-normal families are not available for conditional age-at-length"))
+    stop(paste("Invalid specification for", like_type_field, ". Should be either none, Multinomial, or Dirichlet-Multinomial. The logistic-normal families are not available for conditional age-at-length"))
 
   # Likelihood and composition types -----------------------------------------
   like_vals <- rep(999, n_fleets)
@@ -156,7 +156,7 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
     collect_message(paste("Conditional Age-at-Length Likelihoods for", fleet_type, "fleet", f, "specified as:", CAAL_LikeType[f]))
   } # end f loop
 
-  type_mat <- parse_caal_type(CAAL_Type, n_yrs = n_yrs, n_fleets = n_fleets, what = type_nm)
+  type_mat <- parse_caal_type(CAAL_Type, n_yrs = n_yrs, n_fleets = n_fleets, what = comp_type_field)
 
   # comp_const_obs isn't final until Setup_Mod_Weighting runs, so its Dirichlet-multinomial
   # sanity check lives there instead.
@@ -166,7 +166,7 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
 
   # Input sample size and weighting -------------------------------------------
   if(is.null(ISS_CAAL)) {
-    collect_message(paste0("No ISS is specified for ", stub, ". ISS is calculated by summing up values from ", obs_nm, " within each length bin"))
+    collect_message(paste0("No ISS is specified for ", stub, ". ISS is calculated by summing up values from ", obs_data_field, " within each length bin"))
     ISS_CAAL <- array(0, dim = iss_dim)
     for(y in 1:n_yrs) {
       for(f in 1:n_fleets) {
@@ -181,18 +181,18 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
         } # end seas loop
       } # end f loop
     } # end y loop
-  } else dim_msg(ISS_CAAL, iss_dim, iss_nm, c("n_regions", "n_years", "n_seas", "n_lens", "n_sexes", "n_fleets"))
+  } else dim_msg(ISS_CAAL, iss_dim, iss_data_field, c("n_regions", "n_years", "n_seas", "n_lens", "n_sexes", "n_fleets"))
 
   # reconcile the use flags with any bin restriction so the fitting likelihood and the residual
   # routines agree on which length bins have aged fish. the bins array is set before this runs
   UseCAAL <- drop_empty_fitted_blocks(ObsCAAL, UseCAAL, input_list$data[[paste0(stub, "_bins")]], 5, stub)
 
   # Populate Data List ------------------------------------------------------
-  input_list$data[[obs_nm]] <- ObsCAAL
-  input_list$data[[use_nm]] <- UseCAAL
-  input_list$data[[iss_nm]] <- ISS_CAAL
-  input_list$data[[type_nm]] <- type_mat
-  input_list$data[[like_nm]] <- like_vals
+  input_list$data[[obs_data_field]] <- ObsCAAL
+  input_list$data[[use_data_field]] <- UseCAAL
+  input_list$data[[iss_data_field]] <- ISS_CAAL
+  input_list$data[[comp_type_field]] <- type_mat
+  input_list$data[[like_type_field]] <- like_vals
 
   # The likelihood reads the joint arrays at length and age, so any CAAL data
   # switches the flag that builds them
@@ -201,14 +201,14 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
   # Populate Parameter List -------------------------------------------------
   # One theta per region and sex is shared across length bins, since the bins come
   # from one length-stratified sample rather than from independent surveys
-  input_list$par[[theta_nm]] <- array(0, dim = c(n_regions, n_sexes, n_fleets))
-  input_list$par[[theta_agg_nm]] <- array(0, dim = n_fleets)
+  input_list$par[[theta_par_name]] <- array(0, dim = c(n_regions, n_sexes, n_fleets))
+  input_list$par[[theta_agg_par_name]] <- array(0, dim = n_fleets)
 
   # Mapping Options ---------------------------------------------------------
   # only the Dirichlet-multinomial estimates an overdispersion, so every other
   # theta is kept
-  map_theta <- input_list$par[[theta_nm]]
-  map_theta_agg <- input_list$par[[theta_agg_nm]]
+  map_theta <- input_list$par[[theta_par_name]]
+  map_theta_agg <- input_list$par[[theta_agg_par_name]]
   map_theta[] <- NA
   map_theta_agg[] <- NA
   counter <- 1
@@ -244,8 +244,8 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
     } # end r loop
   } # end f loop
 
-  input_list$map[[theta_nm]] <- factor(map_theta)
-  input_list$map[[theta_agg_nm]] <- factor(map_theta_agg)
+  input_list$map[[theta_par_name]] <- factor(map_theta)
+  input_list$map[[theta_agg_par_name]] <- factor(map_theta_agg)
 
   return(input_list)
 }

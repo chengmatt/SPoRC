@@ -43,8 +43,11 @@ Imports:
     stringr,
     tidyr,
     TMB,
+    tools,
     utils
 Suggests: 
+    devtools,
+    ggthemes,
     igraph,
     knitr,
     mvtnorm,
@@ -56,8 +59,8 @@ Suggests:
     testthat (>= 3.0.0)
 VignetteBuilder: 
     knitr
+Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3
 Encoding: UTF-8
 LazyData: true
 LazyDataCompression: xz
-Config/roxygen2/version: 8.1.0

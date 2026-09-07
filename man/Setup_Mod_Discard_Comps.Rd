@@ -55,7 +55,7 @@ Setup_Mod_Discard_Comps(
 \code{[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]}}
 
 \item{FishAgeComps_discard_LikeType}{Character vector (length n_fish_fleets) specifying likelihood type:
-one of \code{c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal","1d-Logistic-Normal","2d-Logistic-Normal")}}
+one of \code{c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal","1d-Logistic-Normal","2d-Logistic-Normal","iid-Logistic-Normal-miss0","1d-Logistic-Normal-miss0","2d-Logistic-Normal-miss0")}}
 
 \item{FishLenComps_discard_LikeType}{Character vector (length n_fish_fleets) specifying likelihood type}
 

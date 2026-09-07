@@ -45,6 +45,15 @@
 #' @param sexratio_input Proportion of recruits assigned to each sex, array
 #'   \code{[n_pop x n_regions x n_yrs x n_sexes x n_sims]}. Default: \code{1}
 #'   when \code{n_sexes = 1}; \code{0.5} per sex when \code{n_sexes = 2}.
+#' @param RecDevs_model Character. Process error the recruitment deviations are
+#'   drawn under: \code{"iid"} (default) independent draws, \code{"rw"} a random
+#'   walk from the previous year's deviation, or \code{"ar1"} reverting toward
+#'   zero at rate \code{RecDevs_rho}. The first year is an independent draw under
+#'   every option. Matches \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}},
+#'   so a self test can simulate and estimate under the same process.
+#' @param RecDevs_rho Matrix \code{[n_pop x n_regions]} of AR1 correlations on
+#'   the natural scale, in \eqn{(-1, 1)}. Only read when
+#'   \code{RecDevs_model = "ar1"}. Default zero.
 #' @param ln_sigmaR Log-scale standard deviation of recruitment deviations,
 #'   array \code{[2 x n_pop x n_regions]}. The first element controls the SD for
 #'   initial age-structure deviations (\code{ln_InitDevs}); the second controls
@@ -175,7 +184,9 @@ Setup_Sim_Rec <- function(
   SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
-  InitDevs_sex_spec = "est_shared_s"
+  InitDevs_sex_spec = "est_shared_s",
+  RecDevs_model = "iid",
+  RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
 ) {
 
   if(rec_dd == 'global' && sim_list$n_pop > 1 && recruitment_opt == 'bh_rec') stop("Invalid recruitment density-dependence option! When n_pop > 1 and recruitment_opt == 'bh_rec', rec_dd must be local (0).")
@@ -290,6 +301,9 @@ Setup_Sim_Rec <- function(
     stop("SR_ref_yr must be a single year index between 1 and ", sim_list$n_yrs, ".")
   sim_list$SR_ref_yr <- as.integer(SR_ref_yr)
   sim_list$ln_sigmaR <- ln_sigmaR
+  if(!RecDevs_model %in% c("iid", "rw", "ar1")) stop("RecDevs_model incorrectly specified. Must be one of 'iid', 'rw', or 'ar1'")
+  sim_list$RecDevs_model <- match(RecDevs_model, c("iid", "rw", "ar1")) # 1 = iid, 2 = rw, 3 = ar1
+  sim_list$RecDevs_rho <- array(RecDevs_rho, dim = c(sim_list$n_pop, sim_list$n_regions))
   sim_list$t_spawn <- t_spawn
   sim_list$rec_seas_prop <- rec_seas_prop_input
   sim_list$init_age_strc <- init_age_strc
@@ -483,6 +497,13 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
   par_full <- input_list$par$ln_InitDevs
   input_list$par$ln_InitDevs <- array(par_full[,,,1], dim = dim(par_full)[1:3])
 
+  # code 4 estimates the same cells code 2 does and penalizes none of them, so the two share a
+  # mapping and only get_recruitment_penalty tells them apart
+  est_all_ages <- input_list$data$equil_init_age_strc %in% c(2, 4)
+  all_ages_msg <- if(input_list$data$equil_init_age_strc == 4)
+    "Initial age deviations are estimated for all ages including the plus group, and none of them are penalized."
+  else "Initial age deviations are stochastic and estimated for all ages, including the plus group"
+
   # Initial age deviations (equilibrium)
   if(input_list$data$equil_init_age_strc == 0) {
     input_list$par$ln_InitDevs <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$ages) - 1)) # override starting values if previously specified
@@ -522,14 +543,14 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
         collect_message("Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.")
       }
 
-      # share parameters across regions, with stochastic deviations on plus group
-      if(input_list$data$equil_init_age_strc == 2) {
+      # share parameters across regions, with deviations on the plus group as well
+      if(est_all_ages) {
 
         # get indices
         n_ages_all <- dim(input_list$par$ln_InitDevs)[3]
         map_InitDevs[] <- rep(1:n_ages_all, each = input_list$data$n_regions * input_list$data$n_pop)
 
-        collect_message("Initial age deviations are stochastic and estimated for all ages, including the plus group")
+        collect_message(all_ages_msg)
       }
 
       # share parameters across regions, with stochastic deviations on user defined ages
@@ -563,8 +584,8 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
         collect_message("Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.")
       }
 
-      # share parameters across regions, with stochastic deviations on plus group
-      if(input_list$data$equil_init_age_strc == 2) {
+      # share parameters across regions, with deviations on the plus group as well
+      if(est_all_ages) {
 
         # get indices
         n_ages_all <- dim(input_list$par$ln_InitDevs)[3]
@@ -576,7 +597,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
           map_InitDevs[p,,] <- matrix(rep(age_indices, each = n_region), nrow = n_region)
         } # end p loop
 
-        collect_message("Initial age deviations are stochastic and estimated for all ages, including the plus group")
+        collect_message(all_ages_msg)
       }
 
       # Share parameters across used-defined ages
@@ -608,9 +629,9 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
     }
 
     # Plus group and estimating deviations for all dimensions
-    if(input_list$data$equil_init_age_strc == 2) {
+    if(est_all_ages) {
       input_list$map$ln_InitDevs <- factor(1:length(map_InitDevs)) # input into map
-      collect_message("Initial Age Deviations is estimated for all dimensions. They are stochastic and estimated for all ages, including the plus group")
+      collect_message(all_ages_msg)
     }
 
     # User-defined age sharing, estimated independently across all pops and regions
@@ -743,7 +764,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
 #'   and no-dispersal constraint logic.
 #'
 #' @keywords internal
-do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
+do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd, dont_pen_recdev_first = 0) {
 
   map_RecDevs <- input_list$par$ln_RecDevs # set up mapping for recruitment deviations
 
@@ -821,11 +842,70 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd) {
   # are estimated. a deviation mapped off by hand after setup is neither estimated nor penalized
   input_list$data$map_ln_RecDevs <- array(as.numeric(input_list$map$ln_RecDevs),
                                           dim = dim(input_list$par$ln_RecDevs))
+
+  # the first years can belong to the initial condition rather than to the recruitment process.
+  # dropping them from the mirror alone leaves them estimated but takes their penalty away
+  n_dev_yrs <- dim(input_list$par$ln_RecDevs)[3]
+  if(length(dont_pen_recdev_first) != 1 || is.na(dont_pen_recdev_first) || dont_pen_recdev_first %% 1 != 0 || dont_pen_recdev_first < 0)
+    stop("dont_pen_recdev_first is '", paste(dont_pen_recdev_first, collapse = ", "), "'. Give a whole number of ",
+         "leading years to leave out of the recruitment penalty, or 0 to penalize every year.")
+
+  if(dont_pen_recdev_first >= n_dev_yrs)
+    stop("dont_pen_recdev_first is ", dont_pen_recdev_first, " but there are only ", n_dev_yrs,
+         " years of recruitment deviations. Leaving every year out would leave the deviations with ",
+         "no process error at all, so at least one year has to stay in the penalty.")
+
+  input_list$data$dont_pen_recdev_first <- as.integer(dont_pen_recdev_first)
+
+  if(dont_pen_recdev_first > 0) {
+    input_list$data$map_ln_RecDevs[,,seq_len(dont_pen_recdev_first)] <- NA
+    collect_message("Recruitment deviations for the first ", dont_pen_recdev_first,
+                    " year(s) are estimated but left out of the penalty, so they belong to the initial condition")
+  }
   # do the initial age deviations too, so that deviations shared across regions
   # or sexes through the map split one penalty rather than being counted per cell
   if(!is.null(input_list$map$ln_InitDevs))
     input_list$data$map_ln_InitDevs <- array(as.numeric(input_list$map$ln_InitDevs),
                                              dim = dim(input_list$par$ln_InitDevs))
+
+  return(input_list)
+}
+
+#' Map AR1 correlation parameter for recruitment deviations
+#'
+#' Constructs the \code{RecDevs_rho} factor map. \code{RecDevs_rho} is only
+#' read when \code{RecDevs_model = "ar1"} (see \code{\link{Setup_Mod_Rec}});
+#' under any other \code{RecDevs_model} every \code{RecDevs_rho} parameter is
+#' mapped to \code{NA} regardless of \code{RecDevs_rho_spec}, since the
+#' recruitment penalty never reads it.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
+#'   sublists, as constructed by upstream setup functions.
+#' @param RecDevs_rho_spec Character string controlling the sharing and
+#'   estimation structure for \code{RecDevs_rho}: one of \code{"est_all"},
+#'   \code{"est_shared_pop"}, \code{"est_shared_r"},
+#'   \code{"est_shared_pop_r"}, or \code{"fix"}.
+#'
+#' @return The input \code{input_list} with \code{$map$RecDevs_rho} set to a
+#'   factor vector of length \code{prod(dim(par$RecDevs_rho))}.
+#'
+#' @keywords internal
+do_RecDevs_rho_mapping <- function(input_list, RecDevs_rho_spec) {
+
+  dims <- c(pop = input_list$data$n_pop,
+            region = input_list$data$n_regions)
+
+  if(input_list$data$RecDevs_model != 3) { # only ar1 reads RecDevs_rho
+    input_list$map$RecDevs_rho <- factor(rep(NA, prod(dims)))
+  } else {
+    input_list$map$RecDevs_rho <- build_shared_spec_map(
+      dims = dims,
+      spec = RecDevs_rho_spec,
+      dim_abbrev = c(pop = "pop", r = "region")
+    )
+  }
+
+  collect_message("RecDevs_rho is specified as: ", RecDevs_rho_spec)
 
   return(input_list)
 }
@@ -1070,8 +1150,8 @@ do_sexratio_pars_mapping <- function(input_list, sexratio_spec) {
 #'       overwritten with large-magnitude values (\code{-20} for non-natal
 #'       regions, \code{+20} for the natal region when
 #'       \code{natal_region > 1}), and all elements are mapped to \code{NA}
-#'       so the parameters are not estimated. Requires \code{n_pop > 1} and
-#'       \code{n_regions > 1}.}
+#'       so the parameters are not estimated. Requires \code{n_regions > 1};
+#'       a single population apportioned over several regions is allowed.}
 #'     \item{\code{NULL}}{All \code{rec_region_prop_pars} are estimated
 #'       independently. Only available when \code{n_regions > 1}.}
 #'   }
@@ -1091,8 +1171,8 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
     stop("Invalid rec_region_prop_spec: '", rec_region_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse=", "), ", or NULL to estimate all.")
   }
 
-  # no_dispersal only makes sense with multiple populations
-  if(!is.null(rec_region_prop_spec) && rec_region_prop_spec == "no_dispersal" && input_list$data$n_pop == 1 && input_list$data$n_regions == 1) stop("'no_dispersal' is only valid when n_pop > 1 and n_regions > 1.")
+  # with one region there is no apportionment to fix
+  if(!is.null(rec_region_prop_spec) && rec_region_prop_spec == "no_dispersal" && input_list$data$n_regions == 1) stop("'no_dispersal' is only valid when n_regions > 1. With a single region there is no recruitment apportionment to fix.")
 
   # par is [n_pop, n_regions-1]
   if(!is.null(rec_region_prop_spec) && rec_region_prop_spec == 'no_dispersal') {
@@ -1470,6 +1550,77 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
 #'   n_years]}. Default \code{NULL} (estimate all independently). See
 #'   \code{\link{do_RecDevs_mapping}} for full option descriptions.
+#' @param RecDevs_model Character string giving the process error structure on
+#'   the recruitment deviations \code{ln_RecDevs}. The same three forms
+#'   \code{Fdev_model} offers:
+#'   \describe{
+#'     \item{\code{"iid"}}{Default. Independent deviations about the prior mean
+#'       set by \code{RecDevs_pen_center}, which is the classic mean recruitment
+#'       with lognormal deviations.}
+#'     \item{\code{"rw"}}{Random walk. Each deviation is centered on the previous
+#'       estimated one, so recruitment is free to move but not to jump, which is
+#'       the state-space recruitment SAM fits by default. The first estimated
+#'       deviation is given a diffuse normal, so the level of the series is set
+#'       by \code{R0} and the data rather than by the penalty.}
+#'     \item{\code{"ar1"}}{AR1. As the walk, but each deviation reverts toward
+#'       zero at rate \code{RecDevs_rho}, and the first estimated deviation is
+#'       drawn from the stationary marginal distribution.}
+#'   }
+#'   A step spans the gap between estimated years rather than calendar years, so
+#'   mapping deviations off through \code{RecDevs_spec} or
+#'   \code{dont_est_recdev_last} closes the gap rather than splitting the series.
+#'   The walk and the AR1 center each deviation on the previous one, so neither
+#'   can be combined with \code{do_rec_bias_ramp = 1} or
+#'   \code{RecDevs_pen_center = "own_mean"}, both of which assert a mean about
+#'   zero; each combination is rejected. \code{sigmaR_switch} still applies, so
+#'   the walk can take one standard deviation early and another late.
+#' @param RecDevs_rho_spec Character string specifying the sharing structure for
+#'   the AR1 correlation parameter \code{RecDevs_rho} \code{[n_pop x
+#'   n_regions]}: one of \code{"est_all"}, \code{"est_shared_pop"},
+#'   \code{"est_shared_r"}, \code{"est_shared_pop_r"}, or \code{"fix"}
+#'   (default). Only read when \code{RecDevs_model = "ar1"}; every other
+#'   \code{RecDevs_model} maps the parameter off. See
+#'   \code{\link{do_RecDevs_rho_mapping}}.
+#' @param RecDevs_rw_init_sigma Numeric. Standard deviation given to year one of
+#'   a random walk, which is what sets the level of the recruitment series.
+#'   Default \code{5}, wide enough that the level is decided by \code{R0} and
+#'   the data. \code{NA} instead starts the walk at zero under its own sigma,
+#'   which pulls the first year toward mean recruitment. Only read when
+#'   \code{RecDevs_model = "rw"}.
+#' @param ln_global_R0_spec Character string, \code{"est"} (default) or
+#'   \code{"fix"}. \code{"fix"} maps \code{ln_global_R0} off at its starting
+#'   value, so the recruitment deviations hold log recruitment outright rather
+#'   than as departures from a level. That is how SAM writes recruitment, where
+#'   the first year's log numbers at age are the recruitment itself and there is
+#'   no separate level parameter. The recruitment counterpart of
+#'   \code{ln_F_mean_spec} in \code{\link{Setup_Mod_Catch_and_F}}.
+#'
+#'   Under \code{rec_model = "mean_rec"} the level and the deviations are only
+#'   both estimable when something reads the deviations' level. An \code{"iid"}
+#'   or \code{"ar1"} penalty does; a random walk does not, since it penalizes
+#'   only the change from one deviation to the next. Combining a walk with
+#'   \code{dont_pen_recdev_first >= 1}, which removes the first year's term,
+#'   leaves the two exactly unidentified, and that combination is rejected rather
+#'   than fitted: it converges to a singular Hessian and standard errors of
+#'   \code{NA}. A walk with the first year still penalized is accepted with a
+#'   warning, since the level is then readable only through that one term and its
+#'   standard error comes back near \code{RecDevs_rw_init_sigma}.
+#' @param dont_pen_recdev_first Integer. How many leading years of recruitment
+#'   deviations are estimated but left out of the recruitment penalty. \code{0}
+#'   (default) penalizes every year.
+#'
+#'   The first year's recruitment is the first year's age one abundance, which in
+#'   an equilibrium initialization belongs to the initial condition rather than to
+#'   the recruitment process. WHAM keeps it as a separate initial numbers at age
+#'   parameter and gives it no process error at all, and setting this to \code{1}
+#'   is the same statement: the deviation is still estimated, so the data set the
+#'   first year's recruitment freely, but it takes no prior from
+#'   \code{ln_sigmaR}. Mapping the deviation off instead would fix it at its
+#'   starting value rather than leave it free.
+#'
+#'   Leaving years out only removes their penalty, never their estimation, so this
+#'   is separate from \code{dont_est_recdev_last}, which does the opposite at the
+#'   other end of the series.
 #' @param dont_est_recdev_last Non-negative integer. Number of terminal years
 #'   for which recruitment deviations are not estimated. Automatically
 #'   overridden to \code{0} if \code{n_proj_yrs_devs > 0}, since projected
@@ -1518,7 +1669,18 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'       plus-group position to fix it, or share it with the preceding age by
 #'       repeating that index (e.g. \code{c(1:42, rep(42, 9))}). Requires
 #'       \code{init_age_devs_shared} to be non-\code{NULL}.}
+#'     \item{\code{4}/\code{"stoch_all_no_pen"}}{Deviations estimated for all
+#'       ages including the plus group, and none of them penalized. The same
+#'       cells \code{"stoch_all"} estimates, with no prior on any of them.
+#'       Pair it with \code{init_age_strc = "free"}, where the deviations are
+#'       the initial log numbers at age rather than departures from an
+#'       equilibrium, so a penalty on them would be a prior on initial
+#'       abundance rather than on the shape of the age structure. This is what
+#'       ICES assessments in the SAM family do with their first year.}
 #'   }
+#'   \code{"equil"} means both no penalty and no estimation, which are the same
+#'   statement about an equilibrium age structure and two different ones about a
+#'   free age structure. \code{"stoch_all_no_pen"} is the second of them.
 #' @param InitDevs_spec Character or \code{NULL}. Sharing structure for
 #'   initial age-structure deviations \code{ln_InitDevs} \code{[n_pop x
 #'   n_regions x (n_ages - 1) x n_sexes]}. Default \code{NULL} (estimate all
@@ -1778,7 +1940,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   populated in \code{$data} and \code{$par}, and factor maps constructed
 #'   in \code{$map} for: \code{rec_region_prop_pars}, \code{rec_seas_prop_pars},
 #'   \code{ln_sigmaR}, \code{ln_InitDevs}, \code{ln_RecDevs},
-#'   \code{steepness_h}, \code{sexratio_pars}, and \code{stray_rate_pars}. Character-coded inputs
+#'   \code{RecDevs_rho}, \code{steepness_h}, \code{sexratio_pars}, and
+#'   \code{stray_rate_pars}. Character-coded inputs
 #'   for \code{init_age_strc} and \code{equil_init_age_strc} are converted to
 #'   integer codes before storage.
 #'
@@ -1809,6 +1972,7 @@ Setup_Mod_Rec <- function(input_list,
                           max_bias_ramp_fct = 1,
                           sigmaR_switch = 1,
                           dont_est_recdev_last = 0,
+                          dont_pen_recdev_first = 0,
                           init_age_strc = 2,
                           equil_init_age_strc = 1,
                           init_F_prop = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)),
@@ -1818,6 +1982,9 @@ Setup_Mod_Rec <- function(input_list,
                           InitDevs_spec = NULL,
                           InitDevs_sex_spec = "est_shared_s",
                           RecDevs_spec = NULL,
+                          RecDevs_model = "iid",
+                          RecDevs_rho_spec = "fix",
+                          RecDevs_rw_init_sigma = 5,
                           RecDevs_pen_center = "fixed",
                           Use_rec_level_pen = 0,
                           rec_level_pen_sigma = 1,
@@ -1854,7 +2021,11 @@ Setup_Mod_Rec <- function(input_list,
                           r0_prior = NULL,
                           Use_rinit_pen = 0,
                           rinit_pen_sd = 1,
-                          ...
+                          ...,
+                          # after the dots on purpose: ln_global_R0 reaches this function through
+                          # the dots as a starting value, and R partially matches a supplied name to
+                          # a longer formal only when that formal sits before them
+                          ln_global_R0_spec = "est"
                           ) {
 
   messages_list <<- character(0)
@@ -1863,7 +2034,7 @@ Setup_Mod_Rec <- function(input_list,
 
   # Convert character inputs to numeric codes for init_age_strc and equil_init_age_strc
   init_age_strc <- convert_to_numeric(init_age_strc, list(iterative = 0, scalar_no_move = 1, matrix = 2, scalar_plus_only = 3, free = 4))
-  equil_init_age_strc <- convert_to_numeric(equil_init_age_strc, list(equil = 0, stoch_no_plus = 1, stoch_all = 2, stoch_shared_ages = 3))
+  equil_init_age_strc <- convert_to_numeric(equil_init_age_strc, list(equil = 0, stoch_no_plus = 1, stoch_all = 2, stoch_shared_ages = 3, stoch_all_no_pen = 4))
 
   # Setting up the initial fishing mortality ----------------------------------------
   if(!(length(init_F_form) == 1 && init_F_form %in% c("prop", "abs"))) stop("init_F_form must be 'prop' (a proportion of the mean F) or 'abs' (an absolute F), but was: ", paste(init_F_form, collapse = ", "))
@@ -2129,6 +2300,53 @@ Setup_Mod_Rec <- function(input_list,
   if(!InitDevs_pen_center %in% c("fixed", "own_mean")) stop("InitDevs_pen_center must be fixed or own_mean")
   if(RecDevs_pen_center == "own_mean" && do_rec_bias_ramp == 1) stop("RecDevs_pen_center = own_mean estimates the deviations' mean from the deviations themselves, which leaves the bias ramp's -sigma^2/2 offset meaningless. Use one or the other.")
   input_list$data$RecDevs_pen_center <- convert_to_numeric(RecDevs_pen_center, list(fixed = 0, own_mean = 1))
+
+  # RecDevs_model checking
+  if(!RecDevs_model %in% c("iid", "rw", "ar1")) stop("RecDevs_model incorrectly specified. Must be one of 'iid', 'rw', or 'ar1'")
+  else collect_message("RecDevs_model is specified as: ", RecDevs_model)
+
+  if(RecDevs_model %in% c("rw", "ar1") && do_rec_bias_ramp == 1)
+    stop("RecDevs_model = '", RecDevs_model, "' centers each deviation on the previous one, so the bias ramp's -sigma^2/2 offset about zero does not apply. Set do_rec_bias_ramp = 0, or use RecDevs_model = 'iid'.")
+
+  if(RecDevs_model %in% c("rw", "ar1") && RecDevs_pen_center == "own_mean")
+    stop("RecDevs_model = '", RecDevs_model, "' centers each deviation on the previous one, so there is no single mean for RecDevs_pen_center = 'own_mean' to estimate. Use RecDevs_pen_center = 'fixed'.")
+
+  if(RecDevs_model %in% c("rw", "ar1") && sigmaR_spec == "fix")
+    warning("RecDevs_model = '", RecDevs_model, "' but sigmaR_spec = 'fix'; the process error standard deviation (ln_sigmaR) driving the ", RecDevs_model, " process is not being estimated. This may be intentional (e.g. fixing sigma at a known value), but if not, consider estimating ln_sigmaR via sigmaR_spec.")
+
+  if(RecDevs_model == "ar1" && RecDevs_rho_spec == "fix")
+    warning("RecDevs_model = 'ar1' but RecDevs_rho_spec = 'fix'; the AR1 correlation parameter (RecDevs_rho) is not being estimated. This may be intentional (e.g. fixing rho at a known value), but if not, consider estimating RecDevs_rho via RecDevs_rho_spec.")
+
+  if(!(length(RecDevs_rw_init_sigma) == 1 && (is.na(RecDevs_rw_init_sigma) || RecDevs_rw_init_sigma > 0)))
+    stop("RecDevs_rw_init_sigma must be a single positive number, or NA to start the walk at zero under its own sigma")
+
+  if(!ln_global_R0_spec %in% c("est", "fix")) stop("ln_global_R0_spec must be est or fix")
+  collect_message("ln_global_R0 is specified as: ", ln_global_R0_spec)
+
+  # under mean recruitment log R is ln_global_R0 plus a deviation. a walk penalizes only the change
+  # between deviations, so it never reads their level, and dropping the first year's term takes away
+  # the one thing that did. adding a constant to R0 and taking it off every deviation is then exactly
+  # flat: the fit converges, the hessian is singular and every standard error comes back NA
+  if(rec_model == "mean_rec" && RecDevs_model == "rw" && ln_global_R0_spec == "est" &&
+     dont_pen_recdev_first >= 1)
+    stop("rec_model = 'mean_rec' with RecDevs_model = 'rw' and dont_pen_recdev_first = ", dont_pen_recdev_first,
+         " leaves ln_global_R0 and the recruitment deviations mutually unidentified: the walk reads only ",
+         "the change between deviations and the first year no longer reads their level, so the two trade ",
+         "along an exactly flat direction. It needs ln_global_R0_spec = 'fix', which is how SAM writes it, ",
+         "with the deviations holding recruitment outright. Set dont_pen_recdev_first = 0 to keep the ",
+         "level readable instead.")
+
+  # with the first year still in the penalty the level is readable, but only through that one term,
+  # so it is a weak statement rather than an unidentified one
+  if(rec_model == "mean_rec" && RecDevs_model == "rw" && ln_global_R0_spec == "est" &&
+     dont_pen_recdev_first == 0)
+    warning("rec_model = 'mean_rec' with RecDevs_model = 'rw' leaves the level of log recruitment ",
+            "readable only through the first year's deviation, whose standard deviation is ",
+            "RecDevs_rw_init_sigma (", RecDevs_rw_init_sigma, "). ln_global_R0 is then weakly identified ",
+            "and its standard error will come back near that value. Consider ln_global_R0_spec = 'fix'.")
+
+  input_list$data$RecDevs_model <- match(RecDevs_model, c("iid", "rw", "ar1")) # 1 = iid, 2 = rw, 3 = ar1
+  input_list$data$RecDevs_rw_init_sigma <- RecDevs_rw_init_sigma
   if(!Use_rec_level_pen %in% c(0,1)) stop("Use_rec_level_pen must be 0 or 1")
   if(!rec_level_pen_center %in% c("fixed", "own_mean")) stop("rec_level_pen_center must be fixed or own_mean")
   input_list$data$Use_rec_level_pen <- Use_rec_level_pen
@@ -2279,6 +2497,10 @@ Setup_Mod_Rec <- function(input_list,
   max_stray_blks <- if (input_list$data$n_pop > 1) max(apply(stray_rate_blocks_mat, 1, function(x) length(unique(x))))
   else 1
 
+  # ar1 correlation for recruitment deviations (only read when RecDevs_model = 'ar1')
+  input_list$par$RecDevs_rho <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions))
+  input_list$par$RecDevs_rho <- use_starting_value(input_list$par$RecDevs_rho, starting_values, "RecDevs_rho")
+
   max_stray_blks <- if (input_list$data$n_pop > 1)  max(apply(stray_rate_blocks_mat, 1, function(x) length(unique(x)))) else 1
   input_list$par$stray_rate_pars <- array(0,  dim = c(input_list$data$n_pop, max_stray_blks))
   input_list$par$stray_rate_pars <- use_starting_value(input_list$par$stray_rate_pars, starting_values, "stray_rate_pars")
@@ -2292,7 +2514,12 @@ Setup_Mod_Rec <- function(input_list,
   # the shared-subset penalty (equil_init_age_strc == 3) reads this in the model,
   # so it goes into data as well as the map
   if(!is.null(init_age_devs_shared)) input_list$data$init_age_devs_shared <- init_age_devs_shared
-  input_list <- do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd) # RevDevs mapping
+  input_list <- do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd, dont_pen_recdev_first) # RevDevs mapping
+  input_list <- do_RecDevs_rho_mapping(input_list, RecDevs_rho_spec) # recruitment deviation ar1 correlation mapping
+
+  # unfished recruitment, estimated per population and R0 block or fixed at its starting value
+  n_R0_par <- length(input_list$par$ln_global_R0)
+  input_list$map$ln_global_R0 <- factor(if(ln_global_R0_spec == "est") seq_len(n_R0_par) else rep(NA_integer_, n_R0_par))
   input_list <- do_h_mapping(input_list, h_spec, rec_dd) # steepness mapping
   input_list <- do_sexratio_pars_mapping(input_list, sexratio_spec) # sex ratio parameters
   input_list <- do_stray_rate_mapping(input_list, stray_rate_spec) # stray rates

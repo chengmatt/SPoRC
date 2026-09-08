@@ -257,7 +257,7 @@ that moves fish through a season goes through that one file.
 | `utils_math.R` | `build_us_chol`, `build_us_corr`, `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `mat_exp`, `rho_trans` | nothing | `model_distributions.R`, `model_lik_at_age.R`, `model_lik_comps.R`, `model_movement.R`, `model_priors_penalties.R`, `model_transition.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_closed_loop.R`, `sim_random_variates.R`, `sim_self_test.R` |
 | `utils_option_reference.R` | `option_reference`, `rd_argument_text`, `rd_database`, `setup_stage_order` | nothing |  |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
-| `utils_setup.R` | `assign_sel_block`, `bins_or_null`, `check_bin_map`, `check_comp_bins_min`, `check_par_map_lengths`, `collapse_natmort_annual`, `collect_message`, `convert_to_numeric`, `drop_empty_fitted_blocks`, `expand_fleet_ageing_error`, `expand_natmort_seasons`, `extend_years`, `fleet_ageing_error`, `obs_bin_count`, `obs_len_bins`, `parse_bin_subset`, `parse_comp_bins`, `parse_idx_cov`, `resolve_sel_pen_wts`, `resync_fitted_blocks`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `truncate_years`, `use_starting_value`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_fits.R`, `diag_likelihood_profile.R`, `diag_osa_residuals.R`, `diag_retrospective.R`, `model_fit.R`, `model_init_naa.R`, `model_lik_comps.R`, `model_objective.R`, `plot_figures_tables.R`, `projection.R`, `refpts_main.R`, `refpts_msy.R`, `refpts_spr.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_self_test.R` |
+| `utils_setup.R` | `assign_sel_block`, `bins_or_null`, `check_bin_map`, `check_comp_bins_min`, `check_comp_like_type`, `check_par_map_lengths`, `collapse_natmort_annual`, `collect_message`, `comp_like_type_options`, `convert_to_numeric`, `drop_empty_fitted_blocks`, `expand_fleet_ageing_error`, `expand_natmort_seasons`, `extend_years`, `fleet_ageing_error`, `obs_bin_count`, `obs_len_bins`, `parse_bin_subset`, `parse_comp_bins`, `parse_idx_cov`, `resolve_sel_pen_wts`, `resync_fitted_blocks`, `safe_extract`, `seed_dbnrml_peak`, `set_data_indicator_unused`, `setup_dbnrml_raw`, `setup_dbnrml_startbin`, `setup_sel_bin_devs`, `setup_sel_norm_bins`, `setup_sel_sex_offset`, `truncate_years`, `use_starting_value`, `validate_selex_penalty`, `validate_selex_prior_types` | nothing | `diag_fits.R`, `diag_likelihood_profile.R`, `diag_osa_residuals.R`, `diag_retrospective.R`, `model_fit.R`, `model_init_naa.R`, `model_lik_comps.R`, `model_objective.R`, `plot_figures_tables.R`, `projection.R`, `refpts_main.R`, `refpts_msy.R`, `refpts_spr.R`, `setup_biologicals.R`, `setup_caal.R`, `setup_dimensions.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R`, `setup_weighting.R`, `sim_closed_loop.R`, `sim_observations.R`, `sim_self_test.R` |
 | `utils_year_fleet_spec.R` | `at_age_type_matrix`, `check_seas_agg_use`, `parse_seas_agg_spec`, `parse_year_fleet_spec` | nothing | `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_mapping.R`, `setup_sim_fleets.R`, `setup_survey_comps.R` |
 
 #### Package data
@@ -466,7 +466,7 @@ use.
 
 | Prefix | Files | What it covers |
 |----|----|----|
-| `test-setup_*` | 21 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
+| `test-setup_*` | 23 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
 | `test-model_*` | 32 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 7 | Shared numerical helpers |
 | `test-sim_*` | 5 | Operating model, including simulate then refit self tests |
@@ -476,7 +476,7 @@ use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 166 test files in total.
+That is 168 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

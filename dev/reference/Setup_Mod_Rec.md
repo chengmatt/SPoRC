@@ -400,6 +400,8 @@ rec_seas_prop[, 1] <- 1
   `init_F_form`, including estimating the proportion itself
   (`init_F_form = "prop"`, `init_F_spec = "est"`). Note `init_F` is
   generally weakly identified, which is why assessments commonly fix it.
+  `"est"` is refused under `init_age_strc = "free"`, where no
+  equilibrium is projected and `init_F_par` never reaches the objective.
 
   The value is set by the parameter `init_F_par`
   `[n_regions x n_seas x n_fish_fleets]`, supplied through `...` like

@@ -471,7 +471,9 @@ Default: zero for all seasons and fleets.</p></dd>
   <code>init_F_par</code> is estimated. This sets only the mapping, so it combines
   freely with <code>init_F_form</code>, including estimating the proportion itself
   (<code>init_F_form = "prop"</code>, <code>init_F_spec = "est"</code>). Note <code>init_F</code>
-  is generally weakly identified, which is why assessments commonly fix it.</p>
+  is generally weakly identified, which is why assessments commonly fix it.
+  <code>"est"</code> is refused under <code>init_age_strc = "free"</code>, where no
+  equilibrium is projected and <code>init_F_par</code> never reaches the objective.</p>
 <p>The value is set by the parameter <code>init_F_par</code>
   <code>[n_regions x n_seas x n_fish_fleets]</code>, supplied through <code>...</code> like
   any other starting value, e.g.

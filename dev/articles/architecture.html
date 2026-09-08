@@ -1265,9 +1265,10 @@ one file.</p>
 <td>
 <code>assign_sel_block</code>, <code>bins_or_null</code>,
 <code>check_bin_map</code>, <code>check_comp_bins_min</code>,
-<code>check_par_map_lengths</code>,
+<code>check_comp_like_type</code>, <code>check_par_map_lengths</code>,
 <code>collapse_natmort_annual</code>, <code>collect_message</code>,
-<code>convert_to_numeric</code>, <code>drop_empty_fitted_blocks</code>,
+<code>comp_like_type_options</code>, <code>convert_to_numeric</code>,
+<code>drop_empty_fitted_blocks</code>,
 <code>expand_fleet_ageing_error</code>,
 <code>expand_natmort_seasons</code>, <code>extend_years</code>,
 <code>fleet_ageing_error</code>, <code>obs_bin_count</code>,
@@ -1673,7 +1674,7 @@ test setup happens to use.</p>
 <tbody>
 <tr class="odd">
 <td><code>test-setup_*</code></td>
-<td>21</td>
+<td>23</td>
 <td>Input building: the <code>map</code> factor builders and the
 <code>Setup_Mod_*</code> validation</td>
 </tr>
@@ -1722,7 +1723,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 166 test files in total.</p>
+<p>That is 168 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

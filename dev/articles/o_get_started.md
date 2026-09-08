@@ -962,7 +962,7 @@ posterior samples can also readily be plotted.
 ``` r
 
 # get mcmc time series plots
-mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, mcmc_obj = mcmc_short, what = c("SSB", "Rec"), n_cores = parallel::detectCores() - 2)
+mcmc_ts_plot <- get_model_rep_from_mcmc(rtmb_obj = francis_model, mcmc_obj = mcmc, what = c("SSB", "Rec"), n_cores = parallel::detectCores() - 2)
 
 # ssb plot
 # summarize results

@@ -28,8 +28,7 @@ get_comp_source_nLL(
   n_model_bins,
   comp_bins_spec,
   AgeingErrorArr = NULL,
-  LenBinMap_lik = NA,
-  LenBinMap_fn = NULL,
+  LenBinMap_fn = function(y, f) NA,
   n_pop,
   n_regions,
   n_yrs,
@@ -112,14 +111,12 @@ get_comp_source_nLL(
   Ageing error over year by model bin by observed bin by fleet, read
   only for age compositions.
 
-- LenBinMap_lik:
-
-  Model bin to observed bin map, read only for length compositions.
-
 - LenBinMap_fn:
 
-  Function of year and fleet returning the model bin to observed bin
-  map, read only for length compositions on the OSA route.
+  Function `(y, f)` returning the model bin to observed bin map, read
+  only for length compositions. The map varies by neither year nor fleet
+  and takes both so it is read the same way `AgeingErrorArr` is. `NA`
+  leaves the observed bins as the model bins.
 
 - n_pop, n_regions, n_yrs, n_seas, n_fleets, n_sexes:
 

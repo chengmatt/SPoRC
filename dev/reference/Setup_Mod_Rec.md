@@ -293,11 +293,11 @@ rec_seas_prop[, 1] <- 1
   all project an equilibrium age structure forward from `R0` and treat
   `ln_InitDevs` as multiplicative deviations from it. `4`/`"free"`
   projects no equilibrium at all: the numbers at age 2 and older are
-  `exp(ln_InitDevs)` outright, apportioned by sex ratio, with age 1
-  still taken from recruitment. Use it when the initial age structure
-  has no information about `R0` and should not be pulled toward an
-  equilibrium. Note that under `4` the deviations are on the scale of
-  numbers rather than of log ratios, so the penalty applied through
+  `exp(ln_InitDevs)`, apportioned by sex ratio, with age 1 still taken
+  from recruitment. Use it when the initial age structure has no
+  information about `R0` and should not be pulled toward an equilibrium.
+  Note that under `4` the deviations are on the scale of numbers rather
+  than of log ratios, so the penalty applied through
   `equil_init_age_strc` is a prior on log abundance; pair it with
   `equil_init_age_strc = 0` if no such prior is wanted.
 
@@ -818,11 +818,10 @@ rec_seas_prop[, 1] <- 1
 
   Character string, `"est"` (default) or `"fix"`. `"fix"` maps
   `ln_global_R0` off at its starting value, so the recruitment
-  deviations hold log recruitment outright rather than as departures
-  from a level. That is how SAM writes recruitment, where the first
-  year's log numbers at age are the recruitment itself and there is no
-  separate level parameter. The recruitment counterpart of
-  `ln_F_mean_spec` in
+  deviations hold log recruitment rather than as departures from a
+  level. That is how SAM writes recruitment, where the first year's log
+  numbers at age are the recruitment itself and there is no separate
+  level parameter. The recruitment counterpart of `ln_F_mean_spec` in
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
   Under `rec_model = "mean_rec"` the level and the deviations are only

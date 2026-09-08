@@ -371,7 +371,7 @@ estimated regardless. Default <code>0</code>.</p></dd>
 project an equilibrium age structure forward from <code>R0</code> and treat
 <code>ln_InitDevs</code> as multiplicative deviations from it.
 <code>4</code>/<code>"free"</code> projects no equilibrium at all: the numbers at age
-2 and older are <code>exp(ln_InitDevs)</code> outright, apportioned by sex ratio,
+2 and older are <code>exp(ln_InitDevs)</code>, apportioned by sex ratio,
 with age 1 still taken from recruitment. Use it when the initial age
 structure has no information about <code>R0</code> and should not be pulled
 toward an equilibrium.
@@ -882,7 +882,7 @@ Unspecified parameters use internal defaults.</p></dd>
 <dt id="arg-ln-global-r-spec">ln_global_R0_spec<a class="anchor" aria-label="anchor" href="#arg-ln-global-r-spec"></a></dt>
 <dd><p>Character string, <code>"est"</code> (default) or
   <code>"fix"</code>. <code>"fix"</code> maps <code>ln_global_R0</code> off at its starting
-  value, so the recruitment deviations hold log recruitment outright rather
+  value, so the recruitment deviations hold log recruitment rather
   than as departures from a level. That is how SAM writes recruitment, where
   the first year's log numbers at age are the recruitment itself and there is
   no separate level parameter. The recruitment counterpart of

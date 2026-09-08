@@ -1,4 +1,4 @@
-e# Stage 1 of 3: model setup
+# Stage 1 of 3: model setup
 #
 # Recruitment inputs: stock recruit model, steepness, recruitment and initial age deviations, and the
 # spatial, seasonal and sex apportionment of recruits. Setup_Mod_Rec estimates, Setup_Sim_Rec simulates.

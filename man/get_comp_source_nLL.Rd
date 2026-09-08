@@ -21,8 +21,7 @@ get_comp_source_nLL(
   n_model_bins,
   comp_bins_spec,
   AgeingErrorArr = NULL,
-  LenBinMap_lik = NA,
-  LenBinMap_fn = NULL,
+  LenBinMap_fn = function(y, f) NA,
   n_pop,
   n_regions,
   n_yrs,
@@ -75,11 +74,10 @@ data source is fit over. All ones means the whole range.}
 \item{AgeingErrorArr}{Ageing error over year by model bin by observed bin by
 fleet, read only for age compositions.}
 
-\item{LenBinMap_lik}{Model bin to observed bin map, read only for length
-compositions.}
-
-\item{LenBinMap_fn}{Function of year and fleet returning the model bin to
-observed bin map, read only for length compositions on the OSA route.}
+\item{LenBinMap_fn}{Function \code{(y, f)} returning the model bin to observed
+bin map, read only for length compositions. The map varies by neither year
+nor fleet and takes both so it is read the same way \code{AgeingErrorArr}
+is. \code{NA} leaves the observed bins as the model bins.}
 
 \item{n_pop, n_regions, n_yrs, n_seas, n_fleets, n_sexes}{Model dimensions.}
 

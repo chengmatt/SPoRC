@@ -1057,6 +1057,24 @@ bins_or_null <- function(x) {
   return(x)
 }
 
+#' One fleet's fitted bins, or NULL when that fleet is fit over all of them
+#'
+#' The same decision \code{\link{bins_or_null}} makes, taken one fleet at a
+#' time and answered with the bin numbers themselves. The fitting likelihoods
+#' subset a single fleet's observations and need those numbers; the OSA packers
+#' walk every fleet, so they take the whole array.
+#'
+#' @param bins_arr A \code{[n_obs_bins x n_fleets]} 0/1 array.
+#' @param f Fleet index.
+#'
+#' @return Integer vector of the bins fleet \code{f} is fit over, or
+#'   \code{NULL} if it is fit over all of them.
+#' @keywords internal
+fleet_bins_or_null <- function(bins_arr, f) {
+  if(all(bins_arr[,f] == 1)) return(NULL) # nothing restricted, so fit the whole range
+  return(which(bins_arr[,f] == 1)) # the bins this fleet is fit over
+}
+
 #' Validate a model-bin to observed-bin map
 #'
 #' \code{AgeingError} and \code{LenBinMap} are the same operation on different

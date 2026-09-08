@@ -226,7 +226,7 @@ estimated regardless. Default \code{0}.}
 project an equilibrium age structure forward from \code{R0} and treat
 \code{ln_InitDevs} as multiplicative deviations from it.
 \code{4}/\code{"free"} projects no equilibrium at all: the numbers at age
-2 and older are \code{exp(ln_InitDevs)} outright, apportioned by sex ratio,
+2 and older are \code{exp(ln_InitDevs)}, apportioned by sex ratio,
 with age 1 still taken from recruitment. Use it when the initial age
 structure has no information about \code{R0} and should not be pulled
 toward an equilibrium.
@@ -626,7 +626,7 @@ Unspecified parameters use internal defaults.}
 
 \item{ln_global_R0_spec}{Character string, \code{"est"} (default) or
   \code{"fix"}. \code{"fix"} maps \code{ln_global_R0} off at its starting
-  value, so the recruitment deviations hold log recruitment outright rather
+  value, so the recruitment deviations hold log recruitment rather
   than as departures from a level. That is how SAM writes recruitment, where
   the first year's log numbers at age are the recruitment itself and there is
   no separate level parameter. The recruitment counterpart of

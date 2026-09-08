@@ -1228,13 +1228,13 @@ get_seas_comp_exp = function(ExpArr, y, seas, f, seas_agg, p = NULL) {
 #'   data source is fit over. All ones means the whole range.
 #' @param AgeingErrorArr Ageing error over year by model bin by observed bin by
 #'   fleet, read only for age compositions.
-#' @param LenBinMap_lik Model bin to observed bin map, read only for length
-#'   compositions.
 #' @param n_pop,n_regions,n_yrs,n_seas,n_fleets,n_sexes Model dimensions.
 #' @param pop Logical. \code{TRUE} for the population-specific data source, whose arrays
 #'   have a leading population dimension and are never summed over populations.
-#' @param LenBinMap_fn Function of year and fleet returning the model bin to
-#'   observed bin map, read only for length compositions on the OSA route.
+#' @param LenBinMap_fn Function \code{(y, f)} returning the model bin to observed
+#'   bin map, read only for length compositions. The map varies by neither year
+#'   nor fleet and takes both so it is read the same way \code{AgeingErrorArr}
+#'   is. \code{NA} leaves the observed bins as the model bins.
 #' @param addtocomp Small constant added to a composition.
 #' @param comp_const_obs Constant the observations are scaled by.
 #' @param do_internal_comp_osa Logical. \code{TRUE} hands the data source to
@@ -1265,8 +1265,7 @@ get_comp_source_nLL = function(
   n_model_bins,
   comp_bins_spec,
   AgeingErrorArr = NULL,
-  LenBinMap_lik = NA,
-  LenBinMap_fn = NULL,
+  LenBinMap_fn = function(y, f) NA,
   n_pop,
   n_regions,
   n_yrs,
@@ -1331,11 +1330,8 @@ get_comp_source_nLL = function(
 
   } # end if doing OSA
 
-  # bins this fleet is fit over; NULL leaves the whole range in
-  fleet_bins = function(f) if(all(comp_bins_spec[,f] == 1)) NULL else which(comp_bins_spec[,f] == 1)
-
   # age comps read ageing error, length comps read the length bin map
-  ageing_error = function(y, f) if(age_or_len == 0) AgeingErrorArr[y,,,f] else LenBinMap_lik
+  ageing_error = function(y, f) if(age_or_len == 0) AgeingErrorArr[y,,,f] else LenBinMap_fn(y, f)
 
   if(pop) {
 
@@ -1366,7 +1362,7 @@ get_comp_source_nLL = function(
               n_model_bins = n_model_bins,
               n_obs_bins = n_obs_bins,
               addtocomp = addtocomp,
-              comp_bins = fleet_bins(f) # bins this fleet is fit over
+              comp_bins = fleet_bins_or_null(comp_bins_spec, f) # bins this fleet is fit over
             )
 
           } # end seas loop
@@ -1402,7 +1398,7 @@ get_comp_source_nLL = function(
             n_model_bins = n_model_bins,
             n_obs_bins = n_obs_bins,
             addtocomp = addtocomp,
-            comp_bins = fleet_bins(f) # bins this fleet is fit over
+            comp_bins = fleet_bins_or_null(comp_bins_spec, f) # bins this fleet is fit over
           )
 
         } # end seas loop
@@ -1502,8 +1498,6 @@ pack_comp_source_osa = function(
 #'
 #' @param tracked_discrete,tracked_continuous Registered observation vectors, or
 #'   \code{NULL} where no fleet uses that family.
-#' @param LenBinMap_fn Function of year and fleet returning the model bin to
-#'   observed bin map, read only for length compositions.
 #' @inheritParams get_comp_source_nLL
 #' @return \code{nLL_arr}, filled in.
 #' @keywords internal
@@ -1525,7 +1519,7 @@ eval_comp_source_osa = function(
   n_model_bins,
   comp_bins_spec,
   AgeingErrorArr = NULL,
-  LenBinMap_fn = NULL,
+  LenBinMap_fn = function(y, f) NA,
   n_pop,
   n_regions,
   n_yrs,

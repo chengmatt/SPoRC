@@ -90,12 +90,14 @@ compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex
   WAA_srv = state$WAA_srv
   SizeAgeTrans_srv = state$SizeAgeTrans_srv
 
+  # read in from state list
   if(growth_model != 0 && derive_waa == 1 && fish_selex_type == 1 && any(fish_waa_selected == 1)) {
     WAA_fish = growth_selected_waa_year(WAA_fish, SizeAgeTrans_fish, fish_sel_l, wt_len_pars,
                                         growth_len_mid_vals, fish_waa_selected, y,
                                         n_pop, n_regions, n_seas, n_sexes)
   }
 
+  # read in from state list
   if(growth_model != 0 && derive_waa == 1 && srv_selex_type == 1 && any(srv_waa_selected == 1)) {
     WAA_srv = growth_selected_waa_year(WAA_srv, SizeAgeTrans_srv, srv_sel_l, wt_len_pars,
                                        growth_len_mid_vals, srv_waa_selected, y,

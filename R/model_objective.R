@@ -374,7 +374,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   }
 
   # composition bin ranges. older input lists fit every bin, so an all-ones array stands in:
-  # fleet_bins and any_bins return NULL when nothing is restricted and never index into them
+  # bins_or_null and fleet_bins_or_null return NULL when nothing is restricted, so it is never indexed into
   n_lens_bc <- length(get("lens", envir = env))
   for(data_name in c("FishAgeComps_bins", "FishAgeComps_pop_bins", "FishAgeComps_discard_bins",
               "FishAgeComps_discard_pop_bins", "Fish_caal_bins")) {
@@ -519,18 +519,13 @@ SPoRC_rtmb = function(pars, data) {
   maintain_backwards_compatibility() # defaults for input lists built by older SPoRC versions
 
   # Model Set Up (Containers) -----------------------------------------------
+  # a length composition recorded on coarser bins than the model tracks is mapped through LenBinMap.
+  # that is the operation ageing error does on ages, so it is read by year and fleet to match
+  LenBinMap_fn = if(is.null(LenBinMap)) function(y, f) NA else function(y, f) LenBinMap # NA leaves the bins alone
+
   n_ages = length(ages) # number of ages
   n_yrs = length(years) # number of years
   n_lens = length(lens) # number of lengths
-  # length compositions on coarser bins than the model has are mapped through LenBinMap inside the
-  # likelihood, the way ageing error maps model ages onto observed bins; NA leaves the bins alone
-  LenBinMap_lik = if(is.null(LenBinMap)) NA else LenBinMap
-  LenBinMap_fn = if(is.null(LenBinMap)) NULL else function(y, f) LenBinMap
-
-  # composition bin restrictions, NULL when nothing is restricted. fleet_bins serves the fitting
-  # likelihoods one fleet at a time; any_bins serves the OSA packers, which walk every fleet
-  fleet_bins = function(x, f) if(all(x[,f] == 1)) NULL else which(x[,f] == 1)
-  any_bins = bins_or_null
 
   # Recruitment stuff
   n_est_rec_devs = dim(ln_RecDevs)[3] # number of recruitment deviates estimated
@@ -622,11 +617,11 @@ SPoRC_rtmb = function(pars, data) {
   SrvLenComps_pop_nLL = array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)) # Pop-specific Survey Length Comps Likelihoods
   Fish_caal_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets)) # Fishery Conditional Age-at-Length Likelihoods
   Srv_caal_nLL = array(0, dim = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets)) # Survey Conditional Age-at-Length Likelihoods
+
   # Conditional age-at-length is on only where use flags say so
   do_fish_caal = !is.null(UseFish_caal) && any(UseFish_caal == 1)
   do_srv_caal = !is.null(UseSrv_caal) && any(UseSrv_caal == 1)
-  if((do_fish_caal || do_srv_caal) && do_caal != 1)
-    stop("Conditional age-at-length data are being fit, but do_caal is 0, so the joint arrays at length and age were never built. Set do_caal = 1 in Setup_Mod_Biologicals.")
+  if((do_fish_caal || do_srv_caal) && do_caal != 1) stop("Conditional age-at-length data are being fit, but do_caal is 0, so the joint arrays at length and age were never built. Set do_caal = 1 in Setup_Mod_Biologicals.")
 
   # Penalties and Priors
   Fmort_nLL = array(0, dim = dim(ln_F_devs)) # Fishing Mortality Deviation penalty
@@ -694,7 +689,6 @@ SPoRC_rtmb = function(pars, data) {
   if(use_fixed_natmort == 1) natmort = Fixed_natmort # Using fixed natural mortality
 
   ## Growth -------------------------------------------------------------------
-
   use_cohort_growth = growth_model != 0 && growth_tv_type == 1 # whether using growth cohort mode or not
   precomputed_mortality_yrs = if(use_cohort_growth) seq_len(max(1, growth_cohort_styr - 1)) else 1:n_yrs
 
@@ -1175,7 +1169,7 @@ SPoRC_rtmb = function(pars, data) {
   catch_flag_pop = apply(UseCatch_pop[,,1,,,drop = FALSE], c(2,4,5), max)
   catch_flag = pmax(catch_flag_base, catch_flag_pop)
 
-  # a fleet reporting once a year is still fish in every season of that year, so the flag allows fishing instead of where the obs is 
+  # a fleet reporting once a year is still fish in every season of that year, so the flag allows fishing instead of where the obs is
   for(f in seq_len(n_fish_fleets)) {
     if(Catch_seas_Type[f] == 1 || Catch_pop_seas_Type[f] == 1) {
       for(r in 1:n_regions) if(any(catch_flag[r,,f] > 0)) catch_flag[r,,f] = 1
@@ -1598,6 +1592,7 @@ SPoRC_rtmb = function(pars, data) {
 
 
   # Likelihood Equations -------------------------------------------------------------
+
   ## Shared Observation Error and Arrays ------------------------------------
   ### Index observation error -----------------------------------------------
   # standard deviations for every index, fishery and survey
@@ -2023,8 +2018,7 @@ SPoRC_rtmb = function(pars, data) {
       age_or_len = 1, # length compositions
       n_model_bins = n_lens, # model bins
       comp_bins_spec = FishLenComps_bins, # bins this data source is fit over
-      LenBinMap_lik = LenBinMap_lik, # model bin to observed bin map
-      LenBinMap_fn = LenBinMap_fn, # the same map, read on the OSA route
+      LenBinMap_fn = LenBinMap_fn, # model bin to observed bin map
       n_pop = n_pop,
       n_regions = n_regions,
       n_yrs = n_yrs,
@@ -2143,8 +2137,7 @@ SPoRC_rtmb = function(pars, data) {
       age_or_len = 1, # length compositions
       n_model_bins = n_lens, # model bins
       comp_bins_spec = FishLenComps_pop_bins, # bins this data source is fit over
-      LenBinMap_lik = LenBinMap_lik, # model bin to observed bin map
-      LenBinMap_fn = LenBinMap_fn, # the same map, read on the OSA route
+      LenBinMap_fn = LenBinMap_fn, # model bin to observed bin map
       n_pop = n_pop,
       n_regions = n_regions,
       n_yrs = n_yrs,
@@ -2263,8 +2256,7 @@ SPoRC_rtmb = function(pars, data) {
       age_or_len = 1, # length compositions
       n_model_bins = n_lens, # model bins
       comp_bins_spec = FishLenComps_discard_bins, # bins this data source is fit over
-      LenBinMap_lik = LenBinMap_lik, # model bin to observed bin map
-      LenBinMap_fn = LenBinMap_fn, # the same map, read on the OSA route
+      LenBinMap_fn = LenBinMap_fn, # model bin to observed bin map
       n_pop = n_pop,
       n_regions = n_regions,
       n_yrs = n_yrs,
@@ -2383,8 +2375,7 @@ SPoRC_rtmb = function(pars, data) {
       age_or_len = 1, # length compositions
       n_model_bins = n_lens, # model bins
       comp_bins_spec = FishLenComps_discard_pop_bins, # bins this data source is fit over
-      LenBinMap_lik = LenBinMap_lik, # model bin to observed bin map
-      LenBinMap_fn = LenBinMap_fn, # the same map, read on the OSA route
+      LenBinMap_fn = LenBinMap_fn, # model bin to observed bin map
       n_pop = n_pop,
       n_regions = n_regions,
       n_yrs = n_yrs,
@@ -2664,8 +2655,7 @@ SPoRC_rtmb = function(pars, data) {
       age_or_len = 1, # length compositions
       n_model_bins = n_lens, # model bins
       comp_bins_spec = SrvLenComps_bins, # bins this data source is fit over
-        LenBinMap_lik = LenBinMap_lik, # model bin to observed bin map
-        LenBinMap_fn = LenBinMap_fn, # the same map, read on the OSA route
+      LenBinMap_fn = LenBinMap_fn, # model bin to observed bin map
       n_pop = n_pop,
       n_regions = n_regions,
       n_yrs = n_yrs,
@@ -2784,8 +2774,7 @@ SPoRC_rtmb = function(pars, data) {
       age_or_len = 1, # length compositions
       n_model_bins = n_lens, # model bins
       comp_bins_spec = SrvLenComps_pop_bins, # bins this data source is fit over
-        LenBinMap_lik = LenBinMap_lik, # model bin to observed bin map
-        LenBinMap_fn = LenBinMap_fn, # the same map, read on the OSA route
+      LenBinMap_fn = LenBinMap_fn, # model bin to observed bin map
       n_pop = n_pop,
       n_regions = n_regions,
       n_yrs = n_yrs,
@@ -2835,7 +2824,7 @@ SPoRC_rtmb = function(pars, data) {
                 AgeingError = AgeingError_fish[y,,,f],
                 use = UseFish_caal[,y,seas,,f],
                 addtocomp = addtocomp,
-                comp_bins = fleet_bins(Fish_caal_bins, f)
+                comp_bins = fleet_bins_or_null(Fish_caal_bins, f)
               )
             } # if we have fishery caal
           } # end seas loop
@@ -2858,7 +2847,7 @@ SPoRC_rtmb = function(pars, data) {
         n_fleets = n_fish_fleets,
         n_sexes = n_sexes,
         addtocomp = addtocomp,
-        BinsArr = any_bins(Fish_caal_bins)
+        BinsArr = bins_or_null(Fish_caal_bins)
       )
 
       if(!is.null(ObsFish_caal_osa)) {
@@ -2883,7 +2872,7 @@ SPoRC_rtmb = function(pars, data) {
           n_obs_bins = dim(ObsFish_caal)[5],
           AgeingErrorFn = function(y, f) AgeingError_fish[y,,,f],
           addtocomp = addtocomp,
-          BinsArr = any_bins(Fish_caal_bins)
+          BinsArr = bins_or_null(Fish_caal_bins)
         )
       }
 
@@ -2916,7 +2905,7 @@ SPoRC_rtmb = function(pars, data) {
                 AgeingError = AgeingError_srv[y,,,sf],
                 use = UseSrv_caal[,y,seas,,sf],
                 addtocomp = addtocomp,
-                comp_bins = fleet_bins(Srv_caal_bins, sf)
+                comp_bins = fleet_bins_or_null(Srv_caal_bins, sf)
               )
             } # if we have survey caal
           } # end seas loop
@@ -2939,7 +2928,7 @@ SPoRC_rtmb = function(pars, data) {
         n_fleets = n_srv_fleets,
         n_sexes = n_sexes,
         addtocomp = addtocomp,
-        BinsArr = any_bins(Srv_caal_bins)
+        BinsArr = bins_or_null(Srv_caal_bins)
       )
 
       if(!is.null(ObsSrv_caal_osa)) {
@@ -2964,7 +2953,7 @@ SPoRC_rtmb = function(pars, data) {
           n_obs_bins = dim(ObsSrv_caal)[5],
           AgeingErrorFn = function(y, f) AgeingError_srv[y,,,f],
           addtocomp = addtocomp,
-          BinsArr = any_bins(Srv_caal_bins)
+          BinsArr = bins_or_null(Srv_caal_bins)
         )
       }
 

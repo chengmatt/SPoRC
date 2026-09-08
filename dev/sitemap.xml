@@ -145,6 +145,8 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ddirmult2.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ddirmult_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/derive_proj_biom.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dev_own_mean.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dev_share_weights.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dlogistnormal.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dmultinom_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dnbinom_robust_noint.html</loc></url>
@@ -246,6 +248,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_idx_fits.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_idx_fits_plot.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_index_nLL.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_init_devs_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_logistN_Sigma.html</loc></url>
@@ -261,6 +264,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_population_projection.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_q_prior.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_r0_prior.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_rec_devs_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_rec_level_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_recdev_pe_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_recruitment_penalty.html</loc></url>

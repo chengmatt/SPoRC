@@ -1,20 +1,17 @@
-# Recruitment and initial age deviation penalties
+# Initial age deviation penalties
 
-The two deviation penalties the recruitment section owes, gathered so
-the objective reads them in one place: the initial age deviations from
-[`get_init_devs_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/get_init_devs_penalty.md)
-and the recruitment deviations from
-[`get_rec_devs_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/get_rec_devs_penalty.md).
-Called once from the "Recruitment (Penalty)" section of `SPoRC_rtmb.R`.
+Population and region specific penalties on the initial age deviations
+(`ln_InitDevs`), plus the tie holding each later sex's curve near the
+first sex's. Called from
+[`get_recruitment_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/get_recruitment_penalty.md).
 
 ## Usage
 
 ``` r
-get_recruitment_penalty(
+get_init_devs_penalty(
   n_pop,
   n_regions,
   n_ages,
-  n_est_rec_devs,
   rec_region_prop_spec,
   rec_region_prop,
   equil_init_age_strc,
@@ -22,16 +19,6 @@ get_recruitment_penalty(
   init_age_devs_shared,
   ln_sigmaR,
   bias_ramp,
-  sigmaR_switch,
-  ln_RecDevs,
-  sigmaR2_early,
-  sigmaR2_late,
-  do_rec_bias_ramp,
-  map_ln_RecDevs = NULL,
-  RecDevs_model = 1,
-  RecDevs_rho = NULL,
-  RecDevs_rw_init_sigma = 5,
-  RecDevs_pen_center = 0,
   InitDevs_pen_center = 0,
   init_devs_pen_use = NULL,
   Use_init_sex_pen = 0,
@@ -81,51 +68,6 @@ get_recruitment_penalty(
 
   Numeric vector `[year]` of bias ramp adjustment factors.
 
-- sigmaR_switch:
-
-  Integer year index at which the deviations switch from the early to
-  the late sigma regime.
-
-- ln_RecDevs:
-
-  Array `[pop, region, year]` of recruitment deviations.
-
-- sigmaR2_early, sigmaR2_late:
-
-  Arrays `[pop, region]` of squared sigma used for the bias-corrected
-  mean.
-
-- do_rec_bias_ramp:
-
-  Integer switch enabling the bias ramp log sigma term.
-
-- map_ln_RecDevs:
-
-  Array `[pop, region, year]` mirroring `map$ln_RecDevs`. Cells that are
-  `NA` are fixed rather than estimated and go unpenalized; cells sharing
-  a level split one penalty. `NULL` penalizes every cell in full.
-
-- RecDevs_model:
-
-  Integer process error structure: `1` independent, `2` random walk, `3`
-  AR1.
-
-- RecDevs_rho:
-
-  Array `[pop, region]` of unconstrained AR1 correlations, transformed
-  to \\(-1, 1)\\ here. Read when `RecDevs_model = 3`.
-
-- RecDevs_rw_init_sigma:
-
-  Standard deviation given to year one of a random walk. Default `5`,
-  which leaves the level of the series effectively free. `NA` starts the
-  walk at zero under its own sigma. Read when `RecDevs_model = 2`.
-
-- RecDevs_pen_center:
-
-  Integer. `1` centers on the deviations' own weighted mean, `0` on the
-  bias-corrected mean. Read under `RecDevs_model = 1` only.
-
 - InitDevs_pen_center:
 
   Integer. `1` centers on the deviations' own weighted mean, `0` on the
@@ -163,7 +105,24 @@ get_recruitment_penalty(
 
 ## Value
 
-List with `Init_Rec_nLL` and `Init_Sex_nLL` (arrays
-`[pop, region, age, sex]`) and `Rec_nLL` (array `[pop, region, year]`),
-each holding negative log-likelihood penalties and zero where nothing is
-penalized.
+List with `Init_Rec_nLL` (array `[pop, region, age, sex]`) and
+`Init_Sex_nLL` (the same layout, the between-sex tie, zero for the first
+sex and whenever the tie is off), each holding negative log-likelihood
+penalties and zero where nothing is penalized.
+
+## Details
+
+Each penalized deviation is Gaussian on the log scale with the early
+recruitment sigma, \\-\log \phi(d\_{a,s} \mid \mu, \sigma\_{R,1})\\,
+where
+
+- \\d\_{a,s}\\ is the deviation at age \\a\\ and sex \\s\\, log scale,
+  estimated.
+
+- \\\sigma\_{R,1} = \exp(\code{ln_sigmaR\[1,p,r\]})\\ is the early
+  recruitment sigma, log scale.
+
+- \\\mu\\ is the center, either the bias-corrected mean
+  \\-\sigma\_{R,1}^2 b_a / 2\\ with \\b_a\\ the bias ramp read at the
+  year age \\a\\ was born, or the deviations' own weighted mean pooled
+  over ages and sexes.

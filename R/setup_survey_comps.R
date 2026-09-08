@@ -570,10 +570,8 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(SrvAgeComps_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvAgeComps_LikeType')
   check_data_dimensions(SrvLenComps_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvLenComps_LikeType')
-  if(!all(SrvAgeComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for SrvAgeComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(SrvLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for SrvLenComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+  check_comp_like_type(SrvAgeComps_LikeType, "SrvAgeComps_LikeType")
+  check_comp_like_type(SrvLenComps_LikeType, "SrvLenComps_LikeType")
 
   # Survey compositions (population-specific)
   if(any(UseSrvAgeComps_pop == 1)) check_data_dimensions(
@@ -637,10 +635,8 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(SrvAgeComps_pop_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvAgeComps_pop_LikeType')
   check_data_dimensions(SrvLenComps_pop_LikeType, n_srv_fleets = input_list$data$n_srv_fleets, what = 'SrvLenComps_pop_LikeType')
-  if(!all(SrvAgeComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for SrvAgeComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(SrvLenComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for SrvLenComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+  check_comp_like_type(SrvAgeComps_pop_LikeType, "SrvAgeComps_pop_LikeType")
+  check_comp_like_type(SrvLenComps_pop_LikeType, "SrvLenComps_pop_LikeType")
 
   # checking to make sure defaults are not applied
   if(any(UseSrvAgeComps_pop == 1)) {

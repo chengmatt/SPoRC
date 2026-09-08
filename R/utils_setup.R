@@ -1123,6 +1123,64 @@ check_bin_map <- function(x, n_model_bins, what, strict = TRUE, tol = 1e-8) {
   invisible(x)
 }
 
+#' The composition likelihoods a fleet can be given
+#'
+#' @return Character vector of accepted values, in the order the message lists them.
+#' @keywords internal
+comp_like_type_options <- function() {
+  c("none", "Multinomial", "Dirichlet-Multinomial",
+    "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal",
+    "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")
+}
+
+#' Check a composition likelihood setting
+#'
+#' Names the fleets that were given something unrecognized, and suggests the accepted
+#' value when the entry differs only in case, spacing or punctuation.
+#'
+#' @param x Character vector given for the setting, one entry per fleet.
+#' @param what Character. The argument name, used in the message.
+#' @param allowed Character vector of accepted values.
+#' @param note Character. Sentence appended after the accepted values, explaining
+#'   what the less obvious ones do.
+#'
+#' @return \code{x}, invisibly.
+#' @keywords internal
+check_comp_like_type <- function(x, what, allowed = comp_like_type_options(),
+                                 note = paste0("The -miss0 forms drop the empty bins and scale the standard deviation by the ",
+                                               "input sample size.")) {
+
+  bad <- which(!x %in% allowed)
+  if(length(bad) == 0) return(invisible(x))
+
+  # a value differing only in case, spacing or punctuation is a near miss worth naming.
+  # otherwise take the closest accepted value, as long as the edit distance is small
+  # next to the length of the two strings, so "DM" suggests nothing
+  simplify <- function(v) gsub("[^a-z0-9]", "", tolower(v))
+  nearest <- function(v) {
+    if(is.na(v)) return("")
+    hit <- allowed[simplify(allowed) == simplify(v)]
+    if(length(hit) == 0) {
+      d <- as.vector(utils::adist(tolower(v), tolower(allowed)))
+      rel <- d / pmax(nchar(v), nchar(allowed))
+      if(min(rel) <= 0.34) hit <- allowed[which.min(rel)]
+    }
+    if(length(hit) == 0) "" else paste0(', did you mean "', hit[1], '"?')
+  }
+
+  lines <- vapply(bad, function(f) sprintf("  fleet %d was given %s%s", f,
+                                           if(is.na(x[f])) "NA" else paste0('"', x[f], '"'),
+                                           nearest(x[f])), character(1))
+
+  stop(what, " has ", length(bad), " entr", if(length(bad) == 1) "y" else "ies",
+       " SPoRC does not recognize:\n", paste(lines, collapse = "\n"),
+       "\nAccepted values are: ", paste(allowed, collapse = ", "), ".",
+       "\n", note, " \"none\" turns the composition off for that fleet, and the data source is",
+       " still supplied. One entry per fleet, in fleet order.",
+       call. = FALSE)
+}
+
+
 #' Reject a bin restriction that leaves a data source nothing to fit
 #'
 #' A composition fitted over a single bin has no information: the normalized

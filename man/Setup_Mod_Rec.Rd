@@ -308,6 +308,8 @@ Default: zero for all seasons and fleets.}
   freely with \code{init_F_form}, including estimating the proportion itself
   (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
   is generally weakly identified, which is why assessments commonly fix it.
+  \code{"est"} is refused under \code{init_age_strc = "free"}, where no
+  equilibrium is projected and \code{init_F_par} never reaches the objective.
 
   The value is set by the parameter \code{init_F_par}
   \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like

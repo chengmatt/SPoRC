@@ -145,8 +145,9 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
   dim_msg(UseCAAL, use_dim, use_data_field, c("n_regions", "n_years", "n_seas", "n_lens", "n_fleets"))
 
   if(length(CAAL_LikeType) != n_fleets) stop(paste("Dimensions of", like_type_field, "are not correct. Should be a vector of length n_fleets"))
-  if(!all(CAAL_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial")))
-    stop(paste("Invalid specification for", like_type_field, ". Should be either none, Multinomial, or Dirichlet-Multinomial. The logistic-normal families are not available for conditional age-at-length"))
+  check_comp_like_type(CAAL_LikeType, like_type_field,
+                       allowed = c("none", "Multinomial", "Dirichlet-Multinomial"),
+                       note = "The logistic-normal families are not available for conditional age-at-length.")
 
   # Likelihood and composition types -----------------------------------------
   like_vals <- rep(999, n_fleets)

@@ -191,10 +191,8 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_discard_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_discard_LikeType')
   check_data_dimensions(FishLenComps_discard_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_discard_LikeType')
-  if(!all(FishAgeComps_discard_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishAgeComps_discard_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_discard_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishLenComps_discard_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+  check_comp_like_type(FishAgeComps_discard_LikeType, "FishAgeComps_discard_LikeType")
+  check_comp_like_type(FishLenComps_discard_LikeType, "FishLenComps_discard_LikeType")
 
   # Discard Fishery compositions (population-specific)
   if(any(UseFishAgeComps_discard_pop == 1)) check_data_dimensions(
@@ -258,10 +256,8 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_discard_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_discard_pop_LikeType')
   check_data_dimensions(FishLenComps_discard_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_discard_pop_LikeType')
-  if(!all(FishAgeComps_discard_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishAgeComps_discard_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_discard_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishLenComps_discard_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+  check_comp_like_type(FishAgeComps_discard_pop_LikeType, "FishAgeComps_discard_pop_LikeType")
+  check_comp_like_type(FishLenComps_discard_pop_LikeType, "FishLenComps_discard_pop_LikeType")
 
   # checking to make sure defaults are not applied
   if(any(UseFishAgeComps_discard_pop == 1)) {
@@ -1193,10 +1189,8 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_LikeType')
   check_data_dimensions(FishLenComps_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_LikeType')
-  if(!all(FishAgeComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishAgeComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishLenComps_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+  check_comp_like_type(FishAgeComps_LikeType, "FishAgeComps_LikeType")
+  check_comp_like_type(FishLenComps_LikeType, "FishLenComps_LikeType")
 
    # Fishery compositions (population-specific)
   if(any(UseFishAgeComps_pop == 1)) check_data_dimensions(
@@ -1260,10 +1254,8 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   )
   check_data_dimensions(FishAgeComps_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishAgeComps_pop_LikeType')
   check_data_dimensions(FishLenComps_pop_LikeType, n_fish_fleets = input_list$data$n_fish_fleets, what = 'FishLenComps_pop_LikeType')
-  if(!all(FishAgeComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishAgeComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
-  if(!all(FishLenComps_pop_LikeType %in% c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")))
-    stop("Invalid specification for FishLenComps_pop_LikeType Should be either none, Multinomial, Dirichlet-Multinomial, iid-Logistic-Normal, 1d-Logistic-Normal, 2d-Logistic-Normal")
+  check_comp_like_type(FishAgeComps_pop_LikeType, "FishAgeComps_pop_LikeType")
+  check_comp_like_type(FishLenComps_pop_LikeType, "FishLenComps_pop_LikeType")
 
   # checking to make sure defaults are not applied
   if(any(UseFishAgeComps_pop == 1)) {

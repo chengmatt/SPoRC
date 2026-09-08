@@ -1,4 +1,4 @@
-# Stage 1 of 3: model setup
+e# Stage 1 of 3: model setup
 #
 # Recruitment inputs: stock recruit model, steepness, recruitment and initial age deviations, and the
 # spatial, seasonal and sex apportionment of recruits. Setup_Mod_Rec estimates, Setup_Sim_Rec simulates.
@@ -1589,7 +1589,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{RecDevs_model = "rw"}.
 #' @param ln_global_R0_spec Character string, \code{"est"} (default) or
 #'   \code{"fix"}. \code{"fix"} maps \code{ln_global_R0} off at its starting
-#'   value, so the recruitment deviations hold log recruitment outright rather
+#'   value, so the recruitment deviations hold log recruitment rather
 #'   than as departures from a level. That is how SAM writes recruitment, where
 #'   the first year's log numbers at age are the recruitment itself and there is
 #'   no separate level parameter. The recruitment counterpart of
@@ -1633,7 +1633,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   project an equilibrium age structure forward from \code{R0} and treat
 #'   \code{ln_InitDevs} as multiplicative deviations from it.
 #'   \code{4}/\code{"free"} projects no equilibrium at all: the numbers at age
-#'   2 and older are \code{exp(ln_InitDevs)} outright, apportioned by sex ratio,
+#'   2 and older are \code{exp(ln_InitDevs)}, apportioned by sex ratio,
 #'   with age 1 still taken from recruitment. Use it when the initial age
 #'   structure has no information about \code{R0} and should not be pulled
 #'   toward an equilibrium.
@@ -1724,6 +1724,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   freely with \code{init_F_form}, including estimating the proportion itself
 #'   (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
 #'   is generally weakly identified, which is why assessments commonly fix it.
+#'   \code{"est"} is refused under \code{init_age_strc = "free"}, where no
+#'   equilibrium is projected and \code{init_F_par} never reaches the objective.
 #'
 #'   The value is set by the parameter \code{init_F_par}
 #'   \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
@@ -2042,6 +2044,14 @@ Setup_Mod_Rec <- function(input_list,
 
   init_F_form_num <- convert_to_numeric(init_F_form, list(prop = 0, abs = 1))
   init_F_est      <- convert_to_numeric(init_F_spec, list(fix = 0, est = 1))
+
+  # a free initial age structure is exp(ln_InitDevs), so no equilibrium is projected
+  # under an initial F and init_F_par never reaches the objective
+  if(init_F_est == 1 && init_age_strc == 4)
+    stop("init_F_spec = 'est' with init_age_strc = 'free' leaves init_F_par unidentified: the free ",
+         "initialization takes the numbers at age 2 and older as exp(ln_InitDevs), so no ",
+         "equilibrium is projected under an initial F and init_F_par never reaches the objective.")
+
   init_F_dim <- c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)
   init_F_off <- if(init_F_form_num == 0) stats::qlogis(1e-10) else log(1e-100)
 

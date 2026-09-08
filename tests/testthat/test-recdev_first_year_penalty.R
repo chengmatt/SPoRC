@@ -37,7 +37,7 @@ test_that("the penalty drops those years and nothing else", {
   penalty <- function(map_mirror) {
     SPoRC:::get_recruitment_penalty(
       n_pop = 1, n_regions = 1, n_ages = seasonal_M_cfg$n_ages, n_est_rec_devs = n_yrs,
-      rec_dd = 0, natal_region = 1, rec_region_prop_spec = 0,
+      rec_region_prop_spec = 0,
       rec_region_prop = matrix(1, 1, 1), equil_init_age_strc = 0,
       ln_InitDevs = array(0, dim = c(1, 1, seasonal_M_cfg$n_ages - 1, 1)),
       init_age_devs_shared = NA, ln_sigmaR = array(log(0.5), dim = c(2, 1, 1)),

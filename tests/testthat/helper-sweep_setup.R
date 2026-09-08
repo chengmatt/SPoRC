@@ -366,7 +366,7 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
     res <- sweep_build_with(stage, arg, probe, dims = dims, extra = extra)
     if(!inherits(res, "condition")) next
     cand <- gsub("\n", " ", conditionMessage(res))
-    if(grepl("one of|Valid options|Should be|must be", cand)) { msg <- cand; break }
+    if(grepl("one of|Valid options|Accepted values|Should be|must be", cand)) { msg <- cand; break }
     if(!nzchar(msg)) msg <- cand
   }
   if(!nzchar(msg)) return(character(0))
@@ -374,7 +374,8 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
   # The message forms the package uses to name what it will accept. They differ
   # by author rather than by meaning, so all of them are read here instead of
   # keeping a second copy of the surface that would fall out of step with the first.
-  patterns <- c("(?<=Should be one of these: ).*", "(?<=Valid options: ).*",
+  patterns <- c("(?<=Accepted values are: ).*",
+                "(?<=Should be one of these: ).*", "(?<=Valid options: ).*",
                 "(?<=Must be one of: ).*", "(?<=Must be one of these: ).*",
                 "(?<=Should be one of: ).*", "(?<=one of these: ).*",
                 "(?<=Should be either ).*", "(?<=Should be ).*", "(?<=must be ).*")

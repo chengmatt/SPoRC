@@ -154,8 +154,6 @@ rec_pen_args <- function(ln_RecDevs, map_ln_RecDevs, ln_sigmaR, sigmaR_switch, .
     n_regions = n_regions,
     n_ages = n_ages,
     n_est_rec_devs = dim(ln_RecDevs)[3],
-    rec_dd = 999,
-    natal_region = seq_len(n_pop),
     rec_region_prop_spec = 0,
     rec_region_prop = array(1 / n_regions, dim = c(n_pop, n_regions)),
     equil_init_age_strc = 0, # no initial age penalty, so only Rec_nLL is under test

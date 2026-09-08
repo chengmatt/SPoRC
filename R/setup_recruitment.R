@@ -2050,7 +2050,9 @@ Setup_Mod_Rec <- function(input_list,
   if(init_F_est == 1 && init_age_strc == 4)
     stop("init_F_spec = 'est' with init_age_strc = 'free' leaves init_F_par unidentified: the free ",
          "initialization takes the numbers at age 2 and older as exp(ln_InitDevs), so no ",
-         "equilibrium is projected under an initial F and init_F_par never reaches the objective.")
+         "equilibrium is projected under an initial F and init_F_par never reaches the objective. ",
+         "Use init_F_spec = 'fix' here, or an equilibrium init_age_strc if the initial F is meant to ",
+         "set the age structure.")
 
   init_F_dim <- c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)
   init_F_off <- if(init_F_form_num == 0) stats::qlogis(1e-10) else log(1e-100)

@@ -103,8 +103,6 @@ test_that("a deviation-specific Wt_Rec excludes years from the recruitment penal
       n_regions = n_regions,
       n_ages = n_ages,
       n_est_rec_devs = n_dev,
-      rec_dd = 0,
-      natal_region = 1,
       rec_region_prop_spec = 0,
       rec_region_prop = array(1, dim = c(n_pop, n_regions)),
       equil_init_age_strc = 2,

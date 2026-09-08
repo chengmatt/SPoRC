@@ -1,195 +1,61 @@
 # Stage 2 of 3: objective function
 #
-# Initial numbers at age: the equilibrium age structure the model starts from, including the
-# equilibrium plus group when movement is present.
+# Initial numbers at age: the equilibrium age structure the model starts from, and how the
+# plus group is closed when there is movement.
 
-# Initial Numbers at Age ----------------------------------------------------
-
-#' Initialize Numbers-at-Age (NAA) for a Population Model
+#' Initial Numbers-at-Age (NAA)
 #'
-#' Computes equilibrium initial numbers-at-age (NAA) for a structured population
-#' model across populations, regions, sexes, and ages. Several initialization
-#' methods are supported, ranging from numerical iteration to analytical
-#' geometric-series solutions that optionally incorporate seasonal movement.
+#' Numbers at age in the first model year, by population, region, age and sex, at the
+#' equilibrium implied by constant recruitment, mortality and movement.
+#' \code{init_age_strc} chooses how that equilibrium is solved, and \code{ln_InitDevs}
+#' then deviates each age away from it.
 #'
-#' The resulting age structure represents an equilibrium population under
-#' constant recruitment (\eqn{R_0}), mortality, fishing mortality, and movement.
-#'
-#' @param init_age_strc Integer specifying the initialization method:
-#' \itemize{
-#' \item \code{0} Iterative equilibrium solution
-#' \item \code{1} Scalar geometric-series solution (no movement in any age)
-#' \item \code{2} Matrix geometric-series solution (movement allowed)
-#' \item \code{3} Hybrid solution: movement in ages < plus group, scalar solution for plus group
-#' }
-#'
-#' @param init_iter Integer; number of annual iterations used when
-#'   \code{init_age_strc = 0}.
-#'
-#' @param n_regions Integer; number of spatial regions.
-#' @param n_pop Integer; number of populations.
-#' @param n_sexes Integer; number of sexes.
-#' @param n_ages Integer; number of age classes (including the plus group).
-#' @param n_seas Integer; number of seasons per year.
-#' @param n_fish_fleets Integer; number of fishing fleets.
-#'
-#' @param seasdur Numeric vector (\code{n_seas}) giving the fraction of the year
-#'   represented by each season.
-#'
-#' @param rec_seas_prop Matrix (\code{n_pop x n_seas}) giving seasonal recruitment
-#'   proportions.
-#'
-#' @param natmort Array (\code{n_pop x n_regions x n_seas x n_ages x n_sexes}) of
-#'   natural mortality, a rate per year in each season.
-#'
-#' @param natmort_annual Array (\code{n_pop x n_regions x n_ages x n_sexes}) of
-#'   the annual total, the duration weighted sum over seasons. Read by the
-#'   equilibrium seed and the plus group series, which step a whole year at once.
-#'   Defaults to that sum.
-#'
-#' @param init_F Numeric array (\code{n_regions x n_seas x n_fish_fleets})
-#'   giving fishing mortality applied in each region, season, and fleet during
-#'   initialization. Set to zero for an unfished population.
-#'
-#' @param fish_sel Array
-#'   (\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets})
-#'   of total fishery selectivity at age.
-#'
-#' @param R0_r Matrix (\code{n_pop x n_regions}) giving unfished recruitment
-#'   allocated to each region.
-#'
-#' @param sexratio Array (\code{n_pop x n_regions x n_sexes}) giving the
-#'   proportion of recruits by sex.
-#'
+#' @param init_age_strc Integer, how the initial age structure is solved: \code{0} iterates
+#'   the annual cycle \code{init_iter} times, \code{1} scalar geometric series with no
+#'   movement at any age, \code{2} matrix geometric series with movement at every age,
+#'   \code{3} movement below the plus group and a scalar series for the plus group,
+#'   \code{4} no equilibrium at all, ages 2 and older are \code{exp(ln_InitDevs)}
+#'   apportioned by sex ratio.
+#' @param init_iter Integer, annual cycles run when \code{init_age_strc = 0}.
+#' @param n_regions,n_pop,n_sexes,n_ages,n_seas,n_fish_fleets Integer dimensions.
+#'   \code{n_ages} includes the plus group.
+#' @param seasdur Numeric vector (\code{n_seas}) of each season's fraction of a year.
+#' @param rec_seas_prop Matrix (\code{n_pop x n_seas}) of the share of annual recruitment
+#'   entering in each season.
+#' @param natmort Array (\code{n_pop x n_regions x n_seas x n_ages x n_sexes}) of natural
+#'   mortality, a rate per year applied within each season.
+#' @param natmort_annual Array (\code{n_pop x n_regions x n_ages x n_sexes}) of the annual
+#'   total, the duration weighted sum over seasons, read by the steps that advance a whole
+#'   year at once. Defaults to that sum.
+#' @param init_F Numeric array (\code{n_regions x n_seas x n_fish_fleets}) of fully selected
+#'   fishing mortality during initialization. Zero for an unfished population.
+#' @param dmr Numeric array (\code{n_regions x n_seas x n_fish_fleets}) of the discard
+#'   mortality rate during initialization.
+#' @param fish_sel,ret_sel Arrays
+#'   (\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets}) of total fishery
+#'   selectivity at age and of the proportion of those fish retained.
+#' @param R0_r Matrix (\code{n_pop x n_regions}) of unfished recruitment allocated to each region.
+#' @param sexratio Array (\code{n_pop x n_regions x n_sexes}) of the proportion of recruits by sex.
 #' @param Movement Array
-#'   (\code{n_pop x origin x destination x n_seas x n_ages x n_sexes})
-#'   containing seasonal movement probabilities.
+#'   (\code{n_pop x n_regions x n_regions x n_seas x n_ages x n_sexes}) of seasonal movement
+#'   probabilities, where \code{Movement[p,r,r2,,,]} is the fraction of the fish in region
+#'   \code{r} that move to region \code{r2}.
+#' @param do_recruits_move Integer, \code{0} recruits stay in their region for their first
+#'   year, \code{1} recruits move with every other age.
+#' @param ln_InitDevs Array (\code{n_pop x n_regions x (n_ages - 1) x n_sexes}) of log scale
+#'   deviations for ages 2 and older. A 3-D array without the sex dimension is expanded
+#'   across sexes as one shared curve. Under \code{init_age_strc = 4} these are the numbers
+#'   themselves rather than multipliers on an equilibrium.
+#' @param Mrate Array dimensioned like \code{Movement} of instantaneous movement rates.
+#'   Required when \code{move_timing = 2}, ignored otherwise.
+#' @param move_timing Integer ordering of movement and mortality within a season: \code{0}
+#'   movement then mortality, \code{1} mortality then movement, \code{2} both at once. See
+#'   \code{\link{build_seas_operator}}.
+#' @param expm_nsub Integer, how the matrix exponential is taken under \code{move_timing = 2}:
+#'   \code{0} uses \code{Matrix::expm}, \eqn{n \ge 1} the implicit backward Euler scheme. See
+#'   \code{\link{mat_exp}}.
 #'
-#' @param do_recruits_move Integer indicator:
-#' \itemize{
-#' \item \code{0} Recruits do not move during their first year
-#' \item \code{1} Recruits move according to the movement matrix
-#' }
-#'
-#' @param ln_InitDevs Array (\code{n_pop x n_regions x (n_ages - 1) x n_sexes})
-#'   containing log-scale deviations applied to ages 2 through \eqn{A}. A 3-D
-#'   array without the sex dimension is accepted and broadcast across sexes as
-#'   one shared curve.
-#'
-#' @param dmr Numeric array (\code{n_regions x n_seas x n_fish_fleets})
-#'   giving discard mortality rate applied in each region, season, and fleet during
-#'   initialization (first year). Set to zero for an unfished population.
-#' @param ret_sel Array
-#'   (\code{n_pop x n_regions x n_seas x n_ages x n_sexes x n_fish_fleets})
-#'   of retained fishery selectivity at age.
-#'
-#' @details
-#'
-#' Initial numbers-at-age are derived assuming constant recruitment
-#' (\eqn{R_0}) and constant mortality and movement.
-#'
-#' Let
-#'
-#' \itemize{
-#' \item \eqn{N_{p,r,a,s}} denote numbers-at-age
-#' \item \eqn{M_{p,r,a}} denote natural mortality
-#' \item \eqn{F_{r,a,s}} denote total fishing mortality (retained + dead discards)
-#' \item \eqn{Z = M + F} denote total mortality
-#' }
-#'
-#' Recruitment at age 1 is
-#'
-#' \deqn{
-#' N_{p,r,1,s} = R_{0,p,r} \times sexratio_{p,r,s}
-#' }
-#'
-#' Within-season survival follows
-#'
-#' \deqn{
-#' N_{p,r,a,s+1} =
-#' N_{p,r,a,s}\exp(-Z_{p,r,a,s})
-#' }
-#'
-#' Ages advance at the end of the final season of the year:
-#'
-#' \deqn{
-#' N_{p,r,a+1,1} =
-#' N_{p,r,a,n_{seas}}
-#' \exp(-Z_{p,r,a,n_{seas}})
-#' }
-#'
-#' The plus group accumulates survivors from the terminal age:
-#'
-#' \deqn{
-#' N_{A^+} =
-#' N_{A-1} e^{-Z_{A-1}} +
-#' N_{A^+} e^{-Z_{A^+}}
-#' }
-#'
-#' Fishing mortality at age is decomposed into retained and dead discard
-#' components, summed across all fleets:
-#'
-#' \deqn{
-#' F_{p,r,s,a} = \sum_{f=1}^{n_f} F^{init}_{r,s,f} \left[
-#' sel_{p,r,s,a,f} \cdot ret_{p,r,s,a,f} +
-#' sel_{p,r,s,a,f} \cdot (1 - ret_{p,r,s,a,f}) \cdot dmr_{r,s,f}
-#' \right]
-#' }
-#'
-#' where \eqn{sel} is total fishery selectivity, \eqn{ret} is retention
-#' selectivity, and \eqn{dmr} is the discard mortality rate.
-#'
-#' ### Scalar geometric-series solution
-#'
-#' When movement is absent, equilibrium abundance follows
-#'
-#' \deqn{
-#' N_a =
-#' N_1 \exp\left(-\sum_{i=1}^{a-1} Z_i \right)
-#' }
-#'
-#' The plus group has a closed-form solution
-#'
-#' \deqn{
-#' N_{A^+} =
-#' \frac{N_{A-1} e^{-Z_{A-1}}}
-#' {1 - e^{-Z_{A^+}}}
-#' }
-#'
-#' ### Matrix geometric-series solution
-#'
-#' When movement occurs, survival and movement are combined into
-#' seasonal transition matrices:
-#'
-#' \deqn{
-#' \mathbf{T}_a =
-#' \prod_{s=1}^{n_{seas}}
-#' \mathbf{M}_{a,s}\mathbf{S}_{a,s}
-#' }
-#'
-#' where
-#'
-#' \itemize{
-#' \item \eqn{\mathbf{M}} is the movement transition matrix
-#' \item \eqn{\mathbf{S}} is a diagonal matrix of survival probabilities
-#' }
-#'
-#' The plus group equilibrium satisfies
-#'
-#' \deqn{
-#' \mathbf{N}_{A^+} =
-#' (\mathbf{I} - \mathbf{T}_{A^+})^{-1}
-#' \mathbf{T}_{A-1}
-#' \mathbf{N}_{A-1}
-#' }
-#'
-#' The iterative method (\code{init_age_strc = 0}) numerically applies
-#' the full seasonal population dynamics repeatedly until the population
-#' converges to equilibrium.
-#'
-#' After equilibrium is derived, log-scale initial age deviations
-#' (\code{ln_InitDevs}) are applied multiplicatively to ages
-#' \eqn{2,\dots,A}.
+#' @return Array (\code{n_pop x n_regions x n_ages x n_sexes}) of initial numbers at age.
 #'
 #' @keywords internal
 Get_Init_NAA <- function(

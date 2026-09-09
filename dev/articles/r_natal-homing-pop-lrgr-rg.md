@@ -36,6 +36,7 @@ spatial footprint.
 ``` r
 
 library(SPoRC)
+library(dplyr)
 library(ggplot2)
 library(here)
 set.seed(555)

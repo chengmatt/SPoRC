@@ -995,7 +995,7 @@ Results from both scenarios are combined into a single object
 
 sim_res_rand <- run_parallel_simulations(mp_list, sim_list_rand, n_cores = 8)
 sim_res_crash <- run_parallel_simulations(mp_list, sim_list_crash, n_cores = 8)
-sim_all <- list(rand = sim_res_rand) # combine scenarios
+sim_all <- list(rand = sim_res_rand, crash = sim_res_crash) # combine scenarios
 ```
 
 ## Process Results
@@ -1007,6 +1007,12 @@ these quantities across their time-series (and within each time point)
 as the median and their associated 95% simulation intervals.
 
 ``` r
+
+# storage across scenarios and management procedures
+ssb_results <- NULL
+rec_results <- NULL
+catch_results <- NULL
+f_results <- NULL
 
 for(i in 1:length(sim_all)) {
 

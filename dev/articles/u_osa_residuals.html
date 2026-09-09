@@ -80,19 +80,6 @@
 
     
     
-<div class="section level3">
-<h3 id="age-disaggregated-observations">Age-disaggregated observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
-</h3>
-<p>Catch at age, discards at age, and the survey index at age all
-support one-step-ahead residuals. Pass the at-age name as
-<code>index_source</code>:</p>
-<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">osa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">fitted</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"CatchAA"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">osa</span><span class="op">)</span></span></code></pre></div>
-<p>Valid at-age sources are <code>"CatchAA"</code>,
-<code>"DiscardAA"</code> and <code>"SrvIdxAA"</code>, each with a
-<code>pop = TRUE</code> variant. The returned data frame has an extra
-<code>age</code> column, which the residual plots facet on.</p>
 <p>Raw (Pearson) residuals from compositional, count, and index data can
 be difficult to interpret given that multinomial/Dirichlet-multinomial
 proportions are correlated within a year (they must sum to one), tag
@@ -177,7 +164,6 @@ element, <code>res</code>, a data frame of residuals that can be passed
 directly to <code><a href="../reference/plot_resids.html">plot_resids()</a></code>, which produces a QQ-plot (with
 an SDNR annotation) and a second diagnostic plot (a bubble plot for
 compositions/tags, or a residual-vs-year plot for index-type data).</p>
-</div>
 <div class="section level2">
 <h2 id="two-computation-modes">Two computation modes<a class="anchor" aria-label="anchor" href="#two-computation-modes"></a>
 </h2>
@@ -223,7 +209,7 @@ fitted objective function.</p>
 (single-region GOA Dusky Rockfish) so the two can be compared directly,
 plus a simulated multi-population, tagging-enabled model for the
 internal-only data types.</p>
-<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
 <span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://tidyverse.tidyverse.org" class="external-link">tidyverse</a></span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_dusky_data"</span><span class="op">)</span></span></code></pre></div>
@@ -235,7 +221,7 @@ internal-only data types.</p>
 observed/expected proportions from the model report, and
 <code><a href="../reference/get_osa.html">get_osa()</a></code> (no <code>model=</code> argument) computes OSA
 residuals from those arrays via <code>compResidual</code>.</p>
-<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
 <span>  years <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span>,</span>
 <span>  ages <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mod_ages</span>,</span>
@@ -407,7 +393,7 @@ residuals from those arrays via <code>compResidual</code>.</p>
 <code><a href="../reference/get_osa.html">get_osa()</a></code> is then called with
 <code>model =</code>/<code>data =</code> instead of
 <code>obs_mat =</code>/<code>exp_mat =</code>.</p>
-<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
 <span>  years <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span>,</span>
 <span>  ages <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mod_ages</span>,</span>
@@ -556,7 +542,7 @@ catch observations for Dusky rockfish during these periods (i.e.,
 catches were recorded a a mix of different rockfish species earlier in
 the time series, and the variance is adjusted to reflect increased
 uncertainty in the catch observation).</p>
-<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">catch_int</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"Catch"</span><span class="op">)</span></span>
 <span><span class="va">srvidx_int</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"SrvIdx"</span><span class="op">)</span></span>
 <span><span class="co"># index_source = "Discard"/"FishIdx" follow the identical interface (omitted</span></span>
@@ -566,6 +552,21 @@ uncertainty in the catch observation).</p>
 <span><span class="va">resid_catch</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">catch_int</span><span class="op">)</span></span>
 <span><span class="va">resid_srvidx</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">srvidx_int</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/u_internal_index.png"></p>
+</div>
+<div class="section level3">
+<h3 id="age-disaggregated-observations">Age-disaggregated observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations"></a>
+</h3>
+<p>Catch at age, discards at age, and the survey index at age all
+support one-step-ahead residuals. Pass the at-age name as
+<code>index_source</code>. This case study fits aggregated catch, so the
+call below is for a model that fits catch at age:</p>
+<div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">osa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"CatchAA"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">osa</span><span class="op">)</span></span></code></pre></div>
+<p>Valid at-age sources are <code>"CatchAA"</code>,
+<code>"DiscardAA"</code> and <code>"SrvIdxAA"</code>, each with a
+<code>pop = TRUE</code> variant. The returned data frame has an extra
+<code>age</code> column, which the residual plots facet on.</p>
 </div>
 <div class="section level3">
 <h3 id="population-specific-and-tagging-data">Population-specific and tagging data<a class="anchor" aria-label="anchor" href="#population-specific-and-tagging-data"></a>

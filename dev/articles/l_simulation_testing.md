@@ -33,6 +33,10 @@ We start by defining the structural dimensions of the operating model.
 
 ``` r
 
+library(SPoRC)
+library(dplyr)
+library(ggplot2)
+
 sim_list <- Setup_Sim_Dim(
   n_sims        = 50,  # number of simulations
   n_yrs         = 30,  # number of years
@@ -403,7 +407,7 @@ self_test <- simulation_self_test(
   random = NULL,
   rep = dusky_rtmb_model$rep,
   sd_rep = dusky_rtmb_model$sdrep,
-  n_sims = 500, 
+  n_sims = 300, 
   newton_loops = 3,
   do_sdrep = FALSE,
   do_par = TRUE,

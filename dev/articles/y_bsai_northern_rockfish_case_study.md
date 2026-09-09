@@ -381,7 +381,17 @@ specification difference between the two stages.
 ``` r
 
 bridge_list <- input_list
-bridge_list$data <- cap_bsai_nork_srv_sel(bridge_list$data, dat)
+
+# the survey curve as the assessment evaluates it: logistic out to age 30, held flat beyond
+srv_sel <- 1 / (1 + exp(-mle$sel_aslope_srv * (dat$ages - mle$sel_a50_srv)))
+srv_sel[dat$ages > 30] <- srv_sel[dat$ages == 30]
+
+srv_sel_input <- array(0, dim = c(dat$n_pop, dat$n_regions, n_yrs, dat$n_seas,
+                                  n_ages, dat$n_sexes, dat$n_srv_fleets))
+for(y in seq_len(n_yrs)) srv_sel_input[1, 1, y, 1, , 1, 1] <- srv_sel
+
+bridge_list$data$use_fixed_srv_sel <- 1
+bridge_list$data$srv_sel_input <- srv_sel_input
 
 obj <- fit_model(bridge_list$data, bridge_list$par, bridge_list$map,
                  do_optim = FALSE, silent = TRUE)

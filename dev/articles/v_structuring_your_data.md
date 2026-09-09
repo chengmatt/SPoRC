@@ -163,7 +163,11 @@ aggregated arrays, with an extra index for age:
 
 ``` r
 
-ObsCatchAA <- array(0, dim = c(n_regions, n_years, n_seas, n_ages, n_fish_fleets))
+raw_caa <- expand.grid(year = years, age = ages)
+raw_caa$fleet <- 1
+raw_caa$catch <- rpois(nrow(raw_caa), lambda = 8)
+
+ObsCatchAA <- array(0, dim = c(n_regions, length(years), n_seas, length(ages), n_fish_fleets))
 UseCatchAA <- array(0, dim = dim(ObsCatchAA))
 
 for(i in seq_len(nrow(raw_caa))) {
@@ -199,6 +203,9 @@ positions, not literal values: year `1` means `years[1]`, not the
 calendar year 2016.
 
 ``` r
+
+n_pop <- 1
+n_regions <- 2 # the tagging example needs a second region for a tag to move into
 
 conv_tag_release_indicator <- matrix(
   c(1, 1, 1,   # region 1, year index 1, season 1

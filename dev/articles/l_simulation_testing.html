@@ -113,7 +113,11 @@ observation model uses default settings:</p>
 <p>We start by defining the structural dimensions of the operating
 model.</p>
 <div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Dim.html">Setup_Sim_Dim</a></span><span class="op">(</span></span>
+<code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://chengmatt.github.io/SPoRC">SPoRC</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://dplyr.tidyverse.org" class="external-link">dplyr</a></span><span class="op">)</span></span>
+<span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://ggplot2.tidyverse.org" class="external-link">ggplot2</a></span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Dim.html">Setup_Sim_Dim</a></span><span class="op">(</span></span>
 <span>  n_sims        <span class="op">=</span> <span class="fl">50</span>,  <span class="co"># number of simulations</span></span>
 <span>  n_yrs         <span class="op">=</span> <span class="fl">30</span>,  <span class="co"># number of years</span></span>
 <span>  n_regions     <span class="op">=</span> <span class="fl">1</span>,   <span class="co"># single region</span></span>
@@ -465,7 +469,7 @@ SSB and recruitment.</p>
 <span>  random <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  rep <span class="op">=</span> <span class="va">dusky_rtmb_model</span><span class="op">$</span><span class="va">rep</span>,</span>
 <span>  sd_rep <span class="op">=</span> <span class="va">dusky_rtmb_model</span><span class="op">$</span><span class="va">sdrep</span>,</span>
-<span>  n_sims <span class="op">=</span> <span class="fl">500</span>, </span>
+<span>  n_sims <span class="op">=</span> <span class="fl">300</span>, </span>
 <span>  newton_loops <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  do_sdrep <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  do_par <span class="op">=</span> <span class="cn">TRUE</span>,</span>

@@ -1088,7 +1088,7 @@ performance.</p>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">sim_res_rand</span> <span class="op">&lt;-</span> <span class="fu">run_parallel_simulations</span><span class="op">(</span><span class="va">mp_list</span>, <span class="va">sim_list_rand</span>, n_cores <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
 <span><span class="va">sim_res_crash</span> <span class="op">&lt;-</span> <span class="fu">run_parallel_simulations</span><span class="op">(</span><span class="va">mp_list</span>, <span class="va">sim_list_crash</span>, n_cores <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
-<span><span class="va">sim_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rand <span class="op">=</span> <span class="va">sim_res_rand</span><span class="op">)</span> <span class="co"># combine scenarios</span></span></code></pre></div>
+<span><span class="va">sim_all</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>rand <span class="op">=</span> <span class="va">sim_res_rand</span>, crash <span class="op">=</span> <span class="va">sim_res_crash</span><span class="op">)</span> <span class="co"># combine scenarios</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="process-results">Process Results<a class="anchor" aria-label="anchor" href="#process-results"></a>
@@ -1099,7 +1099,13 @@ biomass, recruitment, catch, fishing mortality rates. We then summarize
 these quantities across their time-series (and within each time point)
 as the median and their associated 95% simulation intervals.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sim_all</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<code class="sourceCode R"><span><span class="co"># storage across scenarios and management procedures</span></span>
+<span><span class="va">ssb_results</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
+<span><span class="va">rec_results</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
+<span><span class="va">catch_results</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
+<span><span class="va">f_results</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
+<span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sim_all</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span></span>
 <span>  <span class="co"># extract out recruitment scenario</span></span>
 <span>  <span class="va">sim_tmp</span> <span class="op">&lt;-</span> <span class="va">sim_all</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span></span>

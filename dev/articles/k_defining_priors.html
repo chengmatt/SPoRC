@@ -475,20 +475,26 @@ value for all terms, or a list naming them individually.
 normalized, the first because it sums only the bins that decrease and
 the second because its statistic is already a mean.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># One fleet, curvature and dome on ages 4 to 10, and a random walk that acts</span></span>
-<span><span class="co"># only in the years the curve is allowed to move.</span></span>
+<code class="sourceCode R"><span><span class="co"># curvature and dome on ages 4 to 10 for fleet 1, and a random walk that acts</span></span>
+<span><span class="co"># only in the years the curve is allowed to move. fleet 2 gets no penalty</span></span>
+<span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span></span>
+<span><span class="va">block_change_years</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">40</span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">yr_wt</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">n_yrs</span><span class="op">)</span></span>
 <span><span class="va">yr_wt</span><span class="op">[</span><span class="va">block_change_years</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fl">0.2</span><span class="op">^</span><span class="fl">2</span><span class="op">)</span>   <span class="co"># a walk with sigma = 0.2</span></span>
 <span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>  fish_sel_pen_wts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
-<span>    smooth_bin_curve <span class="op">=</span> <span class="fl">0.5</span>,</span>
-<span>    smooth_dome      <span class="op">=</span> <span class="fl">3.1</span>,</span>
-<span>    smooth_yr_diff   <span class="op">=</span> <span class="va">yr_wt</span>,</span>
-<span>    bin_range        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">10</span><span class="op">)</span>,</span>
-<span>    normalize        <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span>  <span class="op">)</span><span class="op">)</span></span>
+<span>  fish_sel_pen_wts <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
+<span>      smooth_bin_curve <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>      smooth_dome      <span class="op">=</span> <span class="fl">3.1</span>,</span>
+<span>      smooth_yr_diff   <span class="op">=</span> <span class="va">yr_wt</span>,</span>
+<span>      bin_range        <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">4</span>, <span class="fl">10</span><span class="op">)</span>,</span>
+<span>      normalize        <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>    <span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
+<span>  <span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p>With <code>normalize = FALSE</code>, a first-difference weight of
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>2</mn><msubsup><mi>σ</mi><mi>y</mi><mn>2</mn></msubsup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">1/(2\sigma_{y}^{2})</annotation></semantics></math>
@@ -803,7 +809,35 @@ to it exactly as they do to a curve that generates recruitment.</p>
 <span>  sr_pen_sigma <span class="op">=</span> <span class="fl">0.5</span>,              <span class="co"># standard deviation of the log residual</span></span>
 <span>  sr_pen_yrs   <span class="op">=</span> <span class="fl">1980</span><span class="op">:</span><span class="fl">2015</span>,        <span class="co"># years summed over; defaults to all with a lagged SSB</span></span>
 <span>  sr_R0_spec   <span class="op">=</span> <span class="st">"shared"</span>          <span class="co"># "shared", "est", or "rinit"</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initialization F is fixed as a proportion of the mean F (moves with ln_F_mean).</span></span>
+<span><span class="co">#&gt; Recruitment is specified as: mean_rec</span></span>
+<span><span class="co">#&gt; Recruitment Density Dependence is specified as: global</span></span>
+<span><span class="co">#&gt; Recruitment regional proportion priors are: Not Used</span></span>
+<span><span class="co">#&gt; Recruitment seasonal proportion priors are: Not Used</span></span>
+<span><span class="co">#&gt; Recruitment seasonal proportions is: fix</span></span>
+<span><span class="co">#&gt; Stray rates for population 1 specified with 1 block(s).</span></span>
+<span><span class="co">#&gt; Stray rate prior is: Not Used</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 1</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 2</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 3</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 4</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 5</span></span>
+<span><span class="co">#&gt; Recruitment Bias Ramp is: Off</span></span>
+<span><span class="co">#&gt; Initial Age Structure is: Movement and Matrix Geometric Series</span></span>
+<span><span class="co">#&gt; Recruitment deviations for every year are estimated</span></span>
+<span><span class="co">#&gt; Spawning season occurs in season 1</span></span>
+<span><span class="co">#&gt; RecDevs_model is specified as: iid</span></span>
+<span><span class="co">#&gt; ln_global_R0 is specified as: est</span></span>
+<span><span class="co">#&gt; Recruitment is a mean with deviations; a bh curve is fitted as a penalty on the residual, with its scale shared</span></span>
+<span><span class="co">#&gt; Recruitment deviation penalty is centered on: fixed</span></span>
+<span><span class="co">#&gt; Recruitment Variability is specified as: est_all</span></span>
+<span><span class="co">#&gt; Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.</span></span>
+<span><span class="co">#&gt; Recruitment Deviations is estimated for all dimensions</span></span>
+<span><span class="co">#&gt; RecDevs_rho is specified as: fix</span></span>
+<span><span class="co">#&gt; Steepness is estimated for all relavant dimensions</span></span>
+<span><span class="co">#&gt; Sex ratio is specified as: fix</span></span>
+<span><span class="co">#&gt; Stray rates fixed (n_pop == 1, straying not applicable).</span></span></code></pre></div>
 <p><code>sr_R0_spec</code> sets where the curve takes its scale:
 <code>"shared"</code> reuses <code>ln_global_R0</code>, which under mean
 recruitment is the recruitment level itself, <code>"est"</code> gives
@@ -855,7 +889,44 @@ centered at 0.1 and population 2 centered at 0.5:</p>
 <span>  use_fixed_stray_rate <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  use_stray_rate_prior <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  stray_rate_prior     <span class="op">=</span> <span class="va">stray_prior</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initialization F is fixed as a proportion of the mean F (moves with ln_F_mean).</span></span>
+<span><span class="co">#&gt; Recruitment is specified as: bh_rec</span></span>
+<span><span class="co">#&gt; Recruitment Density Dependence is specified as: local</span></span>
+<span><span class="co">#&gt; Recruitment and SSB lag is specified as: 1</span></span>
+<span><span class="co">#&gt; Unfished spawning biomass per recruit uses biologicals from year 1.</span></span>
+<span><span class="co">#&gt; Recruitment regional proportion priors are: Not Used</span></span>
+<span><span class="co">#&gt; Recruitment seasonal proportion priors are: Not Used</span></span>
+<span><span class="co">#&gt; Recruitment seasonal proportions is: fix</span></span>
+<span><span class="co">#&gt; Using 100% natal homing rate.</span></span>
+<span><span class="co">#&gt; Stray rates for population 1 specified with 1 block(s).</span></span>
+<span><span class="co">#&gt; Stray rates for population 2 specified with 1 block(s).</span></span>
+<span><span class="co">#&gt; Stray rate prior is: Used</span></span>
+<span><span class="co">#&gt; Steepness priors are: Not Used</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 1</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 2</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 3</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 4</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 5</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 1</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 2</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 3</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 4</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 5</span></span>
+<span><span class="co">#&gt; Recruitment Bias Ramp is: Off</span></span>
+<span><span class="co">#&gt; Initial Age Structure is: Movement and Matrix Geometric Series</span></span>
+<span><span class="co">#&gt; Recruitment deviations for every year are estimated</span></span>
+<span><span class="co">#&gt; Spawning season occurs in season 1</span></span>
+<span><span class="co">#&gt; RecDevs_model is specified as: iid</span></span>
+<span><span class="co">#&gt; ln_global_R0 is specified as: est</span></span>
+<span><span class="co">#&gt; Recruitment deviation penalty is centered on: fixed</span></span>
+<span><span class="co">#&gt; Recruitment Variability is specified as: est_all</span></span>
+<span><span class="co">#&gt; Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.</span></span>
+<span><span class="co">#&gt; Recruitment Deviations is estimated for all dimensions</span></span>
+<span><span class="co">#&gt; RecDevs_rho is specified as: fix</span></span>
+<span><span class="co">#&gt; Steepness is estimated for all relavant dimensions</span></span>
+<span><span class="co">#&gt; Sex ratio is specified as: fix</span></span>
+<span><span class="co">#&gt; Stray rates specified as: est_all</span></span></code></pre></div>
 <p>Tighter values of <code>sd</code> produce a stronger regularizing
 effect and are recommended when data contain little information about
 cross-population spawning contributions. If <code>sd</code> is set too
@@ -896,7 +967,44 @@ population:</p>
 <span>  use_fixed_stray_rate <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  use_stray_rate_prior <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  stray_rate_prior     <span class="op">=</span> <span class="va">stray_prior_tv</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span><span class="co">#&gt; Initialization F is fixed as a proportion of the mean F (moves with ln_F_mean).</span></span>
+<span><span class="co">#&gt; Recruitment is specified as: bh_rec</span></span>
+<span><span class="co">#&gt; Recruitment Density Dependence is specified as: local</span></span>
+<span><span class="co">#&gt; Recruitment and SSB lag is specified as: 1</span></span>
+<span><span class="co">#&gt; Unfished spawning biomass per recruit uses biologicals from year 1.</span></span>
+<span><span class="co">#&gt; Recruitment regional proportion priors are: Not Used</span></span>
+<span><span class="co">#&gt; Recruitment seasonal proportion priors are: Not Used</span></span>
+<span><span class="co">#&gt; Recruitment seasonal proportions is: fix</span></span>
+<span><span class="co">#&gt; Using 100% natal homing rate.</span></span>
+<span><span class="co">#&gt; Stray rates for population 1 specified with 2 block(s).</span></span>
+<span><span class="co">#&gt; Stray rates for population 2 specified with 2 block(s).</span></span>
+<span><span class="co">#&gt; Stray rate prior is: Used</span></span>
+<span><span class="co">#&gt; Steepness priors are: Not Used</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 1</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 2</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 3</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 4</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 1 and region 5</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 1</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 2</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 3</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 4</span></span>
+<span><span class="co">#&gt; Sex Ratios specified with 1 block for population 2 and region 5</span></span>
+<span><span class="co">#&gt; Recruitment Bias Ramp is: Off</span></span>
+<span><span class="co">#&gt; Initial Age Structure is: Movement and Matrix Geometric Series</span></span>
+<span><span class="co">#&gt; Recruitment deviations for every year are estimated</span></span>
+<span><span class="co">#&gt; Spawning season occurs in season 1</span></span>
+<span><span class="co">#&gt; RecDevs_model is specified as: iid</span></span>
+<span><span class="co">#&gt; ln_global_R0 is specified as: est</span></span>
+<span><span class="co">#&gt; Recruitment deviation penalty is centered on: fixed</span></span>
+<span><span class="co">#&gt; Recruitment Variability is specified as: est_all</span></span>
+<span><span class="co">#&gt; Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.</span></span>
+<span><span class="co">#&gt; Recruitment Deviations is estimated for all dimensions</span></span>
+<span><span class="co">#&gt; RecDevs_rho is specified as: fix</span></span>
+<span><span class="co">#&gt; Steepness is estimated for all relavant dimensions</span></span>
+<span><span class="co">#&gt; Sex ratio is specified as: fix</span></span>
+<span><span class="co">#&gt; Stray rates specified as: est_all</span></span></code></pre></div>
 <p>Each unique block index in <code>stray_rate_blocks</code> requires a
 corresponding row in <code>stray_rate_prior</code>, one per population ×
 block combination.</p>

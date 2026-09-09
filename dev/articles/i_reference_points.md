@@ -1808,17 +1808,6 @@ fishing mortality the assessment estimated for that year and therefore
 changes the numbers-at-age entering year 2, so the two runs are not
 directly comparable.
 
-Sanity checks worth running on any catch projection are that residuals
-are `NA` exactly where no target was set, and that the solved fishing
-mortality is finite and sensible:
-
-``` r
-
-out_catch$proj_catch_resid[1, ] # ~1e-7 in years 2 to 6, NA in year 1 and years 7 to 15
-out_catch$proj_F[1, 1]          # 0.0394, the terminal year's estimated F, untouched
-rowSums(terminal_F)             # 0.0394, the same value, confirming year 1 was not solved
-```
-
 Every input below is the one defined for the single-region example
 above:
 
@@ -1872,8 +1861,10 @@ missed by and is `NA` in years without a target:
 
 ``` r
 
-out_catch$proj_catch_resid[1, ] # ~1e-7 in years 2 to 6, NA thereafter
+out_catch$proj_catch_resid[1, ] # ~1e-7 in years 2 to 6, NA in year 1 and years 7 to 15
 out_catch$proj_F[1, 2:6]        # 0.0331 0.0372 0.0475 0.0455 0.0424
+out_catch$proj_F[1, 1]          # 0.0394, the terminal year's estimated F, untouched
+rowSums(terminal_F)             # 0.0394, the same value, so year 1 was not solved
 sgl_ref_pt$f_ref_pt             # 0.0863
 ```
 

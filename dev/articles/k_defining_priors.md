@@ -386,20 +386,26 @@ statistic is already a mean.
 
 ``` r
 
-# One fleet, curvature and dome on ages 4 to 10, and a random walk that acts
-# only in the years the curve is allowed to move.
+# curvature and dome on ages 4 to 10 for fleet 1, and a random walk that acts
+# only in the years the curve is allowed to move. fleet 2 gets no penalty
+n_yrs <- length(input_list$data$years)
+block_change_years <- c(20, 40)
+
 yr_wt <- rep(0, n_yrs)
 yr_wt[block_change_years] <- 1 / (2 * 0.2^2)   # a walk with sigma = 0.2
 
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,
-  fish_sel_pen_wts = list(list(
-    smooth_bin_curve = 0.5,
-    smooth_dome      = 3.1,
-    smooth_yr_diff   = yr_wt,
-    bin_range        = c(4, 10),
-    normalize        = FALSE
-  ))
+  fish_sel_pen_wts = list(
+    list(
+      smooth_bin_curve = 0.5,
+      smooth_dome      = 3.1,
+      smooth_yr_diff   = yr_wt,
+      bin_range        = c(4, 10),
+      normalize        = FALSE
+    ),
+    list()
+  )
 )
 ```
 
@@ -720,6 +726,34 @@ input_list <- Setup_Mod_Rec(
   sr_pen_yrs   = 1980:2015,        # years summed over; defaults to all with a lagged SSB
   sr_R0_spec   = "shared"          # "shared", "est", or "rinit"
 )
+#> Initialization F is fixed as a proportion of the mean F (moves with ln_F_mean).
+#> Recruitment is specified as: mean_rec
+#> Recruitment Density Dependence is specified as: global
+#> Recruitment regional proportion priors are: Not Used
+#> Recruitment seasonal proportion priors are: Not Used
+#> Recruitment seasonal proportions is: fix
+#> Stray rates for population 1 specified with 1 block(s).
+#> Stray rate prior is: Not Used
+#> Sex Ratios specified with 1 block for population 1 and region 1
+#> Sex Ratios specified with 1 block for population 1 and region 2
+#> Sex Ratios specified with 1 block for population 1 and region 3
+#> Sex Ratios specified with 1 block for population 1 and region 4
+#> Sex Ratios specified with 1 block for population 1 and region 5
+#> Recruitment Bias Ramp is: Off
+#> Initial Age Structure is: Movement and Matrix Geometric Series
+#> Recruitment deviations for every year are estimated
+#> Spawning season occurs in season 1
+#> RecDevs_model is specified as: iid
+#> ln_global_R0 is specified as: est
+#> Recruitment is a mean with deviations; a bh curve is fitted as a penalty on the residual, with its scale shared
+#> Recruitment deviation penalty is centered on: fixed
+#> Recruitment Variability is specified as: est_all
+#> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
+#> Recruitment Deviations is estimated for all dimensions
+#> RecDevs_rho is specified as: fix
+#> Steepness is estimated for all relavant dimensions
+#> Sex ratio is specified as: fix
+#> Stray rates fixed (n_pop == 1, straying not applicable).
 ```
 
 `sr_R0_spec` sets where the curve takes its scale: `"shared"` reuses
@@ -772,6 +806,43 @@ input_list <- Setup_Mod_Rec(
   use_stray_rate_prior = 1,
   stray_rate_prior     = stray_prior
 )
+#> Initialization F is fixed as a proportion of the mean F (moves with ln_F_mean).
+#> Recruitment is specified as: bh_rec
+#> Recruitment Density Dependence is specified as: local
+#> Recruitment and SSB lag is specified as: 1
+#> Unfished spawning biomass per recruit uses biologicals from year 1.
+#> Recruitment regional proportion priors are: Not Used
+#> Recruitment seasonal proportion priors are: Not Used
+#> Recruitment seasonal proportions is: fix
+#> Using 100% natal homing rate.
+#> Stray rates for population 1 specified with 1 block(s).
+#> Stray rates for population 2 specified with 1 block(s).
+#> Stray rate prior is: Used
+#> Steepness priors are: Not Used
+#> Sex Ratios specified with 1 block for population 1 and region 1
+#> Sex Ratios specified with 1 block for population 1 and region 2
+#> Sex Ratios specified with 1 block for population 1 and region 3
+#> Sex Ratios specified with 1 block for population 1 and region 4
+#> Sex Ratios specified with 1 block for population 1 and region 5
+#> Sex Ratios specified with 1 block for population 2 and region 1
+#> Sex Ratios specified with 1 block for population 2 and region 2
+#> Sex Ratios specified with 1 block for population 2 and region 3
+#> Sex Ratios specified with 1 block for population 2 and region 4
+#> Sex Ratios specified with 1 block for population 2 and region 5
+#> Recruitment Bias Ramp is: Off
+#> Initial Age Structure is: Movement and Matrix Geometric Series
+#> Recruitment deviations for every year are estimated
+#> Spawning season occurs in season 1
+#> RecDevs_model is specified as: iid
+#> ln_global_R0 is specified as: est
+#> Recruitment deviation penalty is centered on: fixed
+#> Recruitment Variability is specified as: est_all
+#> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
+#> Recruitment Deviations is estimated for all dimensions
+#> RecDevs_rho is specified as: fix
+#> Steepness is estimated for all relavant dimensions
+#> Sex ratio is specified as: fix
+#> Stray rates specified as: est_all
 ```
 
 Tighter values of `sd` produce a stronger regularizing effect and are
@@ -815,6 +886,43 @@ input_list <- Setup_Mod_Rec(
   use_stray_rate_prior = 1,
   stray_rate_prior     = stray_prior_tv
 )
+#> Initialization F is fixed as a proportion of the mean F (moves with ln_F_mean).
+#> Recruitment is specified as: bh_rec
+#> Recruitment Density Dependence is specified as: local
+#> Recruitment and SSB lag is specified as: 1
+#> Unfished spawning biomass per recruit uses biologicals from year 1.
+#> Recruitment regional proportion priors are: Not Used
+#> Recruitment seasonal proportion priors are: Not Used
+#> Recruitment seasonal proportions is: fix
+#> Using 100% natal homing rate.
+#> Stray rates for population 1 specified with 2 block(s).
+#> Stray rates for population 2 specified with 2 block(s).
+#> Stray rate prior is: Used
+#> Steepness priors are: Not Used
+#> Sex Ratios specified with 1 block for population 1 and region 1
+#> Sex Ratios specified with 1 block for population 1 and region 2
+#> Sex Ratios specified with 1 block for population 1 and region 3
+#> Sex Ratios specified with 1 block for population 1 and region 4
+#> Sex Ratios specified with 1 block for population 1 and region 5
+#> Sex Ratios specified with 1 block for population 2 and region 1
+#> Sex Ratios specified with 1 block for population 2 and region 2
+#> Sex Ratios specified with 1 block for population 2 and region 3
+#> Sex Ratios specified with 1 block for population 2 and region 4
+#> Sex Ratios specified with 1 block for population 2 and region 5
+#> Recruitment Bias Ramp is: Off
+#> Initial Age Structure is: Movement and Matrix Geometric Series
+#> Recruitment deviations for every year are estimated
+#> Spawning season occurs in season 1
+#> RecDevs_model is specified as: iid
+#> ln_global_R0 is specified as: est
+#> Recruitment deviation penalty is centered on: fixed
+#> Recruitment Variability is specified as: est_all
+#> Initial Age Deviations is stochastic for all ages, but the plus group follows equilibrium calculations.
+#> Recruitment Deviations is estimated for all dimensions
+#> RecDevs_rho is specified as: fix
+#> Steepness is estimated for all relavant dimensions
+#> Sex ratio is specified as: fix
+#> Stray rates specified as: est_all
 ```
 
 Each unique block index in `stray_rate_blocks` requires a corresponding

@@ -89,7 +89,7 @@ to age via the size-age transition matrix).
 | Name | Description | Dimensions |
 |----|----|----|
 | `ln_RecDevs` | Log-scale recruitment deviations by population, region, and year (including projection years) | `n_pop × n_regions × (n_est_rec_devs + n_proj_yrs_devs)` |
-| `move_devs` | Movement deviations by population, region pair, year, age, and sex (including projection years) | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_ages × n_sexes` |
+| `move_devs` | Movement deviations by population, region pair, year, season, age, and sex (including projection years) | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes` |
 | `ln_fishsel_devs` | Log-scale fishery selectivity deviations by region, year, bin, sex, and fleet | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` |
 | `ln_srvsel_devs` | Log-scale survey selectivity deviations by region, year, bin, sex, and fleet | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets` |
 

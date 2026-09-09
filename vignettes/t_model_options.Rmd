@@ -182,7 +182,7 @@ Recommendations. Use the default `"matrix"` (2) for spatial models; `"scalar_no_
 
 For no prior at all, note that `equil_init_age_strc` bundles two decisions that do not move together: `"equil"` (0) neither penalizes nor estimates the deviations, and `"stoch_all"` (2) both estimates and penalizes them. Under `"free"` you usually want the combination it does not offer, estimated and unpenalized, because the deviations are the numbers themselves. Either route reaches it with one extra line, and they give an identical fit:
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 # route A: no penalty from the setting, then re-free the deviations it fixed
 input_list <- Setup_Mod_Rec(input_list, ..., init_age_strc = "free",
                             equil_init_age_strc = "equil")
@@ -1120,7 +1120,7 @@ ranges. `fit_model()` refreshes those mirrors from the map immediately
 before building the model, so a deviation mapped off by hand after setup is
 neither estimated nor penalized:
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 # drop dmr deviations for a stretch of years, penalty included
 mp <- array(input_list$map$logit_dmr_devs, dim = dim(input_list$par$logit_dmr_devs))
 mp[, 10:20, , ] <- NA

@@ -419,7 +419,7 @@ cohort actually reached.
 
 # Sharing and fixing
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 # one curve per sex, shared across regions, with the second CV kept fixed
 input_list <- Setup_Mod_Biologicals(
   input_list = input_list, ...,
@@ -459,7 +459,7 @@ There are two mechanisms, and they can be used together.
 
 ## Varying the parameters
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 input_list <- Setup_Mod_Biologicals(
   input_list = input_list, ...,
   growth_model = "richards",
@@ -572,7 +572,7 @@ changes in the shape of size at age that no parameter of the curve can express:
 a curve with five parameters cannot fit a year in which only the four-year-olds
 were small, and an unconstrained transition per year is not identified.
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 input_list <- Setup_Mod_Biologicals(
   input_list = input_list, ...,
   growth_model = "vb_schnute",
@@ -621,7 +621,7 @@ residual, and avoid asking both to explain the same variation.
 
 They are indexed over different dimensions and applied at different points:
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 ln_growth_devs         # [n_pop, n_regions, n_yrs, n_gpars, n_sexes]  4th dim: parameter
 ln_growth_semipar_devs # [n_pop, n_regions, n_yrs, n_ages,  n_sexes]  4th dim: age
 ```
@@ -650,7 +650,7 @@ penalized, as selectivity deviations are in
 `vignette("n_single_region_ebs_pollock_randomeff_case_study")`. Pass the
 parameter name to `fit_model()`:
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 # time-varying growth parameters, with their process error estimated
 fit <- fit_model(input_list$data, input_list$par, input_list$map,
                  random = "ln_growth_devs", newton_loops = 3, silent = TRUE)
@@ -673,7 +673,7 @@ are no random effects, so a random-effects fit takes the slower path.
 
 # Weight at age
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 input_list <- Setup_Mod_Biologicals(
   input_list = input_list,
   WAA = NULL, MatAA = MatAA, ...,
@@ -706,7 +706,7 @@ Under `"wt_len"` the weight arrays are model output, but reference point and
 projection code read `data$WAA`. Copy the reported arrays into the data list
 before calling `Get_Reference_Points()` or `Do_Population_Projection()`:
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 rep <- fit$rep
 input_list$data$WAA <- rep$WAA
 input_list$data$WAA_fish <- rep$WAA_fish

@@ -30,7 +30,7 @@ The `SPoRC` framework allows flexible control over how fishery selectivity rando
 
 Additional arguments (`fish_sel_blocks`, `fish_sel_model`, `fish_fixed_sel_pars_spec`, `fish_q_blocks`, and `fish_q_spec`) provide further control over blocks, functional forms, fixed effects, and catchability. As an example, Fleet 1 is modeled with independent year-to-year deviations on logistic selectivity parameters, estimating all process error parameters, with no correlation suppression and full estimation of deviations:
 
-```{r, eval = FALSE}
+```{r, eval = FALSE, purl = FALSE}
 model_inputs <- Setup_Mod_Fishsel_and_Q(
   input_list           = inputs, 
   fish_sel_model       = "logist1_Fleet_1",

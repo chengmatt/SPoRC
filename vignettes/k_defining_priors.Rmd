@@ -218,21 +218,27 @@ or a list naming them individually. `smooth_dome` and `smooth_mean_center` are
 never normalized, the first because it sums only the bins that decrease and the
 second because its statistic is already a mean.
 
-```{r, eval = FALSE}
-# One fleet, curvature and dome on ages 4 to 10, and a random walk that acts
-# only in the years the curve is allowed to move.
+```{r}
+# curvature and dome on ages 4 to 10 for fleet 1, and a random walk that acts
+# only in the years the curve is allowed to move. fleet 2 gets no penalty
+n_yrs <- length(input_list$data$years)
+block_change_years <- c(20, 40)
+
 yr_wt <- rep(0, n_yrs)
 yr_wt[block_change_years] <- 1 / (2 * 0.2^2)   # a walk with sigma = 0.2
 
 input_list <- Setup_Mod_Weighting(
   input_list = input_list,
-  fish_sel_pen_wts = list(list(
-    smooth_bin_curve = 0.5,
-    smooth_dome      = 3.1,
-    smooth_yr_diff   = yr_wt,
-    bin_range        = c(4, 10),
-    normalize        = FALSE
-  ))
+  fish_sel_pen_wts = list(
+    list(
+      smooth_bin_curve = 0.5,
+      smooth_dome      = 3.1,
+      smooth_yr_diff   = yr_wt,
+      bin_range        = c(4, 10),
+      normalize        = FALSE
+    ),
+    list()
+  )
 )
 ```
 
@@ -379,7 +385,7 @@ input_list <- Setup_Mod_Rec(
 
 Under `rec_model = "mean_rec"`, a stock-recruit curve can be fitted as a penalty rather than used to generate recruitment. That penalty is a prior in the same sense as the ones above, a normal density placed on the log residual $\log R_y - \log \hat{R}_y$, but it is specified differently from everything else in this vignette: there is no `Use_*_prior` toggle and no hyperparameter dataframe. Instead, `sr_penalty` names the curve, `sr_pen_sigma` gives the residual's standard deviation, `sr_pen_yrs` gives the years it is summed over, and `sr_R0_spec` sets where the curve's scale comes from. The curve's steepness remains an ordinary parameter, so `Use_h_prior` and `h_prior` described above apply to it exactly as they do to a curve that generates recruitment.
 
-```{r, eval = FALSE}
+```{r}
 input_list <- Setup_Mod_Rec(
   input_list   = input_list,
   rec_model    = "mean_rec",       # the curve is fitted, not used to generate recruitment
@@ -403,7 +409,7 @@ When stray rates are estimated (`stray_rate_spec` is not `"fix"`), a beta prior 
 
 In the example below, stray rates are estimated independently per population using a single time block, with population 1 given a prior centered at 0.1 and population 2 centered at 0.5:
 
-```{r, eval = FALSE}
+```{r}
 
 input_list$data$n_pop <- 2 # modify to two populations for demo purposes
 
@@ -436,7 +442,7 @@ Tighter values of `sd` produce a stronger regularizing effect and are recommende
 
 Stray rates can also be allowed to vary over time by defining multiple blocks. The `stray_rate_blocks` argument follows the same blocking syntax used elsewhere in `SPoRC`. For example, to allow stray rates to differ between an early and late period for each population:
 
-```{r, eval = FALSE}
+```{r}
 stray_prior_tv <- data.frame(
   pop   = c(1, 1, 2, 2),
   block = c(1, 2, 1, 2),

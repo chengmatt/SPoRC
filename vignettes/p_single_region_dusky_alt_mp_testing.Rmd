@@ -885,12 +885,18 @@ With the simulation environments conditioned, we can now run the closed-loop pro
 ```{r, eval = FALSE}
 sim_res_rand <- run_parallel_simulations(mp_list, sim_list_rand, n_cores = 8)
 sim_res_crash <- run_parallel_simulations(mp_list, sim_list_crash, n_cores = 8)
-sim_all <- list(rand = sim_res_rand) # combine scenarios
+sim_all <- list(rand = sim_res_rand, crash = sim_res_crash) # combine scenarios
 ```
 
 # Process Results
 After simulations have been performed, we can extract results and summarize them for visualization. Below, we extract spawning stock biomass, recruitment, catch, fishing mortality rates. We then summarize these quantities across their time-series (and within each time point) as the median and their associated 95% simulation intervals.
 ```{r, eval = FALSE}
+# storage across scenarios and management procedures
+ssb_results <- NULL
+rec_results <- NULL
+catch_results <- NULL
+f_results <- NULL
+
 for(i in 1:length(sim_all)) {
 
   # extract out recruitment scenario

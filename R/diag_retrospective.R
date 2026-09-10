@@ -473,6 +473,57 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
               retro_mapping = retro_mapping))
 }
 
+#' Cut Fixed Index Covariances and Index Weights to a Retrospective Peel
+#'
+#' A multivariate normal index likelihood reads one covariance row per fitted
+#' observation, ordered the way the fleet's use flags are scanned (region
+#' fastest, then year, then season). A peel removes observations, so the
+#' covariance is cut to the rows and columns those cells pick out, the marginal
+#' over what the peel kept. Year-indexed index weights are cut the same way.
+#'
+#' Call this once every use flag has settled, so a lagged data source is peeled
+#' the same way a terminal year is.
+#'
+#' @param retro_data Truncated data list from \code{\link{truncate_yr}}, with any
+#'   data lags already applied to its use flags.
+#' @param data Full data list the peel was taken from.
+#'
+#' @returns \code{retro_data} with its index covariances and index weights
+#'   matching the observations the peel kept.
+#'
+#' @keywords internal
+truncate_idx_cov <- function(retro_data, data) {
+
+  n_keep <- length(retro_data$years)
+
+  cut_cov <- function(cov_list, use_full, use_new, n_fleets) {
+    if(is.null(cov_list)) return(cov_list)
+    for(f in seq_len(n_fleets)) {
+      if(is.null(cov_list[[f]])) next
+      d_full <- dim(use_full)[1:3]
+      d_new <- dim(use_new)[1:3]
+      full <- arrayInd(which(array(use_full[,,,f], dim = d_full) == 1), d_full) # region, year and season of each row
+      keep <- arrayInd(which(array(use_new[,,,f], dim = d_new) == 1), d_new) # the cells the peel kept
+      rows <- match(paste(keep[,1], keep[,2], keep[,3]), paste(full[,1], full[,2], full[,3]))
+      cov_list[[f]] <- cov_list[[f]][rows, rows, drop = FALSE]
+    } # end f loop
+    return(cov_list)
+  }
+
+  retro_data$SrvIdx_Cov <- cut_cov(data$SrvIdx_Cov, data$UseSrvIdx, retro_data$UseSrvIdx, data$n_srv_fleets)
+  retro_data$FishIdx_Cov <- cut_cov(data$FishIdx_Cov, data$UseFishIdx, retro_data$UseFishIdx, data$n_fish_fleets)
+
+  # the index weights multiply the likelihood year by year, so an array supplied over the full
+  # period is non-conformable once the peel has shortened it
+  if(length(dim(data$Wt_FishIdx)) == 4) retro_data$Wt_FishIdx <- data$Wt_FishIdx[,1:n_keep,,,drop = FALSE]
+  if(length(dim(data$Wt_SrvIdx)) == 4) retro_data$Wt_SrvIdx <- data$Wt_SrvIdx[,1:n_keep,,,drop = FALSE]
+  if(length(dim(data$Wt_FishIdx_pop)) == 5) retro_data$Wt_FishIdx_pop <- data$Wt_FishIdx_pop[,,1:n_keep,,,drop = FALSE]
+  if(length(dim(data$Wt_SrvIdx_pop)) == 5) retro_data$Wt_SrvIdx_pop <- data$Wt_SrvIdx_pop[,,1:n_keep,,,drop = FALSE]
+
+  return(retro_data)
+}
+
+
 
 
 #' Run Retrospective Diagnostics for RTMB Models
@@ -753,6 +804,9 @@ do_retrospective <- function(
         init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
       }
 
+      # the covariance and the index weights are cut last, once the lags have settled the use flags
+      init$retro_data <- truncate_idx_cov(init$retro_data, data)
+
       if(do_francis == FALSE) { # don't do francis within retrospective loop
 
         # run model
@@ -942,6 +996,9 @@ do_retrospective <- function(
           init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[1:nrow(init$retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
           init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
         }
+
+        # the covariance and the index weights are cut last, once the lags have settled the use flags
+        init$retro_data <- truncate_idx_cov(init$retro_data, data)
 
         if(do_francis == FALSE) { # don't do francis within retrospective loop
 

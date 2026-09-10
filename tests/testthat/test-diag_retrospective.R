@@ -1019,3 +1019,58 @@ test_that("get_retrospective_relative_difference() keeps SSB and Recruitment rel
   expect_equal(ssb_row$rd, (90 - 100) / 100, tolerance = 1e-8)
   expect_equal(rec_row$rd, (12 - 10) / 10, tolerance = 1e-8)
 })
+
+test_that("truncate_idx_cov() cuts a fixed index covariance to the observations the peel kept", {
+
+  d <- make_retro_data(n_yrs = 6, n_srv_fleets = 2)
+  Sigma <- outer(1:6, 1:6, function(i, j) 10 * i + j)
+  d$data$SrvIdx_Cov <- list(Sigma, NULL) # only fleet 1 uses a multivariate normal
+
+  out <- truncate_yr(j = 2, data = d$data, parameters = d$parameters, mapping = d$mapping)
+  cut <- truncate_idx_cov(out$retro_data, d$data)
+
+  expect_equal(cut$SrvIdx_Cov[[1]], Sigma[1:4, 1:4])
+  expect_equal(nrow(cut$SrvIdx_Cov[[1]]), sum(cut$UseSrvIdx[,,,1] == 1))
+  expect_null(cut$SrvIdx_Cov[[2]])
+})
+
+test_that("truncate_idx_cov() picks the covariance rows a gap year and a data lag leave behind", {
+
+  d <- make_retro_data(n_yrs = 6)
+  d$data$UseSrvIdx[1, 3, 1, 1] <- 0 # no survey in year 3, so it never has a covariance row
+  Sigma <- outer(1:5, 1:5, function(i, j) 10 * i + j)
+  d$data$SrvIdx_Cov <- list(Sigma)
+
+  out <- truncate_yr(j = 1, data = d$data, parameters = d$parameters, mapping = d$mapping)
+  out$retro_data$UseSrvIdx[1, 5, 1, 1] <- 0 # a one year survey lag, applied the way do_retrospective does
+
+  # years 1, 2 and 4 survive, which are the first three rows of the full covariance
+  expect_equal(truncate_idx_cov(out$retro_data, d$data)$SrvIdx_Cov[[1]], Sigma[1:3, 1:3])
+})
+
+test_that("truncate_idx_cov() truncates array index weights and leaves scalar weights alone", {
+
+  d <- make_retro_data(n_yrs = 6)
+  d$data$Wt_SrvIdx <- array(1, dim = c(1, 6, 1, 1))
+  d$data$Wt_FishIdx <- 1
+
+  out <- truncate_yr(j = 2, data = d$data, parameters = d$parameters, mapping = d$mapping)
+  cut <- truncate_idx_cov(out$retro_data, d$data)
+
+  expect_equal(dim(cut$Wt_SrvIdx), c(1, 4, 1, 1))
+  expect_equal(cut$Wt_FishIdx, 1)
+})
+
+test_that("truncate_idx_cov() leaves the covariance and the weights unchanged at peel 0", {
+
+  d <- make_retro_data(n_yrs = 6)
+  Sigma <- outer(1:6, 1:6, function(i, j) 10 * i + j)
+  d$data$SrvIdx_Cov <- list(Sigma)
+  d$data$Wt_SrvIdx <- array(1, dim = c(1, 6, 1, 1))
+
+  out <- truncate_yr(j = 0, data = d$data, parameters = d$parameters, mapping = d$mapping)
+  cut <- truncate_idx_cov(out$retro_data, d$data)
+
+  expect_equal(cut$SrvIdx_Cov[[1]], Sigma)
+  expect_equal(dim(cut$Wt_SrvIdx), c(1, 6, 1, 1))
+})

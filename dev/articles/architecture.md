@@ -241,7 +241,7 @@ that moves fish through a season goes through that one file.
 | `diag_jitter.R` | `do_jitter`, `jitter_start_values` | `model_fit.R` |  |
 | `diag_likelihood_profile.R` | `build_profile_map`, `check_analytic_q`, `check_profile_mirrors`, `do_likelihood_profile`, `weight_over_ages` | `model_fit.R`, `utils_setup.R` |  |
 | `diag_osa_residuals.R` | `comp_osa_field_map`, `get_osa`, `index_osa_field_map`, `osa_default_bins`, `osa_keep_subset`, `osa_one_step_predict`, `plot_resids`, `run_external_comp_osa`, `run_internal_caal_osa`, `run_internal_comp_osa`, `run_internal_index_osa`, `run_internal_tag_osa`, `validate_osa_method` | `model_lik_at_age.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `utils_setup.R` |  |
-| `diag_retrospective.R` | `do_retrospective`, `get_retrospective_relative_difference`, `truncate_yr` | `diag_francis.R`, `model_fit.R`, `utils_setup.R` | `plot_figures_tables.R` |
+| `diag_retrospective.R` | `do_retrospective`, `get_retrospective_relative_difference`, `truncate_idx_cov`, `truncate_yr` | `diag_francis.R`, `model_fit.R`, `utils_setup.R` | `plot_figures_tables.R` |
 | `diag_runs_test.R` | `do_runs_test` | nothing |  |
 
 #### Plotting

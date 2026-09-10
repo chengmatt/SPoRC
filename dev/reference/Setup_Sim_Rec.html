@@ -321,8 +321,10 @@ model and the estimation model fitted to it can be set the same way.</p></dd>
 <dd><p>Character. Process error the recruitment deviations are
 drawn under: <code>"iid"</code> (default) independent draws, <code>"rw"</code> a random
 walk from the previous year's deviation, or <code>"ar1"</code> reverting toward
-zero at rate <code>RecDevs_rho</code>. The first year is an independent draw under
-every option. Matches <code>RecDevs_model</code> in <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>,
+zero at rate <code>RecDevs_rho</code>. Year one is drawn at <code>ln_sigmaR</code> under
+<code>"iid"</code> and <code>"rw"</code>, and from the stationary marginal
+<code>ln_sigmaR / sqrt(1 - RecDevs_rho^2)</code> under <code>"ar1"</code>.
+Matches <code>RecDevs_model</code> in <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>,
 so a self test can simulate and estimate under the same process.</p></dd>
 
 

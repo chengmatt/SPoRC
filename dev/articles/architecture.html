@@ -593,8 +593,10 @@ one file.</p>
 <code>dbeta_symmetric</code>, <code>ddirichlet</code>,
 <code>ddirmult</code>, <code>dlogistnormal</code>,
 <code>dnbinom_robust_noint</code>, <code>dpois_noint</code>,
-<code>get_at_age_2dar1_nLL</code>, <code>get_at_age_nLL</code>,
-<code>get_beta_scaled_pars</code>, <code>get_index_nLL</code>,
+<code>eval_index_osa_nLL</code>, <code>get_at_age_2dar1_nLL</code>,
+<code>get_at_age_nLL</code>, <code>get_beta_scaled_pars</code>,
+<code>get_index_nLL</code>, <code>get_index_pop_nLL</code>,
+<code>get_index_regional_nLL</code>,
 <code>get_logistnormal_miss0_nLL</code>, <code>get_seas_pred</code>,
 <code>get_seas_pred_pop</code>
 </td>
@@ -723,10 +725,7 @@ one file.</p>
 </tr>
 <tr class="odd">
 <td><code>model_objective.R</code></td>
-<td>
-<code>maintain_backwards_compatibility</code>,
-<code>SPoRC_rtmb</code>
-</td>
+<td><code>SPoRC_rtmb</code></td>
 <td>
 <code>model_distributions.R</code>, <code>model_growth.R</code>,
 <code>model_init_naa.R</code>, <code>model_lik_at_age.R</code>,
@@ -1274,6 +1273,7 @@ one file.</p>
 <code>expand_fleet_ageing_error</code>,
 <code>expand_natmort_seasons</code>, <code>extend_years</code>,
 <code>fleet_ageing_error</code>, <code>fleet_bins_or_null</code>,
+<code>maintain_backwards_compatibility</code>,
 <code>obs_bin_count</code>, <code>obs_len_bins</code>,
 <code>parse_bin_subset</code>, <code>parse_comp_bins</code>,
 <code>parse_idx_cov</code>, <code>resolve_sel_pen_wts</code>,
@@ -1693,7 +1693,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-sim_*</code></td>
-<td>5</td>
+<td>6</td>
 <td>Operating model, including simulate then refit self tests</td>
 </tr>
 <tr class="odd">
@@ -1725,7 +1725,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 168 test files in total.</p>
+<p>That is 170 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

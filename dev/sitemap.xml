@@ -206,6 +206,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_caal_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_comp_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_comp_source_osa.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_index_osa_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_refpt_log_quantities.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/eval_tag_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/expand_fleet_ageing_error.html</loc></url>
@@ -248,6 +249,8 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_idx_fits.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_idx_fits_plot.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_index_nLL.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_index_pop_nLL.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_index_regional_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_init_devs_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_laa_curve.html</loc></url>

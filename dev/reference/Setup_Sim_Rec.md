@@ -259,8 +259,10 @@ rec_seas_prop[, 1, ] <- 1
   Character. Process error the recruitment deviations are drawn under:
   `"iid"` (default) independent draws, `"rw"` a random walk from the
   previous year's deviation, or `"ar1"` reverting toward zero at rate
-  `RecDevs_rho`. The first year is an independent draw under every
-  option. Matches `RecDevs_model` in
+  `RecDevs_rho`. Year one is drawn at `ln_sigmaR` under `"iid"` and
+  `"rw"`, and from the stationary marginal
+  `ln_sigmaR / sqrt(1 - RecDevs_rho^2)` under `"ar1"`. Matches
+  `RecDevs_model` in
   [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md),
   so a self test can simulate and estimate under the same process.
 

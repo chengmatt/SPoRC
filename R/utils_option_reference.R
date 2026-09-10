@@ -133,3 +133,4 @@ option_reference <- function(stages = setup_stage_order(), guide = NULL) {
   out <- do.call(rbind, rows)
   out[order(match(out$stage, sub("^Setup_Mod_", "", stages))), ]
 }
+

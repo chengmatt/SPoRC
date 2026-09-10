@@ -561,3 +561,169 @@ get_seas_pred = function(pred, r, y, seas, f, seas_agg) {
 get_seas_pred_pop = function(pred, p, r, y, seas, f, seas_agg) {
   if(seas_agg == 1) sum(pred[p,r,y,,f]) else pred[p,r,y,seas,f]
 } # end get_seas_pred_pop
+
+# Index Likelihoods ---------------------------------------------------------
+
+#' Index likelihoods for the fleets not fitted on the log scale
+#'
+#' The regional index likelihood for every fleet whose observations stay
+#' untransformed: arithmetic-scale normal, and multivariate normal. Lognormal
+#' fleets are left to \code{\link{eval_index_osa_nLL}}.
+#'
+#' Call this before that one. Registering an observation for OSA residuals binds
+#' the flattened log-scale vector back to the observation's own name, since
+#' \code{RTMB::OBS} files residuals under the name it is called on, so the
+#' untransformed array is gone once the lognormal fleets have been done.
+#'
+#' The fitted cells are flattened into vectors because a multivariate normal
+#' reads the whole series at once. Its total lands in the first cell and the
+#' rest stay zero, so the fleet's likelihood still sums correctly.
+#'
+#' @param nLL_arr Container \code{[region, year, season, fleet]}.
+#' @param Use Indicator array of the cells that are fit.
+#' @param Obs Observed index, untransformed.
+#' @param Pred Predicted index \code{[pop, region, year, season, fleet]}.
+#' @param SD Index standard deviation.
+#' @param LikeType Integer vector, one likelihood code per fleet.
+#' @param Cov List of covariance matrices, one per fleet, read only by a multivariate normal.
+#' @param seas_Type Integer vector, whether each fleet is fit as a season total.
+#' @param const Constant added inside the log.
+#' @param n_fleets Number of fleets.
+#'
+#' @return \code{nLL_arr} with the fitted cells filled.
+#'
+#' @keywords internal
+get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, seas_Type, const, n_fleets) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  for(f in 1:n_fleets) {
+
+    if(LikeType[f] == 0) next # lognormal fleets register OSA observations, so they are done separately
+    use_f = array(Use[,,,f], dim = dim(Use)[1:3]) # cells fit for this fleet
+    if(!any(use_f == 1)) next # nothing fit for this fleet
+
+    obs_pos_f = which(use_f == 1) # position of each fitted cell
+    obs_map_f = arrayInd(obs_pos_f, dim(use_f)) # region, year and season of each
+    obs_vec_f = se_vec_f = rep(0, length(obs_pos_f)) # containers
+    pred_vec_f = rep(0, length(obs_pos_f)) # container
+
+    # flatten the fitted cells into the vectors the index likelihood reads
+    for(i in seq_along(obs_pos_f)) {
+      r    = obs_map_f[i, 1] # region
+      y    = obs_map_f[i, 2] # year
+      seas = obs_map_f[i, 3] # season
+      obs_vec_f[i] = Obs[r,y,seas,f] # observed index
+      se_vec_f[i] = SD[r,y,seas,f] # index standard deviation
+      pred_vec_f[i] = get_seas_pred(Pred, r, y, seas, f, seas_Type[f]) # predicted index, summed across populations
+    } # end i loop
+
+    tmp_nLL = get_index_nLL(obs_vec_f, pred_vec_f, se_vec_f, LikeType[f], Cov[[f]], const)
+
+    # input into likelihoods
+    for(i in seq_along(obs_pos_f)) nLL_arr[obs_map_f[i,1], obs_map_f[i,2], obs_map_f[i,3], f] = tmp_nLL[i]
+
+  } # end f loop
+
+  return(nLL_arr)
+} # end get_index_regional_nLL
+
+#' Population-specific index likelihoods on the arithmetic scale
+#'
+#' The population-specific counterpart of \code{\link{get_index_regional_nLL}},
+#' for normal fleets only. A multivariate normal covariance describes the
+#' regional series, so those fleets are fit on the log scale here and go through
+#' \code{\link{eval_index_osa_nLL}} with the lognormal ones.
+#'
+#' @param nLL_arr Container \code{[pop, region, year, season, fleet]}.
+#' @param Use Indicator array of the cells that are fit.
+#' @param Obs Observed index, untransformed.
+#' @param Pred Predicted index \code{[pop, region, year, season, fleet]}.
+#' @param SD Index standard deviation.
+#' @param LikeType Integer vector, one likelihood code per fleet.
+#' @param seas_Type Integer vector, whether each fleet is fit as a season total.
+#' @param n_fleets Number of fleets.
+#'
+#' @return \code{nLL_arr} with the fitted cells filled.
+#'
+#' @keywords internal
+get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  for(f in 1:n_fleets) {
+
+    if(LikeType[f] != 1) next # only normal fleets are fit on the arithmetic scale
+    use_fp = array(Use[,,,,f], dim = dim(Use)[1:4]) # cells fit for this fleet
+    if(!any(use_fp == 1)) next # nothing fit for this fleet
+
+    obs_pos_fp = which(use_fp == 1) # position of each fitted cell
+    obs_map_fp = arrayInd(obs_pos_fp, dim(use_fp)) # population, region, year and season of each
+
+    # compute nLL
+    for(i in seq_along(obs_pos_fp)) {
+      p    = obs_map_fp[i, 1] # population
+      r    = obs_map_fp[i, 2] # region
+      y    = obs_map_fp[i, 3] # year
+      seas = obs_map_fp[i, 4] # season
+
+      nLL_arr[p,r,y,seas,f] = -1 * RTMB::dnorm(Obs[p,r,y,seas,f],
+                                               get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f]),
+                                               SD[p,r,y,seas,f], TRUE)
+    } # end i loop
+  } # end f loop
+
+  return(nLL_arr)
+} # end get_index_pop_nLL
+
+#' Lognormal index likelihoods for observations registered for OSA residuals
+#'
+#' Evaluated after \code{RTMB::OBS} has substituted the observation vector, so
+#' the objective reads the same values the residuals are computed from. The
+#' observations arrive already flattened and on the log scale.
+#'
+#' @param nLL_arr Container, regional or population-specific.
+#' @param obs_vec Flattened observations, log scale, as returned by \code{RTMB::OBS}.
+#' @param obs_map Index of each observation, from \code{arrayInd}.
+#' @param Pred Predicted index \code{[pop, region, year, season, fleet]}.
+#' @param SD Index standard deviation.
+#' @param seas_Type Integer vector, whether each fleet is fit as a season total.
+#' @param const Constant added inside the log.
+#' @param pop Logical, whether the data source is population-specific.
+#'
+#' @return \code{nLL_arr} with the fitted cells filled.
+#'
+#' @keywords internal
+eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, const, pop) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  for(i in seq_along(obs_vec)) {
+
+    if(pop) {
+      p    = obs_map[i, 1] # population
+      r    = obs_map[i, 2] # region
+      y    = obs_map[i, 3] # year
+      seas = obs_map[i, 4] # season
+      f    = obs_map[i, 5] # fleet
+
+      nLL_arr[p,r,y,seas,f] = -1 * RTMB::dnorm(obs_vec[i],
+                                               log(get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f]) + const),
+                                               SD[p,r,y,seas,f], TRUE)
+    } else {
+      r    = obs_map[i, 1] # region
+      y    = obs_map[i, 2] # year
+      seas = obs_map[i, 3] # season
+      f    = obs_map[i, 4] # fleet
+
+      nLL_arr[r,y,seas,f] = -1 * RTMB::dnorm(obs_vec[i],
+                                             log(get_seas_pred(Pred, r, y, seas, f, seas_Type[f]) + const),
+                                             SD[r,y,seas,f], TRUE)
+    }
+  } # end i loop
+
+  return(nLL_arr)
+} # end eval_index_osa_nLL

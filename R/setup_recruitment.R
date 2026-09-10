@@ -48,8 +48,10 @@
 #' @param RecDevs_model Character. Process error the recruitment deviations are
 #'   drawn under: \code{"iid"} (default) independent draws, \code{"rw"} a random
 #'   walk from the previous year's deviation, or \code{"ar1"} reverting toward
-#'   zero at rate \code{RecDevs_rho}. The first year is an independent draw under
-#'   every option. Matches \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}},
+#'   zero at rate \code{RecDevs_rho}. Year one is drawn at \code{ln_sigmaR} under
+#'   \code{"iid"} and \code{"rw"}, and from the stationary marginal
+#'   \code{ln_sigmaR / sqrt(1 - RecDevs_rho^2)} under \code{"ar1"}.
+#'   Matches \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}},
 #'   so a self test can simulate and estimate under the same process.
 #' @param RecDevs_rho Matrix \code{[n_pop x n_regions]} of AR1 correlations on
 #'   the natural scale, in \eqn{(-1, 1)}. Only read when
@@ -303,6 +305,7 @@ Setup_Sim_Rec <- function(
   sim_list$ln_sigmaR <- ln_sigmaR
   if(!RecDevs_model %in% c("iid", "rw", "ar1")) stop("RecDevs_model incorrectly specified. Must be one of 'iid', 'rw', or 'ar1'")
   sim_list$RecDevs_model <- match(RecDevs_model, c("iid", "rw", "ar1")) # 1 = iid, 2 = rw, 3 = ar1
+  if(RecDevs_model == "ar1" && any(abs(RecDevs_rho) >= 1)) stop("RecDevs_rho must be inside (-1, 1). An ar1 at 1 or beyond has no stationary variance, so year one of the series has nothing to be drawn from.")
   sim_list$RecDevs_rho <- array(RecDevs_rho, dim = c(sim_list$n_pop, sim_list$n_regions))
   sim_list$t_spawn <- t_spawn
   sim_list$rec_seas_prop <- rec_seas_prop_input

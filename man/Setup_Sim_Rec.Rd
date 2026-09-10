@@ -189,8 +189,10 @@ model and the estimation model fitted to it can be set the same way.}
 \item{RecDevs_model}{Character. Process error the recruitment deviations are
 drawn under: \code{"iid"} (default) independent draws, \code{"rw"} a random
 walk from the previous year's deviation, or \code{"ar1"} reverting toward
-zero at rate \code{RecDevs_rho}. The first year is an independent draw under
-every option. Matches \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}},
+zero at rate \code{RecDevs_rho}. Year one is drawn at \code{ln_sigmaR} under
+\code{"iid"} and \code{"rw"}, and from the stationary marginal
+\code{ln_sigmaR / sqrt(1 - RecDevs_rho^2)} under \code{"ar1"}.
+Matches \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}},
 so a self test can simulate and estimate under the same process.}
 
 \item{RecDevs_rho}{Matrix \code{[n_pop x n_regions]} of AR1 correlations on

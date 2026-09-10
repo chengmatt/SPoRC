@@ -778,6 +778,7 @@ get_selex_prior <- function(selex_prior, fixed_sel_pars, sel, sel_l, selex_type,
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
+  # backwards compatibility here
   row_type <- if(is.null(selex_prior$type)) rep("par", nrow(selex_prior)) else selex_prior$type
 
   nLL <- 0
@@ -902,8 +903,7 @@ get_recdev_pe_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, in
 
     if(PE_model == 2) { # random walk
       if(y == 1) {
-        # the walk needs a distribution for year one. a wide sigma leaves the level of the
-        # series effectively free; NA starts the walk at zero under its own sigma
+        # the walk needs a distribution for year one. a wide sigma leaves the level of the series basically free; NA starts the walk at zero under its own sigma
         first_sd <- if(is.na(init_sd)) sigma[y] else init_sd
         nLL[y] <- -RTMB::dnorm(devs[y], 0, first_sd, TRUE)
       }

@@ -272,15 +272,19 @@ generate_recruitment <- function(y,
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
 
           # a walk draws around the previous year's deviation and an ar1 around a fraction of it,
-          # so the level moves through time rather than resetting every year. year one is always
-          # an independent draw, since there is nothing behind it to walk from
+          # so the level moves through time rather than resetting every year
           dev_mu <- 0
+          dev_sd <- exp(ln_sigmaR[2, p, sigma_idx])
           if(RecDevs_model != 1 && y > 1) {
             prev_dev <- sim_env$ln_RecDevs[p,r,y-1,sim]
             dev_mu <- if(RecDevs_model == 2) prev_dev else RecDevs_rho[p,r] * prev_dev
           }
 
-          tmp_ln_rec_devs <- stats::rnorm(1, dev_mu, exp(ln_sigmaR[2, p, sigma_idx]))
+          # year one of an ar1 has nothing behind it, so it comes from the stationary marginal,
+          # which is the sd get_recdev_pe_nLL penalizes it at
+          if(RecDevs_model == 3 && y == 1) dev_sd <- dev_sd / sqrt(1 - RecDevs_rho[p,r]^2)
+
+          tmp_ln_rec_devs <- stats::rnorm(1, dev_mu, dev_sd)
 
           if(R0[p,r,y,sim] != 0) {
             sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs

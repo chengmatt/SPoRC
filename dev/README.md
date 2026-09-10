@@ -4,6 +4,7 @@
 
 - **paper_projects/** — manuscripts and associated analyses using SPoRC
 - **make_sporc_obj_figs/** — scripts for generating figures from SPoRC model objects
+- **check_vignettes/** — runs the code in every vignette, plus static checks on it
 - **dev_output/** — output files generated during package development and testing
 - **dev_data/** — data files used for development and testing
 - **scratch/** — scratch scripts and exploratory/experimental code

@@ -1528,3 +1528,455 @@ truncate_years <- function(arr, n_years, yr_dim = 3) {
   args[[yr_dim]] <- seq_len(n_years)
   do.call(`[`, c(list(arr), args, list(drop = FALSE)))
 }
+
+#' Fill in defaults for input lists built by older versions of SPoRC
+#'
+#' Assigns any data or parameter objects that a current \code{SPoRC_rtmb} call
+#' expects but that older input lists predate, so previously built objects keep
+#' evaluating unchanged. Values are written into \code{env} only when absent and
+#' are never overwritten.
+#'
+#' @param env Environment holding the unpacked data and parameters, i.e. the
+#'   \code{SPoRC_rtmb} frame after \code{RTMB::getAll}. Defaults to the caller.
+#'
+#' @return \code{NULL}, invisibly. Called for its side effects on \code{env}.
+#'
+#' @keywords internal
+maintain_backwards_compatibility <- function(env = parent.frame()) {
+
+  has <- function(x) exists(x, envir = env, inherits = FALSE)
+  set <- function(x, value) assign(x, value, envir = env)
+
+  # Seasonal aggregation of observations. Zero for every fleet is the season by season fit
+  # every data source did before the setting existed
+  for(seas_name in c("Catch_seas_Type", "Catch_pop_seas_Type", "Discard_seas_Type", "Discard_pop_seas_Type",
+                     "CatchAA_seas_Type", "CatchAA_pop_seas_Type", "DiscardAA_seas_Type", "DiscardAA_pop_seas_Type",
+                     "FishIdx_seas_Type", "FishIdx_pop_seas_Type",
+                     "FishAgeComps_seas_Type", "FishAgeComps_pop_seas_Type",
+                     "FishLenComps_seas_Type", "FishLenComps_pop_seas_Type",
+                     "FishAgeComps_discard_seas_Type", "FishAgeComps_discard_pop_seas_Type",
+                     "FishLenComps_discard_seas_Type", "FishLenComps_discard_pop_seas_Type")) {
+    if(!has(seas_name)) set(seas_name, rep(0L, get("n_fish_fleets", envir = env)))
+  } # end seas_name loop
+
+  for(seas_name in c("SrvIdx_seas_Type", "SrvIdx_pop_seas_Type", "SrvIdxAA_seas_Type", "SrvIdxAA_pop_seas_Type",
+                     "SrvAgeComps_seas_Type", "SrvAgeComps_pop_seas_Type",
+                     "SrvLenComps_seas_Type", "SrvLenComps_pop_seas_Type")) {
+    if(!has(seas_name)) set(seas_name, rep(0L, get("n_srv_fleets", envir = env)))
+  } # end seas_name loop
+
+  # Movement timing options.
+  if(!has("move_timing")) set("move_timing", 0)
+  if(!has("move_expm_nsub")) set("move_expm_nsub", 0)
+  if(!has("comp_const_obs")) set("comp_const_obs", 1)
+
+  # CAAL
+  if(!has("do_caal")) set("do_caal", 0)
+
+  # R0 time blocks
+  if(!has("R0_blocks")) set("R0_blocks", NULL) # NULL means one block, read where R0 is built
+  if(!has("R0_ref_block")) set("R0_ref_block", 1L)
+
+  # Growth stuff
+  if(!has("growth_model")) set("growth_model", 0)
+  if(!has("derive_waa")) set("derive_waa", 0)
+  if(!has("wt_len_pars")) set("wt_len_pars", NULL)
+  if(!has("growth_len_mid_vals")) set("growth_len_mid_vals", NULL)
+  if(!has("growth_tv_model")) set("growth_tv_model", NULL)
+  if(!has("growth_tv_link")) set("growth_tv_link", 0)
+  if(!has("growth_par_bounds")) set("growth_par_bounds", NULL)
+  if(!has("growth_tv_type")) set("growth_tv_type", 0)
+  if(!has("growth_cohort_styr")) set("growth_cohort_styr", 1)
+  if(!has("growth_rw_init_sigma")) set("growth_rw_init_sigma", 5)
+  if(!has("growth_semipar")) set("growth_semipar", 0)
+  if(!has("growth_L2_asymptote")) set("growth_L2_asymptote", 0)
+  if(!has("ln_growth_semipar_devs")) set("ln_growth_semipar_devs", NULL)
+  if(!has("growth_pe_pars")) set("growth_pe_pars", NULL)
+  if(!has("map_ln_growth_semipar_devs")) set("map_ln_growth_semipar_devs", NULL)
+  if(!has("growth_semipar_bins")) set("growth_semipar_bins", NULL)
+  if(!has("ln_growth_devs")) set("ln_growth_devs", NULL)
+  if(!has("map_ln_growth_devs")) set("map_ln_growth_devs", NULL)
+  if(!has("fish_len_comp_sel")) set("fish_len_comp_sel", rep(0, get("n_fish_fleets", envir = env)))
+  if(!has("srv_len_comp_sel")) set("srv_len_comp_sel", rep(0, get("n_srv_fleets", envir = env)))
+  if(!has("fish_waa_selected")) set("fish_waa_selected", rep(0, get("n_fish_fleets", envir = env)))
+  if(!has("srv_waa_selected")) set("srv_waa_selected", rep(0, get("n_srv_fleets", envir = env)))
+  if(!has("SizeAgeTrans_fish")) set("SizeAgeTrans_fish", NULL)
+  if(!has("SizeAgeTrans_srv")) set("SizeAgeTrans_srv", NULL)
+  if(!has("LenBinMap")) set("LenBinMap", NULL)
+  if(!has("Use_rinit_pen")) set("Use_rinit_pen", 0)
+  if(!has("rinit_pen_sd")) set("rinit_pen_sd", 1)
+  if(!has("UseFish_caal")) set("UseFish_caal", NULL)
+  if(!has("UseSrv_caal")) set("UseSrv_caal", NULL)
+
+  # The conditional age-at-length weights live in Setup_Mod_Weighting; a list
+  # without them weights every row at one.
+  caal_wt_dim <- function(n_fleets) c(get("n_regions", envir = env), length(get("years", envir = env)), get("n_seas", envir = env),
+                                      length(get("lens", envir = env)), get("n_sexes", envir = env), n_fleets)
+  if(!has("Wt_Fish_caal")) set("Wt_Fish_caal", array(1, dim = caal_wt_dim(get("n_fish_fleets", envir = env))))
+  if(!has("Wt_Srv_caal")) set("Wt_Srv_caal", array(1, dim = caal_wt_dim(get("n_srv_fleets", envir = env))))
+
+  # added seasons to M so need to maintain backwards compatibility
+  n_seas_bc <- get("n_seas", envir = env)
+  if(has("M_blocks")) {
+    M_blocks_bc <- get("M_blocks", envir = env)
+    if(length(dim(M_blocks_bc)) == 5) set("M_blocks", expand_natmort_seasons(M_blocks_bc, n_seas_bc))
+  }
+  if(has("Fixed_natmort")) {
+    Fixed_natmort_bc <- get("Fixed_natmort", envir = env)
+    if(!is.null(Fixed_natmort_bc) && length(dim(Fixed_natmort_bc)) == 5)
+      set("Fixed_natmort", expand_natmort_seasons(Fixed_natmort_bc, n_seas_bc))
+  }
+
+  # Reference year for the biological inputs to unfished spawning biomass per
+  # recruit. The first year is what the model always used, so that stays the default.
+  if(!has("SR_ref_yr")) set("SR_ref_yr", 1)
+  if(!has("ctmc_scale_by_seasdur")) set("ctmc_scale_by_seasdur", 0)
+  if(!has("ctmc_diffusion_eps")) set("ctmc_diffusion_eps", 0.1)
+
+  # initialization of F. older input lists have init_F_prop as data; it is now init_F_par plus
+  # init_F_form, so a stored proportion maps onto the logit scale of the "prop" form
+  if(!has("init_F_form")) set("init_F_form", 0)
+  if(!has("init_F_par")) {
+    init_F_dim <- c(get("n_regions", envir = env), get("n_seas", envir = env), get("n_fish_fleets", envir = env))
+    init_F_prop <- if(has("init_F_prop")) get("init_F_prop", envir = env) else array(0, dim = init_F_dim)
+    set("init_F_par", array(stats::qlogis(pmin(pmax(init_F_prop, 1e-10), 1 - 1e-10)), dim = init_F_dim))
+  }
+
+  # Deviation maps mirrored into the data lists. Without the initial age map the
+  # penalty falls on every cell, which is what lists built before it kept did.
+  if(!has("map_ln_InitDevs")) set("map_ln_InitDevs", NULL)
+  if(!has("map_ln_F_devs") || !has("map_logit_dmr_devs")) {
+    UseCatch <- get("UseCatch", envir = env)
+    has_catch <- UseCatch == 1 |
+      apply(get("UseCatch_pop", envir = env) == 1, c(2,3,4,5), any) |
+      is.na(get("ObsCatch", envir = env))
+    legacy_map <- array(NA_real_, dim = dim(UseCatch))
+    legacy_map[has_catch] <- seq_len(sum(has_catch))
+    if(!has("map_ln_F_devs")) set("map_ln_F_devs", legacy_map)
+    if(!has("map_logit_dmr_devs")) set("map_logit_dmr_devs", legacy_map)
+  }
+
+  # Data lists built before the recruitment map mirror existed penalize every
+  # deviation, so default to that rather than silently changing their objective
+  if(!has("map_ln_RecDevs")) {
+    set("map_ln_RecDevs", array(1, dim = dim(get("ln_RecDevs", envir = env))))
+  }
+
+  # recruitment deviation process error. older lists have independent deviations and no
+  # correlation parameter, so default to that rather than changing their objective
+  if(!has("RecDevs_model")) set("RecDevs_model", 1)
+  if(!has("RecDevs_rw_init_sigma")) set("RecDevs_rw_init_sigma", 5)
+  if(!has("RecDevs_rho")) {
+    set("RecDevs_rho", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env))))
+  }
+
+  # fishery index timing. older input lists have no t_fish and formed the index from
+  # start-of-season numbers, so default to zero rather than shifting their predicted index
+  if(!has("t_fish")) {
+    set("t_fish", array(0, dim = c(get("n_regions", envir = env),
+                                   get("n_seas", envir = env),
+                                   get("n_fish_fleets", envir = env))))
+  }
+
+  # index age selection, catchability solving and index error. older input lists sum over all ages,
+  # estimate every catchability and use a lognormal likelihood, so default to that
+  n_ages_bc <- length(get("ages", envir = env))
+  n_srv_bc <- get("n_srv_fleets", envir = env)
+  n_fish_bc <- get("n_fish_fleets", envir = env)
+  if(!has("srv_idx_ages")) set("srv_idx_ages", array(1, dim = c(n_ages_bc, n_srv_bc)))
+  if(!has("fish_idx_ages")) set("fish_idx_ages", array(1, dim = c(n_ages_bc, n_fish_bc)))
+  if(!has("srv_q_type")) set("srv_q_type", rep(0, n_srv_bc))
+
+  # fishery catchability gained the analytic and covariate routines the survey already had.
+  # absent on older input lists, where every fishery q was estimated with no covariates
+  n_fish_bc <- get("n_fish_fleets", envir = env)
+  if(!has("fish_q_type")) set("fish_q_type", rep(0, n_fish_bc))
+  if(!has("do_fish_q_cov")) set("do_fish_q_cov", 0)
+  if(!has("fish_q_cov")) set("fish_q_cov", array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)), n_fish_bc, 1)))
+  if(!has("fish_q_coeff")) set("fish_q_coeff", array(0, dim = c(get("n_regions", envir = env), n_fish_bc, 1)))
+  if(!has("SrvIdx_LikeType")) set("SrvIdx_LikeType", rep(0, n_srv_bc))
+  if(!has("FishIdx_LikeType")) set("FishIdx_LikeType", rep(0, n_fish_bc))
+  if(!has("SrvIdx_Cov")) set("SrvIdx_Cov", vector("list", n_srv_bc))
+  if(!has("FishIdx_Cov")) set("FishIdx_Cov", vector("list", n_fish_bc))
+
+  # estimated index observation error. zero keeps the reported standard errors as the whole story,
+  # which is what older input lists mean. the population data sources have their own form
+  if(!has("sigmaSrvIdx_form")) set("sigmaSrvIdx_form", 0)
+  if(!has("sigmaFishIdx_form")) set("sigmaFishIdx_form", 0)
+  if(!has("sigmaSrvIdx_pop_form")) set("sigmaSrvIdx_pop_form", 0)
+  if(!has("sigmaFishIdx_pop_form")) set("sigmaFishIdx_pop_form", 0)
+  if(!has("ln_sigmaSrvIdx")) set("ln_sigmaSrvIdx", rep(log(0.01), n_srv_bc))
+  if(!has("ln_sigmaFishIdx")) set("ln_sigmaFishIdx", rep(log(0.01), n_fish_bc))
+  if(!has("ln_sigmaSrvIdx_pop")) set("ln_sigmaSrvIdx_pop", rep(log(0.01), n_srv_bc))
+  if(!has("ln_sigmaFishIdx_pop")) set("ln_sigmaFishIdx_pop", rep(log(0.01), n_fish_bc))
+
+  # a population data source never supplied drops out of the data list rather than arriving empty,
+  # so give it a shape here and let the index code index it unconditionally
+  pop_se_dim <- function(n_fleets) c(get("n_pop", envir = env), get("n_regions", envir = env),
+                                     length(get("years", envir = env)), get("n_seas", envir = env), n_fleets)
+  if(!has("ObsFishIdx_pop_SE")) set("ObsFishIdx_pop_SE", array(0, dim = pop_se_dim(n_fish_bc)))
+
+  # age-disaggregated data sources, absent from older input lists. an all-zero use array leaves a
+  # fleet on the aggregated data source. ordered fishery then survey, as elsewhere
+  n_ages_bc <- length(get("ages", envir = env))
+  n_pop_bc <- get("n_pop", envir = env)
+  n_sexes_bc <- get("n_sexes", envir = env)
+  n_regions_bc <- get("n_regions", envir = env)
+  at_age_dim <- function(n_fleets) c(get("n_regions", envir = env),
+                                     length(get("years", envir = env)),
+                                     get("n_seas", envir = env), n_ages_bc, n_sexes_bc, n_fleets)
+  n_pairs_bc <- max(1, n_ages_bc * (n_ages_bc - 1) / 2)
+
+  aa_sources <- list(
+    list(
+      tag = "CatchAA",
+      corr = "catch",
+      sigma = "ln_sigmaCAA",
+      n = n_fish_bc,
+      flag = "use_catch_aa"
+    ),
+    list(
+      tag = "DiscardAA",
+      corr = "discard",
+      sigma = "ln_sigmaDAA",
+      n = n_fish_bc,
+      flag = "use_discard_aa"
+    ),
+    list(
+      tag = "SrvIdxAA",
+      corr = "srv_idx",
+      sigma = "ln_sigmaSrvIdxAA",
+      n = n_srv_bc,
+      flag = "use_srv_idx_aa"
+    )
+  )
+
+  for(state in aa_sources) {
+
+    if(!has(state$flag)) set(state$flag, rep(0, state$n))
+
+    for(is_pop in c(FALSE, TRUE)) {
+
+      tag <- if(is_pop) paste0(state$tag, "_pop") else state$tag
+      ctag <- if(is_pop) paste0(state$corr, "_pop") else state$corr
+      sig <- if(is_pop) paste0(state$sigma, "_pop") else state$sigma
+      d <- if(is_pop) c(n_pop_bc, at_age_dim(state$n)) else at_age_dim(state$n)
+      sd <- if(is_pop) c(n_pop_bc, n_ages_bc, n_sexes_bc, state$n) else c(n_ages_bc, n_sexes_bc, state$n)
+
+      for(data_name in c(paste0("Obs", tag), paste0("Use", tag), paste0("Obs", tag, "_SE"))) {
+        if(!has(data_name)) set(data_name, array(0, dim = d))
+      } # end data_name loop
+
+      if(!has(paste0(tag, "_Type"))) set(paste0(tag, "_Type"), rep(1, state$n))
+      if(!has(paste0(tag, "_LikeType"))) set(paste0(tag, "_LikeType"), rep(0, state$n))
+      if(!has(paste0(tag, "_sigma_form"))) set(paste0(tag, "_sigma_form"), rep(0, state$n))
+      if(!has(paste0("AgeObsCorr_", ctag))) set(paste0("AgeObsCorr_", ctag), rep(0, state$n))
+      else set(paste0("AgeObsCorr_", ctag), rep_len(get(paste0("AgeObsCorr_", ctag), envir = env), state$n))
+
+      if(!has(sig)) set(sig, array(log(0.5), dim = sd))
+      rho_d <- if(is_pop) c(n_pop_bc, n_regions_bc, n_sexes_bc, state$n) else c(n_regions_bc, n_sexes_bc, state$n)
+      if(!has(paste0("trans_rho_", ctag))) set(paste0("trans_rho_", ctag), array(0, dim = rho_d))
+      if(!has(paste0("trans_rho_", ctag, "_year"))) set(paste0("trans_rho_", ctag, "_year"), array(0, dim = rho_d))
+      if(!has(paste0("trans_rho_", ctag, "_us"))) set(paste0("trans_rho_", ctag, "_us"), array(0, dim = c(n_pairs_bc, rho_d)))
+
+      # an array or parameter reused at an older shape would be indexed by
+      # position and silently read the wrong age or sex, so it is refused instead
+      want_dims <- c(length(d), length(d), length(d), length(sd), length(rho_d))
+      names(want_dims) <- c(paste0("Obs", tag), paste0("Use", tag), paste0("Obs", tag, "_SE"),
+                            sig, paste0("trans_rho_", ctag))
+      for(data_name in names(want_dims)) {
+        n_dims <- length(dim(get(data_name, envir = env)))
+        if(n_dims != want_dims[[data_name]]) {
+          stop(data_name, " has ", n_dims, " dimensions where ", want_dims[[data_name]], " are expected. The ",
+               "at-age data sources have a sex dim: supply the full array, or rebuild the input ",
+               "list through its Setup_Mod_ functions rather than reusing a saved one.")
+        }
+      } # end data_name loop
+    } # end is_pop loop
+  } # end state loop
+  if(!has("ObsSrvIdx_pop_SE")) set("ObsSrvIdx_pop_SE", array(0, dim = pop_se_dim(n_srv_bc)))
+
+  # Deviation penalties centered on a fixed prior mean unless asked otherwise.
+  if(!has("Fdev_pen_center")) set("Fdev_pen_center", 0)
+  if(!has("RecDevs_pen_center")) set("RecDevs_pen_center", 0)
+  if(!has("InitDevs_pen_center")) set("InitDevs_pen_center", 0)
+
+  # only read by the initial-age penalty's shared-subset case (equil_init_age_strc == 3), which
+  # setup stores in data, so a list without it cannot be using that case
+  if(!has("init_age_devs_shared")) set("init_age_devs_shared", NULL)
+
+  # The initial age penalty used to share Wt_Rec, which only worked because both
+  # were scalars applied outside the sum.
+  if(!has("Wt_Init_Rec")) set("Wt_Init_Rec", get("Wt_Rec", envir = env))
+  # An array weight from before the sex dimension is one weight per age; it repeats across sexes so it conforms with the sex-dimensioned penalty array
+  wt_init_bc <- get("Wt_Init_Rec", envir = env)
+  if(length(wt_init_bc) > 1 && length(dim(wt_init_bc)) == 3) set("Wt_Init_Rec", array(rep(wt_init_bc, get("n_sexes", envir = env)), dim = c(dim(wt_init_bc), get("n_sexes", envir = env))))
+
+  # The recruitment level penalty is off unless asked for.
+  if(!has("Use_rec_level_pen")) set("Use_rec_level_pen", 0)
+  if(!has("ln_sigma_rec_level")) set("ln_sigma_rec_level", 0)
+
+  # The between-sex likelihood on initial age deviations is off unless specified
+  if(!has("Use_init_sex_pen")) set("Use_init_sex_pen", 0)
+  if(!has("ln_sigma_init_sex")) set("ln_sigma_init_sex", 0)
+  if(!has("rec_level_pen_center")) set("rec_level_pen_center", 1)
+  if(!has("rec_level_pen_yrs")) set("rec_level_pen_yrs", rep(1, length(get("years", envir = env))))
+
+  # The stock-recruit penalty under mean recruitment is off unless asked for.
+  if(!has("sr_penalty")) set("sr_penalty", 0)
+  if(!has("sr_R0_spec")) set("sr_R0_spec", 0)
+  if(!has("ln_sigma_sr_pen")) set("ln_sigma_sr_pen", 0)
+  if(!has("sr_pen_yrs")) set("sr_pen_yrs", rep(1, length(get("years", envir = env))))
+
+  # Selectivity process error weights. Older input lists always applied it.
+  if(!has("fishsel_pe_wt")) set("fishsel_pe_wt", rep(1, n_fish_bc))
+  if(!has("retsel_pe_wt")) set("retsel_pe_wt", rep(1, n_fish_bc))
+  if(!has("srvsel_pe_wt")) set("srvsel_pe_wt", rep(1, n_srv_bc))
+  if(!has("fishsel_rw_init_sigma")) set("fishsel_rw_init_sigma", rep(5, n_fish_bc))
+  if(!has("retsel_rw_init_sigma")) set("retsel_rw_init_sigma", rep(5, n_fish_bc))
+  if(!has("srvsel_rw_init_sigma")) set("srvsel_rw_init_sigma", rep(5, n_srv_bc))
+  if(!has("fishsel_bin_devs_rw_init_sigma")) set("fishsel_bin_devs_rw_init_sigma", rep(5, n_fish_bc))
+  if(!has("retsel_bin_devs_rw_init_sigma")) set("retsel_bin_devs_rw_init_sigma", rep(5, n_fish_bc))
+  if(!has("srvsel_bin_devs_rw_init_sigma")) set("srvsel_bin_devs_rw_init_sigma", rep(5, n_srv_bc))
+
+  # Fleet-specific ageing error. Older input lists have only the shared matrix,
+  # so every fleet reads that, which is exactly what they did before.
+  if(!has("AgeingError_fish") || !has("AgeingError_srv")) {
+    shared_ae_bc <- get("AgeingError", envir = env)
+    for(data_name in c("AgeingError_fish", "AgeingError_srv")) {
+      if(has(data_name)) next
+      n_fl_bc <- if(data_name == "AgeingError_srv") n_srv_bc else n_fish_bc
+      ae_bc <- array(0, dim = c(dim(shared_ae_bc), n_fl_bc))
+      for(f in seq_len(n_fl_bc)) ae_bc[,,,f] <- shared_ae_bc
+      set(data_name, ae_bc)
+    } # end data_name loop
+  }
+
+  # composition bin ranges. older input lists fit every bin, so an all-ones array stands in:
+  # bins_or_null and fleet_bins_or_null return NULL when nothing is restricted, so it is never indexed into
+  n_lens_bc <- length(get("lens", envir = env))
+  for(data_name in c("FishAgeComps_bins", "FishAgeComps_pop_bins", "FishAgeComps_discard_bins",
+                     "FishAgeComps_discard_pop_bins", "Fish_caal_bins")) {
+    if(!has(data_name)) set(data_name, array(1, dim = c(n_ages_bc, n_fish_bc)))
+  } # end data_name loop
+  for(data_name in c("FishLenComps_bins", "FishLenComps_pop_bins", "FishLenComps_discard_bins",
+                     "FishLenComps_discard_pop_bins")) {
+    if(!has(data_name)) set(data_name, array(1, dim = c(n_lens_bc, n_fish_bc)))
+  } # end data_name loop
+  for(data_name in c("SrvAgeComps_bins", "SrvAgeComps_pop_bins", "Srv_caal_bins")) {
+    if(!has(data_name)) set(data_name, array(1, dim = c(n_ages_bc, n_srv_bc)))
+  } # end data_name loop
+  for(data_name in c("SrvLenComps_bins", "SrvLenComps_pop_bins")) {
+    if(!has(data_name)) set(data_name, array(1, dim = c(n_lens_bc, n_srv_bc)))
+  } # end data_name loop
+
+  # Bin-override selectivity deviations. Older input lists have none
+  for(pre in c("fish", "ret", "srv")) {
+    n_fl_bc <- if(pre == "srv") n_srv_bc else n_fish_bc
+    if(!has(paste0(pre, "_sel_bin_dev_bins"))) set(paste0(pre, "_sel_bin_dev_bins"), array(0, dim = c(n_ages_bc, n_fl_bc)))
+    if(!has(paste0(pre, "_sel_norm_bins"))) set(paste0(pre, "_sel_norm_bins"), array(1, dim = c(n_ages_bc, n_fl_bc)))
+    if(!has(paste0("cont_tv_", pre, "sel_bin_devs"))) set(paste0("cont_tv_", pre, "sel_bin_devs"), rep(0, n_fl_bc))
+    if(!has(paste0("ln_", pre, "sel_bin_devs"))) set(paste0("ln_", pre, "sel_bin_devs"), array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)) + get("n_proj_yrs_devs", envir = env), n_ages_bc, get("n_sexes", envir = env), n_fl_bc)))
+    if(!has(paste0(pre, "sel_bin_devs_pe_pars"))) set(paste0(pre, "sel_bin_devs_pe_pars"), array(0, dim = c(get("n_regions", envir = env), n_ages_bc, get("n_sexes", envir = env), n_fl_bc)))
+    if(!has(paste0("map_ln_", pre, "sel_bin_devs"))) set(paste0("map_ln_", pre, "sel_bin_devs"), array(NA_real_, dim = dim(get(paste0("ln_", pre, "sel_bin_devs"), envir = env))))
+  } # end pre loop
+
+  # state-space numbers at age. n_est_naa_re alone decides whether the state is live; it is never
+  # inferred from dim(ln_NAA), which is non-zero once the setup function has run at all
+  if(!has("NAA_re")) set("NAA_re", 0)
+  if(!has("n_est_naa_re")) set("n_est_naa_re", 0)
+  if(!has("naa_re_ages")) set("naa_re_ages", integer(0))
+  if(!has("naa_re_yrs")) set("naa_re_yrs", integer(0))
+  if(!has("naa_re_where")) set("naa_re_where", NULL) # every population and region cell
+  # Season one alone is what the state was before the season dim existed, so a list without the
+  # field is that model. The arrays themselves are promoted below rather than replaced.
+  if(!has("naa_re_seas")) set("naa_re_seas", 1L)
+  if(!has("naa_sigma_blocks")) set("naa_sigma_blocks", array(1, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), length(get("years", envir = env)), n_seas_bc, n_ages_bc, get("n_sexes", envir = env))))
+  if(!has("ln_NAA")) set("ln_NAA", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), length(get("years", envir = env)), n_seas_bc, n_ages_bc, get("n_sexes", envir = env))))
+  if(!has("ln_sigmaNAA")) set("ln_sigmaNAA", array(log(0.3), dim = c(1, 1, 1, 1, 1, 1)))
+  # Arrays saved before the season dim existed are promoted rather than replaced, holding the
+  # state at season one. A retro peel leaves ln_sigmaNAA a plain vector, which indexes fine as is.
+  for(data_name in c("ln_NAA", "naa_sigma_blocks", "map_ln_NAA", "ln_sigmaNAA")) {
+    if(!has(data_name)) next
+    if(length(dim(get(data_name, envir = env))) != 5) next
+    set(data_name, expand_natmort_seasons(get(data_name, envir = env), if(data_name == "ln_sigmaNAA") 1 else n_seas_bc, 4, 6))
+  } # end data_name loop
+  if(!has("NAA_pe_pars")) set("NAA_pe_pars", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), 3, get("n_sexes", envir = env))))
+  if(!has("NAA_re_region")) set("NAA_re_region", 0)
+  if(!has("NAA_re_pop")) set("NAA_re_pop", 0)
+  if(!has("NAA_re_sex")) set("NAA_re_sex", 0)
+  if(!has("NAA_re_season")) set("NAA_re_season", 0)
+  if(!has("NAA_season_corr_pars")) set("NAA_season_corr_pars", array(0, dim = c(get("n_pop", envir = env), max(1, length(get("naa_re_seas", envir = env)) * (length(get("naa_re_seas", envir = env)) - 1) / 2), get("n_sexes", envir = env))))
+  if(!has("NAA_pop_corr_pars")) set("NAA_pop_corr_pars", rep(0, max(1, get("n_pop", envir = env) * (get("n_pop", envir = env) - 1) / 2)))
+  if(!has("NAA_sex_corr_pars")) set("NAA_sex_corr_pars", rep(0, max(1, get("n_sexes", envir = env) * (get("n_sexes", envir = env) - 1) / 2)))
+  if(!has("NAA_region_corr_pars")) set("NAA_region_corr_pars", array(0, dim = c(get("n_pop", envir = env), max(1, get("n_regions", envir = env) * (get("n_regions", envir = env) - 1) / 2), get("n_sexes", envir = env))))
+
+  # Selectivity parameter centering penalties. The flag guards every reference to
+  # the table, so older input lists need only the flag.
+  if(!has("Use_fish_selex_penalty")) set("Use_fish_selex_penalty", 0)
+  if(!has("Use_ret_selex_penalty")) set("Use_ret_selex_penalty", 0)
+  if(!has("Use_srv_selex_penalty")) set("Use_srv_selex_penalty", 0)
+
+  # bicubic residual tracking arrays, which the parametric plateau also reads. all-zero means no
+  # plateau and no bicubic block anywhere, which is what older input lists were
+  for(pre_arr in c("fish", "ret")) for(suf in c("binnodes", "yrnodes", "selstyr", "nselbins")) {
+    nm_arr <- paste0(pre_arr, "_sel_bicubic_", suf)
+    if(!has(nm_arr)) set(nm_arr, array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)), n_fish_bc)))
+  }
+  for(suf in c("binnodes", "yrnodes", "selstyr", "nselbins")) {
+    nm_arr <- paste0("srv_sel_bicubic_", suf)
+    if(!has(nm_arr)) set(nm_arr, array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)), n_srv_bc)))
+  }
+
+  # sex offsets on selectivity. older input lists have neither the flags nor the scale parameters,
+  # and both defaults reproduce sex-independent selectivity with limbs anchored at the end bins
+  if(!has("fish_dbnrml_raw")) set("fish_dbnrml_raw", array(0, dim = c(n_fish_bc, 2)))
+  if(!has("ret_dbnrml_raw")) set("ret_dbnrml_raw", array(0, dim = c(n_fish_bc, 2)))
+  if(!has("srv_dbnrml_raw")) set("srv_dbnrml_raw", array(0, dim = c(n_srv_bc, 2)))
+  if(!has("fish_dbnrml_startbin")) set("fish_dbnrml_startbin", rep(1, n_fish_bc))
+  if(!has("ret_dbnrml_startbin")) set("ret_dbnrml_startbin", rep(1, n_fish_bc))
+  if(!has("srv_dbnrml_startbin")) set("srv_dbnrml_startbin", rep(1, n_srv_bc))
+  if(!has("fishsel_sex_par_offset")) set("fishsel_sex_par_offset", rep(0, n_fish_bc))
+  if(!has("srvsel_sex_par_offset")) set("srvsel_sex_par_offset", rep(0, n_srv_bc))
+  if(!has("fishsel_sex_scale_offset")) set("fishsel_sex_scale_offset", rep(0, n_fish_bc))
+  if(!has("srvsel_sex_scale_offset")) set("srvsel_sex_scale_offset", rep(0, n_srv_bc))
+  if(!has("fishsel_sex_apical_offset")) set("fishsel_sex_apical_offset", rep(0, n_fish_bc))
+  if(!has("srvsel_sex_apical_offset")) set("srvsel_sex_apical_offset", rep(0, n_srv_bc))
+  if(!has("ln_fishsel_sex_scale")) set("ln_fishsel_sex_scale", array(0, dim = c(get("n_regions", envir = env), dim(get("fish_fixed_sel_pars", envir = env))[3], get("n_sexes", envir = env), n_fish_bc)))
+  if(!has("ln_srvsel_sex_scale")) set("ln_srvsel_sex_scale", array(0, dim = c(get("n_regions", envir = env), dim(get("srv_fixed_sel_pars", envir = env))[3], get("n_sexes", envir = env), n_srv_bc)))
+  if(!has("retsel_sex_par_offset")) set("retsel_sex_par_offset", rep(0, n_fish_bc))
+  if(!has("retsel_sex_scale_offset")) set("retsel_sex_scale_offset", rep(0, n_fish_bc))
+  if(!has("retsel_sex_apical_offset")) set("retsel_sex_apical_offset", rep(0, n_fish_bc))
+  if(!has("ln_retsel_sex_scale")) set("ln_retsel_sex_scale", array(0, dim = c(get("n_regions", envir = env), dim(get("ret_fixed_sel_pars", envir = env))[3], get("n_sexes", envir = env), n_fish_bc)))
+
+  # initial age deviations gained a sex dim. an older 3-D array is one shared curve, so it
+  # broadcasts across sexes and only the first sex's copy is penalized
+  if(length(dim(get("ln_InitDevs", envir = env))) == 3) {
+    init3 <- get("ln_InitDevs", envir = env)
+    set("ln_InitDevs", array(rep(init3, get("n_sexes", envir = env)), dim = c(dim(init3), get("n_sexes", envir = env))))
+  }
+  if(!has("init_devs_pen_use")) {
+    pen_use <- array(0, dim = dim(get("ln_InitDevs", envir = env)))
+    pen_use[,,,1] <- 1
+    set("init_devs_pen_use", pen_use)
+  }
+
+  # Selectivity penalty weights are now one specification per fleet. Older input
+  # lists hold a single named vector shared by every fleet, so replicate it.
+  for(data_name in c("fish_sel_pen_wts", "ret_sel_pen_wts", "srv_sel_pen_wts")) {
+    if(!has(data_name)) next
+    spec <- get(data_name, envir = env)
+    if(is.null(names(spec))) {
+      # Already per fleet, but predates the per-term normalize switch
+      spec <- lapply(spec, function(s) { if(is.null(s$normalize)) s$normalize <- TRUE; s })
+      set(data_name, spec)
+      next
+    }
+    n_fleets_bc <- if(data_name == "srv_sel_pen_wts") n_srv_bc else n_fish_bc
+    spec <- as.list(spec)
+    spec$normalize <- TRUE
+    set(data_name, rep(list(spec), n_fleets_bc))
+  } # end data_name loop
+
+  invisible(NULL)
+}

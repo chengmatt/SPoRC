@@ -298,7 +298,7 @@ self_test <- simulation_self_test(
   random = NULL,
   rep = dusky_rtmb_model$rep,
   sd_rep = dusky_rtmb_model$sdrep,
-  n_sims = 500,
+  n_sims = 300,
   newton_loops = 3,
   do_sdrep = TRUE,
   do_par = F,

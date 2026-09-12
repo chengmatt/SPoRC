@@ -1,20 +1,4 @@
 # Stage 2 of 3: objective function
-#
-# The one RTMB objective function, evaluated by fit_model. It runs end to end and is regulated by
-# the switches set during setup; the array arithmetic lives in the model_*.R modules it calls.
-
-# Development history of the objective function, kept as provenance for the
-# assessment. Current behavior is documented at each section below, not here.
-
-# Stages, in the order they run:
-#   1 Model Set Up (Containers)   containers, and the dim shapes named once
-#   2 Parameter Transformations   movement, M, growth, selectivity, recruitment, mortality at age
-#   3 Population Dynamics         initial age structure, cohort growth, projection, numbers at age state
-#   4 Observation Models          fishery, survey and tagging predictions
-#   5 Likelihood Equations        catch, discards, indices, compositions, age at length, tags
-#   6 Priors and Penalties        deviation penalties, selectivity, recruitment and growth, priors
-#   7 Joint Negative Log Likelihood  every term above, weighted and summed
-#   8 Report Section                 REPORT and ADREPORT
 
 # version 1 - (M.LH Cheng)
 # Bridge model 23.5 from ADMB to RTMB

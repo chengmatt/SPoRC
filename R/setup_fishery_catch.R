@@ -836,7 +836,12 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   }
 #'
 #' @param ObsCatchAA Observed catch at age, an array with dimensions
-#'   \code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}. The
+#'   \code{[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]}.
+#'   The ages are the observed ages, the columns of the fleet's ageing error
+#'   matrix (\code{AgeingError_fish}, or the shared \code{AgeingError}), which
+#'   are the model ages unless an ageing error is supplied. The predicted catch
+#'   at each model age is read onto those ages through that matrix before it is
+#'   compared, as for the age compositions. The
 #'   sex dim is required whatever the fleet reports: a data source summed over
 #'   sexes has its observation in sex slot one. Supplying this
 #'   fits the catch at age directly, every age its own lognormal observation, in
@@ -852,7 +857,7 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   not fished, so this governs closures the way \code{UseCatch} does for the
 #'   aggregated data source.
 #'
-#' @param sigmaCAA_key Integer array \code{[n_ages, n_sexes, n_fish_fleets]}
+#' @param sigmaCAA_key Integer array \code{[n_obs_ages, n_sexes, n_fish_fleets]}
 #'   coupling the catch at age observation error, the key matrix convention ICES
 #'   assessments use. Equal entries share a parameter and \code{NA} excludes one.
 #'   The sex dim is required; a key coupling the sexes repeats its entries across
@@ -870,15 +875,16 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 #'   \code{ln_sigmaCAA}.
 #'
 #' @param ObsDiscardAA,UseDiscardAA Observed discard at age and its use flags,
-#'   shaped like \code{ObsCatchAA}. The discard counterpart of catch at age.
+#'   shaped like \code{ObsCatchAA}. The discard counterpart of catch at age,
+#'   read through the same fishery ageing error.
 #' @param ObsDiscardAA_pop,UseDiscardAA_pop,ObsCatchAA_pop,UseCatchAA_pop
 #'   Population-specific counterparts, with a leading population dimension.
 #' @param sigmaCAA_pop_key,sigmaDAA_key,sigmaDAA_pop_key Integer arrays coupling
 #'   the observation error for the population-specific catch, the discards, and
 #'   the population-specific discards, following the same convention as
 #'   \code{sigmaCAA_key}. \code{sigmaDAA_key} is shaped
-#'   \code{[n_ages, n_sexes, n_fish_fleets]}; the two population-specific keys
-#'   take a leading population dim, \code{[n_pop, n_ages, n_sexes, n_fish_fleets]}.
+#'   \code{[n_obs_ages, n_sexes, n_fish_fleets]}; the two population-specific keys
+#'   take a leading population dim, \code{[n_pop, n_obs_ages, n_sexes, n_fish_fleets]}.
 #' @param sigmaCAA_pop_spec,sigmaDAA_spec,sigmaDAA_pop_spec \code{"est"} or
 #'   \code{"fix"}.
 #' @param AgeObsCorr_catch,AgeObsCorr_discard,AgeObsCorr_catch_pop,AgeObsCorr_discard_pop

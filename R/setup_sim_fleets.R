@@ -216,14 +216,16 @@
 #'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
 #'
 #' @param UseCatchAA,UseDiscardAA Integer arrays
-#'   `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
-#'   at-age observation is drawn. The sex dim is required: a data source summed
+#'   `n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x n_fish_fleets`, `1` where an
+#'   at-age observation is drawn. The draws sit on the observed ages, `n_obs_ages`
+#'   from `Setup_Sim_Dim`, read through `AgeingError_fish_input` the way the
+#'   estimation model reads them. The sex dim is required: a data source summed
 #'   over sexes has its flag in sex slot one.
 #' @param use_catch_aa,use_discard_aa Integer vectors
 #'   `n_fish_fleets`, `1` for fleets whose at-age data sources are drawn.
 #' @param ln_sigmaCAA,ln_sigmaDAA Log-scale observation error
-#'   for the at-age data sources, `n_ages x n_sexes x n_fish_fleets`. An array without
-#'   the sex dim is required.
+#'   for the at-age data sources, `n_obs_ages x n_sexes x n_fish_fleets`. The sex
+#'   dim is required.
 #' @param ObsCatchAA_SE,ObsDiscardAA_SE Reported standard errors
 #'   shaped like the use arrays, read only when the data source's `sigma_form` asks
 #'   for them.
@@ -271,10 +273,10 @@ Setup_Sim_Fishing <- function(sim_list,
                               # Retained / total fishery dynamics
                               ln_sigmaC = array(log(0.02), dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
-                              ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
-                              ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
-                              UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
-                              UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+                              UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
                               ObsCatchAA_SE = NULL,
                               ObsDiscardAA_SE = NULL,
                               CatchAA_Type = "spltRaggS",
@@ -866,9 +868,9 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$catch_units <- catch_units # catch units
   sim_list$ln_sigmaC <- ln_sigmaC # Observation sd for catch
   sim_list$ln_sigmaC_pop <- ln_sigmaC_pop
-  aa_use_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
+  aa_use_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages,
                   sim_list$n_sexes, sim_list$n_fish_fleets)
-  aa_sigma_dim <- c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)
+  aa_sigma_dim <- c(sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets)
   for(data_name in c("ln_sigmaCAA", "ln_sigmaDAA")) check_at_age_shape(get(data_name), aa_sigma_dim, data_name)
   for(data_name in c("UseCatchAA", "UseDiscardAA")) check_at_age_shape(get(data_name), aa_use_dim, data_name)
   sim_list$ln_sigmaCAA <- ln_sigmaCAA
@@ -1143,13 +1145,14 @@ Setup_Sim_Fishing <- function(sim_list,
 #'   inputs are converted to integer equivalents before storage.
 #'
 #' @param UseSrvIdxAA Integer array
-#'   `n_regions x n_yrs x n_seas x n_ages x n_sexes x n_srv_fleets`, `1` where a
-#'   survey index at age is drawn. The sex dim is required: a data source summed
-#'   over sexes has its flag in sex slot one.
+#'   `n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x n_srv_fleets`, `1` where a
+#'   survey index at age is drawn, on the observed ages that `AgeingError_srv_input`
+#'   reads onto. The sex dim is required: a data source summed over sexes has its
+#'   flag in sex slot one.
 #' @param use_srv_idx_aa Integer vector `n_srv_fleets`, `1` for fleets whose
 #'   index at age is drawn.
 #' @param ln_sigmaSrvIdxAA Log-scale observation error for the index at age,
-#'   `n_ages x n_sexes x n_srv_fleets`. The sex dim is required.
+#'   `n_obs_ages x n_sexes x n_srv_fleets`. The sex dim is required.
 #' @param ObsSrvIdxAA_SE Reported standard errors shaped like `UseSrvIdxAA`, read
 #'   only when `SrvIdxAA_sigma_form` asks for them.
 #' @param SrvIdxAA_Type Which dims each fleet reports separately: `"agg"`,
@@ -1185,8 +1188,8 @@ Setup_Sim_Fishing <- function(sim_list,
 Setup_Sim_Survey <- function(sim_list,
                              srv_sel_input,
                              ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,  sim_list$n_srv_fleets)),
-                             ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
-                             UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
+                             ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
+                             UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
                              ObsSrvIdxAA_SE = NULL,
                              SrvIdxAA_Type = "spltRaggS",
                              SrvIdxAA_LikeType = "lognormal",
@@ -1476,9 +1479,9 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$srv_sel <- srv_sel_input
   sim_list$srv_q <- srv_q_input
   sim_list$ObsSrvIdx_SE <- ObsSrvIdx_SE
-  srv_aa_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages,
-                  sim_list$n_sexes, sim_list$n_srv_fleets)
-  check_at_age_shape(ln_sigmaSrvIdxAA, c(sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets), "ln_sigmaSrvIdxAA")
+  srv_aa_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages,
+                  sim_list$n_sexes, sim_list$n_srv_fleets) # on the observed ages the ageing error reads onto
+  check_at_age_shape(ln_sigmaSrvIdxAA, c(sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets), "ln_sigmaSrvIdxAA")
   check_at_age_shape(UseSrvIdxAA, srv_aa_dim, "UseSrvIdxAA")
   check_at_age_shape(ObsSrvIdxAA_SE, srv_aa_dim, "ObsSrvIdxAA_SE")
   sim_list$ln_sigmaSrvIdxAA <- ln_sigmaSrvIdxAA

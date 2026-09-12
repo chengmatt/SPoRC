@@ -4,31 +4,45 @@
 #'
 #' The operating model states an at-age observation the way the estimation model
 #' reads it: summed over whichever of regions and sexes the fleet reports
-#' together, with the fleet's own density and its own standard deviation. A
-#' data source summed over regions is one number, so it is drawn once, when the region
-#' loop reaches region one.
+#' together, read through the fleet's ageing error onto the observed ages, with
+#' the fleet's own density and its own standard deviation. A data source summed
+#' over regions is one number, so it is drawn once, when the region loop reaches
+#' region one.
 #'
 #' @param numbers Array \code{[n_pop, n_regions, n_ages, n_sexes]} of the
-#'   quantity at age for this year, season and fleet.
+#'   quantity at model age for this year, season and fleet.
 #' @param weight Array shaped like \code{numbers}, read when \code{use_weight}.
-#' @param use Integer array \code{[n_regions, n_ages, n_sexes]} of use flags.
+#' @param use Integer array \code{[n_regions, n_obs_ages, n_sexes]} of use flags.
 #' @param se Reported standard errors shaped like \code{use}.
-#' @param ln_sigma Log-scale observation error, \code{[n_ages, n_sexes]}.
+#' @param ln_sigma Log-scale observation error, \code{[n_obs_ages, n_sexes]}.
 #' @param type_code,like_code,form_code The fleet's aggregation, density and
 #'   error-source codes.
 #' @param use_weight Logical, \code{TRUE} for an observation in weight.
 #' @param r Region the loop is on.
+#' @param ageing_error Matrix \code{[n_ages, n_obs_ages]} reading model ages as
+#'   observed ages for this year and fleet, or \code{NULL} for the identity.
 #'
-#' @return A list with \code{true} and \code{obs}, both \code{[n_ages, n_sexes]}
+#' @return A list with \code{true} and \code{obs}, both \code{[n_obs_ages, n_sexes]}
 #'   and \code{NA} wherever nothing was drawn.
 #'
 #' @keywords internal
 sim_at_age_cell <- function(numbers, weight, use, se, ln_sigma, type_code, like_code,
-                            form_code, use_weight, r) {
+                            form_code, use_weight, r, ageing_error = NULL) {
 
-  n_regions <- dim(numbers)[2]; n_ages <- dim(numbers)[3]; n_sexes <- dim(numbers)[4]
+  n_regions <- dim(numbers)[2] # regions
+  n_ages <- dim(numbers)[3] # model ages
+  n_sexes <- dim(numbers)[4] # sexes
+  n_obs_ages <- dim(use)[2] # ages the observations are recorded on
+
+  if(is.null(ageing_error)) ageing_error <- base::diag(n_ages)
+  if(!identical(as.integer(dim(ageing_error)), as.integer(c(n_ages, n_obs_ages)))) {
+    stop("The ageing error for an at-age draw is ", paste(dim(ageing_error), collapse = " by "),
+         " where ", n_ages, " model ages by ", n_obs_ages, " observed ages is expected. Set n_obs_ages ",
+         "in Setup_Sim_Dim to the observed ages of AgeingError_input.")
+  }
+
   split <- at_age_split(type_code)
-  out_true <- array(NA_real_, dim = c(n_ages, n_sexes))
+  out_true <- array(NA_real_, dim = c(n_obs_ages, n_sexes))
   out_obs <- out_true
 
   # summed over regions the observation is one number, drawn once
@@ -36,18 +50,26 @@ sim_at_age_cell <- function(numbers, weight, use, se, ln_sigma, type_code, like_
   r_idx <- if(split$region) r else seq_len(n_regions)
 
   for(s in seq_len(n_sexes)) {
+
     if(!split$sex && s > 1) next
     s_idx <- if(split$sex) s else seq_len(n_sexes)
-    for(a in seq_len(n_ages)) {
+
+    # quantity at each model age, summed over the dims this fleet reports together
+    at_model_age <- vapply(seq_len(n_ages), function(a) {
+      if(use_weight) sum(numbers[,r_idx,a,s_idx] * weight[,r_idx,a,s_idx]) else sum(numbers[,r_idx,a,s_idx])
+    }, numeric(1))
+
+    for(a in seq_len(n_obs_ages)) {
       if(use[r,a,s] != 1) next
-      val <- if(use_weight) sum(numbers[,r_idx,a,s_idx] * weight[,r_idx,a,s_idx])
-             else sum(numbers[,r_idx,a,s_idx])
+      read_as <- which(ageing_error[,a] != 0) # model ages read as this observed age
+      val <- sum(at_model_age[read_as] * ageing_error[read_as,a])
       sd <- exp(ln_sigma[a,s])
       if(form_code != 0) sd <- at_age_obs_sd(se[r,a,s], sd, form_code)
       out_true[a,s] <- val
       out_obs[a,s] <- if(like_code == 0) val * exp(stats::rnorm(1, 0, sd))
                       else val + stats::rnorm(1, 0, sd)
     } # end a loop
+
   } # end s loop
 
   return(list(true = out_true, obs = out_obs))
@@ -1049,20 +1071,19 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           if(catch_units[f] == 0) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim]) # abundance
           if(catch_units[f] == 1) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim] * WAA_fish[,r,y,seas,,,f,sim]) # biomass
           sim_env$ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
-
-          # catch and discards at age, drawn per age and sex from their own standard deviations and
-          # summed over whichever dims the fleet reports together
           aa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
+          aa_obs_dim <- c(n_regions, n_obs_ages, n_sexes) # use flags and errors sit on the observed ages
           aa_wt <- array(WAA_fish[,,y,seas,,,f,sim], dim = aa_dim)
 
           if(exists("use_catch_aa") && use_catch_aa[f] == 1) {
             store_at_age_cell(sim_env, "CatchAA",
                               sim_at_age_cell(array(CAA[,,y,seas,,,f,sim], dim = aa_dim), aa_wt,
-                                              array(UseCatchAA[,y,seas,,,f], dim = aa_dim[-1]),
-                                              array(ObsCatchAA_SE[,y,seas,,,f], dim = aa_dim[-1]),
-                                              array(ln_sigmaCAA[,,f], dim = c(n_ages, n_sexes)),
+                                              array(UseCatchAA[,y,seas,,,f], dim = aa_obs_dim),
+                                              array(ObsCatchAA_SE[,y,seas,,,f], dim = aa_obs_dim),
+                                              array(ln_sigmaCAA[,,f], dim = c(n_obs_ages, n_sexes)),
                                               CatchAA_Type[y,f], CatchAA_LikeType[f], CatchAA_sigma_form[f],
-                                              catch_units[f] == 1, r),
+                                              catch_units[f] == 1, r,
+                                              ageing_error = array(AgeingError_fish[y,,,f,sim], dim = dim(AgeingError_fish)[2:3])),
                               r, y, seas, f, sim)
           }
 
@@ -1071,11 +1092,12 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
             for(rr in 1:n_regions) daa[,rr,,] <- daa[,rr,,] / dmr[rr,y,seas,f,sim] # dead discards raised to the total
             store_at_age_cell(sim_env, "DiscardAA",
                               sim_at_age_cell(daa, aa_wt,
-                                              array(UseDiscardAA[,y,seas,,,f], dim = aa_dim[-1]),
-                                              array(ObsDiscardAA_SE[,y,seas,,,f], dim = aa_dim[-1]),
-                                              array(ln_sigmaDAA[,,f], dim = c(n_ages, n_sexes)),
+                                              array(UseDiscardAA[,y,seas,,,f], dim = aa_obs_dim),
+                                              array(ObsDiscardAA_SE[,y,seas,,,f], dim = aa_obs_dim),
+                                              array(ln_sigmaDAA[,,f], dim = c(n_obs_ages, n_sexes)),
                                               DiscardAA_Type[y,f], DiscardAA_LikeType[f], DiscardAA_sigma_form[f],
-                                              discard_units[f] == 1, r),
+                                              discard_units[f] == 1, r,
+                                              ageing_error = array(AgeingError_fish[y,,,f,sim], dim = dim(AgeingError_fish)[2:3])),
                               r, y, seas, f, sim)
           }
 
@@ -1671,18 +1693,19 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
             sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], ObsSrvIdx_SE[r,y,seas,sf], sidx_like)
           }
 
-          # Survey index at age, each age and sex drawn from its own catchability
-          # and standard deviation, mirroring how the at-age likelihood reads them.
+          # survey index at age
           if(exists("use_srv_idx_aa") && use_srv_idx_aa[sf] == 1) {
             saa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
+            saa_obs_dim <- c(n_regions, n_obs_ages, n_sexes) # use flags and errors sit on the observed ages
             store_at_age_cell(sim_env, "SrvIdxAA",
                               sim_at_age_cell(array(SrvIAA[,,y,seas,,,sf,sim], dim = saa_dim),
                                               array(0, dim = saa_dim),
-                                              array(UseSrvIdxAA[,y,seas,,,sf], dim = saa_dim[-1]),
-                                              array(ObsSrvIdxAA_SE[,y,seas,,,sf], dim = saa_dim[-1]),
-                                              array(ln_sigmaSrvIdxAA[,,sf], dim = c(n_ages, n_sexes)),
+                                              array(UseSrvIdxAA[,y,seas,,,sf], dim = saa_obs_dim),
+                                              array(ObsSrvIdxAA_SE[,y,seas,,,sf], dim = saa_obs_dim),
+                                              array(ln_sigmaSrvIdxAA[,,sf], dim = c(n_obs_ages, n_sexes)),
                                               SrvIdxAA_Type[y,sf], SrvIdxAA_LikeType[sf], SrvIdxAA_sigma_form[sf],
-                                              FALSE, r),
+                                              FALSE, r,
+                                              ageing_error = array(AgeingError_srv[y,,,sf,sim], dim = dim(AgeingError_srv)[2:3])),
                               r, y, seas, sf, sim)
           }
 

@@ -35,9 +35,15 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
     expect_lt(pct(r$WAA_fish[1, a, 1, 1, , s, 1], g$Wt_Mid), 1e-2)
   } # end a, s loops
 
-  # The mid-season age-length key, which SS3 prints with its lengths largest first
-  alk_ss3 <- dat$ss3$ALK[rev(seq_len(dim(dat$ss3$ALK)[1])), , "Seas: 1 Sub_Seas: 2 Morph: 1"]
-  expect_lt(max(abs(r$SizeAgeTrans[1, 1, 1, 1, , , 1] - alk_ss3)), 1e-5)
+  # The mid-season age-length key, one per morph, which SS3 orders as area within sex and
+  # prints lengths largest first. the dim check makes a dropped key loud, -Inf passes quietly
+  rev_l <- rev(seq_len(dim(dat$ss3$ALK)[1]))
+  for(a in 1:n_reg) for(s in 1:n_sex) {
+    alk_ss3 <- dat$ss3$ALK[rev_l, , paste0("Seas: 1 Sub_Seas: 2 Morph: ", (s - 1) * n_reg + a)]
+    alk_sporc <- r[["SizeAgeTrans_srv"]][1, a, 1, 1, , , s, 1]
+    expect_equal(dim(alk_sporc), dim(alk_ss3))
+    expect_lt(max(abs(alk_sporc - alk_ss3)), 1e-5)
+  } # end a, s loops
 
   # Population dynamics ----
   for(a in 1:n_reg) for(s in 1:n_sex) expect_lt(pct(r$NAA[1, a, 1:n_yrs, 1, , s], dat$ss3$NAA[a, , , s]), 1e-2)

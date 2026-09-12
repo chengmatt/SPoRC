@@ -14,20 +14,21 @@ sim_at_age_cell(
   like_code,
   form_code,
   use_weight,
-  r
+  r,
+  ageing_error = NULL
 )
 }
 \arguments{
 \item{numbers}{Array \code{[n_pop, n_regions, n_ages, n_sexes]} of the
-quantity at age for this year, season and fleet.}
+quantity at model age for this year, season and fleet.}
 
 \item{weight}{Array shaped like \code{numbers}, read when \code{use_weight}.}
 
-\item{use}{Integer array \code{[n_regions, n_ages, n_sexes]} of use flags.}
+\item{use}{Integer array \code{[n_regions, n_obs_ages, n_sexes]} of use flags.}
 
 \item{se}{Reported standard errors shaped like \code{use}.}
 
-\item{ln_sigma}{Log-scale observation error, \code{[n_ages, n_sexes]}.}
+\item{ln_sigma}{Log-scale observation error, \code{[n_obs_ages, n_sexes]}.}
 
 \item{type_code, like_code, form_code}{The fleet's aggregation, density and
 error-source codes.}
@@ -35,16 +36,20 @@ error-source codes.}
 \item{use_weight}{Logical, \code{TRUE} for an observation in weight.}
 
 \item{r}{Region the loop is on.}
+
+\item{ageing_error}{Matrix \code{[n_ages, n_obs_ages]} reading model ages as
+observed ages for this year and fleet, or \code{NULL} for the identity.}
 }
 \value{
-A list with \code{true} and \code{obs}, both \code{[n_ages, n_sexes]}
+A list with \code{true} and \code{obs}, both \code{[n_obs_ages, n_sexes]}
   and \code{NA} wherever nothing was drawn.
 }
 \description{
 The operating model states an at-age observation the way the estimation model
 reads it: summed over whichever of regions and sexes the fleet reports
-together, with the fleet's own density and its own standard deviation. A
-data source summed over regions is one number, so it is drawn once, when the region
-loop reaches region one.
+together, read through the fleet's ageing error onto the observed ages, with
+the fleet's own density and its own standard deviation. A data source summed
+over regions is one number, so it is drawn once, when the region loop reaches
+region one.
 }
 \keyword{internal}

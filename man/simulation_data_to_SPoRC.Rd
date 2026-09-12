@@ -22,7 +22,11 @@ Named list with the following elements (all arrays have \code{y}
   \code{WAA_fish} \code{[... x n_fish_fleets]},
   \code{WAA_srv} \code{[... x n_srv_fleets]},
   \code{MatAA}, \code{SizeAgeTrans} (or \code{NULL}),
-  \code{AgeingError} \code{[y x n_obs_ages x n_ages]},
+  \code{AgeingError} \code{[y x n_ages x n_obs_ages]}, the observed ages being
+  the columns the model ages are read onto,
+  \code{AgeingError_fish} \code{[... x n_fish_fleets]},
+  \code{AgeingError_srv} \code{[... x n_srv_fleets]} (both \code{NULL} when the
+  fleets share one matrix),
   \code{use_conv_fish_tagging},
   \code{conv_tag_release_indicator}, \code{obs_conv_tag_fish_recap},
   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},

@@ -9,10 +9,10 @@ Setup_Sim_Survey(
   srv_sel_input,
   ObsSrvIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
     sim_list$n_srv_fleets)),
-  ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
+  ln_sigmaSrvIdxAA = array(log(0.2), dim = c(sim_list$n_obs_ages, sim_list$n_sexes,
     sim_list$n_srv_fleets)),
   UseSrvIdxAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
+    sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets)),
   ObsSrvIdxAA_SE = NULL,
   SrvIdxAA_Type = "spltRaggS",
   SrvIdxAA_LikeType = "lognormal",
@@ -90,12 +90,13 @@ No default; must be provided.}
 array \code{[n_regions × n_yrs × n_seas × n_srv_fleets]}. Default: 0.2.}
 
 \item{ln_sigmaSrvIdxAA}{Log-scale observation error for the index at age,
-`n_ages x n_sexes x n_srv_fleets`. The sex dim is required.}
+`n_obs_ages x n_sexes x n_srv_fleets`. The sex dim is required.}
 
 \item{UseSrvIdxAA}{Integer array
-`n_regions x n_yrs x n_seas x n_ages x n_sexes x n_srv_fleets`, `1` where a
-survey index at age is drawn. The sex dim is required: a data source summed
-over sexes has its flag in sex slot one.}
+`n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x n_srv_fleets`, `1` where a
+survey index at age is drawn, on the observed ages that `AgeingError_srv_input`
+reads onto. The sex dim is required: a data source summed over sexes has its
+flag in sex slot one.}
 
 \item{ObsSrvIdxAA_SE}{Reported standard errors shaped like `UseSrvIdxAA`, read
 only when `SrvIdxAA_sigma_form` asks for them.}

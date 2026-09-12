@@ -1,5 +1,5 @@
-# At-age observation likelihoods for eight data sources: retained catch, discards, fishery index and
-# survey index, each aggregated and population-specific. Stored region x year x season x age x sex x fleet.
+# At-age observation likelihoods for six data sources: retained catch, discards and survey index, each
+# aggregated and population-specific. Stored region x year x season x observed age x sex x fleet.
 
 #' Decode an at-age aggregation type into its split dims
 #'
@@ -98,7 +98,7 @@ prep_at_age_obs = function(obs, use, like_type, const = 0) {
 #'   values hold the height of the curve as well as its shape.
 #' @param p_idx,r_idx,s_idx Population, region and sex indices, each either one
 #'   index or the whole extent of that dim.
-#' @param y,seas,a,f Year, season, age and fleet indices. \code{seas} is one
+#' @param y,seas,a,f Year, season, model age and fleet indices. \code{seas} is one
 #'   season, or every season of the year for a data source reported as a season
 #'   total.
 #'
@@ -126,6 +126,76 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
   return(sum(arrays$SrvIAA[p_idx,r_idx,y,seas,a,s_idx,f])) # survey available numbers
 }
 
+#' Is one fleet's ageing error the identity in every year?
+#'
+#' An identity matrix reads every age as itself, so a fleet with one is
+#' predicted on the model's own ages without passing through the map.
+#'
+#' @param ageing_error Array \code{[n_years, n_ages, n_obs_ages]} for one fleet.
+#'
+#' @return \code{TRUE} when every year is the identity matrix.
+#'
+#' @keywords internal
+is_identity_ageing_error = function(ageing_error) {
+
+  d = dim(ageing_error)
+  if(d[2] != d[3]) return(FALSE)
+
+  identity_mat = base::diag(d[2])
+  for(y in seq_len(d[1])) {
+    if(!all(ageing_error[y,,] == identity_mat)) return(FALSE)
+  } # end y loop
+
+  return(TRUE)
+}
+
+#' Predicted values at the ages the observations are recorded on
+#'
+#' An at-age observation counts fish by the age they were read as, so the prediction at each
+#' observed age sums the predictions at every model age read as it, weighted by the fleet's
+#' ageing error matrix, with units and discard mortality applied at the model age first.
+#'
+#' @param source,arrays,p_idx,r_idx,s_idx,y,seas,f See
+#'   \code{\link{get_at_age_prediction}}.
+#' @param obs_ages Integer vector of the observed ages to predict.
+#' @param ageing_error Array \code{[n_years, n_ages, n_obs_ages]} for this
+#'   fleet, or \code{NULL} when the observed ages are the model ages.
+#'
+#' @return A vector the length of \code{obs_ages}.
+#'
+#' @keywords internal
+get_at_age_obs_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, obs_ages, f, ageing_error = NULL) {
+
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  pred = rep(0, length(obs_ages))
+
+  # observed ages are the model ages
+  if(is.null(ageing_error)) {
+    for(k in seq_along(obs_ages)) {
+      pred[k] = get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx, y, seas, obs_ages[k], f)
+    } # end k loop
+    return(pred)
+  }
+
+  ae = base::matrix(ageing_error[y,,obs_ages], ncol = length(obs_ages)) # model age by observed age
+  from_ages = which(base::rowSums(ae != 0) > 0) # model ages read as any of these observed ages
+
+  # prediction at each of those model ages
+  pred_model = rep(0, length(from_ages))
+  for(j in seq_along(from_ages)) {
+    pred_model[j] = get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx, y, seas, from_ages[j], f)
+  } # end j loop
+
+  # each observed age collects the model ages read as it
+  for(k in seq_along(obs_ages)) {
+    read_as = which(ae[from_ages,k] != 0)
+    pred[k] = sum(pred_model[read_as] * ae[from_ages[read_as],k])
+  } # end k loop
+
+  return(pred)
+}
+
 #' Evaluate one age-disaggregated data source
 #'
 #' Computes the at-age negative log likelihood for every fleet in one data source.
@@ -143,10 +213,10 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
 #'   flagged in \code{use}, in \code{which()} order, on the scale its fleet's
 #'   likelihood uses.
 #' @param use Integer array flagging which cells are fit, dimensioned region by
-#'   year by season by age by sex by fleet, with a leading population dimension
-#'   when \code{pop} is \code{TRUE}.
-#' @param ln_sigma Log-scale observation error, over age by sex by fleet, with a
-#'   leading population dimension when \code{pop} is \code{TRUE}.
+#'   year by season by observed age by sex by fleet, with a leading population
+#'   dimension when \code{pop} is \code{TRUE}.
+#' @param ln_sigma Log-scale observation error, over observed age by sex by
+#'   fleet, with a leading population dimension when \code{pop} is \code{TRUE}.
 #' @param source,arrays Passed to \code{\link{get_at_age_prediction}}.
 #' @param seas_agg Integer vector, one per fleet. \code{1} compares the
 #'   observation against every season of the year summed together, \code{0}
@@ -171,6 +241,10 @@ get_at_age_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, seas, a
 #' @param aa_type Integer codes naming the split dims, as a matrix over year
 #'   by fleet or a vector per fleet standing for every year, see
 #'   \code{\link{at_age_split}}.
+#' @param ageing_error Array \code{[n_years, n_ages, n_obs_ages, n_fleets]}
+#'   reading model ages as observed ages, the fishery or survey ageing error, or
+#'   \code{NULL} when the observed ages are the model ages. Its observed ages
+#'   must be the age dim of \code{use}.
 #'
 #' @return A list with \code{nLL} and \code{pred}, both arrays shaped like
 #'   \code{use} and zero wherever nothing is fit. The predictions are returned so
@@ -193,7 +267,8 @@ get_at_age_source_nLL = function(
   trans_rho_year = 0,
   us_pars = NULL,
   aa_type = 1,
-  seas_agg = 0
+  seas_agg = 0,
+  ageing_error = NULL
 ) {
 
   "[<-" <- RTMB::ADoverload("[<-")
@@ -213,6 +288,13 @@ get_at_age_source_nLL = function(
 
   i_r = if(pop) 2 else 1        # dimension positions within one fleet's slice
   i_y = i_r + 1; i_seas = i_y + 1; i_a = i_seas + 1; i_s = i_a + 1
+
+  # the observations sit on the observed ages, the columns of the ageing error
+  if(!is.null(ageing_error) && dim(ageing_error)[3] != d[i_a]) {
+    stop("The at-age observations are on ", d[i_a], " ages, but the ageing error reads model ages onto ",
+         dim(ageing_error)[3], " observed ages. At-age data are recorded on the observed ages of ",
+         "AgeingError, so rebuild the input list through its Setup_Mod_ functions.")
+  }
 
   # the aggregation may change between years, so it is kept as year by fleet
   # whatever shape it arrived in
@@ -252,6 +334,13 @@ get_at_age_source_nLL = function(
            "over the whole block of years by ages, but its aggregation changes between ",
            "years. Hold the aggregation constant for this fleet, or give each period its ",
            "own fleet so that each block is its own observation.")
+    }
+
+    # this fleet's ageing error, left NULL when it reads every age as itself
+    ae_f = NULL
+    if(!is.null(ageing_error)) {
+      ae_f = array(ageing_error[,,,f], dim = dim(ageing_error)[1:3])
+      if(is_identity_ageing_error(ae_f)) ae_f = NULL
     }
 
     # an unstructured correlation is one matrix per cell the spec keeps apart, built on first use
@@ -307,8 +396,8 @@ get_at_age_source_nLL = function(
         k = 1
         for(ay in seq_along(obs_ages)) {   # column major, matching the slot matrix
           for(yy in seq_along(obs_yrs)) {
-            pred[k] = get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx,
-                                            obs_yrs[yy], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages[ay], f)
+            pred[k] = get_at_age_obs_prediction(source, arrays, p_idx, r_idx, s_idx,
+                                                obs_yrs[yy], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages[ay], f, ae_f)
             k = k + 1
           } # end yy loop
         } # end ay loop
@@ -338,11 +427,9 @@ get_at_age_source_nLL = function(
       extra = if(pop) exp(ln_sigma[p,obs_ages,s,f]) else exp(ln_sigma[obs_ages,s,f])
       sd_vec = if(sd_form[f] == 0) extra else at_age_obs_sd(as.numeric(obs_se)[lin], extra, sd_form[f])
 
-      pred = rep(0, length(obs_ages))
-      for(age_slot in seq_along(obs_ages)) { # prediction for each observed age
-        pred[age_slot] = get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx,
-                                               idx[i_y], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages[age_slot], f)
-      } # end age_slot loop
+      # prediction for each observed age, read through this fleet's ageing error
+      pred = get_at_age_obs_prediction(source, arrays, p_idx, r_idx, s_idx,
+                                       idx[i_y], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages, f, ae_f)
 
       pred_t = if(like_type[f] == 0) log(pred + const) else pred
 

@@ -21,7 +21,7 @@ values hold the height of the curve as well as its shape.}
 \item{p_idx, r_idx, s_idx}{Population, region and sex indices, each either one
 index or the whole extent of that dim.}
 
-\item{y, seas, a, f}{Year, season, age and fleet indices. \code{seas} is one
+\item{y, seas, a, f}{Year, season, model age and fleet indices. \code{seas} is one
 season, or every season of the year for a data source reported as a season
 total.}
 }

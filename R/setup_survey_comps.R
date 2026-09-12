@@ -75,7 +75,10 @@
 #'   fleets and pinned others at a bound.
 #'
 #' @param ObsSrvIdxAA Observed survey index at age, an array with dimensions
-#'   \code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]}.
+#'   \code{[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets]},
+#'   the ages being the columns of the fleet's ageing error matrix
+#'   (\code{AgeingError_srv}, or the shared \code{AgeingError}), through which
+#'   the predicted index at each model age is read before it is compared.
 #'   Supplying this fits the index at age directly, every age its own observation
 #'   with its own catchability. The sex dim is required whatever the fleet
 #'   reports: a data source summed over sexes has its observation in sex slot one.
@@ -89,7 +92,7 @@
 #'   them. This is the parity the aggregated index already has: an index
 #'   disaggregated by age keeps its survey-design errors.
 #' @param sigmaSrvIdxAA_key,sigmaSrvIdxAA_pop_key Integer arrays
-#'   \code{[n_ages, n_sexes, n_srv_fleets]} coupling the index at age
+#'   \code{[n_obs_ages, n_sexes, n_srv_fleets]} coupling the index at age
 #'   observation error, the key matrix convention ICES assessments use. Equal
 #'   entries share a parameter and \code{NA} excludes one. The sex dim is
 #'   required; a key coupling the sexes repeats its entries across them. The age shape of

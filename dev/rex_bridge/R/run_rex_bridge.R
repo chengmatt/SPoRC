@@ -44,7 +44,8 @@ for(a in 1:2) for(s in 1:2) { g <- dat$ss3$growth[[a]][[s]]; cat(sprintf("  area
 
 cat("\n=== ALK (mid season, area 1 female) ===\n")
 alk_ss3 <- dat$ss3$ALK[, , "Seas: 1 Sub_Seas: 2 Morph: 1"][rev(seq_len(n_lens_alk <- dim(dat$ss3$ALK)[1])), ] # SS3 prints lengths largest first
-alk_sporc <- r$SizeAgeTrans[1, 1, 1, 1, , , 1]
+alk_sporc <- r[["SizeAgeTrans_srv"]][1, 1, 1, 1, , , 1, 1] # survey fleet 1, read at mid season
+stopifnot(identical(dim(alk_sporc), dim(alk_ss3))) # a dropped key would print -Inf as the gap
 cat("max abs gap:", signif(max(abs(alk_sporc - alk_ss3)), 3), "\n")
 
 cat("\n=== selectivity (fishery, ages 0..20) ===\n")

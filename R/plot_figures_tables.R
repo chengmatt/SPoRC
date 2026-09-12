@@ -938,12 +938,16 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
             else aa_type[cbind(idx[, 2], fleet)]
     split <- at_age_split(code)
 
+    # observed ages take the model's age labels when the two sets coincide, else their observed bin number
+    n_obs_ages <- dim(use_arr)[4]
+    age_labels <- if(n_obs_ages == length(data[[i]]$ages)) data[[i]]$ages else seq_len(n_obs_ages)
+
     like <- data[[i]][[paste0(data_source, "_LikeType")]]
     rows[[length(rows) + 1]] <- data.frame(
       Year = data[[i]]$years[idx[, 2]],
       Season = idx[, 3],
       Region = ifelse(split$region, paste("Region", idx[, 1]), "All regions"),
-      Age = data[[i]]$ages[idx[, 4]],
+      Age = age_labels[idx[, 4]],
       Sex = ifelse(split$sex, paste("Sex", idx[, 5]), "All sexes"),
       Fleet = fleet,
       Obs = data[[i]][[obs_data_field]][fit_cells],

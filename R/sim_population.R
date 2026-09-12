@@ -816,6 +816,7 @@ Simulate_Pop_Static <- function(sim_list,
                   # Aggregated fishery obs
                   TrueCatch = sim_env$TrueCatch,
                   TrueCatchAA = sim_env$TrueCatchAA, ObsCatchAA = sim_env$ObsCatchAA,
+                  TrueDiscardAA = sim_env$TrueDiscardAA, ObsDiscardAA = sim_env$ObsDiscardAA,
                   TrueSrvIdxAA = sim_env$TrueSrvIdxAA, ObsSrvIdxAA = sim_env$ObsSrvIdxAA,
                   ObsCatch = sim_env$ObsCatch,
                   ObsFishIdx = sim_env$ObsFishIdx,

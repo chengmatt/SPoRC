@@ -2,7 +2,7 @@
 % Please edit documentation in R/setup_mapping.R
 \name{do_key_mapping}
 \alias{do_key_mapping}
-\title{Map an at-age observation error or catchability from a key matrix}
+\title{Map an at-age observation error from a key matrix}
 \usage{
 do_key_mapping(
   input_list,
@@ -19,7 +19,7 @@ do_key_mapping(
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{key}{Integer array \code{[n_ages, n_sexes, n_fleets]}, or \code{NULL}
+\item{key}{Integer array \code{[n_obs_ages, n_sexes, n_fleets]}, or \code{NULL}
 for the default given by \code{default_shared}. Gains a leading population
 dimension when \code{pop} is \code{TRUE}. The sex dim is required: a key
 coupling the sexes says so by repeating its entries across them.}
@@ -41,23 +41,22 @@ key says.}
 
 \item{default_shared}{Logical. When \code{key} is \code{NULL}, \code{TRUE}
 gives one parameter per fleet shared across ages and \code{FALSE} gives one
-per age and fleet. Catchability defaults to the latter.}
+per age and fleet.}
 }
 \value{
 \code{input_list} with \code{$par$<par_name>} and
   \code{$map$<par_name>} set.
 }
 \description{
-The key is an integer matrix \code{[n_ages, n_fleets]} in which equal entries
+The key is an integer array \code{[n_obs_ages, n_sexes, n_fleets]} in which equal entries
 share a parameter and \code{NA} excludes one. This is the key matrix
 convention ICES age-structured assessments use for coupling. One structure
 covers every sharing pattern that would otherwise need its own spec string:
 one parameter per age, one per age group, or one for the whole fleet.
 }
 \details{
-Shared by every at-age data source: the catch, discard and index observation
-errors, the age-specific catchabilities, and their population-specific
-counterparts.
+Shared by every at-age data source: the catch, discard and survey index
+observation errors and their population-specific counterparts.
 
 Coupled parameters are checked against the observations informing them. A
 standard deviation with a single observation is not merely poorly determined:

@@ -1,5 +1,5 @@
-# A minimal at-age model with configurable regions, sexes and fishery fleets. At-age data sources are
-# stored over regions and sexes whatever a fleet reports, so those tests need a model that has them.
+# A minimal at-age model with configurable regions, sexes, fishery fleets and ageing error. At-age data
+# sources are stored over regions and sexes whatever a fleet reports, so those tests need a model that has them.
 
 build_at_age <- function(
   n_yrs = 20,
@@ -10,12 +10,16 @@ build_at_age <- function(
   ObsCatchAA = NULL,
   UseCatchAA = NULL,
   srv_extra = list(),
+  AgeingError = NULL,
+  AgeingError_fish = NULL,
+  AgeingError_srv = NULL,
   ...
 ) {
 
   yrs <- seq_len(n_yrs); ages <- seq_len(n_ages)
   d1 <- c(1, n_regions, n_yrs, 1, n_ages, n_sexes)
   fl <- seq_len(n_fleets)
+  n_obs_ages <- if(is.null(AgeingError)) n_ages else dim(AgeingError)[length(dim(AgeingError))] # compositions sit on these
 
   il <- Setup_Mod_Dim(
     n_pop = 1,
@@ -45,7 +49,10 @@ build_at_age <- function(
     MatAA = array(1, dim = d1),
     fit_lengths = 0,
     M_spec = "fix",
-    Fixed_natmort = array(0.2, dim = c(1, n_regions, n_yrs, n_ages, n_sexes))
+    Fixed_natmort = array(0.2, dim = c(1, n_regions, n_yrs, n_ages, n_sexes)),
+    AgeingError = AgeingError,
+    AgeingError_fish = AgeingError_fish,
+    AgeingError_srv = AgeingError_srv
   ))
   il <- Setup_Mod_Movement(
     il,
@@ -72,7 +79,7 @@ build_at_age <- function(
     ObsFishIdx = array(NA, dim = c(n_regions, n_yrs, 1, n_fleets)),
     ObsFishIdx_SE = array(NA, dim = c(n_regions, n_yrs, 1, n_fleets)),
     UseFishIdx = array(0, dim = c(n_regions, n_yrs, 1, n_fleets)),
-    ObsFishAgeComps = array(0, dim = c(n_regions, n_yrs, 1, n_ages, n_sexes, n_fleets)),
+    ObsFishAgeComps = array(0, dim = c(n_regions, n_yrs, 1, n_obs_ages, n_sexes, n_fleets)),
     UseFishAgeComps = array(0, dim = c(n_regions, n_yrs, 1, n_fleets)),
     ISS_FishAgeComps = array(0, dim = c(n_regions, n_yrs, 1, n_sexes, n_fleets)),
     ObsFishLenComps = array(0, dim = c(n_regions, n_yrs, 1, 1, n_sexes, n_fleets)),
@@ -90,7 +97,7 @@ build_at_age <- function(
     ObsSrvIdx = array(1e5, dim = c(n_regions, n_yrs, 1, 1)),
     ObsSrvIdx_SE = array(0.2, dim = c(n_regions, n_yrs, 1, 1)),
     UseSrvIdx = array(1, dim = c(n_regions, n_yrs, 1, 1)),
-    ObsSrvAgeComps = array(0, dim = c(n_regions, n_yrs, 1, n_ages, n_sexes, 1)),
+    ObsSrvAgeComps = array(0, dim = c(n_regions, n_yrs, 1, n_obs_ages, n_sexes, 1)),
     UseSrvAgeComps = array(0, dim = c(n_regions, n_yrs, 1, 1)),
     ISS_SrvAgeComps = array(0, dim = c(n_regions, n_yrs, 1, n_sexes, 1)),
     ObsSrvLenComps = array(0, dim = c(n_regions, n_yrs, 1, 1, n_sexes, 1)),

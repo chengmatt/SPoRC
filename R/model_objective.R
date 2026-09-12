@@ -1252,7 +1252,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho_year = trans_rho_catch_year, # correlation across years, unconstrained
     us_pars = trans_rho_catch_us, # unstructured correlation parameters
     aa_type = CatchAA_Type, # dims the observations are split by
-    seas_agg = CatchAA_seas_Type # whether this source is fit as a season total
+    seas_agg = CatchAA_seas_Type, # whether this source is fit as a season total
+    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
   )
 
   CatchAA_nLL = caa$nLL # nLL
@@ -1301,7 +1302,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho_year = trans_rho_catch_pop_year, # correlation across years, unconstrained
     us_pars = trans_rho_catch_pop_us, # unstructured correlation parameters
     aa_type = CatchAA_pop_Type, # dims the observations are split by
-    seas_agg = CatchAA_pop_seas_Type # whether this source is fit as a season total
+    seas_agg = CatchAA_pop_seas_Type, # whether this source is fit as a season total
+    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
   )
 
   CatchAA_pop_nLL = caa_pop$nLL # nLL
@@ -1350,7 +1352,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho_year = trans_rho_discard_year, # correlation across years, unconstrained
     us_pars = trans_rho_discard_us, # unstructured correlation parameters
     aa_type = DiscardAA_Type, # dims the observations are split by
-    seas_agg = DiscardAA_seas_Type # whether this source is fit as a season total
+    seas_agg = DiscardAA_seas_Type, # whether this source is fit as a season total
+    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
   )
 
   DiscardAA_nLL = daa$nLL # nLL
@@ -1400,7 +1403,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho_year = trans_rho_discard_pop_year, # correlation across years, unconstrained
     us_pars = trans_rho_discard_pop_us, # unstructured correlation parameters
     aa_type = DiscardAA_pop_Type, # dims the observations are split by
-    seas_agg = DiscardAA_pop_seas_Type # whether this source is fit as a season total
+    seas_agg = DiscardAA_pop_seas_Type, # whether this source is fit as a season total
+    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
   )
 
   DiscardAA_pop_nLL = daa_pop$nLL # nLL
@@ -2018,7 +2022,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho_year = trans_rho_srv_idx_year, # correlation across years, unconstrained
     us_pars = trans_rho_srv_idx_us, # unstructured correlation parameters
     aa_type = SrvIdxAA_Type, # dims the observations are split by
-    seas_agg = SrvIdxAA_seas_Type # whether this source is fit as a season total
+    seas_agg = SrvIdxAA_seas_Type, # whether this source is fit as a season total
+    ageing_error = AgeingError_srv # model ages read as observed ages, per survey fleet
   )
 
   SrvIdxAA_nLL = siaa$nLL # nLL
@@ -2082,7 +2087,8 @@ SPoRC_rtmb = function(pars, data) {
     trans_rho_year = trans_rho_srv_idx_pop_year, # correlation across years, unconstrained
     us_pars = trans_rho_srv_idx_pop_us, # unstructured correlation parameters
     aa_type = SrvIdxAA_pop_Type, # dims the observations are split by
-    seas_agg = SrvIdxAA_pop_seas_Type # whether this source is fit as a season total
+    seas_agg = SrvIdxAA_pop_seas_Type, # whether this source is fit as a season total
+    ageing_error = AgeingError_srv # model ages read as observed ages, per survey fleet
   )
 
   SrvIdxAA_pop_nLL = siaa_pop$nLL # nLL

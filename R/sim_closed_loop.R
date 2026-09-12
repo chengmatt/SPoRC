@@ -298,6 +298,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
                               dim(data$ObsSrvAgeComps)[4]
                             } else if(any(data$UseSrvAgeComps_pop == 1)) {
                               dim(data$ObsSrvAgeComps_pop)[5]
+                            } else {
+                              dim(data$AgeingError)[3] # otherwise the ageing error's observed ages, which the at-age data sit on
                             },
                             n_lens = length(data$lens),
                             n_sexes = data$n_sexes,
@@ -476,22 +478,27 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   FishLen_discard_pop_corr_pars_agg <- if(!"FishLen_discard_pop_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_discard_pop_corr_pars_agg else args$FishLen_discard_pop_corr_pars_agg
   FishLen_discard_pop_corr_pars <- if(!"FishLen_discard_pop_corr_pars" %in% names(args)) optim_parameters_list$FishLen_discard_pop_corr_pars[,,,,,drop = FALSE] else args$FishLen_discard_pop_corr_pars
 
+  n_obs_om <- sim_list$n_obs_ages # observed ages the operating model draws on
+  catch_aa_used <- any(data$UseCatchAA == 1) # whether the fit observes catch at age
+  discard_aa_used <- any(data$UseDiscardAA == 1) # discards at age
+  srv_idx_aa_used <- any(data$UseSrvIdxAA == 1) # survey index at age
+
   # setup fishery simulation processes
   sim_list <- Setup_Sim_Fishing(
     sim_list = sim_list, # update simulate list
     ln_sigmaC = ln_sigmaC,
     # age-disaggregated observation error passes through unweighted: it is keyed by age and fleet
     # and is not scaled by a likelihood weight the way the aggregated sigmas are
-    ln_sigmaCAA = optim_parameters_list$ln_sigmaCAA,
-    ln_sigmaDAA = optim_parameters_list$ln_sigmaDAA,
+    ln_sigmaCAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaCAA, catch_aa_used, 1, n_obs_om, log(0.5)),
+    ln_sigmaDAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaDAA, discard_aa_used, 1, n_obs_om, log(0.5)),
     # the at-age data sources have year on their second dim and no simulation dim, and closed-loop
     # years keep observing whatever the terminal year observed
-    UseCatchAA = extend_years(data$UseCatchAA, closed_loop_yrs, 2, fill = 'last'),
-    UseDiscardAA = extend_years(data$UseDiscardAA, closed_loop_yrs, 2, fill = 'last'),
+    UseCatchAA = unused_at_age_on_obs_ages(extend_years(data$UseCatchAA, closed_loop_yrs, 2, fill = 'last'), catch_aa_used, 4, n_obs_om),
+    UseDiscardAA = unused_at_age_on_obs_ages(extend_years(data$UseDiscardAA, closed_loop_yrs, 2, fill = 'last'), discard_aa_used, 4, n_obs_om),
     use_catch_aa = data$use_catch_aa,
     use_discard_aa = data$use_discard_aa,
-    ObsCatchAA_SE = extend_years(data$ObsCatchAA_SE, closed_loop_yrs, 2, fill = 'last'),
-    ObsDiscardAA_SE = extend_years(data$ObsDiscardAA_SE, closed_loop_yrs, 2, fill = 'last'),
+    ObsCatchAA_SE = unused_at_age_on_obs_ages(extend_years(data$ObsCatchAA_SE, closed_loop_yrs, 2, fill = 'last'), catch_aa_used, 4, n_obs_om),
+    ObsDiscardAA_SE = unused_at_age_on_obs_ages(extend_years(data$ObsDiscardAA_SE, closed_loop_yrs, 2, fill = 'last'), discard_aa_used, 4, n_obs_om),
     CatchAA_Type = extend_years(data$CatchAA_Type, closed_loop_yrs, 1, fill = 'last'),
     DiscardAA_Type = extend_years(data$DiscardAA_Type, closed_loop_yrs, 1, fill = 'last'),
     CatchAA_LikeType = data$CatchAA_LikeType, DiscardAA_LikeType = data$DiscardAA_LikeType,
@@ -686,10 +693,10 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     srv_sel_input = srv_sel_input,
     srv_q_input = srv_q_input,
     ObsSrvIdx_SE = ObsSrvIdx_SE,
-    ln_sigmaSrvIdxAA = optim_parameters_list$ln_sigmaSrvIdxAA,
-    UseSrvIdxAA = extend_years(data$UseSrvIdxAA, closed_loop_yrs, 2, fill = 'last'),
+    ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
+    UseSrvIdxAA = unused_at_age_on_obs_ages(extend_years(data$UseSrvIdxAA, closed_loop_yrs, 2, fill = 'last'), srv_idx_aa_used, 4, n_obs_om),
     use_srv_idx_aa = data$use_srv_idx_aa,
-    ObsSrvIdxAA_SE = extend_years(data$ObsSrvIdxAA_SE, closed_loop_yrs, 2, fill = 'last'),
+    ObsSrvIdxAA_SE = unused_at_age_on_obs_ages(extend_years(data$ObsSrvIdxAA_SE, closed_loop_yrs, 2, fill = 'last'), srv_idx_aa_used, 4, n_obs_om),
     SrvIdxAA_Type = extend_years(data$SrvIdxAA_Type, closed_loop_yrs, 1, fill = 'last'),
     SrvIdxAA_LikeType = data$SrvIdxAA_LikeType, SrvIdxAA_sigma_form = data$SrvIdxAA_sigma_form,
     # data sources the fitted model reports once a year stay annual in the operating model

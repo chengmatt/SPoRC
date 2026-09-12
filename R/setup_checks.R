@@ -206,26 +206,27 @@ check_data_dimensions <- function(x,
 
 # Age-disaggregated observations ------------------------------------------
 
+  # at-age arrays sit on the observed ages of AgeingError, which the caller passes as n_ages
   if(what %in% c('ObsCatchAA', 'UseCatchAA', 'ObsCatchAA_SE',
                  'ObsDiscardAA', 'UseDiscardAA', 'ObsDiscardAA_SE')) {
     if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets)) != 6)
-      stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets"))
+      stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets, where n_obs_ages is the number of observed ages (columns) of AgeingError"))
   }
 
   if(what %in% c('ObsCatchAA_pop', 'UseCatchAA_pop', 'ObsCatchAA_pop_SE',
                  'ObsDiscardAA_pop', 'UseDiscardAA_pop', 'ObsDiscardAA_pop_SE')) {
     if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets)) != 7)
-      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets"))
+      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets, where n_obs_ages is the number of observed ages (columns) of AgeingError"))
   }
 
   if(what %in% c('ObsSrvIdxAA', 'UseSrvIdxAA', 'ObsSrvIdxAA_SE')) {
     if(sum(dim(x) == c(n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets)) != 6)
-      stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets"))
+      stop(paste(what, " is not the correct dimension. Should be n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets, where n_obs_ages is the number of observed ages (columns) of AgeingError"))
   }
 
   if(what %in% c('ObsSrvIdxAA_pop', 'UseSrvIdxAA_pop', 'ObsSrvIdxAA_pop_SE')) {
     if(sum(dim(x) == c(n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets)) != 7)
-      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets"))
+      stop(paste(what, " is not the correct dimension. Should be n_pop, n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets, where n_obs_ages is the number of observed ages (columns) of AgeingError"))
   }
 
 

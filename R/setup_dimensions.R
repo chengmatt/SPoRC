@@ -37,8 +37,9 @@
 #'   equal-length seasons otherwise.
 #' @param n_ages Positive integer. Number of modeled age classes.
 #' @param n_obs_ages Positive integer. Number of observed age bins in composition
-#'   data. Can differ from \code{n_ages} when the plus group or youngest ages are
-#'   pooled differently in observations. Defaults to \code{n_ages}.
+#'   and at-age data, the columns of \code{AgeingError_input}. Can differ from
+#'   \code{n_ages} when the plus group or youngest ages are pooled differently in
+#'   observations. Defaults to \code{n_ages}.
 #' @param n_lens Positive integer. Number of length bins. Set to \code{NULL}
 #'   (default) when length compositions are not simulated.
 #' @param n_sexes Integer. Number of sexes; must be either \code{1}

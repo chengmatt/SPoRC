@@ -230,10 +230,11 @@ check_spec_map_identifiable <- function(
 
 #' Dimensions of one at-age observation array
 #'
-#' Every at-age data source is stored region by year by season by age by sex by fleet,
-#' with a leading population dimension for the population-specific form. This is
-#' the layout of the prediction arrays the likelihood reads, so the two line up
-#' dim for dim.
+#' Every at-age data source is stored region by year by season by observed age by
+#' sex by fleet, with a leading population dimension for the population-specific
+#' form. The observed ages are the columns of the ageing error matrix, which the
+#' likelihood reads the model's predictions through, and the other dims line up
+#' with the prediction arrays dim for dim.
 #'
 #' @param input_list Named list with \code{$data}.
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
@@ -244,7 +245,7 @@ check_spec_map_identifiable <- function(
 #' @keywords internal
 at_age_dims <- function(input_list, fleet_field, pop = FALSE) {
   d <- c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
-         length(input_list$data$ages), at_age_n_sexes(input_list), input_list$data[[fleet_field]])
+         at_age_n_obs_ages(input_list), at_age_n_sexes(input_list), input_list$data[[fleet_field]])
   n_pop <- input_list$data$n_pop
   return(as.integer(if(pop) c(if(is.null(n_pop)) 1L else n_pop, d) else d))
 }
@@ -262,6 +263,62 @@ at_age_dims <- function(input_list, fleet_field, pop = FALSE) {
 at_age_n_sexes <- function(input_list) {
   n_sexes <- input_list$data$n_sexes
   return(if(is.null(n_sexes)) 1L else n_sexes)
+}
+
+#' How many observed ages the at-age data sources are recorded on
+#'
+#' At-age observations are read through the ageing error matrix, so they sit on
+#' its columns, the same observed ages the age compositions use. A list with no
+#' ageing error yet, as the mapping unit tests assemble, has them on the model ages.
+#'
+#' @param input_list Named list with \code{$data}.
+#'
+#' @return An integer.
+#'
+#' @keywords internal
+at_age_n_obs_ages <- function(input_list) {
+  ae <- input_list$data$AgeingError
+  if(is.null(dim(ae))) return(length(input_list$data$ages))
+  return(dim(ae)[length(dim(ae))]) # observed ages are the last dim, 2D or 3D alike
+}
+
+#' Refuse an at-age observation that no model age is read as
+#'
+#' An observed age whose column of the fleet's ageing error is all zero is predicted as zero
+#' whatever the population does, so an observation there cannot be fit. This names the first
+#' fleet, year and observed age where that happens.
+#'
+#' @param input_list Named list with \code{$data}, after
+#'   \code{\link{Setup_Mod_Biologicals}}.
+#' @param use Use array of the data source.
+#' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
+#' @param what Name used in the message.
+#' @param pop Logical. \code{TRUE} for the population-specific data source.
+#'
+#' @return \code{invisible(NULL)}. Called for its error.
+#'
+#' @keywords internal
+check_at_age_read <- function(input_list, use, fleet_field, what, pop = FALSE) {
+
+  ae_name <- if(fleet_field == "n_srv_fleets") "AgeingError_srv" else "AgeingError_fish"
+  ae <- input_list$data[[ae_name]]
+  if(length(dim(ae)) != 4 || !any(use == 1)) return(invisible(NULL)) # no fleet ageing error yet
+
+  read_as <- apply(ae != 0, c(1, 3, 4), any) # year, observed age, fleet
+  fit_cells <- arrayInd(which(use == 1), dim(use))
+  i_y <- if(pop) 3 else 2 # year, observed age and fleet positions in the use array
+  i_a <- i_y + 2
+  i_f <- ncol(fit_cells)
+  unread <- !read_as[fit_cells[, c(i_y, i_a, i_f), drop = FALSE]]
+
+  if(any(unread)) {
+    first <- fit_cells[which(unread)[1], ]
+    stop(what, " fits fleet ", first[i_f], " at observed age ", first[i_a], " in year ", first[i_y],
+         ", but no model age is read as that age in ", ae_name, ", so its prediction is zero. ",
+         "Leave that age out of ", what, ", or give it a nonzero column.")
+  }
+
+  return(invisible(NULL))
 }
 
 #' Refuse an at-age array or parameter that is missing a dimension
@@ -286,7 +343,8 @@ check_at_age_shape <- function(x, expected_dims, what) {
     stop(what, " is ", if(is.null(actual_dims)) paste0("a length ", length(x), " vector")
                        else paste(actual_dims, collapse = " by "),
          " where ", paste(expected_dims, collapse = " by "), " is expected. The at-age data sources have ",
-         "a sex dim, so supply the full array rather than one summed over sexes.")
+         "a sex dim and sit on the observed ages the ageing error reads onto, so supply the full array ",
+         "on those ages rather than one summed over sexes.")
   }
 
   return(invisible(NULL))
@@ -333,7 +391,7 @@ do_at_age_data_setup <- function(input_list, obs, use, se, data_source, fleet_fi
       n_regions = input_list$data$n_regions,
       n_years = length(input_list$data$years),
       n_seas = input_list$data$n_seas,
-      n_ages = length(input_list$data$ages),
+      n_ages = at_age_n_obs_ages(input_list), # at-age data sit on the observed ages
       n_sexes = n_sexes,
       n_pop = input_list$data$n_pop,
       what = what
@@ -342,6 +400,7 @@ do_at_age_data_setup <- function(input_list, obs, use, se, data_source, fleet_fi
   if(supplied$obs) {
     check_one(obs, paste0("Obs", tag))
     check_one(use, paste0("Use", tag))
+    check_at_age_read(input_list, use, fleet_field, paste0("Use", tag), pop)
   }
   if(supplied$se) check_one(se, paste0("Obs", tag, "_SE"))
 
@@ -553,7 +612,7 @@ do_age_corr_setup <- function(
 
   valid <- c("iid", "1dar1", "us", "2dar1")
   n_fleets <- input_list$data[[fleet_field]]
-  n_ages <- length(input_list$data$ages)
+  n_obs_ages <- at_age_n_obs_ages(input_list) # the correlations run over the observed ages
   n_sexes <- at_age_n_sexes(input_list)
 
   tag <- if(pop) paste0(data_source, "_pop") else data_source
@@ -591,7 +650,7 @@ do_age_corr_setup <- function(
                  else c(r = "region", s = "sex", f = "fleet")
   if(is.null(rho_spec)) rho_spec <- if(pop) "est_shared_p_r_s" else "est_shared_r_s"
 
-  n_pairs <- max(1, n_ages * (n_ages - 1) / 2)
+  n_pairs <- max(1, n_obs_ages * (n_obs_ages - 1) / 2)
   rho_dims <- as.integer(spec_dims)
   us_dims <- as.integer(c(n_pairs, spec_dims))
 
@@ -644,12 +703,12 @@ do_age_corr_setup <- function(
     n_cells <- apply(cells, length(dim(cells)), sum)
 
     for(f in which(codes == 2)) {
-      if(n_ages < 2) stop("AgeObsCorr_", tag, " is 'us' for fleet ", f, ", which needs at ",
+      if(n_obs_ages < 2) stop("AgeObsCorr_", tag, " is 'us' for fleet ", f, ", which needs at ",
                           "least two ages to describe a correlation.")
       if(n_cells[f] <= n_pairs) {
         stop("AgeObsCorr_", tag, " is 'us' for fleet ", f, ", which estimates ", n_pairs,
              " correlations from ", n_cells[f], " observed cells. An unstructured ",
-             "correlation across ", n_ages, " ages needs more cells than it has parameters. ",
+             "correlation across ", n_obs_ages, " ages needs more cells than it has parameters. ",
              "Use '1dar1', which spends one.")
       }
       if(n_cells[f] < 3 * n_pairs) {
@@ -743,17 +802,16 @@ sel_has_data <- function(data, use_field, r, f) {
   return(FALSE)
 }
 
-#' Map an at-age observation error or catchability from a key matrix
+#' Map an at-age observation error from a key matrix
 #'
-#' The key is an integer matrix \code{[n_ages, n_fleets]} in which equal entries
+#' The key is an integer array \code{[n_obs_ages, n_sexes, n_fleets]} in which equal entries
 #' share a parameter and \code{NA} excludes one. This is the key matrix
 #' convention ICES age-structured assessments use for coupling. One structure
 #' covers every sharing pattern that would otherwise need its own spec string:
 #' one parameter per age, one per age group, or one for the whole fleet.
 #'
-#' Shared by every at-age data source: the catch, discard and index observation
-#' errors, the age-specific catchabilities, and their population-specific
-#' counterparts.
+#' Shared by every at-age data source: the catch, discard and survey index
+#' observation errors and their population-specific counterparts.
 #'
 #' Coupled parameters are checked against the observations informing them. A
 #' standard deviation with a single observation is not merely poorly determined:
@@ -762,7 +820,7 @@ sel_has_data <- function(data, use_field, r, f) {
 #' infinity. The optimizer reports convergence either way.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
-#' @param key Integer array \code{[n_ages, n_sexes, n_fleets]}, or \code{NULL}
+#' @param key Integer array \code{[n_obs_ages, n_sexes, n_fleets]}, or \code{NULL}
 #'   for the default given by \code{default_shared}. Gains a leading population
 #'   dimension when \code{pop} is \code{TRUE}. The sex dim is required: a key
 #'   coupling the sexes says so by repeating its entries across them.
@@ -777,7 +835,7 @@ sel_has_data <- function(data, use_field, r, f) {
 #' @param pop Logical. \code{TRUE} for the population-specific data source.
 #' @param default_shared Logical. When \code{key} is \code{NULL}, \code{TRUE}
 #'   gives one parameter per fleet shared across ages and \code{FALSE} gives one
-#'   per age and fleet. Catchability defaults to the latter.
+#'   per age and fleet.
 #'
 #' @return \code{input_list} with \code{$par$<par_name>} and
 #'   \code{$map$<par_name>} set.
@@ -799,11 +857,11 @@ do_key_mapping <- function(
 ) {
 
   n_fleets <- input_list$data[[fleet_field]]
-  n_ages <- length(input_list$data$ages)
+  n_obs_ages <- at_age_n_obs_ages(input_list) # the key runs over the observed ages
   n_sexes <- at_age_n_sexes(input_list)
   n_pop <- input_list$data$n_pop
-  dims <- if(pop) as.integer(c(n_pop, n_ages, n_sexes, n_fleets)) else as.integer(c(n_ages, n_sexes, n_fleets))
-  shape_msg <- paste0(if(pop) "n_pop, " else "", "n_ages, n_sexes, ", fleet_field)
+  dims <- if(pop) as.integer(c(n_pop, n_obs_ages, n_sexes, n_fleets)) else as.integer(c(n_obs_ages, n_sexes, n_fleets))
+  shape_msg <- paste0(if(pop) "n_pop, " else "", "n_obs_ages, n_sexes, ", fleet_field)
 
   if(!spec %in% c("est", "fix")) stop(par_name, " spec is '", spec, "', which is not recognized. Valid options: est, fix")
 

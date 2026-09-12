@@ -184,7 +184,7 @@ simulation_self_test <- function(
                             } else if(!is.null(data$UseSrv_caal) && any(data$UseSrv_caal == 1)) {
                               dim(data$ObsSrv_caal)[5]
                             } else {
-                              length(data$ages) # no age observations at all, so the containers take the model ages
+                              dim(data$AgeingError)[3] # otherwise the ageing error's observed ages, which the at-age data sit on
                             },
                             n_lens = length(data$lens), # number of lengths
                             n_sexes = data$n_sexes, # number of sexes
@@ -235,12 +235,31 @@ simulation_self_test <- function(
     else ln_sigmaD_pop[p,r,,,f] <- log(deweight(exp(optim_parameters_list$ln_sigmaD_pop[p,r,,,f]), data$Wt_Discard_pop))
   }
 
+  n_obs_om <- sim_list$n_obs_ages # observed ages the operating model draws on
+  catch_aa_used <- any(data$UseCatchAA == 1) # whether the fit observes catch at age
+  discard_aa_used <- any(data$UseDiscardAA == 1) # discards at age
+  srv_idx_aa_used <- any(data$UseSrvIdxAA == 1) # survey index at age
+
   # setup fishery simulation processes
   sim_list <- Setup_Sim_Fishing(sim_list = sim_list,
                                 ln_sigmaC = ln_sigmaC,
                                 ln_sigmaC_pop = ln_sigmaC_pop,
                                 ln_sigmaD = ln_sigmaD,
                                 ln_sigmaD_pop = ln_sigmaD_pop,
+                                ln_sigmaCAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaCAA, catch_aa_used, 1, n_obs_om, log(0.5)),
+                                ln_sigmaDAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaDAA, discard_aa_used, 1, n_obs_om, log(0.5)),
+                                UseCatchAA = unused_at_age_on_obs_ages(data$UseCatchAA, catch_aa_used, 4, n_obs_om),
+                                UseDiscardAA = unused_at_age_on_obs_ages(data$UseDiscardAA, discard_aa_used, 4, n_obs_om),
+                                use_catch_aa = data$use_catch_aa,
+                                use_discard_aa = data$use_discard_aa,
+                                ObsCatchAA_SE = unused_at_age_on_obs_ages(data$ObsCatchAA_SE, catch_aa_used, 4, n_obs_om),
+                                ObsDiscardAA_SE = unused_at_age_on_obs_ages(data$ObsDiscardAA_SE, discard_aa_used, 4, n_obs_om),
+                                CatchAA_Type = data$CatchAA_Type,
+                                DiscardAA_Type = data$DiscardAA_Type,
+                                CatchAA_LikeType = data$CatchAA_LikeType,
+                                DiscardAA_LikeType = data$DiscardAA_LikeType,
+                                CatchAA_sigma_form = data$CatchAA_sigma_form,
+                                DiscardAA_sigma_form = data$DiscardAA_sigma_form,
                                 catch_units = data$catch_units,
                                 discard_units = data$discard_units,
                                 # data sources the fitted model reports once a year stay annual
@@ -372,6 +391,14 @@ simulation_self_test <- function(
     srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,1:length(data$years),,,,,drop = FALSE]),
     srv_q_input = replicate(n = sim_list$n_sims, rep$srv_q[,1:length(data$years),,drop = FALSE]),
     ObsSrvIdx_SE = deweight(if(is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE else rep$SrvIdx_SD, data$Wt_SrvIdx),
+    # the index at age carries its own error by age and fleet, so no weight is folded into it
+    ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
+    UseSrvIdxAA = unused_at_age_on_obs_ages(data$UseSrvIdxAA, srv_idx_aa_used, 4, n_obs_om),
+    use_srv_idx_aa = data$use_srv_idx_aa,
+    ObsSrvIdxAA_SE = unused_at_age_on_obs_ages(data$ObsSrvIdxAA_SE, srv_idx_aa_used, 4, n_obs_om),
+    SrvIdxAA_Type = data$SrvIdxAA_Type,
+    SrvIdxAA_LikeType = data$SrvIdxAA_LikeType,
+    SrvIdxAA_sigma_form = data$SrvIdxAA_sigma_form,
     ObsSrvIdx_pop_SE = if(any(data$UseSrvIdx_pop == 1)) {
       deweight(data$ObsSrvIdx_pop_SE, data$Wt_SrvIdx_pop)
     } else {
@@ -645,10 +672,13 @@ simulation_self_test <- function(
         tmp_pars$ln_sigmaD_pop[] <- sim_list$ln_sigmaD_pop
         tmp_data$ObsFishIdx_SE[] <- sim_list$ObsFishIdx_SE
         tmp_data$ObsSrvIdx_SE[] <- sim_list$ObsSrvIdx_SE
-        if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_list$ObsCatchAA))
-          tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,,i]
-        if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_list$ObsSrvIdxAA))
-          tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,,i]
+        # only a data source the model fits takes the draws, so an unused one keeps its own shape
+        if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_obj$ObsCatchAA) && any(tmp_data$UseCatchAA == 1))
+          tmp_data$ObsCatchAA[] <- sim_obj$ObsCatchAA[,,,,,,i]
+        if(!is.null(tmp_data$ObsDiscardAA) && !is.null(sim_obj$ObsDiscardAA) && any(tmp_data$UseDiscardAA == 1))
+          tmp_data$ObsDiscardAA[] <- sim_obj$ObsDiscardAA[,,,,,,i]
+        if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_obj$ObsSrvIdxAA) && any(tmp_data$UseSrvIdxAA == 1))
+          tmp_data$ObsSrvIdxAA[] <- sim_obj$ObsSrvIdxAA[,,,,,,i]
         if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
         if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
         if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx
@@ -818,10 +848,13 @@ simulation_self_test <- function(
           tmp_pars$ln_sigmaD_pop[] <- sim_list$ln_sigmaD_pop
           tmp_data$ObsFishIdx_SE[] <- sim_list$ObsFishIdx_SE
           tmp_data$ObsSrvIdx_SE[] <- sim_list$ObsSrvIdx_SE
-          if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_list$ObsCatchAA))
-            tmp_data$ObsCatchAA[] <- sim_list$ObsCatchAA[,,,,,,i]
-          if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_list$ObsSrvIdxAA))
-            tmp_data$ObsSrvIdxAA[] <- sim_list$ObsSrvIdxAA[,,,,,,i]
+          # only a data source the model fits takes the draws, so an unused one keeps its own shape
+          if(!is.null(tmp_data$ObsCatchAA) && !is.null(sim_obj$ObsCatchAA) && any(tmp_data$UseCatchAA == 1))
+            tmp_data$ObsCatchAA[] <- sim_obj$ObsCatchAA[,,,,,,i]
+          if(!is.null(tmp_data$ObsDiscardAA) && !is.null(sim_obj$ObsDiscardAA) && any(tmp_data$UseDiscardAA == 1))
+            tmp_data$ObsDiscardAA[] <- sim_obj$ObsDiscardAA[,,,,,,i]
+          if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_obj$ObsSrvIdxAA) && any(tmp_data$UseSrvIdxAA == 1))
+            tmp_data$ObsSrvIdxAA[] <- sim_obj$ObsSrvIdxAA[,,,,,,i]
           if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
           if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
           if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx
@@ -953,7 +986,11 @@ simulation_self_test <- function(
 #'   \code{WAA_fish} \code{[... x n_fish_fleets]},
 #'   \code{WAA_srv} \code{[... x n_srv_fleets]},
 #'   \code{MatAA}, \code{SizeAgeTrans} (or \code{NULL}),
-#'   \code{AgeingError} \code{[y x n_obs_ages x n_ages]},
+#'   \code{AgeingError} \code{[y x n_ages x n_obs_ages]}, the observed ages being
+#'   the columns the model ages are read onto,
+#'   \code{AgeingError_fish} \code{[... x n_fish_fleets]},
+#'   \code{AgeingError_srv} \code{[... x n_srv_fleets]} (both \code{NULL} when the
+#'   fleets share one matrix),
 #'   \code{use_conv_fish_tagging},
 #'   \code{conv_tag_release_indicator}, \code{obs_conv_tag_fish_recap},
 #'   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},

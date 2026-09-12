@@ -52,8 +52,9 @@ and no sensible default exists.}
 (default) when length compositions are not simulated.}
 
 \item{n_obs_ages}{Positive integer. Number of observed age bins in composition
-data. Can differ from \code{n_ages} when the plus group or youngest ages are
-pooled differently in observations. Defaults to \code{n_ages}.}
+and at-age data, the columns of \code{AgeingError_input}. Can differ from
+\code{n_ages} when the plus group or youngest ages are pooled differently in
+observations. Defaults to \code{n_ages}.}
 
 \item{n_sexes}{Integer. Number of sexes; must be either \code{1}
 (sex-aggregated) or \code{2} (sex-structured).}

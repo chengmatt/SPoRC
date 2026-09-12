@@ -102,7 +102,12 @@ closure: \code{Fmort} is forced to zero and no deviation is estimated.
 See \code{\link{Get_Fdev_PE_loglik}}.}
 
 \item{ObsCatchAA}{Observed catch at age, an array with dimensions
-\code{[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]}. The
+\code{[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]}.
+The ages are the observed ages, the columns of the fleet's ageing error
+matrix (\code{AgeingError_fish}, or the shared \code{AgeingError}), which
+are the model ages unless an ageing error is supplied. The predicted catch
+at each model age is read onto those ages through that matrix before it is
+compared, as for the age compositions. The
 sex dim is required whatever the fleet reports: a data source summed over
 sexes has its observation in sex slot one. Supplying this
 fits the catch at age directly, every age its own lognormal observation, in
@@ -121,7 +126,7 @@ aggregated data source.}
 \item{ObsCatchAA_SE, ObsDiscardAA_SE, ObsCatchAA_pop_SE, ObsDiscardAA_pop_SE}{Reported standard errors shaped like their observation array, read only when
 the data source's \code{sigma_form} asks for them.}
 
-\item{sigmaCAA_key}{Integer array \code{[n_ages, n_sexes, n_fish_fleets]}
+\item{sigmaCAA_key}{Integer array \code{[n_obs_ages, n_sexes, n_fish_fleets]}
 coupling the catch at age observation error, the key matrix convention ICES
 assessments use. Equal entries share a parameter and \code{NA} excludes one.
 The sex dim is required; a key coupling the sexes repeats its entries across
@@ -139,7 +144,8 @@ values. Starting values are supplied through \code{...} as
 \code{ln_sigmaCAA}.}
 
 \item{ObsDiscardAA, UseDiscardAA}{Observed discard at age and its use flags,
-shaped like \code{ObsCatchAA}. The discard counterpart of catch at age.}
+shaped like \code{ObsCatchAA}. The discard counterpart of catch at age,
+read through the same fishery ageing error.}
 
 \item{ObsDiscardAA_pop, UseDiscardAA_pop, ObsCatchAA_pop, UseCatchAA_pop}{Population-specific counterparts, with a leading population dimension.}
 
@@ -147,8 +153,8 @@ shaped like \code{ObsCatchAA}. The discard counterpart of catch at age.}
 the observation error for the population-specific catch, the discards, and
 the population-specific discards, following the same convention as
 \code{sigmaCAA_key}. \code{sigmaDAA_key} is shaped
-\code{[n_ages, n_sexes, n_fish_fleets]}; the two population-specific keys
-take a leading population dim, \code{[n_pop, n_ages, n_sexes, n_fish_fleets]}.}
+\code{[n_obs_ages, n_sexes, n_fish_fleets]}; the two population-specific keys
+take a leading population dim, \code{[n_pop, n_obs_ages, n_sexes, n_fish_fleets]}.}
 
 \item{sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec}{\code{"est"} or
 \code{"fix"}.}

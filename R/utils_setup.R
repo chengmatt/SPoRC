@@ -1040,6 +1040,27 @@ fleet_ageing_error <- function(data, shared, which) {
   return(out)
 }
 
+#' An unused at-age input moved onto the observed ages
+#'
+#' Fits made before the at-age data sources sat on the observed ages hold their unused ones on the
+#' model ages. With nothing observed there is nothing to lose, so a placeholder on the observed ages
+#' stands in; a data source the fit observes is returned as it is, for the shape checks to judge.
+#'
+#' @param x The array, or \code{NULL}.
+#' @param used Logical. \code{TRUE} when the fitted model observes this data source.
+#' @param age_dim Integer. Position of the age dim in \code{x}.
+#' @param n_obs_ages Integer. Number of observed ages the operating model draws on.
+#' @param fill Value the placeholder holds.
+#'
+#' @return \code{x}, or an array of \code{fill} shaped like \code{x} but on \code{n_obs_ages} ages.
+#' @keywords internal
+unused_at_age_on_obs_ages <- function(x, used, age_dim, n_obs_ages, fill = 0) {
+  d <- dim(x)
+  if(is.null(d) || used || d[age_dim] == n_obs_ages) return(x)
+  d[age_dim] <- n_obs_ages
+  return(array(fill, dim = d))
+}
+
 #' A bin selection array, or NULL when it restricts nothing
 #'
 #' The composition routines treats \code{NULL} as "fit every bin", which lets
@@ -1128,7 +1149,7 @@ check_bin_map <- function(x, n_model_bins, what, strict = TRUE, tol = 1e-8) {
                   paste(utils::head(bad, 10), collapse = ", "), " sum to neither (worst is ",
                   signif(rs[bad][which.max(abs(rs[bad] - 1))], 6), ").")
     if(strict) stop(msg)
-    collect_message(msg, " Left as supplied, since the likelihood renormalizes the expectation after the multiply.")
+    collect_message(msg, " Left as supplied: the compositions renormalize the expectation after the multiply, but the at-age data sources read the matrix as it is.")
   }
 
   empty <- which(colSums(x) <= 1e-8)
@@ -1719,13 +1740,15 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   # age-disaggregated data sources, absent from older input lists. an all-zero use array leaves a
   # fleet on the aggregated data source. ordered fishery then survey, as elsewhere
   n_ages_bc <- length(get("ages", envir = env))
+  ae_bc <- if(has("AgeingError")) get("AgeingError", envir = env) else NULL
+  n_obs_ages_bc <- if(is.null(dim(ae_bc))) n_ages_bc else dim(ae_bc)[length(dim(ae_bc))] # at-age data sit on the observed ages
   n_pop_bc <- get("n_pop", envir = env)
   n_sexes_bc <- get("n_sexes", envir = env)
   n_regions_bc <- get("n_regions", envir = env)
   at_age_dim <- function(n_fleets) c(get("n_regions", envir = env),
                                      length(get("years", envir = env)),
-                                     get("n_seas", envir = env), n_ages_bc, n_sexes_bc, n_fleets)
-  n_pairs_bc <- max(1, n_ages_bc * (n_ages_bc - 1) / 2)
+                                     get("n_seas", envir = env), n_obs_ages_bc, n_sexes_bc, n_fleets)
+  n_pairs_bc <- max(1, n_obs_ages_bc * (n_obs_ages_bc - 1) / 2)
 
   aa_sources <- list(
     list(
@@ -1761,7 +1784,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
       ctag <- if(is_pop) paste0(state$corr, "_pop") else state$corr
       sig <- if(is_pop) paste0(state$sigma, "_pop") else state$sigma
       d <- if(is_pop) c(n_pop_bc, at_age_dim(state$n)) else at_age_dim(state$n)
-      sd <- if(is_pop) c(n_pop_bc, n_ages_bc, n_sexes_bc, state$n) else c(n_ages_bc, n_sexes_bc, state$n)
+      sd <- if(is_pop) c(n_pop_bc, n_obs_ages_bc, n_sexes_bc, state$n) else c(n_obs_ages_bc, n_sexes_bc, state$n)
 
       for(data_name in c(paste0("Obs", tag), paste0("Use", tag), paste0("Obs", tag, "_SE"))) {
         if(!has(data_name)) set(data_name, array(0, dim = d))

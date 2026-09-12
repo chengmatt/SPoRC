@@ -729,13 +729,20 @@ run_internal_index_osa <- function(
     trace = FALSE
   )
 
+  # observed ages take the model's age labels when the two sets coincide, else their observed bin number
+  age_labels <- data$ages
+  if(at_age) {
+    n_obs_ages <- dim(use_arr)[if(pop) 5 else 4]
+    if(n_obs_ages != length(data$ages)) age_labels <- seq_len(n_obs_ages)
+  }
+
   res <- data.frame(
     fleet = as.character(map$fleet),
     region = if(at_age) ifelse(aa_split$region, as.character(map$region), "summed") else map$region,
     year = data$years[map$year],
     season = map$season,
     pop = if(pop) map$pop else 1L,
-    age = if(at_age) data$ages[map$age] else NA_integer_,
+    age = if(at_age) age_labels[map$age] else NA_integer_,
     sex = if(at_age) ifelse(aa_split$sex, as.character(map$sex), "summed") else NA_integer_,
     resid = osa$residual,
     idx_type = index_source

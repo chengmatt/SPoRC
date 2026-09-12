@@ -20,7 +20,8 @@ get_at_age_source_nLL(
   trans_rho_year = 0,
   us_pars = NULL,
   aa_type = 1,
-  seas_agg = 0
+  seas_agg = 0,
+  ageing_error = NULL
 )
 }
 \arguments{
@@ -29,11 +30,11 @@ flagged in \code{use}, in \code{which()} order, on the scale its fleet's
 likelihood uses.}
 
 \item{use}{Integer array flagging which cells are fit, dimensioned region by
-year by season by age by sex by fleet, with a leading population dimension
-when \code{pop} is \code{TRUE}.}
+year by season by observed age by sex by fleet, with a leading population
+dimension when \code{pop} is \code{TRUE}.}
 
-\item{ln_sigma}{Log-scale observation error, over age by sex by fleet, with a
-leading population dimension when \code{pop} is \code{TRUE}.}
+\item{ln_sigma}{Log-scale observation error, over observed age by sex by
+fleet, with a leading population dimension when \code{pop} is \code{TRUE}.}
 
 \item{source, arrays}{Passed to \code{\link{get_at_age_prediction}}.}
 
@@ -70,6 +71,11 @@ by fleet or a vector per fleet standing for every year, see
 \item{seas_agg}{Integer vector, one per fleet. \code{1} compares the
 observation against every season of the year summed together, \code{0}
 against the season it sits in.}
+
+\item{ageing_error}{Array \code{[n_years, n_ages, n_obs_ages, n_fleets]}
+reading model ages as observed ages, the fishery or survey ageing error, or
+\code{NULL} when the observed ages are the model ages. Its observed ages
+must be the age dim of \code{use}.}
 }
 \value{
 A list with \code{nLL} and \code{pred}, both arrays shaped like

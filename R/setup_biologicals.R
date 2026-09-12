@@ -580,7 +580,9 @@ do_growth_mapping <- function(input_list,
 #'   bins and sums to one, or to zero to drop that model age from the
 #'   observations. This is the age-axis twin of \code{LenBinMap}: the likelihood
 #'   applies the two identically and validates them identically, so read either
-#'   one for the other. It changes which bins the compositions are recorded on;
+#'   one for the other. It changes which bins the compositions and the at-age
+#'   data sources are recorded on, so \code{ObsCatchAA}, \code{ObsDiscardAA} and
+#'   \code{ObsSrvIdxAA} are dimensioned by the observed ages;
 #'   to leave observed bins out of the likelihood without changing the bins
 #'   themselves, use the \code{*_bins} arguments instead. Accepted forms:
 #'   \describe{
@@ -601,12 +603,14 @@ do_growth_mapping <- function(input_list,
 #'   time-varying one, or \code{NULL} (default), which gives every fishery fleet
 #'   the shared \code{AgeingError}. Each fleet's slice is validated the same way
 #'   \code{AgeingError} is, and every fleet must land on the same observed age
-#'   bins, since the observed composition arrays have one age dimension shared
-#'   across fleets.
+#'   bins, since the observed composition and at-age arrays have one age
+#'   dimension shared across fleets. A fishery fleet's matrix is read by its age
+#'   compositions and by its catch and discards at age.
 #' @param AgeingError_srv Optional fleet-specific ageing error for the survey
 #'   fleets, in the same forms as \code{AgeingError_fish}, with
 #'   \code{n_srv_fleets} in place of \code{n_fish_fleets}. \code{NULL}
-#'   (default) gives every survey fleet the shared \code{AgeingError}.
+#'   (default) gives every survey fleet the shared \code{AgeingError}. A survey
+#'   fleet's matrix is read by its age compositions and its index at age.
 #' @param Use_M_prior Integer flag to apply a lognormal prior on natural mortality.
 #'   \code{0} = no prior (default); \code{1} = apply prior.
 #' @param M_prior Data frame of prior hyperparameters for natural mortality, with one

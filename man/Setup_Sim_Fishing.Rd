@@ -10,14 +10,14 @@ Setup_Sim_Fishing(
     sim_list$n_seas, sim_list$n_fish_fleets)),
   ln_sigmaC_pop = array(log(0.02), dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
-  ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
+  ln_sigmaCAA = array(log(0.2), dim = c(sim_list$n_obs_ages, sim_list$n_sexes,
     sim_list$n_fish_fleets)),
-  ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_ages, sim_list$n_sexes,
+  ln_sigmaDAA = array(log(0.2), dim = c(sim_list$n_obs_ages, sim_list$n_sexes,
     sim_list$n_fish_fleets)),
   UseCatchAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+    sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
   UseDiscardAA = array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
-    sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
+    sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets)),
   ObsCatchAA_SE = NULL,
   ObsDiscardAA_SE = NULL,
   CatchAA_Type = "spltRaggS",
@@ -173,12 +173,14 @@ dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).}
 
 \item{ln_sigmaCAA, ln_sigmaDAA}{Log-scale observation error
-for the at-age data sources, `n_ages x n_sexes x n_fish_fleets`. An array without
-the sex dim is required.}
+for the at-age data sources, `n_obs_ages x n_sexes x n_fish_fleets`. The sex
+dim is required.}
 
 \item{UseCatchAA, UseDiscardAA}{Integer arrays
-`n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets`, `1` where an
-at-age observation is drawn. The sex dim is required: a data source summed
+`n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x n_fish_fleets`, `1` where an
+at-age observation is drawn. The draws sit on the observed ages, `n_obs_ages`
+from `Setup_Sim_Dim`, read through `AgeingError_fish_input` the way the
+estimation model reads them. The sex dim is required: a data source summed
 over sexes has its flag in sex slot one.}
 
 \item{ObsCatchAA_SE, ObsDiscardAA_SE}{Reported standard errors

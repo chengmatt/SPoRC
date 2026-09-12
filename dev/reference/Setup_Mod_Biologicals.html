@@ -238,7 +238,9 @@ to observed age bins. Each row is one model age's share across the observed
 bins and sums to one, or to zero to drop that model age from the
 observations. This is the age-axis twin of <code>LenBinMap</code>: the likelihood
 applies the two identically and validates them identically, so read either
-one for the other. It changes which bins the compositions are recorded on;
+one for the other. It changes which bins the compositions and the at-age
+data sources are recorded on, so <code>ObsCatchAA</code>, <code>ObsDiscardAA</code> and
+<code>ObsSrvIdxAA</code> are dimensioned by the observed ages;
 to leave observed bins out of the likelihood without changing the bins
 themselves, use the <code>*_bins</code> arguments instead. Accepted forms:</p><dl><dt>2D matrix <code>[n_model_ages × n_obs_ages]</code></dt>
 <dd><p>Time-invariant ageing error;
@@ -267,15 +269,17 @@ time-invariant matrix per fleet, a 4D array
 time-varying one, or <code>NULL</code> (default), which gives every fishery fleet
 the shared <code>AgeingError</code>. Each fleet's slice is validated the same way
 <code>AgeingError</code> is, and every fleet must land on the same observed age
-bins, since the observed composition arrays have one age dimension shared
-across fleets.</p></dd>
+bins, since the observed composition and at-age arrays have one age
+dimension shared across fleets. A fishery fleet's matrix is read by its age
+compositions and by its catch and discards at age.</p></dd>
 
 
 <dt id="arg-ageingerror-srv">AgeingError_srv<a class="anchor" aria-label="anchor" href="#arg-ageingerror-srv"></a></dt>
 <dd><p>Optional fleet-specific ageing error for the survey
 fleets, in the same forms as <code>AgeingError_fish</code>, with
 <code>n_srv_fleets</code> in place of <code>n_fish_fleets</code>. <code>NULL</code>
-(default) gives every survey fleet the shared <code>AgeingError</code>.</p></dd>
+(default) gives every survey fleet the shared <code>AgeingError</code>. A survey
+fleet's matrix is read by its age compositions and its index at age.</p></dd>
 
 
 <dt id="arg-use-m-prior">Use_M_prior<a class="anchor" aria-label="anchor" href="#arg-use-m-prior"></a></dt>

@@ -104,22 +104,24 @@ weight is applied.
 
 | Object | Dimensions |
 |----|----|
-| `CatchAA_nLL` | region, year, season, age, sex, fishery fleet |
-| `DiscardAA_nLL` | region, year, season, age, sex, fishery fleet |
-| `SrvIdxAA_nLL` | region, year, season, age, sex, survey fleet |
+| `CatchAA_nLL` | region, year, season, observed age, sex, fishery fleet |
+| `DiscardAA_nLL` | region, year, season, observed age, sex, fishery fleet |
+| `SrvIdxAA_nLL` | region, year, season, observed age, sex, survey fleet |
 | `CatchAA_pop_nLL`, `DiscardAA_pop_nLL`, `SrvIdxAA_pop_nLL` | as above, with a leading population dimension |
 | `PredCatchAA`, `PredDiscardAA`, `PredSrvIdxAA` (and `_pop`) | shaped like their likelihood arrays, on the natural scale |
 
-A data source summed over regions or sexes writes into slot one of those
-dims and leaves the rest at zero, so the array’s shape does not tell you
-what the fleet reported; its `Type` does. A cell whose ages are
+The age dim is the observed ages, the columns of the fleet’s ageing
+error matrix, which are the model ages under the default identity
+matrix. A data source summed over regions or sexes writes into slot one
+of those dims and leaves the rest at zero, so the array’s shape does not
+tell you what the fleet reported; its `Type` does. A cell whose ages are
 correlated contributes its whole density to the first age present, so
 the array still sums correctly but is not readable age by age.
 
 The parameters behind them are also reported: `ln_sigmaCAA`,
-`ln_sigmaDAA`, and `ln_sigmaSrvIdxAA`, each over age, sex and fleet. The
-age shape of catchability is not among them: an index fit age by age has
-it in selectivity, through the `"nonparfree"` form.
+`ln_sigmaDAA`, and `ln_sigmaSrvIdxAA`, each over observed age, sex and
+fleet. The age shape of catchability is not among them: an index fit age
+by age has it in selectivity, through the `"nonparfree"` form.
 
 Region-aggregated likelihoods combine contributions across all
 populations; population-specific likelihoods (`_pop_`) are only computed

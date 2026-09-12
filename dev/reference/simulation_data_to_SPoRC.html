@@ -104,7 +104,11 @@ environment) containing all operating model arrays.</p></dd>
   <code>WAA_fish</code> <code>[... x n_fish_fleets]</code>,
   <code>WAA_srv</code> <code>[... x n_srv_fleets]</code>,
   <code>MatAA</code>, <code>SizeAgeTrans</code> (or <code>NULL</code>),
-  <code>AgeingError</code> <code>[y x n_obs_ages x n_ages]</code>,
+  <code>AgeingError</code> <code>[y x n_ages x n_obs_ages]</code>, the observed ages being
+  the columns the model ages are read onto,
+  <code>AgeingError_fish</code> <code>[... x n_fish_fleets]</code>,
+  <code>AgeingError_srv</code> <code>[... x n_srv_fleets]</code> (both <code>NULL</code> when the
+  fleets share one matrix),
   <code>use_conv_fish_tagging</code>,
   <code>conv_tag_release_indicator</code>, <code>obs_conv_tag_fish_recap</code>,
   <code>conv_tagged_fish</code>, <code>conv_tagged_fish_attr</code>,

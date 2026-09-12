@@ -188,9 +188,11 @@ Setup_Mod_Biologicals(
   the observations. This is the age-axis twin of `LenBinMap`: the
   likelihood applies the two identically and validates them identically,
   so read either one for the other. It changes which bins the
-  compositions are recorded on; to leave observed bins out of the
-  likelihood without changing the bins themselves, use the `*_bins`
-  arguments instead. Accepted forms:
+  compositions and the at-age data sources are recorded on, so
+  `ObsCatchAA`, `ObsDiscardAA` and `ObsSrvIdxAA` are dimensioned by the
+  observed ages; to leave observed bins out of the likelihood without
+  changing the bins themselves, use the `*_bins` arguments instead.
+  Accepted forms:
 
   2D matrix `[n_model_ages × n_obs_ages]`
 
@@ -220,15 +222,17 @@ Setup_Mod_Biologicals(
   time-varying one, or `NULL` (default), which gives every fishery fleet
   the shared `AgeingError`. Each fleet's slice is validated the same way
   `AgeingError` is, and every fleet must land on the same observed age
-  bins, since the observed composition arrays have one age dimension
-  shared across fleets.
+  bins, since the observed composition and at-age arrays have one age
+  dimension shared across fleets. A fishery fleet's matrix is read by
+  its age compositions and by its catch and discards at age.
 
 - AgeingError_srv:
 
   Optional fleet-specific ageing error for the survey fleets, in the
   same forms as `AgeingError_fish`, with `n_srv_fleets` in place of
   `n_fish_fleets`. `NULL` (default) gives every survey fleet the shared
-  `AgeingError`.
+  `AgeingError`. A survey fleet's matrix is read by its age compositions
+  and its index at age.
 
 - Use_M_prior:
 

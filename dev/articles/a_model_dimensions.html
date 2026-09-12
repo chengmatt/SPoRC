@@ -514,7 +514,9 @@ n_seas, n_ages, n_sexes</td>
 <tr class="odd">
 <td>AgeingError</td>
 <td>Ageing error matrix dimensioned by n_years, n_modelled_ages,
-n_observed_ages, where rows across modeled ages sum to 1</td>
+n_observed_ages, where rows across modeled ages sum to 1. Maps the
+model’s ages onto the observed ages that the age compositions and the
+at-age data sources are recorded on</td>
 </tr>
 <tr class="even">
 <td>fit_lengths</td>
@@ -1074,10 +1076,12 @@ order. Validated at setup for symmetry and positive definiteness</td>
 <tr class="odd">
 <td>ObsCatchAA, ObsDiscardAA</td>
 <td>Age-disaggregated retained catch and discards, each dimensioned by
-n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets. A fleet fits
-these or the aggregated form with compositions, never both. The sex dim
-is required whatever the fleet reports: a data source summed over sexes
-has its observation in sex slot one, and an array a dimension short is
+n_regions, n_years, n_seas, n_observed_ages, n_sexes, n_fish_fleets, the
+observed ages being the columns of AgeingError_fish, through which the
+predicted values at each model age are read. A fleet fits these or the
+aggregated form with compositions, never both. The sex dim is required
+whatever the fleet reports: a data source summed over sexes has its
+observation in sex slot one, and an array a dimension short is
 refused</td>
 </tr>
 <tr class="even">
@@ -1510,8 +1514,9 @@ conventions as FishIdx_Cov</td>
 <tr class="even">
 <td>ObsSrvIdxAA</td>
 <td>Age-disaggregated survey index dimensioned by n_regions, n_years,
-n_seas, n_ages, n_sexes, n_srv_fleets. A fleet fits this or the
-aggregated index, never both. Same shape rules as ObsCatchAA</td>
+n_seas, n_observed_ages, n_sexes, n_srv_fleets, read through
+AgeingError_srv. A fleet fits this or the aggregated index, never both.
+Same shape rules as ObsCatchAA</td>
 </tr>
 <tr class="odd">
 <td>UseSrvIdxAA</td>

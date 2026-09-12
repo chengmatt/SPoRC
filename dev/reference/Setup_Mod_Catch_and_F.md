@@ -117,12 +117,17 @@ Setup_Mod_Catch_and_F(
 - ObsCatchAA:
 
   Observed catch at age, an array with dimensions
-  `[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]`. The
-  sex dim is required whatever the fleet reports: a data source summed
-  over sexes has its observation in sex slot one. Supplying this fits
-  the catch at age directly, every age its own lognormal observation, in
-  place of an aggregated catch with compositions. This is the native
-  form for ICES age-structured assessments. The two statements are not
+  `[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]`.
+  The ages are the observed ages, the columns of the fleet's ageing
+  error matrix (`AgeingError_fish`, or the shared `AgeingError`), which
+  are the model ages unless an ageing error is supplied. The predicted
+  catch at each model age is read onto those ages through that matrix
+  before it is compared, as for the age compositions. The sex dim is
+  required whatever the fleet reports: a data source summed over sexes
+  has its observation in sex slot one. Supplying this fits the catch at
+  age directly, every age its own lognormal observation, in place of an
+  aggregated catch with compositions. This is the native form for ICES
+  age-structured assessments. The two statements are not
   interchangeable: the exact factorization of an at-age observation into
   a total and a composition holds for Poisson and multinomial, not for
   lognormal, so a fleet must use one or the other and supplying both for
@@ -144,17 +149,18 @@ Setup_Mod_Catch_and_F(
 
 - sigmaCAA_key:
 
-  Integer array `[n_ages, n_sexes, n_fish_fleets]` coupling the catch at
-  age observation error, the key matrix convention ICES assessments use.
-  Equal entries share a parameter and `NA` excludes one. The sex dim is
-  required; a key coupling the sexes repeats its entries across them.
-  Along the age dim, `1 2 3 4 5` gives one standard deviation per age,
-  `1 1 2 2 2` gives standard deviations by age group as several ICES
-  assessments do, and `1 1 1 1 1` gives one for the fleet. Defaults to
-  one parameter per fleet, shared across ages and sexes. A parameter
-  informed by fewer than two observations is refused, since an
-  observation error standard deviation with a single observation drives
-  the likelihood to negative infinity rather than failing outright.
+  Integer array `[n_obs_ages, n_sexes, n_fish_fleets]` coupling the
+  catch at age observation error, the key matrix convention ICES
+  assessments use. Equal entries share a parameter and `NA` excludes
+  one. The sex dim is required; a key coupling the sexes repeats its
+  entries across them. Along the age dim, `1 2 3 4 5` gives one standard
+  deviation per age, `1 1 2 2 2` gives standard deviations by age group
+  as several ICES assessments do, and `1 1 1 1 1` gives one for the
+  fleet. Defaults to one parameter per fleet, shared across ages and
+  sexes. A parameter informed by fewer than two observations is refused,
+  since an observation error standard deviation with a single
+  observation drives the likelihood to negative infinity rather than
+  failing outright.
 
 - sigmaCAA_spec:
 
@@ -165,7 +171,8 @@ Setup_Mod_Catch_and_F(
 - ObsDiscardAA, UseDiscardAA:
 
   Observed discard at age and its use flags, shaped like `ObsCatchAA`.
-  The discard counterpart of catch at age.
+  The discard counterpart of catch at age, read through the same fishery
+  ageing error.
 
 - ObsDiscardAA_pop, UseDiscardAA_pop, ObsCatchAA_pop, UseCatchAA_pop:
 
@@ -176,9 +183,9 @@ Setup_Mod_Catch_and_F(
   Integer arrays coupling the observation error for the
   population-specific catch, the discards, and the population-specific
   discards, following the same convention as `sigmaCAA_key`.
-  `sigmaDAA_key` is shaped `[n_ages, n_sexes, n_fish_fleets]`; the two
-  population-specific keys take a leading population dim,
-  `[n_pop, n_ages, n_sexes, n_fish_fleets]`.
+  `sigmaDAA_key` is shaped `[n_obs_ages, n_sexes, n_fish_fleets]`; the
+  two population-specific keys take a leading population dim,
+  `[n_pop, n_obs_ages, n_sexes, n_fish_fleets]`.
 
 - sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec:
 

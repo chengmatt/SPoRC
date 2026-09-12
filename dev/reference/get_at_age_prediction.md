@@ -35,8 +35,8 @@ get_at_age_prediction(source, arrays, p_idx, r_idx, s_idx, y, seas, a, f)
 
 - y, seas, a, f:
 
-  Year, season, age and fleet indices. `seas` is one season, or every
-  season of the year for a data source reported as a season total.
+  Year, season, model age and fleet indices. `seas` is one season, or
+  every season of the year for a data source reported as a season total.
 
 ## Value
 

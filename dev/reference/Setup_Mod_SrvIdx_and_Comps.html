@@ -203,7 +203,10 @@ in likelihood; <code>0</code> = exclude.</p></dd>
 
 <dt id="arg-obssrvidxaa">ObsSrvIdxAA<a class="anchor" aria-label="anchor" href="#arg-obssrvidxaa"></a></dt>
 <dd><p>Observed survey index at age, an array with dimensions
-<code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]</code>.
+<code>[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets]</code>,
+the ages being the columns of the fleet's ageing error matrix
+(<code>AgeingError_srv</code>, or the shared <code>AgeingError</code>), through which
+the predicted index at each model age is read before it is compared.
 Supplying this fits the index at age directly, every age its own observation
 with its own catchability. The sex dim is required whatever the fleet
 reports: a data source summed over sexes has its observation in sex slot one.
@@ -229,7 +232,7 @@ a leading population dimension.</p></dd>
 
 <dt id="arg-sigmasrvidxaa-key-sigmasrvidxaa-pop-key">sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidxaa-key-sigmasrvidxaa-pop-key"></a></dt>
 <dd><p>Integer arrays
-<code>[n_ages, n_sexes, n_srv_fleets]</code> coupling the index at age
+<code>[n_obs_ages, n_sexes, n_srv_fleets]</code> coupling the index at age
 observation error, the key matrix convention ICES assessments use. Equal
 entries share a parameter and <code>NA</code> excludes one. The sex dim is
 required; a key coupling the sexes repeats its entries across them. The age shape of

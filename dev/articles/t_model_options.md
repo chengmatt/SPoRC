@@ -1817,8 +1817,8 @@ Supplied via
 | `growth_semipar_spec` | `"fix"` / `"est"` | Whether the surface’s process error parameters are estimated. Their starting values are the second data source of `growth_pe_pars`, in the same slots the selectivity forms use, supplied through `starting_values` and defaulting to a scale of `0.05` with correlations of `0.3` |
 | `growth_semipar_ages`, `growth_semipar_years` | `NULL` or vectors | Ages and calendar years the surface is estimated over; outside them the deviations are kept at zero, which is how a surface is restricted to the ages the length data actually inform |
 | `LenBinMap` | `NULL` or `[l × l_\text{obs}]` | Maps the model’s length bins onto the bins the compositions are recorded on, each row summing to one, for compositions on coarser bins than the population has. Expected compositions are mapped through it inside the likelihood exactly as the ageing error matrix maps ages, and the observed arrays are then dimensioned by the observed bins |
-| `AgeingError` | `NULL`, `[a × a_\text{obs}]` or `[y × a × a_\text{obs}]` | Maps the model’s ages onto the ages the compositions are recorded on: genuine misclassification (a true age 7 read as 6, 7 or 8), a collapse onto coarser observed bins, or both. Each row sums to one, or to zero to drop a model age from the observations. The age-axis twin of `LenBinMap`, applied in the same position inside the likelihood and validated by the same [`check_bin_map()`](https://chengmatt.github.io/SPoRC/dev/reference/check_bin_map.md) |
-| `AgeingError_fish`, `AgeingError_srv` | `NULL`, `[a × a_\text{obs} × n_f]` or `[y × a × a_\text{obs} × n_f]` | Per-fleet ageing error, for when a fishery reading otoliths and a survey reading scales do not misclassify the same way. `NULL` (default) gives every fleet the shared `AgeingError`, which is what a model written before these existed does. Every fleet must land on the same observed age bins, since the observed composition arrays have one age dimension shared across fleets. Wired through the operating model too, as `AgeingError_fish_input` / `AgeingError_srv_input` in `Setup_Sim_Biologicals` |
+| `AgeingError` | `NULL`, `[a × a_\text{obs}]` or `[y × a × a_\text{obs}]` | Maps the model’s ages onto the ages the compositions and the at-age data sources are recorded on: genuine misclassification (a true age 7 read as 6, 7 or 8), a collapse onto coarser observed bins, or both. Each row sums to one, or to zero to drop a model age from the observations. The age-axis twin of `LenBinMap`, applied in the same position inside the likelihood and validated by the same [`check_bin_map()`](https://chengmatt.github.io/SPoRC/dev/reference/check_bin_map.md) |
+| `AgeingError_fish`, `AgeingError_srv` | `NULL`, `[a × a_\text{obs} × n_f]` or `[y × a × a_\text{obs} × n_f]` | Per-fleet ageing error, for when a fishery reading otoliths and a survey reading scales do not misclassify the same way. `NULL` (default) gives every fleet the shared `AgeingError`, which is what a model written before these existed does. Every fleet must land on the same observed age bins, since the observed composition and at-age arrays have one age dimension shared across fleets. Wired through the operating model too, as `AgeingError_fish_input` / `AgeingError_srv_input` in `Setup_Sim_Biologicals` |
 | `waa_model`, `wt_len_pars` | `"data"` / `"wt_len"`; 2 values or `[p × r × s × 2]` | `"data"` (default) reads weight at age from the `WAA*` arguments. `"wt_len"` derives `WAA` (at spawning time) and each fleet’s `WAA_fish` and `WAA_srv` (at that fleet’s `t_fish` or `t_srv`) from its key and $`W = aL^b`$ at the bin midpoints instead of reading them as data. `Get_Reference_Points` reads the derived `rep$WAA` when it is present, falling back to `data$WAA` otherwise; that fallback is a zero placeholder under `"wt_len"`, so pass `rep` from a fitted model rather than calling it on `data` alone |
 
 Growth is not seasonal. The curve depends only on real elapsed time
@@ -1951,10 +1951,12 @@ only in which array supplies the prediction.
 ##### How a data source is reported
 
 Every at-age array is dimensioned
-`[n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets]`, the layout of
-the prediction arrays the likelihood reads, so the two line up dim for
-dim. A fleet says which of regions and sexes it reports separately
-through a `Type`, using the same vocabulary the compositions use:
+`[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fleets]`. The ages
+are the observed ages, the columns of the fleet’s ageing error matrix
+(see Ageing error below), which are the model ages unless you supply
+one; the other dims line up with the prediction arrays dim for dim. A
+fleet says which of regions and sexes it reports separately through a
+`Type`, using the same vocabulary the compositions use:
 
 | String         | Regions  | Sexes           |
 |----------------|----------|-----------------|
@@ -1993,6 +1995,47 @@ over sexes still has its observation in the full array, in sex slot one,
 and an array one dimension short is refused rather than promoted: the
 alternative is a silent reinterpretation of what you passed.
 
+##### Ageing error
+
+An at-age observation counts fish by the age they were read as, so the
+prediction passes through the fleet’s ageing error matrix before it is
+compared, the same matrix its age compositions use: `AgeingError_fish`
+for catch and discards at age, `AgeingError_srv` for the survey index at
+age, each defaulting to the shared `AgeingError`. The prediction at
+observed age $`\tilde{a}`$ is
+
+``` math
+\hat{O}_{\tilde{a}} = \sum_{a} \hat{x}_{a} \, \Theta_{a,\tilde{a}}
+```
+
+where $`\hat{x}_{a}`$ is the model’s catch, discards or survey index at
+model age $`a`$, with units and discard mortality already applied, and
+$`\Theta_{a,\tilde{a}}`$ is the proportion of fish of model age $`a`$
+read as observed age $`\tilde{a}`$ in that year by that fleet.
+
+| Matrix | What the at-age data sources become |
+|----|----|
+| Identity (default) | Fit on the model’s ages, unchanged |
+| Square, misreading only | Fit on the model’s ages, each prediction spread by the reading error, e.g. a true age 7 read as 6, 7 or 8 |
+| Fewer columns than rows | Fit on the observed ages. The arrays, the `sigma*AA_key` arrays and the `"us"` correlations all take the observed age count |
+
+A worked collapse: a model running ages 1 to 6 whose catch at age is
+reported with a 4+ group.
+
+``` r
+
+AgeingError <- cbind(diag(6)[, 1:3], rowSums(diag(6)[, 4:6])) # ages 4 to 6 read as 4+
+# ObsCatchAA is then [n_regions, n_years, n_seas, 4, n_sexes, n_fish_fleets], and the
+# prediction in the 4+ column is the catch at ages 4, 5 and 6 added together
+```
+
+Two differences from the compositions. The observations are absolute
+rather than proportions, so nothing renormalizes after the map: a row
+summing to 0.99 takes one percent of that model age’s catch out of the
+prediction, where a composition would not notice. And an observed age
+that no model age is read as would be predicted as zero whatever the
+population does, so fitting one is refused at setup.
+
 ##### Density and where the observation error comes from
 
 An at-age data source has the same choices the aggregated index has, per
@@ -2013,8 +2056,8 @@ index by age therefore no longer costs you its survey-design errors.
 ##### Key matrices
 
 Parameters are coupled through integer key arrays
-`[n_ages, n_sexes, n_fleets]`, in which equal entries share a parameter
-and `NA` excludes one. This is the key matrix convention ICES
+`[n_obs_ages, n_sexes, n_fleets]`, in which equal entries share a
+parameter and `NA` excludes one. This is the key matrix convention ICES
 assessments use for coupling variances and catchability, with `NA`
 marking an excluded parameter, and the fleet last because that is where
 `SPoRC` puts it. One structure covers every sharing pattern that would
@@ -2057,12 +2100,12 @@ aggregated one:
 | `AgeObsCorr_catch`, `AgeObsCorr_discard` (and `_pop`) | [`Setup_Mod_Catch_and_F()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md) |
 | `AgeObsCorr_srv_idx` (and `_pop`) | [`Setup_Mod_SrvIdx_and_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md) |
 
-| String    | Meaning                                 | Parameters per fleet |
-|-----------|-----------------------------------------|----------------------|
-| `"iid"`   | Ages independent within a cell. Default | none                 |
-| `"1dar1"` | AR(1) in age distance                   | 1                    |
-| `"us"`    | Unstructured across ages                | $`n_a(n_a-1)/2`$     |
-| `"2dar1"` | Separable AR(1) over ages and years     | 2                    |
+| String | Meaning | Parameters per fleet |
+|----|----|----|
+| `"iid"` | Ages independent within a cell. Default | none |
+| `"1dar1"` | AR(1) in age distance | 1 |
+| `"us"` | Unstructured across ages | $`n_a(n_a-1)/2`$, over the observed ages |
+| `"2dar1"` | Separable AR(1) over ages and years | 2 |
 
 Each takes one setting for every fleet or one per fleet, so a model can
 leave one fleet independent and correlate another. The three ICES

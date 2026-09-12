@@ -207,11 +207,15 @@ whole region/year/season/fleet cells, not individual ages:</p>
 </h2>
 <p>A fleet can fit catch, discards or an index <strong>at age</strong>
 instead of an aggregate with a composition beside it. The arrays have an
-age dimension in front of the fleet, so <code>ObsCatch</code> at
-<code>[n_regions, n_years, n_seas, n_fish_fleets]</code> becomes
+age and a sex dimension in front of the fleet, so <code>ObsCatch</code>
+at <code>[n_regions, n_years, n_seas, n_fish_fleets]</code> becomes
 <code>ObsCatchAA</code> at
-<code>[n_regions, n_years, n_seas, n_ages, n_fish_fleets]</code>, and
-the <code>_pop</code> variants add a leading population dimension.</p>
+<code>[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]</code>,
+and the <code>_pop</code> variants add a leading population dimension.
+The ages are the observed ages, the columns of the ageing error matrix,
+which are the model ages unless <code>AgeingError</code> maps them onto
+fewer. The sex dim is there whatever the fleet reports: a data source
+summed over sexes has its observation in sex slot one.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -226,7 +230,7 @@ the <code>_pop</code> variants add a leading population dimension.</p>
 <td>
 <code>ObsCatchAA</code>, <code>UseCatchAA</code>
 </td>
-<td><code>n_regions × n_years × n_seas × n_ages × n_fish_fleets</code></td>
+<td><code>n_regions × n_years × n_seas × n_obs_ages × n_sexes × n_fish_fleets</code></td>
 </tr>
 <tr class="even">
 <td>
@@ -238,7 +242,7 @@ the <code>_pop</code> variants add a leading population dimension.</p>
 <td>
 <code>ObsSrvIdxAA</code>, <code>UseSrvIdxAA</code>
 </td>
-<td><code>n_regions × n_years × n_seas × n_ages × n_srv_fleets</code></td>
+<td><code>n_regions × n_years × n_seas × n_obs_ages × n_sexes × n_srv_fleets</code></td>
 </tr>
 <tr class="even">
 <td>any of the above with <code>_pop</code>
@@ -254,14 +258,14 @@ aggregated arrays, with an extra index for age:</p>
 <span><span class="va">raw_caa</span><span class="op">$</span><span class="va">fleet</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="va">raw_caa</span><span class="op">$</span><span class="va">catch</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/stats/Poisson.html" class="external-link">rpois</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">raw_caa</span><span class="op">)</span>, lambda <span class="op">=</span> <span class="fl">8</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">ObsCatchAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">years</span><span class="op">)</span>, <span class="va">n_seas</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span>, <span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">ObsCatchAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">years</span><span class="op">)</span>, <span class="va">n_seas</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span>, <span class="va">n_sexes</span>, <span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">UseCatchAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim</a></span><span class="op">(</span><span class="va">ObsCatchAA</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">raw_caa</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">y</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">raw_caa</span><span class="op">$</span><span class="va">year</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">years</span><span class="op">)</span></span>
 <span>  <span class="va">a</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">raw_caa</span><span class="op">$</span><span class="va">age</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="va">ages</span><span class="op">)</span></span>
-<span>  <span class="va">ObsCatchAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">y</span>, <span class="fl">1</span>, <span class="va">a</span>, <span class="va">raw_caa</span><span class="op">$</span><span class="va">fleet</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">raw_caa</span><span class="op">$</span><span class="va">catch</span><span class="op">[</span><span class="va">i</span><span class="op">]</span></span>
-<span>  <span class="va">UseCatchAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">y</span>, <span class="fl">1</span>, <span class="va">a</span>, <span class="va">raw_caa</span><span class="op">$</span><span class="va">fleet</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span>  <span class="va">ObsCatchAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">y</span>, <span class="fl">1</span>, <span class="va">a</span>, <span class="fl">1</span>, <span class="va">raw_caa</span><span class="op">$</span><span class="va">fleet</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">raw_caa</span><span class="op">$</span><span class="va">catch</span><span class="op">[</span><span class="va">i</span><span class="op">]</span> <span class="co"># summed over sexes, so sex slot one</span></span>
+<span>  <span class="va">UseCatchAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">y</span>, <span class="fl">1</span>, <span class="va">a</span>, <span class="fl">1</span>, <span class="va">raw_caa</span><span class="op">$</span><span class="va">fleet</span><span class="op">[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="op">}</span> <span class="co"># end i loop</span></span></code></pre></div>
 <p>Two things to know before choosing this form. A fleet fits the
 aggregated data source or the at-age data source, never both, and

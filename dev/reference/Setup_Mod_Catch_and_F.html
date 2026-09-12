@@ -185,7 +185,12 @@ See <code><a href="Get_Fdev_PE_loglik.html">Get_Fdev_PE_loglik</a></code>.</p></
 
 <dt id="arg-obscatchaa">ObsCatchAA<a class="anchor" aria-label="anchor" href="#arg-obscatchaa"></a></dt>
 <dd><p>Observed catch at age, an array with dimensions
-<code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]</code>. The
+<code>[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]</code>.
+The ages are the observed ages, the columns of the fleet's ageing error
+matrix (<code>AgeingError_fish</code>, or the shared <code>AgeingError</code>), which
+are the model ages unless an ageing error is supplied. The predicted catch
+at each model age is read onto those ages through that matrix before it is
+compared, as for the age compositions. The
 sex dim is required whatever the fleet reports: a data source summed over
 sexes has its observation in sex slot one. Supplying this
 fits the catch at age directly, every age its own lognormal observation, in
@@ -210,7 +215,7 @@ the data source's <code>sigma_form</code> asks for them.</p></dd>
 
 
 <dt id="arg-sigmacaa-key">sigmaCAA_key<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-key"></a></dt>
-<dd><p>Integer array <code>[n_ages, n_sexes, n_fish_fleets]</code>
+<dd><p>Integer array <code>[n_obs_ages, n_sexes, n_fish_fleets]</code>
 coupling the catch at age observation error, the key matrix convention ICES
 assessments use. Equal entries share a parameter and <code>NA</code> excludes one.
 The sex dim is required; a key coupling the sexes repeats its entries across
@@ -232,7 +237,8 @@ values. Starting values are supplied through <code>...</code> as
 
 <dt id="arg-obsdiscardaa-usediscardaa">ObsDiscardAA, UseDiscardAA<a class="anchor" aria-label="anchor" href="#arg-obsdiscardaa-usediscardaa"></a></dt>
 <dd><p>Observed discard at age and its use flags,
-shaped like <code>ObsCatchAA</code>. The discard counterpart of catch at age.</p></dd>
+shaped like <code>ObsCatchAA</code>. The discard counterpart of catch at age,
+read through the same fishery ageing error.</p></dd>
 
 
 <dt id="arg-obsdiscardaa-pop-usediscardaa-pop-obscatchaa-pop-usecatchaa-pop">ObsDiscardAA_pop, UseDiscardAA_pop, ObsCatchAA_pop, UseCatchAA_pop<a class="anchor" aria-label="anchor" href="#arg-obsdiscardaa-pop-usediscardaa-pop-obscatchaa-pop-usecatchaa-pop"></a></dt>
@@ -244,8 +250,8 @@ shaped like <code>ObsCatchAA</code>. The discard counterpart of catch at age.</p
 the observation error for the population-specific catch, the discards, and
 the population-specific discards, following the same convention as
 <code>sigmaCAA_key</code>. <code>sigmaDAA_key</code> is shaped
-<code>[n_ages, n_sexes, n_fish_fleets]</code>; the two population-specific keys
-take a leading population dim, <code>[n_pop, n_ages, n_sexes, n_fish_fleets]</code>.</p></dd>
+<code>[n_obs_ages, n_sexes, n_fish_fleets]</code>; the two population-specific keys
+take a leading population dim, <code>[n_pop, n_obs_ages, n_sexes, n_fish_fleets]</code>.</p></dd>
 
 
 <dt id="arg-sigmacaa-pop-spec-sigmadaa-spec-sigmadaa-pop-spec">sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec<a class="anchor" aria-label="anchor" href="#arg-sigmacaa-pop-spec-sigmadaa-spec-sigmadaa-pop-spec"></a></dt>

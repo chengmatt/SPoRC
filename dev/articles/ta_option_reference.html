@@ -1108,7 +1108,7 @@ added to tag recovery observations; default 1e-10 in
 Setup_Mod_Weighting.
 </td>
 </tr>
-<tr data-k="ageingerror null ageing error (age-age transition) array mapping true modeled ages to observed age bins. each row is one model age's share across the observed bins and sums to one, or to zero to drop that model age from the observations. this is the age-axis twin of lenbinmap: the likelihood applies the two identically and validates them identically, so read either one for the other. it changes which bins the compositions are recorded on; to leave observed bins out of the likelihood without changing the bins themselves, use the *_bins arguments instead. accepted forms: 2d matrix [n_model_ages × n_obs_ages]time-invariant ageing error; replicated internally across all years. 3d array [n_years × n_model_ages × n_obs_ages]time-varying ageing error. null (default)an identity matrix is constructed, assuming modeled and observed age bins are identical. if observed bins are a subset of modeled ages (e.g., observed ages 2-10 vs. modeled ages 1-10), supply a shifted identity matrix such as diag(1, n_model_ages)[, obs_age_index] to avoid a dimensional mismatch.">
+<tr data-k="ageingerror null ageing error (age-age transition) array mapping true modeled ages to observed age bins. each row is one model age's share across the observed bins and sums to one, or to zero to drop that model age from the observations. this is the age-axis twin of lenbinmap: the likelihood applies the two identically and validates them identically, so read either one for the other. it changes which bins the compositions and the at-age data sources are recorded on, so obscatchaa, obsdiscardaa and obssrvidxaa are dimensioned by the observed ages; to leave observed bins out of the likelihood without changing the bins themselves, use the *_bins arguments instead. accepted forms: 2d matrix [n_model_ages × n_obs_ages]time-invariant ageing error; replicated internally across all years. 3d array [n_years × n_model_ages × n_obs_ages]time-varying ageing error. null (default)an identity matrix is constructed, assuming modeled and observed age bins are identical. if observed bins are a subset of modeled ages (e.g., observed ages 2-10 vs. modeled ages 1-10), supply a shifted identity matrix such as diag(1, n_model_ages)[, obs_age_index] to avoid a dimensional mismatch.">
 <td>
 <code class="optref-arg">AgeingError</code>
 </td>
@@ -1121,19 +1121,21 @@ observed age bins. Each row is one model age’s share across the observed
 bins and sums to one, or to zero to drop that model age from the
 observations. This is the age-axis twin of LenBinMap: the likelihood
 applies the two identically and validates them identically, so read
-either one for the other. It changes which bins the compositions are
-recorded on; to leave observed bins out of the likelihood without
-changing the bins themselves, use the *_bins arguments instead. Accepted
-forms: 2D matrix [n_model_ages × n_obs_ages]Time-invariant ageing error;
-replicated internally across all years. 3D array [n_years × n_model_ages
-× n_obs_ages]Time-varying ageing error. NULL (default)An identity matrix
-is constructed, assuming modeled and observed age bins are identical. If
-observed bins are a subset of modeled ages (e.g., observed ages 2-10
-vs. modeled ages 1-10), supply a shifted identity matrix such as diag(1,
-n_model_ages)[, obs_age_index] to avoid a dimensional mismatch.
+either one for the other. It changes which bins the compositions and the
+at-age data sources are recorded on, so ObsCatchAA, ObsDiscardAA and
+ObsSrvIdxAA are dimensioned by the observed ages; to leave observed bins
+out of the likelihood without changing the bins themselves, use the
+*_bins arguments instead. Accepted forms: 2D matrix [n_model_ages ×
+n_obs_ages]Time-invariant ageing error; replicated internally across all
+years. 3D array [n_years × n_model_ages × n_obs_ages]Time-varying ageing
+error. NULL (default)An identity matrix is constructed, assuming modeled
+and observed age bins are identical. If observed bins are a subset of
+modeled ages (e.g., observed ages 2-10 vs. modeled ages 1-10), supply a
+shifted identity matrix such as diag(1, n_model_ages)[, obs_age_index]
+to avoid a dimensional mismatch.
 </td>
 </tr>
-<tr data-k="ageingerror_fish null optional fleet-specific ageing error for the fishery fleets, for when the fleets do not read ages the same way. accepted forms: a 3d array [n_model_ages × n_obs_ages × n_fish_fleets] for a time-invariant matrix per fleet, a 4d array [n_years × n_model_ages × n_obs_ages × n_fish_fleets] for a time-varying one, or null (default), which gives every fishery fleet the shared ageingerror. each fleet's slice is validated the same way ageingerror is, and every fleet must land on the same observed age bins, since the observed composition arrays have one age dimension shared across fleets.">
+<tr data-k="ageingerror_fish null optional fleet-specific ageing error for the fishery fleets, for when the fleets do not read ages the same way. accepted forms: a 3d array [n_model_ages × n_obs_ages × n_fish_fleets] for a time-invariant matrix per fleet, a 4d array [n_years × n_model_ages × n_obs_ages × n_fish_fleets] for a time-varying one, or null (default), which gives every fishery fleet the shared ageingerror. each fleet's slice is validated the same way ageingerror is, and every fleet must land on the same observed age bins, since the observed composition and at-age arrays have one age dimension shared across fleets. a fishery fleet's matrix is read by its age compositions and by its catch and discards at age.">
 <td>
 <code class="optref-arg">AgeingError_fish</code>
 </td>
@@ -1148,11 +1150,12 @@ per fleet, a 4D array [n_years × n_model_ages × n_obs_ages ×
 n_fish_fleets] for a time-varying one, or NULL (default), which gives
 every fishery fleet the shared AgeingError. Each fleet’s slice is
 validated the same way AgeingError is, and every fleet must land on the
-same observed age bins, since the observed composition arrays have one
-age dimension shared across fleets.
+same observed age bins, since the observed composition and at-age arrays
+have one age dimension shared across fleets. A fishery fleet’s matrix is
+read by its age compositions and by its catch and discards at age.
 </td>
 </tr>
-<tr data-k="ageingerror_srv null optional fleet-specific ageing error for the survey fleets, in the same forms as ageingerror_fish, with n_srv_fleets in place of n_fish_fleets. null (default) gives every survey fleet the shared ageingerror.">
+<tr data-k="ageingerror_srv null optional fleet-specific ageing error for the survey fleets, in the same forms as ageingerror_fish, with n_srv_fleets in place of n_fish_fleets. null (default) gives every survey fleet the shared ageingerror. a survey fleet's matrix is read by its age compositions and its index at age.">
 <td>
 <code class="optref-arg">AgeingError_srv</code>
 </td>
@@ -1162,7 +1165,8 @@ age dimension shared across fleets.
 <td>
 Optional fleet-specific ageing error for the survey fleets, in the same
 forms as AgeingError_fish, with n_srv_fleets in place of n_fish_fleets.
-NULL (default) gives every survey fleet the shared AgeingError.
+NULL (default) gives every survey fleet the shared AgeingError. A survey
+fleet’s matrix is read by its age compositions and its index at age.
 </td>
 </tr>
 <tr data-k="use_m_prior 0 integer flag to apply a lognormal prior on natural mortality. 0 = no prior (default); 1 = apply prior.">
@@ -2134,7 +2138,7 @@ closure: Fmort is forced to zero and no deviation is estimated. See
 Get_Fdev_PE_loglik.
 </td>
 </tr>
-<tr data-k="obscatchaa null observed catch at age, an array with dimensions [n_regions, n_years, n_seas, n_ages, n_sexes, n_fish_fleets]. the sex dim is required whatever the fleet reports: a data source summed over sexes has its observation in sex slot one. supplying this fits the catch at age directly, every age its own lognormal observation, in place of an aggregated catch with compositions. this is the native form for ices age-structured assessments. the two statements are not interchangeable: the exact factorization of an at-age observation into a total and a composition holds for poisson and multinomial, not for lognormal, so a fleet must use one or the other and supplying both for the same fleet is an error. null (default) leaves the fleet on aggregated catch.">
+<tr data-k="obscatchaa null observed catch at age, an array with dimensions [n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]. the ages are the observed ages, the columns of the fleet's ageing error matrix (ageingerror_fish, or the shared ageingerror), which are the model ages unless an ageing error is supplied. the predicted catch at each model age is read onto those ages through that matrix before it is compared, as for the age compositions. the sex dim is required whatever the fleet reports: a data source summed over sexes has its observation in sex slot one. supplying this fits the catch at age directly, every age its own lognormal observation, in place of an aggregated catch with compositions. this is the native form for ices age-structured assessments. the two statements are not interchangeable: the exact factorization of an at-age observation into a total and a composition holds for poisson and multinomial, not for lognormal, so a fleet must use one or the other and supplying both for the same fleet is an error. null (default) leaves the fleet on aggregated catch.">
 <td>
 <code class="optref-arg">ObsCatchAA</code>
 </td>
@@ -2143,16 +2147,21 @@ Get_Fdev_PE_loglik.
 </td>
 <td>
 Observed catch at age, an array with dimensions [n_regions, n_years,
-n_seas, n_ages, n_sexes, n_fish_fleets]. The sex dim is required
-whatever the fleet reports: a data source summed over sexes has its
-observation in sex slot one. Supplying this fits the catch at age
-directly, every age its own lognormal observation, in place of an
-aggregated catch with compositions. This is the native form for ICES
-age-structured assessments. The two statements are not interchangeable:
-the exact factorization of an at-age observation into a total and a
-composition holds for Poisson and multinomial, not for lognormal, so a
-fleet must use one or the other and supplying both for the same fleet is
-an error. NULL (default) leaves the fleet on aggregated catch.
+n_seas, n_obs_ages, n_sexes, n_fish_fleets]. The ages are the observed
+ages, the columns of the fleet’s ageing error matrix (AgeingError_fish,
+or the shared AgeingError), which are the model ages unless an ageing
+error is supplied. The predicted catch at each model age is read onto
+those ages through that matrix before it is compared, as for the age
+compositions. The sex dim is required whatever the fleet reports: a data
+source summed over sexes has its observation in sex slot one. Supplying
+this fits the catch at age directly, every age its own lognormal
+observation, in place of an aggregated catch with compositions. This is
+the native form for ICES age-structured assessments. The two statements
+are not interchangeable: the exact factorization of an at-age
+observation into a total and a composition holds for Poisson and
+multinomial, not for lognormal, so a fleet must use one or the other and
+supplying both for the same fleet is an error. NULL (default) leaves the
+fleet on aggregated catch.
 </td>
 </tr>
 <tr data-k="usecatchaa null integer array shaped like obscatchaa, 1 where an observation is fit and 0 otherwise. a cell that is not fit is also not fished, so this governs closures the way usecatch does for the aggregated data source.">
@@ -2180,7 +2189,7 @@ Reported standard errors shaped like their observation array, read only
 when the data source’s sigma_form asks for them.
 </td>
 </tr>
-<tr data-k="sigmacaa_key null integer array [n_ages, n_sexes, n_fish_fleets] coupling the catch at age observation error, the key matrix convention ices assessments use. equal entries share a parameter and na excludes one. the sex dim is required; a key coupling the sexes repeats its entries across them. along the age dim, 1 2 3 4 5 gives one standard deviation per age, 1 1 2 2 2 gives standard deviations by age group as several ices assessments do, and 1 1 1 1 1 gives one for the fleet. defaults to one parameter per fleet, shared across ages and sexes. a parameter informed by fewer than two observations is refused, since an observation error standard deviation with a single observation drives the likelihood to negative infinity rather than failing outright.">
+<tr data-k="sigmacaa_key null integer array [n_obs_ages, n_sexes, n_fish_fleets] coupling the catch at age observation error, the key matrix convention ices assessments use. equal entries share a parameter and na excludes one. the sex dim is required; a key coupling the sexes repeats its entries across them. along the age dim, 1 2 3 4 5 gives one standard deviation per age, 1 1 2 2 2 gives standard deviations by age group as several ices assessments do, and 1 1 1 1 1 gives one for the fleet. defaults to one parameter per fleet, shared across ages and sexes. a parameter informed by fewer than two observations is refused, since an observation error standard deviation with a single observation drives the likelihood to negative infinity rather than failing outright.">
 <td>
 <code class="optref-arg">sigmaCAA_key</code>
 </td>
@@ -2188,17 +2197,17 @@ when the data source’s sigma_form asks for them.
 <code>NULL</code>
 </td>
 <td>
-Integer array [n_ages, n_sexes, n_fish_fleets] coupling the catch at age
-observation error, the key matrix convention ICES assessments use. Equal
-entries share a parameter and NA excludes one. The sex dim is required;
-a key coupling the sexes repeats its entries across them. Along the age
-dim, 1 2 3 4 5 gives one standard deviation per age, 1 1 2 2 2 gives
-standard deviations by age group as several ICES assessments do, and 1 1
-1 1 1 gives one for the fleet. Defaults to one parameter per fleet,
-shared across ages and sexes. A parameter informed by fewer than two
-observations is refused, since an observation error standard deviation
-with a single observation drives the likelihood to negative infinity
-rather than failing outright.
+Integer array [n_obs_ages, n_sexes, n_fish_fleets] coupling the catch at
+age observation error, the key matrix convention ICES assessments use.
+Equal entries share a parameter and NA excludes one. The sex dim is
+required; a key coupling the sexes repeats its entries across them.
+Along the age dim, 1 2 3 4 5 gives one standard deviation per age, 1 1 2
+2 2 gives standard deviations by age group as several ICES assessments
+do, and 1 1 1 1 1 gives one for the fleet. Defaults to one parameter per
+fleet, shared across ages and sexes. A parameter informed by fewer than
+two observations is refused, since an observation error standard
+deviation with a single observation drives the likelihood to negative
+infinity rather than failing outright.
 </td>
 </tr>
 <tr data-k="sigmacaa_spec " est character string to estimate the coupled standard deviations or hold them at their starting values. values are supplied through ... as ln_sigmacaa.>
@@ -2206,7 +2215,7 @@ rather than failing outright.
 <td><code>"est"</code></td>
 <td>Character string, "est" (default) to estimate the coupled standard deviations, or "fix" to hold them at their starting values. Starting values are supplied through ... as ln_sigmaCAA.</td>
 </tr>
-<tr data-k="obsdiscardaa null observed discard at age and its use flags, shaped like obscatchaa. the discard counterpart of catch at age.">
+<tr data-k="obsdiscardaa null observed discard at age and its use flags, shaped like obscatchaa. the discard counterpart of catch at age, read through the same fishery ageing error.">
 <td>
 <code class="optref-arg">ObsDiscardAA</code>
 </td>
@@ -2215,10 +2224,11 @@ rather than failing outright.
 </td>
 <td>
 Observed discard at age and its use flags, shaped like ObsCatchAA. The
-discard counterpart of catch at age.
+discard counterpart of catch at age, read through the same fishery
+ageing error.
 </td>
 </tr>
-<tr data-k="usediscardaa null observed discard at age and its use flags, shaped like obscatchaa. the discard counterpart of catch at age.">
+<tr data-k="usediscardaa null observed discard at age and its use flags, shaped like obscatchaa. the discard counterpart of catch at age, read through the same fishery ageing error.">
 <td>
 <code class="optref-arg">UseDiscardAA</code>
 </td>
@@ -2227,7 +2237,8 @@ discard counterpart of catch at age.
 </td>
 <td>
 Observed discard at age and its use flags, shaped like ObsCatchAA. The
-discard counterpart of catch at age.
+discard counterpart of catch at age, read through the same fishery
+ageing error.
 </td>
 </tr>
 <tr data-k="obsdiscardaa_se null reported standard errors shaped like their observation array, read only when the data source's sigma_form asks for them.">
@@ -2310,7 +2321,7 @@ Reported standard errors shaped like their observation array, read only
 when the data source’s sigma_form asks for them.
 </td>
 </tr>
-<tr data-k="sigmacaa_pop_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_ages, n_sexes, n_fish_fleets].">
+<tr data-k="sigmacaa_pop_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_obs_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_obs_ages, n_sexes, n_fish_fleets].">
 <td>
 <code class="optref-arg">sigmaCAA_pop_key</code>
 </td>
@@ -2321,8 +2332,8 @@ when the data source’s sigma_form asks for them.
 Integer arrays coupling the observation error for the
 population-specific catch, the discards, and the population-specific
 discards, following the same convention as sigmaCAA_key. sigmaDAA_key is
-shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific
-keys take a leading population dim, [n_pop, n_ages, n_sexes,
+shaped [n_obs_ages, n_sexes, n_fish_fleets]; the two population-specific
+keys take a leading population dim, [n_pop, n_obs_ages, n_sexes,
 n_fish_fleets].
 </td>
 </tr>
@@ -2331,7 +2342,7 @@ n_fish_fleets].
 <td><code>"est"</code></td>
 <td>"est" or "fix".</td>
 </tr>
-<tr data-k="sigmadaa_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_ages, n_sexes, n_fish_fleets].">
+<tr data-k="sigmadaa_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_obs_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_obs_ages, n_sexes, n_fish_fleets].">
 <td>
 <code class="optref-arg">sigmaDAA_key</code>
 </td>
@@ -2342,8 +2353,8 @@ n_fish_fleets].
 Integer arrays coupling the observation error for the
 population-specific catch, the discards, and the population-specific
 discards, following the same convention as sigmaCAA_key. sigmaDAA_key is
-shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific
-keys take a leading population dim, [n_pop, n_ages, n_sexes,
+shaped [n_obs_ages, n_sexes, n_fish_fleets]; the two population-specific
+keys take a leading population dim, [n_pop, n_obs_ages, n_sexes,
 n_fish_fleets].
 </td>
 </tr>
@@ -2352,7 +2363,7 @@ n_fish_fleets].
 <td><code>"est"</code></td>
 <td>"est" or "fix".</td>
 </tr>
-<tr data-k="sigmadaa_pop_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_ages, n_sexes, n_fish_fleets].">
+<tr data-k="sigmadaa_pop_key null integer arrays coupling the observation error for the population-specific catch, the discards, and the population-specific discards, following the same convention as sigmacaa_key. sigmadaa_key is shaped [n_obs_ages, n_sexes, n_fish_fleets]; the two population-specific keys take a leading population dim, [n_pop, n_obs_ages, n_sexes, n_fish_fleets].">
 <td>
 <code class="optref-arg">sigmaDAA_pop_key</code>
 </td>
@@ -2363,8 +2374,8 @@ n_fish_fleets].
 Integer arrays coupling the observation error for the
 population-specific catch, the discards, and the population-specific
 discards, following the same convention as sigmaCAA_key. sigmaDAA_key is
-shaped [n_ages, n_sexes, n_fish_fleets]; the two population-specific
-keys take a leading population dim, [n_pop, n_ages, n_sexes,
+shaped [n_obs_ages, n_sexes, n_fish_fleets]; the two population-specific
+keys take a leading population dim, [n_pop, n_obs_ages, n_sexes,
 n_fish_fleets].
 </td>
 </tr>
@@ -3597,7 +3608,7 @@ Binary indicator array [n_regions × n_years × n_seas × n_srv_fleets]. 1
 = include in likelihood; 0 = exclude.
 </td>
 </tr>
-<tr data-k="obssrvidxaa null observed survey index at age, an array with dimensions [n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]. supplying this fits the index at age directly, every age its own observation with its own catchability. the sex dim is required whatever the fleet reports: a data source summed over sexes has its observation in sex slot one. a fleet uses this or the aggregated index, never both.">
+<tr data-k="obssrvidxaa null observed survey index at age, an array with dimensions [n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets], the ages being the columns of the fleet's ageing error matrix (ageingerror_srv, or the shared ageingerror), through which the predicted index at each model age is read before it is compared. supplying this fits the index at age directly, every age its own observation with its own catchability. the sex dim is required whatever the fleet reports: a data source summed over sexes has its observation in sex slot one. a fleet uses this or the aggregated index, never both.">
 <td>
 <code class="optref-arg">ObsSrvIdxAA</code>
 </td>
@@ -3606,11 +3617,14 @@ Binary indicator array [n_regions × n_years × n_seas × n_srv_fleets]. 1
 </td>
 <td>
 Observed survey index at age, an array with dimensions [n_regions,
-n_years, n_seas, n_ages, n_sexes, n_srv_fleets]. Supplying this fits the
-index at age directly, every age its own observation with its own
-catchability. The sex dim is required whatever the fleet reports: a data
-source summed over sexes has its observation in sex slot one. A fleet
-uses this or the aggregated index, never both.
+n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets], the ages being the
+columns of the fleet’s ageing error matrix (AgeingError_srv, or the
+shared AgeingError), through which the predicted index at each model age
+is read before it is compared. Supplying this fits the index at age
+directly, every age its own observation with its own catchability. The
+sex dim is required whatever the fleet reports: a data source summed
+over sexes has its observation in sex slot one. A fleet uses this or the
+aggregated index, never both.
 </td>
 </tr>
 <tr data-k="usesrvidxaa null integer array shaped like obssrvidxaa, 1 where an observation is fit.">
@@ -3674,20 +3688,20 @@ aggregated index already has: an index disaggregated by age keeps its
 survey-design errors.
 </td>
 </tr>
-<tr data-k="sigmasrvidxaa_key null integer arrays [n_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ices assessments use. equal entries share a parameter and na excludes one. the sex dim is required; a key coupling the sexes repeats its entries across them. the age shape of catchability is not set here: an index fit age by age puts it in selectivity through the " nonparfree form which holds the height of curve as well its shape. see setup_mod_srvsel_and_q.>
+<tr data-k="sigmasrvidxaa_key null integer arrays [n_obs_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ices assessments use. equal entries share a parameter and na excludes one. the sex dim is required; a key coupling the sexes repeats its entries across them. the age shape of catchability is not set here: an index fit age by age puts it in selectivity through the " nonparfree form which holds the height of curve as well its shape. see setup_mod_srvsel_and_q.>
 <td><code class="optref-arg">sigmaSrvIdxAA_key</code></td>
 <td><code>NULL</code></td>
-<td>Integer arrays [n_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ICES assessments use. Equal entries share a parameter and NA excludes one. The sex dim is required; a key coupling the sexes repeats its entries across them. The age shape of catchability is not set here: an index fit age by age puts it in selectivity through the "nonparfree" form, which holds the height of the curve as well as its shape. See Setup_Mod_Srvsel_and_Q.</td>
+<td>Integer arrays [n_obs_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ICES assessments use. Equal entries share a parameter and NA excludes one. The sex dim is required; a key coupling the sexes repeats its entries across them. The age shape of catchability is not set here: an index fit age by age puts it in selectivity through the "nonparfree" form, which holds the height of the curve as well as its shape. See Setup_Mod_Srvsel_and_Q.</td>
 </tr>
 <tr data-k="sigmasrvidxaa_spec " est or>
 <td><code class="optref-arg">sigmaSrvIdxAA_spec</code></td>
 <td><code>"est"</code></td>
 <td>"est" (default) or "fix".</td>
 </tr>
-<tr data-k="sigmasrvidxaa_pop_key null integer arrays [n_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ices assessments use. equal entries share a parameter and na excludes one. the sex dim is required; a key coupling the sexes repeats its entries across them. the age shape of catchability is not set here: an index fit age by age puts it in selectivity through the " nonparfree form which holds the height of curve as well its shape. see setup_mod_srvsel_and_q.>
+<tr data-k="sigmasrvidxaa_pop_key null integer arrays [n_obs_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ices assessments use. equal entries share a parameter and na excludes one. the sex dim is required; a key coupling the sexes repeats its entries across them. the age shape of catchability is not set here: an index fit age by age puts it in selectivity through the " nonparfree form which holds the height of curve as well its shape. see setup_mod_srvsel_and_q.>
 <td><code class="optref-arg">sigmaSrvIdxAA_pop_key</code></td>
 <td><code>NULL</code></td>
-<td>Integer arrays [n_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ICES assessments use. Equal entries share a parameter and NA excludes one. The sex dim is required; a key coupling the sexes repeats its entries across them. The age shape of catchability is not set here: an index fit age by age puts it in selectivity through the "nonparfree" form, which holds the height of the curve as well as its shape. See Setup_Mod_Srvsel_and_Q.</td>
+<td>Integer arrays [n_obs_ages, n_sexes, n_srv_fleets] coupling the index at age observation error, the key matrix convention ICES assessments use. Equal entries share a parameter and NA excludes one. The sex dim is required; a key coupling the sexes repeats its entries across them. The age shape of catchability is not set here: an index fit age by age puts it in selectivity through the "nonparfree" form, which holds the height of the curve as well as its shape. See Setup_Mod_Srvsel_and_Q.</td>
 </tr>
 <tr data-k="sigmasrvidxaa_pop_spec " est or>
 <td><code class="optref-arg">sigmaSrvIdxAA_pop_spec</code></td>

@@ -4179,12 +4179,13 @@ the observed arrays are then dimensioned by the observed bins</td>
 <code>NULL</code>, <code>[a × a_\text{obs}]</code> or
 <code>[y × a × a_\text{obs}]</code>
 </td>
-<td>Maps the model’s ages onto the ages the compositions are recorded
-on: genuine misclassification (a true age 7 read as 6, 7 or 8), a
-collapse onto coarser observed bins, or both. Each row sums to one, or
-to zero to drop a model age from the observations. The age-axis twin of
-<code>LenBinMap</code>, applied in the same position inside the
-likelihood and validated by the same <code><a href="../reference/check_bin_map.html">check_bin_map()</a></code>
+<td>Maps the model’s ages onto the ages the compositions and the at-age
+data sources are recorded on: genuine misclassification (a true age 7
+read as 6, 7 or 8), a collapse onto coarser observed bins, or both. Each
+row sums to one, or to zero to drop a model age from the observations.
+The age-axis twin of <code>LenBinMap</code>, applied in the same
+position inside the likelihood and validated by the same
+<code><a href="../reference/check_bin_map.html">check_bin_map()</a></code>
 </td>
 </tr>
 <tr class="even">
@@ -4199,9 +4200,9 @@ likelihood and validated by the same <code><a href="../reference/check_bin_map.h
 survey reading scales do not misclassify the same way. <code>NULL</code>
 (default) gives every fleet the shared <code>AgeingError</code>, which
 is what a model written before these existed does. Every fleet must land
-on the same observed age bins, since the observed composition arrays
-have one age dimension shared across fleets. Wired through the operating
-model too, as <code>AgeingError_fish_input</code> /
+on the same observed age bins, since the observed composition and at-age
+arrays have one age dimension shared across fleets. Wired through the
+operating model too, as <code>AgeingError_fish_input</code> /
 <code>AgeingError_srv_input</code> in
 <code>Setup_Sim_Biologicals</code>
 </td>
@@ -4453,11 +4454,13 @@ function, differing only in which array supplies the prediction.</p>
 <h5 id="how-a-data-source-is-reported">How a data source is reported<a class="anchor" aria-label="anchor" href="#how-a-data-source-is-reported"></a>
 </h5>
 <p>Every at-age array is dimensioned
-<code>[n_regions, n_years, n_seas, n_ages, n_sexes, n_fleets]</code>,
-the layout of the prediction arrays the likelihood reads, so the two
-line up dim for dim. A fleet says which of regions and sexes it reports
-separately through a <code>Type</code>, using the same vocabulary the
-compositions use:</p>
+<code>[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fleets]</code>.
+The ages are the observed ages, the columns of the fleet’s ageing error
+matrix (see Ageing error below), which are the model ages unless you
+supply one; the other dims line up with the prediction arrays dim for
+dim. A fleet says which of regions and sexes it reports separately
+through a <code>Type</code>, using the same vocabulary the compositions
+use:</p>
 <table class="table">
 <thead><tr class="header">
 <th>String</th>
@@ -4514,6 +4517,70 @@ promoted: the alternative is a silent reinterpretation of what you
 passed.</p>
 </div>
 <div class="section level5">
+<h5 id="ageing-error">Ageing error<a class="anchor" aria-label="anchor" href="#ageing-error"></a>
+</h5>
+<p>An at-age observation counts fish by the age they were read as, so
+the prediction passes through the fleet’s ageing error matrix before it
+is compared, the same matrix its age compositions use:
+<code>AgeingError_fish</code> for catch and discards at age,
+<code>AgeingError_srv</code> for the survey index at age, each
+defaulting to the shared <code>AgeingError</code>. The prediction at
+observed age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>a</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\tilde{a}</annotation></semantics></math>
+is</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>O</mi><mo accent="true">̂</mo></mover><mover><mi>a</mi><mo accent="true">̃</mo></mover></msub><mo>=</mo><munder><mo>∑</mo><mi>a</mi></munder><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mi>a</mi></msub><mspace width="0.167em"></mspace><msub><mi mathvariant="normal">Θ</mi><mrow><mi>a</mi><mo>,</mo><mover><mi>a</mi><mo accent="true">̃</mo></mover></mrow></msub></mrow><annotation encoding="application/x-tex">\hat{O}_{\tilde{a}} = \sum_{a} \hat{x}_{a} \, \Theta_{a,\tilde{a}}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>x</mi><mo accent="true">̂</mo></mover><mi>a</mi></msub><annotation encoding="application/x-tex">\hat{x}_{a}</annotation></semantics></math>
+is the model’s catch, discards or survey index at model age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>,
+with units and discard mortality already applied, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi mathvariant="normal">Θ</mi><mrow><mi>a</mi><mo>,</mo><mover><mi>a</mi><mo accent="true">̃</mo></mover></mrow></msub><annotation encoding="application/x-tex">\Theta_{a,\tilde{a}}</annotation></semantics></math>
+is the proportion of fish of model age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>a</mi><annotation encoding="application/x-tex">a</annotation></semantics></math>
+read as observed age
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mover><mi>a</mi><mo accent="true">̃</mo></mover><annotation encoding="application/x-tex">\tilde{a}</annotation></semantics></math>
+in that year by that fleet.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr class="header">
+<th>Matrix</th>
+<th>What the at-age data sources become</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>Identity (default)</td>
+<td>Fit on the model’s ages, unchanged</td>
+</tr>
+<tr class="even">
+<td>Square, misreading only</td>
+<td>Fit on the model’s ages, each prediction spread by the reading
+error, e.g. a true age 7 read as 6, 7 or 8</td>
+</tr>
+<tr class="odd">
+<td>Fewer columns than rows</td>
+<td>Fit on the observed ages. The arrays, the <code>sigma*AA_key</code>
+arrays and the <code>"us"</code> correlations all take the observed age
+count</td>
+</tr>
+</tbody>
+</table>
+<p>A worked collapse: a model running ages 1 to 6 whose catch at age is
+reported with a 4+ group.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">AgeingError</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="fl">3</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/base/colSums.html" class="external-link">rowSums</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/diag.html" class="external-link">diag</a></span><span class="op">(</span><span class="fl">6</span><span class="op">)</span><span class="op">[</span>, <span class="fl">4</span><span class="op">:</span><span class="fl">6</span><span class="op">]</span><span class="op">)</span><span class="op">)</span> <span class="co"># ages 4 to 6 read as 4+</span></span>
+<span><span class="co"># ObsCatchAA is then [n_regions, n_years, n_seas, 4, n_sexes, n_fish_fleets], and the</span></span>
+<span><span class="co"># prediction in the 4+ column is the catch at ages 4, 5 and 6 added together</span></span></code></pre></div>
+<p>Two differences from the compositions. The observations are absolute
+rather than proportions, so nothing renormalizes after the map: a row
+summing to 0.99 takes one percent of that model age’s catch out of the
+prediction, where a composition would not notice. And an observed age
+that no model age is read as would be predicted as zero whatever the
+population does, so fitting one is refused at setup.</p>
+</div>
+<div class="section level5">
 <h5 id="density-and-where-the-observation-error-comes-from">Density and where the observation error comes from<a class="anchor" aria-label="anchor" href="#density-and-where-the-observation-error-comes-from"></a>
 </h5>
 <p>An at-age data source has the same choices the aggregated index has,
@@ -4558,12 +4625,13 @@ survey-design errors.</p>
 <h5 id="key-matrices">Key matrices<a class="anchor" aria-label="anchor" href="#key-matrices"></a>
 </h5>
 <p>Parameters are coupled through integer key arrays
-<code>[n_ages, n_sexes, n_fleets]</code>, in which equal entries share a
-parameter and <code>NA</code> excludes one. This is the key matrix
-convention ICES assessments use for coupling variances and catchability,
-with <code>NA</code> marking an excluded parameter, and the fleet last
-because that is where <code>SPoRC</code> puts it. One structure covers
-every sharing pattern that would otherwise need its own argument:</p>
+<code>[n_obs_ages, n_sexes, n_fleets]</code>, in which equal entries
+share a parameter and <code>NA</code> excludes one. This is the key
+matrix convention ICES assessments use for coupling variances and
+catchability, with <code>NA</code> marking an excluded parameter, and
+the fleet last because that is where <code>SPoRC</code> puts it. One
+structure covers every sharing pattern that would otherwise need its own
+argument:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Intent</th>
@@ -4637,6 +4705,11 @@ aggregated one:</p>
 </tbody>
 </table>
 <table class="table">
+<colgroup>
+<col width="33%">
+<col width="33%">
+<col width="33%">
+</colgroup>
 <thead><tr class="header">
 <th>String</th>
 <th>Meaning</th>
@@ -4656,7 +4729,9 @@ aggregated one:</p>
 <tr class="odd">
 <td><code>"us"</code></td>
 <td>Unstructured across ages</td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>a</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>n</mi><mi>a</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">n_a(n_a-1)/2</annotation></semantics></math></td>
+<td>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>a</mi></msub><mo stretchy="false" form="prefix">(</mo><msub><mi>n</mi><mi>a</mi></msub><mo>−</mo><mn>1</mn><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mn>2</mn></mrow><annotation encoding="application/x-tex">n_a(n_a-1)/2</annotation></semantics></math>,
+over the observed ages</td>
 </tr>
 <tr class="even">
 <td><code>"2dar1"</code></td>
@@ -5106,7 +5181,7 @@ or <code>LenBinMap</code>. Default <code>NULL</code> fits every bin.</p>
 </tr>
 </tbody>
 </table>
-<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># the acoustic survey resolves ages 2-15 only; every other fleet fits all ages</span></span>
 <span><span class="va">SrvAgeComps_bins</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">15</span>, <span class="cn">NULL</span>, <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
 <p>Every fleet must keep at least two bins. A composition fitted over
@@ -5377,7 +5452,7 @@ information</td>
 </table>
 <p>A fishery that began sexing its samples in the eighth year of the
 series reads:</p>
-<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">FishAgeComps_Type</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-7_Fleet_1"</span>,</span>
 <span>                      <span class="st">"spltRjntS_Year_8-terminal_Fleet_1"</span><span class="op">)</span></span></code></pre></div>
 <p><code>"agg"</code> is refused where the likelihood is the 2d logistic

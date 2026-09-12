@@ -79,7 +79,8 @@ registered through <code><a href="https://rdrr.io/pkg/RTMB/man/TMB-interface.htm
 <span>  trans_rho_year <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  us_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  aa_type <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  seas_agg <span class="op">=</span> <span class="fl">0</span></span>
+<span>  seas_agg <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  ageing_error <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -95,13 +96,13 @@ likelihood uses.</p></dd>
 
 <dt id="arg-use">use<a class="anchor" aria-label="anchor" href="#arg-use"></a></dt>
 <dd><p>Integer array flagging which cells are fit, dimensioned region by
-year by season by age by sex by fleet, with a leading population dimension
-when <code>pop</code> is <code>TRUE</code>.</p></dd>
+year by season by observed age by sex by fleet, with a leading population
+dimension when <code>pop</code> is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-ln-sigma">ln_sigma<a class="anchor" aria-label="anchor" href="#arg-ln-sigma"></a></dt>
-<dd><p>Log-scale observation error, over age by sex by fleet, with a
-leading population dimension when <code>pop</code> is <code>TRUE</code>.</p></dd>
+<dd><p>Log-scale observation error, over observed age by sex by
+fleet, with a leading population dimension when <code>pop</code> is <code>TRUE</code>.</p></dd>
 
 
 <dt id="arg-source-arrays">source, arrays<a class="anchor" aria-label="anchor" href="#arg-source-arrays"></a></dt>
@@ -162,6 +163,13 @@ by fleet or a vector per fleet standing for every year, see
 <dd><p>Integer vector, one per fleet. <code>1</code> compares the
 observation against every season of the year summed together, <code>0</code>
 against the season it sits in.</p></dd>
+
+
+<dt id="arg-ageing-error">ageing_error<a class="anchor" aria-label="anchor" href="#arg-ageing-error"></a></dt>
+<dd><p>Array <code>[n_years, n_ages, n_obs_ages, n_fleets]</code>
+reading model ages as observed ages, the fishery or survey ageing error, or
+<code>NULL</code> when the observed ages are the model ages. Its observed ages
+must be the age dim of <code>use</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

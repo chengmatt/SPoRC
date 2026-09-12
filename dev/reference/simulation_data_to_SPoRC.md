@@ -42,7 +42,10 @@ Named list with the following elements (all arrays have `y` in the year
 dimension unless noted): `WAA`
 `[n_pop x n_regions x y x n_seas x n_ages x n_sexes]`, `WAA_fish`
 `[... x n_fish_fleets]`, `WAA_srv` `[... x n_srv_fleets]`, `MatAA`,
-`SizeAgeTrans` (or `NULL`), `AgeingError` `[y x n_obs_ages x n_ages]`,
+`SizeAgeTrans` (or `NULL`), `AgeingError` `[y x n_ages x n_obs_ages]`,
+the observed ages being the columns the model ages are read onto,
+`AgeingError_fish` `[... x n_fish_fleets]`, `AgeingError_srv`
+`[... x n_srv_fleets]` (both `NULL` when the fleets share one matrix),
 `use_conv_fish_tagging`, `conv_tag_release_indicator`,
 `obs_conv_tag_fish_recap`, `conv_tagged_fish`, `conv_tagged_fish_attr`,
 `n_tag_cohorts` (all `NULL` when tagging inactive), `ObsCatch`,

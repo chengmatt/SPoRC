@@ -25,7 +25,8 @@ get_at_age_source_nLL(
   trans_rho_year = 0,
   us_pars = NULL,
   aa_type = 1,
-  seas_agg = 0
+  seas_agg = 0,
+  ageing_error = NULL
 )
 ```
 
@@ -40,13 +41,13 @@ get_at_age_source_nLL(
 - use:
 
   Integer array flagging which cells are fit, dimensioned region by year
-  by season by age by sex by fleet, with a leading population dimension
-  when `pop` is `TRUE`.
+  by season by observed age by sex by fleet, with a leading population
+  dimension when `pop` is `TRUE`.
 
 - ln_sigma:
 
-  Log-scale observation error, over age by sex by fleet, with a leading
-  population dimension when `pop` is `TRUE`.
+  Log-scale observation error, over observed age by sex by fleet, with a
+  leading population dimension when `pop` is `TRUE`.
 
 - source, arrays:
 
@@ -109,6 +110,13 @@ get_at_age_source_nLL(
   Integer vector, one per fleet. `1` compares the observation against
   every season of the year summed together, `0` against the season it
   sits in.
+
+- ageing_error:
+
+  Array `[n_years, n_ages, n_obs_ages, n_fleets]` reading model ages as
+  observed ages, the fishery or survey ageing error, or `NULL` when the
+  observed ages are the model ages. Its observed ages must be the age
+  dim of `use`.
 
 ## Value
 

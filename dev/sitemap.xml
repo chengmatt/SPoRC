@@ -92,6 +92,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/assign_sel_block.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_block_complete.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_dims.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_n_obs_ages.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_n_sexes.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_obs_sd.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/at_age_sigma_spec.html</loc></url>
@@ -111,6 +112,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_at_age.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_multifleet.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_singlefleet.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_at_age_read.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_at_age_shape.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_bin_map.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_comp_bins_min.html</loc></url>
@@ -227,6 +229,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_2dar1_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_fits_plot.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_nLL.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_obs_prediction.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_prediction.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_source_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_beta_scaled_pars.html</loc></url>
@@ -301,6 +304,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/index.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/index_osa_field_map.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/integrate_seas_abundance.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/is_identity_ageing_error.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/jitter_start_values.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/local_Fmsy_multipop.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/local_Fmsy_sglpop.html</loc></url>
@@ -409,6 +413,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/truncate_idx_cov.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/truncate_years.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/truncate_yr.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/unused_at_age_on_obs_ages.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/use_starting_value.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/validate_osa_method.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/validate_selex_penalty.html</loc></url>

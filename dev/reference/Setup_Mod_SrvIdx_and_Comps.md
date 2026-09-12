@@ -131,7 +131,10 @@ Setup_Mod_SrvIdx_and_Comps(
 - ObsSrvIdxAA:
 
   Observed survey index at age, an array with dimensions
-  `[n_regions, n_years, n_seas, n_ages, n_sexes, n_srv_fleets]`.
+  `[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets]`, the
+  ages being the columns of the fleet's ageing error matrix
+  (`AgeingError_srv`, or the shared `AgeingError`), through which the
+  predicted index at each model age is read before it is compared.
   Supplying this fits the index at age directly, every age its own
   observation with its own catchability. The sex dim is required
   whatever the fleet reports: a data source summed over sexes has its
@@ -156,13 +159,13 @@ Setup_Mod_SrvIdx_and_Comps(
 
 - sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key:
 
-  Integer arrays `[n_ages, n_sexes, n_srv_fleets]` coupling the index at
-  age observation error, the key matrix convention ICES assessments use.
-  Equal entries share a parameter and `NA` excludes one. The sex dim is
-  required; a key coupling the sexes repeats its entries across them.
-  The age shape of catchability is not set here: an index fit age by age
-  puts it in selectivity through the `"nonparfree"` form, which holds
-  the height of the curve as well as its shape. See
+  Integer arrays `[n_obs_ages, n_sexes, n_srv_fleets]` coupling the
+  index at age observation error, the key matrix convention ICES
+  assessments use. Equal entries share a parameter and `NA` excludes
+  one. The sex dim is required; a key coupling the sexes repeats its
+  entries across them. The age shape of catchability is not set here: an
+  index fit age by age puts it in selectivity through the `"nonparfree"`
+  form, which holds the height of the curve as well as its shape. See
   [`Setup_Mod_Srvsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md).
 
 - sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec:

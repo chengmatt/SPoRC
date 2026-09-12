@@ -2,7 +2,8 @@
 
 The operating model states an at-age observation the way the estimation
 model reads it: summed over whichever of regions and sexes the fleet
-reports together, with the fleet's own density and its own standard
+reports together, read through the fleet's ageing error onto the
+observed ages, with the fleet's own density and its own standard
 deviation. A data source summed over regions is one number, so it is
 drawn once, when the region loop reaches region one.
 
@@ -19,7 +20,8 @@ sim_at_age_cell(
   like_code,
   form_code,
   use_weight,
-  r
+  r,
+  ageing_error = NULL
 )
 ```
 
@@ -27,8 +29,8 @@ sim_at_age_cell(
 
 - numbers:
 
-  Array `[n_pop, n_regions, n_ages, n_sexes]` of the quantity at age for
-  this year, season and fleet.
+  Array `[n_pop, n_regions, n_ages, n_sexes]` of the quantity at model
+  age for this year, season and fleet.
 
 - weight:
 
@@ -36,7 +38,7 @@ sim_at_age_cell(
 
 - use:
 
-  Integer array `[n_regions, n_ages, n_sexes]` of use flags.
+  Integer array `[n_regions, n_obs_ages, n_sexes]` of use flags.
 
 - se:
 
@@ -44,7 +46,7 @@ sim_at_age_cell(
 
 - ln_sigma:
 
-  Log-scale observation error, `[n_ages, n_sexes]`.
+  Log-scale observation error, `[n_obs_ages, n_sexes]`.
 
 - type_code, like_code, form_code:
 
@@ -58,7 +60,12 @@ sim_at_age_cell(
 
   Region the loop is on.
 
+- ageing_error:
+
+  Matrix `[n_ages, n_obs_ages]` reading model ages as observed ages for
+  this year and fleet, or `NULL` for the identity.
+
 ## Value
 
-A list with `true` and `obs`, both `[n_ages, n_sexes]` and `NA` wherever
-nothing was drawn.
+A list with `true` and `obs`, both `[n_obs_ages, n_sexes]` and `NA`
+wherever nothing was drawn.

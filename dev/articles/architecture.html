@@ -434,8 +434,9 @@ one file.</p>
 <td><code>setup_mapping.R</code></td>
 <td>
 <code>at_age_block_complete</code>, <code>at_age_dims</code>,
-<code>at_age_n_sexes</code>, <code>at_age_sigma_spec</code>,
-<code>build_pe_map</code>, <code>build_shared_spec_map</code>,
+<code>at_age_n_obs_ages</code>, <code>at_age_n_sexes</code>,
+<code>at_age_sigma_spec</code>, <code>build_pe_map</code>,
+<code>build_shared_spec_map</code>, <code>check_at_age_read</code>,
 <code>check_at_age_shape</code>, <code>check_fleet_spec_length</code>,
 <code>check_spec_map_identifiable</code>,
 <code>do_age_corr_setup</code>, <code>do_at_age_data_setup</code>,
@@ -654,8 +655,9 @@ one file.</p>
 <td><code>model_lik_at_age.R</code></td>
 <td>
 <code>at_age_obs_sd</code>, <code>at_age_split</code>,
+<code>get_at_age_obs_prediction</code>,
 <code>get_at_age_prediction</code>, <code>get_at_age_source_nLL</code>,
-<code>prep_at_age_obs</code>
+<code>is_identity_ageing_error</code>, <code>prep_at_age_obs</code>
 </td>
 <td>
 <code>model_distributions.R</code>, <code>utils_math.R</code>
@@ -1282,7 +1284,8 @@ one file.</p>
 <code>setup_dbnrml_raw</code>, <code>setup_dbnrml_startbin</code>,
 <code>setup_sel_bin_devs</code>, <code>setup_sel_norm_bins</code>,
 <code>setup_sel_sex_offset</code>, <code>truncate_years</code>,
-<code>use_starting_value</code>, <code>validate_selex_penalty</code>,
+<code>unused_at_age_on_obs_ages</code>, <code>use_starting_value</code>,
+<code>validate_selex_penalty</code>,
 <code>validate_selex_prior_types</code>
 </td>
 <td>nothing</td>
@@ -1725,7 +1728,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 170 test files in total.</p>
+<p>That is 172 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

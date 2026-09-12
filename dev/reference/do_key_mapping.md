@@ -1,8 +1,8 @@
-# Map an at-age observation error or catchability from a key matrix
+# Map an at-age observation error from a key matrix
 
-The key is an integer matrix `[n_ages, n_fleets]` in which equal entries
-share a parameter and `NA` excludes one. This is the key matrix
-convention ICES age-structured assessments use for coupling. One
+The key is an integer array `[n_obs_ages, n_sexes, n_fleets]` in which
+equal entries share a parameter and `NA` excludes one. This is the key
+matrix convention ICES age-structured assessments use for coupling. One
 structure covers every sharing pattern that would otherwise need its own
 spec string: one parameter per age, one per age group, or one for the
 whole fleet.
@@ -31,10 +31,10 @@ do_key_mapping(
 
 - key:
 
-  Integer array `[n_ages, n_sexes, n_fleets]`, or `NULL` for the default
-  given by `default_shared`. Gains a leading population dimension when
-  `pop` is `TRUE`. The sex dim is required: a key coupling the sexes
-  says so by repeating its entries across them.
+  Integer array `[n_obs_ages, n_sexes, n_fleets]`, or `NULL` for the
+  default given by `default_shared`. Gains a leading population
+  dimension when `pop` is `TRUE`. The sex dim is required: a key
+  coupling the sexes says so by repeating its entries across them.
 
 - spec:
 
@@ -65,7 +65,6 @@ do_key_mapping(
 
   Logical. When `key` is `NULL`, `TRUE` gives one parameter per fleet
   shared across ages and `FALSE` gives one per age and fleet.
-  Catchability defaults to the latter.
 
 ## Value
 
@@ -73,9 +72,8 @@ do_key_mapping(
 
 ## Details
 
-Shared by every at-age data source: the catch, discard and index
-observation errors, the age-specific catchabilities, and their
-population-specific counterparts.
+Shared by every at-age data source: the catch, discard and survey index
+observation errors and their population-specific counterparts.
 
 Coupled parameters are checked against the observations informing them.
 A standard deviation with a single observation is not merely poorly

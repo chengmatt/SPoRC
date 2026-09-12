@@ -80,9 +80,10 @@ Setup_Sim_Dim(
 
 - n_obs_ages:
 
-  Positive integer. Number of observed age bins in composition data. Can
-  differ from `n_ages` when the plus group or youngest ages are pooled
-  differently in observations. Defaults to `n_ages`.
+  Positive integer. Number of observed age bins in composition and
+  at-age data, the columns of `AgeingError_input`. Can differ from
+  `n_ages` when the plus group or youngest ages are pooled differently
+  in observations. Defaults to `n_ages`.
 
 - n_sexes:
 

@@ -229,7 +229,6 @@ Get_Movement <- function(move_type,
   } else if(move_type == 0) { # Unstructured markov movement
 
     Movement = array(0, dim = sapply(dims, length), dimnames = dims)
-    ref_region = 1 # Set up reference region (always set at 0)
     n_move_yrs = n_yrs + n_proj_yrs_devs
 
     for(p in 1:n_pop) {
@@ -280,7 +279,7 @@ Get_Movement <- function(move_type,
     # diffusion rate from each region
     theta_k = exp(2 * log_move_diffusion_pars) # get diffusion parameter
     theta_z = (X_zk %*% theta_k)[,1] # multiply diffusion parameter by design matrix
-    theta_z = theta_z/area_r[ctmc_move_dat[,'regions']]  # scale diffusion matrix by area
+    theta_z = theta_z / area_r[ctmc_move_dat[,'regions']]  # scale diffusion matrix by area
 
     # preference for each region. a formula with no terms (~ 0) gives a zero-column design matrix,
     # which is how pure diffusion is requested, so treat it as zero preference everywhere
@@ -307,7 +306,7 @@ Get_Movement <- function(move_type,
     } # end rr loop
 
     # Make instantaneous diffusion rate matrix
-    for( index in seq_len(nrow(loop)) ){
+    for(index in seq_len(nrow(loop))){
 
       # stratum indices. Deviations always use the actual year
       pop_idx = loop$pop[index]

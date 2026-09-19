@@ -44,7 +44,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
 
     Fmort_input = {
       n = sim_list$n_yrs * sim_list$n_seas * sim_list$n_sims * sim_list$n_fish_fleets
-      t = seq(0, 2*pi, length.out = n)
+      t = seq(0, 2 * pi, length.out = n)
       arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                                sim_list$n_fish_fleets, sim_list$n_sims))
       arr[1,,,,] <- 0.15 * exp(sin(t) + rnorm(n, 0, 0.1))   # region 1 higher F, peaks early
@@ -507,7 +507,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
 
     autocorr_ok <- TRUE
     if (test_autocorr && n > 10) {
-      bt <- Box.test(resid, lag = min(5, floor(n/5)), type = "Ljung-Box")
+      bt <- Box.test(resid, lag = min(5, floor(n / 5)), type = "Ljung-Box")
       autocorr_ok <- bt$p.value > 0.01
     }
 

@@ -16,11 +16,19 @@ assign("messages_list", character(0), envir = .GlobalEnv)
 # and with one region movement is multiplication by a 1x1 identity anyway).
 make_tagging_input <- function() {
 
-  n_pop <- 1; n_regions <- 1; n_fish_fleets <- 1; n_conv_tag_cohorts <- 1
-  n_yrs <- 2; n_seas <- 1; n_ages <- 2; n_sexes <- 1; conv_tag_max_liberty <- 2
+  n_pop <- 1
+  n_regions <- 1
+  n_fish_fleets <- 1
+  n_conv_tag_cohorts <- 1
+  n_yrs <- 2
+  n_seas <- 1
+  n_ages <- 2
+  n_sexes <- 1
+  conv_tag_max_liberty <- 2
 
   Fmort <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
-  Fmort[1,1,1,1] <- 0.3; Fmort[1,2,1,1] <- 0.3
+  Fmort[1,1,1,1] <- 0.3
+  Fmort[1,2,1,1] <- 0.3
 
   natmort <- array(0.2, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
 

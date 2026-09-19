@@ -83,15 +83,19 @@ test_that("the age and year dims are not transposed", {
   # built independently of the density code.
   skip_if_not_installed("mvtnorm")
   set.seed(11)
-  ny <- 9; na <- 6
-  rho_a <- 0.75; rho_y <- 0.25; sd_prs <- 0.4
+  ny <- 9
+  na <- 6
+  rho_a <- 0.75
+  rho_y <- 0.25
+  sd_prs <- 0.4
   rt_inv <- function(r) 0.5 * log((1 + r) / (1 - r))
 
   pred <- array(exp(matrix(stats::rnorm(ny * na, 5, 0.2), ny, na)), dim = c(1, 1, ny, 1, na, 1))
   eta <- array(stats::rnorm(ny * na, 0, 0.3), dim = c(1, 1, ny, 1, na, 1))
   sig <- array(sd_prs, dim = dim(pred))
   pe <- array(0, dim = c(1, 1, 3, 1))
-  pe[1,1,1,1] <- rt_inv(rho_a); pe[1,1,2,1] <- rt_inv(rho_y)
+  pe[1,1,1,1] <- rt_inv(rho_a)
+  pe[1,1,2,1] <- rt_inv(rho_y)
 
   got <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, 1,
                                        NAA_re = 4, NAA_pe_pars = pe)
@@ -143,7 +147,8 @@ naa_rg_seed <- local({
     il <- sweep_input(dims = naa_rg_dims)
     obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
     rep <- obj$report(obj$par)
-    ny <- length(il$data$years); na <- length(il$data$ages)
+    ny <- length(il$data$years)
+    na <- length(il$data$ages)
     cached <<- log(array(rep$NAA[,,1:ny,1,,], dim = c(1, 3, ny, 1, na, 2)))
     cached
   }
@@ -158,16 +163,18 @@ test_that("a region correlation at zero reduces to independent regions", {
   # whitening by the Cholesky factor of the identity is the identity, and its log determinant is
   # zero, so every age-year structure must return exactly what it returns without the region factor
   set.seed(4)
-  nr <- 3; ny <- 7; na <- 5
-  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
-  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
+  nr <- 3
+  ny <- 7
+  na <- 5
+  pred <- array(exp(stats::rnorm(nr * ny * na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
+  eta <- array(stats::rnorm(nr * ny * na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
   sig <- array(0.35, dim = dim(pred))
   pe <- array(0.4, dim = c(1, nr, 3, 1))
-  zero_rc <- array(0, dim = c(1, nr*(nr-1)/2, 1))
+  zero_rc <- array(0, dim = c(1, nr * (nr - 1) / 2, 1))
 
   for(code in c(1, 2, 3, 4, 5)) {
     off <- SPoRC:::Get_NAA_state_penalty(
-      log(pred)+eta,
+      log(pred) + eta,
       pred,
       sig,
       1:na,
@@ -178,7 +185,7 @@ test_that("a region correlation at zero reduces to independent regions", {
       NAA_re_region = 0
     )
     on <- SPoRC:::Get_NAA_state_penalty(
-      log(pred)+eta,
+      log(pred) + eta,
       pred,
       sig,
       1:na,
@@ -198,19 +205,24 @@ test_that("the region correlation composes as region against the age and year gr
   # visibly different from the same model with the region factor dropped.
   skip_if_not_installed("mvtnorm")
   set.seed(4)
-  nr <- 3; ny <- 7; na <- 5
-  sd_prs <- 0.35; rho_a <- 0.7; rho_y <- 0.2
+  nr <- 3
+  ny <- 7
+  na <- 5
+  sd_prs <- 0.35
+  rho_a <- 0.7
+  rho_y <- 0.2
   rt_inv <- function(r) 0.5 * log((1 + r) / (1 - r))
 
-  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
-  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
+  pred <- array(exp(stats::rnorm(nr * ny * na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
+  eta <- array(stats::rnorm(nr * ny * na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
   sig <- array(sd_prs, dim = dim(pred))
   pe <- array(0, dim = c(1, nr, 3, 1))
-  pe[1,,1,1] <- rt_inv(rho_a); pe[1,,2,1] <- rt_inv(rho_y)
-  rc <- array(c(0.6, -0.3, 0.45), dim = c(1, nr*(nr-1)/2, 1))
+  pe[1,,1,1] <- rt_inv(rho_a)
+  pe[1,,2,1] <- rt_inv(rho_y)
+  rc <- array(c(0.6, -0.3, 0.45), dim = c(1, nr * (nr - 1) / 2, 1))
 
   got <- SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -237,15 +249,17 @@ test_that("the region correlation composes as region against the age and year gr
 test_that("the region correlation composes with the non-separable three-dimensional field", {
   # the point of whitening rather than forming a Kronecker: the cohort term never has to factor
   set.seed(4)
-  nr <- 3; ny <- 7; na <- 5
-  pred <- array(exp(stats::rnorm(nr*ny*na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
-  eta <- array(stats::rnorm(nr*ny*na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
+  nr <- 3
+  ny <- 7
+  na <- 5
+  pred <- array(exp(stats::rnorm(nr * ny * na, 5, 0.2)), dim = c(1, nr, ny, 1, na, 1))
+  eta <- array(stats::rnorm(nr * ny * na, 0, 0.3), dim = c(1, nr, ny, 1, na, 1))
   sig <- array(0.35, dim = dim(pred))
   pe <- array(0.4, dim = c(1, nr, 3, 1))
-  rc <- array(c(0.6, -0.3, 0.45), dim = c(1, nr*(nr-1)/2, 1))
+  rc <- array(c(0.6, -0.3, 0.45), dim = c(1, nr * (nr - 1) / 2, 1))
 
   off <- SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -256,7 +270,7 @@ test_that("the region correlation composes with the non-separable three-dimensio
     NAA_re_region = 0
   )
   on <- SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -307,17 +321,27 @@ test_that("all four correlation dims compose as one Kronecker product", {
   # code. Every dim has a different structure, so any permutation of them is visible.
   skip_if_not_installed("mvtnorm")
   set.seed(9)
-  np <- 2; nr <- 3; ny <- 6; na <- 4; ns <- 2
-  sd0 <- 0.35; rho_a <- 0.6; rho_y <- 0.3
+  np <- 2
+  nr <- 3
+  ny <- 6
+  na <- 4
+  ns <- 2
+  sd0 <- 0.35
+  rho_a <- 0.6
+  rho_y <- 0.3
   rt <- function(r) 0.5 * log((1 + r) / (1 - r))
   n <- np * nr * ny * na * ns
 
   pred <- array(exp(stats::rnorm(n, 5, 0.2)), dim = c(np, nr, ny, 1, na, ns))
   eta <- array(stats::rnorm(n, 0, 0.3), dim = c(np, nr, ny, 1, na, ns))
   sig <- array(sd0, dim = dim(pred))
-  pe <- array(0, dim = c(np, nr, 3, ns)); pe[,,1,] <- rt(rho_a); pe[,,2,] <- rt(rho_y)
+  pe <- array(0, dim = c(np, nr, 3, ns))
+  pe[,,1,] <- rt(rho_a)
+  pe[,,2,] <- rt(rho_y)
 
-  rcP <- 0.5; rcS <- -0.4; pair <- c(0.6, -0.3, 0.45)
+  rcP <- 0.5
+  rcS <- -0.4
+  pair <- c(0.6, -0.3, 0.45)
   # filled explicitly: array() would recycle a length-three vector across pop and sex, giving each
   # a different correlation and quietly invalidating the comparison
   rcR <- array(0, dim = c(np, 3, ns))
@@ -356,15 +380,19 @@ test_that("all four correlation dims compose as one Kronecker product", {
 
 test_that("a population or sex correlation at zero reduces to independence", {
   set.seed(9)
-  np <- 2; nr <- 2; ny <- 5; na <- 4; ns <- 2
+  np <- 2
+  nr <- 2
+  ny <- 5
+  na <- 4
+  ns <- 2
   n <- np * nr * ny * na * ns
   pred <- array(exp(stats::rnorm(n, 5, 0.2)), dim = c(np, nr, ny, 1, na, ns))
   eta <- array(stats::rnorm(n, 0, 0.3), dim = c(np, nr, ny, 1, na, ns))
   sig <- array(0.35, dim = dim(pred))
   pe <- array(0.4, dim = c(np, nr, 3, ns))
-  off <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1, NAA_re = 4, NAA_pe_pars = pe)
+  off <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, 1, NAA_re = 4, NAA_pe_pars = pe)
   expect_equal(SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -376,7 +404,7 @@ test_that("a population or sex correlation at zero reduces to independence", {
     NAA_pop_corr_pars = 0
   ), off, tolerance = 1e-10)
   expect_equal(SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -412,30 +440,35 @@ test_that("the one-dimensional autoregressions run over the dim they name", {
   # still give a finite objective and converge, so only the cross-check catches it.
   skip_if_not_installed("mvtnorm")
   set.seed(21)
-  ny <- 9; na <- 6; sd0 <- 0.4; rho_a <- 0.75; rho_y <- 0.25
+  ny <- 9
+  na <- 6
+  sd0 <- 0.4
+  rho_a <- 0.75
+  rho_y <- 0.25
   rt <- function(r) 0.5 * log((1 + r) / (1 - r))
 
-  pred <- array(exp(stats::rnorm(ny*na, 5, 0.2)), dim = c(1, 1, ny, 1, na, 1))
-  eta <- array(stats::rnorm(ny*na, 0, 0.3), dim = c(1, 1, ny, 1, na, 1))
+  pred <- array(exp(stats::rnorm(ny * na, 5, 0.2)), dim = c(1, 1, ny, 1, na, 1))
+  eta <- array(stats::rnorm(ny * na, 0, 0.3), dim = c(1, 1, ny, 1, na, 1))
   sig <- array(sd0, dim = dim(pred))
   pe <- array(0, dim = c(1, 1, 3, 1))
-  pe[1,1,1,1] <- rt(rho_a); pe[1,1,2,1] <- rt(rho_y)
+  pe[1,1,1,1] <- rt(rho_a)
+  pe[1,1,2,1] <- rt(rho_y)
 
-  P <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1,
+  P <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, 1,
                                                  NAA_re = k, NAA_pe_pars = pe)
   ar1 <- function(n, r) r^abs(outer(1:n, 1:n, "-"))
   v <- as.vector(matrix(eta[1,1,,,,1], ny, na)) # year varies fastest
   ll <- function(S) -mvtnorm::dmvnorm(v, sigma = S, log = TRUE)
 
   # ages independent, years correlated
-  expect_equal(P(3), ll((sd0/sqrt(1-rho_y^2))^2 * kronecker(diag(na), ar1(ny, rho_y))), tolerance = 1e-10)
+  expect_equal(P(3), ll((sd0 / sqrt(1 - rho_y^2))^2 * kronecker(diag(na), ar1(ny, rho_y))), tolerance = 1e-10)
   # years independent, ages correlated
-  expect_equal(P(2), ll((sd0/sqrt(1-rho_a^2))^2 * kronecker(ar1(na, rho_a), diag(ny))), tolerance = 1e-10)
+  expect_equal(P(2), ll((sd0 / sqrt(1 - rho_a^2))^2 * kronecker(ar1(na, rho_a), diag(ny))), tolerance = 1e-10)
   expect_false(isTRUE(all.equal(P(2), P(3))))
 
   # and both are the independent form when their correlation is zero
   pe0 <- array(0, dim = c(1, 1, 3, 1))
-  Q <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1,
+  Q <- function(k) SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, 1,
                                                  NAA_re = k, NAA_pe_pars = pe0)
   expect_equal(Q(2), Q(1), tolerance = 1e-10)
   expect_equal(Q(3), Q(1), tolerance = 1e-10)
@@ -473,7 +506,8 @@ test_that("a retrospective peel truncates the state, its map and its active year
   peeled <- fit_model(cut$retro_data, cut$retro_parameters, cut$retro_mapping,
                       do_optim = FALSE, silent = TRUE)
   full <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
-  rp <- peeled$report(peeled$par); rf <- full$report(full$par)
+  rp <- peeled$report(peeled$par)
+  rf <- full$report(full$par)
   expect_true(is.finite(rp$NAA_state_nLL))
   # every state sits at its mode here, so the penalty is the same per-state density summed over
   # however many states there are: it scales with the count rather than simply shrinking
@@ -519,7 +553,7 @@ test_that("sharing collapses the correlations without moving which cells are est
   # sharing over regions gives every region the same parameter, one per slot and sex
   ms <- array(as.integer(as.character(shared$map$NAA_pe_pars)), dim = dim(shared$par$NAA_pe_pars))
   for(k in 1:2) for(s in 1:2) expect_equal(length(unique(ms[1,,k,s])), 1)
-  expect_false(any(duplicated(as.vector(ms[1,1,1:2,]))))  # slots and sexes stay distinct
+  expect_false(anyDuplicated(as.vector(ms[1,1,1:2,])) > 0)  # slots and sexes stay distinct
 
   # the state itself is untouched: same live cells, same count
   expect_equal(free$data$n_est_naa_re, shared$data$n_est_naa_re)
@@ -531,8 +565,11 @@ test_that("a shared correlation penalizes the same as repeating one value across
   # region already holds the same rho must be identical under est_all and est_shared_r
   il_f <- naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_all")
   il_s <- naa_rg_on(NAA_re = "2dar1", NAA_pe_spec = "est_shared_r")
-  pe <- array(0, dim = dim(il_f$par$NAA_pe_pars)); pe[,,1,] <- 0.6; pe[,,2,] <- -0.4
-  il_f$par$NAA_pe_pars <- pe; il_s$par$NAA_pe_pars <- pe
+  pe <- array(0, dim = dim(il_f$par$NAA_pe_pars))
+  pe[,,1,] <- 0.6
+  pe[,,2,] <- -0.4
+  il_f$par$NAA_pe_pars <- pe
+  il_s$par$NAA_pe_pars <- pe
 
   o_f <- fit_model(il_f$data, il_f$par, il_f$map, do_optim = FALSE, silent = TRUE)
   o_s <- fit_model(il_s$data, il_s$par, il_s$map, do_optim = FALSE, silent = TRUE)

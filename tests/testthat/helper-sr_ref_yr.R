@@ -11,15 +11,18 @@ sr_ref_mat <- function() stats::plogis(seq(-3, 3, length.out = sr_ref_cfg$n_ages
 
 # phi0 straight from its definition, with no SPoRC code involved
 sr_ref_phi0 <- function(y) {
-  n_ages <- sr_ref_cfg$n_ages; M <- sr_ref_cfg$M
-  N <- numeric(n_ages); N[1] <- 1
+  n_ages <- sr_ref_cfg$n_ages
+  M <- sr_ref_cfg$M
+  N <- numeric(n_ages)
+  N[1] <- 1
   for(a in 2:n_ages) N[a] <- N[a - 1] * exp(-M)
   N[n_ages] <- N[n_ages] / (1 - exp(-M))
   sum(N * sr_ref_waa(y) * sr_ref_mat() * 0.5)
 }
 
 sr_ref_make_om <- function(SR_ref_yr, R0 = 10, seed = 42) {
-  n_yrs <- sr_ref_cfg$n_yrs; n_ages <- sr_ref_cfg$n_ages
+  n_yrs <- sr_ref_cfg$n_yrs
+  n_ages <- sr_ref_cfg$n_ages
   sl <- Setup_Sim_Dim(
     n_sims = 1,
     n_yrs = n_yrs,
@@ -80,7 +83,8 @@ sr_ref_make_om <- function(SR_ref_yr, R0 = 10, seed = 42) {
 # Estimation model over the operating model's data, with its own SR_ref_yr so the two can
 # be matched or deliberately mismatched.
 sr_ref_make_em <- function(sd, SR_ref_yr) suppressWarnings(suppressMessages({
-  n_yrs <- sr_ref_cfg$n_yrs; n_ages <- sr_ref_cfg$n_ages
+  n_yrs <- sr_ref_cfg$n_yrs
+  n_ages <- sr_ref_cfg$n_ages
   il <- Setup_Mod_Dim(
     years = 1:n_yrs,
     ages = 1:n_ages,

@@ -74,10 +74,15 @@
 - Added a shared process-error sharing-spec helper (`build_pe_map`/`build_shared_spec_map`); migrated `sigmaF_spec`, `sigmaC_spec`, `sigmaR_spec`, `Fdev_rho_spec`, and `do_Fmort_mapping` onto it (for developers).
 - Refactored movement's continuous process-error map and log-likelihood onto the same shared code (for developers).
 - Newton refinement in `fit_model` now takes its Hessian from the AD tape (`obj$he`) instead of finite-differencing, and stops early on a non-finite Hessian.
+- Declared the 59 data, parameter and column names that R CMD check reported as undefined globals (conditional age at length, growth, double normal selectivity, selected weight at age, initial deviation penalties), and added a `.lintr.R` that follows the package coding style (for developers).
+- Index ranges built from `length()`, `nrow()`, `ncol()` and `dim()` now use `seq_along()` and `seq_len()`, so an empty object gives no iterations instead of the indices 1 and 0. Semicolon chains are split one statement per line, `T`/`F` are written as `TRUE`/`FALSE`, two `if()` conditions use `&&`, operators have spaces around them, blocks that sat 2 or 4 spaces off their braces are re-indented, and multi-line pipelines put each step on its own line (for developers).
+- `compResidual` is declared in Suggests and DESCRIPTION has a BugReports link; the help pages for `Setup_Mod_Tagging()` and `osa_one_step_predict()` are regenerated, and `Get_Comp_Likelihoods()` no longer documents a `seas_agg` argument it does not take (for developers).
+- Removed 25 values that were computed and never read, and a duplicated `Mrate` entry in the closed loop report list; among them the `tag_selex` and `tag_natmort` lookups in `condition_closed_loop_simulations()`, which never reached the tagging simulation. Seven optimizer, `tryCatch()` and block-final lines keep their call and drop only the unused name (for developers).
 
 ## Bug Fixes
 - Fixed the time-varying selectivity smoothing penalty not being applied in the first year.
 - Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.
+- Fixed `do_runs_test()` returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.
 
 # version 1.1.0
 Release Date: 2026-3-31

@@ -93,8 +93,8 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
 collect_message <- function(...) {
   # the setup entry points open a fresh messages_list, but the helpers they call are also reachable
   # on their own, so start one here rather than failing on a binding that does not exist yet
-  if(!exists("messages_list", inherits = TRUE)) messages_list <<- character(0)
-  messages_list <<- c(messages_list, paste(..., sep = ""))
+  if(!exists("messages_list", inherits = TRUE)) messages_list <<- character(0) # nolint: object_usage_linter.
+  messages_list <<- c(messages_list, paste(..., sep = "")) # nolint: object_usage_linter.
 }
 
 #' Safely extract a named element from a list object
@@ -251,15 +251,16 @@ extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
   if(is.null(arr) || length(arr) == 0) return(arr)
 
   # fill array based on specified option
-  new_dims <- dim(arr); new_dims[yr_dim] <- n_years
+  new_dims <- dim(arr)
+  new_dims[yr_dim] <- n_years
   if(fill %in% c("zeros", "F_pattern")) {
     fill_array <- array(0, dim = new_dims)
   } else if(fill == "last") {
     # Get last non-NaN year slice along yr_dim
     # First, find the last year index that contains at least some non-NaN values
     last_valid_idx <- NULL
-    for(i in dim(arr)[yr_dim]:1) {
-      indices <- rep(list(quote(expr=)), length(dim(arr)))
+    for(i in rev(seq_len(dim(arr)[yr_dim]))) {
+      indices <- rep(list(quote(expr = )), length(dim(arr)))
       indices[[yr_dim]] <- i
       year_slice <- do.call(`[`, c(list(arr), indices, drop = FALSE))
       # check if this slice has any non-NaN values
@@ -273,14 +274,14 @@ extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
       fill_array <- array(NA, dim = new_dims)
     } else {
       # Get the last valid year slice
-      indices <- rep(list(quote(expr=)), length(dim(arr)))
+      indices <- rep(list(quote(expr = )), length(dim(arr)))
       indices[[yr_dim]] <- last_valid_idx
       last_year_slice <- do.call(`[`, c(list(arr), indices, drop = FALSE))
 
       # repeat slice n_years times
       fill_array <- array(0, dim = new_dims)
       for(i in 1:n_years) {
-        fill_indices <- rep(list(quote(expr=)), length(dim(arr)))
+        fill_indices <- rep(list(quote(expr = )), length(dim(arr)))
         fill_indices[[yr_dim]] <- i
         fill_array <- do.call(`[<-`, c(list(fill_array), fill_indices, list(last_year_slice)))
       }
@@ -366,7 +367,7 @@ set_data_indicator_unused <- function(data,
                                                "conv_tagging")) {
 
   # figure out year dimensions
-  data_years <- 1:length(data$years)
+  data_years <- seq_along(data$years)
   unused_years <- unused_years[which(unused_years %in% data_years)]
 
   if(length(unused_years) > 0) {
@@ -398,9 +399,9 @@ set_data_indicator_unused <- function(data,
   if(any(data$use_conv_fish_tagging == 1) && "conv_tagging" %in% what) {
     tags_to_remove <- which(data$conv_tag_release_indicator[,2] %in% unused_years)
     if(length(tags_to_remove) > 0) {
-      data$conv_tagged_fish <- data$conv_tagged_fish[-tags_to_remove,,,,drop=FALSE]
-      data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,-tags_to_remove,,,,,,drop=FALSE]
-      data$conv_tag_release_indicator <- data$conv_tag_release_indicator[-tags_to_remove,,drop=FALSE]
+      data$conv_tagged_fish <- data$conv_tagged_fish[-tags_to_remove,,,,drop = FALSE]
+      data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,-tags_to_remove,,,,,,drop = FALSE]
+      data$conv_tag_release_indicator <- data$conv_tag_release_indicator[-tags_to_remove,,drop = FALSE]
       data$n_conv_tag_cohorts <- nrow(data$conv_tag_release_indicator)
     }
   }
@@ -1295,7 +1296,6 @@ drop_empty_fitted_blocks <- function(obs, use, bins_arr, bin_dim, what) {
 
   n_dims <- length(d)
   dims <- setdiff(seq_len(n_dims), c(bin_dim, bin_dim + 1))   # everything but bins and sexes
-  fleet_pos <- length(dims)                                    # fleets are last in obs, so last in dims
   cleared <- 0
 
   for(f in seq_len(ncol(bins_arr))) {
@@ -1991,7 +1991,10 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     spec <- get(data_name, envir = env)
     if(is.null(names(spec))) {
       # Already per fleet, but predates the per-term normalize switch
-      spec <- lapply(spec, function(s) { if(is.null(s$normalize)) s$normalize <- TRUE; s })
+      spec <- lapply(spec, function(s) {
+        if(is.null(s$normalize)) s$normalize <- TRUE
+        s
+      })
       set(data_name, spec)
       next
     }

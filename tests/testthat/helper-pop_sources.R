@@ -38,7 +38,8 @@ pop_sources_input <- function(n_pop = 2,
   # sized to the cells that fleet fits rather than to any one dim
   n_cells <- n_regions * n_yrs * n_seas
   idx_cov <- if(like == "mvn") {
-    corr <- outer(rep(0.7, n_cells), rep(0.7, n_cells)); diag(corr) <- 1
+    corr <- outer(rep(0.7, n_cells), rep(0.7, n_cells))
+    diag(corr) <- 1
     outer(rep(0.2, n_cells), rep(0.2, n_cells)) * corr
   } else NULL
 

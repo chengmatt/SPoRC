@@ -10,7 +10,8 @@ library(testthat)
 
 test_that("a 500-year projection at the Ricker Fmsy equilibrates at Bmsy", {
 
-  n_yrs <- selftest_cfg$n_yrs; n_ages <- selftest_cfg$n_ages
+  n_yrs <- selftest_cfg$n_yrs
+  n_ages <- selftest_cfg$n_ages
   sigR <- 0.05
   om <- selftest_make_om(
     recruitment_opt = "ricker_rec",
@@ -24,7 +25,8 @@ test_that("a 500-year projection at the Ricker Fmsy equilibrates at Bmsy", {
   fit <- fit_model(input_list$data, input_list$par, input_list$map, random = NULL, silent = TRUE)
   expect_lt(max(abs(fit$gr(fit$env$last.par.best))), 1e-3)
 
-  data <- fit$data; rep <- fit$rep
+  data <- fit$data
+  rep <- fit$rep
   rp <- Get_Reference_Points(
     data = data,
     rep = rep,
@@ -43,7 +45,8 @@ test_that("a 500-year projection at the Ricker Fmsy equilibrates at Bmsy", {
     for(y in 1:n_proj_yrs) out[1, 1, y, 1, , 1] <- vals_by_age
     out
   }
-  WAAp <- proj_arr(selftest_cfg$waa); MatAAp <- proj_arr(selftest_cfg$mat)
+  WAAp <- proj_arr(selftest_cfg$waa)
+  MatAAp <- proj_arr(selftest_cfg$mat)
   WAA_fishp <- array(WAAp, dim = c(1, 1, n_proj_yrs, 1, n_ages, 1, 1))
   fish_selp <- array(0, dim = c(1, 1, n_proj_yrs, 1, n_ages, 1, 1))
   for(y in 1:n_proj_yrs) fish_selp[1, 1, y, 1, , 1, 1] <- rep$fish_sel[1, 1, n_yrs, 1, , 1, 1]

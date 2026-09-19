@@ -36,7 +36,8 @@ sp_true_devs <- function(n_yrs = spcfg$n_yrs, n_ages = spcfg$n_ages, amp = 0.12)
 #' Binned normal age-length key, as the growth module builds one
 #' @keywords internal
 sp_alk <- function(len_lower, mu, sd) {
-  n_lens <- length(len_lower); n_ages <- length(mu)
+  n_lens <- length(len_lower)
+  n_ages <- length(mu)
   alk <- matrix(0, n_lens, n_ages)
   for(a in 1:n_ages) {
     cdf <- stats::pnorm((len_lower - mu[a]) / sd[a])
@@ -56,7 +57,9 @@ sp_alk <- function(len_lower, mu, sd) {
 #'
 #' @keywords internal
 sp_growth <- function(devs = NULL) {
-  n_yrs <- spcfg$n_yrs; n_ages <- spcfg$n_ages; ages <- 1:n_ages
+  n_yrs <- spcfg$n_yrs
+  n_ages <- spcfg$n_ages
+  ages <- 1:n_ages
   crv <- get_laa_curve(
     x = ages,
     L0 = spcfg$len_lower[1],
@@ -80,7 +83,9 @@ sp_growth <- function(devs = NULL) {
 #' @keywords internal
 semipar_simulate <- function(seed = 11) {
 
-  n_yrs <- spcfg$n_yrs; n_ages <- spcfg$n_ages; n_lens <- spcfg$n_lens
+  n_yrs <- spcfg$n_yrs
+  n_ages <- spcfg$n_ages
+  n_lens <- spcfg$n_lens
 
   sim_list <- Setup_Sim_Dim(
     n_sims = 1,
@@ -179,7 +184,8 @@ semipar_simulate <- function(seed = 11) {
 semipar_input <- function(form = "2dar1", obs = NULL) {
 
   if(is.null(obs)) obs <- semipar_simulate()$obs
-  n_yrs <- spcfg$n_yrs; n_ages <- spcfg$n_ages
+  n_yrs <- spcfg$n_yrs
+  n_ages <- spcfg$n_ages
 
   input_list <- Setup_Mod_Dim(
     years = 1:n_yrs,

@@ -174,8 +174,11 @@ test_that("scaling every mortality component is equivalent to scaling the total"
   # components and summing must equal scaling the summed total, or the tag Z would silently
   # change meaning relative to the population Z.
   t <- 0.3333
-  natmort <- 0.30; seasdur <- 0.75; shed <- 0.05
-  ret_F <- 0.25; disc_F <- 0.10
+  natmort <- 0.30
+  seasdur <- 0.75
+  shed <- 0.05
+  ret_F <- 0.25
+  disc_F <- 0.10
 
   Z_then_scale <- ((natmort * seasdur) + (ret_F + disc_F) + (shed * seasdur)) * t
   Z_from_parts <- ((natmort * seasdur) * t) + ((ret_F * t) + (disc_F * t)) + ((shed * seasdur) * t)

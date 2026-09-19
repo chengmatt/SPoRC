@@ -4,8 +4,10 @@ library(testthat)
 # The composition likelihood message used to list six of the nine accepted values and never said
 # which fleet was wrong. It now names the fleet, its value and the nearest accepted one.
 
-msg <- function(...) tryCatch({ SPoRC:::check_comp_like_type(...); NA_character_ },
-                              error = function(e) conditionMessage(e))
+msg <- function(...) tryCatch({
+  SPoRC:::check_comp_like_type(...)
+  NA_character_
+}, error = function(e) conditionMessage(e))
 
 
 test_that("the message names the fleet and every accepted value", {

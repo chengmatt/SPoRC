@@ -129,14 +129,14 @@ Get_Natural_Cubic_Spline_Weights <- function(x_nodes, x_out) {
   A[1,1] <- 1
   A[n,n] <- 1
   if(n > 2) {
-    for(i in 2:(n-1)) {
-      A[i, i-1] <- h[i-1]
-      A[i, i]   <- 2 * (h[i-1] + h[i])
-      A[i, i+1] <- h[i]
+    for(i in 2:(n - 1)) {
+      A[i, i - 1] <- h[i - 1]
+      A[i, i]   <- 2 * (h[i - 1] + h[i])
+      A[i, i + 1] <- h[i]
 
-      Rm[i, i-1] <- 6 / h[i-1]
-      Rm[i, i]   <- -6 * (1 / h[i-1] + 1 / h[i])
-      Rm[i, i+1] <- 6 / h[i]
+      Rm[i, i - 1] <- 6 / h[i - 1]
+      Rm[i, i]   <- -6 * (1 / h[i - 1] + 1 / h[i])
+      Rm[i, i + 1] <- 6 / h[i]
     } # end i loop
   } # end if
 
@@ -152,9 +152,9 @@ Get_Natural_Cubic_Spline_Weights <- function(x_nodes, x_out) {
     a <- 1 - t
     b <- t
 
-    row <- (a^3 - a) * hi^2 / 6 * Mmat[i, ] + (b^3 - b) * hi^2 / 6 * Mmat[i+1, ]
+    row <- (a^3 - a) * hi^2 / 6 * Mmat[i, ] + (b^3 - b) * hi^2 / 6 * Mmat[i + 1, ]
     row[i]   <- row[i]   + a
-    row[i+1] <- row[i+1] + b
+    row[i + 1] <- row[i + 1] + b
     W[k, ] <- row
   } # end k loop
 
@@ -177,8 +177,8 @@ Get_Natural_Cubic_Spline_Weights <- function(x_nodes, x_out) {
 #'
 #' @export rho_trans
 #' @family Utility
-rho_trans <- function(x){
-  2/(1+ exp(-2 * x)) - 1 # constraint between -1 and 1
+rho_trans <- function(x) {
+  2 / (1 + exp(-2 * x)) - 1 # constraint between -1 and 1
 }
 
 #' Build an unstructured correlation matrix from unconstrained parameters
@@ -342,8 +342,8 @@ get_logistN_Sigma <- function(comp_like,
 #' @import RTMB
 mat_exp <- function(A, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   if(expm_nsub == 0) {
     if(is.matrix(A) && is.numeric(A)) A <- methods::as(A, "sparseMatrix")

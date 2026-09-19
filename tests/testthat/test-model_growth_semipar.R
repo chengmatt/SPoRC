@@ -58,7 +58,8 @@ test_that("a growth parameter's deviations move that parameter and no other", {
   # logit link: the parameter stays inside its bounds however large the deviation,
   # approaching a bound rather than crossing it
   bnds <- matrix(c(1, 20, 40, 90, 0.05, 0.6, 0.01, 0.4, 0.01, 0.4), 5, 2, byrow = TRUE)
-  big <- devs; big[1, 1, , 3, 1] <- seq(-40, 40, length.out = n_yrs)
+  big <- devs
+  big[1, 1, , 3, 1] <- seq(-40, 40, length.out = n_yrs)
   gl <- growth_call(
     ln_growth_devs = big,
     growth_tv_model = c(0, 0, 1, 0, 0),
@@ -71,7 +72,8 @@ test_that("a growth parameter's deviations move that parameter and no other", {
   expect_equal(k_y[n_yrs], bnds[3, 2], tolerance = 1e-6)          # and to the upper
   expect_true(all(diff(k_y) > 0))                                 # monotone in the deviation
   # a moderate deviation stays strictly inside
-  mid <- devs; mid[1, 1, , 3, 1] <- seq(-2, 2, length.out = n_yrs)
+  mid <- devs
+  mid[1, 1, , 3, 1] <- seq(-2, 2, length.out = n_yrs)
   km <- growth_call(
     ln_growth_devs = mid,
     growth_tv_model = c(0, 0, 1, 0, 0),
@@ -109,7 +111,8 @@ test_that("the Richards coefficient generalizes the von Bertalanffy curve", {
 
 test_that("semi-parametric deviations scale mean length at age and leave the CV alone", {
 
-  n_yrs <- gcfg$n_yrs; n_ages <- gcfg$n_ages
+  n_yrs <- gcfg$n_yrs
+  n_ages <- gcfg$n_ages
   sp <- array(0, dim = c(1, 1, n_yrs, n_ages, 1))
   set.seed(42)
   sp[1, 1, , , 1] <- matrix(rnorm(n_yrs * n_ages, 0, 0.05), n_yrs, n_ages)
@@ -147,7 +150,9 @@ test_that("semi-parametric deviations scale mean length at age and leave the CV 
 
 test_that("cohort growth has size at age forward and blends the plus group by numbers", {
 
-  n_yrs <- 6; n_ages <- gcfg$n_ages; ages <- 1:n_ages
+  n_yrs <- 6
+  n_ages <- gcfg$n_ages
+  ages <- 1:n_ages
   devs <- array(0, dim = c(1, 1, n_yrs, 5, 1))
   devs[1, 1, , 3, 1] <- c(0, 0, 0.2, -0.15, 0.1, 0) # K varies from year 3
 
@@ -198,7 +203,8 @@ test_that("cohort growth has size at age forward and blends the plus group by nu
   )
 
   # the asymptote is derived from the Schnute pair, so read the year's own
-  K3 <- gpars[["K"]] * exp(devs[1, 1, 3, 3, 1]); Linf <- g2$Linf[1, 1, 3, 1]
+  K3 <- gpars[["K"]] * exp(devs[1, 1, 3, 3, 1])
+  Linf <- g2$Linf[1, 1, 3, 1]
   L_beg <- g$L_beg[1, 1, 3, , 1]
   grown <- grow_increment(L_beg, 1, K3, Linf, 1)
   nxt <- g2$L_beg[1, 1, 4, , 1]

@@ -221,7 +221,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   }
 
   test_that("model builds, evaluates, and differentiates without error with a single bicubic block", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     node_par <- matrix(
       c(-1.5, -0.2, 0.6, 1.2,
                          -0.8,  0.3, 0.9, 0.5,
@@ -339,7 +340,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   # ── SelStyr: sub-range bicubic fit start, matching ADMB's fsh_sel_styr ───────
 
   test_that("SelStyr holds pre-fit years constant at the SelStyr year's curve and fits the spline only from SelStyr onward", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     selstyr_year <- 5 # years 1:4 should be edge-kept; the spline is fit only over years 5:n_years
     set.seed(202)
     node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
@@ -386,7 +388,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   # ── Survey selectivity: same bicubic wiring, mirrored for srv_sel_model ──────
 
   test_that("survey bicubic model builds, evaluates, and differentiates without error with a single block", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     node_par <- matrix(
       c(-1.0, 0.3, 0.7, -0.2,
                          0.4, -0.5, 0.2, 0.9,
@@ -497,7 +500,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   # ── ADMB-aligned smoothness penalty package (smooth_dome, smooth_bin_curve, smooth_yr_diff, smooth_yr_curve, smooth_mean_center), applied here to bicubic fleets ──
 
   test_that("bicubic penalty terms are zero by default (no behavior change unless opted into)", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     set.seed(99)
     node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
     fixed_pars_init <- array(0, dim = c(1, n_bin_nodes * n_yr_nodes, 1, 1, 1))
@@ -541,7 +545,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   })
 
   test_that("setting bicubic penalty weights matches manual Get_Selex_Smoothness_Penalty computation", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     set.seed(100)
     node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
     fixed_pars_init <- array(0, dim = c(1, n_bin_nodes * n_yr_nodes, 1, 1, 1))
@@ -607,7 +612,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   })
 
   test_that("bicubic penalty is applied unconditionally regardless of cont_tv_fish_sel (no time-varying-deviation gate)", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     set.seed(101)
     node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
     fixed_pars_init <- array(0, dim = c(1, n_bin_nodes * n_yr_nodes, 1, 1, 1))
@@ -634,7 +640,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   })
 
   test_that("survey SelStyr holds pre-fit years constant and fits the spline only from SelStyr onward", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     selstyr_year <- 5
     set.seed(203)
     node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
@@ -805,7 +812,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   # ── Retention selectivity: same bicubic wiring, mirrored for ret_sel_model ───
 
   test_that("retention bicubic model builds, evaluates, and differentiates without error with a single block", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     node_par <- matrix(
       c(-1.1, 0.2, 0.8, -0.4,
                          0.5, -0.6, 0.3, 1.0,
@@ -882,7 +890,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   })
 
   test_that("retention SelStyr holds pre-fit years constant and fits the spline only from SelStyr onward", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     selstyr_year <- 5 # years 1:4 should be edge-kept; the spline is fit only over years 5:n_years
     set.seed(303)
     node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
@@ -929,7 +938,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   })
 
   test_that("retention NSelBins holds post-fit bins constant (plateau) and fits the spline only over the first NSelBins bins", {
-    n_bin_nodes <- 4; n_yr_nodes <- 1
+    n_bin_nodes <- 4
+    n_yr_nodes <- 1
     n_fit_bins <- sim_obj$n_ages - 2 # ages 1:(n_ages-2) are actually fit; the last 2 ages plateau
     set.seed(404)
     node_par <- rnorm(n_bin_nodes, sd = 0.5)
@@ -1013,7 +1023,8 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
   })
 
   test_that("setting retention bicubic penalty weights matches manual Get_Selex_Smoothness_Penalty computation", {
-    n_bin_nodes <- 4; n_yr_nodes <- 3
+    n_bin_nodes <- 4
+    n_yr_nodes <- 3
     set.seed(505)
     node_par <- matrix(rnorm(n_bin_nodes * n_yr_nodes, sd = 0.5), nrow = n_yr_nodes, ncol = n_bin_nodes)
     fixed_pars_init <- array(0, dim = c(1, n_bin_nodes * n_yr_nodes, 1, 1, 1))

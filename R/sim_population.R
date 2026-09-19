@@ -67,7 +67,7 @@ generate_initial_age_structure <- function(y,
           init_sex_spec <- if(exists("InitDevs_sex_spec")) InitDevs_sex_spec else "est_shared_s"
           if(is.null(tmp_ln_init_devs)) {
             n_dev_draws <- if(init_sex_spec == "est_all") n_sexes else 1
-            init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), -exp(ln_sigmaR[1,p,sigma_idx])^2/2, exp(ln_sigmaR[1,p,sigma_idx]))
+            init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), -exp(ln_sigmaR[1,p,sigma_idx])^2 / 2, exp(ln_sigmaR[1,p,sigma_idx]))
             tmp_ln_init_devs <- array(init_draws, dim = c(n_ages - 1, n_sexes)) # recycled across sexes when one curve was drawn
           }
         }
@@ -264,7 +264,7 @@ generate_recruitment <- function(y,
           # resample_from_input has no deterministic curve, so Get_Det_Recruitment
           # hands back NA and there is no deviation to back out. Devs stay 0.
           if(isTRUE(tmp_det_rec[p,r] > 0) && tmp_total_rec > 0) {
-            sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + exp(ln_sigmaR[2,p,sigma_idx])^2/2
+            sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + exp(ln_sigmaR[2,p,sigma_idx])^2 / 2
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
         } else {
 
@@ -276,7 +276,7 @@ generate_recruitment <- function(y,
           dev_mu <- 0
           dev_sd <- exp(ln_sigmaR[2, p, sigma_idx])
           if(RecDevs_model != 1 && y > 1) {
-            prev_dev <- sim_env$ln_RecDevs[p,r,y-1,sim]
+            prev_dev <- sim_env$ln_RecDevs[p,r,y - 1,sim]
             dev_mu <- if(RecDevs_model == 2) prev_dev else RecDevs_rho[p,r] * prev_dev
           }
 
@@ -291,7 +291,7 @@ generate_recruitment <- function(y,
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
           # compute rec. a walk's deviation is not mean zero, so only iid draws are bias corrected
-          bias_corr <- if(RecDevs_model == 1) exp(ln_sigmaR[2,p,sigma_idx])^2/2 else 0
+          bias_corr <- if(RecDevs_model == 1) exp(ln_sigmaR[2,p,sigma_idx])^2 / 2 else 0
           tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] - bias_corr)
         }
 
@@ -326,14 +326,24 @@ generate_recruitment <- function(y,
 #' @keywords internal
 compute_biom_y_sim <- function(y, seas, sim, sim_env) {
 
-  NAA <- sim_env$NAA; NAA0 <- sim_env$NAA0
-  WAA <- sim_env$WAA; MatAA <- sim_env$MatAA; ZAA <- sim_env$ZAA
-  natmort <- sim_env$natmort; t_spawn <- sim_env$t_spawn; seasdur <- sim_env$seasdur
-  n_pop <- sim_env$n_pop; n_regions <- sim_env$n_regions; n_seas <- sim_env$n_seas
-  n_ages <- sim_env$n_ages; n_sexes <- sim_env$n_sexes
-  natal_region <- sim_env$natal_region; stray_rate <- sim_env$stray_rate
+  NAA <- sim_env$NAA
+  NAA0 <- sim_env$NAA0
+  WAA <- sim_env$WAA
+  MatAA <- sim_env$MatAA
+  ZAA <- sim_env$ZAA
+  natmort <- sim_env$natmort
+  t_spawn <- sim_env$t_spawn
+  seasdur <- sim_env$seasdur
+  n_pop <- sim_env$n_pop
+  n_regions <- sim_env$n_regions
+  n_seas <- sim_env$n_seas
+  n_ages <- sim_env$n_ages
+  n_sexes <- sim_env$n_sexes
+  natal_region <- sim_env$natal_region
+  stray_rate <- sim_env$stray_rate
   sgl_seas_spawning_movement <- sim_env$sgl_seas_spawning_movement
-  Movement <- sim_env$Movement; Mrate <- sim_env$Mrate
+  Movement <- sim_env$Movement
+  Mrate <- sim_env$Mrate
   move_timing <- if(is.null(sim_env$move_timing)) 0 else sim_env$move_timing
   expm_nsub <- if(is.null(sim_env$expm_nsub)) 0 else sim_env$expm_nsub
   do_recruits_move <- sim_env$do_recruits_move
@@ -386,7 +396,7 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
   SSB0_array <- tmp_NAA0_spawn[,, , , , 1, 1,drop = FALSE] *  WAA[,,  y, seas, , 1, sim, drop = FALSE] * MatAA[,,y, seas, , 1, sim, drop = FALSE]
   if(move_timing == 0 || n_regions == 1) {
     mort_spawn <- exp(-natmort[,, y, seas, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
-    mort_spawn <- array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
+    mort_spawn <- array(mort_spawn, dim = dim(SSB0_array)) # coerce array
   } else mort_spawn <- 1
   Dynamic_SSB0_y <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
 
@@ -508,7 +518,7 @@ apply_pop_dy <- function(y, sim, sim_env) {
         tmp_disc_FAA <- apply(sweep(tmp_fish_sel * (1 - tmp_ret_sel), c(1,4), tmp_Fmort * tmp_dmr, "*"), c(1,2,3), sum) # apply Frate and dmr to discarded selectivity
 
         # Get natural mortality
-        tmp_MAA <- array(tmp_natmort[p,,,,drop=FALSE], dim = c(n_regions, n_ages, n_sexes)) # reshape natural mortality
+        tmp_MAA <- array(tmp_natmort[p,,,,drop = FALSE], dim = c(n_regions, n_ages, n_sexes)) # reshape natural mortality
 
         # Get total mortality
         sim_env$ZAA[p,,y,seas,,,sim] <- tmp_MAA + tmp_ret_FAA + tmp_disc_FAA
@@ -612,25 +622,25 @@ apply_pop_dy <- function(y, sim, sim_env) {
         # State-space numbers at age at a within-year boundary, where the estimation model
         # applies it: on the survival and movement step, with no ageing shift
         if(sim_env$NAA_re > 0) {
-          sim_env$NAA_pred[,,y,seas+1,,,sim] = sim_env$NAA[,,y,seas+1,,,sim]
-          fac <- exp(sim_env$naa_eta[,,y,seas+1,,])
-          sim_env$NAA[,,y,seas+1,,,sim] = sim_env$NAA[,,y,seas+1,,,sim] * fac
-          sim_env$NAA0[,,y,seas+1,,,sim] = sim_env$NAA0[,,y,seas+1,,,sim] * fac
+          sim_env$NAA_pred[,,y,seas + 1,,,sim] = sim_env$NAA[,,y,seas + 1,,,sim]
+          fac <- exp(sim_env$naa_eta[,,y,seas + 1,,])
+          sim_env$NAA[,,y,seas + 1,,,sim] = sim_env$NAA[,,y,seas + 1,,,sim] * fac
+          sim_env$NAA0[,,y,seas + 1,,,sim] = sim_env$NAA0[,,y,seas + 1,,,sim] * fac
         }
       } else {
         # Advance into the next year, season 1
-        sim_env$NAA[,,y+1,1,2:n_ages,,sim] = sstep_NAA[,,1:(n_ages-1),] # fished
-        sim_env$NAA[,,y+1,1,n_ages,,sim] = NAA[,,y+1,1,n_ages,,sim] + sstep_NAA[,,n_ages,] # Acuumulate plus group (fished)
-        sim_env$NAA0[,,y+1,1,2:n_ages,,sim] = sstep_NAA0[,,1:(n_ages-1),] # fished
-        sim_env$NAA0[,,y+1,1,n_ages,,sim] = NAA0[,,y+1,1,n_ages,,sim] + sstep_NAA0[,,n_ages,] # Acuumulate plus group (unfished)
+        sim_env$NAA[,,y + 1,1,2:n_ages,,sim] = sstep_NAA[,,1:(n_ages - 1),] # fished
+        sim_env$NAA[,,y + 1,1,n_ages,,sim] = NAA[,,y + 1,1,n_ages,,sim] + sstep_NAA[,,n_ages,] # Acuumulate plus group (fished)
+        sim_env$NAA0[,,y + 1,1,2:n_ages,,sim] = sstep_NAA0[,,1:(n_ages - 1),] # fished
+        sim_env$NAA0[,,y + 1,1,n_ages,,sim] = NAA0[,,y + 1,1,n_ages,,sim] + sstep_NAA0[,,n_ages,] # Acuumulate plus group (unfished)
 
         # State-space numbers at age, applied where the estimation model applies it: after the plus
         # group accumulates, at the year boundary, with the unfished numbers taking the same factor
         if(sim_env$NAA_re > 0 && (y + 1) <= n_yrs) {
-          sim_env$NAA_pred[,,y+1,1,,,sim] = sim_env$NAA[,,y+1,1,,,sim]
-          fac <- exp(sim_env$naa_eta[,,y+1,1,,])
-          sim_env$NAA[,,y+1,1,,,sim] = sim_env$NAA[,,y+1,1,,,sim] * fac
-          sim_env$NAA0[,,y+1,1,,,sim] = sim_env$NAA0[,,y+1,1,,,sim] * fac
+          sim_env$NAA_pred[,,y + 1,1,,,sim] = sim_env$NAA[,,y + 1,1,,,sim]
+          fac <- exp(sim_env$naa_eta[,,y + 1,1,,])
+          sim_env$NAA[,,y + 1,1,,,sim] = sim_env$NAA[,,y + 1,1,,,sim] * fac
+          sim_env$NAA0[,,y + 1,1,,,sim] = sim_env$NAA0[,,y + 1,1,,,sim] * fac
         }
       }
 

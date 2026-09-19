@@ -20,10 +20,14 @@
 #' @keywords internal
 build_goa_rex_input <- function(dat) {
 
-  yrs <- dat$years; n_yrs <- length(yrs)
-  ages <- dat$ages; n_ages <- length(ages)
-  n_reg <- dat$n_regions; n_sex <- dat$n_sexes
-  n_fish <- dat$n_fish_fleets; n_srv <- dat$n_srv_fleets
+  yrs <- dat$years
+  n_yrs <- length(yrs)
+  ages <- dat$ages
+  n_ages <- length(ages)
+  n_reg <- dat$n_regions
+  n_sex <- dat$n_sexes
+  n_fish <- dat$n_fish_fleets
+  n_srv <- dat$n_srv_fleets
   n_lens <- length(dat$lens)
 
   ## Model dimensions ---------------------------------------------------------
@@ -96,7 +100,10 @@ build_goa_rex_input <- function(dat) {
   # matching the make script, which starts from a bare array
   growth_start <- unname(dat$mle$growth) # [1, area, sex, 5]
   wl <- array(NA_real_, dim = c(1, n_reg, n_sex, 2))
-  for(r in 1:n_reg) { wl[1, r, 1, ] <- dat$wtlen$fem; if(n_sex > 1) wl[1, r, 2, ] <- dat$wtlen$mal }
+  for(r in 1:n_reg) {
+    wl[1, r, 1, ] <- dat$wtlen$fem
+    if(n_sex > 1) wl[1, r, 2, ] <- dat$wtlen$mal
+  }
 
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
@@ -250,8 +257,10 @@ build_goa_rex_input <- function(dat) {
   # Francis weights, one per fleet, for lengths and ages. the conditional
   # age-at-length takes the age weight and needs the length dimension as an extra
   # axis, which is what the `extra` argument builds
-  wl_f <- dat$var_adj_len[dat$fish_fleets]; wa_f <- dat$var_adj_age[dat$fish_fleets]
-  wl_s <- dat$var_adj_len[dat$srv_fleets]; wa_s <- dat$var_adj_age[dat$srv_fleets]
+  wl_f <- dat$var_adj_len[dat$fish_fleets]
+  wa_f <- dat$var_adj_age[dat$fish_fleets]
+  wl_s <- dat$var_adj_len[dat$srv_fleets]
+  wa_s <- dat$var_adj_age[dat$srv_fleets]
   per_fleet <- function(w, n_fl, extra = NULL) {
     d <- c(n_reg, n_yrs, 1, if(!is.null(extra)) extra, n_sex, n_fl)
     arr <- array(1, dim = d)
@@ -287,10 +296,14 @@ build_goa_rex_input <- function(dat) {
 #' @keywords internal
 seed_goa_rex_mle <- function(input_list, dat) {
 
-  yrs <- dat$years; n_yrs <- length(yrs)
-  ages <- dat$ages; n_ages <- length(ages)
-  n_reg <- dat$n_regions; n_sex <- dat$n_sexes
-  n_fish <- dat$n_fish_fleets; n_srv <- dat$n_srv_fleets
+  yrs <- dat$years
+  n_yrs <- length(yrs)
+  ages <- dat$ages
+  n_ages <- length(ages)
+  n_reg <- dat$n_regions
+  n_sex <- dat$n_sexes
+  n_fish <- dat$n_fish_fleets
+  n_srv <- dat$n_srv_fleets
   sigmaR <- dat$rec$sigmaR
 
   ## Recruitment level and apportionment --------------------------------------
@@ -352,22 +365,34 @@ seed_goa_rex_mle <- function(input_list, dat) {
       par[r, , 1, 1, f] <- tab$female
       if(n_sex > 1) par[r, , 1, 2, f] <- c(tab$male[["Peak"]], 0, tab$male[["Ascend"]], tab$male[["Descend"]], 0, tab$male[["Final"]])
     }
-    for(k in 1:6) if(tab$female_est[k]) { lev <- lev + 1; map[, k, 1, 1, f] <- lev }
+    for(k in 1:6) if(tab$female_est[k]) {
+      lev <- lev + 1
+      map[, k, 1, 1, f] <- lev
+    }
     if(n_sex > 1) for(k in c(1, 3, 4, 6)) {
       quant_name <- c("Peak", NA, "Ascend", "Descend", NA, "Final")[k]
-      if(isTRUE(tab$male_est[[quant_name]])) { lev <- lev + 1; map[, k, 1, 2, f] <- lev }
+      if(isTRUE(tab$male_est[[quant_name]])) {
+        lev <- lev + 1
+        map[, k, 1, 2, f] <- lev
+      }
     }
     list(par = par, map = map, lev = lev)
   }
-  map_fish <- array(NA_real_, dim = dim(input_list$par$fish_fixed_sel_pars)); lev <- 0
+  map_fish <- array(NA_real_, dim = dim(input_list$par$fish_fixed_sel_pars))
+  lev <- 0
   for(f in seq_len(n_fish)) {
     out <- put_sel(input_list$par$fish_fixed_sel_pars, map_fish, dat$mle$sel[[dat$fish_fleets[f]]], f, lev)
-    input_list$par$fish_fixed_sel_pars <- out$par; map_fish <- out$map; lev <- out$lev
+    input_list$par$fish_fixed_sel_pars <- out$par
+    map_fish <- out$map
+    lev <- out$lev
   } # end f loop
-  map_srv <- array(NA_real_, dim = dim(input_list$par$srv_fixed_sel_pars)); lev <- 0
+  map_srv <- array(NA_real_, dim = dim(input_list$par$srv_fixed_sel_pars))
+  lev <- 0
   for(sf in seq_len(n_srv)) {
     out <- put_sel(input_list$par$srv_fixed_sel_pars, map_srv, dat$mle$sel[[dat$srv_fleets[sf]]], sf, lev)
-    input_list$par$srv_fixed_sel_pars <- out$par; map_srv <- out$map; lev <- out$lev
+    input_list$par$srv_fixed_sel_pars <- out$par
+    map_srv <- out$map
+    lev <- out$lev
   } # end sf loop
   input_list$map$fish_fixed_sel_pars <- factor(map_fish)
   input_list$map$srv_fixed_sel_pars <- factor(map_srv)

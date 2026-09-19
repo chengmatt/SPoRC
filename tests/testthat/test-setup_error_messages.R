@@ -7,7 +7,10 @@
 # a caller actually sees.
 
 err_msg <- function(expr) {
-  tryCatch({ force(expr); NA_character_ }, error = function(e) conditionMessage(e))
+  tryCatch({
+    force(expr)
+    NA_character_
+  }, error = function(e) conditionMessage(e))
 }
 
 fleet_spec_input <- function() sweep_input(stop_after = "srvidx")

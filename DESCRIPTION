@@ -13,9 +13,10 @@ Authors@R: c(
            comment = c(ORCID = "0000-0002-1234-1297"))
   )
 Description: A generalized spatial population model for stock assessment,
-    written in RTMB.
+    written in 'RTMB'.
 License: GPL-3
 URL: https://chengmatt.github.io/SPoRC
+BugReports: https://github.com/chengmatt/SPoRC/issues
 Depends:
     R (>= 3.5),
     RTMB
@@ -46,6 +47,7 @@ Imports:
     tools,
     utils
 Suggests: 
+    compResidual,
     devtools,
     ggthemes,
     igraph,
@@ -57,7 +59,9 @@ Suggests:
     rmarkdown,
     splines2,
     testthat (>= 3.0.0)
-VignetteBuilder: 
+Remotes:
+    fishfollower/compResidual/compResidual
+VignetteBuilder:
     knitr
 Config/roxygen2/version: 8.1.0
 Config/testthat/edition: 3

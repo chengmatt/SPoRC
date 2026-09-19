@@ -58,7 +58,7 @@ test_that("the external OSA path takes a plain year vector and skips regions wit
   cp <- get_comp_prop(
     input_list$data,
     fit$rep,
-    age_labels = 1:dim(input_list$data$ObsSrvAgeComps)[4],
+    age_labels = seq_len(dim(input_list$data$ObsSrvAgeComps)[4]),
     len_labels = input_list$data$lens,
     year_labels = input_list$data$years
   )

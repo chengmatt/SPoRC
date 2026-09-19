@@ -29,7 +29,8 @@ selftest_make_om <- function(
   seed = 55
 ) {
 
-  n_yrs <- selftest_cfg$n_yrs; n_ages <- selftest_cfg$n_ages
+  n_yrs <- selftest_cfg$n_yrs
+  n_ages <- selftest_cfg$n_ages
 
   sim_list <- Setup_Sim_Dim(
     n_sims = 1,
@@ -105,7 +106,8 @@ selftest_build_input <- function(
   sigmaR = 0.3
 ) {
 
-  n_yrs <- selftest_cfg$n_yrs; n_ages <- selftest_cfg$n_ages
+  n_yrs <- selftest_cfg$n_yrs
+  n_ages <- selftest_cfg$n_ages
 
   input_list <- Setup_Mod_Dim(
     years = 1:n_yrs,
@@ -270,7 +272,9 @@ selftest_run <- function(input_list, what, sim_recruitment = "input", seed = 1) 
 # strong common factor and marginal sd at fraction `scale` of the index level.
 selftest_mvn_cov <- function(idx_scale, scale = 0.15, lambda = 0.7) {
   n_yrs <- selftest_cfg$n_yrs
-  lam <- rep(lambda, n_yrs); d <- rep(scale * idx_scale, n_yrs)
-  R <- outer(lam, lam); diag(R) <- 1
+  lam <- rep(lambda, n_yrs)
+  d <- rep(scale * idx_scale, n_yrs)
+  R <- outer(lam, lam)
+  diag(R) <- 1
   outer(d, d) * R
 }

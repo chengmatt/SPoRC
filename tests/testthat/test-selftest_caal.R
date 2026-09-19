@@ -12,7 +12,8 @@ library(testthat)
 
 
 test_that("simulate_caal draws from P(age | length) and applies ageing error", {
-  n_lens <- 4; n_ages <- 3
+  n_lens <- 4
+  n_ages <- 3
   phi <- cbind(c(0.7, 0.2, 0.1, 0.0), c(0.1, 0.5, 0.3, 0.1), c(0.0, 0.1, 0.4, 0.5))
   caa <- c(100, 50, 20)
   joint <- phi * rep(caa, each = n_lens)

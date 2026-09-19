@@ -10,7 +10,9 @@ library(RTMB)
 
 test_that("a recruitment deviation index is simulated and recovered", {
 
-  n_yrs <- 40; n_ages <- 8; n_srv <- 2
+  n_yrs <- 40
+  n_ages <- 8
+  n_srv <- 2
   sigmaR <- 0.5
   q_rec_true <- 0.8
   waa <- 5 / (1 + exp(-1.2 * ((1:n_ages) - 3)))

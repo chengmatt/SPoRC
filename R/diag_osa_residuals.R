@@ -49,8 +49,8 @@ run_external_comp_osa <- function(obs,
     # Multinomial
     if(comp_like == 0) {
       if(is.null(N)) stop("N is NULL. Please provide the appropriate values for the Multinomial!")
-      o <- round(N * obs/rowSums(obs), 0) # get observed (needs to be integers)
-      p <- exp/rowSums(exp) # get expected
+      o <- round(N * obs / rowSums(obs), 0) # get observed (needs to be integers)
+      p <- exp / rowSums(exp) # get expected
       res <- compResidual::resMulti(t(o), t(p)) # get residuals
       # clean up residual dataframe
       mat <- t(matrix(res, nrow = nrow(res), ncol = ncol(res))) # coerce into matrix
@@ -60,8 +60,8 @@ run_external_comp_osa <- function(obs,
     # Dirichlet-Multinomial
     if(comp_like == 1) {
       if(is.null(N) || is.null(DM_theta)) stop("N or DM_theta is NULL. Please provide the appropriate values for the Dirichlet-multinomial!")
-      o <- round(N * obs/rowSums(obs), 0) # get observed (needs to be integers)
-      p <- N * DM_theta * exp/rowSums(exp) # get expected
+      o <- round(N * obs / rowSums(obs), 0) # get observed (needs to be integers)
+      p <- N * DM_theta * exp / rowSums(exp) # get expected
       res <- compResidual::resDirM(obs = t(o), alpha = t(p)) # get residuals
       # clean up residual dataframe
       mat <- t(matrix(res, nrow = nrow(res), ncol = ncol(res))) # coerce into matrix
@@ -78,7 +78,7 @@ run_external_comp_osa <- function(obs,
       exp <- t(exp)
 
       # loop through to normalize compositions and get OSAs
-      for(i in 1:length(years)) {
+      for(i in seq_along(years)) {
 
         # normalize compositions
         tmp_obs <- obs[,i] / sum(obs[,i])
@@ -116,15 +116,15 @@ run_external_comp_osa <- function(obs,
         param <- list(dummy = 0)
 
         # get OSAs
-        obj <- TMB::MakeADFun(dat, param, DLL = "compResidual", silent = F)
-        opt <- nlminb(obj$par, obj$fn, obj$gr)
+        obj <- TMB::MakeADFun(dat, param, DLL = "compResidual", silent = FALSE)
+        nlminb(obj$par, obj$fn, obj$gr)
         tmp <- TMB::oneStepPredict(
           obj,
           observation.name = "obs",
           data.term.indicator = "keep",
           method = "oneStepGaussianOffMode",
           trace = FALSE,
-          reverse = T
+          reverse = TRUE
         )
 
         # store OSAs
@@ -270,7 +270,7 @@ validate_osa_method <- function(method) {
 #'     \code{DLL} argument, so TMB falls back to guessing the DLL and errors
 #'     with "Multiple TMB models loaded" whenever a session has more than one
 #'     TMB DLL loaded (e.g. RTMB alongside compResidual, which
-#'     \code{\link{run_external_comp_osa}} loads). 
+#'     \code{\link{run_external_comp_osa}} loads).
 #'   \item \code{discreteSupport} is detected with \code{missing()}, so
 #'     supplying it as \code{NULL} is not the same as omitting it: a \code{NULL}
 #'     sends continuous families down the mixed discrete/continuous branch,
@@ -1030,7 +1030,6 @@ get_osa <- function(obs_mat = NULL,
 
       # empty dataframes to bind to
       res_all <- data.frame()
-      agg_all <- data.frame()
 
       for(r in 1:n_regions) {
 
@@ -1087,7 +1086,6 @@ get_osa <- function(obs_mat = NULL,
 
       # empty dataframes to bind to
       res_all <- data.frame()
-      agg_all <- data.frame()
 
       for(r in 1:n_regions) {
 
@@ -1133,7 +1131,8 @@ get_osa <- function(obs_mat = NULL,
         tmp_osa$res$seas <- seas
         tmp_osa$res <- tmp_osa$res %>% dplyr::mutate(split_index = stringr::str_split(index, "_"),  # Split once and store as list
                                                      sex = sapply(split_index, `[`, 1),
-                                                     index = sapply(split_index, `[`, 2)) %>% dplyr::select(-split_index)
+                                                     index = sapply(split_index, `[`, 2)) %>%
+          dplyr::select(-split_index)
         tmp_osa$res$comp_type <- "SpltR_JntS"
 
         res_all <- rbind(res_all, tmp_osa$res)
@@ -1224,8 +1223,8 @@ plot_resids <- function(osa_results) {
     grouped %>%
       dplyr::summarize(
         df  = n() - 1,
-        HCI = sqrt(qchisq(.975, df) / df),
-        LCI = sqrt(qchisq(.025, df) / df),
+        HCI = sqrt(qchisq(0.975, df) / df),
+        LCI = sqrt(qchisq(0.025, df) / df),
         est = sd(resid),
         .groups = "drop"
       ) %>%
@@ -1338,5 +1337,3 @@ plot_resids <- function(osa_results) {
   return(list(sdnr_plot = sdnr_plot, bubble_plot = bubble_plot))
 
 }
-
-

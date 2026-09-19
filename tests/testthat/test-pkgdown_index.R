@@ -11,7 +11,9 @@ test_that("every exported topic and vignette is in the pkgdown index", {
 
   # check_pkgdown() aborts on the first category that is short, so its condition holds the
   # missing names: reporting the message is what makes the failure actionable
-  result <- tryCatch({ pkgdown::check_pkgdown(pkg_root); "ok" },
-                     error = function(e) conditionMessage(e))
+  result <- tryCatch({
+    pkgdown::check_pkgdown(pkg_root)
+    "ok"
+  }, error = function(e) conditionMessage(e))
   expect_equal(result, "ok")
 })

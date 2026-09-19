@@ -8,7 +8,8 @@ library(testthat)
 # Aggregation dims -----------------------------------------------------
 
 test_that("a sex-split data source reads each sex's own catch", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 2, 1)
   il <- build_at_age(
     n_sexes = 2,
@@ -27,9 +28,11 @@ test_that("a sex-split data source reads each sex's own catch", {
 })
 
 test_that("a sex-summed data source reads the sum over sexes, in sex slot one", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 2, 1)
-  use <- array(0, dim = d); use[, , , , 1, ] <- 1
+  use <- array(0, dim = d)
+  use[, , , , 1, ] <- 1
   il <- build_at_age(
     n_sexes = 2,
     ObsCatchAA = array(2e3, dim = d),
@@ -44,9 +47,11 @@ test_that("a sex-summed data source reads the sum over sexes, in sex slot one", 
 })
 
 test_that("a region-summed data source reads the sum over regions, in region one", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(2, ny, 1, na, 1, 1)
-  use <- array(0, dim = d); use[1, , , , , ] <- 1
+  use <- array(0, dim = d)
+  use[1, , , , , ] <- 1
   il <- build_at_age(
     n_regions = 2,
     ObsCatchAA = array(2e3, dim = d),
@@ -61,7 +66,8 @@ test_that("a region-summed data source reads the sum over regions, in region one
 })
 
 test_that("flagging a summed dim outside slot one is refused", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   dr <- c(2, ny, 1, na, 1, 1)
   expect_error(build_at_age(
     n_regions = 2,
@@ -88,7 +94,8 @@ test_that("flagging a summed dim outside slot one is refused", {
 })
 
 test_that("an array missing the sex dim is refused rather than reinterpreted", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   flat <- c(1, ny, 1, na, 1)                       # no sex dim
   full <- c(1, ny, 1, na, 2, 1)
 
@@ -107,16 +114,19 @@ test_that("an array missing the sex dim is refused rather than reinterpreted", {
   ),
                "not the correct dimension")
   # a sex-summed data source says so with a Type, and still holds the full array
-  use <- array(0, dim = full); use[, , , , 1, ] <- 1
+  use <- array(0, dim = full)
+  use[, , , , 1, ] <- 1
   il <- build_at_age(n_sexes = 2, ObsCatchAA = array(2e3, dim = full), UseCatchAA = use)
   expect_equal(dim(il$data$UseCatchAA), full)
   expect_equal(sum(il$data$UseCatchAA[, , , , 2, ]), 0)
 })
 
 test_that("the observation error key and its starting values need the sex dim", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 2, 1)
-  obs <- array(1e3, dim = d); use <- array(1, dim = d)
+  obs <- array(1e3, dim = d)
+  use <- array(1, dim = d)
 
   expect_error(build_at_age(
     n_sexes = 2,
@@ -140,9 +150,11 @@ test_that("the observation error key and its starting values need the sex dim", 
 # Observation error keys --------------------------------------------------
 
 test_that("the observation error key has a sex dim and can share over it", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 2, 1)
-  obs <- array(1e3, dim = d); use <- array(1, dim = d)
+  obs <- array(1e3, dim = d)
+  use <- array(1, dim = d)
 
   # a key repeating its entries across the sexes couples them together
   il <- build_at_age(
@@ -157,7 +169,8 @@ test_that("the observation error key has a sex dim and can share over it", {
 
   # given the dim, each sex can have its own
   key <- array(0L, dim = c(na, 2, 1))
-  key[, 1, 1] <- 1:na; key[, 2, 1] <- na + (1:na)
+  key[, 1, 1] <- 1:na
+  key[, 2, 1] <- na + (1:na)
   il2 <- build_at_age(
     n_sexes = 2,
     ObsCatchAA = obs,
@@ -169,9 +182,11 @@ test_that("the observation error key has a sex dim and can share over it", {
 })
 
 test_that("a sex a fleet never observes has no observation error parameter", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 2, 1)
-  use <- array(0, dim = d); use[, , , , 1, ] <- 1
+  use <- array(0, dim = d)
+  use[, , , , 1, ] <- 1
   il <- build_at_age(
     n_sexes = 2,
     ObsCatchAA = array(2e3, dim = d),
@@ -187,7 +202,8 @@ test_that("a sex a fleet never observes has no observation error parameter", {
 # Density and where the error comes from ----------------------------------
 
 test_that("a normal data source is fit on the natural scale", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 1, 1)
   sig <- 0.3
   il <- build_at_age(
@@ -203,9 +219,12 @@ test_that("a normal data source is fit on the natural scale", {
 })
 
 test_that("reported standard errors enter the way the aggregated index lets them", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 1, 1)
-  obs <- array(2e3, dim = d); use <- array(1, dim = d); se <- array(0.4, dim = d)
+  obs <- array(2e3, dim = d)
+  use <- array(1, dim = d)
+  se <- array(0.4, dim = d)
   sig <- 0.3
 
   # the reported errors alone, which leaves the parameter with nothing to read
@@ -247,12 +266,16 @@ test_that("reported standard errors enter the way the aggregated index lets them
 # Correlation across ages -------------------------------------------------
 
 test_that("an AR(1) across ages is spaced by age, not by position", {
-  ny <- 20; na <- 6
+  ny <- 20
+  na <- 6
   d <- c(1, ny, 1, na, 1, 1)
   ages <- c(1, 2, 4, 5)                      # a gap between the second and third
-  sig <- 0.3; rho <- 0.5
-  use <- array(0, dim = d); use[1, , 1, ages, 1, 1] <- 1
-  obs <- array(0, dim = d); obs[1, , 1, ages, 1, 1] <- 2e3
+  sig <- 0.3
+  rho <- 0.5
+  use <- array(0, dim = d)
+  use[1, , 1, ages, 1, 1] <- 1
+  obs <- array(0, dim = d)
+  obs[1, , 1, ages, 1, 1] <- 2e3
 
   il <- build_at_age(
     n_ages = na,
@@ -275,10 +298,12 @@ test_that("an AR(1) across ages is spaced by age, not by position", {
 })
 
 test_that("an unstructured correlation matches its matrix and is guarded", {
-  ny <- 20; na <- 6
+  ny <- 20
+  na <- 6
   d <- c(1, ny, 1, na, 1, 1)
   sig <- 0.3
-  set.seed(7); pars <- stats::rnorm(na * (na - 1) / 2, 0, 0.3)
+  set.seed(7)
+  pars <- stats::rnorm(na * (na - 1) / 2, 0, 0.3)
 
   il <- build_at_age(
     n_ages = na,
@@ -311,9 +336,12 @@ test_that("an unstructured correlation matches its matrix and is guarded", {
 })
 
 test_that("a separable correlation over ages and years needs a complete grid", {
-  ny <- 8; na <- 4
+  ny <- 8
+  na <- 4
   d <- c(1, ny, 1, na, 1, 1)
-  sig <- 0.3; rho_a <- 0.4; rho_y <- 0.6
+  sig <- 0.3
+  rho_a <- 0.4
+  rho_y <- 0.6
 
   il <- build_at_age(
     n_yrs = ny,
@@ -328,13 +356,15 @@ test_that("a separable correlation over ages and years needs a complete grid", {
   )
   r <- at_age_rep(il)
   resid <- log(2e3) - log(as.numeric(r$PredCatchAA[1, , 1, , 1, 1]))   # year varies fastest
-  Ra <- rho_a^abs(outer(1:na, 1:na, "-")); Ry <- rho_y^abs(outer(1:ny, 1:ny, "-"))
+  Ra <- rho_a^abs(outer(1:na, 1:na, "-"))
+  Ry <- rho_y^abs(outer(1:ny, 1:ny, "-"))
 
   expect_equal(sum(r$CatchAA_nLL[1, , 1, , 1, 1]),
                -dmvn_ref(resid, kronecker(Ra, Ry) * sig^2))
   expect_false(all(is.na(as.integer(il$map$trans_rho_catch_year))))
 
-  gap <- array(1, dim = d); gap[1, 3, 1, 2, 1, 1] <- 0
+  gap <- array(1, dim = d)
+  gap[1, 3, 1, 2, 1, 1] <- 0
   expect_error(build_at_age(
     n_yrs = ny,
     n_ages = na,
@@ -346,7 +376,8 @@ test_that("a separable correlation over ages and years needs a complete grid", {
 })
 
 test_that("the correlation structure is chosen per fleet", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 1, 2)
   il <- build_at_age(
     n_fleets = 2,
@@ -374,9 +405,11 @@ test_that("the correlation structure is chosen per fleet", {
 })
 
 test_that("correlations share through the package's spec strings", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(2, ny, 1, na, 2, 2)
-  obs <- array(1e3, dim = d); use <- array(1, dim = d)
+  obs <- array(1e3, dim = d)
+  use <- array(1, dim = d)
   mk <- function(corr, spec) build_at_age(
     n_regions = 2,
     n_sexes = 2,
@@ -413,12 +446,14 @@ test_that("correlations share through the package's spec strings", {
 })
 
 test_that("a dim a fleet never observes has no correlation", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(2, ny, 1, na, 2, 1)
 
   # summed over regions: the observation lives in region one, so region two has
   # nothing to inform a correlation with
-  ur <- array(0, dim = d); ur[1, , , , 1, ] <- 1
+  ur <- array(0, dim = d)
+  ur[1, , , , 1, ] <- 1
   il <- build_at_age(
     n_regions = 2,
     n_sexes = 2,
@@ -448,7 +483,8 @@ test_that("a dim a fleet never observes has no correlation", {
 })
 
 test_that("the population-specific data source has its own correlation", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 1, 1)
   dp <- c(1, d)
   il <- build_at_age(
@@ -472,7 +508,8 @@ test_that("the population-specific data source has its own correlation", {
 # Discards ----------------------------------------------------------------
 
 test_that("discards at age are the total discarded, in their own units", {
-  ny <- 20; na <- 5
+  ny <- 20
+  na <- 5
   d <- c(1, ny, 1, na, 1, 1)
   il <- build_at_age(
     ObsCatchAA = array(2e3, dim = d),
@@ -587,7 +624,8 @@ test_that("a sex-summed operating model draws one observation, in sex slot one",
 # One-step-ahead residuals ------------------------------------------------
 
 test_that("at-age OSA residuals hold the age and sex the observation came from", {
-  ny <- 12; na <- 4
+  ny <- 12
+  na <- 4
   d <- c(1, ny, 1, na, 2, 1)
   il <- build_at_age(
     n_yrs = ny,
@@ -613,12 +651,16 @@ test_that("at-age OSA residuals hold the age and sex the observation came from",
 # Everything at once ------------------------------------------------------
 
 test_that("data sources with different dims, densities and correlations coexist", {
-  ny <- 15; na <- 5; nr <- 2; ns <- 2
+  ny <- 15
+  na <- 5
+  nr <- 2
+  ns <- 2
 
   caa <- array(500, dim = c(nr, ny, 1, na, ns, 2))   # split region, split sex
   caa_use <- array(1, dim = dim(caa))
   saa <- array(0, dim = c(nr, ny, 1, na, ns, 1))     # split region, summed over sexes
-  saa_use <- array(0, dim = dim(saa)); saa_use[, , , , 1, ] <- 1
+  saa_use <- array(0, dim = dim(saa))
+  saa_use[, , , , 1, ] <- 1
   saa[saa_use == 1] <- 1e4
 
   il <- build_at_age(
@@ -672,7 +714,8 @@ test_that("data sources with different dims, densities and correlations coexist"
 # Plotting ----------------------------------------------------------------
 
 test_that("the at-age fits plot holds the sex and the error the fit used", {
-  ny <- 12; na <- 4
+  ny <- 12
+  na <- 4
   d <- c(1, ny, 1, na, 2, 1)
   il <- build_at_age(
     n_yrs = ny,
@@ -700,7 +743,8 @@ test_that("the at-age fits plot holds the sex and the error the fit used", {
 # Input lists written before the sex dim --------------------------------
 
 test_that("an input list with an older shape is refused, not reinterpreted", {
-  ny <- 12; na <- 4
+  ny <- 12
+  na <- 4
   d <- c(1, ny, 1, na, 1, 1)
   il <- build_at_age(
     n_yrs = ny,

@@ -41,9 +41,12 @@ library(SPoRC)
 data("sgl_rg_ebs_pcod_data")
 
 dat <- sgl_rg_ebs_pcod_data
-yrs <- dat$years; n_yrs <- length(yrs)
-ages <- dat$ages; n_ages <- length(ages)
-n_reg <- 1; n_sex <- 1
+yrs <- dat$years
+n_yrs <- length(yrs)
+ages <- dat$ages
+n_ages <- length(ages)
+n_reg <- 1
+n_sex <- 1
 
 # lens are the bin midpoints the population is kept on; the transition is
 # built on the lower edges, which is what growth_len_lower supplies

@@ -179,16 +179,16 @@ do_jitter <- function(data,
                              control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15))
 
       # newton steps
-      try_improve <- tryCatch(
+      tryCatch(
         expr =
-                                for(j in 1:n_newton_loops) {
-                                  g = as.numeric(obj$gr(optim$par))
-                                  h = optimHess(optim$par, fn = obj$fn, gr = obj$gr)
-                                  optim$par = optim$par - solve(h,g)
-                                  optim$objective = obj$fn(optim$par)
-                                },
-        error = function(e){e},
-        warning = function(w){w}
+                 for(j in 1:n_newton_loops) {
+                   g = as.numeric(obj$gr(optim$par))
+                   h = optimHess(optim$par, fn = obj$fn, gr = obj$gr)
+                   optim$par = optim$par - solve(h,g)
+                   optim$objective = obj$fn(optim$par)
+                 },
+        error = function(e) {e},
+        warning = function(w) {w}
       )
 
       obj$rep <- obj$report(obj$env$last.par.best) # Get report
@@ -246,7 +246,7 @@ do_jitter <- function(data,
                                control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15))
 
         # Newton steps
-        try_improve <- tryCatch({
+        tryCatch({
           for (j in 1:n_newton_loops) {
             g <- as.numeric(obj$gr(optim$par))
             h <- optimHess(optim$par, fn = obj$fn, gr = obj$gr)
@@ -275,7 +275,8 @@ do_jitter <- function(data,
 
         jitter_ts_df
 
-      }, future.seed = TRUE) %>% bind_rows() # bine rows to combine results
+      }, future.seed = TRUE) %>%
+        bind_rows() # bine rows to combine results
 
       future::plan(future::sequential)  # Reset
 

@@ -10,7 +10,8 @@ test_that("the fused operator/integral agrees with computing each separately", {
   for (n in c(1, 2, 4)) {
     for (dur in c(1, 0.25, 0.6)) {
       Q <- matrix(stats::runif(n * n, 0.05, 0.5), n, n)
-      diag(Q) <- 0; diag(Q) <- -rowSums(Q)
+      diag(Q) <- 0
+      diag(Q) <- -rowSums(Q)
       Z <- stats::runif(n, 0.02, 0.6) * dur
       N <- stats::runif(n, 50, 500)
 
@@ -125,7 +126,8 @@ test_that("all three timings agree when there is no movement", {
   n <- 4
   N <- c(100, 250, 30, 80)
   Z <- c(0.2, 0.5, 0.1, 0.9)
-  I <- diag(n); Q0 <- matrix(0, n, n)
+  I <- diag(n)
+  Q0 <- matrix(0, n, n)
 
   expected <- N * exp(-Z)
   expect_equal(advance_seas(N, I, Z, Q0, 1, 0), expected, tolerance = 1e-12)
@@ -240,7 +242,8 @@ test_that("continuous steps compose across seasons to the full-year operator", {
 })
 
 test_that("Get_Movement scales the generator by seasdur when asked", {
-  n_regions <- 3; n_seas <- 2
+  n_regions <- 3
+  n_seas <- 2
   dat <- expand.grid(
     pop = 1,
     regions = 1:n_regions,
@@ -249,7 +252,8 @@ test_that("Get_Movement scales the generator by seasdur when asked", {
     ages = 1:2,
     sexes = 1
   )
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
   seasdur <- c(0.25, 0.75)
 
   call_gm <- function(scale) {
@@ -321,12 +325,16 @@ test_that("composed annual transition equals stepping season by season", {
   # That operator must reproduce what sequential seasonal stepping gives, for every
   # timing. init_age_strc = 2 previously composed t(Movement) %*% S right-to-left,
   # which both inverted the movement/mortality order and traversed seasons backwards.
-  set.seed(11); n <- 3; n_seas <- 3
+  set.seed(11)
+  n <- 3
+  n_seas <- 3
   seasdur <- c(0.2, 0.5, 0.3)
-  M <- array(0, c(n, n, n_seas)); Q <- array(0, c(n, n, n_seas))
+  M <- array(0, c(n, n, n_seas))
+  Q <- array(0, c(n, n, n_seas))
   for (s in seq_len(n_seas)) {
     mv <- make_move(n, dur = seasdur[s])
-    M[, , s] <- mv$Move_row; Q[, , s] <- mv$Q_row
+    M[, , s] <- mv$Move_row
+    Q[, , s] <- mv$Q_row
   }
   Zs <- matrix(stats::runif(n * n_seas, 0.05, 0.3), n, n_seas)
   N0 <- c(100, 40, 70)
@@ -346,9 +354,12 @@ test_that("composed annual transition equals stepping season by season", {
 test_that("right-composing seasons is not equivalent to left-composing", {
   # Guards the season-ordering half of the init_age_strc = 2 fix: if these two agreed,
   # the test above could not distinguish the traversal order.
-  set.seed(12); n <- 3
-  m1 <- make_move(n); m2 <- make_move(n)
-  S1 <- diag(exp(-c(0.2, 0.5, 0.1)), n); S2 <- diag(exp(-c(0.6, 0.1, 0.4)), n)
+  set.seed(12)
+  n <- 3
+  m1 <- make_move(n)
+  m2 <- make_move(n)
+  S1 <- diag(exp(-c(0.2, 0.5, 0.1)), n)
+  S2 <- diag(exp(-c(0.6, 0.1, 0.4)), n)
   left  <- (S2 %*% t(m2$Move_row)) %*% (S1 %*% t(m1$Move_row))
   right <- (S1 %*% t(m1$Move_row)) %*% (S2 %*% t(m2$Move_row))
   expect_false(isTRUE(all.equal(left, right)))
@@ -423,7 +434,8 @@ test_that("survey_state leaves the discrete timings unchanged", {
   # Under move_timing 0 and 1 movement is already resolved for the season, so the
   # historical elementwise discount is exact and must not be perturbed
   m <- make_move(3, seed = 20)
-  N <- c(100, 60, 30); Z <- c(0.3, 0.15, 0.45)
+  N <- c(100, 60, 30)
+  Z <- c(0.3, 0.15, 0.45)
   for (tm in 0:1) {
     expect_equal(survey_state(N, m$Move_row, Z, m$Q_row, 1, 0.4, tm), N * exp(-0.4 * Z))
   }
@@ -431,7 +443,8 @@ test_that("survey_state leaves the discrete timings unchanged", {
 
 test_that("survey_state brackets correctly under continuous movement", {
   m <- make_move(3, seed = 21)
-  N <- c(100, 60, 30); Z <- c(0.3, 0.15, 0.45)
+  N <- c(100, 60, 30)
+  Z <- c(0.3, 0.15, 0.45)
   # t_srv = 0 is the start of the season, t_srv = 1 a full seasonal step
   expect_equal(survey_state(N, m$Move_row, Z, m$Q_row, 1, 0, 2), N, tolerance = 1e-12)
   expect_equal(survey_state(N, m$Move_row, Z, m$Q_row, 1, 1, 2),
@@ -448,7 +461,8 @@ test_that("region-varying survey timing reads each region's own propagation", {
   # t_srv can differ by region, which no single operator represents; the convention is
   # that region r observes the population propagated to that region's survey time
   m <- make_move(3, seed = 22)
-  N <- c(100, 60, 30); Z <- c(0.3, 0.15, 0.45)
+  N <- c(100, 60, 30)
+  Z <- c(0.3, 0.15, 0.45)
   tv <- c(0.2, 0.5, 0.8)
   mixed <- survey_state(N, m$Move_row, Z, m$Q_row, 1, tv, 2)
   ref <- vapply(seq_along(tv), function(r) survey_state(N, m$Move_row, Z, m$Q_row, 1, tv[r], 2)[r],

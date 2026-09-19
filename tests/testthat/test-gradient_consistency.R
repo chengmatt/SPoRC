@@ -22,8 +22,10 @@ fd_gradient_check <- function(obj, k = 6, h = 1e-5) {
 
   fd <- vapply(idx, function(i) {
     step <- h * max(abs(p[i]), 1)
-    up <- p; up[i] <- up[i] + step
-    dn <- p; dn[i] <- dn[i] - step
+    up <- p
+    up[i] <- up[i] + step
+    dn <- p
+    dn[i] <- dn[i] - step
     (obj$fn(up) - obj$fn(dn)) / (2 * step)
   }, numeric(1))
 
@@ -55,9 +57,12 @@ gradient_configs <- function() {
 #' @keywords internal
 gradient_obj <- function(cfg) {
   dims <- utils::modifyList(list(n_srv_fleets = 1, n_yrs = 10, n_ages = 6), cfg$dims)
-  nr <- dims$n_regions; nx <- dims$n_sexes; nf <- dims$n_fish_fleets
+  nr <- dims$n_regions
+  nx <- dims$n_sexes
+  nf <- dims$n_fish_fleets
   ns <- if(is.null(dims$n_seas)) 1 else dims$n_seas
-  NY <- dims$n_yrs; NAG <- dims$n_ages
+  NY <- dims$n_yrs
+  NAG <- dims$n_ages
   like <- if(is.null(cfg$comps)) "Multinomial" else cfg$comps
 
   il <- sweep_input(
@@ -158,15 +163,20 @@ test_that("the gradient check would notice a wrong derivative", {
   i <- which.max(abs(g))
 
   step <- 1e-5 * max(abs(p[i]), 1)
-  up <- p; up[i] <- up[i] + step
-  dn <- p; dn[i] <- dn[i] - step
+  up <- p
+  up[i] <- up[i] + step
+  dn <- p
+  dn[i] <- dn[i] - step
   fd_here <- (obj$fn(up) - obj$fn(dn)) / (2 * step)
 
   # the same difference taken a long way from the evaluation point is a gradient
   # of somewhere else, and must not pass the tolerance the test uses
-  far <- p; far[i] <- far[i] + 0.5
-  up2 <- far; up2[i] <- up2[i] + step
-  dn2 <- far; dn2[i] <- dn2[i] - step
+  far <- p
+  far[i] <- far[i] + 0.5
+  up2 <- far
+  up2[i] <- up2[i] + step
+  dn2 <- far
+  dn2[i] <- dn2[i] - step
   fd_far <- (obj$fn(up2) - obj$fn(dn2)) / (2 * step)
 
   expect_lt(abs(g[i] - fd_here) / max(abs(g[i]), 1), 1e-4)

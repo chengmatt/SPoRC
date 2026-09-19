@@ -49,7 +49,7 @@ get_francis_weights <- function(n_regions,
 
   for(f in 1:n_fleets) {
 
-    data_indices <- matrix(nrow=0, ncol=3)  # storage container for data indices
+    data_indices <- matrix(nrow = 0, ncol = 3)  # storage container for data indices
 
     for(r in 1:n_regions) {
       for(y in 1:n_years) {
@@ -87,8 +87,8 @@ get_francis_weights <- function(n_regions,
         if(comp_type[y,f] == 0) {
           exp_bar[1,yr_alt_idx,seas,1] <- sum(bins * as.vector(tmp_exp[1,1,1,,1,1])) # get mean pred comps
           obs_bar[1,yr_alt_idx,seas,1] <- sum(bins * as.vector(tmp_obs[1,1,1,,1,1])) # get mean obs comps
-          v_y[1,yr_alt_idx,seas,1] <- sum(bins^2*tmp_exp[1,1,1,,1,1])-exp_bar[1,yr_alt_idx,seas,1]^2 # get variance
-          w_denom[1,yr_alt_idx,seas,1] <- (obs_bar[1,yr_alt_idx,seas,1]-exp_bar[1,yr_alt_idx,seas,1])/sqrt(v_y[1,yr_alt_idx,seas,1]/tmp_iss_obs[1,1,1,1,1]) # get weights
+          v_y[1,yr_alt_idx,seas,1] <- sum(bins^2 * tmp_exp[1,1,1,,1,1]) - exp_bar[1,yr_alt_idx,seas,1]^2 # get variance
+          w_denom[1,yr_alt_idx,seas,1] <- (obs_bar[1,yr_alt_idx,seas,1] - exp_bar[1,yr_alt_idx,seas,1]) / sqrt(v_y[1,yr_alt_idx,seas,1] / tmp_iss_obs[1,1,1,1,1]) # get weights
         } # end if aggregated
 
         # If compositions are split by region and sex
@@ -97,8 +97,8 @@ get_francis_weights <- function(n_regions,
             for(s in 1:n_sexes) {
               exp_bar[r,yr_alt_idx,seas,s] <- sum(bins * as.vector(tmp_exp[r,1,1,,s,1])) # get mean pred comps
               obs_bar[r,yr_alt_idx,seas,s] <- sum(bins * as.vector(tmp_obs[r,1,1,,s,1])) # get mean obs comps
-              v_y[r,yr_alt_idx,seas,s] <- sum(bins^2*tmp_exp[r,1,1,,s,1])-exp_bar[r,yr_alt_idx,seas,s]^2 # get variance
-              w_denom[r,yr_alt_idx,seas,s] <- (obs_bar[r,yr_alt_idx,seas,s]-exp_bar[r,yr_alt_idx,seas,s])/sqrt(v_y[r,yr_alt_idx,seas,s]/tmp_iss_obs[r,1,1,s,1]) # get weights
+              v_y[r,yr_alt_idx,seas,s] <- sum(bins^2 * tmp_exp[r,1,1,,s,1]) - exp_bar[r,yr_alt_idx,seas,s]^2 # get variance
+              w_denom[r,yr_alt_idx,seas,s] <- (obs_bar[r,yr_alt_idx,seas,s] - exp_bar[r,yr_alt_idx,seas,s]) / sqrt(v_y[r,yr_alt_idx,seas,s] / tmp_iss_obs[r,1,1,s,1]) # get weights
             } # end s loop
           } # end r loop
         } # end if split by region and sex
@@ -110,8 +110,8 @@ get_francis_weights <- function(n_regions,
             mat_obs <- matrix(tmp_obs[r,1,1,,,1], nrow = n_bins)
             exp_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(mat_exp)) # input mean pred comps
             obs_bar[r,yr_alt_idx,seas,1] <- sum(bins * rowSums(mat_obs)) # input mean obs comps
-            v_y[r,yr_alt_idx,seas,1] <- sum(bins^2*rowSums(mat_exp))-exp_bar[r,yr_alt_idx,seas,1]^2  # variance
-            w_denom[r,yr_alt_idx,seas,1] <- (obs_bar[r,yr_alt_idx,seas,1]-exp_bar[r,yr_alt_idx,seas,1])/sqrt(v_y[r,yr_alt_idx,seas,1]/tmp_iss_obs[r,1,1,1,1]) # get weights
+            v_y[r,yr_alt_idx,seas,1] <- sum(bins^2 * rowSums(mat_exp)) - exp_bar[r,yr_alt_idx,seas,1]^2  # variance
+            w_denom[r,yr_alt_idx,seas,1] <- (obs_bar[r,yr_alt_idx,seas,1] - exp_bar[r,yr_alt_idx,seas,1]) / sqrt(v_y[r,yr_alt_idx,seas,1] / tmp_iss_obs[r,1,1,1,1]) # get weights
           } # end r loop
         } # end if split by region, joint by sex
 
@@ -121,7 +121,7 @@ get_francis_weights <- function(n_regions,
     # get unique composition types
     unique_comp_type <- unique(comp_type[,f])
 
-    for(j in 1:length(unique_comp_type)) {
+    for(j in seq_along(unique_comp_type)) {
 
       # get year pointer index to subset w_denom and calculate weights separately for each composition type
       year_pointer <- which(comp_type[data_yrs,f] == unique_comp_type[j])
@@ -800,7 +800,7 @@ run_francis <- function(data,
     wts <- do_francis_reweighting(
       data = data, rep = rep,
       # uses fishery ages to index, because of potential for uneven number of observed and modeled ages
-      age_labels = 1:dim(data$ObsFishAgeComps)[4],
+      age_labels = seq_len(dim(data$ObsFishAgeComps)[4]),
       len_labels = data$lens,
       year_labels = data$years
     )
@@ -809,27 +809,43 @@ run_francis <- function(data,
     if(j == 1) wts_1 <- wts
 
     # record weights
-    fish_age_wts_df <- reshape2::melt(wts$new_fish_age_wts); fish_age_wts_df$Type <- "Fishery Ages"
-    fish_len_wts_df <- reshape2::melt(wts$new_fish_len_wts); fish_len_wts_df$Type <- "Fishery Lengths"
-    fish_age_discard_wts_df <- reshape2::melt(wts$new_fish_age_discard_wts); fish_age_discard_wts_df$Type <- "Fishery Discard Ages"
-    fish_len_discard_wts_df <- reshape2::melt(wts$new_fish_len_discard_wts); fish_len_discard_wts_df$Type <- "Fishery Discard Lengths"
-    srv_age_wts_df  <- reshape2::melt(wts$new_srv_age_wts);  srv_age_wts_df$Type  <- "Survey Ages"
-    srv_len_wts_df  <- reshape2::melt(wts$new_srv_len_wts);  srv_len_wts_df$Type  <- "Survey Lengths"
+    fish_age_wts_df <- reshape2::melt(wts$new_fish_age_wts)
+    fish_age_wts_df$Type <- "Fishery Ages"
+    fish_len_wts_df <- reshape2::melt(wts$new_fish_len_wts)
+    fish_len_wts_df$Type <- "Fishery Lengths"
+    fish_age_discard_wts_df <- reshape2::melt(wts$new_fish_age_discard_wts)
+    fish_age_discard_wts_df$Type <- "Fishery Discard Ages"
+    fish_len_discard_wts_df <- reshape2::melt(wts$new_fish_len_discard_wts)
+    fish_len_discard_wts_df$Type <- "Fishery Discard Lengths"
+    srv_age_wts_df  <- reshape2::melt(wts$new_srv_age_wts)
+    srv_age_wts_df$Type  <- "Survey Ages"
+    srv_len_wts_df  <- reshape2::melt(wts$new_srv_len_wts)
+    srv_len_wts_df$Type  <- "Survey Lengths"
     colnames(fish_age_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
     colnames(fish_len_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
     colnames(fish_age_discard_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
     colnames(fish_len_discard_wts_df) <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
     colnames(srv_age_wts_df)  <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
     colnames(srv_len_wts_df)  <- c("Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
-    fish_age_wts_df$Pop <- NA; fish_len_wts_df$Pop <- NA; fish_age_discard_wts_df$Pop <- NA; fish_len_discard_wts_df$Pop <- NA
-    srv_age_wts_df$Pop  <- NA; srv_len_wts_df$Pop  <- NA
+    fish_age_wts_df$Pop <- NA
+    fish_len_wts_df$Pop <- NA
+    fish_age_discard_wts_df$Pop <- NA
+    fish_len_discard_wts_df$Pop <- NA
+    srv_age_wts_df$Pop  <- NA
+    srv_len_wts_df$Pop  <- NA
 
-    fish_age_pop_wts_df <- reshape2::melt(wts$new_fish_age_pop_wts); fish_age_pop_wts_df$Type <- "Pop Fishery Ages"
-    fish_len_pop_wts_df <- reshape2::melt(wts$new_fish_len_pop_wts); fish_len_pop_wts_df$Type <- "Pop Fishery Lengths"
-    fish_age_discard_pop_wts_df <- reshape2::melt(wts$new_fish_age_discard_pop_wts); fish_age_discard_pop_wts_df$Type <- "Pop Fishery Discard Ages"
-    fish_len_discard_pop_wts_df <- reshape2::melt(wts$new_fish_len_discard_pop_wts); fish_len_discard_pop_wts_df$Type <- "Pop Fishery Discard Lengths"
-    srv_age_pop_wts_df  <- reshape2::melt(wts$new_srv_age_pop_wts);  srv_age_pop_wts_df$Type  <- "Pop Survey Ages"
-    srv_len_pop_wts_df  <- reshape2::melt(wts$new_srv_len_pop_wts);  srv_len_pop_wts_df$Type  <- "Pop Survey Lengths"
+    fish_age_pop_wts_df <- reshape2::melt(wts$new_fish_age_pop_wts)
+    fish_age_pop_wts_df$Type <- "Pop Fishery Ages"
+    fish_len_pop_wts_df <- reshape2::melt(wts$new_fish_len_pop_wts)
+    fish_len_pop_wts_df$Type <- "Pop Fishery Lengths"
+    fish_age_discard_pop_wts_df <- reshape2::melt(wts$new_fish_age_discard_pop_wts)
+    fish_age_discard_pop_wts_df$Type <- "Pop Fishery Discard Ages"
+    fish_len_discard_pop_wts_df <- reshape2::melt(wts$new_fish_len_discard_pop_wts)
+    fish_len_discard_pop_wts_df$Type <- "Pop Fishery Discard Lengths"
+    srv_age_pop_wts_df  <- reshape2::melt(wts$new_srv_age_pop_wts)
+    srv_age_pop_wts_df$Type  <- "Pop Survey Ages"
+    srv_len_pop_wts_df  <- reshape2::melt(wts$new_srv_len_pop_wts)
+    srv_len_pop_wts_df$Type  <- "Pop Survey Lengths"
     colnames(fish_age_pop_wts_df) <- c("Pop", "Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
     colnames(fish_len_pop_wts_df) <- c("Pop", "Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
     colnames(fish_age_discard_pop_wts_df) <- c("Pop", "Region", "Year", "Seas", "Sex", "Fleet", "Weight", "Type")
@@ -1005,7 +1021,7 @@ get_francis_weights_caal <- function(n_regions,
     } # end y loop
 
     # one inverse variance per composition type, written across the years it covers
-    for(j in 1:length(unique_comp_type)) {
+    for(j in seq_along(unique_comp_type)) {
 
       ct <- unique_comp_type[j]
       yrs_j <- which(comp_type[, f] == ct)

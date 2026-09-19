@@ -7,7 +7,14 @@ library(testthat)
 # real (if tiny) model run.
 make_fishery_obs_input <- function(catch_units = 0, discard_units = 0, fish_idx_type = 0, fit_lengths = 0) {
 
-  n_pop <- 1; n_regions <- 1; n_yrs <- 1; n_seas <- 1; n_fish_fleets <- 1; n_sexes <- 1; n_ages <- 2; n_lens <- 2
+  n_pop <- 1
+  n_regions <- 1
+  n_yrs <- 1
+  n_seas <- 1
+  n_fish_fleets <- 1
+  n_sexes <- 1
+  n_ages <- 2
+  n_lens <- 2
 
   ZAA <- array(c(0.5, 0.3), dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
   NAA <- array(c(100, 50), dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
@@ -57,8 +64,10 @@ test_that("get_fishery_observation_model implements the Baranov catch equation",
   il <- make_fishery_obs_input()
   out <- do.call(SPoRC:::get_fishery_observation_model, il)
 
-  ZAA_vec <- c(0.5, 0.3); NAA_vec <- c(100, 50)
-  ret_FAA_vec <- c(0.2, 0.1); disc_FAA_vec <- c(0.05, 0.02)
+  ZAA_vec <- c(0.5, 0.3)
+  NAA_vec <- c(100, 50)
+  ret_FAA_vec <- c(0.2, 0.1)
+  disc_FAA_vec <- c(0.05, 0.02)
 
   expected_CAA <- ret_FAA_vec / ZAA_vec * NAA_vec * (1 - exp(-ZAA_vec))
   expected_DAA <- disc_FAA_vec / ZAA_vec * NAA_vec * (1 - exp(-ZAA_vec))
@@ -83,11 +92,13 @@ test_that("get_fishery_observation_model: catch_units and discard_units switches
   # abundance/biomass fraction variants must fall strictly within (0, 1)
   il_frac <- make_fishery_obs_input(discard_units = 2)
   out_frac <- do.call(SPoRC:::get_fishery_observation_model, il_frac)
-  expect_true(out_frac$PredDiscard[1,1,1,1,1] > 0 && out_frac$PredDiscard[1,1,1,1,1] < 1)
+  expect_gt(out_frac$PredDiscard[1,1,1,1,1], 0)
+  expect_lt(out_frac$PredDiscard[1,1,1,1,1], 1)
 
   il_frac_b <- make_fishery_obs_input(discard_units = 3)
   out_frac_b <- do.call(SPoRC:::get_fishery_observation_model, il_frac_b)
-  expect_true(out_frac_b$PredDiscard[1,1,1,1,1] > 0 && out_frac_b$PredDiscard[1,1,1,1,1] < 1)
+  expect_gt(out_frac_b$PredDiscard[1,1,1,1,1], 0)
+  expect_lt(out_frac_b$PredDiscard[1,1,1,1,1], 1)
 })
 
 test_that("get_fishery_observation_model: fish_q and fishery index (abundance vs biomass)", {
@@ -116,7 +127,15 @@ test_that("get_fishery_observation_model: length compositions via SizeAgeTrans (
 
 make_survey_obs_input <- function(srv_idx_type = 0, srv_selex_type = 0, do_srv_q_cov = 0, fit_lengths = 0) {
 
-  n_pop <- 1; n_regions <- 1; n_yrs <- 1; n_seas <- 1; n_srv_fleets <- 1; n_sexes <- 1; n_ages <- 2; n_lens <- 2; n_cov <- 1
+  n_pop <- 1
+  n_regions <- 1
+  n_yrs <- 1
+  n_seas <- 1
+  n_srv_fleets <- 1
+  n_sexes <- 1
+  n_ages <- 2
+  n_lens <- 2
+  n_cov <- 1
 
   ZAA <- array(c(0.5, 0.3), dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
   NAA <- array(c(100, 50), dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
@@ -159,7 +178,10 @@ test_that("get_survey_observation_model implements the mid-season-survival index
   il <- make_survey_obs_input()
   out <- do.call(SPoRC:::get_survey_observation_model, il)
 
-  NAA_vec <- c(100, 50); ZAA_vec <- c(0.5, 0.3); sel_vec <- c(0.4, 0.9); t_srv <- 0.5
+  NAA_vec <- c(100, 50)
+  ZAA_vec <- c(0.5, 0.3)
+  sel_vec <- c(0.4, 0.9)
+  t_srv <- 0.5
   expected_SrvIAA <- NAA_vec * sel_vec * exp(-t_srv * ZAA_vec)
 
   expect_equal(as.numeric(out$SrvIAA[1,1,1,1,,1,1]), expected_SrvIAA, tolerance = 1e-8)

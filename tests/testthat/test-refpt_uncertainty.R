@@ -153,4 +153,3 @@ test_that("a report list instead of a fitted object gives a clear error", {
   )
 
 })
-

@@ -307,9 +307,9 @@ test_that("release_conv_tag_attr: non-uniform NAA allocates proportionally", {
     n_sexes = 1
   )
   # Expected shares: 1/6, 2/6, 3/6 of total
-  expect_equal(result[1, 1, 1], 60 * 1/6, tolerance = 1e-10)
-  expect_equal(result[1, 2, 1], 60 * 2/6, tolerance = 1e-10)
-  expect_equal(result[1, 3, 1], 60 * 3/6, tolerance = 1e-10)
+  expect_equal(result[1, 1, 1], 60 * 1 / 6, tolerance = 1e-10)
+  expect_equal(result[1, 2, 1], 60 * 2 / 6, tolerance = 1e-10)
+  expect_equal(result[1, 3, 1], 60 * 3 / 6, tolerance = 1e-10)
 })
 
 test_that("release_conv_tag_attr: n_sexes = 1 does not error", {
@@ -398,4 +398,3 @@ test_that("release_conv_tag_attr: result is array with correct type", {
   expect_true(is.array(result))
   expect_true(is.numeric(result))
 })
-

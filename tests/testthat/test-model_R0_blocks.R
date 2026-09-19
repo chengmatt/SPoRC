@@ -45,8 +45,11 @@ test_that("an unblocked model keeps one R0 column and is unchanged", {
 
 test_that("an input list built before R0 blocks existed still runs", {
   il <- blocks_em(sim_r0)
-  d <- il$data; d$R0_blocks <- NULL; d$R0_ref_block <- NULL
-  p <- il$par; p$ln_global_R0 <- as.vector(p$ln_global_R0)        # the old vector shape
+  d <- il$data
+  d$R0_blocks <- NULL
+  d$R0_ref_block <- NULL
+  p <- il$par
+  p$ln_global_R0 <- as.vector(p$ln_global_R0)        # the old vector shape
   o <- fit_model(d, p, il$map, do_optim = FALSE, silent = TRUE)
   expect_true(is.finite(o$fn(o$par)))
 })
@@ -94,8 +97,14 @@ test_that("a retrospective peel truncates R0 blocks and drops a block it emptied
   # a block with no data left moves the objective not at all when perturbed. The final
   # fn call restores the starting parameters, since report() reads env$last.par.
   n_free_dead <- function(o) {
-    idx <- which(names(o$par) == "ln_global_R0"); p <- o$par; base <- o$fn(p)
-    out <- sum(vapply(idx, function(k) { p2 <- p; p2[k] <- p2[k] + 0.5; abs(o$fn(p2) - base) < 1e-8 }, logical(1)))
+    idx <- which(names(o$par) == "ln_global_R0")
+    p <- o$par
+    base <- o$fn(p)
+    out <- sum(vapply(idx, function(k) {
+      p2 <- p
+      p2[k] <- p2[k] + 0.5
+      abs(o$fn(p2) - base) < 1e-8
+    }, logical(1)))
     o$fn(p)
     out
   }

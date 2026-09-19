@@ -11,7 +11,8 @@ bh_rec <- function(SSB, h, R0, S0) 4 * h * R0 * SSB / ((1 - h) * S0 + (5 * h - 1
 
 test_that("unfished is a fixed point only when S0 and the numerator share an R0", {
 
-  phi0 <- 2.5; h <- 0.7
+  phi0 <- 2.5
+  h <- 0.7
   for(R0 in c(5, 12)) {
     S0 <- R0 * phi0
     expect_equal(bh_rec(S0, h, R0, S0), R0, tolerance = 1e-10)   # matched
@@ -19,7 +20,8 @@ test_that("unfished is a fixed point only when S0 and the numerator share an R0"
 
   # numerator on block 2, S0 still built from block 1: the unfished biomass block 2
   # implies no longer returns block 2's R0
-  R0_1 <- 5; R0_2 <- 12
+  R0_1 <- 5
+  R0_2 <- 12
   mismatched <- bh_rec(R0_2 * phi0, h, R0_2, R0_1 * phi0)
   expect_false(isTRUE(all.equal(mismatched, R0_2)))
   expect_equal(mismatched, 12.8, tolerance = 1e-8)
@@ -27,7 +29,9 @@ test_that("unfished is a fixed point only when S0 and the numerator share an R0"
 
 test_that("steepness keeps its meaning under the matched pairing and loses it otherwise", {
 
-  phi0 <- 2.5; h <- 0.7; R0 <- 12
+  phi0 <- 2.5
+  h <- 0.7
+  R0 <- 12
   S0 <- R0 * phi0
   # h is recruitment at 0.2 * S0 as a fraction of R0
   expect_equal(bh_rec(0.2 * S0, h, R0, S0) / R0, h, tolerance = 1e-10)

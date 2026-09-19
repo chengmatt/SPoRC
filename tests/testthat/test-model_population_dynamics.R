@@ -13,7 +13,13 @@ library(testthat)
 # guaranteed no-op and doesn't need separate verification.
 make_pop_proj_input <- function() {
 
-  n_pop <- 1; n_regions <- 1; n_seas <- 2; n_ages <- 3; n_sexes <- 1; n_yrs <- 1; n_fish_fleets <- 1
+  n_pop <- 1
+  n_regions <- 1
+  n_seas <- 2
+  n_ages <- 3
+  n_sexes <- 1
+  n_yrs <- 1
+  n_fish_fleets <- 1
 
   list(
     n_pop = n_pop, n_regions = n_regions, n_seas = n_seas, n_ages = n_ages, n_sexes = n_sexes,

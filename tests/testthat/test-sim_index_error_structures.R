@@ -11,7 +11,8 @@ test_that("cov_to_factor preserves marginal scale and approximates a one-factor 
 
   d <- c(2, 3, 1.5, 2.5, 4)
   lambda <- rep(0.8, 5)
-  R <- outer(lambda, lambda); diag(R) <- 1
+  R <- outer(lambda, lambda)
+  diag(R) <- 1
   S <- outer(d, d) * R
   fac <- SPoRC:::cov_to_factor(S)
 
@@ -25,7 +26,8 @@ test_that("cov_to_factor preserves marginal scale and approximates a one-factor 
   })
 
   test_that("the implied correlations approximate the true one-factor correlation", {
-    R_hat <- outer(fac$lambda, fac$lambda); diag(R_hat) <- 1
+    R_hat <- outer(fac$lambda, fac$lambda)
+    diag(R_hat) <- 1
     expect_lt(max(abs(R_hat - R)[upper.tri(R)]), 0.1)
   })
 
@@ -35,7 +37,10 @@ test_that("build_idx_factor positions covariance rows the way the model collects
 
   # gappy use flags across two regions: the model scans use == 1 in array order
   # (region fastest, then year, then season), so the covariance rows must too
-  n_regions <- 2; n_yrs <- 5; n_seas <- 1; n_fleets <- 2
+  n_regions <- 2
+  n_yrs <- 5
+  n_seas <- 1
+  n_fleets <- 2
   use <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fleets))
   use[1, c(1, 3, 4), 1, 2] <- 1
   use[2, c(3, 5), 1, 2] <- 1
@@ -96,22 +101,31 @@ test_that("resolve_idx_factor falls back to the mean parameters outside the cova
 
 test_that("draw_index_obs draws each error structure from the same seed formulae", {
 
-  true <- c(100, 120); se <- c(0.2, 0.3)
+  true <- c(100, 120)
+  se <- c(0.2, 0.3)
 
   test_that("lognormal multiplies by exp of a log-scale normal", {
-    set.seed(5); got <- SPoRC:::draw_index_obs(true, se, 0)
-    set.seed(5); expect_equal(got, true * exp(stats::rnorm(2, 0, se)))
+    set.seed(5)
+    got <- SPoRC:::draw_index_obs(true, se, 0)
+    set.seed(5)
+    expect_equal(got, true * exp(stats::rnorm(2, 0, se)))
   })
 
   test_that("normal adds an arithmetic-scale normal", {
-    set.seed(5); got <- SPoRC:::draw_index_obs(true, se, 1)
-    set.seed(5); expect_equal(got, true + stats::rnorm(2, 0, se))
+    set.seed(5)
+    got <- SPoRC:::draw_index_obs(true, se, 1)
+    set.seed(5)
+    expect_equal(got, true + stats::rnorm(2, 0, se))
   })
 
   test_that("mvn combines the shared factor and an independent residual", {
-    d <- c(10, 12); lambda <- c(0.6, 0.7); u <- 1.5
-    set.seed(5); got <- SPoRC:::draw_index_obs(true, NA, 2, d = d, lambda = lambda, u = u)
-    set.seed(5); e <- stats::rnorm(2)
+    d <- c(10, 12)
+    lambda <- c(0.6, 0.7)
+    u <- 1.5
+    set.seed(5)
+    got <- SPoRC:::draw_index_obs(true, NA, 2, d = d, lambda = lambda, u = u)
+    set.seed(5)
+    e <- stats::rnorm(2)
     expect_equal(got, true + d * (lambda * u + sqrt(1 - lambda^2) * e))
   })
 
@@ -123,7 +137,9 @@ test_that("draw_index_obs draws each error structure from the same seed formulae
 
 test_that("Setup_Sim_Fishing and Setup_Sim_Survey validate and store the mvn routines", {
 
-  n_yrs <- 4; n_ages <- 3; n_sims <- 2
+  n_yrs <- 4
+  n_ages <- 3
+  n_sims <- 2
   sim_list <- Setup_Sim_Dim(
     n_sims = n_sims,
     n_yrs = n_yrs,
@@ -138,7 +154,8 @@ test_that("Setup_Sim_Fishing and Setup_Sim_Survey validate and store the mvn rou
   sim_list <- Setup_Sim_Containers(sim_list)
   sel <- replicate(n_sims, array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1, 1)))
 
-  use <- array(0, dim = c(1, n_yrs, 1, 1)); use[1, 1:3, 1, 1] <- 1
+  use <- array(0, dim = c(1, n_yrs, 1, 1))
+  use[1, 1:3, 1, 1] <- 1
   S <- diag(3) * 4
 
   test_that("the lognormal default stores zero codes and no factor routines", {
@@ -226,7 +243,9 @@ index_error_om <- local({
     key <- paste(SrvIdx_LikeType %||% "default", drop_new_fields, seed, sep = "_")
     if(!is.null(cached[[key]])) return(cached[[key]])
 
-    n_yrs <- 15; n_ages <- 6; n_sims <- 2
+    n_yrs <- 15
+    n_ages <- 6
+    n_sims <- 2
     sim_list <- Setup_Sim_Dim(
       n_sims = n_sims,
       n_yrs = n_yrs,
@@ -311,10 +330,12 @@ test_that("a simulation list without the new fields reproduces the lognormal dra
 test_that("an mvn survey fleet draws from the covariance with a shared factor per replicate", {
 
   n_yrs <- 15
-  use <- array(0, dim = c(1, n_yrs, 1, 1)); use[1, , 1, 1] <- 1
+  use <- array(0, dim = c(1, n_yrs, 1, 1))
+  use[1, , 1, 1] <- 1
   lambda <- rep(0.9, n_yrs)
   d <- seq(20, 40, length.out = n_yrs)
-  R <- outer(lambda, lambda); diag(R) <- 1
+  R <- outer(lambda, lambda)
+  diag(R) <- 1
   S <- outer(d, d) * R
 
   om <- index_error_om(SrvIdx_LikeType = "mvn", SrvIdx_Cov = list(S), UseSrvIdx = use)
@@ -342,7 +363,8 @@ test_that("the population-specific index blocks honor the fleet's LikeType", {
 
   om <- index_error_om()
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = om$n_years, sim = 1)
-  n_yrs <- om$n_years; n_ages <- om$n_ages
+  n_yrs <- om$n_years
+  n_ages <- om$n_ages
 
   build_input <- function(SrvIdx_LikeType = "lognormal", SrvIdx_Cov = NULL) {
     input_list <- Setup_Mod_Dim(
@@ -505,8 +527,10 @@ test_that("the population-specific index blocks honor the fleet's LikeType", {
 
   test_that("an mvn fleet keeps its population data source lognormal and its regional series joint", {
     n_obs <- sum(sim_data$UseSrvIdx == 1)
-    lambda <- rep(0.8, n_obs); d <- 0.2 * obs_reg
-    R <- outer(lambda, lambda); diag(R) <- 1
+    lambda <- rep(0.8, n_obs)
+    d <- 0.2 * obs_reg
+    R <- outer(lambda, lambda)
+    diag(R) <- 1
     S <- outer(d, d) * R
 
     m <- report_of(build_input("mvn", SrvIdx_Cov = list(S)))

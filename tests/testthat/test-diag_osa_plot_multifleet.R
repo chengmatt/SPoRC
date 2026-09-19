@@ -39,8 +39,14 @@ test_that("plot_resids() facets by fleet for every comp_type when multiple fleet
 test_that("get_osa(model = ...) + plot_resids() work for a multi-fleet, multi-sex, multi-region model", {
 
   set.seed(42)
-  n_yrs <- 40; n_regions <- 2; n_sexes <- 2; n_fish_fleets <- 2; n_srv_fleets <- 2
-  n_ages <- 8; n_pop <- 1; n_seas <- 1
+  n_yrs <- 40
+  n_regions <- 2
+  n_sexes <- 2
+  n_fish_fleets <- 2
+  n_srv_fleets <- 2
+  n_ages <- 8
+  n_pop <- 1
+  n_seas <- 1
 
   sim_list <- Setup_Sim_Dim(
     n_sims = 1,

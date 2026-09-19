@@ -123,8 +123,8 @@ osa_pbinom <- function(x, n, prob) {
 #' @return Scalar (log-)density contribution.
 #' @keywords internal
 dmultinom_osa <- function(xobs, p, log = TRUE) {
-  "[<-" <- RTMB::ADoverload("[<-")
-  "c"   <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c"   <- RTMB::ADoverload("c") # nolint: object_usage_linter.
 
   x    <- osa_extract_x(xobs)
   kk   <- osa_extract_keep(xobs, length(p))
@@ -166,7 +166,7 @@ dmultinom_osa <- function(xobs, p, log = TRUE) {
 #' @return Scalar log-density.
 #' @keywords internal
 ddirmult2 <- function(obs2, alpha2) {
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   N  <- sum(obs2)
   A0 <- sum(alpha2)
   lgamma(N + 1) - sum(lgamma(obs2 + 1)) +
@@ -218,7 +218,7 @@ osa_pbetabinom <- function(x, N, alpha, beta) {
 #' @return Scalar (log-)density contribution.
 #' @keywords internal
 ddirmult_osa <- function(xobs, alpha, log = TRUE) {
-  "[<-" <- RTMB::ADoverload("[<-")
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
   "c"   <- RTMB::ADoverload("c")
 
   obs  <- osa_extract_x(xobs)

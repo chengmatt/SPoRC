@@ -9,7 +9,8 @@ library(testthat)
 
 test_that("deviation slots beyond a fleet's selectivity form stay unmapped", {
 
-  n_yrs <- 6; n_ages <- 8
+  n_yrs <- 6
+  n_ages <- 8
 
   input_list <- Setup_Mod_Dim(
     years = 1:n_yrs,

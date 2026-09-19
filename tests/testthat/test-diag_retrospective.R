@@ -737,7 +737,8 @@ test_that("do_retrospective() with return_models = TRUE returns both the data.fr
   skip_if_not_installed("dplyr")
 
   inp <- make_minimal_retro_inputs(n_yrs = 5)
-  log_env <- new.env(); log_env$calls <- list()
+  log_env <- new.env()
+  log_env$calls <- list()
   local_mocked_bindings(fit_model = make_mock_fit_model(log_env, n_pop = 1, n_regions = 1))
 
   result <- do_retrospective(
@@ -765,7 +766,8 @@ test_that("do_retrospective() with do_sdrep = TRUE attaches pdHess and max_grad 
   skip_if_not_installed("RTMB")
 
   inp <- make_minimal_retro_inputs(n_yrs = 4)
-  log_env <- new.env(); log_env$calls <- list()
+  log_env <- new.env()
+  log_env$calls <- list()
   local_mocked_bindings(fit_model = make_mock_fit_model(log_env, n_pop = 1, n_regions = 1))
   local_mocked_bindings(
     sdreport = function(obj) list(pdHess = TRUE, gradient.fixed = c(0.001, -0.0005)),
@@ -794,8 +796,10 @@ test_that("do_retrospective() with do_francis = TRUE calls run_francis() instead
   skip_if_not_installed("dplyr")
 
   inp <- make_minimal_retro_inputs(n_yrs = 5)
-  fit_log <- new.env(); fit_log$calls <- list()
-  francis_log <- new.env(); francis_log$calls <- list()
+  fit_log <- new.env()
+  fit_log$calls <- list()
+  francis_log <- new.env()
+  francis_log$calls <- list()
 
   local_mocked_bindings(
     fit_model    = make_mock_fit_model(fit_log, n_pop = 1, n_regions = 1),
@@ -826,7 +830,8 @@ test_that("do_retrospective() zeros the correct lagged columns of UseFishAgeComp
   skip_if_not_installed("dplyr")
 
   inp <- make_minimal_retro_inputs(n_yrs = 6)
-  log_env <- new.env(); log_env$calls <- list()
+  log_env <- new.env()
+  log_env$calls <- list()
   local_mocked_bindings(fit_model = make_mock_fit_model(log_env, n_pop = 1, n_regions = 1))
 
   fishage_lag <- array(2, dim = c(1, 1)) # [region, fleet] lag of 2 years

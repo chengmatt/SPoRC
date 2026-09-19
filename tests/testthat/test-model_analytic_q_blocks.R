@@ -29,7 +29,8 @@ test_that("two blocks are solved from their own observations only", {
   obs <- exp(rnorm(n_yrs, log(10), 0.2))
   pred <- exp(rnorm(n_yrs, log(20), 0.2))
   blk <- rep(1:2, each = 6)
-  a <- 1:6; b <- 7:12
+  a <- 1:6
+  b <- 7:12
 
   arith <- SPoRC:::get_blocked_analytic_q(1, obs, pred, 1:n_yrs, blk, 2)
   geo <- SPoRC:::get_blocked_analytic_q(2, obs, pred, 1:n_yrs, blk, 2)

@@ -76,6 +76,8 @@ test_that("sigmaR slots without recruits stay off under natal homing", {
   m <- array(as.integer(SPoRC:::do_sigmaR_mapping(fake, "est_all")$map$ln_sigmaR),
              dim = c(2, 2, 3))
   # each population keeps its natal slot and nothing else
-  expect_true(all(!is.na(m[, 1, 1])) && all(is.na(m[, 1, 2:3])))
-  expect_true(all(!is.na(m[, 2, 2])) && all(is.na(m[, 2, c(1, 3)])))
+  expect_true(all(!is.na(m[, 1, 1])))
+  expect_true(all(is.na(m[, 1, 2:3])))
+  expect_true(all(!is.na(m[, 2, 2])))
+  expect_true(all(is.na(m[, 2, c(1, 3)])))
 })

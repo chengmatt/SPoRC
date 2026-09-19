@@ -18,7 +18,8 @@ build_aa <- function(
   fish_t = NULL,
   ...
 ) {
-  yrs <- seq_len(n_yrs); ages <- seq_len(n_ages)
+  yrs <- seq_len(n_yrs)
+  ages <- seq_len(n_ages)
   d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
   caa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
 
@@ -144,7 +145,9 @@ build_aa <- function(
 rep_of <- function(il) fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep
 
 test_that("get_at_age_nLL matches dnorm when ages are independent", {
-  obs <- log(c(100, 200, 300)); pred <- log(c(110, 190, 310)); sig <- c(0.2, 0.3, 0.4)
+  obs <- log(c(100, 200, 300))
+  pred <- log(c(110, 190, 310))
+  sig <- c(0.2, 0.3, 0.4)
   expect_equal(get_at_age_nLL(obs, pred, sig, corr_type = 0),
                -stats::dnorm(obs, pred, sig, log = TRUE))
   # a single age has no correlation to describe, so AR falls back to independent
@@ -153,7 +156,9 @@ test_that("get_at_age_nLL matches dnorm when ages are independent", {
 })
 
 test_that("an AR(1) across ages reduces to independence at rho zero", {
-  obs <- log(c(100, 200, 300)); pred <- log(c(110, 190, 310)); sig <- c(0.2, 0.3, 0.4)
+  obs <- log(c(100, 200, 300))
+  pred <- log(c(110, 190, 310))
+  sig <- c(0.2, 0.3, 0.4)
   ar0 <- get_at_age_nLL(obs, pred, sig, corr_type = 1, rho = 0)
   id  <- get_at_age_nLL(obs, pred, sig, corr_type = 0)
   # the correlated form puts the whole cell on its first age, so compare totals
@@ -174,7 +179,8 @@ test_that("catch at age reaches the likelihood and is finite", {
 })
 
 test_that("a fleet cannot fit both aggregated catch and catch at age", {
-  n_yrs <- 20; n_ages <- 5
+  n_yrs <- 20
+  n_ages <- 5
   expect_error(
     build_aa(),
     NA) # the helper turns one off, so the default builds cleanly
@@ -221,7 +227,8 @@ test_that("the key matrix couples, excludes and refuses what it cannot identify"
   # by age group
   il <- build_aa(sigmaCAA_key = array(c(1, 1, 2, 2, 2), dim = c(n_ages, 1, 1)))
   m <- as.integer(il$map$ln_sigmaCAA)
-  expect_equal(m[1], m[2]); expect_equal(m[3], m[5])
+  expect_equal(m[1], m[2])
+  expect_equal(m[3], m[5])
   expect_equal(length(unique(stats::na.omit(m))), 2)
 
   # NA holds an age out
@@ -241,7 +248,8 @@ test_that("an at-age variance with too few observations is refused", {
 })
 
 test_that("discards at age have their own parameter, keyed independently", {
-  n_yrs <- 20; n_ages <- 5
+  n_yrs <- 20
+  n_ages <- 5
   # keyed differently from the retained data source, so the two cannot be sharing
   il <- build_aa(ObsDiscardAA = array(50, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
                  UseDiscardAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
@@ -258,7 +266,8 @@ test_that("an observed discard the model says is impossible is not silently abso
   # this toy model has no discarding, so predicted discards at age are exactly
   # zero. Observing discards against that is infinitely unlikely and should read
   # as such rather than being quietly finite.
-  n_yrs <- 20; n_ages <- 5
+  n_yrs <- 20
+  n_ages <- 5
   il <- build_aa(ObsDiscardAA = array(50, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
                  UseDiscardAA = array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
                  discard_units = "biom")
@@ -299,7 +308,8 @@ test_that("an input list built before at-age observations existed still runs", {
               "AgeObsCorr")) il$data[[quant_name]] <- NULL
   for(quant_name in c("ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaSrvIdxAA",
               "trans_rho")) {
-    il$par[[quant_name]] <- NULL; il$map[[quant_name]] <- NULL
+    il$par[[quant_name]] <- NULL
+    il$map[[quant_name]] <- NULL
   }
   obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
   expect_true(is.finite(obj$rep$jnLL))
@@ -311,7 +321,8 @@ test_that("the at-age and aggregated forms agree where the two say the same thin
   # observed age. There the total IS that age, so the two likelihoods must agree
   # exactly, which is what says the at-age path reads the same prediction and
   # applies the same density as the path it is standing beside.
-  n_yrs <- 20; n_ages <- 5
+  n_yrs <- 20
+  n_ages <- 5
   one_age <- 3
 
   # numbers-at-age prediction for the fleet, taken from a run with neither
@@ -341,7 +352,8 @@ test_that("the at-age and aggregated forms agree where the two say the same thin
     ln_sigmaCAA = array(log(sig), dim = c(n_ages, 1, 1))
   )
 
-  ragg <- rep_of(agg); raa <- rep_of(aa)
+  ragg <- rep_of(agg)
+  raa <- rep_of(aa)
 
   # the aggregated total is the sum over ages, so the two only match when the
   # fleet catches one age; compare the density each places on the same numbers

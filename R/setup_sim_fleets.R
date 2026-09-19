@@ -1250,8 +1250,8 @@ Setup_Sim_Survey <- function(sim_list,
   SrvLenComps_Type <- convert_to_numeric(SrvLenComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   SrvAgeComps_pop_Type <- convert_to_numeric(SrvAgeComps_pop_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   SrvLenComps_pop_Type <- convert_to_numeric(SrvLenComps_pop_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
-  comp_srvage_pop_like <- convert_to_numeric(comp_srvage_pop_like, list( Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
-  comp_srvlen_pop_like <- convert_to_numeric(comp_srvlen_pop_like, list( Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
+  comp_srvage_pop_like <- convert_to_numeric(comp_srvage_pop_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
+  comp_srvlen_pop_like <- convert_to_numeric(comp_srvlen_pop_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
 
   # Input Validation --------------------------------------------------------
   # Validate dimensions of all input parameters

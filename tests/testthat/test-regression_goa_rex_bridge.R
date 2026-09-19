@@ -108,8 +108,11 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
   # constants, the main deviations' (1 - b/2) log(sigma) adjustment, and one log(sigma)
   # per initial age, so the crosswalk subtracts exactly those. A shared deviation has
   # to be counted once for this to close; counting it per region or per sex fails it.
-  sig <- dat$rec$sigmaR; n_main <- length(main_yrs); n_early <- length(early_yrs)
-  b_main <- as.vector(r$bias_ramp)[seq_len(n_main)]; b_early <- as.vector(r$init_bias_ramp)[seq_len(n_early)]
+  sig <- dat$rec$sigmaR
+  n_main <- length(main_yrs)
+  n_early <- length(early_yrs)
+  b_main <- as.vector(r$bias_ramp)[seq_len(n_main)]
+  b_early <- as.vector(r$init_bias_ramp)[seq_len(n_early)]
   rec_net <- sum(r$Rec_nLL) + sum(r$Init_Rec_nLL) - (n_main + n_early) * 0.5 * log(2 * pi) +
     (0.5 * sum(b_main) + sum(b_early) - n_early) * log(sig)
   expect_equal(rec_net, dat$ss3$likelihoods["Recruitment", "values"], tolerance = 1e-4)

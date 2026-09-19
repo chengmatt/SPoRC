@@ -6,7 +6,9 @@
 library(SPoRC)
 library(testthat)
 
-n_yrs <- 4; n_ages <- 6; n_lens <- 8
+n_yrs <- 4
+n_ages <- 6
+n_lens <- 8
 lens <- seq(10, 45, by = 5)
 
 # two hand-built keys: fleet 1 mass concentrated in the short bins, fleet 2 in
@@ -180,7 +182,8 @@ test_that("SizeAgeTrans_fish requires growth_model = 'none' and the right dimens
   )
 
   ok_shape <- array(0, dim = c(1, 1, n_yrs, 1, n_lens, n_ages, 1, 2))
-  ok_shape[, , , , , , , 1] <- mk_sat(key_short); ok_shape[, , , , , , , 2] <- mk_sat(key_long)
+  ok_shape[, , , , , , , 1] <- mk_sat(key_short)
+  ok_shape[, , , , , , , 2] <- mk_sat(key_long)
   bad_dim <- ok_shape[, , 1:2, , , , , , drop = FALSE] # wrong year count
   expect_error(build_input(sat_fish = bad_dim), "SizeAgeTrans_fish")
 })

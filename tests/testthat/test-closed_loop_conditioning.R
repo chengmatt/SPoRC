@@ -89,7 +89,8 @@ test_that("projected years hold the terminal year forward", {
   # last year. A projection that instead repeated the first year, or averaged, or
   # left zeros, changes what the management procedure is tested against.
   cl <- conditioned_loop()
-  NH <- n_hist(); CL <- closed_loop_cfg$closed_loop_yrs
+  NH <- n_hist()
+  CL <- closed_loop_cfg$closed_loop_yrs
 
   for(quant_name in c("WAA", "MatAA", "natmort", "WAA_fish")) {
     expect_equal(as.vector(cl_slice(cl[[quant_name]], (NH + 1):(NH + CL), 1)),
@@ -258,7 +259,8 @@ test_that("at-age observation flags are reused, not zeroed", {
   # the terminal year observed.
   for(d in aa_dims) {
     out <- run_at_age_loop(d$nr, d$nx)
-    NY <- out$m$n_yrs; CL <- out$closed_loop_yrs
+    NY <- out$m$n_yrs
+    CL <- out$closed_loop_yrs
     u <- out$cl$UseCatchAA
 
     per_year <- d$nr * out$m$n_ages * d$nx
@@ -386,11 +388,14 @@ test_that("both simulation drivers produce the same operating model", {
   # Simulate_Pop_Static runs its own loop; the closed loop drives run_annual_cycle directly. The
   # innovations are drawn once per replicate in the annual cycle so that both paths reach them,
   # and at the same point in the random number data source so the two remain comparable.
-  b <- body(naaom_make_om); b[[length(b)]] <- quote(sim_list)
-  make_list <- naaom_make_om; body(make_list) <- b
+  b <- body(naaom_make_om)
+  b[[length(b)]] <- quote(sim_list)
+  make_list <- naaom_make_om
+  body(make_list) <- b
   sl <- make_list(NAA_re = "2dar1", sigmaNAA = 0.25)
 
-  set.seed(1); static <- Simulate_Pop_Static(sim_list = sl)
+  set.seed(1)
+  static <- Simulate_Pop_Static(sim_list = sl)
   set.seed(1)
   sim_env <- Setup_sim_env(sl)
   for(y in 1:sim_env$n_yrs) run_annual_cycle(y = y, sim = 1, sim_env = sim_env)

@@ -52,8 +52,8 @@
 #' @import RTMB
 build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   n_regions <- length(Z)
 
@@ -87,8 +87,8 @@ build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0, exp
 #' @import RTMB
 advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   if(move_timing == 0) {
     as.vector(t(N) %*% Move) * exp(-Z)
@@ -127,8 +127,8 @@ advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_ns
 #' @import RTMB
 spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   if(move_timing == 0) {
     as.vector(t(N) %*% Move) * exp(-t_spawn * Z)
@@ -176,8 +176,8 @@ spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing 
 #' @import RTMB
 integrate_seas_abundance <- function(N, Z, Q, dur = 1, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   as.vector(seas_operator_and_integral(Z, Q, dur, expm_nsub)$Integral %*% N)
 }
@@ -204,8 +204,8 @@ integrate_seas_abundance <- function(N, Z, Q, dur = 1, expm_nsub = 0) {
 #' @import RTMB
 catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   if(move_timing == 2) {
     F_landed * integrate_seas_abundance(N, Z, Q, dur, expm_nsub)
@@ -247,7 +247,7 @@ catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 
 #' @import RTMB
 seas_operator_and_integral <- function(Z, Q, dur = 1, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_regions <- length(Z)
@@ -299,7 +299,7 @@ seas_operator_and_integral <- function(Z, Q, dur = 1, expm_nsub = 0) {
 #' @import RTMB
 survey_state <- function(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_regions <- length(Z)

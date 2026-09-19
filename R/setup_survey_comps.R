@@ -455,7 +455,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        ...
                                        ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_SrvIdx_and_Comps <- mget(names(formals()))[-1]
 
@@ -656,7 +656,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
 
   # Survey Index Options ----------------------------------------------------
 
-  srv_idx_type_vals <- array(NA, dim = c( input_list$data$n_srv_fleets))
+  srv_idx_type_vals <- array(NA, dim = c(input_list$data$n_srv_fleets))
   for(f in 1:input_list$data$n_srv_fleets) {
     if(srv_idx_type[f] == 'biom') srv_idx_type_vals[f] <- 1 # biomass
     if(srv_idx_type[f] == 'abd') srv_idx_type_vals[f] <- 0 # abundance
@@ -802,7 +802,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   if(is.null(ISS_SrvAgeComps)) {
     collect_message("No ISS is specified for SrvAgeComps. ISS weighting is calculated by summing up values from ObsSrvAgeComps each year")
     ISS_SrvAgeComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_srv_fleets))
-    for(y in 1:length(input_list$data$years)) {
+    for(y in seq_along(input_list$data$years)) {
       for(f in 1:input_list$data$n_srv_fleets) {
         for(seas in 1:input_list$data$n_seas) {
           # if aggregated across sexes and regions (0)
@@ -820,7 +820,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   if(is.null(ISS_SrvLenComps)) {
     collect_message("No ISS is specified for SrvLenComps. ISS weighting is calculated by summing up values from ObsSrvLenComps each year")
     ISS_SrvLenComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_srv_fleets))
-    for(y in 1:length(input_list$data$years)) {
+    for(y in seq_along(input_list$data$years)) {
       for(f in 1:input_list$data$n_srv_fleets) {
         for(seas in 1:input_list$data$n_seas) {
           # if aggregated across sexes and regions (0)
@@ -839,7 +839,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     collect_message("No ISS is specified for pop_SrvAgeComps. ISS weighting is calculated by summing up values from ObsSrvAgeComps_pop each year")
     ISS_SrvAgeComps_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_srv_fleets))
     for(p in 1:input_list$data$n_pop) {
-      for(y in 1:length(input_list$data$years)) {
+      for(y in seq_along(input_list$data$years)) {
         for(f in 1:input_list$data$n_srv_fleets) {
           for(seas in 1:input_list$data$n_seas) {
             # if aggregated across sexes and regions (0) or joint across sexes
@@ -859,7 +859,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
     collect_message("No ISS is specified for pop_SrvLenComps. ISS weighting is calculated by summing up values from ObsSrvLenComps_pop each year")
     ISS_SrvLenComps_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_srv_fleets))
     for(p in 1:input_list$data$n_pop) {
-      for(y in 1:length(input_list$data$years)) {
+      for(y in seq_along(input_list$data$years)) {
         for(f in 1:input_list$data$n_srv_fleets) {
           for(seas in 1:input_list$data$n_seas) {
             # if aggregated across sexes and regions (0)

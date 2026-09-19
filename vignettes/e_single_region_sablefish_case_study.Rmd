@@ -70,8 +70,8 @@ vector runs `1:65` rather than `1960:2024`.
 
 ```{r Setup Model Dimensions, message = FALSE}
 input_list <- Setup_Mod_Dim(
-  years = 1:length(dat$years),      # 1960-2024
-  ages = 1:length(dat$ages),        # ages 2-31
+  years = seq_along(dat$years),      # 1960-2024
+  ages = seq_along(dat$ages),        # ages 2-31
   lens = seq(41, 99, 2),            # length bins
   n_regions = 1,
   n_sexes = dat$n_sexes,            # 1 = female, 2 = male
@@ -241,10 +241,10 @@ input_list <- Setup_Mod_Catch_and_F(
   sigmaF_spec = "fix",
   # sigma = 1/sqrt(2) makes 1/(2 sigma^2) = 1, so the Gaussian reduces to the
   # assessment's unweighted norm2 and its lambdas transfer directly.
-  ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, n_yrs,
+  ln_sigmaC = array(log(sqrt(1 / 2)), dim = c(input_list$data$n_regions, n_yrs,
                                             input_list$data$n_seas,
                                             input_list$data$n_fish_fleets)),
-  ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions,
+  ln_sigmaF = array(log(sqrt(1 / 2)), dim = c(input_list$data$n_regions,
                                             input_list$data$n_seas,
                                             input_list$data$n_fish_fleets))
 )

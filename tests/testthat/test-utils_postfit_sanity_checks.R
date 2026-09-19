@@ -171,7 +171,7 @@ test_that("marg_AIC scales the penalty with the number of parameters", {
 test_that("get_optim_param_list fills a mapped vector parameter", {
   parameters <- list(ln_M = c(0, 0))
   mapping <- list(ln_M = factor(c(1, 2)))
-  sd_rep <- list(par.fixed = c(ln_M = 0.1, ln_M = 0.2), par.random = NULL)
+  sd_rep <- list(par.fixed = c(ln_M = 0.1, ln_M = 0.2), par.random = NULL) # nolint: duplicate_argument_linter.
 
   out <- SPoRC:::get_optim_param_list(parameters, mapping, sd_rep, random = NULL)
   expect_equal(unname(out$ln_M), c(0.1, 0.2))
@@ -179,7 +179,7 @@ test_that("get_optim_param_list fills a mapped vector parameter", {
 
 test_that("get_optim_param_list fills an unmapped array parameter", {
   parameters <- list(ln_q = matrix(0, nrow = 2, ncol = 2))
-  sd_rep <- list(par.fixed = c(ln_q = 1, ln_q = 2, ln_q = 3, ln_q = 4),
+  sd_rep <- list(par.fixed = c(ln_q = 1, ln_q = 2, ln_q = 3, ln_q = 4), # nolint: duplicate_argument_linter.
                  par.random = NULL)
 
   out <- SPoRC:::get_optim_param_list(parameters, list(), sd_rep, random = NULL)
@@ -203,7 +203,7 @@ test_that("get_optim_param_list shares one estimate across mapped-together eleme
   # Two elements mapped to the same level are a single estimated parameter.
   parameters <- list(ln_M = c(0, 0, 0))
   mapping <- list(ln_M = factor(c(1, 1, 2)))
-  sd_rep <- list(par.fixed = c(ln_M = 0.3, ln_M = 0.8), par.random = NULL)
+  sd_rep <- list(par.fixed = c(ln_M = 0.3, ln_M = 0.8), par.random = NULL) # nolint: duplicate_argument_linter.
 
   out <- SPoRC:::get_optim_param_list(parameters, mapping, sd_rep, random = NULL)
   expect_equal(unname(out$ln_M), c(0.3, 0.3, 0.8))
@@ -213,7 +213,7 @@ test_that("get_optim_param_list sources random effects from par.random", {
   parameters <- list(ln_rec_devs = c(0, 0))
   mapping <- list(ln_rec_devs = factor(c(1, 2)))
   sd_rep <- list(par.fixed = c(ln_M = 0.1),
-                 par.random = c(ln_rec_devs = -0.4, ln_rec_devs = 0.6))
+                 par.random = c(ln_rec_devs = -0.4, ln_rec_devs = 0.6)) # nolint: duplicate_argument_linter.
 
   out <- SPoRC:::get_optim_param_list(parameters, mapping, sd_rep,
                                       random = "ln_rec_devs")
@@ -223,7 +223,7 @@ test_that("get_optim_param_list sources random effects from par.random", {
 test_that("get_optim_param_list leaves parameters absent from the fit untouched", {
   parameters <- list(ln_M = c(0, 0), ln_unused = c(5, 5))
   mapping <- list(ln_M = factor(c(1, 2)))
-  sd_rep <- list(par.fixed = c(ln_M = 0.1, ln_M = 0.2), par.random = NULL)
+  sd_rep <- list(par.fixed = c(ln_M = 0.1, ln_M = 0.2), par.random = NULL) # nolint: duplicate_argument_linter.
 
   out <- SPoRC:::get_optim_param_list(parameters, mapping, sd_rep, random = NULL)
   expect_equal(out$ln_unused, c(5, 5))

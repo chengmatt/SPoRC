@@ -155,7 +155,8 @@ test_that("the multinomial composition likelihood matches the documented form", 
   #
   # The sweep test setup is used rather than the collapse one because it fits
   # compositions; the collapse test setup switches every data source off.
-  n_yrs <- 8; n_ages <- 5
+  n_yrs <- 8
+  n_ages <- 5
   il <- sweep_input(dims = list(
     n_regions = 1,
     n_sexes = 1,
@@ -169,7 +170,8 @@ test_that("the multinomial composition likelihood matches the documented form", 
   set.seed(42)
   obs <- array(0, dim = c(1, n_yrs, 1, n_ages, 1, 1))
   for(y in seq_len(n_yrs)) obs[1, y, 1, , 1, 1] <- {
-    w <- stats::runif(n_ages, 0.5, 2); w / sum(w)
+    w <- stats::runif(n_ages, 0.5, 2)
+    w / sum(w)
   }
   il$data$ObsFishAgeComps <- obs
   rep <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep

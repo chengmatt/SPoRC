@@ -133,7 +133,9 @@ call_comp <- function(Obs, Exp, ISS, ln_theta, corr, comp_type, like_type,
 
 test_that("split by region and sex gives each cell its own density", {
 
-  n_regions <- 2; n_sexes <- 2; n_bins <- 8
+  n_regions <- 2
+  n_sexes <- 2
+  n_bins <- 8
   Obs <- array(0, dim = c(n_regions, n_bins, n_sexes))
   Exp <- array(0, dim = c(n_regions, n_bins, n_sexes))
   ISS <- array(0, dim = c(n_regions, n_sexes))
@@ -167,7 +169,9 @@ test_that("split by region and sex gives each cell its own density", {
 
 test_that("joint by sex puts the whole bin by sex stack in one density", {
 
-  n_regions <- 2; n_sexes <- 2; n_bins <- 6
+  n_regions <- 2
+  n_sexes <- 2
+  n_bins <- 6
   Obs <- array(0, dim = c(n_regions, n_bins, n_sexes))
   Exp <- array(0, dim = c(n_regions, n_bins, n_sexes))
   seed <- 10
@@ -201,7 +205,9 @@ test_that("joint by sex puts the whole bin by sex stack in one density", {
 
 test_that("aggregated over regions and sexes is one density on the pooled composition", {
 
-  n_regions <- 2; n_sexes <- 1; n_bins <- 7
+  n_regions <- 2
+  n_sexes <- 1
+  n_bins <- 7
   cell <- draw_comp(n_bins, sample_size = 120, seed = 21)
 
   Obs <- array(0, dim = c(n_regions, n_bins, n_sexes))
@@ -227,7 +233,9 @@ test_that("aggregated over regions and sexes is one density on the pooled compos
 
 test_that("length compositions take the same route as ages", {
 
-  n_regions <- 1; n_sexes <- 1; n_bins <- 9
+  n_regions <- 1
+  n_sexes <- 1
+  n_bins <- 9
   cell <- draw_comp(n_bins, sample_size = 45, seed = 31)
 
   Obs <- array(cell$obs, dim = c(n_regions, n_bins, n_sexes))
@@ -448,8 +456,11 @@ ref_miss0_2d <- function(obs, pred, ln_sigma, ISS, trans_rho_bin, trans_rho_sex,
 
 test_that("the separable bin by sex form matches the reference", {
 
-  n_bins <- 6; n_sexes <- 2
-  ln_theta <- -0.35; rho_bin <- 0.7; rho_sex <- 0.4
+  n_bins <- 6
+  n_sexes <- 2
+  ln_theta <- -0.35
+  rho_bin <- 0.7
+  rho_sex <- 0.4
 
   for(seed in 51:55) {
     set.seed(seed)
@@ -458,9 +469,13 @@ test_that("the separable bin by sex form matches the reference", {
     obs <- as.numeric(stats::rmultinom(1, 45, prob))
     obs <- obs / sum(obs)
 
-    Obs <- array(0, dim = c(1, n_bins, n_sexes)); Obs[1, , ] <- matrix(obs, n_bins, n_sexes)
-    Exp <- array(0, dim = c(1, n_bins, n_sexes)); Exp[1, , ] <- matrix(prob, n_bins, n_sexes)
-    corr <- array(0, dim = c(1, n_sexes, 3)); corr[1, 1, 1] <- rho_bin; corr[1, 1, 2] <- rho_sex
+    Obs <- array(0, dim = c(1, n_bins, n_sexes))
+    Obs[1, , ] <- matrix(obs, n_bins, n_sexes)
+    Exp <- array(0, dim = c(1, n_bins, n_sexes))
+    Exp[1, , ] <- matrix(prob, n_bins, n_sexes)
+    corr <- array(0, dim = c(1, n_sexes, 3))
+    corr[1, 1, 1] <- rho_bin
+    corr[1, 1, 2] <- rho_sex
 
     got <- SPoRC:::Get_Comp_Likelihoods(
       Exp = Exp, Obs = Obs, ISS = array(45, c(1, n_sexes)),
@@ -479,7 +494,8 @@ test_that("the separable bin by sex form matches the reference", {
 
 test_that("a zero sex correlation collapses the separable form onto the bin only form", {
 
-  n_bins <- 7; n_sexes <- 2
+  n_bins <- 7
+  n_sexes <- 2
   set.seed(61)
   prob <- stats::runif(n_bins * n_sexes, 0.05, 1)
   prob <- prob / sum(prob)
@@ -534,8 +550,10 @@ test_that("the aggregated iid logistic normal reads the same standard deviation 
   pred <- c(0.08, 0.18, 0.32, 0.22, 0.14, 0.06)
   ln_theta <- -0.4
 
-  Obs <- array(0, dim = c(1, n_bins, 1)); Obs[1, , 1] <- obs
-  Exp <- array(0, dim = c(1, n_bins, 1)); Exp[1, , 1] <- pred
+  Obs <- array(0, dim = c(1, n_bins, 1))
+  Obs[1, , 1] <- obs
+  Exp <- array(0, dim = c(1, n_bins, 1))
+  Exp[1, , 1] <- pred
 
   got <- SPoRC:::Get_Comp_Likelihoods(
     Exp = Exp, Obs = Obs, ISS = array(100, c(1, 1)), Wt_Mltnml = array(1, c(1, 1)),

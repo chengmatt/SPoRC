@@ -81,7 +81,6 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
   for(tc in 1:n_conv_tag_cohorts) {
 
     # set up tagging cohort indexing
-    tr = conv_tag_release_indicator[tc,1] # extract tag release region
     ty = conv_tag_release_indicator[tc,2] # extract tag release year
     tseas = conv_tag_release_indicator[tc,3] # extract tag release season
 
@@ -411,7 +410,10 @@ pack_tag_osa = function(family, like_type,
                   conv_tag_max_liberty, n_yrs, n_seas, conv_tag_mixing_period)
   if(is.null(grid) || nrow(grid) == 0) return(list(vec = NULL, grp_end = integer(0), lengths = integer(0), labels = NULL))
 
-  clean = list(); grp_end = integer(0); lengths = integer(0); pos = 0L
+  clean = list()
+  grp_end = integer(0)
+  lengths = integer(0)
+  pos = 0L
   label_rows = list()
 
   # one label row per element, mirroring the exact loop order used to build 'clean'
@@ -436,9 +438,13 @@ pack_tag_osa = function(family, like_type,
     )
   }
 
-  for(g in 1:nrow(grid)) {
-    tc = grid$tc[g]; ry = grid$ry[g]; rseas = grid$rseas[g]
-    tr = grid$tr[g]; ty = grid$ty[g]; tseas = grid$tseas[g]
+  for(g in seq_len(nrow(grid))) {
+    tc = grid$tc[g]
+    ry = grid$ry[g]
+    rseas = grid$rseas[g]
+    tr = grid$tr[g]
+    ty = grid$ty[g]
+    tseas = grid$tseas[g]
 
     if(family == "count") {
       # one cell per [f,p,r,a,s], mirroring get_conv_tag_likelihoods(). summing pools first would
@@ -450,10 +456,10 @@ pack_tag_osa = function(family, like_type,
             for(a in 1:n_age_pool) {
               for(s in 1:n_sex_pool) {
                 v = sum(obs_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
-                clean[[length(clean)+1]] = round(v)   # integer count for cdf
+                clean[[length(clean) + 1]] = round(v)   # integer count for cdf
                 pos = pos + 1L
                 if(return_labels) {
-                  label_rows[[length(label_rows)+1]] = tag_label_row(
+                  label_rows[[length(label_rows) + 1]] = tag_label_row(
                     fleet = f,
                     region = r,
                     pop_pool_i = p,
@@ -522,7 +528,7 @@ pack_tag_osa = function(family, like_type,
         prop  = prop / sum(prop)                  # renormalize after guard
         g_counts = round(prop * n_rel)
         if(return_labels) {
-          cell_labels[[length(cell_labels)+1]] = tag_label_row(
+          cell_labels[[length(cell_labels) + 1]] = tag_label_row(
             fleet = NA_integer_,
             region = NA_integer_,
             pop_pool_i = NA_integer_,
@@ -547,11 +553,11 @@ pack_tag_osa = function(family, like_type,
       }
 
       L = length(g_counts)
-      clean[[length(clean)+1]] = g_counts
+      clean[[length(clean) + 1]] = g_counts
       lengths = c(lengths, L)
       grp_end = c(grp_end, pos + L)               # determined bin = last element
       pos = pos + L
-      if(return_labels) label_rows[[length(label_rows)+1]] = do.call(rbind, cell_labels)
+      if(return_labels) label_rows[[length(label_rows) + 1]] = do.call(rbind, cell_labels)
     }
   }
 
@@ -629,8 +635,10 @@ eval_tag_osa = function(nLL_arr, tracked, family, like_type,
   d_recap = dim(pred_recap)[4:8]
 
   k = 1
-  for(g in 1:nrow(grid)) {
-    tc = grid$tc[g]; ry = grid$ry[g]; rseas = grid$rseas[g]
+  for(g in seq_len(nrow(grid))) {
+    tc = grid$tc[g]
+    ry = grid$ry[g]
+    rseas = grid$rseas[g]
 
     # this event's predicted recaptures, pooled by both branches below
     pred_ev = array(pred_recap[ry,rseas,tc,,,,,], dim = d_recap)

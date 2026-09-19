@@ -154,7 +154,11 @@ test_that("do_sigmaC_pop_mapping / do_sigmaD_pop_mapping correctly share across 
   # parameter. Both functions were rewritten to delegate to
   # build_shared_spec_map(), which does not have this bug.
 
-  n_pop <- 2; n_regions <- 2; n_years <- 1; n_seas <- 1; n_fish_fleets <- 1
+  n_pop <- 2
+  n_regions <- 2
+  n_years <- 1
+  n_seas <- 1
+  n_fish_fleets <- 1
   il <- list(
     data = list(
       n_pop = n_pop,
@@ -190,7 +194,9 @@ test_that("do_comp_theta_mapping / do_comp_corr_pars_mapping also serve survey c
   # regression-tests that the region_has_data guard (previously present only
   # for the non-pop SrvAge variant) is now applied consistently to SrvLen and
   # the pop variants too.
-  n_regions <- 2; n_srv_fleets <- 1; n_sexes <- 2
+  n_regions <- 2
+  n_srv_fleets <- 1
+  n_sexes <- 2
   comp_type_mat <- matrix(1, nrow = n_regions, ncol = n_srv_fleets)
   use_arr <- array(0, dim = c(n_regions, 1, 1, n_srv_fleets)) # [region, year, season, fleet]
   use_arr[1, , , ] <- 1
@@ -221,7 +227,11 @@ test_that("do_q_mapping estimates q when only population-specific index data is 
   # sigmaC_pop/sigmaD_pop one above, found while merging do_fish_q_mapping and
   # do_srv_q_mapping into do_q_mapping.
 
-  n_regions <- 1; n_years <- 1; n_seas <- 1; n_fish_fleets <- 1; n_pop <- 2
+  n_regions <- 1
+  n_years <- 1
+  n_seas <- 1
+  n_fish_fleets <- 1
+  n_pop <- 2
 
   il <- list(
     data = list(
@@ -247,7 +257,11 @@ test_that("do_q_mapping estimates q when only population-specific index data is 
 
 test_that("do_q_mapping fixes q when no index data (aggregate or pop-specific) is used at all", {
 
-  n_regions <- 1; n_years <- 1; n_seas <- 1; n_fish_fleets <- 1; n_pop <- 2
+  n_regions <- 1
+  n_years <- 1
+  n_seas <- 1
+  n_fish_fleets <- 1
+  n_pop <- 2
 
   il <- list(
     data = list(
@@ -273,7 +287,11 @@ test_that("do_q_mapping fixes q when no index data (aggregate or pop-specific) i
 
 test_that("do_q_mapping also serves survey catchability via prefix = 'srv'", {
 
-  n_regions <- 1; n_years <- 1; n_seas <- 1; n_srv_fleets <- 1; n_pop <- 1
+  n_regions <- 1
+  n_years <- 1
+  n_seas <- 1
+  n_srv_fleets <- 1
+  n_pop <- 1
 
   il <- list(
     data = list(
@@ -299,7 +317,10 @@ test_that("do_q_mapping also serves survey catchability via prefix = 'srv'", {
 
 test_that("do_sigma_dmr_mapping / do_dmr_mean_mapping / do_sigmaD_mapping match build_shared_spec_map", {
 
-  n_regions <- 2; n_years <- 2; n_seas <- 2; n_fish_fleets <- 2
+  n_regions <- 2
+  n_years <- 2
+  n_seas <- 2
+  n_fish_fleets <- 2
   il <- list(
     data = list(n_regions = n_regions, years = 1:n_years, n_seas = n_seas, n_fish_fleets = n_fish_fleets),
     par = list(

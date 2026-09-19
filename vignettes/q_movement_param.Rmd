@@ -23,12 +23,12 @@ The following demonstrations use the three region sablefish dataset as a basis (
 
 ```{r setup, message = FALSE, eval = FALSE}
 # Load in packages
-library(SPoRC) 
+library(SPoRC)
 data("three_rg_sable_data") # load in data
 
 # setup model dimensions
-input_list <- Setup_Mod_Dim(years = 1:length(three_rg_sable_data$years),
-                            ages = 1:length(three_rg_sable_data$ages),
+input_list <- Setup_Mod_Dim(years = seq_along(three_rg_sable_data$years),
+                            ages = seq_along(three_rg_sable_data$ages),
                             lens = seq(41,99,2),
                             n_regions = three_rg_sable_data$n_regions,
                             n_sexes = three_rg_sable_data$n_sexes,
@@ -162,9 +162,9 @@ adjacency <- as.matrix(igraph::as_adjacency_matrix(
 ctmc_data <- expand.grid(
   pop     = 1,
   regions = 1:three_rg_sable_data$n_regions,
-  years   = 1:length(three_rg_sable_data$years),
+  years   = seq_along(three_rg_sable_data$years),
   seas    = 1,
-  ages    = 1:length(three_rg_sable_data$ages),
+  ages    = seq_along(three_rg_sable_data$ages),
   sexes   = 1:three_rg_sable_data$n_sexes
 )
 ```

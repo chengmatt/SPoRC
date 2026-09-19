@@ -24,7 +24,11 @@ library(testthat)
 # exactly when Z is constant across regions, so a symmetric setup would pass at every timing
 # regardless of whether continuous movement were implemented at all.
 
-n_regions <- 2; n_ages <- 12; n_pop <- 1; n_sexes <- 1; n_fish_fleets <- 1
+n_regions <- 2
+n_ages <- 12
+n_pop <- 1
+n_sexes <- 1
+n_fish_fleets <- 1
 n_proj_yrs <- 150
 
 # CTMC generator in row convention (Q[from, to]), rows summing to zero
@@ -82,7 +86,8 @@ msy_vs_projection <- function(n_seas, move_timing) {
   )
 
   fit <- SPoRC:::optim_ref_pts(SPoRC:::global_Fmsy, data_list, list(log_Fmsy = log(0.1)))
-  Fmsy <- fit$rep$Fmsy; Req <- fit$rep$Req
+  Fmsy <- fit$rep$Fmsy
+  Req <- fit$rep$Req
 
   # Lay a season/age slice out over projection years, which sit in dimension 3
   lay <- function(v, dims) aperm(array(rep(as.vector(v), n_proj_yrs), dim = c(dims, n_proj_yrs)),
@@ -92,7 +97,8 @@ msy_vs_projection <- function(n_seas, move_timing) {
                                       dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes, n_proj_yrs)),
                                 c(1, 2, 3, 7, 4, 5, 6))
 
-  Movp <- array(0, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)); Mrtp <- Movp
+  Movp <- array(0, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes))
+  Mrtp <- Movp
   for(seas in 1:n_seas) for(a in 1:n_ages) {
     Movp[1,,,seas,a,1] <- Mov[,,seas,a]
     Mrtp[1,,,seas,a,1] <- Mrt[,,seas,a]
@@ -122,16 +128,16 @@ msy_vs_projection <- function(n_seas, move_timing) {
     terminal_F = array(rep(seas_w, each = n_regions), dim = c(n_regions, n_seas, n_fish_fleets)),
     dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),
     natmort = natmort,
-    WAA      = lay(array(rep(waa, each = n_pop*n_regions*n_seas),
+    WAA      = lay(array(rep(waa, each = n_pop * n_regions * n_seas),
                          dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)),
                    c(n_pop, n_regions, n_seas, n_ages, n_sexes)),
-    WAA_fish = lay(array(rep(waa, each = n_pop*n_regions*n_seas),
+    WAA_fish = lay(array(rep(waa, each = n_pop * n_regions * n_seas),
                          dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)),
                    c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)),
-    MatAA    = lay(array(rep(mat, each = n_pop*n_regions*n_seas),
+    MatAA    = lay(array(rep(mat, each = n_pop * n_regions * n_seas),
                          dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)),
                    c(n_pop, n_regions, n_seas, n_ages, n_sexes)),
-    fish_sel = lay(array(rep(sel, each = n_pop*n_regions*n_seas),
+    fish_sel = lay(array(rep(sel, each = n_pop * n_regions * n_seas),
                          dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)),
                    c(n_pop, n_regions, n_seas, n_ages, n_sexes, n_fish_fleets)),
     ret_sel  = array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)),

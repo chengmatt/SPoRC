@@ -38,11 +38,11 @@ In the following, we will demonstrate how priors can be specified for each of th
 Let us first load in any required packages, data we may use, and define model dimensions.
 
 ```{r setup}
-library(SPoRC) 
+library(SPoRC)
 data("sgl_rg_sable_data")
 
-input_list <- Setup_Mod_Dim(years = 1:length(sgl_rg_sable_data$years),
-                            ages = 1:length(sgl_rg_sable_data$ages),
+input_list <- Setup_Mod_Dim(years = seq_along(sgl_rg_sable_data$years),
+                            ages = seq_along(sgl_rg_sable_data$ages),
                             lens = seq(41, 99, 2),
                             n_regions = 1,
                             n_sexes = sgl_rg_sable_data$n_sexes,
@@ -90,7 +90,7 @@ steepness_prior
 To define natural mortality priors, we use the `Setup_Mod_Biologicals` function. Setting `Use_M_prior = 1` activates the prior, and a dataframe of values is provided via the `M_prior` argument. Each row corresponds to a specific combination of population, region, year, age, and sex blocks, along with their associated mean and standard deviation.
 
 ```{r}
-M_prior <- data.frame( 
+M_prior <- data.frame(
   popblk    = 1,
   regionblk = 1,
   yearblk   = 1,
@@ -254,8 +254,8 @@ Defining priors for movement, tag reporting rates, and recruitment proportions (
 ```{r}
 data(mlt_rg_sable_data)
 
-input_list <- Setup_Mod_Dim(years = 1:length(mlt_rg_sable_data$years),
-                            ages = 1:length(mlt_rg_sable_data$ages),
+input_list <- Setup_Mod_Dim(years = seq_along(mlt_rg_sable_data$years),
+                            ages = seq_along(mlt_rg_sable_data$ages),
                             lens = mlt_rg_sable_data$lens,
                             n_regions = mlt_rg_sable_data$n_regions,
                             n_sexes = mlt_rg_sable_data$n_sexes,

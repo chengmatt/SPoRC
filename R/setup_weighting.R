@@ -242,7 +242,7 @@ Setup_Mod_Weighting <- function(input_list,
 
                                 ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   if(input_list$store_config) input_list$config$Setup_Mod_Weighting <- mget(names(formals()))[-1]
 
   # A value still passed to the deprecated Setup_Mod_Biologicals arguments wins
@@ -336,10 +336,10 @@ Setup_Mod_Weighting <- function(input_list,
   input_list$data$Wt_Rec <- Wt_Rec
   input_list$data$Wt_Init_Rec <- Wt_Init_Rec
   input_list$data$Wt_F <- Wt_F
-  input_list$data$Wt_FishAgeComps<- Wt_FishAgeComps
-  input_list$data$Wt_SrvAgeComps<- Wt_SrvAgeComps
-  input_list$data$Wt_FishLenComps<- Wt_FishLenComps
-  input_list$data$Wt_SrvLenComps<- Wt_SrvLenComps
+  input_list$data$Wt_FishAgeComps <- Wt_FishAgeComps
+  input_list$data$Wt_SrvAgeComps <- Wt_SrvAgeComps
+  input_list$data$Wt_FishLenComps <- Wt_FishLenComps
+  input_list$data$Wt_SrvLenComps <- Wt_SrvLenComps
   input_list$data$Wt_FishAgeComps_pop <- Wt_FishAgeComps_pop
   input_list$data$Wt_SrvAgeComps_pop <- Wt_SrvAgeComps_pop
   input_list$data$Wt_FishLenComps_pop <- Wt_FishLenComps_pop

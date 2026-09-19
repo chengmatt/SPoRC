@@ -181,7 +181,7 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
 
                                        # whether to estiamte all fixed effects for survey catchability
                                        srv_q_spec = c("est_all", "est_all", "est_all"),
-                                       t_srv = array(0.5, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
+                                       t_srv = array(0.5, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets))
 
   )
 
@@ -249,8 +249,8 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
 
   data$ObsSrvIdx_SE <- data$ObsSrvIdx_SE / data$ObsSrvIdx
   data$ObsFishIdx_SE <- data$ObsFishIdx_SE / data$ObsFishIdx
-  parameters$ln_sigmaC[] <- log(sqrt(1/2))
-  parameters$ln_sigmaF[] <- log(sqrt(1/2))
+  parameters$ln_sigmaC[] <- log(sqrt(1 / 2))
+  parameters$ln_sigmaF[] <- log(sqrt(1 / 2))
 
   sabie_rtmb_model <- fit_model(data,
                                 parameters,
@@ -304,4 +304,3 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   expect_jnLL_decomposes(sabie_rtmb_model)
 
 })
-

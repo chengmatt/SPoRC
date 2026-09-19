@@ -16,7 +16,8 @@ build_at_age <- function(
   ...
 ) {
 
-  yrs <- seq_len(n_yrs); ages <- seq_len(n_ages)
+  yrs <- seq_len(n_yrs)
+  ages <- seq_len(n_ages)
   d1 <- c(1, n_regions, n_yrs, 1, n_ages, n_sexes)
   fl <- seq_len(n_fleets)
   n_obs_ages <- if(is.null(AgeingError)) n_ages else dim(AgeingError)[length(dim(AgeingError))] # compositions sit on these

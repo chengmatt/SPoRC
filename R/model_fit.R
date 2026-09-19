@@ -118,28 +118,28 @@ fit_model <- function(
     )
 
     # newton steps
-    try_improve <- tryCatch(expr =
-                              for(i in 1:newton_loops) {
-                                g = as.numeric(obj$gr(optim$par))
+    tryCatch(expr =
+               for(i in 1:newton_loops) {
+                 g = as.numeric(obj$gr(optim$par))
 
-                                # the tape gives the Hessian exactly in one call; optimHess
-                                # differences the gradient once per parameter
+                 # the tape gives the Hessian exactly in one call; optimHess
+                 # differences the gradient once per parameter
 
-                                if(is.null(random)) {
-                                  h = as.matrix(obj$he(optim$par)) # analytical hessian from obj
-                                } else {
-                                  h = stats::optimHess(optim$par, fn = obj$fn, gr = obj$gr)
-                                } # end if else for hessian source
+                 if(is.null(random)) {
+                   h = as.matrix(obj$he(optim$par)) # analytical hessian from obj
+                 } else {
+                   h = stats::optimHess(optim$par, fn = obj$fn, gr = obj$gr)
+                 } # end if else for hessian source
 
-                                # some second derivatives are undefined where the objective and
-                                # gradient still are, showing up as a non-finite Hessian
-                                if(!all(is.finite(h))) break
+                 # some second derivatives are undefined where the objective and
+                 # gradient still are, showing up as a non-finite Hessian
+                 if(!all(is.finite(h))) break
 
-                                new_par = optim$par - solve(h,g)
-                                optim$par = pmax(lower, pmin(upper, new_par)) # keep Newton step within bounds
-                                optim$objective = obj$fn(optim$par)
-                              }
-                            , error = function(e){e}, warning = function(w){w})
+                 new_par = optim$par - solve(h,g)
+                 optim$par = pmax(lower, pmin(upper, new_par)) # keep Newton step within bounds
+                 optim$objective = obj$fn(optim$par)
+               }
+             , error = function(e) {e}, warning = function(w) {w})
 
     # record bounds used alongside optim output
     optim$lower <- lower

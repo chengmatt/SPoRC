@@ -23,7 +23,8 @@ caal_cfg <- list(
 #'
 #' @keywords internal
 caal_alk <- function(len_lower, mean_laa, sd_laa) {
-  n_lens <- length(len_lower); n_ages <- length(mean_laa)
+  n_lens <- length(len_lower)
+  n_ages <- length(mean_laa)
   alk <- matrix(0, n_lens, n_ages)
   for(a in 1:n_ages) {
     cdf <- stats::pnorm((len_lower - mean_laa[a]) / sd_laa[a])
@@ -36,7 +37,10 @@ caal_alk <- function(len_lower, mean_laa, sd_laa) {
 
 # von Bertalanffy mean length at age with a constant CV, per sex
 caal_growth <- function(n_ages, n_sexes) {
-  linf <- c(60, 52)[1:n_sexes]; k <- c(0.30, 0.35)[1:n_sexes]; t0 <- -0.5; cv <- 0.10
+  linf <- c(60, 52)[1:n_sexes]
+  k <- c(0.30, 0.35)[1:n_sexes]
+  t0 <- -0.5
+  cv <- 0.10
   lapply(1:n_sexes, function(s) {
     mu <- linf[s] * (1 - exp(-k[s] * ((1:n_ages) - t0)))
     list(mean = mu, sd = cv * mu)
@@ -62,7 +66,9 @@ caal_make_om <- function(
   seed = 55
 ) {
 
-  n_yrs <- caal_cfg$n_yrs; n_ages <- caal_cfg$n_ages; n_lens <- caal_cfg$n_lens
+  n_yrs <- caal_cfg$n_yrs
+  n_ages <- caal_cfg$n_ages
+  n_lens <- caal_cfg$n_lens
   if(is.null(caal_bins)) caal_bins <- 1:n_lens
 
   sim_list <- Setup_Sim_Dim(
@@ -128,7 +134,8 @@ caal_make_om <- function(
     for(y in 1:n_yrs) for(i in 1:n_sims) sat[1,1,y,1,,,s,i] <- alk
   } # end s loop
 
-  waa <- 5 / (1 + exp(-3 * ((1:n_ages) - 3))); mat <- 1 / (1 + exp(-3 * ((1:n_ages) - 3)))
+  waa <- 5 / (1 + exp(-3 * ((1:n_ages) - 3)))
+  mat <- 1 / (1 + exp(-3 * ((1:n_ages) - 3)))
   biol6 <- function(val) array(rep(val, each = n_yrs), dim = c(1, 1, n_yrs, 1, n_ages, n_sexes))
   suppressWarnings(sim_list <- Setup_Sim_Biologicals(
     sim_list = sim_list,
@@ -173,7 +180,9 @@ caal_build_input <- function(
   n_sexes = 1
 ) {
 
-  n_yrs <- caal_cfg$n_yrs; n_ages <- caal_cfg$n_ages; n_lens <- caal_cfg$n_lens
+  n_yrs <- caal_cfg$n_yrs
+  n_ages <- caal_cfg$n_ages
+  n_lens <- caal_cfg$n_lens
   ct <- if(n_sexes == 1) "spltRspltS" else "spltRjntS"
 
   input_list <- Setup_Mod_Dim(

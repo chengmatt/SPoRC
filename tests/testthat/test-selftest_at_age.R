@@ -15,7 +15,8 @@ at_age_cfg <- list(n_yrs = 40, n_ages = 8, n_sims = 20, sigmaCAA = 0.25, waa = 1
 # operating model fitting catch at age on a single fishery fleet
 at_age_om <- function(seed = 321) {
 
-  n_yrs <- at_age_cfg$n_yrs; n_ages <- at_age_cfg$n_ages
+  n_yrs <- at_age_cfg$n_yrs
+  n_ages <- at_age_cfg$n_ages
 
   sim_list <- Setup_Sim_Dim(
     n_sims = 1,
@@ -105,8 +106,11 @@ test_that("the operating model draws catch at age with the error it was given", 
 # model starts from deterministic equilibrium.
 at_age_em <- function(om, data_source = "catch", extra_disc = NULL) {
 
-  n_yrs <- at_age_cfg$n_yrs; n_ages <- at_age_cfg$n_ages
-  yrs <- seq_len(n_yrs); ages <- seq_len(n_ages); d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
+  n_yrs <- at_age_cfg$n_yrs
+  n_ages <- at_age_cfg$n_ages
+  yrs <- seq_len(n_yrs)
+  ages <- seq_len(n_ages)
+  d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
   zero4 <- array(0, dim = c(1, n_yrs, 1, 1))
   aa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
 
@@ -335,7 +339,8 @@ test_that("one-step-ahead residuals work on every at-age data source", {
   il <- at_age_em(om, "catch")
   r0 <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep
 
-  n_yrs <- at_age_cfg$n_yrs; n_ages <- at_age_cfg$n_ages
+  n_yrs <- at_age_cfg$n_yrs
+  n_ages <- at_age_cfg$n_ages
   aa_dim <- c(1, n_yrs, 1, n_ages, 1, 1)
   # the operating model retains everything, so it produces no discards to fit;
   # the discard data source is covered by the declared-but-unused test above

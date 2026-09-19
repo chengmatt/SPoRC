@@ -336,7 +336,10 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
       for(k in 1:6) {
         if(!tab$est[k, b]) next
         id <- tab$src_id[k, b]
-        if(!id %in% seen) { seen[[length(seen) + 1]] <<- id; lev <<- lev + 1 }
+        if(!id %in% seen) {
+          seen[[length(seen) + 1]] <<- id
+          lev <<- lev + 1
+        }
         map[1, k, b, 1, f] <- match(id, seen) + 0
       } # end k loop
     } # end b loop
@@ -366,8 +369,14 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
     input_list$par$fish_fixed_sel_pars[1, 1, b, 2, 2] <- dat$sel_male$value[["peak"]]
     input_list$par$fish_fixed_sel_pars[1, 6, b, 2, 2] <- dat$sel_male$value[["final"]]
   } # end b loop
-  if(dat$sel_male$est[["peak"]]) { lev <- lev + 1; map_fish[1, 1, seq_len(n_blk2), 2, 2] <- lev }
-  if(dat$sel_male$est[["final"]]) { lev <- lev + 1; map_fish[1, 6, seq_len(n_blk2), 2, 2] <- lev }
+  if(dat$sel_male$est[["peak"]]) {
+    lev <- lev + 1
+    map_fish[1, 1, seq_len(n_blk2), 2, 2] <- lev
+  }
+  if(dat$sel_male$est[["final"]]) {
+    lev <- lev + 1
+    map_fish[1, 6, seq_len(n_blk2), 2, 2] <- lev
+  }
 
   input_list$par$ln_fishsel_sex_scale[] <- 0
   input_list$par$ln_fishsel_sex_scale[1, seq_len(n_blk2), 2, 2:3] <- log(A)

@@ -14,7 +14,10 @@ library(RTMB)
 
 test_that("sex offsets, the selectivity plateau, and per-sex initial deviations recover through the simulation", {
 
-  n_yrs <- 25; n_ages <- 6; n_sexes <- 2; n_sims <- 10
+  n_yrs <- 25
+  n_ages <- 6
+  n_sexes <- 2
+  n_sims <- 10
   waa <- 5 / (1 + exp(-3 * ((1:n_ages) - 3)))
   mat <- 1 / (1 + exp(-3 * ((1:n_ages) - 3)))
   f_ramp <- c(seq(0.05, 0.45, length.out = 15), seq(0.45, 0.15, length.out = 10))
@@ -23,15 +26,23 @@ test_that("sex offsets, the selectivity plateau, and per-sex initial deviations 
   # plateau from bin 4; survey male parameters are log offsets on the female's
   fish_scale_true <- -0.163
   srv_off_true <- c(-0.2, 0.25) # on ln_b50, ln_k
-  plat <- function(s) { s[5:n_ages] <- s[4]; s }
+  plat <- function(s) {
+    s[5:n_ages] <- s[4]
+    s
+  }
   logi <- function(b50, k) 1 / (1 + exp(-k * ((1:n_ages) - b50)))
-  fsel_f <- plat(logi(2.5, 2.0)); fsel_m <- plat(logi(2.9, 1.6)) * exp(fish_scale_true)
-  ssel_f <- logi(3.0, 1.5); ssel_m <- logi(3.0 * exp(srv_off_true[1]), 1.5 * exp(srv_off_true[2]))
+  fsel_f <- plat(logi(2.5, 2.0))
+  fsel_m <- plat(logi(2.9, 1.6)) * exp(fish_scale_true)
+  ssel_f <- logi(3.0, 1.5)
+  ssel_m <- logi(3.0 * exp(srv_off_true[1]), 1.5 * exp(srv_off_true[2]))
   init_devs_true <- cbind(c(0.25, -0.2, 0.15, -0.1, 0.05), c(-0.15, 0.25, -0.1, 0.2, -0.05))
 
   sel_arr <- function(f_curve, m_curve) {
     a <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes, 1))
-    for(y in 1:n_yrs) { a[1,1,y,1,,1,1] <- f_curve; a[1,1,y,1,,2,1] <- m_curve }
+    for(y in 1:n_yrs) {
+      a[1,1,y,1,,1,1] <- f_curve
+      a[1,1,y,1,,2,1] <- m_curve
+    }
     a
   }
 
@@ -68,7 +79,8 @@ test_that("sex offsets, the selectivity plateau, and per-sex initial deviations 
     for(s in 1:n_sexes) a[1,1,,1,,s] <- matrix(rep(val, each = n_yrs), n_yrs, n_ages)
     a
   }
-  waa_fleet <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes, 1)); waa_fleet[1,1,,1,,,1] <- biol6(waa)[1,1,,1,,]
+  waa_fleet <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes, 1))
+  waa_fleet[1,1,,1,,,1] <- biol6(waa)[1,1,,1,,]
   suppressWarnings(sim_list <- Setup_Sim_Biologicals(
     sim_list = sim_list,
     natmort_input = replicate(1, array(0.3, dim = c(1, 1, n_yrs, n_ages, n_sexes))),

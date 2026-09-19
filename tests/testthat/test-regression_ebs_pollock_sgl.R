@@ -321,11 +321,10 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     38013.6005
   )
 
-expect_equal(ebswp_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
-expect_equal(ebswp_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
-expect_true(ebswp_rtmb_model$sdrep$pdHess)
-expect_jnLL_decomposes(ebswp_rtmb_model)
+  expect_equal(ebswp_rtmb_model$rep$SSB[1,1,], ssb_expected_vec, tolerance = 1e-2)
+  expect_equal(ebswp_rtmb_model$rep$Rec[1,1,], rec_expected_vec, tolerance = 1e-2)
+  expect_true(ebswp_rtmb_model$sdrep$pdHess)
+  expect_jnLL_decomposes(ebswp_rtmb_model)
 
 
 })
-

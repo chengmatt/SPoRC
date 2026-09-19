@@ -72,7 +72,9 @@ naaseas_make_om <- function(
 ) {
 
   cfg <- naaseas_cfg
-  n_yrs <- cfg$n_yrs; n_ages <- cfg$n_ages; n_seas <- cfg$n_seas
+  n_yrs <- cfg$n_yrs
+  n_ages <- cfg$n_ages
+  n_seas <- cfg$n_seas
 
   sim_list <- Setup_Sim_Dim(
     n_sims = 1,
@@ -148,7 +150,9 @@ naaseas_make_om <- function(
 naaseas_build_em <- function(sim_data, NAA_re = "none", ...) {
 
   cfg <- naaseas_cfg
-  n_yrs <- dim(sim_data$WAA)[3]; n_ages <- cfg$n_ages; n_seas <- cfg$n_seas
+  n_yrs <- dim(sim_data$WAA)[3]
+  n_ages <- cfg$n_ages
+  n_seas <- cfg$n_seas
 
   il <- Setup_Mod_Dim(
     years = 1:n_yrs,

@@ -3,7 +3,11 @@ library(RTMB)
 
 ## Scenario 1: single pop/region/sex/season, UNFISHED
 make_unfished_single <- function(n_ages = 4, M = 0.2, R0 = 1000) {
-  n_pop <- 1; n_regions <- 1; n_sexes <- 1; n_seas <- 1; n_fish_fleets <- 1
+  n_pop <- 1
+  n_regions <- 1
+  n_sexes <- 1
+  n_seas <- 1
+  n_fish_fleets <- 1
 
   list(
     n_regions = n_regions,
@@ -189,8 +193,17 @@ test_that("init_age_strc = 0 with too few iterations has NOT yet converged (sani
 ## Scenario 2: single pop/region/sex/season, FISHED (retained + discard F)
 test_that("init_age_strc = 1 correctly decomposes fishing mortality into retained + discard-mortality components", {
 
-  n_pop <- 1; n_regions <- 1; n_sexes <- 1; n_ages <- 3; n_seas <- 1; n_fish_fleets <- 1
-  M <- 0.2; R0 <- 1000; Finit <- 2.0; ret <- 0.8; dmr_val <- 0.3
+  n_pop <- 1
+  n_regions <- 1
+  n_sexes <- 1
+  n_ages <- 3
+  n_seas <- 1
+  n_fish_fleets <- 1
+  M <- 0.2
+  R0 <- 1000
+  Finit <- 2.0
+  ret <- 0.8
+  dmr_val <- 0.3
 
   natmort <- array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   init_F <- array(Finit, dim = c(n_regions, n_seas, n_fish_fleets))
@@ -239,8 +252,14 @@ test_that("init_age_strc = 1 correctly decomposes fishing mortality into retaine
 ## Sex ratio handling
 test_that("Get_Init_NAA() allocates age-1 recruits across sexes according to sexratio", {
 
-  n_pop <- 1; n_regions <- 1; n_sexes <- 2; n_ages <- 3; n_seas <- 1; n_fish_fleets <- 1
-  M <- 0.2; R0 <- 1000
+  n_pop <- 1
+  n_regions <- 1
+  n_sexes <- 2
+  n_ages <- 3
+  n_seas <- 1
+  n_fish_fleets <- 1
+  M <- 0.2
+  R0 <- 1000
 
   sexratio <- array(0, dim = c(n_pop, n_regions, n_sexes))
   sexratio[, , 1] <- 0.6
@@ -335,12 +354,20 @@ test_that("ln_InitDevs multiplicatively scales ages 2:n_ages but leaves age 1 un
 ## plus-group linear solve, rather than an independently re-derived value.
 test_that("init_age_strc = 2 plus-group solution satisfies its own equilibrium equation under 2-region movement", {
 
-  n_pop <- 1; n_regions <- 2; n_sexes <- 1; n_ages <- 4; n_seas <- 1; n_fish_fleets <- 1
-  M <- 0.2; R0 <- 500
+  n_pop <- 1
+  n_regions <- 2
+  n_sexes <- 1
+  n_ages <- 4
+  n_seas <- 1
+  n_fish_fleets <- 1
+  M <- 0.2
+  R0 <- 500
 
   Movement <- array(0, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes))
-  Movement[, 1, 1, , , ] <- 0.7; Movement[, 1, 2, , , ] <- 0.3
-  Movement[, 2, 1, , , ] <- 0.3; Movement[, 2, 2, , , ] <- 0.7
+  Movement[, 1, 1, , , ] <- 0.7
+  Movement[, 1, 2, , , ] <- 0.3
+  Movement[, 2, 1, , , ] <- 0.3
+  Movement[, 2, 2, , , ] <- 0.7
 
   natmort <- array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   init_F <- array(0, dim = c(n_regions, n_seas, n_fish_fleets))
@@ -431,7 +458,12 @@ test_that("all four init_age_strc methods agree with each other when n_regions =
 ## Basic dimension / sanity smoke test with multiple pops, regions, sexes, seasons
 test_that("Get_Init_NAA() returns correctly-dimensioned, finite, non-negative output for a larger multi-dimensional setup", {
 
-  n_pop <- 2; n_regions <- 2; n_sexes <- 2; n_ages <- 6; n_seas <- 2; n_fish_fleets <- 1
+  n_pop <- 2
+  n_regions <- 2
+  n_sexes <- 2
+  n_ages <- 6
+  n_seas <- 2
+  n_fish_fleets <- 1
   M <- 0.25
 
   natmort <- array(M, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
@@ -444,8 +476,10 @@ test_that("Get_Init_NAA() returns correctly-dimensioned, finite, non-negative ou
   sexratio <- array(0.5, dim = c(n_pop, n_regions, n_sexes))
 
   Movement <- array(0, dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes))
-  Movement[, 1, 1, , , ] <- 0.8; Movement[, 1, 2, , , ] <- 0.2
-  Movement[, 2, 1, , , ] <- 0.2; Movement[, 2, 2, , , ] <- 0.8
+  Movement[, 1, 1, , , ] <- 0.8
+  Movement[, 1, 2, , , ] <- 0.2
+  Movement[, 2, 1, , , ] <- 0.2
+  Movement[, 2, 2, , , ] <- 0.8
 
   rec_seas_prop <- matrix(c(0.6, 0.4), nrow = n_pop, ncol = n_seas, byrow = TRUE)
   ln_InitDevs <- array(0, dim = c(n_pop, n_regions, n_ages - 1))

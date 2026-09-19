@@ -18,8 +18,11 @@ sable_srr_opt <- function() {
   d <- sgl_rg_sable_data
   rp <- sgl_rg_sable_rep
   ny <- length(d$years)
-  n_pop <- d$n_pop; n_regions <- d$n_regions; n_seas <- d$n_seas
-  n_ages <- length(d$ages); n_fish_fleets <- d$n_fish_fleets
+  n_pop <- d$n_pop
+  n_regions <- d$n_regions
+  n_seas <- d$n_seas
+  n_ages <- length(d$ages)
+  n_fish_fleets <- d$n_fish_fleets
 
   list(
     rec_dd = 1,

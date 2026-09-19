@@ -37,7 +37,8 @@ test_that("AR(1) and logistic-normal covariance utilities produce correct output
   # rho_trans
   test_that("rho_trans maps to (-1, 1) correctly", {
     # output should be in (-1, 1)
-    expect_true(rho_trans(0) > -1 && rho_trans(0) < 1)
+    expect_gt(rho_trans(0), -1)
+    expect_lt(rho_trans(0), 1)
     expect_true(rho_trans(10) < 1)
     expect_true(rho_trans(-10) > -1)
     # rho_trans(0) should equal 0
@@ -75,7 +76,11 @@ test_that("AR(1) and logistic-normal covariance utilities produce correct output
   })
 
   test_that("get_logistN_Sigma comp_like = 4 (AR1 bins x constant sexes) has correct dimensions and structure", {
-    n_bins <- 3; n_sexes <- 2; theta <- 1; corr_b <- 0.4; corr_s <- 0.7
+    n_bins <- 3
+    n_sexes <- 2
+    theta <- 1
+    corr_b <- 0.4
+    corr_s <- 0.7
     Sigma <- get_logistN_Sigma(
       comp_like = 4,
       n_bins = n_bins,

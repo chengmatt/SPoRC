@@ -122,7 +122,8 @@ test_that("every composition data source still reaches the shared grammar", {
     list(stage = "srvidx",  arg = "SrvLenComps_Type"))
 
   for(s in data_sources) {
-    ov <- list(); ov[[s$arg]] <- "bogus_Year_1-terminal_Fleet_1"
+    ov <- list()
+    ov[[s$arg]] <- "bogus_Year_1-terminal_Fleet_1"
     args <- list(dims = list(
       n_regions = 1,
       n_sexes = 1,

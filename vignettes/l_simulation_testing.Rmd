@@ -129,7 +129,7 @@ sim_list <- Setup_Sim_Rec(
   sim_list = sim_list,
   R0_input = replicate(n = sim_list$n_sims, expr = array(5, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs))), # R0
   ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_regions)),
-  recruitment_opt = 'mean_rec', 
+  recruitment_opt = 'mean_rec',
   init_age_strc = 1 # using geometric series scalar to initialize popn
 )
 ```
@@ -163,8 +163,8 @@ setup_em <- function(sim_obj, sim) {
     n_sexes = sim_obj$n_sexes,
     n_fish_fleets = sim_obj$n_fish_fleets,
     n_srv_fleets = sim_obj$n_srv_fleets,
-    n_pop = sim_obj$n_pop, 
-    verbose = F
+    n_pop = sim_obj$n_pop,
+    verbose = FALSE
   )
 
   # Recruitment setup
@@ -318,7 +318,7 @@ for(i in 1:sim_obj$n_sims) {
                      input_list$par,
                      input_list$map,
                      random = NULL,
-                     silent = T
+                     silent = TRUE
                      )
 
   ssb_results[,i] <- as.vector(model$rep$SSB) # save results
@@ -336,9 +336,9 @@ ssb_df_res <- reshape2::melt(ssb_results) %>%
                      dplyr::rename(Region = Var2, Year = Var3, Sim = Var4, True = value), by = c("Year", "Sim")) %>%
   dplyr::mutate(RE = (Est - True) / True * 100) %>%
   dplyr::group_by(Year) %>%
-  dplyr::summarize(median = median(RE, na.rm = T),
-                   lwr = quantile(RE, 0.1, na.rm = T),
-                   upr = quantile(RE, 0.8, na.rm = T))
+  dplyr::summarize(median = median(RE, na.rm = TRUE),
+                   lwr = quantile(RE, 0.1, na.rm = TRUE),
+                   upr = quantile(RE, 0.8, na.rm = TRUE))
 
 # plot!
 print(
@@ -372,7 +372,7 @@ self_test <- simulation_self_test(
   random = NULL,
   rep = dusky_rtmb_model$rep,
   sd_rep = dusky_rtmb_model$sdrep,
-  n_sims = 300, 
+  n_sims = 300,
   newton_loops = 3,
   do_sdrep = FALSE,
   do_par = TRUE,

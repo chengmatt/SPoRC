@@ -52,7 +52,8 @@ oracle_y <- function(arr, n_yrs) {
 #'
 #' @keywords internal
 oracle_project_naa <- function(n1, rec, Z) {
-  n_yrs <- nrow(Z); n_ages <- ncol(Z)
+  n_yrs <- nrow(Z)
+  n_ages <- ncol(Z)
   N <- matrix(0, n_yrs + 1, n_ages)
   N[1, ] <- n1
 
@@ -166,7 +167,8 @@ oracle_selex <- function(form, bins, pars) {
     logist1 = 1 / (1 + exp(-pars[2] * (bins - pars[1]))),
     logist2 = 1 / (1 + 19^((pars[1] - bins) / pars[2])),
     gamma   = {
-      bmax <- pars[1]; delta <- pars[2]
+      bmax <- pars[1]
+      delta <- pars[2]
       p <- 0.5 * (sqrt(bmax^2 + 4 * delta^2) - bmax)
       (bins / bmax)^(bmax / p) * exp((bmax - bins) / p)
     },

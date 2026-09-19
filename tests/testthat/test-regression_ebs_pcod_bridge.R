@@ -17,8 +17,10 @@ data("sgl_rg_ebs_pcod_data")
 test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its own estimate", {
 
   dat <- sgl_rg_ebs_pcod_data
-  yrs <- dat$years; n_yrs <- length(yrs)
-  ages <- dat$ages; n_ages <- length(ages)
+  yrs <- dat$years
+  n_yrs <- length(yrs)
+  ages <- dat$ages
+  n_ages <- length(ages)
   s3 <- dat$ss3
 
   input_list <- seed_ebs_pcod_mle(suppressWarnings(suppressMessages(build_ebs_pcod_input(dat))), dat)
@@ -26,7 +28,10 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   r <- obj$rep
 
   pct <- function(a, b) max(abs(100 * (a - b) / b), na.rm = TRUE)
-  yr_row <- function(m, y) { rr <- as.integer(rownames(m)); m[as.character(max(rr[rr <= y])), ] }
+  yr_row <- function(m, y) {
+    rr <- as.integer(rownames(m))
+    m[as.character(max(rr[rr <= y])), ]
+  }
 
   # Growth ------------------------------------------------------------------
   # Size at age is kept cohort by cohort from 2000, so a year late in the
@@ -42,7 +47,8 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   # the year-by-year growth parameters, deviations applied on the bounded logit scale
   gy <- s3$growth_by_year
   for(y in c(1977, 2000, 2010, 2024)) {
-    iy <- match(y, yrs); g <- gy[gy$Yr == y, ]
+    iy <- match(y, yrs)
+    g <- gy[gy$Yr == y, ]
     expect_lt(pct(r$growth_pars_y[1, 1, iy, 1, 1], g$L1), 1e-3)  # length at the young reference age
     expect_lt(pct(r$growth_pars_y[1, 1, iy, 3, 1], g$K), 1e-3)   # growth rate
     expect_lt(pct(r$growth_pars_y[1, 1, iy, 2, 1], g$L2), 1e-3)  # asymptote, not varying
@@ -60,10 +66,12 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
     fish_a <- max(fish_a, abs(r$fish_sel[1, 1, iy, 1, , 1, 1] - yr_row(s3$asel2[[1]], y)))
     srv_a  <- max(srv_a,  abs(r$srv_sel[1, 1, iy, 1, , 1, 1]  - yr_row(s3$asel2[[2]], y)))
   }
-  expect_lt(fish_l, 1e-5); expect_lt(srv_l, 1e-5)
+  expect_lt(fish_l, 1e-5)
+  expect_lt(srv_l, 1e-5)
   # folding the length selectivity to age goes through the age-length key, so
   # these also test the key in every year
-  expect_lt(fish_a, 1e-5); expect_lt(srv_a, 1e-5)
+  expect_lt(fish_a, 1e-5)
+  expect_lt(srv_a, 1e-5)
 
   # Population --------------------------------------------------------------
   naa <- r$NAA[1, 1, 1:n_yrs, 1, , 1]
@@ -81,8 +89,12 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   # length selectivity applied at length, the survey's at its own timing, and
   # both are mapped from the model's 121 population bins onto the 24 data bins
   LBM <- dat$LenBinMap
-  exp_len <- function(v) { w <- as.vector(v %*% LBM); w / sum(w) }
-  ld <- s3$lendbase; ad <- s3$agedbase
+  exp_len <- function(v) {
+    w <- as.vector(v %*% LBM)
+    w / sum(w)
+  }
+  ld <- s3$lendbase
+  ad <- s3$agedbase
   fl <- sl <- sa <- 0
   for(y in unique(ld$Yr[ld$Fleet == 1])) {
     e <- exp_len(r$CAL[1, 1, match(y, yrs), 1, , 1, 1])
@@ -94,22 +106,29 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   }
   for(y in unique(ad$Yr[ad$Fleet == 2])) {
     iy <- match(y, yrs)
-    e <- as.vector(r$SrvIAA[1, 1, iy, 1, , 1, 1] %*% dat$AgeingError[iy, , ]); e <- e / sum(e)
+    e <- as.vector(r$SrvIAA[1, 1, iy, 1, , 1, 1] %*% dat$AgeingError[iy, , ])
+    e <- e / sum(e)
     sa <- max(sa, abs(e - ad$Exp[ad$Yr == y & ad$Fleet == 2]))
   }
-  expect_lt(fl, 1e-4); expect_lt(sl, 1e-4); expect_lt(sa, 1e-4)
+  expect_lt(fl, 1e-4)
+  expect_lt(sl, 1e-4)
+  expect_lt(sa, 1e-4)
 
   # Likelihood components ---------------------------------------------------
   # Each is restated in the assessment's convention by removing the normal
   # constants SPoRC has and Stock Synthesis does not.
-  sigmaR <- dat$rec$sigmaR; lsr <- log(sigmaR); c2pi <- 0.5 * log(2 * pi)
-  L <- s3$likelihoods; lbf <- s3$likelihoods_by_fleet
+  sigmaR <- dat$rec$sigmaR
+  lsr <- log(sigmaR)
+  c2pi <- 0.5 * log(2 * pi)
+  L <- s3$likelihoods
+  lbf <- s3$likelihoods_by_fleet
   by_fleet <- function(lab, col) lbf[[col]][lbf$Label == lab]
 
   est_r <- which(!is.na(obj$data$map_ln_RecDevs[1, 1, ]))
   est_i <- which(!is.na(obj$data$map_ln_InitDevs[1, 1, , 1]))
   use_i <- obj$data$init_devs_pen_use[1, 1, , 1]
-  ramp_r <- sum(r$bias_ramp[est_r]); ramp_i <- sum(r$init_bias_ramp[est_i] * use_i[est_i])
+  ramp_r <- sum(r$bias_ramp[est_r])
+  ramp_i <- sum(r$init_bias_ramp[est_i] * use_i[est_i])
 
   # recruitment: SPoRC's half ramp on log(sigmaR) restated as the assessment's whole ramp
   rec <- sum(r$Rec_nLL) - length(est_r) * c2pi - 0.5 * ramp_r * lsr +
@@ -126,13 +145,16 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   expect_lt(pct(r$rinit_nLL - (log(obj$data$rinit_pen_sd) + c2pi), L["InitEQ_Regime", "values"]), 1e-2)
 
   # the two growth deviation series and the survey selectivity deviations
-  sg <- c(dat$growth$dev_sd[["L1"]], dat$growth$dev_sd[["K"]]); n_gd <- length(dat$growth$dev_years$L1)
+  sg <- c(dat$growth$dev_sd[["L1"]], dat$growth$dev_sd[["K"]])
+  n_gd <- length(dat$growth$dev_years$L1)
   expect_lt(pct(r$growth_tv_nLL - n_gd * sum(log(sg) + c2pi), sum(s3$parm_devs$Like_devs[1:2])), 1e-2)
   n_sd <- sum(!is.na(obj$data$map_ln_srvsel_devs))
   expect_lt(pct(r$sel_nLL - n_sd * (log(dat$mle$sel$survey$dev_sd) + c2pi), s3$parm_devs$Like_devs[3]), 1e-2)
 
   # catch is fit essentially exactly on both sides, so compare the kernel to zero
-  sc <- exp(as.vector(input_list$par$ln_sigmaC)); obs <- as.vector(dat$ObsCatch); ok <- !is.na(obs)
+  sc <- exp(as.vector(input_list$par$ln_sigmaC))
+  obs <- as.vector(dat$ObsCatch)
+  ok <- !is.na(obs)
   expect_lt(sum(r$Catch_nLL) - sum(log(sc[ok]) + c2pi), 1e-4)
 
   # the gradient at the assessment's estimate is finite everywhere; fishing

@@ -76,8 +76,8 @@ get_laa_curve = function(
   L2_asymptote = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   if(is.null(A2_cv)) A2_cv = A2
   # the asymptote, on the power scale for the Richards form. under L2_asymptote the second
@@ -219,7 +219,8 @@ get_growth_pars_year = function(ln_pars, ln_devs, tv_model, tv_link, bounds, y) 
     dev = ln_devs[y, k]
     if(tv_link == 0) growth_pars[k] = growth_pars[k] * exp(dev)
     else {
-      lo = bounds[k, 1]; hi = bounds[k, 2]
+      lo = bounds[k, 1]
+      hi = bounds[k, 2]
       # the 1e-7 keeps the logit finite at a bound
       base_logit = log((growth_pars[k] - lo + 1e-7) / (hi - growth_pars[k] + 1e-7))
       growth_pars[k] = lo + (hi - lo) / (1 + exp(-base_logit - dev))
@@ -261,8 +262,14 @@ get_selected_waa = function(key, sel_l, w_len) {
 growth_start_state = function(growth_pars, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type,
                               growth_plus_group, growth_L2_asymptote = 0) {
 
-  n_ages = length(ages); n_acc = max(ages)
-  L1 = growth_pars[1]; L2 = growth_pars[2]; K = growth_pars[3]; CV1 = growth_pars[4]; CV2 = growth_pars[5]; rho = growth_pars[6]
+  n_ages = length(ages)
+  n_acc = max(ages)
+  L1 = growth_pars[1]
+  L2 = growth_pars[2]
+  K = growth_pars[3]
+  CV1 = growth_pars[4]
+  CV2 = growth_pars[5]
+  rho = growth_pars[6]
   curve = get_laa_curve(
     x = ages,
     L0 = growth_L0,
@@ -302,11 +309,16 @@ growth_start_state = function(growth_pars, ages, growth_A1, growth_A2, growth_L0
 growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type,
                          cohort, L_beg, L1_birth, cv_ref, a_prop, len_devs = NULL, growth_L2_asymptote = 0) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_ages = length(ages)
-  L1 = growth_pars[1]; L2 = growth_pars[2]; K = growth_pars[3]; CV1 = growth_pars[4]; CV2 = growth_pars[5]; rho = growth_pars[6]
+  L1 = growth_pars[1]
+  L2 = growth_pars[2]
+  K = growth_pars[3]
+  CV1 = growth_pars[4]
+  CV2 = growth_pars[5]
+  rho = growth_pars[6]
   x = ages + e
 
   curve = get_laa_curve(
@@ -492,8 +504,8 @@ Get_Growth = function(
   growth_semipar = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   n_ages = length(ages)
   n_lens = length(growth_len_lower)
@@ -618,18 +630,21 @@ growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  n_ages = length(ages)
   n_yr_fill = length(fill_yrs)
   cum_before = c(0, cumsum(seasdur))[1:n_seas] # fraction of the year elapsed at each season start
   rep_yrs = function(x) rep(x, each = n_yr_fill) # lays the years fastest for a [years, ...] block
 
-  for(y in fill_yrs) { out$L_beg[p,r,y,,s] = L_beg; out$growth_pars_y[p,r,y,,s] = growth_pars }
+  for(y in fill_yrs) {
+    out$L_beg[p,r,y,,s] = L_beg
+    out$growth_pars_y[p,r,y,,s] = growth_pars
+  }
 
   for(seas in 1:n_seas) {
 
     # every point in the season something is read at: each fishery fleet at its t_fish, each survey
     # at its t_srv, and the spawning weight at t_spawn. each distinct point is evaluated once
-    t_fish_seas = as.vector(t_fish[r, seas, ]); t_srv_seas = as.vector(t_srv[r, seas, ])
+    t_fish_seas = as.vector(t_fish[r, seas, ])
+    t_srv_seas = as.vector(t_srv[r, seas, ])
     t_unique = unique(c(t_fish_seas, t_srv_seas, if(seas == spawn_seas) t_spawn))
 
     for(k in seq_along(t_unique)) {
@@ -654,7 +669,8 @@ growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth
         len_devs = len_devs,
         growth_L2_asymptote = growth_L2_asymptote
       )
-      L = laa_at$L; sd = laa_at$sd
+      L = laa_at$L
+      sd = laa_at$sd
       for(y in fill_yrs) out$Linf[p,r,y,s] = laa_at$Linf
       alk = get_alk(growth_len_lower, L, sd, dist = growth_dist) # n_lens x n_ages (get alk for sizeage)
       waa = if(derive_waa == 1) as.vector(t(alk) %*% w_mid) else NULL
@@ -756,15 +772,15 @@ Get_Growth_Year = function(
   growth_semipar = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  n_ages = length(ages); n_acc = max(ages); n_yrs = dim(growth$L_beg)[3]
+  n_ages = length(ages)
+  n_acc = max(ages)
+  n_yrs = dim(growth$L_beg)[3]
   n_gpars = dim(ln_growth_pars)[4]
   # the first integer age whose start-of-year size is advanced; the age
   # before it sits on the current year's curve
   a_prop = ceiling(growth_A1) + 1
-  cum_before = c(0, cumsum(seasdur))[1:n_seas]
 
   for(p in 1:n_pop) {
     for(r in 1:n_regions) {
@@ -836,7 +852,9 @@ Get_Growth_Year = function(
 
         # hold the state to next year with this year's increment
         if(y < n_yrs) {
-          K = growth_pars_yr[3]; rho = growth_pars_yr[6]; Linf = growth$Linf[p,r,y,s]
+          K = growth_pars_yr[3]
+          rho = growth_pars_yr[6]
+          Linf = growth$Linf[p,r,y,s]
           L_next = growth_laa_at(
             e = 0,
             growth_pars = growth_pars_yr,
@@ -857,12 +875,16 @@ Get_Growth_Year = function(
           for(i in 1:n_ages) {
             a = ages[i]
             if(a < a_prop) next # rebuilt from the linear phase and the curve next year
-            if(a == a_prop) { L_next[i] = L_next[i]; next } # the first propagated age starts on this year's curve
+            if(a == a_prop) { # the first propagated age starts on this year's curve
+              L_next[i] = L_next[i]
+              next
+            }
             if(a < n_acc) L_next[i] = grown[i - 1]
           } # end i loop
           # the plus group: the cohort entering it and the fish already there,
           # blended by their numbers at the start of this year
-          N_in = NAA_y[p,r,n_ages - 1,s]; N_old = NAA_y[p,r,n_ages,s]
+          N_in = NAA_y[p,r,n_ages - 1,s]
+          N_old = NAA_y[p,r,n_ages,s]
           L_next[n_ages] = ((N_in + 0.01) * grown[n_ages - 1] + (N_old + 0.01) * grown[n_ages]) / (N_in + N_old + 0.02)
           growth$L_beg[p,r,y + 1,,s] = L_next
         }
@@ -895,16 +917,20 @@ Get_Growth_Year = function(
 #' @import RTMB
 growth_take_year = function(dest, g, y, derive_waa) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   dest$SizeAgeTrans_fish[,,y,,,,,] = g$SizeAgeTrans_fish[,,y,,,,,]
   dest$SizeAgeTrans_srv[,,y,,,,,] = g$SizeAgeTrans_srv[,,y,,,,,]
   dest$SizeAgeTrans_spawn[,,y,,,] = g$SizeAgeTrans_spawn[,,y,,,]
-  dest$mean_LAA_fish[,,y,,,,] = g$mean_LAA_fish[,,y,,,,]; dest$sd_LAA_fish[,,y,,,,] = g$sd_LAA_fish[,,y,,,,]
-  dest$mean_LAA_srv[,,y,,,,] = g$mean_LAA_srv[,,y,,,,]; dest$sd_LAA_srv[,,y,,,,] = g$sd_LAA_srv[,,y,,,,]
-  dest$mean_LAA_spawn[,,y,,,] = g$mean_LAA_spawn[,,y,,,]; dest$sd_LAA_spawn[,,y,,,] = g$sd_LAA_spawn[,,y,,,]
-  dest$Linf[,,y,] = g$Linf[,,y,]; dest$L_beg[,,y,,] = g$L_beg[,,y,,]
+  dest$mean_LAA_fish[,,y,,,,] = g$mean_LAA_fish[,,y,,,,]
+  dest$sd_LAA_fish[,,y,,,,] = g$sd_LAA_fish[,,y,,,,]
+  dest$mean_LAA_srv[,,y,,,,] = g$mean_LAA_srv[,,y,,,,]
+  dest$sd_LAA_srv[,,y,,,,] = g$sd_LAA_srv[,,y,,,,]
+  dest$mean_LAA_spawn[,,y,,,] = g$mean_LAA_spawn[,,y,,,]
+  dest$sd_LAA_spawn[,,y,,,] = g$sd_LAA_spawn[,,y,,,]
+  dest$Linf[,,y,] = g$Linf[,,y,]
+  dest$L_beg[,,y,,] = g$L_beg[,,y,,]
   dest$growth_pars_y[,,y,,] = g$growth_pars_y[,,y,,]
   if(derive_waa == 1) {
     dest$WAA[,,y,,,] = g$WAA[,,y,,,]
@@ -941,7 +967,7 @@ growth_take_year = function(dest, g, y, derive_waa) {
 growth_selected_waa_year = function(WAA_fleet, SizeAgeTrans_fleet, sel_l, wt_len_pars, len_mid,
                                     waa_selected, y, n_pop, n_regions, n_seas, n_sexes) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(f in which(waa_selected == 1)) {

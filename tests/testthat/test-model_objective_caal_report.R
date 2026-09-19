@@ -93,7 +93,12 @@ test_that("each joint cell is the size-age transition scaled by the marginal at 
   # SizeAgeTrans holds P(len | age), so scaling age column a by the catch at age a is the
   # joint array by definition. Checked cell by cell on one stratum rather than through the
   # same vectorized expression the model uses.
-  p <- 1; r <- 1; y <- 7; seas <- 1; s <- 1; f <- 1
+  p <- 1
+  r <- 1
+  y <- 7
+  seas <- 1
+  s <- 1
+  f <- 1
   expected <- matrix(0, nrow = n_lens_test, ncol = n_ages)
   for(a in 1:n_ages) expected[,a] <- size_age[p,r,y,seas,,a,s] * model$rep$CAA[p,r,y,seas,a,s,f]
 
@@ -104,7 +109,13 @@ test_that("each joint cell is the size-age transition scaled by the marginal at 
 test_that("conditioning a row on its own row sum gives the age composition at that length", {
   model <- run(with_caal())
 
-  p <- 1; r <- 1; y <- 7; seas <- 1; l <- 5; s <- 1; f <- 1
+  p <- 1
+  r <- 1
+  y <- 7
+  seas <- 1
+  l <- 5
+  s <- 1
+  f <- 1
   row <- model$rep$Fish_caal[p,r,y,seas,l,,s,f]
   expect_equal(sum(row), model$rep$CAL[p,r,y,seas,l,s,f], tolerance = 1e-12) # denominator is CAL
   expect_equal(sum(row / sum(row)), 1, tolerance = 1e-12)

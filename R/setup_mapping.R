@@ -755,7 +755,9 @@ at_age_block_complete <- function(use_arr, f, nd, i_y, i_a) {
   for(g in seq_len(nrow(grid))) {
     idx <- vector("list", nd)
     for(k in seq_along(other)) idx[[other[k]]] <- grid[g,k]
-    idx[[i_y]] <- seq_len(d[i_y]); idx[[i_a]] <- seq_len(d[i_a]); idx[[nd]] <- f
+    idx[[i_y]] <- seq_len(d[i_y])
+    idx[[i_a]] <- seq_len(d[i_a])
+    idx[[nd]] <- f
     blk <- base::matrix(do.call("[", c(list(use_arr), idx)), nrow = d[i_y])
     obs_yrs <- which(rowSums(blk == 1) > 0)
     obs_ages <- which(colSums(blk == 1) > 0)
@@ -1296,7 +1298,7 @@ do_q_mapping <- function(input_list, q_spec, prefix, fleet_field, fleet_label) {
         # Extract number of catchability blocks
         q_blocks_tmp <- unique(as.vector(input_list$data[[q_blocks_field]][r,,f]))
 
-        for(b in 1:length(q_blocks_tmp)) {
+        for(b in seq_along(q_blocks_tmp)) {
 
           # Estimate for all regions
           if(q_spec[f] == 'est_all') {
@@ -1389,8 +1391,6 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
   bicubic_yrnodes_field <- paste0(prefix, "_sel_bicubic_yrnodes")
   fix_input_valid <- paste0("fix_", prefix, "_sel_input")
   fix_input_check <- paste0("fixed_", prefix, "_sel_input")
-  use_data_field <- paste0("Use", use_field)
-  use_pop_data_field <- paste0(use_data_field, "_pop")
   n_fleets <- input_list$data[[fleet_field]]
   check_fleet_spec_length(sel_pars_spec, n_fleets, paste0(prefix, "_fixed_sel_pars_spec"), allow_null = TRUE)
 
@@ -1428,7 +1428,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
         sel_blocks_tmp <- unique(as.vector(input_list$data[[sel_blocks_field]][r,,f]))
 
         for(s in 1:input_list$data$n_sexes) {
-          for(b in 1:length(sel_blocks_tmp)) {
+          for(b in seq_along(sel_blocks_tmp)) {
 
             block_years <- which(input_list$data[[sel_blocks_field]][r,,f] == sel_blocks_tmp[b]) # figure out block years
             sel_model_this_block <- unique(input_list$data[[sel_model_field]][r, block_years, f]) # get selectivity form for a given block
@@ -1456,7 +1456,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
               all_bins <- unlist(bin_groups)
               if(any(all_bins < 1) || any(all_bins > bins))
                 stop(prefix, "_sel_nonpar_est_bins[[", f, "]][[", b, "]] contains indices outside 1:", bins)
-              if(length(all_bins) != length(unique(all_bins)))
+              if(anyDuplicated(all_bins) > 0)
                 stop(prefix, "_sel_nonpar_est_bins[[", f, "]][[", b, "]] has duplicate bin indices")
             }
 
@@ -2066,7 +2066,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
             # If 3d gmrf for this fleet
             if(input_list$data[[cont_tv_field]][r,f] %in% c(3,4,5)) {
 
-              for(i in 1:length(input_list$data$ages)) {
+              for(i in seq_along(input_list$data$ages)) {
                 # Estimating all selectivity deviations across regions, years and bins
                 if(sel_devs_spec[f] == 'est_all') {
                   map_sel_devs[r,y,i,s,f] <- sel_devs_counter
@@ -2092,28 +2092,28 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
                 }
 
                 if(sel_devs_spec[f] == 'est_shared_b') {
-                  for(k in 1:length(sel_devs_shared_bins)) {
+                  for(k in seq_along(sel_devs_shared_bins)) {
                     map_sel_devs[r,y,sel_devs_shared_bins[[k]],s,f] <- sel_devs_counter
                     sel_devs_counter <- sel_devs_counter + 1
                   } # end k loop
                 }
 
                 if(sel_devs_spec[f] == 'est_shared_r_b' && r == r_anchor) {
-                  for(k in 1:length(sel_devs_shared_bins)) {
+                  for(k in seq_along(sel_devs_shared_bins)) {
                     map_sel_devs[,y,sel_devs_shared_bins[[k]],s,f] <- sel_devs_counter
                     sel_devs_counter <- sel_devs_counter + 1
                   } # end k loop
                 }
 
                 if(sel_devs_spec[f] == 'est_shared_b_s' && s == 1) {
-                  for(k in 1:length(sel_devs_shared_bins)) {
+                  for(k in seq_along(sel_devs_shared_bins)) {
                     map_sel_devs[r,y,sel_devs_shared_bins[[k]],,f] <- sel_devs_counter
                     sel_devs_counter <- sel_devs_counter + 1
                   } # end k loop
                 }
 
                 if(sel_devs_spec[f] == 'est_shared_r_b_s' && s == 1 && r == r_anchor) {
-                  for(k in 1:length(sel_devs_shared_bins)) {
+                  for(k in seq_along(sel_devs_shared_bins)) {
                     map_sel_devs[,y,sel_devs_shared_bins[[k]],,f] <- sel_devs_counter
                     sel_devs_counter <- sel_devs_counter + 1
                   } # end k loop

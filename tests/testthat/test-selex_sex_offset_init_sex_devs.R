@@ -7,7 +7,8 @@ library(RTMB)
 logistic_sel <- function(b50, k, ages) 1 / (1 + exp(-k * (ages - b50)))
 
 make_selex_args <- function(n_ages = 6, n_sexes = 2, n_fleets = 1) {
-  n_regions <- 1; n_yrs <- 3
+  n_regions <- 1
+  n_yrs <- 3
   list(
     selex_type = 0,
     bins = 1:n_ages,
@@ -122,7 +123,8 @@ test_that("setup_sel_sex_offset validates its options and maps scale parameters 
 
   # a mean-standardized form cancels a constant multiplier
   base_input$data$n_sexes <- 2
-  sel_model_nonpar <- sel_model_arr; sel_model_nonpar[,,2] <- 9
+  sel_model_nonpar <- sel_model_arr
+  sel_model_nonpar[,,2] <- 9
   expect_error(setup_sel_sex_offset(
     base_input,
     c("none", "scale"),
@@ -143,11 +145,13 @@ test_that("an NSelBins plateau holds bins beyond it at the last computed value f
   nselbins <- array(4, dim = c(1, 3, 1))
 
   out <- do.call(Get_Selex_Array, c(args, list(nselbins = nselbins)))
-  expected <- logistic_sel(4, 0.4, 1:6); expected[5:6] <- expected[4]
+  expected <- logistic_sel(4, 0.4, 1:6)
+  expected[5:6] <- expected[4]
   expect_equal(as.numeric(out$sel[1,1,1,1,,1,1]), expected, tolerance = 1e-12)
 
   # the plateau composes with a sex scale offset (the fm.tpl male arrangement)
-  sex_scale <- array(0, dim = c(1, 1, 2, 1)); sex_scale[1, 1, 2, 1] <- 0.2
+  sex_scale <- array(0, dim = c(1, 1, 2, 1))
+  sex_scale[1, 1, 2, 1] <- 0.2
   outs <- do.call(Get_Selex_Array, c(args, list(
     nselbins = nselbins,
     sex_par_offset = 0,
@@ -163,7 +167,8 @@ test_that("an NSelBins plateau holds bins beyond it at the last computed value f
 
 test_that("Get_Init_NAA applies sex-specific initial deviations and broadcasts a 3-D array", {
 
-  n_ages <- 4; n_sexes <- 2
+  n_ages <- 4
+  n_sexes <- 2
   d <- list(
     n_regions = 1,
     n_pop = 1,
@@ -226,14 +231,16 @@ test_that("the initial age penalty covers one copy per parameter and pools its o
   # the 3-D legacy array and the 4-D shared layout give the same penalty
   legacy <- do.call(get_recruitment_penalty, c(base_args, list(ln_InitDevs = dev3)))
   dev4 <- array(rep(devs, 2), dim = c(1, 1, n_ages - 1, 2))
-  pen_shared <- array(0, dim = dim(dev4)); pen_shared[,,,1] <- 1
+  pen_shared <- array(0, dim = dim(dev4))
+  pen_shared[,,,1] <- 1
   shared <- do.call(get_recruitment_penalty, c(base_args, list(ln_InitDevs = dev4, init_devs_pen_use = pen_shared)))
   expect_equal(sum(shared$Init_Rec_nLL), sum(legacy$Init_Rec_nLL), tolerance = 1e-12)
   expect_equal(as.numeric(shared$Init_Rec_nLL[1,1,,2]), rep(0, n_ages - 1)) # the second copy is not penalized
 
   # sex-specific deviations are each penalized
   devs_m <- c(-0.15, 0.25, -0.35, 0.05)
-  dev4d <- dev4; dev4d[1,1,,2] <- devs_m
+  dev4d <- dev4
+  dev4d[1,1,,2] <- devs_m
   pen_all <- array(1, dim = dim(dev4d))
   distinct <- do.call(get_recruitment_penalty, c(base_args, list(ln_InitDevs = dev4d, init_devs_pen_use = pen_all)))
   expect_equal(sum(distinct$Init_Rec_nLL), -sum(dnorm(c(devs, devs_m), 0, 0.6, TRUE)), tolerance = 1e-12)
@@ -294,7 +301,8 @@ test_that("do_InitDevs_mapping expands its single-sex logic across sexes per Ini
   expect_equal(sum(distinct$data$init_devs_pen_use), 8)
 
   # a fixed plus group stays fixed for every sex
-  fixed_plus <- make_input(); fixed_plus$data$equil_init_age_strc <- 1
+  fixed_plus <- make_input()
+  fixed_plus$data$equil_init_age_strc <- 1
   fp <- do_InitDevs_mapping(
     fixed_plus,
     InitDevs_spec = NULL,
@@ -306,7 +314,9 @@ test_that("do_InitDevs_mapping expands its single-sex logic across sexes per Ini
   expect_true(all(is.na(map_fp[1, 1, 4, ])))
 
   # one sex cannot be sex-specific
-  single <- make_input(); single$data$n_sexes <- 1; single$par$ln_InitDevs <- array(0, dim = c(1, 1, 4, 1))
+  single <- make_input()
+  single$data$n_sexes <- 1
+  single$par$ln_InitDevs <- array(0, dim = c(1, 1, 4, 1))
   expect_error(do_InitDevs_mapping(
     single,
     InitDevs_spec = NULL,
@@ -336,7 +346,9 @@ test_that("retention selectivity holds the sex offsets and the plateau through s
   expect_equal(dim(out$par$ln_retsel_sex_scale), c(1, 1, 2, 1))
 
   # a small two-sex model with retention estimated under both offsets and a plateau
-  n_yrs <- 12; n_ages <- 6; n_sexes <- 2
+  n_yrs <- 12
+  n_ages <- 6
+  n_sexes <- 2
   input_list <- Setup_Mod_Dim(
     years = 1:n_yrs,
     ages = 1:n_ages,
@@ -358,7 +370,11 @@ test_that("retention selectivity holds the sex offsets and the plateau through s
     equil_init_age_strc = 2,
     ln_global_R0 = log(5)
   )
-  biol <- function(val) { a <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes)); for(s in 1:n_sexes) a[1,1,,1,,s] <- matrix(rep(val, each = n_yrs), n_yrs, n_ages); a }
+  biol <- function(val) {
+    a <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes))
+    for(s in 1:n_sexes) a[1,1,,1,,s] <- matrix(rep(val, each = n_yrs), n_yrs, n_ages)
+    a
+  }
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = biol(1:n_ages),
@@ -454,8 +470,10 @@ test_that("retention selectivity holds the sex offsets and the plateau through s
   expect_equal(sum(!is.na(input_list$map$ln_retsel_sex_scale)), 1) # the second sex's scale is estimated
 
   obj <- fit_model(input_list$data, pars, input_list$map, do_optim = FALSE, silent = TRUE)
-  expected_f <- logistic_sel(3, 1.2, 1:n_ages); expected_f[5:n_ages] <- expected_f[4]
-  expected_m <- logistic_sel(3 * exp(0.3), 1.2 * exp(-0.2), 1:n_ages); expected_m[5:n_ages] <- expected_m[4]
+  expected_f <- logistic_sel(3, 1.2, 1:n_ages)
+  expected_f[5:n_ages] <- expected_f[4]
+  expected_m <- logistic_sel(3 * exp(0.3), 1.2 * exp(-0.2), 1:n_ages)
+  expected_m[5:n_ages] <- expected_m[4]
   expected_m <- expected_m * exp(-0.25)
   expect_equal(as.numeric(obj$rep$ret_sel[1,1,1,1,,1,1]), expected_f, tolerance = 1e-12)
   expect_equal(as.numeric(obj$rep$ret_sel[1,1,1,1,,2,1]), expected_m, tolerance = 1e-12)
@@ -481,7 +499,8 @@ test_that("the between-sex tie on initial age deviations is a Gaussian on each l
     sigmaR2_late = matrix(0.36, 1, 1),
     do_rec_bias_ramp = 0
   )
-  devs_f <- c(0.2, -0.1, 0.4, -0.3); devs_m <- c(-0.15, 0.25, -0.35, 0.05)
+  devs_f <- c(0.2, -0.1, 0.4, -0.3)
+  devs_m <- c(-0.15, 0.25, -0.35, 0.05)
   dev4 <- array(c(devs_f, devs_m), dim = c(1, 1, n_ages - 1, 2))
   pen_all <- array(1, dim = dim(dev4))
 
@@ -502,7 +521,8 @@ test_that("the between-sex tie on initial age deviations is a Gaussian on each l
   expect_equal(sum(on$Init_Rec_nLL), sum(off$Init_Rec_nLL), tolerance = 1e-12)
 
   # a fixed plus group (equil 1) is outside the tie, like the penalty
-  args1 <- base_args; args1$equil_init_age_strc <- 1
+  args1 <- base_args
+  args1$equil_init_age_strc <- 1
   on1 <- do.call(get_recruitment_penalty, c(args1, list(
     ln_InitDevs = dev4,
     init_devs_pen_use = pen_all,
@@ -565,7 +585,8 @@ test_that("sex offsets refuse a sex-shared fixed specification under par and map
   sel_model_arr <- array(0, dim = c(1, 4, 2))
   cont_tv_mat <- array(0, dim = c(1, 2))
   # fleet 1 has two blocks, fleet 2 one; the parameter array is padded to two
-  sel_blocks <- array(1, dim = c(1, 4, 2)); sel_blocks[1, 3:4, 1] <- 2
+  sel_blocks <- array(1, dim = c(1, 4, 2))
+  sel_blocks[1, 3:4, 1] <- 2
 
   # a par offset reads the later sex's slots as offsets, so sharing them across sexes is refused
   expect_error(setup_sel_sex_offset(
@@ -658,11 +679,13 @@ test_that("the simulator draws initial age deviations per sex only when asked, a
   # shared draw is the same numbers the simulator drew before the option existed
   draw <- function(spec) {
     set.seed(42)
-    n_ages <- 5; n_sexes <- 2
+    n_ages <- 5
+    n_sexes <- 2
     n_dev_draws <- if(spec == "est_all") n_sexes else 1
     array(stats::rnorm(n_dev_draws * (n_ages - 1), -0.5^2 / 2, 0.5), dim = c(n_ages - 1, n_sexes))
   }
-  set.seed(42); legacy <- stats::rnorm(4, -0.5^2 / 2, 0.5)
+  set.seed(42)
+  legacy <- stats::rnorm(4, -0.5^2 / 2, 0.5)
   expect_equal(as.numeric(draw("est_shared_s")[, 1]), legacy, tolerance = 1e-12)
   expect_equal(as.numeric(draw("est_shared_s")[, 2]), legacy, tolerance = 1e-12) # both sexes read the one curve
   expect_false(isTRUE(all.equal(as.numeric(draw("est_all")[, 1]), as.numeric(draw("est_all")[, 2]))))

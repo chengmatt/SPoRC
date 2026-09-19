@@ -179,7 +179,7 @@ Setup_Mod_Retsel <- function(
   ...
 ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Fishsel_and_Q <- c(input_list$config$Setup_Mod_Fishsel_and_Q, mget(names(formals()))[-1])
 
@@ -255,7 +255,7 @@ Setup_Mod_Retsel <- function(
   cont_tv_ret_sel_mat <- array(NA, dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets))
   cont_tv_map <- data.frame(type = c("none", "iid", "rw", "3dmarg", "3dcond", "2dar1"), num = c(0,1,2,3,4,5)) # set up values we map to
 
-  for(i in 1:length(cont_tv_ret_sel)) {
+  for(i in seq_along(cont_tv_ret_sel)) {
     # Extract out components from list
     tmp <- cont_tv_ret_sel[i]
     tmp_vec <- unlist(strsplit(tmp, "_"))
@@ -275,7 +275,7 @@ Setup_Mod_Retsel <- function(
 
   # Blocked Retained Time-Varying Selectivity Options --------------------------------
   ret_sel_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
-  for(i in 1:length(ret_sel_blocks)) {
+  for(i in seq_along(ret_sel_blocks)) {
 
     # Extract out components from list
     tmp <- ret_sel_blocks[i]
@@ -320,7 +320,7 @@ Setup_Mod_Retsel <- function(
   ret_sel_bicubic_selstyr_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # calendar year the bicubic surface is actually fit from (0 = block's own start year); years before this are edge-kept, matching fish_sel_model's SelStyr
   ret_sel_bicubic_nselbins_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bins the bicubic surface is actually fit over (0 = all bins); bins beyond this are edge-kept, matching fish_sel_model's NSelBins
 
-  for(i in 1:length(ret_sel_model)) {
+  for(i in seq_along(ret_sel_model)) {
 
     # Extract out retained fishery selectivity components from vector
     tmp_sel_form <- ret_sel_model[i]
@@ -422,7 +422,7 @@ Setup_Mod_Retsel <- function(
     bins = bins,
     starting_values = starting_values
   )
-  input_list$data$retsel_devs_min_shared_bins <- if(!is.null(retsel_devs_shared_bins)) unlist(lapply(retsel_devs_shared_bins, min)) else 1:length(input_list$data$ages)
+  input_list$data$retsel_devs_min_shared_bins <- if(!is.null(retsel_devs_shared_bins)) unlist(lapply(retsel_devs_shared_bins, min)) else seq_along(input_list$data$ages)
 
   # Populate Parameter List -------------------------------------------------
 
@@ -430,7 +430,7 @@ Setup_Mod_Retsel <- function(
   unique_retsel_vals <- unique(as.vector(input_list$data$ret_sel_model))
   sel_pars_vec <- vector() # create empty vector to populate
 
-  for(i in 1:length(unique_retsel_vals)) {
+  for(i in seq_along(unique_retsel_vals)) {
     if(unique_retsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
     if(unique_retsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
     if(unique_retsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
@@ -470,7 +470,7 @@ Setup_Mod_Retsel <- function(
 
         retsel_blocks_tmp <- unique(as.vector(input_list$data$ret_sel_blocks[r,,f]))
 
-        for(b in 1:length(retsel_blocks_tmp)) {
+        for(b in seq_along(retsel_blocks_tmp)) {
 
           block_years <- which(input_list$data$ret_sel_blocks[r,,f] == retsel_blocks_tmp[b])
           if(unique(input_list$data$ret_sel_model[r, block_years, f]) != 8) next # only bicubic blocks need weight matrices
@@ -1074,13 +1074,13 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     retsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
                                     ret_selex_type = 'age',
                                     use_fixed_ret_sel = rep(1, input_list$data$n_fish_fleets),
-                                    ret_sel_input = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets )),
+                                    ret_sel_input = array(1, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
                                     ret_sel_nonpar_est_bins = NULL,
                                     ret_sel_sex_offset = rep("none", input_list$data$n_fish_fleets),
                                     ...
                                     ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Fishsel_and_Q <- mget(names(formals()))[-1]
 
@@ -1176,7 +1176,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   cont_tv_fish_sel_mat <- array(NA, dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets))
   cont_tv_map <- data.frame(type = c("none", "iid", "rw", "3dmarg", "3dcond", "2dar1"), num = c(0,1,2,3,4,5)) # set up values we map to
 
-  for(i in 1:length(cont_tv_fish_sel)) {
+  for(i in seq_along(cont_tv_fish_sel)) {
     # Extract out components from list
     tmp <- cont_tv_fish_sel[i]
     tmp_vec <- unlist(strsplit(tmp, "_"))
@@ -1196,7 +1196,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
 
   # Blocked Time-Varying Selectivity Options --------------------------------
   fish_sel_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
-  for(i in 1:length(fish_sel_blocks)) {
+  for(i in seq_along(fish_sel_blocks)) {
 
     # Extract out components from list
     tmp <- fish_sel_blocks[i]
@@ -1241,7 +1241,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   fish_sel_bicubic_selstyr_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # calendar year the bicubic surface is actually fit from (0 = block's own start year, i.e. no offset); years within the block before this are edge-kept at this year's fitted curve
   fish_sel_bicubic_nselbins_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bins (starting from the first) the bicubic surface is actually fit over (0 = all bins, i.e. no truncation); bins beyond this are kept flat at the last fitted bin's value
 
-  for(i in 1:length(fish_sel_model)) {
+  for(i in seq_along(fish_sel_model)) {
 
     # Extract out fishery selectivity components from vector
     tmp_sel_form <- fish_sel_model[i]
@@ -1319,7 +1319,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
 
   # Blocked Catchability Options --------------------------------------------
   fish_q_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
-  for(i in 1:length(fish_q_blocks)) {
+  for(i in seq_along(fish_q_blocks)) {
     # Extract out components from list
     tmp <- fish_q_blocks[i]
     tmp_vec <- unlist(strsplit(tmp, "_"))
@@ -1398,9 +1398,9 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
         if(length(var_names) == 0) next
         tmp_dat <- data.frame(fish_q_cov_dat[var_names])
         tmp_design_mat <- stats::model.matrix(tmp_formula, data = tmp_dat)
-        fish_q_cov[r,,f,1:ncol(tmp_design_mat)] <- tmp_design_mat
+        fish_q_cov[r,,f,seq_len(ncol(tmp_design_mat))] <- tmp_design_mat
 
-        for(i in 1:ncol(tmp_design_mat)) {
+        for(i in seq_len(ncol(tmp_design_mat))) {
           coeff_counter <- coeff_counter + 1
           map_fish_q_coeff[r,f,i] <- coeff_counter
         } # end i loop
@@ -1445,7 +1445,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   if(!is.null(input_list$data$fish_waa_selected) && any(input_list$data$fish_waa_selected == 1) && fish_selex_type != 1) stop("fish_waa_selected = 1 in Setup_Mod_FishIdx_and_Comps weights the fishery weight at age by length selectivity, so fish_selex_type must be length")
   input_list$data$use_fixed_fish_sel <- use_fixed_fish_sel
   input_list$data$fish_sel_input <- fish_sel_input
-  input_list$data$fishsel_devs_min_shared_bins <- if(!is.null(fishsel_devs_shared_bins)) unlist(lapply(fishsel_devs_shared_bins, min)) else 1:length(input_list$data$ages)
+  input_list$data$fishsel_devs_min_shared_bins <- if(!is.null(fishsel_devs_shared_bins)) unlist(lapply(fishsel_devs_shared_bins, min)) else seq_along(input_list$data$ages)
 
   # Populate Parameter List -------------------------------------------------
 
@@ -1453,7 +1453,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   unique_fishsel_vals <- unique(as.vector(input_list$data$fish_sel_model))
   sel_pars_vec <- vector() # create empty vector to populate
 
-  for(i in 1:length(unique_fishsel_vals)) {
+  for(i in seq_along(unique_fishsel_vals)) {
     if(unique_fishsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
     if(unique_fishsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
     if(unique_fishsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
@@ -1481,7 +1481,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
 
         fishsel_blocks_tmp <- unique(as.vector(input_list$data$fish_sel_blocks[r,,f]))
 
-        for(b in 1:length(fishsel_blocks_tmp)) {
+        for(b in seq_along(fishsel_blocks_tmp)) {
 
           block_years <- which(input_list$data$fish_sel_blocks[r,,f] == fishsel_blocks_tmp[b])
           if(unique(input_list$data$fish_sel_model[r, block_years, f]) != 8) next # only bicubic blocks need weight matrices

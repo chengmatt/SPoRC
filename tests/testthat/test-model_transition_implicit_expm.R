@@ -159,7 +159,10 @@ test_that("mat_exp is differentiable and its gradient converges to the exact one
   # the derivative has to be the derivative of the thing it approximates.
   n <- 4
   adj <- matrix(0, n, n)
-  for (i in 1:(n - 1)) { adj[i, i + 1] <- 1; adj[i + 1, i] <- 1 }
+  for (i in 1:(n - 1)) {
+    adj[i, i + 1] <- 1
+    adj[i + 1, i] <- 1
+  }
   Z <- c(0.3, 0.25, 0.4, 0.2)
 
   f <- function(nsub) function(p) {
@@ -239,7 +242,8 @@ test_that("Setup_Mod_Movement rejects a substep count that is not a power of two
     n_pop = 1,
     verbose = FALSE
   )
-  adj <- matrix(1L, 3, 3); diag(adj) <- 0L
+  adj <- matrix(1L, 3, 3)
+  diag(adj) <- 0L
   mv <- function(nsub) Setup_Mod_Movement(
     input_list = il,
     move_type = 1,

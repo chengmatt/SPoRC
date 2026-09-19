@@ -238,7 +238,7 @@ get_tagging_observation_model <- function(
     ty <- conv_tag_release_indicator[tc,2] # extract tag release year
     tseas <- conv_tag_release_indicator[tc,3] # extract tag release season
 
-    # Cohort specific containers 
+    # Cohort specific containers
     avail_tc <- array(0, dim = c(conv_tag_max_liberty + 1, n_seas, n_pop, n_regions, n_ages, n_sexes))
     recap_tc <- array(0, dim = c(conv_tag_max_liberty, n_seas, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets))
 

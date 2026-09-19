@@ -225,7 +225,7 @@ Setup_Mod_Dim <- function(years,
                           store_config = FALSE
                           ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
 
   # Create empty list
   input_list <- list(data = list(), par = list(), map = list())

@@ -6,7 +6,14 @@ library(testthat)
 # transition a test setup was built from, the objective and gradient have to match
 # the model that read that transition as data.
 
-L0 <- 9; L1 <- 20; L2 <- 55; K <- 0.25; CV1 <- 0.12; CV2 <- 0.08; A1 <- 2; A2 <- 20
+L0 <- 9
+L1 <- 20
+L2 <- 55
+K <- 0.25
+CV1 <- 0.12
+CV2 <- 0.08
+A1 <- 2
+A2 <- 20
 
 # The CAAL test setup's full input list, with the growth module's fields and parameter
 # taken from a biologicals setup that switched growth on. Everything the test setup
@@ -66,8 +73,11 @@ test_that("the CV is CV1 below A1, CV2 from A2, and interpolates on length betwe
 
 
 test_that("the plus group adjustment is the decay-weighted mean SS3 uses", {
-  L_acc <- 50; linf <- 60; n_acc <- 20
-  a <- 0:n_acc; w <- exp(-0.2 * a)
+  L_acc <- 50
+  linf <- 60
+  n_acc <- 20
+  a <- 0:n_acc
+  w <- exp(-0.2 * a)
   expect_equal(plus_group_size(L_acc, linf, n_acc), sum(w * (L_acc + a / n_acc * (linf - L_acc))) / sum(w))
   # it sits between the curve at the accumulator age and the asymptote
   expect_gt(plus_group_size(L_acc, linf, n_acc), L_acc)
@@ -255,7 +265,8 @@ test_that("growth parameters are recovered from lengths plus conditional age-at-
 
 
 test_that("each fleet's key and weight are read at that fleet's own timing", {
-  ages <- 0:6; lower <- seq(10, 60, by = 5)
+  ages <- 0:6
+  lower <- seq(10, 60, by = 5)
   pars <- array(log(c(15, 55, 0.3, 0.15, 0.08)), dim = c(1, 1, 1, 5))
   wl <- array(c(1e-5, 3), dim = c(1, 1, 1, 2))
   run <- function(t_fish, t_srv) {

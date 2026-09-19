@@ -8,7 +8,9 @@ library(testthat)
 
 test_that("a simulated season correlation appears across seasons and leaves ages and years alone", {
   set.seed(31)
-  nk <- 3; ny <- 40; na <- 10
+  nk <- 3
+  ny <- 40
+  na <- 10
   env <- naaseas_env(
     n_yrs = ny,
     n_ages = na,
@@ -27,8 +29,8 @@ test_that("a simulated season correlation appears across seasons and leaves ages
   expect_equal(kc(2, 3), 0.5, tolerance = 0.03)
 
   # the correlation is on the season dim and nowhere else
-  cor_age <- function(x) stats::cor(as.vector(x[1,1,,1,1:(na-1),1]), as.vector(x[1,1,,1,2:na,1]))
-  cor_yr <- function(x) stats::cor(as.vector(x[1,1,1:(ny-1),1,,1]), as.vector(x[1,1,2:ny,1,,1]))
+  cor_age <- function(x) stats::cor(as.vector(x[1,1,,1,1:(na - 1),1]), as.vector(x[1,1,,1,2:na,1]))
+  cor_yr <- function(x) stats::cor(as.vector(x[1,1,1:(ny - 1),1,,1]), as.vector(x[1,1,2:ny,1,,1]))
   expect_equal(mean(vapply(D, cor_age, numeric(1))), 0, tolerance = 0.03)
   expect_equal(mean(vapply(D, cor_yr, numeric(1))), 0, tolerance = 0.03)
   expect_equal(mean(vapply(D, function(x) stats::sd(as.vector(x)), numeric(1))), 0.4, tolerance = 0.02)
@@ -48,7 +50,9 @@ test_that("the penalty recovers the seasonal process the simulator drew from", {
   # catches a simulator and a penalty that disagree about which dim the season is, since a
   # swapped dim still returns a finite optimum, just the wrong one.
   set.seed(33)
-  nk <- 3; ny <- 40; na <- 10
+  nk <- 3
+  ny <- 40
+  na <- 10
   env <- naaseas_env(
     n_yrs = ny,
     n_ages = na,

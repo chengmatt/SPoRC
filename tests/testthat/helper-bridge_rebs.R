@@ -239,7 +239,7 @@ seed_rebs_mle <- function(input_list, dat) {
   input_list$par$ln_F_devs[1, , 1, 1] <- mle$fmort_dev
   input_list$par$fish_fixed_sel_pars[] <- log(c(mle$sel_a50_fish, mle$sel_aslope_fish))
   input_list$par$srv_fixed_sel_pars[] <- log(c(mle$sel_a50_srv, mle$sel_aslope_srv))
-  input_list$par$ln_RecDevs[1, 1, 1:length(mle$rec_dev)] <- mle$rec_dev
+  input_list$par$ln_RecDevs[1, 1, seq_along(mle$rec_dev)] <- mle$rec_dev
 
   ## Initial age structure ----------------------------------------------------
   # the assessment parameterizes it as N(styr, j) = exp(log_rinit - M (j - 1) +

@@ -122,7 +122,8 @@ test_that("Get_Selex works", {
 
   test_that("Model 3: value at b50 is ~0.5 and at b50+b95 is ~0.95", {
     # b95 is the WIDTH from b50, so 95% selectivity is reached at bin = b50 + b95
-    b50 <- 10; b95 <- 5
+    b50 <- 10
+    b95 <- 5
     expect_equal(selex(3, log(c(b50, b95)), bins = b50),        0.5,  tolerance = 1e-6)
     expect_equal(selex(3, log(c(b50, b95)), bins = b50 + b95),  0.95, tolerance = 1e-4)
   })
@@ -130,7 +131,8 @@ test_that("Get_Selex works", {
   test_that("Models 0 and 3 agree when slope parameterizations are equivalent", {
     # Model 3: 1 / (1 + 19^((b50-Bin)/b95)), b95 = width from b50 to 95%
     # k_equiv = log(19) / b95 makes Model 0 match
-    b50 <- 10; b95 <- 5
+    b50 <- 10
+    b95 <- 5
     k_equiv <- log(19) / b95
     res0 <- selex(0, log(c(b50, k_equiv)))
     res3 <- selex(3, log(c(b50, b95)))
@@ -442,7 +444,8 @@ test_that("Get_Selex works", {
 
   test_that("TimeVary_Model=1 positive b50 dev shifts logistic right (Model 0)", {
     pars <- log(c(10, 0.5))
-    devs_pos <- zero_devs(2); devs_pos[1, 1, 1, 1, 1] <- 0.5  # shift b50 up
+    devs_pos <- zero_devs(2)
+    devs_pos[1, 1, 1, 1, 1] <- 0.5  # shift b50 up
     res_base <- selex(0, pars, tv = 0)
     res_tv   <- selex(0, pars, tv = 1, devs = devs_pos)
     # Higher b50 => lower selex at younger ages
@@ -482,7 +485,8 @@ test_that("Get_Selex works", {
   test_that("TimeVary_Model=3 positive bin devs increase selectivity (Model 0)", {
     pars <- log(c(10, 0.5))
     devs_base <- zero_devs(length(ages))
-    devs_pos  <- devs_base; devs_pos[1, 1, , 1, 1] <- 0.5
+    devs_pos  <- devs_base
+    devs_pos[1, 1, , 1, 1] <- 0.5
     res_base <- selex(0, pars, tv = 0, devs = zero_devs(2))
     res_tv   <- selex(0, pars, tv = 3, devs = devs_pos)
     expect_true(all(res_tv >= res_base - 1e-10))
@@ -510,14 +514,18 @@ test_that("Get_Selex works", {
   # ── cross-model sanity ────────────────────────────────────────────────────────
 
   test_that("Models 0 and 6 produce same shape; Model 6 is scaled by alpha", {
-    k <- 0.5; b50 <- 10; alpha <- 0.7
+    k <- 0.5
+    b50 <- 10
+    alpha <- 0.7
     res0 <- selex(0, log(c(b50, k)))
     res6 <- selex(6, c(qlogis(alpha), log(b50), log(k)))
     expect_equal(res6, alpha * res0, tolerance = 1e-8)
   })
 
   test_that("Models 3 and 7 produce same shape; Model 7 is scaled by alpha", {
-    b50 <- 10; b95 <- 15; alpha <- 0.7
+    b50 <- 10
+    b95 <- 15
+    alpha <- 0.7
     res3 <- selex(3, log(c(b50, b95)))
     res7 <- selex(7, c(qlogis(alpha), log(b50), log(b95)))
     expect_equal(res7, alpha * res3, tolerance = 1e-8)

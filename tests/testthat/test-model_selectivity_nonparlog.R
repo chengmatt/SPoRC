@@ -87,7 +87,8 @@ test_that("nonparlog is non-parametric on the log scale and centered within each
 
 test_that("bin overrides replace named bins with their own free deviations", {
 
-  n_ages <- 6; n_yrs <- 4
+  n_ages <- 6
+  n_yrs <- 4
   ln_seldevs <- array(0, dim = c(1, n_yrs, n_ages, 1, 1))
   bin_devs <- array(0, dim = c(1, n_yrs, n_ages, 1, 1))
   set.seed(52)

@@ -28,13 +28,17 @@ test_that("equilibrium SSB is a fixed point of the seasonal operator under every
   # mismatch between the operator used to iterate and the one used to check would
   # show up immediately here.
   set.seed(2024)
-  n <- 3; n_ages <- 12; n_seas <- 2
+  n <- 3
+  n_ages <- 12
+  n_seas <- 2
   seasdur <- c(0.4, 0.6)
 
-  Mv <- array(0, c(n, n, n_seas)); Qv <- array(0, c(n, n, n_seas))
+  Mv <- array(0, c(n, n, n_seas))
+  Qv <- array(0, c(n, n, n_seas))
   for (s in seq_len(n_seas)) {
     D <- matrix(stats::runif(n * n, 0.05, 0.4), n, n)
-    diag(D) <- 0; diag(D) <- -colSums(D)
+    diag(D) <- 0
+    diag(D) <- -colSums(D)
     Qv[, , s] <- t(D)
     Mv[, , s] <- t(as.matrix(Matrix::expm(D * seasdur[s])))
   }
@@ -94,16 +98,21 @@ test_that("the analytic plus group agrees with brute-force iteration under every
   # simply iterating the plus-group recursion many times, for each timing -- this is the
   # link between the reference point routines and the projection dynamics.
   set.seed(99)
-  n <- 3; n_seas <- 2
+  n <- 3
+  n_seas <- 2
   seasdur <- c(0.35, 0.65)
-  Mv <- array(0, c(n, n, n_seas)); Qv <- array(0, c(n, n, n_seas))
+  Mv <- array(0, c(n, n, n_seas))
+  Qv <- array(0, c(n, n, n_seas))
   for (s in seq_len(n_seas)) {
     D <- matrix(stats::runif(n * n, 0.05, 0.4), n, n)
-    diag(D) <- 0; diag(D) <- -colSums(D)
-    Qv[, , s] <- t(D); Mv[, , s] <- t(as.matrix(Matrix::expm(D * seasdur[s])))
+    diag(D) <- 0
+    diag(D) <- -colSums(D)
+    Qv[, , s] <- t(D)
+    Mv[, , s] <- t(as.matrix(Matrix::expm(D * seasdur[s])))
   }
   # M per region and season, same shape as F below
-  M_pen <- matrix(c(0.12, 0.2, 0.09), n, n_seas); M_plus <- matrix(c(0.13, 0.22, 0.1), n, n_seas)
+  M_pen <- matrix(c(0.12, 0.2, 0.09), n, n_seas)
+  M_plus <- matrix(c(0.13, 0.22, 0.1), n, n_seas)
   F_pen <- matrix(stats::runif(n * n_seas, 0.02, 0.25), n, n_seas)
   F_plus <- matrix(stats::runif(n * n_seas, 0.02, 0.25), n, n_seas)
   N_penult <- c(50, 20, 35)
@@ -147,15 +156,23 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
   #
   # Natural mortality varies by region so the three timings differ; with a
   # region-invariant Z they would coincide and the test would be vacuous.
-  n_pop <- 1; n_regions <- 3; n_seas <- 1; n_sexes <- 1; n_ages <- 20; n_flt <- 1
-  seasdur <- rep(1 / n_seas, n_seas); ages <- seq_len(n_ages)
-  t_spawn <- 0.25; spawn_seas <- 1
+  n_pop <- 1
+  n_regions <- 3
+  n_seas <- 1
+  n_sexes <- 1
+  n_ages <- 20
+  n_flt <- 1
+  seasdur <- rep(1 / n_seas, n_seas)
+  ages <- seq_len(n_ages)
+  t_spawn <- 0.25
+  spawn_seas <- 1
   NY <- 120                      # projection years; converged to ~1e-10 well before this
   R_tot <- 100
   rec_prop <- c(0.5, 0.3, 0.2)
   M_r <- c(0.12, 0.20, 0.35)
 
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
   ctmc_dat <- expand.grid(
     pop = 1,
     regions = seq_len(n_regions),
@@ -189,7 +206,8 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
     seasdur = seasdur,
     ctmc_scale_by_seasdur = 1
   )
-  Mov1 <- mv$Movement[1, , , 1, 1, , 1]; Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
+  Mov1 <- mv$Movement[1, , , 1, 1, , 1]
+  Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
 
   sel <- 1 / (1 + exp(-1.2 * (ages - 5)))
   waa <- 6 / (1 + exp(-0.5 * (ages - 6)))
@@ -233,10 +251,12 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
     Mra <- array(0, c(n_pop, n_regions, n_regions, NY, n_seas, n_ages, n_sexes))
     sgl <- array(0, c(n_pop, n_regions, n_regions, NY, n_ages, n_sexes))
     for (y in seq_len(NY)) for (a in seq_len(n_ages)) {
-      Mov[1, , , y, 1, a, 1] <- Mov1[, , a]; Mra[1, , , y, 1, a, 1] <- Mra1[, , a]
+      Mov[1, , , y, 1, a, 1] <- Mov1[, , a]
+      Mra[1, , , y, 1, a, 1] <- Mra1[, , a]
       sgl[1, , , y, a, 1] <- diag(n_regions)
     }
-    tNAA <- array(0, c(n_pop, n_regions, n_seas, n_ages, n_sexes)); tNAA[1, , 1, , 1] <- 10
+    tNAA <- array(0, c(n_pop, n_regions, n_seas, n_ages, n_sexes))
+    tNAA[1, , 1, , 1] <- 10
 
     Do_Population_Projection(
       n_proj_yrs = NY,
@@ -277,7 +297,8 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
     )
   }
 
-  F40 <- numeric(3); B40 <- numeric(3)
+  F40 <- numeric(3)
+  B40 <- numeric(3)
   for (tm in 0:2) {
     rp <- SPoRC:::optim_ref_pts(SPoRC:::global_SPR, spr_data(tm), list(log_F_x = log(0.1)))
     F40[tm + 1] <- rp$rep$F_x
@@ -318,14 +339,20 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
   # build_plus_group_T while their age loops, spawning propagation and catch equation
   # stayed hard-coded to movement-then-mortality. Before the fix these disagreed by 3.1%
   # at timing 1 and 1.3% at timing 2, while agreeing exactly at timing 0.
-  n_regions <- 3; n_ages <- 20; n_seas <- 1; n_flt <- 1
-  seasdur <- rep(1 / n_seas, n_seas); ages <- seq_len(n_ages)
-  t_spawn <- 0.25; spawn_seas <- 1
+  n_regions <- 3
+  n_ages <- 20
+  n_seas <- 1
+  n_flt <- 1
+  seasdur <- rep(1 / n_seas, n_seas)
+  ages <- seq_len(n_ages)
+  t_spawn <- 0.25
+  spawn_seas <- 1
   M_r <- c(0.12, 0.20, 0.35)          # region-varying, so the timings genuinely differ
   rec_prop <- c(0.5, 0.3, 0.2)
   Fv <- 0.2
 
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
   ctmc <- expand.grid(
     pop = 1,
     regions = seq_len(n_regions),
@@ -359,7 +386,8 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
     seasdur = seasdur,
     ctmc_scale_by_seasdur = 1
   )
-  Mov1 <- mv$Movement[1, , , 1, 1, , 1]; Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
+  Mov1 <- mv$Movement[1, , , 1, 1, , 1]
+  Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
 
   sel <- 1 / (1 + exp(-1.2 * (ages - 5)))
   waa <- 6 / (1 + exp(-0.5 * (ages - 6)))
@@ -424,7 +452,8 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
   )
 
   ev <- function(fn, dat, parname, val) {
-    p <- list(); p[[parname]] <- log(val)
+    p <- list()
+    p[[parname]] <- log(val)
     RTMB::MakeADFun(SPoRC:::cmb(fn, dat), parameters = p, random = NULL, silent = TRUE)$report(log(val))
   }
 
@@ -463,17 +492,27 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   # NOTE: global_Fmsy assumes GLOBAL density dependence, so srr_opt$rec_dd must be 1.
   # Pairing it with rec_dd = 0 (local) compares two different equilibria and looks like a
   # bug when it is not.
-  n_pop <- 1; n_regions <- 3; n_seas <- 1; n_sexes <- 1; n_ages <- 20; n_flt <- 1
-  seasdur <- rep(1 / n_seas, n_seas); ages <- seq_len(n_ages)
-  t_spawn <- 0.25; spawn_seas <- 1
+  n_pop <- 1
+  n_regions <- 3
+  n_seas <- 1
+  n_sexes <- 1
+  n_ages <- 20
+  n_flt <- 1
+  seasdur <- rep(1 / n_seas, n_seas)
+  ages <- seq_len(n_ages)
+  t_spawn <- 0.25
+  spawn_seas <- 1
   # The Beverton-Holt feedback loop damps geometrically and converges more slowly than
   # the age structure alone: relative error in equilibrium SSB is 1.3e-9 at 150 years,
   # 1.5e-12 at 200 and ~2e-15 by 250. 280 leaves headroom under the 1e-10 tolerance.
   NY <- 280
-  M_r <- c(0.12, 0.20, 0.35); rec_prop <- c(0.5, 0.3, 0.2)
-  R0 <- 100; h <- 0.7
+  M_r <- c(0.12, 0.20, 0.35)
+  rec_prop <- c(0.5, 0.3, 0.2)
+  R0 <- 100
+  h <- 0.7
 
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
   ctmc <- expand.grid(
     pop = 1,
     regions = seq_len(n_regions),
@@ -507,7 +546,8 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
     seasdur = seasdur,
     ctmc_scale_by_seasdur = 1
   )
-  Mov1 <- mv$Movement[1, , , 1, 1, , 1]; Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
+  Mov1 <- mv$Movement[1, , , 1, 1, , 1]
+  Mra1 <- mv$Mrate[1, , , 1, 1, , 1]
 
   sel <- 1 / (1 + exp(-1.2 * (ages - 5)))
   waa <- 6 / (1 + exp(-0.5 * (ages - 6)))
@@ -552,10 +592,12 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
     Mra <- array(0, c(n_pop, n_regions, n_regions, NY, n_seas, n_ages, n_sexes))
     sgl <- array(0, c(n_pop, n_regions, n_regions, NY, n_ages, n_sexes))
     for (y in seq_len(NY)) for (a in seq_len(n_ages)) {
-      Mov[1, , , y, 1, a, 1] <- Mov1[, , a]; Mra[1, , , y, 1, a, 1] <- Mra1[, , a]
+      Mov[1, , , y, 1, a, 1] <- Mov1[, , a]
+      Mra[1, , , y, 1, a, 1] <- Mra1[, , a]
       sgl[1, , , y, a, 1] <- diag(n_regions)
     }
-    tNAA <- array(0, c(n_pop, n_regions, n_seas, n_ages, n_sexes)); tNAA[1, , 1, , 1] <- 10
+    tNAA <- array(0, c(n_pop, n_regions, n_seas, n_ages, n_sexes))
+    tNAA[1, , 1, , 1] <- 10
 
     bh <- list(
       R0 = R0,
@@ -625,7 +667,8 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   Bmsy_all <- numeric(3)
   for (tm in 0:2) {
     rp <- SPoRC:::optim_ref_pts(SPoRC:::global_Fmsy, msy_data(tm), list(log_Fmsy = log(0.1)))
-    Fmsy <- rp$rep$Fmsy; Req <- rp$rep$Req
+    Fmsy <- rp$rep$Fmsy
+    Req <- rp$rep$Req
     Bmsy <- sum(apply(rp$rep$SB_age[2, , , drop = FALSE], 2, sum)) * Req
     Bmsy_all[tm + 1] <- Bmsy
 
@@ -667,14 +710,24 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
   #     rep$NAA[,,n_yrs,,,]), so its later seasons are inputs, not something the
   #     projection recomputes. Seeding only season 1 leaves SSB[,,1] = 0, which with
   #     Beverton-Holt recruitment collapses the whole projection to zero.
-  n_pop <- 1; n_regions <- 3; n_sexes <- 1; n_ages <- 20; n_flt <- 1
-  NS <- 2; SPAWN <- 2
-  seasdur <- c(0.4, 0.6); ages <- seq_len(n_ages); t_spawn <- 0.25
+  n_pop <- 1
+  n_regions <- 3
+  n_sexes <- 1
+  n_ages <- 20
+  n_flt <- 1
+  NS <- 2
+  SPAWN <- 2
+  seasdur <- c(0.4, 0.6)
+  ages <- seq_len(n_ages)
+  t_spawn <- 0.25
   NY <- 280
-  M_r <- c(0.12, 0.20, 0.35); rec_prop <- c(0.5, 0.3, 0.2)
-  R0 <- 100; h <- 0.7
+  M_r <- c(0.12, 0.20, 0.35)
+  rec_prop <- c(0.5, 0.3, 0.2)
+  R0 <- 100
+  h <- 0.7
 
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
   ctmc <- expand.grid(
     pop = 1,
     regions = seq_len(n_regions),
@@ -762,7 +815,8 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
     sgl <- array(0, c(n_pop, n_regions, n_regions, NY, n_ages, n_sexes))
     for (y in seq_len(NY)) {
       for (s in seq_len(NS)) for (a in seq_len(n_ages)) {
-        Mov[1, , , y, s, a, 1] <- Mov1[, , s, a]; Mra[1, , , y, s, a, 1] <- Mra1[, , s, a]
+        Mov[1, , , y, s, a, 1] <- Mov1[, , s, a]
+        Mra[1, , , y, s, a, 1] <- Mra1[, , s, a]
       }
       for (a in seq_len(n_ages)) sgl[1, , , y, a, 1] <- diag(n_regions)
     }
@@ -863,13 +917,20 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
   #
   # This needs n_seas > 1 AND non-uniform rec_region_prop to bite -- the single-season
   # MSY/SPR agreement test above never enters the seasonal top-up branch.
-  n_regions <- 3; n_ages <- 20; NS <- 2; n_flt <- 1
-  seasdur <- c(0.4, 0.6); ages <- seq_len(n_ages); t_spawn <- 0.25; SPAWN <- 1
+  n_regions <- 3
+  n_ages <- 20
+  NS <- 2
+  n_flt <- 1
+  seasdur <- c(0.4, 0.6)
+  ages <- seq_len(n_ages)
+  t_spawn <- 0.25
+  SPAWN <- 1
   M_r <- c(0.12, 0.20, 0.35)
   rec_prop <- c(0.5, 0.3, 0.2)            # deliberately non-uniform
   Fv <- 0.2
 
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
   ctmc <- expand.grid(
     pop = 1,
     regions = seq_len(n_regions),
@@ -971,7 +1032,8 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
   }
 
   ev <- function(fn, dat, parname, val) {
-    p <- list(); p[[parname]] <- log(val)
+    p <- list()
+    p[[parname]] <- log(val)
     RTMB::MakeADFun(SPoRC:::cmb(fn, dat), parameters = p, random = NULL, silent = TRUE)$report(log(val))
   }
 
@@ -994,7 +1056,11 @@ test_that("CTMC diffusion parameter is recoverable from continuous movement frac
   # minimizing the discrepancy between observed and predicted movement fractions.
   # This checks that Get_Movement's generator and the seasdur scaling are mutually
   # consistent -- if the two disagreed, the recovered value would be biased.
-  n_regions <- 3; n_ages <- 3; n_sexes <- 1; n_yrs <- 2; n_seas <- 2
+  n_regions <- 3
+  n_ages <- 3
+  n_sexes <- 1
+  n_yrs <- 2
+  n_seas <- 2
   seasdur <- c(0.3, 0.7)
   dat <- expand.grid(
     pop = 1,
@@ -1004,7 +1070,8 @@ test_that("CTMC diffusion parameter is recoverable from continuous movement frac
     ages = seq_len(n_ages),
     sexes = seq_len(n_sexes)
   )
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
 
   get_move <- function(log_theta) {
     Get_Movement(
@@ -1048,7 +1115,8 @@ test_that("CTMC diffusion parameter is recoverable from continuous movement frac
 test_that("season-duration scaling is identifiable, not absorbed by the diffusion parameter", {
   # With unequal season durations, movement in a short season must differ from a long one.
   # If the seasdur scaling were dropped, no diffusion value could reproduce both.
-  n_regions <- 3; n_seas <- 2
+  n_regions <- 3
+  n_seas <- 2
   seasdur <- c(0.25, 0.75)
   dat <- expand.grid(
     pop = 1,
@@ -1058,7 +1126,8 @@ test_that("season-duration scaling is identifiable, not absorbed by the diffusio
     ages = 1:2,
     sexes = 1
   )
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
 
   res <- Get_Movement(
     move_type = 1,
@@ -1108,10 +1177,12 @@ test_that("continuous movement reproduces SSB when stepped as one season or seve
   set.seed(31)
   n <- 4
   D <- matrix(stats::runif(n * n, 0.05, 0.4), n, n)
-  diag(D) <- 0; diag(D) <- -colSums(D)
+  diag(D) <- 0
+  diag(D) <- -colSums(D)
   Q <- t(D)
   Z_annual <- c(0.3, 0.5, 0.2, 0.4)
-  WAA <- c(1.2, 0.9, 1.5, 1.1); MatAA <- c(0.8, 0.6, 0.9, 0.7)
+  WAA <- c(1.2, 0.9, 1.5, 1.1)
+  MatAA <- c(0.8, 0.6, 0.9, 0.7)
   N0 <- c(500, 300, 150, 250)
 
   for (k in c(2, 4, 12)) {
@@ -1135,7 +1206,8 @@ test_that("spawning state is consistent between partial and full propagation", {
   set.seed(52)
   n <- 3
   D <- matrix(stats::runif(n * n, 0.05, 0.4), n, n)
-  diag(D) <- 0; diag(D) <- -colSums(D)
+  diag(D) <- 0
+  diag(D) <- -colSums(D)
   Q <- t(D)
   Mv <- t(as.matrix(Matrix::expm(D)))
   Z <- c(0.3, 0.15, 0.45)

@@ -45,8 +45,14 @@ test_that("simulated innovations hold the correlation on the dim they name", {
   # over ages, which is what a transposed dim would fail
   set.seed(3)
   reps <- function(env, n = 1500) replicate(n, SPoRC:::draw_naa_innovations(env), simplify = FALSE)
-  cor_age <- function(x) { na <- dim(x)[5]; stats::cor(as.vector(x[1,,,1,1:(na-1),1]), as.vector(x[1,,,1,2:na,1])) }
-  cor_yr <- function(x) { ny <- dim(x)[3]; stats::cor(as.vector(x[1,,1:(ny-1),1,,1]), as.vector(x[1,,2:ny,1,,1])) }
+  cor_age <- function(x) {
+    na <- dim(x)[5]
+    stats::cor(as.vector(x[1,,,1,1:(na - 1),1]), as.vector(x[1,,,1,2:na,1]))
+  }
+  cor_yr <- function(x) {
+    ny <- dim(x)[3]
+    stats::cor(as.vector(x[1,,1:(ny - 1),1,,1]), as.vector(x[1,,2:ny,1,,1]))
+  }
   avg <- function(L, f) mean(vapply(L, f, numeric(1)))
 
   D <- reps(naa_sim_env(NAA_re = 1, sigmaNAA = 0.5))
@@ -75,7 +81,7 @@ test_that("a simulated region correlation appears across regions and leaves ages
   expect_equal(rc(1, 3), 0.2, tolerance = 0.03)
   expect_equal(rc(2, 3), 0.5, tolerance = 0.03)
   na <- 8
-  expect_equal(mean(vapply(D, function(x) stats::cor(as.vector(x[1,,,1,1:(na-1),1]), as.vector(x[1,,,1,2:na,1])), numeric(1))),
+  expect_equal(mean(vapply(D, function(x) stats::cor(as.vector(x[1,,,1,1:(na - 1),1]), as.vector(x[1,,,1,2:na,1])), numeric(1))),
                0.7, tolerance = 0.03)
 })
 
@@ -86,7 +92,11 @@ test_that("the penalty recovers the parameters the simulator drew from", {
   # standard deviation, every estimate is low by exactly sqrt(1 - rho^2) per correlated dim,
   # which on a single draw is indistinguishable from an unlucky realization.
   set.seed(101)
-  np <- 1; nr <- 1; ny <- 40; na <- 10; ns <- 1
+  np <- 1
+  nr <- 1
+  ny <- 40
+  na <- 10
+  ns <- 1
   n_rep <- 15
   rtinv <- function(x) 2 / (1 + exp(-2 * x)) - 1
 
@@ -109,7 +119,10 @@ test_that("the penalty recovers the parameters the simulator drew from", {
         pe <- array(0, dim = c(np, nr, 3, ns))
         if(code == 2) pe[,,1,] <- th[2]
         if(code == 3) pe[,,2,] <- th[2]
-        if(code == 4) { pe[,,1,] <- th[2]; pe[,,2,] <- th[3] }
+        if(code == 4) {
+          pe[,,1,] <- th[2]
+          pe[,,2,] <- th[3]
+        }
         SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, array(exp(th[1]), dim = dim(pred)),
                                       1:na, 1:ny, 1, NAA_re = code, NAA_pe_pars = pe)
       }

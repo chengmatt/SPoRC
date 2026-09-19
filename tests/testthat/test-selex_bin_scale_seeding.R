@@ -4,7 +4,8 @@
 # on ages 1-6 and lengths 20-100, a peak read off the wrong vector lands at 3.5, below every length bin.
 
 selex_seed_input <- function(selex_type = "length", n_lens = 9) {
-  NY <- 8; NAG <- 6
+  NY <- 8
+  NAG <- 6
   lens <- seq(20, 100, length.out = n_lens)
   # a size-age key spreading each age across the length bins, so length
   # compositions are something the model can fit

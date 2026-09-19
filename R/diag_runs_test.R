@@ -44,10 +44,10 @@ do_runs_test <- function(x,
                          mixing = "two.sided"
                          ) {
 
-  if(is.null(type)) type="resid"
-  if(type=="resid"){
+  if(is.null(type)) type = "resid"
+  if(type == "resid") {
     mu = 0}else{mu = mean(x, na.rm = TRUE)}
-  alternative=c("two.sided","left.sided")[which(c("two.sided", "less")%in%mixing)]
+  alternative = c("two.sided","left.sided")[which(c("two.sided", "less") %in% mixing)]
   # Average moving range
   mr  <- abs(diff(x - mu))
   amr <- mean(mr, na.rm = TRUE)
@@ -61,12 +61,12 @@ do_runs_test <- function(x,
   # Calculate control limits
   lcl <- mu - 3 * stdev
   ucl <- mu + 3 * stdev
-  if(nlevels(factor(sign(x)))>1){
+  if(nlevels(factor(sign(x))) > 1) {
     # Make the runs test non-parametric
     runstest = randtests::runs.test(x,threshold = 0,alternative = alternative)
-    if(is.na(runstest$p.value)) p.value =0.001
+    if(is.na(runstest$p.value)) runstest$p.value = 0.001 # NaN with too few runs for a variance; same floor as the one-sign case
     pvalue = round(runstest$p.value,3)} else {
       pvalue = 0.001
     }
-  return(list(sig3lim=c(lcl,ucl),p.runs= pvalue))
+  return(list(sig3lim = c(lcl,ucl),p.runs = pvalue))
 }

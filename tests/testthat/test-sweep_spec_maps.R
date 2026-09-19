@@ -40,7 +40,8 @@ map_shared_dims <- function(m, d) {
     # constant along dim k when every slice equals the first
     first <- as.vector(apply(arr, seq_along(d)[-k], function(x) x[1]))
     all(vapply(seq_len(d[k]), function(i) {
-      idx <- rep(list(bquote()), length(d)); idx[[k]] <- i
+      idx <- rep(list(bquote()), length(d))
+      idx[[k]] <- i
       identical(as.vector(do.call(`[`, c(list(arr), idx, list(drop = FALSE)))), first)
     }, logical(1)))
   }, logical(1))
@@ -346,7 +347,10 @@ test_that("the list of specs the sweep cannot reach is still accurate", {
       if(sweep_spec_is_degenerate(entry$stage, v, sweep_live_dims(entry$arg))) next
       alt <- spec_build(entry, v)
       if(inherits(alt, "condition")) next
-      if(!sweep_identical(base_sig, sweep_signature(alt))) { live <- TRUE; break }
+      if(!sweep_identical(base_sig, sweep_signature(alt))) {
+        live <- TRUE
+        break
+      }
     }
     if(live) became_reachable <- c(became_reachable, entry$arg)
   }

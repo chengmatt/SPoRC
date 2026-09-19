@@ -268,11 +268,11 @@ simulation_self_test <- function(
                                 FishIdx_seas_Type = data$FishIdx_seas_Type,
                                 FishIdx_pop_seas_Type = data$FishIdx_pop_seas_Type,
                                 FishAgeComps_seas_Type = data$FishAgeComps_seas_Type,
-                                Fmort_input = replicate(n = sim_list$n_sims, rep$Fmort[,1:length(data$years),,,drop = FALSE]),
-                                dmr_input = replicate(n = sim_list$n_sims, rep$dmr[,1:length(data$years),,,drop = FALSE]),
-                                fish_sel_input = replicate(n = sim_list$n_sims, rep$fish_sel[,,1:length(data$years),,,,,drop = FALSE]),
-                                ret_sel_input = replicate(n = sim_list$n_sims, rep$ret_sel[,,1:length(data$years),,,,,drop = FALSE]),
-                                fish_q_input = replicate(n = sim_list$n_sims, rep$fish_q[,1:length(data$years),,drop = FALSE]),
+                                Fmort_input = replicate(n = sim_list$n_sims, rep$Fmort[,seq_along(data$years),,,drop = FALSE]),
+                                dmr_input = replicate(n = sim_list$n_sims, rep$dmr[,seq_along(data$years),,,drop = FALSE]),
+                                fish_sel_input = replicate(n = sim_list$n_sims, rep$fish_sel[,,seq_along(data$years),,,,,drop = FALSE]),
+                                ret_sel_input = replicate(n = sim_list$n_sims, rep$ret_sel[,,seq_along(data$years),,,,,drop = FALSE]),
+                                fish_q_input = replicate(n = sim_list$n_sims, rep$fish_q[,seq_along(data$years),,drop = FALSE]),
                                 ObsFishIdx_SE = deweight(if(is.null(rep$FishIdx_SD)) data$ObsFishIdx_SE else rep$FishIdx_SD,
                              data$Wt_FishIdx),
                                 ObsFishIdx_pop_SE = if(any(data$UseFishIdx_pop == 1)) {
@@ -289,97 +289,97 @@ simulation_self_test <- function(
                                 # fishery age composition specifications
                                 comp_fishage_like = data$FishAgeComps_LikeType,
                                 FishAgeComps_Type = data$FishAgeComps_Type,
-                                ISS_FishAgeComps = replicate(sim_list$n_sims, data$ISS_FishAgeComps[,,,,,drop = F] * data$Wt_FishAgeComps),
-                                ln_FishAge_theta = optim_parameters_list$ln_FishAge_theta[,,,drop = F],
+                                ISS_FishAgeComps = replicate(sim_list$n_sims, data$ISS_FishAgeComps[,,,,,drop = FALSE] * data$Wt_FishAgeComps),
+                                ln_FishAge_theta = optim_parameters_list$ln_FishAge_theta[,,,drop = FALSE],
                                 ln_FishAge_theta_agg = optim_parameters_list$ln_FishAge_theta_agg,
                                 FishAge_corr_pars_agg = optim_parameters_list$FishAge_corr_pars_agg,
-                                FishAge_corr_pars = optim_parameters_list$FishAge_corr_pars[,,,,drop = F],
+                                FishAge_corr_pars = optim_parameters_list$FishAge_corr_pars[,,,,drop = FALSE],
 
                                 # fishery length composition specifications
                                 comp_fishlen_like = data$FishLenComps_LikeType,
                                 FishLenComps_Type = data$FishLenComps_Type,
-                                ISS_FishLenComps = replicate(sim_list$n_sims, data$ISS_FishLenComps[,,,,,drop = F] * data$Wt_FishLenComps),
-                                ln_FishLen_theta = optim_parameters_list$ln_FishLen_theta[,,,drop = F],
+                                ISS_FishLenComps = replicate(sim_list$n_sims, data$ISS_FishLenComps[,,,,,drop = FALSE] * data$Wt_FishLenComps),
+                                ln_FishLen_theta = optim_parameters_list$ln_FishLen_theta[,,,drop = FALSE],
                                 ln_FishLen_theta_agg = optim_parameters_list$ln_FishLen_theta_agg,
                                 FishLen_corr_pars_agg = optim_parameters_list$FishLen_corr_pars_agg,
-                                FishLen_corr_pars = optim_parameters_list$FishLen_corr_pars[,,,,drop = F],
+                                FishLen_corr_pars = optim_parameters_list$FishLen_corr_pars[,,,,drop = FALSE],
 
                                 # population-specific age composition specifications
                                 comp_fishage_pop_like = data$pop_FishAgeComps_LikeType,
                                 FishAgeComps_pop_Type = data$FishAgeComps_pop_Type,
                                 ISS_FishAgeComps_pop = if(any(data$UseFishAgeComps_pop == 1)) {
-                                  replicate(sim_list$n_sims, data$ISS_FishAgeComps_pop[,,,,,,drop = F] * data$Wt_FishAgeComps_pop)
+                                  replicate(sim_list$n_sims, data$ISS_FishAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_pop)
                                 } else {
                                   array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
                                 },
-                                ln_FishAge_pop_theta = optim_parameters_list$ln_FishAge_pop_theta[,,,,drop = F],
+                                ln_FishAge_pop_theta = optim_parameters_list$ln_FishAge_pop_theta[,,,,drop = FALSE],
                                 ln_FishAge_pop_theta_agg = optim_parameters_list$ln_FishAge_pop_theta_agg,
                                 FishAge_pop_corr_pars_agg = optim_parameters_list$FishAge_pop_corr_pars_agg,
-                                FishAge_pop_corr_pars = optim_parameters_list$FishAge_pop_corr_pars[,,,,,drop = F],
+                                FishAge_pop_corr_pars = optim_parameters_list$FishAge_pop_corr_pars[,,,,,drop = FALSE],
 
                                 # population-specific length composition specifications
                                 comp_fishlen_pop_like = data$FishLenComps_pop_LikeType,
                                 FishLenComps_pop_Type = data$FishLenComps_pop_Type,
                                 ISS_FishLenComps_pop = if(any(data$UseFishLenComps_pop == 1)) {
-                                  replicate(sim_list$n_sims, data$ISS_FishLenComps_pop[,,,,,,drop = F] * data$Wt_FishLenComps_pop)
+                                  replicate(sim_list$n_sims, data$ISS_FishLenComps_pop[,,,,,,drop = FALSE] * data$Wt_FishLenComps_pop)
                                 } else {
                                   array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
                                 },
-                                ln_FishLen_pop_theta = optim_parameters_list$ln_FishLen_pop_theta[,,,,drop = F],
+                                ln_FishLen_pop_theta = optim_parameters_list$ln_FishLen_pop_theta[,,,,drop = FALSE],
                                 ln_FishLen_pop_theta_agg = optim_parameters_list$ln_FishLen_pop_theta_agg,
                                 FishLen_pop_corr_pars_agg = optim_parameters_list$FishLen_pop_corr_pars_agg,
-                                FishLen_pop_corr_pars = optim_parameters_list$FishLen_pop_corr_pars[,,,,,drop = F],
+                                FishLen_pop_corr_pars = optim_parameters_list$FishLen_pop_corr_pars[,,,,,drop = FALSE],
 
                                 # discarded fishery age composition specifications
                                 comp_fishage_discard_like = data$FishAgeComps_discard_LikeType,
                                 FishAgeComps_discard_Type = data$FishAgeComps_discard_Type,
-                                ISS_FishAgeComps_discard = replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard[,,,,,drop = F] * data$Wt_FishAgeComps_discard),
-                                ln_FishAge_discard_theta = optim_parameters_list$ln_FishAge_discard_theta[,,,drop = F],
+                                ISS_FishAgeComps_discard = replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard[,,,,,drop = FALSE] * data$Wt_FishAgeComps_discard),
+                                ln_FishAge_discard_theta = optim_parameters_list$ln_FishAge_discard_theta[,,,drop = FALSE],
                                 ln_FishAge_discard_theta_agg = optim_parameters_list$ln_FishAge_discard_theta_agg,
                                 FishAge_discard_corr_pars_agg = optim_parameters_list$FishAge_discard_corr_pars_agg,
-                                FishAge_discard_corr_pars = optim_parameters_list$FishAge_discard_corr_pars[,,,,drop = F],
+                                FishAge_discard_corr_pars = optim_parameters_list$FishAge_discard_corr_pars[,,,,drop = FALSE],
 
                                 # discarded fishery length composition specifications
                                 comp_fishlen_discard_like = data$FishLenComps_discard_LikeType,
                                 FishLenComps_discard_Type = data$FishLenComps_discard_Type,
-                                ISS_FishLenComps_discard = replicate(sim_list$n_sims, data$ISS_FishLenComps_discard[,,,,,drop = F] * data$Wt_FishLenComps_discard),
-                                ln_FishLen_discard_theta = optim_parameters_list$ln_FishLen_discard_theta[,,,drop = F],
+                                ISS_FishLenComps_discard = replicate(sim_list$n_sims, data$ISS_FishLenComps_discard[,,,,,drop = FALSE] * data$Wt_FishLenComps_discard),
+                                ln_FishLen_discard_theta = optim_parameters_list$ln_FishLen_discard_theta[,,,drop = FALSE],
                                 ln_FishLen_discard_theta_agg = optim_parameters_list$ln_FishLen_discard_theta_agg,
                                 FishLen_discard_corr_pars_agg = optim_parameters_list$FishLen_discard_corr_pars_agg,
-                                FishLen_discard_corr_pars = optim_parameters_list$FishLen_discard_corr_pars[,,,,drop = F],
+                                FishLen_discard_corr_pars = optim_parameters_list$FishLen_discard_corr_pars[,,,,drop = FALSE],
 
                                 # discarded population-specific age composition specifications
                                 comp_fishage_discard_pop_like = data$FishAgeComps_discard_pop_LikeType,
                                 FishAgeComps_discard_pop_Type = data$FishAgeComps_discard_pop_Type,
                                 ISS_FishAgeComps_discard_pop = if(any(data$UseFishAgeComps_discard_pop == 1)) {
-                                  replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard_pop[,,,,,,drop = F] * data$Wt_FishAgeComps_discard_pop)
+                                  replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_discard_pop)
                                 } else {
                                   array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
                                 },
-                                ln_FishAge_discard_pop_theta = optim_parameters_list$ln_FishAge_discard_pop_theta[,,,,drop = F],
+                                ln_FishAge_discard_pop_theta = optim_parameters_list$ln_FishAge_discard_pop_theta[,,,,drop = FALSE],
                                 ln_FishAge_discard_pop_theta_agg = optim_parameters_list$ln_FishAge_discard_pop_theta_agg,
                                 FishAge_discard_pop_corr_pars_agg = optim_parameters_list$FishAge_discard_pop_corr_pars_agg,
-                                FishAge_discard_pop_corr_pars = optim_parameters_list$FishAge_discard_pop_corr_pars[,,,,,drop = F],
+                                FishAge_discard_pop_corr_pars = optim_parameters_list$FishAge_discard_pop_corr_pars[,,,,,drop = FALSE],
 
                                 # discarded population-specific length composition specifications
                                 comp_fishlen_discard_pop_like = data$FishLenComps_discard_pop_LikeType,
                                 FishLenComps_discard_pop_Type = data$FishLenComps_discard_pop_Type,
                                 ISS_FishLenComps_discard_pop = if(any(data$UseFishLenComps_discard_pop == 1)) {
-                                  replicate(sim_list$n_sims, data$ISS_FishLenComps_discard_pop[,,,,,,drop = F] * data$Wt_FishLenComps_discard_pop)
+                                  replicate(sim_list$n_sims, data$ISS_FishLenComps_discard_pop[,,,,,,drop = FALSE] * data$Wt_FishLenComps_discard_pop)
                                 } else {
                                   array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
                                 },
-                                ln_FishLen_discard_pop_theta = optim_parameters_list$ln_FishLen_discard_pop_theta[,,,,drop = F],
+                                ln_FishLen_discard_pop_theta = optim_parameters_list$ln_FishLen_discard_pop_theta[,,,,drop = FALSE],
                                 ln_FishLen_discard_pop_theta_agg = optim_parameters_list$ln_FishLen_discard_pop_theta_agg,
                                 FishLen_discard_pop_corr_pars_agg = optim_parameters_list$FishLen_discard_pop_corr_pars_agg,
-                                FishLen_discard_pop_corr_pars = optim_parameters_list$FishLen_discard_pop_corr_pars[,,,,,drop = F],
+                                FishLen_discard_pop_corr_pars = optim_parameters_list$FishLen_discard_pop_corr_pars[,,,,,drop = FALSE],
 
                                 # conditional age-at-length specifications; absent on models built
                                 # before the data source existed, which the defaults leave off
                                 comp_fish_caal_like = if(is.null(data$Fish_caal_LikeType)) rep(999, sim_list$n_fish_fleets) else data$Fish_caal_LikeType,
                                 Fish_caal_Type = if(is.null(data$Fish_caal_Type)) array(999, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)) else data$Fish_caal_Type,
                                 ISS_Fish_caal = if(!is.null(data$UseFish_caal) && any(data$UseFish_caal == 1)) {
-                                  replicate(sim_list$n_sims, data$ISS_Fish_caal[,,,,,,drop = F] * data$Wt_Fish_caal)
+                                  replicate(sim_list$n_sims, data$ISS_Fish_caal[,,,,,,drop = FALSE] * data$Wt_Fish_caal)
                                 } else NULL,
                                 ln_Fish_caal_theta = optim_parameters_list$ln_Fish_caal_theta,
                                 ln_Fish_caal_theta_agg = optim_parameters_list$ln_Fish_caal_theta_agg
@@ -388,8 +388,8 @@ simulation_self_test <- function(
   # Setup Survey Processes --------------------------------------------------
   sim_list <- Setup_Sim_Survey(
     sim_list = sim_list,
-    srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,1:length(data$years),,,,,drop = FALSE]),
-    srv_q_input = replicate(n = sim_list$n_sims, rep$srv_q[,1:length(data$years),,drop = FALSE]),
+    srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,seq_along(data$years),,,,,drop = FALSE]),
+    srv_q_input = replicate(n = sim_list$n_sims, rep$srv_q[,seq_along(data$years),,drop = FALSE]),
     ObsSrvIdx_SE = deweight(if(is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE else rep$SrvIdx_SD, data$Wt_SrvIdx),
     # the index at age carries its own error by age and fleet, so no weight is folded into it
     ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
@@ -417,52 +417,52 @@ simulation_self_test <- function(
     # survey age composition specifications
     comp_srvage_like = data$SrvAgeComps_LikeType,
     SrvAgeComps_Type = data$SrvAgeComps_Type,
-    ISS_SrvAgeComps = replicate(sim_list$n_sims, data$ISS_SrvAgeComps[,,,,,drop = F] * data$Wt_SrvAgeComps),
-    ln_SrvAge_theta = optim_parameters_list$ln_SrvAge_theta[,,,drop = F],
+    ISS_SrvAgeComps = replicate(sim_list$n_sims, data$ISS_SrvAgeComps[,,,,,drop = FALSE] * data$Wt_SrvAgeComps),
+    ln_SrvAge_theta = optim_parameters_list$ln_SrvAge_theta[,,,drop = FALSE],
     ln_SrvAge_theta_agg = optim_parameters_list$ln_SrvAge_theta_agg,
     SrvAge_corr_pars_agg = optim_parameters_list$SrvAge_corr_pars_agg,
-    SrvAge_corr_pars = optim_parameters_list$SrvAge_corr_pars[,,,,drop = F],
+    SrvAge_corr_pars = optim_parameters_list$SrvAge_corr_pars[,,,,drop = FALSE],
 
     # survey length composition specifications
     comp_srvlen_like = data$SrvLenComps_LikeType,
     SrvLenComps_Type = data$SrvLenComps_Type,
-    ISS_SrvLenComps = replicate(sim_list$n_sims, data$ISS_SrvLenComps[,,,,,drop = F] * data$Wt_SrvLenComps),
-    ln_SrvLen_theta = optim_parameters_list$ln_SrvLen_theta[,,,drop = F],
+    ISS_SrvLenComps = replicate(sim_list$n_sims, data$ISS_SrvLenComps[,,,,,drop = FALSE] * data$Wt_SrvLenComps),
+    ln_SrvLen_theta = optim_parameters_list$ln_SrvLen_theta[,,,drop = FALSE],
     ln_SrvLen_theta_agg = optim_parameters_list$ln_SrvLen_theta_agg,
     SrvLen_corr_pars_agg = optim_parameters_list$SrvLen_corr_pars_agg,
-    SrvLen_corr_pars = optim_parameters_list$SrvLen_corr_pars[,,,,drop = F],
+    SrvLen_corr_pars = optim_parameters_list$SrvLen_corr_pars[,,,,drop = FALSE],
 
     # population-specific age composition specifications
     comp_srvage_pop_like = data$SrvAgeComps_pop_LikeType,
     SrvAgeComps_pop_Type = data$SrvAgeComps_pop_Type,
     ISS_SrvAgeComps_pop = if(any(data$UseSrvAgeComps_pop == 1)) {
-      replicate(sim_list$n_sims, data$ISS_SrvAgeComps_pop[,,,,,,drop = F] * data$Wt_SrvAgeComps_pop)
+      replicate(sim_list$n_sims, data$ISS_SrvAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_SrvAgeComps_pop)
     } else {
       array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
     },
-    ln_SrvAge_pop_theta = optim_parameters_list$ln_SrvAge_pop_theta[,,,,drop = F],
+    ln_SrvAge_pop_theta = optim_parameters_list$ln_SrvAge_pop_theta[,,,,drop = FALSE],
     ln_SrvAge_pop_theta_agg = optim_parameters_list$ln_SrvAge_pop_theta_agg,
     SrvAge_pop_corr_pars_agg = optim_parameters_list$SrvAge_pop_corr_pars_agg,
-    SrvAge_pop_corr_pars = optim_parameters_list$SrvAge_pop_corr_pars[,,,,,drop = F],
+    SrvAge_pop_corr_pars = optim_parameters_list$SrvAge_pop_corr_pars[,,,,,drop = FALSE],
 
     # population-specific length composition specifications
     comp_srvlen_pop_like = data$SrvLenComps_pop_LikeType,
     SrvLenComps_pop_Type = data$SrvLenComps_pop_Type,
     ISS_SrvLenComps_pop = if(any(data$UseSrvLenComps_pop == 1)) {
-      replicate(sim_list$n_sims, data$ISS_SrvLenComps_pop[,,,,,,drop = F] * data$Wt_SrvLenComps_pop)
+      replicate(sim_list$n_sims, data$ISS_SrvLenComps_pop[,,,,,,drop = FALSE] * data$Wt_SrvLenComps_pop)
     } else {
       array(100, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
     },
-    ln_SrvLen_pop_theta = optim_parameters_list$ln_SrvLen_pop_theta[,,,,drop = F],
+    ln_SrvLen_pop_theta = optim_parameters_list$ln_SrvLen_pop_theta[,,,,drop = FALSE],
     ln_SrvLen_pop_theta_agg = optim_parameters_list$ln_SrvLen_pop_theta_agg,
     SrvLen_pop_corr_pars_agg = optim_parameters_list$SrvLen_pop_corr_pars_agg,
-    SrvLen_pop_corr_pars = optim_parameters_list$SrvLen_pop_corr_pars[,,,,,drop = F],
+    SrvLen_pop_corr_pars = optim_parameters_list$SrvLen_pop_corr_pars[,,,,,drop = FALSE],
 
     # conditional age-at-length specifications
     comp_srv_caal_like = if(is.null(data$Srv_caal_LikeType)) rep(999, sim_list$n_srv_fleets) else data$Srv_caal_LikeType,
     Srv_caal_Type = if(is.null(data$Srv_caal_Type)) array(999, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)) else data$Srv_caal_Type,
     ISS_Srv_caal = if(!is.null(data$UseSrv_caal) && any(data$UseSrv_caal == 1)) {
-      replicate(sim_list$n_sims, data$ISS_Srv_caal[,,,,,,drop = F] * data$Wt_Srv_caal)
+      replicate(sim_list$n_sims, data$ISS_Srv_caal[,,,,,,drop = FALSE] * data$Wt_Srv_caal)
     } else NULL,
     ln_Srv_caal_theta = optim_parameters_list$ln_Srv_caal_theta,
     ln_Srv_caal_theta_agg = optim_parameters_list$ln_Srv_caal_theta_agg
@@ -473,24 +473,24 @@ simulation_self_test <- function(
     sim_list = sim_list, # simualtion list
     natmort_input = replicate(n = sim_list$n_sims, truncate_years(expand_natmort_seasons(rep$natmort, data$n_seas), length(data$years))), # natural mortality
     # derived by the growth module when present, otherwise the data the model was given
-    WAA_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA)) data$WAA else rep$WAA)[,,1:length(data$years),,,,drop = FALSE]), # weight at age
-    WAA_fish_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_fish)) data$WAA_fish else rep$WAA_fish)[,,1:length(data$years),,,,,drop = FALSE]), # fishery weight at age
-    WAA_srv_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_srv)) data$WAA_srv else rep$WAA_srv)[,,1:length(data$years),,,,,drop = FALSE]), # survey weight at age
-    MatAA_input = replicate(n = sim_list$n_sims, data$MatAA[,,1:length(data$years),,,,drop = FALSE]), # maturity at age
-    AgeingError_input = replicate(n = sim_list$n_sims, data$AgeingError[1:length(data$years),,,drop = FALSE]), # ageing error
+    WAA_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA)) data$WAA else rep$WAA)[,,seq_along(data$years),,,,drop = FALSE]), # weight at age
+    WAA_fish_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_fish)) data$WAA_fish else rep$WAA_fish)[,,seq_along(data$years),,,,,drop = FALSE]), # fishery weight at age
+    WAA_srv_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_srv)) data$WAA_srv else rep$WAA_srv)[,,seq_along(data$years),,,,,drop = FALSE]), # survey weight at age
+    MatAA_input = replicate(n = sim_list$n_sims, data$MatAA[,,seq_along(data$years),,,,drop = FALSE]), # maturity at age
+    AgeingError_input = replicate(n = sim_list$n_sims, data$AgeingError[seq_along(data$years),,,drop = FALSE]), # ageing error
     # fleet-specific ageing error, absent from data lists written before it existed,
     # in which case the operating model falls back on the shared matrix
-    AgeingError_fish_input = if(is.null(data$AgeingError_fish)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_fish[1:length(data$years),,,,drop = FALSE]),
-    AgeingError_srv_input = if(is.null(data$AgeingError_srv)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_srv[1:length(data$years),,,,drop = FALSE]),
-    SizeAgeTrans_input = if(data$fit_lengths == 0 || is.null(data$SizeAgeTrans) || all(is.na(data$SizeAgeTrans))) NULL else replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,1:length(data$years),,,,,drop = FALSE]),
+    AgeingError_fish_input = if(is.null(data$AgeingError_fish)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_fish[seq_along(data$years),,,,drop = FALSE]),
+    AgeingError_srv_input = if(is.null(data$AgeingError_srv)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_srv[seq_along(data$years),,,,drop = FALSE]),
+    SizeAgeTrans_input = if(data$fit_lengths == 0 || is.null(data$SizeAgeTrans) || all(is.na(data$SizeAgeTrans))) NULL else replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,seq_along(data$years),,,,,drop = FALSE]),
     # keys per fleet from the growth module, each at its fleet's own timing
-    SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else replicate(n = sim_list$n_sims, rep$SizeAgeTrans_fish[,,1:length(data$years),,,,,,drop = FALSE]),
-    SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else replicate(n = sim_list$n_sims, rep$SizeAgeTrans_srv[,,1:length(data$years),,,,,,drop = FALSE]) # size age transition matrix, derived by the growth module when present
+    SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else replicate(n = sim_list$n_sims, rep$SizeAgeTrans_fish[,,seq_along(data$years),,,,,,drop = FALSE]),
+    SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else replicate(n = sim_list$n_sims, rep$SizeAgeTrans_srv[,,seq_along(data$years),,,,,,drop = FALSE]) # size age transition matrix, derived by the growth module when present
   )
 
   # Movement
-  sim_list$Movement <- replicate(n = sim_list$n_sims, rep$Movement[,,,1:length(data$years),,,,drop = FALSE])
-  sim_list$sgl_seas_spawning_movement <- replicate(n = sim_list$n_sims, rep$sgl_seas_spawning_movement[,,,1:length(data$years),,,drop = FALSE])
+  sim_list$Movement <- replicate(n = sim_list$n_sims, rep$Movement[,,,seq_along(data$years),,,,drop = FALSE])
+  sim_list$sgl_seas_spawning_movement <- replicate(n = sim_list$n_sims, rep$sgl_seas_spawning_movement[,,,seq_along(data$years),,,drop = FALSE])
   # Movement / mortality sequencing; absent for models built before this option existed
   sim_list$move_timing <- if(is.null(data$move_timing)) 0 else data$move_timing
   # How the matrix exponential is evaluated; likewise absent on older models
@@ -498,7 +498,7 @@ simulation_self_test <- function(
   # The instantaneous rate matrix only exists for an estimated CTMC, and is only needed
   # for continuous movement
   sim_list$Mrate <- if(sim_list$move_timing == 2)
-    replicate(n = sim_list$n_sims, rep$Mrate[,,,1:length(data$years),,,,drop = FALSE]) else NULL
+    replicate(n = sim_list$n_sims, rep$Mrate[,,,seq_along(data$years),,,,drop = FALSE]) else NULL
 
   # Setup Recruitment Processes ---------------------------------------------
   sim_list <- Setup_Sim_Rec(
@@ -523,15 +523,15 @@ simulation_self_test <- function(
       tmp
     },
     use_rinit = data$use_rinit,
-    sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,,1:length(data$years),,drop = FALSE]), # sex ratio
+    sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,,seq_along(data$years),,drop = FALSE]), # sex ratio
     # rescaling by the recruitment weight is only an identity for a single scalar. recruitment and
     # the initial age deviations are supplied directly below, so ln_sigmaR passes through unscaled
     ln_sigmaR = if(length(data$Wt_Rec) == 1) optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec) else optim_parameters_list$ln_sigmaR, # ln_sigmaR
     # Rec_input for every year makes sim_population() ignore rec_model, so the curve itself goes
     # untested; sim_recruitment = "model" withholds it and makes the self-test recover it
-    Rec_input = if(sim_recruitment == "model") NULL else replicate(n = sim_list$n_sims, expr = rep$Rec[,,1:length(data$years),drop = FALSE]), # recruitment time series
+    Rec_input = if(sim_recruitment == "model") NULL else replicate(n = sim_list$n_sims, expr = rep$Rec[,,seq_along(data$years),drop = FALSE]), # recruitment time series
     ln_InitDevs_input = replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs),  # init devs
-    stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,1:length(data$years), drop = FALSE]),
+    stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,seq_along(data$years), drop = FALSE]),
     rec_seas_prop_input = array(
       rep(rep$rec_seas_prop, times = sim_list$n_sims),
       dim = c(data$n_pop, data$n_seas, sim_list$n_sims)), # seasonal recruitment apportionment
@@ -577,7 +577,7 @@ simulation_self_test <- function(
   # storage
   store_res_list <- vector("list", length(what) + 1) # get list
   names(store_res_list) <- c(what, "sd_rep") # name list
-  for(j in 1:length(what)) store_res_list[[j]] <- vector("list", n_sims) # stick in n_sims lists into storage
+  for(j in seq_along(what)) store_res_list[[j]] <- vector("list", n_sims) # stick in n_sims lists into storage
 
   sim_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = output_path) # get simulated datasets
 
@@ -725,7 +725,7 @@ simulation_self_test <- function(
         )
 
         # Populate results into store list
-        for(j in 1:length(what)) store_res_list[[j]][[i]] <- obj$rep[[what[j]]]
+        for(j in seq_along(what)) store_res_list[[j]][[i]] <- obj$rep[[what[j]]]
 
         if(do_sdrep == TRUE) {
           tryCatch({
@@ -739,14 +739,14 @@ simulation_self_test <- function(
       }, error = function(e) {
         # Skip failed simulations, saying why
         warning(sprintf("simulation %d failed: %s", i, conditionMessage(e)), call. = FALSE)
-        for(j in 1:length(what)) store_res_list[[j]][[i]] <- NA
+        for(j in seq_along(what)) store_res_list[[j]][[i]] <- NA
         if(do_sdrep == TRUE) store_res_list[[length(what) + 1]][[i]] <- NA
       })
 
     } # end i loop
 
     # Convert result lists to array
-    for(j in 1:length(what)) store_res_list[[j]] <- simplify2array(store_res_list[[j]])
+    for(j in seq_along(what)) store_res_list[[j]] <- simplify2array(store_res_list[[j]])
 
   } # not doing parallelization
 
@@ -902,7 +902,7 @@ simulation_self_test <- function(
 
           # Extract what we need and return
           result <- list()
-          for(j in 1:length(what)) result[[what[j]]] <- obj$rep[[what[j]]]
+          for(j in seq_along(what)) result[[what[j]]] <- obj$rep[[what[j]]]
 
           if(do_sdrep == TRUE) {
             tryCatch({
@@ -920,7 +920,7 @@ simulation_self_test <- function(
           # Skip failed simulations, saying why
           warning(sprintf("simulation %d failed: %s", i, conditionMessage(e)), call. = FALSE)
           result <- list()
-          for(j in 1:length(what)) result[[what[j]]] <- NA
+          for(j in seq_along(what)) result[[what[j]]] <- NA
           if(do_sdrep == TRUE) result[[length(what) + 1]] <- NA
 
           p() # update progress
@@ -933,9 +933,9 @@ simulation_self_test <- function(
     })
 
     # Populate results from parallel run
-    for(i in 1:n_sims) for(j in 1:length(what)) store_res_list[[j]][[i]] <- sim_results[[i]][[what[j]]]
+    for(i in 1:n_sims) for(j in seq_along(what)) store_res_list[[j]][[i]] <- sim_results[[i]][[what[j]]]
     if(do_sdrep == TRUE) for(i in 1:n_sims) store_res_list[[length(what) + 1]][[i]] <- sim_results[[i]][[length(what) + 1]]
-    for(j in 1:length(what)) store_res_list[[j]] <- simplify2array(store_res_list[[j]])  # Convert lists to array
+    for(j in seq_along(what)) store_res_list[[j]] <- simplify2array(store_res_list[[j]])  # Convert lists to array
   }
 
   return(store_res_list)

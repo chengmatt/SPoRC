@@ -5,7 +5,8 @@ test_that("Get_3d_precision works", {
 
   # Dimensions
   test_that("returns a sparse matrix of the correct dimension", {
-    n_ages <- 4; n_yrs <- 5
+    n_ages <- 4
+    n_yrs <- 5
     Q <- SPoRC:::Get_3d_precision(n_ages, n_yrs, 0.3, 0.2, 0.1, log(1), 1)
     expect_s4_class(Q, "sparseMatrix")
     expect_equal(dim(Q), c(n_ages * n_yrs, n_ages * n_yrs))
@@ -86,7 +87,8 @@ test_that("Get_3d_precision works", {
 
   # Axis wiring: each partial correlation reaches its own neighbor
   test_that("pcorr_age links age-adjacent nodes and pcorr_year year-adjacent nodes", {
-    n_ages <- 3; n_yrs <- 4
+    n_ages <- 3
+    n_yrs <- 4
     index  <- expand.grid(seq_len(n_ages), seq_len(n_yrs)) # node n is (age, year)
 
     # with a single partial correlation switched on every node has one

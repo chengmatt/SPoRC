@@ -173,13 +173,15 @@ rec_pen_args <- function(ln_RecDevs, map_ln_RecDevs, ln_sigmaR, sigmaR_switch, .
 
 test_that("get_recruitment_penalty walks the deviations under rw and ar1", {
 
-  n_pop <- 1; n_regions <- 2; n_yrs <- 9
+  n_pop <- 1
+  n_regions <- 2
+  n_yrs <- 9
   set.seed(14)
   ln_RecDevs <- array(rnorm(n_pop * n_regions * n_yrs, sd = 0.6), dim = c(n_pop, n_regions, n_yrs))
 
   # region 2 has its first three deviations fixed, so its walk contributes from year 4 on,
   # anchored on the asserted year 3 value
-  map_ln_RecDevs <- array(seq_len(length(ln_RecDevs)), dim = dim(ln_RecDevs))
+  map_ln_RecDevs <- array(seq_along(ln_RecDevs), dim = dim(ln_RecDevs))
   map_ln_RecDevs[1, 2, 1:3] <- NA
 
   sigmaR_switch <- 5 # the early sigma runs to year 4, the late sigma from year 5
@@ -215,7 +217,9 @@ test_that("get_recruitment_penalty walks the deviations under rw and ar1", {
 
 test_that("get_recruitment_penalty leaves the independent penalty unchanged", {
 
-  n_pop <- 1; n_regions <- 1; n_yrs <- 8
+  n_pop <- 1
+  n_regions <- 1
+  n_yrs <- 8
   set.seed(15)
   ln_RecDevs <- array(rnorm(n_yrs, sd = 0.6), dim = c(n_pop, n_regions, n_yrs))
   map_ln_RecDevs <- array(seq_len(n_yrs), dim = dim(ln_RecDevs))
@@ -237,7 +241,9 @@ test_that("get_recruitment_penalty leaves the independent penalty unchanged", {
 
 test_that("dont_pen_recdev_first frees the level of a walk without breaking the series", {
 
-  n_pop <- 1; n_regions <- 1; n_yrs <- 8
+  n_pop <- 1
+  n_regions <- 1
+  n_yrs <- 8
   set.seed(16)
   ln_RecDevs <- array(rnorm(n_yrs, sd = 0.6), dim = c(n_pop, n_regions, n_yrs))
   ln_sigmaR <- array(log(c(0.5, 0.5)), dim = c(2, n_pop, n_regions))

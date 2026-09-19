@@ -395,7 +395,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   if(is.null(ISS_FishAgeComps_discard)) {
     collect_message("No ISS is specified for FishAgeComps_discard. ISS weighting is calculated by summing up values from ObsFishAgeComps_discard each year")
     ISS_FishAgeComps_discard <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
-    for(y in 1:length(input_list$data$years)) {
+    for(y in seq_along(input_list$data$years)) {
       for(f in 1:input_list$data$n_fish_fleets) {
         for(seas in 1:input_list$data$n_seas) {
           # if aggregated across sexes and regions (0) or joint across sexes
@@ -413,7 +413,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   if(is.null(ISS_FishLenComps_discard)) {
     collect_message("No ISS is specified for FishLenComps_discard. ISS weighting is calculated by summing up values from ObsFishLenComps_discard each year")
     ISS_FishLenComps_discard <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
-    for(y in 1:length(input_list$data$years)) {
+    for(y in seq_along(input_list$data$years)) {
       for(f in 1:input_list$data$n_fish_fleets) {
         for(seas in 1:input_list$data$n_seas) {
           # if aggregated across sexes and regions (0)
@@ -432,7 +432,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
     collect_message("No ISS is specified for pop_FishAgeComps_discard. ISS weighting is calculated by summing up values from ObsFishAgeComps_discard_pop each year")
     ISS_FishAgeComps_discard_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
     for(p in 1:input_list$data$n_pop) {
-      for(y in 1:length(input_list$data$years)) {
+      for(y in seq_along(input_list$data$years)) {
         for(f in 1:input_list$data$n_fish_fleets) {
           for(seas in 1:input_list$data$n_seas) {
             # if aggregated across sexes and regions (0) or joint across sexes
@@ -452,7 +452,7 @@ Setup_Mod_Discard_Comps     <- function(input_list,
     collect_message("No ISS is specified for pop_FishLenComps_discard. ISS weighting is calculated by summing up values from ObsFishLenComps_discard_pop each year")
     ISS_FishLenComps_discard_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
     for(p in 1:input_list$data$n_pop) {
-      for(y in 1:length(input_list$data$years)) {
+      for(y in seq_along(input_list$data$years)) {
         for(f in 1:input_list$data$n_fish_fleets) {
           for(seas in 1:input_list$data$n_seas) {
             # if aggregated across sexes and regions (0)
@@ -1069,7 +1069,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         ...
                                         ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_FishIdx_and_Comps <- mget(names(formals()))[-1]
 
@@ -1426,7 +1426,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   if(is.null(ISS_FishAgeComps)) {
     collect_message("No ISS is specified for FishAgeComps. ISS weighting is calculated by summing up values from ObsFishAgeComps each year")
     ISS_FishAgeComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
-    for(y in 1:length(input_list$data$years)) {
+    for(y in seq_along(input_list$data$years)) {
       for(f in 1:input_list$data$n_fish_fleets) {
         for(seas in 1:input_list$data$n_seas) {
           # if aggregated across sexes and regions (0) or joint across sexes
@@ -1444,7 +1444,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   if(is.null(ISS_FishLenComps)) {
     collect_message("No ISS is specified for FishLenComps. ISS weighting is calculated by summing up values from ObsFishLenComps each year")
     ISS_FishLenComps <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
-    for(y in 1:length(input_list$data$years)) {
+    for(y in seq_along(input_list$data$years)) {
       for(f in 1:input_list$data$n_fish_fleets) {
         for(seas in 1:input_list$data$n_seas) {
           # if aggregated across sexes and regions (0)
@@ -1463,7 +1463,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     collect_message("No ISS is specified for pop_FishAgeComps. ISS weighting is calculated by summing up values from ObsFishAgeComps_pop each year")
     ISS_FishAgeComps_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
     for(p in 1:input_list$data$n_pop) {
-      for(y in 1:length(input_list$data$years)) {
+      for(y in seq_along(input_list$data$years)) {
         for(f in 1:input_list$data$n_fish_fleets) {
           for(seas in 1:input_list$data$n_seas) {
             # if aggregated across sexes and regions (0) or joint across sexes
@@ -1483,7 +1483,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
     collect_message("No ISS is specified for pop_FishLenComps. ISS weighting is calculated by summing up values from ObsFishLenComps_pop each year")
     ISS_FishLenComps_pop <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_sexes, input_list$data$n_fish_fleets))
     for(p in 1:input_list$data$n_pop) {
-      for(y in 1:length(input_list$data$years)) {
+      for(y in seq_along(input_list$data$years)) {
         for(f in 1:input_list$data$n_fish_fleets) {
           for(seas in 1:input_list$data$n_seas) {
             # if aggregated across sexes and regions (0)

@@ -1015,7 +1015,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   UseCatch,
                                   catch_units = array("biom", dim = c(input_list$data$n_fish_fleets)),
                                   UseCatch_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
-                                                                  length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets )),
+                                                                  length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                   ObsCatch_pop = NULL,
                                   Use_F_pen = 1,
                                   sigmaC_spec = "fix",
@@ -1028,10 +1028,10 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   # Discarded Catch Stuff
                                   ObsDiscard = NULL,
                                   UseDiscard = array(0, dim = c(input_list$data$n_regions,
-                                                                length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets )),
+                                                                length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                   discard_units = array("biom_frac", dim = c(input_list$data$n_fish_fleets)),
                                   UseDiscard_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
-                                                                    length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets )),
+                                                                    length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                   ObsDiscard_pop = NULL,
                                   Use_dmr_pen = 0,
                                   sigmaD_spec = "fix",
@@ -1042,7 +1042,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   ...,
                                   ln_F_mean_spec = "est") {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Catch_and_F <- mget(names(formals()))[-1]
 
@@ -1379,4 +1379,3 @@ Setup_Mod_Catch_and_F <- function(input_list,
 
   return(input_list)
 }
-

@@ -14,7 +14,11 @@ library(testthat)
 # that same set so that every estimated deviation is penalized and no deviation
 # fixed at zero contributes to the penalty.
 
-n_pop <- 2; n_regions <- 2; n_yrs <- 6; n_seas <- 2; n_fleets <- 2
+n_pop <- 2
+n_regions <- 2
+n_yrs <- 6
+n_seas <- 2
+n_fleets <- 2
 agg_dims <- c(n_regions, n_yrs, n_seas, n_fleets)
 pop_dims <- c(n_pop, n_regions, n_yrs, n_seas, n_fleets)
 

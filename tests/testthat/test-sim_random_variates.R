@@ -32,7 +32,7 @@ test_that("Custom Random Samplers produce consistent results", {
 
   test_that("rlogistnormal Kronecker (comp_like=4) returns valid composition", {
     # 2 sexes x 3 bins = 6 categories
-    exp_comp <- rep(1/6, 6)
+    exp_comp <- rep(1 / 6, 6)
     result <- rlogistnormal(exp_comp, pars = c(0.2, 0.3, 0.4), comp_like = 4, n_sexes = 2)
     expect_length(result, 6)
     expect_equal(sum(result), 1, tolerance = 1e-10)
@@ -80,7 +80,7 @@ test_that("Custom Random Samplers produce consistent results", {
     N <- 100
     result_dm <- rdirM(n = 3000, N = N, alpha = alpha)
     # multinomial variance for p=1/3: N * p * (1-p) = 100 * 1/3 * 2/3 ~ 22.2
-    multinom_var <- N * (1/3) * (2/3)
+    multinom_var <- N * (1 / 3) * (2 / 3)
     dm_var <- var(result_dm[1, ])
     expect_gt(dm_var, multinom_var)
   })

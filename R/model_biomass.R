@@ -58,7 +58,10 @@ compute_biom_y = function(
         Mv = if(moves) Movement[p,,,y,seas,a,1] else diag(n_regions)
         Qv = if(moves) Mrate[p,,,y,seas,a,1] else matrix(0, n_regions, n_regions)
         for(s in 1:n_sexes) {
-          if(moves) { Mv = Movement[p,,,y,seas,a,s]; Qv = Mrate[p,,,y,seas,a,s] }
+          if(moves) {
+            Mv = Movement[p,,,y,seas,a,s]
+            Qv = Mrate[p,,,y,seas,a,s]
+          }
           tmp_NAA_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA_spawn[p,,1,1,a,s], Mv,
                                                   ZAA[p,,y,seas,a,s], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
           tmp_NAA0_spawn[p,,1,1,a,s] = spawn_state(tmp_NAA0_spawn[p,,1,1,a,s], Mv,
@@ -97,7 +100,7 @@ compute_biom_y = function(
   SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, seas, , 1, drop = FALSE] * MatAA[,,y, seas, , 1, drop = FALSE]
   if(move_timing == 0 || n_regions == 1) {
     mort_spawn = exp(-natmort[,, y, seas, , 1, drop = FALSE] * t_spawn * seasdur[seas])
-    mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
+    mort_spawn = array(mort_spawn, dim = dim(SSB0_array)) # coerce array
   } else mort_spawn = 1
   Dynamic_SSB0_y = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
 
@@ -220,7 +223,7 @@ derive_proj_biom = function(
   SSB0_array = tmp_NAA0_spawn[,, 1, 1, , 1,drop = FALSE] *  WAA[,,  y, seas, , 1, drop = FALSE] * MatAA[,,y, seas, , 1, drop = FALSE]
   if(move_timing == 0 || n_regions == 1) {
     mort_spawn = exp(-natmort[,, y, seas, , 1, drop = FALSE] * t_spawn * seasdur[seas])
-    mort_spawn = array(mort_spawn, dim = dim(SSB0_array) ) # coerce array
+    mort_spawn = array(mort_spawn, dim = dim(SSB0_array)) # coerce array
   } else mort_spawn = 1
   Dynamic_SSB0_y = apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
 

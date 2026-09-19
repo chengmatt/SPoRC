@@ -195,7 +195,9 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
     fit_bins = bins_of(f)   # true observed bin numbers, so labels stay comparable across fleets
     n_bins = length(fit_bins)
     if(ct == 0) {
-      region = rep(used[1], n_bins); sex = rep(1L, n_bins); bin = fit_bins
+      region = rep(used[1], n_bins)
+      sex = rep(1L, n_bins)
+      bin = fit_bins
       last_in_group = (bin == fit_bins[n_bins])
     } else {
       region = rep(used, times = n_bins * n_sexes)

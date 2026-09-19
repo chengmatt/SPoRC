@@ -94,7 +94,8 @@ test_that("parse_idx_cov validates only the fleets that need a covariance", {
     expect_error(SPoRC:::parse_idx_cov(list(NULL, NULL), c(2, 0), use_arr, 2, "x"))
     expect_error(SPoRC:::parse_idx_cov(list(diag(4), NULL), c(2, 0), use_arr, 2, "x")) # fleet 1 fits 3 observations
     # RTMB::dmvnorm reads only the lower triangle, so an asymmetric matrix must not slip through
-    asym <- Sigma; asym[1,2] <- 0.5
+    asym <- Sigma
+    asym[1,2] <- 0.5
     expect_error(SPoRC:::parse_idx_cov(list(asym, NULL), c(2, 0), use_arr, 2, "x"))
     expect_error(SPoRC:::parse_idx_cov(list(matrix(c(1, 2, 2, 1), 2), NULL), c(2, 0), use_arr, 2, "x"))
   })
@@ -134,7 +135,13 @@ test_that("the multivariate normal index likelihood agrees with a hand-computed 
 
 test_that("the survey observation model honors age subsets and analytic catchability", {
 
-  n_pop <- 1; n_regions <- 1; n_yrs <- 3; n_seas <- 1; n_srv <- 2; n_sexes <- 1; n_ages <- 4
+  n_pop <- 1
+  n_regions <- 1
+  n_yrs <- 3
+  n_seas <- 1
+  n_srv <- 2
+  n_sexes <- 1
+  n_ages <- 4
 
   NAA <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
   NAA[1,1,,1,,1] <- matrix(c(100, 80, 60, 40,

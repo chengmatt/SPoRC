@@ -255,8 +255,12 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
 
   ### Set up shared projection inputs ------------------------------------------
   n_proj_yrs <- 500
-  n_regions <- data$n_regions; n_ages <- length(data$ages); n_sexes <- data$n_sexes
-  n_fish_fleets <- data$n_fish_fleets; n_seas <- data$n_seas; n_pop <- data$n_pop
+  n_regions <- data$n_regions
+  n_ages <- length(data$ages)
+  n_sexes <- data$n_sexes
+  n_fish_fleets <- data$n_fish_fleets
+  n_seas <- data$n_seas
+  n_pop <- data$n_pop
   t_spawn <- data$t_spawn
   do_recruits_move <- 0
   n_yrs_hist <- length(data$years)

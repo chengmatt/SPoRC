@@ -19,7 +19,8 @@ collapse_cfg <- list(n_yrs = 10, n_ages = 6)
 #'
 #' @keywords internal
 collapse_input <- function(nr = 1, nx = 1, nf = 1, ns = 1, catch_tot = 1e4, f_scale = 1) {
-  NY <- collapse_cfg$n_yrs; NAG <- collapse_cfg$n_ages
+  NY <- collapse_cfg$n_yrs
+  NAG <- collapse_cfg$n_ages
   off_f <- array(0, dim = c(nr, NY, ns, nf))
   off_s <- array(0, dim = c(nr, NY, ns, 1))
 

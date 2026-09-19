@@ -321,7 +321,7 @@ Setup_Mod_Srvsel_and_Q <- function(
   ...
 ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Srvsel_and_Q <- mget(names(formals()))[-1]
 
@@ -410,7 +410,7 @@ Setup_Mod_Srvsel_and_Q <- function(
   cont_tv_srv_sel_mat <- array(NA, dim = c(input_list$data$n_regions, input_list$data$n_srv_fleets))
   cont_tv_map <- data.frame(type = c("none", "iid", "rw", "3dmarg", "3dcond", "2dar1"), num = c(0,1,2,3,4,5)) # set up values we map to
 
-  for(i in 1:length(cont_tv_srv_sel)) {
+  for(i in seq_along(cont_tv_srv_sel)) {
     # Extract out components from list
     tmp <- cont_tv_srv_sel[i]
     tmp_vec <- unlist(strsplit(tmp, "_"))
@@ -430,7 +430,7 @@ Setup_Mod_Srvsel_and_Q <- function(
 
   # Blocked Time-Varying Selectivity Options --------------------------------
   srv_sel_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets))
-  for(i in 1:length(srv_sel_blocks)) {
+  for(i in seq_along(srv_sel_blocks)) {
 
     # Extract out components from list
     tmp <- srv_sel_blocks[i]
@@ -473,7 +473,7 @@ Setup_Mod_Srvsel_and_Q <- function(
   srv_sel_bicubic_selstyr_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # calendar year the bicubic surface is actually fit from (0 = block's own start year, i.e. no offset); years within the block before this are edge-kept at this year's fitted curve
   srv_sel_bicubic_nselbins_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # number of bins (starting from the first) the bicubic surface is actually fit over (0 = all bins, i.e. no truncation); bins beyond this are kept flat at the last fitted bin's value
 
-  for(i in 1:length(srv_sel_model)) {
+  for(i in seq_along(srv_sel_model)) {
 
     # Extract out survey selectivity components from vector
     tmp_sel_form <- srv_sel_model[i]
@@ -551,7 +551,7 @@ Setup_Mod_Srvsel_and_Q <- function(
 
   # Blocked Catchability Options --------------------------------------------
   srv_q_blocks_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets))
-  for(i in 1:length(srv_q_blocks)) {
+  for(i in seq_along(srv_q_blocks)) {
 
     # Extract out components from list
     tmp <- srv_q_blocks[i]
@@ -636,10 +636,10 @@ Setup_Mod_Srvsel_and_Q <- function(
         # Generate design matrix
         tmp_design_mat <- stats::model.matrix(tmp_formula, data = tmp_dat)
         # store covariate effects into container
-        srv_q_cov[r,,f,1:ncol(tmp_design_mat)] <- tmp_design_mat
+        srv_q_cov[r,,f,seq_len(ncol(tmp_design_mat))] <- tmp_design_mat
 
         # setup mapping - assign unique counter values for each coefficient
-        for(i in 1:ncol(tmp_design_mat)) {
+        for(i in seq_len(ncol(tmp_design_mat))) {
           coeff_counter <- coeff_counter + 1
           map_srv_q_coeff[r,f,i] <- coeff_counter
         } # end i loop
@@ -689,14 +689,14 @@ Setup_Mod_Srvsel_and_Q <- function(
   input_list$data$srv_selex_type <- srv_selex_type
   input_list$data$use_fixed_srv_sel <- use_fixed_srv_sel
   input_list$data$srv_sel_input <- srv_sel_input
-  input_list$data$srvsel_devs_min_shared_bins <- if(!is.null(srvsel_devs_shared_bins)) unlist(lapply(srvsel_devs_shared_bins, min)) else 1:length(input_list$data$ages)
+  input_list$data$srvsel_devs_min_shared_bins <- if(!is.null(srvsel_devs_shared_bins)) unlist(lapply(srvsel_devs_shared_bins, min)) else seq_along(input_list$data$ages)
 
   # Populate Parameter List -------------------------------------------------
   # Figure out number of selectivity parameters for a given functional form
   unique_srvsel_vals <- unique(as.vector(input_list$data$srv_sel_model))
   sel_pars_vec <- vector() # create empty vector to populate
 
-  for(i in 1:length(unique_srvsel_vals)) {
+  for(i in seq_along(unique_srvsel_vals)) {
     if(unique_srvsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
     if(unique_srvsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
     if(unique_srvsel_vals[i] == 4) sel_pars_vec[i] <- 6 # double normal
@@ -723,7 +723,7 @@ Setup_Mod_Srvsel_and_Q <- function(
 
         srvsel_blocks_tmp <- unique(as.vector(input_list$data$srv_sel_blocks[r,,f]))
 
-        for(b in 1:length(srvsel_blocks_tmp)) {
+        for(b in seq_along(srvsel_blocks_tmp)) {
 
           block_years <- which(input_list$data$srv_sel_blocks[r,,f] == srvsel_blocks_tmp[b])
           if(unique(input_list$data$srv_sel_model[r, block_years, f]) != 8) next # only bicubic blocks need weight matrices

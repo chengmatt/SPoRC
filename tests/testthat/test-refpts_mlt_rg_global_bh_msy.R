@@ -91,14 +91,14 @@ test_that("Multi Region Global BH MSY (mock) Reference Points Sablefish Model Co
     h = array(mlt_rg_sable_rep$h_trans, dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions)),
     rec_region_prop = mlt_rg_sable_rep$rec_region_prop,
     WAA = array(mlt_rg_sable_data$WAA[,,1,,,1], dim = c(mlt_rg_sable_data$n_pop,mlt_rg_sable_data$n_regions,mlt_rg_sable_data$n_seas,length(mlt_rg_sable_data$ages))),
-    MatAA = array(mlt_rg_sable_data$MatAA[,,1,,,1], dim = c(mlt_rg_sable_data$n_pop,mlt_rg_sable_data$n_regions,mlt_rg_sable_data$n_seas,length(mlt_rg_sable_data$ages)) ),
+    MatAA = array(mlt_rg_sable_data$MatAA[,,1,,,1], dim = c(mlt_rg_sable_data$n_pop,mlt_rg_sable_data$n_regions,mlt_rg_sable_data$n_seas,length(mlt_rg_sable_data$ages))),
     SSB = mlt_rg_sable_rep$SSB,
-    Movement = array(Movement[,,,1,,,1], dim = c(mlt_rg_sable_data$n_pop,mlt_rg_sable_data$n_regions,mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas,length(mlt_rg_sable_data$ages)) ),
+    Movement = array(Movement[,,,1,,,1], dim = c(mlt_rg_sable_data$n_pop,mlt_rg_sable_data$n_regions,mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas,length(mlt_rg_sable_data$ages))),
     sex_ratio_f = array(0.5, dim = c(mlt_rg_sable_data$n_pop, n_regions)),
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = c(mlt_rg_sable_data$n_pop)),
     # M now has seasons, which Get_Det_Recruitment reads
-    natmort = array(natmort[,,1,,,1], dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas, length(mlt_rg_sable_data$ages) )),
+    natmort = array(natmort[,,1,,,1], dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas, length(mlt_rg_sable_data$ages))),
     fish_sel = array(fish_sel[,,1,,,1,], dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas, length(mlt_rg_sable_data$ages), mlt_rg_sable_data$n_fish_fleets)),
     ret_sel = array(ret_sel[,,1,,,1,], dim = c(mlt_rg_sable_data$n_pop, mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas, length(mlt_rg_sable_data$ages), mlt_rg_sable_data$n_fish_fleets)),
     init_F = array(0, dim = c(mlt_rg_sable_data$n_regions, mlt_rg_sable_data$n_seas, mlt_rg_sable_data$n_fish_fleets)),
@@ -146,7 +146,7 @@ test_that("Multi Region Global BH MSY (mock) Reference Points Sablefish Model Co
 
   # Check to see if SSB equilibriates
   expect_equal(round(as.numeric(out$proj_SSB[1,1,n_proj_yrs]), 10),
-               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs-1]), 10), tolerance = 0)
+               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs - 1]), 10), tolerance = 0)
 
 
 })

@@ -169,18 +169,27 @@ test_that("Custom Distributions produce consistent results", {
   })
 
   test_that("get_beta_scaled_pars recovered mean matches input mean", {
-    low <- 0.2; high <- 1; mu <- 0.6; sigma <- 0.08
+    low <- 0.2
+    high <- 1
+    mu <- 0.6
+    sigma <- 0.08
     pars <- get_beta_scaled_pars(low, high, mu, sigma)
-    alpha <- pars[1]; beta <- pars[2]
+    alpha <- pars[1]
+    beta <- pars[2]
     # beta distribution mean = alpha / (alpha + beta), back-transformed
     recovered_mu <- low + (high - low) * alpha / (alpha + beta)
     expect_equal(recovered_mu, mu, tolerance = 1e-6)
   })
 
   test_that("get_beta_scaled_pars recovered sd matches input sd", {
-    low <- 0.2; high <- 1; mu <- 0.6; sigma <- 0.08
+    low <- 0.2
+    high <- 1
+    mu <- 0.6
+    sigma <- 0.08
     pars  <- get_beta_scaled_pars(low, high, mu, sigma)
-    alpha <- pars[1]; beta <- pars[2]; scale <- pars[4]
+    alpha <- pars[1]
+    beta <- pars[2]
+    scale <- pars[4]
     # beta variance = alpha*beta / ((alpha+beta)^2*(alpha+beta+1))
     ab    <- alpha + beta
     var01 <- alpha * beta / (ab^2 * (ab + 1))

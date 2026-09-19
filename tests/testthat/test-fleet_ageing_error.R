@@ -19,7 +19,8 @@ smear <- function(n, p = 0.2) {
 }
 
 test_that("expand_fleet_ageing_error defaults every fleet to the shared matrix", {
-  n_years <- 4; n_ages <- 6
+  n_years <- 4
+  n_ages <- 6
   shared <- array(0, dim = c(n_years, n_ages, n_ages))
   for(i in seq_len(n_years)) shared[i,,] <- smear(n_ages)
 
@@ -29,7 +30,9 @@ test_that("expand_fleet_ageing_error defaults every fleet to the shared matrix",
 })
 
 test_that("expand_fleet_ageing_error accepts the time-invariant and time-varying forms", {
-  n_years <- 3; n_ages <- 5; n_fleets <- 2
+  n_years <- 3
+  n_ages <- 5
+  n_fleets <- 2
   shared <- array(0, dim = c(n_years, n_ages, n_ages))
   for(i in seq_len(n_years)) shared[i,,] <- diag(1, n_ages)
 
@@ -49,7 +52,8 @@ test_that("expand_fleet_ageing_error accepts the time-invariant and time-varying
 })
 
 test_that("expand_fleet_ageing_error refuses shapes that would misalign the comps", {
-  n_years <- 3; n_ages <- 5
+  n_years <- 3
+  n_ages <- 5
   shared <- array(0, dim = c(n_years, n_ages, n_ages))
   for(i in seq_len(n_years)) shared[i,,] <- diag(1, n_ages)
 
@@ -77,7 +81,8 @@ test_that("expand_fleet_ageing_error refuses shapes that would misalign the comp
 })
 
 test_that("fleet_ageing_error falls back for a model fitted before the arrays existed", {
-  n_years <- 2; n_ages <- 4
+  n_years <- 2
+  n_ages <- 4
   shared <- array(0, dim = c(n_years, n_ages, n_ages))
   for(i in seq_len(n_years)) shared[i,,] <- smear(n_ages)
 
@@ -87,7 +92,10 @@ test_that("fleet_ageing_error falls back for a model fitted before the arrays ex
   for(f in 1:2) expect_equal(out[,,,f], shared, tolerance = 1e-12)
 
   own <- array(0, dim = c(n_years, n_ages, n_ages, 2))
-  for(i in seq_len(n_years)) { own[i,,,1] <- diag(1, n_ages); own[i,,,2] <- smear(n_ages, 0.4) }
+  for(i in seq_len(n_years)) {
+    own[i,,,1] <- diag(1, n_ages)
+    own[i,,,2] <- smear(n_ages, 0.4)
+  }
   new_data <- list(n_fish_fleets = 2, n_srv_fleets = 1, AgeingError_fish = own)
   expect_equal(fleet_ageing_error(new_data, shared, "fish"), own, tolerance = 1e-12)
 })

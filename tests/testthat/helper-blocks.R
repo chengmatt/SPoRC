@@ -23,7 +23,8 @@ blocks_sim <- function(n_sims = 1, n_yrs = 30, true_break = 11, seed = 123, q_la
   sl <- Setup_Sim_Survey(sl, srv_sel_input = replicate(n_sims, arr7(logi(1, 3), n_yrs, 1)),
                          srv_q_input = array(rep(q_path, times = n_sims), dim = c(1, n_yrs, 1, n_sims)))
   sl$srv_sel[, , true_break:n_yrs, , , , , ] <- replicate(n_sims, arr7(logi(3, 5), length(true_break:n_yrs), 1))
-  waa <- 5 * logi(3, 3); mat <- logi(3, 3)
+  waa <- 5 * logi(3, 3)
+  mat <- logi(3, 3)
   arr6 <- function(v) array(rep(v, each = n_yrs), dim = c(1, 1, n_yrs, 1, n_ages, 1))
   sl <- Setup_Sim_Biologicals(
     sl,

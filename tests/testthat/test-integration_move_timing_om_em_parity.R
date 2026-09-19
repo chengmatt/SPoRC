@@ -19,7 +19,8 @@ library(Matrix)
 # the only regime where the three timings actually differ.
 make_setup <- function(n_regions = 3, n_ages = 8, n_seas = 1, n_sexes = 1, n_yrs = 3) {
   seasdur <- rep(1 / n_seas, n_seas)
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
   dat <- expand.grid(
     pop = 1,
     regions = seq_len(n_regions),
@@ -73,9 +74,15 @@ test_that("simulator and estimation model agree on spawning biomass under every 
   # model reconstructs, and no amount of refitting recovers the truth.
   set.seed(11)
   fx <- make_setup()
-  n_regions <- fx$n_regions; n_ages <- fx$n_ages; n_sexes <- fx$n_sexes
-  n_pop <- 1; n_seas <- fx$n_seas; n_yrs <- fx$n_yrs
-  y <- 2; seas <- 1; t_spawn <- 0.3
+  n_regions <- fx$n_regions
+  n_ages <- fx$n_ages
+  n_sexes <- fx$n_sexes
+  n_pop <- 1
+  n_seas <- fx$n_seas
+  n_yrs <- fx$n_yrs
+  y <- 2
+  seas <- 1
+  t_spawn <- 0.3
 
   NAA <- array(stats::runif(n_pop * n_regions * (n_yrs + 1) * n_seas * n_ages * n_sexes, 20, 200),
                dim = c(n_pop, n_regions, n_yrs + 1, n_seas, n_ages, n_sexes))
@@ -100,7 +107,8 @@ test_that("simulator and estimation model agree on spawning biomass under every 
     out[, , , n_yrs + 1, , , ] <- x[, , , n_yrs, , , ]
     out
   }
-  Mov <- pad(fx$Movement); Mra <- pad(fx$Mrate)
+  Mov <- pad(fx$Movement)
+  Mra <- pad(fx$Mrate)
 
   for (tm in 0:2) {
     em <- SPoRC:::compute_biom_y(y, seas, NAA, NAA0, WAA, MatAA, ZAA, natmort, t_spawn, fx$seasdur,
@@ -110,16 +118,26 @@ test_that("simulator and estimation model agree on spawning biomass under every 
 
     # Minimal simulation environment: one replicate, everything with a trailing sim dim
     sim_env <- new.env()
-    sim_env$NAA <- array(NAA, dim = c(dim(NAA), 1)); sim_env$NAA0 <- array(NAA0, dim = c(dim(NAA0), 1))
-    sim_env$WAA <- array(WAA, dim = c(dim(WAA), 1)); sim_env$MatAA <- array(MatAA, dim = c(dim(MatAA), 1))
-    sim_env$ZAA <- array(ZAA, dim = c(dim(ZAA), 1)); sim_env$natmort <- array(natmort, dim = c(dim(natmort), 1))
-    sim_env$t_spawn <- t_spawn; sim_env$seasdur <- fx$seasdur
-    sim_env$n_pop <- n_pop; sim_env$n_regions <- n_regions; sim_env$n_seas <- n_seas
-    sim_env$n_ages <- n_ages; sim_env$n_sexes <- n_sexes
-    sim_env$natal_region <- 1; sim_env$stray_rate <- array(stray, dim = c(dim(stray), 1))
+    sim_env$NAA <- array(NAA, dim = c(dim(NAA), 1))
+    sim_env$NAA0 <- array(NAA0, dim = c(dim(NAA0), 1))
+    sim_env$WAA <- array(WAA, dim = c(dim(WAA), 1))
+    sim_env$MatAA <- array(MatAA, dim = c(dim(MatAA), 1))
+    sim_env$ZAA <- array(ZAA, dim = c(dim(ZAA), 1))
+    sim_env$natmort <- array(natmort, dim = c(dim(natmort), 1))
+    sim_env$t_spawn <- t_spawn
+    sim_env$seasdur <- fx$seasdur
+    sim_env$n_pop <- n_pop
+    sim_env$n_regions <- n_regions
+    sim_env$n_seas <- n_seas
+    sim_env$n_ages <- n_ages
+    sim_env$n_sexes <- n_sexes
+    sim_env$natal_region <- 1
+    sim_env$stray_rate <- array(stray, dim = c(dim(stray), 1))
     sim_env$sgl_seas_spawning_movement <- array(sgl, dim = c(dim(sgl), 1))
-    sim_env$Movement <- array(Mov, dim = c(dim(Mov), 1)); sim_env$Mrate <- array(Mra, dim = c(dim(Mra), 1))
-    sim_env$move_timing <- tm; sim_env$do_recruits_move <- 0
+    sim_env$Movement <- array(Mov, dim = c(dim(Mov), 1))
+    sim_env$Mrate <- array(Mra, dim = c(dim(Mra), 1))
+    sim_env$move_timing <- tm
+    sim_env$do_recruits_move <- 0
 
     om <- SPoRC:::compute_biom_y_sim(y, seas, sim = 1, sim_env = sim_env)
 
@@ -137,7 +155,8 @@ test_that("spawning biomass actually depends on move_timing when mortality varie
   # the same answer, a simulator that ignored move_timing would still pass.
   set.seed(12)
   fx <- make_setup()
-  n <- fx$n_regions; n_ages <- fx$n_ages
+  n <- fx$n_regions
+  n_ages <- fx$n_ages
   Z <- matrix(0, n, n_ages)
   for (r in seq_len(n)) Z[r, ] <- fx$M + fx$Fr[r]
   N <- matrix(stats::runif(n * n_ages, 20, 200), n, n_ages)
@@ -164,9 +183,12 @@ test_that("Get_Init_NAA respects move_timing", {
   # estimation model uses, so it has to pass Mrate and move_timing through. If either
   # were dropped the equilibrium would silently be built at timing 0.
   fx <- make_setup()
-  n_regions <- fx$n_regions; n_ages <- fx$n_ages; n_seas <- fx$n_seas
+  n_regions <- fx$n_regions
+  n_ages <- fx$n_ages
+  n_seas <- fx$n_seas
 
-  init_F <- array(0, dim = c(n_regions, n_seas, 1)); init_F[, 1, 1] <- fx$Fr
+  init_F <- array(0, dim = c(n_regions, n_seas, 1))
+  init_F[, 1, 1] <- fx$Fr
 
   call_init <- function(tm) Get_Init_NAA(
     init_age_strc = 2,

@@ -23,7 +23,9 @@ has process error correlated across those regions. However, in some cases, spati
 
 ```{r setup, warning = FALSE, message = FALSE, eval = F}
 library(SPoRC)
-n_regions <- 3; n_yrs <- 40; n_ages <- 8
+n_regions <- 3
+n_yrs <- 40
+n_ages <- 8
 waa <- 5 / (1 + exp(-3 * ((1:n_ages) - 3)))
 mat <- 1 / (1 + exp(-3 * ((1:n_ages) - 3)))
 ```
@@ -90,7 +92,8 @@ sim_list <- Setup_Sim_Biologicals(
 sim_list <- Setup_Sim_Tagging(sim_list = sim_list, use_conv_fish_tagging = 0)
 
 # modest movement, so the regions are linked but keep their own histories
-mv <- diag(n_regions) * 0.8 + 0.1; mv <- mv / rowSums(mv)
+mv <- diag(n_regions) * 0.8 + 0.1
+mv <- mv / rowSums(mv)
 Movement <- array(0, dim = c(1, n_regions, n_regions, n_yrs, 1, n_ages, 1, 1))
 for(y in 1:n_yrs) for(a in 1:n_ages) Movement[1, , , y, 1, a, 1, 1] <- mv
 sim_list$Movement <- Movement
@@ -159,7 +162,8 @@ build_em <- function(d, n_reg, NAA_re = "none", NAA_re_region = "iid") {
   il <- Setup_Mod_Movement(
     input_list = il, use_fixed_movement = 1, do_recruits_move = 0,
     Fixed_Movement = if(n_reg == 1) NA else {
-      m <- diag(n_reg) * 0.8 + 0.1; m <- m / rowSums(m)
+      m <- diag(n_reg) * 0.8 + 0.1
+      m <- m / rowSums(m)
       a <- array(0, dim = c(1, n_reg, n_reg, n_yrs, 1, n_ages, 1))
       for(y in 1:n_yrs) for(x in 1:n_ages) a[1, , , y, 1, x, 1] <- m
       a })
@@ -272,12 +276,15 @@ aggregate_regions <- function(d) {
   pool <- function(C) {
     out <- array(0, dim = c(1, n_yrs, 1, n_ages, 1, 1))
     for(y in 1:n_yrs) {
-      num <- colSums(C[, y, 1, , 1, 1] * w[, y]); out[1, y, 1, , 1, 1] <- num / sum(num)
+      num <- colSums(C[, y, 1, , 1, 1] * w[, y])
+      out[1, y, 1, , 1, 1] <- num / sum(num)
     }
     out
   }
-  a$ObsSrvAgeComps <- pool(d$ObsSrvAgeComps); a$ObsFishAgeComps <- pool(d$ObsFishAgeComps)
-  a$UseSrvAgeComps <- array(1, dim = c(1, n_yrs, 1, 1)); a$UseFishAgeComps <- a$UseSrvAgeComps
+  a$ObsSrvAgeComps <- pool(d$ObsSrvAgeComps)
+  a$ObsFishAgeComps <- pool(d$ObsFishAgeComps)
+  a$UseSrvAgeComps <- array(1, dim = c(1, n_yrs, 1, 1))
+  a$UseFishAgeComps <- a$UseSrvAgeComps
   a$ISS_SrvAgeComps <- array(400 * n_regions, dim = c(1, n_yrs, 1, 1, 1))
   a$ISS_FishAgeComps <- a$ISS_SrvAgeComps
   for(name in c("ObsFishIdx", "ObsFishIdx_SE", "UseFishIdx"))
@@ -295,7 +302,7 @@ agg_det     <- build_em(agg, 1, "none")
 fits <- list(
   `spatial, no state`   = refit(spatial_det, NULL),
   `spatial + state`     = refit(warm_start(build_em(dat, n_regions, "iid", "us"), spatial_det), "ln_NAA"),
-  `aggregated, no state`= refit(agg_det, NULL),
+  `aggregated, no state` = refit(agg_det, NULL),
   `aggregated + state`  = refit(warm_start(build_em(agg, 1, "iid"), agg_det), "ln_NAA"))
 
 truth <- colSums(om$SSB[1, , 1:n_yrs, 1])

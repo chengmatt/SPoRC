@@ -467,7 +467,7 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
           tagrep_blocks_tmp <- unique(as.vector(input_list$data$conv_tag_fish_reporting_blocks[r,,f]))
 
           if(input_list$data$use_conv_fish_tagging[f] == 1) {
-            for(b in 1:length(tagrep_blocks_tmp)) {
+            for(b in seq_along(tagrep_blocks_tmp)) {
 
               if(conv_tagrep_spec == 'est_all') {
                 map_TagRep[r,b,f] <- tagrep_counter
@@ -681,7 +681,7 @@ Setup_Mod_Tagging <- function(input_list,
                               use_conv_tag_fishrep_prior = 0,
                               conv_tag_fishrep_prior = NULL,
                               conv_tag_pop_pool = as.list(1:input_list$data$n_pop),
-                              conv_tag_age_pool = as.list(1:length(input_list$data$ages)),
+                              conv_tag_age_pool = as.list(seq_along(input_list$data$ages)),
                               conv_tag_sex_pool = as.list(1:input_list$data$n_sexes),
                               init_conv_tag_mort_spec = NULL,
                               conv_tag_shed_spec = NULL,
@@ -692,7 +692,7 @@ Setup_Mod_Tagging <- function(input_list,
                               ...
                               ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Tagging <- mget(names(formals()))[-1]
 
@@ -756,15 +756,15 @@ Setup_Mod_Tagging <- function(input_list,
 
   # Tag Pooling Options -----------------------------------------------------
   # If movement is pooled either across pops, sexes or ages
-  if(is.character(conv_tag_pop_pool)){
+  if(is.character(conv_tag_pop_pool)) {
     if(conv_tag_pop_pool == "all") move_pop_tag_pool_vals = list(1:input_list$data$n_pop)
   } else move_pop_tag_pool_vals = conv_tag_pop_pool
 
-  if(is.character(conv_tag_age_pool)){
+  if(is.character(conv_tag_age_pool)) {
     if(conv_tag_age_pool == "all") move_age_tag_pool_vals = list(seq_along(input_list$data$ages))
   } else move_age_tag_pool_vals = conv_tag_age_pool
 
-  if(is.character(conv_tag_sex_pool)){
+  if(is.character(conv_tag_sex_pool)) {
     if(conv_tag_sex_pool == "all") move_sex_tag_pool_vals = list(1:input_list$data$n_sexes)
   } else move_sex_tag_pool_vals = conv_tag_sex_pool
 
@@ -804,7 +804,7 @@ Setup_Mod_Tagging <- function(input_list,
   conv_tag_fish_reporting_blocks_mat <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
 
   if(!is.null(conv_tag_fish_reporting_blocks)) {
-    for(i in 1:length(conv_tag_fish_reporting_blocks)) {
+    for(i in seq_along(conv_tag_fish_reporting_blocks)) {
 
       # Extract out components from list
       tmp <- conv_tag_fish_reporting_blocks[i]

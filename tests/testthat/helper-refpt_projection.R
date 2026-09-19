@@ -47,8 +47,12 @@ project_at_F <- function(
   d <- if(is.null(data)) sgl_rg_sable_data else data
   rp <- if(is.null(rep)) sgl_rg_sable_rep else rep
   n_yrs <- length(d$years)
-  n_regions <- d$n_regions; n_ages <- length(d$ages); n_sexes <- d$n_sexes
-  n_fish_fleets <- d$n_fish_fleets; n_seas <- d$n_seas; n_pop <- d$n_pop
+  n_regions <- d$n_regions
+  n_ages <- length(d$ages)
+  n_sexes <- d$n_sexes
+  n_fish_fleets <- d$n_fish_fleets
+  n_seas <- d$n_seas
+  n_pop <- d$n_pop
 
   biol_d <- c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)
 
@@ -70,7 +74,8 @@ project_at_F <- function(
       stop("terminal-year slice has ", length(slice), " cells where the projection wants ",
            n_per_year, "; the array layouts have diverged")
     for(y in seq_len(n_proj_yrs)) {
-      i <- rep(list(bquote()), length(dims)); i[[3]] <- y
+      i <- rep(list(bquote()), length(dims))
+      i[[3]] <- y
       # pinned to base: while a tape is being built RTMB's replacement operator is
       # in scope, and it does not take the empty-symbol form do.call needs here
       out <- do.call(base::`[<-`, c(list(out), i, list(slice)))

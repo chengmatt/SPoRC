@@ -39,7 +39,7 @@ test_that("build_shared_spec_map parses est_all/fix/est_shared_* spec strings", 
 
   test_that("est_all gives a unique id per cell", {
     m <- SPoRC:::build_shared_spec_map(dims, "est_all", abbrev)
-    expect_equal(length(levels(m)), prod(dims))
+    expect_equal(nlevels(m), prod(dims))
     expect_true(all(!is.na(m)))
   })
 

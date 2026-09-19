@@ -17,7 +17,7 @@ Setup_Mod_Tagging(
   use_conv_tag_fishrep_prior = 0,
   conv_tag_fishrep_prior = NULL,
   conv_tag_pop_pool = as.list(1:input_list$data$n_pop),
-  conv_tag_age_pool = as.list(1:length(input_list$data$ages)),
+  conv_tag_age_pool = as.list(seq_along(input_list$data$ages)),
   conv_tag_sex_pool = as.list(1:input_list$data$n_sexes),
   init_conv_tag_mort_spec = NULL,
   conv_tag_shed_spec = NULL,

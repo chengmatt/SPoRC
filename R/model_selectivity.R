@@ -123,7 +123,7 @@
 #'   functional form, the \code{NSelBins} plateau convention several existing
 #'   assessments apply (e.g. \code{nselages}). Applied after the form and its
 #'   parameter deviations, but before the bin-level semi-parametric deviations and
-#'   the bin overrides. 
+#'   the bin overrides.
 #' @param Region Integer region index.
 #' @param Year Integer year index (absolute, i.e. a row index into
 #'   \code{Wyr_bicubic}). Only used directly by \code{Selex_Model == 8};
@@ -221,8 +221,8 @@ Get_Selex = function(
 
   if(Selex_Model == 0) { # logistic selectivity (b50 and slope)
     # Extract out and exponentiate the parameters here
-    b50 = exp(pars[1]); # b50
-    k = exp(pars[2]); # slope
+    b50 = exp(pars[1]) # b50
+    k = exp(pars[2]) # slope
 
     if(TimeVary_Model %in% c(1:2)) {
       b50 = b50 * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # b50 parameter varying
@@ -243,13 +243,13 @@ Get_Selex = function(
     } # end if iid or random walk
 
     # Now, calculate/derive power parameter + selex values
-    p = 0.5 * (sqrt( bmax^2 + (4 * delta^2)) - bmax)
-    selex = (Bin / bmax)^(bmax/p) * exp( (bmax - Bin) / p ) # return parametric form
+    p = 0.5 * (sqrt(bmax^2 + (4 * delta^2)) - bmax)
+    selex = (Bin / bmax)^(bmax / p) * exp((bmax - Bin) / p) # return parametric form
   }
 
   if(Selex_Model == 2) { # power function selectivity
     # Extract out and exponentiate the parameters here
-    power = exp(pars[1]); # power parameter
+    power = exp(pars[1]) # power parameter
 
     if(TimeVary_Model %in% c(1:2)) {
       power = power * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # power parameter varying
@@ -261,15 +261,15 @@ Get_Selex = function(
   if(Selex_Model == 3) { # logistic selectivity (b50 and b95)
 
     # Extract out and exponentiate the parameters here
-    b50 = exp(pars[1]); # b50
-    b95 = exp(pars[2]); # b95
+    b50 = exp(pars[1]) # b50
+    b95 = exp(pars[2]) # b95
 
     if(TimeVary_Model %in% c(1:2)) {
       b50 = b50 * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # b50 parameter varying
       b95 = b95 * exp(ln_seldevs[Region, Year, 2, Sex, 1]) # b95 parameter varying
     } # end if iid or random walk
 
-    selex = 1 / (1+19^((b50-Bin)/b95)) # 19 b/c 0.95 / (1 - 0.95) return parametric form
+    selex = 1 / (1 + 19^((b50 - Bin) / b95)) # 19 b/c 0.95 / (1 - 0.95) return parametric form
   }
 
   if(Selex_Model == 4) {
@@ -279,11 +279,11 @@ Get_Selex = function(
     binwidth <- if(length(Bin) > 1) Bin[2] - Bin[1] else 1
 
     p1trans <- pars[1] # bin at the start of the plateau, on the bin scale
-    p2trans <- p1trans + binwidth + (0.99 * max(Bin) - p1trans - binwidth)/(1 + exp(-1.0 * pars[2])) # bin at the end of the plateau
+    p2trans <- p1trans + binwidth + (0.99 * max(Bin) - p1trans - binwidth) / (1 + exp(-1.0 * pars[2])) # bin at the end of the plateau
     p3trans <- exp(pars[3]) # ascending width
     p4trans <- exp(pars[4]) # descending width
-    p5trans <- 1/(1 + exp(-1.0 * pars[5])) # selectivity at the first bin
-    p6trans <- 1/(1 + exp(-1.0 * pars[6])) # selectivity at the last bin
+    p5trans <- 1 / (1 + exp(-1.0 * pars[5])) # selectivity at the first bin
+    p6trans <- 1 / (1 + exp(-1.0 * pars[6])) # selectivity at the last bin
 
     if(TimeVary_Model %in% c(1:2)) {
       p1trans = p1trans * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # p1 parameter varying
@@ -297,16 +297,16 @@ Get_Selex = function(
     # construct selectivity function. apical is the height the limbs build up to and the plateau
     # sits at, one for the reference sex; the endpoints are anchors that do not move with it
     startbin <- if(is.null(dbnrml_startbin) || dbnrml_startbin < 1) 1 else dbnrml_startbin
-    asc_min <- exp(-((Bin[startbin] - p1trans)^2/p3trans)) # ascending limb evaluated at the start bin (the first bin by default)
-    dsc_min <- exp(-((max(Bin) - p2trans)^2/p4trans)) # descending limb evaluated at the last bin
+    asc_min <- exp(-((Bin[startbin] - p1trans)^2 / p3trans)) # ascending limb evaluated at the start bin (the first bin by default)
+    dsc_min <- exp(-((max(Bin) - p2trans)^2 / p4trans)) # descending limb evaluated at the last bin
     # a raw limb is the Gaussian itself, built up to apical, with no anchoring at
     # the end bin, so p5 or p6 has no role
-    asc <- if(dbnrml_raw[1] == 1) apical * exp(-((Bin - p1trans)^2/p3trans)) else
-      p5trans + (apical - p5trans) * (exp(-((Bin - p1trans)^2/p3trans)) - asc_min)/(1 - asc_min)
-    dsc <- if(dbnrml_raw[2] == 1) apical * exp(-((Bin - p2trans)^2/p4trans)) else
-      apical + (p6trans - apical) * (exp(-((Bin - p2trans)^2/p4trans)) - 1)/(dsc_min - 1)
-    join1 <- 1/(1 + exp(-(20 * (Bin - p1trans)/(1 + abs(Bin - p1trans))))) # joiner between the ascending limb and the plateau
-    join2 <- 1/(1 + exp(-(20 * (Bin - p2trans)/(1 + abs(Bin - p2trans))))) # joiner between the plateau and the descending limb
+    asc <- if(dbnrml_raw[1] == 1) apical * exp(-((Bin - p1trans)^2 / p3trans)) else
+      p5trans + (apical - p5trans) * (exp(-((Bin - p1trans)^2 / p3trans)) - asc_min) / (1 - asc_min)
+    dsc <- if(dbnrml_raw[2] == 1) apical * exp(-((Bin - p2trans)^2 / p4trans)) else
+      apical + (p6trans - apical) * (exp(-((Bin - p2trans)^2 / p4trans)) - 1) / (dsc_min - 1)
+    join1 <- 1 / (1 + exp(-(20 * (Bin - p1trans) / (1 + abs(Bin - p1trans))))) # joiner between the ascending limb and the plateau
+    join2 <- 1 / (1 + exp(-(20 * (Bin - p2trans) / (1 + abs(Bin - p2trans))))) # joiner between the plateau and the descending limb
     selex <- asc * (1 - join1) + join1 * (apical * (1 - join2) + dsc * join2) # return parametric form
     # bins below the start bin fall off as the square of their bin relative to it
     if(startbin > 1) selex[1:(startbin - 1)] <- (Bin[1:(startbin - 1)] / Bin[startbin])^2 * selex[startbin]
@@ -349,7 +349,7 @@ Get_Selex = function(
       b95 = b95 * exp(ln_seldevs[Region, Year, 3, Sex, 1]) # slope parameter varying
     } # end if iid or random walk
 
-    selex = alpha / (1+19^((b50-Bin)/b95)) # 19 b/c 0.95 / (1 - 0.95) return parametric form
+    selex = alpha / (1 + 19^((b50 - Bin) / b95)) # 19 b/c 0.95 / (1 - 0.95) return parametric form
 
   } # end if logistic selex with an asymptotic parameter, w/ b50 b95 parameterization
 
@@ -373,7 +373,7 @@ Get_Selex = function(
 
   if(Selex_Model == 9) {
 
-    # Non-parametric on the log scale, standardized so each year's selectivity averages to one across bins. 
+    # Non-parametric on the log scale, standardized so each year's selectivity averages to one across bins.
     if(TimeVary_Model %in% c(1:2)) pars = pars + ln_seldevs[Region, Year, , Sex, 1]
     selex = exp(pars)
     # Figure out which bins to normalize across
@@ -399,7 +399,7 @@ Get_Selex = function(
   if(TimeVary_Model %in% c(3:5)) selex = selex * exp(ln_seldevs[Region,Year,,Sex, 1]) # varies semi-parametriclly
 
   # Named bins take a free annual value instead of whatever the form produced.
-  # Applied last, so it overrides any within-form standardization 
+  # Applied last, so it overrides any within-form standardization
   if(!is.null(bin_dev_bins) && length(bin_dev_bins) > 0) {
     selex[bin_dev_bins] = exp(bin_devs[Region, Year, bin_dev_bins, Sex, 1])
   }
@@ -627,4 +627,3 @@ Get_Selex_Array = function(selex_type,
 
   return(list(sel = sel, sel_l = sel_l))
 } # end function
-

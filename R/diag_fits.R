@@ -111,8 +111,10 @@ get_idx_fits <- function(data,
   }
 
   # Observed survey index
-  obs_srv <- reshape2::melt(data$ObsSrvIdx) %>% dplyr::rename(obs = value) %>%
-    dplyr::left_join(reshape2::melt(data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx)) %>%  dplyr::rename(se = value), by = c("Var1", "Var2", "Var3", "Var4")) %>%
+  obs_srv <- reshape2::melt(data$ObsSrvIdx) %>%
+    dplyr::rename(obs = value) %>%
+    dplyr::left_join(reshape2::melt(data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx)) %>%  dplyr::rename(se = value),
+                     by = c("Var1", "Var2", "Var3", "Var4")) %>%
     dplyr::mutate(lci = exp(log(obs) - (1.96 * se)), uci = exp(log(obs) + (1.96 * se)), Type = 'Survey') %>%
     tidyr::drop_na() %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Fleet = Var4)
@@ -303,7 +305,7 @@ Restrc_Comps <- function(Exp,
     if(age_or_len == 1) tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize (lengths)
 
     # Normalize observed
-    tmp_Obs =  (Obs[1,1,1,,1,1]) / sum( Obs[1,1,1,,1,1])
+    tmp_Obs =  (Obs[1,1,1,,1,1]) / sum(Obs[1,1,1,,1,1])
 
     # Input into storage matrix
     Exp_mat[1,,1] = tmp_Exp
@@ -336,7 +338,7 @@ Restrc_Comps <- function(Exp,
     for(r in 1:n_regions) {
       # Expected values
       if(age_or_len == 0) { # if ages
-        tmp_Exp = t(as.vector((Exp[r,1,1,,,1])/ sum(Exp[r,1,1,,,1]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, collapses to observed age bins if ageing error is non square
+        tmp_Exp = t(as.vector((Exp[r,1,1,,,1]) / sum(Exp[r,1,1,,,1]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, collapses to observed age bins if ageing error is non square
         tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize to make sure sum to 1
       } # if ages
       if(age_or_len == 1) tmp_Exp = as.vector((Exp[r,1,1,,,1]) / sum((Exp[r,1,1,,,1]))) # Normalize temporary variable (lengths)
@@ -518,12 +520,10 @@ get_comp_prop <- function(data,
   # setup ageing error if user-supplied is not year specific
   if(length(dim(data$AgeingError)) == 2) {
     AgeingError_t <- array(0, dim = c(length(data$years), dim(data$AgeingError)))
-    for(i in 1:length(data$years)) AgeingError_t[i,,] <-  data$AgeingError
+    for(i in seq_along(data$years)) AgeingError_t[i,,] <-  data$AgeingError
   }
   # ageing error if it is year specific (just reassigning)
   if(length(dim(data$AgeingError)) == 3) AgeingError_t <-  data$AgeingError
-
-  AgeingError <- AgeingError_t # ageing errors
 
   # Fleet-specific ageing error, falling back on the shared matrix for a model
   # fitted before the fleet-specific arrays existed
@@ -919,7 +919,8 @@ get_comp_prop <- function(data,
   all_fishages <- reshape2::melt(Obs_FishAge) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishAge) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishAge) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Fishery Ages', Pop = NA)
 
@@ -927,7 +928,8 @@ get_comp_prop <- function(data,
   all_fishlens <- reshape2::melt(Obs_FishLen) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishLen) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishLen) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Len = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Fishery Lengths', Pop = NA)
 
@@ -935,7 +937,8 @@ get_comp_prop <- function(data,
   all_fishages_discard <- reshape2::melt(Obs_FishAge_discard) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishAge_discard) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishAge_discard) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Fishery Discard Ages', Pop = NA)
 
@@ -943,7 +946,8 @@ get_comp_prop <- function(data,
   all_fishlens_discard <- reshape2::melt(Obs_FishLen_discard) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishLen_discard) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishLen_discard) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Len = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Fishery Discard Lengths', Pop = NA)
 
@@ -951,7 +955,8 @@ get_comp_prop <- function(data,
   all_srvages <- reshape2::melt(Obs_SrvAge) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_SrvAge) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvAge) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Age = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Survey Ages', Pop = NA)
 
@@ -959,7 +964,8 @@ get_comp_prop <- function(data,
   all_srvlens <- reshape2::melt(Obs_SrvLen) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_SrvLen) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvLen) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6")) %>%
     dplyr::rename(Region = Var1, Year = Var2, Seas = Var3, Len = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(Type = 'Survey Lengths', Pop = NA)
 
@@ -967,7 +973,8 @@ get_comp_prop <- function(data,
   all_fishages_pop <- reshape2::melt(Obs_FishAge_pop) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishAge_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishAge_pop) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
     dplyr::mutate(Type = 'Pop Fishery Ages')
 
@@ -975,7 +982,8 @@ get_comp_prop <- function(data,
   all_fishlens_pop <- reshape2::melt(Obs_FishLen_pop) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishLen_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishLen_pop) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Len = Var5, Sex = Var6, Fleet = Var7) %>%
     dplyr::mutate(Type = 'Pop Fishery Lengths')
 
@@ -983,7 +991,8 @@ get_comp_prop <- function(data,
   all_fishages_discard_pop <- reshape2::melt(Obs_FishAge_discard_pop) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishAge_discard_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishAge_discard_pop) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
     dplyr::mutate(Type = 'Pop Fishery Discard Ages')
 
@@ -991,7 +1000,8 @@ get_comp_prop <- function(data,
   all_fishlens_discard_pop <- reshape2::melt(Obs_FishLen_discard_pop) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_FishLen_discard_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::left_join(reshape2::melt(Pred_FishLen_discard_pop) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Len = Var5, Sex = Var6, Fleet = Var7) %>%
     dplyr::mutate(Type = 'Pop Fishery Discard Lengths')
 
@@ -999,7 +1009,8 @@ get_comp_prop <- function(data,
   all_srvages_pop <- reshape2::melt(Obs_SrvAge_pop) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_SrvAge_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvAge_pop) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
     dplyr::mutate(Type = 'Pop Survey Ages')
 
@@ -1007,7 +1018,8 @@ get_comp_prop <- function(data,
   all_srvlens_pop <- reshape2::melt(Obs_SrvLen_pop) %>%
     dplyr::rename(obs = value) %>%
     tidyr::drop_na() %>%
-    dplyr::left_join(reshape2::melt(Pred_SrvLen_pop) %>% dplyr::rename(pred = value), by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
+    dplyr::left_join(reshape2::melt(Pred_SrvLen_pop) %>% dplyr::rename(pred = value),
+                     by = c("Var1", "Var2", "Var3", "Var4", "Var5", "Var6", "Var7")) %>%
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Len = Var5, Sex = Var6, Fleet = Var7) %>%
     dplyr::mutate(Type = 'Pop Survey Lengths')
 
@@ -1183,9 +1195,9 @@ get_caal_fits <- function(data, rep) {
     rows <- data.frame()
 
     for(f in 1:n_fleets) {
-      for(y in 1:length(data$years)) {
+      for(y in seq_along(data$years)) {
         for(seas in 1:data$n_seas) {
-          for(l in 1:dim(Use)[4]) {
+          for(l in seq_len(dim(Use)[4])) {
 
             if(sum(Use[, y, seas, l, f]) < 1) next
 

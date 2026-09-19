@@ -81,12 +81,14 @@ wiring_build <- function(entry, value) {
 #'
 #' @keywords internal
 wiring_differs <- function(entry, a, b) {
-  ia <- wiring_build(entry, a); ib <- wiring_build(entry, b)
+  ia <- wiring_build(entry, a)
+  ib <- wiring_build(entry, b)
   if(inherits(ia, "condition") || inherits(ib, "condition")) return(NA)
   d <- sweep_diff(sweep_signature(ia), sweep_signature(ib))
   if(length(d$map) > 0 || length(d$par) > 0) return(TRUE)
 
-  ca <- wiring_contributions(entry, a); cb <- wiring_contributions(entry, b)
+  ca <- wiring_contributions(entry, a)
+  cb <- wiring_contributions(entry, b)
   if(is.null(ca) || is.null(cb)) return(NA)
   shared <- intersect(names(ca), names(cb))
   !isTRUE(all.equal(ca[shared], cb[shared], tolerance = 1e-12))
@@ -190,7 +192,8 @@ test_that("the list of options the sweep cannot reach is still accurate", {
     if(!entry$arg %in% wiring_unconfigured) next
     for(v in entry$legal[-1]) {
       if(isTRUE(wiring_differs(entry, entry$legal[1], v))) {
-        became_reachable <- c(became_reachable, entry$arg); break
+        became_reachable <- c(became_reachable, entry$arg)
+        break
       }
     }
   }

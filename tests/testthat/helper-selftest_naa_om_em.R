@@ -21,7 +21,8 @@ naaom_make_om <- function(
   rho_year = 0.4,
   seed = 808
 ) {
-  n_yrs <- naaom_cfg$n_yrs; n_ages <- naaom_cfg$n_ages
+  n_yrs <- naaom_cfg$n_yrs
+  n_ages <- naaom_cfg$n_ages
   curve <- function(slope, infl, scale = 1)
     array(rep(scale / (1 + exp(-slope * ((1:n_ages) - infl))), each = n_yrs),
           dim = c(1, 1, n_yrs, 1, n_ages, 1, 1))
@@ -96,7 +97,8 @@ naaom_om_data <- function(om) simulation_data_to_SPoRC(sim_env = om, y = naaom_c
 naaom_build_em <- function(sim_data, NAA_re = "none") {
   # read from the data rather than the test setup so the same builder serves an assessment run inside
   # a closed loop, where the series grows by one year at a time
-  n_yrs <- dim(sim_data$WAA)[3]; n_ages <- naaom_cfg$n_ages
+  n_yrs <- dim(sim_data$WAA)[3]
+  n_ages <- naaom_cfg$n_ages
   il <- Setup_Mod_Dim(
     years = 1:n_yrs,
     ages = 1:n_ages,

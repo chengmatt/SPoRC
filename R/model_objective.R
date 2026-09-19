@@ -1056,10 +1056,16 @@ SPoRC_rtmb = function(pars, data) {
     Fish_caal_discard = Fish_caal_discard
   )
 
-  fish_q = tmp_fish_obs$fish_q; CAA = tmp_fish_obs$CAA; DAA = tmp_fish_obs$DAA
-  CAL = tmp_fish_obs$CAL; DAL = tmp_fish_obs$DAL
-  Fish_caal = tmp_fish_obs$Fish_caal; Fish_caal_discard = tmp_fish_obs$Fish_caal_discard
-  PredCatch = tmp_fish_obs$PredCatch; PredDiscard = tmp_fish_obs$PredDiscard; PredFishIdx = tmp_fish_obs$PredFishIdx
+  fish_q = tmp_fish_obs$fish_q
+  CAA = tmp_fish_obs$CAA
+  DAA = tmp_fish_obs$DAA
+  CAL = tmp_fish_obs$CAL
+  DAL = tmp_fish_obs$DAL
+  Fish_caal = tmp_fish_obs$Fish_caal
+  Fish_caal_discard = tmp_fish_obs$Fish_caal_discard
+  PredCatch = tmp_fish_obs$PredCatch
+  PredDiscard = tmp_fish_obs$PredDiscard
+  PredFishIdx = tmp_fish_obs$PredFishIdx
 
   ## Survey Observation Model ------------------------------------------------
 
@@ -1118,8 +1124,11 @@ SPoRC_rtmb = function(pars, data) {
     Srv_caal = Srv_caal
   )
 
-  srv_q = tmp_srv_obs$srv_q; srv_sel = tmp_srv_obs$srv_sel
-  SrvIAA = tmp_srv_obs$SrvIAA; SrvIAL = tmp_srv_obs$SrvIAL; PredSrvIdx = tmp_srv_obs$PredSrvIdx
+  srv_q = tmp_srv_obs$srv_q
+  srv_sel = tmp_srv_obs$srv_sel
+  SrvIAA = tmp_srv_obs$SrvIAA
+  SrvIAL = tmp_srv_obs$SrvIAL
+  PredSrvIdx = tmp_srv_obs$PredSrvIdx
   Srv_caal = tmp_srv_obs$Srv_caal
 
 
@@ -2683,7 +2692,7 @@ SPoRC_rtmb = function(pars, data) {
                                             ln_devs = ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
                                             map_sel_devs = map_ln_fishsel_bin_devs[r,,,,f, drop = FALSE],
                                             map_sel_devs_full = map_ln_fishsel_bin_devs[,,,,f, drop = FALSE],
-                                            min_sel_devs_shared_bins = 1:dim(ln_fishsel_bin_devs)[3],
+                                            min_sel_devs_shared_bins = seq_len(dim(ln_fishsel_bin_devs)[3]),
                                             rw_init_sigma = fishsel_bin_devs_rw_init_sigma[f])
       } # end if
       if(cont_tv_retsel_bin_devs[f] > 0) {
@@ -2692,7 +2701,7 @@ SPoRC_rtmb = function(pars, data) {
                                              ln_devs = ln_retsel_bin_devs[r,,,,f, drop = FALSE],
                                              map_sel_devs = map_ln_retsel_bin_devs[r,,,,f, drop = FALSE],
                                             map_sel_devs_full = map_ln_retsel_bin_devs[,,,,f, drop = FALSE],
-                                             min_sel_devs_shared_bins = 1:dim(ln_retsel_bin_devs)[3],
+                                             min_sel_devs_shared_bins = seq_len(dim(ln_retsel_bin_devs)[3]),
                                              rw_init_sigma = retsel_bin_devs_rw_init_sigma[f])
       } # end if
     } # end f loop
@@ -2703,7 +2712,7 @@ SPoRC_rtmb = function(pars, data) {
                                              ln_devs = ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
                                              map_sel_devs = map_ln_srvsel_bin_devs[r,,,,sf, drop = FALSE],
                                             map_sel_devs_full = map_ln_srvsel_bin_devs[,,,,sf, drop = FALSE],
-                                             min_sel_devs_shared_bins = 1:dim(ln_srvsel_bin_devs)[3],
+                                             min_sel_devs_shared_bins = seq_len(dim(ln_srvsel_bin_devs)[3]),
                                              rw_init_sigma = srvsel_bin_devs_rw_init_sigma[sf])
       } # end if
     } # end sf loop

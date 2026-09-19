@@ -88,7 +88,7 @@ Setup_sim_env <- function(sim_list) {
   # output into simulation environment
   list2env(sim_list, envir = sim_env)
 
-  # State-space containers live here rather than in Simulate_Pop_Static 
+  # State-space containers live here rather than in Simulate_Pop_Static
   naa_dims <- c(sim_env$n_pop, sim_env$n_regions, sim_env$n_yrs, sim_env$n_seas, sim_env$n_ages, sim_env$n_sexes, sim_env$n_sims)
   if(length(naa_dims) == 7 && all(is.finite(naa_dims))) {
     sim_env$naa_eta_all <- array(0, dim = naa_dims)

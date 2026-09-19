@@ -61,7 +61,7 @@ get_ts_plot <- function(rep,
 
   biom_rec_df <- data.frame() # empty dataframe to bind
 
-  for(i in 1:length(rep)) {
+  for(i in seq_along(rep)) {
 
     # Spawning Stock Biomass
     ssb_plot_df <- reshape2::melt(rep[[i]]$SSB) %>%
@@ -129,7 +129,7 @@ get_ts_plot <- function(rep,
   comb_ts_plot <- ggplot2::ggplot(biom_rec_df,
                              ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
-    ggplot2::facet_grid(Type~Region, scales = 'free') +
+    ggplot2::facet_grid(Type ~ Region, scales = 'free') +
     ggplot2::labs(x = 'Year', y = 'Value', color = 'Model', fill = 'Model') +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
     theme_sablefish()
@@ -138,7 +138,7 @@ get_ts_plot <- function(rep,
   f_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(stringr::str_detect(Type, 'Fleet')),
                                ggplot2::aes(x = Year, y = value, color = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
-    ggplot2::facet_grid(Type~Region, scales = 'free') +
+    ggplot2::facet_grid(Type ~ Region, scales = 'free') +
     ggplot2::labs(x = 'Year', y = 'Value', color = 'Model') +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
     theme_sablefish()
@@ -147,16 +147,16 @@ get_ts_plot <- function(rep,
   rec_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'Recruitment')),
                                  ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
-    ggplot2::facet_grid(Type~Region, scales = 'free') +
+    ggplot2::facet_grid(Type ~ Region, scales = 'free') +
     ggplot2::labs(x = 'Year', y = 'Recruitment', color = 'Model', fill = 'Model') +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
     theme_sablefish()
 
   # ssb
-  ssb_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'SSB') & !str_detect(Type, 'Dynamic')),
+  ssb_ts_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'SSB'), !str_detect(Type, 'Dynamic')),
                                ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
-    ggplot2::facet_grid(Type~Region, scales = 'free') +
+    ggplot2::facet_grid(Type ~ Region, scales = 'free') +
     ggplot2::labs(x = 'Year', y = 'Spawning Stock Biomass', color = 'Model', fill = 'Model') +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
     theme_sablefish()
@@ -165,7 +165,7 @@ get_ts_plot <- function(rep,
   total_biom_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'Total')),
                       ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
-    ggplot2::facet_grid(Type~Region, scales = 'free') +
+    ggplot2::facet_grid(Type ~ Region, scales = 'free') +
     ggplot2::labs(x = 'Year', y = 'Total Biomass', color = 'Model', fill = 'Model') +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
     theme_sablefish()
@@ -174,7 +174,7 @@ get_ts_plot <- function(rep,
   ssb0_plot <- ggplot2::ggplot(biom_rec_df %>% dplyr::filter(str_detect(Type, 'Dynamic')),
                                ggplot2::aes(x = Year, y = value, ymin = lwr, ymax = upr, color = factor(Model), fill = factor(Model))) +
     ggplot2::geom_line(lwd = 0.9) +
-    ggplot2::facet_grid(Type~Region, scales = 'free') +
+    ggplot2::facet_grid(Type ~ Region, scales = 'free') +
     ggplot2::labs(x = 'Year', y = 'Unfished Spawning Stock Biomass', color = 'Model', fill = 'Model') +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
     theme_sablefish()
@@ -393,7 +393,7 @@ get_biological_plot <- function(data,
   waa_plot_df <- data.frame()
   mataa_plot_df <- data.frame()
 
-  for(i in 1:length(rep)) {
+  for(i in seq_along(rep)) {
 
     # old reports have no season dim
     rep[[i]]$natmort <- expand_natmort_seasons(rep[[i]]$natmort, data[[i]]$n_seas)
@@ -472,8 +472,8 @@ get_biological_plot <- function(data,
                                     dplyr::filter(Year == max(natmort_plot_df$Year)),
                                   ggplot2::aes(x = Age, y = value, color = factor(Model), lty = factor(Pop))) +
     ggplot2::geom_line(lwd = 2) +
-    ggplot2::facet_grid(Region~Sex+Seas) +
-    ggplot2::labs(x = 'Age', y = 'Natural Mortality', color = 'Model', lty=  'Population') +
+    ggplot2::facet_grid(Region ~ Sex + Seas) +
+    ggplot2::labs(x = 'Age', y = 'Natural Mortality', color = 'Model', lty =  'Population') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     theme_sablefish() +
     ggplot2::theme(legend.key.width = unit(2, "lines"))
@@ -483,7 +483,7 @@ get_biological_plot <- function(data,
                                 dplyr::filter(Year == max(waa_plot_df$Year)),
                               ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Pop)) +
     ggplot2::geom_line(lwd = 2) +
-    ggplot2::facet_grid(Region~Sex + Seas) +
+    ggplot2::facet_grid(Region ~ Sex + Seas) +
     ggplot2::labs(x = 'Age', y = 'Spawning Weight at Age', color = 'Model', lty = 'Population') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     theme_sablefish() +
@@ -494,7 +494,7 @@ get_biological_plot <- function(data,
                                   dplyr::filter(Year == max(mataa_plot_df$Year)),
                                 ggplot2::aes(x = Age, y = value, color = factor(Model), lty = Pop)) +
     ggplot2::geom_line(lwd = 2) +
-    ggplot2::facet_grid(Region~Sex+Seas) +
+    ggplot2::facet_grid(Region ~ Sex + Seas) +
     ggplot2::labs(x = 'Age', y = 'Maturity at Age', color = 'Model', lty = 'Population') +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
     theme_sablefish() +
@@ -550,11 +550,11 @@ get_data_fitted_plot <- function(data,
                                  ) {
 
   data_plot_all_df <- data.frame()
-  for(i in 1:length(data)) {
+  for(i in seq_along(data)) {
 
     # Get tag release indicator
     if(any(data[[i]]$use_conv_fish_tagging == 1)) {
-      use_tag_indicator <- array(0, dim = c(max(data[[i]]$conv_tag_release_indicator[,1]), max(data[[i]]$conv_tag_release_indicator[,2]), max(data[[i]]$conv_tag_release_indicator[,3]) ))
+      use_tag_indicator <- array(0, dim = c(max(data[[i]]$conv_tag_release_indicator[,1]), max(data[[i]]$conv_tag_release_indicator[,2]), max(data[[i]]$conv_tag_release_indicator[,3])))
       use_tag_indicator[data[[i]]$conv_tag_release_indicator[,1], data[[i]]$conv_tag_release_indicator[,2], data[[i]]$conv_tag_release_indicator[,3]] <- 1
     }
 
@@ -660,7 +660,7 @@ get_data_fitted_plot <- function(data,
   data_plot <- ggplot2::ggplot(data_plot_all_df,
                                ggplot2::aes(x = Year, y = Type, fill = Type)) +
     ggplot2::geom_point(size = 3, pch = 21, color = 'black', alpha = 0.8) +
-    ggplot2::facet_grid(Model~Region) +
+    ggplot2::facet_grid(Model ~ Region) +
     theme_sablefish() +
     ggplot2::theme(legend.position = 'none') +
     ggplot2::labs(x = 'Year', y = '')
@@ -732,7 +732,7 @@ get_nLL_plot <- function(data,
 
 
   nLL_all_df <- data.frame() # empty dataframe
-  for(i in 1:length(rep)) {
+  for(i in seq_along(rep)) {
 
     # nLL values
     nLL_df <- data.frame(
@@ -853,7 +853,7 @@ get_idx_fits_plot <- function(data,
 
   idx_fits_all <- data.frame()
   # get index fits data
-  for(i in 1:length(rep)) {
+  for(i in seq_along(rep)) {
     idx_fits <- get_idx_fits(data = data[[i]], rep = rep[[i]], year_labs = data[[i]]$years) %>%
       dplyr::mutate(Model = model_names[i])
     idx_fits_all <- rbind(idx_fits_all, idx_fits) # bind
@@ -868,7 +868,7 @@ get_idx_fits_plot <- function(data,
     ggplot2::labs(x = "Year", y = 'Index', color = 'Model') +
     theme_sablefish() +
     ggplot2::coord_cartesian(ylim = c(0,NA)) +
-    ggplot2::facet_grid(Category~Region, scales = 'free_y')
+    ggplot2::facet_grid(Category ~ Region, scales = 'free_y')
 
   return(idx_fit_plot)
 }
@@ -1051,7 +1051,7 @@ get_catch_fits_plot <- function(data,
     catch_fits_rg_all <- data.frame()
 
     # get catch fits data
-    for(i in 1:length(rep)) {
+    for(i in seq_along(rep)) {
 
       # Get catch fits
       catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
@@ -1086,7 +1086,7 @@ get_catch_fits_plot <- function(data,
       ggplot2::labs(x = "Year", y = 'Catch', color = 'Model') +
       theme_sablefish() +
       ggplot2::coord_cartesian(ylim = c(0,NA)) +
-      ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
+      ggplot2::facet_grid(Seas_Fleet ~ Region, scales = 'free_y')
   } else NULL
 
   # Plot discards fits
@@ -1095,7 +1095,7 @@ get_catch_fits_plot <- function(data,
     discard_fits_rg_all <- data.frame()
 
     # get discard fits data
-    for(i in 1:length(rep)) {
+    for(i in seq_along(rep)) {
 
       # Get discard fits
       discard_fits <- reshape2::melt(rep[[i]]$PredDiscard) %>%
@@ -1130,7 +1130,7 @@ get_catch_fits_plot <- function(data,
       ggplot2::labs(x = "Year", y = 'Discard', color = 'Model') +
       theme_sablefish() +
       ggplot2::coord_cartesian(ylim = c(0,NA)) +
-      ggplot2::facet_grid(Seas_Fleet~Region, scales = 'free_y')
+      ggplot2::facet_grid(Seas_Fleet ~ Region, scales = 'free_y')
   } else NULL
 
   catch_fit_pop_plot <- if(any(data[[1]]$UseCatch_pop == 1)) {
@@ -1138,7 +1138,7 @@ get_catch_fits_plot <- function(data,
     catch_fits_pop_all <- data.frame()
 
     # get catch fits data
-    for(i in 1:length(rep)) {
+    for(i in seq_along(rep)) {
 
       # Get catch fits
       catch_fits <- reshape2::melt(rep[[i]]$PredCatch) %>%
@@ -1170,7 +1170,7 @@ get_catch_fits_plot <- function(data,
       ggplot2::labs(x = "Year", y = 'Population-Specific Catch', color = 'Model') +
       theme_sablefish() +
       ggplot2::coord_cartesian(ylim = c(0,NA)) +
-      ggplot2::facet_grid(Pop_Seas_Fleet~Region, scales = 'free_y')
+      ggplot2::facet_grid(Pop_Seas_Fleet ~ Region, scales = 'free_y')
   } else NULL
 
   discard_fit_pop_plot <- if(any(data[[1]]$UseDiscard_pop == 1)) {
@@ -1178,7 +1178,7 @@ get_catch_fits_plot <- function(data,
     discard_fits_pop_all <- data.frame()
 
     # get discard fits data
-    for(i in 1:length(rep)) {
+    for(i in seq_along(rep)) {
 
       # Get discard fits
       discard_fits <- reshape2::melt(rep[[i]]$PredDiscard) %>%
@@ -1210,7 +1210,7 @@ get_catch_fits_plot <- function(data,
       ggplot2::labs(x = "Year", y = 'Population-Specific Discard', color = 'Model') +
       theme_sablefish() +
       ggplot2::coord_cartesian(ylim = c(0,NA)) +
-      ggplot2::facet_grid(Pop_Seas_Fleet~Region, scales = 'free_y')
+      ggplot2::facet_grid(Pop_Seas_Fleet ~ Region, scales = 'free_y')
   } else NULL
 
   return(list(catch_fit_rg_plot, catch_fit_pop_plot, discard_fit_rg_plot, discard_fit_pop_plot))
@@ -1324,7 +1324,7 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
     ) +
     ggplot2::scale_color_viridis_c() +
     ggplot2::scale_fill_viridis_c() +
-    ggplot2::facet_grid(Region~Type + Pop, scales = 'free') +
+    ggplot2::facet_grid(Region ~ Type + Pop, scales = 'free') +
     theme_sablefish() +
     ggplot2::theme(legend.position = 'top')
 
@@ -1339,7 +1339,7 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
     ) +
     ggplot2::scale_color_viridis_c() +
     ggplot2::coord_cartesian(ylim = c(0, NA)) +
-    ggplot2::facet_wrap(Region~Type+Pop, scales = 'free_y') +
+    ggplot2::facet_wrap(Region ~ Type + Pop, scales = 'free_y') +
     theme_sablefish() +
     ggplot2::labs(x = 'Year', y = 'Value', color = 'Peel')
 
@@ -1349,13 +1349,13 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
       Year = Year,
       terminal = max(retro_output$Year) - peel,
       cohort = Year - Rec_Age,
-      years_est = terminal-Year
+      years_est = terminal - Year
     ) %>%
     dplyr::filter(Type == 'Recruitment', cohort %in% seq(max(retro_output$Year) - 10, max(retro_output$Year), 1), terminal != Year) %>%
     ggplot2::ggplot(ggplot2::aes(x = years_est - 1, y = value, group = Year, color = factor(cohort))) +
     ggplot2::geom_line(lwd = 1.3) +
     ggplot2::geom_point(size = 4) +
-    ggplot2::facet_grid(Pop~Region, scales = 'free') +
+    ggplot2::facet_grid(Pop ~ Region, scales = 'free') +
     ggplot2::theme_bw(base_size = 15) +
     ggplot2::labs(
       x = 'Years since cohort was last estimated',
@@ -1608,7 +1608,7 @@ get_key_quants <- function(data,
   ref_pts <- list()
   key_quants_df <- data.frame()
 
-  for(i in 1:length(rep)) {
+  for(i in seq_along(rep)) {
 
     # get reference points
     tmp_ref_pts <- Get_Reference_Points(data = data[[i]],
@@ -1627,7 +1627,6 @@ get_key_quants <- function(data,
 
     # do population project to get catch advice
     n_proj_yrs <- proj_model_opt$n_proj_yrs # number of projection years
-    t_spawn <- reference_points_opt$t_spawn # spawn timing
 
     # terminal estimates
     terminal_NAA <-  array(rep[[i]]$NAA[,,length(data[[i]]$years),,,], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
@@ -1687,8 +1686,6 @@ get_key_quants <- function(data,
       Mrate_avg <- apply(rep[[i]]$Mrate[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean)
       proj_Mrate <- abind::abind(replicate(n_proj_yrs, Mrate_avg, simplify = FALSE), along = 4)
     } else proj_Mrate <- NULL
-    sgl_seas_spawning_movement_avg <- apply(rep[[i]]$sgl_seas_spawning_movement[,,,avg_yrs,,1,drop = FALSE], c(1,2,3,5), mean)
-    sgl_seas_spawning_movement <- array(sgl_seas_spawning_movement_avg, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_ages)) # Movement
     stray_rate <- array(apply(rep[[i]]$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = c(data[[i]]$n_pop, n_proj_yrs))
 
     # Sex ratio
@@ -1716,14 +1713,14 @@ get_key_quants <- function(data,
         SSB = rep[[i]]$SSB,
 
         # Demographics for unfished SSB, taken at SR_ref_yr
-        WAA = array(data[[i]]$WAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ),
-        MatAA = array(data[[i]]$MatAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages)) ) ,
-        natmort = array(rep[[i]]$natmort[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )),
-        sgl_seas_spawning_movement = array(rep[[i]]$sgl_seas_spawning_movement[,,,sr_yr,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, length(data[[i]]$ages) )),
-        Movement = array(rep[[i]]$Movement[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )),
+        WAA = array(data[[i]]$WAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages))),
+        MatAA = array(data[[i]]$MatAA[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages))) ,
+        natmort = array(rep[[i]]$natmort[,,sr_yr,,,1,drop = FALSE], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages))),
+        sgl_seas_spawning_movement = array(rep[[i]]$sgl_seas_spawning_movement[,,,sr_yr,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, length(data[[i]]$ages))),
+        Movement = array(rep[[i]]$Movement[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages))),
         # Instantaneous rates matched to Movement above, needed by the SPR routines
         # behind Beverton-Holt when movement is continuous
-        Mrate = if(proj_move_timing == 2) array(rep[[i]]$Mrate[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages) )) else NULL,
+        Mrate = if(proj_move_timing == 2) array(rep[[i]]$Mrate[,,,sr_yr,,,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages))) else NULL,
         stray_rate = array(rep[[i]]$stray_rate[,1], dim = data[[i]]$n_pop),
         sex_ratio_f = array(if(data[[i]]$n_sexes == 1) 0.5 else rep[[i]]$sexratio[,,1,1], dim = c(data[[i]]$n_pop, data[[i]]$n_regions))
       )

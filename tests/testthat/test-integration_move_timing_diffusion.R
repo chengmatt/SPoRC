@@ -25,9 +25,12 @@ TRUE_LOG_THETA <- log(0.30)   # generating CTMC diffusion parameter
 START_LOG_THETA <- log(0.10)  # deliberately off the truth, so recovery is not a no-op
 OM_R0 <- rep(10, N_REGIONS)
 OM_F <- c(0.05, 0.15, 0.30)   # region-varying F is what makes diffusion identifiable
-FISH_B50 <- 5; FISH_K <- 3
-SRV_B50 <- 3;  SRV_K <- 1
-ADJ <- matrix(1L, N_REGIONS, N_REGIONS); diag(ADJ) <- 0L
+FISH_B50 <- 5
+FISH_K <- 3
+SRV_B50 <- 3
+SRV_K <- 1
+ADJ <- matrix(1L, N_REGIONS, N_REGIONS)
+diag(ADJ) <- 0L
 
 # Lay a vector of age-specific values into a (pop, region, year, seas, age, ...) array.
 # The age dimension is the 5th, so the values have to repeat over the product of every

@@ -131,7 +131,7 @@ test_that("Single Region SPR Reference Points Sablefish Model Converges to Equil
 
   # Check to see if SSB equilibriates
   expect_equal(round(as.numeric(out$proj_SSB[1,1,n_proj_yrs]), 10),
-               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs-1]), 10), tolerance = 1e-5)
+               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs - 1]), 10), tolerance = 1e-5)
 
   # Check to make sure single region F40% and B40% is consistent with historical values
   expect_equal(round(sgl_ref_pt$f_ref_pt, 8), 0.08625413, tolerance = 1e-5)

@@ -10,8 +10,13 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
   # a stable unfished equilibrium, confirming the projection's age-0 timing
   # logic runs correctly and converges.
 
-  n_pop <- 1; n_regions <- 1; n_ages <- 6; n_sexes <- 1
-  n_fish_fleets <- 1; n_seas <- 2; spawn_seas <- 2
+  n_pop <- 1
+  n_regions <- 1
+  n_ages <- 6
+  n_sexes <- 1
+  n_fish_fleets <- 1
+  n_seas <- 2
+  spawn_seas <- 2
   n_proj_yrs <- 300
 
   seasdur <- c(0.5, 0.5)

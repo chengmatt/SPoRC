@@ -117,7 +117,7 @@ test_that("Get_Movement works", {
 
   test_that("unstructured movement is uniform when all logit pars are zero", {
     res <- make_unstructured_call(move_pars_val = 0)
-    expect_equal(unique(as.numeric(res$Movement)), 1/3, tolerance = 1e-10)
+    expect_equal(unique(as.numeric(res$Movement)), 1 / 3, tolerance = 1e-10)
   })
 
   test_that("unstructured movement output dimensions are correct", {
@@ -438,7 +438,10 @@ test_that("Get_Movement works", {
       expect_equal(unname(q[2, 3]), switch(
         bf,
         none = theta + d,
-        softplus = { u <- theta + d; (u + abs(u)) / 2 + 0.1 * log1p(exp(-abs(u) / 0.1)) },
+        softplus = {
+          u <- theta + d
+          (u + abs(u)) / 2 + 0.1 * log1p(exp(-abs(u) / 0.1))
+        },
         upwind = theta + max(d, 0)
       ),
         tolerance = 1e-9, label = sprintf("%s deviation on the 2 -> 3 edge", bf))

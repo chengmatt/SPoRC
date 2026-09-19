@@ -277,7 +277,7 @@ do_natmort_mapping <- function(input_list,
   if(!M_spec %in% c('est_ln_M', 'fix')) stop("M_spec needs to be specified as either est_ln_M or fix")
 
   # set up whether fixing M or estimating
-  if(M_spec == 'est_ln_M') input_list$map$ln_M <- factor(1:length(input_list$par$ln_M))
+  if(M_spec == 'est_ln_M') input_list$map$ln_M <- factor(seq_along(input_list$par$ln_M))
   if(M_spec == 'fix') input_list$map$ln_M <- factor(rep(NA, length(input_list$par$ln_M)))
 
   # create array for blocks
@@ -286,22 +286,22 @@ do_natmort_mapping <- function(input_list,
   # loop through to get counters for blocking structure for indexing. Season sits
   # between year and age so one season block gives the same counters as before
   counter <- 1
-  for(popblk in 1:length(M_popblk_spec_vals)) {
+  for(popblk in seq_along(M_popblk_spec_vals)) {
     map_p <- M_popblk_spec_vals[[popblk]]
 
-    for (regionblk in 1:length(M_regionblk_spec_vals)) {
+    for (regionblk in seq_along(M_regionblk_spec_vals)) {
       map_r <- M_regionblk_spec_vals[[regionblk]]
 
-      for (yearblk in 1:length(M_yearblk_spec_vals)) {
+      for (yearblk in seq_along(M_yearblk_spec_vals)) {
         map_y <- M_yearblk_spec_vals[[yearblk]]
 
-        for (seasblk in 1:length(M_seasblk_spec_vals)) {
+        for (seasblk in seq_along(M_seasblk_spec_vals)) {
           map_seas <- M_seasblk_spec_vals[[seasblk]]
 
-          for (ageblk in 1:length(M_ageblk_spec_vals)) {
+          for (ageblk in seq_along(M_ageblk_spec_vals)) {
             map_a <- M_ageblk_spec_vals[[ageblk]]
 
-            for (sexblk in 1:length(M_sexblk_spec_vals)) {
+            for (sexblk in seq_along(M_sexblk_spec_vals)) {
               map_s <- M_sexblk_spec_vals[[sexblk]]
 
               # Assign the current counter to this block
@@ -1039,13 +1039,17 @@ Setup_Mod_Biologicals <- function(input_list,
                                   ...
                                   ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Biologicals <- mget(names(formals()))[-1]
 
   # Growth Options ---------------------------------------------------------
-  n_pop <- input_list$data$n_pop; n_regions <- input_list$data$n_regions; n_sexes <- input_list$data$n_sexes
-  n_yrs <- length(input_list$data$years); n_ages <- length(input_list$data$ages); n_seas <- input_list$data$n_seas
+  n_pop <- input_list$data$n_pop
+  n_regions <- input_list$data$n_regions
+  n_sexes <- input_list$data$n_sexes
+  n_yrs <- length(input_list$data$years)
+  n_ages <- length(input_list$data$ages)
+  n_seas <- input_list$data$n_seas
   if(!growth_model %in% c("none", "vb_schnute", "richards")) stop("growth_model must be one of: none, vb_schnute, richards")
   growth_model_val <- c(none = 0, vb_schnute = 1, richards = 2)[[growth_model]]
   gpar_names <- c("L1", "L2", "K", "CV1", "CV2", "rho")
@@ -1095,7 +1099,8 @@ Setup_Mod_Biologicals <- function(input_list,
     collect_message("Growth is estimated (", if(growth_model_val == 1) "von Bertalanffy, Schnute form" else "Richards", "); SizeAgeTrans is built inside the model")
 
     # Time variation of the growth parameters ---------------------------------
-    tv_vals <- rep(0, n_gpars); names(tv_vals) <- gpar_names[1:n_gpars]
+    tv_vals <- rep(0, n_gpars)
+    names(tv_vals) <- gpar_names[1:n_gpars]
     if(!is.null(growth_tv_model)) {
       tv_codes <- c(none = 0, iid = 1, rw = 2)
       if(!all(growth_tv_model %in% names(tv_codes))) stop("growth_tv_model entries must be one of: none, iid, rw")
@@ -1249,7 +1254,7 @@ Setup_Mod_Biologicals <- function(input_list,
     n_sexes = input_list$data$n_sexes,
     what = 'SizeAgeTrans'
   )
-  if(fit_lengths == 1 & is.na(sum(SizeAgeTrans))) stop("Length composition are fit to, but the size-age transition matrix is NA")
+  if(fit_lengths == 1 && is.na(sum(SizeAgeTrans))) stop("Length composition are fit to, but the size-age transition matrix is NA")
 
   # Per-fleet fixed keys: only meaningful without a growth module, which already
   # derives one key per fleet and would leave two sources for the same quantity
@@ -1348,7 +1353,7 @@ Setup_Mod_Biologicals <- function(input_list,
         n_years = length(input_list$data$years),
         what = 'AgeingError_t'
       )
-      for(i in 1:dim(AgeingError)[1]) check_bin_map(AgeingError[i,,], length(input_list$data$ages), paste0("AgeingError year ", i), strict = FALSE, tol = 0.05)
+      for(i in seq_len(dim(AgeingError)[1])) check_bin_map(AgeingError[i,,], length(input_list$data$ages), paste0("AgeingError year ", i), strict = FALSE, tol = 0.05)
     } # end i loop
   }
 
@@ -1375,11 +1380,11 @@ Setup_Mod_Biologicals <- function(input_list,
   if(is.null(AgeingError)) {
     AgeingError <- diag(1, length(input_list$data$ages)) # if no inputs for ageing error, then create identity matrix
     AgeingError_t <- array(0, dim = c(length(input_list$data$years), dim(AgeingError)))
-    for(i in 1:length(input_list$data$years)) AgeingError_t[i,,] <- AgeingError
+    for(i in seq_along(input_list$data$years)) AgeingError_t[i,,] <- AgeingError
     warning("No ageing error matrix was provided. A default identity matrix was used, which assumes that the number and structure of modeled age bins exactly match the observed age bins. If the observed age composition data includes fewer age bins than the model (e.g., observed ages 2-10 while modeled ages are 1-10), this default assumption will cause a dimensional mismatch and potentially misalign the modeled and observed compositions. To avoid this, please provide an ageing error matrix of dimension n_model_ages x n_obs_ages that correctly maps modeled ages to observed age bins. For example, if observed ages are 2-10, supply a matrix that drops the first model age by using a shifted identity matrix: diag(1, 10)[, 2:10]. This will ensure the age bins are correctly aligned for likelihood calculations.")
   } else if(length(dim(AgeingError)) == 2) {   # setup ageing error if user-supplied is not year specific
     AgeingError_t <- array(0, dim = c(length(input_list$data$years), dim(AgeingError)))
-    for(i in 1:length(input_list$data$years)) AgeingError_t[i,,] <- AgeingError
+    for(i in seq_along(input_list$data$years)) AgeingError_t[i,,] <- AgeingError
     collect_message("Ageing Error is specified to be time-invariant")
   } else if(length(dim(AgeingError)) == 3) {   # ageing error if it is year specific (just reassigning)
     AgeingError_t <- AgeingError
@@ -1457,13 +1462,13 @@ Setup_Mod_Biologicals <- function(input_list,
   # If M is constant for ages
   if(is.character(M_ageblk_spec)) {
     if(!identical(M_ageblk_spec, "constant")) stop("M_ageblk_spec must be \"constant\" or a list of age blocks, but was: ", M_ageblk_spec)
-    M_ageblk_spec_vals <- list(1:length(input_list$data$ages))
+    M_ageblk_spec_vals <- list(seq_along(input_list$data$ages))
   } else M_ageblk_spec_vals <- M_ageblk_spec
 
   # If M is constant across years
   if(is.character(M_yearblk_spec)) {
     if(!identical(M_yearblk_spec, "constant")) stop("M_yearblk_spec must be \"constant\" or a list of year blocks, but was: ", M_yearblk_spec)
-    M_yearblk_spec_vals <- list(1:length(input_list$data$years))
+    M_yearblk_spec_vals <- list(seq_along(input_list$data$years))
   } else M_yearblk_spec_vals <- M_yearblk_spec
 
   # If M is constant across seasons
@@ -1508,7 +1513,7 @@ Setup_Mod_Biologicals <- function(input_list,
     input_list$par$ln_growth_devs <- array(0, dim = c(n_pop, n_regions, n_yrs, n_gpars, n_sexes))
     input_list$par$ln_growth_semipar_devs <- array(0, dim = c(n_pop, n_regions, n_yrs, n_ages, n_sexes))
 
-    # growth process erorr parameter starting value stuff ... 
+    # growth process erorr parameter starting value stuff ...
     if("growth_pe_pars" %in% names(starting_values)) {
       input_list$par$growth_pe_pars <- starting_values$growth_pe_pars
     } else {
@@ -1790,17 +1795,17 @@ do_NAAstate_mapping <- function(input_list,
   # Process error standard deviations, blocked the way natural mortality is
   sigma_blocks <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
   counter <- 1
-  for(popblk in 1:length(NAA_sigma_popblk_spec_vals)) {
+  for(popblk in seq_along(NAA_sigma_popblk_spec_vals)) {
     map_p <- NAA_sigma_popblk_spec_vals[[popblk]]
-    for(regionblk in 1:length(NAA_sigma_regionblk_spec_vals)) {
+    for(regionblk in seq_along(NAA_sigma_regionblk_spec_vals)) {
       map_r <- NAA_sigma_regionblk_spec_vals[[regionblk]]
-      for(yearblk in 1:length(NAA_sigma_yearblk_spec_vals)) {
+      for(yearblk in seq_along(NAA_sigma_yearblk_spec_vals)) {
         map_y <- NAA_sigma_yearblk_spec_vals[[yearblk]]
-        for(seasblk in 1:length(NAA_sigma_seasblk_spec_vals)) {
+        for(seasblk in seq_along(NAA_sigma_seasblk_spec_vals)) {
           map_k <- NAA_sigma_seasblk_spec_vals[[seasblk]]
-          for(ageblk in 1:length(NAA_sigma_ageblk_spec_vals)) {
+          for(ageblk in seq_along(NAA_sigma_ageblk_spec_vals)) {
             map_a <- NAA_sigma_ageblk_spec_vals[[ageblk]]
-            for(sexblk in 1:length(NAA_sigma_sexblk_spec_vals)) {
+            for(sexblk in seq_along(NAA_sigma_sexblk_spec_vals)) {
               map_s <- NAA_sigma_sexblk_spec_vals[[sexblk]]
               sigma_blocks[map_p, map_r, map_y, map_k, map_a, map_s] <- counter
               counter <- counter + 1
@@ -1825,7 +1830,7 @@ do_NAAstate_mapping <- function(input_list,
   # checking valid options
   if(!NAA_sigma_spec %in% c("est", "fix"))
     stop("NAA_sigma_spec is '", NAA_sigma_spec, "'. Valid options: est, fix")
-  if(NAA_sigma_spec == "est") input_list$map$ln_sigmaNAA <- factor(1:length(input_list$par$ln_sigmaNAA))
+  if(NAA_sigma_spec == "est") input_list$map$ln_sigmaNAA <- factor(seq_along(input_list$par$ln_sigmaNAA))
   if(NAA_sigma_spec == "fix") input_list$map$ln_sigmaNAA <- factor(rep(NA, length(input_list$par$ln_sigmaNAA)))
   if(naa_val > 1 && (length(NAA_sigma_yearblk_spec_vals) > 1 || length(NAA_sigma_ageblk_spec_vals) > 1)) {
     stop("NAA_re = \"", NAA_re, "\" is a correlated structure over the age and year grid, but the ",

@@ -56,7 +56,10 @@ test_that("do_Fdev_rho_mapping only activates Fdev_rho under Fdev_model = 'ar1'"
 
 test_that("Get_Fdev_PE_loglik matches hand-computed values for iid/rw/ar1", {
 
-  n_regions <- 2; n_yrs <- 5; n_seas <- 1; n_fish_fleets <- 2
+  n_regions <- 2
+  n_yrs <- 5
+  n_seas <- 1
+  n_fish_fleets <- 2
 
   # region 1, fleet 1: catch starts late (years 2:5) -- "first active" is NOT
   # calendar year 1, exercising the general case.
@@ -129,7 +132,10 @@ test_that("Get_Fdev_PE_loglik handles multi-year gaps via the closed-form margin
   # region 1: catch active in years 1, 2, 3, then closed for 3 years (4, 5, 6),
   # resuming in year 7 -- a gap of d = 4 between the last active year (3) and
   # the next (7). No sharing across regions/seasons/fleets needed here.
-  n_regions <- 1; n_yrs <- 7; n_seas <- 1; n_fish_fleets <- 1
+  n_regions <- 1
+  n_yrs <- 7
+  n_seas <- 1
+  n_fish_fleets <- 1
   UseCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
   UseCatch[1, c(1,2,3,7), 1, 1] <- 1
   UseCatch_pop <- array(0, dim = c(1, n_regions, n_yrs, n_seas, n_fish_fleets))
@@ -164,12 +170,12 @@ test_that("Get_Fdev_PE_loglik handles multi-year gaps via the closed-form margin
     ln_F_devs = ln_F_devs,
     map_ln_F_devs = fdev_map(UseCatch, UseCatch_pop, ObsCatch)
   )
-  geom_sum <- sum(rho^(2 * (0:(d-1))))
+  geom_sum <- sum(rho^(2 * (0:(d - 1))))
   expected_ar1_y7 <- -dnorm(ln_F_devs[1,7,1,1], rho^d * ln_F_devs[1,3,1,1], sigma * sqrt(geom_sum), log = TRUE)
   expect_equal(got_ar1[1,7,1,1], expected_ar1_y7, tolerance = 1e-10)
 
   # closed-form geometric sum matches the closed-form (1 - rho^(2d)) / (1 - rho^2)
-  expect_equal(geom_sum, (1 - rho^(2*d)) / (1 - rho^2), tolerance = 1e-10)
+  expect_equal(geom_sum, (1 - rho^(2 * d)) / (1 - rho^2), tolerance = 1e-10)
 
   # d = 1 (contiguous) reduces exactly to the standard single-step transition
   expected_rw_y2 <- -dnorm(ln_F_devs[1,2,1,1], ln_F_devs[1,1,1,1], sigma, log = TRUE)
@@ -179,7 +185,10 @@ test_that("Get_Fdev_PE_loglik handles multi-year gaps via the closed-form margin
 })
 
 test_that("Get_Fdev_PE_loglik iid model matches the pre-refactor inline dnorm formula", {
-  n_regions <- 2; n_yrs <- 3; n_seas <- 1; n_fish_fleets <- 1
+  n_regions <- 2
+  n_yrs <- 3
+  n_seas <- 1
+  n_fish_fleets <- 1
   UseCatch <- array(1, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
   UseCatch_pop <- array(0, dim = c(1, n_regions, n_yrs, n_seas, n_fish_fleets))
   ObsCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
@@ -207,7 +216,10 @@ test_that("Get_Fdev_PE_loglik iid model matches the pre-refactor inline dnorm fo
 
 test_that("do_Fmort_mapping estimates a deviation for missing (NA) ObsCatch but not for a true recorded zero", {
 
-  n_regions <- 1; n_yrs <- 4; n_seas <- 1; n_fish_fleets <- 1
+  n_regions <- 1
+  n_yrs <- 4
+  n_seas <- 1
+  n_fish_fleets <- 1
   UseCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # nothing fit anywhere
   UseCatch_pop <- array(0, dim = c(1, n_regions, n_yrs, n_seas, n_fish_fleets))
 
@@ -241,7 +253,10 @@ test_that("do_Fmort_mapping estimates a deviation for missing (NA) ObsCatch but 
 
 test_that("Get_Fdev_PE_loglik treats a missing (NA) year as an ordinary active year, not a gap", {
 
-  n_regions <- 1; n_yrs <- 5; n_seas <- 1; n_fish_fleets <- 1
+  n_regions <- 1
+  n_yrs <- 5
+  n_seas <- 1
+  n_fish_fleets <- 1
 
   # years 1, 2 fit normally; year 3 is a true closure (recorded zero, UseCatch = 0);
   # year 4 is missing (NA, UseCatch = 0) -- should behave like an ordinary active

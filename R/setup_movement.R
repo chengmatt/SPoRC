@@ -97,28 +97,28 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
     # If spatial model
     if(input_list$data$n_regions > 1 &&
        input_list$data$use_fixed_movement == 0 # if not using fixed movement matrix
-       ){
+       ) {
 
       # Initialize counter
       counter <- 1
 
-      for(popblk in 1:length(Movement_popblk_spec_vals)) {
+      for(popblk in seq_along(Movement_popblk_spec_vals)) {
         # get populations to block and map off
         map_p <- Movement_popblk_spec_vals[[popblk]]
 
-        for(ageblk in 1:length(Movement_ageblk_spec_vals)) {
+        for(ageblk in seq_along(Movement_ageblk_spec_vals)) {
           # get ages to block and map off
           map_a <- Movement_ageblk_spec_vals[[ageblk]]
 
-          for(yearblk in 1:length(Movement_yearblk_spec_vals)) {
+          for(yearblk in seq_along(Movement_yearblk_spec_vals)) {
             # get years to block and map off
             map_y <- Movement_yearblk_spec_vals[[yearblk]]
 
-            for(seasblk in 1:length(Movement_seasblk_spec_vals)) {
+            for(seasblk in seq_along(Movement_seasblk_spec_vals)) {
               # get seasons to block and map off
               map_seas <- Movement_seasblk_spec_vals[[seasblk]]
 
-              for(sexblk in 1:length(Movement_sexblk_spec_vals)) {
+              for(sexblk in seq_along(Movement_sexblk_spec_vals)) {
                 # get sexes to block and map off
                 map_s <- Movement_sexblk_spec_vals[[sexblk]]
 
@@ -154,8 +154,8 @@ do_move_pars_mapping <- function(input_list, Movement_popblk_spec,
     # turn off parameters for unstructured markov
     map_Movement_Pars <- factor(rep(NA, length(input_list$par$move_pars))) # don't estimate movement
     # estimate parameters for CTMC
-    if(length(map_log_move_diffusion_pars) != 0 ) map_log_move_diffusion_pars <- factor(1:length(map_log_move_diffusion_pars))
-    if(length(map_move_preference_pars) != 0 ) map_move_preference_pars <- factor(1:length(map_move_preference_pars))
+    if(length(map_log_move_diffusion_pars) != 0) map_log_move_diffusion_pars <- factor(seq_along(map_log_move_diffusion_pars))
+    if(length(map_move_preference_pars) != 0) map_move_preference_pars <- factor(seq_along(map_move_preference_pars))
   }
 
   # Input into mapping list
@@ -264,7 +264,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 
     # Mapping for movement process error deviations
     if(Movement_cont_pe_pars_spec %in% c("fix", "none")) map_move_pe_pars <- map_move_pe_pars
-    if(Movement_cont_pe_pars_spec == 'est_all') map_move_pe_pars[] <- 1:length(map_move_pe_pars)
+    if(Movement_cont_pe_pars_spec == 'est_all') map_move_pe_pars[] <- seq_along(map_move_pe_pars)
     if(Movement_cont_pe_pars_spec == 'est_shared') map_move_pe_pars[] <- 1
 
     # return to input list
@@ -498,7 +498,7 @@ Setup_Mod_Movement <- function(input_list,
                                ...
 ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages
+  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
   starting_values <- list(...) # get starting values if there are any
   if(input_list$store_config) input_list$config$Setup_Mod_Movement <- mget(names(formals()))[-1]
 
@@ -536,7 +536,7 @@ Setup_Mod_Movement <- function(input_list,
 
   # Check movement continuous varying parameterization
   if(!cont_vary_movement %in% c("none", "iid_y", "iid_a", "iid_y_a", "iid_y_a_s", "iid_y_seas_a_s",
-                                "iid_p_y", "iid_p_a", "iid_p_y_a", "iid_p_y_a_s", "iid_p_y_seas_a_s" ))
+                                "iid_p_y", "iid_p_a", "iid_p_y_a", "iid_p_y_a_s", "iid_p_y_seas_a_s"))
     stop('Options for continuous movement is not correctly specified. The options are none,
          iid_y, iid_a, iid_y_a, iid_y_a_s, iid_y_seas_a_s, iid_p_y, iid_p_a, iid_p_y_a, iid_p_y_a_s, iid_p_y_seas_a_s')
   else collect_message("Continuous movement specification is: ", cont_vary_movement)
@@ -712,7 +712,7 @@ Setup_Mod_Movement <- function(input_list,
     if(length(missing_cols) > 0) stop("Movement_prior is missing required columns: ", paste(missing_cols, collapse = ", "))
 
     # check dimensions for alpha
-    for(i in 1:nrow(Movement_prior)) {
+    for(i in seq_len(nrow(Movement_prior))) {
       alpha_vec <- Movement_prior$alpha[[i]]
       if(length(alpha_vec) != input_list$data$n_regions) stop("Row ", i, ": alpha vector has length ", length(alpha_vec), " but should have length ", input_list$data$n_regions)
     } # end i loop

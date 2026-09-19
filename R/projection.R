@@ -750,7 +750,7 @@ Do_Population_Projection <- function(
                                        target = if(catch_seasonal) array(catch_input[,y,], dim = c(n_regions, n_seas)) else catch_input[,y],
                                        seasonal = catch_seasonal,
                                        seas_share = seas_share,
-                                       f_start = if(y > 1) array(proj_F_seas[,y-1,], dim = c(n_regions, n_seas)) else apply(terminal_F, c(1,2), sum),
+                                       f_start = if(y > 1) array(proj_F_seas[,y - 1,], dim = c(n_regions, n_seas)) else apply(terminal_F, c(1,2), sum),
                                        state = state,
                                        tmp_rec = tmp_rec,
                                        proj_args = proj_args,
@@ -790,7 +790,7 @@ Do_Population_Projection <- function(
 
     # compute F for next year. fmort_rule is fmort_opt itself except under Catch, where it is
     # catch_fallback_opt and only runs when next year needs it
-    if(fmort_opt != 'Catch' || (y + 1 <= n_proj_yrs && !catch_yr_targeted[y+1])) {
+    if(fmort_opt != 'Catch' || (y + 1 <= n_proj_yrs && !catch_yr_targeted[y + 1])) {
 
       # A rule that declares a state argument is handed this year's numbers and
       # biomass, so a policy can read more than spawning biomass alone: mean
@@ -807,33 +807,33 @@ Do_Population_Projection <- function(
 
       for(r in 1:n_regions) {
 
-      # Project F using HCR and reference points -----------------------------------------------------
-      if(fmort_rule == 'HCR') {
-        if(is.null(hcr_state))
-          proj_F[r,y+1] <- HCR_function(x = sum(proj_SSB[,r,y]),
-                                        frp = f_ref_pt[r,y],
-                                        brp = sum(b_ref_pt[,r,y]))
-        else
-          proj_F[r,y+1] <- HCR_function(x = sum(proj_SSB[,r,y]),
-                                        frp = f_ref_pt[r,y],
-                                        brp = sum(b_ref_pt[,r,y]),
-                                        state = c(hcr_state, list(r = r)))
-      }
+        # Project F using HCR and reference points -----------------------------------------------------
+        if(fmort_rule == 'HCR') {
+          if(is.null(hcr_state))
+            proj_F[r,y + 1] <- HCR_function(x = sum(proj_SSB[,r,y]),
+                                          frp = f_ref_pt[r,y],
+                                          brp = sum(b_ref_pt[,r,y]))
+          else
+            proj_F[r,y + 1] <- HCR_function(x = sum(proj_SSB[,r,y]),
+                                          frp = f_ref_pt[r,y],
+                                          brp = sum(b_ref_pt[,r,y]),
+                                          state = c(hcr_state, list(r = r)))
+        }
 
-      if(fmort_rule == 'HCR_global') {
-        if(is.null(hcr_state))
-          proj_F[r,y+1] <- HCR_function(x = sum(proj_SSB[,,y]),
-                                        frp = f_ref_pt[r,y],
-                                        brp = sum(b_ref_pt[,,y]))
-        else
-          proj_F[r,y+1] <- HCR_function(x = sum(proj_SSB[,,y]),
-                                        frp = f_ref_pt[r,y],
-                                        brp = sum(b_ref_pt[,,y]),
-                                        state = c(hcr_state, list(r = r)))
-      }
+        if(fmort_rule == 'HCR_global') {
+          if(is.null(hcr_state))
+            proj_F[r,y + 1] <- HCR_function(x = sum(proj_SSB[,,y]),
+                                          frp = f_ref_pt[r,y],
+                                          brp = sum(b_ref_pt[,,y]))
+          else
+            proj_F[r,y + 1] <- HCR_function(x = sum(proj_SSB[,,y]),
+                                          frp = f_ref_pt[r,y],
+                                          brp = sum(b_ref_pt[,,y]),
+                                          state = c(hcr_state, list(r = r)))
+        }
 
-      # Project F using User Inputs ---------------------------------------------
-      if(fmort_rule == 'Input') proj_F[r,y+1] <- f_ref_pt[r,y]
+        # Project F using User Inputs ---------------------------------------------
+        if(fmort_rule == 'Input') proj_F[r,y + 1] <- f_ref_pt[r,y]
 
       } # end r loop
     } # end if the year needs an F rule
@@ -968,233 +968,233 @@ run_proj_year <- function(y,
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-      for(seas in 1:n_seas) {
+  for(seas in 1:n_seas) {
 
-        # insert seasonal recruits already known from earlier this year.
-        # under age0_rec spawn_seas generates and inserts its own share below
-        if(y > 1 && (if(age0_rec) seas > spawn_seas else seas > 1)) {
-          for(p in 1:n_pop) {
-            for(r in 1:n_regions) {
-              for(s in 1:n_sexes) {
-                proj_NAA[p,r,y,seas,1,s]  = proj_NAA[p,r,y,seas,1,s]  + tmp_rec[p,r] * rec_seas_prop[p,seas] * sexratio[p,r,y,s]
-                proj_NAA0[p,r,y,seas,1,s] = proj_NAA0[p,r,y,seas,1,s] + tmp_rec[p,r] * rec_seas_prop[p,seas] * sexratio[p,r,y,s]
-              } # end s loop
-            } # end r loop
-          } # end p loop
-        } # end if
-
-        # Construct Mortality Processes -------------------------------------------
+    # insert seasonal recruits already known from earlier this year.
+    # under age0_rec spawn_seas generates and inserts its own share below
+    if(y > 1 && (if(age0_rec) seas > spawn_seas else seas > 1)) {
+      for(p in 1:n_pop) {
         for(r in 1:n_regions) {
-          for(a in 1:n_ages) {
-            for(s in 1:n_sexes) {
-              for(f in 1:n_fish_fleets) {
-                # get fishing mortality at age
-                for(p in 1:n_pop) {
-                  proj_ret_FAA[p,r,y,seas,a,s,f] <- F_y[r,seas] * fratio_fleet[r,seas,f] * fish_sel[p,r,y,seas,a,s,f] * ret_sel[p,r,y,seas,a,s,f] # retained F
-                  proj_disc_FAA[p,r,y,seas,a,s,f] <- F_y[r,seas] * fratio_fleet[r,seas,f] * fish_sel[p,r,y,seas,a,s,f] * (1 - ret_sel[p,r,y,seas,a,s,f]) * dmr[r,seas,f] # discarded F
-                  proj_tot_FAA[p,r,y,seas,a,s,f] <- proj_ret_FAA[p,r,y,seas,a,s,f] + proj_disc_FAA[p,r,y,seas,a,s,f] # total F
-                } # end p loop
-              } # end f loop
+          for(s in 1:n_sexes) {
+            proj_NAA[p,r,y,seas,1,s]  = proj_NAA[p,r,y,seas,1,s]  + tmp_rec[p,r] * rec_seas_prop[p,seas] * sexratio[p,r,y,s]
+            proj_NAA0[p,r,y,seas,1,s] = proj_NAA0[p,r,y,seas,1,s] + tmp_rec[p,r] * rec_seas_prop[p,seas] * sexratio[p,r,y,s]
+          } # end s loop
+        } # end r loop
+      } # end p loop
+    } # end if
 
-              # Get Total Mortality at Age
-              for(p in 1:n_pop) {
-                proj_ZAA[p,r,y,seas,a,s] <- (natmort[p,r,y,seas,a,s] * seasdur[seas]) + sum(proj_tot_FAA[p,r,y,seas,a,s,])
-              }
-
-            } # end s loop
-          } # end a loop
-        }
-
-        # Movement Processes ------------------------------------------------------
-        # Only apply movement if more than 1 region, or if y > 1 (because terminal proj_NAA already has movement applied).
-        # Under move_timing 1 and 2 movement is deferred to the mortality/ageing step below.
-        if(n_regions > 1 && y > 1 && move_timing == 0) {
-          for(p in 1:n_pop) {
-            # Recruits don't move
-            if(do_recruits_move == 0) {
-              # Apply movement after ageing processes - start movement at age 2
-              for(a in 2:n_ages) for(s in 1:n_sexes) proj_NAA[p,,y,seas,a,s] = t(proj_NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # fished
-              for(a in 2:n_ages) for(s in 1:n_sexes) proj_NAA0[p,,y,seas,a,s] = t(proj_NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # unfished
-            } # end if recruits don't move
-            # Recruits move here
-            if(do_recruits_move == 1) {
-              for(a in 1:n_ages) for(s in 1:n_sexes) proj_NAA[p,,y,seas,a,s] = t(proj_NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # fished
-              for(a in 1:n_ages) for(s in 1:n_sexes) proj_NAA0[p,,y,seas,a,s] = t(proj_NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # unfished
-            }
-          } # end p loop
-        } # only compute if spatial
-
-        # Derive Biomass + Recruitment (age0_rec only) ------------------------------
-        # SSB is fully determined by the survivors here, so generate this year's recruitment from
-        # it and insert the spawn_seas share before mortality and ageing run below
-        if(age0_rec && seas == spawn_seas) {
-
-          biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
-                                  n_seas, n_pop, n_regions, n_ages, n_sexes,
-                                  sgl_seas_spawning_movement, natal_region, stray_rate,
-                                  Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
-          proj_SSB[,, y] <- biom$SSB_y
-          proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
-          proj_eff_SSB[,y] <- biom$eff_SSB_y
-          proj_Total_Biom[,,y] <- biom$Total_Biom_y
-
-          if(y > 1) {
-
-            tmp_rec <- Get_Det_Recruitment(recruitment_model = srr_opt$rec_model,
-                                           rec_dd = srr_opt$rec_dd,
-                                           n_pop = n_pop,
-                                           sgl_seas_spawning_movement = srr_opt$sgl_seas_spawning_movement,
-                                           natal_region = natal_region,
-                                           y = y + dim(srr_opt$SSB)[3],
-                                           rec_lag = srr_opt$rec_lag,
-                                           R0 = srr_opt$R0,
-                                           rec_region_prop = srr_opt$rec_region_prop,
-                                           rec_seas_prop = rec_seas_prop,
-                                           h = srr_opt$h,
-                                           n_regions = n_regions,
-                                           n_ages = n_ages,
-                                           WAA = srr_opt$WAA,
-                                           MatAA = srr_opt$MatAA,
-                                           n_seas = n_seas,
-                                           seasdur = seasdur,
-                                           spawn_seas = spawn_seas,
-                                           natmort = srr_opt$natmort,
-                                           SSB_vals = bind_proj_SSB(srr_opt$SSB, proj_SSB),
-                                           Movement = srr_opt$Movement,
-                                           # SSB0 behind the stock recruit curve has to use the same movement
-                                           # sequencing as the projection itself, so forward both of these.
-                                           Mrate = srr_opt$Mrate,
-                                           stray_rate = srr_opt$stray_rate,
-                                           do_recruits_move = do_recruits_move,
-                                           t_spawn = t_spawn,
-                                           sexratio_f = srr_opt$sex_ratio_f,
-                                           init_F = srr_opt$init_F,
-                                           n_fish_fleets = n_fish_fleets,
-                                           fish_sel = srr_opt$fish_sel,
-                                           ret_sel = srr_opt$ret_sel,
-                                           dmr = srr_opt$dmr,
-                                           move_timing = move_timing,
-                                           expm_nsub = expm_nsub)
-
-            tmp_rec <- array(tmp_rec, dim = c(n_pop, n_regions))
-            if(!is.null(rec_devs)) tmp_rec <- tmp_rec * array(rec_devs[,,y], dim = c(n_pop, n_regions))
-
+    # Construct Mortality Processes -------------------------------------------
+    for(r in 1:n_regions) {
+      for(a in 1:n_ages) {
+        for(s in 1:n_sexes) {
+          for(f in 1:n_fish_fleets) {
+            # get fishing mortality at age
             for(p in 1:n_pop) {
-              for(r in 1:n_regions) {
-                proj_NAA[p,r,y,spawn_seas,1,]  <- proj_NAA[p,r,y,spawn_seas,1,]  + tmp_rec[p,r] * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,]
-                proj_NAA0[p,r,y,spawn_seas,1,] <- proj_NAA0[p,r,y,spawn_seas,1,] + tmp_rec[p,r] * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,]
-              } # end r loop
+              proj_ret_FAA[p,r,y,seas,a,s,f] <- F_y[r,seas] * fratio_fleet[r,seas,f] * fish_sel[p,r,y,seas,a,s,f] * ret_sel[p,r,y,seas,a,s,f] # retained F
+              proj_disc_FAA[p,r,y,seas,a,s,f] <- F_y[r,seas] * fratio_fleet[r,seas,f] * fish_sel[p,r,y,seas,a,s,f] * (1 - ret_sel[p,r,y,seas,a,s,f]) * dmr[r,seas,f] # discarded F
+              proj_tot_FAA[p,r,y,seas,a,s,f] <- proj_ret_FAA[p,r,y,seas,a,s,f] + proj_disc_FAA[p,r,y,seas,a,s,f] # total F
             } # end p loop
+          } # end f loop
 
-            # recruits just inserted missed this season's movement step, which had to run before
-            # SSB was knowable. catch age 1 up when recruits are supposed to move from birth
-
-            # Only needed under move_timing == 0; under timings 1 and 2 these recruits are
-            # picked up by the end-of-season transition below.
-            if(do_recruits_move == 1 && n_regions > 1 && move_timing == 0) {
-              for(p in 1:n_pop) {
-                for(s in 1:n_sexes) proj_NAA[p,,y,seas,1,s] = t(proj_NAA[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
-                for(s in 1:n_sexes) proj_NAA0[p,,y,seas,1,s] = t(proj_NAA0[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
-              } # end p loop
-            }
-
-          } # end if y > 1
-
-        } # end if age0_rec && seas == spawn_seas
-
-        # Movement (timing 1 and 2), Mortality and Ageing --------------------------
-        # Post-season state at every age, before the ageing shift. Under move_timing == 0
-        # movement was applied above so this reduces to the original elementwise survival.
-        if(move_timing == 0 || n_regions == 1) {
-          pstep_NAA <- array(proj_NAA[,,y,seas,1:n_ages,] * exp(-proj_ZAA[,,y,seas,1:n_ages,]),
-                             dim = c(n_pop, n_regions, n_ages, n_sexes))
-          pstep_NAA0 <- array(proj_NAA0[,,y,seas,1:n_ages,] * exp(-natmort[,,y,seas,1:n_ages,] * seasdur[seas]),
-                              dim = c(n_pop, n_regions, n_ages, n_sexes))
-        } else {
-
-          pstep_NAA <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
-          pstep_NAA0 <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
-
-          # Advance fish throughout the season
-          for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
-            moves <- (do_recruits_move == 1 || a > 1)
-            Mv <- if(moves) Movement[p,,,y,seas,a,s] else diag(n_regions)
-            Qv <- if(moves) Mrate[p,,,y,seas,a,s] else matrix(0, n_regions, n_regions)
-            pstep_NAA[p,,a,s] <- advance_seas(proj_NAA[p,,y,seas,a,s], Mv, proj_ZAA[p,,y,seas,a,s],
-                                              Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
-            pstep_NAA0[p,,a,s] <- advance_seas(proj_NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,seas,a,s] * seasdur[seas],
-                                               Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
-          }
-        }
-
-        # Input fish into seasonal containers / fish at the end of the season / year
-        if(seas < n_seas && y > 1) { # within season mortality
-          proj_NAA[,,y,seas+1,1:n_ages,] = pstep_NAA
-          proj_NAA0[,,y,seas+1,1:n_ages,] = pstep_NAA0
-        } else { # age advancement
-          # age advancement and enter into first season of next year
-          proj_NAA[,,y+1,1,2:n_ages,] = pstep_NAA[,,1:(n_ages-1),] # Exponential mortality for individuals not in plus group
-          proj_NAA[,,y+1,1,n_ages,] = proj_NAA[,,y+1,1,n_ages,] + pstep_NAA[,,n_ages,] # Acuumulate plus group
-          proj_NAA0[,,y+1,1,2:n_ages,] = pstep_NAA0[,,1:(n_ages-1),] # Exponential mortality for individuals not in plus group
-          proj_NAA0[,,y+1,1,n_ages,] = proj_NAA0[,,y+1,1,n_ages,] + pstep_NAA0[,,n_ages,] # Acuumulate plus group
-        }
-
-        # Derive Biomass (age0_rec: already computed above, before mortality/ageing),
-        if(seas == spawn_seas && !age0_rec) {
-          biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
-                                  n_seas, n_pop, n_regions, n_ages, n_sexes,
-                                  sgl_seas_spawning_movement, natal_region, stray_rate,
-                                  Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
-          proj_SSB[,, y] <- biom$SSB_y
-          proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
-          proj_eff_SSB[,y] <- biom$eff_SSB_y
-          proj_Total_Biom[,,y] <- biom$Total_Biom_y
-        } # calculate biomass
-
-
-        # Season-integrated abundance for the spatial Baranov under continuous movement.
-        # Computed once per season across all regions, since the integral couples them.
-        if(move_timing == 2) {
-          proj_NAA_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+          # Get Total Mortality at Age
           for(p in 1:n_pop) {
-            for(a in 1:n_ages) {
-              for(s in 1:n_sexes) {
-                proj_NAA_int[p,,a,s] <- integrate_seas_abundance(proj_NAA[p,,y,seas,a,s], proj_ZAA[p,,y,seas,a,s],
-                                                                Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
-              } # end s loop
-            } # end a loop
-          } # end p loop
-        }
+            proj_ZAA[p,r,y,seas,a,s] <- (natmort[p,r,y,seas,a,s] * seasdur[seas]) + sum(proj_tot_FAA[p,r,y,seas,a,s,])
+          }
 
-        # Derive Catches ----------------------------------------------------------
+        } # end s loop
+      } # end a loop
+    }
+
+    # Movement Processes ------------------------------------------------------
+    # Only apply movement if more than 1 region, or if y > 1 (because terminal proj_NAA already has movement applied).
+    # Under move_timing 1 and 2 movement is deferred to the mortality/ageing step below.
+    if(n_regions > 1 && y > 1 && move_timing == 0) {
+      for(p in 1:n_pop) {
+        # Recruits don't move
+        if(do_recruits_move == 0) {
+          # Apply movement after ageing processes - start movement at age 2
+          for(a in 2:n_ages) for(s in 1:n_sexes) proj_NAA[p,,y,seas,a,s] = t(proj_NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # fished
+          for(a in 2:n_ages) for(s in 1:n_sexes) proj_NAA0[p,,y,seas,a,s] = t(proj_NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # unfished
+        } # end if recruits don't move
+        # Recruits move here
+        if(do_recruits_move == 1) {
+          for(a in 1:n_ages) for(s in 1:n_sexes) proj_NAA[p,,y,seas,a,s] = t(proj_NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # fished
+          for(a in 1:n_ages) for(s in 1:n_sexes) proj_NAA0[p,,y,seas,a,s] = t(proj_NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # unfished
+        }
+      } # end p loop
+    } # only compute if spatial
+
+    # Derive Biomass + Recruitment (age0_rec only) ------------------------------
+    # SSB is fully determined by the survivors here, so generate this year's recruitment from
+    # it and insert the spawn_seas share before mortality and ageing run below
+    if(age0_rec && seas == spawn_seas) {
+
+      biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
+                              n_seas, n_pop, n_regions, n_ages, n_sexes,
+                              sgl_seas_spawning_movement, natal_region, stray_rate,
+                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
+      proj_SSB[,, y] <- biom$SSB_y
+      proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
+      proj_eff_SSB[,y] <- biom$eff_SSB_y
+      proj_Total_Biom[,,y] <- biom$Total_Biom_y
+
+      if(y > 1) {
+
+        tmp_rec <- Get_Det_Recruitment(recruitment_model = srr_opt$rec_model,
+                                       rec_dd = srr_opt$rec_dd,
+                                       n_pop = n_pop,
+                                       sgl_seas_spawning_movement = srr_opt$sgl_seas_spawning_movement,
+                                       natal_region = natal_region,
+                                       y = y + dim(srr_opt$SSB)[3],
+                                       rec_lag = srr_opt$rec_lag,
+                                       R0 = srr_opt$R0,
+                                       rec_region_prop = srr_opt$rec_region_prop,
+                                       rec_seas_prop = rec_seas_prop,
+                                       h = srr_opt$h,
+                                       n_regions = n_regions,
+                                       n_ages = n_ages,
+                                       WAA = srr_opt$WAA,
+                                       MatAA = srr_opt$MatAA,
+                                       n_seas = n_seas,
+                                       seasdur = seasdur,
+                                       spawn_seas = spawn_seas,
+                                       natmort = srr_opt$natmort,
+                                       SSB_vals = bind_proj_SSB(srr_opt$SSB, proj_SSB),
+                                       Movement = srr_opt$Movement,
+                                       # SSB0 behind the stock recruit curve has to use the same movement
+                                       # sequencing as the projection itself, so forward both of these.
+                                       Mrate = srr_opt$Mrate,
+                                       stray_rate = srr_opt$stray_rate,
+                                       do_recruits_move = do_recruits_move,
+                                       t_spawn = t_spawn,
+                                       sexratio_f = srr_opt$sex_ratio_f,
+                                       init_F = srr_opt$init_F,
+                                       n_fish_fleets = n_fish_fleets,
+                                       fish_sel = srr_opt$fish_sel,
+                                       ret_sel = srr_opt$ret_sel,
+                                       dmr = srr_opt$dmr,
+                                       move_timing = move_timing,
+                                       expm_nsub = expm_nsub)
+
+        tmp_rec <- array(tmp_rec, dim = c(n_pop, n_regions))
+        if(!is.null(rec_devs)) tmp_rec <- tmp_rec * array(rec_devs[,,y], dim = c(n_pop, n_regions))
+
         for(p in 1:n_pop) {
           for(r in 1:n_regions) {
-            for(f in 1:n_fish_fleets) {
-              for(a in 1:n_ages) {
-                for(s in 1:n_sexes) {
-                  if(move_timing == 2) {
-                    # Spatial Baranov: fish redistribute among regions while dying, so catch
-                    # uses the season-integrated abundance rather than N (1 - exp(-Z)) / Z
-                    proj_CAA[p,r,y,seas,a,s,f] <- proj_ret_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
-                    proj_DAA[p,r,y,seas,a,s,f] <- proj_disc_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
-                  } else {
-                    # Get catch and discards at age with Baranov's
-                    proj_CAA[p,r,y,seas,a,s,f] <- (proj_ret_FAA[p,r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
-                      proj_NAA[p,r,y,seas,a,s] * (1 - exp(-proj_ZAA[p,r,y,seas,a,s]))
-                    proj_DAA[p,r,y,seas,a,s,f] <- (proj_disc_FAA[p,r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
-                      proj_NAA[p,r,y,seas,a,s] * (1 - exp(-proj_ZAA[p,r,y,seas,a,s]))
-                  }
-                } # end s loop
-              } # end a loop
-
-              # Get total catch
-              proj_Catch[p,r,y,seas,f] <- sum(proj_CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f])
-
-            } # end f loop
+            proj_NAA[p,r,y,spawn_seas,1,]  <- proj_NAA[p,r,y,spawn_seas,1,]  + tmp_rec[p,r] * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,]
+            proj_NAA0[p,r,y,spawn_seas,1,] <- proj_NAA0[p,r,y,spawn_seas,1,] + tmp_rec[p,r] * rec_seas_prop[p,spawn_seas] * sexratio[p,r,y,]
           } # end r loop
         } # end p loop
 
-      } # end seas loop
+        # recruits just inserted missed this season's movement step, which had to run before
+        # SSB was knowable. catch age 1 up when recruits are supposed to move from birth
+
+        # Only needed under move_timing == 0; under timings 1 and 2 these recruits are
+        # picked up by the end-of-season transition below.
+        if(do_recruits_move == 1 && n_regions > 1 && move_timing == 0) {
+          for(p in 1:n_pop) {
+            for(s in 1:n_sexes) proj_NAA[p,,y,seas,1,s] = t(proj_NAA[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
+            for(s in 1:n_sexes) proj_NAA0[p,,y,seas,1,s] = t(proj_NAA0[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
+          } # end p loop
+        }
+
+      } # end if y > 1
+
+    } # end if age0_rec && seas == spawn_seas
+
+    # Movement (timing 1 and 2), Mortality and Ageing --------------------------
+    # Post-season state at every age, before the ageing shift. Under move_timing == 0
+    # movement was applied above so this reduces to the original elementwise survival.
+    if(move_timing == 0 || n_regions == 1) {
+      pstep_NAA <- array(proj_NAA[,,y,seas,1:n_ages,] * exp(-proj_ZAA[,,y,seas,1:n_ages,]),
+                         dim = c(n_pop, n_regions, n_ages, n_sexes))
+      pstep_NAA0 <- array(proj_NAA0[,,y,seas,1:n_ages,] * exp(-natmort[,,y,seas,1:n_ages,] * seasdur[seas]),
+                          dim = c(n_pop, n_regions, n_ages, n_sexes))
+    } else {
+
+      pstep_NAA <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+      pstep_NAA0 <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+
+      # Advance fish throughout the season
+      for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
+        moves <- (do_recruits_move == 1 || a > 1)
+        Mv <- if(moves) Movement[p,,,y,seas,a,s] else diag(n_regions)
+        Qv <- if(moves) Mrate[p,,,y,seas,a,s] else matrix(0, n_regions, n_regions)
+        pstep_NAA[p,,a,s] <- advance_seas(proj_NAA[p,,y,seas,a,s], Mv, proj_ZAA[p,,y,seas,a,s],
+                                          Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+        pstep_NAA0[p,,a,s] <- advance_seas(proj_NAA0[p,,y,seas,a,s], Mv, natmort[p,,y,seas,a,s] * seasdur[seas],
+                                           Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+      }
+    }
+
+    # Input fish into seasonal containers / fish at the end of the season / year
+    if(seas < n_seas && y > 1) { # within season mortality
+      proj_NAA[,,y,seas + 1,1:n_ages,] = pstep_NAA
+      proj_NAA0[,,y,seas + 1,1:n_ages,] = pstep_NAA0
+    } else { # age advancement
+      # age advancement and enter into first season of next year
+      proj_NAA[,,y + 1,1,2:n_ages,] = pstep_NAA[,,1:(n_ages - 1),] # Exponential mortality for individuals not in plus group
+      proj_NAA[,,y + 1,1,n_ages,] = proj_NAA[,,y + 1,1,n_ages,] + pstep_NAA[,,n_ages,] # Acuumulate plus group
+      proj_NAA0[,,y + 1,1,2:n_ages,] = pstep_NAA0[,,1:(n_ages - 1),] # Exponential mortality for individuals not in plus group
+      proj_NAA0[,,y + 1,1,n_ages,] = proj_NAA0[,,y + 1,1,n_ages,] + pstep_NAA0[,,n_ages,] # Acuumulate plus group
+    }
+
+    # Derive Biomass (age0_rec: already computed above, before mortality/ageing),
+    if(seas == spawn_seas && !age0_rec) {
+      biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
+                              n_seas, n_pop, n_regions, n_ages, n_sexes,
+                              sgl_seas_spawning_movement, natal_region, stray_rate,
+                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
+      proj_SSB[,, y] <- biom$SSB_y
+      proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
+      proj_eff_SSB[,y] <- biom$eff_SSB_y
+      proj_Total_Biom[,,y] <- biom$Total_Biom_y
+    } # calculate biomass
+
+
+    # Season-integrated abundance for the spatial Baranov under continuous movement.
+    # Computed once per season across all regions, since the integral couples them.
+    if(move_timing == 2) {
+      proj_NAA_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+      for(p in 1:n_pop) {
+        for(a in 1:n_ages) {
+          for(s in 1:n_sexes) {
+            proj_NAA_int[p,,a,s] <- integrate_seas_abundance(proj_NAA[p,,y,seas,a,s], proj_ZAA[p,,y,seas,a,s],
+                                                            Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
+          } # end s loop
+        } # end a loop
+      } # end p loop
+    }
+
+    # Derive Catches ----------------------------------------------------------
+    for(p in 1:n_pop) {
+      for(r in 1:n_regions) {
+        for(f in 1:n_fish_fleets) {
+          for(a in 1:n_ages) {
+            for(s in 1:n_sexes) {
+              if(move_timing == 2) {
+                # Spatial Baranov: fish redistribute among regions while dying, so catch
+                # uses the season-integrated abundance rather than N (1 - exp(-Z)) / Z
+                proj_CAA[p,r,y,seas,a,s,f] <- proj_ret_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
+                proj_DAA[p,r,y,seas,a,s,f] <- proj_disc_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
+              } else {
+                # Get catch and discards at age with Baranov's
+                proj_CAA[p,r,y,seas,a,s,f] <- (proj_ret_FAA[p,r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
+                  proj_NAA[p,r,y,seas,a,s] * (1 - exp(-proj_ZAA[p,r,y,seas,a,s]))
+                proj_DAA[p,r,y,seas,a,s,f] <- (proj_disc_FAA[p,r,y,seas,a,s,f] / proj_ZAA[p,r,y,seas,a,s]) *
+                  proj_NAA[p,r,y,seas,a,s] * (1 - exp(-proj_ZAA[p,r,y,seas,a,s]))
+              }
+            } # end s loop
+          } # end a loop
+
+          # Get total catch
+          proj_Catch[p,r,y,seas,f] <- sum(proj_CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f])
+
+        } # end f loop
+      } # end r loop
+    } # end p loop
+
+  } # end seas loop
 
   return(list(proj_NAA = proj_NAA,
               proj_NAA0 = proj_NAA0,

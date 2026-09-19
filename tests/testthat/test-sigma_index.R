@@ -10,7 +10,9 @@ library(testthat)
 # A minimal single region, single sex, single season model. Small enough to fit
 # in a test, large enough that an index sigma is identified.
 build_toy <- function(n_yrs = 20, n_srv = 1, ...) {
-  yrs <- seq_len(n_yrs); ages <- 1:8; n_ages <- length(ages)
+  yrs <- seq_len(n_yrs)
+  ages <- 1:8
+  n_ages <- length(ages)
   d1 <- c(1, 1, n_yrs, 1, n_ages, 1)
 
   il <- Setup_Mod_Dim(
@@ -115,7 +117,8 @@ build_toy <- function(n_yrs = 20, n_srv = 1, ...) {
     srv_q_spec = rep("est_all", n_srv)
   )
 
-  cd <- c(1, n_yrs, 1, 1, 1); sd <- c(1, n_yrs, 1, 1, n_srv)
+  cd <- c(1, n_yrs, 1, 1, 1)
+  sd <- c(1, n_yrs, 1, 1, n_srv)
   Setup_Mod_Weighting(
     il,
     Wt_Catch = 1,
@@ -137,7 +140,8 @@ sd_of <- function(il) {
 }
 
 test_that("combine_idx_sd implements the three forms it documents", {
-  se <- c(0.2, 0.3); extra <- 0.4
+  se <- c(0.2, 0.3)
+  extra <- 0.4
   expect_equal(combine_idx_sd(se, extra, 0), se)
   expect_equal(combine_idx_sd(se, extra, 1), se + extra)
   expect_equal(combine_idx_sd(se, extra, 2), sqrt(se^2 + extra^2))
@@ -264,13 +268,20 @@ test_that("estimating an index sigma under a likelihood weight warns", {
 test_that("an input list built before the feature existed still runs", {
   il <- build_toy()
   # strip every trace of the feature, as an older saved list would be
-  il$data$sigmaSrvIdx_form <- NULL; il$data$sigmaFishIdx_form <- NULL
-  il$data$sigmaSrvIdx_pop_form <- NULL; il$data$sigmaFishIdx_pop_form <- NULL
-  il$par$ln_sigmaSrvIdx <- NULL; il$par$ln_sigmaFishIdx <- NULL
-  il$par$ln_sigmaSrvIdx_pop <- NULL; il$par$ln_sigmaFishIdx_pop <- NULL
-  il$map$ln_sigmaSrvIdx <- NULL; il$map$ln_sigmaFishIdx <- NULL
-  il$map$ln_sigmaSrvIdx_pop <- NULL; il$map$ln_sigmaFishIdx_pop <- NULL
-  il$data$ObsSrvIdx_pop_SE <- NULL; il$data$ObsFishIdx_pop_SE <- NULL
+  il$data$sigmaSrvIdx_form <- NULL
+  il$data$sigmaFishIdx_form <- NULL
+  il$data$sigmaSrvIdx_pop_form <- NULL
+  il$data$sigmaFishIdx_pop_form <- NULL
+  il$par$ln_sigmaSrvIdx <- NULL
+  il$par$ln_sigmaFishIdx <- NULL
+  il$par$ln_sigmaSrvIdx_pop <- NULL
+  il$par$ln_sigmaFishIdx_pop <- NULL
+  il$map$ln_sigmaSrvIdx <- NULL
+  il$map$ln_sigmaFishIdx <- NULL
+  il$map$ln_sigmaSrvIdx_pop <- NULL
+  il$map$ln_sigmaFishIdx_pop <- NULL
+  il$data$ObsSrvIdx_pop_SE <- NULL
+  il$data$ObsFishIdx_pop_SE <- NULL
 
   obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
   expect_true(is.finite(obj$rep$jnLL))

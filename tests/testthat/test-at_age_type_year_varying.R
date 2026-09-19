@@ -16,7 +16,8 @@ aa_setup <- function(
   aa <- c(nr, ny, 1, na, nx, 1)
   use <- array(0, dim = aa)
   if(is.null(flagged_region)) use[, , , , flagged_sex, ] <- 1 else use[flagged_region, , , , , ] <- 1
-  obs <- array(0, dim = aa); obs[use == 1] <- 100
+  obs <- array(0, dim = aa)
+  obs[use == 1] <- 100
   sweep_input(
     dims = list(
       n_regions = nr,
@@ -68,8 +69,10 @@ AA_STREAMS <- list(
 
 stream_nll <- function(st, type, nx = 2, nr = 1, ny = 10, na = 6) {
   aa <- c(nr, ny, 1, na, nx, 1)
-  use <- array(0, dim = aa); use[, , , , 1, ] <- 1
-  obs <- array(0, dim = aa); obs[use == 1] <- 10
+  use <- array(0, dim = aa)
+  use[, , , , 1, ] <- 1
+  obs <- array(0, dim = aa)
+  obs[use == 1] <- 10
 
   args <- st$extra(ny, nr)
   args[[paste0("Obs", st$name)]] <- obs
@@ -109,7 +112,8 @@ test_that("a bare value still sets the whole series", {
 
 test_that("one value per fleet still sets each fleet's whole series", {
   aa <- c(1, 10, 1, 6, 1, 2)
-  use <- array(1, dim = aa); obs <- array(100, dim = aa)
+  use <- array(1, dim = aa)
+  obs <- array(100, dim = aa)
   il <- sweep_input(
     dims = list(
       n_regions = 1,
@@ -169,8 +173,10 @@ test_that("every at-age data source builds a tape and a finite gradient when its
   # the tape leaves the value right and the model unfittable.
   for(st in AA_STREAMS) {
     aa <- c(1, 10, 1, 6, 2, 1)
-    use <- array(0, dim = aa); use[, , , , 1, ] <- 1
-    obs <- array(0, dim = aa); obs[use == 1] <- 10
+    use <- array(0, dim = aa)
+    use[, , , , 1, ] <- 1
+    obs <- array(0, dim = aa)
+    obs[use == 1] <- 10
     args <- st$extra(10, 1)
     args[[paste0("Obs", st$name)]] <- obs
     args[[paste0("Use", st$name)]] <- use
@@ -216,7 +222,8 @@ test_that("a summed dim is checked in the years it applies to", {
   # Region is summed only from year 6, so flagging both regions is a problem in
   # those years and not before. The check runs per year rather than per fleet.
   aa <- c(2, 10, 1, 6, 1, 1)
-  use <- array(0, dim = aa); use[, , , , , ] <- 1
+  use <- array(0, dim = aa)
+  use[, , , , , ] <- 1
   obs <- array(100, dim = aa)
   build <- function(type) sweep_input(
     dims = list(
@@ -285,8 +292,10 @@ test_that("the fits plot names a summed dim instead of naming a slot", {
   # observation is not about, which is what the plot did before the setting was
   # readable per row.
   d <- c(1, 10, 1, 6, 2, 1)
-  use <- array(0, dim = d); use[, , , , 1, ] <- 1
-  obs <- array(0, dim = d); obs[use == 1] <- 100
+  use <- array(0, dim = d)
+  use[, , , , 1, ] <- 1
+  obs <- array(0, dim = d)
+  obs[use == 1] <- 100
 
   build <- function(type) sweep_input(
     dims = list(

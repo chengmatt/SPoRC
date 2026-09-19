@@ -65,7 +65,7 @@ compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex
                           catch_seas_agg = NULL, catch_pop_seas_agg = NULL,
                           catch_aa_seas_agg = NULL, catch_aa_pop_seas_agg = NULL) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   # an objective saved before seasonal reporting existed calls this without those settings
@@ -157,9 +157,16 @@ compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex
     } # end seas loop
   } # end r loop
 
-  state$Fmort = Fmort; state$dmr = dmr; state$fish_sel = fish_sel; state$ret_sel = ret_sel
-  state$ret_FAA = ret_FAA; state$disc_FAA = disc_FAA; state$tot_FAA = tot_FAA; state$ZAA = ZAA
-  state$WAA_fish = WAA_fish; state$WAA_srv = WAA_srv
+  state$Fmort = Fmort
+  state$dmr = dmr
+  state$fish_sel = fish_sel
+  state$ret_sel = ret_sel
+  state$ret_FAA = ret_FAA
+  state$disc_FAA = disc_FAA
+  state$tot_FAA = tot_FAA
+  state$ZAA = ZAA
+  state$WAA_fish = WAA_fish
+  state$WAA_srv = WAA_srv
 
   return(state)
 
@@ -587,40 +594,40 @@ get_population_projection <- function(
 
       if(seas < n_seas) {
         # within year / seasonal mortality
-        NAA[,,y,seas+1,1:n_ages,] <- step_NAA
-        NAA0[,,y,seas+1,1:n_ages,] <- step_NAA0
+        NAA[,,y,seas + 1,1:n_ages,] <- step_NAA
+        NAA0[,,y,seas + 1,1:n_ages,] <- step_NAA0
 
         # State-space numbers at age at a within-year season boundary, on the survival and
         # movement step alone since ageing happens only at the year boundary
         if(n_est_naa_re > 0 && y %in% naa_re_yrs && (seas + 1) %in% naa_re_seas) {
-          NAA_pred[,,y,seas+1,,] <- NAA[,,y,seas+1,,]
+          NAA_pred[,,y,seas + 1,,] <- NAA[,,y,seas + 1,,]
           for(a in naa_re_ages) {
             for(s in 1:n_sexes) {
-              delta <- ln_NAA[,,y,seas+1,a,s] - log(NAA_pred[,,y,seas+1,a,s]) # realized deviation
-              NAA[,,y,seas+1,a,s] <- exp(ln_NAA[,,y,seas+1,a,s]) # input predicted state-space numbers at age
-              NAA0[,,y,seas+1,a,s] <- NAA0[,,y,seas+1,a,s] * exp(delta) # update with scalar
-              NAA_scalar[,,y,seas+1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
+              delta <- ln_NAA[,,y,seas + 1,a,s] - log(NAA_pred[,,y,seas + 1,a,s]) # realized deviation
+              NAA[,,y,seas + 1,a,s] <- exp(ln_NAA[,,y,seas + 1,a,s]) # input predicted state-space numbers at age
+              NAA0[,,y,seas + 1,a,s] <- NAA0[,,y,seas + 1,a,s] * exp(delta) # update with scalar
+              NAA_scalar[,,y,seas + 1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
             } # end s loop
           } # end a loop
         }
       } else {
         # age advancement and enter into first season of next year
         # Fished
-        NAA[,,y+1,1,2:n_ages,] <- step_NAA[,,1:(n_ages-1),] # Exponential mortality for individuals not in plus group
-        NAA[,,y+1,1,n_ages,] <- NAA[,,y+1,1,n_ages,] + step_NAA[,,n_ages,] # Acuumulate plus group
+        NAA[,,y + 1,1,2:n_ages,] <- step_NAA[,,1:(n_ages - 1),] # Exponential mortality for individuals not in plus group
+        NAA[,,y + 1,1,n_ages,] <- NAA[,,y + 1,1,n_ages,] + step_NAA[,,n_ages,] # Acuumulate plus group
         # Unfished
-        NAA0[,,y+1,1,2:n_ages,] <- step_NAA0[,,1:(n_ages-1),] # Exponential mortality for individuals not in plus group
-        NAA0[,,y+1,1,n_ages,] <- NAA0[,,y+1,1,n_ages,] + step_NAA0[,,n_ages,] # Acuumulate plus group
+        NAA0[,,y + 1,1,2:n_ages,] <- step_NAA0[,,1:(n_ages - 1),] # Exponential mortality for individuals not in plus group
+        NAA0[,,y + 1,1,n_ages,] <- NAA0[,,y + 1,1,n_ages,] + step_NAA0[,,n_ages,] # Acuumulate plus group
 
         # State-space numbers at age at the year boundary, applied after the plus group accumulates
         if(n_est_naa_re > 0 && (y + 1) <= n_yrs && (y + 1) %in% naa_re_yrs && 1 %in% naa_re_seas) {
-          NAA_pred[,,y+1,1,,] <- NAA[,,y+1,1,,]
+          NAA_pred[,,y + 1,1,,] <- NAA[,,y + 1,1,,]
           for(a in naa_re_ages) {
             for(s in 1:n_sexes) {
-              delta <- ln_NAA[,,y+1,1,a,s] - log(NAA_pred[,,y+1,1,a,s]) # realized deviation
-              NAA[,,y+1,1,a,s] <- exp(ln_NAA[,,y+1,1,a,s]) # input predicted state-space numbers at age
-              NAA0[,,y+1,1,a,s] <- NAA0[,,y+1,1,a,s] * exp(delta) # update with scalar
-              NAA_scalar[,,y+1,1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
+              delta <- ln_NAA[,,y + 1,1,a,s] - log(NAA_pred[,,y + 1,1,a,s]) # realized deviation
+              NAA[,,y + 1,1,a,s] <- exp(ln_NAA[,,y + 1,1,a,s]) # input predicted state-space numbers at age
+              NAA0[,,y + 1,1,a,s] <- NAA0[,,y + 1,1,a,s] * exp(delta) # update with scalar
+              NAA_scalar[,,y + 1,1,a,s] <- exp(delta) # record devs / multiplicative factor for state space mode
             } # end s loop
           } # end a loop
         }

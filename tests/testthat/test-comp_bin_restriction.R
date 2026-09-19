@@ -100,7 +100,9 @@ test_that("the sex-joint AR1 keeps true bin lags inside each sex block", {
   # bins of the same sex equal to their true separation, which is what the
   # correlation is meant to describe. The lag across the sex boundary stretches
   # as a side effect, and is arbitrary either way.
-  n_regions <- 1; n_sexes <- 2; n_bins <- 8
+  n_regions <- 1
+  n_sexes <- 2
+  n_bins <- 8
   keep <- 3:7
   Exp <- peaked_exp(n_regions, n_bins, n_sexes)
   Obs <- lumpy_obs(n_regions, n_bins, n_sexes)
@@ -119,7 +121,9 @@ test_that("the sex-joint AR1 keeps true bin lags inside each sex block", {
 })
 
 test_that("naming every bin is a no-op", {
-  n_regions <- 2; n_sexes <- 2; n_bins <- 6
+  n_regions <- 2
+  n_sexes <- 2
+  n_bins <- 6
   Exp <- peaked_exp(n_regions, n_bins, n_sexes)
   Obs <- lumpy_obs(n_regions, n_bins, n_sexes)
   for(ct in 0:2) {
@@ -135,7 +139,8 @@ test_that("naming every bin is a no-op", {
 })
 
 test_that("length compositions restrict the same way ages do", {
-  n_sexes <- 1; n_bins <- 10
+  n_sexes <- 1
+  n_bins <- 10
   keep <- 4:9
   for(ct in 0:2) {
     n_regions <- if(ct == 0) 1 else 2   # aggregated comps are single-region, as above
@@ -166,7 +171,10 @@ test_that("length compositions restrict the same way ages do", {
 
 test_that("a length bin map and a bin restriction compose", {
   # 8 model bins collapsed onto 4 observed bins, then fitted over 2 of those 4
-  n_regions <- 1; n_sexes <- 1; n_model <- 8; n_obs <- 4
+  n_regions <- 1
+  n_sexes <- 1
+  n_model <- 8
+  n_obs <- 4
   map <- matrix(0, nrow = n_model, ncol = n_obs)
   for(i in seq_len(n_model)) map[i, ceiling(i / 2)] <- 1
   Exp <- peaked_exp(n_regions, n_model, n_sexes)
@@ -198,7 +206,9 @@ test_that("the sex-joint stack is restricted within each sex, not across the sta
   # Comp_Type 2 evaluates a [bin x sex] stack. Restricting must drop the named
   # bins from every sex's block, leaving n_fit_bins * n_sexes cells, rather than
   # slicing the flattened stack.
-  n_regions <- 1; n_sexes <- 2; n_bins <- 6
+  n_regions <- 1
+  n_sexes <- 2
+  n_bins <- 6
   keep <- c(2, 5)
   Exp <- peaked_exp(n_regions, n_bins, n_sexes)
   Obs <- lumpy_obs(n_regions, n_bins, n_sexes)
@@ -218,7 +228,9 @@ test_that("AR1 lags are measured over the observed range, not the fitted one", {
   # With a gap in the kept bins, the covariance between the bins either side of
   # the gap must reflect the true lag, so a gapped restriction differs from
   # simply handing in the kept bins as if they were adjacent.
-  n_regions <- 1; n_sexes <- 1; n_bins <- 8
+  n_regions <- 1
+  n_sexes <- 1
+  n_bins <- 8
   keep <- c(1, 2, 7, 8)
   Exp <- peaked_exp(n_regions, n_bins, n_sexes)
   Obs <- lumpy_obs(n_regions, n_bins, n_sexes)
@@ -230,11 +242,14 @@ test_that("AR1 lags are measured over the observed range, not the fitted one", {
 })
 
 test_that("parse_bin_subset accepts the list and array forms alike", {
-  n_bins <- 10; n_fleets <- 3
+  n_bins <- 10
+  n_fleets <- 3
   from_list <- parse_bin_subset(list(NULL, 2:6, 10), n_bins, n_fleets, "x")
   arr <- array(1, dim = c(n_bins, n_fleets))
-  arr[, 2] <- 0; arr[2:6, 2] <- 1
-  arr[, 3] <- 0; arr[10, 3] <- 1
+  arr[, 2] <- 0
+  arr[2:6, 2] <- 1
+  arr[, 3] <- 0
+  arr[10, 3] <- 1
   expect_equal(from_list, arr)
   expect_equal(parse_bin_subset(arr, n_bins, n_fleets, "x"), arr)
   expect_equal(parse_bin_subset(NULL, n_bins, n_fleets, "x"),
@@ -260,12 +275,15 @@ test_that("check_bin_map holds AgeingError and LenBinMap to the same rules", {
   # must not trip the row-sum rule for them. A length bin map is written by hand
   # rather than read off a rounded table, so it keeps the tight default it has
   # always been kept to.
-  rounded <- ok; rounded[1, 1] <- 0.997; rounded[2, 2] <- 1.002
+  rounded <- ok
+  rounded[1, 1] <- 0.997
+  rounded[2, 2] <- 1.002
   expect_silent(check_bin_map(rounded, 6, "AgeingError", strict = FALSE, tol = 0.05))
   expect_error(check_bin_map(rounded, 6, "LenBinMap"), "sum to neither")
 
   expect_error(check_bin_map(ok, 5, "AgeingError"), "one row per model bin")
-  half <- ok; half[1, 1] <- 0.5
+  half <- ok
+  half[1, 1] <- 0.5
   # strict, which is what LenBinMap has always been
   expect_error(check_bin_map(half, 6, "LenBinMap"), "sum to neither")
   # non-strict, which is what AgeingError gets so an existing model still runs
@@ -278,7 +296,9 @@ test_that("check_bin_map holds AgeingError and LenBinMap to the same rules", {
   messages_list <<- character(0)
   expect_silent(check_bin_map(empty_col, 6, "AgeingError", strict = FALSE))
   expect_true(any(grepl("nothing mapped into them", messages_list)))
-  neg <- ok; neg[2, 3] <- -1; neg[2, 2] <- 2
+  neg <- ok
+  neg[2, 3] <- -1
+  neg[2, 2] <- 2
   expect_error(check_bin_map(neg, 6, "AgeingError"), "negative")
 })
 
@@ -288,10 +308,14 @@ test_that("check_bin_map holds AgeingError and LenBinMap to the same rules", {
 # wrong bin count desynchronizes every group after the first.
 
 test_that("the OSA packer and evaluator agree on the restricted bin count", {
-  n_regions <- 2; n_sexes <- 2; n_obs_bins <- 8; n_fleets <- 2
+  n_regions <- 2
+  n_sexes <- 2
+  n_obs_bins <- 8
+  n_fleets <- 2
   keep <- 3:7
   BinsArr <- array(1, dim = c(n_obs_bins, n_fleets))
-  BinsArr[, 1] <- 0; BinsArr[keep, 1] <- 1   # fleet 1 restricted, fleet 2 not
+  BinsArr[, 1] <- 0
+  BinsArr[keep, 1] <- 1   # fleet 1 restricted, fleet 2 not
 
   ObsArr <- array(0, dim = c(n_regions, 2, 1, n_obs_bins, n_sexes, n_fleets))
   for(r in 1:n_regions) for(y in 1:2) for(s in 1:n_sexes) for(f in 1:n_fleets) {
@@ -362,9 +386,12 @@ test_that("the OSA packer and evaluator agree on the restricted bin count", {
 })
 
 test_that("OSA labels report true observed bin numbers under a restriction", {
-  n_regions <- 1; n_sexes <- 1; n_obs_bins <- 6
+  n_regions <- 1
+  n_sexes <- 1
+  n_obs_bins <- 6
   keep <- 2:5
-  BinsArr <- array(0, dim = c(n_obs_bins, 1)); BinsArr[keep, 1] <- 1
+  BinsArr <- array(0, dim = c(n_obs_bins, 1))
+  BinsArr[keep, 1] <- 1
 
   ObsArr <- array(0, dim = c(n_regions, 1, 1, n_obs_bins, n_sexes, 1))
   ObsArr[1, 1, 1, , 1, 1] <- 100 * (1:n_obs_bins) / sum(1:n_obs_bins)
@@ -397,7 +424,9 @@ test_that("an empty fitted block contributes nothing rather than NaN", {
   # restricting onto bins a region never sampled leaves that region's block empty.
   # Comp_Type 1 has always skipped such a block; Comp_Type 2 must too, since a
   # restriction can empty a block that the full composition filled.
-  n_regions <- 2; n_sexes <- 2; n_bins <- 6
+  n_regions <- 2
+  n_sexes <- 2
+  n_bins <- 6
   keep <- 5:6
   Exp <- peaked_exp(n_regions, n_bins, n_sexes)
   Obs <- lumpy_obs(n_regions, n_bins, n_sexes)
@@ -421,12 +450,15 @@ test_that("an empty fitted block contributes nothing rather than NaN", {
 # routines cannot survive, so it is refused at the packer.
 
 test_that("a restriction leaving fewer than two bins is refused at setup", {
-  arr <- array(0, dim = c(10, 2)); arr[5, 1] <- 1; arr[, 2] <- 1
+  arr <- array(0, dim = c(10, 2))
+  arr[5, 1] <- 1
+  arr[, 2] <- 1
   expect_error(check_comp_bins_min(arr, c(0, 0), "FishAgeComps_bins"),
                "leaves fleet 1 with 1 fitted bin")
   # a fleet that is not fitted is skipped, since its bins are never read
   expect_silent(check_comp_bins_min(arr, c(999, 0), "FishAgeComps_bins"))
-  ok <- array(0, dim = c(10, 1)); ok[4:5, 1] <- 1
+  ok <- array(0, dim = c(10, 1))
+  ok[4:5, 1] <- 1
   expect_silent(check_comp_bins_min(ok, 0, "FishAgeComps_bins"))
   # every family degenerates on one bin, not only the logistic-normals
   for(lt in c(0, 1, 2, 3, 4)) {
@@ -444,7 +476,9 @@ test_that("a zero-length slice request reads nothing rather than counting backwa
 })
 
 test_that("a bin array indexed on the wrong bin count is refused, not silently mismatched", {
-  n_regions <- 1; n_sexes <- 1; n_obs_bins <- 6
+  n_regions <- 1
+  n_sexes <- 1
+  n_obs_bins <- 6
   ObsArr <- array(0, dim = c(n_regions, 1, 1, n_obs_bins, n_sexes, 1))
   ObsArr[1, 1, 1, , 1, 1] <- 100 * (1:n_obs_bins) / sum(1:n_obs_bins)
   wrong <- array(1, dim = c(n_obs_bins + 3, 1))   # indexed on a different data source's bins
@@ -472,12 +506,18 @@ test_that("a bin array indexed on the wrong bin count is refused, not silently m
 test_that("a restriction that empties a block clears its use flag", {
   # the fitting likelihood already skips such a block; clearing the flag stops the
   # residual packer normalizing (0 + addtocomp) into a flat composition and fitting it
-  n_regions <- 2; n_yrs <- 3; n_seas <- 1; n_bins <- 8; n_sexes <- 1; n_fleets <- 1
+  n_regions <- 2
+  n_yrs <- 3
+  n_seas <- 1
+  n_bins <- 8
+  n_sexes <- 1
+  n_fleets <- 1
   obs <- array(0, dim = c(n_regions, n_yrs, n_seas, n_bins, n_sexes, n_fleets))
   for(r in 1:n_regions) for(y in 1:n_yrs) obs[r, y, 1, , 1, 1] <- 10
   obs[2, 2, 1, 5:8, 1, 1] <- 0            # region 2, year 2 has nothing above bin 4
   use <- array(1, dim = c(n_regions, n_yrs, n_seas, n_fleets))
-  bins <- array(0, dim = c(n_bins, n_fleets)); bins[5:8, 1] <- 1
+  bins <- array(0, dim = c(n_bins, n_fleets))
+  bins[5:8, 1] <- 1
 
   messages_list <<- character(0)
   out <- drop_empty_fitted_blocks(obs, use, bins, 4, "FishAgeComps")

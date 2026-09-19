@@ -351,7 +351,9 @@ test_that("OSA composition likelihood pipeline works!", {
 
   # pack_comp_osa: shapes, NULL handling, numeric correctness
   test_that("pack_comp_osa returns NULL when no fleet matches the requested family", {
-    n_regions <- 2; n_obs_bins <- 4; n_sexes <- 1
+    n_regions <- 2
+    n_obs_bins <- 4
+    n_sexes <- 1
     ObsArr <- array(1, dim = c(n_regions, 1, 1, n_obs_bins, n_sexes, 1))
     ISSArr <- array(50, dim = c(n_regions, 1, 1, n_sexes, 1))
     WtArr  <- array(1,  dim = c(n_regions, 1, 1, n_sexes, 1))
@@ -379,7 +381,9 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   test_that("pack_comp_osa returns NULL when no region has use=1", {
-    n_regions <- 2; n_obs_bins <- 4; n_sexes <- 1
+    n_regions <- 2
+    n_obs_bins <- 4
+    n_sexes <- 1
     ObsArr <- array(1, dim = c(n_regions, 1, 1, n_obs_bins, n_sexes, 1))
     ISSArr <- array(50, dim = c(n_regions, 1, 1, n_sexes, 1))
     WtArr  <- array(1,  dim = c(n_regions, 1, 1, n_sexes, 1))
@@ -407,7 +411,9 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   test_that("pack_comp_osa produces the documented vector lengths (discrete)", {
-    n_obs_bins <- 5; n_sexes <- 2; use <- c(1L, 1L, 0L)  # n_ru = 2
+    n_obs_bins <- 5
+    n_sexes <- 2
+    use <- c(1L, 1L, 0L)  # n_ru = 2
     n_ru <- sum(use)
 
     for (ct in 0:2) {
@@ -427,7 +433,9 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   test_that("pack_comp_osa produces the documented vector lengths (continuous / LN)", {
-    n_obs_bins <- 5; n_sexes <- 2; use <- c(1L, 1L, 0L)
+    n_obs_bins <- 5
+    n_sexes <- 2
+    use <- c(1L, 1L, 0L)
     n_ru <- sum(use)
 
     for (ct in 0:2) {
@@ -452,7 +460,8 @@ test_that("OSA composition likelihood pipeline works!", {
     n_obs_bins <- 4
     props <- c(0.1, 0.2, 0.3, 0.4)
     prop_arr <- make_prop_array(props, 2, 1)  # only region1/sex1 matters for ct=0
-    iss <- 200; wt <- 0.5
+    iss <- 200
+    wt <- 0.5
 
     g <- pack_single_group(
       prop_arr,
@@ -475,7 +484,8 @@ test_that("OSA composition likelihood pipeline works!", {
     n_obs_bins <- 4
     props <- c(0.1, 0.2, 0.3, 0.4)
     prop_arr <- make_prop_array(props, 2, 1)
-    iss <- 150; wt <- 999  # Wt should be ignored for DM
+    iss <- 150
+    wt <- 999  # Wt should be ignored for DM
 
     g <- pack_single_group(
       prop_arr,
@@ -519,7 +529,10 @@ test_that("OSA composition likelihood pipeline works!", {
 
   # eval_comp_osa: multi-fleet round trip, zero_init behavior
   test_that("eval_comp_osa round-trips pack_comp_osa output for a single discrete fleet", {
-    n_regions <- 2; n_obs_bins <- 4; n_model_bins <- 4; n_sexes <- 1
+    n_regions <- 2
+    n_obs_bins <- 4
+    n_model_bins <- 4
+    n_sexes <- 1
 
     Exp_true <- normalize_rs(array(c(0.1, 0.2, 0.3, 0.4,
                                      0.1, 0.2, 0.3, 0.4),
@@ -614,7 +627,11 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   test_that("eval_comp_osa preserves other fleets' slots when zero_init = FALSE, and wipes them when TRUE", {
-    n_regions <- 2; n_obs_bins <- 4; n_model_bins <- 4; n_sexes <- 1; n_fleets <- 2
+    n_regions <- 2
+    n_obs_bins <- 4
+    n_model_bins <- 4
+    n_sexes <- 1
+    n_fleets <- 2
 
     # Fleet 1: multinomial (discrete), Comp_Type = 1
     # Fleet 2: logistic-normal iid (continuous), Comp_Type = 1
@@ -772,7 +789,8 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   test_that("eval_comp_osa returns nLL_arr unchanged when tracked is NULL", {
-    n_regions <- 2; n_sexes <- 1
+    n_regions <- 2
+    n_sexes <- 1
     nLL_init <- array(runif(n_regions * n_sexes), dim = c(n_regions, 1, 1, n_sexes, 1))
     UseArr <- array(1L, dim = c(n_regions, 1, 1, 1))
     TypeMat <- matrix(1, nrow = 1, ncol = 1)

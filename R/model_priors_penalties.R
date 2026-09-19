@@ -78,7 +78,7 @@ Get_Selex_Smoothness_Penalty <- function(
 ) {
 
   "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   loglik = 0 # initialize likelihood (positive scale, negated by the caller)
 
@@ -108,35 +108,41 @@ Get_Selex_Smoothness_Penalty <- function(
     if(is.null(nz)) TRUE else nz
   }
 
-  bins = get_bins("smooth_bin_curve"); b_lo = bins[1]; b_hi = bins[2]
+  bins = get_bins("smooth_bin_curve")
+  b_lo = bins[1]
+  b_hi = bins[2]
   bin_norm = if(get_norm("smooth_bin_curve")) b_hi - b_lo + 1 else 1
   if(any(wt_bin_curve != 0) && (b_hi - b_lo + 1) >= 3) { # age/bin curvature (second difference across bins)
     for(s in 1:n_sexes) {
       for(y in 1:n_yrs) {
         if(wt_bin_curve[y] == 0) next
         for(b in (b_lo + 1):(b_hi - 1)) {
-          bin_penalty = log(sel_vals[1,y,b+1,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y,b-1,s,1])
+          bin_penalty = log(sel_vals[1,y,b + 1,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y,b - 1,s,1])
           loglik = loglik - wt_bin_curve[y] / bin_norm * bin_penalty^2
         } # end b loop
       } # end y loop
     } # end s loop
   }
 
-  bins = get_bins("smooth_bin_diff"); b_lo = bins[1]; b_hi = bins[2]
+  bins = get_bins("smooth_bin_diff")
+  b_lo = bins[1]
+  b_hi = bins[2]
   bin_norm = if(get_norm("smooth_bin_diff")) b_hi - b_lo + 1 else 1
   if(any(wt_bin_diff != 0) && (b_hi - b_lo + 1) >= 2) { # unconditional bin first-difference (both directions penalized, unlike wt_dome)
     for(s in 1:n_sexes) {
       for(y in 1:n_yrs) {
         if(wt_bin_diff[y] == 0) next
         for(b in b_lo:(b_hi - 1)) {
-          bin_diff_penalty = log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b+1,s,1])
+          bin_diff_penalty = log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b + 1,s,1])
           loglik = loglik - wt_bin_diff[y] / bin_norm * bin_diff_penalty^2
         } # end b loop
       } # end y loop
     } # end s loop
   }
 
-  bins = get_bins("smooth_yr_diff"); b_lo = bins[1]; b_hi = bins[2]
+  bins = get_bins("smooth_yr_diff")
+  b_lo = bins[1]
+  b_hi = bins[2]
   yr_norm = if(get_norm("smooth_yr_diff")) n_yrs else 1
 
   # the walk has no previous value in its first year, so that year is normally unpenalized. a
@@ -149,7 +155,7 @@ Get_Selex_Smoothness_Penalty <- function(
         for(y in 1:n_yrs) {
           if(wt_yr_diff[y] == 0) next
           if(y == 1 && y != yr_ref_first) next
-          prev_sel = if(y == yr_ref_first) yr_ref[b] else log(sel_vals[1,y-1,b,s,1])
+          prev_sel = if(y == yr_ref_first) yr_ref[b] else log(sel_vals[1,y - 1,b,s,1])
           yr_diff_penalty = log(sel_vals[1,y,b,s,1]) - prev_sel
           loglik = loglik - wt_yr_diff[y] / yr_norm * yr_diff_penalty^2
         } # end y loop
@@ -157,27 +163,31 @@ Get_Selex_Smoothness_Penalty <- function(
     } # end s loop
   }
 
-  bins = get_bins("smooth_yr_curve"); b_lo = bins[1]; b_hi = bins[2]
+  bins = get_bins("smooth_yr_curve")
+  b_lo = bins[1]
+  b_hi = bins[2]
   yr_norm = if(get_norm("smooth_yr_curve")) n_yrs else 1
   if(any(wt_yr_curve != 0) && n_yrs >= 3) { # inter-annual second difference / smoothness
     for(s in 1:n_sexes) {
       for(b in b_lo:b_hi) {
         for(y in 2:(n_yrs - 1)) {
           if(wt_yr_curve[y] == 0) next
-          year_penalty = log(sel_vals[1,y+1,b,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y-1,b,s,1])
+          year_penalty = log(sel_vals[1,y + 1,b,s,1]) - 2 * log(sel_vals[1,y,b,s,1]) + log(sel_vals[1,y - 1,b,s,1])
           loglik = loglik - wt_yr_curve[y] / yr_norm * year_penalty^2
         } # end y loop
       } # end b loop
     } # end s loop
   }
 
-  bins = get_bins("smooth_dome"); b_lo = bins[1]; b_hi = bins[2]
+  bins = get_bins("smooth_dome")
+  b_lo = bins[1]
+  b_hi = bins[2]
   if(any(wt_dome != 0) && (b_hi - b_lo + 1) >= 2) { # dome-shape / non-monotonicity, within each year
     for(s in 1:n_sexes) {
       for(y in 1:n_yrs) {
         if(wt_dome[y] == 0) next
         for(b in b_lo:(b_hi - 1)) {
-          decrease = max(log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b+1,s,1]), 0) # only decreases contribute
+          decrease = max(log(sel_vals[1,y,b,s,1]) - log(sel_vals[1,y,b + 1,s,1]), 0) # only decreases contribute
           loglik = loglik - wt_dome[y] * decrease^2
         } # end b loop
       } # end y loop
@@ -286,7 +296,7 @@ Get_PE_loglik <- function(PE_model,
                               ) {
 
   "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   # Note that the likelihood calculations are positive within the function,
   # because it gets converted to negative outside the wrapper function
@@ -299,8 +309,6 @@ Get_PE_loglik <- function(PE_model,
   # Exit out fxn if this region x fleet slice has no estimated deviations at all.
   if(length(unique_sel_devs) == 0) return(loglik)
   n_yrs = dim(map_sel_devs)[2] # get years for indexing
-  n_bins = dim(map_sel_devs)[3] # get bins / pars for indexing
-  n_sexes = dim(map_sel_devs)[4] # get sexes for indexing
 
   # a shared deviation is one parameter appearing in every sharing unit's slice, and this runs one
   # unit at a time, so its penalty is split over the units holding it. dim 1 is the unit
@@ -311,7 +319,7 @@ Get_PE_loglik <- function(PE_model,
 
   if(PE_model %in% c(1, 2)) {
 
-    for(dev_idx in 1:length(unique_sel_devs)) {
+    for(dev_idx in seq_along(unique_sel_devs)) {
 
       # figure out where unique sel devs first occur
       idx = which(map_sel_devs == unique_sel_devs[dev_idx], arr.ind = TRUE)[1,]
@@ -331,7 +339,7 @@ Get_PE_loglik <- function(PE_model,
           init_sd = if(is.na(rw_init_sigma)) exp(PE_pars[1,i,s,1]) else rw_init_sigma
           loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], 0, init_sd, TRUE) / share
         }
-        else loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], ln_devs[1,y-1,i,s,1], exp(PE_pars[1,i,s,1]), TRUE) / share
+        else loglik = loglik + RTMB::dnorm(ln_devs[1,y,i,s,1], ln_devs[1,y - 1,i,s,1], exp(PE_pars[1,i,s,1]), TRUE) / share
       } # end random walk process error
 
     } # end dev_idx loop
@@ -351,7 +359,7 @@ Get_PE_loglik <- function(PE_model,
     # Next, get unique sex deviations
     unique_s = unique(unique_comb[4,])
 
-    for(idx in 1:length(unique_s)) {
+    for(idx in seq_along(unique_s)) {
 
       s = unique_s[idx] # get sex index
 
@@ -382,7 +390,7 @@ Get_PE_loglik <- function(PE_model,
       # 2dar1 model
       if(PE_model == 5) {
         # Function to constrain values between -1 and 1
-        rho_trans = function(x) 2/(1+ exp(-2 * x)) - 1
+        rho_trans = function(x) 2 / (1 + exp(-2 * x)) - 1
 
         # Extract out varaibles and transform into appropriate space
         eps_ya = ln_devs[1,,min_sel_devs_shared_bins,s,1] # needs to be in matrix format for dseparable
@@ -482,7 +490,7 @@ Get_move_PE_loglik <- function(PE_model,
                                ) {
 
   "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   # Note that the likelihood calculations are positive within the function,
   # because it gets converted to negative outside the wrapper function
@@ -599,7 +607,7 @@ Get_move_PE_loglik <- function(PE_model,
 #' @import RTMB
 Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_F_devs, Fdev_pen_center = 0) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   rho_trans <- function(x) 2 / (1 + exp(-2 * x)) - 1 # constrain to (-1, 1)
@@ -651,7 +659,7 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_
             if(is.na(last_active_y)) Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], 0, sigma / sqrt(1 - rho^2), TRUE) # stationary marginal sd
             else {
               d <- y - last_active_y # elapsed years since the previous active year
-              trans_sd <- sigma * sqrt((1 - rho^(2*d)) / (1 - rho^2))
+              trans_sd <- sigma * sqrt((1 - rho^(2 * d)) / (1 - rho^2))
               Fmort_nLL[r,y,seas,f] <- -RTMB::dnorm(ln_F_devs[r,y,seas,f], rho^d * ln_F_devs[r,last_active_y,seas,f], trans_sd, TRUE)
             }
           }
@@ -699,7 +707,7 @@ Get_Fdev_PE_loglik <- function(PE_model, ln_sigmaF, Fdev_rho, ln_F_devs, map_ln_
 get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
                              n_fish_fleets, n_yrs, n_regions, n_seas) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   dmr_nLL <- array(0, dim = dim(logit_dmr_devs))
@@ -775,14 +783,14 @@ get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
 #' @import RTMB
 get_selex_prior <- function(selex_prior, fixed_sel_pars, sel, sel_l, selex_type, sel_blocks) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   # backwards compatibility here
   row_type <- if(is.null(selex_prior$type)) rep("par", nrow(selex_prior)) else selex_prior$type
 
   nLL <- 0
-  for(i in 1:nrow(selex_prior)) {
+  for(i in seq_len(nrow(selex_prior))) {
     r <- selex_prior$region[i]
     p <- selex_prior$par[i]
     b <- selex_prior$block[i]
@@ -830,11 +838,11 @@ get_selex_prior <- function(selex_prior, fixed_sel_pars, sel, sel_l, selex_type,
 #' @import RTMB
 get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
-  for(i in 1:nrow(selex_penalty)) {
+  for(i in seq_len(nrow(selex_penalty))) {
     r <- selex_penalty$region[i]
     b <- selex_penalty$block[i]
     s <- selex_penalty$sex[i]
@@ -887,7 +895,7 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #' @import RTMB
 get_recdev_pe_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init_sd = 5) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_yrs <- length(devs)
@@ -907,12 +915,12 @@ get_recdev_pe_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, in
         first_sd <- if(is.na(init_sd)) sigma[y] else init_sd
         nLL[y] <- -RTMB::dnorm(devs[y], 0, first_sd, TRUE)
       }
-      else nLL[y] <- -RTMB::dnorm(devs[y], devs[y-1], sigma[y], TRUE)
+      else nLL[y] <- -RTMB::dnorm(devs[y], devs[y - 1], sigma[y], TRUE)
     }
 
     if(PE_model == 3) { # ar1
       if(y == 1) nLL[y] <- -RTMB::dnorm(devs[y], 0, sigma[y] / sqrt(1 - rho^2), TRUE) # stationary marginal sd
-      else nLL[y] <- -RTMB::dnorm(devs[y], rho * devs[y-1], sigma[y], TRUE)
+      else nLL[y] <- -RTMB::dnorm(devs[y], rho * devs[y - 1], sigma[y], TRUE)
     }
 
   } # end y loop
@@ -1192,7 +1200,7 @@ get_rec_devs_penalty <- function(
   RecDevs_pen_center = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   Rec_nLL <- array(0, dim = dim(ln_RecDevs))
@@ -1381,14 +1389,14 @@ get_recruitment_penalty <- function(
 #' @import RTMB
 get_rec_level_penalty <- function(Rec, sigma, center = 1, yrs = NULL) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   nLL <- array(0, dim = dim(Rec))
-  use_y <- if(is.null(yrs)) 1:dim(Rec)[3] else yrs
+  use_y <- if(is.null(yrs)) seq_len(dim(Rec)[3]) else yrs
 
-  for(p in 1:dim(Rec)[1]) {
-    for(r in 1:dim(Rec)[2]) {
+  for(p in seq_len(dim(Rec)[1])) {
+    for(r in seq_len(dim(Rec)[2])) {
       ln_rec <- log(Rec[p,r,use_y])
       mu <- if(center == 1) sum(ln_rec) / length(ln_rec) else 0
       nLL[p,r,use_y] <- -RTMB::dnorm(ln_rec, mu, sigma, TRUE)
@@ -1426,14 +1434,14 @@ get_rec_level_penalty <- function(Rec, sigma, center = 1, yrs = NULL) {
 #' @import RTMB
 get_sr_penalty <- function(Rec, SR_pred, sigma, yrs = NULL) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   nLL <- array(0, dim = dim(Rec))
-  use_y <- if(is.null(yrs)) 1:dim(Rec)[3] else yrs
+  use_y <- if(is.null(yrs)) seq_len(dim(Rec)[3]) else yrs
 
-  for(p in 1:dim(Rec)[1]) {
-    for(r in 1:dim(Rec)[2]) {
+  for(p in seq_len(dim(Rec)[1])) {
+    for(r in seq_len(dim(Rec)[2])) {
       resid <- log(Rec[p,r,use_y]) - log(SR_pred[p,r,use_y])
       nLL[p,r,use_y] <- -RTMB::dnorm(resid, 0, sigma, TRUE)
     } # end r loop
@@ -1462,11 +1470,11 @@ get_sr_penalty <- function(Rec, SR_pred, sigma, yrs = NULL) {
 #' @import RTMB
 get_q_prior <- function(q_prior, ln_q) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
-  for(i in 1:nrow(q_prior)) {
+  for(i in seq_len(nrow(q_prior))) {
     r <- q_prior$region[i]
     b <- q_prior$block[i]
     f <- q_prior$fleet[i]
@@ -1500,11 +1508,11 @@ get_q_prior <- function(q_prior, ln_q) {
 #' @import RTMB
 get_natmort_prior <- function(M_prior, ln_M, M_blocks) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
-  for(i in 1:nrow(M_prior)) {
+  for(i in seq_len(nrow(M_prior))) {
     p <- M_prior$popblk[i]
     r <- M_prior$regionblk[i]
     b <- M_prior$yearblk[i]
@@ -1538,11 +1546,11 @@ get_natmort_prior <- function(M_prior, ln_M, M_blocks) {
 #' @import RTMB
 get_steepness_prior <- function(h_prior, h_trans) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
-  for(i in 1:nrow(h_prior)) {
+  for(i in seq_len(nrow(h_prior))) {
     p <- h_prior$pop[i]
     r <- h_prior$region[i]
     # bounding for steepness, but also can be user specified
@@ -1596,11 +1604,11 @@ get_steepness_prior <- function(h_prior, h_trans) {
 #' @import RTMB
 get_movement_dirichlet_prior <- function(Movement_prior, Movement, Mrate = NULL) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
-  for(i in 1:nrow(Movement_prior)) {
+  for(i in seq_len(nrow(Movement_prior))) {
     p <- Movement_prior$pop[i] # population
     region_from <- Movement_prior$region_from[i] # region from
     y <- Movement_prior$year[i] # year
@@ -1645,11 +1653,11 @@ get_movement_dirichlet_prior <- function(Movement_prior, Movement, Mrate = NULL)
 #' @import RTMB
 get_r0_prior <- function(r0_prior, ln_global_R0) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
-  for(i in 1:nrow(r0_prior)) {
+  for(i in seq_len(nrow(r0_prior))) {
     p <- r0_prior$pop[i] # population
     nLL <- nLL - RTMB::dnorm(ln_global_R0[p], log(r0_prior$mu[i]), r0_prior$sd[i], TRUE) # normal prior
   } # end i loop
@@ -1696,13 +1704,13 @@ get_recruitment_proportion_priors <- function(use_rec_region_prop_prior, rec_reg
                                                rec_seas_prop, rec_lag, spawn_seas, n_seas,
                                                use_stray_rate_prior, stray_rate_prior, stray_rate_pars) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
 
   if(use_rec_region_prop_prior == 1) { # recruitment regional apportionment
-    for(i in 1:nrow(rec_region_prop_prior)) {
+    for(i in seq_len(nrow(rec_region_prop_prior))) {
       p <- rec_region_prop_prior$pop[i] # population
       alpha <- rec_region_prop_prior$alpha[[i]] # get concentration values
       nLL <- nLL - ddirichlet(x = rec_region_prop[p,], alpha = alpha, log = TRUE) # dirichlet prior
@@ -1710,7 +1718,7 @@ get_recruitment_proportion_priors <- function(use_rec_region_prop_prior, rec_reg
   }
 
   if(use_rec_seas_prop_prior == 1 && use_fixed_rec_seas_prop == 0) { # recruitment seasonal apportionment
-    for(i in 1:nrow(rec_seas_prop_prior)) { # recruitment seasonal apportionment
+    for(i in seq_len(nrow(rec_seas_prop_prior))) { # recruitment seasonal apportionment
       p <- rec_seas_prop_prior$pop[i] # population
       alpha <- rec_seas_prop_prior$alpha[[i]] # get concentration values
       if(rec_lag == 0 && spawn_seas > 1) {
@@ -1724,7 +1732,7 @@ get_recruitment_proportion_priors <- function(use_rec_region_prop_prior, rec_reg
   }
 
   if(use_stray_rate_prior == 1) {
-    for(i in 1:nrow(stray_rate_prior)) {
+    for(i in seq_len(nrow(stray_rate_prior))) {
       # extract indices
       p <- stray_rate_prior$pop[i]
       b <- stray_rate_prior$block[i]
@@ -1736,7 +1744,7 @@ get_recruitment_proportion_priors <- function(use_rec_region_prop_prior, rec_reg
       alpha <- mu * concentration
       beta <- (1 - mu) * concentration
       # extract values
-      stray_rate_val <- 1e-4 + (1 - 2*1e-4) * RTMB::plogis(stray_rate_pars[p,b])
+      stray_rate_val <- 1e-4 + (1 - 2 * 1e-4) * RTMB::plogis(stray_rate_pars[p,b])
       nLL <- nLL - RTMB::dbeta(x = stray_rate_val, shape1 = alpha, shape2 = beta, log = TRUE) # penalize
     }
   }
@@ -1763,11 +1771,11 @@ get_recruitment_proportion_priors <- function(use_rec_region_prop_prior, rec_reg
 #' @import RTMB
 get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_pars) {
 
-  "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   nLL <- 0
-  for(i in 1:nrow(conv_tag_fishrep_prior)) {
+  for(i in seq_len(nrow(conv_tag_fishrep_prior))) {
 
     # Extract indices
     r <- conv_tag_fishrep_prior$region[i]
@@ -1889,8 +1897,12 @@ Get_NAA_state_penalty <- function(
   "[<-" <- RTMB::ADoverload("[<-")
 
   d <- dim(ln_NAA)
-  n_pop <- d[1]; n_regions <- d[2]; n_sexes <- d[6]
-  ny <- length(naa_re_yrs); na <- length(naa_re_ages); nk <- length(naa_re_seas)
+  n_pop <- d[1]
+  n_regions <- d[2]
+  n_sexes <- d[6]
+  ny <- length(naa_re_yrs)
+  na <- length(naa_re_ages)
+  nk <- length(naa_re_seas)
 
   # a population that never occupies a region holds no fish there, so it has no state to
   # penalize and the logarithm below would be taken on a structural zero
@@ -1996,7 +2008,7 @@ Get_NAA_state_penalty <- function(
 penalize_naa_age_year <- function(eps_ya, sd_prs, NAA_re, pe, ny, na) {
 
   "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   # 1 = independent over ages and years
   if(NAA_re == 1) return(-sum(RTMB::dnorm(as.vector(eps_ya), 0, sd_prs, TRUE)))

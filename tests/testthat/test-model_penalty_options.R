@@ -54,7 +54,9 @@ test_that("get_selex_fixed_penalty centers a named set of selectivity parameters
     expect_no_error(obj$fn(obj$par))
     expect_no_error(obj$gr(obj$par))
     fd <- sapply(1:3, function(i) {
-      up <- dn <- obj$par; up[i] <- up[i] + 1e-6; dn[i] <- dn[i] - 1e-6
+      up <- dn <- obj$par
+      up[i] <- up[i] + 1e-6
+      dn[i] <- dn[i] - 1e-6
       (obj$fn(up) - obj$fn(dn)) / 2e-6
     })
     expect_equal(as.numeric(obj$gr(obj$par)), fd, tolerance = 1e-5)
@@ -81,9 +83,11 @@ test_that("validate_selex_penalty checks the table only when the flag is on", {
   test_that("errors on a missing table, missing columns, a negative weight, and an empty set", {
     expect_error(SPoRC:::validate_selex_penalty(NULL, 1, "x"))
     expect_error(SPoRC:::validate_selex_penalty(good[, c("region", "fleet")], 1, "x"))
-    bad_wt <- good; bad_wt$wt <- -1
+    bad_wt <- good
+    bad_wt$wt <- -1
     expect_error(SPoRC:::validate_selex_penalty(bad_wt, 1, "x"))
-    empty <- good; empty$par <- list(integer(0))
+    empty <- good
+    empty$par <- list(integer(0))
     expect_error(SPoRC:::validate_selex_penalty(empty, 1, "x"))
   })
 
@@ -91,7 +95,10 @@ test_that("validate_selex_penalty checks the table only when the flag is on", {
 
 test_that("a deviation-specific Wt_Rec excludes years from the recruitment penalty", {
 
-  n_pop <- 1; n_regions <- 1; n_ages <- 5; n_dev <- 6
+  n_pop <- 1
+  n_regions <- 1
+  n_ages <- 5
+  n_dev <- 6
   ln_RecDevs <- array(0, dim = c(n_pop, n_regions, n_dev))
   set.seed(42)
   ln_RecDevs[1,1,] <- rnorm(n_dev, 0, 0.6)
@@ -134,7 +141,8 @@ test_that("a deviation-specific Wt_Rec excludes years from the recruitment penal
   test_that("zero weight and an unestimated deviation reach the same objective by different routes", {
     map <- array(seq_len(n_dev), dim = dim(ln_RecDevs))
     map[1,1,3] <- NA
-    wt <- array(1, dim = dim(ln_RecDevs)); wt[1,1,3] <- 0
+    wt <- array(1, dim = dim(ln_RecDevs))
+    wt[1,1,3] <- 0
     expect_equal(sum(run(map)$Rec_nLL), sum(wt * pen$Rec_nLL), tolerance = 1e-12)
   })
 
@@ -172,7 +180,8 @@ test_that("Setup_Mod_Weighting validates the recruitment weight shapes", {
   })
 
   test_that("an array Wt_Rec is accepted at the deviation array's shape", {
-    wt <- array(1, dim = rec_dim); wt[1,1,rec_dim[3]] <- 0
+    wt <- array(1, dim = rec_dim)
+    wt[1,1,rec_dim[3]] <- 0
     out <- Setup_Mod_Weighting(
       input_list = base_list,
       Wt_Rec = wt,

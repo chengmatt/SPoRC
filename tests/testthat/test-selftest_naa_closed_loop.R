@@ -8,7 +8,8 @@ naacl <- local({
   cached <- NULL
   function() {
     if(!is.null(cached)) return(cached)
-    proj_yrs <- 8; assess_every <- 4
+    proj_yrs <- 8
+    assess_every <- 4
 
     om  <- naaom_make_om(NAA_re = "2dar1", sigmaNAA = 0.30, rho_age = 0.5, rho_year = 0.4, seed = 808)
     il  <- naaom_build_em(naaom_om_data(om), NAA_re = "2dar1")

@@ -28,7 +28,7 @@ Wrapper used by the internal OSA runners, which works around two quirks of
     \code{DLL} argument, so TMB falls back to guessing the DLL and errors
     with "Multiple TMB models loaded" whenever a session has more than one
     TMB DLL loaded (e.g. RTMB alongside compResidual, which
-    \code{\link{run_external_comp_osa}} loads). 
+    \code{\link{run_external_comp_osa}} loads).
   \item \code{discreteSupport} is detected with \code{missing()}, so
     supplying it as \code{NULL} is not the same as omitting it: a \code{NULL}
     sends continuous families down the mixed discrete/continuous branch,

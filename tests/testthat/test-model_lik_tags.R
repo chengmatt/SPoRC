@@ -24,11 +24,15 @@ make_data <- function(like_type, ln_theta = log(5), n_tags_released = 50) {
   obs  <- array(0, dim = arr_dim)
   pred <- array(0, dim = arr_dim)
 
-  obs[1, 1, 1, 1, 1, 1, 1, 1] <- 3;  obs[1, 1, 1, 1, 2, 1, 1, 1] <- 5
-  obs[2, 1, 1, 1, 1, 1, 1, 1] <- 2;  obs[2, 1, 1, 1, 2, 1, 1, 1] <- 4
+  obs[1, 1, 1, 1, 1, 1, 1, 1] <- 3
+  obs[1, 1, 1, 1, 2, 1, 1, 1] <- 5
+  obs[2, 1, 1, 1, 1, 1, 1, 1] <- 2
+  obs[2, 1, 1, 1, 2, 1, 1, 1] <- 4
 
-  pred[1, 1, 1, 1, 1, 1, 1, 1] <- 2.5; pred[1, 1, 1, 1, 2, 1, 1, 1] <- 4.5
-  pred[2, 1, 1, 1, 1, 1, 1, 1] <- 1.8; pred[2, 1, 1, 1, 2, 1, 1, 1] <- 3.9
+  pred[1, 1, 1, 1, 1, 1, 1, 1] <- 2.5
+  pred[1, 1, 1, 1, 2, 1, 1, 1] <- 4.5
+  pred[2, 1, 1, 1, 1, 1, 1, 1] <- 1.8
+  pred[2, 1, 1, 1, 2, 1, 1, 1] <- 3.9
 
   conv_fish_tag_nLL <- array(0, dim = c(conv_tag_max_liberty, n_seas, n_conv_tag_cohorts, n_regions, n_fish_fleets))
   conv_tagged_fish  <- array(n_tags_released, dim = c(n_conv_tag_cohorts, 1, 1, 1))
@@ -291,7 +295,7 @@ test_that("tag_grid() enumerates recovery events and correctly applies the mixin
     n_seas = 1,
     conv_tag_mixing_period = 99
   )
-  expect_equal(nrow(g_none), NULL)
+  expect_null(nrow(g_none))
 })
 
 
@@ -563,4 +567,3 @@ test_that("internal path: pack_tag_osa() clamps a negative release-conditioned t
     expect_equal(sum(grp), round(n_rel), tolerance = 1)
   }
 })
-

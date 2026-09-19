@@ -10,7 +10,7 @@ test_that("get_osa(model = ..., pop = TRUE) + plot_resids() work for a multi-sex
     n_regions     = 2,
     n_ages        = 8,
     n_lens        = NULL,
-    n_sexes       = 2,  
+    n_sexes       = 2,
     n_fish_fleets = 1,
     n_srv_fleets  = 1,
     n_seas        = 2,
@@ -41,7 +41,7 @@ test_that("get_osa(model = ..., pop = TRUE) + plot_resids() work for a multi-sex
     ),
     Fmort_input = {
       n = sim_list$n_yrs * sim_list$n_seas * sim_list$n_sims * sim_list$n_fish_fleets
-      t = seq(0, 2*pi, length.out = n)
+      t = seq(0, 2 * pi, length.out = n)
       arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                                sim_list$n_fish_fleets, sim_list$n_sims))
       arr[1,,,,] <- 0.15 * exp(sin(t) + rnorm(n, 0, 0.1))

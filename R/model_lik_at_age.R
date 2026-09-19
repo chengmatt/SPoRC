@@ -287,7 +287,10 @@ get_at_age_source_nLL = function(
   seas_agg = rep_len(seas_agg, n_fleets)
 
   i_r = if(pop) 2 else 1        # dimension positions within one fleet's slice
-  i_y = i_r + 1; i_seas = i_y + 1; i_a = i_seas + 1; i_s = i_a + 1
+  i_y = i_r + 1
+  i_seas = i_y + 1
+  i_a = i_seas + 1
+  i_s = i_a + 1
 
   # the observations sit on the observed ages, the columns of the ageing error
   if(!is.null(ageing_error) && dim(ageing_error)[3] != d[i_a]) {

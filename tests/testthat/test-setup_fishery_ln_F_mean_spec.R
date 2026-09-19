@@ -100,7 +100,10 @@ test_that("own-mean centering with an estimated mean warns only when nothing rea
         Use_F_pen = 1,
         ...
       ),
-      warning = function(cnd) { w <<- c(w, conditionMessage(cnd)); invokeRestart("muffleWarning") }
+      warning = function(cnd) {
+        w <<- c(w, conditionMessage(cnd))
+        invokeRestart("muffleWarning")
+      }
     )
     any(grepl("mutually unidentified", w))
   }

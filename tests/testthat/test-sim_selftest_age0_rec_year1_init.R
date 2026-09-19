@@ -17,10 +17,16 @@ test_that("Age-0 (rec_lag = 0) recruitment does not double-count Get_Init_NAA's 
   # several years later once the contaminated cohort matures - this test
   # checks the NAA state directly instead of relying on downstream SSB movement.
 
-  n_pop <- 1; n_regions <- 1; n_ages <- 8; n_sexes <- 1
-  n_fish_fleets <- 1; n_srv_fleets <- 1; n_seas <- 1
+  n_pop <- 1
+  n_regions <- 1
+  n_ages <- 8
+  n_sexes <- 1
+  n_fish_fleets <- 1
+  n_srv_fleets <- 1
+  n_seas <- 1
   n_years <- 10
-  true_R0 <- 10; true_h <- 0.7
+  true_R0 <- 10
+  true_h <- 0.7
 
   inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
 

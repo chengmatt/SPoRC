@@ -207,13 +207,13 @@ if (have_igraph) {
   sg <- igraph::graph_from_data_frame(sw, directed = TRUE)
 
   coords <- rbind(
-    Plotting          = c( 0.0,  3.0),
+    Plotting          = c(0.0,  3.0),
     Diagnostics       = c(-2.0,  1.9),
-    "Ref points"      = c( 0.7,  1.9),
-    "Operating model" = c( 2.9,  1.9),
+    "Ref points"      = c(0.7,  1.9),
+    "Operating model" = c(2.9,  1.9),
     Objective         = c(-0.6,  0.8),
-    Setup             = c( 2.1,  0.8),
-    Helpers           = c( 0.7, -0.4))
+    Setup             = c(2.1,  0.8),
+    Helpers           = c(0.7, -0.4))
   lab <- setNames(rownames(coords), rownames(coords))
   lab["Operating model"] <- "Operating\nmodel"
   keep <- intersect(igraph::V(sg)$name, rownames(coords))
@@ -246,7 +246,9 @@ rows call nothing else in the package, empty columns are called by nothing.
 ```{r dependency_matrix, fig.width = 11.5, fig.height = 10.2, dpi = 150, out.width = "100%", fig.alt = "Dependency matrix of the 52 files in R/, grouped by pipeline stage, where a filled cell means the row file calls a function defined in the column file."}
 if (have_src) {
   ord <- order(match(stage_of, STAGES), g$files)
-  fl <- g$files[ord]; st <- stage_of[ord]; n <- length(fl)
+  fl <- g$files[ord]
+  st <- stage_of[ord]
+  n <- length(fl)
   A <- matrix(0L, n, n)
   A[cbind(match(g$edges$from, fl), match(g$edges$to, fl))] <- 1L
   lab <- sub("[.]R$", "", fl)
@@ -277,7 +279,8 @@ if (have_src) {
   }
 
   brk <- which(st[-1] != st[-n]) + 0.5
-  abline(h = brk, col = "gray62", lwd = 1); abline(v = brk, col = "gray62", lwd = 1)
+  abline(h = brk, col = "gray62", lwd = 1)
+  abline(v = brk, col = "gray62", lwd = 1)
   rect(0.5, 0.5, n + 0.5, n + 0.5, border = "gray45")
 
   hit <- which(A == 1L, arr.ind = TRUE)
@@ -286,7 +289,8 @@ if (have_src) {
 
   # Stage color strips just inside each dim, and stage names down the side.
   for (k in seq_along(blocks)) {
-    idx <- blocks[[k]]; s <- names(blocks)[k]
+    idx <- blocks[[k]]
+    s <- names(blocks)[k]
     rect(-1.9, min(idx) - 0.5, -0.7, max(idx) + 0.5, col = PAL[[s]],
          border = "white", xpd = NA, lwd = 0.6)
     rect(min(idx) - 0.5, -1.9, max(idx) + 0.5, -0.7, col = PAL[[s]],

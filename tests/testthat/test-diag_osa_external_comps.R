@@ -8,7 +8,7 @@ test_that("OSA residuals are calibrated (SDNR ≈ 1) for all composition likelih
   set.seed(42)
   n_years <- 50
   n_bins  <- 30
-  true_p  <- rep(1/n_bins, n_bins)
+  true_p  <- rep(1 / n_bins, n_bins)
   tol     <- 0.1  # SDNR within [0.9, 1.1]
 
   # --- Multinomial ---
@@ -85,7 +85,7 @@ test_that("OSA residuals are calibrated (SDNR ≈ 1) for all composition likelih
   rho_sex  <- 0.5
   n_sexes  <- 2
   n_bins_sex <- n_bins * n_sexes  # total bins = bins per sex * n_sexes
-  true_p_sex <- rep(1/n_bins_sex, n_bins_sex)
+  true_p_sex <- rep(1 / n_bins_sex, n_bins_sex)
 
   obs_ln4 <- t(replicate(n_years, rlogistnormal(true_p_sex, c(sigma_ln, rho_ln3, rho_sex),
                                                 comp_like = 4, n_sexes = n_sexes)))

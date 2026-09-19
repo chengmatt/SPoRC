@@ -97,9 +97,9 @@ test_that("the CAAL weight is one pooled inverse variance per fleet, region and 
   s <- cells[1, 2]
   res <- c()
   yrs_with_rows <- 0
-  for(y in 1:length(input_list$data$years)) {
+  for(y in seq_along(input_list$data$years)) {
     acc <- NULL
-    for(l in 1:dim(input_list$data$UseSrv_caal)[4]) {
+    for(l in seq_len(dim(input_list$data$UseSrv_caal)[4])) {
       if(input_list$data$UseSrv_caal[r, y, 1, l, f] != 1) next
       p_row <- props$Pred_Srv_caal[r, y, 1, l, , s, f]
       o_row <- props$Obs_Srv_caal[r, y, 1, l, , s, f]

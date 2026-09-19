@@ -50,11 +50,16 @@ spr_data <- function(
 # Spawning biomass per recruit, walked forward one season at a time.
 spr_oracle <- function(d, f) {
   # M is a rate per year per season, laid out [seas, age]
-  M <- array(d$natmort[1, , ], dim = c(d$n_seas, d$n_ages)); sel <- d$fish_sel[1, 1, , 1]
-  ss <- d$spawn_seas; ts <- d$t_spawn; sd_ <- d$seasdur
-  n_ages <- d$n_ages; n_seas <- d$n_seas
+  M <- array(d$natmort[1, , ], dim = c(d$n_seas, d$n_ages))
+  sel <- d$fish_sel[1, 1, , 1]
+  ss <- d$spawn_seas
+  ts <- d$t_spawn
+  sd_ <- d$seasdur
+  n_ages <- d$n_ages
+  n_seas <- d$n_seas
 
-  N <- numeric(n_ages); SB <- numeric(n_ages)
+  N <- numeric(n_ages)
+  SB <- numeric(n_ages)
   start_of_year <- numeric(n_ages)
   N[1] <- d$rec_seas_prop[1, 1] * d$sex_ratio_f[1]
   start_of_year[1] <- N[1]
@@ -115,7 +120,8 @@ test_that("the agreement holds for every season spawning can fall in", {
   # to cancel at a particular spawning season.
   for(n_seas in c(1L, 2L, 4L)) {
     for(ss in seq_len(n_seas)) {
-      rec <- rep(0, n_seas); rec[n_seas] <- 1
+      rec <- rep(0, n_seas)
+      rec[n_seas] <- 1
       d <- spr_data(spawn_seas = ss, rec_seas_prop = rec, n_seas = n_seas)
       for(f in c(0, 0.25)) {
         expect_equal(spr_solver(d, f), spr_oracle(d, f), tolerance = 1e-10,

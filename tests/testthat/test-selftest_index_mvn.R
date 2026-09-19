@@ -11,7 +11,8 @@ test_that("an mvn index likelihood recovers SSB and catchability", {
 
   om_ln <- selftest_make_om()
   S <- selftest_mvn_cov(mean(om_ln$TrueSrvIdx[1, , 1, 1, 1]))
-  use_all <- array(0, dim = c(1, selftest_cfg$n_yrs, 1, 1)); use_all[1, , 1, 1] <- 1
+  use_all <- array(0, dim = c(1, selftest_cfg$n_yrs, 1, 1))
+  use_all[1, , 1, 1] <- 1
 
   om <- selftest_make_om(SrvIdx_LikeType = "mvn", SrvIdx_Cov = list(S), UseSrvIdx = use_all)
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = selftest_cfg$n_yrs, sim = 1)

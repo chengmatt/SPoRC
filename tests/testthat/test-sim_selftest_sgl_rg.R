@@ -102,7 +102,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
       n_srv_fleets = sim_obj$n_srv_fleets,
       n_pop = sim_obj$n_pop,
       natal_region = sim_obj$natal_region,
-      verbose = F
+      verbose = FALSE
     )
 
     # Recruitment setup
@@ -257,7 +257,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
                        input_list$par,
                        input_list$map,
                        random = NULL,
-                       silent = T
+                       silent = TRUE
     )
 
     # the EM configuration is identical across simulations, so one check covers it
@@ -281,8 +281,7 @@ test_that("Simulation self-test produces approximately unbiased SSB results", {
 
   # check to see if relative error is within 2%
   expect_equal(median(ssb_df_res$RE), 0, tolerance = 0.02)
-  expect_equal(median(((rinit_results - 2) / 2) ), 0, tolerance = 0.05)
-  expect_equal(median(((r0_results - 5) / 5) ), 0, tolerance = 0.05)
+  expect_equal(median(((rinit_results - 2) / 2)), 0, tolerance = 0.05)
+  expect_equal(median(((r0_results - 5) / 5)), 0, tolerance = 0.05)
 
 })
-

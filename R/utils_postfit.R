@@ -44,7 +44,7 @@ post_optim_sanity_checks <- function(sd_rep,
   # check likelihoods are all finite and not NA
   if(!all(is.finite(rep$jnLL))) {
     message("Found Inf in joint log-likelihood, model is not converged!")
-    passed_post_sanity_checks <- F
+    passed_post_sanity_checks <- FALSE
   }
 
   # check maximum absolute gradients
@@ -53,25 +53,25 @@ post_optim_sanity_checks <- function(sd_rep,
   if(gradient_tol < max_abs_grad) {
     message("Parameter: ", names(sd_rep$par.fixed)[max_abs_grad_ndx], " had absolute gradient = ", max_abs_grad,
             " which was greater than tolerance ", gradient_tol,". This indicates potential non-convergence according to the tolerance.\n")
-    passed_post_sanity_checks <- F
+    passed_post_sanity_checks <- FALSE
   }
 
   # check hessian
   if(!sd_rep$pdHess) {
     message("Hessian is not positive definite, model is not converged!")
-    passed_post_sanity_checks <- F
+    passed_post_sanity_checks <- FALSE
   }
 
   # check if standard errors are finite (if finite, then check other stuff)
   if(!all(is.finite(sqrt(diag(sd_rep$cov.fixed))))) {
     message("Found non finite elements in standard errors of parameters, model is not converged!")
-    passed_post_sanity_checks <- F
+    passed_post_sanity_checks <- FALSE
   } else {
     # check if standard errors are big
     if(max(sqrt(diag(sd_rep$cov.fixed))) > se_tol) {
       message("Parameter: ", names(diag(sd_rep$cov.fixed))[which.max(sqrt(diag(sd_rep$cov.fixed)))], " has a standard error = ",
               max(sqrt(diag(sd_rep$cov.fixed))), " which was greated than tolerance ", se_tol, ". This indicates potential non-convergence according to the tolerance. \n")
-      passed_post_sanity_checks <- F
+      passed_post_sanity_checks <- FALSE
     }
 
     # check if correlations are big
@@ -85,7 +85,7 @@ post_optim_sanity_checks <- function(sd_rep,
 
     if(max(abs(corr_df$value)) > corr_tol) {
       message("Parameter pairs: ", corr_df$Var1[which.max(abs(corr_df$value))], " and ", corr_df$Var2[which.max(abs(corr_df$value))], " have a correlation of ", max(abs(corr_df$value)), ". This indicates potential non-convergence according to the tolerance.")
-      passed_post_sanity_checks <- F
+      passed_post_sanity_checks <- FALSE
     }
   }
 
@@ -224,12 +224,6 @@ get_optim_param_list <- function(parameters, mapping, sd_rep, random) {
   for (param_name in names(parameters)) {
     map_name <- param_name
     if (map_name %in% names(mapping) && param_name %in% est_param_names) {
-      # checking to see if vector
-      if(!is.vector(parameters[[param_name]])) {
-        param_map <- array(mapping[[map_name]], dim = dim(parameters[[param_name]])) # not a vector
-      } else {
-        param_map <- mapping[[map_name]] # vector
-      }
 
       est_values <- if(param_name %in% random) sd_rep$par.random[names(sd_rep$par.random) == param_name] else sd_rep$par.fixed[names(sd_rep$par.fixed) == param_name] # Get estimated values for this parameter
       param_map_int <- as.integer(mapping[[map_name]])  # codes: 1=level1, 2=level2, etc.
@@ -302,7 +296,7 @@ get_model_rep_from_mcmc <- function(rtmb_obj, mcmc_obj, what, n_cores) {
   future::plan(future::multisession, workers = n_cores)
   all_results <- progressr::with_progress({
     p <- progressr::progressor(steps = nrow(samples_collapsed)) # progress
-    future.apply::future_lapply(1:nrow(samples_collapsed), function(idx) {
+    future.apply::future_lapply(seq_len(nrow(samples_collapsed)), function(idx) {
       tmp_rep <- rtmb_obj$report(par = samples_collapsed[idx, ])
       what_results <- vector("list", length(what)) # empty list
       names(what_results) <- what
@@ -345,7 +339,7 @@ get_model_rep_from_mcmc <- function(rtmb_obj, mcmc_obj, what, n_cores) {
 #' @return Numeric. The AICc value.
 #'
 #' @export marg_AIC
-marg_AIC <- function(opt, p = 2, n = Inf){
+marg_AIC <- function(opt, p = 2, n = Inf) {
   k <- length(opt[["par"]])
   if(all(c("par","objective") %in% names(opt))) negloglike <- opt[["objective"]]
   if(all(c("par","value") %in% names(opt))) negloglike <- opt[["value"]]

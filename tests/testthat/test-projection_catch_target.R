@@ -52,10 +52,15 @@ make_proj_inputs <- function(
   Movement <- array(0, dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   Mrate <- array(0, dim = dim(Movement))
   if (n_regions > 1) {
-    M <- matrix(0.12, n_regions, n_regions); diag(M) <- 0; diag(M) <- 1 - rowSums(M)
-    Q <- matrix(0.15, n_regions, n_regions); diag(Q) <- 0; diag(Q) <- -rowSums(Q)
+    M <- matrix(0.12, n_regions, n_regions)
+    diag(M) <- 0
+    diag(M) <- 1 - rowSums(M)
+    Q <- matrix(0.15, n_regions, n_regions)
+    diag(Q) <- 0
+    diag(Q) <- -rowSums(Q)
   } else {
-    M <- matrix(1, 1, 1); Q <- matrix(0, 1, 1)
+    M <- matrix(1, 1, 1)
+    Q <- matrix(0, 1, 1)
   }
   for (y in 1:n_proj_yrs) for (seas in 1:n_seas) for (a in 1:n_ages) for (s in 1:n_sexes) {
     Movement[1, , , y, seas, a, s] <- M
@@ -185,9 +190,14 @@ test_that("catch targets are met under Beverton-Holt recruitment, including rec_
   # spawn_seas, which changes that same year's recruitment, which changes catch.
   for (rec_lag in c(1, 0)) {
 
-    n_regions <- 2; n_seas <- 4; n_fish_fleets <- 1; spawn_seas <- 2
+    n_regions <- 2
+    n_seas <- 4
+    n_fish_fleets <- 1
+    spawn_seas <- 2
     inp <- make_proj_inputs(n_regions, n_seas, n_fish_fleets)
-    npy <- inp$n_proj_yrs; n_pop <- 1; n_ages <- inp$n_ages
+    npy <- inp$n_proj_yrs
+    n_pop <- 1
+    n_ages <- inp$n_ages
 
     # rec_lag = 0 requires no recruitment entering before the spawning season
     rsp <- array(0, dim = c(n_pop, n_seas))
@@ -232,7 +242,9 @@ test_that("catch targets are met under Beverton-Holt recruitment, including rec_
 
 test_that("seasonal catch targets hit a profile the terminal year's seasonal shares cannot", {
 
-  n_regions <- 3; n_seas <- 4; n_fish_fleets <- 2
+  n_regions <- 3
+  n_seas <- 4
+  n_fish_fleets <- 2
 
   for (mt in c(0, 2)) {
     inp <- make_proj_inputs(n_regions, n_seas, n_fish_fleets, move_timing = mt)
@@ -367,7 +379,8 @@ test_that("catch_terminal_yr solves projection year 1 against its own target", {
   # without it, year 1 is left at terminal_F and its target ignored
   inp <- make_proj_inputs(1, 1, 1)
   npy <- inp$n_proj_yrs
-  ci <- array(NA_real_, dim = c(1, npy)); ci[1, ] <- 3e5
+  ci <- array(NA_real_, dim = c(1, npy))
+  ci[1, ] <- 3e5
   got <- run_proj(inp, "Catch", catch_input = ci)
   expect_equal(got$proj_F[1, 1], sum(inp$terminal_F), tolerance = 1e-12)
   expect_true(is.na(got$proj_catch_resid[1, 1]))
@@ -390,7 +403,8 @@ test_that("a zero target means no fishing and is distinct from NA", {
   expect_lt(max(abs(got$proj_catch_resid[c(1, 3), 2:npy])), 1e-5)
 
   # a year of all zeros is a real instruction, not a fallback
-  ci2 <- array(NA_real_, dim = c(3, npy)); ci2[, 2] <- 0
+  ci2 <- array(NA_real_, dim = c(3, npy))
+  ci2[, 2] <- 0
   got2 <- run_proj(
     inp,
     "Catch",
@@ -408,7 +422,8 @@ test_that("an unreachable catch target warns, caps F, and records the shortfall"
 
   inp <- make_proj_inputs(3, 4, 2)
   npy <- inp$n_proj_yrs
-  ci <- array(NA_real_, dim = c(3, npy)); ci[, 2:npy] <- 1e12
+  ci <- array(NA_real_, dim = c(3, npy))
+  ci[, 2:npy] <- 1e12
 
   # every targeted year should warn, so capture them all rather than just the first
   w <- capture_warnings(got <- run_proj(inp, "Catch", catch_input = ci, catch_f_max = 5))
@@ -425,7 +440,8 @@ test_that("catch_input is validated before the projection runs", {
 
   inp <- make_proj_inputs(3, 4, 2)
   npy <- inp$n_proj_yrs
-  ok_ci <- array(NA_real_, dim = c(3, npy)); ok_ci[, 2:3] <- 3e5
+  ok_ci <- array(NA_real_, dim = c(3, npy))
+  ok_ci[, 2:3] <- 3e5
   extra <- list(f_ref_pt = array(0.13, dim = c(3, npy)),
                 b_ref_pt = array(3e6, dim = c(inp$n_pop, 3, npy)),
                 HCR_function = threshold_hcr)
@@ -440,7 +456,8 @@ test_that("catch_input is validated before the projection runs", {
                "fallback options")
 
   # a year has to be all target or all NA
-  part <- array(NA_real_, dim = c(3, npy)); part[1, 2] <- 1e5
+  part <- array(NA_real_, dim = c(3, npy))
+  part[1, 2] <- 1e5
   expect_error(do.call(run_proj, c(list(inp, "Catch"), extra, list(catch_input = part))),
                "only partly specified")
 
@@ -529,11 +546,17 @@ test_that("projected total biomass continues the estimated series and exceeds SS
 
 test_that("returned arrays hold the documented dimensions", {
 
-  n_regions <- 3; n_seas <- 4; n_fish_fleets <- 2
+  n_regions <- 3
+  n_seas <- 4
+  n_fish_fleets <- 2
   inp <- make_proj_inputs(n_regions, n_seas, n_fish_fleets)
-  npy <- inp$n_proj_yrs; n_pop <- inp$n_pop; n_ages <- inp$n_ages; n_sexes <- inp$n_sexes
+  npy <- inp$n_proj_yrs
+  n_pop <- inp$n_pop
+  n_ages <- inp$n_ages
+  n_sexes <- inp$n_sexes
 
-  ci <- array(NA_real_, dim = c(n_regions, npy)); ci[, 2:3] <- 3e5
+  ci <- array(NA_real_, dim = c(n_regions, npy))
+  ci[, 2:3] <- 3e5
   got <- run_proj(
     inp,
     "Catch",
@@ -564,7 +587,8 @@ test_that("returned arrays hold the documented dimensions", {
   expect_true(all(got$proj_ret_FAA[, , npy + 1, , , , ] == 0))
 
   # seasonal targets give a seasonal residual array
-  ci3 <- array(NA_real_, dim = c(n_regions, npy, n_seas)); ci3[, 2:3, ] <- 8e4
+  ci3 <- array(NA_real_, dim = c(n_regions, npy, n_seas))
+  ci3[, 2:3, ] <- 8e4
   got3 <- run_proj(
     inp,
     "Catch",
@@ -590,8 +614,10 @@ test_that("the deprecated bh_rec_opt still works, warns, and cannot be doubled u
   skip_if_not(exists("project_at_F"), "the projection helper is not loaded")
 
   partial <- list(rec_dd = 0, R0 = 1e6, h = 0.7)
-  err <- function(expr) tryCatch({ expr; NA_character_ },
-                                 error = function(e) conditionMessage(e))
+  err <- function(expr) tryCatch({
+    expr
+    NA_character_
+  }, error = function(e) conditionMessage(e))
 
   # it warns, and it names its replacement rather than only itself
   expect_warning(

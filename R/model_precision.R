@@ -40,65 +40,62 @@
 #' @importFrom Matrix sparseMatrix
 #' @importFrom methods as
 #' @keywords internal
-Get_3d_precision <- function(n_ages, n_yrs, pcorr_age, pcorr_year, pcorr_cohort, ln_var_value, Var_Type){
+Get_3d_precision <- function(n_ages, n_yrs, pcorr_age, pcorr_year, pcorr_cohort, ln_var_value, Var_Type) {
 
-    "c" <- RTMB::ADoverload("c")
-    "[<-" <- RTMB::ADoverload("[<-")
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
-    index = expand.grid(seq_len(n_ages), seq_len(n_yrs)) # create index combinations to loop through
-    i = j = x = numeric(0) # initialize posiiton to fill in precision matrix
-    var_value = exp(ln_var_value) # transform to normal space
+  index = expand.grid(seq_len(n_ages), seq_len(n_yrs)) # create index combinations to loop through
+  i = j = x = numeric(0) # initialize posiiton to fill in precision matrix
+  var_value = exp(ln_var_value) # transform to normal space
 
-    for(n in 1:nrow(index)){
-      age = index[n,1] # get age index out of all index combinations
-      year = index[n,2] # get year index out of all index combinations
-      if(age > 1 ){
-        i = c(i, n)
-        j = c(j, which(index[,1] == (age-1) & index[,2] == year))
-        x = c(x, pcorr_age) # link to the age-adjacent neighbor in the same year
-      }
-      if(year > 1){
-        i = c(i, n)
-        j = c(j, which(index[,1]==age & index[,2]==(year-1)) )
-        x = c(x, pcorr_year) # link to the year-adjacent neighbor at the same age
-      }
-      if( age>1 & year>1 ){
-        i = c(i, n)
-        j = c(j, which(index[,1]==(age-1) & index[,2] == (year-1)) )
-        x = c(x, pcorr_cohort) # cohort correlation indexing
+  for(n in seq_len(nrow(index))){
+    age = index[n,1] # get age index out of all index combinations
+    year = index[n,2] # get year index out of all index combinations
+    if(age > 1) {
+      i = c(i, n)
+      j = c(j, which(index[,1] == (age - 1) & index[,2] == year))
+      x = c(x, pcorr_age) # link to the age-adjacent neighbor in the same year
+    }
+    if(year > 1) {
+      i = c(i, n)
+      j = c(j, which(index[,1] == age & index[,2] == (year - 1)))
+      x = c(x, pcorr_year) # link to the year-adjacent neighbor at the same age
+    }
+    if(age > 1 && year > 1) {
+      i = c(i, n)
+      j = c(j, which(index[,1] == (age - 1) & index[,2] == (year - 1)))
+      x = c(x, pcorr_cohort) # cohort correlation indexing
+    }
+  } # end n loop
+
+  # create B path matrix
+  B = matrix(0, nrow = n_ages * n_yrs, ncol = n_ages * n_yrs)
+  B[cbind(i, j)] = x
+  B = as(B, "sparseMatrix")
+
+  # identity matrix
+  I = as(diag(1, n_ages * n_yrs, n_ages * n_yrs), "sparseMatrix")
+
+  # Solve Omega recursively for stationary variance (accumulator function)
+  if(Var_Type == 0) {
+    L = solve(I - B) # solve to get accumulator function for stationary variance
+    d = rep(0, nrow(index))
+    for(n in seq_len(nrow(index))){
+      if(n == 1) {
+        d[n] = var_value
+      }else{
+        cumvar = sum(L[n,seq_len(n - 1)] * d[seq_len(n - 1)] * L[n,seq_len(n - 1)])
+        d[n] = (var_value - cumvar) / L[n,n]^2
       }
     } # end n loop
+  } # end marginal variance (stationary variance)
 
-    # create B path matrix
-    B = matrix(0, nrow = n_ages * n_yrs, ncol = n_ages * n_yrs)
-    B[cbind(i, j)] = x
-    B = as(B, "sparseMatrix")
+  if(Var_Type == 1) d = var_value # conditional variance (non-stationary variance)
 
-    # identity matrix
-    I = as(diag(1, n_ages * n_yrs, n_ages * n_yrs), "sparseMatrix")
+  # omega matrix
+  Omega_inv = diag(1 / d, n_ages * n_yrs, n_ages * n_yrs)
+  Q = as((I - Matrix::t(B)) %*% Omega_inv %*% (I - B), "sparseMatrix") # solve for precision
 
-    # Solve Omega recursively for stationary variance (accumulator function)
-    if(Var_Type == 0) {
-      L = solve(I-B) # solve to get accumulator function for stationary variance
-      d = rep(0, nrow(index))
-      for(n in 1:nrow(index) ){
-        if(n==1){
-          d[n] = var_value
-        }else{
-          cumvar = sum(L[n,seq_len(n-1)] * d[seq_len(n-1)] * L[n,seq_len(n-1)])
-          d[n] = (var_value-cumvar) / L[n,n]^2
-        }
-      } # end n loop
-    } # end marginal variance (stationary variance)
-
-    if(Var_Type == 1) d = var_value # conditional variance (non-stationary variance)
-
-    # omega matrix
-    Omega_inv = diag(1/d, n_ages * n_yrs, n_ages * n_yrs)
-    Q = as((I-Matrix::t(B)) %*% Omega_inv %*% (I-B), "sparseMatrix") # solve for precision
-
-    return(Q)
-  }
-
-
-
+  return(Q)
+}

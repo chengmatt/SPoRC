@@ -389,7 +389,6 @@ Get_Reference_Points <- function(
   n_pop <- data$n_pop # number of populations
   n_seas <- data$n_seas # number of populations
   n_regions <- data$n_regions # number of regions
-  n_fish_fleets <- data$n_fish_fleets # number of fleets
 
   f_ref_pt <- vector()
   virgin_pop_b_ref_pt <- pop_b_ref_pt <- virgin_b_ref_pt <- b_ref_pt <- array(0, dim = c(n_pop, n_regions))
@@ -424,7 +423,7 @@ Get_Reference_Points <- function(
     if(n_regions > 1) stop("Single region reference points specified, but n_regions > 1!")
 
     data_list <- list() # set up data list
-    
+
     # reference points are only correct under the curve the model was fitted with; the two agree at
     # (S0, R0) and nowhere else. absent on older data lists, so default to Beverton-Holt
     data_list$rec_model <- if(is.null(data$rec_model)) 1 else data$rec_model
@@ -476,7 +475,7 @@ Get_Reference_Points <- function(
       f_ref_pt[1] <- tmp_obj$rep$F_x
 
       # Compute population specific reference points, by using stray rates
-      mean_rec <- apply(rep$Rec[,1,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], 1, mean)
+      mean_rec <- apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age),drop = FALSE], 1, mean)
 
       for(p2 in 1:n_pop) {
         r <- data$natal_region[p2]
@@ -492,8 +491,8 @@ Get_Reference_Points <- function(
       }
 
       # Compute global reference points (sum across populations)
-      b_ref_pt[,1] <- tmp_obj$rep$SB * apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
-      virgin_b_ref_pt[,1] <- tmp_obj$rep$SB0 * apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
+      b_ref_pt[,1] <- tmp_obj$rep$SB * apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
+      virgin_b_ref_pt[,1] <- tmp_obj$rep$SB0 * apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
 
     } # end SPR reference points
 
@@ -594,7 +593,7 @@ Get_Reference_Points <- function(
           f_ref_pt[r] <- tmp_obj[[r]]$rep$F_x
 
           # Compute population specific reference points, by using stray rates
-          mean_rec <- apply(rep$Rec[,r,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], 1, mean)
+          mean_rec <- apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age),drop = FALSE], 1, mean)
           if(n_pop > 1) {
             for(p2 in 1:n_pop) {
               rn <- data$natal_region[p2]
@@ -611,8 +610,8 @@ Get_Reference_Points <- function(
           }
 
           # Compute global reference points (sum across populations)
-          b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
-          virgin_b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB0 * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = F], 1, mean)
+          b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
+          virgin_b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB0 * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
 
         } # independent SPR
 
@@ -698,7 +697,7 @@ Get_Reference_Points <- function(
       data_list$n_pop_in_region <- n_pop_in_region
 
       data_list$SPR_x <- SPR_x # SPR fraction
-      mean_rec <- apply(rep$Rec[,,calc_rec_st_yr:(n_years-rec_age),drop=FALSE], c(1,2), mean) # [n_pop, n_regions]
+      mean_rec <- apply(rep$Rec[,,calc_rec_st_yr:(n_years - rec_age),drop = FALSE], c(1,2), mean) # [n_pop, n_regions]
       total_mean_rec <- apply(mean_rec, 1, sum) # [n_pop] - total recruitment across regions
       data_list$rec_region_prop <- mean_rec / total_mean_rec # recruitment proportions
 
@@ -784,9 +783,9 @@ Get_Reference_Points <- function(
 
       # Output reference points
       f_ref_pt <- rep(tmp_obj$rep$Fmsy, n_regions)
-      b_ref_pt[1,] <- apply(tmp_obj$rep$SB_age[2,,,drop = F], 2, sum) * tmp_obj$rep$Req
+      b_ref_pt[1,] <- apply(tmp_obj$rep$SB_age[2,,,drop = FALSE], 2, sum) * tmp_obj$rep$Req
       pop_b_ref_pt[1,1] <- sum(b_ref_pt)
-      virgin_b_ref_pt[1,] <- apply(tmp_obj$rep$SB_age[1,,,drop = F], 2, sum) * data_list$R0
+      virgin_b_ref_pt[1,] <- apply(tmp_obj$rep$SB_age[1,,,drop = FALSE], 2, sum) * data_list$R0
       virgin_pop_b_ref_pt[1,1]  <- sum(virgin_b_ref_pt)
 
     } # end global BH MSY

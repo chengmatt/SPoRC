@@ -91,22 +91,27 @@ test_that("an annual state on a seasonal array penalizes what it does with no se
   # the season dim must be inert when only season one is live, otherwise every existing model
   # changes value the moment the array grows a dimension
   set.seed(21)
-  ny <- 7; na <- 5; nk <- 3
-  pred1 <- array(exp(stats::rnorm(ny*na, 5, 0.2)), dim = c(1, 1, ny, 1, na, 1))
-  eta1 <- array(stats::rnorm(ny*na, 0, 0.3), dim = c(1, 1, ny, 1, na, 1))
+  ny <- 7
+  na <- 5
+  nk <- 3
+  pred1 <- array(exp(stats::rnorm(ny * na, 5, 0.2)), dim = c(1, 1, ny, 1, na, 1))
+  eta1 <- array(stats::rnorm(ny * na, 0, 0.3), dim = c(1, 1, ny, 1, na, 1))
   sig1 <- array(0.35, dim = dim(pred1))
   pe <- array(0.4, dim = c(1, 1, 3, 1))
 
-  pred3 <- array(0, dim = c(1, 1, ny, nk, na, 1)); pred3[,,,1,,] <- pred1
-  eta3 <- array(0, dim = c(1, 1, ny, nk, na, 1)); eta3[,,,1,,] <- eta1
+  pred3 <- array(0, dim = c(1, 1, ny, nk, na, 1))
+  pred3[,,,1,,] <- pred1
+  eta3 <- array(0, dim = c(1, 1, ny, nk, na, 1))
+  eta3[,,,1,,] <- eta1
   # the inactive seasons hold nonsense on purpose: the slice must never reach them
-  pred3[,,,2:3,,] <- exp(9); eta3[,,,2:3,,] <- 7
+  pred3[,,,2:3,,] <- exp(9)
+  eta3[,,,2:3,,] <- 7
   sig3 <- array(0.35, dim = dim(pred3))
 
   for(code in c(1, 2, 3, 4, 5, 6)) {
-    one <- SPoRC:::Get_NAA_state_penalty(log(pred1)+eta1, pred1, sig1, 1:na, 1:ny, 1,
+    one <- SPoRC:::Get_NAA_state_penalty(log(pred1) + eta1, pred1, sig1, 1:na, 1:ny, 1,
                                          NAA_re = code, NAA_pe_pars = pe)
-    three <- SPoRC:::Get_NAA_state_penalty(log(pred3)+eta3, pred3, sig3, 1:na, 1:ny, 1,
+    three <- SPoRC:::Get_NAA_state_penalty(log(pred3) + eta3, pred3, sig3, 1:na, 1:ny, 1,
                                            NAA_re = code, NAA_pe_pars = pe)
     expect_equal(three, one, tolerance = 1e-12, label = paste("NAA_re code", code))
   } # end code loop
@@ -114,19 +119,21 @@ test_that("an annual state on a seasonal array penalizes what it does with no se
 
 test_that("independent seasons are penalized as independent replicates of the age-year surface", {
   set.seed(22)
-  ny <- 6; na <- 4; nk <- 3
-  pred <- array(exp(stats::rnorm(ny*na*nk, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
-  eta <- array(stats::rnorm(ny*na*nk, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
+  ny <- 6
+  na <- 4
+  nk <- 3
+  pred <- array(exp(stats::rnorm(ny * na * nk, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
+  eta <- array(stats::rnorm(ny * na * nk, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
   sig <- array(0.3, dim = dim(pred))
   pe <- array(0.5, dim = c(1, 1, 3, 1))
 
   for(code in c(1, 2, 4, 5)) {
-    got <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1:nk,
+    got <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, 1:nk,
                                          NAA_re = code, NAA_pe_pars = pe)
     parts <- vapply(1:nk, function(k) {
       p1 <- array(pred[,,,k,,], dim = c(1, 1, ny, 1, na, 1))
       e1 <- array(eta[,,,k,,], dim = c(1, 1, ny, 1, na, 1))
-      SPoRC:::Get_NAA_state_penalty(log(p1)+e1, p1, array(0.3, dim = dim(p1)), 1:na, 1:ny, 1,
+      SPoRC:::Get_NAA_state_penalty(log(p1) + e1, p1, array(0.3, dim = dim(p1)), 1:na, 1:ny, 1,
                                     NAA_re = code, NAA_pe_pars = pe)
     }, numeric(1))
     expect_equal(got, sum(parts), tolerance = 1e-10, label = paste("NAA_re code", code))
@@ -135,16 +142,18 @@ test_that("independent seasons are penalized as independent replicates of the ag
 
 test_that("a season correlation at zero reduces to independent seasons", {
   set.seed(23)
-  ny <- 6; na <- 4; nk <- 3
-  pred <- array(exp(stats::rnorm(ny*na*nk, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
-  eta <- array(stats::rnorm(ny*na*nk, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
+  ny <- 6
+  na <- 4
+  nk <- 3
+  pred <- array(exp(stats::rnorm(ny * na * nk, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
+  eta <- array(stats::rnorm(ny * na * nk, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
   sig <- array(0.3, dim = dim(pred))
   pe <- array(0.4, dim = c(1, 1, 3, 1))
-  zero_kc <- array(0, dim = c(1, nk*(nk-1)/2, 1))
+  zero_kc <- array(0, dim = c(1, nk * (nk - 1) / 2, 1))
 
   for(code in c(1, 2, 3, 4, 5)) {
     off <- SPoRC:::Get_NAA_state_penalty(
-      log(pred)+eta,
+      log(pred) + eta,
       pred,
       sig,
       1:na,
@@ -155,7 +164,7 @@ test_that("a season correlation at zero reduces to independent seasons", {
       NAA_re_season = 0
     )
     on <- SPoRC:::Get_NAA_state_penalty(
-      log(pred)+eta,
+      log(pred) + eta,
       pred,
       sig,
       1:na,
@@ -175,19 +184,24 @@ test_that("the season dim is the season dim and not a year or an age", {
   # every extent distinct and every correlation different, so a swapped dim lands visibly wrong.
   skip_if_not_installed("mvtnorm")
   set.seed(24)
-  nk <- 3; ny <- 7; na <- 5
-  sd_prs <- 0.35; rho_a <- 0.7; rho_y <- 0.2
+  nk <- 3
+  ny <- 7
+  na <- 5
+  sd_prs <- 0.35
+  rho_a <- 0.7
+  rho_y <- 0.2
   rt_inv <- function(r) 0.5 * log((1 + r) / (1 - r))
 
-  pred <- array(exp(stats::rnorm(nk*ny*na, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
-  eta <- array(stats::rnorm(nk*ny*na, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
+  pred <- array(exp(stats::rnorm(nk * ny * na, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
+  eta <- array(stats::rnorm(nk * ny * na, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
   sig <- array(sd_prs, dim = dim(pred))
   pe <- array(0, dim = c(1, 1, 3, 1))
-  pe[1,1,1,1] <- rt_inv(rho_a); pe[1,1,2,1] <- rt_inv(rho_y)
-  kc <- array(c(0.6, -0.3, 0.45), dim = c(1, nk*(nk-1)/2, 1))
+  pe[1,1,1,1] <- rt_inv(rho_a)
+  pe[1,1,2,1] <- rt_inv(rho_y)
+  kc <- array(c(0.6, -0.3, 0.45), dim = c(1, nk * (nk - 1) / 2, 1))
 
   got <- SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -215,15 +229,17 @@ test_that("the season dim is the season dim and not a year or an age", {
 test_that("a season correlation composes with the non-separable three-dimensional field", {
   # the point of whitening rather than forming a Kronecker: the cohort term never has to factor
   set.seed(25)
-  nk <- 3; ny <- 6; na <- 4
-  pred <- array(exp(stats::rnorm(nk*ny*na, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
-  eta <- array(stats::rnorm(nk*ny*na, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
+  nk <- 3
+  ny <- 6
+  na <- 4
+  pred <- array(exp(stats::rnorm(nk * ny * na, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
+  eta <- array(stats::rnorm(nk * ny * na, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
   sig <- array(0.35, dim = dim(pred))
   pe <- array(0.4, dim = c(1, 1, 3, 1))
-  kc <- array(c(0.6, -0.3, 0.45), dim = c(1, nk*(nk-1)/2, 1))
+  kc <- array(c(0.6, -0.3, 0.45), dim = c(1, nk * (nk - 1) / 2, 1))
 
   off <- SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -234,7 +250,7 @@ test_that("a season correlation composes with the non-separable three-dimensiona
     NAA_re_season = 0
   )
   on <- SPoRC:::Get_NAA_state_penalty(
-    log(pred)+eta,
+    log(pred) + eta,
     pred,
     sig,
     1:na,
@@ -251,24 +267,34 @@ test_that("a season correlation composes with the non-separable three-dimensiona
 
 test_that("a season-varying standard deviation reaches the season it belongs to", {
   set.seed(26)
-  ny <- 6; na <- 4; nk <- 2
-  pred <- array(exp(stats::rnorm(ny*na*nk, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
-  eta <- array(stats::rnorm(ny*na*nk, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
+  ny <- 6
+  na <- 4
+  nk <- 2
+  pred <- array(exp(stats::rnorm(ny * na * nk, 5, 0.2)), dim = c(1, 1, ny, nk, na, 1))
+  eta <- array(stats::rnorm(ny * na * nk, 0, 0.3), dim = c(1, 1, ny, nk, na, 1))
   pe <- array(0.4, dim = c(1, 1, 3, 1))
-  sig <- array(0, dim = dim(pred)); sig[,,,1,,] <- 0.2; sig[,,,2,,] <- 0.5
+  sig <- array(0, dim = dim(pred))
+  sig[,,,1,,] <- 0.2
+  sig[,,,2,,] <- 0.5
 
   # under a correlated age-year form the sigma is read once per season, so swapping the two
   # seasons' standard deviations has to change the answer by the same amount as swapping the data
-  got <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig, 1:na, 1:ny, 1:nk,
+  got <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig, 1:na, 1:ny, 1:nk,
                                        NAA_re = 4, NAA_pe_pars = pe)
-  sig_sw <- sig; sig_sw[,,,1,,] <- 0.5; sig_sw[,,,2,,] <- 0.2
-  eta_sw <- eta; eta_sw[,,,1,,] <- eta[,,,2,,]; eta_sw[,,,2,,] <- eta[,,,1,,]
-  pred_sw <- pred; pred_sw[,,,1,,] <- pred[,,,2,,]; pred_sw[,,,2,,] <- pred[,,,1,,]
-  both <- SPoRC:::Get_NAA_state_penalty(log(pred_sw)+eta_sw, pred_sw, sig_sw, 1:na, 1:ny, 1:nk,
+  sig_sw <- sig
+  sig_sw[,,,1,,] <- 0.5
+  sig_sw[,,,2,,] <- 0.2
+  eta_sw <- eta
+  eta_sw[,,,1,,] <- eta[,,,2,,]
+  eta_sw[,,,2,,] <- eta[,,,1,,]
+  pred_sw <- pred
+  pred_sw[,,,1,,] <- pred[,,,2,,]
+  pred_sw[,,,2,,] <- pred[,,,1,,]
+  both <- SPoRC:::Get_NAA_state_penalty(log(pred_sw) + eta_sw, pred_sw, sig_sw, 1:na, 1:ny, 1:nk,
                                         NAA_re = 4, NAA_pe_pars = pe)
   expect_equal(both, got, tolerance = 1e-10)
 
-  one <- SPoRC:::Get_NAA_state_penalty(log(pred)+eta, pred, sig_sw, 1:na, 1:ny, 1:nk,
+  one <- SPoRC:::Get_NAA_state_penalty(log(pred) + eta, pred, sig_sw, 1:na, 1:ny, 1:nk,
                                        NAA_re = 4, NAA_pe_pars = pe)
   expect_gt(abs(one - got), 1)
 })
@@ -341,7 +367,8 @@ test_that("a within-year innovation lands in its own season and cuts the recursi
   il <- seas_state_on(NAA_re_seasons = "all")
   base <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$report()
 
-  y <- il$data$naa_re_yrs[3]; a <- il$data$naa_re_ages[2]
+  y <- il$data$naa_re_yrs[3]
+  a <- il$data$naa_re_ages[2]
   bump <- il
   bump$par$ln_NAA[1, 1, y, 2, a, 1] <- bump$par$ln_NAA[1, 1, y, 2, a, 1] + log(1.4)
   moved <- fit_model(bump$data, bump$par, bump$map, do_optim = FALSE, silent = TRUE)$report()
@@ -360,7 +387,8 @@ test_that("under the annual state a season one innovation persists through the y
   il <- seas_state_on()
   base <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$report()
 
-  y <- il$data$naa_re_yrs[3]; a <- il$data$naa_re_ages[2]
+  y <- il$data$naa_re_yrs[3]
+  a <- il$data$naa_re_ages[2]
   bump <- il
   bump$par$ln_NAA[1, 1, y, 1, a, 1] <- bump$par$ln_NAA[1, 1, y, 1, a, 1] + log(1.4)
   moved <- fit_model(bump$data, bump$par, bump$map, do_optim = FALSE, silent = TRUE)$report()

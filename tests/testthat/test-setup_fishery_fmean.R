@@ -23,7 +23,10 @@ mk_input <- function(UseCatch, ObsCatch, UseCatch_pop = NULL) {
 test_that("ln_F_mean is estimated only where a cell is fished in some year", {
 
   # 3 regions x 2 seasons -> 6 fleets, each fishing only its own region/season
-  n_reg <- 3; n_seas <- 2; n_yrs <- 10; n_ff <- n_reg * n_seas
+  n_reg <- 3
+  n_seas <- 2
+  n_yrs <- 10
+  n_ff <- n_reg * n_seas
   UseCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
   ObsCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
   for (r in 1:n_reg) for (s in 1:n_seas) {
@@ -48,7 +51,9 @@ test_that("ln_F_mean is estimated only where a cell is fished in some year", {
 
 test_that("a single fleet fishing everywhere leaves all ln_F_mean estimated", {
 
-  n_reg <- 3; n_seas <- 2; n_yrs <- 10
+  n_reg <- 3
+  n_seas <- 2
+  n_yrs <- 10
   UseCatch <- array(1, dim = c(n_reg, n_yrs, n_seas, 1))
   ObsCatch <- array(5, dim = c(n_reg, n_yrs, n_seas, 1))
 
@@ -60,11 +65,16 @@ test_that("a single fleet fishing everywhere leaves all ln_F_mean estimated", {
 
 test_that("a cell fished in only one year still gets an estimated mean", {
 
-  n_reg <- 2; n_seas <- 1; n_yrs <- 10; n_ff <- 1
+  n_reg <- 2
+  n_seas <- 1
+  n_yrs <- 10
+  n_ff <- 1
   UseCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
   ObsCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
-  UseCatch[1, , 1, 1] <- 1; ObsCatch[1, , 1, 1] <- 5
-  UseCatch[2, 4, 1, 1] <- 1; ObsCatch[2, 4, 1, 1] <- 5   # region 2 fished once
+  UseCatch[1, , 1, 1] <- 1
+  ObsCatch[1, , 1, 1] <- 5
+  UseCatch[2, 4, 1, 1] <- 1
+  ObsCatch[2, 4, 1, 1] <- 5   # region 2 fished once
 
   out <- SPoRC:::do_Fmort_mapping(mk_input(UseCatch, ObsCatch))
 
@@ -74,10 +84,14 @@ test_that("a cell fished in only one year still gets an estimated mean", {
 
 test_that("missing (NA) catch counts as fished, matching the ln_F_devs rule", {
 
-  n_reg <- 2; n_seas <- 1; n_yrs <- 5; n_ff <- 1
+  n_reg <- 2
+  n_seas <- 1
+  n_yrs <- 5
+  n_ff <- 1
   UseCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
   ObsCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
-  UseCatch[1, , 1, 1] <- 1; ObsCatch[1, , 1, 1] <- 5
+  UseCatch[1, , 1, 1] <- 1
+  ObsCatch[1, , 1, 1] <- 5
   ObsCatch[2, 3, 1, 1] <- NA  # region 2: no catch fit, but one missing obs
 
   out <- SPoRC:::do_Fmort_mapping(mk_input(UseCatch, ObsCatch))
@@ -93,7 +107,11 @@ test_that("missing (NA) catch counts as fished, matching the ln_F_devs rule", {
 
 test_that("pop-specific catch alone activates ln_F_mean", {
 
-  n_pop <- 2; n_reg <- 2; n_seas <- 1; n_yrs <- 5; n_ff <- 1
+  n_pop <- 2
+  n_reg <- 2
+  n_seas <- 1
+  n_yrs <- 5
+  n_ff <- 1
   UseCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
   ObsCatch <- array(0, dim = c(n_reg, n_yrs, n_seas, n_ff))
   UseCatch_pop <- array(0, dim = c(n_pop, n_reg, n_yrs, n_seas, n_ff))
@@ -109,7 +127,10 @@ test_that("pop-specific catch alone activates ln_F_mean", {
 test_that("ln_F_mean map matches the year-collapsed ln_F_devs map", {
 
   set.seed(42)
-  n_reg <- 3; n_seas <- 2; n_yrs <- 8; n_ff <- 4
+  n_reg <- 3
+  n_seas <- 2
+  n_yrs <- 8
+  n_ff <- 4
   UseCatch <- array(rbinom(n_reg * n_yrs * n_seas * n_ff, 1, 0.3),
                     dim = c(n_reg, n_yrs, n_seas, n_ff))
   ObsCatch <- array(5, dim = c(n_reg, n_yrs, n_seas, n_ff))

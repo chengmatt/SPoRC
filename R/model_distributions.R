@@ -30,11 +30,11 @@
 #' @keywords internal
 dbeta_symmetric <- function(p_val, p_ub, p_lb, p_prsd, log = TRUE) {
   # Calculate mu term
-  mu <- p_prsd * log((p_ub + p_lb)/2 - p_lb) - p_prsd * log(0.5)
+  mu <- p_prsd * log((p_ub + p_lb) / 2 - p_lb) - p_prsd * log(0.5)
   # Calculate the prior likelihood components
   term1 <- mu
   term2 <- p_prsd * log(p_val - p_lb + 1e-4)
-  term3 <- p_prsd * log(1 - (p_val - p_lb - 1e-4)/(p_ub - p_lb))
+  term3 <- p_prsd * log(1 - (p_val - p_lb - 1e-4) / (p_ub - p_lb))
   # Combine terms to get final prior likelihood
   nLL <- term1 + term2 + term3
   if(log == TRUE) return(nLL) else return(exp(nLL))
@@ -99,11 +99,11 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
 
   # set up pdf
   logres = lgamma(Ntotal + 1)
-  for(c in 1:n_c) logres = logres - lgamma(Ntotal*p_obs[c]+1) # integration constant
-  logres = logres + lgamma(dirichlet_Parm) - lgamma(Ntotal+dirichlet_Parm) # 2nd term in formula
+  for(c in 1:n_c) logres = logres - lgamma(Ntotal * p_obs[c] + 1) # integration constant
+  logres = logres + lgamma(dirichlet_Parm) - lgamma(Ntotal + dirichlet_Parm) # 2nd term in formula
 
   for(c in 1:n_c) {
-    logres = logres + lgamma(Ntotal*p_obs[c] + dirichlet_Parm*p_exp[c])
+    logres = logres + lgamma(Ntotal * p_obs[c] + dirichlet_Parm * p_exp[c])
     logres = logres - lgamma(dirichlet_Parm * p_exp[c])
   } # end c
 
@@ -184,7 +184,7 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE) {
 get_logistnormal_miss0_nLL = function(obs, pred, ln_sigma, ISS, corr_type = 0, trans_rho = 0,
                                       lag_bins = NULL, corr_mat = NULL) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   # bins with nothing in them are dropped, and both vectors renormalized over the rest
@@ -268,7 +268,7 @@ get_at_age_nLL = function(
   corr_mat = NULL
 ) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   n = length(obs_t)
@@ -425,7 +425,7 @@ build_idx_sd = function(se, ln_sigma, form) {
 #' @keywords internal
 get_index_nLL = function(obs, pred, sigma, like_type, Sigma = NULL, const = 0) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   nLL = rep(0, length(obs))
@@ -466,7 +466,7 @@ dnbinom_robust_noint <- function(x, log_mu, log_var_minus_mu, give_log = TRUE) {
   mu = exp(log_mu)
   var_minus_mu = exp(log_var_minus_mu)
   k = mu^2 / var_minus_mu # get overdispersion
-  logres = lgamma(k+x)-lgamma(k)-lgamma(x+1)+k*log(k)-k*log(mu+k)+x*log(mu)-x*log(mu+k)
+  logres = lgamma(k + x) - lgamma(k) - lgamma(x + 1) + k * log(k) - k * log(mu + k) + x * log(mu) - x * log(mu + k)
   if(give_log) return(logres) else return(exp(logres))
 }
 
@@ -486,7 +486,7 @@ dnbinom_robust_noint <- function(x, log_mu, log_var_minus_mu, give_log = TRUE) {
 #'
 #' @keywords internal
 dpois_noint <- function(x, pred, give_log = TRUE) {
-  logres <- -pred + x*log(pred) - lgamma(x+1)
+  logres <- -pred + x * log(pred) - lgamma(x + 1)
   if(give_log == TRUE) return(logres) else return(exp(logres))
 }
 
@@ -595,7 +595,7 @@ get_seas_pred_pop = function(pred, p, r, y, seas, f, seas_agg) {
 #' @keywords internal
 get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, seas_Type, const, n_fleets) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(f in 1:n_fleets) {
@@ -650,7 +650,7 @@ get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, se
 #' @keywords internal
 get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(f in 1:n_fleets) {
@@ -698,7 +698,7 @@ get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n
 #' @keywords internal
 eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, const, pop) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(i in seq_along(obs_vec)) {

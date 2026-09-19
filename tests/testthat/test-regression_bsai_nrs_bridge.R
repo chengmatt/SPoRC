@@ -35,7 +35,7 @@ test_that("BSAI northern rock sole bridges to the 2024 ADMB assessment at its ow
   # the assessment's Ricker, R = A S exp(-B S), in SPoRC's depletion form
   Nspr <- numeric(n_ages)
   Nspr[1] <- 0.5
-  for(a in 2:n_ages) Nspr[a] <- Nspr[a-1] * exp(-mle$M_f)
+  for(a in 2:n_ages) Nspr[a] <- Nspr[a - 1] * exp(-mle$M_f)
   Nspr[n_ages] <- Nspr[n_ages] / (1 - exp(-mle$M_f))
   phi0 <- sum(Nspr * exp(-dat$t_spawn * mle$M_f) * dat$WAA[1,1,n_yrs,1,,1] * dat$MatAA[1,1,n_yrs,1,,1])
   a_sr <- log(exp(mle$R_logalpha) * phi0)

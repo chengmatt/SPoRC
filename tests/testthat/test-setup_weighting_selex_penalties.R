@@ -94,7 +94,8 @@ test_that("resolve_sel_pen_wts works", {
 
 test_that("Get_Selex_Smoothness_Penalty honors per-year weights and bin ranges", {
 
-  n_yrs <- 4; n_bins <- 6
+  n_yrs <- 4
+  n_bins <- 6
   set.seed(21)
   sel_vals <- array(exp(matrix(rnorm(n_yrs * n_bins), nrow = n_yrs)), dim = c(1, n_yrs, n_bins, 1, 1))
 
@@ -104,8 +105,10 @@ test_that("Get_Selex_Smoothness_Penalty honors per-year weights and bin ranges",
   })
 
   test_that("zeroing a year's weight drops exactly that year's contribution", {
-    wt <- rep(1, n_yrs); wt[2] <- 0
-    only_yr2 <- rep(0, n_yrs); only_yr2[2] <- 1
+    wt <- rep(1, n_yrs)
+    wt[2] <- 0
+    only_yr2 <- rep(0, n_yrs)
+    only_yr2[2] <- 1
     expect_equal(Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = rep(1, n_yrs)),
                  Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = wt) +
                    Get_Selex_Smoothness_Penalty(sel_vals, wt_bin_curve = only_yr2), tolerance = 1e-12)
@@ -158,7 +161,7 @@ test_that("Get_Selex_Smoothness_Penalty honors per-year weights and bin ranges",
 
   test_that("omitting yr_diff_ref leaves the walk's first year unpenalized", {
     expect_equal(Get_Selex_Smoothness_Penalty(sel_vals, wt_yr_diff = 1, normalize = FALSE),
-                 -sum(sapply(2:n_yrs, function(y) sum((log(sel_vals[1,y,,1,1]) - log(sel_vals[1,y-1,,1,1]))^2))),
+                 -sum(sapply(2:n_yrs, function(y) sum((log(sel_vals[1,y,,1,1]) - log(sel_vals[1,y - 1,,1,1]))^2))),
                  tolerance = 1e-12)
   })
 
@@ -169,7 +172,8 @@ test_that("Get_Selex_Smoothness_Penalty works", {
   # A perfectly smooth (log-linear-in-age, constant-across-years) surface should have
   # exactly zero second-difference penalty in both directions, and no dome penalty
   # (strictly increasing across bins).
-  n_yrs <- 4; n_bins <- 6
+  n_yrs <- 4
+  n_bins <- 6
   log_sel_smooth <- outer(rep(1, n_yrs), seq(0.1, 1.5, length.out = n_bins))
   sel_vals_smooth <- array(exp(log_sel_smooth), dim = c(1, n_yrs, n_bins, 1, 1))
 
@@ -309,7 +313,9 @@ test_that("Get_PE_loglik has no penalty-weight arguments (caller's responsibilit
   })
 
   test_that("bin_curve and yr_curve smoothness penalties are applied by the caller via Get_Selex_Smoothness_Penalty, normalized", {
-    n_yrs <- 5; n_bins <- 4; n_sexes <- 1
+    n_yrs <- 5
+    n_bins <- 4
+    n_sexes <- 1
     set.seed(11)
     sel_vals <- array(exp(matrix(rnorm(n_yrs * n_bins), nrow = n_yrs)), dim = c(1, n_yrs, n_bins, n_sexes, 1))
 

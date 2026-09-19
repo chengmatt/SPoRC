@@ -60,7 +60,8 @@ rd_argument_text <- function(topic, db) {
   rd <- db[[key]]
 
   tags <- vapply(rd, function(x) {
-    t <- attr(x, "Rd_tag"); if(is.null(t)) NA_character_ else t
+    t <- attr(x, "Rd_tag")
+    if(is.null(t)) NA_character_ else t
   }, character(1))
   i <- which(tags == "\\arguments")
   if(length(i) == 0) return(character(0))
@@ -133,4 +134,3 @@ option_reference <- function(stages = setup_stage_order(), guide = NULL) {
   out <- do.call(rbind, rows)
   out[order(match(out$stage, sub("^Setup_Mod_", "", stages))), ]
 }
-

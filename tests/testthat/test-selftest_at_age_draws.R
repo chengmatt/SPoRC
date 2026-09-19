@@ -34,7 +34,8 @@ at_age_selftest_model <- function(n_yrs, n_ages, sigma_caa, use_aa = NULL) {
 
 test_that("a self test on a catch-at-age model refits the operating model's draws", {
 
-  n_yrs <- 15; n_ages <- 5
+  n_yrs <- 15
+  n_ages <- 5
   use_aa <- array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1))
   il <- at_age_selftest_model(n_yrs, n_ages, 0.2)
 
@@ -76,7 +77,9 @@ test_that("a self test on a catch-at-age model refits the operating model's draw
 
 test_that("a self test on catch at age recovers spawning biomass without median bias", {
 
-  n_yrs <- 30; n_ages <- 8; n_sims <- 20
+  n_yrs <- 30
+  n_ages <- 8
+  n_sims <- 20
   il <- at_age_selftest_model(n_yrs, n_ages, 0.2)
 
   fit <- fit_model(il$data, il$par, il$map, newton_loops = 3, silent = TRUE)
@@ -109,7 +112,8 @@ test_that("an age the fit leaves out is left out of the draws as well", {
 
   # the at-age sources have no bin argument because the use flags already run over the
   # observed ages, so this is what a bin restriction is on those streams
-  n_yrs <- 15; n_ages <- 5
+  n_yrs <- 15
+  n_ages <- 5
   use_aa <- array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1))
   use_aa[, , , 1, , ] <- 0  # age one is never aged
   il <- at_age_selftest_model(n_yrs, n_ages, 0.2, use_aa = use_aa)

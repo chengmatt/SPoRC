@@ -47,7 +47,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
 
     Fmort_input = {
       n = sim_list$n_yrs * sim_list$n_seas * sim_list$n_sims * sim_list$n_fish_fleets
-      t = seq(0, 2*pi, length.out = n)
+      t = seq(0, 2 * pi, length.out = n)
       arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                                sim_list$n_fish_fleets, sim_list$n_sims))
       arr[1,,,,] <- 0.15 * exp(sin(t) + rnorm(n, 0, 0.1))   # region 1 higher F, peaks early
@@ -391,8 +391,7 @@ test_that("Multi-region, population, and seasonal local BH MSY reference points 
 
   # Check to see if SSB equilibriates
   expect_equal(round(as.numeric(out$proj_SSB[,,n_proj_yrs]), 10),
-               round(as.numeric(out$proj_SSB[,,n_proj_yrs-1]), 10), tolerance = 0)
+               round(as.numeric(out$proj_SSB[,,n_proj_yrs - 1]), 10), tolerance = 0)
 
 
 })
-

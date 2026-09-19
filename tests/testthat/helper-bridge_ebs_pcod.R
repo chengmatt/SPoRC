@@ -20,9 +20,14 @@
 #' @keywords internal
 build_ebs_pcod_input <- function(dat) {
 
-  yrs <- dat$years; n_yrs <- length(yrs)
-  ages <- dat$ages; n_ages <- length(ages)
-  n_reg <- 1; n_sex <- 1; n_fish <- 1; n_srv <- 1
+  yrs <- dat$years
+  n_yrs <- length(yrs)
+  ages <- dat$ages
+  n_ages <- length(ages)
+  n_reg <- 1
+  n_sex <- 1
+  n_fish <- 1
+  n_srv <- 1
   n_lens <- length(dat$lens)
   sigmaR <- dat$rec$sigmaR
 
@@ -268,8 +273,13 @@ build_ebs_pcod_input <- function(dat) {
   w_len_fish <- va$value[va$factor == 4 & va$fleet == dat$fish_fleets[1]]
   w_len_srv <- va$value[va$factor == 4 & va$fleet == dat$srv_fleets[1]]
   w_age_srv <- va$value[va$factor == 5 & va$fleet == dat$srv_fleets[1]]
-  n_obs_lens <- ncol(dat$LenBinMap); n_obs_ages <- length(dat$obs_ages)
-  per_fleet <- function(w, n_fl) { arr <- array(1, dim = c(n_reg, n_yrs, 1, n_sex, n_fl)); for(f in seq_len(n_fl)) arr[, , , , f] <- w; arr }
+  n_obs_lens <- ncol(dat$LenBinMap)
+  n_obs_ages <- length(dat$obs_ages)
+  per_fleet <- function(w, n_fl) {
+    arr <- array(1, dim = c(n_reg, n_yrs, 1, n_sex, n_fl))
+    for(f in seq_len(n_fl)) arr[, , , , f] <- w
+    arr
+  }
   input_list <- Setup_Mod_Weighting(
     input_list = input_list,
     Wt_Catch = 1,
@@ -299,8 +309,10 @@ build_ebs_pcod_input <- function(dat) {
 #' @keywords internal
 seed_ebs_pcod_mle <- function(input_list, dat) {
 
-  yrs <- dat$years; n_yrs <- length(yrs)
-  ages <- dat$ages; n_ages <- length(ages)
+  yrs <- dat$years
+  n_yrs <- length(yrs)
+  ages <- dat$ages
+  n_ages <- length(ages)
   sigmaR <- dat$rec$sigmaR
 
   ## Recruitment level --------------------------------------------------------
@@ -362,11 +374,15 @@ seed_ebs_pcod_mle <- function(input_list, dat) {
   # the 1977-1989 block takes the base block's six parameters with the peak and
   # the ascending width replaced, and only those two are estimated in each block
   fs <- dat$mle$sel$fishery
-  block1 <- fs$base; block1[c(1, 3)] <- fs$block1
+  block1 <- fs$base
+  block1[c(1, 3)] <- fs$block1
   input_list$par$fish_fixed_sel_pars[1, , 1, 1, 1] <- block1
   input_list$par$fish_fixed_sel_pars[1, , 2, 1, 1] <- fs$base
   map_fish <- array(NA_real_, dim = dim(input_list$par$fish_fixed_sel_pars))
-  map_fish[1, 1, 1, 1, 1] <- 1; map_fish[1, 3, 1, 1, 1] <- 2; map_fish[1, 1, 2, 1, 1] <- 3; map_fish[1, 3, 2, 1, 1] <- 4
+  map_fish[1, 1, 1, 1, 1] <- 1
+  map_fish[1, 3, 1, 1, 1] <- 2
+  map_fish[1, 1, 2, 1, 1] <- 3
+  map_fish[1, 3, 2, 1, 1] <- 4
   input_list$map$fish_fixed_sel_pars <- factor(map_fish)
 
   ## Survey selectivity -------------------------------------------------------
@@ -377,7 +393,8 @@ seed_ebs_pcod_mle <- function(input_list, dat) {
   sv <- dat$mle$sel$survey
   input_list$par$srv_fixed_sel_pars[1, , 1, 1, 1] <- sv$base
   map_srv <- array(NA_real_, dim = dim(input_list$par$srv_fixed_sel_pars))
-  map_srv[1, 1, 1, 1, 1] <- 1; map_srv[1, 3, 1, 1, 1] <- 2
+  map_srv[1, 1, 1, 1, 1] <- 1
+  map_srv[1, 3, 1, 1, 1] <- 2
   input_list$map$srv_fixed_sel_pars <- factor(map_srv)
 
   srv_p3 <- grep("SizeSel_P_3_survey", rownames(dat$sel$size))

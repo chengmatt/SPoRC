@@ -54,7 +54,10 @@ yrs <- dat$years
 n_yrs <- length(yrs)
 ages <- dat$ages
 n_ages <- length(ages)
-n_reg <- 1; n_sex <- 1; n_fish <- 1; n_srv <- 1
+n_reg <- 1
+n_sex <- 1
+n_fish <- 1
+n_srv <- 1
 sigmaR <- dat$rec$sigmaR
 ```
 
@@ -327,7 +330,8 @@ va <- dat$var_adj
 w_len_fish <- va$value[va$factor == 4 & va$fleet == dat$fish_fleets[1]]
 w_len_srv  <- va$value[va$factor == 4 & va$fleet == dat$srv_fleets[1]]
 w_age_srv  <- va$value[va$factor == 5 & va$fleet == dat$srv_fleets[1]]
-n_obs_lens <- ncol(dat$LenBinMap); n_obs_ages <- length(dat$obs_ages)
+n_obs_lens <- ncol(dat$LenBinMap)
+n_obs_ages <- length(dat$obs_ages)
 
 per_fleet <- function(w, n_fl) {
   arr <- array(1, dim = c(n_reg, n_yrs, 1, n_sex, n_fl))

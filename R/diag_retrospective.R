@@ -353,11 +353,11 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
 
     # Tag cohort stuff
     Tag_Release_Ind <- as.matrix(data$conv_tag_release_indicator)
-    retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)),,drop = FALSE ])
-    retro_data$conv_tag_release_platform <- data$conv_tag_release_platform[1:nrow(retro_data$conv_tag_release_indicator),,drop = FALSE]
+    retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[which(Tag_Release_Ind[,2] %in% 1:(length(data$years) - j)),,drop = FALSE])
+    retro_data$conv_tag_release_platform <- data$conv_tag_release_platform[seq_len(nrow(retro_data$conv_tag_release_indicator)),,drop = FALSE]
     retro_data$n_conv_tag_cohorts <- nrow(retro_data$conv_tag_release_indicator)
-    retro_data$conv_tagged_fish <- data$conv_tagged_fish[1:nrow(retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-    retro_data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,1:nrow(retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+    retro_data$conv_tagged_fish <- data$conv_tagged_fish[seq_len(nrow(retro_data$conv_tag_release_indicator)),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
+    retro_data$obs_conv_tag_fish_recap <- data$obs_conv_tag_fish_recap[,,seq_len(nrow(retro_data$conv_tag_release_indicator)),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
   }
 
 
@@ -799,9 +799,9 @@ do_retrospective <- function(
         tag_end_col <- max(start_col - conv_tag_datalag + 1, 1) # get end index
         init$retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
         init$retro_data$n_conv_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
-        init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[1:nrow(init$retro_data$conv_tag_release_indicator),]
-        init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[1:nrow(init$retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-        init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+        init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[seq_len(nrow(init$retro_data$conv_tag_release_indicator)),]
+        init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[seq_len(nrow(init$retro_data$conv_tag_release_indicator)),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
+        init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,seq_len(nrow(init$retro_data$conv_tag_release_indicator)),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
       }
 
       # the covariance and the index weights are cut last, once the lags have settled the use flags
@@ -992,9 +992,9 @@ do_retrospective <- function(
           tag_end_col <- max(start_col - conv_tag_datalag + 1, 1) # get end index
           init$retro_data$conv_tag_release_indicator <- as.matrix(Tag_Release_Ind[-which(Tag_Release_Ind[,2] %in% start_col:tag_end_col), ]) # remove tag data when lagged
           init$retro_data$n_conv_tag_cohorts <- nrow(init$retro_data$conv_tag_release_indicator)
-          init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[1:nrow(init$retro_data$conv_tag_release_indicator),]
-          init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[1:nrow(init$retro_data$conv_tag_release_indicator),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
-          init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,1:nrow(init$retro_data$conv_tag_release_indicator),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
+          init$retro_data$conv_tag_release_platform <- init$retro_data$conv_tag_release_platform[seq_len(nrow(init$retro_data$conv_tag_release_indicator)),]
+          init$retro_data$conv_tagged_fish <- init$retro_data$conv_tagged_fish[seq_len(nrow(init$retro_data$conv_tag_release_indicator)),,,,drop = FALSE] # remove data (not necessary, but helps with computational cost if using tagging)
+          init$retro_data$obs_conv_tag_fish_recap <- init$retro_data$obs_conv_tag_fish_recap[,,seq_len(nrow(init$retro_data$conv_tag_release_indicator)),,,,,,drop = FALSE] # remove data (not necessary, but helps with computational cost)
         }
 
         # the covariance and the index weights are cut last, once the lags have settled the use flags
@@ -1097,7 +1097,8 @@ get_retrospective_relative_difference <- function(retro_data) {
   terminal <- retro_data %>% dplyr::filter(peel == 0)
 
   # Get peels
-  peels <- retro_data %>% filter(peel != 0) %>%
+  peels <- retro_data %>%
+    filter(peel != 0) %>%
     tidyr::pivot_wider(names_from = peel, values_from = value, id_cols = c('Pop', 'Region', "Year", "Type"))
 
   # Summarize relative difference

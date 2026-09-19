@@ -137,7 +137,8 @@ test_that("the reference year changes the operating model", {
 test_that("a matched reference year recovers R0 and a mismatched one biases it", {
 
   skip_on_cran()
-  n <- sr_ref_cfg$n_yrs; true_R0 <- 10
+  n <- sr_ref_cfg$n_yrs
+  true_R0 <- 10
   om <- sr_ref_make_om(SR_ref_yr = n)
   sd <- simulation_data_to_SPoRC(sim_env = om, y = n, sim = 1)
 

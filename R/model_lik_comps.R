@@ -83,9 +83,6 @@
 #'   the fitted bins. Logistic-normal covariances are built over all observed
 #'   bins and then cut down to the fitted ones, so a gap in \code{comp_bins}
 #'   still counts towards the AR1 lag between the bins on either side of it.
-#' @param seas_agg Integer vector, one per fleet. \code{1} builds the predicted
-#'   composition from every season of the year summed together, \code{0} from the
-#'   season the observation sits in.
 #' @param addtocomp Small constant added to compositions to avoid numerical
 #'   issues when zeros are present.
 #' @param comp_const_obs Integer (0 or 1). Whether \code{addtocomp} is added to
@@ -98,7 +95,7 @@
 #'   \code{0} there. It is also added inside the
 #'   logarithms. \code{1} (default) is the unbiased choice: the stationary point
 #'   of the likelihood is exactly \code{p = obs}. \code{0} weights by the raw
-#'   observed proportions. 
+#'   observed proportions.
 #' @keywords internal
 Get_Comp_Likelihoods = function(Exp,
                                 Obs,
@@ -125,7 +122,7 @@ Get_Comp_Likelihoods = function(Exp,
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  rho_trans = function(x) 2/(1+ exp(-2 * x)) - 1 # constraint between -1 and 1
+  rho_trans = function(x) 2 / (1 + exp(-2 * x)) - 1 # constraint between -1 and 1
   comp_nLL = array(0, dim = c(n_regions, n_sexes)) # initialize nLL here
   const = addtocomp # small constant
   # Filter expectation and observations to regions that have observations
@@ -153,7 +150,6 @@ Get_Comp_Likelihoods = function(Exp,
 
   # Bin restriction here
   fit_bins = if(is.null(comp_bins)) seq_len(n_obs_bins) else comp_bins
-  n_fit_bins = length(fit_bins)
   fit_bins_joint = as.vector(outer(fit_bins, (seq_len(n_sexes) - 1) * n_obs_bins, "+"))
   # Comparing against the full run of bins rather than just counting them, so a
   # reordered comp_bins is honored rather than passing as unrestricted
@@ -358,7 +354,7 @@ Get_Comp_Likelihoods = function(Exp,
 
       # Expected values
       if(age_or_len == 0 || is.matrix(AgeingError)) { # if ages, or lengths with a bin map
-        tmp_Exp = t(as.vector((Exp[r,,])/ sum(Exp[r,,]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, or the length bin map
+        tmp_Exp = t(as.vector((Exp[r,,]) / sum(Exp[r,,]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, or the length bin map
         tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize to make sure sum to 1
       } else tmp_Exp = as.vector((Exp[r,,]) / sum((Exp[r,,]))) # Normalize temporary variable (lengths)
 
@@ -502,7 +498,7 @@ Get_Comp_Likelihoods = function(Exp,
   }
 
   return(comp_nLL) # return negative log likelihood
-  
+
 } # end function
 
 #' Composition Data Likelihood (OSA variant)
@@ -834,7 +830,9 @@ pack_comp_osa = function(
     n_bins   = length(fit_bins)
     if(like_type %in% c(0,1)) { # discrete: every fitted bin retained
       if(ct == 0) {
-        region = rep(used[1], n_bins); sex = rep(1L, n_bins); bin = fit_bins
+        region = rep(used[1], n_bins)
+        sex = rep(1L, n_bins)
+        bin = fit_bins
         last_in_group = (bin == fit_bins[n_bins])
       } else {
         region = rep(used, times = n_bins * n_sexes)
@@ -852,7 +850,9 @@ pack_comp_osa = function(
       }
     } else { # continuous (LN): reference bin already ALR-dropped during packing
       if(ct == 0) {
-        region = rep(used[1], n_bins - 1); sex = rep(1L, n_bins - 1); bin = fit_bins[-n_bins]
+        region = rep(used[1], n_bins - 1)
+        sex = rep(1L, n_bins - 1)
+        bin = fit_bins[-n_bins]
       } else if(ct == 1) {
         region = rep(used, times = (n_bins - 1) * n_sexes)
         bin    = rep(rep(fit_bins[-n_bins], each = n_ru), times = n_sexes)
@@ -947,7 +947,8 @@ pack_comp_osa = function(
               } else if(ct == 1) {
                 # ALR each (region,sex) -> [n_ru, n_bins-1, n_sexes], as.vector col-major
                 arr = array(0, dim = c(n_ru, n_bins - 1, n_sexes))
-                arr = RTMB::AD(arr); dim(arr) = c(n_ru, n_bins - 1, n_sexes)
+                arr = RTMB::AD(arr)
+                dim(arr) = c(n_ru, n_bins - 1, n_sexes)
                 for(rr in 1:n_ru) {
                   for(s in 1:n_sexes) {
                     pr = (obs_slice[rr, , s] + addtocomp) / sum(obs_slice[rr, , s] + addtocomp)
@@ -960,7 +961,8 @@ pack_comp_osa = function(
                 # and as.vector region-fastest, matching the idx = seq(from=r, by=n_ru, ...) below
                 Lred = n_bins * n_sexes - 1
                 arr = array(0, dim = c(n_ru, Lred))
-                arr = RTMB::AD(arr); dim(arr) = c(n_ru, Lred)
+                arr = RTMB::AD(arr)
+                dim(arr) = c(n_ru, Lred)
                 for(rr in 1:n_ru) {
                   v  = as.vector(obs_slice[rr, , ])           # bin-fastest-then-sex
                   pr = (v + addtocomp) / sum(v + addtocomp)
@@ -1281,7 +1283,7 @@ get_comp_source_nLL = function(
   seas_agg = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c")
+  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
 
   # a data source with nothing fit never reads its observations, which a model without
@@ -1532,7 +1534,7 @@ eval_comp_source_osa = function(
 ) {
 
   "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-")
+  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
 
   seas_agg = rep_len(seas_agg, n_fleets) # a single setting stands for every fleet
 

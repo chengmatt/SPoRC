@@ -241,7 +241,7 @@ test_that("Internal composition OSAs are producing consistent results with an in
       UseFishAgeComps_discard      = sim_data$UseFishAgeComps_discard,
       ISS_FishAgeComps_discard     = sim_data$ISS_FishAgeComps_discard,
       FishAgeComps_discard_LikeType = rep("Multinomial", input_list$data$n_fish_fleets),
-      FishAgeComps_discard_Type     = "agg_Year_1-terminal_Fleet_1",
+      FishAgeComps_discard_Type     = "agg_Year_1-terminal_Fleet_1"
     )
 
     # Survey indices and compositions
@@ -452,4 +452,3 @@ test_that("Internal composition OSAs are producing consistent results with an in
   expect_true(abs(sd(osa_idx_correct$residual) - 1) < abs(sd(osa_idx_incorrect$residual) - 1))
 
 })
-

@@ -13,7 +13,8 @@ test_that("a restriction reaches the use flags through every setup path", {
 
   sim_obj <- objective_setup_sim(NULL)
   sd <- simulation_data_to_SPoRC(sim_env = sim_obj, y = sim_obj$n_years, sim = 1)
-  n_yrs <- sim_obj$n_years; n_ages <- sim_obj$n_ages
+  n_yrs <- sim_obj$n_years
+  n_ages <- sim_obj$n_ages
   keep <- 1:4
   bad_year <- 5
 

@@ -14,7 +14,9 @@ assign("messages_list", character(0), envir = .GlobalEnv)
 # (fish/ret -> "Catch", srv -> "SrvIdx").
 make_sel_input_list <- function(prefix, use_field, n_bins = 2, n_years = 1) {
 
-  n_regions <- 1; n_fleets <- 1; n_sexes <- 1
+  n_regions <- 1
+  n_fleets <- 1
+  n_sexes <- 1
 
   il <- list(data = list(), par = list(), map = list())
   il$data$n_regions <- n_regions
@@ -133,13 +135,15 @@ test_that("do_sel_devs_mapping resolves field names correctly for fish/ret/srv",
 
     # the equivalent integer array should also be attached to $data
     data_nm <- paste0("map_ln_", cfg["prefix"], "sel_devs")
-    expect_true(!is.null(out$data[[data_nm]]))
+    expect_false(is.null(out$data[[data_nm]]))
   }
 })
 
 test_that("do_fixed_sel_pars_mapping fleet-sharing copies the reference fleet's map", {
 
-  n_regions <- 1; n_fleets <- 2; n_sexes <- 1
+  n_regions <- 1
+  n_fleets <- 2
+  n_sexes <- 1
 
   il <- list(data = list(), par = list(), map = list())
   il$data$n_regions <- n_regions

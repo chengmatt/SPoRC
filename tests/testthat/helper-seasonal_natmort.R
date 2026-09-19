@@ -15,7 +15,9 @@ seasonal_M_cfg <- list(n_yrs = 25, n_ages = 8, n_seas = 2, seasdur = c(0.4, 0.6)
 seasonal_M_sim <- function(M_by_seas = seasonal_M_cfg$M, seed = 909, sigmaR = 0.3, idx_se = 0.1, iss = 300) {
 
   cfg <- seasonal_M_cfg
-  n_yrs <- cfg$n_yrs; n_ages <- cfg$n_ages; n_seas <- cfg$n_seas
+  n_yrs <- cfg$n_yrs
+  n_ages <- cfg$n_ages
+  n_seas <- cfg$n_seas
   if(length(M_by_seas) == 1) M_by_seas <- rep(M_by_seas, n_seas)
 
   sim_list <- Setup_Sim_Dim(
@@ -105,7 +107,9 @@ seasonal_M_sim <- function(M_by_seas = seasonal_M_cfg$M, seed = 909, sigmaR = 0.
 seasonal_M_input <- function(sim_obj, M_arg, sigmaR = 0.3) {
 
   cfg <- seasonal_M_cfg
-  n_yrs <- cfg$n_yrs; n_ages <- cfg$n_ages; n_seas <- cfg$n_seas
+  n_yrs <- cfg$n_yrs
+  n_ages <- cfg$n_ages
+  n_seas <- cfg$n_seas
   sim_data <- simulation_data_to_SPoRC(sim_env = sim_obj, y = n_yrs, sim = 1)
 
   input_list <- Setup_Mod_Dim(

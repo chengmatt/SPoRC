@@ -150,8 +150,12 @@ color_naa_dim <- function(x, L, dim_idx) {
 #' @keywords internal
 draw_naa_innovations <- function(sim_env) {
 
-  np <- sim_env$n_pop; nr <- sim_env$n_regions; ns <- sim_env$n_sexes
-  ny <- sim_env$n_yrs; na <- sim_env$n_ages; nk <- sim_env$n_seas
+  np <- sim_env$n_pop
+  nr <- sim_env$n_regions
+  ns <- sim_env$n_sexes
+  ny <- sim_env$n_yrs
+  na <- sim_env$n_ages
+  nk <- sim_env$n_seas
   code <- sim_env$NAA_re
   rho <- sim_env$naa_rho
 
@@ -178,7 +182,9 @@ draw_naa_innovations <- function(sim_env) {
   us_chol <- function(cor_vals, n) {
     if(n == 1) return(diag(1))
     v <- rep(cor_vals, length.out = n * (n - 1) / 2)
-    C <- diag(n); C[lower.tri(C)] <- v; C[upper.tri(C)] <- t(C)[upper.tri(C)]
+    C <- diag(n)
+    C[lower.tri(C)] <- v
+    C[upper.tri(C)] <- t(C)[upper.tri(C)]
     t(chol(C))
   }
   if(isTRUE(sim_env$NAA_re_pop == 1)) eta <- color_naa_dim(eta, us_chol(sim_env$naa_pop_corr, np), 1)

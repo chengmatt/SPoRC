@@ -234,9 +234,13 @@ test_that("Get_Comp_Likelihoods works!", {
 
   test_that("non-square ageing error collapses model bins to obs bins (Comp_Type=1)", {
     # 6 model age bins mapped to 4 observed bins
-    n_mod <- 6; n_obs <- 4
+    n_mod <- 6
+    n_obs <- 4
     AE <- matrix(0, nrow = n_mod, ncol = n_obs)
-    AE[1:2, 1] <- 0.5; AE[3:4, 2] <- 0.5; AE[5, 3] <- 1; AE[6, 4] <- 1
+    AE[1:2, 1] <- 0.5
+    AE[3:4, 2] <- 0.5
+    AE[5, 3] <- 1
+    AE[6, 4] <- 1
     Exp <- peaked_exp(2, n_mod, 1)
     Obs <- uniform_obs(2, n_obs, 1)
     res <- call_comp_nll(
@@ -326,7 +330,8 @@ test_that("Get_Comp_Likelihoods works!", {
   })
 
   test_that("multinomial nLL = 0 when Exp == Obs (Comp_Type=2)", {
-    n_bins <- 5; n_sexes <- 2
+    n_bins <- 5
+    n_sexes <- 2
     flat <- array(1 / (n_bins * n_sexes), dim = c(2, n_bins, n_sexes))
     res <- call_comp_nll(
       Comp_Type = 2,
@@ -347,7 +352,9 @@ test_that("Get_Comp_Likelihoods works!", {
     n_bins <- 5
     flat  <- array(1 / n_bins, dim = c(2, n_bins, 1))
     # Expected concentrated on bin 1, observed uniform => poor fit
-    bad   <- flat; bad[, 1, ] <- 0.9; bad[, 2:5, ] <- 0.1 / 4
+    bad   <- flat
+    bad[, 1, ] <- 0.9
+    bad[, 2:5, ] <- 0.1 / 4
     res_good <- call_comp_nll(
       Comp_Type = 1,
       Likelihood_Type = 0,
@@ -385,7 +392,9 @@ test_that("Get_Comp_Likelihoods works!", {
   test_that("Comp_Type=0 nLL increases with worse fit (single region)", {
     n_bins <- 5
     flat <- array(1 / n_bins, dim = c(1, n_bins, 1))
-    bad  <- flat; bad[, 1, ] <- 0.9; bad[, 2:5, ] <- 0.1 / 4
+    bad  <- flat
+    bad[, 1, ] <- 0.9
+    bad[, 2:5, ] <- 0.1 / 4
     res_good <- call_comp_nll(
       Comp_Type = 0,
       Likelihood_Type = 0,

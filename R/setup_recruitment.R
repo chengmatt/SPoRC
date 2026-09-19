@@ -171,10 +171,10 @@ Setup_Sim_Rec <- function(
   stray_rate_input = array(0, dim = c(sim_list$n_pop, sim_list$n_yrs, sim_list$n_sims)),
   ln_sigmaR = array(log(1), dim = c(2, sim_list$n_pop, sim_list$n_regions)),
   rec_seas_prop_input = {
-      rec_seas_prop = array(0, dim = c(sim_list$n_pop, sim_list$n_seas, sim_list$n_sims))
-      rec_seas_prop[, 1, ] <- 1
-      rec_seas_prop
-    },
+    rec_seas_prop = array(0, dim = c(sim_list$n_pop, sim_list$n_seas, sim_list$n_sims))
+    rec_seas_prop[, 1, ] <- 1
+    rec_seas_prop
+  },
   recruitment_opt = 'bh_rec',
   rec_dd = 'global',
   init_dd = 'global',
@@ -577,7 +577,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
         n_region <- dim(input_list$par$ln_InitDevs)[2]
 
         for(p in 1:input_list$data$n_pop) {
-          age_indices <- (1:n_ages) + (p-1) * n_ages # get age indices
+          age_indices <- (1:n_ages) + (p - 1) * n_ages # get age indices
           # each region gets the same index for a given age (repeat each index across regions)
           map_InitDevs[p,,-dim(input_list$par$ln_InitDevs)[3]] <- matrix(rep(age_indices, each = n_region), nrow = n_region)
           map_InitDevs[p,,dim(input_list$par$ln_InitDevs)[3]] <- NA  # NA for plus group
@@ -595,7 +595,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
         n_region <- dim(input_list$par$ln_InitDevs)[2]
 
         for(p in 1:input_list$data$n_pop) {
-          age_indices <- (1:n_ages_all) + (p-1) * n_ages_all
+          age_indices <- (1:n_ages_all) + (p - 1) * n_ages_all
           # each region gets the same index for a given age (repeat each index across regions)
           map_InitDevs[p,,] <- matrix(rep(age_indices, each = n_region), nrow = n_region)
         } # end p loop
@@ -624,7 +624,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
     map_InitDevs <- input_list$par$ln_InitDevs # set up mapping for initial age deviations
 
     if(input_list$data$equil_init_age_strc == 1) { # estimating all deviations across all dimensions, except for plus group
-      map_InitDevs[,,-dim(input_list$par$ln_InitDevs)[3]] <- 1:length(map_InitDevs[,,-dim(input_list$par$ln_InitDevs)[3]]) # don't estimate plus group
+      map_InitDevs[,,-dim(input_list$par$ln_InitDevs)[3]] <- seq_along(map_InitDevs[,,-dim(input_list$par$ln_InitDevs)[3]]) # don't estimate plus group
       map_InitDevs[,,dim(input_list$par$ln_InitDevs)[3]] <- NA # NA for plus group
       input_list$par$ln_InitDevs[,,dim(input_list$par$ln_InitDevs)[3]] <- 0 # reset plus group starting value to 0
       input_list$map$ln_InitDevs <- factor(map_InitDevs) # input into map
@@ -633,7 +633,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
 
     # Plus group and estimating deviations for all dimensions
     if(est_all_ages) {
-      input_list$map$ln_InitDevs <- factor(1:length(map_InitDevs)) # input into map
+      input_list$map$ln_InitDevs <- factor(seq_along(map_InitDevs)) # input into map
       collect_message(all_ages_msg)
     }
 
@@ -786,7 +786,7 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd, dont_pen_recdev
       n_region <- dim(input_list$par$ln_RecDevs)[2]
 
       for(p in 1:input_list$data$n_pop) {
-        yr_indices <- (1:n_yrs) + (p-1) * n_yrs # get age indices
+        yr_indices <- (1:n_yrs) + (p - 1) * n_yrs # get age indices
         # each region gets the same index for a given age (repeat each index across regions)
         map_RecDevs[p,,] <- matrix(rep(yr_indices, each = n_region), nrow = n_region)
       } # end p loop
@@ -813,7 +813,7 @@ do_RecDevs_mapping <- function(input_list, RecDevs_spec, rec_dd, dont_pen_recdev
     if(input_list$data$n_pop > 1 && input_list$data$rec_region_prop_spec == 1)
       stop("Can't estimate recruitment eviations for all populations and regions if no recruitment dispersal is occuring within a given region! Please specify est_shared_r or est_shared_pop_r instead!")
 
-    input_list$map$ln_RecDevs <- factor(1:length(map_RecDevs)) # input into mapping
+    input_list$map$ln_RecDevs <- factor(seq_along(map_RecDevs)) # input into mapping
     collect_message("Recruitment Deviations is estimated for all dimensions")
   }
 
@@ -1084,7 +1084,7 @@ do_sexratio_pars_mapping <- function(input_list, sexratio_spec) {
       # Get number of sex ratio rate blocks
       sexratio_blocks_tmp <- unique(as.vector(input_list$data$sexratio_blocks[p,r,]))
 
-      for(b in 1:length(sexratio_blocks_tmp)) {
+      for(b in seq_along(sexratio_blocks_tmp)) {
 
         # Estimate for all regions
         if(sexratio_spec == 'est_all') {
@@ -1171,7 +1171,7 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
   # Validate spec options
   valid_specs <- c("no_dispersal")
   if(!is.null(rec_region_prop_spec) && !rec_region_prop_spec %in% valid_specs) {
-    stop("Invalid rec_region_prop_spec: '", rec_region_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse=", "), ", or NULL to estimate all.")
+    stop("Invalid rec_region_prop_spec: '", rec_region_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse = ", "), ", or NULL to estimate all.")
   }
 
   # with one region there is no apportionment to fix
@@ -1189,7 +1189,7 @@ do_rec_region_prop_mapping <- function(input_list, rec_region_prop_spec) {
   }
 
   # estimate all recruitment propostions if n_regions > 1
-  if(is.null(rec_region_prop_spec) && input_list$data$n_regions > 1) input_list$map$rec_region_prop_pars <- factor(1:length(input_list$par$rec_region_prop_pars))
+  if(is.null(rec_region_prop_spec) && input_list$data$n_regions > 1) input_list$map$rec_region_prop_pars <- factor(seq_along(input_list$par$rec_region_prop_pars))
 
   # single region - not even a parameter
   if(input_list$data$n_regions == 1) {
@@ -1356,7 +1356,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
   # Validate spec options
   valid_specs <- c("fix", "est_shared_pop")
   if(!is.null(rec_seas_prop_spec) && !rec_seas_prop_spec %in% valid_specs) {
-    stop("Invalid rec_seas_prop_spec: '", rec_seas_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse=", "), ", or NULL to estimate all.")
+    stop("Invalid rec_seas_prop_spec: '", rec_seas_prop_spec, "'. Valid options are: ", paste(valid_specs, collapse = ", "), ", or NULL to estimate all.")
   }
 
   if((is.null(rec_seas_prop_spec) || rec_seas_prop_spec == 'est_shared_pop') && input_list$data$use_fixed_rec_seas_prop == 1) {
@@ -1370,7 +1370,7 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 
   # estimate all recruitment seasonal proportions if n_seas > 1
   if(is.null(rec_seas_prop_spec)) {
-    input_list$map$rec_seas_prop_pars <- factor(1:length(input_list$par$rec_seas_prop_pars))
+    input_list$map$rec_seas_prop_pars <- factor(seq_along(input_list$par$rec_seas_prop_pars))
   } else if(rec_seas_prop_spec == 'est_shared_pop') { # estimate recruitment seasonal proportions but share across populations
     counter <- 1
     tmp_map = input_list$par$rec_seas_prop_pars
@@ -2033,7 +2033,7 @@ Setup_Mod_Rec <- function(input_list,
                           ln_global_R0_spec = "est"
                           ) {
 
-  messages_list <<- character(0)
+  messages_list <<- character(0) # nolint: object_usage_linter.
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Rec <- mget(names(formals()))[-1]
 
@@ -2229,7 +2229,7 @@ Setup_Mod_Rec <- function(input_list,
   # Sex Ratio Options ---------------------------------------------
   sexratio_blocks_mat <- array(NA, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years)))
 
-  for(i in 1:length(sexratio_blocks)) {
+  for(i in seq_along(sexratio_blocks)) {
 
     # Extract out components from list
     tmp <- sexratio_blocks[i]
@@ -2399,7 +2399,7 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$equil_init_age_strc <- equil_init_age_strc
   input_list$data$max_bias_ramp_fct <- max_bias_ramp_fct
   input_list$data$use_rec_region_prop_prior <- use_rec_region_prop_prior
-  input_list$data$rec_region_prop_spec <- ifelse(is.null(rec_region_prop_spec), 0, 1) # 0 = Full dispersal, 1 = no dispersal
+  input_list$data$rec_region_prop_spec <- if(is.null(rec_region_prop_spec)) 0 else 1 # 0 = Full dispersal, 1 = no dispersal
   input_list$data$rec_region_prop_prior <- rec_region_prop_prior
   input_list$data$use_fixed_stray_rate <- use_fixed_stray_rate
   input_list$data$fixed_stray_rate     <- fixed_stray_rate
@@ -2426,7 +2426,8 @@ Setup_Mod_Rec <- function(input_list,
 
   # global R0, one per population; use_starting_value catches a wrong-length starting value here.
   # time blocks add a column, so a model with no blocks keeps ln_global_R0 a length-n_pop vector
-  n_yrs_r0 <- length(input_list$data$years); n_pop_r0 <- input_list$data$n_pop
+  n_yrs_r0 <- length(input_list$data$years)
+  n_pop_r0 <- input_list$data$n_pop
   if(is.null(R0_blocks)) R0_blocks <- paste0("none_Pop_", seq_len(n_pop_r0))
   R0_blocks_arr <- array(NA, dim = c(1, n_yrs_r0, n_pop_r0))
   for(str in R0_blocks) {
@@ -2434,7 +2435,8 @@ Setup_Mod_Rec <- function(input_list,
     if(!v[1] %in% c("none", "Block")) stop("R0_blocks must be none_Pop_p or Block_b_Year_a-e_Pop_p")
     if(v[1] == "none") R0_blocks_arr[, , as.numeric(v[3])] <- 1
     if(v[1] == "Block") {
-      pp <- as.numeric(v[6]); bv <- as.numeric(v[2])
+      pp <- as.numeric(v[6])
+      bv <- as.numeric(v[2])
       rng <- unlist(strsplit(v[4], "-"))
       yy <- as.numeric(rng[1]):(if(rng[2] == "terminal") n_yrs_r0 else as.numeric(rng[2]))
       R0_blocks_arr[, yy, pp] <- bv
@@ -2467,7 +2469,7 @@ Setup_Mod_Rec <- function(input_list,
   input_list$par$ln_sr_R0 <- array(input_list$par$ln_global_R0[, R0_ref_block], dim = c(input_list$data$n_pop))
   input_list$par$ln_sr_R0 <- use_starting_value(input_list$par$ln_sr_R0, starting_values, "ln_sr_R0")
   input_list$map$ln_sr_R0 <- if(input_list$data$sr_R0_spec == 1 && input_list$data$sr_penalty > 0) {
-    factor(seq_len(length(input_list$par$ln_sr_R0)))
+    factor(seq_along(input_list$par$ln_sr_R0))
   } else factor(rep(NA, length(input_list$par$ln_sr_R0)))
 
   # Global Initial R0

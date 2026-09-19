@@ -56,7 +56,12 @@ cont_move_map <- data.frame(
 
 test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
 
-  n_pop <- 2; n_regions <- 3; n_yrs <- 4; n_seas <- 2; n_ages <- 5; n_sexes <- 2
+  n_pop <- 2
+  n_regions <- 3
+  n_yrs <- 4
+  n_seas <- 2
+  n_ages <- 5
+  n_sexes <- 2
   n_movable_ages <- n_ages - 1 # do_recruits_move = 0 -> age 1 excluded
   n_pairs <- n_regions * (n_regions - 1) # (from, to) combinations in the collapsed array
 
@@ -135,7 +140,12 @@ test_that("do_cont_vary_move_mapping respects CTMC adjacency masking", {
 
 test_that("Get_move_PE_loglik matches a hand-computed dnorm sum for each PE_model", {
 
-  n_pop <- 2; n_regions <- 2; n_yrs <- 3; n_seas <- 2; n_ages <- 4; n_sexes <- 2
+  n_pop <- 2
+  n_regions <- 2
+  n_yrs <- 3
+  n_seas <- 2
+  n_ages <- 4
+  n_sexes <- 2
   adjacency_collapsed <- matrix(1, n_regions, n_regions - 1)
 
   dims <- c(n_pop, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes)

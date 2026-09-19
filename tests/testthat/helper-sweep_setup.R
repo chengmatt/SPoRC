@@ -48,10 +48,16 @@ sweep_input <- function(
 ) {
 
   d <- utils::modifyList(sweep_dims, dims)
-  n_yrs <- d$n_yrs; n_ages <- d$n_ages; n_regions <- d$n_regions
-  n_sexes <- d$n_sexes; n_seas <- d$n_seas; n_pop <- d$n_pop
-  n_fish <- d$n_fish_fleets; n_srv <- d$n_srv_fleets
-  ff <- seq_len(n_fish); sf <- seq_len(n_srv)
+  n_yrs <- d$n_yrs
+  n_ages <- d$n_ages
+  n_regions <- d$n_regions
+  n_sexes <- d$n_sexes
+  n_seas <- d$n_seas
+  n_pop <- d$n_pop
+  n_fish <- d$n_fish_fleets
+  n_srv <- d$n_srv_fleets
+  ff <- seq_len(n_fish)
+  sf <- seq_len(n_srv)
 
   # region by year by season by age by sex, with a leading population dim, is
   # the biological array layout every stage reads
@@ -366,7 +372,10 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
     res <- sweep_build_with(stage, arg, probe, dims = dims, extra = extra)
     if(!inherits(res, "condition")) next
     cand <- gsub("\n", " ", conditionMessage(res))
-    if(grepl("one of|Valid options|Accepted values|Should be|must be", cand)) { msg <- cand; break }
+    if(grepl("one of|Valid options|Accepted values|Should be|must be", cand)) {
+      msg <- cand
+      break
+    }
     if(!nzchar(msg)) msg <- cand
   }
   if(!nzchar(msg)) return(character(0))
@@ -494,7 +503,8 @@ sweep_live_config <- function(arg, dims = list()) {
     utils::modifyList(out, extra)
   }
 
-  n_f <- d$n_fish_fleets; n_s <- d$n_srv_fleets
+  n_f <- d$n_fish_fleets
+  n_s <- d$n_srv_fleets
 
   switch(arg,
     rho_catch_spec      = aa_stream("CatchAA", n_f, "AgeObsCorr_catch", "UseCatch"),

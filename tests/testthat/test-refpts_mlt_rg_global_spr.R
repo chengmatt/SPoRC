@@ -124,7 +124,7 @@ test_that("Multi Region Global SPR Reference Points Sablefish Model Converges to
 
   # Check to see if SSB equilibriates
   expect_equal(round(as.numeric(out$proj_SSB[1,1,n_proj_yrs]), 10),
-               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs-1]), 10), tolerance = 0)
+               round(as.numeric(out$proj_SSB[1,1,n_proj_yrs - 1]), 10), tolerance = 0)
 
 
 })

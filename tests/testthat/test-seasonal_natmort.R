@@ -59,7 +59,8 @@ test_that("M_seasblk_spec builds the block index and the parameter array over se
   const <- suppressWarnings(seasonal_M_input(sim_obj, list(M_spec = "est_ln_M")))
   split <- suppressWarnings(seasonal_M_input(sim_obj, list(M_spec = "est_ln_M",
                                                            M_seasblk_spec = list(1, 2))))
-  n_yrs <- seasonal_M_cfg$n_yrs; n_ages <- seasonal_M_cfg$n_ages
+  n_yrs <- seasonal_M_cfg$n_yrs
+  n_ages <- seasonal_M_cfg$n_ages
 
   # season dim in slot 4, same as WAA and MatAA
   expect_equal(dim(const$data$M_blocks), c(1, 1, n_yrs, 2, n_ages, 1))

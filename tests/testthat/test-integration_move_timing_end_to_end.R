@@ -33,7 +33,8 @@ build_ctmc_model <- function(n_regions = 3, n_seas = 1, n_sexes = 2, n_yrs = 8, 
     ages = seq_len(n_ages),
     sexes = seq_len(n_sexes)
   )
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
 
   input_list <- Setup_Mod_Movement(
     input_list = input_list,
@@ -91,7 +92,11 @@ test_that("continuous movement forces the generator onto annual time units", {
 test_that("Get_Movement returns a usable generator for every timing", {
   # Shape guard on the pieces the dynamics index into: Movement and Mrate must be
   # dimensioned alike so that Mrate[p,,,y,seas,a,s] lines up with Movement[p,,,y,seas,a,s]
-  n_regions <- 3; n_ages <- 4; n_sexes <- 2; n_yrs <- 3; n_seas <- 2
+  n_regions <- 3
+  n_ages <- 4
+  n_sexes <- 2
+  n_yrs <- 3
+  n_seas <- 2
   dat <- expand.grid(
     pop = 1,
     regions = seq_len(n_regions),
@@ -100,7 +105,8 @@ test_that("Get_Movement returns a usable generator for every timing", {
     ages = seq_len(n_ages),
     sexes = seq_len(n_sexes)
   )
-  adj <- matrix(1L, n_regions, n_regions); diag(adj) <- 0L
+  adj <- matrix(1L, n_regions, n_regions)
+  diag(adj) <- 0L
 
   res <- Get_Movement(
     move_type = 1,
@@ -146,11 +152,14 @@ test_that("timing-2 catch and tag Baranov survive a length-1 sex dimension", {
   # Regression guard: the slices multiplied against the season-integrated abundance
   # drop their sex dimension when n_sexes == 1, which previously made them
   # non-conformable with the 3-d integral array.
-  n_regions <- 3; n_ages <- 4; n_sexes <- 1
+  n_regions <- 3
+  n_ages <- 4
+  n_sexes <- 1
   m <- local({
     set.seed(77)
     D <- matrix(stats::runif(n_regions^2, 0.05, 0.5), n_regions, n_regions)
-    diag(D) <- 0; diag(D) <- -colSums(D)
+    diag(D) <- 0
+    diag(D) <- -colSums(D)
     list(Q_row = t(D))
   })
 
@@ -177,9 +186,11 @@ test_that("timing-2 catch and tag Baranov survive a length-1 sex dimension", {
 test_that("continuous movement reduces to the discrete timings when regions are decoupled", {
   # With a zero generator there is no movement, so all three timings must agree in a
   # full seasonal sweep -- an end-to-end check that the operator plumbing is consistent.
-  n <- 3; n_seas <- 4
+  n <- 3
+  n_seas <- 4
   seasdur <- rep(0.25, n_seas)
-  Q0 <- matrix(0, n, n); I <- diag(n)
+  Q0 <- matrix(0, n, n)
+  I <- diag(n)
   Zs <- matrix(stats::runif(n * n_seas, 0.05, 0.3), n, n_seas)
   N0 <- c(120, 60, 90)
 

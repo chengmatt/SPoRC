@@ -64,8 +64,8 @@ n_regions <- dat$n_regions
 
 ```{r Setup Model Dimensions, message = FALSE}
 input_list <- Setup_Mod_Dim(
-  years = 1:length(dat$years),
-  ages = 1:length(dat$ages),
+  years = seq_along(dat$years),
+  ages = seq_along(dat$ages),
   lens = dat$lens,
   n_regions = dat$n_regions,
   n_sexes = dat$n_sexes,

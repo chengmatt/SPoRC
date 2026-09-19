@@ -52,8 +52,12 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
 
   # sums over the observations each block owns. arith is the ratio of the two means, so the counts
   # cancel and only the sums are needed; geo is the mean log ratio, so it needs the count
-  num = vector("list", n_blk); den = vector("list", n_blk)
-  for(b in 1:n_blk) { num[[b]] = 0; den[[b]] = 0 }
+  num = vector("list", n_blk)
+  den = vector("list", n_blk)
+  for(b in 1:n_blk) {
+    num[[b]] = 0
+    den[[b]] = 0
+  }
   for(i in 1:n_obs) {
     b = blk_yr[yr_obs[i]]
     if(q_type == 1) {
@@ -67,7 +71,10 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
 
   # a block with no observations has nothing to solve from, so it takes the pooled value
   n_in_blk = tabulate(blk_yr[yr_obs], nbins = n_blk)
-  for(b in which(n_in_blk == 0)) { num[[b]] = pool_num; den[[b]] = pool_den }
+  for(b in which(n_in_blk == 0)) {
+    num[[b]] = pool_num
+    den[[b]] = pool_den
+  }
 
   q_blk = vector("list", n_blk)
   for(b in 1:n_blk) q_blk[[b]] = if(q_type == 1) num[[b]] / den[[b]] else exp(num[[b]] / den[[b]])
@@ -124,7 +131,7 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
 #' @param fish_sel,ret_sel Arrays \code{[pop, region, year, season, age, sex,
 #'   fish_fleet]} of total/retained fishery selectivity.
 #' @param do_caal Integer (0/1) switch for building the joint catch at length
-#'   and age arrays. Off by default. 
+#'   and age arrays. Off by default.
 #' @param Fish_caal,Fish_caal_discard Arrays \code{[pop, region, year, season, len, age, sex,
 #'   fish_fleet]}, output containers for retained/discarded catch at length and
 #'   age. Only written when \code{do_caal == 1} and \code{fit_lengths == 1}.
@@ -283,9 +290,11 @@ get_fishery_observation_model <- function(
                   avail <- if(move_timing == 2) NAA_int[p,r,y,seas,,s] else NAA[p,r,y,seas,,s] * (1 - exp(-ZAA[p,r,y,seas,,s])) / ZAA[p,r,y,seas,,s]
                   avail <- avail * Fmort[r,y,seas,f]
                   if(ret_selex_type == 1) {
-                    ret_l <- ret_sel_l[r,y,,s,f]; ret_a <- rep(1, length(avail))
+                    ret_l <- ret_sel_l[r,y,,s,f]
+                    ret_a <- rep(1, length(avail))
                   } else {
-                    ret_l <- rep(1, n_lens); ret_a <- ret_sel[p,r,y,seas,,s,f]
+                    ret_l <- rep(1, n_lens)
+                    ret_a <- ret_sel[p,r,y,seas,,s,f]
                   }
                   sel_at_l <- fish_sel_l[r,y,,s,f]
                   joint_ret <- (key_f * rep(avail * ret_a, each = n_lens)) * (sel_at_l * ret_l) # [len, age]
@@ -462,7 +471,7 @@ get_fishery_observation_model <- function(
 #'   solves catchability analytically.
 #'
 #' @param do_caal Integer (0/1) switch for building the joint survey index at
-#'   length and age array. Off by default. 
+#'   length and age array. Off by default.
 #' @param Srv_caal Array \code{[pop, region, year, season, len, age, sex,
 #'   srv_fleet]}, output container for the survey index at length and age. Only
 #'   written when \code{do_caal == 1} and \code{fit_lengths == 1}.
@@ -598,7 +607,7 @@ get_survey_observation_model <- function(
             if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * idx_ages) # abundance
             if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf] * idx_ages) # biomass
 
-            # Recruitment index as a survey fleet 
+            # Recruitment index as a survey fleet
             if(srv_idx_type[sf] == 2 && !is.null(RecDev_anom) && y <= dim(RecDev_anom)[3]) {
               PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * RecDev_anom[p,r,y]
             }

@@ -76,7 +76,7 @@ rlogistnormal <- function(exp,
 
   # if iid logistic normal
   if(comp_like == 2) {
-    Sigma <- diag(length(exp)-1) # set up sigma
+    Sigma <- diag(length(exp) - 1) # set up sigma
     diag(Sigma) <- pars[1]^2 # input parameter
   } # end if iid logistic normal
 
@@ -106,7 +106,7 @@ rlogistnormal <- function(exp,
   } # end if zeros dropped
 
   x <- MASS::mvrnorm(1, mu, Sigma) # simulate from mvnorm (does not sum to 1) and length k
-  p <- exp(x)/(1 + sum(exp(x))) # do additive transformation length k and does not sum to 1
+  p <- exp(x) / (1 + sum(exp(x))) # do additive transformation length k and does not sum to 1
   p <- c(p, 1 - sum(p)) # output now so it sums to 1
 
   return(p)
@@ -198,7 +198,6 @@ rinvgauss_rec <- function(sims,
   gamma <- a_meanRec / h_meanRec
   gi_beta <- a_meanRec
   delta <- 1 / (gamma - 1)
-  cvrec <- sqrt(1 / delta)
 
   # Generate random variables with transformation
   psi <- stats::rnorm(sims,0,1)^2 # generate squared random normal
@@ -211,4 +210,3 @@ rinvgauss_rec <- function(sims,
 
   return(rv)
 }
-

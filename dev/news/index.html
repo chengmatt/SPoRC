@@ -38,6 +38,7 @@
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -47,7 +48,7 @@
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Changelog</h1>
-
+      <small>Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
     <div class="section level2">
@@ -132,11 +133,17 @@
 <li>Added a shared process-error sharing-spec helper (<code>build_pe_map</code>/<code>build_shared_spec_map</code>); migrated <code>sigmaF_spec</code>, <code>sigmaC_spec</code>, <code>sigmaR_spec</code>, <code>Fdev_rho_spec</code>, and <code>do_Fmort_mapping</code> onto it (for developers).</li>
 <li>Refactored movement’s continuous process-error map and log-likelihood onto the same shared code (for developers).</li>
 <li>Newton refinement in <code>fit_model</code> now takes its Hessian from the AD tape (<code>obj$he</code>) instead of finite-differencing, and stops early on a non-finite Hessian.</li>
+<li>Declared the 59 data, parameter and column names that R CMD check reported as undefined globals (conditional age at length, growth, double normal selectivity, selected weight at age, initial deviation penalties), and added a <code>.lintr.R</code> that follows the package coding style (for developers).</li>
+<li>Index ranges built from <code><a href="https://rdrr.io/r/base/length.html" class="external-link">length()</a></code>, <code><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow()</a></code>, <code><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol()</a></code> and <code><a href="https://rdrr.io/r/base/dim.html" class="external-link">dim()</a></code> now use <code><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along()</a></code> and <code><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len()</a></code>, so an empty object gives no iterations instead of the indices 1 and 0. Semicolon chains are split one statement per line, <code>T</code>/<code>F</code> are written as <code>TRUE</code>/<code>FALSE</code>, two <code>if()</code> conditions use <code>&amp;&amp;</code>, operators have spaces around them, blocks that sat 2 or 4 spaces off their braces are re-indented, and multi-line pipelines put each step on its own line (for developers).</li>
+<li>
+<code>compResidual</code> is declared in Suggests and DESCRIPTION has a BugReports link; the help pages for <code><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging()</a></code> and <code><a href="../reference/osa_one_step_predict.html">osa_one_step_predict()</a></code> are regenerated, and <code><a href="../reference/Get_Comp_Likelihoods.html">Get_Comp_Likelihoods()</a></code> no longer documents a <code>seas_agg</code> argument it does not take (for developers).</li>
+<li>Removed 25 values that were computed and never read, and a duplicated <code>Mrate</code> entry in the closed loop report list; among them the <code>tag_selex</code> and <code>tag_natmort</code> lookups in <code><a href="../reference/condition_closed_loop_simulations.html">condition_closed_loop_simulations()</a></code>, which never reached the tagging simulation. Seven optimizer, <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> and block-final lines keep their call and drop only the unused name (for developers).</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>
 <ul><li>Fixed the time-varying selectivity smoothing penalty not being applied in the first year.</li>
 <li>Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.</li>
+<li>Fixed <code><a href="../reference/do_runs_test.html">do_runs_test()</a></code> returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.</li>
 </ul></div>
 </div>
     <div class="section level2">

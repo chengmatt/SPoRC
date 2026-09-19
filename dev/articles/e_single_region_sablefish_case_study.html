@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Case Study: Alaska Sablefish (Single Region)</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/e_single_region_sablefish_case_study.Rmd" class="external-link"><code>vignettes/e_single_region_sablefish_case_study.Rmd</code></a></small>
       <div class="d-none name"><code>e_single_region_sablefish_case_study.Rmd</code></div>
     </div>
 
@@ -166,8 +167,8 @@ than calendar values here, which is why the year vector runs
 <code>1:65</code> rather than <code>1960:2024</code>.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span></span>
-<span>  years <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,      <span class="co"># 1960-2024</span></span>
-<span>  ages <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">ages</span><span class="op">)</span>,        <span class="co"># ages 2-31</span></span>
+<span>  years <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,      <span class="co"># 1960-2024</span></span>
+<span>  ages <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">ages</span><span class="op">)</span>,        <span class="co"># ages 2-31</span></span>
 <span>  lens <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">41</span>, <span class="fl">99</span>, <span class="fl">2</span><span class="op">)</span>,            <span class="co"># length bins</span></span>
 <span>  n_regions <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  n_sexes <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">n_sexes</span>,            <span class="co"># 1 = female, 2 = male</span></span>
@@ -338,10 +339,10 @@ squares and the assessment’s weights are reused unchanged as
 <span>  sigmaF_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  <span class="co"># sigma = 1/sqrt(2) makes 1/(2 sigma^2) = 1, so the Gaussian reduces to the</span></span>
 <span>  <span class="co"># assessment's unweighted norm2 and its lambdas transfer directly.</span></span>
-<span>  ln_sigmaC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">n_yrs</span>,</span>
+<span>  ln_sigmaC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">n_yrs</span>,</span>
 <span>                                            <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>                                            <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  ln_sigmaF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span><span class="op">/</span><span class="fl">2</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
+<span>  ln_sigmaF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">2</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>                                            <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>                                            <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>

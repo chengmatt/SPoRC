@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Case Study: EBS Pacific Cod</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/ae_ebs_pacific_cod_case_study.Rmd" class="external-link"><code>vignettes/ae_ebs_pacific_cod_case_study.Rmd</code></a></small>
       <div class="d-none name"><code>ae_ebs_pacific_cod_case_study.Rmd</code></div>
     </div>
 
@@ -160,7 +161,10 @@ and natural mortality is fixed at 0.3866.</p>
 <span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">yrs</span><span class="op">)</span></span>
 <span><span class="va">ages</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">ages</span></span>
 <span><span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span></span>
-<span><span class="va">n_reg</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_sex</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_fish</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_srv</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">n_reg</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">n_sex</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">n_fish</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">n_srv</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span><span class="va">sigmaR</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">rec</span><span class="op">$</span><span class="va">sigmaR</span></span></code></pre></div>
 <p>The object holds the model inputs, the assessment’s maximum
 likelihood estimate in <code>dat$mle</code>, used both as a starting
@@ -438,7 +442,8 @@ Dividing the weight by that factor absorbs it.</p>
 <span><span class="va">w_len_fish</span> <span class="op">&lt;-</span> <span class="va">va</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">va</span><span class="op">$</span><span class="va">factor</span> <span class="op">==</span> <span class="fl">4</span> <span class="op">&amp;</span> <span class="va">va</span><span class="op">$</span><span class="va">fleet</span> <span class="op">==</span> <span class="va">dat</span><span class="op">$</span><span class="va">fish_fleets</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">w_len_srv</span>  <span class="op">&lt;-</span> <span class="va">va</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">va</span><span class="op">$</span><span class="va">factor</span> <span class="op">==</span> <span class="fl">4</span> <span class="op">&amp;</span> <span class="va">va</span><span class="op">$</span><span class="va">fleet</span> <span class="op">==</span> <span class="va">dat</span><span class="op">$</span><span class="va">srv_fleets</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
 <span><span class="va">w_age_srv</span>  <span class="op">&lt;-</span> <span class="va">va</span><span class="op">$</span><span class="va">value</span><span class="op">[</span><span class="va">va</span><span class="op">$</span><span class="va">factor</span> <span class="op">==</span> <span class="fl">5</span> <span class="op">&amp;</span> <span class="va">va</span><span class="op">$</span><span class="va">fleet</span> <span class="op">==</span> <span class="va">dat</span><span class="op">$</span><span class="va">srv_fleets</span><span class="op">[</span><span class="fl">1</span><span class="op">]</span><span class="op">]</span></span>
-<span><span class="va">n_obs_lens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">LenBinMap</span><span class="op">)</span>; <span class="va">n_obs_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">obs_ages</span><span class="op">)</span></span>
+<span><span class="va">n_obs_lens</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">ncol</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">LenBinMap</span><span class="op">)</span></span>
+<span><span class="va">n_obs_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">obs_ages</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">per_fleet</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">w</span>, <span class="va">n_fl</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">arr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_reg</span>, <span class="va">n_yrs</span>, <span class="fl">1</span>, <span class="va">n_sex</span>, <span class="va">n_fl</span><span class="op">)</span><span class="op">)</span></span>

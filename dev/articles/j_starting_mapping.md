@@ -68,12 +68,12 @@ dimensions.
 ``` r
 
 # Load in packages
-library(SPoRC) 
+library(SPoRC)
 data("sgl_rg_sable_data") # load in data
 
-input_list <- Setup_Mod_Dim(years = 1:length(sgl_rg_sable_data$years), # vector of years 
+input_list <- Setup_Mod_Dim(years = seq_along(sgl_rg_sable_data$years), # vector of years
                             # (corresponds to year 1960 - 2024)
-                            ages = 1:length(sgl_rg_sable_data$ages), # vector of ages
+                            ages = seq_along(sgl_rg_sable_data$ages), # vector of ages
                             lens = seq(41,99,2), # number of lengths
                             n_regions = 1, # number of regions
                             n_sexes = sgl_rg_sable_data$n_sexes, # number of sexes == 1,
@@ -101,7 +101,7 @@ input_list <- Setup_Mod_Rec(
   dont_est_recdev_last = 1,       # do not estimate last recruitment deviate
   rec_model = "mean_rec",         # recruitment model type
   init_age_strc = 1,              # geometric series for initial age structure
-  
+
   # Specify starting values
   ln_global_R0 = log(30),         # starting value for global R0
   ln_sigmaR = array(log(1.5), dim = c(2, input_list$data$n_pop, input_list$data$n_regions))  # starting values for early and late sigmaR
@@ -121,7 +121,7 @@ starting values as needed:
 
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             # Model options
-                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            do_rec_bias_ramp = 0, # don't do bias ramp
                             sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
                             dont_est_recdev_last = 1, # don't estimate last recruitment deviate
                             rec_model = "mean_rec", # recruitment model
@@ -177,12 +177,12 @@ how *ln_sigmaR* can be fixed using the convenience argument
 
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             # Model options
-                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            do_rec_bias_ramp = 0, # don't do bias ramp
                             sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
                             dont_est_recdev_last = 1, # don't estimate last recruitment deviate
                             rec_model = "mean_rec", # recruitment model
                             init_age_strc = 1, # geometric series to derive age structure
-                            
+
                             # Parameter Fixing
                             sigmaR_spec = 'fix'
                             )
@@ -205,12 +205,12 @@ the desired starting value at the same time:
 
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             # Model options
-                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            do_rec_bias_ramp = 0, # don't do bias ramp
                             sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
                             dont_est_recdev_last = 1, # don't estimate last recruitment deviate
                             rec_model = "mean_rec", # recruitment model
                             init_age_strc = 1, # geometric series to derive age structure
-                            
+
                             # Parameter Fixing
                             sigmaR_spec = 'fix',
   ln_sigmaR = array(log(1.5), dim = c(2, input_list$data$n_pop, input_list$data$n_regions))  # starting values for early and late sigmaR
@@ -238,11 +238,11 @@ the map entry fixes the parameter at whatever is currently in
 
 input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                             # Model options
-                            do_rec_bias_ramp = 0, # don't do bias ramp 
+                            do_rec_bias_ramp = 0, # don't do bias ramp
                             sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
                             dont_est_recdev_last = 1, # don't estimate last recruitment deviate
                             rec_model = "mean_rec", # recruitment model
-                            init_age_strc = 1, # geometric series to derive age structure
+                            init_age_strc = 1 # geometric series to derive age structure
                             )
 
 input_list$map$ln_global_R0 <- factor(NA)

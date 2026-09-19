@@ -324,8 +324,10 @@ conditional age-at-length taking each survey’s age weight.
 
 ``` r
 
-wl_f <- dat$var_adj_len[dat$fish_fleets]; wa_f <- dat$var_adj_age[dat$fish_fleets]
-wl_s <- dat$var_adj_len[dat$srv_fleets]; wa_s <- dat$var_adj_age[dat$srv_fleets]
+wl_f <- dat$var_adj_len[dat$fish_fleets]
+wa_f <- dat$var_adj_age[dat$fish_fleets]
+wl_s <- dat$var_adj_len[dat$srv_fleets]
+wa_s <- dat$var_adj_age[dat$srv_fleets]
 
 per_fleet <- function(w, n_fl, extra = NULL) {
   d <- c(n_reg, n_yrs, 1, if(!is.null(extra)) extra, n_sex, n_fl)

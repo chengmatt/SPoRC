@@ -39,7 +39,7 @@ estimation of deviations:
 ``` r
 
 model_inputs <- Setup_Mod_Fishsel_and_Q(
-  input_list           = inputs, 
+  input_list           = inputs,
   fish_sel_model       = "logist1_Fleet_1",
   cont_tv_fish_sel     = c("iid_Fleet_1"),
   fishsel_pe_pars_spec = "est_all",
@@ -96,7 +96,7 @@ that fleet to age 1.
 #' The function relies on the global dataset \code{sgl_rg_ebswp_data} to provide
 #' years, ages, weight-at-age, maturity-at-age, observed catches, fishery and
 #' survey indices, age and length compositions, and other required inputs.
-#' 
+#'
 #' The model is configured for:
 #' - one region
 #' - one sex
@@ -113,7 +113,7 @@ that fleet to age 1.
 #' - 0.3 for age-3+.
 #'
 #' Recruitment is modeled using a Beverton-Holt stock-recruitment function
-#' with fixed steepness. 
+#' with fixed steepness.
 #'
 #' Selectivity and catchability are parameterized separately for fishery and
 #' survey fleets, with user control over random effects and correlation
@@ -130,9 +130,9 @@ that fleet to age 1.
 #' \code{\link{Setup_Mod_Fishsel_and_Q}}, \code{\link{Setup_Mod_Srvsel_and_Q}},
 #' \code{\link{Setup_Mod_Weighting}}
 #'
-pol_model <- function(cont_tv_fish_sel, 
+pol_model <- function(cont_tv_fish_sel,
                       fishsel_pe_pars_spec,
-                      corr_opt_semipar, 
+                      corr_opt_semipar,
                       fish_sel_devs_spec
                       ) {
 
@@ -422,7 +422,7 @@ random; otherwise, it is `NULL.`
 models <- list()
 
 # loop through models
-for(i in 1:nrow(pol_model_var)) {
+for(i in seq_len(nrow(pol_model_var))) {
 
   # if selectivity deviations should be treated as random
   if(str_detect(pol_model_var$cont_tv_fish_sel[i], "none")) random <- NULL
@@ -446,7 +446,7 @@ for(i in 1:nrow(pol_model_var)) {
                                 mapping,
                                 random = random,
                                 newton_loops = 3,
-                                silent = T
+                                silent = TRUE
   )
 
   ebswp_rtmb_model$sdrep <- RTMB::sdreport(ebswp_rtmb_model)
@@ -467,7 +467,7 @@ recruitment, spawning stock biomass, and fishery selectivity estimates.
 model_names <- c("constant", "iid_p", "rw_p", "2dar1_sp", "3dgmrf_sp", "iid_sp")
 fishsel_all_df <- data.frame() # empty dataframe to bind to
 ts_all_df <- data.frame() # empty dataframe to bind to
-for(i in 1:length(models)) {
+for(i in seq_along(models)) {
 
   # Get recruitment time-series
   rec_series <- reshape2::melt((models[[i]]$rep$Rec)) %>%
@@ -484,8 +484,8 @@ for(i in 1:length(models)) {
   # Get fishery selectivity estimates
   fishsel_df <- reshape2::melt(models[[i]]$rep$fish_sel) %>%
     rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Age = Var5, Sex = Var6, Fleet = Var7) %>%
-    group_by(Year, Region, Sex, Fleet) %>% 
-    mutate(value = value/max(value),
+    group_by(Year, Region, Sex, Fleet) %>%
+    mutate(value = value / max(value),
            Year = Year + 1963)
   fishsel_df$Model <- model_names[i]
 

@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>One-Step-Ahead (OSA) Residuals</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/u_osa_residuals.Rmd" class="external-link"><code>vignettes/u_osa_residuals.Rmd</code></a></small>
       <div class="d-none name"><code>u_osa_residuals.Rmd</code></div>
     </div>
 
@@ -236,116 +237,116 @@ residuals from those arrays via <code>compResidual</code>.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    do_rec_bias_ramp <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    bias_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>,</span>
-<span>    sigmaR_switch <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    ln_sigmaR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.1068576</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    rec_model <span class="op">=</span> <span class="st">"mean_rec"</span>,</span>
-<span>    sigmaR_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>    init_age_strc <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    ln_global_R0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">2.7</span><span class="op">)</span>,</span>
-<span>    t_spawn <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">spwn_month</span></span>
-<span>  <span class="op">)</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  do_rec_bias_ramp <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  bias_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>,</span>
+<span>  sigmaR_switch <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ln_sigmaR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.1068576</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  rec_model <span class="op">=</span> <span class="st">"mean_rec"</span>,</span>
+<span>  sigmaR_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  init_age_strc <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ln_global_R0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">2.7</span><span class="op">)</span>,</span>
+<span>  t_spawn <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">spwn_month</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    WAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">waa_arr</span>,</span>
-<span>    MatAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mataa_arr</span>,</span>
-<span>    fit_lengths <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    SizeAgeTrans <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">sizeage</span>,</span>
-<span>    AgeingError <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">age_error_matrix</span>,</span>
-<span>    M_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>    Fixed_natmort <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">fix_natmort</span>,</span>
-<span>    addtocomp <span class="op">=</span> <span class="fl">0.00001</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  WAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">waa_arr</span>,</span>
+<span>  MatAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mataa_arr</span>,</span>
+<span>  fit_lengths <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  SizeAgeTrans <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">sizeage</span>,</span>
+<span>  AgeingError <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">age_error_matrix</span>,</span>
+<span>  M_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  Fixed_natmort <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">fix_natmort</span>,</span>
+<span>  addtocomp <span class="op">=</span> <span class="fl">0.00001</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    use_fixed_movement <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    Fixed_Movement <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>    do_recruits_move <span class="op">=</span> <span class="fl">0</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  use_fixed_movement <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  Fixed_Movement <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  do_recruits_move <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging</a></span><span class="op">(</span>input_list <span class="op">=</span> <span class="va">input_list</span>, use_conv_fish_tagging <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging</a></span><span class="op">(</span>input_list <span class="op">=</span> <span class="va">input_list</span>, use_conv_fish_tagging <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    ObsCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsCatch</span>,</span>
-<span>    UseCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseCatch</span>,</span>
-<span>    Use_F_pen <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    sigmaC_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>    Catch_Constant <span class="op">=</span> <span class="fl">0.00001</span>,</span>
-<span>    ln_sigmaC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">15</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">33</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,</span>
-<span>                                                <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    ln_sigmaF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>                                                <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  ObsCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsCatch</span>,</span>
+<span>  UseCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseCatch</span>,</span>
+<span>  Use_F_pen <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sigmaC_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  Catch_Constant <span class="op">=</span> <span class="fl">0.00001</span>,</span>
+<span>  ln_sigmaC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">15</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">33</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,</span>
+<span>                                              <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ln_sigmaF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
+<span>                                              <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    ObsFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx</span>,</span>
-<span>    ObsFishIdx_SE <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx_SE</span>,</span>
-<span>    UseFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishIdx</span>,</span>
-<span>    ObsFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishAgeComps</span>,</span>
-<span>    UseFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishAgeComps</span>,</span>
-<span>    ISS_FishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishAgeComps</span>,</span>
-<span>    ObsFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishLenComps</span>,</span>
-<span>    UseFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishLenComps</span>,</span>
-<span>    ISS_FishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishLenComps</span>,</span>
-<span>    fish_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span><span class="op">)</span>,</span>
-<span>    FishAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    FishLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    FishAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    FishLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  ObsFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx</span>,</span>
+<span>  ObsFishIdx_SE <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx_SE</span>,</span>
+<span>  UseFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishIdx</span>,</span>
+<span>  ObsFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishAgeComps</span>,</span>
+<span>  UseFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishAgeComps</span>,</span>
+<span>  ISS_FishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishAgeComps</span>,</span>
+<span>  ObsFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishLenComps</span>,</span>
+<span>  UseFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishLenComps</span>,</span>
+<span>  ISS_FishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishLenComps</span>,</span>
+<span>  fish_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  FishAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  FishLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  FishAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  FishLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    ObsSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span>,</span>
-<span>    ObsSrvIdx_SE <span class="op">=</span> <span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx_SE</span> <span class="op">/</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1.66</span><span class="op">)</span>,</span>
-<span>    UseSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvIdx</span>,</span>
-<span>    ObsSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvAgeComps</span>,</span>
-<span>    ISS_SrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvAgeComps</span>,</span>
-<span>    UseSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvAgeComps</span>,</span>
-<span>    ObsSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvLenComps</span>,</span>
-<span>    UseSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvLenComps</span>,</span>
-<span>    ISS_SrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvLenComps</span>,</span>
-<span>    srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"biom"</span><span class="op">)</span>,</span>
-<span>    SrvAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    SrvLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    SrvAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    SrvLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  ObsSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span>,</span>
+<span>  ObsSrvIdx_SE <span class="op">=</span> <span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx_SE</span> <span class="op">/</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1.66</span><span class="op">)</span>,</span>
+<span>  UseSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvIdx</span>,</span>
+<span>  ObsSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvAgeComps</span>,</span>
+<span>  ISS_SrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvAgeComps</span>,</span>
+<span>  UseSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvAgeComps</span>,</span>
+<span>  ObsSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvLenComps</span>,</span>
+<span>  UseSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvLenComps</span>,</span>
+<span>  ISS_SrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvLenComps</span>,</span>
+<span>  srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"biom"</span><span class="op">)</span>,</span>
+<span>  SrvAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  SrvLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  SrvAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  SrvLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    cont_tv_fish_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
-<span>    fish_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fix"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  cont_tv_fish_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
+<span>  fish_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fix"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">srv_q_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>region <span class="op">=</span> <span class="fl">1</span>, block <span class="op">=</span> <span class="fl">1</span>, fleet <span class="op">=</span> <span class="fl">1</span>, mu <span class="op">=</span> <span class="fl">1</span>, sd <span class="op">=</span> <span class="fl">0.447213595</span><span class="op">)</span></span>
+<span><span class="va">srv_q_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>region <span class="op">=</span> <span class="fl">1</span>, block <span class="op">=</span> <span class="fl">1</span>, fleet <span class="op">=</span> <span class="fl">1</span>, mu <span class="op">=</span> <span class="fl">1</span>, sd <span class="op">=</span> <span class="fl">0.447213595</span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    cont_tv_srv_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
-<span>    srv_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
-<span>    Use_srv_q_prior <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    srv_q_prior <span class="op">=</span> <span class="va">srv_q_prior</span>,</span>
-<span>    t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  cont_tv_srv_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
+<span>  srv_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
+<span>  Use_srv_q_prior <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  srv_q_prior <span class="op">=</span> <span class="va">srv_q_prior</span>,</span>
+<span>  t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
-<span>    <span class="va">input_list</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
+<span>  <span class="va">input_list</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
@@ -407,117 +408,117 @@ residuals from those arrays via <code>compResidual</code>.</p>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    do_rec_bias_ramp <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    bias_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>,</span>
-<span>    sigmaR_switch <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    ln_sigmaR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.1068576</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    rec_model <span class="op">=</span> <span class="st">"mean_rec"</span>,</span>
-<span>    sigmaR_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>    init_age_strc <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    ln_global_R0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">2.7</span><span class="op">)</span>,</span>
-<span>    t_spawn <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">spwn_month</span></span>
-<span>  <span class="op">)</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  do_rec_bias_ramp <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  bias_year <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="fl">4</span><span class="op">)</span>,</span>
+<span>  sigmaR_switch <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ln_sigmaR <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="op">-</span><span class="fl">0.1068576</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  rec_model <span class="op">=</span> <span class="st">"mean_rec"</span>,</span>
+<span>  sigmaR_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  init_age_strc <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ln_global_R0 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">2.7</span><span class="op">)</span>,</span>
+<span>  t_spawn <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">spwn_month</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    WAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">waa_arr</span>,</span>
-<span>    MatAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mataa_arr</span>,</span>
-<span>    fit_lengths <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    SizeAgeTrans <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">sizeage</span>,</span>
-<span>    AgeingError <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">age_error_matrix</span>,</span>
-<span>    M_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>    Fixed_natmort <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">fix_natmort</span>,</span>
-<span>    addtocomp <span class="op">=</span> <span class="fl">0.00001</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  WAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">waa_arr</span>,</span>
+<span>  MatAA <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">mataa_arr</span>,</span>
+<span>  fit_lengths <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  SizeAgeTrans <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">sizeage</span>,</span>
+<span>  AgeingError <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">age_error_matrix</span>,</span>
+<span>  M_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  Fixed_natmort <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">fix_natmort</span>,</span>
+<span>  addtocomp <span class="op">=</span> <span class="fl">0.00001</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    use_fixed_movement <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    Fixed_Movement <span class="op">=</span> <span class="cn">NA</span>,</span>
-<span>    do_recruits_move <span class="op">=</span> <span class="fl">0</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  use_fixed_movement <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  Fixed_Movement <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  do_recruits_move <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging</a></span><span class="op">(</span>input_list <span class="op">=</span> <span class="va">input_list</span>, use_conv_fish_tagging <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging</a></span><span class="op">(</span>input_list <span class="op">=</span> <span class="va">input_list</span>, use_conv_fish_tagging <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    ObsCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsCatch</span>,</span>
-<span>    UseCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseCatch</span>,</span>
-<span>    Use_F_pen <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    sigmaC_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
-<span>    Catch_Constant <span class="op">=</span> <span class="fl">0.00001</span>,</span>
-<span>    ln_sigmaC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">15</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">33</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,</span>
-<span>                                                <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    ln_sigmaF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>                                                <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  ObsCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsCatch</span>,</span>
+<span>  UseCatch <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseCatch</span>,</span>
+<span>  Use_F_pen <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sigmaC_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  Catch_Constant <span class="op">=</span> <span class="fl">0.00001</span>,</span>
+<span>  ln_sigmaC <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="op">(</span><span class="fl">2</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">15</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">33</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>,</span>
+<span>                                              <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  ln_sigmaF <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1</span> <span class="op">/</span> <span class="fl">4</span><span class="op">)</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
+<span>                                              <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    ObsFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx</span>,</span>
-<span>    ObsFishIdx_SE <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx_SE</span>,</span>
-<span>    UseFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishIdx</span>,</span>
-<span>    ObsFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishAgeComps</span>,</span>
-<span>    UseFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishAgeComps</span>,</span>
-<span>    ISS_FishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishAgeComps</span>,</span>
-<span>    ObsFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishLenComps</span>,</span>
-<span>    UseFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishLenComps</span>,</span>
-<span>    ISS_FishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishLenComps</span>,</span>
-<span>    fish_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span><span class="op">)</span>,</span>
-<span>    FishAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    FishLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    FishAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    FishLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  ObsFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx</span>,</span>
+<span>  ObsFishIdx_SE <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishIdx_SE</span>,</span>
+<span>  UseFishIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishIdx</span>,</span>
+<span>  ObsFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishAgeComps</span>,</span>
+<span>  UseFishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishAgeComps</span>,</span>
+<span>  ISS_FishAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishAgeComps</span>,</span>
+<span>  ObsFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsFishLenComps</span>,</span>
+<span>  UseFishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseFishLenComps</span>,</span>
+<span>  ISS_FishLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_FishLenComps</span>,</span>
+<span>  fish_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span><span class="op">)</span>,</span>
+<span>  FishAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  FishLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  FishAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  FishLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    ObsSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span>,</span>
-<span>    ObsSrvIdx_SE <span class="op">=</span> <span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx_SE</span> <span class="op">/</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1.66</span><span class="op">)</span>,</span>
-<span>    UseSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvIdx</span>,</span>
-<span>    ObsSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvAgeComps</span>,</span>
-<span>    ISS_SrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvAgeComps</span>,</span>
-<span>    UseSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvAgeComps</span>,</span>
-<span>    ObsSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvLenComps</span>,</span>
-<span>    UseSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvLenComps</span>,</span>
-<span>    ISS_SrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvLenComps</span>,</span>
-<span>    srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"biom"</span><span class="op">)</span>,</span>
-<span>    SrvAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    SrvLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
-<span>    SrvAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    SrvLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  ObsSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span>,</span>
+<span>  ObsSrvIdx_SE <span class="op">=</span> <span class="op">(</span><span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx_SE</span> <span class="op">/</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvIdx</span><span class="op">)</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/MathFun.html" class="external-link">sqrt</a></span><span class="op">(</span><span class="fl">1.66</span><span class="op">)</span>,</span>
+<span>  UseSrvIdx <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvIdx</span>,</span>
+<span>  ObsSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvAgeComps</span>,</span>
+<span>  ISS_SrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvAgeComps</span>,</span>
+<span>  UseSrvAgeComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvAgeComps</span>,</span>
+<span>  ObsSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ObsSrvLenComps</span>,</span>
+<span>  UseSrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">UseSrvLenComps</span>,</span>
+<span>  ISS_SrvLenComps <span class="op">=</span> <span class="va">sgl_rg_dusky_data</span><span class="op">$</span><span class="va">ISS_SrvLenComps</span>,</span>
+<span>  srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"biom"</span><span class="op">)</span>,</span>
+<span>  SrvAgeComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  SrvLenComps_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Multinomial"</span><span class="op">)</span>,</span>
+<span>  SrvAgeComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  SrvLenComps_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"agg_Year_1-terminal_Fleet_1"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    cont_tv_fish_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    fish_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
-<span>    fish_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fix"</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  cont_tv_fish_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  fish_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
+<span>  fish_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fix"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">srv_q_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>region <span class="op">=</span> <span class="fl">1</span>, block <span class="op">=</span> <span class="fl">1</span>, fleet <span class="op">=</span> <span class="fl">1</span>, mu <span class="op">=</span> <span class="fl">1</span>, sd <span class="op">=</span> <span class="fl">0.447213595</span><span class="op">)</span></span>
+<span><span class="va">srv_q_prior</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>region <span class="op">=</span> <span class="fl">1</span>, block <span class="op">=</span> <span class="fl">1</span>, fleet <span class="op">=</span> <span class="fl">1</span>, mu <span class="op">=</span> <span class="fl">1</span>, sd <span class="op">=</span> <span class="fl">0.447213595</span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></span><span class="op">(</span></span>
-<span>    input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>    cont_tv_srv_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
-<span>    srv_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
-<span>    srv_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
-<span>    Use_srv_q_prior <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>    srv_q_prior <span class="op">=</span> <span class="va">srv_q_prior</span>,</span>
-<span>    t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Srvsel_and_Q.html">Setup_Mod_Srvsel_and_Q</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  cont_tv_srv_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_sel_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_sel_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"logist2_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_q_blocks <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none_Fleet_1"</span><span class="op">)</span>,</span>
+<span>  srv_fixed_sel_pars_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
+<span>  srv_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"est_all"</span><span class="op">)</span>,</span>
+<span>  Use_srv_q_prior <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  srv_q_prior <span class="op">=</span> <span class="va">srv_q_prior</span>,</span>
+<span>  t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
-<span>    <span class="va">input_list</span></span>
-<span>  <span class="op">)</span></span>
-<span>  </span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting</a></span><span class="op">(</span></span>
+<span>  <span class="va">input_list</span></span>
+<span><span class="op">)</span></span>
+<span></span>
 <span><span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
 <span>                   random <span class="op">=</span> <span class="cn">NULL</span>, newton_loops <span class="op">=</span> <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>

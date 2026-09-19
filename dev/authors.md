@@ -15,6 +15,9 @@
 
 ## Citation
 
+Source:
+[`inst/CITATION`](https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/inst/CITATION)
+
 Cheng MLH, Goethel DR, Cunningham CJ, Hulson P-JF, Ianelli JN, Omori KL
 (2026). The SPoRC Stock Assessment Package: A Generalized
 Next-Generation Platform to Assess Spatial, Age and Sex-Structured

@@ -52,14 +52,14 @@ data files.
 
 ``` r
 
-library(parallel)      
-library(foreach)       
-library(doParallel)    
-library(ggplot2)       
-library(here)          
+library(parallel)
+library(foreach)
+library(doParallel)
+library(ggplot2)
+library(here)
 library(SPoRC)
 # devtools::install_github("ricardo-bion/ggradar", dependencies = TRUE)
-library(ggradar)      
+library(ggradar)
 data("dusky_rtmb_model")
 ```
 
@@ -112,7 +112,7 @@ setup_em <- function(sim_env, y, sim) {
     n_sexes = sim_env$n_sexes,
     n_fish_fleets = sim_env$n_fish_fleets,
     n_srv_fleets = sim_env$n_srv_fleets,
-    n_pop = sim_env$n_pop, 
+    n_pop = sim_env$n_pop,
     verbose = FALSE
   )
 
@@ -166,7 +166,7 @@ setup_em <- function(sim_env, y, sim) {
     Use_F_pen = 1,
     sigmaC_spec = "fix",
     ln_sigmaC = sim_data$ln_sigmaC,
-    ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+    ln_sigmaF = array(log(sqrt(1 / 2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
   )
 
   # Configure fishery indices and compositions
@@ -243,13 +243,13 @@ setup_em <- function(sim_env, y, sim) {
     Wt_Rec = 1,
     Wt_F = 1,
     Wt_Tagging = 0,
-    Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, 
+    Wt_FishAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                        input_list$data$n_sexes, input_list$data$n_fish_fleets)),
-    Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, 
+    Wt_FishLenComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                        input_list$data$n_sexes, input_list$data$n_fish_fleets)),
-    Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, 
+    Wt_SrvAgeComps = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                       input_list$data$n_sexes, input_list$data$n_srv_fleets)),
-    Wt_SrvLenComps = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, 
+    Wt_SrvLenComps = array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
                                       input_list$data$n_sexes, input_list$data$n_srv_fleets))
   )
 
@@ -385,7 +385,7 @@ run_projection <- function(sim_env, obj, reference_points, asmt_data, mp_config,
     t_spawn = sim_env$t_spawn,
     bh_rec_opt = mp_config$proj_opt$bh_rec_opt
   )
-  
+
   return(proj_results)
 }
 ```
@@ -414,7 +414,7 @@ on management procedures defined later.
 #'
 #' @return Modified TAC array with constraints applied
 apply_catch_constraints <- function(tmp_TAC, catch_opt_func) {
-  for (j in 1:dim(tmp_TAC)[3]) {
+  for (j in seq_len(dim(tmp_TAC)[3])) {
     tmp_TAC[1,, j,1, ] <- catch_opt_func(catch = tmp_TAC[1,, j,1, ])
   }
   return(tmp_TAC)
@@ -676,13 +676,13 @@ repeated simulations.
 #' @return List containing simulation results (SSB, catch, F, NAA)
 run_single_replicate <- function(sim, sim_list, mp_config, assessment_years,
                                  years_to_use, assess_freq) {
-  
+
   # Initialize simulation environment
   sim_env <- Setup_sim_env(sim_list)
 
   # Loop through all simulation years
   for (y in 1:sim_env$n_yrs) {
-    
+
     # Execute annual population dynamics
     run_annual_cycle(y, sim, sim_env)
 
@@ -797,7 +797,7 @@ applications.
 #'
 #' @param mp_list List of management procedure configurations
 #' @param sim_list Simulation configuration list
-#' @param n_cores Number of CPU cores to use 
+#' @param n_cores Number of CPU cores to use
 #'
 #' @return List of simulation results for each management procedure
 run_parallel_simulations <- function(mp_list, sim_list, n_cores = max(1, detectCores() - 2)) {
@@ -835,13 +835,13 @@ run_parallel_simulations <- function(mp_list, sim_list, n_cores = max(1, detectC
 
     # export MP to par env
     current_mp_config <- mp_list[[i]]
-    current_mp_name <- names(mp_list)[i]
+    current_mp_name <- names(mp_list)[i] # nolint: object_usage_linter.
     clusterExport(cl, c("current_mp_config", "current_mp_name"), envir = environment())
 
     # run replicates in parallel
     replicate_results <- parLapply(cl, 1:sim_list$n_sims, function(sim) {
 
-      set.seed(123 + sim) 
+      set.seed(123 + sim)
 
       tryCatch({
         run_single_replicate(
@@ -923,7 +923,7 @@ sd_rep <- dusky_rtmb_model$sdrep
 # Define operating model parameters
 closed_loop_yrs <- 50      # Years to project forward
 n_years <- length(data$years)  # number of years
-burnin_years <- 1:length(data$years)  # Historical conditioning period
+burnin_years <- seq_along(data$years)  # Historical conditioning period
 n_sims <- 100              # Number of replicate simulations
 assess_freq <- 2           # Assessment frequency (every 2 years)
 data_yr_freq <- 2          # Data collection frequency
@@ -1014,13 +1014,13 @@ rec_results <- NULL
 catch_results <- NULL
 f_results <- NULL
 
-for(i in 1:length(sim_all)) {
+for(i in seq_along(sim_all)) {
 
   # extract out recruitment scenario
   sim_tmp <- sim_all[[i]]
 
   # get mp specific results
-  for(j in 1:length(sim_tmp)) {
+  for(j in seq_along(sim_tmp)) {
     # get ssb
     tmp_ssb <- reshape2::melt(sim_tmp[[j]]$ssb) %>%
       rename(Region = Var1, Year = Var2, Sim = Var3, SSB = value) %>%

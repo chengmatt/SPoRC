@@ -36,12 +36,12 @@ model dimensions.
 
 ``` r
 
-library(SPoRC) 
+library(SPoRC)
 #> Loading required package: RTMB
 data("sgl_rg_sable_data")
 
-input_list <- Setup_Mod_Dim(years = 1:length(sgl_rg_sable_data$years),
-                            ages = 1:length(sgl_rg_sable_data$ages),
+input_list <- Setup_Mod_Dim(years = seq_along(sgl_rg_sable_data$years),
+                            ages = seq_along(sgl_rg_sable_data$ages),
                             lens = seq(41, 99, 2),
                             n_regions = 1,
                             n_sexes = sgl_rg_sable_data$n_sexes,
@@ -149,7 +149,7 @@ blocks, along with their associated mean and standard deviation.
 
 ``` r
 
-M_prior <- data.frame( 
+M_prior <- data.frame(
   popblk    = 1,
   regionblk = 1,
   yearblk   = 1,
@@ -427,8 +427,8 @@ study.
 
 data(mlt_rg_sable_data)
 
-input_list <- Setup_Mod_Dim(years = 1:length(mlt_rg_sable_data$years),
-                            ages = 1:length(mlt_rg_sable_data$ages),
+input_list <- Setup_Mod_Dim(years = seq_along(mlt_rg_sable_data$years),
+                            ages = seq_along(mlt_rg_sable_data$ages),
                             lens = mlt_rg_sable_data$lens,
                             n_regions = mlt_rg_sable_data$n_regions,
                             n_sexes = mlt_rg_sable_data$n_sexes,

@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Case Study: Bering Sea and Aleutian Islands Blackspotted and Rougheye Rockfish</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/z_bsai_rougheye_rockfish_case_study.Rmd" class="external-link"><code>vignettes/z_bsai_rougheye_rockfish_case_study.Rmd</code></a></small>
       <div class="d-none name"><code>z_bsai_rougheye_rockfish_case_study.Rmd</code></div>
     </div>
 
@@ -414,7 +415,7 @@ deviations are the log ratio of the two.</p>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_F_devs</span><span class="op">[</span><span class="fl">1</span>, , <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">fmort_dev</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">fish_fixed_sel_pars</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">sel_a50_fish</span>, <span class="va">mle</span><span class="op">$</span><span class="va">sel_aslope_fish</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">srv_fixed_sel_pars</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">sel_a50_srv</span>, <span class="va">mle</span><span class="op">$</span><span class="va">sel_aslope_srv</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_RecDevs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">rec_dev</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">rec_dev</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_RecDevs</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">rec_dev</span><span class="op">)</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">mle</span><span class="op">$</span><span class="va">rec_dev</span></span>
 <span></span>
 <span><span class="co"># The assessment's initial numbers at age against SPoRC's equilibrium reference.</span></span>
 <span><span class="va">NAA_equil</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="va">mle</span><span class="op">$</span><span class="va">log_rinit</span><span class="op">)</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="op">-</span><span class="op">(</span><span class="fl">0</span><span class="op">:</span><span class="op">(</span><span class="va">n_ages</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span><span class="op">)</span> <span class="op">*</span> <span class="va">mle</span><span class="op">$</span><span class="va">M</span><span class="op">)</span></span>

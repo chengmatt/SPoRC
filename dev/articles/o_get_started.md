@@ -132,17 +132,17 @@ parameterized. In this example, movement is not estimated
 ``` r
 
 # setup movement
-  input_list <- Setup_Mod_Movement(
-    input_list = input_list,
-    use_fixed_movement = 1,
-    Fixed_Movement = NA,
-    do_recruits_move = 0
-  )
+input_list <- Setup_Mod_Movement(
+  input_list = input_list,
+  use_fixed_movement = 1,
+  Fixed_Movement = NA,
+  do_recruits_move = 0
+)
 
 # setup tagging
-  input_list <- Setup_Mod_Tagging(
-    input_list = input_list, 
-    UseTagging = 0)
+input_list <- Setup_Mod_Tagging(
+  input_list = input_list,
+  UseTagging = 0)
 ```
 
 ### Setup Catch and Fishing Mortality
@@ -178,8 +178,8 @@ input_list <- Setup_Mod_Catch_and_F(
   sigmaC_spec = "fix",
 
   # Fixing sigma C and F
-  ln_sigmaC = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,  input_list$data$n_fish_fleets)),
-  ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+  ln_sigmaC = array(log(sqrt(1 / 2)), dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,  input_list$data$n_fish_fleets)),
+  ln_sigmaF = array(log(sqrt(1 / 2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
 )
 ```
 
@@ -368,7 +368,7 @@ to 0.
 
 ``` r
 
-# catch weigthing 
+# catch weigthing
 Wt_Catch <- array(0, dim = c(sgl_rg_dusky_data$n_regions, length(sgl_rg_dusky_data$years),                                    input_list$data$n_seas, sgl_rg_dusky_data$n_fish_fleets))
 Wt_Catch[,which(sgl_rg_dusky_data$years %in% 1977:1991),,] <- 2
 Wt_Catch[,-which(sgl_rg_dusky_data$years %in% 1977:1991),,] <- 50
@@ -730,7 +730,7 @@ nofrancis_retro <- do_retrospective(
   random = NULL, # random effects
   do_par = TRUE, # whether to parallellize
   n_cores = parallel::detectCores() - 2,  # number of cores to use
-  do_francis = FALSE,  # whether to do francis within a given retrospective peel
+  do_francis = FALSE  # whether to do francis within a given retrospective peel
 )
 
 # get retrospective plots
@@ -805,7 +805,7 @@ francis_mean_rec_profile <- francis_meanrec_prof$agg_nLL %>%
     str_detect(type, "Age") ~ "Age Comps",
     str_detect(type, "Idx") ~ "Indices",
     str_detect(type, "Catch") ~ "Catch",
-    str_detect(type, "jnLL") ~ "jnLL",
+    str_detect(type, "jnLL") ~ "jnLL"
   )) %>%
   filter(value != 0) %>%
   group_by(Summarized_Type, prof_val) %>%
@@ -857,10 +857,12 @@ prop_converged <- jitter_res %>%
   summarize(prop_conv = sum(Hessian) / length(Hessian))
 
 # get jitter results
-final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Pop = Var1, Region = Var2, Year = Var3) %>%
+final_mod <- reshape2::melt(francis_model$rep$SSB) %>%
+  rename(Pop = Var1, Region = Var2, Year = Var3) %>%
   mutate(Type = 'SSB') %>%
   bind_rows(reshape2::melt(francis_model$rep$Rec) %>%
-              rename(Pop = Var1, Region = Var2, Year = Var3) %>% mutate(Type = 'Recruitment'))
+              rename(Pop = Var1, Region = Var2, Year = Var3) %>%
+              mutate(Type = 'Recruitment'))
 ```
 
 ``` r
@@ -868,7 +870,7 @@ final_mod <- reshape2::melt(francis_model$rep$SSB) %>% rename(Pop = Var1, Region
 ggplot() +
   geom_line(jitter_res, mapping = aes(x = Year + 1976, y = value, group = jitter, color = Hessian), lwd = 1) +
   geom_line(final_mod, mapping = aes(x = Year + 1976, y = value), color = "black", lwd = 1.3 , lty = 2) +
-  facet_grid(Type~Region, scales = 'free',
+  facet_grid(Type ~ Region, scales = 'free',
              labeller = labeller(Region = function(x) paste0("Region ", x),
                                  Type = c("Recruitment" = "Age 2 Recruitment (millions)", "SSB" = 'SSB (kt)'))) +
   labs(x = "Year", y = "Value") +
@@ -1216,7 +1218,7 @@ for (i in seq_along(proj_inputs)) {
 
     all_scenarios_ssb[,,,sim,i] <- out$proj_SSB
     all_scenarios_catch[,,,,,sim,i] <- out$proj_Catch
-    all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs+1)] # remove last year, since it's not used
+    all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs + 1)] # remove last year, since it's not used
   } # end sim loop
   print(i)
 } # end i loop
@@ -1255,7 +1257,7 @@ scenarios <- reshape2::melt(all_scenarios_ssb) %>%
 
 # expand historical SSB for plotting
 scenarios_unique <- unique(scenarios$Scenario)
-historical_expanded <- historical[rep(1:nrow(historical), times = length(scenarios_unique)), ]
+historical_expanded <- historical[rep(seq_len(nrow(historical)), times = length(scenarios_unique)), ]
 historical_expanded$Scenario <- rep(scenarios_unique, each = nrow(historical))
 
 # combine
@@ -1329,7 +1331,7 @@ scenarios <- reshape2::melt(all_scenarios_catch) %>%
 
 # expand historical catch for plotting
 scenarios_unique <- unique(scenarios$Scenario)
-historical_expanded <- historical[rep(1:nrow(historical), times = length(scenarios_unique)), ]
+historical_expanded <- historical[rep(seq_len(nrow(historical)), times = length(scenarios_unique)), ]
 historical_expanded$Scenario <- rep(scenarios_unique, each = nrow(historical))
 
 # combine
@@ -1443,7 +1445,7 @@ scenarios <- reshape2::melt(all_scenarios_f) %>%
 
 # expand historical F for plotting
 scenarios_unique <- unique(scenarios$Scenario)
-historical_expanded <- historical[rep(1:nrow(historical), times = length(scenarios_unique)), ]
+historical_expanded <- historical[rep(seq_len(nrow(historical)), times = length(scenarios_unique)), ]
 historical_expanded$Scenario <- rep(scenarios_unique, each = nrow(historical))
 
 # combine

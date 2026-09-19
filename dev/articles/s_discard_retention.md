@@ -287,7 +287,7 @@ setup_em <- function(sim_obj, sim) {
     ln_sigmaF      = array(log(1), dim = c(input_list$data$n_regions,
                                            input_list$data$n_seas,
                                            input_list$data$n_fish_fleets)),
-    
+
     # Discard data (discard units are biomass fractions as default)
     ObsDiscard     = sim_data$ObsDiscard, # observed discards
     UseDiscard     = sim_data$UseDiscard, # using discards
@@ -326,7 +326,7 @@ setup_em <- function(sim_obj, sim) {
     UseFishAgeComps_discard      = sim_data$UseFishAgeComps_discard,
     ISS_FishAgeComps_discard     = sim_data$ISS_FishAgeComps_discard,
     FishAgeComps_discard_LikeType = rep("Multinomial", input_list$data$n_fish_fleets),
-    FishAgeComps_discard_Type     = "agg_Year_1-terminal_Fleet_1",
+    FishAgeComps_discard_Type     = "agg_Year_1-terminal_Fleet_1"
   )
 
   # Survey indices and compositions
@@ -416,7 +416,7 @@ for (i in 1:sim_obj$n_sims) {
 
   # setup EM from above
   input_list <- setup_em(sim_obj, sim = i)
-  
+
   # fit model
   model <- fit_model(
     input_list$data,
@@ -473,8 +473,8 @@ ssb_df_res <- reshape2::melt(ssb_results) %>%
       rename(Pop = Var1, Region = Var2, Year = Var3, Sim = Var4, True = value),
     by = c("Year", "Sim")
   ) %>%
-  mutate(RE = (Est - True) / True) %>% 
-  group_by(Year) %>% 
+  mutate(RE = (Est - True) / True) %>%
+  group_by(Year) %>%
   summarize(
     lwr = quantile(RE, 0.025),
     upr = quantile(RE, 0.975),

@@ -2,7 +2,7 @@
 
 ``` r
 
-library(SPoRC) 
+library(SPoRC)
 library(here)
 library(RTMB)
 library(ggplot2)
@@ -1409,7 +1409,7 @@ calculations (0 = landing fleet, 1 = discard-only fleet).
 ``` r
 
 data("sgl_rg_sable_rep") # read in single region report
-data("sgl_rg_sable_data") # read in single region data 
+data("sgl_rg_sable_data") # read in single region data
 
 # single area model
 sgl_ref_pt <- Get_Reference_Points(data = sgl_rg_sable_data,
@@ -1418,7 +1418,7 @@ sgl_ref_pt <- Get_Reference_Points(data = sgl_rg_sable_data,
                                    type = 'single_region',
                                    what = 'SPR',
                                    calc_rec_st_yr = 20,
-                                   rec_age = 2,
+                                   rec_age = 2
                                    )
 sgl_ref_pt$f_ref_pt # F40
 sgl_ref_pt$b_ref_pt # B40
@@ -1442,7 +1442,7 @@ region-specific and can be applied accordingly.
 ``` r
 
 data("mlt_rg_sable_rep") # read in multi region report
-data("mlt_rg_sable_data") # read in multi region data 
+data("mlt_rg_sable_data") # read in multi region data
 
 # multi region model with independent SPR
 mlt_ref_pt_indp <- Get_Reference_Points(data = mlt_rg_sable_data,
@@ -1469,7 +1469,7 @@ but these values are all identical.
 ``` r
 
 data("mlt_rg_sable_rep") # read in multi region report
-data("mlt_rg_sable_data") # read in multi region data 
+data("mlt_rg_sable_data") # read in multi region data
 
 # multi region model with global SPR
 mlt_ref_pt_global <- Get_Reference_Points(data = mlt_rg_sable_data,
@@ -1615,7 +1615,7 @@ hcr_df <- tibble(
   })
 )
 
-ggplot(hcr_df, aes(x = SSB_B40, y = F)) +
+ggplot(hcr_df, aes(x = SSB_B40, y = .data$F)) +
   geom_line(color = "steelblue", size = 1) +
   labs(x = "SSB / B40", y = "F") +
   theme_bw(base_size = 13)
@@ -1629,7 +1629,7 @@ We can define all the inputs needed to run the population projection:
 
 
 data("sgl_rg_sable_rep") # read in single region report
-data("sgl_rg_sable_data") # read in single region data 
+data("sgl_rg_sable_data") # read in single region data
 
 # Setup necessary inputs
 t_spawn <- 0 # spawn timing
@@ -1966,7 +1966,7 @@ hcr_df <- expand.grid(j = 1:5, i = 1:50) %>%
     SSB_B40 = i / brp
   )
 
-ggplot(hcr_df, aes(x = SSB_B40, y = F, color = factor(j))) +
+ggplot(hcr_df, aes(x = SSB_B40, y = .data$F, color = factor(j))) +
   geom_line(lwd = 1.3) +
   facet_wrap(~j, scales = 'free') +
   labs(x = "SSB / B40", y = "F", color = 'Region') +
@@ -1983,7 +1983,7 @@ projection:
 
 
 data("mlt_rg_sable_rep") # read in multi region report
-data("mlt_rg_sable_data") # read in multi region data 
+data("mlt_rg_sable_data") # read in multi region data
 
 # Setup necessary inputs
 t_spawn <- 0
@@ -2070,7 +2070,7 @@ and catch advice:
 ``` r
 
 combined_ssb <- cbind(mlt_rg_sable_rep$SSB[1,,-62], out$proj_SSB[1,,])
-combined_ssb_df <- reshape2::melt(combined_ssb) %>% 
+combined_ssb_df <- reshape2::melt(combined_ssb) %>%
   rename(Region = Var1, Year = Var2, SSB = value)
 
 ggplot(combined_ssb_df, aes(x = Year + 1959, y = SSB, color = factor(Region))) +
@@ -2088,7 +2088,7 @@ ggplot(combined_ssb_df, aes(x = Year + 1959, y = SSB, color = factor(Region))) +
 ``` r
 
 combined_catch <- cbind(apply(mlt_rg_sable_rep$PredCatch, c(2,3), sum), apply(out$proj_Catch, c(2,3), sum))
-combined_catch_df <- reshape2::melt(combined_catch) %>% 
+combined_catch_df <- reshape2::melt(combined_catch) %>%
   rename(Region = Var1, Year = Var2, Catch = value)
 
 ggplot(combined_catch_df, aes(x = Year + 1959, y = Catch, color = factor(Region))) +
@@ -2202,7 +2202,7 @@ for (i in seq_along(proj_inputs)) {
                                     t_spawn = t_spawn)
     all_scenarios_ssb[,,sim,i] <- out$proj_SSB
     all_scenarios_catch[,,,sim,i] <- out$proj_Catch
-    all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs+1)]
+    all_scenarios_f[,,sim,i] <- out$proj_F[,-(n_proj_yrs + 1)]
   }
   print(i)
 }
@@ -2224,7 +2224,7 @@ scenarios <- reshape2::melt(all_scenarios_ssb) %>%
   rename(Region = Var1, Simulation = Var3, SSB = value)
 
 scenarios_unique <- unique(scenarios$Scenario)
-historical_expanded <- historical[rep(1:nrow(historical), times = length(scenarios_unique)), ]
+historical_expanded <- historical[rep(seq_len(nrow(historical)), times = length(scenarios_unique)), ]
 historical_expanded$Scenario <- rep(scenarios_unique, each = nrow(historical))
 combined_ssb <- bind_rows(historical_expanded, scenarios)
 
@@ -2259,7 +2259,7 @@ scenarios <- reshape2::melt(all_scenarios_catch) %>%
   select(-c(Var2, Var5))
 
 scenarios_unique <- unique(scenarios$Scenario)
-historical_expanded <- historical[rep(1:nrow(historical), times = length(scenarios_unique)), ]
+historical_expanded <- historical[rep(seq_len(nrow(historical)), times = length(scenarios_unique)), ]
 historical_expanded$Scenario <- rep(scenarios_unique, each = nrow(historical))
 combined_cat <- bind_rows(historical_expanded, scenarios)
 

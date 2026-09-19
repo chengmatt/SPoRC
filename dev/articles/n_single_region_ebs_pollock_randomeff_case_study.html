@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Random Effects (Selectivity Example; Eastern Bering Sea Pollock) </h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/n_single_region_ebs_pollock_randomeff_case_study.Rmd" class="external-link"><code>vignettes/n_single_region_ebs_pollock_randomeff_case_study.Rmd</code></a></small>
       <div class="d-none name"><code>n_single_region_ebs_pollock_randomeff_case_study.Rmd</code></div>
     </div>
 
@@ -119,7 +120,7 @@ all process error parameters, with no correlation suppression and full
 estimation of deviations:</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">model_inputs</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Fishsel_and_Q.html">Setup_Mod_Fishsel_and_Q</a></span><span class="op">(</span></span>
-<span>  input_list           <span class="op">=</span> <span class="va">inputs</span>, </span>
+<span>  input_list           <span class="op">=</span> <span class="va">inputs</span>,</span>
 <span>  fish_sel_model       <span class="op">=</span> <span class="st">"logist1_Fleet_1"</span>,</span>
 <span>  cont_tv_fish_sel     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"iid_Fleet_1"</span><span class="op">)</span>,</span>
 <span>  fishsel_pe_pars_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
@@ -170,7 +171,7 @@ acoustic biomass index and from its age composition, and
 <span><span class="co">#' The function relies on the global dataset \code{sgl_rg_ebswp_data} to provide</span></span>
 <span><span class="co">#' years, ages, weight-at-age, maturity-at-age, observed catches, fishery and</span></span>
 <span><span class="co">#' survey indices, age and length compositions, and other required inputs.</span></span>
-<span><span class="co">#' </span></span>
+<span><span class="co">#'</span></span>
 <span><span class="co">#' The model is configured for:</span></span>
 <span><span class="co">#' - one region</span></span>
 <span><span class="co">#' - one sex</span></span>
@@ -187,7 +188,7 @@ acoustic biomass index and from its age composition, and
 <span><span class="co">#' - 0.3 for age-3+.</span></span>
 <span><span class="co">#'</span></span>
 <span><span class="co">#' Recruitment is modeled using a Beverton-Holt stock-recruitment function</span></span>
-<span><span class="co">#' with fixed steepness. </span></span>
+<span><span class="co">#' with fixed steepness.</span></span>
 <span><span class="co">#'</span></span>
 <span><span class="co">#' Selectivity and catchability are parameterized separately for fishery and</span></span>
 <span><span class="co">#' survey fleets, with user control over random effects and correlation</span></span>
@@ -204,9 +205,9 @@ acoustic biomass index and from its age composition, and
 <span><span class="co">#' \code{\link{Setup_Mod_Fishsel_and_Q}}, \code{\link{Setup_Mod_Srvsel_and_Q}},</span></span>
 <span><span class="co">#' \code{\link{Setup_Mod_Weighting}}</span></span>
 <span><span class="co">#'</span></span>
-<span><span class="va">pol_model</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">cont_tv_fish_sel</span>, </span>
+<span><span class="va">pol_model</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">cont_tv_fish_sel</span>,</span>
 <span>                      <span class="va">fishsel_pe_pars_spec</span>,</span>
-<span>                      <span class="va">corr_opt_semipar</span>, </span>
+<span>                      <span class="va">corr_opt_semipar</span>,</span>
 <span>                      <span class="va">fish_sel_devs_spec</span></span>
 <span>                      <span class="op">)</span> <span class="op">{</span></span>
 <span></span>
@@ -489,7 +490,7 @@ are modeled as random; otherwise, it is <code>NULL.</code></p>
 <span><span class="va">models</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># loop through models</span></span>
-<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pol_model_var</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">pol_model_var</span><span class="op">)</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span></span>
 <span>  <span class="co"># if selectivity deviations should be treated as random</span></span>
 <span>  <span class="kw">if</span><span class="op">(</span><span class="fu">str_detect</span><span class="op">(</span><span class="va">pol_model_var</span><span class="op">$</span><span class="va">cont_tv_fish_sel</span><span class="op">[</span><span class="va">i</span><span class="op">]</span>, <span class="st">"none"</span><span class="op">)</span><span class="op">)</span> <span class="va">random</span> <span class="op">&lt;-</span> <span class="cn">NULL</span></span>
@@ -513,7 +514,7 @@ are modeled as random; otherwise, it is <code>NULL.</code></p>
 <span>                                <span class="va">mapping</span>,</span>
 <span>                                random <span class="op">=</span> <span class="va">random</span>,</span>
 <span>                                newton_loops <span class="op">=</span> <span class="fl">3</span>,</span>
-<span>                                silent <span class="op">=</span> <span class="cn">T</span></span>
+<span>                                silent <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span>  <span class="va">ebswp_rtmb_model</span><span class="op">$</span><span class="va">sdrep</span> <span class="op">&lt;-</span> <span class="fu">RTMB</span><span class="fu">::</span><span class="fu">sdreport</span><span class="op">(</span><span class="va">ebswp_rtmb_model</span><span class="op">)</span></span>
@@ -531,7 +532,7 @@ estimates.</p>
 <code class="sourceCode R"><span><span class="va">model_names</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"constant"</span>, <span class="st">"iid_p"</span>, <span class="st">"rw_p"</span>, <span class="st">"2dar1_sp"</span>, <span class="st">"3dgmrf_sp"</span>, <span class="st">"iid_sp"</span><span class="op">)</span></span>
 <span><span class="va">fishsel_all_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># empty dataframe to bind to</span></span>
 <span><span class="va">ts_all_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span><span class="op">)</span> <span class="co"># empty dataframe to bind to</span></span>
-<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">models</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
+<span><span class="kw">for</span><span class="op">(</span><span class="va">i</span> <span class="kw">in</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_along</a></span><span class="op">(</span><span class="va">models</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span>
 <span></span>
 <span>  <span class="co"># Get recruitment time-series</span></span>
 <span>  <span class="va">rec_series</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="op">(</span><span class="va">models</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">rep</span><span class="op">$</span><span class="va">Rec</span><span class="op">)</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
@@ -548,8 +549,8 @@ estimates.</p>
 <span>  <span class="co"># Get fishery selectivity estimates</span></span>
 <span>  <span class="va">fishsel_df</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="va">models</span><span class="op">[[</span><span class="va">i</span><span class="op">]</span><span class="op">]</span><span class="op">$</span><span class="va">rep</span><span class="op">$</span><span class="va">fish_sel</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>Pop <span class="op">=</span> <span class="va">Var1</span>, Region <span class="op">=</span> <span class="va">Var2</span>, Year <span class="op">=</span> <span class="va">Var3</span>, Seas <span class="op">=</span> <span class="va">Var4</span>, Age <span class="op">=</span> <span class="va">Var5</span>, Sex <span class="op">=</span> <span class="va">Var6</span>, Fleet <span class="op">=</span> <span class="va">Var7</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">Year</span>, <span class="va">Region</span>, <span class="va">Sex</span>, <span class="va">Fleet</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
-<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>value <span class="op">=</span> <span class="va">value</span><span class="op">/</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span>,</span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">Year</span>, <span class="va">Region</span>, <span class="va">Sex</span>, <span class="va">Fleet</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>    <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>value <span class="op">=</span> <span class="va">value</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">value</span><span class="op">)</span>,</span>
 <span>           Year <span class="op">=</span> <span class="va">Year</span> <span class="op">+</span> <span class="fl">1963</span><span class="op">)</span></span>
 <span>  <span class="va">fishsel_df</span><span class="op">$</span><span class="va">Model</span> <span class="op">&lt;-</span> <span class="va">model_names</span><span class="op">[</span><span class="va">i</span><span class="op">]</span></span>
 <span></span>

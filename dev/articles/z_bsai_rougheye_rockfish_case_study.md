@@ -324,7 +324,7 @@ input_list$par$ln_F_mean[] <- mle$log_avg_fmort
 input_list$par$ln_F_devs[1, , 1, 1] <- mle$fmort_dev
 input_list$par$fish_fixed_sel_pars[] <- log(c(mle$sel_a50_fish, mle$sel_aslope_fish))
 input_list$par$srv_fixed_sel_pars[] <- log(c(mle$sel_a50_srv, mle$sel_aslope_srv))
-input_list$par$ln_RecDevs[1, 1, 1:length(mle$rec_dev)] <- mle$rec_dev
+input_list$par$ln_RecDevs[1, 1, seq_along(mle$rec_dev)] <- mle$rec_dev
 
 # The assessment's initial numbers at age against SPoRC's equilibrium reference.
 NAA_equil <- exp(mle$log_rinit) * exp(-(0:(n_ages - 1)) * mle$M)

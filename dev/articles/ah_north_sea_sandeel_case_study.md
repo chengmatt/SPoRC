@@ -133,7 +133,7 @@ for(y in 1:n_yrs) {
 } # end y loop
 
 # smsR holds the mortality accumulated within each season. SPoRC parameterizes an
-# instantaneous rate per year and multiplies it by the season's duration ... 
+# instantaneous rate per year and multiplies it by the season's duration ...
 M_sms <- lhs$M[, 1:n_yrs, ]
 natmort <- array(0, dim = c(1, 1, n_yrs, n_seas, n_ages, 1))
 for(y in 1:n_yrs) {
@@ -145,7 +145,7 @@ input_list <- Setup_Mod_Biologicals(
   WAA = WAA,
   WAA_fish = WAA_fish,
   WAA_srv = WAA_srv,
-  MatAA = MatAA * 2, # cancels the single sex SSB halving in model dynamics 
+  MatAA = MatAA * 2, # cancels the single sex SSB halving in model dynamics
   fit_lengths = 0,
   M_spec = "fix",
   Fixed_natmort = natmort,
@@ -358,7 +358,7 @@ input_list <- Setup_Mod_Fishsel_and_Q(
   fish_q_spec = rep("fix", 2))
 
 # Fishery selectivity is one value per age, per block, shared by the two season
-# fleets because smsR's age pattern does not vary by season. 
+# fleets because smsR's age pattern does not vary by season.
 sel_par <- rbind(block_1 = c(NA, 1L, 2L, NA, NA),
                  block_2 = c(NA, 3L, 4L, 5L, 5L))
 
@@ -507,9 +507,9 @@ input_list <- Setup_Mod_Weighting(
 
 ``` r
 
-input_list$par$ln_sigmaR[] <- log(1) 
+input_list$par$ln_sigmaR[] <- log(1)
 est <- fit_model(input_list$data, input_list$par, input_list$map,
-                 random = NULL, newton_loops = 3, silent = F)
+                 random = NULL, newton_loops = 3, silent = FALSE)
 ```
 
 | Quantity | Correlation | Median annual difference | Largest annual difference |

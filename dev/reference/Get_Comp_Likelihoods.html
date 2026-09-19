@@ -46,6 +46,7 @@ and logistic-normal likelihoods."><meta name="robots" content="noindex"></head><
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul><ul class="navbar-nav"><li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json"></form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul></div>
 
 
@@ -55,7 +56,7 @@ and logistic-normal likelihoods."><meta name="robots" content="noindex"></head><
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Composition Data Likelihood</h1>
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/R/model_lik_comps.R" class="external-link"><code>R/model_lik_comps.R</code></a></small>
       <div class="d-none name"><code>Get_Comp_Likelihoods.Rd</code></div>
     </div>
 
@@ -226,12 +227,6 @@ age-at-length above all) potentially bias \(\theta\) upward under <code>1</code>
 logarithms. <code>1</code> (default) is the unbiased choice: the stationary point
 of the likelihood is exactly <code>p = obs</code>. <code>0</code> weights by the raw
 observed proportions.</p></dd>
-
-
-<dt id="arg-seas-agg">seas_agg<a class="anchor" aria-label="anchor" href="#arg-seas-agg"></a></dt>
-<dd><p>Integer vector, one per fleet. <code>1</code> builds the predicted
-composition from every season of the year summed together, <code>0</code> from the
-season the observation sits in.</p></dd>
 
 </dl></div>
     <div class="section level2">

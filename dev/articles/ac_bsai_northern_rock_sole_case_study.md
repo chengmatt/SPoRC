@@ -141,7 +141,7 @@ inv_steepness <- function(s) qlogis((s - 0.2) / 0.8)
 # biologicals
 Nspr <- numeric(n_ages)
 Nspr[1] <- 0.5
-for(a in 2:n_ages) Nspr[a] <- Nspr[a-1] * exp(-mle$M_f)
+for(a in 2:n_ages) Nspr[a] <- Nspr[a - 1] * exp(-mle$M_f)
 Nspr[n_ages] <- Nspr[n_ages] / (1 - exp(-mle$M_f))
 phi0 <- sum(Nspr * exp(-dat$t_spawn * mle$M_f) * dat$WAA[1,1,n_yrs,1,,1] * dat$MatAA[1,1,n_yrs,1,,1])
 a_sr <- log(exp(mle$R_logalpha) * phi0)

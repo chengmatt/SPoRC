@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Choosing Growth Options</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/af_growth_options.Rmd" class="external-link"><code>vignettes/af_growth_options.Rmd</code></a></small>
       <div class="d-none name"><code>af_growth_options.Rmd</code></div>
     </div>
 
@@ -102,9 +103,12 @@ every option below can be switched on against them.</p>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_ebs_pcod_data"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="va">sgl_rg_ebs_pcod_data</span></span>
-<span><span class="va">yrs</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">years</span>; <span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">yrs</span><span class="op">)</span></span>
-<span><span class="va">ages</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">ages</span>; <span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span></span>
-<span><span class="va">n_reg</span> <span class="op">&lt;-</span> <span class="fl">1</span>; <span class="va">n_sex</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">yrs</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">years</span></span>
+<span><span class="va">n_yrs</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">yrs</span><span class="op">)</span></span>
+<span><span class="va">ages</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">ages</span></span>
+<span><span class="va">n_ages</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">ages</span><span class="op">)</span></span>
+<span><span class="va">n_reg</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">n_sex</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
 <span></span>
 <span><span class="co"># lens are the bin midpoints the population is kept on; the transition is</span></span>
 <span><span class="co"># built on the lower edges, which is what growth_len_lower supplies</span></span>

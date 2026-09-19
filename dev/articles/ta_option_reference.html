@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Setup Estimation Model Argument Reference</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/ta_option_reference.Rmd" class="external-link"><code>vignettes/ta_option_reference.Rmd</code></a></small>
       <div class="d-none name"><code>ta_option_reference.Rmd</code></div>
     </div>
 
@@ -2052,9 +2053,9 @@ use_conv_tag_fishrep_prior = 0. Default NULL.
 <td><code>as.list(1:input_list$data$n_pop)</code></td>
 <td>List of integer vectors defining population pooling groups for the tagging likelihood. When "p" is not attended in conv_fish_tag_attr, use list(1:n_pop). If the pooling structure is inconsistent with conv_fish_tag_attr, a warning is issued and the structure is automatically overridden to a single group. Default: as.list(1:n_pop) (population-specific).</td>
 </tr>
-<tr data-k="conv_tag_age_pool as.list(1:length(input_list$data$ages)) list of integer vectors defining age pooling groups. when " a is not attended use list custom groupings are supported when attended. default: as.list>
+<tr data-k="conv_tag_age_pool as.list(seq_along(input_list$data$ages)) list of integer vectors defining age pooling groups. when " a is not attended use list custom groupings are supported when attended. default: as.list>
 <td><code class="optref-arg">conv_tag_age_pool</code></td>
-<td><code>as.list(1:length(input_list$data$ages))</code></td>
+<td><code>as.list(seq_along(input_list$data$ages))</code></td>
 <td>List of integer vectors defining age pooling groups. When "a" is not attended, use list(1:n_ages). Custom groupings (e.g., list(1:5, 6:10)) are supported when "a" is attended. Default: as.list(1:n_ages).</td>
 </tr>
 <tr data-k="conv_tag_sex_pool as.list(1:input_list$data$n_sexes) list of integer vectors defining sex pooling groups. when " s is not attended use list default: as.list>

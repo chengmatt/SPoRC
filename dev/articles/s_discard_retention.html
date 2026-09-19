@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Discard and Retention Modeling</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/s_discard_retention.Rmd" class="external-link"><code>vignettes/s_discard_retention.Rmd</code></a></small>
       <div class="d-none name"><code>s_discard_retention.Rmd</code></div>
     </div>
 
@@ -353,7 +354,7 @@ encapsulates the full EM setup for a single simulation replicate.</p>
 <span>    ln_sigmaF      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>                                           <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>                                           <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>    </span>
+<span></span>
 <span>    <span class="co"># Discard data (discard units are biomass fractions as default)</span></span>
 <span>    ObsDiscard     <span class="op">=</span> <span class="va">sim_data</span><span class="op">$</span><span class="va">ObsDiscard</span>, <span class="co"># observed discards</span></span>
 <span>    UseDiscard     <span class="op">=</span> <span class="va">sim_data</span><span class="op">$</span><span class="va">UseDiscard</span>, <span class="co"># using discards</span></span>
@@ -392,7 +393,7 @@ encapsulates the full EM setup for a single simulation replicate.</p>
 <span>    UseFishAgeComps_discard      <span class="op">=</span> <span class="va">sim_data</span><span class="op">$</span><span class="va">UseFishAgeComps_discard</span>,</span>
 <span>    ISS_FishAgeComps_discard     <span class="op">=</span> <span class="va">sim_data</span><span class="op">$</span><span class="va">ISS_FishAgeComps_discard</span>,</span>
 <span>    FishAgeComps_discard_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"Multinomial"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
-<span>    FishAgeComps_discard_Type     <span class="op">=</span> <span class="st">"agg_Year_1-terminal_Fleet_1"</span>,</span>
+<span>    FishAgeComps_discard_Type     <span class="op">=</span> <span class="st">"agg_Year_1-terminal_Fleet_1"</span></span>
 <span>  <span class="op">)</span></span>
 <span></span>
 <span>  <span class="co"># Survey indices and compositions</span></span>
@@ -480,7 +481,7 @@ store the estimated SSB trajectories.</p>
 <span></span>
 <span>  <span class="co"># setup EM from above</span></span>
 <span>  <span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu">setup_em</span><span class="op">(</span><span class="va">sim_obj</span>, sim <span class="op">=</span> <span class="va">i</span><span class="op">)</span></span>
-<span>  </span>
+<span></span>
 <span>  <span class="co"># fit model</span></span>
 <span>  <span class="va">model</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span></span>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>,</span>
@@ -531,8 +532,8 @@ expected, given data availiability in an age-structured model).</p>
 <span>      <span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>Pop <span class="op">=</span> <span class="va">Var1</span>, Region <span class="op">=</span> <span class="va">Var2</span>, Year <span class="op">=</span> <span class="va">Var3</span>, Sim <span class="op">=</span> <span class="va">Var4</span>, True <span class="op">=</span> <span class="va">value</span><span class="op">)</span>,</span>
 <span>    by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Year"</span>, <span class="st">"Sim"</span><span class="op">)</span></span>
 <span>  <span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>RE <span class="op">=</span> <span class="op">(</span><span class="va">Est</span> <span class="op">-</span> <span class="va">True</span><span class="op">)</span> <span class="op">/</span> <span class="va">True</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
-<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">Year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span> </span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/mutate.html" class="external-link">mutate</a></span><span class="op">(</span>RE <span class="op">=</span> <span class="op">(</span><span class="va">Est</span> <span class="op">-</span> <span class="va">True</span><span class="op">)</span> <span class="op">/</span> <span class="va">True</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
+<span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/group_by.html" class="external-link">group_by</a></span><span class="op">(</span><span class="va">Year</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu"><a href="https://dplyr.tidyverse.org/reference/summarise.html" class="external-link">summarize</a></span><span class="op">(</span></span>
 <span>    lwr <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">RE</span>, <span class="fl">0.025</span><span class="op">)</span>,</span>
 <span>    upr <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/quantile.html" class="external-link">quantile</a></span><span class="op">(</span><span class="va">RE</span>, <span class="fl">0.975</span><span class="op">)</span>,</span>

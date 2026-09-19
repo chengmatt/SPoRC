@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>North Sea Sandeel (smsR bridge)</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/ah_north_sea_sandeel_case_study.Rmd" class="external-link"><code>vignettes/ah_north_sea_sandeel_case_study.Rmd</code></a></small>
       <div class="d-none name"><code>ah_north_sea_sandeel_case_study.Rmd</code></div>
     </div>
 
@@ -239,7 +240,7 @@ is a coincidence and not the reason it is there.</p>
 <span><span class="op">}</span> <span class="co"># end y loop</span></span>
 <span></span>
 <span><span class="co"># smsR holds the mortality accumulated within each season. SPoRC parameterizes an</span></span>
-<span><span class="co"># instantaneous rate per year and multiplies it by the season's duration ... </span></span>
+<span><span class="co"># instantaneous rate per year and multiplies it by the season's duration ...</span></span>
 <span><span class="va">M_sms</span> <span class="op">&lt;-</span> <span class="va">lhs</span><span class="op">$</span><span class="va">M</span><span class="op">[</span>, <span class="fl">1</span><span class="op">:</span><span class="va">n_yrs</span>, <span class="op">]</span></span>
 <span><span class="va">natmort</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="va">n_yrs</span>, <span class="va">n_seas</span>, <span class="va">n_ages</span>, <span class="fl">1</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="kw">for</span><span class="op">(</span><span class="va">y</span> <span class="kw">in</span> <span class="fl">1</span><span class="op">:</span><span class="va">n_yrs</span><span class="op">)</span> <span class="op">{</span></span>
@@ -251,7 +252,7 @@ is a coincidence and not the reason it is there.</p>
 <span>  WAA <span class="op">=</span> <span class="va">WAA</span>,</span>
 <span>  WAA_fish <span class="op">=</span> <span class="va">WAA_fish</span>,</span>
 <span>  WAA_srv <span class="op">=</span> <span class="va">WAA_srv</span>,</span>
-<span>  MatAA <span class="op">=</span> <span class="va">MatAA</span> <span class="op">*</span> <span class="fl">2</span>, <span class="co"># cancels the single sex SSB halving in model dynamics </span></span>
+<span>  MatAA <span class="op">=</span> <span class="va">MatAA</span> <span class="op">*</span> <span class="fl">2</span>, <span class="co"># cancels the single sex SSB halving in model dynamics</span></span>
 <span>  fit_lengths <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  M_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  Fixed_natmort <span class="op">=</span> <span class="va">natmort</span>,</span>
@@ -507,7 +508,7 @@ empty.</p>
 <span>  fish_q_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"fix"</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Fishery selectivity is one value per age, per block, shared by the two season</span></span>
-<span><span class="co"># fleets because smsR's age pattern does not vary by season. </span></span>
+<span><span class="co"># fleets because smsR's age pattern does not vary by season.</span></span>
 <span><span class="va">sel_par</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span>block_1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">1L</span>, <span class="fl">2L</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
 <span>                 block_2 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">3L</span>, <span class="fl">4L</span>, <span class="fl">5L</span>, <span class="fl">5L</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
@@ -651,9 +652,9 @@ parameter, which is what an age a survey never sees wants.</p>
 <h2 id="fitting">Fitting<a class="anchor" aria-label="anchor" href="#fitting"></a>
 </h2>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_sigmaR</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span> </span>
+<code class="sourceCode R"><span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">ln_sigmaR</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
-<span>                 random <span class="op">=</span> <span class="cn">NULL</span>, newton_loops <span class="op">=</span> <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">F</span><span class="op">)</span></span></code></pre></div>
+<span>                 random <span class="op">=</span> <span class="cn">NULL</span>, newton_loops <span class="op">=</span> <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
 <table class="table">
 <colgroup>
 <col width="25%">

@@ -95,7 +95,7 @@ sim_list <- Setup_Sim_Fishing(
 
   Fmort_input = {
     n = sim_list$n_yrs * sim_list$n_seas * sim_list$n_sims * sim_list$n_fish_fleets
-    t = seq(0, 2*pi, length.out = n)
+    t = seq(0, 2 * pi, length.out = n)
     arr <- array(NA, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,
                              sim_list$n_fish_fleets, sim_list$n_sims))
     arr[1,,,,] <- 0.15 * exp(sin(t) + rnorm(n, 0, 0.1))   # region 1 higher F, peaks early
@@ -644,7 +644,7 @@ non_pop_obj$sd_rep <- sdreport(non_pop_obj)
 # Population-disaggregated data
 input_list  <- setup_em(sim_obj, sim = 1, use_pop_specific_cat_comps = TRUE)
 pop_obj     <- fit_model(input_list$data, input_list$par, input_list$map,
-                         NULL, 3, silent = FALSE, do_optim = T)
+                         NULL, 3, silent = FALSE, do_optim = TRUE)
 pop_obj$sd_rep <- sdreport(pop_obj)
 ```
 

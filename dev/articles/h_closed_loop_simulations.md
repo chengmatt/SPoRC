@@ -63,7 +63,7 @@ data stop.
 ``` r
 
 closed_loop_yrs <- 30 # number of closed loop years to do
-burnin_years <- 1:length(data$years) # number of conditioning years
+burnin_years <- seq_along(data$years) # number of conditioning years
 n_sims <- 100 # number of simulations to do
 assess_freq <- 5 # assessments every 5 years
 data_yr_freq <- 5 # data year frequency
@@ -80,7 +80,7 @@ sim_list <- condition_closed_loop_simulations(closed_loop_yrs = closed_loop_yrs,
                                               random = NULL,
                                               recruitment_opt = 'resample_from_input',
                                               ISS_FishAgeComps_fill = "F_pattern",
-                                              ISS_FishLenComps_fill = "F_pattern",
+                                              ISS_FishLenComps_fill = "F_pattern"
                                               )
 
 assessment_years <- seq(sim_list$feedback_start_yr, sim_list$n_yrs, assess_freq) # assessment years
@@ -171,7 +171,7 @@ setup_em <- function(sim_env, y, sim) {
                               n_fish_fleets = sim_env$n_fish_fleets, # number of fishery fleet
                               n_srv_fleets = sim_env$n_srv_fleets, # number of survey fleets
                               n_pop = sim_env$n_pop, # number of populations
-                              verbose = F
+                              verbose = FALSE
                               )
 
   # Recruitment setup
@@ -225,7 +225,7 @@ setup_em <- function(sim_env, y, sim) {
     sigmaC_spec = "fix",
     # Fixing sigma C and F
     ln_sigmaC = sim_data$ln_sigmaC,
-    ln_sigmaF = array(log(sqrt(1/2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+    ln_sigmaF = array(log(sqrt(1 / 2)), dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
   )
 
   # Survey selectivity and catchability
@@ -399,7 +399,7 @@ for (sim in 1:sim_env$n_sims) {
                          mapping,
                          random = NULL,
                          newton_loops = 1,
-                         silent = T
+                         silent = TRUE
         )
       }
 
@@ -475,13 +475,13 @@ for (sim in 1:sim_env$n_sims) {
           catch_to_F_singlefleet(
             f_guess = 0.05, # guess for fishing mortality rate
             catch = tmp_TAC[,r, tac_year_index,, f], # catch values to use
-            NAA = sim_env$NAA[1, r, y+1,,, , sim], # numbers at age in simulation (truth)
-            WAA = sim_env$WAA[1, r, y+1,, , , sim], # weight-at-age in simulation (truth)
-            natmort  = sim_env$natmort[1, r, y+1, , , , sim], # natural mortality in simulation (truth)
-            fish_sel = sim_env$fish_sel[1, r, y+1, 1, , , f, sim] # fishery selectivity in simulation (truth)
+            NAA = sim_env$NAA[1, r, y + 1,,, , sim], # numbers at age in simulation (truth)
+            WAA = sim_env$WAA[1, r, y + 1,, , , sim], # weight-at-age in simulation (truth)
+            natmort  = sim_env$natmort[1, r, y + 1, , , , sim], # natural mortality in simulation (truth)
+            fish_sel = sim_env$fish_sel[1, r, y + 1, 1, , , f, sim] # fishery selectivity in simulation (truth)
           )
         }, r = rf_grid$r, f = rf_grid$f)
-        sim_env$Fmort[,y+1,,,sim] <- array(tmp_f, dim = c(sim_env$n_regions, sim_env$n_seas, sim_env$n_fish_fleets)) # assign bisection values back into simulation
+        sim_env$Fmort[,y + 1,,,sim] <- array(tmp_f, dim = c(sim_env$n_regions, sim_env$n_seas, sim_env$n_fish_fleets)) # assign bisection values back into simulation
       } # end if
 
     } # feedback year
@@ -520,7 +520,7 @@ reshape2::melt(sim_env$TrueCatch) %>%
   summarize(median = median(value),
             lwr = quantile(value, 0.025),
             upr = quantile(value, 0.975)) %>%
-  rename(Year = Var2) %>% 
+  rename(Year = Var2) %>%
   ggplot(aes(x = Year, y = median, ymin = lwr, ymax = upr)) +
   geom_line() +
   geom_ribbon(alpha = 0.3) +

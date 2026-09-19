@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Specifying a Natal Homing Model</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/r_natal-homing-pop-lrgr-rg.Rmd" class="external-link"><code>vignettes/r_natal-homing-pop-lrgr-rg.Rmd</code></a></small>
       <div class="d-none name"><code>r_natal-homing-pop-lrgr-rg.Rmd</code></div>
     </div>
 
@@ -191,7 +192,7 @@ phase between regions, producing different exploitation histories:</p>
 <span></span>
 <span>  Fmort_input <span class="op">=</span> <span class="op">{</span></span>
 <span>    <span class="va">n</span> <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span> <span class="op">*</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span> <span class="op">*</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span> <span class="op">*</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span></span>
-<span>    <span class="va">t</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2</span><span class="op">*</span><span class="va">pi</span>, length.out <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
+<span>    <span class="va">t</span> <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">2</span> <span class="op">*</span> <span class="va">pi</span>, length.out <span class="op">=</span> <span class="va">n</span><span class="op">)</span></span>
 <span>    <span class="va">arr</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="cn">NA</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>                             <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span><span class="op">)</span><span class="op">)</span></span>
 <span>    <span class="va">arr</span><span class="op">[</span><span class="fl">1</span>,,,,<span class="op">]</span> <span class="op">&lt;-</span> <span class="fl">0.15</span> <span class="op">*</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">exp</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Trig.html" class="external-link">sin</a></span><span class="op">(</span><span class="va">t</span><span class="op">)</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/stats/Normal.html" class="external-link">rnorm</a></span><span class="op">(</span><span class="va">n</span>, <span class="fl">0</span>, <span class="fl">0.1</span><span class="op">)</span><span class="op">)</span>   <span class="co"># region 1 higher F, peaks early</span></span>
@@ -772,7 +773,7 @@ are obtained via <code>sdreport()</code>.</p>
 <span><span class="co"># Population-disaggregated data</span></span>
 <span><span class="va">input_list</span>  <span class="op">&lt;-</span> <span class="fu">setup_em</span><span class="op">(</span><span class="va">sim_obj</span>, sim <span class="op">=</span> <span class="fl">1</span>, use_pop_specific_cat_comps <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pop_obj</span>     <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
-<span>                         <span class="cn">NULL</span>, <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">FALSE</span>, do_optim <span class="op">=</span> <span class="cn">T</span><span class="op">)</span></span>
+<span>                         <span class="cn">NULL</span>, <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">FALSE</span>, do_optim <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">pop_obj</span><span class="op">$</span><span class="va">sd_rep</span> <span class="op">&lt;-</span> <span class="fu">sdreport</span><span class="op">(</span><span class="va">pop_obj</span><span class="op">)</span></span></code></pre></div>
 <div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">ssb_comp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">rbind</a></span><span class="op">(</span></span>

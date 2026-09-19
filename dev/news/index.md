@@ -192,6 +192,40 @@
 - Newton refinement in `fit_model` now takes its Hessian from the AD
   tape (`obj$he`) instead of finite-differencing, and stops early on a
   non-finite Hessian.
+- Declared the 59 data, parameter and column names that R CMD check
+  reported as undefined globals (conditional age at length, growth,
+  double normal selectivity, selected weight at age, initial deviation
+  penalties), and added a `.lintr.R` that follows the package coding
+  style (for developers).
+- Index ranges built from
+  [`length()`](https://rdrr.io/r/base/length.html),
+  [`nrow()`](https://rdrr.io/r/base/nrow.html),
+  [`ncol()`](https://rdrr.io/r/base/nrow.html) and
+  [`dim()`](https://rdrr.io/r/base/dim.html) now use
+  [`seq_along()`](https://rdrr.io/r/base/seq.html) and
+  [`seq_len()`](https://rdrr.io/r/base/seq.html), so an empty object
+  gives no iterations instead of the indices 1 and 0. Semicolon chains
+  are split one statement per line, `T`/`F` are written as
+  `TRUE`/`FALSE`, two `if()` conditions use `&&`, operators have spaces
+  around them, blocks that sat 2 or 4 spaces off their braces are
+  re-indented, and multi-line pipelines put each step on its own line
+  (for developers).
+- `compResidual` is declared in Suggests and DESCRIPTION has a
+  BugReports link; the help pages for
+  [`Setup_Mod_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Tagging.md)
+  and
+  [`osa_one_step_predict()`](https://chengmatt.github.io/SPoRC/dev/reference/osa_one_step_predict.md)
+  are regenerated, and
+  [`Get_Comp_Likelihoods()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Comp_Likelihoods.md)
+  no longer documents a `seas_agg` argument it does not take (for
+  developers).
+- Removed 25 values that were computed and never read, and a duplicated
+  `Mrate` entry in the closed loop report list; among them the
+  `tag_selex` and `tag_natmort` lookups in
+  [`condition_closed_loop_simulations()`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md),
+  which never reached the tagging simulation. Seven optimizer,
+  [`tryCatch()`](https://rdrr.io/r/base/conditions.html) and block-final
+  lines keep their call and drop only the unused name (for developers).
 
 ### Bug Fixes
 
@@ -200,6 +234,12 @@
 - Fixed the projection dropping the AD class when joining assessment and
   projected spawning biomass for the stock-recruit curve, which took
   recruitment off the tape.
+- Fixed
+  [`do_runs_test()`](https://chengmatt.github.io/SPoRC/dev/reference/do_runs_test.md)
+  returning a NaN p-value when the runs test has too few runs for a
+  variance (a two-point series, or zeros with every other residual one
+  sign). It now returns 0.001, as it already did for a series with no
+  sign changes.
 
 ## version 1.1.0
 

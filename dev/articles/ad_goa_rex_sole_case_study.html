@@ -58,6 +58,7 @@
 <li class="nav-item"><form class="form-inline" role="search">
  <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
 </form></li>
+<li class="nav-item"><a class="external-link nav-link" href="https://github.com/chengmatt/SPoRC/" aria-label="GitHub"><span class="fa fab fa-github fa-lg"></span></a></li>
       </ul>
 </div>
 
@@ -74,7 +75,7 @@
       <h1>Case Study: GOA Rex Sole</h1>
             
       
-
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/vignettes/ad_goa_rex_sole_case_study.Rmd" class="external-link"><code>vignettes/ad_goa_rex_sole_case_study.Rmd</code></a></small>
       <div class="d-none name"><code>ad_goa_rex_sole_case_study.Rmd</code></div>
     </div>
 
@@ -442,8 +443,10 @@ seeded.</p>
 <p>Francis weights, one per fleet, on the lengths and on the ages, with
 the conditional age-at-length taking each survey’s age weight.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">wl_f</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_len</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">fish_fleets</span><span class="op">]</span>; <span class="va">wa_f</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_age</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">fish_fleets</span><span class="op">]</span></span>
-<span><span class="va">wl_s</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_len</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">srv_fleets</span><span class="op">]</span>; <span class="va">wa_s</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_age</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">srv_fleets</span><span class="op">]</span></span>
+<code class="sourceCode R"><span><span class="va">wl_f</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_len</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">fish_fleets</span><span class="op">]</span></span>
+<span><span class="va">wa_f</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_age</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">fish_fleets</span><span class="op">]</span></span>
+<span><span class="va">wl_s</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_len</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">srv_fleets</span><span class="op">]</span></span>
+<span><span class="va">wa_s</span> <span class="op">&lt;-</span> <span class="va">dat</span><span class="op">$</span><span class="va">var_adj_age</span><span class="op">[</span><span class="va">dat</span><span class="op">$</span><span class="va">srv_fleets</span><span class="op">]</span></span>
 <span></span>
 <span><span class="va">per_fleet</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">w</span>, <span class="va">n_fl</span>, <span class="va">extra</span> <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span> <span class="op">{</span></span>
 <span>  <span class="va">d</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_reg</span>, <span class="va">n_yrs</span>, <span class="fl">1</span>, <span class="kw">if</span><span class="op">(</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NULL.html" class="external-link">is.null</a></span><span class="op">(</span><span class="va">extra</span><span class="op">)</span><span class="op">)</span> <span class="va">extra</span>, <span class="va">n_sex</span>, <span class="va">n_fl</span><span class="op">)</span></span>

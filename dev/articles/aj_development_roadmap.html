@@ -84,9 +84,11 @@
 <p>This document records what <code>SPoRC</code> development is working
 towards, what is saved for later to be revisited, and what is likely not
 in the development plan (out of scope) .</p>
-<p>Four tracks are likely to be developed in the future: numbers at age
-as a state space process, close-kin mark-recapture, electronic tagging,
-and process error on the remaining parameter blocks.</p>
+<p>Three tracks are under active development: structural equation models
+linking the deviation processes to each other and to environmental
+covariates, process error on the remaining parameter blocks, and
+electronic tagging. Close-kin mark-recapture is planned, but has not
+been started.</p>
 <p>Work to date has involved the following released versions:</p>
 <div class="section level2">
 <h2 id="released-versions">Released versions<a class="anchor" aria-label="anchor" href="#released-versions"></a>
@@ -122,61 +124,83 @@ functions.</td>
 <td>Population specific (natal homing) and seasonal dynamics, discarding
 and retention, time varying and semi-parametric growth, conditional age
 at length, at age data sources, estimated index observation error, per
-fleet ageing error.</td>
+fleet ageing error, numbers at age as a state space process, and
+catchability process error.</td>
 </tr>
 </tbody>
 </table>
 </div>
 <div class="section level2">
-<h2 id="numbers-at-age-as-a-state-space-process">Numbers at age as a state space process<a class="anchor" aria-label="anchor" href="#numbers-at-age-as-a-state-space-process"></a>
+<h2 id="in-progress">In progress<a class="anchor" aria-label="anchor" href="#in-progress"></a>
 </h2>
-<p>Recruitment is the only stochastic element of the population state.
-From age 2 onwards, numbers at age are a deterministic consequence of
-recruitment, mortality and movement, so any misspecification in natural
-mortality, in selectivity or in the reported catch is absorbed by the
-recruitment deviations. Estimating process error on the whole numbers at
-age surface, as in SAM and WHAM, lets that misspecification enter at the
-age it occurs instead. (This has now been implemented).</p>
+<div class="section level3">
+<h3 id="structural-equation-models-and-environmental-covariates">Structural equation models and environmental covariates<a class="anchor" aria-label="anchor" href="#structural-equation-models-and-environmental-covariates"></a>
+</h3>
+<p>Recruitment, the state space numbers at age, time varying and
+semi-parametric growth, continuous movement and catchability each
+estimate annual deviations, and each takes its penalty from its own
+module. Putting those deviations on one grid alongside environmental
+covariates, with estimated paths between them, would let a covariate
+enter any of these processes and let one process inform another.
+Structural equation models are under consideration for this.</p>
 </div>
-<div class="section level2">
-<h2 id="close-kin-mark-recapture">Close-kin mark-recapture<a class="anchor" aria-label="anchor" href="#close-kin-mark-recapture"></a>
-</h2>
-<p>Close-kin mark-recapture estimates absolute abundance from the rate
-at which pairs of sampled fish turn out to be related. The quantities it
-needs are already in the report file: numbers at age by population,
-region, year and sex, maturity at age, and weight at age, from which
-relative reproductive output follows. What is missing is the pairwise
-comparison data and a likelihood over it.</p>
+<div class="section level3">
+<h3 id="process-error-on-the-remaining-parameter-blocks">Process error on the remaining parameter blocks<a class="anchor" aria-label="anchor" href="#process-error-on-the-remaining-parameter-blocks"></a>
+</h3>
+<p>Selectivity and growth already take a deviation surface with a choice
+of covariance, fishing mortality takes independent, random walk or first
+order autoregressive deviations, and catchability now takes those same
+three forms. Natural mortality is what is left: it is constant within a
+population, region and time block. Giving it annual deviations is also
+what a temperature or body condition covariate on natural mortality
+would attach to.</p>
 </div>
-<div class="section level2">
-<h2 id="electronic-tagging">Electronic tagging<a class="anchor" aria-label="anchor" href="#electronic-tagging"></a>
-</h2>
+<div class="section level3">
+<h3 id="electronic-tagging">Electronic tagging<a class="anchor" aria-label="anchor" href="#electronic-tagging"></a>
+</h3>
 <p>Conventional tags inform movement through recaptures. Recaptures are
 sparse, they happen only where the fishery is, and they arrive filtered
 through a reporting rate. Archival and satellite tags record position
 through the fish’s life independently of the fishery, so they inform the
 movement rates themselves rather than the movement rates confounded with
-fishing processes.</p>
+fishing processes. An experimental implementation was written and taken
+back out of the package while the movement parameterization changed, and
+it is being reworked onto the current one.</p>
+</div>
 </div>
 <div class="section level2">
-<h2 id="process-error-on-the-remaining-parameter-blocks">Process error on the remaining parameter blocks<a class="anchor" aria-label="anchor" href="#process-error-on-the-remaining-parameter-blocks"></a>
+<h2 id="implemented">Implemented<a class="anchor" aria-label="anchor" href="#implemented"></a>
 </h2>
-<p>Selectivity and growth already take a deviation surface with a choice
-of covariance, and fishing mortality takes independent, random walk or
-first order autoregressive deviations. Natural mortality and
-catchability are constant within a time block, and regional recruitment
-deviations are independent. Thus, another priority of <code>SPoRC</code>
-will be to add additional process error functionality to these data
-sources.</p>
+<div class="section level3">
+<h3 id="numbers-at-age-as-a-state-space-process">Numbers at age as a state space process<a class="anchor" aria-label="anchor" href="#numbers-at-age-as-a-state-space-process"></a>
+</h3>
+<p>Recruitment used to be the only stochastic element of the population
+state. From age two onwards, numbers at age were a deterministic
+consequence of recruitment, mortality and movement, so any
+misspecification in natural mortality, in selectivity or in the reported
+catch was absorbed by the recruitment deviations. Process error on the
+whole numbers at age surface, as in SAM and WHAM, lets that
+misspecification enter at the age it occurs instead. The state runs at
+season boundaries as well as year boundaries. It is not advanced by the
+deterministic projection, so a forecast from a state space fit omits
+that process error, but the closed loop operating model does advance
+it.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="to-be-revisited">To be revisited<a class="anchor" aria-label="anchor" href="#to-be-revisited"></a>
 </h2>
-<p>Environmental covariates on recruitment, natural mortality, growth
-and catchability. Movement already accepts covariates through
-<code>cont_vary_movement</code>, and extending the same interface to the
-other processes is a natural addition. It is not a near term priority
-and will be revisited.</p>
+<div class="section level3">
+<h3 id="close-kin-mark-recapture">Close-kin mark-recapture<a class="anchor" aria-label="anchor" href="#close-kin-mark-recapture"></a>
+</h3>
+<p>Close-kin mark-recapture estimates absolute abundance from the rate
+at which pairs of sampled fish turn out to be related. The quantities it
+needs are already in the report file: numbers at age by population,
+region, year and sex, maturity at age, and weight at age, from which
+relative reproductive output follows. What is missing is the pairwise
+comparison data and a likelihood over it. It is planned, and no work has
+started on it.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="outside-current-scope">Outside current scope<a class="anchor" aria-label="anchor" href="#outside-current-scope"></a>

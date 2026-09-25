@@ -3,13 +3,17 @@
 process error deviations under multiple IID structural assumptions.
 Deviations are penalized as \(N(0, \sigma^2)\) where \(\sigma\)
 is drawn from PE_pars according to the selected model structure.
-Only origin-destination pairs that are adjacent (non-zero in
-adjacency_collapsed) contribute to the likelihood."><meta property="og:description" content="Calculates the positive log-likelihood contribution for movement
+Under unstructured movement, only origin-destination pairs that are adjacent
+(non-zero in adjacency_collapsed) contribute to the likelihood; under
+CTMC movement the deviations sit on each region's preference, and every
+region the map keeps contributes."><meta property="og:description" content="Calculates the positive log-likelihood contribution for movement
 process error deviations under multiple IID structural assumptions.
 Deviations are penalized as \(N(0, \sigma^2)\) where \(\sigma\)
 is drawn from PE_pars according to the selected model structure.
-Only origin-destination pairs that are adjacent (non-zero in
-adjacency_collapsed) contribute to the likelihood."><meta name="robots" content="noindex"></head><body>
+Under unstructured movement, only origin-destination pairs that are adjacent
+(non-zero in adjacency_collapsed) contribute to the likelihood; under
+CTMC movement the deviations sit on each region's preference, and every
+region the map keeps contributes."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -67,14 +71,16 @@ adjacency_collapsed) contribute to the likelihood."><meta name="robots" content=
 process error deviations under multiple IID structural assumptions.
 Deviations are penalized as \(N(0, \sigma^2)\) where \(\sigma\)
 is drawn from <code>PE_pars</code> according to the selected model structure.
-Only origin-destination pairs that are adjacent (non-zero in
-<code>adjacency_collapsed</code>) contribute to the likelihood.</p>
+Under unstructured movement, only origin-destination pairs that are adjacent
+(non-zero in <code>adjacency_collapsed</code>) contribute to the likelihood; under
+CTMC movement the deviations sit on each region's preference, and every
+region the map keeps contributes.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Get_move_PE_loglik</span><span class="op">(</span></span>
-<span>  <span class="va">PE_model</span>,</span>
+<span>  <span class="va">cont_vary_movement</span>,</span>
 <span>  <span class="va">PE_pars</span>,</span>
 <span>  <span class="va">move_devs</span>,</span>
 <span>  <span class="va">map_move_devs</span>,</span>
@@ -88,34 +94,28 @@ Only origin-destination pairs that are adjacent (non-zero in
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-pe-model">PE_model<a class="anchor" aria-label="anchor" href="#arg-pe-model"></a></dt>
-<dd><p>Integer specifying the movement process error structure.
-  All models are IID; they differ in which dimensions share a common
-  standard deviation. Models 1-5 are single-population (fix <code>pop = 1</code>);
-  models 6-10 estimate separate parameters per population:</p><ul><li><p><strong>1</strong>: IID across years (single \(\sigma\) per origin region)</p></li>
-<li><p><strong>2</strong>: IID across ages (single \(\sigma\) per origin region and age)</p></li>
-<li><p><strong>3</strong>: IID across years and ages</p></li>
-<li><p><strong>4</strong>: IID across years, ages, and sexes</p></li>
-<li><p><strong>5</strong>: IID across years, seasons, ages, and sexes</p></li>
-<li><p><strong>6</strong>: IID across populations and years</p></li>
-<li><p><strong>7</strong>: IID across populations and ages</p></li>
-<li><p><strong>8</strong>: IID across populations, years, and ages</p></li>
-<li><p><strong>9</strong>: IID across populations, years, ages, and sexes</p></li>
-<li><p><strong>10</strong>: IID across populations, years, seasons, ages, and sexes</p></li>
-</ul></dd>
+<dl><dt id="arg-cont-vary-movement">cont_vary_movement<a class="anchor" aria-label="anchor" href="#arg-cont-vary-movement"></a></dt>
+<dd><p>Character string specifying the movement process
+error structure, <code>"iid_"</code> followed by the dims the deviations vary
+over, any of p (population), y (year), seas (season), a (age), s (sex):
+<code>"iid_y"</code> is one \(\sigma\) per origin region, <code>"iid_p_y_seas_a_s"</code>
+one per population, origin region, season, age and sex. A dim left out
+shares one deviation, and one \(\sigma\), across it.</p></dd>
 
 
 <dt id="arg-pe-pars">PE_pars<a class="anchor" aria-label="anchor" href="#arg-pe-pars"></a></dt>
 <dd><p>Array of movement process error parameters (log standard
 deviations) dimensioned <code>[pop, from_region, seas, age, sex]</code>.
 Exponentiated internally to obtain \(\sigma\). Which dimensions
-are active depends on <code>PE_model</code>; unused dimensions should be
+are active depends on <code>cont_vary_movement</code>; unused dimensions should be
 fixed at a constant (e.g., index 1) via the parameter map.</p></dd>
 
 
 <dt id="arg-move-devs">move_devs<a class="anchor" aria-label="anchor" href="#arg-move-devs"></a></dt>
 <dd><p>Movement deviation array dimensioned
-<code>[pop, from_region, to_region, year, seas, age, sex]</code>.</p></dd>
+<code>[pop, from_region, to_region, year, seas, age, sex]</code>. Under CTMC
+movement a deviation sits on a region's preference rather than on a pair,
+so <code>from_region</code> is that region and <code>to_region</code> has length one.</p></dd>
 
 
 <dt id="arg-map-move-devs">map_move_devs<a class="anchor" aria-label="anchor" href="#arg-map-move-devs"></a></dt>
@@ -133,17 +133,17 @@ If <code>1</code>, all ages including recruits are penalized.</p></dd>
 
 
 <dt id="arg-adjacency-collapsed">adjacency_collapsed<a class="anchor" aria-label="anchor" href="#arg-adjacency-collapsed"></a></dt>
-<dd><p>Square <code>[n_regions x n_regions]</code> matrix
-of allowable movement connections among regions, excluding self-retention
-(diagonal entries should be 0). Origin-destination pairs with a value
-of 0 are skipped and contribute nothing to the likelihood.</p></dd>
+<dd><p><code>[n_regions x (n_regions - 1)]</code> matrix
+of allowable movement connections among regions, with self-retention
+collapsed out. Origin-destination pairs with a value of 0 are skipped and
+contribute nothing to the likelihood. Read only when <code>move_type == 0</code>.</p></dd>
 
 
 <dt id="arg-move-type">move_type<a class="anchor" aria-label="anchor" href="#arg-move-type"></a></dt>
 <dd><p>Integer specifying the movement formulation:</p><ul><li><p><strong>0</strong> = Unstructured multinomial logit movement</p></li>
 <li><p><strong>1</strong> = CTMC-based movement</p></li>
-</ul><p>Currently used for dispatch context; likelihood computation is
-  identical across movement types within this function.</p></dd>
+</ul><p>Decides whether <code>adjacency_collapsed</code> is read: an unstructured
+  deviation belongs to a region pair, a CTMC deviation to a single region.</p></dd>
 
 </dl></div>
     <div class="section level2">

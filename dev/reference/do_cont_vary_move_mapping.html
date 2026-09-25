@@ -4,20 +4,20 @@ TMB/RTMB factor maps for move_devs (iid deviations on the movement
 logit or log-rate surface) and move_pe_pars (process-error variance
 parameters). Deviations are only activated when the model is spatial
 (n_regions &amp;gt; 1), continuous variation is requested
-(cont_vary_movement &amp;gt; 0), and movement is estimated
-(use_fixed_movement == 0). For CTMC movement, deviations are only
-assigned to region pairs that are connected in the adjacency matrix. The
-resulting integer map is also stored as $data$map_move_devs for use
-in the C++ template."><meta property="og:description" content="Internal helper called by Setup_Mod_Movement to construct the
+(cont_vary_movement is not &quot;none&quot;), and movement is estimated
+(use_fixed_movement == 0). For CTMC movement, deviations sit on each
+region's preference, so the only ones left unestimated belong to a region no
+edge of the adjacency matrix touches. The resulting integer map is also
+stored as $data$map_move_devs for use in the C++ template."><meta property="og:description" content="Internal helper called by Setup_Mod_Movement to construct the
 TMB/RTMB factor maps for move_devs (iid deviations on the movement
 logit or log-rate surface) and move_pe_pars (process-error variance
 parameters). Deviations are only activated when the model is spatial
 (n_regions &amp;gt; 1), continuous variation is requested
-(cont_vary_movement &amp;gt; 0), and movement is estimated
-(use_fixed_movement == 0). For CTMC movement, deviations are only
-assigned to region pairs that are connected in the adjacency matrix. The
-resulting integer map is also stored as $data$map_move_devs for use
-in the C++ template."><meta name="robots" content="noindex"></head><body>
+(cont_vary_movement is not &quot;none&quot;), and movement is estimated
+(use_fixed_movement == 0). For CTMC movement, deviations sit on each
+region's preference, so the only ones left unestimated belong to a region no
+edge of the adjacency matrix touches. The resulting integer map is also
+stored as $data$map_move_devs for use in the C++ template."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -76,11 +76,11 @@ TMB/RTMB factor maps for <code>move_devs</code> (iid deviations on the movement
 logit or log-rate surface) and <code>move_pe_pars</code> (process-error variance
 parameters). Deviations are only activated when the model is spatial
 (<code>n_regions &gt; 1</code>), continuous variation is requested
-(<code>cont_vary_movement &gt; 0</code>), and movement is estimated
-(<code>use_fixed_movement == 0</code>). For CTMC movement, deviations are only
-assigned to region pairs that are connected in the adjacency matrix. The
-resulting integer map is also stored as <code>$data$map_move_devs</code> for use
-in the C++ template.</p>
+(<code>cont_vary_movement</code> is not <code>"none"</code>), and movement is estimated
+(<code>use_fixed_movement == 0</code>). For CTMC movement, deviations sit on each
+region's preference, so the only ones left unestimated belong to a region no
+edge of the adjacency matrix touches. The resulting integer map is also
+stored as <code>$data$map_move_devs</code> for use in the C++ template.</p>
     </div>
 
     <div class="section level2">
@@ -102,13 +102,12 @@ sublists.</p></dd>
 
 
 <dt id="arg-cont-vary-movement">cont_vary_movement<a class="anchor" aria-label="anchor" href="#arg-cont-vary-movement"></a></dt>
-<dd><p>Character string specifying the deviation structure.
-One of <code>"none"</code>, <code>"iid_y"</code>, <code>"iid_a"</code>, <code>"iid_y_a"</code>,
-<code>"iid_y_a_s"</code>, <code>"iid_y_seas_a_s"</code>, or the population-specific
-analogs <code>"iid_p_y"</code>, <code>"iid_p_a"</code>, <code>"iid_p_y_a"</code>,
-<code>"iid_p_y_a_s"</code>, <code>"iid_p_y_seas_a_s"</code>. Dimensions present in
-the string receive unique estimation indices; absent dimensions share a
-single index. <code>"none"</code> maps all deviations to <code>NA</code>.</p></dd>
+<dd><p>Character string specifying the deviation structure:
+<code>"none"</code>, or <code>"iid_"</code> followed by the dims the deviations vary
+over, any of p, y, seas, a, s in any order (<code>"iid_y"</code>, <code>"iid_y_a_s"</code>,
+<code>"iid_p_y_seas_a_s"</code>, any combination). Dimensions present in the
+string receive unique estimation indices; absent dimensions share a single
+index. <code>"none"</code> maps all deviations to <code>NA</code>.</p></dd>
 
 
 <dt id="arg-movement-cont-pe-pars-spec">Movement_cont_pe_pars_spec<a class="anchor" aria-label="anchor" href="#arg-movement-cont-pe-pars-spec"></a></dt>
@@ -134,8 +133,8 @@ the process-error variance for movement deviations. One of:</p><dl><dt><code>"no
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>The input <code>input_list</code> with three entries updated:</p><dl><dt><code>$map$move_devs</code></dt>
 <dd><p>Factor vector for movement deviations.
-      Active cells receive sequential integer indices; non-adjacent CTMC
-      pairs and inactive configurations are <code>NA</code>.</p></dd>
+      Active cells receive sequential integer indices; CTMC regions no edge
+      touches and inactive configurations are <code>NA</code>.</p></dd>
 
     <dt><code>$data$map_move_devs</code></dt>
 <dd><p>Integer array (same dimensions as

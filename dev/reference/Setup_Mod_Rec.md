@@ -1,25 +1,12 @@
 # Set up the recruitment module and associated processes
 
-Configures all recruitment-related components of the estimation model:
-stock-recruit relationship type and density-dependence structure,
-Beverton-Holt steepness and priors, recruitment variability
-(\\\sigma_R\\), annual and initial age-structure deviations, regional
-and seasonal recruitment apportionment, spawning movement and stray
-rates, sex ratio dynamics, equilibrium initialization method, and the
-recruitment bias ramp. Delegates parameter mapping to a family of
-internal helpers
-([`do_sigmaR_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sigmaR_mapping.md),
-[`do_RecDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_RecDevs_mapping.md),
-[`do_InitDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_InitDevs_mapping.md),
-[`do_h_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_h_mapping.md),
-[`do_sexratio_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sexratio_pars_mapping.md),
-[`do_rec_region_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_region_prop_mapping.md),
-[`do_rec_seas_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_seas_prop_mapping.md)).
-Must be called after
+Sets the stock-recruit form and density dependence, steepness and its
+prior, \\\sigma_R\\, annual and initial deviations, regional and
+seasonal apportionment, spawning movement, stray rates, sex ratio, the
+equilibrium initialization and the bias ramp. Call after
 [`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
 and
-[`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md),
-and before model compilation.
+[`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
 
 ## Usage
 
@@ -112,415 +99,238 @@ rec_seas_prop[, 1] <- 1
 
 - input_list:
 
-  Named list with `$data`, `$par`, `$map`, and `$verbose` sublists, as
-  returned by upstream setup functions. Population, region, age, year,
-  and season dimensions must already be defined in `$data`.
+  Named list with `$data`, `$par`, `$map` and `$verbose`. Dimensions
+  must already be set in `$data`.
 
 - rec_model:
 
-  Character string (required). Stock-recruit relationship:
-
-  `"mean_rec"`
-
-  :   Fixed mean recruitment; no stock-recruit relationship. Steepness
-      is automatically fixed and not estimated.
-
-  `"bh_rec"`
-
-  :   Beverton-Holt stock-recruit relationship.
-
-  `"ricker_rec"`
-
-  :   Ricker stock-recruit relationship, in the depletion form \\R = R_0
-      (S/S_0) \exp(\alpha (1 - S/S_0))\\ with \\\alpha =
-      \log(4h/(1-h))\\. Steepness is not interchangeable with
-      `"bh_rec"`; see
-      [`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md).
+  Character, required. `"mean_rec"` (steepness fixed and not estimated),
+  `"bh_rec"`, or `"ricker_rec"`. Steepness is not interchangeable
+  between the last two, see
+  [`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md).
 
 - rec_dd:
 
-  Density-dependence structure. Default `"global"`.
-
-  `"local"`
-
-  :   Independent stock-recruit relationship per population. Required
-      when `n_pop > 1`.
-
-  `"global"`
-
-  :   Single pooled spawner-recruit relationship across all regions.
-      Constrains `h_spec`, `RecDevs_spec`, and `InitDevs_spec` to shared
-      or fixed options when `n_regions > 1`.
+  Density dependence. `"local"` is one stock-recruit relationship per
+  population, required when `n_pop > 1`. `"global"` (default) pools
+  across regions and restricts `h_spec`, `RecDevs_spec` and
+  `InitDevs_spec` to shared or fixed options when `n_regions > 1`.
 
 - rec_lag:
 
-  Integer. Lag between spawning biomass and recruitment (in seasons).
-  `1` (default) is the classic lagged case: recruitment uses SSB from
-  `rec_lag` seasons prior and may enter in any season. `0` is age-0
-  recruitment: recruitment uses the SAME year's SSB, and because that
-  SSB isn't known until `spawn_seas` is reached, recruits may only enter
-  in `spawn_seas` itself or a later season, when
-  `use_fixed_rec_seas_prop = 1`, `fixed_rec_seas_prop` must be zero
-  before `spawn_seas`; when estimated, this is enforced structurally via
-  a restricted softmax (see
-  [`do_rec_seas_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_seas_prop_mapping.md)).
+  Integer lag in seasons between spawning biomass and recruitment. `1`
+  (default) uses SSB from that many seasons prior. `0` is age-0
+  recruitment on the same year's SSB, so recruits may only enter in
+  `spawn_seas` or later.
 
 - SR_ref_yr:
 
   Integer year index supplying every input to unfished spawning biomass
-  per recruit, and so to `S0` and the scale of the stock-recruit curve.
-  Matches the estimation model's `SR_ref_yr`. Default `1`.
+  per recruit, and so to `S0` and the curve's scale: weight-at-age,
+  maturity, natural mortality, movement, stray rate, sex ratio, and what
+  enters through `init_F`. `R0` is the exception and is always the
+  year's own value. Default `1`. Ignored under `rec_model = "mean_rec"`.
 
 - Use_h_prior:
 
-  Integer (0/1). Whether normal priors on steepness are applied. Only
-  relevant when a stock-recruit curve is used (`rec_model = "bh_rec"` or
-  `"ricker_rec"`). Default `0`.
+  Integer (0/1). Normal priors on steepness. Default `0`.
 
 - h_prior:
 
-  Data frame of steepness prior parameters. Required columns: `pop`,
-  `region`, `mu`, `sd`. Ignored when `Use_h_prior = 0`. Default `NULL`.
+  Data frame with columns `pop`, `region`, `mu` and `sd`. Default
+  `NULL`.
 
 - rec_region_prop_spec:
 
-  Character or `NULL`. Regional recruitment dispersal structure. Default
-  `NULL` (estimate all proportions freely). See
-  [`do_rec_region_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_region_prop_mapping.md)
-  for full option descriptions including `"no_dispersal"`. Stored as
-  `$data$rec_region_prop_spec`: `0` = full dispersal, `1` = no
-  dispersal.
+  Character or `NULL`. Regional recruitment dispersal structure, default
+  `NULL` (all estimated freely). Stored as `$data$rec_region_prop_spec`,
+  `0` = full dispersal, `1` = none. See
+  [`do_rec_region_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_region_prop_mapping.md).
 
 - use_rec_region_prop_prior:
 
-  Integer (0/1). Whether Dirichlet priors are applied to regional
-  recruitment proportions. Not valid when `n_regions = 1`. Default `0`.
+  Integer (0/1). Dirichlet priors on regional recruitment proportions.
+  Not valid when `n_regions = 1`. Default `0`.
 
 - rec_region_prop_prior:
 
-  Data frame of Dirichlet prior concentration parameters. Required
-  columns: `pop` and `alpha`, where `alpha` is a list-column of
-  length-`n_regions` vectors. Ignored when
-  `use_rec_region_prop_prior = 0`. Default `NULL`.
+  Data frame of Dirichlet concentrations with columns `pop` and `alpha`,
+  a list-column of length-`n_regions` vectors. Default `NULL`.
 
 - rec_seas_prop_spec:
 
-  Character or `NULL`. Seasonal recruitment apportionment structure.
-  Default `"fix"`. See
-  [`do_rec_seas_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_seas_prop_mapping.md)
-  for full option descriptions including `"est_shared_pop"`.
+  Character or `NULL`. Seasonal apportionment structure, default
+  `"fix"`. See
+  [`do_rec_seas_prop_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_rec_seas_prop_mapping.md).
 
 - use_rec_seas_prop_prior:
 
-  Integer (0/1). Whether Dirichlet priors are applied to seasonal
-  recruitment proportions. Not valid when `n_seas = 1`. When
-  `rec_lag = 0` and `spawn_seas > 1`, the prior is evaluated only over
-  seasons `spawn_seas:n_seas` (the seasons before `spawn_seas` are
-  structurally zero, not estimated). Default `0`.
+  Integer (0/1). Dirichlet priors on seasonal proportions. Not valid
+  when `n_seas = 1`. Evaluated only over `spawn_seas:n_seas` when
+  `rec_lag = 0` and `spawn_seas > 1`. Default `0`.
 
 - rec_seas_prop_prior:
 
-  Data frame of Dirichlet prior concentration parameters for seasonal
-  proportions. Required columns: `pop` and `alpha`. Ignored when
-  `use_rec_seas_prop_prior = 0`. Default `NULL`.
+  Data frame of Dirichlet concentrations with columns `pop` and `alpha`.
+  Default `NULL`.
 
 - use_fixed_rec_seas_prop:
 
-  Integer (0/1). Whether fixed (non-estimated) seasonal proportions from
-  `fixed_rec_seas_prop` are used. Automatically reset to `0` with a
-  warning if `rec_seas_prop_spec` requests estimation. Default `1`.
+  Integer (0/1). Whether `fixed_rec_seas_prop` is used. Reset to `0`
+  with a warning if `rec_seas_prop_spec` estimates. Default `1`.
 
 - fixed_rec_seas_prop:
 
-  Array `[n_pop x n_seas]`. Fixed seasonal recruitment proportions used
-  when `use_fixed_rec_seas_prop = 1`. Default: all recruitment assigned
-  to season 1. When `rec_lag = 0` and `spawn_seas > 1`, must be zero for
-  every season before `spawn_seas`. An error is raised otherwise.
+  Array `[n_pop x n_seas]` of fixed seasonal proportions, default all
+  recruitment in season 1. Must be zero before `spawn_seas` when
+  `rec_lag = 0` and `spawn_seas > 1`.
 
 - do_rec_bias_ramp:
 
-  Integer (0/1). Whether a recruitment bias ramp is applied to
-  `ln_RecDevs` to account for reduced information in early and terminal
-  years. Default `0`.
+  Integer (0/1). Whether a bias ramp is applied to `ln_RecDevs`. Under
+  `0` every penalty is centered on the full \\-\sigma_R^2/2\\, under `1`
+  the center follows the ramp. Default `0`.
 
 - bias_year:
 
-  Numeric. Calendar year at which the bias ramp reaches its maximum
-  correction. Only used when `do_rec_bias_ramp = 1`. Default `NA`.
+  Numeric calendar year at which the ramp reaches its maximum
+  correction. Default `NA`.
 
 - max_bias_ramp_fct:
 
-  Numeric in \\\[0, 1\]\\. Maximum bias correction factor applied at
+  Numeric in \\\[0, 1\]\\, the maximum correction applied at
   `bias_year`. Default `1`.
 
 - sigmaR_switch:
 
-  Integer. Year index at which \\\sigma_R\\ switches from the
-  early-period value (index 1) to the late-period value (index 2). If
-  \\\leq 1\\, a single \\\sigma_R\\ is applied throughout. Default `1`.
+  Integer year index at which \\\sigma_R\\ switches from the early to
+  the late value. \\\leq 1\\ (default) uses one value throughout.
 
 - dont_est_recdev_last:
 
-  Non-negative integer. Number of terminal years for which recruitment
-  deviations are not estimated. Automatically overridden to `0` if
-  `n_proj_yrs_devs > 0`, since projected deviation years are penalized
-  toward the mean and are effectively estimated regardless. Default `0`.
+  Non-negative integer. Terminal years for which recruitment deviations
+  are not estimated. Forced to `0` when `n_proj_yrs_devs > 0`, refused
+  under `RecDevs_model = "dsem"`. Default `0`.
 
 - dont_pen_recdev_first:
 
   Integer. How many leading years of recruitment deviations are
-  estimated but left out of the recruitment penalty. `0` (default)
-  penalizes every year.
-
-  The first year's recruitment is the first year's age one abundance,
-  which in an equilibrium initialization belongs to the initial
-  condition rather than to the recruitment process. WHAM keeps it as a
-  separate initial numbers at age parameter and gives it no process
-  error at all, and setting this to `1` is the same statement: the
-  deviation is still estimated, so the data set the first year's
-  recruitment freely, but it takes no prior from `ln_sigmaR`. Mapping
-  the deviation off instead would fix it at its starting value rather
-  than leave it free.
-
-  Leaving years out only removes their penalty, never their estimation,
-  so this is separate from `dont_est_recdev_last`, which does the
-  opposite at the other end of the series.
+  estimated but left out of the penalty. `0` (default) penalizes every
+  year.
 
 - init_age_strc:
 
-  Initialization method. Default `2`. Options `0`/`"iterative"`,
-  `1`/`"scalar_no_move"`, `2`/`"matrix"`, and `3`/`"scalar_plus_only"`
-  all project an equilibrium age structure forward from `R0` and treat
-  `ln_InitDevs` as multiplicative deviations from it. `4`/`"free"`
-  projects no equilibrium at all: the numbers at age 2 and older are
-  `exp(ln_InitDevs)`, apportioned by sex ratio, with age 1 still taken
-  from recruitment. Use it when the initial age structure has no
-  information about `R0` and should not be pulled toward an equilibrium.
-  Note that under `4` the deviations are on the scale of numbers rather
-  than of log ratios, so the penalty applied through
-  `equil_init_age_strc` is a prior on log abundance; pair it with
-  `equil_init_age_strc = 0` if no such prior is wanted.
-
-  `0`/`"iterative"`
-
-  :   Iterates the population to approximate equilibrium. Slowest but
-      most general.
-
-  `1`/`"scalar_no_move"`
-
-  :   Scalar geometric series assuming no movement.
-
-  `2`/`"matrix"`
-
-  :   Matrix geometric series incorporating movement. Recommended
-      default for spatial models.
-
-  `3`/`"scalar_plus_only"`
-
-  :   Scalar geometric series with movement only in the plus group.
+  Initialization method, default `2`. `0`/`"iterative"` iterates to
+  approximate equilibrium, `1`/`"scalar_no_move"` is a scalar geometric
+  series without movement, `2`/`"matrix"` is the matrix series with
+  movement, and `3`/`"scalar_plus_only"` moves only the plus group; all
+  four treat `ln_InitDevs` as multiplicative deviations from the
+  equilibrium. `4`/`"free"` projects no equilibrium: ages 2 and older
+  are `exp(ln_InitDevs)` apportioned by sex ratio, so the deviations are
+  on the scale of numbers and `equil_init_age_strc` becomes a prior on
+  log abundance.
 
 - equil_init_age_strc:
 
-  Plus-group treatment during stochastic initialization. Default `1`.
-
-  `0`/`"equil"`
-
-  :   Deterministic equilibrium; no `ln_InitDevs` are estimated.
-
-  `1`/`"stoch_no_plus"`
-
-  :   Stochastic deviations for all ages except the plus group.
-
-  `2`/`"stoch_all"`
-
-  :   Stochastic deviations for all ages including the plus group.
-
-  `3`/`"stoch_shared_ages"`
-
-  :   Stochastic deviations with user-defined age sharing via
-      `init_age_devs_shared`. Deviations are estimated independently
-      across all populations and regions, but ages sharing the same
-      value in `init_age_devs_shared` are constrained to a single
-      parameter. The plus group is not automatically fixed; include an
-      `NA` in `init_age_devs_shared` at the plus-group position to fix
-      it, or share it with the preceding age by repeating that index
-      (e.g. `c(1:42, rep(42, 9))`). Requires `init_age_devs_shared` to
-      be non-`NULL`.
-
-  `4`/`"stoch_all_no_pen"`
-
-  :   Deviations estimated for all ages including the plus group, and
-      none of them penalized. The same cells `"stoch_all"` estimates,
-      with no prior on any of them. Pair it with
-      `init_age_strc = "free"`, where the deviations are the initial log
-      numbers at age rather than departures from an equilibrium, so a
-      penalty on them would be a prior on initial abundance rather than
-      on the shape of the age structure. This is what ICES assessments
-      in the SAM family do with their first year.
-
-  `"equil"` means both no penalty and no estimation, which are the same
-  statement about an equilibrium age structure and two different ones
-  about a free age structure. `"stoch_all_no_pen"` is the second of
-  them.
+  Plus-group treatment during stochastic initialization, default `1`.
+  `0`/`"equil"` estimates no `ln_InitDevs`, `1`/`"stoch_no_plus"`
+  estimates every age but the plus group, `2`/`"stoch_all"` estimates
+  every age, `3`/`"stoch_shared_ages"` shares ages through
+  `init_age_devs_shared` (non-`NULL` required; the plus group is not
+  fixed automatically), and `4`/`"stoch_all_no_pen"` estimates every age
+  and penalizes none, for pairing with `init_age_strc = "free"`.
 
 - init_F_prop:
 
-  Numeric array `[n_regions x n_seas x n_fish_fleets]`. **Legacy
-  interface, retained for backwards compatibility.** A fixed proportion
-  of the estimated mean F applied during equilibrium initialization.
-  When supplied non-zero (and `init_F_par` is not given) it is converted
-  to `ln_init_F = log(init_F_prop)` with `init_F_form = "prop"`, which
-  reproduces the previous behavior exactly. Prefer `init_F_par`.
-  Default: zero for all seasons and fleets.
+  Numeric array `[n_regions x n_seas x n_fish_fleets]`. Legacy
+  interface. A non-zero value without `init_F_par` is converted to
+  `ln_init_F = log(init_F_prop)` with `init_F_form = "prop"`. Prefer
+  `init_F_par`. Default zero.
 
 - init_F_form:
 
-  Character. What the `init_F_par` parameter MEANS:
-
-  - `"prop"` (default): `init_F = exp(ln_init_F) * exp(ln_F_mean)`, a
-    proportion of the estimated mean F, so the initial age structure
-    moves with it.
-
-  - `"abs"`: `init_F = exp(ln_init_F)`, an absolute fishing mortality
-    independent of `ln_F_mean`.
-
-  Use `"abs"` when bridging an assessment that has a separate historical
-  F (one estimated as its own parameter, distinct from the mean log
-  fishing mortality). Under `"prop"` those two quantities collapse into
-  a single parameter, and because catch constrains only the PRODUCT of
-  numbers and fishing mortality, the optimizer can raise `ln_F_mean` to
-  deplete the initial age structure and raise F together, fitting catch
-  just as well with a smaller, harder-fished stock. That is a genuine
-  second solution branch, not a rounding difference.
+  What `init_F_par` means. `"prop"` (default) gives
+  `init_F = exp(ln_init_F) * exp(ln_F_mean)`, a proportion of the
+  estimated mean F. `"abs"` gives `init_F = exp(ln_init_F)`, independent
+  of `ln_F_mean`. Use `"abs"` when bridging an assessment with a
+  separate historical F; under `"prop"` the two collapse into one
+  parameter and catch constrains only their product.
 
 - init_F_spec:
 
-  Character, `"fix"` (default) or `"est"`. Whether `init_F_par` is
-  estimated. This sets only the mapping, so it combines freely with
-  `init_F_form`, including estimating the proportion itself
-  (`init_F_form = "prop"`, `init_F_spec = "est"`). Note `init_F` is
-  generally weakly identified, which is why assessments commonly fix it.
-  `"est"` is refused under `init_age_strc = "free"`, where no
-  equilibrium is projected and `init_F_par` never reaches the objective.
-
-  The value is set by the parameter `init_F_par`
-  `[n_regions x n_seas x n_fish_fleets]`, supplied through `...` like
-  any other starting value, e.g.
-  `Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))`.
-  Its SCALE depends on `init_F_form`, logit under `"prop"` (so the
-  proportion is bounded to (0, 1)) and log under `"abs"`, which is why
-  it is not named `ln_` or `logit_`. Defaults to effectively no initial
-  fishing mortality.
+  `"fix"` (default) or `"est"`, whether `init_F_par` is estimated. Sets
+  only the mapping, so it combines freely with `init_F_form`. Refused
+  under `init_age_strc = "free"`. The value comes from `init_F_par`
+  `[n_regions x n_seas x n_fish_fleets]`, passed through `...`, on the
+  logit scale under `"prop"` and the log scale under `"abs"`.
 
 - sigmaR_spec:
 
   Character. Estimation structure for \\\sigma_R\\, stored in
-  `ln_sigmaR` `[2 x n_pop x n_regions]`, where index 1 = initial
-  deviation period and index 2 = annual deviation period. Default
-  `"est_all"`. See
-  [`do_sigmaR_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sigmaR_mapping.md)
-  for full option descriptions.
+  `ln_sigmaR` `[2 x n_pop x n_regions]` with index 1 the initial period
+  and 2 the annual period. Default `"est_all"`, see
+  [`do_sigmaR_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sigmaR_mapping.md).
 
 - InitDevs_spec:
 
-  Character or `NULL`. Sharing structure for initial age-structure
-  deviations `ln_InitDevs`
-  `[n_pop x n_regions x (n_ages - 1) x n_sexes]`. Default `NULL`
-  (estimate all independently). See
-  [`do_InitDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_InitDevs_mapping.md)
-  for full option descriptions.
+  Character or `NULL`. Sharing structure for `ln_InitDevs`
+  `[n_pop x n_regions x (n_ages - 1) x n_sexes]`. Default `NULL` (all
+  independent), see
+  [`do_InitDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_InitDevs_mapping.md).
 
 - InitDevs_sex_spec:
 
-  Character. `"est_shared_s"` (default) estimates one initial age
-  deviation curve read by every sex, which is how the model has always
-  behaved. `"est_all"` gives each sex its own curve, each penalized
-  under the initial-age penalty, with an `"own_mean"`
-  `InitDevs_pen_center` pooled across sexes so the sexes share one
-  estimated level the way assessments with a common mean-log-initial and
-  sex-specific deviations are written. Requires `n_sexes > 1`.
+  `"est_shared_s"` (default) estimates one initial age deviation curve
+  read by every sex; `"est_all"` gives each sex its own, pooling the
+  level across sexes under an `"own_mean"` `InitDevs_pen_center`.
+  Requires `n_sexes > 1`.
 
 - RecDevs_spec:
 
-  Character or `NULL`. Sharing structure for annual recruitment
-  deviations `ln_RecDevs` `[n_pop x n_regions x n_years]`. Default
-  `NULL` (estimate all independently). See
-  [`do_RecDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_RecDevs_mapping.md)
-  for full option descriptions.
+  Character or `NULL`. Sharing structure for `ln_RecDevs`
+  `[n_pop x n_regions x n_years]`. Default `NULL` (all independent), see
+  [`do_RecDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_RecDevs_mapping.md).
 
 - RecDevs_model:
 
-  Character string giving the process error structure on the recruitment
-  deviations `ln_RecDevs`. The same three forms `Fdev_model` offers:
-
-  `"iid"`
-
-  :   Default. Independent deviations about the prior mean set by
-      `RecDevs_pen_center`, which is the classic mean recruitment with
-      lognormal deviations.
-
-  `"rw"`
-
-  :   Random walk. Each deviation is centered on the previous estimated
-      one, so recruitment is free to move but not to jump, which is the
-      state-space recruitment SAM fits by default. The first estimated
-      deviation is given a diffuse normal, so the level of the series is
-      set by `R0` and the data rather than by the penalty.
-
-  `"ar1"`
-
-  :   AR1. As the walk, but each deviation reverts toward zero at rate
-      `RecDevs_rho`, and the first estimated deviation is drawn from the
-      stationary marginal distribution.
-
-  A step spans the gap between estimated years rather than calendar
-  years, so mapping deviations off through `RecDevs_spec` or
-  `dont_est_recdev_last` closes the gap rather than splitting the
-  series. The walk and the AR1 center each deviation on the previous
-  one, so neither can be combined with `do_rec_bias_ramp = 1` or
-  `RecDevs_pen_center = "own_mean"`, both of which assert a mean about
-  zero; each combination is rejected. `sigmaR_switch` still applies, so
-  the walk can take one standard deviation early and another late.
+  Process error on `ln_RecDevs`. `"iid"` (default) is independent about
+  the prior mean, `"rw"` centers each deviation on the previous one with
+  a diffuse first year, `"ar1"` reverts toward zero at rate
+  `RecDevs_rho` with a stationary first year, and `"dsem"` takes the
+  density from the arrows in
+  [`Setup_Mod_DSEM`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md).
+  Steps span estimated years, not calendar years. `"rw"` and `"ar1"` are
+  refused alongside `do_rec_bias_ramp = 1` or
+  `RecDevs_pen_center = "own_mean"`; `"dsem"` reads `sigmaR` off the
+  arrows, so `sigmaR_spec` other than `"fix"`,
+  `dont_est_recdev_last > 0` and a nonzero ramp are refused.
 
 - RecDevs_rho_spec:
 
-  Character string specifying the sharing structure for the AR1
-  correlation parameter `RecDevs_rho` `[n_pop x n_regions]`: one of
+  Sharing structure for `RecDevs_rho` `[n_pop x n_regions]`:
   `"est_all"`, `"est_shared_pop"`, `"est_shared_r"`,
-  `"est_shared_pop_r"`, or `"fix"` (default). Only read when
-  `RecDevs_model = "ar1"`; every other `RecDevs_model` maps the
-  parameter off. See
+  `"est_shared_pop_r"` or `"fix"` (default). Only read under
+  `RecDevs_model = "ar1"`, see
   [`do_RecDevs_rho_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_RecDevs_rho_mapping.md).
 
 - RecDevs_rw_init_sigma:
 
-  Numeric. Standard deviation given to year one of a random walk, which
-  is what sets the level of the recruitment series. Default `5`, wide
-  enough that the level is decided by `R0` and the data. `NA` instead
-  starts the walk at zero under its own sigma, which pulls the first
-  year toward mean recruitment. Only read when `RecDevs_model = "rw"`.
+  Standard deviation given to year one of a random walk, which sets the
+  level of the series. Default `5`; `NA` instead starts the walk at zero
+  under its own sigma. Only read under `RecDevs_model = "rw"`.
 
 - RecDevs_pen_center, InitDevs_pen_center:
 
   Where the recruitment and initial age deviation penalties are
-  centered. `"fixed"` (default) centers on the asserted prior mean, zero
-  or the bias-corrected \\-\sigma_R^2/2\\, which constrains both the
-  level and the spread of the deviations. `"own_mean"` centers on the
-  mean of the estimated deviations themselves, so only their spread is
-  penalized and their level is left free; that is what a sum of squares
-  about the series' own mean amounts to. The level being unpenalized
-  means it must be pinned elsewhere, by a prior on `R0` or by fixing a
-  deviation, or the likelihood is flat along it. Cannot be combined with
-  `do_rec_bias_ramp = 1`, whose offset is meaningless once the mean is
-  estimated rather than asserted.
+  centered. `"fixed"` (default) centers on zero or the bias-corrected
+  \\-\sigma_R^2/2\\; `"own_mean"` centers on the estimated deviations'
+  own mean, leaving their level free to be set elsewhere. Cannot be
+  combined with `do_rec_bias_ramp = 1`.
 
 - Use_rec_level_pen:
 
-  Integer (0/1). Whether a penalty is applied to the log recruitment
-  series itself, separately from the deviation penalty. Under a
-  stock-recruit relationship the deviations are residuals about the
-  predicted curve, so this is the only way to also say that the
-  recruitment series should not wander. Default `0`.
+  Integer (0/1). Whether the log recruitment series itself is penalized,
+  separately from the deviation penalty. Default `0`.
 
 - rec_level_pen_sigma:
 
@@ -529,41 +339,29 @@ rec_seas_prop[, 1] <- 1
 
 - rec_level_pen_center:
 
-  Either `"own_mean"` (default), centering on the mean of the log
-  recruitment series so only its variability is penalized, or `"fixed"`,
-  centering on zero.
+  `"own_mean"` (default) centers on the mean of the log recruitment
+  series, `"fixed"` centers on zero.
 
 - rec_level_pen_yrs:
 
-  Vector of years the penalty applies over, or `NULL` (default) for
-  every year.
+  Years the penalty applies over, or `NULL` (default) for every year.
 
 - Use_init_sex_pen:
 
   Integer (0/1). Whether each later sex's initial age deviations are
-  tied to the first sex's, through a Gaussian on their difference at
-  every age the initial-age penalty covers. A statement about how
-  different the sexes' initial age structures may be, separate from the
-  initial-age penalty's statement about how variable each curve is.
-  Requires `n_sexes > 1` and `InitDevs_sex_spec = "est_all"` (under
-  `"est_shared_s"` the difference is identically zero). Enters the
+  tied to the first sex's by a Gaussian on their difference. Requires
+  `n_sexes > 1` and `InitDevs_sex_spec = "est_all"`. Enters the
   objective unweighted. Default `0`.
 
 - init_sex_pen_sigma:
 
-  Numeric standard deviation of that tie. A sum of squares with weight
-  \\w\\ corresponds to \\1/\sqrt{2w}\\. Default `1`.
+  Numeric standard deviation of that tie. Default `1`.
 
 - sr_penalty:
 
-  Character. `"none"` (default), `"bh"` or `"ricker"`. Only valid with
-  `rec_model = "mean_rec"`. Fits a stock-recruit curve as a LIKELIHOOD
-  on the log residual \\\log R_y - \log\widehat{R}\_y\\ without letting
-  it generate recruitment, which is how several AFSC templates treat a
-  weakly determined relationship: it informs the recruitment series
-  rather than dictating it. Under `rec_model = "bh_rec"` or
-  `"ricker_rec"` the curve already generates recruitment and this must
-  stay `"none"`.
+  Character. `"none"` (default), `"bh"` or `"ricker"`. Only valid under
+  `rec_model = "mean_rec"`. Fits the curve as a likelihood on \\\log
+  R_y - \log\widehat{R}\_y\\ without letting it generate recruitment.
 
 - sr_pen_sigma:
 
@@ -571,231 +369,136 @@ rec_seas_prop[, 1] <- 1
 
 - sr_pen_yrs:
 
-  Vector of years the stock-recruit penalty applies over, or `NULL`
-  (default) for every year that has a lagged spawning biomass, i.e. all
-  but the first `rec_lag`. Years outside it keep their recruitment
-  deviation estimated but contribute nothing to the penalty, which is
-  how a restricted stock-recruit window is expressed. Naming a year with
-  no lagged spawning biomass is an error rather than a silent fallback
-  to the equilibrium.
+  Years the stock-recruit penalty applies over, or `NULL` (default) for
+  every year with a lagged spawning biomass. Naming a year without one
+  is an error.
 
 - sr_R0_spec:
 
-  Character. `"shared"` (default) reuses `ln_global_R0`, which under
-  mean recruitment is the recruitment level, as the curve's scale,
-  giving one scale parameter. `"est"` gives the curve its own estimated
-  `ln_sr_R0`, identified by the curve fit itself. `"rinit"` takes the
-  scale from `ln_rinit`, the initial equilibrium recruitment, so one
-  parameter sets both the unfished age structure and the curve; it
-  requires `use_rinit = 1`. `"shared"` is the better posed of the first
-  two; `"est"` reproduces templates that have separate mean-recruitment
-  and unfished-recruitment parameters, and `"rinit"` reproduces those
-  that use the unfished recruitment in both places, which is the usual
-  ADMB arrangement.
+  Character. `"shared"` (default) takes the curve's scale from
+  `ln_global_R0`, `"est"` gives it its own `ln_sr_R0`, and `"rinit"`
+  takes it from `ln_rinit` and requires `use_rinit = 1`.
 
 - h_spec:
 
-  Character or `NULL`. Sharing structure for stock-recruit steepness
-  `steepness_h` `[n_pop x n_regions]`, parameterized in bounded logit
-  space \\(0.2, 1)\\. Default `NULL` (estimate by population when
-  `n_pop > 1`, by region when `n_pop = 1`). Ignored when
-  `rec_model = "mean_rec"`. See
-  [`do_h_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_h_mapping.md)
-  for full option descriptions.
+  Character or `NULL`. Sharing structure for `steepness_h`
+  `[n_pop x n_regions]`, on a logit scale bounded to \\(0.2, 1)\\.
+  Default `NULL`, ignored under `rec_model = "mean_rec"`. See
+  [`do_h_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_h_mapping.md).
 
 - sgl_seas_spawning_movement:
 
-  Spawning movement array
-  `[n_pop x n_regions x n_regions x n_years x n_ages x n_sexes]`. Each
-  `[p, , r, y, a, s]` slice is a row-stochastic movement matrix giving
-  the probability of fish from each origin region spawning in region
-  `r`. If `NA` (default), 100% natal homing is assumed and the array is
-  constructed internally.
+  Array `[n_pop x n_regions x n_regions x n_years x n_ages x n_sexes]`,
+  each `[p, , r, y, a, s]` slice row-stochastic. `NA` (default) assumes
+  complete natal homing and builds the array internally.
 
 - t_spawn:
 
-  Numeric. Spawn timing as a fraction of the season elapsed before
-  spawning. `0` (default) = spawning before any mortality; `1` =
-  spawning after all mortality.
+  Numeric fraction of the spawning season elapsed before spawning. `0`
+  (default) spawns before any mortality, `1` after all of it.
 
 - stray_rate_spec:
 
-  Character string. Estimation structure for `stray_rate_pars`
-  `[n_pop x max_stray_blocks]`, parameterized on the logit scale.
-  Ignored when `use_fixed_stray_rate = 1` or `n_pop = 1`. Default
-  `"fix"`. Options:
-
-  `"fix"`
-
-  :   All parameters fixed at starting values (mapped to `NA`). Use this
-      alongside `use_fixed_stray_rate = 0` to hold stray rates at a
-      specified value without estimating.
-
-  `"est_all"`
-
-  :   Estimate independently per population x block. Produces one
-      parameter per population per unique block.
-
-  `"est_shared_pop"`
-
-  :   Single parameter per block, shared across all populations.
-      Requires identical block structures across all populations. An
-      error is raised if block indices differ.
+  Estimation structure for `stray_rate_pars`
+  `[n_pop x max_stray_blocks]` on the logit scale. `"fix"` (default)
+  holds every value, `"est_all"` estimates per population and block, and
+  `"est_shared_pop"` gives one parameter per block shared across
+  populations, which requires identical block structures. Ignored when
+  `use_fixed_stray_rate = 1` or `n_pop = 1`.
 
 - stray_rate_blocks:
 
-  Character vector of length `n_pop` defining the temporal block
-  structure for stray rate parameters. Valid formats:
-
-  `"none_Pop_x"`
-
-  :   Constant stray rate for population `x` across all years (single
-      block).
-
-  `"Block_k_Year_a-b_Pop_x"`
-
-  :   Block `k` applies to years `a` through `b` for population `x`. Use
-      `"terminal"` in place of the end year to extend through the final
-      model year.
-
-  Default: a single constant block for every population. **Note:** stray
-  rate is generally unidentifiable from fisheries data alone.
-  Time-blocking is provided for completeness but regularization via
-  `use_stray_rate_prior` in the penalty setup is strongly recommended
-  whenever `stray_rate_spec != "fix"`.
+  Character vector of length `n_pop`, either `"none_Pop_x"` for one
+  block or `"Block_k_Year_a-b_Pop_x"`, with `"terminal"` allowed as the
+  end year. Default one block each. Stray rate is generally
+  unidentifiable from fisheries data alone, so use
+  `use_stray_rate_prior` whenever `stray_rate_spec != "fix"`.
 
 - use_fixed_stray_rate:
 
-  Integer (0/1). Whether stray rates are supplied as a fixed external
-  array (`fixed_stray_rate`) rather than estimated as model parameters.
-  Default `1` (fixed), preserving existing behavior. Set to `0` to
-  estimate stray rates via `stray_rate_pars`.
+  Integer (0/1). Whether stray rates come from `fixed_stray_rate` rather
+  than being estimated. Default `1`.
 
 - fixed_stray_rate:
 
-  Array `[n_pop x n_years]`. Fixed stray rate values used when
-  `use_fixed_stray_rate = 1`. Values should be in \\\[0, 1\]\\. Default:
-  `0` (no straying) for all populations and years. Ignored when
-  `use_fixed_stray_rate = 0`.
+  Array `[n_pop x n_years]` of stray rates in \\\[0, 1\]\\. Default `0`.
 
 - use_stray_rate_prior:
 
-  Integer (0/1). Whether Beta priors are applied to estimated stray rate
-  parameters. Only relevant when `use_fixed_stray_rate = 0` and
-  `n_pop > 1`. An error is raised if `use_stray_rate_prior = 1`
-  alongside `use_fixed_stray_rate = 1` since `stray_rate_pars` would not
-  be estimated. Default `0`.
+  Integer (0/1). Beta priors on estimated stray rates. Only relevant
+  when `use_fixed_stray_rate = 0` and `n_pop > 1`; an error is raised
+  alongside `use_fixed_stray_rate = 1`. Default `0`.
 
 - stray_rate_prior:
 
-  Data frame of Beta prior parameters for stray rates. Required columns:
-  `pop` (population index), `block` (block index matching
-  `stray_rate_blocks`), `mu` (prior mean, in \\(0,1)\\), `sd` (prior
-  standard deviation). One row per population x block combination to
-  penalize. Ignored when `use_stray_rate_prior = 0`. Default `NULL`.
+  Data frame with columns `pop`, `block`, `mu` in \\(0,1)\\ and `sd`,
+  one row per population and block. Default `NULL`.
 
 - spawn_seas:
 
-  Integer. Season index in which spawning occurs. Default `1`.
+  Integer season index in which spawning occurs. Default `1`.
 
 - sexratio_spec:
 
-  Character. Estimation structure for sex ratio parameters
-  `sexratio_pars` `[n_pop x n_regions x n_blocks]`. Default `"fix"`. See
-  [`do_sexratio_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sexratio_pars_mapping.md)
-  for full option descriptions. Must be `"fix"` when `n_sexes = 1`.
+  Estimation structure for `sexratio_pars`
+  `[n_pop x n_regions x n_blocks]`. Default `"fix"`, which is required
+  when `n_sexes = 1`. See
+  [`do_sexratio_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sexratio_pars_mapping.md).
 
 - sexratio_blocks:
 
-  Character vector defining temporal block structure for sex ratio
-  parameters. One entry per population-region combination. Valid
-  formats:
-
-  `"none_Pop_x_Region_x"`
-
-  :   Constant sex ratio for population `x` and region `x` (single block
-      across all years).
-
-  `"Block_k_Year_a-b_Pop_x_Region_x"`
-
-  :   Block `k` applies to years `a` through `b`. Use `"terminal"` in
-      place of the end year to extend through the final model year.
-
-  Default: a single constant block for every population-region
-  combination.
+  Character vector, one entry per population and region, either
+  `"none_Pop_x_Region_x"` or `"Block_k_Year_a-b_Pop_x_Region_x"`, with
+  `"terminal"` allowed as the end year. Default one block each.
 
 - use_rinit:
 
-  Integer (0/1). Whether a separate initial recruitment scalar
-  `ln_rinit` is used to initialize the population independently of the
-  recruitment `ln_global_R0`. When `0` (default), `ln_rinit` is fixed
-  and `ln_global_R0` governs both initialization and recruitment. When
-  `1`, both `ln_rinit` and `ln_global_R0` are estimated, with `ln_rinit`
-  used exclusively for equilibrium initialization and `ln_global_R0`
-  used for the stock-recruit relationship.
+  Integer (0/1). Whether `ln_rinit` initializes the population
+  separately from `ln_global_R0`. Under `0` (default) `ln_rinit` is
+  fixed and `ln_global_R0` does both jobs.
 
 - init_age_devs_shared:
 
-  Integer vector of length `n_ages - 1` specifying an explicit
-  parameter-sharing structure for `ln_InitDevs` along the age dimension.
-  Each element gives the factor level assigned to that age position;
-  positions sharing the same integer value are constrained to a single
-  estimated parameter. Used in conjunction with
-  `equil_init_age_strc = 3` (`"stoch_shared_ages"`), which activates
-  user-defined age sharing while still estimating deviations
-  independently across populations and regions. The sharing structure is
-  also respected by `InitDevs_spec` options: `"est_shared_r"` applies
-  the vector per population (with a population-level offset so pops
-  remain independent), and `"est_shared_pop_r"` applies it globally (no
-  offset, all pops and regions share the same parameters). A typical use
-  case is replicating ADMB models where ages beyond the data plus group
-  share the last estimated deviation, e.g. `c(1:42, rep(42, 9))` for a
-  52-age model with 43 data ages, giving 42 free parameters. When `NULL`
-  (default), age sharing follows the standard behavior determined by
-  `equil_init_age_strc` alone.
+  Integer vector of length `n_ages - 1` giving the factor level of each
+  age position for `ln_InitDevs`; positions sharing a value share one
+  parameter. Read under `equil_init_age_strc = 3`, and also respected by
+  `InitDevs_spec = "est_shared_r"` (applied per population, with a
+  population offset) and `"est_shared_pop_r"` (applied globally, no
+  offset). `c(1:42, rep(42, 9))` gives 42 free parameters for a 52-age
+  model with 43 data ages. Default `NULL`.
 
 - R0_blocks:
 
-  Character vector giving time blocks for `R0`, one entry per
-  population, in the same vocabulary as the selectivity blocks:
-  `"none_Pop_<p>"`, `"Block_<b>_Year_<a>-<e>_Pop_<p>"` (1-based year
-  indices, `"terminal"` allowed for the end year). Under
-  `rec_model = "mean_rec"` `R0` IS mean recruitment, so a block is a
-  productivity regime. Under a stock-recruit form it is the curve's
-  scale, so blocking it makes the curve time-varying: `S0` moves with
-  the block, and depletion and any reference point built on the curve
-  step at its boundary. A curve fitted as a penalty instead
-  (`sr_penalty` with `sr_R0_spec = "shared"`) takes its scale from
-  `R0_ref_block` and stays put. Default `NULL`, a single block.
+  Character vector of time blocks for `R0`, one per population, in the
+  selectivity block vocabulary: `"none_Pop_<p>"` or
+  `"Block_<b>_Year_<a>-<e>_Pop_<p>"` on 1-based year indices, with
+  `"terminal"` allowed. Under `"mean_rec"` a block is a productivity
+  regime; under a stock-recruit form it makes the curve time-varying, so
+  `S0`, depletion and any reference point step at the boundary. Default
+  `NULL`.
 
 - R0_ref_block:
 
-  Integer, the block whose `R0` is used everywhere a single value is
-  needed rather than a year's value: the initial age structure, the
-  regional apportionment, the `R0` prior, the `ln_rinit` penalty and the
-  stock-recruit scale when `sr_R0_spec = "shared"`. Default 1. Only the
-  recruitment computed each year uses that year's block.
+  Integer, the block whose `R0` is used wherever a single value is
+  needed: the initial age structure, the regional apportionment, the
+  `R0` prior, the `ln_rinit` penalty, and the stock-recruit scale under
+  `sr_R0_spec = "shared"`. Default 1.
 
 - use_r0_prior:
 
-  Integer (0/1). Whether to apply a lognormal prior on R0 for any
-  populations. Default 0.
+  Integer (0/1). Lognormal prior on `R0`. Default 0.
 
 - r0_prior:
 
-  Data frame with columns `pop` (population index), `mu` (prior mean on
-  natural scale), and `sd` (prior SD on log scale). Required when
-  `use_r0_prior = 1`.
+  Data frame with columns `pop`, `mu` on the natural scale and `sd` on
+  the log scale. Required when `use_r0_prior = 1`.
 
 - Use_rinit_pen:
 
-  Integer (0/1). Whether to penalize the initial equilibrium
-  recruitment's offset from the recruitment level, \\\log(R\_{init} /
-  R_0) \sim N(0, \mathrm{rinit\\pen\\sd}^2)\\, under `use_rinit = 1`. An
-  equilibrium recruitment stands for the average of several years of
-  recruitment, so its spread is smaller than a single year's; \\\sigma_R
-  / (1 / M - 0.5)\\, with \\1/M - 0.5\\ the average age of the stock, is
-  a reasonable choice. Default 0.
+  Integer (0/1). Whether \\\log(R\_{init} / R_0)\\ is penalized under
+  `use_rinit = 1`. An equilibrium recruitment stands for an average of
+  several years, so \\\sigma_R / (1 / M - 0.5)\\ is a reasonable sd.
+  Default 0.
 
 - rinit_pen_sd:
 
@@ -803,46 +506,31 @@ rec_seas_prop[, 1] <- 1
 
 - ...:
 
-  Optional named starting values for parameters. Any of: `ln_global_R0`
-  `[n_pop]`, `ln_rinit` `[n_pop]`, `rec_region_prop_pars`
-  `[n_pop x (n_regions - 1)]`, `rec_seas_prop_pars`
-  `[n_pop x (n_seas - 1)]`, `steepness_h` `[n_pop x n_regions]` (bounded
-  logit scale), `ln_InitDevs`
+  Optional named starting values: `ln_global_R0` `[n_pop]`, `ln_rinit`
+  `[n_pop]`, `rec_region_prop_pars` `[n_pop x (n_regions - 1)]`,
+  `rec_seas_prop_pars` `[n_pop x (n_seas - 1)]`, `steepness_h`
+  `[n_pop x n_regions]` on the bounded logit scale, `ln_InitDevs`
   `[n_pop x n_regions x (n_ages - 1) x n_sexes]` (a 3-D array is
-  broadcast across sexes), `ln_RecDevs` `[n_pop x n_regions x n_years]`,
+  expanded across sexes), `ln_RecDevs` `[n_pop x n_regions x n_years]`,
   `ln_sigmaR` `[2 x n_pop x n_regions]`, `sexratio_pars`
-  `[n_pop x n_regions x n_blocks]`. Unspecified parameters use internal
-  defaults.
+  `[n_pop x n_regions x n_blocks]`.
 
 - ln_global_R0_spec:
 
-  Character string, `"est"` (default) or `"fix"`. `"fix"` maps
-  `ln_global_R0` off at its starting value, so the recruitment
-  deviations hold log recruitment rather than as departures from a
-  level. That is how SAM writes recruitment, where the first year's log
-  numbers at age are the recruitment itself and there is no separate
-  level parameter. The recruitment counterpart of `ln_F_mean_spec` in
-  [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
-
-  Under `rec_model = "mean_rec"` the level and the deviations are only
-  both estimable when something reads the deviations' level. An `"iid"`
-  or `"ar1"` penalty does; a random walk does not, since it penalizes
-  only the change from one deviation to the next. Combining a walk with
-  `dont_pen_recdev_first >= 1`, which removes the first year's term,
-  leaves the two exactly unidentified, and that combination is rejected
-  rather than fitted: it converges to a singular Hessian and standard
-  errors of `NA`. A walk with the first year still penalized is accepted
-  with a warning, since the level is then readable only through that one
-  term and its standard error comes back near `RecDevs_rw_init_sigma`.
+  `"est"` (default) or `"fix"`. `"fix"` maps `ln_global_R0` off at its
+  starting value, so the deviations hold log recruitment outright. Under
+  `rec_model = "mean_rec"` a random walk with
+  `dont_pen_recdev_first >= 1` leaves the level unidentified and is
+  refused; a walk with the first year still penalized is accepted with a
+  warning.
 
 ## Value
 
-The input `input_list` with all recruitment-related fields populated in
-`$data` and `$par`, and factor maps constructed in `$map` for:
-`rec_region_prop_pars`, `rec_seas_prop_pars`, `ln_sigmaR`,
-`ln_InitDevs`, `ln_RecDevs`, `RecDevs_rho`, `steepness_h`,
-`sexratio_pars`, and `stray_rate_pars`. Character-coded inputs for
-`init_age_strc` and `equil_init_age_strc` are converted to integer codes
+`input_list` with recruitment fields set in `$data` and `$par`, and maps
+built in `$map` for `rec_region_prop_pars`, `rec_seas_prop_pars`,
+`ln_sigmaR`, `ln_InitDevs`, `ln_RecDevs`, `RecDevs_rho`, `steepness_h`,
+`sexratio_pars` and `stray_rate_pars`. Character codes for
+`init_age_strc` and `equil_init_age_strc` are converted to integers
 before storage.
 
 ## See also

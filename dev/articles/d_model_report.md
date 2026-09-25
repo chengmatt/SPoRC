@@ -89,9 +89,18 @@ to age via the size-age transition matrix).
 | Name | Description | Dimensions |
 |----|----|----|
 | `ln_RecDevs` | Log-scale recruitment deviations by population, region, and year (including projection years) | `n_pop × n_regions × (n_est_rec_devs + n_proj_yrs_devs)` |
-| `move_devs` | Movement deviations by population, region pair, year, season, age, and sex (including projection years) | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes` |
+| `move_devs` | Movement deviations by population, region pair (region alone under CTMC movement, where they sit on preference), year, season, age, and sex (including projection years) | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes`, the third dim `1` under CTMC movement |
 | `ln_fishsel_devs` | Log-scale fishery selectivity deviations by region, year, bin, sex, and fleet | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_fish_fleets` |
 | `ln_srvsel_devs` | Log-scale survey selectivity deviations by region, year, bin, sex, and fleet | `n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets` |
+| `dsem_x_grid` | The DSEM grid `[year, series]` with the linked deviations written in, when a DSEM is set up |  |
+| `dsem_margvar_grid` | Marginal of each DSEM cell `[year, series]` |  |
+
+## Dynamic Structural Equation Model
+
+| Name | Description |
+|----|----|
+| `dsem_nLL` | Negative log density of the DSEM grid, the linked deviations’ density and the covariates’ process |
+| `dsem_obs_nLL` | Negative log likelihood of the covariate observations under their families (every `dsem_family` but `"fixed"`) |
 
 ## Likelihoods
 

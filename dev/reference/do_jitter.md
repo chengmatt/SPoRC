@@ -1,9 +1,13 @@
 # Run Jitter Analysis for Model Diagnostics
 
-Performs a jitter analysis to evaluate sensitivity of model optimization
-to starting parameter values. The function repeatedly perturbs the
-parameter vector with additive normal noise, refits the model, and
-records resulting time series and diagnostic metrics.
+Tests how sensitive the optimization is to its starting values by
+perturbing the parameter vector with additive normal noise, refitting,
+and recording the resulting series and diagnostics. Each iteration
+perturbs the fixed effects, and the random effects too under
+`jitter_random = TRUE`, optimizes with
+[`stats::nlminb()`](https://rdrr.io/r/stats/nlminb.html), optionally
+takes extra Newton steps, and extracts the reported quantities.
+Iterations run sequentially or in parallel through `future`.
 
 ## Usage
 
@@ -27,95 +31,66 @@ do_jitter(
 
 - data:
 
-  A list of model data used to construct the `RTMB` objective function.
+  List of model data for the `RTMB` objective function.
 
 - parameters:
 
-  A named list of model parameters used to initialize
-  `RTMB::MakeADFun()`.
+  Named list of parameters for `RTMB::MakeADFun()`.
 
 - mapping:
 
-  A named list defining parameter mappings for `RTMB::MakeADFun()`.
+  Named list of parameter mappings.
 
 - random:
 
-  Character vector specifying random-effect parameters.
+  Character vector of random-effect parameters.
 
 - sd:
 
-  Numeric value specifying the standard deviation of the additive normal
-  noise used to jitter parameters.
+  Standard deviation of the additive normal noise.
 
 - n_jitter:
 
-  Integer specifying the number of jittered optimization runs.
+  Number of jittered runs.
 
 - n_newton_loops:
 
-  Integer specifying the number of additional Newton optimization steps
-  performed after [`nlminb()`](https://rdrr.io/r/stats/nlminb.html)
-  convergence. Default = 0.
+  Extra Newton steps after
+  [`nlminb()`](https://rdrr.io/r/stats/nlminb.html) converges. Default
+  0.
 
 - do_par:
 
-  Logical indicating whether jitter iterations should be executed in
-  parallel.
+  Logical, whether the iterations run in parallel.
 
 - n_cores:
 
-  Integer specifying the number of parallel workers to use when
-  `do_par = TRUE`.
+  Parallel workers used when `do_par = TRUE`.
 
 - par_vec:
 
-  Optional numeric vector of starting values to jitter. Accepts either
-  the fixed-effect vector (`length(obj$par)`, for example
-  `fit$optim$par`) or the joint fixed and random vector
-  (`length(obj$env$par)`, for example `fit$env$last.par.best`). Any
-  other length is an error. `NULL` uses the model's own start.
+  Optional starting values to jitter, either the fixed-effect vector
+  (`length(obj$par)`, such as `fit$optim$par`) or the joint fixed and
+  random vector (`length(obj$env$par)`, such as
+  `fit$env$last.par.best`). Any other length is an error, and `NULL`
+  uses the model's own start.
 
 - jitter_random:
 
-  Logical indicating whether the random effects are perturbed alongside
-  the fixed effects. Only the fixed effects are searched by
+  Logical, whether the random effects are perturbed alongside the fixed
+  effects. Only the fixed effects are searched by
   [`nlminb()`](https://rdrr.io/r/stats/nlminb.html), so the random draws
   move the starting point of the inner Laplace solve and check whether
   it settles on the same modes. Either way the inner solve starts from
   the random values in `par_vec`, or from the model's own start when
-  `par_vec` holds no random effects. Default is `FALSE`.
+  `par_vec` holds none. Default `FALSE`.
 
 ## Value
 
-A `data.frame` containing jitter iteration results. The output includes
-time series of spawning stock biomass (SSB) and recruitment, along with
-diagnostic information for each jitter run, including:
-
-- Jitter index
-
-- Whether the Hessian is positive definite
-
-- Joint negative log-likelihood
-
-- Maximum absolute gradient of fixed effects
-
-## Details
-
-Each jitter iteration:
-
-- Perturbs the fixed effects with additive normal noise, and the random
-  effects too when `jitter_random = TRUE`.
-
-- Optimizes the objective function using
-  [`stats::nlminb()`](https://rdrr.io/r/stats/nlminb.html).
-
-- Optionally performs additional Newton steps to refine the solution.
-
-- Extracts reported quantities (e.g., spawning biomass and recruitment)
-  and diagnostic statistics.
-
-The analysis can be executed sequentially or in parallel using the
-`future` framework.
+A data frame of the jitter results: the spawning stock biomass and
+recruitment series of each run, with its jitter index, whether the
+Hessian was positive definite, the joint negative log-likelihood, and
+the maximum absolute gradient of the fixed effects.
 
 ## See also
 

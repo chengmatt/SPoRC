@@ -1,14 +1,11 @@
 # Generate recruitment for a simulation year
 
-Computes total recruitment for year `y` by first obtaining deterministic
-expected recruitment from
-[`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md)
-and then multiplying by lognormal deviations (bias-corrected).
-Recruitment is apportioned across sexes and seasons and written into
-`sim_env$NAA[p, r, y, 1, 1, s, sim]` (first season, age-1 slot).
-Unfished NAA (`NAA0`) is synchronized to match fished NAA at
-recruitment. If `Rec_input` exists in the environment and covers year
-`y`, those values override the stochastic draw entirely.
+Takes deterministic recruitment from
+[`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md),
+multiplies it by lognormal deviations, apportions it across sexes and
+seasons, and writes it into the age-one slot of `sim_env$NAA`, with
+`NAA0` synchronized to match. A `Rec_input` covering year `y` overrides
+the draw entirely.
 
 ## Usage
 
@@ -20,7 +17,7 @@ generate_recruitment(y, sim, sim_env, seas = 1)
 
 - y:
 
-  Integer. Year index for which recruitment is generated.
+  Integer. Year index.
 
 - sim:
 
@@ -28,39 +25,32 @@ generate_recruitment(y, sim, sim_env, seas = 1)
 
 - sim_env:
 
-  Simulation environment created by
-  [`Setup_sim_env`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md).
-  Modified in place: `$ln_RecDevs[p, r, y, sim]`, `$Rec[p, r, y, sim]`,
-  `$NAA[p, r, y, seas, 1, s, sim]`, and
-  `$NAA0[p, r, y, seas, 1, s, sim]` are updated.
+  Simulation environment from
+  [`Setup_sim_env`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md),
+  modified in place: `$ln_RecDevs`, `$Rec`, `$NAA` and `$NAA0`.
 
 - seas:
 
-  Integer. Season this recruitment first enters the population in, using
-  `rec_seas_prop[p, seas, sim]`. Default `1`, matching the classic
-  `rec_lag >= 1` case where recruitment for the whole year is already
-  known before season 1 starts. `rec_lag = 0` (age-0 recruitment)
-  instead calls this with `seas = spawn_seas`, since that is the
-  earliest season this year's own SSB (and hence recruitment) is
-  knowable, see
+  Integer. Season this recruitment first enters in, through
+  `rec_seas_prop[p, seas, sim]`. Default `1`, the classic `rec_lag >= 1`
+  case where the whole year's recruitment is known before season one.
+  `rec_lag = 0` instead calls this with `seas = spawn_seas`, the
+  earliest season this year's own SSB is knowable. See
   [`apply_pop_dy`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md).
 
 ## Value
 
-`invisible(NULL)`. All modifications are made by reference within
-`sim_env`.
+`invisible(NULL)`; everything is modified by reference within `sim_env`.
 
 ## Details
 
-Recruitment deviation sharing follows the same population/region logic
-as
+Deviation sharing follows
 [`generate_initial_age_structure`](https://chengmatt.github.io/SPoRC/dev/reference/generate_initial_age_structure.md):
-deviations are drawn once per population (`n_pop > 1`) or once per
-region (`n_pop = 1`, local density-dependence). Populations with
-`R0 = 0` receive zero deviations. `sigma_idx` selects the natal region's
-`ln_sigmaR` for the bias-correction term.
-
-`RecDevs_model` sets what the draw is centered on: zero for independent
-deviations, the previous year's deviation for a random walk, and
-`RecDevs_rho` times it for an AR1. Only independent draws are bias
-corrected, since a random walk's deviation is not mean zero.
+one draw per population when `n_pop > 1`, or one per region when
+`n_pop = 1` under local density dependence. Populations with `R0 = 0`
+get zero deviations, and `sigma_idx` picks the natal region's
+`ln_sigmaR` for the bias correction. `RecDevs_model` sets what the draw
+is centered on: zero for independent deviations, the previous year's for
+a random walk, and `RecDevs_rho` times it for an AR1. Only the
+independent draws are bias corrected, a walk's deviation not being mean
+zero.

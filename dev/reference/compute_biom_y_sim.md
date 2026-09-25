@@ -1,13 +1,9 @@
 # Compute spawning-time biomass quantities for one simulation year/season
 
-Computes Total_Biom, SSB, Dynamic_SSB0, and eff_SSB for year `y` at
-season `seas` (always called with `seas == spawn_seas`) from the current
-`NAA`/`NAA0` state in `sim_env`. Factored out of
-[`apply_pop_dy`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md)
-so it can be evaluated either before or after that season's
-mortality/ageing step depending on `rec_lag`, without duplicating the
-underlying math. Pure/read-only: returns a list rather than modifying
-`sim_env`.
+The operating model's state at year `y` and season `seas`, always the
+spawning season, sliced at replicate `sim` and given to
+[`biom_at_spawn`](https://chengmatt.github.io/SPoRC/dev/reference/biom_at_spawn.md),
+which the estimation model and the forward projection also run.
 
 ## Usage
 

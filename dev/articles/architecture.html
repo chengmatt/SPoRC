@@ -364,6 +364,21 @@ one file.</p>
 </td>
 </tr>
 <tr class="odd">
+<td><code>setup_catchability.R</code></td>
+<td>
+<code>do_q_devs_mapping</code>, <code>q_dev_par_names</code>,
+<code>renumber_map_levels</code>, <code>setup_q_devs</code>
+</td>
+<td>
+<code>setup_mapping.R</code>, <code>utils_setup.R</code>
+</td>
+<td>
+<code>setup_dsem.R</code>, <code>setup_fishery_selectivity.R</code>,
+<code>setup_survey_selectivity.R</code>,
+<code>sim_catchability.R</code>, <code>sim_setup.R</code>
+</td>
+</tr>
+<tr class="even">
 <td><code>setup_checks.R</code></td>
 <td>
 <code>check_data_dimensions</code>, <code>check_miss0_osa</code>,
@@ -380,7 +395,7 @@ one file.</p>
 <code>setup_tagging.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>setup_dimensions.R</code></td>
 <td>
 <code>Setup_Mod_Dim</code>, <code>Setup_Sim_Dim</code>
@@ -388,6 +403,31 @@ one file.</p>
 <td><code>utils_setup.R</code></td>
 <td>
 <code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>setup_dsem.R</code></td>
+<td>
+<code>apply_dsem_link_switch</code>,
+<code>check_dsem_cov_support</code>, <code>dev_map_levels</code>,
+<code>dsem_cov_link_mean</code>, <code>dsem_cov_sd_start</code>,
+<code>dsem_default_link</code>, <code>dsem_family_codes</code>,
+<code>dsem_link_codes</code>, <code>dsem_process_table</code>,
+<code>dsem_series</code>, <code>get_dsem_cells</code>,
+<code>get_dsem_link</code>, <code>get_dsem_link_sd_arrow</code>,
+<code>peel_dsem_years</code>, <code>peel_series_order</code>,
+<code>read_dsem_arrows</code>, <code>set_dsem_logdet_atomic</code>,
+<code>Setup_Mod_DSEM</code>
+</td>
+<td>
+<code>model_precision.R</code>, <code>setup_catchability.R</code>,
+<code>setup_movement.R</code>, <code>setup_recruitment.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td>
+<code>diag_retrospective.R</code>, <code>model_objective.R</code>,
+<code>setup_mapping.R</code>, <code>sim_dsem.R</code>,
+<code>sim_setup.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -426,8 +466,9 @@ one file.</p>
 <code>Setup_Mod_Retsel</code>
 </td>
 <td>
-<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
-<code>utils_math.R</code>, <code>utils_setup.R</code>
+<code>setup_catchability.R</code>, <code>setup_checks.R</code>,
+<code>setup_mapping.R</code>, <code>utils_math.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -450,12 +491,12 @@ one file.</p>
 <code>sel_has_data</code>, <code>sync_dev_map_data</code>
 </td>
 <td>
-<code>model_lik_at_age.R</code>, <code>utils_setup.R</code>,
-<code>utils_year_fleet_spec.R</code>
+<code>model_lik_at_age.R</code>, <code>setup_dsem.R</code>,
+<code>utils_setup.R</code>, <code>utils_year_fleet_spec.R</code>
 </td>
 <td>
-<code>model_fit.R</code>, <code>setup_fishery_catch.R</code>,
-<code>setup_fishery_comps.R</code>,
+<code>model_fit.R</code>, <code>setup_catchability.R</code>,
+<code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
 <code>setup_recruitment.R</code>, <code>setup_sim_fleets.R</code>,
 <code>setup_survey_comps.R</code>,
@@ -466,13 +507,15 @@ one file.</p>
 <td><code>setup_movement.R</code></td>
 <td>
 <code>do_cont_vary_move_mapping</code>,
-<code>do_move_pars_mapping</code>, <code>Setup_Mod_Movement</code>
+<code>do_move_pars_mapping</code>,
+<code>get_yr_varying_pref_terms</code>,
+<code>Setup_Mod_Movement</code>
 </td>
 <td>
 <code>model_movement.R</code>, <code>setup_checks.R</code>,
 <code>setup_mapping.R</code>, <code>utils_setup.R</code>
 </td>
-<td></td>
+<td><code>setup_dsem.R</code></td>
 </tr>
 <tr class="even">
 <td><code>setup_recruitment.R</code></td>
@@ -482,15 +525,17 @@ one file.</p>
 <code>do_rec_seas_prop_mapping</code>, <code>do_RecDevs_mapping</code>,
 <code>do_RecDevs_rho_mapping</code>,
 <code>do_sexratio_pars_mapping</code>, <code>do_sigmaR_mapping</code>,
-<code>do_stray_rate_mapping</code>, <code>Setup_Mod_Rec</code>,
-<code>Setup_Sim_Rec</code>
+<code>do_stray_rate_mapping</code>, <code>get_rec_bias_ramp</code>,
+<code>Setup_Mod_Rec</code>, <code>Setup_Sim_Rec</code>
 </td>
 <td>
 <code>setup_checks.R</code>, <code>setup_mapping.R</code>,
 <code>utils_setup.R</code>
 </td>
 <td>
-<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+<code>model_objective.R</code>, <code>setup_dsem.R</code>,
+<code>sim_closed_loop.R</code>, <code>sim_dsem.R</code>,
+<code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -529,8 +574,9 @@ one file.</p>
 <td><code>setup_survey_selectivity.R</code></td>
 <td><code>Setup_Mod_Srvsel_and_Q</code></td>
 <td>
-<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
-<code>utils_math.R</code>, <code>utils_setup.R</code>
+<code>setup_catchability.R</code>, <code>setup_checks.R</code>,
+<code>setup_mapping.R</code>, <code>utils_math.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -580,12 +626,13 @@ one file.</p>
 <tr class="odd">
 <td><code>model_biomass.R</code></td>
 <td>
-<code>compute_biom_y</code>, <code>derive_proj_biom</code>
+<code>biom_at_spawn</code>, <code>compute_biom_y</code>,
+<code>derive_proj_biom</code>
 </td>
 <td><code>model_transition.R</code></td>
 <td>
-<code>model_population_dynamics.R</code>,
-<code>projection.R</code>
+<code>model_population_dynamics.R</code>, <code>projection.R</code>,
+<code>sim_population.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -639,7 +686,8 @@ one file.</p>
 <td>nothing</td>
 <td>
 <code>model_objective.R</code>,
-<code>model_population_dynamics.R</code>
+<code>model_population_dynamics.R</code>,
+<code>sim_biologicals.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -737,8 +785,9 @@ one file.</p>
 <code>model_obs_fishery_survey.R</code>,
 <code>model_obs_tagging.R</code>,
 <code>model_population_dynamics.R</code>,
-<code>model_priors_penalties.R</code>, <code>model_selectivity.R</code>,
-<code>utils_setup.R</code>
+<code>model_precision.R</code>, <code>model_priors_penalties.R</code>,
+<code>model_selectivity.R</code>, <code>setup_dsem.R</code>,
+<code>setup_recruitment.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -792,10 +841,17 @@ one file.</p>
 </tr>
 <tr class="even">
 <td><code>model_precision.R</code></td>
-<td><code>Get_3d_precision</code></td>
+<td>
+<code>fill_dsem_derived</code>, <code>Get_3d_precision</code>,
+<code>get_dsem_arrow_values</code>, <code>get_dsem_margvar</code>,
+<code>get_dsem_matrices</code>, <code>get_dsem_nLL</code>,
+<code>get_dsem_obs_nLL</code>, <code>get_dsem_precision</code>
+</td>
 <td>nothing</td>
 <td>
-<code>model_priors_penalties.R</code>,
+<code>model_objective.R</code>,
+<code>model_priors_penalties.R</code>, <code>plot_dsem.R</code>,
+<code>setup_dsem.R</code>, <code>sim_dsem.R</code>,
 <code>sim_naa_state.R</code>
 </td>
 </tr>
@@ -803,13 +859,14 @@ one file.</p>
 <td><code>model_priors_penalties.R</code></td>
 <td>
 <code>dev_own_mean</code>, <code>dev_share_weights</code>,
-<code>get_dmr_penalty</code>, <code>Get_Fdev_PE_loglik</code>,
-<code>get_init_devs_penalty</code>, <code>Get_move_PE_loglik</code>,
+<code>get_dev_pe_nLL</code>, <code>get_dmr_penalty</code>,
+<code>Get_Fdev_PE_loglik</code>, <code>get_init_devs_penalty</code>,
+<code>Get_move_PE_loglik</code>,
 <code>get_movement_dirichlet_prior</code>,
 <code>Get_NAA_state_penalty</code>, <code>get_natmort_prior</code>,
-<code>Get_PE_loglik</code>, <code>get_q_prior</code>,
-<code>get_r0_prior</code>, <code>get_rec_devs_penalty</code>,
-<code>get_rec_level_penalty</code>, <code>get_recdev_pe_nLL</code>,
+<code>Get_PE_loglik</code>, <code>Get_q_dev_penalty</code>,
+<code>get_q_prior</code>, <code>get_r0_prior</code>,
+<code>get_rec_devs_penalty</code>, <code>get_rec_level_penalty</code>,
 <code>get_recruitment_penalty</code>,
 <code>get_recruitment_proportion_priors</code>,
 <code>get_selex_fixed_penalty</code>, <code>get_selex_prior</code>,
@@ -968,6 +1025,32 @@ one file.</p>
 </tr></thead>
 <tbody>
 <tr class="odd">
+<td><code>sim_biologicals.R</code></td>
+<td>
+<code>advance_sim_growth_year</code>,
+<code>derive_sim_growth</code>, <code>derive_sim_movement</code>,
+<code>match_model_args</code>, <code>sim_growth_devs</code>,
+<code>take_sim_growth_years</code>
+</td>
+<td><code>model_growth.R</code></td>
+<td>
+<code>sim_dsem.R</code>, <code>sim_population.R</code>
+</td>
+</tr>
+<tr class="even">
+<td><code>sim_catchability.R</code></td>
+<td>
+<code>check_q_dsem_drawable</code>, <code>draw_sim_q_devs</code>,
+<code>Setup_Sim_q_devs</code>, <code>split_reported_q</code>
+</td>
+<td><code>setup_catchability.R</code></td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_dsem.R</code>,
+<code>sim_population.R</code>, <code>sim_self_test.R</code>,
+<code>sim_setup.R</code>
+</td>
+</tr>
+<tr class="odd">
 <td><code>sim_closed_loop.R</code></td>
 <td>
 <code>catch_to_F_multifleet</code>,
@@ -979,22 +1062,41 @@ one file.</p>
 <code>refpts_main.R</code>, <code>setup_biologicals.R</code>,
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
-<code>setup_tagging.R</code>, <code>sim_self_test.R</code>,
-<code>utils_math.R</code>, <code>utils_postfit.R</code>,
-<code>utils_setup.R</code>
+<code>setup_tagging.R</code>, <code>sim_catchability.R</code>,
+<code>sim_self_test.R</code>, <code>utils_math.R</code>,
+<code>utils_postfit.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
 <tr class="even">
+<td><code>sim_dsem.R</code></td>
+<td>
+<code>draw_dsem_conditional</code>, <code>draw_dsem_cov_obs</code>,
+<code>draw_dsem_recursive</code>, <code>draw_dsem_sim</code>,
+<code>draw_tweedie</code>, <code>get_dsem_conditional</code>,
+<code>scratch_dsem_fit</code>, <code>Setup_Sim_DSEM</code>
+</td>
+<td>
+<code>model_precision.R</code>, <code>setup_dsem.R</code>,
+<code>setup_recruitment.R</code>, <code>sim_biologicals.R</code>,
+<code>sim_catchability.R</code>, <code>utils_setup.R</code>
+</td>
+<td>
+<code>sim_self_test.R</code>, <code>sim_setup.R</code>
+</td>
+</tr>
+<tr class="odd">
 <td><code>sim_naa_state.R</code></td>
 <td>
 <code>color_naa_dim</code>, <code>draw_naa_innovations</code>,
 <code>Setup_Sim_NAA_state</code>
 </td>
 <td><code>model_precision.R</code></td>
-<td><code>sim_population.R</code></td>
+<td>
+<code>sim_population.R</code>, <code>sim_self_test.R</code>
+</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sim_observations.R</code></td>
 <td>
 <code>build_idx_factor</code>, <code>collapse_seas_at_age</code>,
@@ -1019,7 +1121,7 @@ one file.</p>
 <code>setup_sim_fleets.R</code>, <code>sim_population.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sim_population.R</code></td>
 <td>
 <code>apply_pop_dy</code>, <code>compute_biom_y_sim</code>,
@@ -1028,13 +1130,15 @@ one file.</p>
 <code>Simulate_Pop_Static</code>
 </td>
 <td>
-<code>model_init_naa.R</code>, <code>model_recruitment.R</code>,
-<code>model_transition.R</code>, <code>sim_naa_state.R</code>,
-<code>sim_observations.R</code>, <code>sim_setup.R</code>
+<code>model_biomass.R</code>, <code>model_init_naa.R</code>,
+<code>model_recruitment.R</code>, <code>model_transition.R</code>,
+<code>sim_biologicals.R</code>, <code>sim_catchability.R</code>,
+<code>sim_naa_state.R</code>, <code>sim_observations.R</code>,
+<code>sim_setup.R</code>
 </td>
 <td><code>sim_self_test.R</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sim_random_variates.R</code></td>
 <td>
 <code>comp_corr_natural</code>, <code>rdirM</code>,
@@ -1045,7 +1149,7 @@ one file.</p>
 <code>projection.R</code>, <code>sim_observations.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sim_self_test.R</code></td>
 <td>
 <code>simulation_data_to_SPoRC</code>,
@@ -1056,16 +1160,20 @@ one file.</p>
 <code>model_fit.R</code>, <code>setup_biologicals.R</code>,
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
-<code>setup_tagging.R</code>, <code>sim_population.R</code>,
-<code>utils_math.R</code>, <code>utils_postfit.R</code>,
-<code>utils_setup.R</code>
+<code>setup_tagging.R</code>, <code>sim_catchability.R</code>,
+<code>sim_dsem.R</code>, <code>sim_naa_state.R</code>,
+<code>sim_population.R</code>, <code>utils_math.R</code>,
+<code>utils_postfit.R</code>, <code>utils_setup.R</code>
 </td>
 <td><code>sim_closed_loop.R</code></td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sim_setup.R</code></td>
 <td><code>Setup_sim_env</code></td>
-<td>nothing</td>
+<td>
+<code>setup_catchability.R</code>, <code>setup_dsem.R</code>,
+<code>sim_catchability.R</code>, <code>sim_dsem.R</code>
+</td>
 <td><code>sim_population.R</code></td>
 </tr>
 </tbody>
@@ -1159,7 +1267,7 @@ one file.</p>
 </td>
 <td>
 <code>diag_francis.R</code>, <code>model_fit.R</code>,
-<code>utils_setup.R</code>
+<code>setup_dsem.R</code>, <code>utils_setup.R</code>
 </td>
 <td><code>plot_figures_tables.R</code></td>
 </tr>
@@ -1188,7 +1296,14 @@ one file.</p>
 <th>Calls into</th>
 <th>Called from</th>
 </tr></thead>
-<tbody><tr class="odd">
+<tbody>
+<tr class="odd">
+<td><code>plot_dsem.R</code></td>
+<td><code>plot_dsem_dag</code></td>
+<td><code>model_precision.R</code></td>
+<td></td>
+</tr>
+<tr class="even">
 <td><code>plot_figures_tables.R</code></td>
 <td>
 <code>get_at_age_fits_plot</code>, <code>get_biological_plot</code>,
@@ -1204,7 +1319,8 @@ one file.</p>
 <code>refpts_main.R</code>, <code>utils_setup.R</code>
 </td>
 <td></td>
-</tr></tbody>
+</tr>
+</tbody>
 </table>
 </div>
 <div class="section level4">
@@ -1298,14 +1414,16 @@ one file.</p>
 <code>plot_figures_tables.R</code>, <code>projection.R</code>,
 <code>refpts_main.R</code>, <code>refpts_msy.R</code>,
 <code>refpts_spr.R</code>, <code>setup_biologicals.R</code>,
-<code>setup_caal.R</code>, <code>setup_dimensions.R</code>,
+<code>setup_caal.R</code>, <code>setup_catchability.R</code>,
+<code>setup_dimensions.R</code>, <code>setup_dsem.R</code>,
 <code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_mapping.R</code>,
 <code>setup_movement.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_fleets.R</code>, <code>setup_survey_comps.R</code>,
 <code>setup_survey_selectivity.R</code>, <code>setup_tagging.R</code>,
 <code>setup_weighting.R</code>, <code>sim_closed_loop.R</code>,
-<code>sim_observations.R</code>, <code>sim_self_test.R</code>
+<code>sim_dsem.R</code>, <code>sim_observations.R</code>,
+<code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -1390,8 +1508,8 @@ SPoRC_rtmb()                                                [model_objective.R]
        called from the objective's mortality_year step, once per year, only for
        fleets flagged fish_waa_selected / srv_waa_selected
   -&gt; ### Growth (Process Error): Get_PE_loglik()          [model_priors_penalties.R]
-       penalizes ln_growth_devs and ln_growth_semipar_devs for departing from the
-       process they are supposed to follow, the same function selectivity uses</code></pre>
+       penalizes ln_growth_devs and ln_growth_semipar_devs under the process
+       they are supposed to follow, the same function selectivity uses</code></pre>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -1542,8 +1660,8 @@ SPoRC_rtmb()                                                      [model_objecti
          each bin; knows nothing about years, blocks, or fleets
   ### Selectivity (Penalty): Get_PE_loglik(), once for each of the three
                                                                 [model_priors_penalties.R]
-       penalizes the year-by-year deviations for departing from whatever
-       process they are supposed to follow (iid, random walk, ...); the same
+       penalizes the year-by-year deviations under whatever process they are
+       supposed to follow (iid, random walk, ...); the same
        penalty function growth uses
   ### Selectivity Smoothness (Penalty)                             [model_objective.R]
        a separate penalty just for the bicubic spline form, since a smooth
@@ -1596,7 +1714,7 @@ block/year/fleet residual tracking around it.</td>
 <code>model_selectivity.R</code> or <code>model_growth.R</code>, because
 it does not need to know which one is calling it: give it a deviation
 array, its map, and a code for which process (iid, random walk, …) it is
-supposed to follow, and it penalizes departures from that process.
+supposed to follow, and it penalizes that array under that process.
 Growth and selectivity therefore call the same function with the same
 five arguments.</td>
 </tr>
@@ -1697,7 +1815,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-sim_*</code></td>
-<td>6</td>
+<td>8</td>
 <td>Operating model, including simulate then refit self tests</td>
 </tr>
 <tr class="odd">
@@ -1729,7 +1847,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 172 test files in total.</p>
+<p>That is 198 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

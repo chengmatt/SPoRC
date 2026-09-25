@@ -1,16 +1,13 @@
 # Generate fishery catches, compositions, and indices in simulation
 
-Applies Baranov's catch equation to compute retained catch-at-age
-(`CAA`) and dead discard catch-at-age (`DAA`) for all populations,
-regions, seasons, and fleets, derives catch-at-length (`CAL` and `DAL`)
-when a size-age transition matrix is available, and generates observed
-catch and discard indices (with lognormal error), fishery abundance or
-biomass indices, and age and length composition samples for both
-retained and discarded catch. Composition sampling calls
+Takes retained and dead discard catch at age from Baranov's equation for
+every population, region, season and fleet, converts them to catch at
+length when a size-age key is available, and draws the observed catch,
+discard and fishery indices under lognormal error together with the age
+and length compositions of both retained and discarded catch. The
+composition draws go through
 [`simulate_comps`](https://chengmatt.github.io/SPoRC/dev/reference/simulate_comps.md)
-and respects the likelihood type (`comp_fishage_like`,
-`comp_fishlen_like`) and aggregation structure (`FishAgeComps_Type`,
-`FishLenComps_Type`) specified in `sim_env`.
+and follow the likelihood and aggregation type set in `sim_env`.
 
 ## Usage
 
@@ -30,103 +27,26 @@ generate_fishery_catch_comp_idx(y, sim, sim_env)
 
 - sim_env:
 
-  Simulation environment created by
-  [`Setup_sim_env`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md).
-  Modified in place. The following elements are updated:
-
-  `CAA`, `DAA`
-
-  :   Retained and dead discard catch-at-age for all populations,
-      regions, seasons, and fleets.
-
-  `CAL` and `DAL`
-
-  :   Retained and dead discard catch-at-length if `SizeAgeTrans` is
-      present.
-
-  `TrueCatch`, `ObsCatch`
-
-  :   Regional retained catch indices (abundance or biomass).
-
-  `TrueCatch_pop`, `ObsCatch_pop`
-
-  :   Population-specific retained catch indices.
-
-  `TrueDiscard`, `ObsDiscard`
-
-  :   Regional discard indices (abundance, biomass, or fraction).
-
-  `TrueDiscard_pop`, `ObsDiscard_pop`
-
-  :   Population-specific discard indices.
-
-  `TrueFishIdx`, `ObsFishIdx`
-
-  :   Regional fishery indices (abundance or biomass).
-
-  `TrueFishIdx_pop`, `ObsFishIdx_pop`
-
-  :   Population-specific fishery indices.
-
-  `ObsFishAgeComps`, `ObsFishAgeComps_pop`
-
-  :   Observed retained fishery age compositions.
-
-  `ObsFishLenComps`, `ObsFishLenComps_pop`
-
-  :   Observed retained fishery length compositions if `SizeAgeTrans` is
-      available.
-
-  `ObsFishAgeComps_discard`, `ObsFishAgeComps_discard_pop`
-
-  :   Observed discard fishery age compositions.
-
-  `ObsFishLenComps_discard`, `ObsFishLenComps_discard_pop`
-
-  :   Observed discard fishery length compositions if `SizeAgeTrans` is
-      available.
-
-  `ISS_FishAgeComps`, `ISS_FishAgeComps_pop`, `ISS_FishLenComps`, `ISS_FishLenComps_pop`, `ISS_FishAgeComps_discard`, `ISS_FishAgeComps_discard_pop`, `ISS_FishLenComps_discard`, `ISS_FishLenComps_discard_pop`
-
-  :   Effective sample sizes for retained and discard age and length
-      compositions.
+  Simulation environment from
+  [`Setup_sim_env`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md),
+  modified in place. It gains the retained and dead discard catch at age
+  `CAA` and `DAA`, their at-length counterparts `CAL` and `DAL` when a
+  size-age key is present, the true and observed regional catch, discard
+  and fishery indices with their population-specific counterparts, the
+  observed retained and discard age and length compositions with theirs,
+  and the input sample sizes of all eight composition data sources.
 
 ## Value
 
-`invisible(NULL)`. All modifications are made by reference within
-`sim_env`.
+`invisible(NULL)`; everything is modified by reference within `sim_env`.
 
 ## Details
 
-Composition draws are skipped for fleet-season cells with zero fishing
-mortality (`Fmort = 0`). Discard composition draws are additionally
-skipped when retention selectivity is fully 1 for the fleet-region-year-
-season cell (i.e., no discarding occurs). Discard indices support four
-unit types: abundance (`discard_units = 0`), biomass (`1`), abundance
-fraction (`2`), and biomass fraction (`3`).
-
-When `ISS_FishAgeComps_fill = "F_pattern"` and feedback is active,
-sample sizes for retained and discard compositions in the current and
-prior years are updated via
+Composition draws are skipped where `Fmort = 0`, and the discard ones
+also where retention selectivity is fully 1, so nothing is discarded.
+Discard indices come in four units: abundance, biomass, abundance
+fraction and biomass fraction. Under
+`ISS_FishAgeComps_fill = "F_pattern"` with feedback active, the sample
+sizes for the current and prior years are rescaled by
 [`predict_sim_fish_iss_fmort`](https://chengmatt.github.io/SPoRC/dev/reference/predict_sim_fish_iss_fmort.md)
-(scaled by fishing mortality) before sampling.
-
-For each combination of season, region, and fleet, the function:
-
-1.  Applies Baranov's catch equation to compute retained and dead
-    discard catch-at-age.
-
-2.  Converts catch-at-age to catch-at-length if `SizeAgeTrans` is
-    available.
-
-3.  Calculates true regional and population-specific catch, discard, and
-    fishery indices.
-
-4.  Applies lognormal observation error to generate observed indices.
-
-5.  Simulates retained age and length compositions using
-    [`simulate_comps`](https://chengmatt.github.io/SPoRC/dev/reference/simulate_comps.md),
-    skipping fleet-season cells with zero fishing mortality.
-
-6.  Simulates discard age and length compositions when retention
-    selectivity is not fully 1.
+before sampling.

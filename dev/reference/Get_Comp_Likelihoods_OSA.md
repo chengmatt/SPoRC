@@ -1,12 +1,10 @@
 # Composition Data Likelihood (OSA variant)
 
-Computes multinomial (0), Dirichlet-multinomial (1), and logistic-normal
-(2 iid, 3 AR1, 4 2D‑AR1) composition likelihoods for one‑step‑ahead
-(OSA) residuals using
-[`RTMB::oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html).
-The function evaluates the likelihood for a single flat tracked OBS
-vector, respecting the reduced logistic‑normal block lengths used during
-packing.
+Evaluates the multinomial (0), Dirichlet-multinomial (1) and
+logistic-normal (2 iid, 3 AR1, 4 2D-AR1) composition likelihoods on one
+flat tracked OBS vector for
+[`RTMB::oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html),
+respecting the reduced logistic-normal block lengths the packer used.
 
 ## Usage
 
@@ -37,31 +35,32 @@ Get_Comp_Likelihoods_OSA(
 
 - Exp:
 
-  Expected proportions \[n_regions × n_model_bins × n_sexes\].
+  Expected proportions `[n_regions × n_model_bins × n_sexes]`.
 
 - Obs:
 
-  Flat tracked observation vector (already ALR‑transformed for LN).
+  Flat tracked observation vector, already transformed for the logistic
+  normal.
 
 - ISS:
 
-  Input sample size \[n_regions × n_sexes\].
+  Input sample size `[n_regions × n_sexes]`.
 
 - ln_theta:
 
-  Log overdispersion \[n_regions × n_sexes\].
+  Log overdispersion `[n_regions × n_sexes]`.
 
 - ln_theta_agg:
 
-  Log overdispersion scalar for aggregated comps.
+  Log overdispersion scalar for the aggregated comps.
 
 - LN_corr_pars:
 
-  LN correlation parameters \[n_regions × n_sexes × 3\].
+  Logistic-normal correlation parameters `[n_regions × n_sexes × 3]`.
 
 - LN_corr_pars_agg:
 
-  LN aggregated correlation scalar(s).
+  Its aggregated counterpart.
 
 - Comp_Type:
 
@@ -150,24 +149,19 @@ Get_Comp_Likelihoods_OSA(
 
 ## Details
 
-The tracked `Obs` vector is \*\*never reshaped\*\*. All expectation‑side
-quantities (`Exp`, `ISS`, `ln_theta`, `LN_corr_pars`, ageing error) are
-reshaped and filtered by `use`, exactly as in fitting.
+The tracked `Obs` vector is never reshaped. Everything on the
+expectation side (`Exp`, `ISS`, `ln_theta`, `LN_corr_pars`, the ageing
+error) is reshaped and filtered by `use` exactly as in fitting.
 
-\*\*Logistic‑normal note:\*\* Because
-[`RTMB::OBS()`](https://rdrr.io/pkg/RTMB/man/TMB-interface.html) cannot
-be altered after tracking, the additive‑log‑ratio (ALR) transform of the
-\*observation\* is performed in the packer. Thus, `Obs[idx]` is
-\*\*already ALR‑transformed\*\* (last bin dropped). Here we only
-ALR‑transform the expectation, construct the covariance matrix `Sigma`
-(dropping its last row/column), and evaluate the multivariate normal
-density.
-
-Reduced LN block lengths: \* Comp_Type 0: `n_fit_bins - 1` \* Comp_Type
-1: `n_fit_bins - 1` per region/sex \* Comp_Type 2:
-`n_fit_bins * n_sexes - 1` per region (one joint reference)
-
-where `n_fit_bins` is the number of bins named by `comp_bins`, equal to
-`n_obs_bins` when the fleet fits every bin. The packer applies the same
-restriction before transforming, so the ALR reference is the last fitted
-bin rather than the last observed one.
+Because [`RTMB::OBS()`](https://rdrr.io/pkg/RTMB/man/TMB-interface.html)
+cannot be altered after tracking, the additive log ratio transform of
+the observation happens in the packer, so `Obs[idx]` arrives already
+transformed with its last bin dropped. Here only the expectation is
+transformed, `Sigma` is built with its last row and column dropped, and
+the multivariate normal density is evaluated. A block is
+`n_fit_bins - 1` long under comp type 0, the same per region and sex
+under type 1, and `n_fit_bins * n_sexes - 1` per region under type 2,
+which takes one joint reference. `n_fit_bins` is the number of bins
+`comp_bins` names, equal to `n_obs_bins` when the fleet fits every bin,
+and the packer applies the same restriction before transforming, so the
+reference is the last fitted bin rather than the last observed one.

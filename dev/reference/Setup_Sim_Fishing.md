@@ -1,9 +1,9 @@
 # Setup Simulation Fishing Inputs
 
-Initializes and validates fishing-related inputs for a simulation list
-(\`sim_list\`). This includes fishing mortality, selectivity,
-catchability, observation error, and age- and length-composition
-parameters for both aggregate and population-specific data.
+Sets and validates the fishing inputs of a \`sim_list\`: fishing
+mortality, selectivity, catchability, observation error, and the age and
+length composition settings for the aggregate and population-specific
+data sources.
 
 ## Usage
 
@@ -170,21 +170,14 @@ Setup_Sim_Fishing(
 
 - sim_list:
 
-  A list containing simulation settings, including the number of
-  populations (\`n_pop\`), regions (\`n_regions\`), years (\`n_yrs\`),
-  seasons (\`n_seas\`), ages (\`n_ages\`), sexes (\`n_sexes\`), fishing
-  fleets (\`n_fish_fleets\`), and simulations (\`n_sims\`).
+  Simulation list holding \`n_pop\`, \`n_regions\`, \`n_yrs\`,
+  \`n_seas\`, \`n_ages\`, \`n_sexes\`, \`n_fish_fleets\` and \`n_sims\`.
 
-- ln_sigmaC:
+- ln_sigmaC, ln_sigmaC_pop:
 
-  Numeric array. Log-scale observation SD for total catch, dimensions
-  \`n_regions x n_yrs x n_seas x n_fish_fleets\`. Default: log(0.02).
-
-- ln_sigmaC_pop:
-
-  Numeric array. Log-scale observation SD for population-specific catch,
-  dimensions \`n_pop x n_regions x n_yrs x n_seas x n_fish_fleets\`.
-  Default: log(0.02).
+  Log-scale observation sd for total and population-specific catch,
+  \`n_regions x n_yrs x n_seas x n_fish_fleets\` with a leading
+  \`n_pop\` for the second. Default log(0.02).
 
 - ln_sigmaCAA, ln_sigmaDAA:
 
@@ -195,10 +188,10 @@ Setup_Sim_Fishing(
 
   Integer arrays \`n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x
   n_fish_fleets\`, \`1\` where an at-age observation is drawn. The draws
-  sit on the observed ages, \`n_obs_ages\` from \`Setup_Sim_Dim\`, read
-  through \`AgeingError_fish_input\` the way the estimation model reads
-  them. The sex dim is required: a data source summed over sexes has its
-  flag in sex slot one.
+  sit on the observed ages from \`Setup_Sim_Dim\`, read through
+  \`AgeingError_fish_input\` the way the estimation model reads them.
+  The sex dim is required: a data source summed over sexes has its flag
+  in sex slot one.
 
 - ObsCatchAA_SE, ObsDiscardAA_SE:
 
@@ -227,496 +220,224 @@ Setup_Sim_Fishing(
 
 - catch_units:
 
-  Numeric vector. Catch units (0 = abundance, 1 = biomass), length
-  \`n_fish_fleets\`. Default: 1.
+  Catch units per fleet, 0 = abundance, 1 = biomass (default).
 
 - init_F_val:
 
-  Numeric array. Initial fishing mortality, dimensions \`n_regions x
-  n_seas x n_fish_fleets\`. Default: 0.
+  Initial fishing mortality, \`n_regions x n_seas x n_fish_fleets\`.
+  Default 0.
 
 - Fmort_input:
 
-  Numeric array. Fishing mortality, dimensions \`n_regions x n_yrs x
-  n_seas x n_fish_fleets x n_sims\`. Default: 0.1.
+  Fishing mortality, \`n_regions x n_yrs x n_seas x n_fish_fleets x
+  n_sims\`. Default 0.1.
 
 - fish_sel_input:
 
-  Numeric array. Fishery selectivity, dimensions \`n_pop x n_regions x
-  n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets x n_sims\`.
+  Fishery selectivity, \`n_pop x n_regions x n_yrs x n_seas x n_ages x
+  n_sexes x n_fish_fleets x n_sims\`.
 
 - fish_q_input:
 
-  Numeric array. Catchability, dimensions \`n_regions x n_yrs x
-  n_fish_fleets x n_sims\`. Default: 1.
+  Catchability, \`n_regions x n_yrs x n_fish_fleets x n_sims\`. Default
+  1.
 
-- ObsFishIdx_SE:
+- ObsFishIdx_SE, ObsFishIdx_pop_SE:
 
-  Numeric array. Observation SD for fishery indices, dimensions
-  \`n_regions x n_yrs x n_seas x n_fish_fleets\`. Default: 0.2.
-
-- ObsFishIdx_pop_SE:
-
-  Numeric array. Observation SD for population-specific fishery indices,
-  dimensions \`n_pop x n_regions x n_yrs x n_seas x n_fish_fleets\`.
-  Default: 0.2.
+  Observation sd for the fishery indices, \`n_regions x n_yrs x n_seas x
+  n_fish_fleets\` with a leading \`n_pop\` for the second. Default 0.2.
 
 - fish_idx_type:
 
-  Numeric array. Index type (0 = abundance, 1 = biomass), dimensions
-  \`n_regions x n_fish_fleets\`. Default: 1.
+  Index type, 0 = abundance, 1 = biomass (default), \`n_regions x
+  n_fish_fleets\`.
 
 - FishIdx_LikeType:
 
-  Character or numeric vector, length \`n_fish_fleets\`. Error structure
-  each fleet's index is drawn under: `"lognormal"` (0), `"normal"` (1),
-  or `"mvn"` (2), matching the estimation model's `FishIdx_LikeType`. An
-  mvn fleet draws from `FishIdx_Cov` through a common-factor
+  Error structure each fleet's index is drawn under: \`"lognormal"\` (0,
+  default), \`"normal"\` (1) or \`"mvn"\` (2), matching the estimation
+  model. An mvn fleet draws from \`FishIdx_Cov\` through a common-factor
   decomposition (see
   [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md))
-  instead of `ObsFishIdx_SE`, and its population-specific data source
-  stays lognormal. Default: lognormal for every fleet.
+  instead of \`ObsFishIdx_SE\`, and its population-specific data source
+  stays lognormal.
 
 - Catch_seas_Type, Catch_pop_seas_Type, FishIdx_seas_Type,
   FishIdx_pop_seas_Type, FishAgeComps_seas_Type:
 
   Whether the operating model reports a data source once a season
-  (`"spltSeas"`, the default) or once a year as a season total
-  (`"aggSeas"`). One value for every fleet or one per fleet. An annual
-  total is written into season one with the other seasons left at zero,
-  and the observation error is applied once to that total rather than to
-  each season, so an estimation model reading it should mark season one
-  in its `Use` array and set the matching argument in
+  (\`"spltSeas"\`, the default) or once a year as a season total
+  (\`"aggSeas"\`), one value for every fleet or one per fleet. An annual
+  total is written into season one with the other seasons left at zero
+  and the observation error applied once to that total, so an estimation
+  model reading it should mark season one in its \`Use\` array and set
+  the matching argument in
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md)
   or
   [`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md).
 
 - FishIdx_Cov:
 
-  List with one element per fishery fleet holding the fixed covariance
-  over that fleet's fitted index observations, ordered by scanning
-  `UseFishIdx` in array order (region fastest, then year, then season).
-  Required for mvn fleets. Default: `NULL`.
+  List with one element per fleet holding the fixed covariance over that
+  fleet's fitted index observations, ordered by scanning \`UseFishIdx\`
+  in array order. Required for mvn fleets. Default \`NULL\`.
 
 - UseFishIdx:
 
-  Numeric array `[n_regions x n_yrs x n_seas x n_fish_fleets]` of fit
-  flags from the estimation model, used to position each simulated cell
-  in the covariance. Its year dimension may be shorter than the
-  simulation, in which case later years draw with the mean factor scale
-  and loading. Required for mvn fleets. Default: `NULL`.
+  Fit flags \`n_regions x n_yrs x n_seas x n_fish_fleets\` from the
+  estimation model, used to place each simulated cell in the covariance.
+  Its year dim may be shorter than the simulation, in which case later
+  years draw with the mean factor scale and loading. Required for mvn
+  fleets. Default \`NULL\`.
 
 - t_fish:
 
-  Numeric array `[n_regions x n_seas x n_fish_fleets]` giving the
-  fishery index timing, the fraction of the season elapsed when the
-  index is observed. Numbers at age are decayed by `exp(-t_fish * ZAA)`
-  before the index is formed, matching `t_srv` for surveys and the
-  estimation model's own `t_fish`. Defaults to `0` (start of season).
+  Fishery index timing, \`n_regions x n_seas x n_fish_fleets\`, the
+  fraction of the season elapsed when the index is observed. Numbers at
+  age are decayed by \`exp(-t_fish \* ZAA)\` before the index is formed,
+  matching \`t_srv\` and the estimation model's own \`t_fish\`. Default
+  0.
 
 - comp_fish_caal_like:
 
-  Character or numeric vector \`n_fish_fleets\` giving the conditional
-  age-at-length likelihood per fleet: \`"Multinomial"\` (0),
-  \`"Dirichlet-Multinomial"\` (1), or \`"none"\` (999). Only these two
-  families exist for CAAL: a CAAL row is the age composition of the
-  otoliths taken from one length bin, usually a small and mostly zero
-  sample, which the logistic-normal forms cannot support. Default:
-  \`"none"\` for every fleet.
+  Conditional age-at-length likelihood per fleet: \`"Multinomial"\` (0),
+  \`"Dirichlet-Multinomial"\` (1) or \`"none"\` (999, default). Only
+  these two families exist for CAAL, since a CAAL row is the age
+  composition of the otoliths from one length bin, usually a small and
+  mostly zero sample.
 
 - ISS_Fish_caal:
 
-  Numeric array. Number of fish aged within each length bin, dimensions
-  \`n_regions x n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x
-  n_sims\`. A bin whose sample size rounds to zero is skipped. \`NULL\`
-  (the default) draws no CAAL; supplying it alongside a likelihood other
-  than \`"none"\` is what switches \`do_fish_caal\` on. Requires
-  \`n_lens\`.
+  Number of fish aged within each length bin, \`n_regions x n_yrs x
+  n_seas x n_lens x n_sexes x n_fish_fleets x n_sims\`. A bin whose
+  sample size rounds to zero is skipped. \`NULL\` (default) draws no
+  CAAL; supplying it alongside a likelihood other than \`"none"\` is
+  what switches \`do_fish_caal\` on. Requires \`n_lens\`.
 
 - ln_Fish_caal_theta:
 
-  Numeric array. Log overdispersion for the Dirichlet-multinomial,
-  dimensions \`n_regions x n_sexes x n_fish_fleets\`. Read under the
-  split types, \`\[r, s, f\]\` when sexes are split and \`\[r, 1, f\]\`
-  when they are joint, and ignored under the multinomial. Default:
-  log(1).
+  Log overdispersion for the Dirichlet-multinomial, \`n_regions x
+  n_sexes x n_fish_fleets\`. Read under the split types, \`\[r, s, f\]\`
+  when sexes are split and \`\[r, 1, f\]\` when they are joint, and
+  ignored under the multinomial. Default log(1).
 
 - ln_Fish_caal_theta_agg:
 
-  Numeric vector \`n_fish_fleets\`. The aggregated type's counterpart to
-  \`ln_Fish_caal_theta\`. Default: log(1).
+  The aggregated type's counterpart, length \`n_fish_fleets\`. Default
+  log(1).
 
 - Fish_caal_Type:
 
-  Numeric or character array giving the composition structure per year
-  and fleet, dimensions \`n_yrs x n_fish_fleets\`: \`"agg"\` (0) pools
-  regions and sexes and is drawn once when the region loop reaches the
-  last region, \`"spltRspltS"\` (1) draws each sex in a bin as its own
-  sample, \`"spltRjntS"\` (2) draws one sample across the age by sex
-  stack, and \`"none"\` (999) skips the fleet in that year. Unlike the
-  estimation model, which parses \`"CompType_Year_x-y_Fleet_z"\`
-  strings, the simulator takes the year by fleet array directly.
-  Default: \`"none"\` throughout.
+  Composition structure per year and fleet, \`n_yrs x n_fish_fleets\`:
+  \`"agg"\` (0) pools regions and sexes and is drawn once when the
+  region loop reaches the last region, \`"spltRspltS"\` (1) draws each
+  sex in a bin as its own sample, \`"spltRjntS"\` (2) draws one sample
+  across the age by sex stack, and \`"none"\` (999, default) skips the
+  fleet that year. The simulator takes the year by fleet array directly
+  rather than the estimation model's \`"CompType_Year_x-y_Fleet_z"\`
+  strings.
 
-- comp_fishage_like:
+- comp_fishage_like, comp_fishlen_like, comp_fishage_pop_like,
+  comp_fishlen_pop_like, comp_fishage_discard_like,
+  comp_fishlen_discard_like, comp_fishage_discard_pop_like,
+  comp_fishlen_discard_pop_like:
 
-  Numeric vector. Likelihood for age composition (0 = Multinomial, 1 =
-  Dirichlet-Multinomial, 2-4 = Logistic-Normal variants), length
-  \`n_fish_fleets\`. Default: 0.
+  Composition likelihood per fleet for the eight fishery composition
+  data sources: 0 = multinomial (default), 1 = Dirichlet-multinomial,
+  2-4 = logistic-normal, 999 = none.
 
-- ISS_FishAgeComps:
+- ISS_FishAgeComps, ISS_FishLenComps, ISS_FishAgeComps_discard,
+  ISS_FishLenComps_discard:
 
-  Numeric array. Effective sample sizes for age compositions, dimensions
-  \`n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims\`.
-  Default: 100.
+  Input sample sizes, \`n_regions x n_yrs x n_seas x n_sexes x
+  n_fish_fleets x n_sims\`. Default 100.
 
-- ln_FishAge_theta:
+- ln_FishAge_theta, ln_FishLen_theta, ln_FishAge_discard_theta,
+  ln_FishLen_discard_theta:
 
-  Numeric array. Log-scale overdispersion for fishery age compositions,
-  dimensions \`n_regions x n_sexes x n_fish_fleets\`. Default: log(1).
+  Log-scale overdispersion, \`n_regions x n_sexes x n_fish_fleets\`.
+  Default log(1).
 
-- ln_FishAge_theta_agg:
+- ln_FishAge_theta_agg, ln_FishLen_theta_agg,
+  ln_FishAge_discard_theta_agg, ln_FishLen_discard_theta_agg:
 
-  Numeric vector. Aggregated log-scale overdispersion for fishery age
-  compositions, length \`n_fish_fleets\`. Default: log(1).
+  The aggregated types' counterparts, length \`n_fish_fleets\`. Default
+  log(1).
 
-- FishAge_corr_pars_agg:
+- FishAge_corr_pars_agg, FishLen_corr_pars_agg,
+  FishAge_discard_corr_pars_agg, FishLen_discard_corr_pars_agg:
 
-  Numeric vector. Aggregated correlation parameters for fishery age
-  compositions, length \`n_fish_fleets\`. Default: 0.01.
+  Their aggregated counterparts, length \`n_fish_fleets\`. Default 0.01.
 
-- FishAge_corr_pars:
+- FishAge_corr_pars, FishLen_corr_pars, FishAge_discard_corr_pars,
+  FishLen_discard_corr_pars:
 
-  Numeric array. Correlation parameters for fishery age compositions,
-  dimensions \`n_regions x n_sexes x n_fish_fleets x 2\`. Default: 0.01.
+  Correlation parameters, \`n_regions x n_sexes x n_fish_fleets x 2\`.
+  Default 0.01.
 
-- FishAgeComps_Type:
+- FishAgeComps_Type, FishLenComps_Type, FishAgeComps_pop_Type,
+  FishLenComps_pop_Type, FishAgeComps_discard_Type,
+  FishLenComps_discard_Type, FishAgeComps_discard_pop_Type,
+  FishLenComps_discard_pop_Type:
 
-  Numeric array. Composition structure for fishery age compositions (0 =
-  aggregated, 1 = split region/sex, 2 = split region joint sex, 999 =
-  none), dimensions \`n_yrs x n_fish_fleets\`. Default: 2.
+  Composition structure per year and fleet, \`n_yrs x n_fish_fleets\`: 0
+  = aggregated, 1 = split region and sex, 2 = split region joint sex
+  (default), 999 = none.
 
-- comp_fishlen_like:
+- ISS_FishAgeComps_pop, ISS_FishLenComps_pop,
+  ISS_FishAgeComps_discard_pop, ISS_FishLenComps_discard_pop:
 
-  Numeric vector. Likelihood for length composition (0 = Multinomial, 1
-  = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants), length
-  \`n_fish_fleets\`. Default: 0.
+  The population-specific counterparts, with a leading \`n_pop\` dim.
+  Default 100.
 
-- ISS_FishLenComps:
+- ln_FishAge_pop_theta, ln_FishLen_pop_theta,
+  ln_FishAge_discard_pop_theta, ln_FishLen_discard_pop_theta:
 
-  Numeric array. Effective sample sizes for length compositions,
-  dimensions \`n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x
-  n_sims\`. Default: 100.
+  Log-scale overdispersion for the population-specific data sources,
+  \`n_pop x n_regions x n_sexes x n_fish_fleets\`. Default log(1).
 
-- ln_FishLen_theta:
+- ln_FishAge_pop_theta_agg, ln_FishLen_pop_theta_agg,
+  ln_FishAge_discard_pop_theta_agg, ln_FishLen_discard_pop_theta_agg:
 
-  Numeric array. Log-scale overdispersion for fishery length
-  compositions, dimensions \`n_regions x n_sexes x n_fish_fleets\`.
-  Default: log(1).
+  Their aggregated counterparts, \`n_pop x n_fish_fleets\`. Default
+  log(1).
 
-- ln_FishLen_theta_agg:
+- FishAge_pop_corr_pars, FishLen_pop_corr_pars,
+  FishAge_discard_pop_corr_pars, FishLen_discard_pop_corr_pars:
 
-  Numeric vector. Aggregated log-scale overdispersion for fishery length
-  compositions, length \`n_fish_fleets\`. Default: log(1).
+  Correlation parameters for the population-specific data sources,
+  \`n_pop x n_regions x n_sexes x n_fish_fleets x 2\`. Default 0.01.
 
-- FishLen_corr_pars_agg:
+- FishAge_pop_corr_pars_agg, FishLen_pop_corr_pars_agg,
+  FishAge_discard_pop_corr_pars_agg, FishLen_discard_pop_corr_pars_agg:
 
-  Numeric vector. Aggregated correlation parameters for fishery length
-  compositions, length \`n_fish_fleets\`. Default: 0.01.
-
-- FishLen_corr_pars:
-
-  Numeric array. Correlation parameters for fishery length compositions,
-  dimensions \`n_regions x n_sexes x n_fish_fleets x 2\`. Default: 0.01.
-
-- FishLenComps_Type:
-
-  Numeric array. Composition structure for fishery length compositions
-  (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999
-  = none), dimensions \`n_yrs x n_fish_fleets\`. Default: 2.
-
-- comp_fishage_pop_like:
-
-  Numeric vector. Likelihood for population-specific fishery age
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
-  Logistic-Normal variants), length \`n_fish_fleets\`. Default: 0.
-
-- ISS_FishAgeComps_pop:
-
-  Numeric array. Effective sample sizes for population-specific fishery
-  age compositions, dimensions \`n_pop x n_regions x n_yrs x n_seas x
-  n_sexes x n_fish_fleets x n_sims\`. Default: 100.
-
-- ln_FishAge_pop_theta:
-
-  Numeric array. Log-scale overdispersion for population-specific
-  fishery age compositions, dimensions \`n_pop x n_regions x n_sexes x
-  n_fish_fleets\`. Default: log(1).
-
-- ln_FishAge_pop_theta_agg:
-
-  Numeric array. Aggregated log-scale overdispersion for
-  population-specific fishery age compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: log(1).
-
-- FishAge_pop_corr_pars:
-
-  Numeric array. Correlation parameters for population-specific fishery
-  age compositions, dimensions \`n_pop x n_regions x n_sexes x
-  n_fish_fleets x 2\`. Default: 0.01.
-
-- FishAge_pop_corr_pars_agg:
-
-  Numeric array. Aggregated correlation parameters for
-  population-specific fishery age compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: 0.01.
-
-- FishAgeComps_pop_Type:
-
-  Numeric array. Composition structure for population-specific fishery
-  age compositions (0 = aggregated, 1 = split region/sex, 2 = split
-  region joint sex, 999 = none), dimensions \`n_yrs x n_fish_fleets\`.
-  Default: 2.
-
-- comp_fishlen_pop_like:
-
-  Numeric vector. Likelihood for population-specific fishery length
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
-  Logistic-Normal variants), length \`n_fish_fleets\`. Default: 0.
-
-- ISS_FishLenComps_pop:
-
-  Numeric array. Effective sample sizes for population-specific fishery
-  length compositions, dimensions \`n_pop x n_regions x n_yrs x n_seas x
-  n_sexes x n_fish_fleets x n_sims\`. Default: 100.
-
-- ln_FishLen_pop_theta:
-
-  Numeric array. Log-scale overdispersion for population-specific
-  fishery length compositions, dimensions \`n_pop x n_regions x n_sexes
-  x n_fish_fleets\`. Default: log(1).
-
-- ln_FishLen_pop_theta_agg:
-
-  Numeric array. Aggregated log-scale overdispersion for
-  population-specific fishery length compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: log(1).
-
-- FishLen_pop_corr_pars:
-
-  Numeric array. Correlation parameters for population-specific fishery
-  length compositions, dimensions \`n_pop x n_regions x n_sexes x
-  n_fish_fleets x 2\`. Default: 0.01.
-
-- FishLen_pop_corr_pars_agg:
-
-  Numeric array. Aggregated correlation parameters for
-  population-specific fishery length compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: 0.01.
-
-- FishLenComps_pop_Type:
-
-  Numeric array. Composition structure for population-specific fishery
-  length compositions (0 = aggregated, 1 = split region/sex, 2 = split
-  region joint sex, 999 = none), dimensions \`n_yrs x n_fish_fleets\`.
-  Default: 2.
+  Their aggregated counterparts, \`n_pop x n_fish_fleets\`. Default
+  0.01.
 
 - ret_sel_input:
 
-  Numeric array. Retained selectivity at age, dimensions \`n_pop x
-  n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets x
-  n_sims\`. Default: 1.
+  Retained selectivity at age, \`n_pop x n_regions x n_yrs x n_seas x
+  n_ages x n_sexes x n_fish_fleets x n_sims\`. Default 1.
 
 - dmr_input:
 
-  Numeric array. Discard mortality rate, dimensions \`n_regions x n_yrs
-  x n_seas x n_fish_fleets x n_sims\`. Default: 0.
+  Discard mortality rate, \`n_regions x n_yrs x n_seas x n_fish_fleets x
+  n_sims\`. Default 0.
 
 - discard_units:
 
-  Numeric vector. Discard units (0 = abundance, 1 = biomass, 2 =
-  abundance fraction, 3 = biomass fraction), length \`n_fish_fleets\`.
-  Default: 3.
+  Discard units per fleet: 0 = abundance, 1 = biomass, 2 = abundance
+  fraction, 3 = biomass fraction (default).
 
-- ln_sigmaD:
+- ln_sigmaD, ln_sigmaD_pop:
 
-  Numeric array. Log-scale observation SD for discards, dimensions
-  \`n_regions x n_yrs x n_seas x n_fish_fleets\`. Default: log(0.02).
-
-- ln_sigmaD_pop:
-
-  Numeric array. Log-scale observation SD for population-specific
-  discards, dimensions \`n_pop x n_regions x n_yrs x n_seas x
-  n_fish_fleets\`. Default: log(0.02).
-
-- comp_fishage_discard_like:
-
-  Numeric vector. Likelihood for discard age composition (0 =
-  Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal
-  variants, 999 = none), length \`n_fish_fleets\`. Default: 0.
-
-- ISS_FishAgeComps_discard:
-
-  Numeric array. Effective sample sizes for discard age compositions,
-  dimensions \`n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x
-  n_sims\`. Default: 100.
-
-- ln_FishAge_discard_theta:
-
-  Numeric array. Log-scale overdispersion for discard age compositions,
-  dimensions \`n_regions x n_sexes x n_fish_fleets\`. Default: log(1).
-
-- ln_FishAge_discard_theta_agg:
-
-  Numeric vector. Aggregated log-scale overdispersion for discard age
-  compositions, length \`n_fish_fleets\`. Default: log(1).
-
-- FishAge_discard_corr_pars:
-
-  Numeric array. Correlation parameters for discard age compositions,
-  dimensions \`n_regions x n_sexes x n_fish_fleets x 2\`. Default: 0.01.
-
-- FishAge_discard_corr_pars_agg:
-
-  Numeric vector. Aggregated correlation parameters for discard age
-  compositions, length \`n_fish_fleets\`. Default: 0.01.
-
-- FishAgeComps_discard_Type:
-
-  Numeric array. Composition structure for discard age compositions (0 =
-  aggregated, 1 = split region/sex, 2 = split region joint sex, 999 =
-  none), dimensions \`n_yrs x n_fish_fleets\`. Default: 2.
-
-- comp_fishlen_discard_like:
-
-  Numeric vector. Likelihood for discard length composition (0 =
-  Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal
-  variants, 999 = none), length \`n_fish_fleets\`. Default: 0.
-
-- ISS_FishLenComps_discard:
-
-  Numeric array. Effective sample sizes for discard length compositions,
-  dimensions \`n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x
-  n_sims\`. Default: 100.
-
-- ln_FishLen_discard_theta:
-
-  Numeric array. Log-scale overdispersion for discard length
-  compositions, dimensions \`n_regions x n_sexes x n_fish_fleets\`.
-  Default: log(1).
-
-- ln_FishLen_discard_theta_agg:
-
-  Numeric vector. Aggregated log-scale overdispersion for discard length
-  compositions, length \`n_fish_fleets\`. Default: log(1).
-
-- FishLen_discard_corr_pars:
-
-  Numeric array. Correlation parameters for discard length compositions,
-  dimensions \`n_regions x n_sexes x n_fish_fleets x 2\`. Default: 0.01.
-
-- FishLen_discard_corr_pars_agg:
-
-  Numeric vector. Aggregated correlation parameters for discard length
-  compositions, length \`n_fish_fleets\`. Default: 0.01.
-
-- FishLenComps_discard_Type:
-
-  Numeric array. Composition structure for discard length compositions
-  (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999
-  = none), dimensions \`n_yrs x n_fish_fleets\`. Default: 2.
-
-- comp_fishage_discard_pop_like:
-
-  Numeric vector. Likelihood for population-specific discard age
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
-  Logistic-Normal variants, 999 = none), length \`n_fish_fleets\`.
-  Default: 0.
-
-- ISS_FishAgeComps_discard_pop:
-
-  Numeric array. Effective sample sizes for population-specific discard
-  age compositions, dimensions \`n_pop x n_regions x n_yrs x n_seas x
-  n_sexes x n_fish_fleets x n_sims\`. Default: 100.
-
-- ln_FishAge_discard_pop_theta:
-
-  Numeric array. Log-scale overdispersion for population-specific
-  discard age compositions, dimensions \`n_pop x n_regions x n_sexes x
-  n_fish_fleets\`. Default: log(1).
-
-- ln_FishAge_discard_pop_theta_agg:
-
-  Numeric array. Aggregated log-scale overdispersion for
-  population-specific discard age compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: log(1).
-
-- FishAge_discard_pop_corr_pars:
-
-  Numeric array. Correlation parameters for population-specific discard
-  age compositions, dimensions \`n_pop x n_regions x n_sexes x
-  n_fish_fleets x 2\`. Default: 0.01.
-
-- FishAge_discard_pop_corr_pars_agg:
-
-  Numeric array. Aggregated correlation parameters for
-  population-specific discard age compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: 0.01.
-
-- FishAgeComps_discard_pop_Type:
-
-  Numeric array. Composition structure for population-specific discard
-  age compositions (0 = aggregated, 1 = split region/sex, 2 = split
-  region joint sex, 999 = none), dimensions \`n_yrs x n_fish_fleets\`.
-  Default: 2.
-
-- comp_fishlen_discard_pop_like:
-
-  Numeric vector. Likelihood for population-specific discard length
-  composition (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 =
-  Logistic-Normal variants, 999 = none), length \`n_fish_fleets\`.
-  Default: 0.
-
-- ISS_FishLenComps_discard_pop:
-
-  Numeric array. Effective sample sizes for population-specific discard
-  length compositions, dimensions \`n_pop x n_regions x n_yrs x n_seas x
-  n_sexes x n_fish_fleets x n_sims\`. Default: 100.
-
-- ln_FishLen_discard_pop_theta:
-
-  Numeric array. Log-scale overdispersion for population-specific
-  discard length compositions, dimensions \`n_pop x n_regions x n_sexes
-  x n_fish_fleets\`. Default: log(1).
-
-- ln_FishLen_discard_pop_theta_agg:
-
-  Numeric array. Aggregated log-scale overdispersion for
-  population-specific discard length compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: log(1).
-
-- FishLen_discard_pop_corr_pars:
-
-  Numeric array. Correlation parameters for population-specific discard
-  length compositions, dimensions \`n_pop x n_regions x n_sexes x
-  n_fish_fleets x 2\`. Default: 0.01.
-
-- FishLen_discard_pop_corr_pars_agg:
-
-  Numeric array. Aggregated correlation parameters for
-  population-specific discard length compositions, dimensions \`n_pop x
-  n_fish_fleets\`. Default: 0.01.
-
-- FishLenComps_discard_pop_Type:
-
-  Numeric array. Composition structure for population-specific discard
-  length compositions (0 = aggregated, 1 = split region/sex, 2 = split
-  region joint sex, 999 = none), dimensions \`n_yrs x n_fish_fleets\`.
-  Default: 2.
+  Log-scale observation sd for discards, \`n_regions x n_yrs x n_seas x
+  n_fish_fleets\` with a leading \`n_pop\` for the second. Default
+  log(0.02).
 
 ## Value
 
-A modified \`sim_list\` with validated fishing-related inputs.
+A modified \`sim_list\` with validated fishing inputs.
 
 ## See also
 

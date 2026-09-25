@@ -1,10 +1,9 @@
 # Extract Index Fit Results
 
-Generates a tidy dataframe of observed and predicted survey and fishery
-indices from a fitted RTMB model, including standard errors, confidence
-intervals, a raw log-scale (Pearson-style) residual, and catchability
-blocks. Both pooled and population-specific indices are returned when
-the corresponding `Use*_pop` flags contain any ones.
+A tidy data frame of the observed and predicted survey and fishery
+indices from a fitted model, with standard errors, confidence intervals,
+a log-scale residual and the catchability blocks. Population-specific
+indices are included when their `Use*_pop` flags hold any ones.
 
 ## Usage
 
@@ -16,92 +15,41 @@ get_idx_fits(data, rep, year_labs)
 
 - data:
 
-  List. Input data used in the RTMB model. Must contain `ObsSrvIdx`,
+  Input data used in the RTMB model, holding `ObsSrvIdx`,
   `ObsSrvIdx_SE`, `ObsFishIdx`, `ObsFishIdx_SE`, `Wt_SrvIdx`,
-  `Wt_FishIdx`, `srv_q_blocks`, `fish_q_blocks`, `UseFishIdx`, and
-  `UseSrvIdx`. For population-specific indices, also requires
-  `ObsSrvIdx_pop`, `ObsSrvIdx_pop_SE`, `ObsFishIdx_pop`,
-  `ObsFishIdx_pop_SE`, `Wt_SrvIdx_pop`, `Wt_FishIdx_pop`,
-  `UseSrvIdx_pop`, and `UseFishIdx_pop`.
+  `Wt_FishIdx`, `srv_q_blocks`, `fish_q_blocks`, `UseFishIdx` and
+  `UseSrvIdx`, plus the `_pop` counterparts for the population-specific
+  indices.
 
 - rep:
 
-  List. RTMB report output containing `PredSrvIdx` and `PredFishIdx`,
-  both dimensioned `[n_pop × n_regions × n_years × n_seas × n_fleets]`.
-  Pooled indices are obtained by summing across the population
-  dimension; population-specific indices use each population slice
-  directly.
+  RTMB report holding `PredSrvIdx` and `PredFishIdx`, both
+  `[n_pop × n_regions × n_years × n_seas × n_fleets]`. The pooled
+  indices are summed across populations; the population-specific ones
+  read each slice directly.
 
 - year_labs:
 
-  Vector. Year labels assigned to the year dimension of predicted and
-  observed index arrays.
+  Year labels for the year dim of the index arrays.
 
 ## Value
 
-A dataframe containing pooled and, when active, population-specific
-survey and fishery indices with the following columns:
-
-- `Region`:
-
-  Region label (prefixed with `"Region"`).
-
-- `Year`:
-
-  Year.
-
-- `Seas`:
-
-  Season.
-
-- `Fleet`:
-
-  Fleet identifier.
-
-- `Type`:
-
-  One of `"Survey"`, `"Fishery"`, `"Pop Survey"`, or `"Pop Fishery"`.
-
-- `obs`:
-
-  Observed index value.
-
-- `value`:
-
-  Predicted index value.
-
-- `se`:
-
-  Standard error of the observed index (weight-adjusted).
-
-- `lci`, `uci`:
-
-  95% log-normal confidence interval for the observed index.
-
-- `q_block`:
-
-  Catchability block identifier.
-
-- `resid`:
-
-  Log-scale residual (\\\log(\text{obs}) - \log(\text{predicted})\\).
-
-- `Category`:
-
-  Combined label of Type, population (for pop rows), Fleet, Season, and
-  Q-block.
+A data frame with `Region`, `Year`, `Seas`, `Fleet`, `Type` (`"Survey"`,
+`"Fishery"`, `"Pop Survey"` or `"Pop Fishery"`), the observed value
+`obs` and predicted `value`, the weight-adjusted `se`, the 95% lognormal
+interval `lci` and `uci`, the `q_block`, the log-scale `resid`, and
+`Category`, which combines the type, population, fleet, season and q
+block.
 
 ## Details
 
-The `resid` column here is the simple log-scale residual
-\\\log(\text{obs}) - \log(\text{predicted})\\, *not* a one-step-ahead
-(OSA) residual. For properly decorrelated OSA index residuals (with
-QQ-plots and SDNR diagnostics via
-[`plot_resids`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md)),
+The `resid` column is the plain log-scale residual \\\log(\text{obs}) -
+\log(\text{predicted})\\, not a one-step-ahead residual. For
+decorrelated OSA index residuals, with the QQ plots and SDNR from
+[`plot_resids`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md),
 use
 [`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
-with `index_source = `. The observed-vs- predicted *fit* plot built from
-this function's output is
+with `index_source`. The fit plot built from this output is
 [`get_idx_fits_plot`](https://chengmatt.github.io/SPoRC/dev/reference/get_idx_fits_plot.md).
 
 ## See also

@@ -1,10 +1,9 @@
 # Compute global SPR reference point for a spatially explicit model
 
-Calculates a single, spatially-integrated SPR using a per-recruit cohort
-tracked across all regions and seasons under movement. A single scalar
-\\F_x\\ is applied uniformly across regions (scaled by region-specific
-fleet fractions and selectivity). Returns the squared penalty \\100
-(SPR - SPR_x)^2\\ for optimization.
+Spatially integrated SPR from a per-recruit cohort tracked across every
+region and season under movement, with one scalar \\F_x\\ applied across
+regions and scaled by the region's fleet fractions and selectivity.
+Returns the squared penalty \\100 (SPR - SPR_x)^2\\ for the optimizer.
 
 ## Usage
 
@@ -16,162 +15,45 @@ global_SPR(pars, data)
 
 - pars:
 
-  Named list of RTMB parameters. Must contain:
-
-  `log_F_x`
-
-  :   Log-scale trial fishing mortality.
+  Named list of RTMB parameters, holding `log_F_x`, the log-scale trial
+  fishing mortality.
 
 - data:
 
-  Named list of RTMB data. Must contain:
-
-  `n_pop`
-
-  :   Integer. Number of populations.
-
-  `n_regions`
-
-  :   Integer. Number of spatial regions.
-
-  `n_ages`
-
-  :   Integer. Number of age classes.
-
-  `n_seas`
-
-  :   Integer. Number of seasons.
-
-  `seasdur`
-
-  :   Numeric vector `[n_seas]`. Season durations.
-
-  `spawn_seas`
-
-  :   Integer. Index of the spawning season.
-
-  `t_spawn`
-
-  :   Numeric. Mid-season spawning timing correction.
-
-  `F_fract_flt`
-
-  :   Numeric array `[n_regions, n_seas, n_fish_fleets]`. Fleet F
-      fractions by region.
-
-  `fish_sel`
-
-  :   Numeric array `[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]`.
-      Female fishery selectivity.
-
-  `ret_sel`
-
-  :   Numeric array `[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]`.
-      Retention selectivity (fraction of selected fish that are
-      retained).
-
-  `dmr`
-
-  :   Numeric array `[n_regions, n_seas, n_fish_fleets]`. Discard
-      mortality rate (fraction of discarded fish that die).
-
-  `natmort`
-
-  :   Numeric array `[n_pop, n_regions, n_ages]`. Female natural
-      mortality.
-
-  `WAA`
-
-  :   Numeric array `[n_pop, n_regions, n_seas, n_ages]`. Female weight
-      at age.
-
-  `MatAA`
-
-  :   Numeric array `[n_pop, n_regions, n_seas, n_ages]`. Maturity at
-      age.
-
-  `Movement`
-
-  :   Numeric array `[n_pop, n_regions, n_regions, n_seas, n_ages]`.
-      Seasonal movement transition matrices.
-
-  `sgl_seas_spawning_movement`
-
-  :   Numeric array `[n_pop, n_regions, n_regions, n_ages]`. Spawning
-      movement for single-season natal homing models.
-
-  `do_recruits_move`
-
-  :   Integer (0/1). Whether age-1 recruits are subject to movement.
-
-  `rec_region_prop`
-
-  :   Numeric array `[n_pop, n_regions]`. Proportion of recruitment
-      entering each region.
-
-  `sex_ratio_f`
-
-  :   Numeric array `[n_pop, n_regions]`. Female sex ratio at
-      recruitment.
-
-  `rec_seas_prop`
-
-  :   Numeric array `[n_pop, n_seas]`. Seasonal recruitment proportions.
-
-  `stray_rate`
-
-  :   Numeric vector `[n_pop]`. Per-population stray rate.
-
-  `natal_region`
-
-  :   Integer vector `[n_pop]`. Natal region index for each population.
-
-  `n_pop_in_region`
-
-  :   Integer vector `[n_regions]`. Number of populations per natal
-      region.
-
-  `SPR_x`
-
-  :   Numeric. Target SPR fraction.
+  Named list of RTMB data: the dimensions `n_pop`, `n_regions`, `n_ages`
+  and `n_seas`; `seasdur` `[n_seas]`; `spawn_seas` and `t_spawn`;
+  `F_fract_flt` `[n_regions, n_seas, n_fish_fleets]`, the fleet F
+  fractions by region; `fish_sel` and `ret_sel`
+  `[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]`, the female
+  selectivity and the retained fraction of it; `dmr`
+  `[n_regions, n_seas, n_fish_fleets]`, the fraction of discards that
+  die; `natmort` `[n_pop, n_regions, n_ages]`; `WAA` and `MatAA`
+  `[n_pop, n_regions, n_seas, n_ages]`; `Movement`
+  `[n_pop, n_regions, n_regions, n_seas, n_ages]` and
+  `sgl_seas_spawning_movement` `[n_pop, n_regions, n_regions, n_ages]`;
+  `do_recruits_move`; `rec_region_prop` and `sex_ratio_f`
+  `[n_pop, n_regions]`; `rec_seas_prop` `[n_pop, n_seas]`; `stray_rate`
+  and `natal_region` `[n_pop]`; `n_pop_in_region` `[n_regions]`; and the
+  target `SPR_x`.
 
 ## Value
 
-Numeric scalar. Squared penalty \\(SPR - SPR_x)^2\\.
+Numeric scalar, the squared penalty \\(SPR - SPR_x)^2\\.
 
 ## Details
 
-Supports single- and multi-population models. When `n_pop > 1`,
+Single and multi-population models are both covered. When `n_pop > 1`,
 effective SSB at each population's natal region accumulates straying
-contributions from other populations. When `n_seas = 1` and `n_pop > 1`,
-`sgl_seas_spawning_movement` redistributes fish to natal grounds before
-SSB is computed.
-
-The plus-group is solved analytically using
+contributions from the others, and when `n_seas = 1` as well,
+`sgl_seas_spawning_movement` redistributes fish to the natal grounds
+before SSB is computed. The plus group is solved analytically through
 [`build_plus_group_T`](https://chengmatt.github.io/SPoRC/dev/reference/build_plus_group_T.md)
 and
 [`solve_plus_group`](https://chengmatt.github.io/SPoRC/dev/reference/solve_plus_group.md).
 
-\*\*Fishing mortality decomposition\*\*
-
-Fishing mortality at age is split into:
-
-\- retained fishing mortality `F_ret = F * selectivity * retention`
-
-\- discard fishing mortality (dead discards only)
-`F_disc = F * selectivity * (1 - retention) * dmr`
-
-where `dmr` is the discard mortality rate (fraction of discarded fish
-that die). Only the dead fraction contributes to total instantaneous
-mortality `Z`.
-
-The total mortality used for survival is:
-
-`Z = M + F_ret + F_disc`
-
-This formulation assumes:
-
-\- retained fish always die, - only a fraction `dmr` of discarded fish
-die, - the surviving fraction `(1 - dmr)` of discards remains in the
-population and continues aging, moving, and contributing to spawning
-biomass.
+Fishing mortality at age splits into retained,
+`F_ret = F * selectivity * retention`, and dead discards,
+`F_disc = F * selectivity * (1 - retention) * dmr`, so survival runs on
+`Z = M + F_ret + F_disc`. Retained fish always die, only the fraction
+`dmr` of discards die, and the surviving `(1 - dmr)` keeps ageing,
+moving and spawning.

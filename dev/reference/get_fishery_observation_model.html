@@ -110,9 +110,7 @@ populated over <code>1:n_yrs</code>.</p>
 <span>  t_fish <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_idx_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_q_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  do_fish_q_cov <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  fish_q_cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  fish_q_coeff <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ln_fish_q_devs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  do_caal <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -221,6 +219,11 @@ timing, the fraction of the season elapsed when the index is observed.
 Numbers at age are decayed by <code>exp(-t_fish * ZAA)</code> before the index is
 formed, mirroring <code>t_srv</code> for surveys. <code>NULL</code> (the default) skips
 the decay entirely and reproduces a start-of-season index.</p></dd>
+
+
+<dt id="arg-ln-fish-q-devs">ln_fish_q_devs<a class="anchor" aria-label="anchor" href="#arg-ln-fish-q-devs"></a></dt>
+<dd><p>Array <code>[region, year, fish_fleet]</code> of log-scale
+annual catchability deviations, or <code>NULL</code> for none.</p></dd>
 
 
 <dt id="arg-do-caal">do_caal<a class="anchor" aria-label="anchor" href="#arg-do-caal"></a></dt>

@@ -6,8 +6,8 @@ applied by `RTMB::MakeADFun` and is invisible inside the objective.
 Those copies are written at setup, so a map edited by hand afterwards
 would otherwise leave the penalty evaluating deviations that are no
 longer estimated. Rebuilding the mirrors from the map immediately before
-the model is constructed keeps the two in step, with the map treated as
-authoritative.
+the model is constructed keeps the two in sync. Anything not previously
+in map is left untouched.
 
 ## Usage
 
@@ -28,9 +28,3 @@ sync_dev_map_data(data, mapping)
 ## Value
 
 `data` with every `map_<par>` element refreshed from `mapping[[par]]`.
-
-## Details
-
-A mirror whose parameter has no entry in `mapping`, or whose length no
-longer matches (as when a caller has truncated one but not the other),
-is left untouched.

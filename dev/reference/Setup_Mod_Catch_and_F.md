@@ -1,12 +1,9 @@
 # Set up fishing mortality, discard mortality, and catch observation inputs
 
-Populates `input_list` with observed catch, catch usage indicators,
-fishing mortality parameters (`ln_F_mean`, `ln_F_devs`), and
-observation/process error structures (`ln_sigmaC`, `ln_sigmaC_pop`,
-`ln_sigmaF`). Also populates discard observations, discard mortality
-rate parameters (`logit_dmr_mean`, `logit_dmr_devs`), and discard
-observation/process error structures (`ln_sigmaD`, `ln_sigmaD_pop`,
-`ln_sigma_dmr`). Must be called after
+Sets the observed catch and discards with their use flags, the fishing
+mortality parameters (`ln_F_mean`, `ln_F_devs`) and their observation
+and process error, the catch and discard at age data sources, and the
+discard mortality rate parameters. Call after
 [`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
 
 ## Usage
@@ -99,93 +96,80 @@ Setup_Mod_Catch_and_F(
 
 - input_list:
 
-  Named list with `$data`, `$par`, `$map`, and `$verbose` sublists, as
-  returned by upstream setup functions.
+  Named list with `$data`, `$par`, `$map` and `$verbose`.
 
 - ObsCatch:
 
   Observed aggregated catch array
-  `[n_regions x n_years x n_seas x n_fish_fleets]`. Values should be in
-  the units specified by `catch_units`. For a cell with `UseCatch == 0`
-  (and no population-specific catch used), an `NA` entry here is treated
-  as a missing observation; fishing is assumed to have continued and
-  `Fmort`/ `ln_F_devs` are estimated normally for that year, whereas a
-  true recorded value (typically `0`) is treated as a real closure:
-  `Fmort` is forced to zero and no deviation is estimated. See
+  `[n_regions x n_years x n_seas x n_fish_fleets]` in the units
+  `catch_units` names. Where `UseCatch == 0` and no population-specific
+  catch is used, an `NA` here is a missing observation: fishing is
+  assumed to have continued and `Fmort` and `ln_F_devs` are estimated as
+  usual. A recorded value, typically `0`, is a real closure: `Fmort` is
+  forced to zero and no deviation is estimated. See
   [`Get_Fdev_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Fdev_PE_loglik.md).
 
 - ObsCatchAA:
 
-  Observed catch at age, an array with dimensions
-  `[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]`.
-  The ages are the observed ages, the columns of the fleet's ageing
-  error matrix (`AgeingError_fish`, or the shared `AgeingError`), which
-  are the model ages unless an ageing error is supplied. The predicted
-  catch at each model age is read onto those ages through that matrix
-  before it is compared, as for the age compositions. The sex dim is
-  required whatever the fleet reports: a data source summed over sexes
-  has its observation in sex slot one. Supplying this fits the catch at
-  age directly, every age its own lognormal observation, in place of an
-  aggregated catch with compositions. This is the native form for ICES
-  age-structured assessments. The two statements are not
-  interchangeable: the exact factorization of an at-age observation into
-  a total and a composition holds for Poisson and multinomial, not for
-  lognormal, so a fleet must use one or the other and supplying both for
-  the same fleet is an error. `NULL` (default) leaves the fleet on
-  aggregated catch.
+  Observed catch at age
+  `[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]`,
+  the ages being the columns of the fleet's ageing error matrix, through
+  which the predicted catch at each model age is read before it is
+  compared. The sex dim is required whatever the fleet reports: a data
+  source summed over sexes has its observation in sex slot one.
+  Supplying this fits the catch at age directly, every age its own
+  lognormal observation, in place of an aggregated catch with
+  compositions, which is the native form for ICES age-structured
+  assessments. The exact factorization of an at-age observation into a
+  total and a composition holds for Poisson and multinomial but not
+  lognormal, so a fleet must use one or the other and supplying both is
+  an error. `NULL` (default) keeps the fleet on aggregated catch.
 
 - UseCatchAA:
 
   Integer array shaped like `ObsCatchAA`, `1` where an observation is
-  fit and `0` otherwise. A cell that is not fit is also not fished, so
-  this governs closures the way `UseCatch` does for the aggregated data
-  source.
+  fit. A cell that is not fit is also not fished, so this governs
+  closures the way `UseCatch` does.
 
 - ObsCatchAA_SE, ObsDiscardAA_SE, ObsCatchAA_pop_SE,
   ObsDiscardAA_pop_SE:
 
   Reported standard errors shaped like their observation array, read
-  only when the data source's `sigma_form` asks for them.
+  only when that data source's `sigma_form` asks for them.
 
 - sigmaCAA_key:
 
   Integer array `[n_obs_ages, n_sexes, n_fish_fleets]` coupling the
-  catch at age observation error, the key matrix convention ICES
-  assessments use. Equal entries share a parameter and `NA` excludes
-  one. The sex dim is required; a key coupling the sexes repeats its
-  entries across them. Along the age dim, `1 2 3 4 5` gives one standard
-  deviation per age, `1 1 2 2 2` gives standard deviations by age group
-  as several ICES assessments do, and `1 1 1 1 1` gives one for the
-  fleet. Defaults to one parameter per fleet, shared across ages and
-  sexes. A parameter informed by fewer than two observations is refused,
-  since an observation error standard deviation with a single
-  observation drives the likelihood to negative infinity rather than
-  failing outright.
+  catch at age observation error, the key matrix ICES assessments use.
+  Equal entries share a parameter and `NA` excludes one. The sex dim is
+  required; a key coupling the sexes repeats its entries across them.
+  Along ages, `1 2 3 4 5` gives one sd per age, `1 1 2 2 2` gives sds by
+  age group, and `1 1 1 1 1` gives one for the fleet. Defaults to one
+  parameter per fleet. A parameter informed by fewer than two
+  observations is refused, since an sd with a single observation drives
+  the likelihood to negative infinity rather than failing outright.
 
 - sigmaCAA_spec:
 
-  Character string, `"est"` (default) to estimate the coupled standard
-  deviations, or `"fix"` to hold them at their starting values. Starting
-  values are supplied through `...` as `ln_sigmaCAA`.
+  `"est"` (default) or `"fix"`. Starting values go through `...` as
+  `ln_sigmaCAA`.
 
 - ObsDiscardAA, UseDiscardAA:
 
-  Observed discard at age and its use flags, shaped like `ObsCatchAA`.
-  The discard counterpart of catch at age, read through the same fishery
-  ageing error.
+  Observed discard at age and its use flags, shaped like `ObsCatchAA`
+  and read through the same fishery ageing error.
 
 - ObsDiscardAA_pop, UseDiscardAA_pop, ObsCatchAA_pop, UseCatchAA_pop:
 
-  Population-specific counterparts, with a leading population dimension.
+  Population-specific counterparts, with a leading population dim.
 
 - sigmaCAA_pop_key, sigmaDAA_key, sigmaDAA_pop_key:
 
   Integer arrays coupling the observation error for the
-  population-specific catch, the discards, and the population-specific
-  discards, following the same convention as `sigmaCAA_key`.
-  `sigmaDAA_key` is shaped `[n_obs_ages, n_sexes, n_fish_fleets]`; the
-  two population-specific keys take a leading population dim,
-  `[n_pop, n_obs_ages, n_sexes, n_fish_fleets]`.
+  population-specific catch, the discards and the population-specific
+  discards, following `sigmaCAA_key`. `sigmaDAA_key` is
+  `[n_obs_ages, n_sexes, n_fish_fleets]`; the two population-specific
+  keys take a leading population dim.
 
 - sigmaCAA_pop_spec, sigmaDAA_spec, sigmaDAA_pop_spec:
 
@@ -193,41 +177,29 @@ Setup_Mod_Catch_and_F(
 
 - CatchAA_Type, DiscardAA_Type, CatchAA_pop_Type, DiscardAA_pop_Type:
 
-  Which dims the fleet reports separately, following the composition
-  vocabulary. Give it as one setting for every fleet, one per fleet, or
-  as year and fleet specifications such as
-  `"spltRaggS_Year_1-20_Fleet_1"` when the setting changes part way
-  through the series. `"agg"` sums over regions and sexes, `"spltRaggS"`
-  (default) splits regions and sums over sexes, `"aggRspltS"` does the
-  reverse, and `"spltRspltS"` splits both. An observation summed over a
-  dim belongs in slot one of it.
+  Which dims the fleet reports separately, in the composition
+  vocabulary, as one setting for every fleet, one per fleet, or year and
+  fleet specifications such as `"spltRaggS_Year_1-20_Fleet_1"`. `"agg"`
+  sums over regions and sexes, `"spltRaggS"` (default) splits regions
+  and sums over sexes, `"aggRspltS"` does the reverse, and
+  `"spltRspltS"` splits both. An observation summed over a dim belongs
+  in slot one of it.
 
 - Catch_seas_Type, Catch_pop_seas_Type, Discard_seas_Type,
   Discard_pop_seas_Type, CatchAA_seas_Type, CatchAA_pop_seas_Type,
   DiscardAA_seas_Type, DiscardAA_pop_seas_Type:
 
   Whether a seasonal model reports this data source once a season or
-  once a year. One value for every fleet or one per fleet.
-
-  `"spltSeas"`
-
-  :   Fit the observation against the prediction for the season it sits
-      in. This is the default and what every data source did before this
-      setting existed.
-
-  `"aggSeas"`
-
-  :   Sum the prediction over every season of the year and fit it
-      against a single observation, which is how a fleet that lands
-      catch all year but reports one annual total is usually recorded.
-
-  Under `"aggSeas"` the observation still lives in whichever season it
-  was placed in, and exactly one season per region and year may be
-  turned on in the matching `Use` array; more than one is an error,
-  because each would be fit against the same year total. The likelihood
-  and the reported negative log likelihood land in that season. Fishing
-  mortality is still estimated season by season, so a fleet with one
-  annual observation and free seasonal deviations leaves the split
+  once a year, one value for every fleet or one per fleet. `"spltSeas"`
+  (default) fits the observation against the prediction for the season
+  it sits in; `"aggSeas"` sums the prediction over the year's seasons
+  and fits one observation, which is how a fleet that lands catch all
+  year but reports one annual total is usually recorded. Under
+  `"aggSeas"` the observation stays in the season it was placed in and
+  exactly one season per region and year may be on in the matching `Use`
+  array, since more than one would be fit against the same year total.
+  Fishing mortality is still estimated season by season, so a fleet with
+  one annual observation and free seasonal deviations leaves the split
   between seasons unidentified: share the deviations or fix the seasonal
   pattern.
 
@@ -251,12 +223,11 @@ Setup_Mod_Catch_and_F(
   Correlation across ages within a cell, one setting for every fleet or
   one per fleet. `"iid"` (default) treats ages as independent, `"1dar1"`
   correlates them as an AR(1) in age distance, `"us"` estimates an
-  unstructured correlation across ages, and `"2dar1"` correlates over
-  ages and years jointly through a separable AR(1), which requires the
-  fleet's observed ages and years to form a complete grid. A cell with a
-  single observed age falls back to independent. The population-specific
-  data sources have their own settings rather than borrowing the
-  aggregated ones. The fishery and survey index data sources are set in
+  unstructured correlation, and `"2dar1"` correlates over ages and years
+  jointly through a separable AR(1), which needs the fleet's observed
+  ages and years to form a complete grid. A cell with one observed age
+  falls back to independent. The population-specific data sources have
+  their own settings. The index data sources are set in
   [`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md)
   and
   [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
@@ -264,261 +235,175 @@ Setup_Mod_Catch_and_F(
 - rho_catch_spec, rho_discard_spec, rho_catch_pop_spec,
   rho_discard_pop_spec:
 
-  How each data source's correlation parameters are shared, using the
-  same spec strings as `sigmaF_spec` and `Fdev_rho_spec`. The
-  correlations sit over region, sex and fleet, with a leading population
-  dim for the population-specific data sources, so `"est_shared_r_s"`
-  gives one per fleet, `"est_shared_s"` one per region and fleet,
-  `"est_shared_r_s_f"` a single value, `"est_all"` one per cell, and
-  `"fix"` holds them. `NULL` (the default) takes `"est_shared_r_s"`, or
-  `"est_shared_p_r_s"` for the population data sources, both one per
-  fleet. The spec governs the across-age correlation, the across-year
-  correlation and the unstructured matrix together, so fleets sharing
-  under `"us"` share a whole matrix. A region, sex or population a fleet
-  never observes has no parameter, which is what holds the unused slots
-  of a summed dim out.
+  How each data source's correlation parameters are shared, in the spec
+  strings `sigmaF_spec` uses. The correlations sit over region, sex and
+  fleet, with a leading population dim for the population-specific data
+  sources, so `"est_shared_r_s"` gives one per fleet, `"est_shared_s"`
+  one per region and fleet, `"est_shared_r_s_f"` a single value,
+  `"est_all"` one per cell, and `"fix"` holds them. `NULL` (default)
+  takes `"est_shared_r_s"`, or `"est_shared_p_r_s"` for the population
+  data sources. The spec governs the across-age correlation, the
+  across-year correlation and the unstructured matrix together, so
+  fleets sharing under `"us"` share a whole matrix. A region, sex or
+  population a fleet never observes has no parameter.
 
 - UseCatch:
 
-  Binary indicator array
-  `[n_regions x n_years x n_seas x n_fish_fleets]` controlling which
-  aggregated catch observations enter the likelihood and whether
-  `ln_F_devs` are estimated for each cell. `1` = use; `0` = exclude,
-  unless `ObsCatch` is `NA` at that cell (see `ObsCatch` above), in
-  which case `ln_F_devs` is still estimated as an ordinary active year
-  despite not being fit against an observation.
+  Binary array dimensioned like `ObsCatch` controlling which aggregated
+  catch observations enter the likelihood and whether `ln_F_devs` is
+  estimated in each cell. `0` excludes the observation, unless
+  `ObsCatch` is `NA` there, in which case the deviation is still
+  estimated.
 
 - catch_units:
 
-  Character array `[n_fish_fleets]` specifying catch units per fleet.
-  `"biom"` = biomass (default); `"abd"` = abundance. Converted
-  internally to `0`/`1` integer codes.
+  Character array `[n_fish_fleets]`: `"biom"` (default) or `"abd"`,
+  stored as `0`/`1`.
 
 - UseCatch_pop:
 
-  Binary indicator array
-  `[n_pop x n_regions x n_years x n_seas x n_fish_fleets]` controlling
-  which population-specific catch observations enter the likelihood. `1`
-  = use; `0` = exclude.
+  Binary array dimensioned like `ObsCatch_pop`.
 
 - ObsCatch_pop:
 
   Observed population-specific catch array
-  `[n_pop x n_regions x n_years x n_seas x n_fish_fleets]`. Values
-  should be in the units specified by `catch_units`.
+  `[n_pop x n_regions x n_years x n_seas x n_fish_fleets]`, in
+  `catch_units`.
 
 - Use_F_pen:
 
-  Integer flag for applying a fishing mortality penalty to penalize
-  large deviations in `ln_F_devs`. `1` = apply (default); `0` = do not
-  apply.
+  Integer flag for the fishing mortality penalty on `ln_F_devs`. `1`
+  (default) applies it.
 
 - sigmaC_spec:
 
-  Character string specifying the sharing structure for `ln_sigmaC`
-  (aggregated catch observation error SD). Default `"fix"` holds
-  `ln_sigmaC` at its starting value (`log(0.01)` unless overridden via
-  `...`). Sharing options follow the convention `"est_shared_<dims>"`
-  where `<dims>` is an underscore-separated list of dimensions to
-  collapse: `"r"` (regions), `"y"` (years), `"seas"` (seasons), `"f"`
-  (fleets), or any combination (e.g., `"est_shared_r_y"`,
-  `"est_shared_r_y_seas_f"`). Use `"est_all"` for a fully independent
-  parameter per cell. A warning is issued if `"fix"` is selected without
-  providing a starting value in `...`.
+  Sharing structure for `ln_sigmaC`, the aggregated catch observation
+  error sd. `"fix"` (default) holds it at its starting value,
+  `log(0.01)` unless supplied through `...`, and warns when no starting
+  value was given. Estimated options are `"est_shared_<dims>"` over any
+  of `"r"` (regions), `"y"` (years), `"seas"` and `"f"` (fleets), e.g.
+  `"est_shared_r_y_seas_f"`, or `"est_all"` for one parameter per cell.
 
 - sigmaC_pop_spec:
 
-  Character string specifying the sharing structure for `ln_sigmaC_pop`
-  (population-specific catch observation error SD). Default `"fix"`
-  holds `ln_sigmaC_pop` at its starting value (`log(0.01)` unless
-  overridden via `...`). Sharing options follow the same convention as
-  `sigmaC_spec` but with an additional population dimension: e.g.,
-  `"est_shared_pop"` shares across populations, `"est_shared_pop_r"`
-  shares across populations and regions, and
-  `"est_shared_pop_r_y_seas_f"` collapses all dimensions into a single
-  parameter. A warning is issued if `"fix"` is selected without
-  providing a starting value in `...`.
+  Sharing structure for `ln_sigmaC_pop`, as `sigmaC_spec` with an added
+  population dim, e.g. `"est_shared_pop_r"` or
+  `"est_shared_pop_r_y_seas_f"`.
 
 - sigmaF_spec:
 
-  Character string specifying the sharing structure for `ln_sigmaF`
-  (fishing mortality process error SD). Default `"fix"` holds
-  `ln_sigmaF` at its starting value (`log(1)`, i.e., \\\sigma_F = 1\\,
-  unless overridden via `...`). A warning is issued if `"fix"` is
-  selected without providing a starting value in `...`.
+  Sharing structure for `ln_sigmaF`, the fishing mortality process error
+  sd, following `sigmaC_spec`. `"fix"` (default) holds it at `log(1)`
+  unless supplied through `...`, and warns.
 
 - Fdev_model:
 
-  Character string specifying the process error structure for
-  `ln_F_devs`. One of `"iid"` (default; independent deviations), `"rw"`
-  (random walk; the first catch-active year per region/season/fleet is
-  initialized with a diffuse \\N(0,5)\\ prior), or `"ar1"` (first-order
-  autoregressive; the first catch-active year is drawn from its
-  stationary marginal distribution, and `Fdev_rho_spec` controls the AR1
-  correlation parameter). Catch-active years do not need to be
-  contiguous for `"rw"` or `"ar1"`: the transition between two active
-  years spanning a gap of \\d\\ closed years is taken over the elapsed
-  gap directly (the same marginal transition as estimating deviations
-  for the closed years and integrating them out, without actually
-  estimating them), see
+  Process error on `ln_F_devs`: `"iid"` (default), `"rw"` (the first
+  catch-active year per region, season and fleet takes a diffuse
+  \\N(0,5)\\), or `"ar1"` (that year is drawn from the stationary
+  marginal, with `Fdev_rho_spec` setting the correlation). Catch-active
+  years need not be contiguous under `"rw"` or `"ar1"`: the transition
+  across a gap of \\d\\ closed years is taken over the elapsed gap, the
+  same marginal as estimating the closed years and integrating them out.
+  See
   [`Get_Fdev_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Fdev_PE_loglik.md).
-  A warning is issued if `"rw"` or `"ar1"` is selected but
-  `Use_F_pen = 0` (the penalty is never evaluated, so the process
-  structure has no effect), `sigmaF_spec = "fix"` (the process error SD
-  is not estimated), or (for `"ar1"`) `Fdev_rho_spec = "fix"` (the
-  correlation is not estimated), any of these may be intentional, but
-  are common oversights when switching away from `"iid"`.
+  Warns under `Use_F_pen = 0` (the penalty is never evaluated),
+  `sigmaF_spec = "fix"`, or, for `"ar1"`, `Fdev_rho_spec = "fix"`.
 
 - Fdev_pen_center:
 
   Where the fishing mortality deviation penalty is centered. `"fixed"`
-  (default) centers on zero, constraining both the level and the spread
-  of the deviations. `"own_mean"` centers on the mean of the estimated
-  deviations, penalizing only their spread and leaving the level free,
-  which is what a sum of squares about the series' own mean amounts to.
-  Under a mean-plus-deviations parameterization the level is already set
-  by `ln_F_mean`, so `"own_mean"` avoids penalizing it twice; note that
-  it also leaves `ln_F_mean` and the deviations' level mutually
-  unidentified unless one of them is fixed, which
-  `ln_F_mean_spec = "fix"` does.
+  (default) centers on zero, constraining the level and the spread.
+  `"own_mean"` centers on the deviations' own mean, penalizing only
+  their spread; the level is then already set by `ln_F_mean`, so it is
+  not penalized twice, but the two are mutually unidentified unless one
+  is fixed, which `ln_F_mean_spec = "fix"` does.
 
 - Fdev_rho_spec:
 
-  Character string specifying the sharing structure for the AR1
-  correlation parameter `Fdev_rho`, following the same convention as
-  `sigmaF_spec`. Only used when `Fdev_model = "ar1"`; ignored (and
-  mapped entirely to `NA`) otherwise.
+  Sharing structure for `Fdev_rho`, following `sigmaF_spec`. Only read
+  under `Fdev_model = "ar1"` and mapped entirely to `NA` otherwise.
 
 - ObsDiscard:
 
   Observed aggregated discard array
-  `[n_regions x n_years x n_seas x n_fish_fleets]`. Values should be in
-  the units specified by `discard_units`. Default: `NULL` (no discard
-  observations).
+  `[n_regions x n_years x n_seas x n_fish_fleets]` in `discard_units`.
+  Default `NULL`.
 
 - UseDiscard:
 
-  Binary indicator array
-  `[n_regions x n_years x n_seas x n_fish_fleets]` controlling which
-  aggregated discard observations enter the likelihood. `1` = use; `0` =
-  exclude. Default: all zeros.
+  Binary array dimensioned like `ObsDiscard`. Default all zeros.
 
 - discard_units:
 
-  Character array `[n_fish_fleets]` specifying discard units per fleet.
-  `"abd"` = abundance (`0`), `"biom"` = biomass (`1`), `"abd_frac"` =
-  abundance fraction (`2`), `"biom_frac"` = biomass fraction (`3`,
-  default). Converted internally to integer codes.
+  Character array `[n_fish_fleets]`: `"abd"` (`0`), `"biom"` (`1`),
+  `"abd_frac"` (`2`) or `"biom_frac"` (`3`, default).
 
 - UseDiscard_pop:
 
-  Binary indicator array
-  `[n_pop x n_regions x n_years x n_seas x n_fish_fleets]` controlling
-  which population-specific discard observations enter the likelihood.
-  `1` = use; `0` = exclude. Default: all zeros.
+  Binary array `[n_pop x n_regions x n_years x n_seas x n_fish_fleets]`.
+  Default all zeros.
 
 - ObsDiscard_pop:
 
-  Observed population-specific discard array
-  `[n_pop x n_regions x n_years x n_seas x n_fish_fleets]`. Values
-  should be in the units specified by `discard_units`. Default: `NULL`
-  (no population-specific discard observations).
+  Observed population-specific discard array, same dims, in
+  `discard_units`. Default `NULL`.
 
 - Use_dmr_pen:
 
-  Integer flag for applying a discard mortality rate penalty to penalize
-  large deviations in `logit_dmr_devs`. `1` = apply; `0` = do not apply
-  (default). Must be `1` when `dmr_dev_spec = "est_all"` and `0` when
-  `dmr_dev_spec = "fix"`.
+  Integer flag for the penalty on `logit_dmr_devs`. Default `0`. Must be
+  `1` under `dmr_dev_spec = "est_all"` and `0` under `"fix"`.
 
-- sigmaD_spec:
+- sigmaD_spec, sigmaD_pop_spec:
 
-  Character string specifying the sharing structure for `ln_sigmaD`
-  (aggregated discard observation error SD). Default `"fix"` holds
-  `ln_sigmaD` at its starting value (`log(0.01)` unless overridden via
-  `...`). Sharing options follow the same convention as `sigmaC_spec`. A
-  warning is issued if `"fix"` is selected without providing a starting
-  value in `...`.
-
-- sigmaD_pop_spec:
-
-  Character string specifying the sharing structure for `ln_sigmaD_pop`
-  (population-specific discard observation error SD). Default `"fix"`
-  holds `ln_sigmaD_pop` at its starting value (`log(0.01)` unless
-  overridden via `...`). Sharing options follow the same convention as
-  `sigmaC_pop_spec`. A warning is issued if `"fix"` is selected without
-  providing a starting value in `...`.
+  Sharing structures for `ln_sigmaD` and `ln_sigmaD_pop`, the discard
+  observation error sds, following `sigmaC_spec` and `sigmaC_pop_spec`.
+  `"fix"` (default) holds them at `log(0.01)` and warns when no starting
+  value was given.
 
 - sigma_dmr_spec:
 
-  Character string specifying the sharing structure for `ln_sigma_dmr`
-  (discard mortality rate process error SD). Default `"fix"` holds
-  `ln_sigma_dmr` at its starting value (`log(1)` unless overridden via
-  `...`). Sharing options follow the same convention as `sigmaF_spec`. A
-  warning is issued if `"fix"` is selected without providing a starting
-  value in `...`.
+  Sharing structure for `ln_sigma_dmr`, the discard mortality rate
+  process error sd, following `sigmaF_spec`. `"fix"` (default) holds it
+  at `log(1)` and warns.
 
 - dmr_mean_spec:
 
-  Character string specifying the sharing/estimation structure for
-  `logit_dmr_mean` (logit-scale mean discard mortality rate). Default
-  `"fix"` holds at its starting value (`0`, i.e., DMR = 0.5 on the
-  natural scale, unless overridden via `...`). See
-  [`do_dmr_mean_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_dmr_mean_mapping.md)
-  for sharing options.
+  Sharing structure for `logit_dmr_mean`. `"fix"` (default) holds it at
+  `0`, a rate of 0.5 on the natural scale. See
+  [`do_dmr_mean_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_dmr_mean_mapping.md).
 
 - dmr_dev_spec:
 
-  Character string specifying the sharing/estimation structure for
-  `logit_dmr_devs` (logit-scale annual discard mortality rate
-  deviations). Default `"fix"` holds deviations at zero (unless
-  overridden via `...`). Use `"est_all"` to estimate a deviation in
-  every fished cell; requires `Use_dmr_pen = 1`. See
-  [`do_dmr_dev_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_dmr_dev_mapping.md)
-  for sharing options.
+  Sharing structure for `logit_dmr_devs`. `"fix"` (default) holds the
+  deviations at zero; `"est_all"` estimates one in every fished cell and
+  requires `Use_dmr_pen = 1`. See
+  [`do_dmr_dev_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_dmr_dev_mapping.md).
 
 - ...:
 
-  Optional starting value overrides for catch and discard related
-  parameters.
+  Optional starting values for the catch and discard parameters.
 
 - ln_F_mean_spec:
 
-  Character string, matched by exact name only because it sits after
-  `...`. `"est"` (default, the previous and only behavior) or `"fix"`.
-  `"fix"` maps `ln_F_mean` off at its starting value, which defaults to
-  `0` under this spec unless supplied through `...`, so the deviations
-  have all of log fishing mortality: `F = exp(ln_F_devs)`, where it
-  follows a free annual log-F parameterization. It must be paired with
-  `Fdev_pen_center = "own_mean"` (penalize only the spread about the
-  deviations' own mean), `Fdev_model = "rw"`, or `Use_F_pen = 0`: an
-  `"iid"` or `"ar1"` penalty centered on a fixed zero mean would shrink
-  the deviations toward `F = 1`, so that combination is rejected at
-  setup. `"est"` keeps the mean-plus-deviations form, where the `"iid"`
-  penalty shrinks each year toward the estimated average F.
+  `"est"` (default) or `"fix"`, matched by exact name only because it
+  sits after `...`. `"fix"` maps `ln_F_mean` off at its starting value,
+  `0` unless supplied through `...`, so the deviations hold all of log
+  fishing mortality, `F = exp(ln_F_devs)`. It must be paired with
+  `Fdev_pen_center = "own_mean"`, `Fdev_model = "rw"` or
+  `Use_F_pen = 0`: an `"iid"` or `"ar1"` penalty centered on a fixed
+  zero would shrink the deviations toward `F = 1`, so that combination
+  is rejected at setup.
 
 ## Value
 
-The input `input_list` with `$data`, `$par`, and `$map` updated. Key
-additions:
-
-- `$data`:
-
-  `ObsCatch`, `ObsCatch_pop`, `UseCatch`, `UseCatch_pop`, `Use_F_pen`,
-  `catch_units`, `Fdev_model`, `ObsDiscard`, `ObsDiscard_pop`,
-  `UseDiscard`, `UseDiscard_pop`, `Use_dmr_pen`, `discard_units`.
-
-- `$par`:
-
-  `ln_sigmaC`, `ln_sigmaC_pop`, `ln_sigmaF`, `Fdev_rho`, `ln_F_mean`,
-  `ln_F_devs`, `ln_sigmaD`, `ln_sigmaD_pop`, `ln_sigma_dmr`,
-  `logit_dmr_mean`, `logit_dmr_devs`.
-
-- `$map`:
-
-  `ln_sigmaC`, `ln_sigmaC_pop`, `ln_sigmaF`, `Fdev_rho`, `ln_F_mean`,
-  `ln_F_devs`, `ln_sigmaD`, `ln_sigmaD_pop`, `ln_sigma_dmr`,
-  `logit_dmr_mean`, `logit_dmr_devs`.
+`input_list` with `$data`, `$par` and `$map` updated. `$data` gains
+`ObsCatch`, `ObsCatch_pop`, `UseCatch`, `UseCatch_pop`, `Use_F_pen`,
+`catch_units`, `Fdev_model`, `ObsDiscard`, `ObsDiscard_pop`,
+`UseDiscard`, `UseDiscard_pop`, `Use_dmr_pen` and `discard_units`.
+`$par` and `$map` both gain `ln_sigmaC`, `ln_sigmaC_pop`, `ln_sigmaF`,
+`Fdev_rho`, `ln_F_mean`, `ln_F_devs`, `ln_sigmaD`, `ln_sigmaD_pop`,
+`ln_sigma_dmr`, `logit_dmr_mean` and `logit_dmr_devs`.
 
 ## See also
 

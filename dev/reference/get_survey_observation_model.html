@@ -83,9 +83,7 @@ fully populated (or, for <code>srv_sel</code>, further updated) over
 <span>  <span class="va">srv_q_blocks</span>,</span>
 <span>  <span class="va">ln_srv_q</span>,</span>
 <span>  <span class="va">srv_q</span>,</span>
-<span>  <span class="va">do_srv_q_cov</span>,</span>
-<span>  <span class="va">srv_q_cov</span>,</span>
-<span>  <span class="va">srv_q_coeff</span>,</span>
+<span>  <span class="va">ln_srv_q_devs</span>,</span>
 <span>  <span class="va">srv_selex_type</span>,</span>
 <span>  <span class="va">srv_sel</span>,</span>
 <span>  <span class="va">srv_sel_l</span>,</span>
@@ -137,19 +135,9 @@ catchability.</p></dd>
 <dd><p>Array <code>[region, year, srv_fleet]</code>, output container.</p></dd>
 
 
-<dt id="arg-do-srv-q-cov">do_srv_q_cov<a class="anchor" aria-label="anchor" href="#arg-do-srv-q-cov"></a></dt>
-<dd><p>Integer (0/1) switch for a catchability covariate
-effect.</p></dd>
-
-
-<dt id="arg-srv-q-cov">srv_q_cov<a class="anchor" aria-label="anchor" href="#arg-srv-q-cov"></a></dt>
-<dd><p>Array <code>[region, year, srv_fleet, covariate]</code> of
-covariate values.</p></dd>
-
-
-<dt id="arg-srv-q-coeff">srv_q_coeff<a class="anchor" aria-label="anchor" href="#arg-srv-q-coeff"></a></dt>
-<dd><p>Array <code>[region, srv_fleet, covariate]</code> of
-covariate coefficients.</p></dd>
+<dt id="arg-ln-srv-q-devs">ln_srv_q_devs<a class="anchor" aria-label="anchor" href="#arg-ln-srv-q-devs"></a></dt>
+<dd><p>Array <code>[region, year, srv_fleet]</code> of log-scale
+annual catchability deviations, or <code>NULL</code> for none.</p></dd>
 
 
 <dt id="arg-srv-selex-type">srv_selex_type<a class="anchor" aria-label="anchor" href="#arg-srv-selex-type"></a></dt>

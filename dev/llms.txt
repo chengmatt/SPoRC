@@ -112,6 +112,13 @@ Functions for setting up a `SPoRC` model
   : Set up the conventional tagging module for model fitting
 - [`Setup_Mod_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
   : Initialize model dimension settings
+- [`Setup_Mod_DSEM()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md)
+  : Set up a dynamic structural equation model on any deviation process
+- [`read_dsem_arrows()`](https://chengmatt.github.io/SPoRC/dev/reference/read_dsem_arrows.md)
+  : Read dsem arrow and lag notation
+- [`dsem_series()`](https://chengmatt.github.io/SPoRC/dev/reference/dsem_series.md)
+  : Helper that defines the names of the deviation series a dsem can
+  link
 
 ## Reference Points and Projections
 
@@ -148,6 +155,10 @@ Functions for setting up simulations
   simulation
 - [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md)
   : Initialize simulation dimension settings
+- [`Setup_Sim_DSEM()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_DSEM.md)
+  : Set up dsem series in a simulation list
+- [`Setup_Sim_q_devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_q_devs.md)
+  : Set up catchability deviations for the operating model
 - [`Setup_sim_env()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md)
   : Construct and populate a simulation execution environment
 - [`run_annual_cycle()`](https://chengmatt.github.io/SPoRC/dev/reference/run_annual_cycle.md)
@@ -258,6 +269,8 @@ Functions for plotting
   : Get Data Fitted to Plot
 - [`plot_all_basic()`](https://chengmatt.github.io/SPoRC/dev/reference/plot_all_basic.md)
   : Plotting Function for All Basic Quantities
+- [`plot_dsem_dag()`](https://chengmatt.github.io/SPoRC/dev/reference/plot_dsem_dag.md)
+  : Plot a dsem as a graph of its arrows
 - [`theme_sablefish()`](https://chengmatt.github.io/SPoRC/dev/reference/theme_sablefish.md)
   : ggplot2 theme for SPoRC plots
 

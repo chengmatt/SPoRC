@@ -623,8 +623,8 @@ the parametric mean length at age,
 ```
 
 applied after the curve and after any cohort propagation. The curve
-remains the parametric part and $`\varepsilon`$ holds departures from
-it. This represents changes in the shape of size at age that no
+remains the parametric part and $`\varepsilon`$ holds the deviations
+from it. This represents changes in the shape of size at age that no
 parameter of the curve can express: a curve with five parameters cannot
 fit a year in which only the four-year-olds were small, and an
 unconstrained transition per year is not identified.

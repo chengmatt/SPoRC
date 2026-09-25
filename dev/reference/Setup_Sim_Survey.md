@@ -1,9 +1,8 @@
 # Set up survey parameterization for the operating model simulation
 
-Populates `sim_list` with all survey-related inputs needed by the
-operating model: catchability, selectivity, survey timing, index type,
-and age/length composition likelihood settings including overdispersion
-and correlation parameters. Must be called after
+Sets the survey catchability, selectivity, timing, index type and the
+age and length composition settings, with their overdispersion and
+correlation parameters. Call after
 [`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md).
 
 ## Usage
@@ -96,12 +95,13 @@ Setup_Sim_Survey(
 
   Survey selectivity array
   `[n_pop x n_regions x n_yrs x n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]`.
-  No default; must be provided.
+  No default.
 
-- ObsSrvIdx_SE:
+- ObsSrvIdx_SE, ObsSrvIdx_pop_SE:
 
-  Lognormal observation error SD for survey index, array
-  `[n_regions × n_yrs × n_seas × n_srv_fleets]`. Default: 0.2.
+  Lognormal observation error sd for the survey indices,
+  `[n_regions × n_yrs × n_seas × n_srv_fleets]` with a leading `n_pop`
+  for the second. Default 0.2.
 
 - ln_sigmaSrvIdxAA:
 
@@ -112,8 +112,8 @@ Setup_Sim_Survey(
 
   Integer array \`n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x
   n_srv_fleets\`, \`1\` where a survey index at age is drawn, on the
-  observed ages that \`AgeingError_srv_input\` reads onto. The sex dim
-  is required: a data source summed over sexes has its flag in sex slot
+  observed ages \`AgeingError_srv_input\` reads onto. The sex dim is
+  required: a data source summed over sexes has its flag in sex slot
   one.
 
 - ObsSrvIdxAA_SE:
@@ -140,266 +140,160 @@ Setup_Sim_Survey(
   Integer vector \`n_srv_fleets\`, \`1\` for fleets whose index at age
   is drawn.
 
-- ObsSrvIdx_pop_SE:
-
-  As above, but for population-specific indices, array
-  `[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]`.
-
 - srv_q_input:
 
   Survey catchability array
-  `[n_regions × n_yrs × n_srv_fleets × n_sims]`. Default: 1 for all
-  cells.
+  `[n_regions × n_yrs × n_srv_fleets × n_sims]`. Default 1.
 
 - t_srv:
 
-  Survey timing as fraction of year or season, array
-  `[n_regions × n_seas × n_srv_fleets]`. Default: 1.
+  Survey timing as a fraction of the year or season,
+  `[n_regions × n_seas × n_srv_fleets]`. Default 1.
 
 - srv_idx_type:
 
-  Integer vector `[n_srv_fleets]` specifying survey index type. Default:
-  all 1 (biomass). Options: 0/“abd” (abundance), 1/“biom” (biomass).
+  Index type per fleet: 0/`"abd"` or 1/`"biom"` (default).
 
 - SrvIdx_LikeType:
 
-  Character or numeric vector, length \`n_srv_fleets\`. Error structure
-  each fleet's index is drawn under: `"lognormal"` (0), `"normal"` (1),
-  or `"mvn"` (2), matching the estimation model's `SrvIdx_LikeType`. An
-  mvn fleet draws from `SrvIdx_Cov` through a common-factor
+  Error structure each fleet's index is drawn under: `"lognormal"` (0,
+  default), `"normal"` (1) or `"mvn"` (2), matching the estimation
+  model. An mvn fleet draws from `SrvIdx_Cov` through a common-factor
   decomposition (see
   [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md))
   instead of `ObsSrvIdx_SE`, and its population-specific data source
-  stays lognormal. Default: lognormal for every fleet.
+  stays lognormal.
 
 - SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvAgeComps_seas_Type:
 
   Whether the operating model reports a survey data source once a season
   (`"spltSeas"`, the default) or once a year as a season total
-  (`"aggSeas"`). One value for every survey or one per survey. An annual
-  total is written into season one with the other seasons left at zero,
-  and the observation error is applied once to that total, so an
-  estimation model reading it should mark season one in its `Use` array
-  and set the matching argument in
+  (`"aggSeas"`), one value for every survey or one per survey. An annual
+  total is written into season one with the other seasons left at zero
+  and the observation error applied once to that total, so an estimation
+  model reading it should mark season one in its `Use` array and set the
+  matching argument in
   [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
 
 - SrvIdx_Cov:
 
-  List with one element per survey fleet holding the fixed covariance
-  over that fleet's fitted index observations, ordered by scanning
-  `UseSrvIdx` in array order (region fastest, then year, then season).
-  Required for mvn fleets. Default: `NULL`.
+  List with one element per fleet holding the fixed covariance over that
+  fleet's fitted index observations, ordered by scanning `UseSrvIdx` in
+  array order. Required for mvn fleets. Default `NULL`.
 
 - UseSrvIdx:
 
-  Numeric array `[n_regions x n_yrs x n_seas x n_srv_fleets]` of fit
-  flags from the estimation model, used to position each simulated cell
-  in the covariance. Its year dimension may be shorter than the
-  simulation, in which case later years draw with the mean factor scale
-  and loading. Required for mvn fleets. Default: `NULL`.
+  Fit flags `[n_regions x n_yrs x n_seas x n_srv_fleets]` from the
+  estimation model, used to place each simulated cell in the covariance.
+  Its year dim may be shorter than the simulation, in which case later
+  years draw with the mean factor scale and loading. Required for mvn
+  fleets. Default `NULL`.
 
 - comp_srv_caal_like:
 
-  Character or numeric vector \`n_srv_fleets\` giving the conditional
-  age-at-length likelihood per fleet: \`"Multinomial"\` (0),
-  \`"Dirichlet-Multinomial"\` (1), or \`"none"\` (999). The survey twin
-  of \`comp_fish_caal_like\`, and only these two families exist for
-  CAAL. Default: \`"none"\` for every fleet.
+  Conditional age-at-length likelihood per fleet: \`"Multinomial"\` (0),
+  \`"Dirichlet-Multinomial"\` (1) or \`"none"\` (999, default). The
+  survey twin of \`comp_fish_caal_like\`, and only these two families
+  exist for CAAL.
 
 - ISS_Srv_caal:
 
-  Numeric array. Number of fish aged within each length bin, dimensions
-  \`n_regions x n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x
-  n_sims\`. A bin whose sample size rounds to zero is skipped. \`NULL\`
-  (the default) draws no CAAL; supplying it alongside a likelihood other
-  than \`"none"\` switches \`do_srv_caal\` on. Requires \`n_lens\`.
+  Number of fish aged within each length bin, \`n_regions x n_yrs x
+  n_seas x n_lens x n_sexes x n_srv_fleets x n_sims\`. A bin whose
+  sample size rounds to zero is skipped. \`NULL\` (default) draws no
+  CAAL; supplying it alongside a likelihood other than \`"none"\`
+  switches \`do_srv_caal\` on. Requires \`n_lens\`.
 
 - ln_Srv_caal_theta:
 
-  Numeric array. Log overdispersion for the Dirichlet-multinomial,
-  dimensions \`n_regions x n_sexes x n_srv_fleets\`, read under the
-  split types and ignored under the multinomial. Default: log(1).
+  Log overdispersion for the Dirichlet-multinomial, \`n_regions x
+  n_sexes x n_srv_fleets\`, read under the split types and ignored under
+  the multinomial. Default log(1).
 
 - ln_Srv_caal_theta_agg:
 
-  Numeric vector \`n_srv_fleets\`. The aggregated type's counterpart to
-  \`ln_Srv_caal_theta\`. Default: log(1).
+  The aggregated type's counterpart, length \`n_srv_fleets\`. Default
+  log(1).
 
 - Srv_caal_Type:
 
-  Numeric or character array giving the composition structure per year
-  and fleet, dimensions \`n_yrs x n_srv_fleets\`, with the same codes as
-  \`Fish_caal_Type\`: \`"agg"\` (0), \`"spltRspltS"\` (1),
-  \`"spltRjntS"\` (2), \`"none"\` (999). The simulator takes the year by
-  fleet array directly rather than the estimation model's
-  \`"CompType_Year_x-y_Fleet_z"\` strings. Default: \`"none"\`
-  throughout.
+  Composition structure per year and fleet, \`n_yrs x n_srv_fleets\`,
+  with the codes of \`Fish_caal_Type\`: \`"agg"\` (0), \`"spltRspltS"\`
+  (1), \`"spltRjntS"\` (2) or \`"none"\` (999, default). The simulator
+  takes the year by fleet array directly.
 
-- comp_srvage_like:
+- comp_srvage_like, comp_srvlen_like, comp_srvage_pop_like,
+  comp_srvlen_pop_like:
 
-  Integer or character vector `[n_srv_fleets]` specifying likelihood for
-  survey age compositions. Default: all 0 (multinomial). Options:
-  0/“Multinomial”, 1/“Dirichlet-Multinomial”, 2/“iid-Logistic-Normal”,
-  3/“1d-Logistic-Normal”, 4/“2d-Logistic-Normal”.
+  Composition likelihood per fleet for the four survey composition data
+  sources: 0/`"Multinomial"` (default), 1/`"Dirichlet-Multinomial"`,
+  2/`"iid-Logistic-Normal"`, 3/`"1d-Logistic-Normal"` or
+  4/`"2d-Logistic-Normal"`.
 
-- ISS_SrvAgeComps:
+- ISS_SrvAgeComps, ISS_SrvLenComps:
 
-  Array `[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]`
-  of sample sizes or overdispersion for survey age compositions.
-  Default: 100.
+  Input sample sizes
+  `[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]`.
+  Default 100.
 
-- ln_SrvAge_theta:
+- ln_SrvAge_theta, ln_SrvLen_theta:
 
-  Log-scale overdispersion array `[n_regions × n_sexes × n_srv_fleets]`.
-  Used for likelihoods 1-4. Default: log(1).
+  Log-scale overdispersion `[n_regions × n_sexes × n_srv_fleets]`, read
+  under likelihoods 1-4. Default log(1).
 
-- ln_SrvAge_theta_agg:
+- ln_SrvAge_theta_agg, ln_SrvLen_theta_agg:
 
-  Log-scale overdispersion for aggregated survey age compositions,
-  vector `[n_srv_fleets]`. Default: log(1).
+  The aggregated types' counterparts, length `n_srv_fleets`. Default
+  log(1).
 
-- SrvAge_corr_pars_agg:
+- SrvAge_corr_pars_agg, SrvLen_corr_pars_agg:
 
-  Vector `[n_srv_fleets]` for aggregated survey age correlations. Only
-  for likelihood 3. Default: 0.01.
+  The aggregated types' counterparts, length `n_srv_fleets`, read under
+  likelihood 3. Default 0.01.
 
-- SrvAge_corr_pars:
+- SrvAge_corr_pars, SrvLen_corr_pars:
 
-  Correlation parameters array
-  `[n_regions × n_sexes × n_srv_fleets × 2]` (age AR1, sex). Only for
-  likelihoods 3-4. Default: 0.01.
+  Correlation parameters `[n_regions × n_sexes × n_srv_fleets × 2]`, the
+  age AR1 and the sex correlation, read under likelihoods 3 and 4.
+  Default 0.01.
 
-- SrvAgeComps_Type:
+- SrvAgeComps_Type, SrvLenComps_Type, SrvAgeComps_pop_Type,
+  SrvLenComps_pop_Type:
 
-  Array `[n_yrs × n_srv_fleets]` specifying composition structure.
-  Default: 2 (split by region, joint sexes). Options: 0/“agg”,
-  1/“spltRspltS”, 2/“spltRjntS”, 999/“none”.
+  Composition structure `[n_yrs × n_srv_fleets]`: 0/`"agg"`,
+  1/`"spltRspltS"`, 2/`"spltRjntS"` (default) or 999/`"none"`.
 
-- comp_srvlen_like:
+- ISS_SrvAgeComps_pop, ISS_SrvLenComps_pop:
 
-  Integer or character vector `[n_srv_fleets]` specifying likelihood for
-  survey length compositions. Default: all 0.
+  The population-specific counterparts, with a leading `n_pop` dim.
+  Default 100.
 
-- ISS_SrvLenComps:
+- ln_SrvAge_pop_theta, ln_SrvLen_pop_theta:
 
-  Array `[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]`
-  of sample sizes or overdispersion for survey length compositions.
-  Default: 100.
+  Log-scale overdispersion for the population-specific data sources
+  `[n_pop × n_regions × n_sexes × n_srv_fleets]`. Default log(1).
 
-- ln_SrvLen_theta:
+- ln_SrvAge_pop_theta_agg, ln_SrvLen_pop_theta_agg:
 
-  Log-scale overdispersion array `[n_regions × n_sexes × n_srv_fleets]`.
-  Default: log(1).
+  Their aggregated counterparts `[n_pop × n_srv_fleets]`. Default
+  log(1).
 
-- ln_SrvLen_theta_agg:
+- SrvAge_pop_corr_pars, SrvLen_pop_corr_pars:
 
-  Vector `[n_srv_fleets]` for aggregated length composition
-  overdispersion. Default: log(1).
+  Correlation parameters for the population-specific data sources
+  `[n_pop × n_regions × n_sexes × n_srv_fleets × 2]`. Default 0.01.
 
-- SrvLen_corr_pars_agg:
+- SrvAge_pop_corr_pars_agg, SrvLen_pop_corr_pars_agg:
 
-  Vector `[n_srv_fleets]` for aggregated length composition
-  correlations. Default: 0.01.
-
-- SrvLen_corr_pars:
-
-  Array `[n_regions × n_sexes × n_srv_fleets × 2]` correlation
-  parameters for length comps. Default: 0.01.
-
-- SrvLenComps_Type:
-
-  Array `[n_yrs × n_srv_fleets]` specifying length composition
-  structure. Default: 2.
-
-- comp_srvage_pop_like:
-
-  Integer or character vector `[n_srv_fleets]` specifying likelihood for
-  population-specific survey age compositions. Default: all 0.
-
-- ISS_SrvAgeComps_pop:
-
-  Array
-  `[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]`
-  of population-specific sample sizes or overdispersion. Default: 100.
-
-- ln_SrvAge_pop_theta:
-
-  Log-scale overdispersion array
-  `[n_pop × n_regions × n_sexes × n_srv_fleets]`. Default: log(1).
-
-- ln_SrvAge_pop_theta_agg:
-
-  Array `[n_pop × n_srv_fleets]` for aggregated population-specific
-  overdispersion. Default: log(1).
-
-- SrvAge_pop_corr_pars:
-
-  Array `[n_pop × n_regions × n_sexes × n_srv_fleets × 2]` correlation
-  parameters (age AR1, sex) for population-specific age compositions.
-  Default: 0.01.
-
-- SrvAge_pop_corr_pars_agg:
-
-  Array `[n_pop × n_srv_fleets]` for aggregated population-specific age
-  correlations. Default: 0.01.
-
-- SrvAgeComps_pop_Type:
-
-  Array `[n_yrs × n_srv_fleets]` specifying population-specific age
-  composition structure. Default: 2.
-
-- comp_srvlen_pop_like:
-
-  Integer or character vector `[n_srv_fleets]` specifying likelihood for
-  population-specific survey length compositions. Default: all 0.
-
-- ISS_SrvLenComps_pop:
-
-  Array
-  `[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]`
-  of population-specific sample sizes or overdispersion. Default: 100.
-
-- ln_SrvLen_pop_theta:
-
-  Array `[n_pop × n_regions × n_sexes × n_srv_fleets]` log-scale
-  overdispersion for population-specific lengths. Default: log(1).
-
-- ln_SrvLen_pop_theta_agg:
-
-  Array `[n_pop × n_srv_fleets]` for aggregated population-specific
-  length overdispersion. Default: log(1).
-
-- SrvLen_pop_corr_pars:
-
-  Array `[n_pop × n_regions × n_sexes × n_srv_fleets × 2]` correlation
-  parameters for population-specific length comps. Default: 0.01.
-
-- SrvLen_pop_corr_pars_agg:
-
-  Array `[n_pop × n_srv_fleets]` for aggregated population-specific
-  length correlations. Default: 0.01.
-
-- SrvLenComps_pop_Type:
-
-  Array `[n_yrs × n_srv_fleets]` specifying population-specific length
-  composition structure. Default: 2.
+  Their aggregated counterparts `[n_pop × n_srv_fleets]`. Default 0.01.
 
 ## Value
 
-The input `sim_list` with survey-related fields appended: `$srv_sel`,
-`$srv_q`, `$ObsSrvIdx_SE`, `$ObsSrvIdx_pop_SE`, `$t_srv`,
-`$srv_idx_type`, `$comp_srvage_like`, `$ISS_SrvAgeComps`,
-`$ln_SrvAge_theta`, `$ln_SrvAge_theta_agg`, `$SrvAge_corr_pars_agg`,
-`$SrvAge_corr_pars`, `$SrvAgeComps_Type`, `$comp_srvlen_like`,
-`$ISS_SrvLenComps`, `$ln_SrvLen_theta`, `$ln_SrvLen_theta_agg`,
-`$SrvLen_corr_pars_agg`, `$SrvLen_corr_pars`, `$SrvLenComps_Type`,
-`$comp_srvage_pop_like`, `$ISS_SrvAgeComps_pop`, `$ln_SrvAge_pop_theta`,
-`$ln_SrvAge_pop_theta_agg`, `$SrvAge_pop_corr_pars_agg`,
-`$SrvAge_pop_corr_pars`, `$SrvAgeComps_pop_Type`,
-`$comp_srvlen_pop_like`, `$ISS_SrvLenComps_pop`, `$ln_SrvLen_pop_theta`,
-`$ln_SrvLen_pop_theta_agg`, `$SrvLen_pop_corr_pars_agg`,
-`$SrvLen_pop_corr_pars`, `$SrvLenComps_pop_Type`. Character-coded inputs
-are converted to integer equivalents before storage.
+`sim_list` with the survey fields appended: `$srv_sel`, `$srv_q`,
+`$ObsSrvIdx_SE`, `$ObsSrvIdx_pop_SE`, `$t_srv`, `$srv_idx_type`, and,
+for each of the four composition data sources, its likelihood, input
+sample sizes, overdispersion, correlation parameters and composition
+type. Character codes are converted to integers before storage.
 
 ## See also
 

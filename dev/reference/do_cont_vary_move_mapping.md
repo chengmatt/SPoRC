@@ -6,11 +6,11 @@ to construct the TMB/RTMB factor maps for `move_devs` (iid deviations on
 the movement logit or log-rate surface) and `move_pe_pars`
 (process-error variance parameters). Deviations are only activated when
 the model is spatial (`n_regions > 1`), continuous variation is
-requested (`cont_vary_movement > 0`), and movement is estimated
-(`use_fixed_movement == 0`). For CTMC movement, deviations are only
-assigned to region pairs that are connected in the adjacency matrix. The
-resulting integer map is also stored as `$data$map_move_devs` for use in
-the C++ template.
+requested (`cont_vary_movement` is not `"none"`), and movement is
+estimated (`use_fixed_movement == 0`). For CTMC movement, deviations sit
+on each region's preference, so the only ones left unestimated belong to
+a region no edge of the adjacency matrix touches. The resulting integer
+map is also stored as `$data$map_move_devs` for use in the C++ template.
 
 ## Usage
 
@@ -30,12 +30,12 @@ do_cont_vary_move_mapping(
 
 - cont_vary_movement:
 
-  Character string specifying the deviation structure. One of `"none"`,
-  `"iid_y"`, `"iid_a"`, `"iid_y_a"`, `"iid_y_a_s"`, `"iid_y_seas_a_s"`,
-  or the population-specific analogs `"iid_p_y"`, `"iid_p_a"`,
-  `"iid_p_y_a"`, `"iid_p_y_a_s"`, `"iid_p_y_seas_a_s"`. Dimensions
-  present in the string receive unique estimation indices; absent
-  dimensions share a single index. `"none"` maps all deviations to `NA`.
+  Character string specifying the deviation structure: `"none"`, or
+  `"iid_"` followed by the dims the deviations vary over, any of p, y,
+  seas, a, s in any order (`"iid_y"`, `"iid_y_a_s"`,
+  `"iid_p_y_seas_a_s"`, any combination). Dimensions present in the
+  string receive unique estimation indices; absent dimensions share a
+  single index. `"none"` maps all deviations to `NA`.
 
 - Movement_cont_pe_pars_spec:
 
@@ -64,8 +64,8 @@ The input `input_list` with three entries updated:
 - `$map$move_devs`:
 
   Factor vector for movement deviations. Active cells receive sequential
-  integer indices; non-adjacent CTMC pairs and inactive configurations
-  are `NA`.
+  integer indices; CTMC regions no edge touches and inactive
+  configurations are `NA`.
 
 - `$data$map_move_devs`:
 

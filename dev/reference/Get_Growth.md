@@ -150,9 +150,9 @@ Get_Growth(
 
   Array `[pop, region, year, age, sex]` of log deviations on mean length
   at age, or `NULL` for none. Multiplies the parametric mean at age, so
-  the curve stays the parametric part and the deviations have departures
-  from it; the spread at age follows the deviated mean, leaving the
-  coefficient of variation at age alone.
+  the curve stays the parametric part and the deviations move mean
+  length around it; the spread at age follows the deviated mean, leaving
+  the coefficient of variation at age alone.
 
 - growth_semipar:
 

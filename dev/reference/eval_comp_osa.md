@@ -1,10 +1,10 @@
 # Evaluate OSA composition negative log-likelihood from a flat tracked vector
 
-Walks the same group order used by
-[`pack_comp_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.md),
-keeping the pointer `k` synchronized with the packed slice lengths.
-Evaluates the multinomial, Dirichlet-multinomial, or logistic-normal
-likelihood for each region/sex/fleet/season block.
+Walks the group order
+[`pack_comp_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.md)
+used, keeping the pointer `k` in step with the packed slice lengths, and
+evaluates the multinomial, Dirichlet-multinomial or logistic-normal
+likelihood for each region, sex, fleet and season block.
 
 ## Usage
 
@@ -43,7 +43,7 @@ eval_comp_osa(
 
 - nLL_arr:
 
-  Array receiving negative log-likelihood contributions.
+  Array receiving the negative log-likelihood contributions.
 
 - tracked:
 
@@ -51,7 +51,7 @@ eval_comp_osa(
 
 - ExpArrFn:
 
-  Function returning expected proportions for (p,y,seas,f).
+  Function returning the expected proportions for `(p, y, seas, f)`.
 
 - UseArr:
 
@@ -69,115 +69,68 @@ eval_comp_osa(
 
   Input sample sizes.
 
-- lnThetaArr:
+- lnThetaArr, lnThetaAggVec:
 
-  Log overdispersion.
+  Log overdispersion and its aggregated counterpart.
 
-- lnThetaAggVec:
+- LNcorrArr, LNcorrAggVec:
 
-  Aggregated log overdispersion.
+  Logistic-normal correlation parameters and their aggregated
+  counterpart.
 
-- LNcorrArr:
+- n_regions, n_yrs, n_seas, n_fleets, n_sexes, n_pop:
 
-  LN correlation parameters.
+  Model dimensions.
 
-- LNcorrAggVec:
+- n_model_bins, n_obs_bins:
 
-  Aggregated LN correlation parameters.
-
-- n_regions:
-
-  Total number of structural regions.
-
-- n_yrs:
-
-  Number of model years.
-
-- n_seas:
-
-  Number of seasons per year.
-
-- n_fleets:
-
-  Total number of fishing fleets.
-
-- n_sexes:
-
-  Number of biological sexes.
-
-- n_model_bins:
-
-  Number of internal model bins.
-
-- n_obs_bins:
-
-  Number of observational bins.
+  Numbers of model and observed bins.
 
 - age_or_len:
 
-  Flag indicating age-based or length-based composition.
+  Flag for an age-based or length-based composition.
 
 - AgeingErrorFn:
 
-  Function `(y, f)` returning the ageing error matrix for a given year
-  and fleet, or the length bin map, which ignores both. Fleet specific
+  Function `(y, f)` returning that year and fleet's ageing error matrix,
+  or the length bin map, which ignores both. It is fleet specific
   because a fishery and a survey need not read ages the same way.
 
 - addtocomp:
 
-  Small constant added to proportions before normalization.
+  Small constant added to the proportions before normalization.
 
 - BinsArr:
 
   Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed bins
   each fleet is fitted over, or `NULL` (default) for all bins. Must be
-  the same array handed to
+  the array handed to
   [`pack_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.md),
   since the strides walked here are sized on it.
 
 - family:
 
-  Character string specifying the likelihood type, either "discrete" or
-  "continuous".
+  `"discrete"` or `"continuous"`.
 
 - zero_init:
 
-  Logical; whether to zero out the nLL array on entry.
+  Logical; whether the nLL array is zeroed on entry.
 
 - pop:
 
-  Logical; if TRUE, evaluations account for the population structure
-  layer.
-
-- n_pop:
-
-  Number of population structures or pools.
+  Logical; `TRUE` accounts for the population layer.
 
 ## Value
 
-Updated `nLL_arr` containing the evaluated negative log-likelihood
-values.
+`nLL_arr` with the evaluated values.
 
 ## Details
 
-Slice lengths must match the packer exactly:
-
-Discrete (LikeType 0,1):
-
-- Comp_Type 0: `n_fit_bins`
-
-- Comp_Type 1/2: `n_ru x n_fit_bins x n_sexes`
-
-Logistic-normal (LikeType 2,3,4):
-
-- Comp_Type 0: `n_fit_bins - 1`
-
-- Comp_Type 1: `n_ru x (n_fit_bins - 1) x n_sexes`
-
-- Comp_Type 2: `n_ru x (n_fit_bins x n_sexes - 1)`
-
-`n_fit_bins` is the number of bins the fleet is fitted over, taken from
-`BinsArr` and equal to `n_obs_bins` when the fleet fits every bin.
-
-These reduced lengths reflect that the tracked `Obs` vector is already
-ALR-transformed (the last reference bin is dropped).
+The slice lengths have to match the packer exactly. A discrete family
+takes `n_fit_bins` under comp type 0 and `n_ru x n_fit_bins x n_sexes`
+under types 1 and 2. A logistic-normal family takes one fewer bin, since
+the tracked `Obs` vector arrives already transformed with its reference
+bin dropped: `n_fit_bins - 1` under type 0,
+`n_ru x (n_fit_bins - 1) x n_sexes` under type 1, and
+`n_ru x (n_fit_bins x n_sexes - 1)` under type 2. `n_fit_bins` comes
+from `BinsArr` and equals `n_obs_bins` when the fleet fits every bin.

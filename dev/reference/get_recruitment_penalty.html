@@ -146,8 +146,8 @@ ages read the early one.</p></dd>
 
 
 <dt id="arg-sigmar-switch">sigmaR_switch<a class="anchor" aria-label="anchor" href="#arg-sigmar-switch"></a></dt>
-<dd><p>Integer year index at which the deviations switch from
-the early to the late sigma regime.</p></dd>
+<dd><p>Integer year index the deviations switch from the early to
+the late sigma at.</p></dd>
 
 
 <dt id="arg-ln-recdevs">ln_RecDevs<a class="anchor" aria-label="anchor" href="#arg-ln-recdevs"></a></dt>
@@ -155,7 +155,7 @@ the early to the late sigma regime.</p></dd>
 
 
 <dt id="arg-sigmar-early-sigmar-late">sigmaR2_early, sigmaR2_late<a class="anchor" aria-label="anchor" href="#arg-sigmar-early-sigmar-late"></a></dt>
-<dd><p>Arrays <code>[pop, region]</code> of squared sigma
+<dd><p>Arrays <code>[pop, region]</code> of squared sigma,
 used for the bias-corrected mean.</p></dd>
 
 
@@ -165,9 +165,9 @@ used for the bias-corrected mean.</p></dd>
 
 <dt id="arg-map-ln-recdevs">map_ln_RecDevs<a class="anchor" aria-label="anchor" href="#arg-map-ln-recdevs"></a></dt>
 <dd><p>Array <code>[pop, region, year]</code> mirroring
-<code>map$ln_RecDevs</code>. Cells that are <code>NA</code> are fixed rather than
-estimated and go unpenalized; cells sharing a level split one penalty.
-<code>NULL</code> penalizes every cell in full.</p></dd>
+<code>map$ln_RecDevs</code>. <code>NA</code> cells are fixed rather than estimated and go
+unpenalized, and cells sharing a level split one penalty. <code>NULL</code>
+penalizes every cell in full.</p></dd>
 
 
 <dt id="arg-recdevs-model">RecDevs_model<a class="anchor" aria-label="anchor" href="#arg-recdevs-model"></a></dt>
@@ -177,14 +177,14 @@ estimated and go unpenalized; cells sharing a level split one penalty.
 
 <dt id="arg-recdevs-rho">RecDevs_rho<a class="anchor" aria-label="anchor" href="#arg-recdevs-rho"></a></dt>
 <dd><p>Array <code>[pop, region]</code> of unconstrained AR1
-correlations, transformed to \((-1, 1)\) here. Read when
+correlations, transformed to \((-1, 1)\) here. Read under
 <code>RecDevs_model = 3</code>.</p></dd>
 
 
 <dt id="arg-recdevs-rw-init-sigma">RecDevs_rw_init_sigma<a class="anchor" aria-label="anchor" href="#arg-recdevs-rw-init-sigma"></a></dt>
 <dd><p>Standard deviation given to year one of a random
 walk. Default <code>5</code>, which leaves the level of the series effectively
-free. <code>NA</code> starts the walk at zero under its own sigma. Read when
+free; <code>NA</code> starts the walk at zero under its own sigma. Read under
 <code>RecDevs_model = 2</code>.</p></dd>
 
 

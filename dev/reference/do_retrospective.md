@@ -1,10 +1,8 @@
 # Run Retrospective Diagnostics for RTMB Models
 
-Conducts retrospective analyses by sequentially removing terminal years
-("peels") from the dataset and refitting the model. For each peel, the
-function truncates the model inputs, optionally applies data lags and
-Francis composition reweighting, fits the model, and extracts estimates
-of spawning stock biomass (SSB) and recruitment.
+Refits the model with terminal years removed one peel at a time,
+truncating the inputs, applying any data lags and Francis reweighting,
+and extracting spawning stock biomass and recruitment from each fit.
 
 ## Usage
 
@@ -49,193 +47,87 @@ do_retrospective(
 
 - n_retro:
 
-  Integer specifying the number of retrospective peels to perform. A
-  value of `n_retro = 0` fits the model using the full dataset only.
+  Number of peels. `0` fits the full dataset only.
 
 - data:
 
-  List containing the data supplied to the RTMB model.
+  List of data supplied to the RTMB model.
 
 - parameters:
 
-  List containing the model parameters.
+  List of model parameters.
 
 - mapping:
 
-  List defining parameter mappings used during estimation.
+  List of parameter mappings used during estimation.
 
 - random:
 
-  Character vector identifying random-effect parameters in the model.
-  Default is `NULL`.
+  Character vector of random-effect parameters. Default `NULL`.
 
 - do_par:
 
-  Logical indicating whether retrospective peels should be run in
-  parallel. Default is `FALSE`.
+  Logical, whether the peels run in parallel. Default `FALSE`.
 
 - n_cores:
 
-  Integer specifying the number of cores to use when `do_par = TRUE`.
+  Cores used when `do_par = TRUE`.
 
 - newton_loops:
 
-  Integer specifying the number of Newton optimization loops used during
-  model fitting. Default is `3`.
+  Newton optimization loops per fit. Default `3`.
 
 - do_francis:
 
-  Logical indicating whether Francis composition reweighting should be
-  applied within each retrospective peel. Default is `FALSE`.
+  Logical, whether Francis reweighting runs within each peel. Default
+  `FALSE`.
 
 - n_francis_iter:
 
-  Integer specifying the number of Francis reweighting iterations.
-  Required if `do_francis = TRUE`.
+  Francis reweighting iterations, required when `do_francis = TRUE`.
 
 - nlminb_control:
 
-  List of control arguments passed to
-  [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html) during model
-  fitting. Default is
+  Control list passed to
+  [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html). Default
   `list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)`.
 
 - do_sdrep:
 
-  Logical indicating whether standard errors should be calculated using
-  `RTMB::sdreport`. Default is `FALSE`.
+  Logical, whether standard errors are computed through
+  `RTMB::sdreport`. Default `FALSE`.
 
-- fishidx_datalag:
+- fishidx_datalag, fishage_datalag, fishlen_datalag,
+  fishage_discard_datalag, fishlen_discard_datalag, srvidx_datalag,
+  srvage_datalag, srvlen_datalag:
 
-  Integer array specifying lags applied to fishery index data \\\[region
-  \times fleet\]\\. Default is zeros.
+  Integer arrays \\\[region \times fleet\]\\ of the lag applied to each
+  pooled data source. Default zeros.
 
-- fishage_datalag:
+- fishidx_pop_datalag, fishage_pop_datalag, fishlen_pop_datalag,
+  fishage_discard_pop_datalag, fishlen_discard_pop_datalag,
+  srvidx_pop_datalag, srvage_pop_datalag, srvlen_pop_datalag:
 
-  Integer array specifying lags applied to fishery age-composition data
-  \\\[region \times fleet\]\\. Default is zeros.
-
-- fishlen_datalag:
-
-  Integer array specifying lags applied to fishery length-composition
-  data \\\[region \times fleet\]\\. Default is zeros.
-
-- fishage_discard_datalag:
-
-  Integer array specifying lags applied to fishery discard
-  age-composition data \\\[region \times fleet\]\\. Default is zeros.
-
-- fishlen_discard_datalag:
-
-  Integer array specifying lags applied to fishery discard
-  length-composition data \\\[region \times fleet\]\\. Default is zeros.
-
-- srvidx_datalag:
-
-  Integer array specifying lags applied to survey index data \\\[region
-  \times fleet\]\\. Default is zeros.
-
-- srvage_datalag:
-
-  Integer array specifying lags applied to survey age-composition data
-  \\\[region \times fleet\]\\. Default is zeros.
-
-- srvlen_datalag:
-
-  Integer array specifying lags applied to survey length-composition
-  data \\\[region \times fleet\]\\. Default is zeros.
-
-- fishidx_pop_datalag:
-
-  Integer array specifying lags applied to population-specific fishery
-  index data \\\[n\\pop \times region \times fleet\]\\. Default is
-  zeros.
-
-- fishage_pop_datalag:
-
-  Integer array specifying lags applied to population-specific fishery
-  age-composition data \\\[n\\pop \times region \times fleet\]\\.
-  Default is zeros.
-
-- fishlen_pop_datalag:
-
-  Integer array specifying lags applied to population-specific fishery
-  length-composition data \\\[n\\pop \times region \times fleet\]\\.
-  Default is zeros.
-
-- fishage_discard_pop_datalag:
-
-  Integer array specifying lags applied to population-specific fishery
-  discard age-composition data \\\[n\\pop \times region \times
-  fleet\]\\. Default is zeros.
-
-- fishlen_discard_pop_datalag:
-
-  Integer array specifying lags applied to population-specific fishery
-  discard length-composition data \\\[n\\pop \times region \times
-  fleet\]\\. Default is zeros.
-
-- srvidx_pop_datalag:
-
-  Integer array specifying lags applied to population-specific survey
-  index data \\\[n\\pop \times region \times fleet\]\\. Default is
-  zeros.
-
-- srvage_pop_datalag:
-
-  Integer array specifying lags applied to population-specific survey
-  age-composition data \\\[n\\pop \times region \times fleet\]\\.
-  Default is zeros.
-
-- srvlen_pop_datalag:
-
-  Integer array specifying lags applied to population-specific survey
-  length-composition data \\\[n\\pop \times region \times fleet\]\\.
-  Default is zeros.
+  The population-specific counterparts, \\\[n\\pop \times region \times
+  fleet\]\\. Default zeros.
 
 - conv_tag_datalag:
 
-  Integer specifying the lag applied to conventional tagging data.
-  Default is `0`.
+  Integer lag applied to the conventional tagging data. Default `0`.
 
 - return_models:
 
-  Logical indicating whether fitted model objects should be returned for
-  each retrospective peel. Default is `FALSE`. When `TRUE`, the function
-  returns a named list with two elements: `retro_df` (the long-format
-  `data.frame` of SSB and recruitment estimates) and `retro_models` (a
-  named list of fitted model objects, indexed as `peel_0`, `peel_1`,
-  ..., `peel_n`). When `FALSE`, only the `data.frame` is returned.
+  Logical, whether the fitted objects are returned per peel. Default
+  `FALSE`. `TRUE` returns a list of `retro_df` and `retro_models`, the
+  latter indexed `peel_0`, `peel_1` and so on.
 
 ## Value
 
-A long-format `data.frame` containing retrospective estimates of
-spawning stock biomass and recruitment. Columns include:
-
-- `Pop`: Population index.
-
-- `Region`: Region index.
-
-- `Year`: Model year.
-
-- `Type`: Quantity reported (`"SSB"` or `"Recruitment"`).
-
-- `peel`: Retrospective peel number (0 = full data, 1 = one-year peel,
-  etc.).
-
-- `value`: Estimated value of the quantity.
-
-- `pdHess`: Logical indicator of positive-definite Hessian (only present
-  when `do_sdrep = TRUE`).
-
-- `max_grad`: Maximum absolute gradient of fixed effects (only present
-  when `do_sdrep = TRUE`).
-
-## Details
-
-Retrospective analyses are commonly used to evaluate the stability of
-model estimates through time and to diagnose potential model
-misspecification.
+A long-format data frame of retrospective spawning stock biomass and
+recruitment, with columns `Pop`, `Region`, `Year`, `Type` (`"SSB"` or
+`"Recruitment"`), `peel` (0 for the full data), and `value`. Under
+`do_sdrep = TRUE` it also holds `pdHess` and `max_grad`, the maximum
+absolute gradient of the fixed effects.
 
 ## See also
 

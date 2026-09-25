@@ -248,6 +248,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 #> srv_q_spec is specified as: est_all for survey fleet 1
 #> srv_q_spec is specified as: est_all for survey fleet 2
 #> srv_q_spec is specified as: est_all for survey fleet 3
+#> Catchability deviations for survey fleet 1 are: none
+#> Catchability deviations for survey fleet 2 are: none
+#> Catchability deviations for survey fleet 3 are: none
 ```
 
 ## Selectivity
@@ -338,6 +341,9 @@ input_list <- Setup_Mod_Srvsel_and_Q(
 #> srv_q_spec is specified as: est_all for survey fleet 1
 #> srv_q_spec is specified as: est_all for survey fleet 2
 #> srv_q_spec is specified as: est_all for survey fleet 3
+#> Catchability deviations for survey fleet 1 are: none
+#> Catchability deviations for survey fleet 2 are: none
+#> Catchability deviations for survey fleet 3 are: none
 ```
 
 ### Selectivity smoothness penalties

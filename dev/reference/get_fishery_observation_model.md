@@ -47,9 +47,7 @@ get_fishery_observation_model(
   t_fish = NULL,
   fish_idx_ages = NULL,
   fish_q_type = NULL,
-  do_fish_q_cov = 0,
-  fish_q_cov = NULL,
-  fish_q_coeff = NULL,
+  ln_fish_q_devs = NULL,
   ObsFishIdx = NULL,
   UseFishIdx = NULL,
   do_caal = 0,
@@ -152,6 +150,11 @@ get_fishery_observation_model(
   age are decayed by `exp(-t_fish * ZAA)` before the index is formed,
   mirroring `t_srv` for surveys. `NULL` (the default) skips the decay
   entirely and reproduces a start-of-season index.
+
+- ln_fish_q_devs:
+
+  Array `[region, year, fish_fleet]` of log-scale annual catchability
+  deviations, or `NULL` for none.
 
 - do_caal:
 

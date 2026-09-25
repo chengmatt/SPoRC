@@ -1,12 +1,12 @@
 # Compute Process Error Log-Likelihood for a Deviation Surface (Positive Scale)
 
-Calculates the positive log-likelihood contribution for a surface of
-deviations indexed by year and by some second dimension, under a variety
-of temporal and spatiotemporal structures. Selectivity deviations use it
-over years and bins, growth's semi-parametric deviations over years and
-ages, and a time-varying growth parameter over years alone (a surface
-one column wide). The argument names still read `bin` for that second
-dimension.
+The positive log-likelihood of a surface of deviations indexed by year
+and a second dim, under iid, random walk, 3D GMRF (marginal or
+conditional variance) or separable 2D AR(1) process error. Selectivity
+deviations use it over years and bins, growth's semi-parametric
+deviations over years and ages, and a time-varying growth parameter over
+years alone, a surface one column wide; the argument names read `bin`
+for that second dim throughout. The caller negates the result.
 
 ## Usage
 
@@ -26,48 +26,29 @@ Get_PE_loglik(
 
 - PE_model:
 
-  Integer specifying the process error structure:
-
-  - 1 = IID: deviations drawn independently as \\N(0, \sigma^2)\\.
-
-  - 2 = Random walk: deviations follow a first-order random walk
-    initialized with a diffuse prior (\\\sigma = 5\\) at `y = 1`.
-
-  - 3 = 3D GMRF with marginal variance parameterization.
-
-  - 4 = 3D GMRF with conditional variance parameterization.
-
-  - 5 = Separable 2D AR(1) across bins and years.
+  Integer process error structure: `1` iid, `2` random walk with a
+  diffuse prior at `y = 1`, `3` and `4` the 3D GMRF on the marginal or
+  conditional variance, `5` the separable 2D AR(1) over bins and years.
 
 - PE_pars:
 
-  Array of process error parameters dimensioned
-  `[1, par_index, sex, 1]`. The `par_index` slot meaning depends on
-  `PE_model`:
-
-  - Models 1-2: `[1,1,s,1]` = log standard deviation (\\\log \sigma\\)
-    for sex `s`, indexed by bin/age.
-
-  - Models 3-4: `[1,1,s,1]` = unconstrained partial correlation by
-    age/bin; `[1,2,s,1]` = unconstrained partial correlation by year;
-    `[1,3,s,1]` = unconstrained partial correlation by cohort;
-    `[1,4,s,1]` = log variance.
-
-  - Model 5: `[1,1,s,1]` = unconstrained bin correlation (transformed
-    via \\2/(1+e^{-2x})-1\\); `[1,2,s,1]` = unconstrained year
-    correlation; `[1,4,s,1]` = log standard deviation.
+  Array of process error parameters `[1, par_index, sex, 1]`, whose
+  `par_index` slots depend on `PE_model`. Models 1 and 2 hold a log
+  standard deviation in slot 1, indexed by bin. Models 3 and 4 hold the
+  unconstrained partial correlations by bin, year and cohort in slots 1
+  to 3 and a log variance in slot 4. Model 5 holds the unconstrained bin
+  and year correlations in slots 1 and 2 and a log standard deviation in
+  slot 4.
 
 - ln_devs:
 
-  Array of log-scale selectivity deviations dimensioned
-  `[1, year, bin, sex, 1]`.
+  Array of log-scale deviations `[1, year, bin, sex, 1]`.
 
 - map_sel_devs:
 
-  Integer array dimensioned `[fleet, year, bin, sex]` mapping deviations
-  to unique estimated parameters. Shared deviations hold the same
-  integer value; `NA` entries are treated as fixed and excluded from
-  likelihood evaluation.
+  Integer array `[fleet, year, bin, sex]` mapping the deviations to
+  estimated parameters. Shared deviations hold the same integer, and
+  `NA` entries are fixed and left out of the likelihood.
 
 - map_sel_devs_full:
 
@@ -77,42 +58,20 @@ Get_PE_loglik(
   parameter appearing in each of their slices, and this function runs
   one unit at a time, so its contribution is divided by the number
   holding it. Without the split, a series shared over `n` units is
-  penalized `n` times, an implicit \\\sigma / \sqrt{n}\\. A deviation
-  that is not shared appears once, divides by one, and is unaffected.
+  penalized `n` times, an implicit \\\sigma / \sqrt{n}\\.
 
 - min_sel_devs_shared_bins:
 
-  Integer vector. Indices of the reference (minimum) bin within each
-  shared deviation group, used to subset the bin dimension when
-  evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin
-  sharing is specified, defaults to `1:n_bins` (i.e., all bins are
-  included).
+  Integer vector of the reference bin within each shared deviation
+  group, used to subset the bin dim under process error models 3 to 5.
+  Defaults to `1:n_bins` when no bin sharing is set.
 
 - rw_init_sigma:
 
   Standard deviation given to the first year of a random walk. A number
   (5 by default) leaves that year effectively unconstrained; `NA` starts
-  the walk at zero under its own sigma instead.
+  the walk at zero under its own sigma.
 
 ## Value
 
-Numeric scalar: the positive log-likelihood contribution from
-selectivity process error. Negated externally to form the negative
-log-likelihood.
-
-## Details
-
-The function supports:
-
-- IID process error
-
-- Random walk process error
-
-- 3D Gaussian Markov Random Field (GMRF) models (marginal or conditional
-  variance)
-
-- Separable 2D AR(1) models
-
-**Note:** The returned value is on the *positive* log-likelihood scale.
-It must be negated to obtain a negative log-likelihood contribution,
-which is handled outside this function.
+Numeric scalar, the positive log-likelihood, negated by the caller.

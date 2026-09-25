@@ -1,12 +1,11 @@
 # Population projection (numbers-at-age dynamics)
 
-Advances numbers-at-age forward through all modeled years and seasons:
-inserts recruitment (timing controlled by `rec_lag`), applies movement,
-computes SSB/biomass quantities via `compute_biom_y`, and applies
-mortality/ageing. Called once from the "Population Projection" section
-of `SPoRC_rtmb.R`. `ZAA` (total mortality at age) must already be
-computed before calling this, since it is treated as an input here
-rather than derived from `NAA`.
+Advances numbers at age through every modeled year and season: inserts
+recruitment at the timing `rec_lag` sets, applies movement, computes the
+biomass quantities through `compute_biom_y`, and applies mortality and
+ageing. `ZAA` is an input here, not derived from `NAA`, so it must
+already be computed. Called once from the population projection section
+of `SPoRC_rtmb.R`.
 
 ## Usage
 
@@ -83,9 +82,9 @@ get_population_projection(
 
 - rec_lag:
 
-  Integer. Recruitment timing: `0` inserts recruitment within the
-  spawning-season biomass computation; non-zero inserts recruitment once
-  per year ahead of the seasonal loop.
+  Integer. `0` inserts recruitment inside the spawning-season biomass
+  computation; non-zero inserts it once a year ahead of the seasonal
+  loop.
 
 - rec_model, rec_dd, R0, rec_region_prop, rec_seas_prop, h_trans,
   natal_region, t_spawn, spawn_seas, seasdur, init_F:
@@ -96,29 +95,23 @@ get_population_projection(
 - R0_yr:
 
   Matrix `[n_pop x n_yrs]` of R0 by year when R0 has time blocks, or
-  `NULL` to use the single `R0` in every year. Only the recruitment
-  computed each year reads it; everything that needs one value still
-  uses `R0`.
+  `NULL` for the single `R0`. Only the recruitment computed each year
+  reads it; everything needing one value still uses `R0`.
 
 - ln_RecDevs:
 
-  Array `[pop, region, year]` of log recruitment deviations; applied
+  Array `[pop, region, year]` of log recruitment deviations, applied
   multiplicatively to deterministic recruitment for
   `y <= n_est_rec_devs`.
 
 - sexratio:
 
-  Array `[pop, region, year, sex]` of recruitment sex ratio.
+  Array `[pop, region, year, sex]` of the recruitment sex ratio.
 
-- WAA, MatAA:
+- WAA, MatAA, natmort:
 
-  Arrays `[pop, region, year, season, age, sex]` of weight-at-age and
-  maturity-at-age.
-
-- natmort:
-
-  Array `[pop, region, year, season, age, sex]` of natural mortality at
-  age.
+  Arrays `[pop, region, year, season, age, sex]` of weight at age,
+  maturity at age and natural mortality.
 
 - Movement:
 
@@ -131,18 +124,17 @@ get_population_projection(
 
 - sgl_seas_spawning_movement:
 
-  Array `[pop, region_from, region_to, year, age, sex]` of
-  single-season-spawning movement rates.
+  Array `[pop, region_from, region_to, year, age, sex]` of single-season
+  spawning movement.
 
 - do_recruits_move:
 
-  Integer (0/1) switch for whether age-1 recruits are subject to
-  movement.
+  Integer (0/1) for whether age-1 recruits move.
 
 - fish_sel, ret_sel:
 
-  Arrays `[pop, region, year, season, age, sex, fish_fleet]` of
-  total/retained fishery selectivity.
+  Arrays `[pop, region, year, season, age, sex, fish_fleet]` of total
+  and retained fishery selectivity.
 
 - dmr:
 
@@ -151,22 +143,18 @@ get_population_projection(
 - ZAA:
 
   Array `[pop, region, year, season, age, sex]` of total mortality at
-  age (precomputed).
+  age, precomputed.
 
-- NAA, NAA0:
+- NAA, NAA0, NAA_bef, NAA_aft:
 
-  Arrays `[pop, region, year+1, season, age, sex]`, output containers
-  for fished/unfished numbers at age.
-
-- NAA_bef, NAA_aft:
-
-  Arrays `[pop, region, year+1, season, age, sex]`, output containers
-  for numbers at age immediately before/after movement.
+  Arrays `[pop, region, year+1, season, age, sex]`, the output
+  containers for the fished and unfished numbers at age and for the
+  numbers immediately before and after movement.
 
 - Rec:
 
-  Array `[pop, region, year]`, output container for total recruitment
-  before seasonal apportionment.
+  Array `[pop, region, year]`, the output container for total
+  recruitment before seasonal apportionment.
 
 - SSB, Total_Biom, Dynamic_SSB0:
 
@@ -174,20 +162,17 @@ get_population_projection(
 
 - eff_SSB:
 
-  Array `[pop, year]`, output container for effective
+  Array `[pop, year]`, the output container for effective
   (natal-homing-adjusted) SSB.
 
 - SR_ref_yr:
 
-  Integer year index supplying the biological inputs, weight at age,
-  maturity, natural mortality and movement, to unfished spawning biomass
-  per recruit, and so to `S0` and the scale of the stock-recruit curve.
-  Default `1`, the first model year, which is what the function used to
-  hardcode. Set to `n_yrs` to condition the curve on terminal weight at
-  age, which is what several ADMB assessments do; with time-varying
-  weight at age the two differ and the whole curve shifts with them. It
-  is a year INDEX, not a calendar year, so callers that truncate the
-  year dimension (retrospectives) must clamp it.
+  Integer year index supplying the biological inputs (weight at age,
+  maturity, natural mortality and movement) to unfished spawning biomass
+  per recruit, and so to `S0` and the curve's scale. Default `1`. Set it
+  to `n_yrs` to condition the curve on terminal weight at age, as
+  several ADMB assessments do. It is an index, not a calendar year, so a
+  caller that truncates the year dim must clamp it.
 
 - growth_mortality_year_fn:
 
@@ -196,17 +181,15 @@ get_population_projection(
   year, array `[pop, region, age, sex]`, and the state kept from the
   previous year. It returns a list with `state`, advanced to the next
   call and returned to the caller, and `ZAA_y`, `WAA_y` and `MatAA_y`,
-  the year's slices of total mortality, weight and maturity at age,
-  which replace those handed in for that year. Passing the state in and
-  out keeps the per-year step a function of its arguments.
+  which replace that year's slices. Passing the state in and out keeps
+  the per-year step a function of its arguments.
 
 - growth_mortality_state:
 
   Initial state for `growth_mortality_year_fn`, passed through the year
-  loop and returned as `growth_mortality_state`. Ignored when
-  `growth_mortality_year_fn` is `NULL`. This is how cohort growth, whose
-  plus group blends by numbers, is evaluated inside the year loop.
-  `NULL` (the default) uses the arrays as given.
+  loop and returned. `NULL` (default) uses the arrays as given. This is
+  how cohort growth, whose plus group blends by numbers, is evaluated
+  inside the year loop.
 
 - n_est_naa_re:
 
@@ -228,18 +211,15 @@ get_population_projection(
 
 ## Value
 
-List with elements `NAA`, `NAA0`, `NAA_bef`, `NAA_aft`, `Rec`, `SSB`,
-`Total_Biom`, `Dynamic_SSB0`, `eff_SSB`, `Aggregated_SSB` (array
-`[year]`, SSB summed across pop/region), `Dynamic_Aggregated_SSB0`
-(array `[year]`, likewise for `Dynamic_SSB0`), and `NAA_int` (array
-`[pop, region, year, season, age, sex]`). `NAA_int` holds the
-season-integrated abundance needed by the spatial Baranov catch equation
-and is populated only when `move_timing = 2`; it is all zeros otherwise.
+List with `NAA`, `NAA0`, `NAA_bef`, `NAA_aft`, `Rec`, `SSB`,
+`Total_Biom`, `Dynamic_SSB0`, `eff_SSB`, `Aggregated_SSB` and
+`Dynamic_Aggregated_SSB0` (arrays `[year]`, summed across population and
+region), and `NAA_int` `[pop, region, year, season, age, sex]`, the
+season-integrated abundance the spatial Baranov equation needs,
+populated only under `move_timing = 2` and all zeros otherwise.
 
 ## Details
 
-All array arguments matching an output name (`NAA`, `NAA0`, `NAA_bef`,
-`NAA_aft`, `Rec`, `SSB`, `Total_Biom`, `Dynamic_SSB0`, `eff_SSB`) are
-passed in already dimensioned (typically all-zero, aside from any
-initial-year values already inserted upstream) and returned fully
-populated over `1:n_yrs`.
+Every array argument matching an output name is passed in already
+dimensioned, usually all zero aside from any initial-year values
+inserted upstream, and comes back filled over `1:n_yrs`.

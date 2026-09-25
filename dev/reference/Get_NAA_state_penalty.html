@@ -76,6 +76,7 @@ before the state overwrote <code>NAA</code>.</p>
 <span>  <span class="va">naa_re_seas</span>,</span>
 <span>  NAA_re <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  NAA_pe_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  map_ln_NAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  NAA_re_region <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  NAA_region_corr_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  NAA_re_pop <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -133,6 +134,11 @@ marginal variance respectively.</p></dd>
 <dd><p>Array <code>[pop, region, 3, sex]</code> of correlation
 parameters on the unconstrained scale, read as age, year and cohort. Unused
 under <code>NAA_re = 1</code>.</p></dd>
+
+
+<dt id="arg-map-ln-naa">map_ln_NAA<a class="anchor" aria-label="anchor" href="#arg-map-ln-naa"></a></dt>
+<dd><p>Mirror of <code>map$ln_NAA</code>, <code>NA</code> where a cell is
+estimated but left out of this penalty. <code>NULL</code> penalizes every cell.</p></dd>
 
 
 <dt id="arg-naa-re-region">NAA_re_region<a class="anchor" aria-label="anchor" href="#arg-naa-re-region"></a></dt>

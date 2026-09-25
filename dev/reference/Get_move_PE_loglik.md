@@ -3,15 +3,17 @@
 Calculates the positive log-likelihood contribution for movement process
 error deviations under multiple IID structural assumptions. Deviations
 are penalized as \\N(0, \sigma^2)\\ where \\\sigma\\ is drawn from
-`PE_pars` according to the selected model structure. Only
-origin-destination pairs that are adjacent (non-zero in
-`adjacency_collapsed`) contribute to the likelihood.
+`PE_pars` according to the selected model structure. Under unstructured
+movement, only origin-destination pairs that are adjacent (non-zero in
+`adjacency_collapsed`) contribute to the likelihood; under CTMC movement
+the deviations sit on each region's preference, and every region the map
+keeps contributes.
 
 ## Usage
 
 ``` r
 Get_move_PE_loglik(
-  PE_model,
+  cont_vary_movement,
   PE_pars,
   move_devs,
   map_move_devs,
@@ -23,45 +25,29 @@ Get_move_PE_loglik(
 
 ## Arguments
 
-- PE_model:
+- cont_vary_movement:
 
-  Integer specifying the movement process error structure. All models
-  are IID; they differ in which dimensions share a common standard
-  deviation. Models 1-5 are single-population (fix `pop = 1`); models
-  6-10 estimate separate parameters per population:
-
-  - **1**: IID across years (single \\\sigma\\ per origin region)
-
-  - **2**: IID across ages (single \\\sigma\\ per origin region and age)
-
-  - **3**: IID across years and ages
-
-  - **4**: IID across years, ages, and sexes
-
-  - **5**: IID across years, seasons, ages, and sexes
-
-  - **6**: IID across populations and years
-
-  - **7**: IID across populations and ages
-
-  - **8**: IID across populations, years, and ages
-
-  - **9**: IID across populations, years, ages, and sexes
-
-  - **10**: IID across populations, years, seasons, ages, and sexes
+  Character string specifying the movement process error structure,
+  `"iid_"` followed by the dims the deviations vary over, any of p
+  (population), y (year), seas (season), a (age), s (sex): `"iid_y"` is
+  one \\\sigma\\ per origin region, `"iid_p_y_seas_a_s"` one per
+  population, origin region, season, age and sex. A dim left out shares
+  one deviation, and one \\\sigma\\, across it.
 
 - PE_pars:
 
   Array of movement process error parameters (log standard deviations)
   dimensioned `[pop, from_region, seas, age, sex]`. Exponentiated
   internally to obtain \\\sigma\\. Which dimensions are active depends
-  on `PE_model`; unused dimensions should be fixed at a constant (e.g.,
-  index 1) via the parameter map.
+  on `cont_vary_movement`; unused dimensions should be fixed at a
+  constant (e.g., index 1) via the parameter map.
 
 - move_devs:
 
   Movement deviation array dimensioned
-  `[pop, from_region, to_region, year, seas, age, sex]`.
+  `[pop, from_region, to_region, year, seas, age, sex]`. Under CTMC
+  movement a deviation sits on a region's preference rather than on a
+  pair, so `from_region` is that region and `to_region` has length one.
 
 - map_move_devs:
 
@@ -79,10 +65,10 @@ Get_move_PE_loglik(
 
 - adjacency_collapsed:
 
-  Square `[n_regions x n_regions]` matrix of allowable movement
-  connections among regions, excluding self-retention (diagonal entries
-  should be 0). Origin-destination pairs with a value of 0 are skipped
-  and contribute nothing to the likelihood.
+  `[n_regions x (n_regions - 1)]` matrix of allowable movement
+  connections among regions, with self-retention collapsed out.
+  Origin-destination pairs with a value of 0 are skipped and contribute
+  nothing to the likelihood. Read only when `move_type == 0`.
 
 - move_type:
 
@@ -92,8 +78,9 @@ Get_move_PE_loglik(
 
   - **1** = CTMC-based movement
 
-  Currently used for dispatch context; likelihood computation is
-  identical across movement types within this function.
+  Decides whether `adjacency_collapsed` is read: an unstructured
+  deviation belongs to a region pair, a CTMC deviation to a single
+  region.
 
 ## Value
 

@@ -1,10 +1,8 @@
 # Map natural mortality parameters to a block structure
 
-Constructs the `M_blocks` index array and the `ln_M` factor map used by
-the TMB/RTMB objective function to share or fix natural mortality
-parameters across population, region, year, season, age, and sex
-dimensions. Each unique combination of blocks is assigned a sequential
-integer ID; all cells within a block share the same `ln_M` parameter.
+Builds the `M_blocks` index array and the `ln_M` factor map. Each
+combination of blocks takes a sequential integer, and every cell in a
+block shares one `ln_M`.
 
 ## Usage
 
@@ -25,67 +23,47 @@ do_natmort_mapping(
 
 - input_list:
 
-  Named list containing `$data`, `$par`, and `$map` sublists, as
-  constructed by upstream setup functions.
+  Named list with `$data`, `$par` and `$map`.
 
 - M_spec:
 
-  Character string controlling whether `ln_M` is estimated or fixed. One
-  of:
-
-  `"est_ln_M"`
-
-  :   Freely estimate `ln_M` across all defined blocks.
-
-  `"fix"`
-
-  :   Fix all `ln_M` parameters by mapping them to `NA`.
+  `"est_ln_M"` estimates `ln_M` across the blocks, `"fix"` maps every
+  parameter to `NA`.
 
 - M_popblk_spec_vals:
 
-  List of integer vectors assigning population indices to blocks, e.g.,
-  `list(1, 2)` for two population-specific blocks or `list(1:2)` for a
-  single shared block.
+  List of integer vectors assigning population indices to blocks, e.g.
+  `list(1, 2)` or `list(1:2)`.
 
 - M_regionblk_spec_vals:
 
-  List of integer vectors assigning region indices to blocks, e.g.,
-  `list(1:3, 4:5)` for two region blocks.
+  List of integer vectors assigning region indices to blocks, e.g.
+  `list(1:3, 4:5)`.
 
 - M_yearblk_spec_vals:
 
-  List of integer vectors assigning year indices to blocks, e.g.,
-  `list(1:10, 11:30)` for two time periods.
+  List of integer vectors assigning year indices to blocks, e.g.
+  `list(1:10, 11:30)`.
 
 - M_seasblk_spec_vals:
 
-  List of integer vectors assigning season indices to blocks, e.g.,
-  `list(1, 2)` for two season-specific rates.
+  List of integer vectors assigning season indices to blocks, e.g.
+  `list(1, 2)`.
 
 - M_ageblk_spec_vals:
 
-  List of integer vectors assigning age indices to blocks, e.g.,
-  `list(1:5, 6:10)` for two age groups.
+  List of integer vectors assigning age indices to blocks, e.g.
+  `list(1:5, 6:10)`.
 
 - M_sexblk_spec_vals:
 
-  List of integer vectors assigning sex indices to blocks. Use
-  `list(1:2)` for a sex-invariant block or `list(1, 2)` for sex-specific
-  mortality.
+  List of integer vectors assigning sex indices to blocks, `list(1:2)`
+  for one shared rate or `list(1, 2)` for sex-specific mortality.
 
 ## Value
 
-The input `input_list` with two fields updated:
-
-- `$map$ln_M`:
-
-  Factor vector of length equal to `prod(dim(par$ln_M))`. Each element
-  is an integer estimation index when `M_spec = "est_ln_M"`, or `NA`
-  when `M_spec = "fix"`.
-
-- `$data$M_blocks`:
-
-  Integer array of dimensions
-  `[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]` mapping
-  each population-region-year-season-age-sex cell to its corresponding
-  `ln_M` parameter index.
+`input_list` with `$map$ln_M`, a factor vector of length
+`prod(dim(par$ln_M))` holding estimation indices or `NA`, and
+`$data$M_blocks`, an integer array
+`[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]` giving each
+cell's `ln_M` index.

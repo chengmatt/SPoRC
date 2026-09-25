@@ -382,7 +382,7 @@ age-specific movement preferences.</p>
 <div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># constant diffusion, spline-based age preference</span></span>
 <span><span class="va">diffusion_formula</span>  <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">1</span></span>
-<span><span class="va">preference_formula</span> <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/splines2/man/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">preference_formula</span> <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Setup movement</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
@@ -412,8 +412,8 @@ fashion. This specification results in the estimation of
 <code class="sourceCode R"><span><span class="co"># spline-based age and year preference, sex-specific</span></span>
 <span><span class="va">diffusion_formula</span>  <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">1</span></span>
 <span><span class="va">preference_formula</span> <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span></span>
-<span>  <span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/splines2/man/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
-<span>  <span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/splines2/man/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">years</span>, df <span class="op">=</span> <span class="fl">6</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
+<span>  <span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
+<span>  <span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">years</span>, df <span class="op">=</span> <span class="fl">6</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">:</span></span>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">sexes</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Setup movement</span></span>
@@ -441,10 +441,10 @@ movement estimates. In the example below, movement is modeled using a
 CTMC framework, although process error can similarly be applied to an
 unstructured Markov model. Movement is specified to vary smoothly across
 ages using a spline function, while allowing independent and identically
-distributed (<code>iid</code>) deviations across years for each source
-region (<code>cont_vary_movement = 'iid_y'</code>). Process error
-variance parameters are specified to be shared across populations,
-source regions, seasons, ages, and sexes
+distributed (<code>iid</code>) deviations across years for each region
+(<code>cont_vary_movement = 'iid_y'</code>). Process error variance
+parameters are specified to be shared across populations, regions,
+seasons, ages, and sexes
 (<code>Movement_cont_pe_pars_spec = 'est_shared'</code>). Additional
 options for <code>cont_vary_movement</code> and
 <code>Movement_cont_pe_pars_spec</code> are described in the function
@@ -455,13 +455,32 @@ likelihood terms, depending on how
 <code>Movement_cont_pe_pars_spec</code> is defined. When
 <code>Movement_cont_pe_pars_spec = 'fix'</code>, users can supply a
 fixed variance value directly through
-<code>input_list$par$move_pe_pars</code>. Note that deviations are only
-estimated for destination regions (i.e., <code>n_regions - 1</code>), as
-no deviation term is defined for the source region.</p>
+<code>input_list$par$move_pe_pars</code>.</p>
+<p>Where a deviation sits depends on the movement type. Under an
+unstructured Markov model it is an offset on the logit of one
+origin-destination pair, so deviations are estimated for destination
+regions only (i.e., <code>n_regions - 1</code>), the source region
+having no deviation term. Under CTMC movement a deviation is added to a
+region’s own habitat preference, so there is one per region and
+<code>move_devs</code> holds a single destination level. That one
+deviation raises the rate into its region from every neighbor and lowers
+the rate out of it, which is a year in which the region was simply a
+better place to be, rather than a year in which one boundary happened to
+be busier. Only differences in preference reach the generator, so adding
+the same deviation to every region leaves movement unchanged and the
+level of the field is held down by the process error penalty alone.</p>
+<p>Note that because preference enters the generator additively, a
+deviation larger than an edge’s diffusion rate can potentially drive
+that rate negative, and with <code>ctmc_diffusion_bounds = "none"</code>
+the resulting movement fractions end up departing from the
+<code>[0, 1]</code> while still summing to one (so abundance is not
+conserved). It is recommended to use a bounded form
+(<code>"upwind"</code> or <code>"softplus"</code>) whenever CTMC
+deviations are estimated.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># spline age preference with iid year deviations</span></span>
 <span><span class="va">diffusion_formula</span>  <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">1</span></span>
-<span><span class="va">preference_formula</span> <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/splines2/man/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">preference_formula</span> <span class="op">&lt;-</span> <span class="op">~</span><span class="fl">0</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">regions</span><span class="op">)</span><span class="op">:</span><span class="fu">splines2</span><span class="fu">::</span><span class="fu"><a href="https://wwenjie.org/splines2/reference/bSpline.html" class="external-link">bSpline</a></span><span class="op">(</span><span class="va">ages</span>, df <span class="op">=</span> <span class="fl">4</span>, intercept <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># Setup movement</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>

@@ -1,12 +1,9 @@
 # Set up biological parameter inputs for closed-loop simulation
 
-Populates a simulation list (created by
-[`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md))
-with biological arrays needed to run the operating model: natural
-mortality, weight-at-age (spawning, fishery, and survey),
-maturity-at-age, ageing error, and an optional size-age transition
-matrix for length compositions. All arrays must conform to the dimension
-structure stored in `sim_list`.
+Sets natural mortality, weight-at-age, maturity-at-age, ageing error and
+an optional size-age transition for the operating model. All arrays are
+validated against the dimensions in `sim_list`. Call after
+[`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md).
 
 ## Usage
 
@@ -31,121 +28,77 @@ Setup_Sim_Biologicals(
 
 - sim_list:
 
-  Simulation list object returned by
-  [`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
-  which defines the dimension sizes used to validate all input arrays.
+  Simulation list returned by
+  [`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md).
 
 - natmort_input:
 
   Natural mortality array, either
-  `[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]` or
-  `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]`.
-  Values are instantaneous rates per year in both forms, and the
-  mortality applied within a season is the rate times `seasdur`.
+  `[n_pop × n_regions × n_yrs × n_ages × n_sexes × n_sims]` or with
+  `n_seas` between years and ages. Values are rates per year in both
+  forms, so mortality within a season is the rate times `seasdur`.
 
 - WAA_input:
 
-  Spawning weight-at-age array with dimensions
+  Spawning weight-at-age array
   `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]`.
-  Used to compute spawning stock biomass.
 
 - WAA_fish_input:
 
-  Fishery weight-at-age array with dimensions
-  `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims]`.
-  Used to compute fishery biomass and catch in weight.
+  Fishery weight-at-age array, `WAA_input` with an `n_fish_fleets` dim
+  before the simulations.
 
 - WAA_srv_input:
 
-  Survey weight-at-age array with dimensions
-  `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]`.
-  Used to compute survey biomass indices.
+  Survey weight-at-age array, `WAA_input` with an `n_srv_fleets` dim
+  before the simulations.
 
 - MatAA_input:
 
-  Maturity-at-age array with dimensions
-  `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]`.
-  Values should be proportions in \\\[0, 1\]\\. When `rec_lag = 0`
-  (age-0 recruitment, set via
-  [`Setup_Sim_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)),
-  maturity at the recruit age (the first age class) must be exactly `0`
-  for all populations, regions, years, seasons, and sexes. An error is
-  raised otherwise.
+  Maturity-at-age array dimensioned like `WAA_input`, in \\\[0, 1\]\\.
+  Maturity at the first age must be exactly `0` under `rec_lag = 0`, set
+  through
+  [`Setup_Sim_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md).
 
 - AgeingError_input:
 
-  Ageing error (age-length transition) array with dimensions
-  `[n_yrs × n_model_ages × n_obs_ages × n_sims]`, where each
-  `[n_model_ages × n_obs_ages]` slice is a row-stochastic matrix mapping
-  true modeled ages to observed age bins. If `NULL` (default), an
-  identity matrix is constructed for each year and simulation, which
-  assumes that modeled and observed age bins are identical in number and
-  alignment. **If observed age bins are a subset of modeled ages**
-  (e.g., observed ages 2-10 vs. modeled ages 1-10), the default identity
-  matrix will cause a dimensional mismatch. In that case, supply a
-  shifted identity matrix such as
-  `diag(1, n_model_ages)[, obs_age_index]` to correctly drop or collapse
-  model ages into observed bins.
+  Ageing error array `[n_yrs × n_model_ages × n_obs_ages × n_sims]`,
+  each slice row-stochastic. `NULL` (default) builds an identity matrix
+  per year and simulation. For observed bins that are a subset of the
+  model ages, supply a shifted identity such as
+  `diag(1, n_model_ages)[, obs_age_index]` instead.
 
 - AgeingError_fish_input:
 
-  Optional fleet-specific ageing error for the simulated fishery fleets,
-  dimensioned `[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]`,
-  or `NULL` (default) to give every fishery fleet `AgeingError_input`.
+  Optional per-fleet ageing error for the fishery fleets,
+  `[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]`, or `NULL`
+  (default) to read `AgeingError_input`.
 
 - AgeingError_srv_input:
 
-  Optional fleet-specific ageing error for the simulated survey fleets,
-  dimensioned `[n_yrs × n_ages × n_obs_ages × n_srv_fleets × n_sims]`,
-  or `NULL` (default) to give every survey fleet `AgeingError_input`.
+  As `AgeingError_fish_input` with `n_srv_fleets` in place of
+  `n_fish_fleets`.
 
 - SizeAgeTrans_input:
 
-  Size-age transition matrix array with dimensions
-  `[n_pop × n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]`.
-  Each slice maps age classes to length bins and should be
-  column-stochastic (columns sum to 1). Only required when fitting
-  length compositions; defaults to `NULL`.
+  Size-age transition array
+  `[n_pop × n_regions × n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]`,
+  column-stochastic over ages. Only needed when fitting length
+  compositions. Default `NULL`.
 
 - SizeAgeTrans_fish_input, SizeAgeTrans_srv_input:
 
-  Optional size-age transition arrays per fleet,
+  Optional per-fleet size-age arrays
   `[n_pop x n_regions x n_yrs x n_seas x n_lens x n_ages x n_sexes x n_fleets x n_sims]`,
-  each read at that fleet's own timing. When supplied they are used for
-  that fleet type in place of `SizeAgeTrans_input`; the self-test passes
-  the fitted model's own keys here when growth was estimated.
+  each read at that fleet's own timing and used in place of
+  `SizeAgeTrans_input`. The self-test passes the fitted model's own keys
+  here when growth was estimated.
 
 ## Value
 
-The input `sim_list` with the following fields added or updated:
-
-- `$natmort`:
-
-  Natural mortality array.
-
-- `$WAA`:
-
-  Spawning weight-at-age array.
-
-- `$WAA_fish`:
-
-  Fishery weight-at-age array.
-
-- `$WAA_srv`:
-
-  Survey weight-at-age array.
-
-- `$MatAA`:
-
-  Maturity-at-age array.
-
-- `$AgeingError`:
-
-  Ageing error array (identity matrix if not supplied).
-
-- `$SizeAgeTrans`:
-
-  Size-age transition array (only added if supplied).
+`sim_list` with `$natmort`, `$WAA`, `$WAA_fish`, `$WAA_srv`, `$MatAA`,
+`$AgeingError` (an identity matrix when none was supplied) and, when
+supplied, `$SizeAgeTrans`.
 
 ## See also
 

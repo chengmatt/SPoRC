@@ -1,12 +1,10 @@
 # Map recruitment regional apportionment parameters
 
-Internal helper called by
-[`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
-to construct the TMB/RTMB factor map for `rec_region_prop_pars`, the
-logit-scale parameters controlling the proportion of recruits assigned
-to each region. The array has dimensions `[n_pop x (n_regions - 1)]`,
-using a sum-to-one soft-max parameterization with one reference region
-omitted.
+Builds the factor map for `rec_region_prop_pars`
+`[n_pop x (n_regions - 1)]`, the logit-scale share of recruits per
+region, under a softmax with one reference region omitted. Both the
+parameter and its map are `NULL` when `n_regions = 1`. Called by
+[`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md).
 
 ## Usage
 
@@ -18,39 +16,19 @@ do_rec_region_prop_mapping(input_list, rec_region_prop_spec)
 
 - input_list:
 
-  Named list with `$data`, `$par`, and `$map` sublists. Requires
-  `$data$n_pop`, `$data$n_regions`, and `$data$natal_region` to be set
-  by upstream setup functions.
+  Named list with `$data`, `$par` and `$map`. Requires `$data$n_pop`,
+  `$data$n_regions` and `$data$natal_region`.
 
 - rec_region_prop_spec:
 
-  Character string specifying the dispersal structure, or `NULL` to
-  estimate all regional proportions freely. Options when non-`NULL`:
-
-  `"no_dispersal"`
-
-  :   Recruits are assigned entirely to their natal region. Starting
-      values for `rec_region_prop_pars` are overwritten with
-      large-magnitude values (`-20` for non-natal regions, `+20` for the
-      natal region when `natal_region > 1`), and all elements are mapped
-      to `NA` so the parameters are not estimated. Requires
-      `n_regions > 1`; a single population apportioned over several
-      regions is allowed.
-
-  `NULL`
-
-  :   All `rec_region_prop_pars` are estimated independently. Only
-      available when `n_regions > 1`.
+  Dispersal structure. `"no_dispersal"` assigns recruits entirely to
+  their natal region, overwriting the starting values with `-20` for
+  non-natal regions and `+20` for the natal region when
+  `natal_region > 1`, and mapping every element to `NA`. `NULL`
+  estimates all independently. Both require `n_regions > 1`.
 
 ## Value
 
-The input `input_list` with `$map$rec_region_prop_pars` set to a factor
-vector of length `n_pop * (n_regions - 1)`, or `NULL` when
-`n_regions = 1`. Under `"no_dispersal"`, `$par$rec_region_prop_pars`
-starting values are also overwritten.
-
-## Details
-
-When `n_regions = 1`, the parameter is structurally irrelevant and both
-`$par$rec_region_prop_pars` and `$map$rec_region_prop_pars` are set to
-`NULL`.
+`input_list` with `$map$rec_region_prop_pars` set to a factor vector of
+length `n_pop * (n_regions - 1)`, or `NULL` when `n_regions = 1`.
+Starting values are overwritten under `"no_dispersal"`.

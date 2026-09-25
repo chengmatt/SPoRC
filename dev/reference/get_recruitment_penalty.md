@@ -83,8 +83,8 @@ get_recruitment_penalty(
 
 - sigmaR_switch:
 
-  Integer year index at which the deviations switch from the early to
-  the late sigma regime.
+  Integer year index the deviations switch from the early to the late
+  sigma at.
 
 - ln_RecDevs:
 
@@ -92,7 +92,7 @@ get_recruitment_penalty(
 
 - sigmaR2_early, sigmaR2_late:
 
-  Arrays `[pop, region]` of squared sigma used for the bias-corrected
+  Arrays `[pop, region]` of squared sigma, used for the bias-corrected
   mean.
 
 - do_rec_bias_ramp:
@@ -101,9 +101,9 @@ get_recruitment_penalty(
 
 - map_ln_RecDevs:
 
-  Array `[pop, region, year]` mirroring `map$ln_RecDevs`. Cells that are
-  `NA` are fixed rather than estimated and go unpenalized; cells sharing
-  a level split one penalty. `NULL` penalizes every cell in full.
+  Array `[pop, region, year]` mirroring `map$ln_RecDevs`. `NA` cells are
+  fixed rather than estimated and go unpenalized, and cells sharing a
+  level split one penalty. `NULL` penalizes every cell in full.
 
 - RecDevs_model:
 
@@ -113,13 +113,13 @@ get_recruitment_penalty(
 - RecDevs_rho:
 
   Array `[pop, region]` of unconstrained AR1 correlations, transformed
-  to \\(-1, 1)\\ here. Read when `RecDevs_model = 3`.
+  to \\(-1, 1)\\ here. Read under `RecDevs_model = 3`.
 
 - RecDevs_rw_init_sigma:
 
   Standard deviation given to year one of a random walk. Default `5`,
-  which leaves the level of the series effectively free. `NA` starts the
-  walk at zero under its own sigma. Read when `RecDevs_model = 2`.
+  which leaves the level of the series effectively free; `NA` starts the
+  walk at zero under its own sigma. Read under `RecDevs_model = 2`.
 
 - RecDevs_pen_center:
 

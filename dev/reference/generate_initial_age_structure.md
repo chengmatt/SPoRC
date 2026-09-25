@@ -1,11 +1,10 @@
 # Initialize age structure for a simulation replicate
 
-Simulates or reads in initial age deviations and calls
+Draws or reads the initial age deviations and calls
 [`Get_Init_NAA`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Init_NAA.md)
-to compute both the fished and unfished equilibrium numbers-at-age for
-year 1 and season 1. Results are written directly into the simulation
-environment arrays `NAA` and `NAA0`. This function is called once per
-simulation replicate at `y = 1` by
+for the fished and unfished equilibrium numbers at age in year 1, season
+1, writing them into `NAA` and `NAA0`. Called once per replicate at
+`y = 1` by
 [`run_annual_cycle`](https://chengmatt.github.io/SPoRC/dev/reference/run_annual_cycle.md).
 
 ## Usage
@@ -18,7 +17,7 @@ generate_initial_age_structure(y, sim, sim_env)
 
 - y:
 
-  Integer. Year index (must be `1`).
+  Integer. Year index, which must be `1`.
 
 - sim:
 
@@ -26,25 +25,21 @@ generate_initial_age_structure(y, sim, sim_env)
 
 - sim_env:
 
-  Simulation environment created by
-  [`Setup_sim_env`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md).
-  Modified in place: `$ln_InitDevs`, `$NAA[,,1,1,,,sim]`, and
-  `$NAA0[,,1,1,,,sim]` are updated.
+  Simulation environment from
+  [`Setup_sim_env`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md),
+  modified in place: `$ln_InitDevs`, `$NAA[,,1,1,,,sim]` and
+  `$NAA0[,,1,1,,,sim]`.
 
 ## Value
 
-`invisible(NULL)`. All modifications are made by reference within
-`sim_env`.
+`invisible(NULL)`; everything is modified by reference within `sim_env`.
 
 ## Details
 
-Initial deviation sharing follows the same logic as the estimation
-model: deviations are drawn once per population when `n_pop > 1`, or
-once per region when `n_pop = 1` and `init_dd = 0` (local
-density-dependence). Across sexes the draw follows `InitDevs_sex_spec`:
-`"est_shared_s"` (the default) draws one curve and gives it to every
-sex, `"est_all"` draws each sex its own. If `ln_InitDevs_input` exists
-in the simulation environment, those values are used directly rather
-than simulating new draws. Populations with `R0 = 0` receive zero
-deviations. The equilibrium solver uses `init_iter = n_ages × 5`
-iterations.
+Sharing follows the estimation model: one draw per population when
+`n_pop > 1`, or one per region when `n_pop = 1` and `init_dd = 0`.
+Across sexes it follows `InitDevs_sex_spec`, with `"est_shared_s"`
+(default) drawing one curve for every sex and `"est_all"` drawing each
+its own. An `ln_InitDevs_input` in the environment is used directly
+rather than drawn. Populations with `R0 = 0` get zero deviations, and
+the equilibrium solver runs `n_ages × 5` iterations.

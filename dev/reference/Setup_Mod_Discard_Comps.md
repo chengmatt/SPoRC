@@ -1,6 +1,8 @@
 # Set up discard age and length composition inputs
 
-Set up discard age and length composition inputs
+Sets the observed discard compositions, pooled and population-specific,
+with their use flags, input sample sizes, likelihood and composition
+types, and the overdispersion and correlation parameters and maps.
 
 ## Usage
 
@@ -39,168 +41,112 @@ Setup_Mod_Discard_Comps(
 
 - input_list:
 
-  Main model input list containing data, parameters, and mapping
-  structures.
+  Main model input list with data, parameter and mapping lists.
 
 - ObsFishAgeComps_discard:
 
-  5D array of observed discard age compositions:
-  `[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`
+  Observed discard age compositions
+  `[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`.
 
 - UseFishAgeComps_discard:
 
-  Matrix indicating whether discard age comps are used:
-  `[n_regions, n_years, n_seas, n_fish_fleets]`
+  Use flags `[n_regions, n_years, n_seas, n_fish_fleets]`.
 
 - ISS_FishAgeComps_discard:
 
-  Optional ISS (effective sample size) array for discard age comps:
-  `[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`
+  Optional input sample sizes
+  `[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`.
 
 - ObsFishLenComps_discard:
 
-  6D array of observed discard length compositions:
-  `[n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets]`
+  Observed discard length compositions
+  `[n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets]`.
 
 - UseFishLenComps_discard:
 
-  Matrix indicating whether discard length comps are used:
-  `[n_regions, n_years, n_seas, n_fish_fleets]`
+  Use flags `[n_regions, n_years, n_seas, n_fish_fleets]`.
 
 - ISS_FishLenComps_discard:
 
-  Optional ISS array for discard length comps:
-  `[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`
+  Optional input sample sizes
+  `[n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`.
 
-- FishAgeComps_discard_LikeType:
+- FishAgeComps_discard_LikeType, FishLenComps_discard_LikeType:
 
-  Character vector (length n_fish_fleets) specifying likelihood type:
-  one of
-  `c("none","Multinomial","Dirichlet-Multinomial","iid-Logistic-Normal","1d-Logistic-Normal","2d-Logistic-Normal","iid-Logistic-Normal-miss0","1d-Logistic-Normal-miss0","2d-Logistic-Normal-miss0")`
+  Character vectors `[n_fish_fleets]`, one of `"none"`, `"Multinomial"`,
+  `"Dirichlet-Multinomial"`, the three logistic-normal forms or their
+  three `-miss0` counterparts.
 
-- FishLenComps_discard_LikeType:
+- FishAgeComps_discard_Type, FishLenComps_discard_Type:
 
-  Character vector (length n_fish_fleets) specifying likelihood type
-
-- FishAgeComps_discard_Type:
-
-  List/encoded character strings defining composition structure by year
-  and fleet.
-
-- FishLenComps_discard_Type:
-
-  List/encoded character strings defining composition structure by year
-  and fleet.
+  Encoded composition structure by year and fleet.
 
 - ObsFishAgeComps_discard_pop:
 
-  6D array of population-specific discard age comps:
-  `[n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`
+  Observed population-specific discard age compositions
+  `[n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`.
 
 - UseFishAgeComps_discard_pop:
 
-  5D array indicating use of population age comps:
-  `[n_pop, n_regions, n_years, n_seas, n_fish_fleets]`
+  Use flags `[n_pop, n_regions, n_years, n_seas, n_fish_fleets]`.
 
 - ISS_FishAgeComps_discard_pop:
 
-  Optional ISS array for population discard age comps:
-  `[n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`
+  Optional input sample sizes
+  `[n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`.
 
 - ObsFishLenComps_discard_pop:
 
-  7D array of population-specific discard length comps:
-  `[n_pop, n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets]`
+  Observed population-specific discard length compositions
+  `[n_pop, n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets]`.
 
 - UseFishLenComps_discard_pop:
 
-  5D array indicating use of population length comps:
-  `[n_pop, n_regions, n_years, n_seas, n_fish_fleets]`
+  Use flags `[n_pop, n_regions, n_years, n_seas, n_fish_fleets]`.
 
 - ISS_FishLenComps_discard_pop:
 
-  Optional ISS array for population length comps:
-  `[n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`
+  Optional input sample sizes
+  `[n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets]`.
 
-- FishAgeComps_discard_pop_LikeType:
+- FishAgeComps_discard_pop_LikeType, FishLenComps_discard_pop_LikeType:
 
-  Character vector (length n_fish_fleets) for population age likelihood
-  types.
+  Character vectors `[n_fish_fleets]` for the population-specific
+  discard compositions.
 
-- FishLenComps_discard_pop_LikeType:
+- FishAgeComps_discard_pop_Type, FishLenComps_discard_pop_Type:
 
-  Character vector (length n_fish_fleets) for population length
-  likelihood types.
-
-- FishAgeComps_discard_pop_Type:
-
-  Encoded structure definitions for population age comps by year/fleet.
-
-- FishLenComps_discard_pop_Type:
-
-  Encoded structure definitions for population length comps by
-  year/fleet.
+  Encoded composition structure for the population-specific discard
+  compositions.
 
 - FishAgeComps_discard_bins:
 
-  Which age bins each fishery fleet's discard age composition is fitted
-  over. Supply a list with one element per fleet, each a vector of bin
-  indices or `NULL` for all bins, or an `[n_obs_ages x n_fish_fleets]`
-  array of 0/1 weights. Indices refer to observed bins, that is after
-  any ageing error. Excluded bins are left out of the likelihood rather
-  than being forced to be explained. Default `NULL`, which fits all bins
-  for all fleets.
+  Which age bins each fleet's discard age composition is fitted over,
+  either a list with one element per fleet (bin indices, or `NULL` for
+  all) or an `[n_obs_ages x n_fish_fleets]` array of 0/1 weights.
+  Indices are observed bins, after any ageing error. Excluded bins leave
+  the likelihood rather than being forced to be explained. Default
+  `NULL`, all bins.
 
-- FishLenComps_discard_bins:
+- FishLenComps_discard_bins, FishAgeComps_discard_pop_bins,
+  FishLenComps_discard_pop_bins:
 
-  Which length bins each fishery fleet's discard length composition is
-  fitted over, in the same format.
-
-- FishAgeComps_discard_pop_bins:
-
-  Which age bins each fishery fleet's population-specific discard age
-  composition is fitted over, in the same format.
-
-- FishLenComps_discard_pop_bins:
-
-  Which length bins each fishery fleet's population-specific discard
-  length composition is fitted over, in the same format.
+  Which bins the discard length, population-specific discard age and
+  population-specific discard length compositions are fitted over, in
+  the same format as `FishAgeComps_discard_bins`.
 
 - ...:
 
-  Optional starting values for parameters (e.g., dispersion,
-  correlation)
+  Optional starting values for the overdispersion and correlation
+  parameters.
 
 ## Value
 
-The input `input_list` updated with:
-
-- discard age and length composition data structures
-
-- ISS (effective sample size) arrays (computed or supplied)
-
-- likelihood type mappings (integer-coded)
-
-- composition type matrices by year and fleet
-
-- population-specific discard composition structures
-
-- parameter arrays for dispersion and correlation
-
-- mapping configurations for estimation
-
-## Details
-
-All composition arrays follow consistent indexing conventions:
-
-- Age compositions: `[region, year, season, sex, fleet]`
-
-- Length compositions: `[region, year, season, length, sex, fleet]`
-
-- Population age comps: `[pop, region, year, season, sex, fleet]`
-
-- Population length comps:
-  `[pop, region, year, season, length, sex, fleet]`
+`input_list` with the discard composition arrays, the computed or
+supplied input sample sizes, the integer-coded likelihood types, the
+composition type matrices by year and fleet, the population-specific
+discard structures, and the overdispersion and correlation parameters
+with their maps.
 
 ## See also
 

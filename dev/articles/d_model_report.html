@@ -474,9 +474,12 @@ transition matrix).</p>
 </tr>
 <tr class="even">
 <td><code>move_devs</code></td>
-<td>Movement deviations by population, region pair, year, season, age,
-and sex (including projection years)</td>
-<td><code>n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code></td>
+<td>Movement deviations by population, region pair (region alone under
+CTMC movement, where they sit on preference), year, season, age, and sex
+(including projection years)</td>
+<td>
+<code>n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code>,
+the third dim <code>1</code> under CTMC movement</td>
 </tr>
 <tr class="odd">
 <td><code>ln_fishsel_devs</code></td>
@@ -489,6 +492,44 @@ and fleet</td>
 <td>Log-scale survey selectivity deviations by region, year, bin, sex,
 and fleet</td>
 <td><code>n_regions × (n_years + n_proj_yrs_devs) × n_bins × n_sexes × n_srv_fleets</code></td>
+</tr>
+<tr class="odd">
+<td><code>dsem_x_grid</code></td>
+<td>The DSEM grid <code>[year, series]</code> with the linked deviations
+written in, when a DSEM is set up</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>dsem_margvar_grid</code></td>
+<td>Marginal of each DSEM cell <code>[year, series]</code>
+</td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
+<h2 id="dynamic-structural-equation-model">Dynamic Structural Equation Model<a class="anchor" aria-label="anchor" href="#dynamic-structural-equation-model"></a>
+</h2>
+<table class="table">
+<colgroup>
+<col width="15%">
+<col width="84%">
+</colgroup>
+<thead><tr class="header">
+<th>Name</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>dsem_nLL</code></td>
+<td>Negative log density of the DSEM grid, the linked deviations’
+density and the covariates’ process</td>
+</tr>
+<tr class="even">
+<td><code>dsem_obs_nLL</code></td>
+<td>Negative log likelihood of the covariate observations under their
+families (every <code>dsem_family</code> but <code>"fixed"</code>)</td>
 </tr>
 </tbody>
 </table>

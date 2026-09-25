@@ -1,18 +1,9 @@
 # Set up the conventional tagging module for model fitting
 
-Configures all conventional tagging components of the estimation model:
-tag release cohort definitions, recapture data, tag recapture
-likelihood, mixing period, release platform, dimension-attendance and
-pooling structure, reporting rate time blocks and sharing, and optional
-reporting rate priors. Delegates parameter mapping to four internal
-helpers
-([`do_conv_init_tag_mort_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_init_tag_mort_mapping.md),
-[`do_conv_tag_shed_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_tag_shed_mapping.md),
-[`do_conv_tag_theta_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_tag_theta_mapping.md),
-[`do_conv_tag_fish_reporting_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_tag_fish_reporting_pars_mapping.md)).
-Must be called after
-[`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
-and before model compilation.
+Sets the release cohorts and recapture data, the tag likelihood, the
+mixing period, the release platform, which dims are attended and how
+they pool, and the reporting rate blocks, sharing and priors. Call after
+[`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md).
 
 ## Usage
 
@@ -46,193 +37,136 @@ Setup_Mod_Tagging(
 
 - input_list:
 
-  Named list with `$data`, `$par`, `$map`, and `$verbose` sublists, as
-  returned by upstream setup functions.
+  Named list with `$data`, `$par`, `$map` and `$verbose`.
 
 - use_conv_fish_tagging:
 
-  Integer vector `[n_fish_fleets]` (0/1). Whether conventional tagging
-  data are included in the likelihood for each fishery fleet. Default:
-  `0` for all fleets.
+  Integer vector `[n_fish_fleets]` (0/1) of whether each fleet's tagging
+  data enter the likelihood. Default `0`.
 
 - conv_tag_release_indicator:
 
-  Integer matrix `[n_conv_tag_cohorts × 3]` giving the release region,
-  year, and season for each tag cohort. Required when any
+  Integer matrix `[n_conv_tag_cohorts × 3]` of the release region, year
+  and season of each cohort. Required when any
   `use_conv_fish_tagging = 1`. Default `NULL`.
 
 - conv_tag_max_liberty:
 
-  Integer. Maximum years-at-liberty included in the likelihood;
-  recaptures beyond this horizon are ignored. Must be \\\> 0\\ when
-  tagging is active. Default `0`.
+  Integer maximum years at liberty in the likelihood; later recaptures
+  are ignored. Must exceed `0` when tagging is active. Default `0`.
 
 - conv_tagged_fish:
 
-  Array `[n_conv_tag_cohorts × n_pop × n_ages × n_sexes]` of tagged fish
-  released per cohort. Required when any `use_conv_fish_tagging = 1`.
-  Dimensions not attended in `conv_fish_tag_attr` should have all fish
-  placed into index 1 with remaining indices set to zero. Default `NA`.
+  Array `[n_conv_tag_cohorts × n_pop × n_ages × n_sexes]` of fish
+  released per cohort. Dims not attended in `conv_fish_tag_attr` take
+  all their fish in index 1 and zero elsewhere. Default `NA`.
 
 - obs_conv_tag_fish_recap:
 
-  Array of observed recaptures
+  Observed recaptures
   `[conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_pop × n_regions × n_ages × n_sexes × n_fish_fleets]`.
-  Required when any `use_conv_fish_tagging = 1`. Default `NA`.
+  Default `NA`.
 
 - conv_fish_tag_like:
 
-  Character string specifying the tag recapture likelihood. One of
-  `"Poisson"`, `"NegBin"`, `"Multinomial_Release"`,
-  `"Multinomial_Recapture"`, `"Dirichlet-Multinomial_Release"`,
-  `"Dirichlet-Multinomial_Recapture"`. Converted to integer codes
-  (`0`-`5`) before storage. Default `NA`.
+  Tag recapture likelihood: `"Poisson"`, `"NegBin"`,
+  `"Multinomial_Release"`, `"Multinomial_Recapture"`,
+  `"Dirichlet-Multinomial_Release"` or
+  `"Dirichlet-Multinomial_Recapture"`, stored as `0`-`5`. Default `NA`.
 
 - conv_tag_mixing_period:
 
-  Integer. Minimum number of years (or seasons in seasonal models)
-  post-release before recaptures contribute to the likelihood. Allows
-  time for tags to mix within the population before informing movement
-  estimation. Default `1`.
+  Integer years, or seasons in a seasonal model, after release before
+  recaptures contribute to the likelihood, allowing the tags to mix
+  before they inform movement. Default `1`.
 
 - conv_tag_t_tagging:
 
-  Numeric scalar or vector of length `n_conv_tag_cohorts` (one value per
-  row of `conv_tag_release_indicator`), each in \\\[0, 1\]\\. Fraction
-  of the season remaining at tag release for that release event. `1` =
-  start of season; `0.5` = mid-season; `0` = end of season. A scalar is
-  recycled to all release events. Default `1`.
+  Numeric scalar or vector `[n_conv_tag_cohorts]` in \\\[0, 1\]\\, the
+  fraction of the season remaining at release: `1` the start of the
+  season, `0.5` mid-season, `0` the end. A scalar is recycled. Default
+  `1`.
 
 - use_conv_tag_fishrep_prior:
 
-  Integer (0/1). Whether priors are applied to reporting rate
-  parameters. Default `0`.
+  Integer (0/1) for priors on the reporting rates. Default `0`.
 
 - conv_tag_fishrep_prior:
 
-  Data frame of prior specifications for reporting rates. Required
-  columns: `region`, `block`, `fleet`, `mu`, `sd`, `type`. Ignored when
-  `use_conv_tag_fishrep_prior = 0`. Default `NULL`.
+  Data frame with columns `region`, `block`, `fleet`, `mu`, `sd` and
+  `type`. Default `NULL`.
 
-- conv_tag_pop_pool:
+- conv_tag_pop_pool, conv_tag_age_pool, conv_tag_sex_pool:
 
-  List of integer vectors defining population pooling groups for the
-  tagging likelihood. When `"p"` is not attended in
-  `conv_fish_tag_attr`, use `list(1:n_pop)`. If the pooling structure is
-  inconsistent with `conv_fish_tag_attr`, a warning is issued and the
-  structure is automatically overridden to a single group. Default:
-  `as.list(1:n_pop)` (population-specific).
+  Lists of integer vectors defining the population, age and sex pooling
+  groups for the tagging likelihood. Use `list(1:n)` for a dim that is
+  not attended; custom groupings such as `list(1:5, 6:10)` work for an
+  attended one. A structure inconsistent with `conv_fish_tag_attr` warns
+  and is overridden to a single group. Default one group per level.
 
-- conv_tag_age_pool:
+- init_conv_tag_mort_spec, conv_tag_shed_spec:
 
-  List of integer vectors defining age pooling groups. When `"a"` is not
-  attended, use `list(1:n_ages)`. Custom groupings (e.g.,
-  `list(1:5, 6:10)`) are supported when `"a"` is attended. Default:
-  `as.list(1:n_ages)`.
-
-- conv_tag_sex_pool:
-
-  List of integer vectors defining sex pooling groups. When `"s"` is not
-  attended, use `list(1:n_sexes)`. Default: `as.list(1:n_sexes)`.
-
-- init_conv_tag_mort_spec:
-
-  Character string (`"fix"`, `"est_shared"`, or `"est_all"`). Whether
-  initial tag-induced mortality is fixed at its starting values,
-  estimated as a single value shared across all release events, or
-  estimated independently for every release event. See
-  [`do_conv_init_tag_mort_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_init_tag_mort_mapping.md).
-  Default `NULL`.
-
-- conv_tag_shed_spec:
-
-  Character string (`"fix"`, `"est_shared"`, or `"est_all"`). Whether
-  chronic tag shedding is fixed at its starting values, estimated as a
-  single value shared across all release events, or estimated
-  independently for every release event. See
+  `"fix"`, `"est_shared"` or `"est_all"`: whether the initial
+  tag-induced mortality and the chronic shedding rate are held at their
+  starting values, estimated as one value across release events, or
+  estimated per event. See
+  [`do_conv_init_tag_mort_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_init_tag_mort_mapping.md)
+  and
   [`do_conv_tag_shed_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_tag_shed_mapping.md).
   Default `NULL`.
 
 - conv_tagrep_spec:
 
-  Character string. Sharing structure for reporting rate parameters
-  `conv_tag_fish_reporting_pars`
-  `[n_regions × max_tagrep_blocks × n_fish_fleets]`. See
-  [`do_conv_tag_fish_reporting_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_tag_fish_reporting_pars_mapping.md)
-  for full option descriptions. Default `"fix"` (a warning is issued if
-  this was unintentional).
+  Sharing structure for `conv_tag_fish_reporting_pars`
+  `[n_regions × max_tagrep_blocks × n_fish_fleets]`. Default `"fix"`,
+  which warns. See
+  [`do_conv_tag_fish_reporting_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_conv_tag_fish_reporting_pars_mapping.md).
 
 - conv_tag_fish_reporting_blocks:
 
-  Character vector defining time blocks for fishery tag reporting rates.
-  Each element follows one of:
-
-  `"none_Region_r_Fleet_f"`
-
-  :   Constant reporting rate for region `r` and fleet `f`.
-
-  `"Block_b_Year_y1-y2_Region_r_Fleet_f"`
-
-  :   Block `b` applies to years `y1`-`y2`. Use `"terminal"` for the end
-      year to extend to the final model year.
-
-  Parsed into an array `[n_regions × n_years × n_fish_fleets]`. If
-  `NULL`, a single constant block is used for all region-fleet
-  combinations. Default `NULL`.
+  Character vector of time blocks for the fishery reporting rates, each
+  `"none_Region_r_Fleet_f"` or `"Block_b_Year_y1-y2_Region_r_Fleet_f"`
+  with `"terminal"` allowed as the end year. Parsed into an
+  `[n_regions × n_years × n_fish_fleets]` array. `NULL` (default) gives
+  one constant block per region and fleet.
 
 - conv_fish_tag_attr:
 
-  Character scalar or character vector of length `n_conv_tag_cohorts`
-  specifying which biological dimensions are attended (resolved) at
-  release for each tag release event. A scalar is recycled to every
-  event; a vector lets different events resolve different dimensions
-  (e.g. event 1 known at `"p_a_s"`, event 2 only at `"p_a"`). Each
-  element is built from any combination of `"p"` (population), `"a"`
-  (age), and `"s"` (sex), joined by underscores. Region and fleet are
-  always retained. When a dimension is not attended for an event, all
-  released fish for that event are placed into index 1 of that dimension
-  and apportioned to full resolution via the release platform. A
-  dimension may only be split into more than one pooling group if it is
-  attended in *every* release event; otherwise the corresponding pooling
-  argument is overridden to a single group (with a warning). Valid
-  values: `"p_a_s"`, `"a_s"`, `"p_a"`, `"p_s"`, `"a"`, `"s"`, `"p"`,
-  `"none"`. Default `"p_a_s"`.
+  Character scalar or vector `[n_conv_tag_cohorts]` naming which dims
+  are resolved at release, built from `"p"` (population), `"a"` (age)
+  and `"s"` (sex) joined by underscores: `"p_a_s"` (default), `"a_s"`,
+  `"p_a"`, `"p_s"`, `"a"`, `"s"`, `"p"` or `"none"`. A scalar is
+  recycled; a vector lets events resolve different dims. Region and
+  fleet are always kept. An unattended dim takes all that event's fish
+  in index 1 and is apportioned to full resolution by the release
+  platform. A dim may only be split into several pooling groups if it is
+  attended in every release event; otherwise its pooling argument is
+  overridden to a single group with a warning.
 
 - conv_tag_release_platform:
 
-  Character matrix `[n_conv_tag_cohorts × 2]` specifying the release
-  platform and fleet index per cohort. Same format as in
-  [`Setup_Sim_Tagging`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md).
-  Default `NULL`.
+  Character matrix `[n_conv_tag_cohorts × 2]` of the release platform
+  and fleet index per cohort, in the format
+  [`Setup_Sim_Tagging`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md)
+  uses. Default `NULL`.
 
 - ...:
 
-  Optional named starting values for parameters. Supported names and
-  defaults: `ln_init_conv_tag_mort` (scalar or length
-  `n_conv_tag_cohorts` vector; a scalar is recycled to all release
-  events; default `-1000`), `ln_conv_tag_shed` (scalar or length
-  `n_conv_tag_cohorts` vector; a scalar is recycled to all release
-  events; default `-1000`), `ln_conv_fish_tag_theta` (scalar, default
-  `0`), `conv_tag_fish_reporting_pars`
-  `[n_regions × max_tagrep_blocks × n_fish_fleets]`, default `0` (logit
-  scale ≈ 0.5 reporting probability; inactive fleet slots overwritten to
-  `-1000`).
+  Optional starting values: `ln_init_conv_tag_mort` and
+  `ln_conv_tag_shed`, each a scalar or a vector `[n_conv_tag_cohorts]`
+  with a scalar recycled, default `-1000`; `ln_conv_fish_tag_theta`,
+  default `0`; and `conv_tag_fish_reporting_pars`
+  `[n_regions × max_tagrep_blocks × n_fish_fleets]`, default `0` on the
+  logit scale, about a 0.5 reporting probability, with inactive fleet
+  slots overwritten to `-1000`.
 
 ## Value
 
-The input `input_list` with tagging configuration stored in `$data`
-(`use_conv_fish_tagging`, `conv_tag_release_indicator`,
-`n_conv_tag_cohorts`, `conv_tag_max_liberty`, `conv_tagged_fish`,
-`obs_conv_tag_fish_recap`, `conv_fish_tag_like`,
-`conv_tag_mixing_period`, `conv_tag_t_tagging`,
-`use_conv_tag_fishrep_prior`, `conv_tag_fishrep_prior`,
-`conv_tag_pop_pool`, `conv_tag_age_pool`, `conv_tag_sex_pool`,
-`conv_tag_fish_reporting_blocks`, `conv_fish_tag_attr`,
-`conv_tag_release_platform`); starting values in `$par` for
-`ln_init_conv_tag_mort` and `ln_conv_tag_shed` (each length
-`n_conv_tag_cohorts`, or length 1 when tagging is inactive),
-`ln_conv_fish_tag_theta`, and `conv_tag_fish_reporting_pars`; and factor
-maps in `$map` for all four parameter arrays.
+`input_list` with the tagging configuration in `$data`, the starting
+values in `$par` for `ln_init_conv_tag_mort` and `ln_conv_tag_shed`
+(each of length `n_conv_tag_cohorts`, or 1 when tagging is inactive),
+`ln_conv_fish_tag_theta` and `conv_tag_fish_reporting_pars`, and the
+factor maps for all four in `$map`.
 
 ## See also
 

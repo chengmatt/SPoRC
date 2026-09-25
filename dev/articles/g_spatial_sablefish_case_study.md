@@ -64,7 +64,7 @@ input_list <- Setup_Mod_Dim(
 ## Spatial population dynamics
 
 The seasonal transition of the population is where the spatial model
-departs from the panmictic one. Numbers at age are advanced across a
+differs from the panmictic one. Numbers at age are advanced across a
 season by an operator that combines movement with survival. With a
 single season, movement applied first (`move_timing = 0`, the default),
 that operator is

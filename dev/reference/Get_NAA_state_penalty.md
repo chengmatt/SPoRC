@@ -17,6 +17,7 @@ Get_NAA_state_penalty(
   naa_re_seas,
   NAA_re = 1,
   NAA_pe_pars = NULL,
+  map_ln_NAA = NULL,
   NAA_re_region = 0,
   NAA_region_corr_pars = NULL,
   NAA_re_pop = 0,
@@ -72,6 +73,11 @@ Get_NAA_state_penalty(
   Array `[pop, region, 3, sex]` of correlation parameters on the
   unconstrained scale, read as age, year and cohort. Unused under
   `NAA_re = 1`.
+
+- map_ln_NAA:
+
+  Mirror of `map$ln_NAA`, `NA` where a cell is estimated but left out of
+  this penalty. `NULL` penalizes every cell.
 
 - NAA_re_region:
 

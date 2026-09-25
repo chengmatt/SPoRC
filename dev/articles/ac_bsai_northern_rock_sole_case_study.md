@@ -44,7 +44,7 @@ structures may sit, which is not the same statement as how variable each
 one is: initial numbers at age hold the exploitation the stock had
 already seen before $`y_{1}`$ as well as year-class strength, and with
 sex specific selectivity and mortality the two sexes need not have
-departed from equilibrium by the same amount.
+deviated from equilibrium by the same amount.
 
 Fishery selectivity is logistic in both parameters of both sexes,
 varying annually, with the male curve scaled by a constant:

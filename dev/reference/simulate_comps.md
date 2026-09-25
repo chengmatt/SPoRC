@@ -1,13 +1,10 @@
 # Simulate age or length compositions
 
-Draws observed composition samples (by age or length) for a single
-region-year-fleet-season-simulation cell, supporting multinomial,
-Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
-optionally applied post-draw. Three composition aggregation structures
-are handled: sex-split (`comp_type = 1`), joint across sexes
-(`comp_type = 2`), and spatially aggregated across all regions
-(`comp_type = 0`). The flag value `comp_type = 999` or `comp_like = 999`
-causes the function to return `Obs` unchanged.
+Draws composition samples for one region, year, fleet, season and
+replicate under the multinomial, Dirichlet-multinomial or
+logistic-normal likelihoods, applying ageing error after the draw for
+age compositions. A `comp_type` or `comp_like` of `999` returns `Obs`
+unchanged.
 
 ## Usage
 
@@ -46,161 +43,108 @@ simulate_comps(
 
 ## Arguments
 
-- r:
+- r, y, f, seas, sim:
 
-  Integer. Region index.
-
-- y:
-
-  Integer. Year index.
-
-- f:
-
-  Integer. Fleet index (fishery or survey).
-
-- seas:
-
-  Integer. Season index.
-
-- sim:
-
-  Integer. Simulation replicate index.
+  Region, year, fleet, season and replicate indices.
 
 - Exp:
 
-  Array. Expected compositions
+  Expected compositions
   `[n_pop × n_regions × n_yrs × n_seas × n_cat × n_sexes × n_fleets × n_sims]`.
 
 - ISS:
 
-  Array. Integer sample sizes
-  `[n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]`. Used
+  Integer sample sizes
+  `[n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]`, read
   when `pop_specific = FALSE`.
 
 - AgeingError:
 
-  Array. Ageing error transition matrices
-  `[n_yrs × n_obs_ages × n_ages × n_sims]`. Ignored when
-  `age_or_len = 1`.
+  Ageing error matrices `[n_yrs × n_obs_ages × n_ages × n_sims]`,
+  ignored when `age_or_len = 1`.
 
 - comp_like:
 
-  Integer vector `[n_fleets]`. Likelihood type per fleet: `0` =
-  multinomial, `1` = Dirichlet-multinomial, `2`-`4` = logistic-normal
-  variants.
+  Integer vector `[n_fleets]` of the likelihood per fleet: `0`
+  multinomial, `1` Dirichlet-multinomial, `2`-`4` the logistic-normal
+  forms.
 
 - ln_theta:
 
-  Array. Log overdispersion or log-variance parameters
-  `[n_regions × n_sexes × n_fleets]`. Used when `pop_specific = FALSE`.
+  Log overdispersion `[n_regions × n_sexes × n_fleets]`, read when
+  `pop_specific = FALSE`.
 
 - corr_pars:
 
-  Array. Correlation parameters for logistic-normal likelihoods
+  Logistic-normal correlation parameters
   `[n_regions × n_sexes × n_fleets × n_corr_pars]`.
 
-- ln_theta_agg:
+- ln_theta_agg, corr_pars_agg:
 
-  Numeric vector `[n_fleets]`. Log overdispersion for spatially
-  aggregated compositions (`comp_type = 0`).
-
-- corr_pars_agg:
-
-  Numeric vector `[n_fleets]`. Correlation parameter(s) for aggregated
-  logistic-normal compositions.
+  Their counterparts for the aggregated compositions, each of length
+  `n_fleets`.
 
 - comp_type:
 
-  Integer matrix `[n_yrs × n_fleets]`. Aggregation structure: `0` =
-  aggregated across regions, `1` = split by sex, `2` = joint across
-  sexes, `999` = no data (skip).
+  Integer matrix `[n_yrs × n_fleets]`: `0` aggregated across regions,
+  `1` split by sex, `2` joint across sexes, `999` no data.
 
-- n_sexes:
+- n_sexes, n_pop, n_regions, n_cat:
 
-  Integer. Number of sexes.
-
-- n_pop:
-
-  Integer. Number of populations.
-
-- n_regions:
-
-  Integer. Number of regions.
-
-- n_cat:
-
-  Integer. Number of composition categories (ages or lengths).
+  Model dimensions, `n_cat` being the number of ages or lengths.
 
 - Obs:
 
-  Array. Observed compositions container with the same dimensions as
-  `Exp`. Simulated values are written in-place.
+  Observed composition container, dimensioned like `Exp` and written in
+  place.
 
 - pop_specific:
 
-  Logical. If `TRUE`, simulate compositions separately for each
-  population using population-specific inputs.
+  Logical. `TRUE` simulates each population separately from
+  population-specific inputs.
 
 - ISS_pop:
 
-  Array. Population-specific sample sizes
-  `[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]`.
-  Used when `pop_specific = TRUE`.
+  Population-specific sample sizes
+  `[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]`,
+  read when `pop_specific = TRUE`.
 
-- pop_comp_like:
+- pop_comp_like, pop_comp_type:
 
-  Integer vector `[n_fleets]`. Likelihood type per fleet for
-  population-specific compositions.
-
-- pop_comp_type:
-
-  Integer matrix `[n_yrs × n_fleets]`. Aggregation structure for
-  population-specific compositions.
+  The likelihood and aggregation structure for the population-specific
+  compositions, shaped as their aggregate counterparts.
 
 - ln_pop_theta:
 
-  Array. Log overdispersion parameters
-  `[n_pop × n_regions × n_sexes × n_fleets]`.
+  Log overdispersion `[n_pop × n_regions × n_sexes × n_fleets]`.
 
 - pop_corr_pars:
 
-  Array. Correlation parameters for logistic-normal likelihoods
+  Logistic-normal correlation parameters
   `[n_pop × n_regions × n_sexes × n_fleets × n_corr_pars]`.
 
-- ln_pop_theta_agg:
+- ln_pop_theta_agg, pop_corr_pars_agg:
 
-  Numeric array `[n_pop × n_fleets]`. Log overdispersion for
-  population-specific aggregated compositions.
-
-- pop_corr_pars_agg:
-
-  Numeric array `[n_pop × n_fleets]`. Correlation parameter(s) for
-  population-specific aggregated logistic-normal compositions.
+  Their counterparts for the population-specific aggregated
+  compositions, each `[n_pop × n_fleets]`.
 
 - age_or_len:
 
-  Integer. Indicator for composition type: `0` = age compositions (apply
-  ageing error), `1` = length compositions (no ageing error).
+  Integer. `0` for age compositions, which take ageing error, `1` for
+  length compositions, which do not.
 
 ## Value
 
-The `Obs` array with simulated composition draws filled in at the
-appropriate slice. When `pop_specific = FALSE`, values are written to
-`[r, y, seas, , , f, sim]`; when `pop_specific = TRUE`, values are
-written to `[p, r, y, seas, , , f, sim]`. All other slices are
-unchanged.
+`Obs` with the draws filled in at `[r, y, seas, , , f, sim]`, or
+`[p, r, y, seas, , , f, sim]` under `pop_specific = TRUE`. Every other
+slice is unchanged.
 
 ## Details
 
-When `pop_specific = TRUE`, compositions are simulated separately for
-each population, extending all relevant inputs (e.g., sample size,
-dispersion, and correlation parameters) to include a population
-dimension. In this case, aggregation across regions (`comp_type = 0`) is
-performed within population, and results are written to `Obs[p, ...]`.
-
-For joint compositions (`comp_type = 2`), the Kronecker product
-`diag(n_sexes) ⊗ AgeingError` is used to apply ageing error across the
-combined age-sex vector. For aggregated compositions (`comp_type = 0`),
-the draw is only executed when `r == n_regions` (i.e., on the final
-region pass), and uses region- and sex-marginalized expected
-proportions.
+Joint compositions (`comp_type = 2`) apply ageing error across the
+combined age by sex vector through the Kronecker product `diag(n_sexes)`
+and `AgeingError`. Aggregated compositions (`comp_type = 0`) are drawn
+only on the final region pass, from expected proportions marginalized
+over regions and sexes. Under `pop_specific = TRUE` each population is
+drawn separately from its own sample sizes, dispersion and correlations,
+and that aggregation happens within a population.

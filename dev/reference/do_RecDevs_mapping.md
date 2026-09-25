@@ -1,10 +1,11 @@
 # Map annual recruitment deviation parameters
 
-Internal helper called by
-[`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
-to construct the TMB/RTMB factor map for `ln_RecDevs`, the log-scale
-annual recruitment deviations. The `ln_RecDevs` array has dimensions
-`[n_pop x n_regions x n_years]`.
+Builds the factor map for `ln_RecDevs` `[n_pop x n_regions x n_years]`,
+the log-scale annual recruitment deviations. When
+`rec_region_prop_spec = 1` and `n_pop > 1`, non-natal regions get no
+recruitment, so their deviations are fixed to `NA` whatever
+`RecDevs_spec` asks for and the rest are re-numbered. Called by
+[`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md).
 
 ## Usage
 
@@ -16,73 +17,35 @@ do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd, dont_pen_recdev_first = 0)
 
 - input_list:
 
-  Named list with `$data`, `$par`, and `$map` sublists. Requires
-  `$data$rec_region_prop_spec`, `$data$natal_region`, `$data$rec_dd`,
-  and `$data$n_pop` to be set by upstream setup functions.
+  Named list with `$data`, `$par` and `$map`. Requires
+  `$data$rec_region_prop_spec`, `$data$natal_region`, `$data$rec_dd` and
+  `$data$n_pop`.
 
 - RecDevs_spec:
 
-  Character string specifying the sharing structure for `ln_RecDevs`, or
-  `NULL` to estimate all deviations independently across all dimensions.
-  Options when non-`NULL`:
-
-  `"est_shared_r"`
-
-  :   Separate year-specific deviations per population, shared across
-      regions within each population. All regions of a given population
-      follow the same annual deviation time series. Valid under both
-      local and global density dependence.
-
-  `"est_shared_pop_r"`
-
-  :   A single set of year-specific deviations shared across all
-      populations and regions. Each year receives one estimated
-      parameter regardless of how many populations or regions are
-      modeled. Required when `rec_dd = "global"` and `n_regions > 1`.
-
-  `"fix"`
-
-  :   All `ln_RecDevs` parameters fixed at zero (mapped to `NA`).
-      Equivalent to deterministic recruitment with no interannual
-      variability.
-
-  `NULL`
-
-  :   Estimate all deviations independently across populations, regions,
-      and years. Not permitted when `rec_region_prop_spec = 1` and
-      `n_pop > 1`, as non-natal regions have no recruitment.
+  Sharing structure for `ln_RecDevs`. `"est_shared_r"` gives one
+  deviation series per population, shared across its regions.
+  `"est_shared_pop_r"` gives one series across every population and
+  region, required when `rec_dd = "global"` and `n_regions > 1`. `"fix"`
+  holds every deviation at zero. `NULL` estimates all independently,
+  which is not permitted when `rec_region_prop_spec = 1` and
+  `n_pop > 1`.
 
 - rec_dd:
 
-  Recruitment density-dependence structure inherited from
+  Density dependence inherited from
   [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md).
-  `"global"` restricts valid `RecDevs_spec` choices to `"est_shared_r"`
-  or `"est_shared_pop_r"` when `n_regions > 1`.
+  `"global"` restricts `RecDevs_spec` to `"est_shared_r"` or
+  `"est_shared_pop_r"` when `n_regions > 1`.
 
 ## Value
 
-The input `input_list` with `$map$ln_RecDevs` set to a factor vector of
-length `prod(dim(par$ln_RecDevs))`. Active parameters receive sequential
-integer indices; non-natal region slots (when
-`rec_region_prop_spec = 1`) and fixed deviations are `NA`. Starting
-values in `$par$ln_RecDevs` are reset to `0` for any fixed cells.
-
-## Details
-
-Mapping behavior is governed by two interacting considerations:
-
-1.  **Sharing specification** (`RecDevs_spec`): controls whether
-    deviations are shared across regions and/or populations, or
-    estimated independently.
-
-2.  **No-dispersal constraint**: when `rec_region_prop_spec = 1` and
-    `n_pop > 1`, non-natal regions receive no recruitment and their
-    deviations are structurally zero; these are automatically fixed to
-    `NA` regardless of `RecDevs_spec`, and the remaining indices are
-    re-numbered sequentially.
+`input_list` with `$map$ln_RecDevs` set to a factor vector of length
+`prod(dim(par$ln_RecDevs))`. Active parameters take sequential integers;
+non-natal region slots and fixed deviations are `NA`, and their starting
+values are reset to `0`.
 
 ## See also
 
-[`do_InitDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_InitDevs_mapping.md)
-for the analogous initial age-structure deviation mapping, which shares
-the same sharing options and no-dispersal constraint logic.
+[`do_InitDevs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_InitDevs_mapping.md),
+which shares the same options.

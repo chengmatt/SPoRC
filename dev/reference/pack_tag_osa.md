@@ -1,7 +1,7 @@
 # Pack conventional-tag observations for OSA
 
-Packs conventional-tag observations into a flat vector suitable for
-one-step-ahead (OSA) analysis for a single likelihood family.
+Packs the conventional tag observations of one likelihood family into a
+flat vector for one-step-ahead analysis.
 
 ## Usage
 
@@ -36,79 +36,43 @@ pack_tag_osa(
 
 - family:
 
-  Character, either `"count"` or `"comp"`.
+  Character, `"count"` or `"comp"`.
 
 - like_type:
 
   Integer likelihood type code (0-5).
 
-- obs_recap:
+- obs_recap, pred_recap:
 
-  Observed recapture array.
-
-- pred_recap:
-
-  Predicted recapture array (used for scaling).
+  Observed and predicted recapture arrays, the second used for scaling.
 
 - tagged_fish:
 
-  Array of numbers of tagged fish released.
+  Numbers of tagged fish released.
 
 - conv_tag_release_indicator:
 
-  Matrix giving release region, year, season for each cohort.
+  Matrix of the release region, year and season of each cohort.
 
 - conv_tag_max_liberty:
 
   Maximum years at liberty to evaluate.
 
-- n_conv_tag_cohorts:
+- n_conv_tag_cohorts, n_yrs, n_seas, n_regions, n_fish_fleets:
 
-  Number of conventional tag cohorts.
+  Model dimensions.
 
-- n_yrs:
+- n_pop_pool, n_age_pool, n_sex_pool:
 
-  Total number of modeled years.
+  Numbers of pooling groups.
 
-- n_seas:
+- pop_pool, age_pool, sex_pool:
 
-  Number of seasons per year.
-
-- n_regions:
-
-  Number of spatial regions.
-
-- n_fish_fleets:
-
-  Number of fishing fleets.
-
-- n_pop_pool:
-
-  Number of population pooling groups.
-
-- n_age_pool:
-
-  Number of age pooling groups.
-
-- n_sex_pool:
-
-  Number of sex pooling groups.
-
-- pop_pool:
-
-  List of population index pools.
-
-- age_pool:
-
-  List of age index pools.
-
-- sex_pool:
-
-  List of sex index pools.
+  Lists of the index pools themselves.
 
 - use_fish_tagging:
 
-  Vector indicating which fleets use conventional tagging.
+  Vector flagging the fleets with tagging data.
 
 - conv_tag_mixing_period:
 
@@ -120,50 +84,36 @@ pack_tag_osa(
 
 - return_labels:
 
-  Logical; if TRUE, also builds a per-element label data.frame
-  identifying the origin (family, like_type, tag cohort/release
-  region-year-season, recovery year/season, fleet, region, pop/age/sex
-  pool, is_tail, last_in_group) of every entry in `vec`, in the same
-  order. Intended for post-hoc relabeling of
+  Logical; `TRUE` also builds a per-element label data frame giving the
+  family, like_type, cohort release region, year and season, recovery
+  year and season, fleet, region, pools, is_tail and last_in_group of
+  every entry, in the same order, for relabeling
   [`TMB::oneStepPredict()`](https://rdrr.io/pkg/TMB/man/oneStepPredict.html)
-  residuals (see \[get_osa()\]); left `FALSE` (default) inside the model
-  itself to avoid the extra residual tracking cost.
+  residuals afterwards (see \[get_osa()\]). Left `FALSE` (default)
+  inside the model to avoid the extra tracking cost.
 
 ## Value
 
-A list with components:
-
-- `vec`: flat numeric/AD vector of packed observations, or `NULL` if no
-  events.
-
-- `grp_end`: integer vector of end indices for each composition group
-  (empty for `family == "count"`).
-
-- `lengths`: integer vector of per-group lengths.
-
-- `labels`: data.frame with one row per element of `vec` (`NULL` unless
-  `return_labels = TRUE`).
+A list with `vec`, the flat vector of packed observations or `NULL` when
+there are no events; `grp_end`, the end index of each composition group,
+empty under `family == "count"`; `lengths`, the per-group lengths; and
+`labels`, `NULL` unless `return_labels = TRUE`.
 
 ## Details
 
-For `family == "count"`, each valid event contributes one integer
-observation per `[fleet, pop_pool, region, age_pool, sex_pool]` cell
-with `use_fish_tagging[f] == 1`, in `(f, p, r, a, s)` loop order within
-each event, and events in `tag_grid` order. This mirrors
-[`get_conv_tag_likelihoods()`](https://chengmatt.github.io/SPoRC/dev/reference/get_conv_tag_likelihoods.md)'s
-exact accumulation structure: a separate Poisson/NB term is fit per
-pool/age/sex cell and their -log-likelihoods summed, so packing one
-count per `[region, fleet]` pre-summed across pools would evaluate a
-different (non-equivalent) likelihood whenever more than one pool is
-used.
+Under `family == "count"` each valid event contributes one integer per
+`[fleet, pop_pool, region, age_pool, sex_pool]` cell with
+`use_fish_tagging[f] == 1`, in `(f, p, r, a, s)` order within an event
+and events in `tag_grid` order. That mirrors how
+[`get_conv_tag_likelihoods()`](https://chengmatt.github.io/SPoRC/dev/reference/get_conv_tag_likelihoods.md)
+accumulates, a separate Poisson or negative binomial term per cell
+summed afterwards, so packing one count per region and fleet pre-summed
+across pools would evaluate a different likelihood whenever more than
+one pool is used.
 
-For `family == "comp"`, each valid event contributes one composition
-vector:
-
-- release-conditioned (`like_type` 2, 4): recap cells in
-  `(f, p, a, s, r)` loop order plus a non-recapture tail; counts are
-  `round(prop * n_tags_released)`.
-
-- recapture-conditioned (`like_type` 3, 5): recap cells only,
-  conditioned on total recaptures; counts are
-  `round(prop * n_tags_recap)`.
+Under `family == "comp"` each valid event contributes one composition
+vector. The release-conditioned forms (`like_type` 2 and 4) take the
+recapture cells in `(f, p, a, s, r)` order plus a non-recapture tail,
+with counts `round(prop * n_tags_released)`; the recapture-conditioned
+forms (3 and 5) take the recapture cells alone, with counts
+`round(prop * n_tags_recap)`.

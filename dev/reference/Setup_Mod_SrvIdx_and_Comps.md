@@ -1,20 +1,14 @@
 # Set up observed survey indices and composition data
 
-Ingests observed survey index, age composition, and length composition
-data (both pooled and population-specific) into `input_list$data`,
-initializes overdispersion and correlation starting values in
-`input_list$par`, and constructs parameter maps via
+Sets the observed survey indices and compositions, pooled and
+population-specific, with the overdispersion and correlation starting
+values and the maps from
 [`do_comp_theta_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_comp_theta_mapping.md)
 and
-[`do_comp_corr_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_comp_corr_pars_mapping.md)
-(called with `comp_prefix = "SrvAge"`/`"SrvLen"` and
-`fleet_field = "n_srv_fleets"`). When `ISS_SrvAgeComps`,
-`ISS_SrvLenComps`, `ISS_SrvAgeComps_pop`, or `ISS_SrvLenComps_pop` is
-`NULL`, input sample sizes are derived automatically by summing observed
-composition counts across the appropriate dimensions each year. Must be
-called after
-[`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
-and before model compilation.
+[`do_comp_corr_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_comp_corr_pars_mapping.md).
+A `NULL` `ISS_*` argument is summed from the matching observed array
+each year, following that data source's composition type. Call after
+[`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md).
 
 ## Usage
 
@@ -109,8 +103,7 @@ Setup_Mod_SrvIdx_and_Comps(
 
 - input_list:
 
-  Named list with `$data`, `$par`, `$map`, and `$verbose` sublists, as
-  returned by upstream setup functions.
+  Named list with `$data`, `$par`, `$map` and `$verbose`.
 
 - ObsSrvIdx:
 
@@ -119,24 +112,21 @@ Setup_Mod_SrvIdx_and_Comps(
 
 - ObsSrvIdx_SE:
 
-  Lognormal standard errors for `ObsSrvIdx`, same dimensions
-  `[n_regions × n_years × n_seas × n_srv_fleets]`.
+  Lognormal standard errors for `ObsSrvIdx`, same dims.
 
 - UseSrvIdx:
 
-  Binary indicator array
-  `[n_regions × n_years × n_seas × n_srv_fleets]`. `1` = include in
-  likelihood; `0` = exclude.
+  Binary array dimensioned like `ObsSrvIdx`, `1` to include the index in
+  the likelihood.
 
 - ObsSrvIdxAA:
 
-  Observed survey index at age, an array with dimensions
+  Observed survey index at age
   `[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_srv_fleets]`, the
-  ages being the columns of the fleet's ageing error matrix
-  (`AgeingError_srv`, or the shared `AgeingError`), through which the
-  predicted index at each model age is read before it is compared.
-  Supplying this fits the index at age directly, every age its own
-  observation with its own catchability. The sex dim is required
+  ages being the columns of the fleet's ageing error matrix, through
+  which the predicted index at each model age is read before it is
+  compared. Supplying this fits the index at age directly, every age its
+  own observation with its own catchability. The sex dim is required
   whatever the fleet reports: a data source summed over sexes has its
   observation in sex slot one. A fleet uses this or the aggregated
   index, never both.
@@ -149,23 +139,20 @@ Setup_Mod_SrvIdx_and_Comps(
 - ObsSrvIdxAA_SE, ObsSrvIdxAA_pop_SE:
 
   Reported standard errors shaped like their observation array, read
-  only when `SrvIdxAA_sigma_form` asks for them. This is the parity the
-  aggregated index already has: an index disaggregated by age keeps its
-  survey-design errors.
+  only when `SrvIdxAA_sigma_form` asks for them.
 
 - ObsSrvIdxAA_pop, UseSrvIdxAA_pop:
 
-  Population-specific counterparts, with a leading population dimension.
+  Population-specific counterparts, with a leading population dim.
 
 - sigmaSrvIdxAA_key, sigmaSrvIdxAA_pop_key:
 
   Integer arrays `[n_obs_ages, n_sexes, n_srv_fleets]` coupling the
-  index at age observation error, the key matrix convention ICES
-  assessments use. Equal entries share a parameter and `NA` excludes
-  one. The sex dim is required; a key coupling the sexes repeats its
-  entries across them. The age shape of catchability is not set here: an
-  index fit age by age puts it in selectivity through the `"nonparfree"`
-  form, which holds the height of the curve as well as its shape. See
+  index at age observation error, the key matrix ICES assessments use.
+  Equal entries share a parameter and `NA` excludes one. The sex dim is
+  required; a key coupling the sexes repeats its entries across them.
+  The age shape of catchability is not set here: an index fit age by age
+  puts it in selectivity through the `"nonparfree"` form. See
   [`Setup_Mod_Srvsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Srvsel_and_Q.md).
 
 - sigmaSrvIdxAA_spec, sigmaSrvIdxAA_pop_spec:
@@ -191,368 +178,225 @@ Setup_Mod_SrvIdx_and_Comps(
 
 - AgeObsCorr_srv_idx, AgeObsCorr_srv_idx_pop:
 
-  Correlation across ages for the survey index at age, `"iid"`
+  Correlation across ages for the survey index at age: `"iid"`
   (default), `"1dar1"`, `"us"` or `"2dar1"`, one setting for every fleet
   or one per fleet. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
 - rho_srv_idx_spec, rho_srv_idx_pop_spec:
 
-  How the correlation parameters are shared, over region, sex and fleet,
-  using the package's spec strings. `NULL` (the default) gives one per
-  fleet. See
+  How the correlation parameters are shared over region, sex and fleet.
+  `NULL` (default) gives one per fleet. See
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md).
 
-- sigmaSrvIdx_spec:
+- sigmaSrvIdx_spec, sigmaSrvIdx_pop_spec:
 
-  Character string controlling the estimated component of the aggregated
-  survey index observation error, one value per fleet. One of:
+  The estimated component of the aggregated and population-specific
+  survey index observation error, one value per fleet. `"fix"` (default)
+  uses the reported standard errors as they are. `"est_additive"` adds
+  an estimated component to them, `"est_quadrature"` adds it in
+  quadrature, and `"est_replace"` replaces them, as several ICES
+  assessments do. An estimated component is confounded with a likelihood
+  weight, since a weight on a normal likelihood is the same statement as
+  dividing the variance, and `Setup_Mod_Weighting` warns when both are
+  used. A fleet with a multivariate normal index takes its scale from
+  the supplied covariance and cannot have one, which is an error.
 
-  `"fix"`
+- sigmaSrvIdx_map, sigmaSrvIdx_pop_map:
 
-  :   The reported standard errors are used as they are and
-      `ln_sigmaSrvIdx` is not estimated. The default.
-
-  `"est_additive"`
-
-  :   Total standard deviation is the reported standard error plus an
-      estimated component, the additive extra standard deviation
-      convention.
-
-  `"est_quadrature"`
-
-  :   Total standard deviation is the reported standard error and the
-      estimated component added in quadrature, treating them as
-      independent variances.
-
-  `"est_replace"`
-
-  :   An estimated standard deviation replaces the reported standard
-      errors entirely, as several ICES assessments do.
-
-  An estimated component is confounded with a likelihood weight, since a
-  weight on a normal likelihood is the same statement as dividing the
-  variance by that weight. `Setup_Mod_Weighting` warns when both are
-  used. Fleets with a multivariate normal index likelihood take their
-  scale from the supplied covariance and cannot have one, which is an
-  error rather than a silently unidentified parameter.
-
-- sigmaSrvIdx_map:
-
-  Optional integer vector of length `n_srv_fleets` giving the estimation
-  groups for `ln_sigmaSrvIdx`. Fleets sharing a value share a parameter
-  and `NA` holds a fleet at its starting value. Defaults to one free
-  parameter per fleet. Use it when a reference assessment estimated some
-  fleets and pinned others at a bound.
-
-- sigmaSrvIdx_pop_spec:
-
-  Character string controlling the estimated component of the
-  population-specific survey index observation error, one value per
-  fleet. One of:
-
-  `"fix"`
-
-  :   The reported standard errors are used as they are and
-      `ln_sigmaSrvIdx_pop` is not estimated. The default.
-
-  `"est_additive"`
-
-  :   Total standard deviation is the reported standard error plus an
-      estimated component, the additive extra standard deviation
-      convention.
-
-  `"est_quadrature"`
-
-  :   Total standard deviation is the reported standard error and the
-      estimated component added in quadrature, treating them as
-      independent variances.
-
-  `"est_replace"`
-
-  :   An estimated standard deviation replaces the reported standard
-      errors entirely, as several ICES assessments do.
-
-  An estimated component is confounded with a likelihood weight, since a
-  weight on a normal likelihood is the same statement as dividing the
-  variance by that weight. `Setup_Mod_Weighting` warns when both are
-  used. Fleets with a multivariate normal index likelihood take their
-  scale from the supplied covariance and cannot have one, which is an
-  error rather than a silently unidentified parameter.
-
-- sigmaSrvIdx_pop_map:
-
-  Optional integer vector of length `n_srv_fleets` giving the estimation
-  groups for `ln_sigmaSrvIdx_pop`. Fleets sharing a value share a
-  parameter and `NA` holds a fleet at its starting value. Defaults to
-  one free parameter per fleet. Use it when a reference assessment
-  estimated some fleets and pinned others at a bound.
+  Optional integer vectors `[n_srv_fleets]` of estimation groups for
+  `ln_sigmaSrvIdx` and `ln_sigmaSrvIdx_pop`. Fleets sharing a value
+  share a parameter and `NA` holds a fleet at its starting value.
+  Defaults to one free parameter per fleet.
 
 - ObsSrvIdx_pop:
 
-  Observed population-specific survey index array
+  Observed population-specific index array
   `[n_pop × n_regions × n_years × n_seas × n_srv_fleets]`.
 
 - ObsSrvIdx_pop_SE:
 
-  Lognormal standard errors for `ObsSrvIdx_pop`, same dimensions
-  `[n_pop × n_regions × n_years × n_seas × n_srv_fleets]`.
+  Lognormal standard errors for `ObsSrvIdx_pop`, same dims.
 
 - UseSrvIdx_pop:
 
-  Binary indicator array
-  `[n_pop × n_regions × n_years × n_seas × n_srv_fleets]`. `1` = include
-  population-specific index in likelihood; `0` = exclude. Default: all
-  zeros.
+  Binary array dimensioned like `ObsSrvIdx_pop`. Default all zeros.
 
 - srv_idx_type:
 
-  Character vector `[n_srv_fleets]` specifying the index type per fleet.
-  One of `"biom"` (biomass), `"abd"` (abundance), `"recdev"`
-  (recruitment deviations), or `"none"` (no index for that fleet).
-  Converted to integer codes (`1`, `0`, `2`, `999`) before storage.
-
-  A `"recdev"` fleet observes year class strength directly rather than
-  any part of the population. Its predicted value is
-  `q * (ln_RecDevs - mu)`, with `mu` the center the recruitment penalty
-  asserts for that year, so it measures the anomaly rather than the
-  deviation as stored; under a bias ramp the two differ. Such a fleet
-  reads no numbers at age, so its selectivity, survey timing and weight
-  at age are unused and its compositions should be left off. It requires
-  `SrvIdx_LikeType = "normal"`, since deviations are signed, and
-  `RecDevs_pen_center = "fixed"` in
+  Character vector `[n_srv_fleets]`: `"biom"`, `"abd"`, `"recdev"` or
+  `"none"`, stored as `1`, `0`, `2` and `999`. A `"recdev"` fleet
+  observes year class strength directly rather than any part of the
+  population: its predicted value is `q * (ln_RecDevs - mu)`, with `mu`
+  the center the recruitment penalty asserts for that year, so it
+  measures the anomaly rather than the deviation as stored. It reads no
+  numbers at age, so its selectivity, timing and weight at age are
+  unused and its compositions should be left off. It requires
+  `SrvIdx_LikeType = "normal"` and `RecDevs_pen_center = "fixed"` in
   [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md).
 
 - ObsSrvAgeComps:
 
-  Observed survey age compositions, array
-  `[n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]`.
-  Values may be counts or proportions on a comparable scale.
+  Observed survey age compositions
+  `[n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]`,
+  counts or proportions on a comparable scale.
 
 - UseSrvAgeComps:
 
-  Binary indicator array
-  `[n_regions × n_years × n_seas × n_srv_fleets]`. `1` = fit age
-  compositions; `0` = exclude.
+  Binary array `[n_regions × n_years × n_seas × n_srv_fleets]`, `1` to
+  fit the age compositions.
 
 - ObsSrvLenComps:
 
-  Observed survey length compositions, array
+  Observed survey length compositions
   `[n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets]`.
-  Only validated when `input_list$data$fit_lengths = 1` in `$data`.
+  Only validated when `fit_lengths = 1`.
 
 - UseSrvLenComps:
 
-  Binary indicator array
-  `[n_regions × n_years × n_seas × n_srv_fleets]`. `1` = fit length
-  compositions; `0` = exclude.
+  Binary array `[n_regions × n_years × n_seas × n_srv_fleets]`, `1` to
+  fit the length compositions.
 
 - ISS_SrvAgeComps:
 
-  Input sample sizes for survey age compositions, array
-  `[n_regions × n_years × n_seas × n_sexes × n_srv_fleets]`, or `NULL`
-  to derive automatically by summing `ObsSrvAgeComps` across the age
-  dimension each year, respecting `SrvAgeComps_Type`.
+  Input sample sizes
+  `[n_regions × n_years × n_seas × n_sexes × n_srv_fleets]`. `NULL` sums
+  `ObsSrvAgeComps` over ages.
 
 - ISS_SrvLenComps:
 
-  Input sample sizes for survey length compositions, same structure as
-  `ISS_SrvAgeComps`, or `NULL` for automatic derivation from
+  Input sample sizes, structured as `ISS_SrvAgeComps`. `NULL` sums
   `ObsSrvLenComps`.
 
 - SrvAgeComps_LikeType:
 
-  Character vector `[n_srv_fleets]` specifying the likelihood for survey
-  age compositions. One of `"none"`, `"Multinomial"`,
-  `"Dirichlet-Multinomial"`, `"iid-Logistic-Normal"`,
-  `"1d-Logistic-Normal"`, `"2d-Logistic-Normal"`,
-  `"iid-Logistic-Normal-miss0"`, `"1d-Logistic-Normal-miss0"`,
-  `"2d-Logistic-Normal-miss0"`. Converted to integer codes (`999`,
-  `0`-`7`) before storage.
+  Character vector `[n_srv_fleets]`: `"none"`, `"Multinomial"`,
+  `"Dirichlet-Multinomial"`, the three logistic-normal forms or their
+  three `-miss0` counterparts, stored as `999` and `0`-`7`.
 
-  The two `miss0` forms drop the empty bins and renormalize the expected
+  The `miss0` forms drop the empty bins and renormalize the expected
   proportions over the bins that remain, rather than adding `addtocomp`
-  to the zeros and keeping every bin. Their standard deviation is
-  divided by the square root of the input sample size, so the parameter
-  is a per fish quantity and a year sampled harder is fit more tightly,
-  and the change of variables from the log ratio is taken off so the
-  result is a density on the composition itself. Their correlations run
-  through the logistic function and are therefore positive, matching the
-  autoregression they mirror, where the other logistic normal forms
-  allow either sign. The `2d` form needs a composition joint across
-  sexes, the same as `"2d-Logistic-Normal"`. One step ahead residuals
-  are not available for any of the three, since the number of
-  observations in a cell changes with the number of empty bins.
+  to the zeros. Their standard deviation is divided by the square root
+  of the input sample size, so the parameter is a per fish quantity and
+  a year sampled harder is fit more tightly, and the change of variables
+  from the log ratio is taken off so the result is a density on the
+  composition itself. Their correlations run through the logistic
+  function and are therefore positive, matching the autoregression they
+  mirror. The `2d` form needs a composition joint across sexes.
+  One-step-ahead residuals are not available for any of the three.
 
 - SrvLenComps_LikeType:
 
-  Character vector `[n_srv_fleets]` specifying the likelihood for survey
-  length compositions. Same options as `SrvAgeComps_LikeType`.
+  As `SrvAgeComps_LikeType`, for length compositions.
 
 - SrvAgeComps_Type:
 
-  Character vector defining the survey age composition structure per
-  fleet and year range. Each element follows the format
-  `"<type>_Year_<start>-<end>_Fleet_<fleet>"`. Use `"terminal"` in place
-  of the end year to extend to the final model year. Valid types:
-
-  `"agg"`
-
-  :   Aggregated across regions and sexes. Not compatible with
-      `"2d-Logistic-Normal"`.
-
-  `"spltRspltS"`
-
-  :   Split by region and sex.
-
-  `"spltRjntS"`
-
-  :   Split by region, joint across sexes.
-
-  `"none"`
-
-  :   No composition data used.
-
-  Parsed into a `[n_years × n_srv_fleets]` integer matrix before
-  storage. An error is raised if any cell remains `NA` after parsing,
-  indicating an incomplete year range specification.
+  Character vector of the composition structure per fleet and year
+  range, each `"<type>_Year_<start>-<end>_Fleet_<fleet>"` with
+  `"terminal"` allowed as the end year. Types are `"agg"` (aggregated
+  across regions and sexes, not valid with `"2d-Logistic-Normal"`),
+  `"spltRspltS"`, `"spltRjntS"` and `"none"`. Parsed into an
+  `[n_years × n_srv_fleets]` integer matrix; a cell left `NA` means an
+  incomplete year range and is an error.
 
 - SrvLenComps_Type:
 
-  Character vector defining the survey length composition structure.
-  Same format and options as `SrvAgeComps_Type`.
+  As `SrvAgeComps_Type`, for length compositions.
 
 - ObsSrvAgeComps_pop:
 
-  Observed population-specific survey age composition array
+  Observed population-specific age composition array
   `[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes × n_srv_fleets]`.
-  Required when any element of `UseSrvAgeComps_pop` is `1`.
+  Required when any `UseSrvAgeComps_pop` is `1`.
 
 - UseSrvAgeComps_pop:
 
-  Binary indicator array
-  `[n_pop × n_regions × n_years × n_seas × n_srv_fleets]`. `1` = fit
-  population-specific age compositions; `0` = exclude. Default: all
-  zeros.
+  Binary array `[n_pop × n_regions × n_years × n_seas × n_srv_fleets]`.
+  Default all zeros.
 
 - ISS_SrvAgeComps_pop:
 
-  Input sample size array for population-specific survey age
-  compositions
-  `[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]`. If
-  `NULL` (default), computed automatically by summing
-  `ObsSrvAgeComps_pop` within each population-year-fleet-season-region
-  cell according to `SrvAgeComps_pop_Type`.
+  Input sample size array
+  `[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]`.
+  `NULL` (default) sums `ObsSrvAgeComps_pop`.
 
 - ObsSrvLenComps_pop:
 
-  Observed population-specific survey length composition array
+  Observed population-specific length composition array
   `[n_pop × n_regions × n_years × n_seas × n_lens × n_sexes × n_srv_fleets]`.
-  Required when `input_list$data$fit_lengths == 1` and any element of
-  `UseSrvLenComps_pop` is `1`.
+  Required when `fit_lengths == 1` and any `UseSrvLenComps_pop` is `1`.
 
 - UseSrvLenComps_pop:
 
-  Binary indicator array
-  `[n_pop × n_regions × n_years × n_seas × n_srv_fleets]`. `1` = fit
-  population-specific length compositions; `0` = exclude. Default: all
-  zeros.
+  Binary array `[n_pop × n_regions × n_years × n_seas × n_srv_fleets]`.
+  Default all zeros.
 
 - ISS_SrvLenComps_pop:
 
-  Input sample size array for population-specific survey length
-  compositions
-  `[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]`. If
-  `NULL` (default), derived automatically from `ObsSrvLenComps_pop`.
+  Input sample size array
+  `[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]`.
+  `NULL` (default) sums `ObsSrvLenComps_pop`.
 
-- SrvAgeComps_pop_LikeType:
+- SrvAgeComps_pop_LikeType, SrvLenComps_pop_LikeType:
 
-  Character vector of length `n_srv_fleets` specifying the likelihood
-  for population-specific survey age compositions. Same options as
-  `SrvAgeComps_LikeType`. Default: `"none"` for all fleets.
+  Character vectors `[n_srv_fleets]` for the population-specific
+  compositions, with the same options as `SrvAgeComps_LikeType`. Default
+  `"none"`.
 
-- SrvLenComps_pop_LikeType:
+- SrvAgeComps_pop_Type, SrvLenComps_pop_Type:
 
-  Character vector of length `n_srv_fleets` specifying the likelihood
-  for population-specific survey length compositions. Same options as
-  `SrvLenComps_LikeType`. Default: `"none"` for all fleets.
-
-- SrvAgeComps_pop_Type:
-
-  Character vector defining the composition structure for
-  population-specific survey age compositions. Same format and options
-  as `SrvAgeComps_Type`. Default: `"none"` for all fleets across all
-  years.
-
-- SrvLenComps_pop_Type:
-
-  Character vector defining the composition structure for
-  population-specific survey length compositions. Same format and
-  options as `SrvLenComps_Type`. Default: `"none"` for all fleets across
-  all years.
+  Composition structure for the population-specific compositions, in the
+  same format as `SrvAgeComps_Type`. Default `"none"` for every fleet
+  and year.
 
 - srv_idx_ages:
 
-  Per-fleet selection of which ages contribute to the index total.
-  Either a list with one element per survey fleet, where each element is
-  a vector of ages or `NULL` for all ages, or an array
-  `[n_ages x n_srv_fleets]` of 0/1 weights. Default `NULL` uses every
-  age for every fleet. Restricting a fleet to a single age turns it into
-  an index of that age alone, which is how an age-1 acoustic index is
-  specified; the fleet's compositions are unaffected because the
-  restriction applies to the index sum rather than to selectivity.
+  Which ages contribute to each fleet's index total, either a list with
+  one element per fleet (a vector of ages, or `NULL` for all) or an
+  `[n_ages x n_srv_fleets]` array of 0/1 weights. `NULL` (default) uses
+  every age. Restricting a fleet to one age makes it an index of that
+  age alone, which is how an age-1 acoustic index is specified; the
+  compositions are unaffected, since the restriction applies to the
+  index sum.
 
 - SrvAgeComps_bins:
 
-  Which age bins each survey fleet's age composition is fitted over.
-  Supply a list with one element per fleet, each a vector of bin indices
-  or `NULL` for all bins, or an `[n_obs_ages x n_srv_fleets]` array of
-  0/1 weights. Both observed and expected compositions are restricted to
-  the named bins and renormalized within them, so excluded bins are left
-  out of the likelihood rather than being forced to be explained; this
-  is how a fleet that only ages part of its age range is fitted. Indices
-  refer to observed bins, that is after any ageing error has mapped
-  model ages onto observed ones. The restriction applies whatever the
-  composition type: for sex-joint comps the named bins are dropped from
-  each sex's block, so the sex ratio the joint comps have becomes the
-  ratio within the fitted bins. Every fleet must retain at least two
-  bins, since the proportion in a lone bin is one whatever the model
-  predicts. Default `NULL`, which fits all bins for all fleets.
+  Which age bins each fleet's age composition is fitted over, either a
+  list with one element per fleet (bin indices, or `NULL` for all) or an
+  `[n_obs_ages x n_srv_fleets]` array of 0/1 weights. Observed and
+  expected are both restricted to the named bins and renormalized within
+  them, so excluded bins leave the likelihood rather than being forced
+  to be explained. Indices are observed bins, after any ageing error.
+  For sex-joint comps the named bins are dropped from each sex's block,
+  so the sex ratio becomes the ratio within the fitted bins. Every fleet
+  must keep at least two bins. Default `NULL`, all bins.
 
 - SrvLenComps_bins:
 
-  Which length bins each survey fleet's length composition is fitted
-  over, in the same format as `SrvAgeComps_bins`. Indices refer to
-  observed length bins, that is after any `LenBinMap` has mapped model
-  bins onto observed ones.
+  Which length bins each fleet's length composition is fitted over, as
+  `SrvAgeComps_bins`. Indices are observed length bins, after any
+  `LenBinMap`.
 
 - Srv_caal_bins:
 
-  Which age bins each survey fleet's conditional age-at-length data are
-  fitted over, in the same format as `SrvAgeComps_bins`. Applied to
-  every length bin's row of ages alike.
+  Which age bins each fleet's CAAL data are fitted over, as
+  `SrvAgeComps_bins`, applied to every length bin's row of ages alike.
 
-- SrvAgeComps_pop_bins:
+- SrvAgeComps_pop_bins, SrvLenComps_pop_bins:
 
-  Which age bins each survey fleet's population-specific age composition
-  is fitted over, in the same format as `SrvAgeComps_bins`.
-
-- SrvLenComps_pop_bins:
-
-  Which length bins each survey fleet's population-specific length
-  composition is fitted over, in the same format as `SrvAgeComps_bins`.
+  Which bins each fleet's population-specific age and length
+  compositions are fitted over, as `SrvAgeComps_bins`.
 
 - SrvIdx_LikeType:
 
-  Character vector `[n_srv_fleets]` giving the error structure of each
-  survey index. Options are `"lognormal"` (default, the observation
-  standard errors are on the log scale), `"normal"` (arithmetic scale),
-  and `"mvn"` (multivariate normal on the arithmetic scale using a fixed
-  covariance supplied through `SrvIdx_Cov`). One-step-ahead residuals
-  are available only for lognormal fleets. A fleet's population-specific
-  index data source follows the same choice for `"lognormal"` and
-  `"normal"`, but stays lognormal under `"mvn"`, whose covariance
-  describes the regional series only.
+  Character vector `[n_srv_fleets]` of each index's error structure:
+  `"lognormal"` (default, standard errors on the log scale), `"normal"`
+  (arithmetic scale), or `"mvn"` (multivariate normal on the arithmetic
+  scale with a fixed covariance from `SrvIdx_Cov`). One-step-ahead
+  residuals are available for lognormal fleets only. A fleet's
+  population-specific index follows the same choice for the first two
+  and stays lognormal under `"mvn"`, whose covariance describes the
+  regional series alone.
 
 - SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvIdxAA_seas_Type,
   SrvIdxAA_pop_seas_Type, SrvAgeComps_seas_Type,
@@ -560,68 +404,52 @@ Setup_Mod_SrvIdx_and_Comps(
   SrvLenComps_pop_seas_Type:
 
   Whether a seasonal model reports this data source once a season or
-  once a year. One value for every fleet or one per fleet.
-
-  `"spltSeas"`
-
-  :   Fit the observation against the prediction for the season it sits
-      in. This is the default and what every data source did before this
-      setting existed.
-
-  `"aggSeas"`
-
-  :   Sum the prediction over every season of the year and fit it
-      against a single observation.
-
-  Under `"aggSeas"` the observation still lives in whichever season it
-  was placed in, and exactly one season per region and year may be
-  turned on in the matching `Use` array. The likelihood and the reported
-  negative log likelihood land in that season. A survey measured at a
-  point in time belongs in its own season with its own timing rather
-  than aggregated; this setting is for a data source that accumulates
-  across the year.
+  once a year, one value for every fleet or one per fleet. `"spltSeas"`
+  (default) fits the observation against the prediction for the season
+  it sits in; `"aggSeas"` sums the prediction over the year's seasons
+  and fits one observation. Under `"aggSeas"` the observation stays in
+  the season it was placed in, exactly one season per region and year
+  may be on in the matching `Use` array, and the likelihood lands in
+  that season. A survey measured at a point in time belongs in its own
+  season with its own timing.
 
 - SrvLenComps_sel:
 
-  Character vector `[n_srv_fleets]`, whether a length-based selectivity
-  is applied before or after the fish are spread over lengths. `"age"`
+  Character vector `[n_srv_fleets]`, whether length-based selectivity
+  applies before or after the fish are spread over lengths. `"age"`
   (default) selects the index at age and spreads it afterwards;
-  `"length"` spreads the numbers at each age over the key first and
-  selects them length by length, so the survey sees the long fish of an
-  age more often. The key is the survey's own, at `t_srv`. Requires
-  length-based survey selectivity. Use `"length"` when selectivity is
-  length based and the length compositions are what inform it.
+  `"length"` spreads first and selects length by length, so the survey
+  sees the long fish of an age more often. The key is the survey's own
+  at `t_srv`, and length-based survey selectivity is required.
 
 - srv_waa_selected:
 
   Integer vector `[n_srv_fleets]` (0/1). With weight at age derived from
   growth and length-based selectivity, `1` makes a biomass index use the
   mean weight of the fish the survey sees at each age, \\\sum_l P(l
-  \mid a) s(l) w(l) / \sum_l P(l \mid a) s(l)\\, instead of the
-  population mean weight at that age. The survey twin of
-  `fish_waa_selected`. Only applies to an index in weight
-  (`srv_idx_type = "biom"`).
+  \mid a) s(l) w(l) / \sum_l P(l \mid a) s(l)\\, rather than the
+  population mean weight. The survey twin of `fish_waa_selected`, and
+  only read for an index in weight.
 
 - SrvIdx_Cov:
 
-  List with one element per survey fleet holding the fixed covariance
-  matrix for fleets using `"mvn"`, and `NULL` otherwise. Each matrix
-  must be square with one row per observation the fleet fits, ordered as
-  the observations appear when scanning that fleet's `UseSrvIdx` slice
-  in array order.
+  List with one element per fleet holding the fixed covariance for
+  `"mvn"` fleets and `NULL` otherwise. Each matrix is square with one
+  row per observation the fleet fits, ordered as they appear when
+  scanning that fleet's `UseSrvIdx` slice in array order.
 
 - ObsSrv_caal:
 
   Observed conditional age-at-length array
   `[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x n_srv_fleets]`.
-  A CAAL observation is the age composition of the fish aged from one
-  length bin, so the age dim of each length row is what gets fit. `NULL`
-  (default) for a model with no CAAL data.
+  An observation is the age composition of the fish aged from one length
+  bin, so the age dim of each length row is what is fit. `NULL`
+  (default) for no CAAL data.
 
 - UseSrv_caal:
 
   Use flags `[n_regions x n_years x n_seas x n_lens x n_srv_fleets]`.
-  Length bins with no aged fish have a zero and are skipped.
+  Length bins with no aged fish take a zero and are skipped.
 
 - ISS_Srv_caal:
 
@@ -631,36 +459,27 @@ Setup_Mod_SrvIdx_and_Comps(
 
 - Srv_caal_LikeType:
 
-  Character vector of length `n_srv_fleets`. One of `"none"`,
-  `"Multinomial"` or `"Dirichlet-Multinomial"`. The logistic-normal
-  families are not available for CAAL, since a single length bin's age
-  sample is small and mostly zeros, which the additive log-ratio
-  transform cannot handle.
+  Character vector `[n_srv_fleets]`: `"none"`, `"Multinomial"` or
+  `"Dirichlet-Multinomial"`. The logistic-normal families are not
+  available for CAAL, since a length bin's age sample is small and
+  mostly zeros.
 
 - Srv_caal_Type:
 
-  Composition type specification, using the same
-  `"CompType_Year_x-y_Fleet_z"` convention as the marginal compositions.
+  Composition type, in the same `"CompType_Year_x-y_Fleet_z"` vocabulary
+  as the marginal compositions.
 
 - ...:
 
-  Optional named starting values for overdispersion and correlation
+  Optional starting values for the overdispersion and correlation
   parameters.
 
 ## Value
 
-The input `input_list` with survey data stored in `$data` (`ObsSrvIdx`,
-`ObsSrvIdx_SE`, `UseSrvIdx`, `ObsSrvIdx_pop`, `ObsSrvIdx_pop_SE`,
-`UseSrvIdx_pop`, `ObsSrvAgeComps`, `UseSrvAgeComps`, `ISS_SrvAgeComps`,
-`ObsSrvLenComps`, `UseSrvLenComps`, `ISS_SrvLenComps`,
-`ObsSrvAgeComps_pop`, `UseSrvAgeComps_pop`, `ISS_SrvAgeComps_pop`,
-`ObsSrvLenComps_pop`, `UseSrvLenComps_pop`, `ISS_SrvLenComps_pop`,
-`SrvAgeComps_LikeType`, `SrvLenComps_LikeType`,
-`SrvAgeComps_pop_LikeType`, `SrvLenComps_pop_LikeType`,
-`SrvAgeComps_Type`, `SrvLenComps_Type`, `SrvAgeComps_pop_Type`,
-`SrvLenComps_pop_Type`, `srv_idx_type`); overdispersion and correlation
-starting values in `$par`; and factor maps in `$map` for all pooled and
-population-specific overdispersion and correlation parameter arrays.
+`input_list` with the survey observations, use flags, input sample sizes
+and integer-coded likelihood and composition types in `$data`, the
+overdispersion and correlation starting values in `$par`, and their
+factor maps, pooled and population-specific, in `$map`.
 
 ## See also
 

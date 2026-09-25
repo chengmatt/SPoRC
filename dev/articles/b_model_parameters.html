@@ -463,12 +463,37 @@ year’s curve is standardized to average one over the bins named in
 <th>Description</th>
 <th>Default</th>
 </tr></thead>
-<tbody><tr class="odd">
+<tbody>
+<tr class="odd">
 <td><code>ln_fish_q</code></td>
 <td><code>n_regions × max_fishq_blks × n_fish_fleets</code></td>
 <td>Log-scale fishery catchability coefficient</td>
 <td>0</td>
-</tr></tbody>
+</tr>
+<tr class="even">
+<td><code>ln_fish_q_devs</code></td>
+<td><code>n_regions × n_years × n_fish_fleets</code></td>
+<td>Log-scale annual deviations about the mean fishery catchability,
+under <code>fish_q_model</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>ln_sigma_fish_q</code></td>
+<td><code>n_regions × n_fish_fleets</code></td>
+<td>Log-scale standard deviation of the fishery catchability
+deviations</td>
+<td>log(0.1)</td>
+</tr>
+<tr class="even">
+<td><code>fish_q_rho</code></td>
+<td><code>n_regions × n_fish_fleets</code></td>
+<td>Unconstrained ar1 correlation of the fishery catchability
+deviations, read only under <code>fish_q_model = "ar1"</code>
+</td>
+<td>0</td>
+</tr>
+</tbody>
 </table>
 </div>
 <div class="section level2">
@@ -823,9 +848,26 @@ estimated) for fleets whose catchability is solved analytically via
 <td>0</td>
 </tr>
 <tr class="even">
-<td><code>srv_q_coeff</code></td>
-<td><code>n_regions × n_srv_fleets × n_covariates</code></td>
-<td>Regression coefficients for covariate-based survey catchability</td>
+<td><code>ln_srv_q_devs</code></td>
+<td><code>n_regions × n_years × n_srv_fleets</code></td>
+<td>Log-scale annual deviations about the mean survey catchability,
+under <code>srv_q_model</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="odd">
+<td><code>ln_sigma_srv_q</code></td>
+<td><code>n_regions × n_srv_fleets</code></td>
+<td>Log-scale standard deviation of the survey catchability
+deviations</td>
+<td>log(0.1)</td>
+</tr>
+<tr class="even">
+<td><code>srv_q_rho</code></td>
+<td><code>n_regions × n_srv_fleets</code></td>
+<td>Unconstrained ar1 correlation of the survey catchability deviations,
+read only under <code>srv_q_model = "ar1"</code>
+</td>
 <td>0</td>
 </tr>
 </tbody>
@@ -1192,6 +1234,85 @@ be fixed or given an informative prior.</td>
 </table>
 </div>
 <div class="section level2">
+<h2 id="dynamic-structural-equation-model">Dynamic Structural Equation Model<a class="anchor" aria-label="anchor" href="#dynamic-structural-equation-model"></a>
+</h2>
+<p>Only present when <code><a href="../reference/Setup_Mod_DSEM.html">Setup_Mod_DSEM()</a></code> was called. The grid
+has one column per series, covariates first, then the linked deviation
+series.</p>
+<table class="table">
+<colgroup>
+<col width="25%">
+<col width="25%">
+<col width="29%">
+<col width="20%">
+</colgroup>
+<thead><tr class="header">
+<th>Parameter</th>
+<th>Dimension</th>
+<th>Description</th>
+<th>Default</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td><code>dsem_beta</code></td>
+<td><code>n_paths</code></td>
+<td>Path coefficients, one per named path or covariance arrow, in the
+order the arrows name them (<code>data$dsem_model$beta_names</code>). A
+fixed arrow (<code>NA</code> name, value in the fourth field) has no
+entry here.</td>
+<td>0, or the arrow’s start value</td>
+</tr>
+<tr class="even">
+<td><code>ln_dsem_sd</code></td>
+<td><code>n_sd_lines</code></td>
+<td>Log innovation standard deviations, one per sd line
+(<code>data$dsem_model$ln_sd_names</code>).</td>
+<td>log(1), or the arrow’s start value</td>
+</tr>
+<tr class="odd">
+<td><code>dsem_mu</code></td>
+<td><code>n_series</code></td>
+<td>Series means. Estimated for the covariates <code>dsem_mu_spec</code>
+names, kept at the observed mean otherwise, and always zero for a
+deviation series.</td>
+<td>observed mean, 0</td>
+</tr>
+<tr class="even">
+<td><code>dsem_x</code></td>
+<td><code>n_grid_years × n_series</code></td>
+<td>The dsem grid. Known covariate cells and linked deviation cells are
+mapped off (the objective writes the deviations in); missing covariate
+years, <code>"normal"</code> covariates and the rows a linked series
+does not reach (the forecast) are estimated.</td>
+<td>the series means</td>
+</tr>
+<tr class="odd">
+<td><code>logit_dsem_tweedie_p</code></td>
+<td><code>n_covariates</code></td>
+<td>Tweedie power as <code>1 + plogis(.)</code>, estimated for
+<code>dsem_family = "tweedie"</code> only.</td>
+<td></td>
+</tr>
+<tr class="even">
+<td><code>ln_dsem_obs_sd</code></td>
+<td><code>n_covariates</code></td>
+<td>Log spread of each covariate’s observations on its family’s scale:
+sd (<code>"normal"</code>), CV (<code>"gamma"</code>), sd of the log
+(<code>"lognormal"</code>), dispersion (<code>"tweedie"</code>); mapped
+off for <code>"fixed"</code>.</td>
+<td>log(sd / 2)</td>
+</tr>
+<tr class="odd">
+<td><code>dsem_delta0</code></td>
+<td><code>n_series</code></td>
+<td>First-year offset of each series, estimated for those
+<code>dsem_delta0_spec</code> names.</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section level2">
 <h2 id="movement">Movement<a class="anchor" aria-label="anchor" href="#movement"></a>
 </h2>
 <table class="table">
@@ -1230,10 +1351,13 @@ be fixed or given an informative prior.</td>
 </tr>
 <tr class="even">
 <td><code>move_devs</code></td>
-<td><code>n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code></td>
+<td>
+<code>n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes</code>,
+the third dim <code>1</code> under CTMC movement</td>
 <td>Movement deviations w/ projection years (can be specified as random
-effects); IID process error only, sharing structure set via
-<code>cont_vary_movement</code>
+effects); offsets on the logit of a region pair (unstructured) or on a
+region’s preference (CTMC); IID process error only, sharing structure
+set via <code>cont_vary_movement</code>
 </td>
 <td>0</td>
 </tr>

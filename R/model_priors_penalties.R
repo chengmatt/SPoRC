@@ -479,8 +479,9 @@ Get_move_PE_loglik <- function(cont_vary_movement,
   sex_idx  = if("sex"    %in% key_dims) 1:n_sexes else 1
 
   # Penalize Deviations
-  for(rr in 1:n_regions_to) {
-    for(r in 1:n_regions_from) {
+  # a single region model has no destinations, so seq_len keeps the loop from running at all
+  for(rr in seq_len(n_regions_to)) {
+    for(r in seq_len(n_regions_from)) {
 
       if(move_type == 0 && adjacency_collapsed[r,rr] == 0) next # skip
 

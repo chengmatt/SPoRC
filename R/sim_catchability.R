@@ -111,7 +111,7 @@ split_reported_q <- function(rep_q, ln_q, q_blocks, q_type = NULL) {
 
 } # end function
 
-#' Refuse a catchability series the operating model cannot draw
+#' Dont allow a catchability series the operating model cannot draw
 #'
 #' A dsem series given an sd of zero is derived: it has no innovation of its
 #' own, the objective works it out from its covariates, and the fitted

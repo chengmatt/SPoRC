@@ -7,56 +7,36 @@
 
 #' Extract Index Fit Results
 #'
-#' Generates a tidy dataframe of observed and predicted survey and fishery
-#' indices from a fitted RTMB model, including standard errors, confidence
-#' intervals, a raw log-scale (Pearson-style) residual, and catchability
-#' blocks. Both pooled and population-specific indices are returned when the
-#' corresponding \code{Use*_pop} flags contain any ones.
+#' A tidy data frame of the observed and predicted survey and fishery indices
+#' from a fitted model, with standard errors, confidence intervals, a log-scale
+#' residual and the catchability blocks. Population-specific indices are included
+#' when their \code{Use*_pop} flags hold any ones.
 #'
-#' The \code{resid} column here is the simple log-scale residual
-#' \eqn{\log(\text{obs}) - \log(\text{predicted})}, \emph{not} a
-#' one-step-ahead (OSA) residual. For properly decorrelated OSA index
-#' residuals (with QQ-plots and SDNR diagnostics via \code{\link{plot_resids}}),
-#' use \code{\link{get_osa}} with \code{index_source = }. The observed-vs-
-#' predicted \emph{fit} plot built from this function's output is
+#' The \code{resid} column is the plain log-scale residual
+#' \eqn{\log(\text{obs}) - \log(\text{predicted})}, not a one-step-ahead
+#' residual. For decorrelated OSA index residuals, with the QQ plots and SDNR
+#' from \code{\link{plot_resids}}, use \code{\link{get_osa}} with
+#' \code{index_source}. The fit plot built from this output is
 #' \code{\link{get_idx_fits_plot}}.
 #'
-#' @param data List. Input data used in the RTMB model. Must contain
-#'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{ObsFishIdx},
-#'   \code{ObsFishIdx_SE}, \code{Wt_SrvIdx}, \code{Wt_FishIdx},
-#'   \code{srv_q_blocks}, \code{fish_q_blocks}, \code{UseFishIdx}, and
-#'   \code{UseSrvIdx}. For population-specific indices, also requires
-#'   \code{ObsSrvIdx_pop}, \code{ObsSrvIdx_pop_SE}, \code{ObsFishIdx_pop},
-#'   \code{ObsFishIdx_pop_SE}, \code{Wt_SrvIdx_pop}, \code{Wt_FishIdx_pop},
-#'   \code{UseSrvIdx_pop}, and \code{UseFishIdx_pop}.
-#' @param rep List. RTMB report output containing \code{PredSrvIdx} and
-#'   \code{PredFishIdx}, both dimensioned
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_fleets]}. Pooled indices
-#'   are obtained by summing across the population dimension; population-specific
-#'   indices use each population slice directly.
-#' @param year_labs Vector. Year labels assigned to the year dimension of
-#'   predicted and observed index arrays.
+#' @param data Input data used in the RTMB model, holding \code{ObsSrvIdx},
+#'   \code{ObsSrvIdx_SE}, \code{ObsFishIdx}, \code{ObsFishIdx_SE},
+#'   \code{Wt_SrvIdx}, \code{Wt_FishIdx}, \code{srv_q_blocks},
+#'   \code{fish_q_blocks}, \code{UseFishIdx} and \code{UseSrvIdx}, plus the
+#'   \code{_pop} counterparts for the population-specific indices.
+#' @param rep RTMB report holding \code{PredSrvIdx} and \code{PredFishIdx}, both
+#'   \code{[n_pop × n_regions × n_years × n_seas × n_fleets]}. The pooled indices
+#'   are summed across populations; the population-specific ones read each slice
+#'   directly.
+#' @param year_labs Year labels for the year dim of the index arrays.
 #'
-#' @return A dataframe containing pooled and, when active, population-specific
-#'   survey and fishery indices with the following columns:
-#'   \describe{
-#'     \item{\code{Region}}{Region label (prefixed with \code{"Region"}).}
-#'     \item{\code{Year}}{Year.}
-#'     \item{\code{Seas}}{Season.}
-#'     \item{\code{Fleet}}{Fleet identifier.}
-#'     \item{\code{Type}}{One of \code{"Survey"}, \code{"Fishery"},
-#'       \code{"Pop Survey"}, or \code{"Pop Fishery"}.}
-#'     \item{\code{obs}}{Observed index value.}
-#'     \item{\code{value}}{Predicted index value.}
-#'     \item{\code{se}}{Standard error of the observed index (weight-adjusted).}
-#'     \item{\code{lci}, \code{uci}}{95\% log-normal confidence interval for
-#'       the observed index.}
-#'     \item{\code{q_block}}{Catchability block identifier.}
-#'     \item{\code{resid}}{Log-scale residual
-#'       (\eqn{\log(\text{obs}) - \log(\text{predicted})}).}
-#'     \item{\code{Category}}{Combined label of Type, population (for pop
-#'       rows), Fleet, Season, and Q-block.}
-#'   }
+#' @return A data frame with \code{Region}, \code{Year}, \code{Seas},
+#'   \code{Fleet}, \code{Type} (\code{"Survey"}, \code{"Fishery"},
+#'   \code{"Pop Survey"} or \code{"Pop Fishery"}), the observed value \code{obs}
+#'   and predicted \code{value}, the weight-adjusted \code{se}, the 95\%
+#'   lognormal interval \code{lci} and \code{uci}, the \code{q_block}, the
+#'   log-scale \code{resid}, and \code{Category}, which combines the type,
+#'   population, fleet, season and q block.
 #'
 #' @examples
 #' \dontrun{

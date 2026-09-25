@@ -7,189 +7,95 @@
 
 #' Calculate Selectivity
 #'
-#' Computes selectivity-at-bin using a suite of parametric, semi-parametric,
-#' and non-parametric formulations. Supports constant, time-varying, and
-#' fully flexible selectivity structures.
+#' Selectivity-at-bin under any of the parametric, semi-parametric and
+#' non-parametric forms, constant or time-varying. Equations are in the model
+#' equations vignette.
 #'
-#' @param Selex_Model Integer specifying the selectivity model:
-#'   \describe{
-#'     \item{0}{Logistic (b50, slope): \eqn{1 / (1 + \exp(-k(\text{bin} - b_{50})))}}
-#'     \item{1}{Gamma-shaped dome (bin-at-peak \eqn{b_{\max}}, curvature \eqn{\delta}).}
-#'     \item{2}{Power function (monotonic decreasing): \eqn{1 / \text{bin}^{\text{power}}}.}
-#'     \item{3}{Logistic (b50, b95 parameterization).}
-#'     \item{4}{Double-normal dome with plateau and flexible tails (6 parameters).
-#'              \eqn{p_{1}} is the bin at which the plateau starts, kept on the bin
-#'              scale rather than transformed, \eqn{p_{5}} is the selectivity at the
-#'              first bin and \eqn{p_{6}} the selectivity at the last bin.}
-#'     \item{5}{Non-parametric selectivity: bin-level logit parameters mapped via \code{plogis},
-#'              optionally modified by time-varying deviations.}
-#'     \item{6}{Logistic selectivity with asymptote:
-#'              \eqn{\alpha / (1 + \exp(-k(\text{bin} - b_{50})))}.
-#'              Allows maximum selectivity \eqn{\alpha \in (0,1)}.}
-#'     \item{7}{Logistic selectivity with asymptote (b50, b95 parameterization):
-#'              \eqn{\alpha / (1 + 19^{(b_{50} - \text{bin})/b_{95}})}.
-#'              Equivalent to Model 3 scaled by asymptote \eqn{\alpha}.}
-#'     \item{9}{Non-parametric selectivity on the log scale, standardized so
-#'              each year's selectivity averages to one across bins. Differs
-#'              from model 5 in both respects: 5 bounds every raw value below
-#'              one through \code{plogis} and standardizes over years and bins
-#'              jointly, whereas 9 leaves the scale free and centers within the
-#'              year.}
-#'     \item{8}{Bicubic spline over a bin-node x year-node grid (see
-#'              \code{Wbin_bicubic}, \code{Wyr_bicubic}). One generalized form
-#'              covers three cases depending on how the caller constructs the
-#'              node grid and interpolation weights: a single smooth bin x
-#'              year surface (bicubic), a time-invariant bin-only spline
-#'              (\code{n_yr_nodes == 1}), or a bin-only spline re-fit
-#'              independently within each of several year blocks
-#'              (\code{n_yr_nodes == 1} within each of SPoRC's existing
-#'              selectivity blocks). No \code{TimeVary_Model} deviation
-#'              layering applies to this model.}
-#'   }
-#'
-#' @param TimeVary_Model Integer specifying temporal structure:
-#'   \describe{
-#'     \item{0}{No time variation.}
-#'     \item{1}{IID deviations applied multiplicatively to model parameters.}
-#'     \item{2}{Random walk deviations applied multiplicatively to model parameters.}
-#'     \item{3}{3D GMRF (marginal variance): deviations applied multiplicatively at bin level.}
-#'     \item{4}{3D GMRF (conditional variance): deviations applied multiplicatively at bin level.}
-#'     \item{5}{Separable 2D AR(1): deviations applied multiplicatively at bin level.}
-#'   }
-#'
-#' @param pars Numeric vector of log-scale selectivity parameters.
-#' Parameters are exponentiated or transformed depending on model specification:
-#'   \describe{
-#'     \item{Model 0}{\code{c(ln_b50, ln_slope)}}
-#'     \item{Model 1}{\code{c(ln_bmax, ln_delta)}}
-#'     \item{Model 2}{\code{c(ln_power)}}
-#'     \item{Model 3}{\code{c(ln_b50, ln_b95)}}
-#'     \item{Model 4}{\code{c(p1, p2, p3, p4, p5, p6)}}
-#'     \item{Model 5}{\code{c(logit_sel_1, ..., logit_sel_nbins)}}
-#'     \item{Model 6}{\code{c(logit_alpha, ln_b50, ln_k)}}
-#'     \item{Model 7}{\code{c(logit_alpha, ln_b50, ln_b95)}}
-#'     \item{Model 9}{\code{c(ln_sel_1, ..., ln_sel_nbins)}}
-#'     \item{Model 8}{Flattened bin-node x year-node log-selectivity grid,
-#'       length \code{ncol(Wyr_bicubic) * ncol(Wbin_bicubic)}, filled
-#'       column-major into a \code{ncol(Wyr_bicubic)} (rows, year nodes) by
-#'       \code{ncol(Wbin_bicubic)} (columns, bin nodes) matrix.}
-#'   }
-#'
-#' @param ln_seldevs Array of log-scale selectivity deviations with dimension
-#'   \code{[n_regions, n_years, n_parameters_or_bins, n_sexes, 1]}.
-#'
-#'   For \code{TimeVary_Model = 1-2}: deviations apply to selectivity parameters
-#'   on the natural scale after exponentiation.
-#'
-#'   For \code{TimeVary_Model = 3-5}: deviations apply multiplicatively at the
-#'   bin level to the constructed selectivity curve.
-#'
-#'   For \code{Selex_Model = 5}: deviations act directly on bin-level logit
-#'   selectivity parameters prior to logistic transformation.
-#'
-#' @param bin_devs Array of log-scale bin-override deviations with dimension
-#'   \code{[n_regions, n_years, n_bins, n_sexes, 1]}, or \code{NULL}. Supplies
-#'   the value for every bin named in \code{bin_dev_bins}.
-#' @param sel_norm_bins Integer vector of bins the mean-one standardization
-#'   averages over (\code{Selex_Model = 9}), or \code{NULL} to use every bin.
-#'   A gear whose catchability is defined against only part of the age range
-#'   standardizes over that part, which shifts the scale absorbed by q.
-#' @param bin_dev_bins Integer vector of bins whose selectivity is replaced by
+#' @param Selex_Model Integer selectivity form. \code{0} logistic (b50, slope),
+#'   \code{1} gamma dome (bin-at-peak, curvature), \code{2} power
+#'   \eqn{1/\text{bin}^{p}}, \code{3} logistic (b50, b95), \code{4} double normal
+#'   with plateau and flexible tails (six parameters, \eqn{p_1} the bin the plateau
+#'   starts at on the bin scale, \eqn{p_5} and \eqn{p_6} the selectivity at the
+#'   first and last bins), \code{6} and \code{7} the two logistics scaled by an
+#'   asymptote \eqn{\alpha \in (0,1)}, \code{5} non-parametric on the logit scale
+#'   through \code{plogis}, standardized over years and bins jointly, \code{9}
+#'   non-parametric on the log scale with the level free and each year centered
+#'   over \code{sel_norm_bins}, and \code{8} a bicubic spline over a bin-node by
+#'   year-node grid, which takes no \code{TimeVary_Model} deviations.
+#' @param TimeVary_Model Integer temporal structure. \code{0} none, \code{1} iid
+#'   and \code{2} random walk deviations on the model parameters, \code{3} and
+#'   \code{4} a 3D GMRF on the marginal or conditional variance and \code{5} a
+#'   separable 2D AR(1), all three applied at bin level.
+#' @param pars Numeric vector of selectivity parameters on the transformed scale,
+#'   in the order the form expects: \code{c(ln_b50, ln_slope)} for model 0,
+#'   \code{c(ln_bmax, ln_delta)} for 1, \code{c(ln_power)} for 2,
+#'   \code{c(ln_b50, ln_b95)} for 3, \code{c(p1, ..., p6)} for 4, one logit value
+#'   per bin for 5, \code{c(logit_alpha, ln_b50, ln_k)} for 6,
+#'   \code{c(logit_alpha, ln_b50, ln_b95)} for 7, one log value per bin for 9, and
+#'   for 8 the flattened bin-node by year-node grid, filled column-major into a
+#'   \code{n_yr_nodes} by \code{n_bin_nodes} matrix.
+#' @param ln_seldevs Array of log-scale deviations \code{[n_regions, n_years,
+#'   n_parameters_or_bins, n_sexes, 1]}. Under \code{TimeVary_Model} 1 and 2 they
+#'   apply to the parameters after exponentiation; under 3 to 5 they apply
+#'   multiplicatively at bin level to the constructed curve; under
+#'   \code{Selex_Model = 5} they act on the bin-level logit parameters before the
+#'   transformation.
+#' @param bin_devs Array of log-scale bin-override deviations \code{[n_regions,
+#'   n_years, n_bins, n_sexes, 1]}, or \code{NULL}. Supplies the value for every
+#'   bin named in \code{bin_dev_bins}.
+#' @param sel_norm_bins Integer vector of the bins the mean-one standardization
+#'   averages over under \code{Selex_Model = 9}, or \code{NULL} for every bin. A
+#'   gear whose catchability is defined against part of the age range standardizes
+#'   over that part, which shifts the scale absorbed by q.
+#' @param bin_dev_bins Integer vector of the bins whose selectivity is replaced by
 #'   \code{exp(bin_devs[...])} rather than taken from the functional form, or
-#'   \code{NULL} for none. The override is applied after everything else,
-#'   including any standardization the form performs internally, so the named
-#'   bins are governed entirely by their own deviations while the rest of the
-#'   curve keeps its parametric shape.
-#' @param dbnrml_raw Integer vector of length two (0/1) for the double normal
-#'   (\code{Selex_Model == 4}): whether the ascending and descending limbs are
-#'   left as raw Gaussians rather than anchored to \code{p5} and \code{p6} at
-#'   the first and last bins. A raw limb is \eqn{\exp(-(x - peak)^2 / width)}
-#'   built up to the apical value, with no rescaling to hit an endpoint.
-#'   Default \code{c(0, 0)}, both anchored.
-#' @param dbnrml_startbin Integer, the bin the double normal's ascending limb
-#'   is anchored at and built up from (\code{Selex_Model == 4}). \code{1}
-#'   (the default) anchors at the first bin. Anchor at a later bin when the
-#'   compositions start above the population's first length bin: \code{p5} is
-#'   then the selectivity at that bin, and every bin below it takes
+#'   \code{NULL} for none. Applied after everything else, including any
+#'   standardization, so the named bins are governed by their own deviations while
+#'   the rest of the curve keeps its parametric shape.
+#' @param dbnrml_raw Integer vector of length two (0/1) for the double normal:
+#'   whether the ascending and descending limbs are left as raw Gaussians,
+#'   \eqn{\exp(-(x - peak)^2 / width)} built up to the apical value, rather than
+#'   anchored to \code{p5} and \code{p6} at the first and last bins. Default
+#'   \code{c(0, 0)}.
+#' @param dbnrml_startbin Integer, the bin the double normal's ascending limb is
+#'   anchored at and built up from. \code{1} (default) anchors at the first bin.
+#'   Anchor later when the compositions start above the population's first length
+#'   bin: \code{p5} is then the selectivity at that bin, and every bin below takes
 #'   \eqn{(b / b_{start})^2} times the selectivity there.
-#' @param apical Numeric. For the double normal (\code{Selex_Model == 4}), the
-#'   height the ascending and descending limbs are built up to and the plateau
-#'   sits at. \code{1} (the default) is the ordinary curve. A sex with an
-#'   apical offset takes \code{exp(ln_*sel_sex_scale)} here, which moves the
-#'   middle of its curve and leaves the selectivity at the first and last bins
-#'   where their own parameters put them. Ignored by every other form.
-#' @param n_sel_bins Integer or \code{NULL}/\code{0} for none. Bins beyond this
+#' @param apical Numeric, the height the double normal's limbs are built up to and
+#'   the plateau sits at. \code{1} (default) is the ordinary curve; a sex with an
+#'   apical offset takes \code{exp(ln_*sel_sex_scale)} here, which moves the middle
+#'   of its curve and leaves the first and last bins where their own parameters put
+#'   them. Ignored by every other form.
+#' @param n_sel_bins Integer, or \code{NULL}/\code{0} for none. Bins beyond this
 #'   one are kept at its computed value rather than evaluated through the
-#'   functional form, the \code{NSelBins} plateau convention several existing
-#'   assessments apply (e.g. \code{nselages}). Applied after the form and its
-#'   parameter deviations, but before the bin-level semi-parametric deviations and
-#'   the bin overrides.
+#'   functional form, the \code{NSelBins} plateau convention several assessments
+#'   apply. Applied after the form and its parameter deviations, but before the
+#'   bin-level semi-parametric deviations and the bin overrides.
 #' @param Region Integer region index.
-#' @param Year Integer year index (absolute, i.e. a row index into
-#'   \code{Wyr_bicubic}). Only used directly by \code{Selex_Model == 8};
-#'   otherwise only used to index \code{ln_seldevs}.
+#' @param Year Integer absolute year index, a row index into \code{Wyr_bicubic}.
+#'   Read directly by \code{Selex_Model == 8}, and otherwise only to index
+#'   \code{ln_seldevs}.
 #' @param Bin Numeric vector of bins (ages or lengths).
 #' @param Sex Integer sex index.
 #' @param Wbin_bicubic Numeric \code{length(Bin) x n_bin_nodes} natural cubic
-#'   spline weight matrix (see \code{\link{Get_Natural_Cubic_Spline_Weights}}),
-#'   mapping bin-node log-selectivity values onto \code{Bin}. Only used when
-#'   \code{Selex_Model == 8}; ignored (may be \code{NULL}) otherwise. Zero
-#'   padding in unused columns (e.g. when a shared parameter array is padded
-#'   to a common width across fleets/blocks) contributes nothing, since it is
-#'   multiplied through to zero.
-#' @param Wyr_bicubic Numeric \code{n_yrs_total x n_yr_nodes} interpolation
-#'   weight matrix mapping year-node log-selectivity values onto every
-#'   absolute model year (rows beyond the fitted block are typically
-#'   constructed to hold the boundary node constant). Row \code{Year} is used
-#'   for this call. Only used when \code{Selex_Model == 8}; ignored (may be
-#'   \code{NULL}) otherwise. A single-column matrix of all-1s (\code{n_yr_nodes
-#'   == 1}) yields a time-invariant bin-only spline, since every year maps
-#'   onto the same single node.
-#' @param n_bin_nodes_bicubic,n_yr_nodes_bicubic Integer. This fleet/block's
-#'   own true number of bin nodes / year nodes. Only used when
-#'   \code{Selex_Model == 8}. \strong{Must} be supplied whenever
-#'   \code{Wbin_bicubic}/\code{Wyr_bicubic} may have been zero-padded wider
-#'   than this specific block's own grid (e.g. because some \emph{other}
-#'   fleet/block shares the same padded storage array but uses a larger
-#'   bicubic grid), \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)} give
-#'   the padded (shared) width, not this block's true node counts, and using
-#'   the padded width to reshape \code{pars} would misassign which flattened
-#'   parameter values land in which (bin-node, year-node) cell. Default
-#'   \code{NULL} falls back to \code{ncol(Wbin_bicubic)}/\code{ncol(Wyr_bicubic)}
-#'   which is correct whenever no padding mismatch is possible (a single bicubic
-#'   block or fleet, or direct unit testing).
+#'   spline weight matrix (see \code{\link{Get_Natural_Cubic_Spline_Weights}})
+#'   mapping bin-node log-selectivity onto \code{Bin}. Read under
+#'   \code{Selex_Model == 8} only, and may be \code{NULL} otherwise. Zero padding
+#'   in unused columns contributes nothing.
+#' @param Wyr_bicubic Numeric \code{n_yrs_total x n_yr_nodes} weight matrix mapping
+#'   year-node log-selectivity onto every absolute model year; row \code{Year} is
+#'   used for this call. Read under \code{Selex_Model == 8} only. A single column
+#'   of ones gives a time-invariant bin-only spline.
+#' @param n_bin_nodes_bicubic,n_yr_nodes_bicubic Integer, this fleet and block's
+#'   own node counts. Supply them whenever \code{Wbin_bicubic} or
+#'   \code{Wyr_bicubic} may have been zero-padded wider than this block's grid,
+#'   because another block shares the storage array: the padded width would
+#'   misassign which flattened parameter lands in which cell. \code{NULL} (default)
+#'   falls back to \code{ncol()}, which is right when no padding is possible.
 #'
-#' @return Numeric vector of selectivity values corresponding to \code{Bin}.
-#' Values are on the natural scale and are not normalized unless specified
-#' in downstream components.
-#'
-#' @details
-#'
-#' For \code{TimeVary_Model = 0}, only the base parametric form is evaluated.
-#'
-#' For \code{TimeVary_Model = 1-2}, deviations modify model parameters
-#' multiplicatively on the natural scale after transformation.
-#'
-#' For \code{TimeVary_Model = 3-5}, deviations act directly on the constructed
-#' selectivity curve as multiplicative log-normal perturbations:
-#' \deqn{\text{selex} = \text{selex} \cdot \exp(\delta_{r,y,b,s})}.
-#'
-#' For \code{Selex_Model = 5}, selectivity is fully non-parametric:
-#' bin-specific logit parameters are optionally adjusted by time-varying
-#' deviations and transformed via:
-#' \deqn{\text{selex}_b = \text{logit}^{-1}(\eta_b)}.
-#'
-#' For \code{Selex_Model = 9}, selectivity is likewise fully non-parametric but
-#' kept on the log scale and standardized within each year:
-#' \deqn{\text{selex}_b = \exp(\eta_b) / \overline{\exp(\eta)}}.
-#' Only the differences among \eqn{\eta} within a year are identified, so the
-#' level of \eqn{\eta} is free and is absorbed by catchability or fishing
-#' mortality.
-#'
-#' Models 6 and 7 extend logistic selectivity by introducing an asymptote
-#' parameter \eqn{\alpha \in (0,1)} that allows selectivity to saturate below
-#' full vulnerability.
-#'
+#' @return Numeric vector of selectivity at \code{Bin}, on the natural scale and
+#'   not normalized unless a downstream component says so.
 #'
 #' @keywords internal
 Get_Selex = function(

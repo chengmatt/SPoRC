@@ -34,8 +34,34 @@ derive_proj_biom(
 \item{y}{Projection year integer}
 
 \item{seas}{Season integer (always spawn_seas)}
+
+\item{proj_NAA, proj_NAA0}{Projected abundance arrays, fished and unfished.}
+
+\item{proj_ZAA}{Projected total mortality.}
+
+\item{t_spawn}{Fraction of the season elapsed at spawning.}
+
+\item{seasdur}{Numeric vector of season durations.}
+
+\item{n_seas, n_pop, n_regions, n_ages, n_sexes}{Model dimensions.}
+
+\item{sgl_seas_spawning_movement}{Natal homing movement \code{[pop, region, region, year, age, sex]}.}
+
+\item{natal_region}{Integer vector of each population's natal region.}
+
+\item{stray_rate}{Matrix \code{[pop, year]} of stray rates.}
+
+\item{Movement, Mrate}{Movement fractions and generator
+\code{[pop, region, region, year, season, age, sex]}, or \code{NULL}.}
+
+\item{move_timing, do_recruits_move, expm_nsub}{Movement timing, whether age one moves, and
+substeps for the implicit matrix exponential.}
+}
+\value{
+List of \code{Total_Biom_y}, \code{SSB_y}, \code{Dynamic_SSB0_y} and \code{eff_SSB_y}.
 }
 \description{
-Compute Biomass for Population Projections
+Spawning-time biomass for projection year \code{y} at the spawning season, from the current
+projected state. Plain R, so it can run either side of mortality depending on \code{rec_lag}.
 }
 \keyword{internal}

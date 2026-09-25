@@ -201,6 +201,14 @@ simulation_self_test <- function(
   # Setup Simulation Containers ---------------------------------------------
   sim_list <- Setup_Sim_Containers(sim_list)
 
+  # Catchability: the reported value is the block mean times the fit's deviation, and the operating
+  # model wants those apart, the mean as the level and the deviations as what conditioning reproduces
+  fit_yrs <- seq_along(data$years)
+  fish_q_fit <- split_reported_q(rep$fish_q[,fit_yrs,,drop = FALSE], optim_parameters_list$ln_fish_q,
+                                 data$fish_q_blocks[,fit_yrs,,drop = FALSE], data$fish_q_type)
+  srv_q_fit <- split_reported_q(rep$srv_q[,fit_yrs,,drop = FALSE], optim_parameters_list$ln_srv_q,
+                                data$srv_q_blocks[,fit_yrs,,drop = FALSE], data$srv_q_type)
+
   # Setup Fishing Processes -------------------------------------------------
 
   # Region-specific sigmaC
@@ -272,7 +280,7 @@ simulation_self_test <- function(
                                 dmr_input = replicate(n = sim_list$n_sims, rep$dmr[,seq_along(data$years),,,drop = FALSE]),
                                 fish_sel_input = replicate(n = sim_list$n_sims, rep$fish_sel[,,seq_along(data$years),,,,,drop = FALSE]),
                                 ret_sel_input = replicate(n = sim_list$n_sims, rep$ret_sel[,,seq_along(data$years),,,,,drop = FALSE]),
-                                fish_q_input = replicate(n = sim_list$n_sims, rep$fish_q[,seq_along(data$years),,drop = FALSE]),
+                                fish_q_input = replicate(n = sim_list$n_sims, fish_q_fit$q_mean),
                                 ObsFishIdx_SE = deweight(if(is.null(rep$FishIdx_SD)) data$ObsFishIdx_SE else rep$FishIdx_SD,
                              data$Wt_FishIdx),
                                 ObsFishIdx_pop_SE = if(any(data$UseFishIdx_pop == 1)) {
@@ -389,7 +397,7 @@ simulation_self_test <- function(
   sim_list <- Setup_Sim_Survey(
     sim_list = sim_list,
     srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,seq_along(data$years),,,,,drop = FALSE]),
-    srv_q_input = replicate(n = sim_list$n_sims, rep$srv_q[,seq_along(data$years),,drop = FALSE]),
+    srv_q_input = replicate(n = sim_list$n_sims, srv_q_fit$q_mean),
     ObsSrvIdx_SE = deweight(if(is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE else rep$SrvIdx_SD, data$Wt_SrvIdx),
     # the index at age carries its own error by age and fleet, so no weight is folded into it
     ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
@@ -493,12 +501,10 @@ simulation_self_test <- function(
   sim_list$sgl_seas_spawning_movement <- replicate(n = sim_list$n_sims, rep$sgl_seas_spawning_movement[,,,seq_along(data$years),,,drop = FALSE])
   # Movement / mortality sequencing; absent for models built before this option existed
   sim_list$move_timing <- if(is.null(data$move_timing)) 0 else data$move_timing
-  # How the matrix exponential is evaluated; likewise absent on older models
+  # How the matrix exponential is evaluated
   sim_list$expm_nsub <- if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub
-  # The instantaneous rate matrix only exists for an estimated CTMC, and is only needed
-  # for continuous movement
-  sim_list$Mrate <- if(sim_list$move_timing == 2)
-    replicate(n = sim_list$n_sims, rep$Mrate[,,,seq_along(data$years),,,,drop = FALSE]) else NULL
+  # The instantaneous rate matrix only exists for an estimated CTMC, and is only needed for continuous movement
+  sim_list$Mrate <- if(sim_list$move_timing == 2) replicate(n = sim_list$n_sims, rep$Mrate[,,,seq_along(data$years),,,,drop = FALSE]) else NULL
 
   # Setup Recruitment Processes ---------------------------------------------
   sim_list <- Setup_Sim_Rec(
@@ -549,6 +555,36 @@ simulation_self_test <- function(
     RecDevs_rho = if(is.null(optim_parameters_list$RecDevs_rho)) array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
                   else rho_trans(array(optim_parameters_list$RecDevs_rho, dim = c(sim_list$n_pop, sim_list$n_regions)))
   )
+
+  # Setup Numbers At Age State ----------------------------------------------
+  if(isTRUE(data$NAA_re > 0)) {
+
+    # figure out eta from NAA PE
+    naa_codes <- c("none", "iid", "1dar1_a", "1dar1_y", "2dar1", "3dcond", "3dmarg")
+    eta <- array(0, dim = c(dim(optim_parameters_list$ln_NAA), sim_list$n_sims))
+    ny_state <- dim(optim_parameters_list$ln_NAA)[3]
+    pred <- rep$NAA_pred[,,seq_len(ny_state),,,,drop = FALSE]
+    fit_eta <- array(0, dim = dim(optim_parameters_list$ln_NAA))
+    fit_eta[pred > 0] <- optim_parameters_list$ln_NAA[pred > 0] - log(pred[pred > 0])
+    for(i in seq_len(sim_list$n_sims)) eta[,,,,,,i] <- fit_eta
+
+    sim_list <- Setup_Sim_NAA_state(
+      sim_list = sim_list,
+      NAA_re = naa_codes[data$NAA_re + 1],
+      NAA_re_ages = data$naa_re_ages,
+      NAA_re_years = data$naa_re_yrs,
+      NAA_re_seasons = data$naa_re_seas,
+      naa_eta_input = eta 
+    )
+  }
+
+  # Catchability Stuff -------------------------------------------------
+  sim_list$n_cond_yrs <- length(data$years)
+  sim_list$ln_fish_q_devs <- replicate(n = sim_list$n_sims, fish_q_fit$devs)
+  sim_list$ln_srv_q_devs <- replicate(n = sim_list$n_sims, srv_q_fit$devs)
+
+  # Setup DSEM --------------------------------------------------------------
+  if(!is.null(data$dsem_model)) sim_list <- Setup_Sim_DSEM(sim_list, data, optim_parameters_list, rep = rep, condition_on_fit = TRUE)
 
   # Setup Tagging -----------------------------------------------------------
   if(!is.na(sum(data$conv_tagged_fish))) n_tags_rel_input <- apply(data$conv_tagged_fish, 1, sum) else n_tags_rel_input <- NA
@@ -710,8 +746,17 @@ simulation_self_test <- function(
           tmp_data$Wt_Srv_caal[] <- 1
         }
 
-        # This replicate's observations are not the ones setup reconciled against,
-        # so a bin restriction may have emptied a block that was full before
+        # do dsem covariate stuff here 
+        if(!is.null(tmp_data$dsem_model)) {
+          tmp_data$dsem_cov_obs <- array(sim_obj$dsem_cov_obs_sim[,,i], dim = dim(tmp_data$dsem_cov_obs))
+          for(k in seq_along(tmp_data$dsem_cov_var_idx)) {
+            if(tmp_data$dsem_cov_family[k] != 0) next
+            seen <- !is.na(tmp_data$dsem_cov_obs[,k])
+            tmp_pars$dsem_x[seen,tmp_data$dsem_cov_var_idx[k]] <- tmp_data$dsem_cov_obs[seen,k]
+          } # end k loop
+        }
+
+        # update setup stuff if needed
         tmp_data <- resync_fitted_blocks(tmp_data)
 
         # Fit model
@@ -944,88 +989,50 @@ simulation_self_test <- function(
 
 #' Extract simulation outputs into SPoRC estimation model format
 #'
-#' Subsets and reshapes biological, tagging, fishery, and survey arrays from a
-#' simulation environment or output list to cover years \code{1:y} and
-#' simulation replicate \code{sim}, producing a named list ready for direct
-#' use in \code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Catch_and_F}},
-#' \code{\link{Setup_Mod_SrvIdx_and_Comps}}, and \code{\link{Setup_Mod_Tagging}}.
-#' Binary \code{Use*} indicator arrays are derived automatically from the
-#' extracted observation arrays (non-NA, positive values set to 1).
+#' Subsets and reshapes the biological, tagging, fishery and survey arrays of a
+#' simulation environment to years \code{1:y} and replicate \code{sim}, giving a
+#' list ready for \code{\link{Setup_Mod_Biologicals}},
+#' \code{\link{Setup_Mod_Catch_and_F}}, \code{\link{Setup_Mod_SrvIdx_and_Comps}}
+#' and \code{\link{Setup_Mod_Tagging}}. The \code{Use*} flags are derived from the
+#' extracted observations, 1 where a value is present and positive.
 #'
-#' Population-specific arrays (\code{ObsCatch_pop}, \code{ObsFishIdx_pop},
-#' \code{ObsFishAgeComps_pop}, \code{ObsFishLenComps_pop}, \code{ObsSrvIdx_pop},
-#' \code{ObsSrvAgeComps_pop}, \code{ObsSrvLenComps_pop}) are extracted when
-#' present in \code{sim_env}; corresponding \code{Use*_PopSpec} flags are
-#' derived automatically.
+#' Population-specific arrays are extracted when \code{sim_env} holds them, with
+#' their own flags derived the same way. The length composition outputs and
+#' \code{SizeAgeTrans} are \code{NULL} when the environment holds no size-age
+#' transition matrix, and the tagging outputs are \code{NULL} under
+#' \code{use_conv_fish_tagging = 0}; otherwise only cohorts released in
+#' \code{1:y} are kept.
 #'
-#' Input sample sizes for age and length compositions are extracted for both
-#' aggregate and population-specific data sources, including retained
-#' (\code{ISS_FishAgeComps}, \code{ISS_FishLenComps}, \code{ISS_FishAgeComps_pop},
-#' \code{ISS_FishLenComps_pop}, \code{ISS_SrvAgeComps}, \code{ISS_SrvLenComps},
-#' \code{ISS_SrvAgeComps_pop}, \code{ISS_SrvLenComps_pop}) and discard
-#' (\code{ISS_FishAgeComps_discard}, \code{ISS_FishLenComps_discard},
-#' \code{ISS_FishAgeComps_discard_pop}, \code{ISS_FishLenComps_discard_pop})
-#' data sources.
+#' @param sim_env Simulation environment or list, from
+#'   \code{\link{Simulate_Pop_Static}} or \code{\link{Setup_sim_env}}, holding the
+#'   operating model arrays.
+#' @param y Integer. Last year to include; years \code{1:y} are kept.
+#' @param sim Integer. Simulation replicate to extract.
 #'
-#' Length composition outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps},
-#' and their population-specific and discard variants) and \code{SizeAgeTrans}
-#' are \code{NULL} when no size-age transition matrix is present in
-#' \code{sim_env}. Tagging outputs are \code{NULL} when
-#' \code{use_conv_fish_tagging = 0}; otherwise, only cohorts with release
-#' years in \code{1:y} are retained.
+#' @return Named list, every array with \code{y} in its year dim. The
+#'   biological elements are \code{WAA} \code{[n_pop x n_regions x y x n_seas x
+#'   n_ages x n_sexes]}, \code{WAA_fish} and \code{WAA_srv} with a trailing fleet
+#'   dim, \code{MatAA}, \code{SizeAgeTrans}, \code{AgeingError} \code{[y x n_ages x
+#'   n_obs_ages]}, whose columns are the observed ages the model ages are read
+#'   onto, and \code{AgeingError_fish} and \code{AgeingError_srv}, \code{NULL} when
+#'   the fleets share one matrix. The tagging elements are
+#'   \code{use_conv_fish_tagging}, \code{conv_tag_release_indicator},
+#'   \code{obs_conv_tag_fish_recap}, \code{conv_tagged_fish},
+#'   \code{conv_tagged_fish_attr} and \code{n_tag_cohorts}.
 #'
-#' @param sim_env Simulation environment or list (e.g., output from
-#'   \code{\link{Simulate_Pop_Static}} or a \code{\link{Setup_sim_env}}
-#'   environment) containing all operating model arrays.
-#' @param y Integer. Last year to include; years \code{1:y} are retained.
-#' @param sim Integer. Simulation replicate index to extract.
+#'   Each fishery and survey data source contributes its observations, its
+#'   observation error or input sample sizes, and its use flag: \code{ObsCatch}
+#'   with \code{ln_sigmaC} and \code{UseCatch}, \code{ObsDiscard} with
+#'   \code{ln_sigmaD} and \code{UseDiscard}, \code{ObsFishIdx} and
+#'   \code{ObsSrvIdx} with their \code{_SE} and use arrays, and the four
+#'   composition streams (fishery and survey age and length) with their
+#'   \code{ISS_*} and \code{Use*} arrays. Each has a \code{_pop} counterpart, and
+#'   the fishery compositions also have \code{_discard} and \code{_discard_pop}
+#'   ones. The length composition elements and their input sample sizes are
+#'   \code{NULL} when no size-age transition matrix is present.
 #'
-#' @return Named list with the following elements (all arrays have \code{y}
-#'   in the year dimension unless noted):
-#'   \code{WAA} \code{[n_pop x n_regions x y x n_seas x n_ages x n_sexes]},
-#'   \code{WAA_fish} \code{[... x n_fish_fleets]},
-#'   \code{WAA_srv} \code{[... x n_srv_fleets]},
-#'   \code{MatAA}, \code{SizeAgeTrans} (or \code{NULL}),
-#'   \code{AgeingError} \code{[y x n_ages x n_obs_ages]}, the observed ages being
-#'   the columns the model ages are read onto,
-#'   \code{AgeingError_fish} \code{[... x n_fish_fleets]},
-#'   \code{AgeingError_srv} \code{[... x n_srv_fleets]} (both \code{NULL} when the
-#'   fleets share one matrix),
-#'   \code{use_conv_fish_tagging},
-#'   \code{conv_tag_release_indicator}, \code{obs_conv_tag_fish_recap},
-#'   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
-#'   \code{n_tag_cohorts} (all \code{NULL} when tagging inactive),
-#'   \code{ObsCatch}, \code{ln_sigmaC}, \code{UseCatch},
-#'   \code{ObsCatch_pop}, \code{ln_sigmaC_pop}, \code{UseCatch_pop},
-#'   \code{ObsDiscard}, \code{ln_sigmaD}, \code{UseDiscard},
-#'   \code{ObsDiscard_pop}, \code{ln_sigmaD_pop}, \code{UseDiscard_pop},
-#'   \code{ObsFishIdx}, \code{ObsFishIdx_SE}, \code{UseFishIdx},
-#'   \code{ObsFishIdx_pop}, \code{ObsFishIdx_pop_SE}, \code{UseFishIdx_pop},
-#'   \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{UseFishAgeComps},
-#'   \code{ObsFishAgeComps_pop}, \code{ISS_FishAgeComps_pop},
-#'   \code{UseFishAgeComps_pop},
-#'   \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps} (or \code{NULL}),
-#'   \code{UseFishLenComps},
-#'   \code{ObsFishLenComps_pop} (or \code{NULL}), \code{ISS_FishLenComps_pop} (or \code{NULL}),
-#'   \code{UseFishLenComps_pop},
-#'   \code{ObsFishAgeComps_discard}, \code{ISS_FishAgeComps_discard}, \code{UseFishAgeComps_discard},
-#'   \code{ObsFishAgeComps_discard_pop}, \code{ISS_FishAgeComps_discard_pop},
-#'   \code{UseFishAgeComps_discard_pop},
-#'   \code{ObsFishLenComps_discard} (or \code{NULL}), \code{ISS_FishLenComps_discard} (or \code{NULL}),
-#'   \code{UseFishLenComps_discard},
-#'   \code{ObsFishLenComps_discard_pop} (or \code{NULL}), \code{ISS_FishLenComps_discard_pop} (or \code{NULL}),
-#'   \code{UseFishLenComps_discard_pop},
-#'   \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
-#'   \code{ObsSrvIdx_pop}, \code{ObsSrvIdx_pop_SE}, \code{UseSrvIdx_pop},
-#'   \code{ObsSrvAgeComps}, \code{ISS_SrvAgeComps}, \code{UseSrvAgeComps},
-#'   \code{ObsSrvAgeComps_pop}, \code{ISS_SrvAgeComps_pop},
-#'   \code{UseSrvAgeComps_pop},
-#'   \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps} (or \code{NULL}),
-#'   \code{UseSrvLenComps},
-#'   \code{ObsSrvLenComps_pop} (or \code{NULL}), \code{ISS_SrvLenComps_pop} (or \code{NULL}),
-#'   \code{UseSrvLenComps_pop}.
-#'
-#' @seealso \code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Catch_and_F}},
+#' @seealso \code{\link{Setup_Mod_Biologicals}},
+#'   \code{\link{Setup_Mod_Catch_and_F}},
 #'   \code{\link{Setup_Mod_SrvIdx_and_Comps}}, \code{\link{Setup_Mod_Tagging}},
 #'   \code{\link{Simulate_Pop_Static}}, \code{\link{Setup_sim_env}}
 #'

@@ -25,15 +25,15 @@ do_NAAstate_mapping(
   NAA_re_seasons = "annual",
   NAA_re_season = "iid",
   NAA_re_season_spec = "est_all",
-  NAA_re_where = NULL
+  NAA_re_where = NULL,
+  naa_sigma_given = TRUE
 )
 }
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{NAA_re}{Character. \code{"none"} (default) leaves the numbers at age
-deterministic. \code{"iid"} gives every active cell an independent Gaussian
-innovation.}
+\item{NAA_re}{\code{"none"} (default) leaves the numbers at age deterministic,
+\code{"iid"} gives every active cell an independent Gaussian innovation.}
 
 \item{NAA_re_ages}{Ages the state is active over, as ages rather than indices.
 \code{NULL} (default) uses every age from the second onward.}
@@ -41,63 +41,46 @@ innovation.}
 \item{NAA_re_years}{Calendar years the state is active over. \code{NULL}
 (default) uses every year from the second onward.}
 
-\item{NAA_sigma_spec}{Character, \code{"est"} or \code{"fix"}, whether the
-process error standard deviations are estimated.}
+\item{NAA_sigma_spec}{\code{"est"} or \code{"fix"}, whether the process error
+standard deviations are estimated.}
 
-\item{NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_seasblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals}{Lists of integer vectors assigning indices to blocks, the same as the
-\code{M_*blk_spec_vals} arguments. Blocking shares the standard
-deviation.}
+\item{NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_seasblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals}{Lists of integer vectors assigning indices to blocks, as the
+\code{M_*blk_spec_vals} arguments. Blocking shares the standard deviation.}
 
-\item{NAA_pe_spec}{Character sharing spec for \code{NAA_pe_pars}, as documented
-on \code{\link{Setup_Mod_Biologicals}}.}
+\item{NAA_pe_spec}{Sharing spec for \code{NAA_pe_pars}, as documented on
+\code{\link{Setup_Mod_Biologicals}}.}
 
-\item{NAA_re_seasons}{Seasons the state is active over. \code{"annual"}
-(default) uses season one alone, \code{"all"} every season, or an integer
-vector of season indices.}
+\item{NAA_re_seasons}{Seasons the state is active over: \code{"annual"} (default)
+for season one alone, \code{"all"}, or an integer vector of season indices.}
 
-\item{NAA_re_season}{Character, \code{"iid"} (default) or \code{"us"}, the
-correlation across the active seasons.}
+\item{NAA_re_season}{\code{"iid"} (default) or \code{"us"}, the correlation
+across the active seasons.}
 
-\item{NAA_re_season_spec}{Character sharing spec for the season correlations,
-taking the same values as \code{NAA_re_region_spec}.}
+\item{NAA_re_season_spec}{Sharing spec for the season correlations, taking the
+same values as \code{NAA_re_region_spec}.}
 
-\item{NAA_re_where}{Integer matrix \code{[population, region]}, \code{1} where
-the numbers at age state runs and \code{0} where a population never occupies
-that region. \code{NULL} (default) gives every cell a state. A natal homing
-population that never reaches a region holds no fish there, so a lognormal
-state on that cell is undefined and the penalty would take the logarithm of
-zero. Cells set to \code{0} are dropped from the map as well as from the
-penalty, and they need the region and population correlations off.}
+\item{NAA_re_where}{Integer matrix \code{[population, region]}, \code{1} where the
+state runs and \code{0} where a population never occupies that region.
+\code{NULL} (default) gives every cell a state. Cells set to \code{0} are
+dropped from the map and the penalty, and need the region and population
+correlations off.}
+
+\item{naa_sigma_given}{Logical, whether the caller set \code{NAA_sigma_spec}
+itself; an explicit \code{"est"} is refused under \code{NAA_re = "dsem"}.}
 }
 \value{
-\code{input_list} with \code{$par$ln_NAA}, \code{$par$ln_sigmaNAA},
-  their maps, and the data fields \code{NAA_re}, \code{n_est_naa_re},
+\code{input_list} with \code{$par$ln_NAA}, \code{$par$ln_sigmaNAA}, their
+  maps, and the data fields \code{NAA_re}, \code{n_est_naa_re},
   \code{naa_re_ages}, \code{naa_re_yrs}, \code{naa_re_seas} and
   \code{naa_sigma_blocks}.
 }
 \description{
-Builds the \code{ln_NAA} parameter array and its map, the process error
-standard deviations and their blocking index, and the data fields the
-dynamics and the penalty read.
-}
-\details{
-The state covers ages 2 and older, including the plus group, over years 2 and
-later. Year 1 at those ages belongs to \code{ln_InitDevs} and age 1 belongs to
-\code{ln_RecDevs} in every year, so the three parameterizations partition the
-numbers at age rather than overlapping. The plus group is inside the state and
-not optional: it is the only cell whose influence never decays, so leaving it
-deterministic gives up the conditional independence the state is worth having
-for.
-
-Ages and years must each be a contiguous run. The penalty covers the active
-cells as one rectangular slice, and a gap would either leave penalized cells the
-dynamics never wrote or force a per-cell branch onto the tape. Seasons have
-no such requirement, because the season dim is only ever independent or
-unstructured and neither reads adjacency.
-
-A cell is the log numbers at the start of its season, so season one of year
-\code{y} is the state at the year boundary, after ageing and the plus group,
-and later seasons are states on the within-year survival and movement step.
-Season one alone reproduces the annual state exactly.
+Builds the \code{ln_NAA} parameter array and its map, the process error standard
+deviations and their blocking index, and the data fields the dynamics and the
+penalty read. The state covers ages 2 and older including the plus group, over
+years 2 and later; year 1 at those ages belongs to \code{ln_InitDevs} and age 1
+to \code{ln_RecDevs}. Ages and years must each be a contiguous run, seasons need
+not be. A cell is the log numbers at the start of its season, so season one alone
+reproduces the annual state exactly.
 }
 \keyword{internal}

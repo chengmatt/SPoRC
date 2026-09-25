@@ -107,7 +107,7 @@ ss3_tv_rows <- function(tv_table, base_name, pattern) {
 #'
 #' Covers natM_type 0 (one rate), 1 (breakpoints interpolated over age) and 3
 #' (one rate per age), each optionally with time blocks. Growth patterns map
-#' onto regions, which holds whenever an SS3 area owns one pattern.
+#' onto regions, which holds whenever an SS3 area has one pattern.
 ss3_natmort <- function(ctl, ages, years, n_pop, n_regions, n_sexes) {
 
   if(!ctl$natM_type %in% c(0, 1, 3)) {

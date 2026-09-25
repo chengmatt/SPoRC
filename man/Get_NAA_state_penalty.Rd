@@ -13,6 +13,7 @@ Get_NAA_state_penalty(
   naa_re_seas,
   NAA_re = 1,
   NAA_pe_pars = NULL,
+  map_ln_NAA = NULL,
   NAA_re_region = 0,
   NAA_region_corr_pars = NULL,
   NAA_re_pop = 0,
@@ -51,6 +52,9 @@ marginal variance respectively.}
 \item{NAA_pe_pars}{Array \code{[pop, region, 3, sex]} of correlation
 parameters on the unconstrained scale, read as age, year and cohort. Unused
 under \code{NAA_re = 1}.}
+
+\item{map_ln_NAA}{Mirror of \code{map$ln_NAA}, \code{NA} where a cell is
+estimated but left out of this penalty. \code{NULL} penalizes every cell.}
 
 \item{NAA_re_region}{Integer code for the structure across regions. \code{0}
 independent, \code{1} unstructured.}

@@ -11,32 +11,26 @@ release_conv_tags(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by
-\code{\link{Setup_sim_env}}. Modified in place:
-\code{$conv_tagged_fish[tc, , , , sim]} and
-\code{$conv_tagged_fish_attr[tc, , , , sim]} for each cohort released
-in year \code{y}.}
+\item{sim_env}{Simulation environment from \code{\link{Setup_sim_env}},
+modified in place: \code{$conv_tagged_fish} and
+\code{$conv_tagged_fish_attr} for each cohort released in year \code{y}.}
 }
 \value{
-\code{invisible(NULL)}. All modifications are made by reference
-  within \code{sim_env}.
+\code{invisible(NULL)}; everything is modified by reference within
+  \code{sim_env}.
 }
 \description{
-For each tag cohort scheduled for release in year \code{y}, distributes
-\code{n_tags} (or \code{n_tags_rel_input} if provided) across populations,
-ages, and sexes proportional to the selectivity-weighted abundance
-(\code{NAA_bef}) of the release platform (survey, fishery, or population).
-Tagged fish counts are rounded to integers. The attended attribute string
-\code{conv_fish_tag_attr} is then applied via
-\code{\link{marginalize_conv_fish_tags}} to produce the observation-level
-release array \code{conv_tagged_fish_attr}, which is consistent with the
-dimension resolution of the recapture likelihood.
+Spreads each cohort's \code{n_tags}, or \code{n_tags_rel_input} when supplied,
+across populations, ages and sexes in proportion to the selectivity-weighted
+abundance \code{NAA_bef} of the release platform, rounding to integers.
+\code{conv_fish_tag_attr} is then applied through
+\code{\link{marginalize_conv_fish_tags}} to give the observation-level release
+array \code{conv_tagged_fish_attr}, at the resolution the recapture likelihood
+reads.
 }
 \details{
-For survey and fishery platforms, total tags in the release region are
-scaled relative to the selectivity-weighted global abundance to allocate
-region-specific cohort sizes when \code{n_tags_rel_input} is not provided.
-For the population platform, scaling is proportional to the region's share
-of total abundance.
+Without \code{n_tags_rel_input}, a survey or fishery platform scales the
+region's total against the selectivity-weighted global abundance, and a
+population platform against the region's share of total abundance.
 }
 \keyword{internal}

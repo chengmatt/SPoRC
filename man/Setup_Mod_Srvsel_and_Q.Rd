@@ -18,8 +18,10 @@ Setup_Mod_Srvsel_and_Q(
   srv_q_type = rep("est", input_list$data$n_srv_fleets),
   srv_sel_devs_spec = NULL,
   corr_opt_semipar = NULL,
-  srv_q_formula = NULL,
-  srv_q_cov_dat = NULL,
+  srv_q_model = NULL,
+  sigma_srv_q_spec = "est_all",
+  srv_q_rho_spec = "est_all",
+  srv_q_rw_init_sigma = NA,
   Use_srv_selex_prior = 0,
   srv_selex_prior = NULL,
   Use_srv_selex_penalty = 0,
@@ -44,308 +46,212 @@ Setup_Mod_Srvsel_and_Q(
 )
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
-and \code{$verbose} sublists, as returned by upstream setup functions.
-\code{$data$srv_selex_type} must already be set by
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map} and
+\code{$verbose}. \code{$data$srv_selex_type} must already be set by
 \code{\link{Setup_Mod_Biologicals}}.}
 
-\item{cont_tv_srv_sel}{Character vector defining the continuous
-time-variation form per fleet. Each element follows
-\code{"<type>_Fleet_x"}. Options:
-\describe{
-  \item{\code{"none"}}{No continuous time variation (default).}
-  \item{\code{"iid"}}{IID deviations across years.}
-  \item{\code{"rw"}}{Random walk in time.}
-  \item{\code{"3dmarg"}}{3D marginal GMRF (age × year × cohort).}
-  \item{\code{"3dcond"}}{3D conditional GMRF.}
-  \item{\code{"2dar1"}}{2D AR1 (bin × year).}
-}
-When any fleet uses a non-\code{"none"} type, both
-\code{srvsel_pe_pars_spec} and \code{srv_sel_devs_spec} must be
-specified. Default: \code{"none_Fleet_x"} for each fleet.}
+\item{cont_tv_srv_sel}{Character vector of continuous time variation per fleet,
+each \code{"<type>_Fleet_x"}: \code{"none"} (default), \code{"iid"},
+\code{"rw"}, \code{"3dmarg"}, \code{"3dcond"} (3D GMRF over age, year and
+cohort) or \code{"2dar1"} (separable over bin and year). Any fleet other than
+\code{"none"} also needs \code{srvsel_pe_pars_spec} and
+\code{srv_sel_devs_spec}.}
 
-\item{srv_sel_blocks}{Character vector defining discrete time blocks for
-survey selectivity. Each element follows \code{"Block_k_Year_a-b_Fleet_x"}
-or \code{"none_Fleet_x"} (constant selectivity). Use \code{"terminal"} in
-place of the end year to extend to the final model year. Parsed into an
-internal array \code{[n_regions × n_years × n_srv_fleets]}. Blocked and
-continuous time-varying selectivity are mutually exclusive for a given
-fleet. Default: \code{"none_Fleet_x"} for each fleet.}
+\item{srv_sel_blocks}{Character vector of discrete selectivity time blocks, each
+\code{"Block_k_Year_a-b_Fleet_x"} with \code{"terminal"} allowed as the end
+year, or \code{"none_Fleet_x"} (default) for constant selectivity. Parsed into
+an \code{[n_regions × n_years × n_srv_fleets]} array. Mutually exclusive with
+continuous time variation for the same fleet.}
 
-\item{srv_sel_model}{Character vector specifying the selectivity functional
-form per fleet, and optionally per time block. Each element follows one
-of:
-\describe{
-  \item{\code{"<model>_Fleet_x"}}{Single form applied across all years for
-    fleet \code{x}.}
-  \item{\code{"<model>_Fleet_x_Block_k"}}{Form applied only to block
-    \code{k} for fleet \code{x}, as defined in \code{srv_sel_blocks}.
-    Required when multiple blocks are defined for a fleet.}
-}
-Available models (see the model equations vignette for parameterizations):
-\describe{
-  \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
-  \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
-  \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
-  \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
-  \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-  \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
-    the logit scale, then mean-standardized jointly over years and bins so the
-    grand mean of the surface is one. Bins may be grouped through the
-    non-parametric bin mapping. No fixed functional form is imposed.}
-  \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
-    each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
-    within-year contrasts are identified; the level is absorbed by
-    catchability or fishing mortality.}
-  \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
-    standardization, \eqn{\exp(\theta)}, so the values hold the height of the
-    curve as well as its shape. This is the form for a data source fit age by age:
-    a free catchability per age and a selectivity estimated at age are one
-    quantity written two ways, so the whole age multiplier lives here and no
-    catchability is set. Pin one bin, by leaving it out of the estimated bins,
-    whenever the mean it multiplies is also free.}
-  \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
-  \item{\code{"asymplogist2"}}{Logistic selectivity with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
-  \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid
-    (see \code{\link{Get_Selex}}, \code{Selex_Model == 8}). Specified as
-    \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} (optionally
-    with \code{_Block_k}). One generalized form covers a smooth bin x year
-    surface (\code{n_yr_nodes > 1}), a time-invariant bin-only spline
-    (\code{n_yr_nodes == 1}), or a bin-only spline re-fit independently
-    per year-block (\code{n_yr_nodes == 1} within each of several blocks
-    defined via \code{srv_sel_blocks}). An optional \code{_SelStyr_<year>}
-    suffix (a calendar year within the block) restricts the actual spline
-    fit to \code{SelStyr}:block-end; years within the block before
-    \code{SelStyr} are kept constant at the \code{SelStyr} year's fitted
-    curve, rather than fitting the surface over the whole block. An
-    optional \code{_NSelBins_<n>} suffix restricts the actual spline fit
-    to the first \code{n} bins (ages or lengths, per \code{srv_selex_type});
-    bins beyond \code{n} are kept constant at the last fitted bin's
-    curve.}
-}
-No default; must be provided.}
+\item{srv_sel_model}{Character vector of the selectivity form per fleet, and
+optionally per block: \code{"<model>_Fleet_x"} or
+\code{"<model>_Fleet_x_Block_k"}, the latter required when a fleet has several
+blocks. The forms and their syntax, including the \code{"bicubic"} suffixes,
+are those of \code{fish_sel_model} in \code{\link{Setup_Mod_Fishsel_and_Q}}.
+No default.}
 
-\item{Use_srv_q_prior}{Integer (0/1). Whether log-normal priors are applied
-to survey catchability parameters. Default \code{0}.}
+\item{Use_srv_q_prior}{Integer (0/1) for lognormal priors on survey
+catchability. Default \code{0}.}
 
-\item{srv_q_prior}{Data frame of catchability prior specifications. Required
-columns: \code{region}, \code{fleet}, \code{block}, \code{mu} (prior mean
-on natural scale), \code{sd} (prior SD on log scale). Each row specifies
-a \eqn{\log\text{N}(\log(\mu), \text{sd})} prior. Ignored when
-\code{Use_srv_q_prior = 0}. Default \code{NA}.}
+\item{srv_q_prior}{Data frame with columns \code{region}, \code{fleet},
+\code{block}, \code{mu} on the natural scale and \code{sd} on the log scale,
+one row per \eqn{\log\text{N}(\log(\mu), \text{sd})} prior. Default \code{NA}.}
 
-\item{srv_q_blocks}{Character vector defining discrete time blocks for
-survey catchability. Same format as \code{srv_sel_blocks}:
-\code{"Block_k_Year_a-b_Fleet_x"} or \code{"none_Fleet_x"}. Parsed into
-an array \code{[n_regions × n_years × n_srv_fleets]}. Default:
-\code{"none_Fleet_x"} for each fleet.}
+\item{srv_q_blocks}{Character vector of discrete catchability time blocks, in
+the format of \code{srv_sel_blocks}. Parsed into an \code{[n_regions × n_years
+× n_srv_fleets]} array. Default \code{"none_Fleet_x"}.}
 
-\item{srvsel_pe_pars_spec}{Character vector \code{[n_srv_fleets]} or
-\code{NULL}. Sharing structure for process error hyperparameters. See
-\code{\link{do_sel_pe_pars_mapping}} for full option descriptions.
-Default \code{NULL}.}
+\item{srvsel_pe_pars_spec}{Character vector \code{[n_srv_fleets]} or \code{NULL}
+(default) of the sharing structure for the process error hyperparameters. See
+\code{\link{do_sel_pe_pars_mapping}}.}
 
-\item{srv_fixed_sel_pars_spec}{Character vector \code{[n_srv_fleets]}.
-Sharing structure for fixed-effect selectivity parameters. See
-\code{\link{do_fixed_sel_pars_mapping}} for full option descriptions.
-No default; must be provided.}
+\item{srv_fixed_sel_pars_spec}{Character vector \code{[n_srv_fleets]} of the
+sharing structure for the fixed-effect selectivity parameters. No default. See
+\code{\link{do_fixed_sel_pars_mapping}}.}
 
-\item{srv_q_spec}{Character vector \code{[n_srv_fleets]} or \code{NULL}.
-Sharing structure for catchability. See \code{\link{do_q_mapping}}
-for full option descriptions. Default \code{NULL}.}
+\item{srv_q_spec}{Character vector \code{[n_srv_fleets]} or \code{NULL}
+(default) of the sharing structure for catchability. See
+\code{\link{do_q_mapping}}.}
 
-\item{srv_q_type}{Character vector \code{[n_srv_fleets]} controlling how
-catchability is obtained. \code{"est"} (default) estimates
-\code{ln_srv_q}. \code{"arith"} concentrates it out of the likelihood as
-the ratio of mean observed to mean predicted index, and \code{"geo"} does
-the same on the log scale as \code{exp(mean(log(obs) - log(pred)))}. Both
-analytic forms use only the years with observations and fix that fleet's
-\code{ln_srv_q} regardless of \code{srv_q_spec}. The solve is done within
-each \code{srv_q_blocks} time block, so a blocked catchability gets one
-solved value per block. A single block, the default, is one value for the
-whole series.}
+\item{srv_q_type}{Character vector \code{[n_srv_fleets]} of how catchability is
+obtained. \code{"est"} (default) estimates \code{ln_srv_q}, \code{"arith"}
+concentrates it out as the ratio of mean observed to mean predicted index, and
+\code{"geo"} does the same on the log scale as
+\code{exp(mean(log(obs) - log(pred)))}. Both analytic forms use the years with
+observations only and fix that fleet's \code{ln_srv_q} whatever
+\code{srv_q_spec} says. The solve runs within each \code{srv_q_blocks} block.}
 
-\item{srv_sel_devs_spec}{Character vector \code{[n_srv_fleets]} or
-\code{NULL}. Sharing structure for selectivity deviation time series.
-See \code{\link{do_sel_devs_mapping}} for full option descriptions.
-Default \code{NULL}.}
+\item{srv_sel_devs_spec}{Character vector \code{[n_srv_fleets]} or \code{NULL}
+(default) of the sharing structure for the deviation series. See
+\code{\link{do_sel_devs_mapping}}.}
 
-\item{corr_opt_semipar}{Character vector \code{[n_srv_fleets]} or
-\code{NULL}. Specifies correlation components to suppress for 3D GMRF or
-2D AR1 forms. See \code{\link{do_sel_pe_pars_mapping}} for valid
-values. Default \code{NULL}.}
+\item{corr_opt_semipar}{Character vector \code{[n_srv_fleets]} or \code{NULL}
+(default) of which correlation components to suppress under the 3D GMRF or 2D
+AR1 forms. See \code{\link{do_sel_pe_pars_mapping}}.}
 
-\item{srv_q_formula}{Named list of R formulas specifying environmental
-covariate relationships for catchability per region-fleet combination.
-Names follow the convention \code{"Region_r_Fleet_f"}. Covariates must
-be present in \code{srv_q_cov_dat}. If \code{NULL}, no covariate effects
-are included. Default \code{NULL}.}
+\item{srv_q_model}{Character vector \code{[n_srv_fleets]} of the process error
+on annual catchability deviations: \code{"none"} (default), \code{"iid"},
+\code{"rw"}, \code{"ar1"} or \code{"dsem"}, which hands the series to
+\code{\link{Setup_Mod_DSEM}}. Catchability is then \eqn{\exp(\ln q_{r,b,f} +
+\epsilon_{r,y,f})}. A fleet with deviations cannot also have
+\code{srv_q_blocks} or an analytically solved \code{srv_q_type}.}
 
-\item{srv_q_cov_dat}{Named list of numeric vectors (length = \code{n_years})
-containing covariate time series referenced in \code{srv_q_formula}.
-All vectors must be the same length and contain no missing values; set
-values to \code{0} for years when the survey is not active. If
-\code{NULL}, covariate effects are excluded. Default \code{NULL}.}
+\item{sigma_srv_q_spec}{Sharing string for the deviation standard deviation over
+region and fleet: \code{"est_all"} (default), \code{"est_shared_r"},
+\code{"est_shared_f"}, \code{"est_shared_r_f"} or \code{"fix"}.}
 
-\item{Use_srv_selex_prior}{Integer (0/1). Whether log-normal priors are
-applied to survey selectivity parameters. Default \code{0}.}
+\item{srv_q_rho_spec}{Sharing string for the AR1 correlation, with the same
+options as \code{sigma_srv_q_spec}. Default \code{"est_all"}. Only read under
+\code{srv_q_model = "ar1"}.}
 
-\item{srv_selex_prior}{Data frame of selectivity prior specifications, one
-row per prior. Required columns: \code{region}, \code{fleet},
-\code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd}, plus an
-optional \code{type} giving each row's target: \code{"par"} (the default
-when the column is absent) is a lognormal prior on one fixed selectivity
-parameter, with \code{mu} on the natural scale and \code{sd} on the log
-scale; \code{"value"} is a normal prior on the realized selectivity value
-at one bin, with both on the natural scale, where \code{par} instead names
-the bin (on ages or lengths per \code{srv_selex_type}) and the value is
-read at the first model year of \code{block}. A \code{"value"} row
-constrains the derived selectivity value rather than the parameters,
-matching the ADMB convention of pinning survey selectivity at a reference
-age near one, which no set of independent parameter priors can express.
-Ignored when \code{Use_srv_selex_prior = 0}. Default \code{NULL}.}
+\item{srv_q_rw_init_sigma}{Standard deviation of the first estimated year of a
+random walk. \code{NA} (default) starts the walk at zero under its own sigma,
+which keeps \code{ln_srv_q} as the level of the series; a wide value leaves
+the level free and confounds it with \code{ln_srv_q}.}
+
+\item{Use_srv_selex_prior}{Integer (0/1) for priors on the survey selectivity
+parameters. Default \code{0}.}
+
+\item{srv_selex_prior}{Data frame with columns \code{region}, \code{fleet},
+\code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
+\code{type}. \code{"par"} (the default) is a lognormal prior on one fixed
+selectivity parameter, with \code{mu} on the natural scale and \code{sd} on
+the log scale. \code{"value"} is a normal prior on the realized selectivity at
+one bin, both on the natural scale, where \code{par} names the bin and the
+value is read at the first model year of \code{block}; that is the ADMB
+convention of pinning survey selectivity at a reference age near one, which no
+set of independent parameter priors can express. Default \code{NULL}.}
 
 \item{Use_srv_selex_penalty}{Integer (0/1). Whether a centering penalty is
 applied to sets of survey selectivity fixed-effect parameters. Default
 \code{0}.}
 
-\item{srv_sel_norm_bins}{List with one element per survey fleet naming the
-bins the mean-one standardization averages over, or \code{NULL} for fleets
-standardizing over every bin (\code{Selex_Model = 9} only). A gear whose
-catchability is defined against part of the bin range standardizes over
-that part, and catchability absorbs the difference in scale. Default
+\item{srv_sel_norm_bins}{List with one element per fleet naming the bins the
+mean-one standardization averages over, or \code{NULL} for fleets
+standardizing over every bin. Read under \code{"nonparlog"} only. A gear whose
+catchability is defined against part of the bin range standardizes over that
+part, and catchability absorbs the difference in scale. Default \code{NULL}.}
+
+\item{srv_sel_bin_dev_bins}{List with one element per fleet naming the bins that
+fleet overrides, or \code{NULL} for none, e.g. \code{list(1, NULL)}. An
+overridden bin takes a freely estimated annual value
+\eqn{\exp(\epsilon_{y,b})} in place of what the functional form produced,
+applied after every other transformation including standardization, while the
+rest of the curve keeps its parametric shape. Default \code{NULL}.}
+
+\item{srvsel_pe_wt}{Numeric vector \code{[n_srv_fleets]} multiplying the survey
+selectivity process error likelihood. Default \code{1}. \code{0} skips that
+fleet's process error, so the deviations stay estimated but enter the objective
+only through the data and any smoothness or centering penalties. Values other
+than 0 or 1 make an estimated process error sigma reinterpretable. Applies to
+\code{ln_srvsel_devs} only; the bin-override deviations have their own process
+error.}
+
+\item{srvsel_rw_init_sigma}{Numeric vector \code{[n_srv_fleets]} giving the
+standard deviation of the first year of an \code{"rw"} deviation series.
+Default \code{5}, which leaves that year effectively free. \code{NA} instead
+starts the walk at zero under the walk's own estimated sigma, which suits a
+base curve that already describes the first year well.}
+
+\item{cont_tv_srvsel_bin_devs}{Character vector \code{[n_srv_fleets]} of the
+process error on the bin-override deviations: \code{"none"} (default),
+\code{"iid"} or \code{"rw"}. A walk has its own estimated sigma per bin.}
+
+\item{srv_selex_penalty}{Data frame of centering penalties with columns
+\code{region}, \code{fleet}, \code{block}, \code{sex}, \code{par} and
+\code{wt}, required when \code{Use_srv_selex_penalty = 1}. Each row penalizes
+\code{wt * (log(mean(exp(pars))))^2} over the parameters named in \code{par},
+a single index or a list column of integer vectors. This pins the scalar of a
+non-parametric curve that catchability would otherwise absorb, and is softer
+than fixing a bin. Meant for parameter sets on the log scale. Default
 \code{NULL}.}
 
-\item{srv_sel_bin_dev_bins}{List with one element per survey fleet naming the
-bins that fleet overrides, or \code{NULL} for fleets with no overrides
-(e.g. \code{list(1, NULL)} frees bin 1 of fleet 1 only). An overridden bin
-takes a freely estimated annual value \eqn{\exp(\epsilon_{y,b})} in place of
-whatever the functional form produced, applied after every other
-transformation including standardization. The rest of the curve keeps its
-parametric shape. Default \code{NULL}.}
+\item{t_srv}{Survey timing as a fraction of the year (annual models) or the
+season (seasonal models), array \code{[n_regions × n_seas × n_srv_fleets]}.
+Default \code{1}, the end of the period.}
 
-\item{srvsel_pe_wt}{Numeric vector \code{[n_srv_fleets]}. Per-fleet
-multiplier on the survey selectivity process error likelihood. Default
-\code{1} for every fleet. \code{0} skips that fleet's process error
-likelihood altogether, so the deviations stay estimated but enter the
-objective only through the data and any explicit smoothness or centering
-penalties, which is how several existing assessments constrain them. Values
-other than 0 or 1 make an estimated process error sigma reinterpretable, so
-prefer 0 or 1 unless deliberately down-weighting. Applies only to
-\code{ln_srvsel_devs}; the bin-override deviations have their own process
-error and are not affected.}
+\item{srvsel_devs_shared_bins}{List of integer vectors grouping the bins that
+share one deviation series, e.g. \code{list(1:5, 6:10, 11:30)}. Required when
+\code{srv_sel_devs_spec} names an \code{"est_shared_b"} variant. Default
+\code{NULL}.}
 
-\item{srvsel_rw_init_sigma}{Numeric vector \code{[n_srv_fleets]}. Standard
-deviation given to the first year of an \code{"rw"} deviation series.
-Default \code{5}, which leaves that year effectively free. \code{NA}
-instead starts the walk at zero under the walk's own estimated sigma,
-making the first year as smooth as every later step. Appropriate when the
-base parametric curve already describes the first year well.}
+\item{srv_selex_type}{Character scalar, \code{"age"} (default) or
+\code{"length"}.}
 
-\item{cont_tv_srvsel_bin_devs}{Character vector \code{[n_srv_fleets]} giving
-the process error on the bin-override deviations for each fleet:
-\code{"none"} (default), \code{"iid"}, or \code{"rw"}. A random walk
-has its own estimated sigma per bin, with
-\code{srvsel_bin_devs_rw_init_sigma} governing its first year.}
+\item{use_fixed_srv_sel}{Integer vector \code{[n_srv_fleets]}, \code{1} to fix
+survey selectivity and \code{0} to estimate it.}
 
-\item{srv_selex_penalty}{Data frame of centering penalty specifications,
-required when \code{Use_srv_selex_penalty = 1}. Required columns:
-\code{region}, \code{fleet}, \code{block}, \code{sex}, \code{par}, and
-\code{wt}. Each row penalizes \code{wt * (log(mean(exp(pars))))^2} over the
-set of parameters named in \code{par}, which may be a single index or a
-list column of integer vectors naming a whole set. This pins the scalar of
-a non-parametric curve that catchability or fishing mortality would
-otherwise absorb, and is softer than fixing a bin outright. Intended for
-parameter sets kept on the log scale. Default \code{NULL}.}
+\item{srv_sel_input}{Array of fixed survey selectivity values \code{[n_pop ×
+n_regions × n_years × n_seas × n_bins × n_sexes × n_srv_fleets]}, required
+whenever any survey has fixed selectivity.}
 
-\item{t_srv}{Survey timing fraction within a given year (annual models) or
-season (seasonal models), array
-\code{[n_regions × n_seas × n_srv_fleets]}. Default: \code{1}
-(end of period).}
+\item{srv_sel_nonpar_est_bins}{Optional bin groupings for non-parametric survey
+selectivity, structured \code{[[survey]][[block]]}, each element a list of
+integer vectors naming the bins that share one estimated parameter. Indices
+are on the bin dim the survey selectivity type names.}
 
-\item{srvsel_devs_shared_bins}{List of integer vectors defining bin groups
-for age/length-sharing of deviations under semi-parametric forms (e.g.,
-\code{list(1:5, 6:10, 11:30)}). Required when \code{srv_sel_devs_spec}
-includes any \code{"est_shared_b"} variant. Default \code{NULL}.}
+\item{srvsel_dont_est_dev_first}{Integer vector \code{[n_srv_fleets]} of 0/1,
+default \code{0}. Where \code{1}, that fleet's deviations start in year two and
+the fixed parameters hold year one. A non-parametric form has one free base
+parameter per bin, so year one's deviation is that same value written twice
+with only \code{srvsel_rw_init_sigma} between them, a prior on a level usually
+meant to be free. Refused for the GMRF and 2D AR1 forms, whose deviations are a
+field over years and bins rather than a walk anchored at year one.}
 
-\item{srv_selex_type}{Character. Whether survey selectivity type is 'age' or 'length' based. Default: \code{age}.}
-
-\item{use_fixed_srv_sel}{Integer vector of length \code{n_srv_fleets}
-indicating whether survey selectivity is fixed (\code{1}) or estimated
-(\code{0}) for each survey index.}
-
-\item{srv_sel_input}{Array of fixed survey selectivity values used when
-\code{use_fixed_srv_sel == 1}. Dimensions:
-\code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_srv_fleets]}.
-Required whenever any survey has fixed selectivity specified.}
-
-\item{srv_sel_nonpar_est_bins}{Optional list defining bin groupings for
-non-parametric survey selectivity. Structure is
-\code{[[survey]][[block]]}, where each element is a list of integer vectors.
-Each vector defines a group of bins that share a single estimated
-selectivity parameter. Indices must correspond to the bin dimension
-defined by the survey selectivity type (age or length).}
-
-\item{srvsel_dont_est_dev_first}{Integer vector of length \code{n_srv_fleets} of
-0/1, default \code{0}. Where \code{1}, that fleet's deviations start in
-year two and the fixed selectivity parameters hold year one. A
-non-parametric form (\code{"nonpar"}, \code{"nonparlog"},
-\code{"nonparfree"}) has one free base parameter per bin, so year one's
-deviation is that same value written twice and only
-\code{srvsel_rw_init_sigma} separates them, as a prior on a level
-that is usually meant to be free. Dropping it removes the redundant
-parameter and that prior, and leaves the walk a sum of differences. Refused
-for the GMRF and 2D AR1 forms, whose deviations are a field over years and
-bins rather than a walk anchored at year one.}
-
-\item{srv_sel_sex_offset}{Character vector of length \code{n_srv_fleets}
-linking the sexes of a fleet's selectivity, for models with
-\code{n_sexes > 1}. Options per fleet are \code{"none"} (default, each
-sex's stored parameters are its own), \code{"par"} (sexes beyond the first
-store additive offsets on the first sex's transformed-scale parameters),
-\code{"scale"} (sexes beyond the first have an estimated constant
-log-scale offset on the whole realized curve), \code{"par_scale"} (both),
-\code{"apical"} (sexes beyond the first build their double normal's limbs
-up to an estimated height rather than to one, which moves the middle of
-the curve and leaves its two ends where their own parameters put them),
-and \code{"par_apical"} (both). See \code{fish_sel_sex_offset} in
-\code{\link{Setup_Mod_Fishsel_and_Q}} for the full description.}
+\item{srv_sel_sex_offset}{Character vector \code{[n_srv_fleets]} linking the
+sexes of a fleet's selectivity when \code{n_sexes > 1}: \code{"none"}
+(default), \code{"par"}, \code{"scale"}, \code{"par_scale"}, \code{"apical"}
+or \code{"par_apical"}. See \code{fish_sel_sex_offset} in
+\code{\link{Setup_Mod_Fishsel_and_Q}} for what each one does.}
 
 \item{srv_sel_dbnrml_raw}{\code{NULL} (default) or a 0/1 matrix
-\code{[n_srv_fleets x 2]} for fleets on the double normal: column one
-leaves the ascending limb as a raw Gaussian instead of anchoring it to
-\code{p5} at the first bin, column two does the same for the descending
-limb and \code{p6}.}
+\code{[n_srv_fleets x 2]} for fleets on the double normal: column one leaves
+the ascending limb a raw Gaussian instead of anchoring it to \code{p5} at the
+first bin, column two does the same for the descending limb and \code{p6}.}
 
 \item{srv_sel_dbnrml_startbin}{\code{NULL} (default) or an integer vector
 \code{[n_srv_fleets]}, the bin each survey's double normal anchors its
-ascending limb at; see \code{fish_sel_dbnrml_startbin} in
+ascending limb at. See \code{fish_sel_dbnrml_startbin} in
 \code{\link{Setup_Mod_Fishsel_and_Q}}.}
 
-\item{...}{Optional named starting values for selectivity and catchability
+\item{...}{Optional starting values for the selectivity and catchability
 parameters.}
 }
 \value{
-The input \code{input_list} with selectivity and catchability
-  configuration stored in \code{$data} (\code{cont_tv_srv_sel}, \code{srv_sel_blocks},
+\code{input_list} with the selectivity and catchability configuration in
+  \code{$data} (\code{cont_tv_srv_sel}, \code{srv_sel_blocks},
   \code{srv_sel_model}, \code{srv_q_blocks}, \code{srv_q_prior},
-  \code{Use_srv_q_prior}, \code{do_srv_q_cov}, \code{srv_q_cov},
-  \code{Use_srv_selex_prior}, \code{srv_selex_prior}, \code{t_srv});
-  starting values in \code{$par} for \code{srv_fixed_sel_pars},
-  \code{ln_srv_q}, \code{srvsel_pe_pars}, \code{ln_srvsel_devs}, and
-  \code{srv_q_coeff}; and factor maps in \code{$map} for all five
-  parameter arrays plus \code{srv_q_coeff}.
+  \code{Use_srv_q_prior}, \code{srv_q_model}, \code{Use_srv_selex_prior},
+  \code{srv_selex_prior}, \code{t_srv}), the starting values in \code{$par} for
+  \code{srv_fixed_sel_pars}, \code{ln_srv_q}, \code{srvsel_pe_pars},
+  \code{ln_srvsel_devs}, \code{ln_srv_q_devs}, \code{ln_sigma_srv_q} and
+  \code{srv_q_rho}, and their factor maps in \code{$map}.
 }
 \description{
-Configures all survey selectivity and catchability components of the
-estimation model: continuous and blocked time-varying selectivity,
-selectivity functional forms, catchability blocks and optional
-environmental covariate effects, process error and deviation mapping, and
-selectivity/catchability priors. Delegates parameter mapping to four
-internal helpers (\code{\link{do_fixed_sel_pars_mapping}},
-\code{\link{do_q_mapping}}, \code{\link{do_sel_pe_pars_mapping}},
-\code{\link{do_sel_devs_mapping}}). Must be called after
-\code{\link{Setup_Mod_SrvIdx_and_Comps}} and before model compilation.
+Sets the survey selectivity forms, time blocks, continuous time variation,
+process error and deviations, the catchability blocks and estimation structure,
+and the selectivity and catchability priors. Call after
+\code{\link{Setup_Mod_SrvIdx_and_Comps}}.
 }
 \seealso{
 Other Model Setup:

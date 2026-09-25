@@ -7,68 +7,37 @@
 do_RecDevs_mapping(input_list, RecDevs_spec, rec_dd, dont_pen_recdev_first = 0)
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{$data$rec_region_prop_spec},
-\code{$data$natal_region}, \code{$data$rec_dd}, and \code{$data$n_pop}
-to be set by upstream setup functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.
+Requires \code{$data$rec_region_prop_spec}, \code{$data$natal_region},
+\code{$data$rec_dd} and \code{$data$n_pop}.}
 
-\item{RecDevs_spec}{Character string specifying the sharing structure for
-\code{ln_RecDevs}, or \code{NULL} to estimate all deviations independently
-across all dimensions. Options when non-\code{NULL}:
-\describe{
-  \item{\code{"est_shared_r"}}{Separate year-specific deviations per
-    population, shared across regions within each population. All regions
-    of a given population follow the same annual deviation time series.
-    Valid under both local and global density dependence.}
-  \item{\code{"est_shared_pop_r"}}{A single set of year-specific
-    deviations shared across all populations and regions. Each year
-    receives one estimated parameter regardless of how many populations
-    or regions are modeled. Required when \code{rec_dd = "global"} and
-    \code{n_regions > 1}.}
-  \item{\code{"fix"}}{All \code{ln_RecDevs} parameters fixed at zero
-    (mapped to \code{NA}). Equivalent to deterministic recruitment with
-    no interannual variability.}
-  \item{\code{NULL}}{Estimate all deviations independently across
-    populations, regions, and years. Not permitted when
-    \code{rec_region_prop_spec = 1} and \code{n_pop > 1}, as non-natal
-    regions have no recruitment.}
-}}
+\item{RecDevs_spec}{Sharing structure for \code{ln_RecDevs}.
+\code{"est_shared_r"} gives one deviation series per population, shared across
+its regions. \code{"est_shared_pop_r"} gives one series across every
+population and region, required when \code{rec_dd = "global"} and
+\code{n_regions > 1}. \code{"fix"} holds every deviation at zero. \code{NULL}
+estimates all independently, which is not permitted when
+\code{rec_region_prop_spec = 1} and \code{n_pop > 1}.}
 
-\item{rec_dd}{Recruitment density-dependence structure inherited from
-\code{\link{Setup_Mod_Rec}}. \code{"global"} restricts valid
-\code{RecDevs_spec} choices to \code{"est_shared_r"} or
+\item{rec_dd}{Density dependence inherited from \code{\link{Setup_Mod_Rec}}.
+\code{"global"} restricts \code{RecDevs_spec} to \code{"est_shared_r"} or
 \code{"est_shared_pop_r"} when \code{n_regions > 1}.}
 }
 \value{
-The input \code{input_list} with \code{$map$ln_RecDevs} set to a
-  factor vector of length \code{prod(dim(par$ln_RecDevs))}. Active
-  parameters receive sequential integer indices; non-natal region slots
-  (when \code{rec_region_prop_spec = 1}) and fixed deviations are
-  \code{NA}. Starting values in \code{$par$ln_RecDevs} are reset to
-  \code{0} for any fixed cells.
+\code{input_list} with \code{$map$ln_RecDevs} set to a factor vector of
+  length \code{prod(dim(par$ln_RecDevs))}. Active parameters take sequential
+  integers; non-natal region slots and fixed deviations are \code{NA}, and their
+  starting values are reset to \code{0}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
-the TMB/RTMB factor map for \code{ln_RecDevs}, the log-scale annual
-recruitment deviations. The \code{ln_RecDevs} array has dimensions
-\code{[n_pop x n_regions x n_years]}.
-}
-\details{
-Mapping behavior is governed by two interacting considerations:
-\enumerate{
-  \item \strong{Sharing specification} (\code{RecDevs_spec}): controls
-    whether deviations are shared across regions and/or populations, or
-    estimated independently.
-  \item \strong{No-dispersal constraint}: when \code{rec_region_prop_spec = 1}
-    and \code{n_pop > 1}, non-natal regions receive no recruitment and their
-    deviations are structurally zero; these are automatically fixed to
-    \code{NA} regardless of \code{RecDevs_spec}, and the remaining indices
-    are re-numbered sequentially.
-}
+Builds the factor map for \code{ln_RecDevs} \code{[n_pop x n_regions x
+n_years]}, the log-scale annual recruitment deviations. When
+\code{rec_region_prop_spec = 1} and \code{n_pop > 1}, non-natal regions get no
+recruitment, so their deviations are fixed to \code{NA} whatever
+\code{RecDevs_spec} asks for and the rest are re-numbered. Called by
+\code{\link{Setup_Mod_Rec}}.
 }
 \seealso{
-\code{\link{do_InitDevs_mapping}} for the analogous initial
-  age-structure deviation mapping, which shares the same sharing options
-  and no-dispersal constraint logic.
+\code{\link{do_InitDevs_mapping}}, which shares the same options.
 }
 \keyword{internal}

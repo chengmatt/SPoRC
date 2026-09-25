@@ -376,8 +376,8 @@ SPoRC_rtmb()                                                [model_objective.R]
        called from the objective's mortality_year step, once per year, only for
        fleets flagged fish_waa_selected / srv_waa_selected
   -> ### Growth (Process Error): Get_PE_loglik()          [model_priors_penalties.R]
-       penalizes ln_growth_devs and ln_growth_semipar_devs for departing from the
-       process they are supposed to follow, the same function selectivity uses
+       penalizes ln_growth_devs and ln_growth_semipar_devs under the process
+       they are supposed to follow, the same function selectivity uses
 ```
 
 | Function | Why it is its own function |
@@ -446,8 +446,8 @@ SPoRC_rtmb()                                                      [model_objecti
          each bin; knows nothing about years, blocks, or fleets
   ### Selectivity (Penalty): Get_PE_loglik(), once for each of the three
                                                                 [model_priors_penalties.R]
-       penalizes the year-by-year deviations for departing from whatever
-       process they are supposed to follow (iid, random walk, ...); the same
+       penalizes the year-by-year deviations under whatever process they are
+       supposed to follow (iid, random walk, ...); the same
        penalty function growth uses
   ### Selectivity Smoothness (Penalty)                             [model_objective.R]
        a separate penalty just for the bicubic spline form, since a smooth
@@ -461,7 +461,7 @@ SPoRC_rtmb()                                                      [model_objecti
 | `do_fixed_sel_pars_mapping()`, `do_sel_pe_pars_mapping()`, `do_sel_devs_mapping()` | Three separate functions because a fleet can turn each piece on independently: the curve's own parameters, whether it varies over time and under what process, and the actual deviation values. A fleet might hold the curve fixed with no deviations, vary it under one process with the process's own settings fixed, or estimate both together. Keeping the three apart means each one's sharing options do not have to be reconciled against the other two inside a single function. |
 | `Get_Selex_Array()` | The only place that knows about SPoRC's blocks, year-by-year deviations, and fleet counts. Works out which block and which deviation apply to a given region/year/fleet, then hands off to `Get_Selex()`. |
 | `Get_Selex()` | Given one functional form and its parameters, the selectivity at a vector of bins, nothing else. Because it does not know about years, blocks, or fleets, `test-model_selectivity.R` can check every functional form directly against its formula without building a whole model around it, and `Get_Selex_Array()`'s only job is the block/year/fleet residual tracking around it. |
-| `Get_PE_loglik()` | Lives in `model_priors_penalties.R`, not `model_selectivity.R` or `model_growth.R`, because it does not need to know which one is calling it: give it a deviation array, its map, and a code for which process (iid, random walk, ...) it is supposed to follow, and it penalizes departures from that process. Growth and selectivity therefore call the same function with the same five arguments. |
+| `Get_PE_loglik()` | Lives in `model_priors_penalties.R`, not `model_selectivity.R` or `model_growth.R`, because it does not need to know which one is calling it: give it a deviation array, its map, and a code for which process (iid, random walk, ...) it is supposed to follow, and it penalizes that array under that process. Growth and selectivity therefore call the same function with the same five arguments. |
 
 ### The same shape shows up elsewhere too
 

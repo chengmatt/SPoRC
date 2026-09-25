@@ -48,7 +48,7 @@ test_that("a block with no observations falls back to the pooled solve", {
   n_yrs <- 10
   obs <- exp(rnorm(6, log(10), 0.2))
   pred <- exp(rnorm(6, log(20), 0.2))
-  blk <- c(rep(1L, 6), rep(2L, 4))   # block 2 owns years 7 to 10, none of which have an index
+  blk <- c(rep(1L, 6), rep(2L, 4))   # block 2 covers years 7 to 10, none of which have an index
 
   q <- SPoRC:::get_blocked_analytic_q(1, obs, pred, 1:6, blk, 2)
   expect_equal(q[1], mean(obs) / mean(pred), tolerance = 1e-14)

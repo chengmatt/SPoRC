@@ -5,151 +5,73 @@
 
 #' Set up retained fishery selectivity
 #'
-#' Configures all aspects of retained fishery selectivity and catchability for the
-#' estimation model, including functional forms, time blocks, continuous time-varying
-#' selectivity, process error structure, annual deviations, and fixed or estimated
-#' selectivity parameters. Must be called after
+#' Sets the retention selectivity forms, time blocks, continuous time variation,
+#' process error, annual deviations and fixed or estimated parameters. Time
+#' variation through \code{cont_tv_ret_sel} and blocks through
+#' \code{ret_sel_blocks} are mutually exclusive within a fleet. Call after
 #' \code{\link{Setup_Mod_FishIdx_and_Comps}}.
 #'
-#' Selectivity time-variation via \code{cont_tv_ret_sel} and blocked selectivity via
-#' \code{ret_sel_blocks} are mutually exclusive within a fleet. Specifying both for
-#' the same fleet will result in an error.
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map} and
+#'   \code{$verbose}.
+#' @param cont_tv_ret_sel Character vector of continuous time variation per fleet,
+#'   each \code{"<type>_Fleet_<f>"}: \code{"none"}, \code{"iid"}, \code{"rw"},
+#'   \code{"3dmarg"}, \code{"3dcond"} or \code{"2dar1"}. Stored as integer codes.
+#' @param ret_sel_blocks Character vector of discrete blocks, either
+#'   \code{"none_Fleet_<f>"} or \code{"Block_<b>_Year_<start>-<end>_Fleet_<f>"} with
+#'   \code{"terminal"} allowed as the end year. Expanded into an \code{[n_regions ×
+#'   n_years × n_fish_fleets]} array.
+#' @param ret_sel_model Character vector of the retention form per fleet, and
+#'   optionally per block: \code{"<type>_Fleet_<f>"} or
+#'   \code{"<type>_Fleet_<f>_Block_<b>"}. The forms and their syntax are those of
+#'   \code{fish_sel_model} in \code{\link{Setup_Mod_Fishsel_and_Q}}.
+#' @param retsel_pe_pars_spec Process error parameters for time-varying retention,
+#'   one entry per fishery fleet.
+#' @param ret_fixed_sel_pars_spec Which fixed retention parameters are estimated.
+#' @param ret_sel_devs_spec Structure of the annual retention deviations per fleet.
+#' @param ret_sel_corr_opt_semipar Optional correlation structure for
+#'   semi-parametric retention deviations, one entry per fishery fleet.
+#' @param Use_ret_selex_prior Integer flag (0/1) for retention selectivity priors.
+#' @param ret_selex_prior Data frame with columns \code{region}, \code{fleet},
+#'   \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
+#'   \code{type} (\code{"par"} or \code{"value"}), as \code{fish_selex_prior} in
+#'   \code{\link{Setup_Mod_Fishsel_and_Q}}.
+#' @param retsel_devs_shared_bins Bins sharing one retention deviation series.
+#' @param ret_sel_bin_dev_bins List with one element per fleet naming the bins that
+#'   fleet overrides, or \code{NULL} for none. An overridden bin takes a freely
+#'   estimated annual value in place of what the functional form produced, applied
+#'   after every other transformation including standardization. Default
+#'   \code{NULL}.
+#' @param cont_tv_retsel_bin_devs Character vector \code{[n_fish_fleets]} of the
+#'   process error on the bin-override deviations: \code{"none"} (default),
+#'   \code{"iid"} or \code{"rw"}.
+#' @param retsel_pe_wt Numeric vector \code{[n_fish_fleets]} multiplying the
+#'   retention process error likelihood. Default \code{1}. \code{0} skips that
+#'   fleet's process error, so the deviations stay estimated but enter the objective
+#'   only through the data and any smoothness or centering penalties. Values other
+#'   than 0 or 1 make an estimated process error sigma reinterpretable. Applies to
+#'   \code{ln_retsel_devs} only.
+#' @param retsel_rw_init_sigma Numeric vector \code{[n_fish_fleets]} giving the
+#'   standard deviation of the first year of an \code{"rw"} deviation series.
+#'   Default \code{5}, which leaves that year effectively free. \code{NA} instead
+#'   starts the walk at zero under the walk's own estimated sigma.
+#' @param ret_selex_type Character scalar, \code{"age"} or \code{"length"}.
+#' @param use_fixed_ret_sel Binary array \code{[n_pop × n_regions × n_years ×
+#'   n_seas × n_fish_fleets]}, \code{1} to use \code{ret_sel_input}.
+#' @param ret_sel_input Fixed retention array \code{[n_pop × n_regions × n_years ×
+#'   n_seas × n_bins × n_sexes × n_fish_fleets]}.
+#' @param ret_sel_nonpar_est_bins Estimated bins for non-parametric retention.
+#' @param ret_sel_sex_offset Character vector \code{[n_fish_fleets]} linking the
+#'   sexes of a fleet's retention curve: \code{"none"} (default), \code{"par"},
+#'   \code{"scale"} or \code{"par_scale"}, as \code{fish_sel_sex_offset} in
+#'   \code{\link{Setup_Mod_Fishsel_and_Q}}. Retention is a fraction, so a scale
+#'   offset only makes sense where the scaled curve stays at or below one, and
+#'   nothing enforces that.
+#' @param ... Optional starting values for the selectivity parameters and
+#'   deviations.
 #'
-#' @param input_list Named list containing \code{$data}, \code{$par}, \code{$map},
-#'   and \code{$verbose} sublists as created by upstream setup functions.
-#'
-#' @param cont_tv_ret_sel Character vector defining continuous time-varying selectivity
-#'   structure per fleet. Format:
-#'   \code{"<type>_Fleet_<f>"} where \code{type} is one of:
-#'   \describe{
-#'     \item{\code{"none"}}{No time variation}
-#'     \item{\code{"iid"}}{Independent year effects}
-#'     \item{\code{"rw"}}{Random walk process}
-#'     \item{\code{"3dmarg"}}{3D marginal structure}
-#'     \item{\code{"3dcond"}}{3D conditional structure}
-#'     \item{\code{"2dar1"}}{2D AR1 structure}
-#'   }
-#'   Output is mapped to integer codes internally.
-#'
-#' @param ret_sel_blocks Character vector defining discrete selectivity blocks.
-#'   Format:
-#'   \code{"none_Fleet_<f>"} or
-#'   \code{"Block_<b>_Year_<start>-<end>_Fleet_<f>"} (or terminal year version).
-#'   Values are expanded into a 3D array:
-#'   \code{[n_regions × n_years × n_fish_fleets]}.
-#'
-#' @param ret_sel_model Character vector defining selectivity functional forms.
-#'   Format:
-#'   \code{"<type>_Fleet_<f>"} or
-#'   \code{"<type>_Fleet_<f>_Block_<b>"}.
-#'   Supported types:
-#'   \describe{
-#'     \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
-#'     \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
-#'     \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
-#'     \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
-#'     \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-#'     \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
-#'       the logit scale, then mean-standardized jointly over years and bins so the
-#'       grand mean of the surface is one. Bins may be grouped through the
-#'       non-parametric bin mapping. No fixed functional form is imposed.}
-#'     \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
-#'       each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
-#'       within-year contrasts are identified; the level is absorbed by
-#'       catchability or fishing mortality.}
-#'     \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
-#'       standardization, \eqn{\exp(\theta)}, so the values hold the height of the
-#'       curve as well as its shape. This is the form for a data source fit age by age:
-#'       a free catchability per age and a selectivity estimated at age are one
-#'       quantity written two ways, so the whole age multiplier lives here and no
-#'       catchability is set. Pin one bin, by leaving it out of the estimated bins,
-#'       whenever the mean it multiplies is also free.}
-#'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
-#'     \item{\code{"asymplogist2"}}{Logistic selectivity with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
-#'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid; see \code{ret_sel_model} in \code{\link{Setup_Mod_Fishsel_and_Q}} for full syntax.}
-#'   }
-#'
-#' @param retsel_pe_pars_spec Specification of process error parameters for
-#'   time-varying selectivity. Length must equal \code{n_fish_fleets}.
-#'
-#' @param ret_fixed_sel_pars_spec Specification controlling which fixed
-#'   selectivity parameters are estimated vs fixed.
-#'
-#' @param ret_sel_devs_spec Specification of annual selectivity deviations
-#'   structure per fleet.
-#'
-#' @param ret_sel_corr_opt_semipar Optional correlation structure for semi-parametric
-#'   selectivity deviations. Length must equal \code{n_fish_fleets}.
-#'
-#' @param Use_ret_selex_prior Integer flag (\code{0/1}) indicating whether
-#'   selectivity priors are used.
-#'
-#' @param ret_selex_prior Data frame of priors for selectivity parameters.
-#'   Must include columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
-#'   \code{par}, \code{mu}, \code{sd}, plus an optional \code{type}
-#'   (\code{"par"}/\code{"value"}; see \code{fish_selex_prior} in
-#'   \code{Setup_Mod_Fishsel_and_Q}).
-#'
-#' @param retsel_devs_shared_bins Vector defining shared bins for selectivity
-#'   deviation estimation (e.g., age or length grouping structure).
-#'
-#' @param ret_sel_bin_dev_bins List with one element per fishery fleet naming the
-#'   bins that fleet overrides, or \code{NULL} for fleets with no overrides. An
-#'   overridden bin takes a freely estimated annual value in place of whatever
-#'   the functional form produced, applied after every other transformation
-#'   including standardization. Default \code{NULL}.
-#'
-#' @param cont_tv_retsel_bin_devs Character vector of length
-#'   \code{n_fish_fleets} giving the process error on the bin-override
-#'   deviations for each fleet: \code{"none"} (default), \code{"iid"}, or
-#'   \code{"rw"}.
-#'
-#' @param retsel_pe_wt Numeric vector of length \code{n_fish_fleets}. Per-fleet
-#'   multiplier on the retention selectivity process error likelihood. Default
-#'   \code{1} for every fleet. \code{0} skips that fleet's process error
-#'   likelihood altogether, so the deviations stay estimated but enter the
-#'   objective only through the data and any explicit smoothness or centering
-#'   penalties. Values other than 0 or 1 make an estimated process error sigma
-#'   reinterpretable, so prefer 0 or 1 unless deliberately down-weighting.
-#'   Applies only to \code{ln_retsel_devs}; the bin-override deviations have
-#'   their own process error and are not affected.
-#'
-#' @param retsel_rw_init_sigma Numeric vector of length \code{n_fish_fleets}.
-#'   Standard deviation given to the first year of an \code{"rw"} deviation
-#'   series. Default \code{5}, which leaves that year effectively free.
-#'   \code{NA} instead starts the walk at zero under the walk's own estimated
-#'   sigma, making the first year as smooth as every later step. Appropriate
-#'   when the base parametric curve already describes the first year well.
-#'
-#' @param ret_selex_type Character string indicating selectivity domain:
-#'   \code{"age"} or \code{"length"}.
-#'
-#' @param use_fixed_ret_sel Binary indicator array
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
-#'   \code{1} = use fixed selectivity input; \code{0} = estimate.
-#'
-#' @param ret_sel_input Fixed selectivity input array:
-#'   \code{[n_pop × n_regions × n_years × n_seas × (ages or lengths) × n_sexes × n_fish_fleets]}.
-#'
-#' @param ret_sel_nonpar_est_bins Vector defining estimated bins for
-#'   non-parametric selectivity.
-#'
-#' @param ret_sel_sex_offset Character vector of length \code{n_fish_fleets}
-#'   linking the sexes of a fleet's retention curve: \code{"none"} (default),
-#'   \code{"par"}, \code{"scale"}, or \code{"par_scale"}, with the same
-#'   meaning as \code{fish_sel_sex_offset} in
-#'   \code{\link{Setup_Mod_Fishsel_and_Q}}. Retention is a fraction, so a
-#'   scale offset is only sensible where the scaled curve stays at or below
-#'   one (a negative offset, the less-retained sex); nothing enforces that.
-#'
-#' @param ... Optional starting values for selectivity parameters and deviations.
-#'
-#' @return The updated \code{input_list} with:
-#' \itemize{
-#'   \item Parsed selectivity structure arrays in \code{$data}
-#'   \item Starting parameter arrays in \code{$par}
-#'   \item Factor mapping objects in \code{$map}
-#' }
+#' @return \code{input_list} with the parsed retention structure arrays in
+#'   \code{$data}, the starting values in \code{$par} and the factor maps in
+#'   \code{$map}.
 #'
 #' @keywords internal
 #' @importFrom stringr str_detect
@@ -592,432 +514,247 @@ Setup_Mod_Retsel <- function(
 
 #' Set up total and retained fishery selectivity and catchability specifications
 #'
-#' Configures all aspects of fishery selectivity and catchability for the
-#' estimation model: functional forms, time blocks, continuous time-varying
-#' structures, process error hyperparameters, annual deviations, and
-#' catchability blocks and estimation structure. Must be called after
-#' \code{\link{Setup_Mod_FishIdx_and_Comps}}.
+#' Sets the selectivity functional forms, time blocks, continuous time variation,
+#' process error hyperparameters, annual deviations, and the catchability blocks
+#' and estimation structure, for total and retained selectivity alike. Time
+#' variation and blocked selectivity are mutually exclusive within a fleet. Call
+#' after \code{\link{Setup_Mod_FishIdx_and_Comps}}.
 #'
-#' Selectivity time-variation and blocked selectivity are mutually exclusive
-#' within a fleet. Specifying both for the same fleet will raise an error.
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map} and
+#'   \code{$verbose}.
+#' @param fish_sel_model Character vector of the selectivity form per fleet, and
+#'   optionally per block: \code{"<model>_Fleet_<f>"} or
+#'   \code{"<model>_Fleet_<f>_Block_<b>"}. The forms are \code{"logist1"}
+#'   (\eqn{a_{50}} and slope), \code{"logist2"} (\eqn{a_{50}} and \eqn{a_{95}}),
+#'   \code{"gamma"} (dome, \eqn{a_{max}} and \eqn{\delta}), \code{"exponential"}
+#'   (one power), \code{"dbnrml"} (double normal, six parameters),
+#'   \code{"asymplogist1"} and \code{"asymplogist2"} (the two logistics with an
+#'   asymptote), the three non-parametric forms and \code{"bicubic"}.
 #'
-#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
-#'   and \code{$verbose} sublists.
-#' @param fish_sel_model Character vector specifying the selectivity functional
-#'   form for each fleet (and optionally each time block). Each element must
-#'   follow one of:
-#'   \itemize{
-#'     \item \code{"<model>_Fleet_<f>"}: single form for all years of fleet \code{f}.
-#'     \item \code{"<model>_Fleet_<f>_Block_<b>"}: form specific to block \code{b}
-#'       of fleet \code{f}, as defined in \code{fish_sel_blocks}.
-#'   }
-#'   Available models:
-#'   \describe{
-#'     \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
-#'     \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
-#'     \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
-#'     \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
-#'     \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-#'     \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
-#'       the logit scale, then mean-standardized jointly over years and bins so the
-#'       grand mean of the surface is one. Bins may be grouped through the
-#'       non-parametric bin mapping. No fixed functional form is imposed.}
-#'     \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
-#'       each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
-#'       within-year contrasts are identified; the level is absorbed by
-#'       catchability or fishing mortality.}
-#'     \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
-#'       standardization, \eqn{\exp(\theta)}, so the values hold the height of the
-#'       curve as well as its shape. This is the form for a data source fit age by age:
-#'       a free catchability per age and a selectivity estimated at age are one
-#'       quantity written two ways, so the whole age multiplier lives here and no
-#'       catchability is set. Pin one bin, by leaving it out of the estimated bins,
-#'       whenever the mean it multiplies is also free.}
-#'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
-#'     \item{\code{"asymplogist2"}}{Logistic selectivity with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
-#'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid
-#'       (see \code{\link{Get_Selex}}, \code{Selex_Model == 8}). Specified as
-#'       \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} (optionally
-#'       with \code{_Block_k}). One generalized form covers a smooth bin x year
-#'       surface (\code{n_yr_nodes > 1}), a time-invariant bin-only spline
-#'       (\code{n_yr_nodes == 1}), or a bin-only spline re-fit independently
-#'       per year-block (\code{n_yr_nodes == 1} within each of several blocks
-#'       defined via \code{fish_sel_blocks}). An optional \code{_SelStyr_<year>}
-#'       suffix (a calendar year within the block) restricts the actual spline
-#'       fit to \code{SelStyr}:block-end; years within the block before
-#'       \code{SelStyr} are kept constant at the \code{SelStyr} year's fitted
-#'       curve, rather than fitting the surface over the whole block. An
-#'       optional \code{_NSelBins_<n>} suffix restricts the actual spline fit
-#'       to the first \code{n} bins (ages or lengths, per \code{fish_selex_type});
-#'       bins beyond \code{n} are kept constant at the last fitted bin's
-#'       curve.}
-#'   }
-#'   See the model equations vignette for mathematical definitions.
-#' @param cont_tv_fish_sel Character vector of length \code{n_fish_fleets}
-#'   specifying continuous time-varying selectivity per fleet. Each element
-#'   must be \code{"<type>_Fleet_<f>"}. Valid types:
-#'   \describe{
-#'     \item{\code{"none"}}{No continuous time-variation (default).}
-#'     \item{\code{"iid"}}{IID annual deviations on selectivity parameters.}
-#'     \item{\code{"rw"}}{Random walk in selectivity parameters over time.}
-#'     \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterization.}
-#'     \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterization.}
-#'     \item{\code{"2dar1"}}{2D separable AR1 in bin and year dimensions.}
-#'   }
-#'   If any fleet has \code{cont_tv_fish_sel != "none"}, both
-#'   \code{fishsel_pe_pars_spec} and \code{fish_sel_devs_spec} must also be
-#'   provided.
-#' @param fish_sel_blocks Character vector defining discrete selectivity time
-#'   blocks per fleet. Each element follows \code{"Block_<b>_Year_<s>-<e>_Fleet_<f>"}
-#'   or \code{"Block_<b>_Year_<s>-terminal_Fleet_<f>"}. Use
-#'   \code{"none_Fleet_<f>"} (default) for a single constant block. Blocks must
-#'   be non-overlapping and together span all model years for the specified fleet.
-#'   Mutually exclusive with \code{cont_tv_fish_sel != "none"} for the same fleet.
-#' @param fish_q_blocks Character vector defining catchability time blocks per
-#'   fleet, using the same format as \code{fish_sel_blocks}. Default
-#'   \code{"none_Fleet_<f>"} gives a single constant block.
-#' @param fish_fixed_sel_pars_spec Character vector of length \code{n_fish_fleets}
-#'   specifying how fixed-effect selectivity parameters are estimated. See
-#'   \code{\link{do_fixed_sel_pars_mapping}} for all options
-#'   (\code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
-#'   \code{"est_shared_r_s"}, \code{"est_shared_f_x"}, \code{"fix"}).
-#' @param fish_q_spec Character vector of length \code{n_fish_fleets} specifying
-#'   catchability estimation structure. See \code{\link{do_q_mapping}} for
-#'   options (\code{"est_all"}, \code{"est_shared_r"}, \code{"fix"}).
-#' @param fishsel_pe_pars_spec Character vector of length \code{n_fish_fleets}
-#'   specifying the estimation structure for selectivity process error
-#'   hyperparameters. Required when any fleet has continuous time-variation.
-#'   See \code{\link{do_sel_pe_pars_mapping}} for all options.
-#' @param fish_sel_devs_spec Character vector of length \code{n_fish_fleets}
-#'   specifying the estimation structure for annual selectivity deviations.
-#'   Required when any fleet has continuous time-variation. See
-#'   \code{\link{do_sel_devs_mapping}} for all options including age-sharing
-#'   options for semi-parametric forms.
+#'   \code{"nonpar"} is on the logit scale, mean-standardized jointly over years
+#'   and bins so the grand mean of the surface is one. \code{"nonparlog"} is on the
+#'   log scale, standardized so each year averages to one over
+#'   \code{*_sel_norm_bins}, leaving only within-year contrasts identified.
+#'   \code{"nonparfree"} is on the log scale with no standardization,
+#'   \eqn{\exp(\theta)}, so the values hold the height of the curve as well as its
+#'   shape; this is the form for a data source fit age by age, where a free
+#'   catchability per age and a selectivity estimated at age are one quantity
+#'   written twice, so no catchability is set. Pin one bin, by leaving it out of
+#'   the estimated bins, whenever the mean it multiplies is also free.
+#'
+#'   \code{"bicubic"} is a spline over a bin-node by year-node grid, written
+#'   \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} with an optional
+#'   \code{_Block_k}. One form covers a smooth bin by year surface
+#'   (\code{n_yr_nodes > 1}), a time-invariant bin-only spline
+#'   (\code{n_yr_nodes == 1}), and a bin-only spline re-fit per block. An optional
+#'   \code{_SelStyr_<year>} restricts the fit to \code{SelStyr}:block-end, holding
+#'   earlier years of the block at the \code{SelStyr} curve, and an optional
+#'   \code{_NSelBins_<n>} restricts it to the first \code{n} bins, holding the rest
+#'   at the last fitted bin. See \code{\link{Get_Selex}} and the model equations
+#'   vignette.
+#' @param cont_tv_fish_sel Character vector \code{[n_fish_fleets]} of continuous
+#'   time variation per fleet, each \code{"<type>_Fleet_<f>"}: \code{"none"}
+#'   (default), \code{"iid"} or \code{"rw"} on the selectivity parameters, or
+#'   \code{"3dmarg"}, \code{"3dcond"} (3D GMRF on the marginal or conditional
+#'   variance) and \code{"2dar1"} (separable over bin and year). Any fleet other
+#'   than \code{"none"} also needs \code{fishsel_pe_pars_spec} and
+#'   \code{fish_sel_devs_spec}.
+#' @param fish_sel_blocks Character vector of discrete selectivity time blocks per
+#'   fleet, each \code{"Block_<b>_Year_<s>-<e>_Fleet_<f>"} with \code{"terminal"}
+#'   allowed as the end year, or \code{"none_Fleet_<f>"} (default) for one constant
+#'   block. Blocks must not overlap and together must span every model year for
+#'   that fleet. Mutually exclusive with \code{cont_tv_fish_sel != "none"}.
+#' @param fish_q_blocks Catchability time blocks per fleet, in the same format as
+#'   \code{fish_sel_blocks}. Default one constant block.
+#' @param fish_fixed_sel_pars_spec Character vector \code{[n_fish_fleets]} of how
+#'   the fixed-effect selectivity parameters are estimated: \code{"est_all"},
+#'   \code{"est_shared_r"}, \code{"est_shared_s"}, \code{"est_shared_r_s"},
+#'   \code{"est_shared_f_x"} or \code{"fix"}. See
+#'   \code{\link{do_fixed_sel_pars_mapping}}.
+#' @param fish_q_spec Character vector \code{[n_fish_fleets]} of the catchability
+#'   estimation structure: \code{"est_all"}, \code{"est_shared_r"} or \code{"fix"}.
+#'   See \code{\link{do_q_mapping}}.
+#' @param fishsel_pe_pars_spec Character vector \code{[n_fish_fleets]} of the
+#'   estimation structure for the selectivity process error hyperparameters,
+#'   required when any fleet varies continuously. See
+#'   \code{\link{do_sel_pe_pars_mapping}}.
+#' @param fish_sel_devs_spec Character vector \code{[n_fish_fleets]} of the
+#'   estimation structure for the annual selectivity deviations, required when any
+#'   fleet varies continuously. See \code{\link{do_sel_devs_mapping}}.
 #' @param Use_fish_selex_penalty Integer (0/1). Whether a centering penalty is
 #'   applied to sets of fishery selectivity fixed-effect parameters. Default
 #'   \code{0}.
-#' @param fish_selex_penalty Data frame of centering penalty specifications,
-#'   required when \code{Use_fish_selex_penalty = 1}. Required columns:
-#'   \code{region}, \code{fleet}, \code{block}, \code{sex}, \code{par}, and
-#'   \code{wt}. Each row penalizes \code{wt * (log(mean(exp(pars))))^2} over the
-#'   set of parameters named in \code{par}, which may be a single index or a
-#'   list column of integer vectors naming a whole set. This pins the scalar of
-#'   a non-parametric curve that catchability or fishing mortality would
-#'   otherwise absorb, and is softer than fixing a bin outright. Intended for
-#'   parameter sets kept on the log scale. Default \code{NULL}.
-#' @param fishsel_devs_shared_bins List of integer vectors grouping age or length
-#'   bins that share a single deviation series. Only used when
-#'   \code{fish_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
-#'   Example: \code{list(1:5, 6:10, 11:30)}.
-#' @param corr_opt_semipar Character vector of length \code{n_fish_fleets}
-#'   controlling which correlation components to suppress in semi-parametric
-#'   (3D GMRF or 2D AR1) time-varying selectivity. Set to \code{NA} (default)
-#'   for no suppression. See \code{\link{do_sel_pe_pars_mapping}} for valid
-#'   suppression codes. Cohort-correlation options are invalid for \code{"2dar1"}.
-#' @param fish_q_type Character vector of length \code{n_fish_fleets} controlling
-#'   how catchability is obtained. \code{"est"} (default) estimates
-#'   \code{ln_fish_q}. \code{"arith"} concentrates it out of the likelihood as
-#'   the ratio of mean observed to mean predicted index, and \code{"geo"} does
-#'   the same on the log scale as \code{exp(mean(log(obs) - log(pred)))}. Both
-#'   analytic forms use only the years with observations and fix that fleet's
-#'   \code{ln_fish_q} regardless of \code{fish_q_spec}. The solve is done within
-#'   each \code{fish_q_blocks} time block, so a blocked catchability gets one
-#'   solved value per block. A single block, the default, is one value for the
-#'   whole series.
-#' @param fish_q_formula Named list of one-sided formulas, one element per fleet
-#'   requiring catchability covariates, referencing series in
-#'   \code{fish_q_cov_dat}. \code{NULL} (default) excludes covariate effects.
-#' @param fish_q_cov_dat Named list of numeric vectors (length =
-#'   \code{n_years}) containing the covariate time series referenced in
-#'   \code{fish_q_formula}. All vectors must be the same length and contain no
-#'   missing values; set values to \code{0} for years when the fishery index is
-#'   not active. Default \code{NULL}.
-#' @param fishsel_pe_wt Numeric vector of length \code{n_fish_fleets}. Per-fleet
-#'   multiplier on the fishery selectivity process error likelihood. Default
-#'   \code{1} for every fleet. \code{0} skips that fleet's process error
-#'   likelihood altogether, so the deviations stay estimated but enter the
-#'   objective only through the data and any explicit smoothness or centering
-#'   penalties, which is how several existing assessments constrain them. Values
-#'   other than 0 or 1 make an estimated process error sigma reinterpretable, so
-#'   prefer 0 or 1 unless deliberately down-weighting. Applies only to
-#'   \code{ln_fishsel_devs}; the bin-override deviations have their own process
-#'   error and are not affected.
-#' @param fishsel_rw_init_sigma Numeric vector of length \code{n_fish_fleets}.
-#'   Standard deviation given to the first year of an \code{"rw"} deviation
-#'   series. Default \code{5}, which leaves that year effectively free.
-#'   \code{NA} instead starts the walk at zero under the walk's own estimated
-#'   sigma, making the first year as smooth as every later step. Appropriate when
-#'   the base parametric curve already describes the first year well.
-#' @param fish_sel_norm_bins List with one element per fishery fleet naming the
-#'   bins the mean-one standardization averages over, or \code{NULL} for fleets
-#'   standardizing over every bin (\code{Selex_Model = 9} only). A gear whose
-#'   catchability is defined against part of the bin range standardizes over
-#'   that part, and catchability absorbs the difference in scale. Default
-#'   \code{NULL}.
-#' @param fish_sel_bin_dev_bins List with one element per fishery fleet naming
-#'   the bins that fleet overrides, or \code{NULL} for fleets with no overrides
-#'   (e.g. \code{list(1, NULL)} frees bin 1 of fleet 1 only). An overridden bin
-#'   takes a freely estimated annual value \eqn{\exp(\epsilon_{y,b})} in place of
-#'   whatever the functional form produced, applied after every other
-#'   transformation including standardization. The rest of the curve keeps its
-#'   parametric shape. Default \code{NULL}.
-#' @param cont_tv_fishsel_bin_devs Character vector of length
-#'   \code{n_fish_fleets} giving the process error on the bin-override
-#'   deviations for each fleet: \code{"none"} (default), \code{"iid"}, or
-#'   \code{"rw"}. A random walk has its own estimated sigma per bin, with
-#'   \code{fishsel_bin_devs_rw_init_sigma} governing its first year.
-#' @param fishsel_dont_est_dev_first Integer vector of length \code{n_fish_fleets} of
-#'   0/1, default \code{0}. Where \code{1}, that fleet's deviations start in
-#'   year two and the fixed selectivity parameters hold year one. A
-#'   non-parametric form (\code{"nonpar"}, \code{"nonparlog"},
-#'   \code{"nonparfree"}) has one free base parameter per bin, so year one's
-#'   deviation is that same value written twice and only
-#'   \code{fishsel_rw_init_sigma} separates them, as a prior on a level
-#'   that is usually meant to be free. Dropping it removes the redundant
-#'   parameter and that prior, and leaves the walk a sum of differences. Refused
-#'   for the GMRF and 2D AR1 forms, whose deviations are a field over years and
-#'   bins rather than a walk anchored at year one.
-#' @param Use_fish_q_prior Integer flag. \code{1} = apply lognormal priors to
-#'   catchability; \code{0} = no priors (default). Requires \code{fish_q_prior}.
-#' @param fish_q_prior Data frame of catchability prior hyperparameters. Required
-#'   columns: \code{region}, \code{fleet}, \code{block} (block index), \code{mu}
-#'   (prior mean on natural scale), \code{sd} (prior SD on log scale). Each row
-#'   specifies a \eqn{\text{Normal}(\log(\mu), \sigma)} prior for one catchability
-#'   parameter. Only used when \code{Use_fish_q_prior = 1}.
-#' @param Use_fish_selex_prior Integer flag. \code{1} = apply lognormal priors to
-#'   selectivity parameters; \code{0} = no priors (default). Requires
-#'   \code{fish_selex_prior}.
-#' @param fish_selex_prior Data frame of selectivity prior hyperparameters, one
-#'   row per prior. Required columns: \code{region}, \code{fleet},
-#'   \code{block}, \code{sex}, \code{par} (parameter index within the
-#'   functional form), \code{mu}, \code{sd}, plus an optional \code{type}
-#'   giving each row's target: \code{"par"} (the default when the column is
-#'   absent) is a lognormal prior on one fixed selectivity parameter, with
-#'   \code{mu} on the natural scale and \code{sd} on the log scale;
-#'   \code{"value"} is a normal prior on the realized selectivity value at one
-#'   bin, with both on the natural scale, where \code{par} instead names the
-#'   bin (on ages or lengths per \code{fish_selex_type}) and the value is read
-#'   at the first model year of \code{block}. A \code{"value"} row constrains
-#'   the derived selectivity value rather than the parameters, matching the
-#'   ADMB convention of pinning selectivity at a reference age near one, which
-#'   no set of independent parameter priors can express. Only used when
-#'   \code{Use_fish_selex_prior = 1}.
-#' @param ... Optional starting value overrides for selectivity parameters.
-#' @param cont_tv_ret_sel Character vector of length \code{n_fish_fleets}
-#'   specifying continuous time-varying selectivity per fleet. Each element
-#'   must be \code{"<type>_Fleet_<f>"}. Valid types:
-#'   \describe{
-#'     \item{\code{"none"}}{No continuous time-variation (default).}
-#'     \item{\code{"iid"}}{IID annual deviations on selectivity parameters.}
-#'     \item{\code{"rw"}}{Random walk in selectivity parameters over time.}
-#'     \item{\code{"3dmarg"}}{3D GMRF with marginal variance parameterization.}
-#'     \item{\code{"3dcond"}}{3D GMRF with conditional variance parameterization.}
-#'     \item{\code{"2dar1"}}{2D separable AR1 in bin and year dimensions.}
-#'   }
-#'   If any fleet has \code{cont_tv_ret_sel != "none"}, both
-#'   \code{retsel_pe_pars_spec} and \code{ret_sel_devs_spec} must also be
-#'   provided.
-#'
-#' @param ret_sel_blocks Character vector defining discrete selectivity time
-#'   blocks per fleet. Each element follows \code{"Block_<b>_Year_<s>-<e>_Fleet_<f>"}
-#'   or \code{"Block_<b>_Year_<s>-terminal_Fleet_<f>"}. Use
-#'   \code{"none_Fleet_<f>"} (default) for a single constant block. Blocks must
-#'   be non-overlapping and together span all model years for the specified fleet.
-#'   Mutually exclusive with \code{cont_tv_ret_sel != "none"} for the same fleet.
-#'
-#' @param ret_sel_model Character vector specifying the selectivity functional
-#'   form for each fleet (and optionally each time block). Each element must
-#'   follow one of:
-#'   \itemize{
-#'     \item \code{"<model>_Fleet_<f>"}: single form for all years of fleet \code{f}.
-#'     \item \code{"<model>_Fleet_<f>_Block_<b>"}: form specific to block \code{b}
-#'       of fleet \code{f}, as defined in \code{ret_sel_blocks}.
-#'   }
-#'   Available models:
-#'   \describe{
-#'     \item{\code{"logist1"}}{Logistic with \eqn{a_{50}} and slope \eqn{k} (2 parameters).}
-#'     \item{\code{"logist2"}}{Logistic with \eqn{a_{50}} and \eqn{a_{95}} (2 parameters).}
-#'     \item{\code{"gamma"}}{Dome-shaped gamma with \eqn{a_{max}} and \eqn{\delta} (2 parameters).}
-#'     \item{\code{"exponential"}}{Exponential with a single power parameter (1 parameter).}
-#'     \item{\code{"dbnrml"}}{Double-normal with 6 parameters.}
-#'     \item{\code{"nonpar"}}{Non-parametric over discrete age or length bins, on
-#'       the logit scale, then mean-standardized jointly over years and bins so the
-#'       grand mean of the surface is one. Bins may be grouped through the
-#'       non-parametric bin mapping. No fixed functional form is imposed.}
-#'     \item{\code{"nonparlog"}}{Non-parametric on the log scale, standardized so
-#'       each year's selectivity averages to one over \code{*_sel_norm_bins}. Only
-#'       within-year contrasts are identified; the level is absorbed by
-#'       catchability or fishing mortality.}
-#'     \item{\code{"nonparfree"}}{Non-parametric on the log scale with no
-#'       standardization, \eqn{\exp(\theta)}, so the values hold the height of the
-#'       curve as well as its shape. This is the form for a data source fit age by age:
-#'       a free catchability per age and a selectivity estimated at age are one
-#'       quantity written two ways, so the whole age multiplier lives here and no
-#'       catchability is set. Pin one bin, by leaving it out of the estimated bins,
-#'       whenever the mean it multiplies is also free.}
-#'     \item{\code{"asymplogist1"}}{Logistic selectivity with \eqn{a_{50}} and slope \eqn{k} and asymptotic control (3 parameters).}
-#'     \item{\code{"asymplogist2"}}{Logistic selectivity with \eqn{a_{50}} and \eqn{a_{95}} and asymptotic control (3 parameters).}
-#'     \item{\code{"bicubic"}}{Bicubic spline over a bin-node x year-node grid, specified as
-#'       \code{"bicubic_Bin_<n_bin_nodes>_Yr_<n_yr_nodes>_Fleet_x"} (optionally with \code{_Block_k},
-#'       \code{_SelStyr_<year>}, and/or \code{_NSelBins_<n>}); see \code{fish_sel_model} above for the
-#'       full syntax and \code{\link{Get_Selex}} (\code{Selex_Model == 8}) for the underlying math.}
-#'   }
-#'   See the model equations vignette for mathematical definitions.
-#'
-#' @param retsel_pe_pars_spec Character vector of length \code{n_fish_fleets}
-#'   specifying the estimation structure for selectivity process error
-#'   hyperparameters. Required when any fleet has continuous time-variation.
-#'   See \code{\link{do_sel_pe_pars_mapping}} for all options.
-#'
-#' @param ret_fixed_sel_pars_spec Character vector of length \code{n_fish_fleets}
-#'   specifying how fixed-effect selectivity parameters are estimated. See
-#'   \code{\link{do_fixed_sel_pars_mapping}} for all options
-#'   (\code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
-#'   \code{"est_shared_r_s"}, \code{"est_shared_f_x"}, \code{"fix"}).
-#'
-#' @param ret_sel_devs_spec Character vector of length \code{n_fish_fleets}
-#'   specifying the estimation structure for annual selectivity deviations.
-#'   Required when any fleet has continuous time-variation. See
-#'   \code{\link{do_sel_devs_mapping}} for all options including age-sharing
-#'   options for semi-parametric forms.
-#'
-#' @param retsel_devs_shared_bins List of integer vectors grouping age or length
-#'   bins that share a single deviation series. Only used when
-#'   \code{ret_sel_devs_spec} contains one of the \code{"est_shared_b"} variants.
-#'   Example: \code{list(1:5, 6:10, 11:30)}.
-#'
-#' @param retsel_pe_wt Numeric vector of length \code{n_fish_fleets}. Per-fleet
-#'   multiplier on the retention selectivity process error likelihood, the
-#'   retention counterpart of \code{fishsel_pe_wt}. Default \code{1} for every
-#'   fleet, and \code{0} skips that fleet's process error likelihood so its
-#'   deviations stay estimated but are constrained only by the data and any
-#'   explicit smoothness or centering penalties.
-#'
-#' @param retsel_rw_init_sigma Numeric vector of length \code{n_fish_fleets}.
-#'   Standard deviation given to the first year of an \code{"rw"} retention
-#'   deviation series, the retention counterpart of
-#'   \code{fishsel_rw_init_sigma}. Default \code{5}; \code{NA} instead starts
-#'   the walk at zero under the walk's own estimated sigma.
-#'
-#' @param retsel_dont_est_dev_first Integer vector of length \code{n_fish_fleets} of
-#'   0/1, default \code{0}. Where \code{1}, that fleet's deviations start in
-#'   year two and the fixed selectivity parameters hold year one. A
-#'   non-parametric form (\code{"nonpar"}, \code{"nonparlog"},
-#'   \code{"nonparfree"}) has one free base parameter per bin, so year one's
-#'   deviation is that same value written twice and only
-#'   \code{retsel_rw_init_sigma} separates them, as a prior on a level
-#'   that is usually meant to be free. Dropping it removes the redundant
-#'   parameter and that prior, and leaves the walk a sum of differences. Refused
-#'   for the GMRF and 2D AR1 forms, whose deviations are a field over years and
-#'   bins rather than a walk anchored at year one.
-#'
-#' @param ret_sel_corr_opt_semipar Character vector of length \code{n_fish_fleets}
-#'   controlling which correlation components to suppress in semi-parametric
-#'   (3D GMRF or 2D AR1) time-varying selectivity. Set to \code{NA} (default)
-#'   for no suppression. See \code{\link{do_sel_pe_pars_mapping}} for valid
-#'   suppression codes. Cohort-correlation options are invalid for \code{"2dar1"}.
-#'
-#' @param Use_ret_selex_prior Integer flag. \code{1} = apply lognormal priors to
-#'   selectivity parameters; \code{0} = no priors (default). Requires
-#'   \code{ret_selex_prior}.
-#'
-#' @param ret_selex_prior Data frame of selectivity prior hyperparameters.
-#'   Required columns: \code{region}, \code{fleet}, \code{block}, \code{sex},
-#'   \code{par}, \code{mu}, \code{sd}, plus an optional \code{type}
-#'   (\code{"par"}/\code{"value"}; see \code{fish_selex_prior}).
-#'
-#' @param use_fixed_ret_sel Integer vector of length \code{n_fish_fleets}
-#'   indicating whether to fix selectivity (\code{1}) or estimate it (\code{0}).
-#'
-#' @param ret_sel_input Array of fixed selectivity values with dimensions
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fish_fleets]}.
-#'
-#' @param ret_sel_nonpar_est_bins Optional list specifying bin groupings for
-#' non-parametric retained selectivity. Structure is \code{[[fleet]][[block]]}, where each
-#' element is a list of bin index vectors defining grouped parameters.
-#' @param ret_sel_sex_offset Character vector of length \code{n_fish_fleets}
-#'   linking the sexes of a fleet's retention curve, with the options and
-#'   meaning of \code{fish_sel_sex_offset}. Default \code{"none"}. Retention
-#'   is a fraction, so a scale offset is only sensible where the scaled curve
-#'   stays at or below one.
-#' @param fish_selex_type Character scalar specifying whether selectivity is
-#'   age- or length-based. Options:
-#'   \describe{
-#'     \item{\code{"age"}}{Selectivity is defined over age bins.}
-#'     \item{\code{"length"}}{Selectivity is defined over length bins.}
-#'   }
-#'   Determines the bin dimension used for all fishery selectivity functions,
-#'   including parametric, time-varying, and non-parametric forms.
-
-#' @param use_fixed_fish_sel Integer vector of length \code{n_fish_fleets}
-#'   indicating whether fishery selectivity is fixed (\code{1}) or estimated
-#'   (\code{0}) for each fleet.
-
-#' @param fish_sel_input Array of fixed fishery selectivity values with
-#'   dimensions:
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fish_fleets]}.
-#'   Required when any element of \code{use_fixed_fish_sel == 1}.
-
-#' @param fish_sel_nonpar_est_bins Optional list defining bin groupings for
-#' non-parametric fishery selectivity. Structure is \code{[[fleet]][[block]]}, where each
-#' element is a list of integer vectors. Each vector defines a group of bins that
-#' share a single estimated selectivity parameter. Indices must correspond to the
-#' bin dimension defined by \code{fish_selex_type}.
-
+#' @param fish_selex_penalty Data frame of centering penalties with columns
+#'   \code{region}, \code{fleet}, \code{block}, \code{sex}, \code{par} and
+#'   \code{wt}, required when \code{Use_fish_selex_penalty = 1}. Each row penalizes
+#'   \code{wt * (log(mean(exp(pars))))^2} over the parameters named in \code{par},
+#'   a single index or a list column of integer vectors. This pins the scalar of a
+#'   non-parametric curve that catchability or fishing mortality would otherwise
+#'   absorb, and is softer than fixing a bin. Meant for parameter sets on the log
+#'   scale. Default \code{NULL}.
+#' @param fishsel_devs_shared_bins List of integer vectors grouping the bins that
+#'   share one deviation series, e.g. \code{list(1:5, 6:10, 11:30)}. Only read when
+#'   \code{fish_sel_devs_spec} names an \code{"est_shared_b"} variant.
+#' @param corr_opt_semipar Character vector \code{[n_fish_fleets]} of which
+#'   correlation components to suppress under 3D GMRF or 2D AR1 time variation.
+#'   \code{NA} (default) suppresses none, and the cohort options are invalid for
+#'   \code{"2dar1"}. See \code{\link{do_sel_pe_pars_mapping}}.
+#' @param fish_q_type Character vector \code{[n_fish_fleets]} of how catchability
+#'   is obtained. \code{"est"} (default) estimates \code{ln_fish_q},
+#'   \code{"arith"} concentrates it out as the ratio of mean observed to mean
+#'   predicted index, and \code{"geo"} does the same on the log scale as
+#'   \code{exp(mean(log(obs) - log(pred)))}. Both analytic forms use the years with
+#'   observations only and fix that fleet's \code{ln_fish_q} whatever
+#'   \code{fish_q_spec} says. The solve runs within each \code{fish_q_blocks}
+#'   block, so a blocked catchability gets one solved value per block.
+#' @param fish_q_model Character vector \code{[n_fish_fleets]} of the process error
+#'   on annual catchability deviations: \code{"none"} (default), \code{"iid"},
+#'   \code{"rw"}, \code{"ar1"} or \code{"dsem"}, which hands the series to
+#'   \code{\link{Setup_Mod_DSEM}}. Catchability is then \eqn{\exp(\ln q_{r,b,f} +
+#'   \epsilon_{r,y,f})}. A fleet with deviations cannot also have
+#'   \code{fish_q_blocks} or an analytically solved \code{fish_q_type}.
+#' @param sigma_fish_q_spec Sharing string for the deviation standard deviation
+#'   over region and fleet: \code{"est_all"} (default), \code{"est_shared_r"},
+#'   \code{"est_shared_f"}, \code{"est_shared_r_f"} or \code{"fix"}.
+#' @param fish_q_rho_spec Sharing string for the AR1 correlation, with the same
+#'   options as \code{sigma_fish_q_spec}. Default \code{"est_all"}. Only read under
+#'   \code{fish_q_model = "ar1"}.
+#' @param fish_q_rw_init_sigma Standard deviation of the first estimated year of a
+#'   random walk. \code{NA} (default) starts the walk at zero under its own sigma,
+#'   which keeps \code{ln_fish_q} as the level of the series.
+#' @param fishsel_pe_wt Numeric vector \code{[n_fish_fleets]} multiplying the
+#'   fishery selectivity process error likelihood. Default \code{1}. \code{0} skips
+#'   that fleet's process error, so the deviations stay estimated but enter the
+#'   objective only through the data and any smoothness or centering penalties.
+#'   Values other than 0 or 1 make an estimated process error sigma
+#'   reinterpretable. Applies to \code{ln_fishsel_devs} only; the bin-override
+#'   deviations have their own process error.
+#' @param fishsel_rw_init_sigma Numeric vector \code{[n_fish_fleets]} giving the
+#'   standard deviation of the first year of an \code{"rw"} deviation series.
+#'   Default \code{5}, which leaves that year effectively free. \code{NA} instead
+#'   starts the walk at zero under the walk's own estimated sigma, which suits a
+#'   base curve that already describes the first year well.
+#' @param fish_sel_norm_bins List with one element per fleet naming the bins the
+#'   mean-one standardization averages over, or \code{NULL} for fleets
+#'   standardizing over every bin. Read under \code{"nonparlog"} only. A gear whose
+#'   catchability is defined against part of the bin range standardizes over that
+#'   part, and catchability absorbs the difference in scale. Default \code{NULL}.
+#' @param fish_sel_bin_dev_bins List with one element per fleet naming the bins
+#'   that fleet overrides, or \code{NULL} for none, e.g. \code{list(1, NULL)}. An
+#'   overridden bin takes a freely estimated annual value
+#'   \eqn{\exp(\epsilon_{y,b})} in place of what the functional form produced,
+#'   applied after every other transformation including standardization, while the
+#'   rest of the curve keeps its parametric shape. Default \code{NULL}.
+#' @param cont_tv_fishsel_bin_devs Character vector \code{[n_fish_fleets]} of the
+#'   process error on the bin-override deviations: \code{"none"} (default),
+#'   \code{"iid"} or \code{"rw"}. A walk has its own estimated sigma per bin.
+#' @param fishsel_dont_est_dev_first Integer vector \code{[n_fish_fleets]} of 0/1,
+#'   default \code{0}. Where \code{1}, that fleet's deviations start in year two and
+#'   the fixed parameters hold year one. A non-parametric form has one free base
+#'   parameter per bin, so year one's deviation is that same value written twice
+#'   with only \code{fishsel_rw_init_sigma} between them, a prior on a level usually
+#'   meant to be free. Refused for the GMRF and 2D AR1 forms, whose deviations are a
+#'   field over years and bins rather than a walk anchored at year one.
+#' @param Use_fish_q_prior Integer flag, \code{1} for lognormal priors on
+#'   catchability. Default \code{0}.
+#' @param fish_q_prior Data frame with columns \code{region}, \code{fleet},
+#'   \code{block}, \code{mu} on the natural scale and \code{sd} on the log scale,
+#'   one row per \eqn{\text{Normal}(\log(\mu), \sigma)} prior. Read when
+#'   \code{Use_fish_q_prior = 1}.
+#' @param Use_fish_selex_prior Integer flag, \code{1} for priors on the selectivity
+#'   parameters. Default \code{0}.
+#' @param fish_selex_prior Data frame with columns \code{region}, \code{fleet},
+#'   \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
+#'   \code{type}. \code{"par"} (the default) is a lognormal prior on one fixed
+#'   selectivity parameter, with \code{mu} on the natural scale and \code{sd} on the
+#'   log scale. \code{"value"} is a normal prior on the realized selectivity at one
+#'   bin, both on the natural scale, where \code{par} names the bin and the value is
+#'   read at the first model year of \code{block}; that is the ADMB convention of
+#'   pinning selectivity at a reference age near one, which no set of independent
+#'   parameter priors can express. Read when \code{Use_fish_selex_prior = 1}.
+#' @param cont_tv_ret_sel Continuous time variation on retention, with the options
+#'   and requirements of \code{cont_tv_fish_sel}. Any fleet other than
+#'   \code{"none"} also needs \code{retsel_pe_pars_spec} and
+#'   \code{ret_sel_devs_spec}.
+#' @param ret_sel_blocks Discrete retention time blocks per fleet, in the format of
+#'   \code{fish_sel_blocks} and mutually exclusive with
+#'   \code{cont_tv_ret_sel != "none"}.
+#' @param ret_sel_model Retention selectivity form per fleet and block, with the
+#'   same syntax and the same set of forms as \code{fish_sel_model}.
+#' @param retsel_pe_pars_spec Estimation structure for the retention process error
+#'   hyperparameters, as \code{fishsel_pe_pars_spec}.
+#' @param ret_fixed_sel_pars_spec How the retention fixed-effect parameters are
+#'   estimated, with the options of \code{fish_fixed_sel_pars_spec}.
+#' @param ret_sel_devs_spec Estimation structure for the annual retention
+#'   deviations, as \code{fish_sel_devs_spec}.
+#' @param retsel_devs_shared_bins Bins sharing one retention deviation series, as
+#'   \code{fishsel_devs_shared_bins}.
+#' @param retsel_pe_wt Per-fleet multiplier on the retention process error
+#'   likelihood, as \code{fishsel_pe_wt}. Default \code{1}.
+#' @param retsel_rw_init_sigma Standard deviation of the first year of an
+#'   \code{"rw"} retention deviation series, as \code{fishsel_rw_init_sigma}.
+#'   Default \code{5}.
+#' @param retsel_dont_est_dev_first Whether each fleet's retention deviations start
+#'   in year two, as \code{fishsel_dont_est_dev_first}. Default \code{0}.
+#' @param ret_sel_corr_opt_semipar Which correlation components to suppress under
+#'   semi-parametric retention time variation, as \code{corr_opt_semipar}.
+#' @param Use_ret_selex_prior Integer flag, \code{1} for priors on the retention
+#'   selectivity parameters. Default \code{0}.
+#' @param ret_selex_prior Data frame with the columns and the optional \code{type}
+#'   of \code{fish_selex_prior}.
+#' @param use_fixed_ret_sel Integer vector \code{[n_fish_fleets]}, \code{1} to fix
+#'   retention selectivity and \code{0} to estimate it.
+#' @param ret_sel_input Array of fixed retention values \code{[n_pop × n_regions ×
+#'   n_years × n_seas × n_bins × n_sexes × n_fish_fleets]}.
+#' @param ret_sel_nonpar_est_bins Optional bin groupings for non-parametric
+#'   retention, structured \code{[[fleet]][[block]]}, each element a list of bin
+#'   index vectors defining grouped parameters.
+#' @param ret_sel_sex_offset Character vector \code{[n_fish_fleets]} linking the
+#'   sexes of a fleet's retention curve, with the options of
+#'   \code{fish_sel_sex_offset}. Default \code{"none"}. Retention is a fraction, so
+#'   a scale offset only makes sense where the scaled curve stays at or below one.
+#' @param fish_selex_type Character scalar, \code{"age"} or \code{"length"}, the
+#'   bin dim every fishery selectivity function is defined over.
+#' @param use_fixed_fish_sel Integer vector \code{[n_fish_fleets]}, \code{1} to fix
+#'   fishery selectivity and \code{0} to estimate it.
+#' @param fish_sel_input Array of fixed fishery selectivity values \code{[n_pop ×
+#'   n_regions × n_years × n_seas × n_bins × n_sexes × n_fish_fleets]}. Required
+#'   when any \code{use_fixed_fish_sel == 1}.
+#' @param fish_sel_nonpar_est_bins Optional bin groupings for non-parametric
+#'   fishery selectivity, structured \code{[[fleet]][[block]]}, each element a list
+#'   of integer vectors naming the bins that share one estimated parameter. Indices
+#'   are on the bin dim \code{fish_selex_type} names.
 #' @param fish_sel_dbnrml_startbin \code{NULL} (default) or an integer vector
 #'   \code{[n_fish_fleets]}, the bin each fleet's double normal anchors its
-#'   ascending limb at (\code{1} is the first bin). Bins below it take the
-#'   squared ratio of their bin to it times the selectivity there, Stock
-#'   Synthesis's convention when the compositions start above the population's
-#'   first length bin.
+#'   ascending limb at. Bins below it take the squared ratio of their bin to it
+#'   times the selectivity there, which is Stock Synthesis's convention when the
+#'   compositions start above the population's first length bin.
 #' @param fish_sel_dbnrml_raw \code{NULL} (default) or a 0/1 matrix
-#'   \code{[n_fish_fleets x 2]} for fleets on the double normal: column one
-#'   leaves the ascending limb as a raw Gaussian instead of anchoring it to
-#'   \code{p5} at the first bin, column two does the same for the descending
-#'   limb and \code{p6}.
-#' @param fish_sel_sex_offset Character vector of length \code{n_fish_fleets}
-#'   linking the sexes of a fleet's selectivity, for models with
-#'   \code{n_sexes > 1}. Options per fleet:
-#'   \describe{
-#'     \item{\code{"none"} (default)}{Each sex's stored parameters are its own.}
-#'     \item{\code{"par"}}{The stored fixed-effect parameter slots of every sex
-#'       beyond the first hold additive offsets on the first sex's stored
-#'       (transformed-scale) parameters, so for log-scale parameters the
-#'       sex-\eqn{s} natural value is the first sex's times
-#'       \eqn{e^{\delta}}. Offsets fixed at zero reproduce sex-shared
-#'       parameters; estimating them links the sexes through the offset the way
-#'       several existing assessments parameterize male selectivity.}
-#'     \item{\code{"scale"}}{Each sex keeps its own parameters, and every sex
-#'       beyond the first additionally has a constant log-scale offset on
-#'       the whole realized curve, \code{exp(ln_fishsel_sex_scale)}, estimated
-#'       per region, block, and sex. The scaled curve may exceed one. Refused
-#'       for non-parametric forms and semi-parametric time variation, whose
-#'       post-hoc standardization would cancel a constant multiplier.}
-#'     \item{\code{"apical"}}{Each sex keeps its own parameters, and for every
-#'       sex beyond the first the double normal builds its limbs up to
-#'       \code{exp(ln_*sel_sex_scale)} rather than to one. Selectivity at the
-#'       first and last bins stays where that sex's own parameters put it, so
-#'       the offset moves the middle of the curve and leaves its ends anchored.
-#'       Requires the double normal.}
-#'     \item{\code{"par_apical"}}{Both a par offset and an apical offset.}
-#'     \item{\code{"par_scale"}}{Both a par offset and a scale offset.}
-#'   }
-
-#' @param ret_selex_type Character scalar specifying whether retained selectivity
-#'   is age- or length-based. Options:
-#'   \describe{
-#'     \item{\code{"age"}}{Selectivity is defined over age bins.}
-#'     \item{\code{"length"}}{Selectivity is defined over length bins.}
-#'   }
-#'   Determines the bin dimension used for all retained selectivity functions,
-#'   including parametric, time-varying, and non-parametric forms.
+#'   \code{[n_fish_fleets x 2]} for fleets on the double normal: column one leaves
+#'   the ascending limb a raw Gaussian instead of anchoring it to \code{p5} at the
+#'   first bin, column two does the same for the descending limb and \code{p6}.
+#' @param fish_sel_sex_offset Character vector \code{[n_fish_fleets]} linking the
+#'   sexes of a fleet's selectivity when \code{n_sexes > 1}. \code{"none"} (default)
+#'   keeps each sex's stored parameters its own. \code{"par"} makes every sex beyond
+#'   the first hold additive offsets on the first sex's stored parameters, so a
+#'   log-scale parameter's natural value is the first sex's times \eqn{e^{\delta}};
+#'   offsets fixed at zero reproduce sex-shared parameters. \code{"scale"} keeps
+#'   each sex's own parameters and adds a constant log-scale offset on the whole
+#'   realized curve, \code{exp(ln_fishsel_sex_scale)}, per region, block and sex,
+#'   which may exceed one and is refused for the non-parametric forms and
+#'   semi-parametric time variation, whose standardization would cancel it.
+#'   \code{"apical"} has the double normal build its limbs up to
+#'   \code{exp(ln_*sel_sex_scale)} rather than one, so the offset moves the middle
+#'   of the curve and leaves its ends where that sex's own parameters put them.
+#'   \code{"par_apical"} and \code{"par_scale"} combine a par offset with each.
+#' @param ret_selex_type Character scalar, \code{"age"} or \code{"length"}, the bin
+#'   dim every retention selectivity function is defined over.
+#' @param ... Optional starting values for the selectivity parameters.
 #'
-#' @return The input \code{input_list} with \code{$data}, \code{$par}, and
-#'   \code{$map} updated. Key additions include the parsed integer arrays for
-#'   \code{cont_tv_fish_sel}, \code{fish_sel_blocks}, \code{fish_sel_model}, and
-#'   \code{fish_q_blocks}; starting value arrays for all four parameter groups;
-#'   and their corresponding factor maps.
-#'
+#' @return \code{input_list} with \code{$data}, \code{$par} and \code{$map}
+#'   updated: the parsed integer arrays for \code{cont_tv_fish_sel},
+#'   \code{fish_sel_blocks}, \code{fish_sel_model} and \code{fish_q_blocks}, the
+#'   starting values for all four parameter groups, and their factor maps.
 #'
 #' @export Setup_Mod_Fishsel_and_Q
 #' @importFrom stringr str_detect
@@ -1032,8 +769,10 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     fish_q_prior = NA,
                                     fish_q_blocks = paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = ''),
                                     fish_q_type = rep("est", input_list$data$n_fish_fleets),
-                                    fish_q_cov_dat = NULL,
-                                    fish_q_formula = NULL,
+                                    fish_q_model = NULL,
+                                    sigma_fish_q_spec = "est_all",
+                                    fish_q_rho_spec = "est_all",
+                                    fish_q_rw_init_sigma = NA,
                                     fishsel_pe_pars_spec = NULL,
                                     fish_fixed_sel_pars_spec = NULL,
                                     fish_q_spec = NULL,
@@ -1363,57 +1102,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   input_list$data$fish_sel_bicubic_yrnodes <- fish_sel_bicubic_yrnodes_arr
   input_list$data$fish_sel_bicubic_selstyr <- fish_sel_bicubic_selstyr_arr
   input_list$data$fish_sel_bicubic_nselbins <- fish_sel_bicubic_nselbins_arr
-  # Catchability covariate containers, mirroring the survey
-  if(!is.null(fish_q_cov_dat) && !is.null(fish_q_formula)) {
-    n_fish_q_cov <- max(sapply(names(fish_q_formula), function(key) {
-      tmp_formula <- fish_q_formula[[key]]
-      var_names <- all.vars(tmp_formula)
-      tmp_dat <- data.frame(fish_q_cov_dat[var_names])
-      ncol(stats::model.matrix(tmp_formula, data = tmp_dat))
-    }))
-  } else {
-    do_fish_q_cov <- 0
-    n_fish_q_cov <- 1 # dummy to initialize the array
-  }
-
-  fish_q_cov <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets, n_fish_q_cov)) # environmental time series
-  fish_q_coeff <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets, n_fish_q_cov)) # coefficients to be estimated
-  map_fish_q_coeff <- array(NA, dim = c(input_list$data$n_regions, input_list$data$n_fish_fleets, n_fish_q_cov)) # coefficients to be mapped off
-
-  if(!is.null(fish_q_cov_dat) && !is.null(fish_q_formula)) {
-
-    cov_lengths <- lengths(fish_q_cov_dat)
-    if (length(unique(cov_lengths)) != 1) stop("All covariates in 'fish_q_cov_dat' must have the same length. If some years are missing data, either impute some value, or set at 0 (if it is not used in the calculation).")
-    if (unique(cov_lengths) != length(input_list$data$years)) stop(paste0("Covariate length mismatch: expected ",  length(input_list$data$years),  " years but got ", unique(cov_lengths),  "."))
-
-    do_fish_q_cov <- 1
-    coeff_counter <- 0
-
-    for(r in 1:input_list$data$n_regions) {
-      for(f in 1:input_list$data$n_fish_fleets) {
-
-        key <- paste(paste("Region", r, sep = "_"), "_Fleet_", f, sep = "")
-        tmp_formula <- fish_q_formula[[key]]
-        var_names <- all.vars(tmp_formula)
-        if(length(var_names) == 0) next
-        tmp_dat <- data.frame(fish_q_cov_dat[var_names])
-        tmp_design_mat <- stats::model.matrix(tmp_formula, data = tmp_dat)
-        fish_q_cov[r,,f,seq_len(ncol(tmp_design_mat))] <- tmp_design_mat
-
-        for(i in seq_len(ncol(tmp_design_mat))) {
-          coeff_counter <- coeff_counter + 1
-          map_fish_q_coeff[r,f,i] <- coeff_counter
-        } # end i loop
-
-      } # end f loop
-    } # end r loop
-  } # if using covariates
-
   input_list$data$fish_q_type <- fish_q_type_val
-  input_list$data$do_fish_q_cov <- do_fish_q_cov
-  input_list$data$fish_q_cov <- fish_q_cov
-  input_list$par$fish_q_coeff <- fish_q_coeff
-  input_list$map$fish_q_coeff <- factor(map_fish_q_coeff)
   input_list$data$fish_q_blocks <- fish_q_blocks_arr
   input_list$data$fish_q_prior <- fish_q_prior
   input_list$data$Use_fish_q_prior <- Use_fish_q_prior
@@ -1605,6 +1294,19 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     prefix = "fish",
     fleet_field = "n_fish_fleets",
     fleet_label = "fishery fleet"
+  )
+  input_list <- setup_q_devs(
+    input_list,
+    q_model = fish_q_model,
+    sigma_q_spec = sigma_fish_q_spec,
+    q_rho_spec = fish_q_rho_spec,
+    q_rw_init_sigma = fish_q_rw_init_sigma,
+    q_type = fish_q_type,
+    prefix = "fish",
+    fleet_field = "n_fish_fleets",
+    use_field = "UseFishIdx",
+    fleet_label = "fishery fleet",
+    starting_values = starting_values
   )
   input_list <- do_sel_pe_pars_mapping(
     input_list,

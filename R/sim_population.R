@@ -7,33 +7,28 @@
 
 #' Initialize age structure for a simulation replicate
 #'
-#' Simulates or reads in initial age deviations and calls
-#' \code{\link{Get_Init_NAA}} to compute both the fished and unfished
-#' equilibrium numbers-at-age for year 1 and season 1. Results are written
-#' directly into the simulation environment arrays \code{NAA} and
-#' \code{NAA0}. This function is called once per simulation replicate at
-#' \code{y = 1} by \code{\link{run_annual_cycle}}.
+#' Draws or reads the initial age deviations and calls
+#' \code{\link{Get_Init_NAA}} for the fished and unfished equilibrium numbers at
+#' age in year 1, season 1, writing them into \code{NAA} and \code{NAA0}. Called
+#' once per replicate at \code{y = 1} by \code{\link{run_annual_cycle}}.
 #'
-#' Initial deviation sharing follows the same logic as the estimation model:
-#' deviations are drawn once per population when \code{n_pop > 1}, or once
-#' per region when \code{n_pop = 1} and \code{init_dd = 0} (local
-#' density-dependence). Across sexes the draw follows
-#' \code{InitDevs_sex_spec}: \code{"est_shared_s"} (the default) draws one
-#' curve and gives it to every sex, \code{"est_all"} draws each sex its own.
-#' If \code{ln_InitDevs_input} exists in the simulation environment, those
-#' values are used directly rather than simulating new draws. Populations with
-#' \code{R0 = 0} receive zero deviations. The equilibrium solver uses
-#' \code{init_iter = n_ages × 5} iterations.
+#' Sharing follows the estimation model: one draw per population when
+#' \code{n_pop > 1}, or one per region when \code{n_pop = 1} and
+#' \code{init_dd = 0}. Across sexes it follows \code{InitDevs_sex_spec}, with
+#' \code{"est_shared_s"} (default) drawing one curve for every sex and
+#' \code{"est_all"} drawing each its own. An \code{ln_InitDevs_input} in the
+#' environment is used directly rather than drawn. Populations with \code{R0 = 0}
+#' get zero deviations, and the equilibrium solver runs \code{n_ages × 5}
+#' iterations.
 #'
-#' @param y Integer. Year index (must be \code{1}).
+#' @param y Integer. Year index, which must be \code{1}.
 #' @param sim Integer. Simulation replicate index.
-#' @param sim_env Simulation environment created by
-#'   \code{\link{Setup_sim_env}}. Modified in place: \code{$ln_InitDevs},
-#'   \code{$NAA[,,1,1,,,sim]}, and \code{$NAA0[,,1,1,,,sim]} are updated.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place: \code{$ln_InitDevs}, \code{$NAA[,,1,1,,,sim]} and
+#'   \code{$NAA0[,,1,1,,,sim]}.
 #'
-#' @return \code{invisible(NULL)}. All modifications are made by reference
-#'   within \code{sim_env}.
-#'
+#' @return \code{invisible(NULL)}; everything is modified by reference within
+#'   \code{sim_env}.
 #'
 #' @keywords internal
 generate_initial_age_structure <- function(y,
@@ -67,7 +62,8 @@ generate_initial_age_structure <- function(y,
           init_sex_spec <- if(exists("InitDevs_sex_spec")) InitDevs_sex_spec else "est_shared_s"
           if(is.null(tmp_ln_init_devs)) {
             n_dev_draws <- if(init_sex_spec == "est_all") n_sexes else 1
-            init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), -exp(ln_sigmaR[1,p,sigma_idx])^2 / 2, exp(ln_sigmaR[1,p,sigma_idx]))
+            init_center <- if(isTRUE(rec_bias_correct == 0)) 0 else -exp(ln_sigmaR[1,p,sigma_idx])^2 / 2 # whether to do bias correction
+            init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), init_center, exp(ln_sigmaR[1,p,sigma_idx]))
             tmp_ln_init_devs <- array(init_draws, dim = c(n_ages - 1, n_sexes)) # recycled across sexes when one curve was drawn
           }
         }
@@ -145,45 +141,35 @@ generate_initial_age_structure <- function(y,
 
 #' Generate recruitment for a simulation year
 #'
-#' Computes total recruitment for year \code{y} by first obtaining
-#' deterministic expected recruitment from \code{\link{Get_Det_Recruitment}}
-#' and then multiplying by lognormal deviations (bias-corrected). Recruitment
-#' is apportioned across sexes and seasons and written into
-#' \code{sim_env$NAA[p, r, y, 1, 1, s, sim]} (first season, age-1 slot).
-#' Unfished NAA (\code{NAA0}) is synchronized to match fished NAA at
-#' recruitment. If \code{Rec_input} exists in the environment and covers year
-#' \code{y}, those values override the stochastic draw entirely.
+#' Takes deterministic recruitment from \code{\link{Get_Det_Recruitment}},
+#' multiplies it by lognormal deviations, apportions it across sexes and seasons,
+#' and writes it into the age-one slot of \code{sim_env$NAA}, with \code{NAA0}
+#' synchronized to match. A \code{Rec_input} covering year \code{y} overrides the
+#' draw entirely.
 #'
-#' Recruitment deviation sharing follows the same population/region logic as
-#' \code{\link{generate_initial_age_structure}}: deviations are drawn once
-#' per population (\code{n_pop > 1}) or once per region (\code{n_pop = 1},
-#' local density-dependence). Populations with \code{R0 = 0} receive zero
-#' deviations. \code{sigma_idx} selects the natal region's \code{ln_sigmaR}
-#' for the bias-correction term.
+#' Deviation sharing follows \code{\link{generate_initial_age_structure}}: one
+#' draw per population when \code{n_pop > 1}, or one per region when
+#' \code{n_pop = 1} under local density dependence. Populations with
+#' \code{R0 = 0} get zero deviations, and \code{sigma_idx} picks the natal
+#' region's \code{ln_sigmaR} for the bias correction. \code{RecDevs_model} sets
+#' what the draw is centered on: zero for independent deviations, the previous
+#' year's for a random walk, and \code{RecDevs_rho} times it for an AR1. Only the
+#' independent draws are bias corrected, a walk's deviation not being mean zero.
 #'
-#' \code{RecDevs_model} sets what the draw is centered on: zero for independent
-#' deviations, the previous year's deviation for a random walk, and
-#' \code{RecDevs_rho} times it for an AR1. Only independent draws are bias
-#' corrected, since a random walk's deviation is not mean zero.
-#'
-#' @param y Integer. Year index for which recruitment is generated.
+#' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
-#' @param sim_env Simulation environment created by
-#'   \code{\link{Setup_sim_env}}. Modified in place:
-#'   \code{$ln_RecDevs[p, r, y, sim]}, \code{$Rec[p, r, y, sim]},
-#'   \code{$NAA[p, r, y, seas, 1, s, sim]}, and
-#'   \code{$NAA0[p, r, y, seas, 1, s, sim]} are updated.
-#' @param seas Integer. Season this recruitment first enters the population
-#'   in, using \code{rec_seas_prop[p, seas, sim]}. Default \code{1}, matching
-#'   the classic \code{rec_lag >= 1} case where recruitment for the whole year
-#'   is already known before season 1 starts. \code{rec_lag = 0} (age-0
-#'   recruitment) instead calls this with \code{seas = spawn_seas}, since that
-#'   is the earliest season this year's own SSB (and hence recruitment) is
-#'   knowable, see \code{\link{apply_pop_dy}}.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place: \code{$ln_RecDevs}, \code{$Rec}, \code{$NAA} and
+#'   \code{$NAA0}.
+#' @param seas Integer. Season this recruitment first enters in, through
+#'   \code{rec_seas_prop[p, seas, sim]}. Default \code{1}, the classic
+#'   \code{rec_lag >= 1} case where the whole year's recruitment is known before
+#'   season one. \code{rec_lag = 0} instead calls this with
+#'   \code{seas = spawn_seas}, the earliest season this year's own SSB is
+#'   knowable. See \code{\link{apply_pop_dy}}.
 #'
-#' @return \code{invisible(NULL)}. All modifications are made by reference
-#'   within \code{sim_env}.
-#'
+#' @return \code{invisible(NULL)}; everything is modified by reference within
+#'   \code{sim_env}.
 #'
 #' @keywords internal
 generate_recruitment <- function(y,
@@ -230,13 +216,9 @@ generate_recruitment <- function(y,
                                        dmr = array(dmr[,SR_ref_yr,,,sim], dim = c(n_regions, n_seas, n_fish_fleets)), # discard mortality rate
                                        fish_sel = array(fish_sel[,,SR_ref_yr,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # total fishery selectivity at SR_ref_yr
                                        ret_sel = array(ret_sel[,,SR_ref_yr,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity at SR_ref_yr
-                                       # Sequencing must match the estimation model; SSB0 and the SPR
-                                       # routines behind Beverton-Holt depend on it
                                        Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-                                       move_timing = move_timing
-
-    ,
-    expm_nsub = expm_nsub)
+                                       move_timing = move_timing,
+                                       expm_nsub = expm_nsub)
 
 
     # if Rec_input exists and year index is within bounds
@@ -250,29 +232,24 @@ generate_recruitment <- function(y,
 
       for(r in 1:n_regions) {
 
-        # if local DD and n_pop = 1, reset deviations for each region (draws for each region, but if n_pop > 1,
-        # shares deviations across regions withn a given population)
+        # if local DD and n_pop = 1, reset deviations for each region (draws for each region)
         if(n_pop == 1 && rec_dd == 0) tmp_ln_rec_devs <- NULL
 
-        if(use_rec_input) {
-          # recruitment input
-          tmp_total_rec <- Rec_input[p,r,y,sim]
+        if(use_rec_input) { # if jut using recruitment input
 
-          # keep the deviation container consistent with the recruitment in use, so an operating
-          # model conditioned on a fit reports the deviations it is running on rather than zeros
+          tmp_total_rec <- Rec_input[p,r,y,sim]
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-          # resample_from_input has no deterministic curve, so Get_Det_Recruitment
-          # hands back NA and there is no deviation to back out. Devs stay 0.
-          if(isTRUE(tmp_det_rec[p,r] > 0) && tmp_total_rec > 0) {
+
+          if(isTRUE(tmp_det_rec[p,r] > 0) && tmp_total_rec > 0) { # back out the true ln Rec Devs from a conditioned fit if needed
             sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + exp(ln_sigmaR[2,p,sigma_idx])^2 / 2
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
+
         } else {
 
           # get rec devs
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
 
-          # a walk draws around the previous year's deviation and an ar1 around a fraction of it,
-          # so the level moves through time rather than resetting every year
+          # doing random walk or AR 1
           dev_mu <- 0
           dev_sd <- exp(ln_sigmaR[2, p, sigma_idx])
           if(RecDevs_model != 1 && y > 1) {
@@ -280,19 +257,22 @@ generate_recruitment <- function(y,
             dev_mu <- if(RecDevs_model == 2) prev_dev else RecDevs_rho[p,r] * prev_dev
           }
 
-          # year one of an ar1 has nothing behind it, so it comes from the stationary marginal,
-          # which is the sd get_recdev_pe_nLL penalizes it at
+          # get staionary marginal for ar1
           if(RecDevs_model == 3 && y == 1) dev_sd <- dev_sd / sqrt(1 - RecDevs_rho[p,r]^2)
 
-          tmp_ln_rec_devs <- stats::rnorm(1, dev_mu, dev_sd)
+          # if using a dsem, rec devs already drawn, otherwise, draw here
+          dsem_cell <- dsem_drawn$ln_RecDevs[p,r,y]
+          tmp_ln_rec_devs <- if(dsem_cell) sim_env$ln_RecDevs[p,r,y,sim] else stats::rnorm(1, dev_mu, dev_sd)
 
+          # input devs here
           if(R0[p,r,y,sim] != 0) {
             sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
-          # compute rec. a walk's deviation is not mean zero, so only iid draws are bias corrected
-          bias_corr <- if(RecDevs_model == 1) exp(ln_sigmaR[2,p,sigma_idx])^2 / 2 else 0
+          # doing bias correction
+          bias_corr <- if(dsem_cell || isTRUE(rec_bias_correct == 0)) 0 else if(RecDevs_model == 1) exp(ln_sigmaR[2,p,sigma_idx])^2 / 2 else 0
           tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] - bias_corr)
+
         }
 
         # input recruitment into the season it first enters the population
@@ -310,13 +290,9 @@ generate_recruitment <- function(y,
 
 #' Compute spawning-time biomass quantities for one simulation year/season
 #'
-#' Computes Total_Biom, SSB, Dynamic_SSB0, and eff_SSB for year \code{y} at
-#' season \code{seas} (always called with \code{seas == spawn_seas}) from the
-#' current \code{NAA}/\code{NAA0} state in \code{sim_env}. Factored out of
-#' \code{\link{apply_pop_dy}} so it can be evaluated either before or after
-#' that season's mortality/ageing step depending on \code{rec_lag}, without
-#' duplicating the underlying math. Pure/read-only: returns a list rather
-#' than modifying \code{sim_env}.
+#' The operating model's state at year \code{y} and season \code{seas}, always the spawning
+#' season, sliced at replicate \code{sim} and given to \code{\link{biom_at_spawn}}, which the
+#' estimation model and the forward projection also run. 
 #'
 #' @param y Year integer
 #' @param seas Season integer
@@ -326,108 +302,42 @@ generate_recruitment <- function(y,
 #' @keywords internal
 compute_biom_y_sim <- function(y, seas, sim, sim_env) {
 
-  NAA <- sim_env$NAA
-  NAA0 <- sim_env$NAA0
-  WAA <- sim_env$WAA
-  MatAA <- sim_env$MatAA
-  ZAA <- sim_env$ZAA
-  natmort <- sim_env$natmort
-  t_spawn <- sim_env$t_spawn
-  seasdur <- sim_env$seasdur
   n_pop <- sim_env$n_pop
   n_regions <- sim_env$n_regions
   n_seas <- sim_env$n_seas
-  n_ages <- sim_env$n_ages
-  n_sexes <- sim_env$n_sexes
-  natal_region <- sim_env$natal_region
-  stray_rate <- sim_env$stray_rate
-  sgl_seas_spawning_movement <- sim_env$sgl_seas_spawning_movement
-  Movement <- sim_env$Movement
-  Mrate <- sim_env$Mrate
   move_timing <- if(is.null(sim_env$move_timing)) 0 else sim_env$move_timing
-  expm_nsub <- if(is.null(sim_env$expm_nsub)) 0 else sim_env$expm_nsub
-  do_recruits_move <- sim_env$do_recruits_move
 
-  tmp_NAA_spawn <- NAA[,,y,seas,,,sim, drop = FALSE]
-  tmp_NAA0_spawn <- NAA0[,,y,seas,,,sim, drop = FALSE]
-
-  # Propagate to the spawning point
-  if(move_timing != 0 && n_regions > 1) {
-    for(p in 1:n_pop) {
-      for(a in 1:n_ages) {
-        moves <- (do_recruits_move == 1 || a > 1)
-        for(s in 1:n_sexes) {
-          Mv <- if(moves) Movement[p,,,y,seas,a,s,sim] else diag(n_regions)
-          Qv <- if(moves) Mrate[p,,,y,seas,a,s,sim] else matrix(0, n_regions, n_regions)
-          tmp_NAA_spawn[p,,1,1,a,s,1] <- spawn_state(tmp_NAA_spawn[p,,1,1,a,s,1], Mv,
-                                                     ZAA[p,,y,seas,a,s,sim], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
-          tmp_NAA0_spawn[p,,1,1,a,s,1] <- spawn_state(tmp_NAA0_spawn[p,,1,1,a,s,1], Mv,
-                                                      natmort[p,,y,seas,a,s,sim] * seasdur[seas], Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
-        } # end s loop
-      } # end a loop
-    } # end p loop
+  # drop sim dimension
+  drop_sim <- function(x) {
+    dim(x) <- dim(x)[-length(dim(x))]
+    x
   }
 
-  # If we are natal homing with 1 season
-  if(n_seas == 1 && n_pop > 1) {
-    for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
-      tmp_NAA_spawn[p,,1,1,a,s,1] <- tmp_NAA_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
-      tmp_NAA0_spawn[p,,1,1,a,s,1] <- tmp_NAA0_spawn[p,,1,1,a,s,1] %*% sgl_seas_spawning_movement[p,,,y,a,s,sim]
-    } # end s loop
-  }
+  propagates <- move_timing != 0 && n_regions > 1 # whether movement happens
+  homes <- n_seas == 1 && n_pop > 1 # whether homing happens
 
-  # Mortality discount up to spawning. Already folded into spawn_state above when
-  # move_timing != 0, so it collapses to 1 in that case to avoid applying it twice.
-  spawn_disc_Z <- if(move_timing == 0 || n_regions == 1) exp(-ZAA[,,y,seas,,,sim,drop = FALSE] * t_spawn) else 1
-  spawn_disc_Z_f <- if(move_timing == 0 || n_regions == 1) exp(-ZAA[,, y, seas, , 1, sim,drop = FALSE] * t_spawn) else 1
-
-  # Total Biomass
-  Total_Biom_y <- apply(tmp_NAA_spawn *
-                          WAA[,, y, seas, , , sim,drop = FALSE] *
-                          spawn_disc_Z, c(1,2), sum)
-
-  # Spawning Stock Biomass
-  SSB_y <- apply(tmp_NAA_spawn[,, , , , 1, 1,drop = FALSE] *
-                   WAA[,, y, seas, , 1, sim,drop = FALSE] *
-                   MatAA[,, y, seas, , 1, sim,drop = FALSE] *
-                   spawn_disc_Z_f, c(1,2), sum)
-
-  # Get dynamic B0
-  SSB0_array <- tmp_NAA0_spawn[,, , , , 1, 1,drop = FALSE] *  WAA[,,  y, seas, , 1, sim, drop = FALSE] * MatAA[,,y, seas, , 1, sim, drop = FALSE]
-  if(move_timing == 0 || n_regions == 1) {
-    mort_spawn <- exp(-natmort[,, y, seas, , 1, sim, drop = FALSE] * t_spawn * seasdur[seas])
-    mort_spawn <- array(mort_spawn, dim = dim(SSB0_array)) # coerce array
-  } else mort_spawn <- 1
-  Dynamic_SSB0_y <- apply(SSB0_array * mort_spawn, c(1,2), sum) # Dynamic B0
-
-  if(n_sexes == 1) { # If single sex model, multiply SSB calculations by 0.5
-    SSB_y <- SSB_y * 0.5
-    Dynamic_SSB0_y <- Dynamic_SSB0_y * 0.5
-  }
-
-  # Accumulate effective SSB at each population's natal region
-  # across all source populations (captures stray contributions)
-  eff_SSB_y <- array(0, dim = n_pop)
-  if(n_pop > 1) {
-    n_pop_in_region = array(0, dim = n_regions)
-    for(p in 1:n_pop) n_pop_in_region[natal_region[p]] = n_pop_in_region[natal_region[p]] + 1
-    for(p2 in 1:n_pop) {
-      for(p in 1:n_pop) {
-        if(p == p2) {
-          eff_SSB_y[p2] = eff_SSB_y[p2] + SSB_y[p, natal_region[p2]]
-        } else {
-          n_receivers = n_pop_in_region[natal_region[p2]]
-          eff_SSB_y[p2] = eff_SSB_y[p2] + (stray_rate[p,y,sim] / n_receivers) * SSB_y[p, natal_region[p2]]
-        }
-      }
-    }
-  } else eff_SSB_y[1] = sum(SSB_y[1,])
-
-  list(
-    Total_Biom_y = Total_Biom_y,
-    SSB_y = SSB_y,
-    Dynamic_SSB0_y = Dynamic_SSB0_y,
-    eff_SSB_y = eff_SSB_y
+  biom_at_spawn(
+    NAA_s = drop_sim(sim_env$NAA[,,y,seas,,,sim, drop = FALSE]),
+    NAA0_s = drop_sim(sim_env$NAA0[,,y,seas,,,sim, drop = FALSE]),
+    WAA_s = drop_sim(sim_env$WAA[,,y,seas,,,sim, drop = FALSE]),
+    MatAA_s = drop_sim(sim_env$MatAA[,,y,seas,,,sim, drop = FALSE]),
+    ZAA_s = drop_sim(sim_env$ZAA[,,y,seas,,,sim, drop = FALSE]),
+    natmort_s = drop_sim(sim_env$natmort[,,y,seas,,,sim, drop = FALSE]),
+    spawn_move_s = if(homes) drop_sim(sim_env$sgl_seas_spawning_movement[,,,y,,,sim, drop = FALSE]) else NULL,
+    stray_rate_y = if(n_pop > 1) sim_env$stray_rate[,y,sim] else NULL,
+    t_spawn = sim_env$t_spawn,
+    seasdur_seas = sim_env$seasdur[seas],
+    n_seas = n_seas,
+    n_pop = n_pop,
+    n_regions = n_regions,
+    n_ages = sim_env$n_ages,
+    n_sexes = sim_env$n_sexes,
+    natal_region = sim_env$natal_region,
+    Movement_s = if(propagates) drop_sim(sim_env$Movement[,,,y,seas,,,sim, drop = FALSE]) else NULL,
+    Mrate_s = if(propagates) drop_sim(sim_env$Mrate[,,,y,seas,,,sim, drop = FALSE]) else NULL,
+    move_timing = move_timing,
+    do_recruits_move = sim_env$do_recruits_move,
+    expm_nsub = if(is.null(sim_env$expm_nsub)) 0 else sim_env$expm_nsub
   )
 }
 
@@ -435,41 +345,32 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
 
 #' Apply population dynamics within a simulation year
 #'
-#' Executes the full within-year population dynamics loop for year \code{y}:
-#' seasonal recruitment apportionment (seasons 2+), movement, Baranov
-#' catch-equation mortality, age advancement into the following year, and
-#' spawning-season biomass calculations (total biomass, SSB, dynamic \eqn{B_0},
-#' and effective SSB for multi-population natal homing). Both fished
-#' (\code{NAA}) and unfished (\code{NAA0}) trajectories are tracked in
-#' parallel. For single-season multi-population models,
-#' \code{sgl_seas_spawning_movement} is applied to \code{NAA} and
-#' \code{NAA0} prior to computing spawning biomass quantities. Single-sex
-#' models have SSB and \eqn{B_0} multiplied by 0.5 to obtain female-only
-#' spawning biomass.
+#' Runs the within-year loop for year \code{y}: seasonal recruitment
+#' apportionment from season two on, movement, Baranov mortality, age advancement
+#' into the following year, and the spawning-season biomass quantities (total
+#' biomass, SSB, dynamic \eqn{B_0} and effective SSB under natal homing). The
+#' fished and unfished trajectories are tracked together, with the snapshots
+#' before and after movement stored in \code{NAA_bef} and \code{NAA_aft}. Movement
+#' runs only when \code{n_regions > 1}, and recruits are left out of it when
+#' \code{do_recruits_move = 0}. With one season and several populations,
+#' \code{sgl_seas_spawning_movement} is applied to both trajectories before the
+#' biomass quantities; with one sex, SSB and \eqn{B_0} are halved to give
+#' female-only spawning biomass.
 #'
-#' Pre- and post-movement snapshots are stored in \code{NAA_bef} and
-#' \code{NAA_aft} respectively. Movement is only applied when
-#' \code{n_regions > 1}; recruits (\code{a = 1}) are excluded from movement
-#' when \code{do_recruits_move = 0}.
-#'
-#' When \code{rec_lag == 0} (age-0 recruitment), this year's recruitment
-#' can't be known until \code{spawn_seas} is reached (it depends on this
-#' year's own SSB), so \code{\link{generate_recruitment}} is called from
-#' inside this function at \code{seas == spawn_seas} instead of beforehand -
-#' see the "rec_lag == 0" block below, which mirrors the equivalent
-#' restructuring in the estimation model (\code{SPoRC_rtmb.R}).
+#' Under \code{rec_lag == 0} this year's recruitment is not knowable until
+#' \code{spawn_seas}, since it depends on this year's own SSB, so
+#' \code{\link{generate_recruitment}} is called from inside this function at
+#' \code{seas == spawn_seas}, mirroring the estimation model.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
-#' @param sim_env Simulation environment created by
-#'   \code{\link{Setup_sim_env}}. Modified in place: \code{$ZAA},
-#'   \code{$NAA}, \code{$NAA0}, \code{$NAA_bef}, \code{$NAA_aft},
-#'   \code{$Total_Biom}, \code{$SSB}, \code{$Dynamic_SSB0}, and
-#'   \code{$eff_SSB} are updated.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place: \code{$ZAA}, \code{$NAA}, \code{$NAA0}, \code{$NAA_bef},
+#'   \code{$NAA_aft}, \code{$Total_Biom}, \code{$SSB}, \code{$Dynamic_SSB0} and
+#'   \code{$eff_SSB}.
 #'
-#' @return \code{invisible(NULL)}. All modifications are made by reference
-#'   within \code{sim_env}.
-#'
+#' @return \code{invisible(NULL)}; everything is modified by reference within
+#'   \code{sim_env}.
 #'
 #' @keywords internal
 apply_pop_dy <- function(y, sim, sim_env) {
@@ -659,31 +560,24 @@ apply_pop_dy <- function(y, sim, sim_env) {
 
 #' Run the annual cycle for a single simulation year
 #'
-#' Orchestrates the complete annual sequence of operating model processes for
-#' year \code{y} and simulation replicate \code{sim}: initializes age
-#' structure and generates first-year recruitment at \code{y = 1}; applies
-#' population dynamics (movement, mortality, biomass); generates fishery
-#' catches, indices, and compositions; generates survey indices and
-#' compositions; releases conventional tags; generates fishery tag
-#' recaptures (when any \code{use_conv_fish_tagging = 1}); and generates
-#' recruitment for the following year (\code{y + 1}) when \code{y < n_yrs}.
+#' Runs the operating model's processes for year \code{y} and replicate
+#' \code{sim} in order: initial age structure and first-year recruitment at
+#' \code{y = 1}, population dynamics, fishery catches, indices and compositions,
+#' survey indices and compositions, tag releases, fishery tag recaptures when any
+#' \code{use_conv_fish_tagging = 1}, and next year's recruitment when
+#' \code{y < n_yrs}.
 #'
-#' The two standalone \code{generate_recruitment()} calls described above
-#' (at \code{y = 1} and for \code{y + 1}) only run when \code{rec_lag != 0}.
-#' For \code{rec_lag = 0} (age-0 recruitment), recruitment for year \code{y}
-#' depends on year \code{y}'s own SSB, which isn't known until
-#' \code{\link{apply_pop_dy}} reaches \code{spawn_seas} within that year -
-#' \code{generate_recruitment()} is called from inside \code{apply_pop_dy()}
-#' instead, once that SSB is available.
+#' Those two standalone \code{generate_recruitment()} calls only run when
+#' \code{rec_lag != 0}. Under \code{rec_lag = 0} recruitment depends on year
+#' \code{y}'s own SSB, which is not known until \code{\link{apply_pop_dy}} reaches
+#' \code{spawn_seas}, so it is called from inside \code{apply_pop_dy()} instead.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
-#' @param sim_env Simulation environment created by
-#'   \code{\link{Setup_sim_env}} and passed by reference. All annual-cycle
-#'   helper functions modify this environment in place.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}}, passed
+#'   by reference and modified in place by every annual-cycle helper.
 #'
 #' @return \code{invisible(NULL)}.
-#'
 #'
 #' @importFrom stats rnorm rmultinom
 #' @export run_annual_cycle
@@ -693,15 +587,30 @@ run_annual_cycle <- function(y,
                              sim_env) {
 
   if(y == 1) {
-    # The whole replicate's innovations are drawn up front: the matrix is conditional on all
-    # previous states and formed rectangular over age and year
+
+    # note that some innovations are drawn before hand (in y = 1 here)
     if(isTRUE(sim_env$NAA_re > 0)) {
-      sim_env$naa_eta <- draw_naa_innovations(sim_env)
+
+      sim_env$naa_eta <- draw_naa_innovations(sim_env) # get naa PE
+      if(!is.null(sim_env$naa_eta_input)) { # if provided input eta
+        n_cond <- dim(sim_env$naa_eta_input)[3]
+        d <- dim(sim_env$naa_eta)
+        sim_env$naa_eta[,,seq_len(n_cond),,,] <- array(sim_env$naa_eta_input[,,seq_len(n_cond),,,,sim], dim = c(d[1], d[2], n_cond, d[4], d[5], d[6]))
+      }
+
+      # if drawing own eta
+      drawn <- sim_env$dsem_drawn$naa_eta_all
+      if(!is.null(drawn) && any(drawn)) sim_env$naa_eta[drawn] <- array(sim_env$naa_eta_all[,,,,,,sim], dim = dim(drawn))[drawn]
       sim_env$naa_eta_all[,,,,,,sim] <- sim_env$naa_eta
     }
+
+    draw_sim_q_devs(sim, sim_env)  # get catchability deviations
     generate_initial_age_structure(y = 1, sim, sim_env) # Initialize age structure
     if(sim_env$rec_lag != 0) generate_recruitment(y = 1, sim, sim_env) # Get recruitment in the first year
   }
+
+  # growth kept cohort by cohort takes this year's start of year numbers, as the fit's population loop does
+  if(!is.null(sim_env$growth_state) && y >= sim_env$dsem_growth_args$growth_cohort_styr) advance_sim_growth_year(y, sim, sim_env)
 
   apply_pop_dy(y, sim, sim_env) # Apply population dynamics (movement, mortality, and biomass calculations)
   generate_fishery_catch_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices
@@ -789,7 +698,12 @@ Simulate_Pop_Static <- function(sim_list,
                   fish_sel = sim_env$fish_sel,
                   ret_sel = sim_env$ret_sel,
                   fish_q = sim_env$fish_q,
+                  srv_q = sim_env$srv_q, # note already scaled by catchability deviations
+                  ln_fish_q_devs = sim_env$ln_fish_q_devs,
+                  ln_srv_q_devs = sim_env$ln_srv_q_devs,
                   ln_RecDevs = sim_env$ln_RecDevs,
+                  dsem_x_sim = sim_env$dsem_x_sim, # the dsem grid every replicate was drawn on, NULL without one
+                  dsem_cov_obs_sim = sim_env$dsem_cov_obs_sim, # dsem covariate observations a refit reads
                   naa_eta = sim_env$naa_eta_all,
                   NAA_pred = sim_env$NAA_pred,
                   ln_InitDevs = sim_env$ln_InitDevs,
@@ -926,8 +840,6 @@ Simulate_Pop_Static <- function(sim_list,
                   n_sims = sim_env$n_sims,
                   n_regions = sim_env$n_regions,
                   n_pop = sim_env$n_pop,
-                  # same quantity under both spellings: n_yrs is what the simulation code reads,
-                  # n_years the name used in the dimension documentation
                   n_years = sim_env$n_yrs,
                   n_yrs = sim_env$n_yrs,
                   n_ages = sim_env$n_ages,

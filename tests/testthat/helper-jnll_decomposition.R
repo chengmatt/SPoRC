@@ -62,6 +62,8 @@ jnLL_terms <- list(
   growth_tv_nLL                = list(weight = NA, mode = "scalar"),
   growth_semipar_nLL           = list(weight = NA, mode = "scalar"),
   rinit_nLL                    = list(weight = NA, mode = "scalar"),
+  dsem_nLL                     = list(weight = NA, mode = "scalar"),
+  dsem_obs_nLL                 = list(weight = NA, mode = "scalar"),
   M_nLL                        = list(weight = NA, mode = "scalar"),
   R0_nLL                       = list(weight = NA, mode = "scalar"),
   h_nLL                        = list(weight = NA, mode = "scalar"),

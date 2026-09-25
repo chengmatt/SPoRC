@@ -28,75 +28,56 @@ pack_comp_osa(
 
 \item{ISSArr}{Input sample sizes.}
 
-\item{WtArr}{Optional weighting for multinomial.}
+\item{WtArr}{Optional weighting for the multinomial.}
 
 \item{UseArr}{Region-use flags.}
 
-\item{TypeMat}{Composition type matrix (0,1,2).}
+\item{TypeMat}{Composition type matrix (0, 1, 2).}
 
 \item{LikeTypeVec}{Likelihood type per fleet.}
 
-\item{n_yrs}{Number of model years.}
+\item{n_yrs, n_seas, n_fleets, n_sexes, n_pop}{Model dimensions.}
 
-\item{n_seas}{Number of seasons per year.}
+\item{addtocomp}{Small constant added to the proportions before
+normalization.}
 
-\item{n_fleets}{Total number of fishing fleets.}
+\item{family}{\code{"discrete"} or \code{"continuous"}.}
 
-\item{n_sexes}{Number of biological sexes.}
+\item{pop}{Logical; \code{TRUE} treats the population dim as the outermost
+layer.}
 
-\item{addtocomp}{Small constant added to proportions before normalization.}
-
-\item{family}{Character string specifying the likelihood type, either "discrete" or "continuous".}
-
-\item{pop}{Logical; if TRUE, the population dimension is treated as the outermost layer.}
-
-\item{n_pop}{Number of population structures or pools.}
-
-\item{return_labels}{Logical; if TRUE, also builds a per-element label
-data.frame identifying the origin (pop, region, year, season, fleet, sex,
-bin, comp_type, likelihood_type, family, last_in_group) of every entry in
-the tracked vector, in the same order. Intended for post-hoc relabeling of
-\code{TMB::oneStepPredict()} residuals (see [get_osa()]); left \code{FALSE}
-(default) inside the model itself to avoid the extra residual tracking cost.}
+\item{return_labels}{Logical; \code{TRUE} also builds a per-element label data
+frame giving the pop, region, year, season, fleet, sex, bin, comp_type,
+likelihood_type, family and last_in_group of every entry, in the same order,
+for relabeling \code{TMB::oneStepPredict()} residuals afterwards (see
+[get_osa()]). Left \code{FALSE} (default) inside the model to avoid the extra
+tracking cost.}
 
 \item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 observed bins each fleet is fitted over, or \code{NULL} (default) for all
-bins. Restricted fleets pack a shorter block, and \code{eval_comp_osa} must
-be handed the same array so its strides stay in step with the packer.}
+bins. A restricted fleet packs a shorter block, and \code{eval_comp_osa} must
+be handed the same array so its strides stay in step.}
 }
 \value{
-If \code{return_labels = FALSE} (default): flat OBS vector, or
-  \code{NULL} if no fleet of this family is present (unchanged behavior).
-  If \code{return_labels = TRUE}: a list with elements \code{vec} (the flat
-  OBS vector) and \code{labels} (a data.frame with one row per element of
-  \code{vec}), or \code{NULL} if no fleet of this family is present.
+The flat OBS vector, or, under \code{return_labels = TRUE}, a list of
+  \code{vec} and \code{labels}. \code{NULL} when no fleet of this family is
+  present.
 }
 \description{
-Produces the flat tracked OBS vector required by \code{RTMB::oneStepPredict}.
-Population is the outermost dimension, so the entire result is one continuous
-vector with a single pointer.
+Builds the flat tracked OBS vector \code{RTMB::oneStepPredict} needs, ordered
+region-fastest with population outermost so the evaluator can use strided
+indexing over one continuous vector.
 }
 \details{
-Discrete families (LikeType 0,1):
-\itemize{
-  \item Multinomial (0): counts = round(prop x ISS x Wt)
-  \item Dirichlet-multinomial (1): counts = round(prop x ISS)
-}
-
-Continuous families (LikeType 2,3,4): logistic-normal
-The ALR transform is performed here, because the tracked OBS vector
-cannot be modified later. Proportions receive \code{+addtocomp}, are
-renormalized, then transformed to \code{log(p_k / p_K)} for k = 1..K-1.
-The last bin is the ALR reference and is dropped:
-\itemize{
-  \item Comp_Type 0: length = \code{n_obs_bins - 1}
-  \item Comp_Type 1: length = \code{n_ru x (n_obs_bins - 1) x n_sexes}
-  \item Comp_Type 2: joint ALR of the full [bin x sex] stack ->
-        length = \code{n_obs_bins x n_sexes - 1}
-        (Joint drops one reference for the whole stack -> length \code{n_obs_bins * n_sexes - 1})
-}
-
-The resulting vector is ordered region-fastest so that the likelihood
-evaluator can use simple strided indexing.
+The discrete families pack counts: the multinomial as
+\code{round(prop x ISS x Wt)} and the Dirichlet-multinomial as
+\code{round(prop x ISS)}. The logistic-normal families pack the additive log
+ratio of the observation, which has to happen here because a tracked OBS
+vector cannot be changed later: proportions take \code{+addtocomp}, are
+renormalized, and become \code{log(p_k / p_K)} for k = 1..K-1, with the last
+bin the reference and dropped. A block is then \code{n_obs_bins - 1} long under
+comp type 0, \code{n_ru x (n_obs_bins - 1) x n_sexes} under type 1, and
+\code{n_obs_bins * n_sexes - 1} under type 2, which takes one joint reference
+for the whole bin by sex stack.
 }
 \keyword{internal}

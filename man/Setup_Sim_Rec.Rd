@@ -36,186 +36,128 @@ Setup_Sim_Rec(
   ln_InitDevs_input = NULL,
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
-  RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
+  RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
+  rec_bias_correct = 1
 )
 }
 \arguments{
 \item{sim_list}{Simulation list returned by \code{\link{Setup_Sim_Dim}}.}
 
-\item{do_recruits_move}{Integer flag. \code{0} = age-1 fish do not move
-(default); movement begins at age 2. \code{1} = recruits participate in
-movement from age 1.}
+\item{do_recruits_move}{Integer flag. \code{0} (default) starts movement at age 2,
+\code{1} moves recruits from age 1.}
 
-\item{sexratio_input}{Proportion of recruits assigned to each sex, array
-\code{[n_pop x n_regions x n_yrs x n_sexes x n_sims]}. Default: \code{1}
-when \code{n_sexes = 1}; \code{0.5} per sex when \code{n_sexes = 2}.}
+\item{sexratio_input}{Proportion of recruits per sex, array \code{[n_pop x
+n_regions x n_yrs x n_sexes x n_sims]}. Default \code{1} for one sex, \code{0.5}
+each for two.}
 
-\item{R0_input}{Unfished equilibrium recruitment array
-\code{[n_pop x n_regions x n_yrs x n_sims]}. Default: \code{15} for all
-cells.}
+\item{R0_input}{Unfished equilibrium recruitment array \code{[n_pop x n_regions x
+n_yrs x n_sims]}. Default \code{15}.}
 
-\item{rinit_input}{Unfished equilibrium recruitment scalar used for
-population initialization when \code{use_rinit = 1}, array
-\code{[n_pop x n_regions x n_sims]}. Ignored when \code{use_rinit = 0}.
-Default: \code{15} for all cells.}
+\item{rinit_input}{Equilibrium recruitment used for initialization under
+\code{use_rinit = 1}, array \code{[n_pop x n_regions x n_sims]}. Default \code{15}.}
 
-\item{h_input}{Beverton-Holt steepness array
-\code{[n_pop x n_regions x n_yrs x n_sims]}. Values should be in
-\eqn{(0.2, 1)}. Default: \code{0.8}.}
+\item{h_input}{Steepness array \code{[n_pop x n_regions x n_yrs x n_sims]}, values
+in \eqn{(0.2, 1)}. Default \code{0.8}.}
 
-\item{stray_rate_input}{Natal-homing stray rate array
-\code{[n_pop x n_yrs x n_sims]}. Proportion of individuals that stray
-from their natal region during spawning. Default: \code{0} (No individuals stray).}
+\item{stray_rate_input}{Natal-homing stray rate array \code{[n_pop x n_yrs x
+n_sims]}, the proportion straying from the natal region at spawning. Default
+\code{0}.}
 
-\item{ln_sigmaR}{Log-scale standard deviation of recruitment deviations,
-array \code{[2 x n_pop x n_regions]}. The first element controls the SD for
-initial age-structure deviations (\code{ln_InitDevs}); the second controls
-the SD for annual recruitment deviations (\code{ln_RecDevs}). Default:
-\code{log(1)} for both.}
+\item{ln_sigmaR}{Log-scale sd of the recruitment deviations, array \code{[2 x n_pop
+x n_regions]}, index 1 for \code{ln_InitDevs} and 2 for \code{ln_RecDevs}.
+Default \code{log(1)}.}
 
 \item{rec_seas_prop_input}{Seasonal allocation of annual recruitment, array
-\code{[n_pop x n_seas x n_sims]}. Each population's values should sum to
-1 across seasons. Default: all recruitment assigned to season 1. When
-\code{rec_lag = 0} and \code{spawn_seas > 1}, must be zero for every
-season before \code{spawn_seas}. An error is raised otherwise.}
+\code{[n_pop x n_seas x n_sims]} summing to 1 across seasons. Default all in
+season 1. Must be zero before \code{spawn_seas} when \code{rec_lag = 0} and
+\code{spawn_seas > 1}.}
 
-\item{recruitment_opt}{Recruitment model. Default \code{"bh_rec"}. Options:
-\describe{
-  \item{\code{0}/\code{"mean_rec"}}{Mean recruitment; no stock-recruit
-    relationship.}
-  \item{\code{1}/\code{"bh_rec"}}{Beverton-Holt stock-recruit relationship.
-    Requires \code{rec_dd = "local"} when \code{n_pop > 1}.}
-  \item{\code{999}/\code{"resample_from_input"}}{Bootstrap recruitment by
-    resampling years from \code{Rec_input}. Historical years are used
-    as-is; projection years are sampled with replacement, preserving
-    spatial covariance among regions within each resampled year.
-    Requires \code{Rec_input} to be non-\code{NULL}.}
-}}
+\item{recruitment_opt}{Recruitment model, default \code{"bh_rec"}.
+\code{0}/\code{"mean_rec"} has no stock-recruit relationship,
+\code{1}/\code{"bh_rec"} is Beverton-Holt and requires \code{rec_dd = "local"}
+when \code{n_pop > 1}, and \code{999}/\code{"resample_from_input"} resamples
+years from \code{Rec_input}, using historical years as they are and sampling
+projection years with replacement so spatial covariance within a year is kept.}
 
-\item{rec_dd}{Density-dependence structure for the stock-recruit
-relationship. Default \code{"global"}. Options:
-\describe{
-  \item{\code{0}/\code{"local"}}{Region-specific spawner-recruit
-    relationship; each region has its own \eqn{R_0} and steepness.
-    Required when \code{n_pop > 1} and \code{recruitment_opt = "bh_rec"}.}
-  \item{\code{1}/\code{"global"}}{Single shared spawner-recruit
-    relationship pooled across regions.}
-}}
+\item{rec_dd}{Density dependence for the stock-recruit relationship, default
+\code{"global"}. \code{0}/\code{"local"} gives each region its own \eqn{R_0} and
+steepness, required when \code{n_pop > 1} under \code{"bh_rec"};
+\code{1}/\code{"global"} pools across regions.}
 
-\item{init_dd}{Density-dependence structure for equilibrium age-structure
-initialization. Default \code{"global"}. Same options as \code{rec_dd}.}
+\item{init_dd}{Density dependence for equilibrium initialization, same options as
+\code{rec_dd}. Default \code{"global"}.}
 
-\item{use_rinit}{Integer (0/1). Whether a separate initial recruitment
-scalar \code{rinit_input} is used to initialize the population
-independently of \code{R0_input}. When \code{0} (default),
-\code{rinit_input} is ignored and \code{R0_input} governs both
-initialization and recruitment. When \code{1}, \code{rinit_input} is
-used exclusively for equilibrium initialization and \code{R0_input}
-governs the recruitment relationship.}
+\item{use_rinit}{Integer (0/1). Whether \code{rinit_input} initializes the
+population separately from \code{R0_input}. Under \code{0} (default)
+\code{rinit_input} is ignored.}
 
-\item{init_age_strc}{Integer specifying the equilibrium age-structure
-initialization method. Default \code{2}. Options:
-\describe{
-  \item{\code{0}/\code{"iterative"}}{Iterates the population forward until
-    approximate equilibrium. Slowest but most general.}
-  \item{\code{1}/\code{"scalar_no_move"}}{Scalar geometric series solution
-    assuming no movement in any age class.}
-  \item{\code{2}/\code{"matrix"}}{Matrix geometric series solution that
-    generalizes the scalar approach to include movement. Recommended
-    default for spatially explicit models.}
-  \item{\code{3}/\code{"scalar_plus_only"}}{Scalar geometric series
-    solution assuming no movement except in the plus group.}
-  \item{\code{4}/\code{"free"}}{No equilibrium is projected at all:
-    \code{ln_InitDevs} are the initial log numbers-at-age themselves for
-    ages 2 and above, apportioned by the sex ratio, with age 1 still taken
-    from recruitment. Use this where the assessment estimates its initial
-    numbers-at-age freely rather than as departures from an equilibrium.
-    The initial condition then does not depend on \code{init_F_par} or
-    \code{ln_rinit}, and because the deviations are log-numbers rather
-    than log-ratios, any penalty acts as a prior on initial abundance:
-    pair with \code{equil_init_age_strc = "equil"} for no such prior, or
-    with \code{InitDevs_pen_center = "own_mean"} to penalize only the
-    roughness of the age structure and not its level.}
-}}
+\item{init_age_strc}{Equilibrium initialization method, default \code{2}.
+\code{0}/\code{"iterative"} iterates forward to approximate equilibrium,
+\code{1}/\code{"scalar_no_move"} is a scalar geometric series without movement,
+\code{2}/\code{"matrix"} is the matrix series with movement, and
+\code{3}/\code{"scalar_plus_only"} moves only the plus group.
+\code{4}/\code{"free"} projects no equilibrium: \code{ln_InitDevs} are the initial
+log numbers-at-age for ages 2 and above, apportioned by sex ratio, so the initial
+condition ignores \code{init_F_par} and \code{ln_rinit} and any penalty becomes a
+prior on initial abundance.}
 
-\item{spawn_seas}{Integer index of the season in which spawning occurs.
-Default \code{1}.}
+\item{spawn_seas}{Integer index of the spawning season. Default \code{1}.}
 
-\item{t_spawn}{Spawn timing as a fraction of the season elapsed before
-spawning within \code{spawn_seas}. \code{0} (default) = spawning occurs
-before any mortality is applied in that season; \code{1} = spawning occurs
-after all mortality.}
+\item{t_spawn}{Spawn timing as a fraction of \code{spawn_seas} elapsed before
+spawning. \code{0} (default) spawns before any mortality, \code{1} after all of it.}
 
-\item{rec_lag}{Integer. Number of seasons between spawning and recruitment.
-\code{1} (default) is the classic lagged case: recruits enter the
-population using SSB from \code{rec_lag} seasons prior, in any season.
-\code{0} is age-0 recruitment: recruits enter using the SAME year's SSB.
-Because that SSB isn't known until \code{spawn_seas} is reached, age-0
-recruits may only enter in \code{spawn_seas} itself or a later season in
-the same year; \code{rec_seas_prop_input} must be zero for every season
-before \code{spawn_seas} when \code{rec_lag = 0}.}
+\item{rec_lag}{Integer seasons between spawning and recruitment. \code{1} (default)
+uses SSB from that many seasons prior, in any season. \code{0} is age-0
+recruitment on the same year's SSB, so recruits may only enter in
+\code{spawn_seas} or later and \code{rec_seas_prop_input} must be zero before it.}
 
 \item{SR_ref_yr}{Integer year index supplying the biological inputs to unfished
-spawning biomass per recruit, and so the scale of the stock-recruit curve.
-Matches the estimation model's \code{SR_ref_yr}. Default \code{1}.}
+spawning biomass per recruit, and so the curve's scale. Matches the estimation
+model's \code{SR_ref_yr}. Default \code{1}.}
 
-\item{Rec_input}{External recruitment array
-\code{[n_pop x n_regions x n_yrs x n_sims]}. Required when
-\code{recruitment_opt = "resample_from_input"}; projection years beyond
-the length of \code{Rec_input} are filled by resampling historical years
-with replacement. Ignored for other recruitment options. Default
-\code{NULL}.}
+\item{Rec_input}{External recruitment array \code{[n_pop x n_regions x n_yrs x
+n_sims]}, required under \code{recruitment_opt = "resample_from_input"}.
+Projection years beyond its length are resampled from historical years with
+replacement. Default \code{NULL}.}
 
-\item{ln_InitDevs_input}{Optional log-scale initial age-structure deviations
-array, either \code{[n_pop x n_regions x (n_ages - 1) x n_sims]} (one
-shared curve, broadcast across sexes) or
-\code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} (one curve
-per sex). The \code{n_ages - 1} dimension excludes the reference age used
-during initialization. If \code{NULL} (default), deviations are drawn as
-one shared curve per population and region.}
+\item{ln_InitDevs_input}{Optional log-scale initial age deviations, either
+\code{[n_pop x n_regions x (n_ages - 1) x n_sims]} for one shared curve or
+\code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} for one per sex. The
+\code{n_ages - 1} dim excludes the reference age. \code{NULL} (default) draws one
+shared curve per population and region; pass zeros to start in equilibrium.}
 
-\item{InitDevs_sex_spec}{Character. How initial age deviations are drawn
-across sexes when they are not supplied through
-\code{ln_InitDevs_input}. \code{"est_shared_s"} (default) draws one curve
-per population or region and gives it to every sex.
-\code{"est_all"} draws each sex its own. Departures from the initial
-equilibrium reflect the exploitation the stock had already seen as well as
-year-class strength, and with sex-specific selectivity or natural
-mortality the two sexes need not have departed by the same amount, which is
-the case \code{"est_all"} covers. The names match
-\code{InitDevs_sex_spec} in \code{\link{Setup_Mod_Rec}}, so an operating
-model and the estimation model fitted to it can be set the same way.}
+\item{InitDevs_sex_spec}{How initial age deviations are drawn across sexes when
+\code{ln_InitDevs_input} is not supplied. \code{"est_shared_s"} (default) draws
+one curve per population or region for every sex, \code{"est_all"} draws each sex
+its own. Names match \code{\link{Setup_Mod_Rec}}.}
 
-\item{RecDevs_model}{Character. Process error the recruitment deviations are
-drawn under: \code{"iid"} (default) independent draws, \code{"rw"} a random
-walk from the previous year's deviation, or \code{"ar1"} reverting toward
-zero at rate \code{RecDevs_rho}. Year one is drawn at \code{ln_sigmaR} under
-\code{"iid"} and \code{"rw"}, and from the stationary marginal
-\code{ln_sigmaR / sqrt(1 - RecDevs_rho^2)} under \code{"ar1"}.
-Matches \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}},
-so a self test can simulate and estimate under the same process.}
+\item{RecDevs_model}{Process error the deviations are drawn under. \code{"iid"}
+(default) is independent, \code{"rw"} a random walk, \code{"ar1"} reverts toward
+zero at rate \code{RecDevs_rho}. Year one is drawn at \code{ln_sigmaR} under the
+first two and from \code{ln_sigmaR / sqrt(1 - RecDevs_rho^2)} under \code{"ar1"}.
+Matches \code{\link{Setup_Mod_Rec}}.}
 
-\item{RecDevs_rho}{Matrix \code{[n_pop x n_regions]} of AR1 correlations on
-the natural scale, in \eqn{(-1, 1)}. Only read when
-\code{RecDevs_model = "ar1"}. Default zero.}
+\item{RecDevs_rho}{Matrix \code{[n_pop x n_regions]} of AR1 correlations in
+\eqn{(-1, 1)}. Only read under \code{RecDevs_model = "ar1"}. Default zero.}
+
+\item{rec_bias_correct}{Integer. \code{1} (default) draws the recruitment and
+initial age deviations as mean-one lognormal multipliers centered at
+\eqn{-\sigma^2/2}, matching an estimation model with the bias ramp on; \code{0}
+centers them at zero. A linked cell follows the same switch under the arrows.}
 }
 \value{
-The input \code{sim_list} with recruitment-related fields appended:
-  \code{$recruitment_opt}, \code{$rec_dd}, \code{$init_dd}, \code{$R0},
-  \code{$h}, \code{$sexratio}, \code{$ln_sigmaR}, \code{$rec_seas_prop},
-  \code{$spawn_seas}, \code{$t_spawn}, \code{$rec_lag},
+\code{sim_list} with \code{$recruitment_opt}, \code{$rec_dd},
+  \code{$init_dd}, \code{$R0}, \code{$h}, \code{$sexratio}, \code{$ln_sigmaR},
+  \code{$rec_seas_prop}, \code{$spawn_seas}, \code{$t_spawn}, \code{$rec_lag},
   \code{$init_age_strc}, \code{$do_recruits_move}, \code{$move_age},
   \code{$stray_rate}, and optionally \code{$Rec_input} and
-  \code{$ln_InitDevs_input}. Character-coded inputs are converted to their
-  integer equivalents before storage.
+  \code{$ln_InitDevs_input}. Character codes are converted to integers before
+  storage.
 }
 \description{
-Populates \code{sim_list} with all recruitment-related inputs needed by the
-operating model: stock-recruit relationship type and density-dependence
-structure, biological parameters (\eqn{R_0}, steepness, sex ratio),
-recruitment and initial age-structure deviations, seasonal recruitment
-allocation, spawn timing, and equilibrium initialization method. Must be
-called after \code{\link{Setup_Sim_Dim}}.
+Sets the stock-recruit form and density dependence, \eqn{R_0}, steepness, sex
+ratio, the recruitment and initial age deviations, seasonal allocation, spawn
+timing and the equilibrium initialization. Call after \code{\link{Setup_Sim_Dim}}.
 }
 \seealso{
 Other Simulation Setup:

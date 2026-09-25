@@ -125,7 +125,7 @@ test_that("get_fishery_observation_model: length compositions via SizeAgeTrans (
   expect_equal(as.numeric(out$DAL[1,1,1,1,,1,1]), as.numeric(out$DAA[1,1,1,1,,1,1]), tolerance = 1e-8)
 })
 
-make_survey_obs_input <- function(srv_idx_type = 0, srv_selex_type = 0, do_srv_q_cov = 0, fit_lengths = 0) {
+make_survey_obs_input <- function(srv_idx_type = 0, srv_selex_type = 0, q_dev = NULL, fit_lengths = 0) {
 
   n_pop <- 1
   n_regions <- 1
@@ -135,7 +135,6 @@ make_survey_obs_input <- function(srv_idx_type = 0, srv_selex_type = 0, do_srv_q
   n_sexes <- 1
   n_ages <- 2
   n_lens <- 2
-  n_cov <- 1
 
   ZAA <- array(c(0.5, 0.3), dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
   NAA <- array(c(100, 50), dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
@@ -153,9 +152,7 @@ make_survey_obs_input <- function(srv_idx_type = 0, srv_selex_type = 0, do_srv_q
     srv_q_blocks = array(1L, dim = c(n_regions, n_yrs, n_srv_fleets)),
     ln_srv_q = array(log(0.002), dim = c(n_regions, 1, n_srv_fleets)),
     srv_q = array(0, dim = c(n_regions, n_yrs, n_srv_fleets)),
-    do_srv_q_cov = do_srv_q_cov,
-    srv_q_cov = array(0.1, dim = c(n_regions, n_yrs, n_srv_fleets, n_cov)),
-    srv_q_coeff = array(0.5, dim = c(n_regions, n_srv_fleets, n_cov)),
+    ln_srv_q_devs = if(is.null(q_dev)) NULL else array(q_dev, dim = c(n_regions, n_yrs, n_srv_fleets)),
     srv_selex_type = srv_selex_type,
     srv_sel = srv_sel,
     srv_sel_l = srv_sel_l,
@@ -196,9 +193,9 @@ test_that("get_survey_observation_model: biomass index and catchability covariat
   WAA_vec <- c(1.5, 3.0)
   expect_equal(out_b$PredSrvIdx[1,1,1,1,1], 0.002 * sum(out_b$SrvIAA[1,1,1,1,,1,1] * WAA_vec), tolerance = 1e-8)
 
-  il_cov <- make_survey_obs_input(do_srv_q_cov = 1)
-  out_cov <- do.call(SPoRC:::get_survey_observation_model, il_cov)
-  expect_equal(out_cov$srv_q[1,1,1], 0.002 * exp(0.1 * 0.5), tolerance = 1e-10) # q * exp(cov * coeff)
+  il_dev <- make_survey_obs_input(q_dev = 0.05)
+  out_dev <- do.call(SPoRC:::get_survey_observation_model, il_dev)
+  expect_equal(out_dev$srv_q[1,1,1], exp(log(0.002) + 0.05), tolerance = 1e-10) # the block value shifted by the deviation
 })
 
 test_that("get_survey_observation_model: length-based selectivity is converted via SizeAgeTrans", {

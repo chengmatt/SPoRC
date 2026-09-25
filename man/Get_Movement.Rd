@@ -33,152 +33,124 @@ Get_Movement(
 )
 }
 \arguments{
-\item{move_type}{Integer flag indicating movement type: 0 = unstructured Markov,
-1 = CTMC movement.}
+\item{move_type}{Integer: 0 unstructured Markov, 1 CTMC.}
 
-\item{do_recruits_move}{Integer flag: 0 = recruits (age 1) do not move, 1 = recruits move.}
+\item{do_recruits_move}{Integer: 0 keeps recruits (age 1) in place, 1 moves them.}
 
-\item{n_pop}{Number of populations.}
+\item{n_regions, n_ages, n_sexes, n_seas, n_pop}{Model dimensions.}
 
-\item{n_regions}{Number of spatial regions.}
+\item{n_yrs}{Number of observed (historical) years.}
 
-\item{n_yrs}{Number of years in the observed (historical) data.}
+\item{n_proj_yrs_devs}{Number of projected years, extending the year dim of the
+movement array beyond \code{n_yrs}. CTMC covariate lookups stay capped at
+\code{n_yrs} unless \code{ctmc_move_dat} holds projection-year rows.}
 
-\item{n_proj_yrs_devs}{Number of projected years. Extends the year dimension of the
-movement array beyond \code{n_yrs}; CTMC covariate lookups are capped at \code{n_yrs}
-unless \code{ctmc_move_dat} contains projection-year rows.}
+\item{move_pars}{Unstructured movement parameters \code{[pop, from_region,
+counter, year, seas, age, sex]}, \code{counter} indexing the
+\code{n_regions - 1} non-reference destinations. Ignored when
+\code{move_type == 1} or \code{use_fixed_movement == 1}.}
 
-\item{n_ages}{Number of age classes.}
+\item{move_devs}{Movement deviations \code{[pop, region, counter, year, seas,
+age, sex]}, always indexed on the actual (possibly projected) year. Under
+unstructured movement \code{counter} indexes the non-reference destinations
+and the deviations are additive on the logit scale. Under CTMC movement they
+sit on each region's preference instead, so \code{counter} has length one and
+\code{region} is the region whose preference is shifted.}
 
-\item{n_sexes}{Number of sexes.}
+\item{use_fixed_movement}{Integer: 0 estimates movement, 1 uses
+\code{Fixed_Movement}.}
 
-\item{n_seas}{Number of seasons.}
+\item{Fixed_Movement}{Fixed movement matrix \code{[pop, from_region, to_region,
+year, seas, age, sex]}, read when \code{use_fixed_movement == 1}.}
 
-\item{move_pars}{Array of movement parameters for unstructured (multinomial logit)
-movement, dimensioned \code{[pop, from_region, counter, year, seas, age, sex]}.
-\code{counter} indexes the \code{n_regions - 1} non-reference destinations.
-Ignored when \code{move_type == 1} or \code{use_fixed_movement == 1}.}
+\item{ctmc_move_dat}{Data frame of CTMC covariates, required when
+\code{move_type == 1}, with columns \code{pop}, \code{regions},
+\code{years}, \code{seas}, \code{ages}, \code{sexes} and any covariate the
+formulas name.}
 
-\item{move_devs}{Array of origin-destination movement deviations, dimensioned
-\code{[pop, origin_region, counter, year, seas, age, sex]}, where \code{counter}
-indexes adjacent non-diagonal destinations from each origin region. Applied as
-multiplicative offsets (\code{exp(move_devs)}) to off-diagonal diffusion rates
-in CTMC movement, or as additive offsets to logit-scale parameters in unstructured
-movement. Always indexed on the actual (possibly projected) year.}
+\item{preference_formula, diffusion_formula}{Formulas for the preference (taxis)
+and diffusion covariates. Required when \code{move_type == 1}.}
 
-\item{use_fixed_movement}{Integer flag: 0 = estimate movement, 1 = use fixed matrix.}
+\item{log_move_diffusion_pars}{Log-scale diffusion parameters
+(\eqn{\theta_k}), exponentiated and squared internally as
+\code{exp(2 * log_theta)}. Required when \code{move_type == 1}.}
 
-\item{Fixed_Movement}{Fixed movement matrix used when \code{use_fixed_movement == 1},
-dimensioned \code{[pop, from_region, to_region, year, seas, age, sex]}. Ignored otherwise.}
+\item{move_preference_pars}{Preference (taxis) parameters (\eqn{\gamma_k}) on
+the natural scale. Required when \code{move_type == 1}.}
 
-\item{ctmc_move_dat}{Data.frame of CTMC covariates. Required when \code{move_type == 1}.
-Must include columns \code{pop}, \code{regions}, \code{years}, \code{seas},
-\code{ages}, \code{sexes}, and any covariates referenced in \code{diffusion_formula}
-or \code{preference_formula}.}
+\item{area_r}{Numeric vector \code{[n_regions]} of region areas, scaling the
+diffusion rates. Required when \code{move_type == 1}.}
 
-\item{preference_formula}{R formula specifying preference (taxis) covariates
-for CTMC movement. Required when \code{move_type == 1}.}
-
-\item{diffusion_formula}{R formula specifying diffusion covariates
-for CTMC movement. Required when \code{move_type == 1}.}
-
-\item{log_move_diffusion_pars}{Log-scale diffusion parameters (\eqn{\theta_k}) for
-CTMC movement. Exponentiated and squared internally (\code{exp(2 * log_theta)}).
-Required when \code{move_type == 1}.}
-
-\item{move_preference_pars}{Preference (taxis) parameters (\eqn{\gamma_k}) for CTMC
-movement, on the natural scale. Required when \code{move_type == 1}.}
-
-\item{area_r}{Numeric vector of region areas (length \code{n_regions}) used to
-scale diffusion rates. Required when \code{move_type == 1}.}
-
-\item{adjacency_mat}{Square \code{[n_regions x n_regions]} matrix defining
-connectivity among regions (1 = adjacent, 0 = not adjacent). Required when
-\code{move_type == 1}.}
+\item{adjacency_mat}{Square \code{[n_regions x n_regions]} connectivity matrix,
+1 for adjacent and 0 for not. Required when \code{move_type == 1}.}
 
 \item{ctmc_diffusion_bounds}{How the off-diagonal generator entries are kept
-non-negative (a valid generator). Every form is evaluated on the adjacency
-edges only, so non-edges stay exactly zero. Taking \eqn{d} as the preference
-gradient \eqn{\gamma_i - \gamma_j} along the edge from \eqn{j} to \eqn{i} and
-\eqn{\theta_j} as the diffusion rate out of \eqn{j}:
-\describe{
-  \item{\code{"none"} (or \code{0})}{\eqn{q = \theta_j + d}, unbounded. Valid
-    only where diffusion outweighs taxis everywhere.}
-  \item{\code{"softplus"} (or \code{1})}{softplus of \eqn{\theta_j + d} with
-    width \code{ctmc_diffusion_eps}. Smooth, but an edge where taxis cancels
-    diffusion has a floor of \code{eps * log(2)}, so the width is a
-    minimum exchange rate and not only a smoothing constant.}
-  \item{\code{"upwind"} (or \code{2})}{discontinuous Galerkin / finite volume upwind flux,
-    \eqn{q = \theta_j + \max(d, 0)}: diffusion is kept whole and only the
-    down-gradient half of the taxis flux is added, so positivity never depends
-    on the two cancelling. }
-}}
+non-negative. Every form is evaluated on the adjacency edges only, so
+non-edges stay exactly zero. With \eqn{d} the preference gradient
+\eqn{\gamma_i - \gamma_j} along the edge from \eqn{j} to \eqn{i} and
+\eqn{\theta_j} the diffusion rate out of \eqn{j}: \code{"none"} (or \code{0})
+is \eqn{q = \theta_j + d}, valid only where diffusion outweighs taxis
+everywhere; \code{"softplus"} (or \code{1}) is a softplus of that of width
+\code{ctmc_diffusion_eps}, smooth, but an edge where taxis cancels diffusion
+has a floor of \code{eps * log(2)}, so the width is a minimum exchange rate
+and not only a smoothing constant; \code{"upwind"} (or \code{2}) is the
+finite volume upwind flux \eqn{q = \theta_j + \max(d, 0)}, which keeps
+diffusion whole and adds only the down-gradient half of the taxis flux, so
+positivity never depends on the two cancelling.}
 
-\item{ctmc_diffusion_eps}{Positive numeric width of the softplus used when
-\code{ctmc_diffusion_bounds} is \code{"softplus"}. Default 0.1.}
+\item{ctmc_diffusion_eps}{Positive width of the softplus under
+\code{ctmc_diffusion_bounds = "softplus"}. Default 0.1.}
 
-\item{seasdur}{Numeric vector of length \code{n_seas} giving season durations
-(summing to 1). Used to scale the CTMC generator when
-\code{ctmc_scale_by_seasdur == 1}. Defaults to \code{rep(1, n_seas)}, which
-reproduces the unscaled behavior.}
+\item{seasdur}{Numeric vector \code{[n_seas]} of season durations summing to 1,
+used to scale the generator when \code{ctmc_scale_by_seasdur == 1}. Defaults
+to \code{rep(1, n_seas)}, the unscaled behavior.}
 
-\item{ctmc_scale_by_seasdur}{Integer flag controlling the time units of the CTMC
-generator. \code{1} = treat \eqn{Q} as an annual rate and exponentiate
-\eqn{Q \cdot \mathrm{seasdur}[s]} for each season; \code{0} = treat \eqn{Q} as
-a per season rate and exponentiate it once per season irrespective of season
-duration. Only affects \code{move_type == 1} with \code{n_seas > 1}. Defaults
-to \code{0} here so that callers passing an unscaled generator get the
-arithmetic they expect; the user facing default is \code{1}, set by
-\code{Setup_Mod_Movement}.}
+\item{ctmc_scale_by_seasdur}{Integer flag for the generator's time units.
+\code{1} treats \eqn{Q} as an annual rate and exponentiates
+\eqn{Q \cdot \mathrm{seasdur}[s]} each season; \code{0} treats it as a per
+season rate and exponentiates it once per season. Only matters under
+\code{move_type == 1} with \code{n_seas > 1}. Defaults to \code{0} here so a
+caller passing an unscaled generator gets the arithmetic it expects; the user
+facing default is \code{1}, set by \code{Setup_Mod_Movement}.}
 
-\item{expm_nsub}{Integer controlling how the CTMC generator is exponentiated
-into movement fractions: \code{0} (default) uses \code{Matrix::expm}, a value
-\eqn{n \ge 1} uses the implicit backward Euler scheme \eqn{(I - Q\Delta/n)^{-n}},
-which is cheaper to differentiate but is a first-order approximation. Only read
-when \code{move_type == 1} and \code{use_fixed_movement == 0}. See
-\code{\link{mat_exp}}.}
+\item{expm_nsub}{How the generator is exponentiated into movement fractions.
+\code{0} (default) uses \code{Matrix::expm}; \eqn{n \ge 1} uses the implicit
+backward Euler scheme \eqn{(I - Q\Delta/n)^{-n}}, cheaper to differentiate but
+first order. Read when \code{move_type == 1} and
+\code{use_fixed_movement == 0}. See \code{\link{mat_exp}}.}
 }
 \value{
-A list with components:
-\describe{
-  \item{\code{Movement}}{Array of movement fractions dimensioned
-    \code{[pop, from_region, to_region, year, seas, age, sex]}.
-    Populated for all three movement configurations.}
-  \item{\code{Mrate}}{Instantaneous rate matrix (generator \eqn{Q}) dimensioned
-    \code{[pop, from_region, to_region, year, seas, age, sex]}. Populated only
-    when \code{move_type == 1} and \code{use_fixed_movement == 0}; \code{NULL} otherwise.
-    Stored \emph{unscaled} by season duration, so that consumers combining it with
-    mortality must apply \code{seasdur[seas]} themselves (see
-    \code{build_seas_operator}).}
-  \item{\code{move_pen}}{Numeric movement penalty used for regularization.
-    For CTMC movement, equal to \eqn{\sum_k \gamma_k^2}, a ridge on the
-    preference coefficients applied once (not per stratum) that pins the
-    otherwise unidentified level and spread. Zero for unstructured or fixed
-    movement.}
-}
+A list with \code{Movement}, the movement fractions \code{[pop,
+  from_region, to_region, year, seas, age, sex]}, populated under every
+  configuration; \code{Mrate}, the generator \eqn{Q} on the same dims, populated
+  only when \code{move_type == 1} and \code{use_fixed_movement == 0} and stored
+  unscaled by season duration, so a consumer combining it with mortality applies
+  \code{seasdur[seas]} itself (see \code{build_seas_operator}); and
+  \code{move_pen}, the penalty, which under CTMC movement is
+  \eqn{\sum_k \gamma_k^2}, a ridge on the preference coefficients applied once
+  rather than per stratum that pins the otherwise unidentified level and spread,
+  and is zero for unstructured or fixed movement.
 }
 \description{
-Generates movement matrices for a population model based on either unstructured
-multinomial logit movement or a Continuous Time Markov Chain (CTMC) formulation.
-Also calculates a movement penalty if applicable. For CTMC movement, projection
-years are supported: covariate lookups are capped at the last historical year
-(\code{n_yrs}), so CTMC parameters are frozen at their final historical values
-during projection unless \code{ctmc_move_dat} is extended with projection-year rows.
+Movement fractions under unstructured multinomial logit movement, a CTMC
+generator, or a fixed matrix, plus the movement penalty. Under CTMC movement
+the covariate lookups are capped at \code{n_yrs}, so the parameters are frozen
+at their last historical values through the projection unless
+\code{ctmc_move_dat} holds projection-year rows.
 }
 \details{
-Three movement configurations are supported:
-\enumerate{
-  \item Fixed movement (\code{use_fixed_movement == 1}): \code{Fixed_Movement} is used
-    directly with no estimation.
-  \item Unstructured multinomial logit movement (\code{move_type == 0}): movement
-    fractions are estimated via a softmax transform of \code{move_pars + move_devs}.
-  \item CTMC movement (\code{move_type == 1}): a generator matrix \eqn{Q = D + Z}
-    is constructed from diffusion (\eqn{D}) and taxis (\eqn{Z}) components, then
-    exponentiated via \code{\link{mat_exp}} (either \code{Matrix::expm} or the
-    implicit solve, per \code{expm_nsub}) to obtain movement fractions. During
-    projection years (\code{y > n_yrs}), covariate lookups are capped at \code{n_yrs}
-    (i.e., CTMC base parameters are frozen at their last historical values), while
-    \code{move_devs} continue to use the actual projected year index.
-}
+Fixed movement (\code{use_fixed_movement == 1}) uses \code{Fixed_Movement}
+directly. Unstructured movement (\code{move_type == 0}) takes a softmax of
+\code{move_pars + move_devs}. CTMC movement (\code{move_type == 1}) builds a
+generator \eqn{Q = D + Z} from its diffusion and taxis components and
+exponentiates it through \code{\link{mat_exp}}.
+
+Under CTMC movement a deviation is added to its own region's preference,
+\eqn{h_r + \epsilon_r}, before the gradient \eqn{d = h_i - h_j} is taken along
+each edge. One deviation therefore moves every edge that touches that region,
+raising the rates into it and lowering the rates out of it, and the perturbed
+taxis is still the gradient of a surface. Only differences reach the generator,
+so a constant added to every region's deviation leaves movement unchanged and
+the level of the field is held only by the process error penalty.
 }
 \keyword{internal}

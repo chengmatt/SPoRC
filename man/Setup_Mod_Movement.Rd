@@ -33,227 +33,192 @@ Setup_Mod_Movement(
 )
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
-and \code{$verbose} sublists, as returned by upstream setup functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map} and
+\code{$verbose}.}
 
-\item{move_type}{Integer. Movement model formulation: \code{0} =
-unstructured Markov; \code{1} = CTMC. Default \code{0}.}
+\item{move_type}{Integer. \code{0} (default) unstructured Markov, \code{1} CTMC.}
 
-\item{do_recruits_move}{Integer flag. \code{0} = age-1 fish do not move
-(default); movement deviations and CTMC rows for the minimum age are
-fixed at zero. \code{1} = recruits participate in movement.}
+\item{do_recruits_move}{Integer flag. \code{0} (default) fixes the movement
+deviations and CTMC rows at the minimum age to zero, \code{1} moves recruits.}
 
-\item{use_fixed_movement}{Integer flag. \code{0} = estimate movement
-(default); \code{1} = fix movement rates to \code{Fixed_Movement} and
-map all movement parameters to \code{NA}.}
+\item{use_fixed_movement}{Integer flag. \code{0} (default) estimates movement,
+\code{1} fixes it at \code{Fixed_Movement} and maps every movement parameter
+to \code{NA}.}
 
-\item{Fixed_Movement}{Numeric array of externally supplied movement
-probability matrices, dimensioned
-\code{[n_pop × n_regions × n_regions × n_years × n_seas × n_ages × n_sexes]}.
-Each \code{[n_regions × n_regions]} slice must be row-stochastic (rows
-sum to 1). Required when \code{use_fixed_movement = 1}. If \code{NA}
-(default), an identity matrix (no movement) is constructed internally.}
+\item{Fixed_Movement}{Movement probability array \code{[n_pop × n_regions ×
+n_regions × n_years × n_seas × n_ages × n_sexes]}, each \code{[n_regions ×
+n_regions]} slice row-stochastic. Required when
+\code{use_fixed_movement = 1}. \code{NA} (default) builds an identity matrix.}
 
-\item{Use_Movement_Prior}{Integer flag. \code{1} = apply Dirichlet priors
-to movement row probabilities; \code{0} = no priors (default). Requires
-\code{Movement_prior}.}
+\item{Use_Movement_Prior}{Integer flag, \code{1} for Dirichlet priors on the
+movement rows. Default \code{0}.}
 
-\item{Movement_prior}{Data frame of Dirichlet prior concentration
-parameters. Required columns: \code{pop}, \code{region_from},
-\code{year}, \code{seas}, \code{age}, \code{sex}, and \code{alpha},
-where \code{alpha} is a list-column with each element a numeric vector
-of length \code{n_regions} giving the Dirichlet concentration for
-transitions out of \code{region_from}. Values near 1 are uninformative;
-larger values concentrate the prior toward equal movement. Only used
-when \code{Use_Movement_Prior = 1}.}
+\item{Movement_prior}{Data frame with columns \code{pop}, \code{region_from},
+\code{year}, \code{seas}, \code{age}, \code{sex} and \code{alpha}, the last a
+list-column of length-\code{n_regions} concentrations for transitions out of
+\code{region_from}. Values near 1 are uninformative, larger ones concentrate
+toward equal movement. Read when \code{Use_Movement_Prior = 1}.}
 
-\item{Movement_popblk_spec}{\code{"constant"} (default, shared across all
-populations) or a list of integer vectors partitioning populations into
-blocks. Example: \code{list(c(1, 2), 3)} shares parameters for
-populations 1 and 2 and estimates a separate parameter for population 3.
-Ignored when \code{move_type = 1}.}
-
-\item{Movement_ageblk_spec}{\code{"constant"} (default) or a list of
-integer vectors defining age blocks. Example: \code{list(1:4, 5:10)}
-creates a juvenile block (ages 1-4) and an adult block (ages 5-10).
-Ignored when \code{move_type = 1}.}
-
-\item{Movement_yearblk_spec}{\code{"constant"} (default) or a list of
-integer vectors defining year blocks for discrete structural breaks in
-movement. For residual annual variation, use \code{cont_vary_movement}
-instead. Ignored when \code{move_type = 1}.}
-
-\item{Movement_seasblk_spec}{\code{"constant"} (default) or a list of
-integer vectors defining season blocks. Example: \code{list(c(1, 2),
-c(3, 4))} groups winter/spring and summer/fall. Ignored when
+\item{Movement_popblk_spec, Movement_ageblk_spec, Movement_yearblk_spec, Movement_seasblk_spec, Movement_sexblk_spec}{Blocking across populations, ages, years, seasons and sexes: \code{"constant"}
+(default) or a list of integer vectors, e.g. \code{list(c(1, 2), 3)} for
+populations, \code{list(1:4, 5:10)} for a juvenile and an adult block, or
+\code{list(1, 2)} for sex-specific movement. Use
+\code{Movement_yearblk_spec} for structural breaks and
+\code{cont_vary_movement} for residual annual variation. All are ignored when
 \code{move_type = 1}.}
 
-\item{Movement_sexblk_spec}{\code{"constant"} (default, sex-invariant) or
-a list of integer vectors defining sex blocks. Example: \code{list(1, 2)}
-estimates sex-specific movement independently. Ignored when
-\code{move_type = 1}.}
+\item{cont_vary_movement}{Structure of the continuous deviations on the
+fixed-effect movement surface. \code{"none"} (default), or \code{"iid_"}
+followed by the dims they vary over, any of p (population), y (year), seas
+(season), a (age) and s (sex) in any order: \code{"iid_y"} is one deviation per
+year and region pair, or per year and region under CTMC movement, shared
+across everything else, and \code{"iid_p_y_seas_a_s"} varies by every dim. A
+dim left out shares one deviation across it. They are random effects with
+\code{Movement_cont_pe_pars_spec} estimating the sd and
+\code{random = "move_devs"} in \code{\link{fit_model}}. \code{"dsem"} instead
+hands their density to the arrows given to \code{\link{Setup_Mod_DSEM}}, one
+series per origin and destination (per region under CTMC, whose deviations
+hold no destination) and per level of every other dim with more than one,
+which it names itself since a deviation shared across a dim cannot be linked;
+\code{move_pe_pars} are then read by nothing.}
 
-\item{cont_vary_movement}{Character string specifying the structure of
-continuous iid movement deviations added on top of the fixed-effect
-movement surface. Default \code{"none"}. Options:
-\describe{
-  \item{\code{"none"}}{No deviations.}
-  \item{\code{"iid_y"}}{Year-varying; shared across pop, age, sex, season.}
-  \item{\code{"iid_a"}}{Age-varying; shared across pop, year, sex, season.}
-  \item{\code{"iid_y_a"}}{Year \eqn{\times} age.}
-  \item{\code{"iid_y_a_s"}}{Year \eqn{\times} age \eqn{\times} sex.}
-  \item{\code{"iid_y_seas_a_s"}}{Year \eqn{\times} season \eqn{\times} age \eqn{\times} sex.}
-  \item{\code{"iid_p_y"}, \code{"iid_p_a"}, \code{"iid_p_y_a"}, \code{"iid_p_y_a_s"}, \code{"iid_p_y_seas_a_s"}}{Population-specific analogs of the above.}
-}}
+\item{Movement_cont_pe_pars_spec}{Estimation of the process error variance for
+the \code{cont_vary_movement} deviations. \code{"none"} creates no parameters
+and pairs with \code{cont_vary_movement = "none"}, \code{"fix"} holds the
+variance at its starting value, \code{"est_shared"} estimates one shared
+value, and \code{"est_all"} estimates \code{[n_pop × n_regions × n_seas ×
+n_ages × n_sexes]} independently.}
 
-\item{Movement_cont_pe_pars_spec}{Character string specifying estimation of
-process-error variance for \code{cont_vary_movement} deviations. One of:
-\describe{
-  \item{\code{"none"}}{No process-error parameters; use with \code{cont_vary_movement = "none"}.}
-  \item{\code{"fix"}}{Parameters initialized but not estimated; fixes
-    deviation variance at its starting value.}
-  \item{\code{"est_shared"}}{Single variance estimated, shared across all
-    dimensions.}
-  \item{\code{"est_all"}}{All variance parameters estimated independently,
-    dimensioned \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}.}
-}}
+\item{ctmc_move_dat}{Data frame required when \code{move_type = 1}, one row per
+population, region, year, season, age and sex, with columns \code{pop},
+\code{regions}, \code{years}, \code{seas}, \code{ages}, \code{sexes} and any
+covariates the formulas name. Projection years beyond \code{n_years} are
+capped at the final estimation year to prevent spline extrapolation.}
 
-\item{ctmc_move_dat}{Data frame required when \code{move_type = 1}. Each
-row corresponds to a unique pop-region-year-season-age-sex combination.
-Required columns: \code{pop}, \code{regions}, \code{years}, \code{seas},
-\code{ages}, \code{sexes}, plus any covariate columns referenced in
-\code{diffusion_formula} or \code{preference_formula}. Projection years
-exceeding \code{n_years} are automatically capped to the final estimation
-year to prevent spline extrapolation.}
+\item{adjacency_mat}{Square \code{[n_regions × n_regions]} matrix, 1 for an
+allowed transition and 0 for none. The diagonal must be 0: residency falls out
+of the generator, and a non-zero diagonal leaves the generator columns summing
+to something other than zero, so the movement matrix loses abundance rather
+than redistributing it. A fully connected matrix is \code{1 - diag(n_regions)}
+(\code{diag(1, n_regions)} is the identity, not an adjacency matrix). Required
+under \code{move_type = 1}, where it is validated for dimension, 0/1 entries,
+a zero diagonal and at least one connection; built automatically under
+\code{move_type = 0}.}
 
-\item{adjacency_mat}{Square numeric matrix \code{[n_regions × n_regions]}
-with 1 indicating an allowed transition and 0 indicating no direct
-connection. The diagonal must be 0: residency falls out of the generator,
-and a non-zero diagonal leaves the generator columns summing to something
-other than zero, so the movement matrix loses abundance rather than
-redistributing it. A fully connected matrix is \code{1 - diag(n_regions)}
-(note that \code{diag(1, n_regions)} is the identity, not an adjacency
-matrix). Required for \code{move_type = 1}, where it is validated for
-dimension, 0/1 entries, a zero diagonal, and at least one connection.
-For \code{move_type = 0} a fully connected matrix is constructed
-automatically.}
+\item{area_r}{Numeric vector \code{[n_regions]} of region areas, used to scale
+the CTMC diffusion rates. Required under \code{move_type = 1}. Default
+\code{rep(1, n_regions)}.}
 
-\item{area_r}{Numeric vector of length \code{n_regions} giving the area of
-each region, used to scale CTMC diffusion rates. Required for
-\code{move_type = 1}. Default: \code{rep(1, n_regions)}.}
+\item{diffusion_formula}{Formula for the CTMC diffusion (\eqn{\theta}) linear
+predictor, e.g. \code{~ bs(depth, df = 4)}. Every right-hand-side variable
+must be in \code{ctmc_move_dat}. Required under \code{move_type = 1}.}
 
-\item{diffusion_formula}{R \code{formula} defining the linear predictor for
-the CTMC diffusion (\eqn{\theta}) component (e.g.,
-\code{~ bs(depth, df = 4)}). All right-hand-side variables must be
-present in \code{ctmc_move_dat}. Required for \code{move_type = 1}.}
-
-\item{preference_formula}{R \code{formula} defining the linear predictor for
-the CTMC habitat-preference (taxis, \eqn{\gamma}) component. All
-variables must be present in \code{ctmc_move_dat}. Required for
-\code{move_type = 1}.}
+\item{preference_formula}{Formula for the CTMC preference (taxis, \eqn{\gamma})
+linear predictor, on the same terms. Required under \code{move_type = 1}.}
 
 \item{ctmc_diffusion_bounds}{How the CTMC generator is kept a valid Metzler
-matrix (non-negative off-diagonal entries) when taxis outweighs diffusion.
-\code{"softplus"} for a softplus of \eqn{\theta_j + d} of width
-\code{ctmc_diffusion_eps}; and \code{"upwind"} (or \code{2}) for the discontinuous Galerkin
-(finite volume) flux \eqn{\theta_j + \max(d, 0)}, which has diffusion whole
-and adds only the down-gradient taxis, so positivity never depends on the two
-cancelling.}
+matrix when taxis outweighs diffusion. \code{"softplus"} takes a softplus of
+\eqn{\theta_j + d} of width \code{ctmc_diffusion_eps}; \code{"upwind"} takes
+the finite volume flux \eqn{\theta_j + \max(d, 0)}, which keeps diffusion
+whole and adds only the down-gradient taxis, so positivity never depends on
+the two cancelling.}
 
-\item{ctmc_diffusion_eps}{Positive numeric width of the softplus applied when
-\code{ctmc_diffusion_bounds = "softplus"} (default \code{0.1}). An edge where
-taxis exactly cancels diffusion has \code{eps * log(2)}, so this sets a
-floor on exchange as well as smoothing the hinge.}
+\item{ctmc_diffusion_eps}{Positive width of the softplus under
+\code{ctmc_diffusion_bounds = "softplus"}. Default \code{0.1}. An edge where
+taxis exactly cancels diffusion has \code{eps * log(2)}, so this is a floor on
+exchange as well as a smoothing constant.}
 
-\item{move_timing}{Integer flag setting how movement and mortality are
-sequenced within a season. \code{0} = movement then mortality (default,
-historical SPoRC behavior); \code{1} = mortality then movement;
-\code{2} = continuous, with movement and mortality acting simultaneously via
-the matrix exponential of \eqn{Q\Delta - \mathrm{diag}(Z)}. \code{move_timing = 2}
-requires an estimated CTMC generator, i.e. \code{move_type = 1} and
-\code{use_fixed_movement = 0}.}
+\item{move_timing}{How movement and mortality are sequenced within a season.
+\code{0} (default) moves then kills, \code{1} kills then moves, and \code{2}
+runs the two together through the matrix exponential of
+\eqn{Q\Delta - \mathrm{diag}(Z)}. \code{2} needs an estimated CTMC generator,
+so \code{move_type = 1} and \code{use_fixed_movement = 0}.}
 
-\item{ctmc_scale_by_seasdur}{Integer flag controlling the time units of the CTMC
-generator. \code{1} (default) treats \eqn{Q} as an annual rate, exponentiating
-\eqn{Q \cdot \mathrm{seasdur}[s]} in each season so that movement and mortality
-share time units. \code{0} exponentiates
-\eqn{Q} once per season regardless of duration. Only has an effect when
-\code{move_type = 1} and \code{n_seas > 1}; forced to \code{1} when
-\code{move_timing = 2}.}
+\item{ctmc_scale_by_seasdur}{Integer flag for the time units of the CTMC
+generator. \code{1} (default) treats \eqn{Q} as an annual rate and
+exponentiates \eqn{Q \cdot \mathrm{seasdur}[s]} each season, so movement and
+mortality share time units; \code{0} exponentiates \eqn{Q} once per season
+whatever its duration. Only matters under \code{move_type = 1} with
+\code{n_seas > 1}, and is forced to \code{1} under \code{move_timing = 2}.}
 
-\item{move_expm_nsub}{Integer controlling how matrix exponentials of the CTMC
-generator are evaluated, both when converting \eqn{Q} to movement fractions and
-inside the \code{move_timing = 2} seasonal operators. \code{0} (default)
-uses \code{Matrix::expm}. A power of two \eqn{n \ge 1} instead uses \eqn{n} implicit
-(backward Euler) substeps, \eqn{(I - A/n)^{-n}}, evaluated as one linear solve plus
-\eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. The implicit form has a much cheaper reverse-mode derivative
-than a matrix exponential, so the gradient is several times faster, but it is a
-first-order approximation: \eqn{n = 1} is plain \code{solve(I - A)} and is an approximation.}
+\item{move_expm_nsub}{How matrix exponentials of the generator are evaluated,
+both converting \eqn{Q} to movement fractions and inside the
+\code{move_timing = 2} seasonal operators. \code{0} (default) uses
+\code{Matrix::expm}. A power of two \eqn{n \ge 1} uses \eqn{n} implicit
+backward Euler substeps, \eqn{(I - A/n)^{-n}}, as one linear solve plus
+\eqn{\log_2 n} squarings, which is why \eqn{n} must be a power of two. Its
+reverse-mode derivative is much cheaper, so the gradient is several times
+faster, but it is a first-order approximation and \eqn{n = 1} is plain
+\code{solve(I - A)}.}
 
-\item{...}{Optional starting value overrides, passed by name. Recognized
-arguments:
-\describe{
-  \item{\code{move_pars}}{Array \code{[n_pop × n_regions × (n_regions-1) × n_years × n_seas × n_ages × n_sexes]}. Default: \code{0} (equal movement on logit scale).}
-  \item{\code{log_move_diffusion_pars}}{Vector of length \code{n_theta}. Default: \code{log(0.1)}.}
-  \item{\code{move_preference_pars}}{Vector of length \code{n_gamma}. Default: \code{0}.}
-  \item{\code{move_devs}}{Array \code{[n_pop × n_regions × (n_regions-1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes]}. Default: \code{0}.}
-  \item{\code{move_pe_pars}}{Array \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}. Default: \code{0}.}
-}}
+\item{...}{Optional starting values by name: \code{move_pars} \code{[n_pop ×
+n_regions × (n_regions-1) × n_years × n_seas × n_ages × n_sexes]}, default
+\code{0}; \code{log_move_diffusion_pars} of length \code{n_theta}, default
+\code{log(0.1)}; \code{move_preference_pars} of length \code{n_gamma}, default
+\code{0}; \code{move_devs}, shaped as \code{move_pars} with
+\code{n_years + n_proj_yrs_devs} years and the third dim \code{1} under
+\code{move_type = 1}, default \code{0}; and \code{move_pe_pars} \code{[n_pop ×
+n_regions × n_seas × n_ages × n_sexes]}, default \code{0}.}
 }
 \value{
-The input \code{input_list} with \code{$data}, \code{$par}, and
-  \code{$map} updated. Key additions to \code{$data} include
-  \code{move_type}, \code{use_fixed_movement}, \code{Fixed_Movement},
-  \code{adjacency_mat}, \code{adjacency_collapsed}, \code{area_r},
-  \code{ctmc_move_dat}, \code{diffusion_formula}, \code{preference_formula},
-  and \code{cont_vary_movement} (stored as an integer code). Parameter
-  arrays \code{move_pars}, \code{log_move_diffusion_pars},
-  \code{move_preference_pars}, \code{move_devs}, and \code{move_pe_pars}
-  are added to \code{$par}, with corresponding factor maps in \code{$map}.
+\code{input_list} with \code{$data}, \code{$par} and \code{$map}
+  updated. \code{$data} gains \code{move_type}, \code{use_fixed_movement},
+  \code{Fixed_Movement}, \code{adjacency_mat}, \code{adjacency_collapsed},
+  \code{area_r}, \code{ctmc_move_dat}, \code{diffusion_formula},
+  \code{preference_formula} and \code{cont_vary_movement} as its form string.
+  \code{move_pars}, \code{log_move_diffusion_pars}, \code{move_preference_pars},
+  \code{move_devs} and \code{move_pe_pars} go into \code{$par} with their factor
+  maps in \code{$map}.
 }
 \description{
-Configures all aspects of spatial movement for the estimation model,
-supporting both unstructured Markov transition (\code{move_type = 0}) and
-Continuous Time Markov Chain (\code{move_type = 1}) formulations, with
-optional continuous iid deviations on the movement surface. Validates all
-inputs, initializes parameter arrays, constructs TMB/RTMB factor maps, and
-populates \code{input_list$data} accordingly. Must be called after
-\code{\link{Setup_Mod_Biologicals}}.
+Sets up unstructured Markov transition movement (\code{move_type = 0}) or a
+continuous time Markov chain (\code{move_type = 1}), with optional iid
+deviations on the movement surface, and builds the parameter arrays and factor
+maps. Call after \code{\link{Setup_Mod_Biologicals}}.
 }
 \section{Unstructured Markov movement (\code{move_type = 0})}{
 
-Transition probabilities from region \eqn{r} to all other regions are
-parameterized via a multinomial logit with a reference-cell constraint.
-The parameter array \code{move_pars} has dimensions
-\code{[n_pop × n_regions × (n_regions - 1) × n_years × n_seas × n_ages × n_sexes]}.
-Block specifications (\code{Movement_*blk_spec}) control sharing: indices
-within the same block receive the same TMB factor level and are estimated
-as a single free parameter. A fully connected adjacency matrix is
-constructed automatically. Blocked and continuous time-varying movement
-can be combined: use \code{Movement_yearblk_spec} for discrete structural
-breaks and \code{cont_vary_movement} for residual year-to-year variation.
+Transitions out of region \eqn{r} are a multinomial logit with a reference cell,
+so \code{move_pars} is \code{[n_pop × n_regions × (n_regions - 1) × n_years ×
+n_seas × n_ages × n_sexes]}. The \code{Movement_*blk_spec} arguments share
+parameters: indices in one block take the same factor level. A fully connected
+adjacency matrix is built automatically. Blocks and continuous time variation
+combine: use \code{Movement_yearblk_spec} for structural breaks and
+\code{cont_vary_movement} for residual year-to-year variation.
 }
 
 \section{CTMC movement (\code{move_type = 1})}{
 
-The instantaneous rate matrix \eqn{Q} is decomposed into diffusion
-(\eqn{\theta}) and preference (\eqn{\gamma}) components following
-Thorson et al. Design matrices for both components are derived from
-\code{diffusion_formula} and \code{preference_formula} evaluated on
-\code{ctmc_move_dat}. The discrete-time movement matrix for each time step
-is \eqn{\exp(Q \Delta t)}. Parameter blocking is not supported for CTMC;
-all \code{Movement_*blk_spec} arguments must remain \code{"constant"}.
-Structural variation across populations, ages, sexes, or seasons should
-instead be introduced through formula covariates in \code{ctmc_move_dat}.
+The rate matrix \eqn{Q} is decomposed into diffusion (\eqn{\theta}) and
+preference (\eqn{\gamma}), with design matrices from \code{diffusion_formula}
+and \code{preference_formula} evaluated on \code{ctmc_move_dat}, and each time
+step's movement matrix is \eqn{\exp(Q \Delta t)}. Blocking is not supported, so
+every \code{Movement_*blk_spec} must stay \code{"constant"}; put structure
+across populations, ages, sexes or seasons into formula covariates instead.
 }
 
 \section{Continuous movement deviations}{
 
-IID deviations (\code{move_devs}) are added to the movement logit surface
-(unstructured Markov) or log-rate surface (CTMC) before computing
-probabilities. Deviations are penalized as normal random effects; the
-variance is optionally estimated via \code{Movement_cont_pe_pars_spec}.
-If \code{do_recruits_move = 0}, age-1 deviations are fixed at zero.
+Deviations are added to the movement logit surface under unstructured movement,
+or to each region's preference under CTMC, before probabilities are computed,
+and are penalized as normal random effects whose variance
+\code{Movement_cont_pe_pars_spec} can estimate. Age-1 deviations are fixed at
+zero when \code{do_recruits_move = 0}.
+
+The two types size the deviations differently. Unstructured movement holds one
+per origin and destination pair, \code{[n_regions x (n_regions - 1)]}, while the
+CTMC holds one per region, \code{[n_regions x 1]}, since preference is a surface
+over regions rather than a rate along an edge. A CTMC deviation raises the rates
+into its region and lowers those out of it on every edge at once. Only
+differences in preference reach the generator, so a constant added to every
+region's deviation leaves movement unchanged and nothing but the process error
+penalty holds the level of the field down.
+
+Because the deviations are preference they enter the generator additively, and
+one larger than an edge's diffusion rate drives that rate negative. Under
+\code{ctmc_diffusion_bounds = "none"} the movement fractions then leave
+\code{[0, 1]} while still summing to one, so use \code{"upwind"} or
+\code{"softplus"} whenever the deviations are estimated.
 }
 
 \seealso{

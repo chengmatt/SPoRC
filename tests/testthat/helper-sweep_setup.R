@@ -541,6 +541,12 @@ sweep_live_config <- function(arg, dims = list()) {
                                 ret_fixed_sel_pars_spec = rep("est_all", n_f),
                                 cont_tv_ret_sel = paste0("iid_Fleet_", seq_len(n_f)),
                                 ret_sel_devs_spec = rep("est_all", n_f)),
+    # catchability deviations exist only once a fleet has a process error, and only
+    # an ar1 reads a correlation
+    sigma_fish_q_spec = list(fish_q_model = rep("iid", n_f)),
+    sigma_srv_q_spec  = list(srv_q_model  = rep("iid", n_s)),
+    fish_q_rho_spec   = list(fish_q_model = rep("ar1", n_f)),
+    srv_q_rho_spec    = list(srv_q_model  = rep("ar1", n_s)),
     NULL)
 }
 

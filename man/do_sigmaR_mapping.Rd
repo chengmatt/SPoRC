@@ -7,45 +7,26 @@
 do_sigmaR_mapping(input_list, sigmaR_spec)
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists, as constructed by upstream setup functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{sigmaR_spec}{Character string specifying the estimation structure for
-\code{ln_sigmaR}. One of:
-\describe{
-  \item{\code{"est_all"}}{Estimate \code{ln_sigmaR} separately for both
-    the initial deviation period (\code{i = 1}) and the annual deviation
-    period (\code{i = 2}), and for every population and region.}
-  \item{\code{"est_shared_r"}}{Separate per deviation period and
-    population, shared across regions within each.}
-  \item{\code{"est_shared_all"}}{Single \code{ln_sigmaR} shared across
-    both deviation periods, all populations, and all regions.}
-  \item{\code{"fix_early_est_late"}}{Fix \code{ln_sigmaR} for the initial
-    deviation period (\code{i = 1}) at its starting value; estimate
-    \code{ln_sigmaR} for the annual deviation period (\code{i = 2}),
-    per population and region.
-    Useful when initial age-structure uncertainty is assumed known.}
-  \item{\code{"fix"}}{Fix all \code{ln_sigmaR} parameters at their
-    starting values (all mapped to \code{NA}).}
-}}
+\item{sigmaR_spec}{Estimation structure for \code{ln_sigmaR}. \code{"est_all"}
+estimates each period, population and region separately. \code{"est_shared_r"}
+estimates per period and population, shared across regions.
+\code{"est_shared_all"} gives one value for everything.
+\code{"fix_early_est_late"} holds the initial period at its starting value and
+estimates the annual one per population and region. \code{"fix"} holds every
+value.}
 }
 \value{
-The input \code{input_list} with \code{$map$ln_sigmaR} set to a
-  factor vector of length \code{prod(dim(par$ln_sigmaR))}. Active parameters
-  receive sequential integer indices; fixed parameters are \code{NA}.
+\code{input_list} with \code{$map$ln_sigmaR} set to a factor vector of
+  length \code{prod(dim(par$ln_sigmaR))}. Active parameters take sequential
+  integers, fixed ones are \code{NA}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
-the TMB/RTMB factor map for \code{ln_sigmaR}, the log-scale standard
-deviation of recruitment deviations. The \code{ln_sigmaR} array has
-dimensions \code{[2 x n_pop x n_regions]}, where the first index
-distinguishes initial age-structure deviations (\code{i = 1}) from annual
-recruitment deviations (\code{i = 2}).
-}
-\details{
-The map decides what is shared, and the recruitment penalty reads each
-region's own slot. Under \code{rec_region_prop_spec = 1} with multiple
-populations, a population's non-natal region slots have no deviations and
-are mapped off automatically.
+Builds the factor map for \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, where
+the first index is the initial deviation period and the second the annual one.
+The recruitment penalty reads each region's own slot, and a population's
+non-natal region slots are mapped off under \code{rec_region_prop_spec = 1} with
+several populations. Called by \code{\link{Setup_Mod_Rec}}.
 }
 \keyword{internal}

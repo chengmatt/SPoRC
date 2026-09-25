@@ -5,179 +5,104 @@
 
 #' Set likelihood and penalty weights for the estimation model
 #'
-#' Assigns lambda (\eqn{\lambda}) multipliers to each likelihood component and
-#' penalty term in the TMB/RTMB objective function. Weights scale the relative
-#' contribution of each data source during estimation and can be used to
-#' down-weight noisy data, implement iterative reweighting schemes (e.g.,
-#' Francis), or disable a component entirely by setting
-#' its weight to \code{1}. Must be called after all data setup functions.
+#' Assigns the \eqn{\lambda} multiplier on each likelihood component and penalty
+#' term, which is how a noisy data source is down-weighted, how an iterative
+#' reweighting such as Francis is applied, and how a component is switched off
+#' entirely, with a weight of \code{0}. Call after every data setup function.
 #'
-#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
-#'   and \code{$verbose} sublists, as returned by upstream setup functions.
-#' @param addtocomp Small constant added to composition proportions before likelihood
-#'   evaluation to avoid \code{log(0)}. Default \code{1e-3}. Ignored when a
-#'   logistic-normal likelihood is specified, as that family handles zeros internally.
-#' @param comp_const_obs Integer switch (\code{0} or \code{1}) controlling where
-#'   \code{addtocomp} is applied in the multinomial likelihood, not a constant to be
-#'   tuned. \code{1} (default) adds it to the observed proportions that weight
-#'   the multinomial as well as inside the logarithms, so the likelihood is
-#'   stationary exactly at \code{pred = obs}. \code{0} weights by the raw
-#'   observed proportions. If any fishery or survey conditional age-at-length
-#'   fleet uses the Dirichlet-Multinomial, \code{1} triggers a warning, since the
-#'   added constant biases theta upward when most age bins in a length bin are
-#'   structurally empty.
-#' @param addtofishidx Small constant added to fishery indices. Default \code{1e-4}.
-#' @param addtosrvidx Small constant added to survey indices. Default \code{1e-4}.
-#' @param addtotag Small constant added to tag recovery observations. Default \code{1e-10}.
-#' @param Wt_Catch Weight applied to the catch likelihood. Either a scalar
-#'   applied uniformly across all fleets, regions, years, and seasons, or a
-#'   numeric array \code{[n_regions × n_years × n_seas × n_fish_fleets]} for
-#'   fleet- or time-specific weighting. Default \code{1}.
-#' @param Wt_FishIdx Weight applied to the fishery index likelihood. Accepts
-#'   the same scalar or array format as \code{Wt_Catch}, dimensioned
-#'   \code{[n_regions × n_years × n_seas × n_fish_fleets]}. Default \code{1}.
-#' @param Wt_SrvIdx Weight applied to the survey index likelihood. Accepts
-#'   the same scalar or array format, dimensioned
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map} and
+#'   \code{$verbose}.
+#' @param addtocomp Small constant added to the composition proportions to avoid
+#'   \code{log(0)}. Default \code{1e-3}. Ignored by the logistic normal, which
+#'   handles zeros itself.
+#' @param comp_const_obs Integer switch for where \code{addtocomp} enters the
+#'   multinomial, not a constant to tune. \code{1} (default) adds it to the
+#'   observed proportions that weight the likelihood as well as inside the
+#'   logarithms, so the likelihood is stationary at \code{pred = obs}; \code{0}
+#'   weights by the raw observed proportions. With a Dirichlet-multinomial
+#'   conditional age-at-length fleet, \code{1} warns, since the constant biases
+#'   theta upward when most age bins in a length bin are structurally empty.
+#' @param addtofishidx,addtosrvidx Small constants added to the fishery and survey
+#'   indices. Default \code{1e-4}.
+#' @param addtotag Small constant added to the tag recovery observations. Default
+#'   \code{1e-10}.
+#' @param Wt_Catch,Wt_FishIdx Weights on the catch and fishery index likelihoods,
+#'   a scalar or an array \code{[n_regions × n_years × n_seas × n_fish_fleets]}.
+#'   Default \code{1}.
+#' @param Wt_SrvIdx Weight on the survey index likelihood, a scalar or an array
 #'   \code{[n_regions × n_years × n_seas × n_srv_fleets]}. Default \code{1}.
-#' @param Wt_Catch_pop Weight applied to the population-specific catch
-#'   likelihood. Either a scalar applied uniformly or a numeric array
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}. Default \code{1}.
-#' @param Wt_FishIdx_pop Weight applied to the population-specific fishery
-#'   index likelihood. Same scalar or array format as \code{Wt_Catch_pop},
-#'   dimensioned \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}.
-#'   Default \code{1}.
-#' @param Wt_SrvIdx_pop Weight applied to the population-specific survey index
-#'   likelihood. Same scalar or array format as \code{Wt_Catch_pop}, dimensioned
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_srv_fleets]}. Default \code{1}.
-#' @param Wt_FishAgeComps Weight applied to the fishery age composition
-#'   likelihood. Either a scalar or a numeric array
-#'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_SrvAgeComps Weight applied to the survey age composition
-#'   likelihood. Either a scalar or a numeric array
-#'   \code{[n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_FishLenComps Weight applied to the fishery length composition
-#'   likelihood. Same format as \code{Wt_FishAgeComps},
-#'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_SrvLenComps Weight applied to the survey length composition
-#'   likelihood. Same format as \code{Wt_SrvAgeComps},
-#'   \code{[n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_FishAgeComps_pop Weight applied to the population-specific fishery
-#'   age composition likelihood. Either a scalar or a numeric array
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_SrvAgeComps_pop Weight applied to the population-specific survey
-#'   age composition likelihood. Either a scalar or a numeric array
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_FishLenComps_pop Weight applied to the population-specific fishery
-#'   length composition likelihood. Same format as \code{Wt_FishAgeComps_pop},
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_SrvLenComps_pop Weight applied to the population-specific survey
-#'   length composition likelihood. Same format as \code{Wt_SrvAgeComps_pop},
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_Rec Weight applied to the recruitment deviation penalty
-#'   (\code{ln_RecDevs}). Either a scalar applied uniformly or a numeric array
-#'   \code{[n_pop × n_regions × n_est_rec_devs]} for deviation-specific
-#'   weighting, where \code{n_est_rec_devs} is the third dimension of
-#'   \code{ln_RecDevs} rather than the number of years, since
-#'   \code{dont_est_recdev_last} and \code{n_proj_yrs_devs} both move it.
-#'   Default \code{1}. A weight of zero on a deviation leaves it estimated but
-#'   removes it from the penalty entirely, which is how a stock-recruit
-#'   relationship is fit over a window of years while recruitment stays free in
-#'   every year. That is distinct from \code{dont_est_recdev_last}, which
-#'   removes the deviations themselves so recruitment reverts to the
-#'   deterministic prediction in those years.
-#' @param Wt_Init_Rec Weight applied to the initial age deviation penalty
-#'   (\code{ln_InitDevs}). Either a scalar or a numeric array
-#'   \code{[n_pop × n_regions × (n_ages - 1) × n_sexes]}. Defaults to \code{NULL}, which
-#'   takes whatever \code{Wt_Rec} is when \code{Wt_Rec} is a scalar; supply it
-#'   explicitly when \code{Wt_Rec} is an array, since the two penalties are
-#'   dimensioned differently.
-#' @param Wt_F Scalar weight applied to the fishing mortality deviation penalty
-#'   (\code{ln_F_devs}). Default \code{1}.
-#' @param Wt_Tagging Scalar weight applied to the tag-recovery likelihood.
-#'   Default \code{1}.
-#' @param Wt_Discard Weight applied to the aggregated discard amount or
-#'   fraction likelihood. Either a scalar applied uniformly or a numeric
-#'   array \code{[n_regions × n_years × n_seas × n_fish_fleets]}. Default
+#' @param Wt_Catch_pop,Wt_FishIdx_pop The population-specific catch and fishery
+#'   index weights, a scalar or an array \code{[n_pop × n_regions × n_years ×
+#'   n_seas × n_fish_fleets]}. Default \code{1}.
+#' @param Wt_SrvIdx_pop The population-specific survey index weight, a scalar or an
+#'   array \code{[n_pop × n_regions × n_years × n_seas × n_srv_fleets]}. Default
 #'   \code{1}.
-#' @param Wt_Discard_pop Weight applied to the population-specific discard
-#'   likelihood. Either a scalar or a numeric array
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_fish_fleets]}. Default
+#' @param Wt_FishAgeComps,Wt_FishLenComps,Wt_FishAgeComps_discard,Wt_FishLenComps_discard
+#'   Weights on the fishery and discard composition likelihoods, a scalar or an
+#'   array \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}. Default
+#'   one everywhere.
+#' @param Wt_SrvAgeComps,Wt_SrvLenComps Weights on the survey composition
+#'   likelihoods, a scalar or an array \code{[n_regions × n_years × n_seas ×
+#'   n_sexes × n_srv_fleets]}. Default one everywhere.
+#' @param Wt_FishAgeComps_pop,Wt_FishLenComps_pop,Wt_FishAgeComps_discard_pop,Wt_FishLenComps_discard_pop
+#'   The population-specific fishery and discard composition weights, a scalar or
+#'   an array \code{[n_pop × n_regions × n_years × n_seas × n_sexes ×
+#'   n_fish_fleets]}. Default one everywhere.
+#' @param Wt_SrvAgeComps_pop,Wt_SrvLenComps_pop The population-specific survey
+#'   composition weights, a scalar or an array \code{[n_pop × n_regions × n_years ×
+#'   n_seas × n_sexes × n_srv_fleets]}. Default one everywhere.
+#' @param Wt_Rec Weight on the recruitment deviation penalty, a scalar or an array
+#'   \code{[n_pop × n_regions × n_est_rec_devs]}, where the third dim is
+#'   \code{ln_RecDevs}'s own rather than the number of years, since
+#'   \code{dont_est_recdev_last} and \code{n_proj_yrs_devs} both move it. Default
+#'   \code{1}. A zero leaves a deviation estimated but takes it out of the penalty,
+#'   which is how a stock-recruit relationship is fit over a window of years while
+#'   recruitment stays free in every year; \code{dont_est_recdev_last} instead
+#'   removes the deviations, so recruitment reverts to the deterministic
+#'   prediction.
+#' @param Wt_Init_Rec Weight on the initial age deviation penalty, a scalar or an
+#'   array \code{[n_pop × n_regions × (n_ages - 1) × n_sexes]}. \code{NULL}
+#'   (default) takes \code{Wt_Rec} when that is a scalar; supply it explicitly when
+#'   \code{Wt_Rec} is an array, since the two penalties are dimensioned
+#'   differently.
+#' @param Wt_F Scalar weight on the fishing mortality deviation penalty. Default
 #'   \code{1}.
-#' @param Wt_D Scalar weight applied to the discard mortality rate
-#'   deviation penalty (\code{logit_dmr_devs}). Default \code{1}.
-#' @param Wt_FishAgeComps_discard Weight applied to the discard fishery age
-#'   composition likelihood. Either a scalar or a numeric array
-#'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_FishLenComps_discard Weight applied to the discard fishery
-#'   length composition likelihood. Same format as
-#'   \code{Wt_FishAgeComps_discard},
-#'   \code{[n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_FishAgeComps_discard_pop Weight applied to the
-#'   population-specific discard fishery age composition likelihood. Either
-#'   a scalar or a numeric array
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param Wt_Fish_caal Weight applied to the fishery conditional age-at-length
-#'   likelihood, multiplying the input sample size of each length bin's age
-#'   composition. Array \code{[n_regions x n_years x n_seas x n_lens x n_sexes x
-#'   n_fish_fleets]}, the shape of \code{ISS_Fish_caal}. Defaults to one
-#'   everywhere.
-#' @param Wt_Srv_caal Weight applied to the survey conditional age-at-length
-#'   likelihood. Same format as \code{Wt_Fish_caal}, with \code{n_srv_fleets}
-#'   as the last dimension. Defaults to one everywhere.
-#' @param Wt_FishLenComps_discard_pop Weight applied to the
-#'   population-specific discard fishery length composition likelihood.
-#'   Same format as \code{Wt_FishAgeComps_discard_pop},
-#'   \code{[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets]}.
-#'   Default: array of \code{1}s.
-#' @param fish_sel_pen_wts \code{NULL} (default), or a named numeric vector/list
-#'   with independent weights for any subset of six selectivity smoothness
-#'   penalty terms (see \code{\link{resolve_sel_pen_wts}} and
-#'   \code{\link{Get_Selex_Smoothness_Penalty}}), evaluated directly on the
-#'   fleet's realized selectivity-at-bin-at-year surface and so applicable to
-#'   any selectivity functional form:
-#'   \describe{
-#'     \item{\code{"smooth_bin_curve"}}{Second-difference (curvature) penalty across bins.}
-#'     \item{\code{"smooth_bin_diff"}}{Unconditional first-difference penalty across bins.}
-#'     \item{\code{"smooth_yr_diff"}}{First-difference penalty across years.}
-#'     \item{\code{"smooth_yr_curve"}}{Second-difference (curvature) penalty across years.}
-#'     \item{\code{"smooth_dome"}}{Dome-shape (non-monotonicity) penalty across bins.}
-#'     \item{\code{"smooth_mean_center"}}{Per-year mean-centering regularization.}
-#'   }
-#'   Any name not supplied defaults to \code{0} (off). Must be called after
-#'   \code{Setup_Mod_Fishsel_and_Q}.
-#'   Each weight may instead be a vector with one value per model year, so a
-#'   penalty can act only in some years or with a different strength in each.
-#'   The specification may also have \code{"bin_range"}, a length-two vector
-#'   giving the first and last bin the penalties act over. To give each fleet
-#'   its own penalties, pass an unnamed list with one named specification per
-#'   fleet instead of a single specification.
-#' @param ret_sel_pen_wts Same format as \code{fish_sel_pen_wts}, for the
-#'   retained fishery selectivity penalty.
-#' @param srv_sel_pen_wts Same format as \code{fish_sel_pen_wts}, for the
-#'   survey selectivity penalty. Must be called
+#' @param Wt_Tagging Scalar weight on the tag recovery likelihood. Default \code{1}.
+#' @param Wt_Discard Weight on the aggregated discard amount or fraction
+#'   likelihood, a scalar or an array \code{[n_regions × n_years × n_seas ×
+#'   n_fish_fleets]}. Default \code{1}.
+#' @param Wt_Discard_pop The population-specific discard weight, a scalar or an
+#'   array with a leading \code{n_pop} dim. Default \code{1}.
+#' @param Wt_D Scalar weight on the discard mortality rate deviation penalty.
+#'   Default \code{1}.
+#' @param Wt_Fish_caal Weight on the fishery conditional age-at-length likelihood,
+#'   multiplying each length bin's input sample size. Array \code{[n_regions x
+#'   n_years x n_seas x n_lens x n_sexes x n_fish_fleets]}, the shape of
+#'   \code{ISS_Fish_caal}. Default one everywhere.
+#' @param Wt_Srv_caal The survey counterpart, with \code{n_srv_fleets} last.
+#'   Default one everywhere.
+#' @param fish_sel_pen_wts \code{NULL} (default), or a named numeric vector or list
+#'   weighting any subset of six selectivity smoothness penalties, which are
+#'   evaluated on the fleet's realized selectivity by bin and year surface and so
+#'   apply to any functional form: \code{"smooth_bin_curve"} and
+#'   \code{"smooth_bin_diff"} are the second and first difference across bins,
+#'   \code{"smooth_yr_diff"} and \code{"smooth_yr_curve"} the same across years,
+#'   \code{"smooth_dome"} penalizes non-monotonicity across bins, and
+#'   \code{"smooth_mean_center"} regularizes each year's mean. See
+#'   \code{\link{resolve_sel_pen_wts}} and
+#'   \code{\link{Get_Selex_Smoothness_Penalty}}. A name left out is \code{0}. Each
+#'   weight may instead be a vector with one value per model year, so a penalty can
+#'   act in some years only or at a different strength in each. The specification
+#'   may also hold \code{"bin_range"}, the first and last bin the penalties act
+#'   over. Pass an unnamed list of per-fleet specifications to give each fleet its
+#'   own. Call after \code{Setup_Mod_Fishsel_and_Q}.
+#' @param ret_sel_pen_wts As \code{fish_sel_pen_wts}, for retained fishery
+#'   selectivity.
+#' @param srv_sel_pen_wts As \code{fish_sel_pen_wts}, for survey selectivity. Call
 #'   after \code{Setup_Mod_Srvsel_and_Q}.
 #'
-#' @return The input \code{input_list} with all weight values stored in
-#'   \code{$data} under their respective names (\code{Wt_Catch},
-#'   \code{Wt_FishIdx}, \code{Wt_SrvIdx}, \code{Wt_Catch_pop},
-#'   \code{Wt_FishIdx_pop}, \code{Wt_SrvIdx_pop}, \code{Wt_FishAgeComps},
-#'   \code{Wt_SrvAgeComps}, \code{Wt_FishLenComps}, \code{Wt_SrvLenComps},
-#'   \code{Wt_FishAgeComps_pop}, \code{Wt_SrvAgeComps_pop},
-#'   \code{Wt_FishLenComps_pop}, \code{Wt_SrvLenComps_pop},
-#'   \code{Wt_Rec}, \code{Wt_F}, \code{Wt_Tagging}, \code{Wt_Discard}, \code{Wt_Discard_pop}, \code{Wt_D},
-#'   \code{Wt_FishAgeComps_discard}, \code{Wt_FishLenComps_discard},
-#'   \code{Wt_FishAgeComps_discard_pop}, \code{Wt_FishLenComps_discard_pop}).
+#' @return \code{input_list} with every weight stored in \code{$data} under its own
+#'   name.
 #'
 #' @export Setup_Mod_Weighting
 #' @family Model Setup

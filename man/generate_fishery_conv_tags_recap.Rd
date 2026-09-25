@@ -11,57 +11,43 @@ generate_fishery_conv_tags_recap(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by \code{\link{Setup_sim_env}}.
-Modified in place. The following elements are updated:
-\describe{
-  \item{\code{conv_tag_fish_avail}}{Available tagged fish at age/region/season/fleet for each cohort.}
-  \item{\code{pred_conv_tag_fish_recap}}{Predicted conventional tag recaptures by fleet, region, season, and cohort.}
-  \item{\code{obs_conv_tag_fish_recap}}{Observed conventional tag recaptures after sampling error.}
-  \item{\code{conv_tag_fish_surv}}{Surviving tagged fish after mortality and movement.}
-  \item{\code{conv_tag_fish_reported}}{Reporting-adjusted recapture counts by fleet and region.}
-}}
+\item{sim_env}{Simulation environment from \code{\link{Setup_sim_env}},
+modified in place. It gains \code{conv_tag_fish_avail}, the tagged fish
+available by age, region, season and fleet for each cohort;
+\code{pred_conv_tag_fish_recap} and \code{obs_conv_tag_fish_recap}, the
+predicted recaptures and the observed ones after sampling error;
+\code{conv_tag_fish_surv}, the survivors after mortality and movement; and
+\code{conv_tag_fish_reported}, the reporting-adjusted counts by fleet and
+region.}
 }
 \value{
-\code{invisible(NULL)}. All modifications are made by reference
-  within \code{sim_env}.
+\code{invisible(NULL)}; everything is modified by reference within
+  \code{sim_env}.
 }
 \description{
-For each tag cohort (\code{tc}) and recovery season (\code{rseas}) in year
-\code{y}, advances available tagged fish through movement and mortality,
-applies Baranov's equation to compute predicted recaptures
-(\code{pred_conv_tag_fish_recap}), and draws observed recaptures
-(\code{obs_conv_tag_fish_recap}) via
+For each tag cohort and recovery season in year \code{y}, advances the
+available tagged fish through movement and mortality, applies Baranov's
+equation for the predicted recaptures, and draws the observed ones through
 \code{\link{simulate_conv_tag_fish_recaptures}}. Cohorts not yet released,
-already at \code{conv_tag_max_liberty}, or with release year in the future
-are silently skipped.
+already at \code{conv_tag_max_liberty}, or released in a future year are
+skipped.
 }
 \details{
-Total fishing mortality entering Z is decomposed into retained
-(\eqn{F \cdot s_{\text{fish}} \cdot s_{\text{ret}}}) and dead discard
-(\eqn{F \cdot s_{\text{fish}} \cdot (1 - s_{\text{ret}}) \cdot \text{dmr}})
-components, consistent with \code{\link{apply_pop_dy}}. Predicted
-recaptures use only the retained component in the Baranov numerator,
-reflecting that tags are recovered from retained catch only.
+Total fishing mortality entering \eqn{Z} splits into retained,
+\eqn{F \cdot s_{\text{fish}} \cdot s_{\text{ret}}}, and dead discards,
+\eqn{F \cdot s_{\text{fish}} \cdot (1 - s_{\text{ret}}) \cdot \text{dmr}}, as in
+\code{\link{apply_pop_dy}}, and the Baranov numerator takes the retained
+component alone, since tags come back from retained catch.
 
-At initial release (\code{ry = 1}, \code{rseas = tseas}), tags are
-placed into \code{conv_tag_fish_avail[1, rseas, tc, ...]} after discounting
-for initial tag-induced mortality (\code{ln_init_conv_tag_mort[tc]}). When
-\code{conv_tag_t_tagging[tc] < 1}, total mortality is scaled by the
-fraction of the season remaining at release for that cell only. Chronic
-shedding (\code{ln_conv_tag_shed[tc]}) enters the total mortality rate
-alongside natural and fishing mortality. \code{conv_tag_t_tagging},
-\code{ln_init_conv_tag_mort}, and \code{ln_conv_tag_shed} are each vectors
-of length \code{n_tag_rel_events}, indexed by release event (\code{tc}),
-so timing, initial mortality, and shedding can differ across release
-cohorts. At the end of each season, survivors advance to the next season
-or the next year's first season with plus-group accumulation. Tag
-reporting rates from \code{conv_tag_fish_reporting} are applied fleet- and
-region-specifically.
-
-Tagged fish dynamics follow the same seasonal progression logic
-as the population projection, including natural mortality, fishing mortality,
-movement, and tag shedding. Recaptures are computed only from the retained
-catch component, consistent with tag return processes. Cohorts exceeding
-\code{conv_tag_max_liberty} are removed from the active tracking pool.
+At release, tags enter \code{conv_tag_fish_avail[1, rseas, tc, ...]} discounted
+by the initial tag-induced mortality \code{ln_init_conv_tag_mort[tc]}, and when
+\code{conv_tag_t_tagging[tc] < 1} total mortality is scaled by the fraction of
+the season remaining, for that cell alone. Chronic shedding
+\code{ln_conv_tag_shed[tc]} joins natural and fishing mortality in the total
+rate. All three are vectors of length \code{n_tag_rel_events} indexed by
+release event, so timing, initial mortality and shedding may differ across
+cohorts. At the end of a season the survivors advance to the next season, or to
+the next year's first season with plus group accumulation, and the reporting
+rates in \code{conv_tag_fish_reporting} are applied by fleet and region.
 }
 \keyword{internal}

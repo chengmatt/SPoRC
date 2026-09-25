@@ -1,5 +1,5 @@
 # Checks the recruitment deviations the operating model draws under each process error, against
-# the density get_recdev_pe_nLL penalizes them at. Year one of an ar1 is the case that differed.
+# the density get_dev_pe_nLL penalizes them at. Year one of an ar1 is the case that differed.
 
 recdev_sim_list <- function(sigmaR, RecDevs_model, rho = 0) {
   n_yrs <- naaom_cfg$n_yrs

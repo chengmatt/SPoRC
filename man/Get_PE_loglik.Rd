@@ -15,81 +15,50 @@ Get_PE_loglik(
 )
 }
 \arguments{
-\item{PE_model}{Integer specifying the process error structure:
-\itemize{
-  \item 1 = IID: deviations drawn independently as \eqn{N(0, \sigma^2)}.
-  \item 2 = Random walk: deviations follow a first-order random walk initialized
-    with a diffuse prior (\eqn{\sigma = 5}) at \code{y = 1}.
-  \item 3 = 3D GMRF with marginal variance parameterization.
-  \item 4 = 3D GMRF with conditional variance parameterization.
-  \item 5 = Separable 2D AR(1) across bins and years.
-}}
+\item{PE_model}{Integer process error structure: \code{1} iid, \code{2} random
+walk with a diffuse prior at \code{y = 1}, \code{3} and \code{4} the 3D GMRF
+on the marginal or conditional variance, \code{5} the separable 2D AR(1) over
+bins and years.}
 
-\item{PE_pars}{Array of process error parameters dimensioned
-  \code{[1, par_index, sex, 1]}. The \code{par_index} slot meaning
-  depends on \code{PE_model}:
-\itemize{
-  \item Models 1-2: \code{[1,1,s,1]} = log standard deviation (\eqn{\log \sigma})
-    for sex \code{s}, indexed by bin/age.
-  \item Models 3-4: \code{[1,1,s,1]} = unconstrained partial correlation by age/bin;
-    \code{[1,2,s,1]} = unconstrained partial correlation by year;
-    \code{[1,3,s,1]} = unconstrained partial correlation by cohort;
-    \code{[1,4,s,1]} = log variance.
-  \item Model 5: \code{[1,1,s,1]} = unconstrained bin correlation (transformed via
-    \eqn{2/(1+e^{-2x})-1}); \code{[1,2,s,1]} = unconstrained year correlation;
-    \code{[1,4,s,1]} = log standard deviation.
-}}
+\item{PE_pars}{Array of process error parameters \code{[1, par_index, sex, 1]},
+whose \code{par_index} slots depend on \code{PE_model}. Models 1 and 2 hold a
+log standard deviation in slot 1, indexed by bin. Models 3 and 4 hold the
+unconstrained partial correlations by bin, year and cohort in slots 1 to 3 and
+a log variance in slot 4. Model 5 holds the unconstrained bin and year
+correlations in slots 1 and 2 and a log standard deviation in slot 4.}
 
-\item{ln_devs}{Array of log-scale selectivity deviations dimensioned
-\code{[1, year, bin, sex, 1]}.}
+\item{ln_devs}{Array of log-scale deviations \code{[1, year, bin, sex, 1]}.}
 
-\item{map_sel_devs}{Integer array dimensioned \code{[fleet, year, bin, sex]}
-mapping deviations to unique estimated parameters. Shared deviations
-hold the same integer value; \code{NA} entries are treated as fixed
-and excluded from likelihood evaluation.}
+\item{map_sel_devs}{Integer array \code{[fleet, year, bin, sex]} mapping the
+deviations to estimated parameters. Shared deviations hold the same integer,
+and \code{NA} entries are fixed and left out of the likelihood.}
 
 \item{map_sel_devs_full}{The same map across every unit this penalty is
 evaluated over, that unit being the first dim: regions for selectivity,
-populations by region for growth. A deviation shared over those units is
-one parameter appearing in each of their slices, and this function runs one
-unit at a time, so its contribution is divided by the number holding it.
-Without the split, a series shared over \code{n} units is penalized
-\code{n} times, an implicit \eqn{\sigma / \sqrt{n}}. A deviation that is
-not shared appears once, divides by one, and is unaffected.}
+populations by region for growth. A deviation shared over those units is one
+parameter appearing in each of their slices, and this function runs one unit
+at a time, so its contribution is divided by the number holding it. Without
+the split, a series shared over \code{n} units is penalized \code{n} times, an
+implicit \eqn{\sigma / \sqrt{n}}.}
 
-\item{min_sel_devs_shared_bins}{Integer vector. Indices of the reference (minimum) bin
-within each shared deviation group, used to subset the bin dimension when
-evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
-is specified, defaults to \code{1:n_bins} (i.e., all bins are included).}
+\item{min_sel_devs_shared_bins}{Integer vector of the reference bin within each
+shared deviation group, used to subset the bin dim under process error models
+3 to 5. Defaults to \code{1:n_bins} when no bin sharing is set.}
 
 \item{rw_init_sigma}{Standard deviation given to the first year of a random
 walk. A number (5 by default) leaves that year effectively unconstrained;
-\code{NA} starts the walk at zero under its own sigma instead.}
+\code{NA} starts the walk at zero under its own sigma.}
 }
 \value{
-Numeric scalar: the positive log-likelihood contribution from selectivity
-  process error. Negated externally to form the negative log-likelihood.
+Numeric scalar, the positive log-likelihood, negated by the caller.
 }
 \description{
-Calculates the positive log-likelihood contribution for a surface of
-deviations indexed by year and by some second dimension, under a variety of
-temporal and spatiotemporal structures. Selectivity deviations use it over
-years and bins, growth's semi-parametric deviations over years and ages, and
-a time-varying growth parameter over years alone (a surface one column wide).
-The argument names still read \code{bin} for that second dimension.
-}
-\details{
-The function supports:
-\itemize{
-  \item IID process error
-  \item Random walk process error
-  \item 3D Gaussian Markov Random Field (GMRF) models (marginal or conditional variance)
-  \item Separable 2D AR(1) models
-}
-
-
-\strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
-It must be negated to obtain a negative log-likelihood contribution, which is
-handled outside this function.
+The positive log-likelihood of a surface of deviations indexed by year and a
+second dim, under iid, random walk, 3D GMRF (marginal or conditional variance)
+or separable 2D AR(1) process error. Selectivity deviations use it over years
+and bins, growth's semi-parametric deviations over years and ages, and a
+time-varying growth parameter over years alone, a surface one column wide; the
+argument names read \code{bin} for that second dim throughout. The caller
+negates the result.
 }
 \keyword{internal}

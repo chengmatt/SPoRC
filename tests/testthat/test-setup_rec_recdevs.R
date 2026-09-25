@@ -42,7 +42,7 @@ test_that("do_RecDevs_rho_mapping only activates RecDevs_rho under RecDevs_model
   expect_true(all(is.na(il$map$RecDevs_rho)))
 })
 
-# ── get_recdev_pe_nLL ────────────────────────────────────────────────────────
+# ── get_dev_pe_nLL ───────────────────────────────────────────────────────────
 
 # the walk written out by hand, for one series of deviations
 hand_recdev_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init_sd = 5) {
@@ -62,7 +62,7 @@ hand_recdev_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init
   out
 }
 
-test_that("get_recdev_pe_nLL matches a hand-written walk for iid, rw and ar1", {
+test_that("get_dev_pe_nLL matches a hand-written walk for iid, rw and ar1", {
 
   n_yrs <- 10
   set.seed(11)
@@ -82,7 +82,7 @@ test_that("get_recdev_pe_nLL matches a hand-written walk for iid, rw and ar1", {
   rho <- 2 / (1 + exp(-2 * rho_raw)) - 1
 
   for(PE_model in 1:3) {
-    got <- SPoRC:::get_recdev_pe_nLL(devs, is_est, sigma, dev_mu, PE_model, rho = rho)
+    got <- SPoRC:::get_dev_pe_nLL(devs, is_est, sigma, dev_mu, PE_model, rho = rho)
     want <- hand_recdev_nLL(devs, is_est, sigma, dev_mu, PE_model, rho = rho)
     expect_equal(as.numeric(got), want, tolerance = 1e-10, info = paste("PE_model:", PE_model))
     expect_true(all(got[is_est == 0] == 0), info = paste("fixed years zero, PE_model:", PE_model))
@@ -98,7 +98,7 @@ test_that("a random walk passes through fixed years rather than stepping over th
   is_est[4:6] <- 0 # asserted deviations in the middle of the series
   sigma <- rep(0.35, n_yrs)
 
-  got <- SPoRC:::get_recdev_pe_nLL(devs, is_est, sigma, rep(0, n_yrs), 2)
+  got <- SPoRC:::get_dev_pe_nLL(devs, is_est, sigma, rep(0, n_yrs), 2)
 
   # the fixed years contribute nothing themselves
   expect_true(all(got[4:6] == 0))
@@ -109,7 +109,7 @@ test_that("a random walk passes through fixed years rather than stepping over th
 
   # fixing the terminal deviations removes their terms without pulling the last estimated one
   is_est_term <- c(rep(1, 4), rep(0, 3))
-  term <- SPoRC:::get_recdev_pe_nLL(devs, is_est_term, sigma, rep(0, n_yrs), 2)
+  term <- SPoRC:::get_dev_pe_nLL(devs, is_est_term, sigma, rep(0, n_yrs), 2)
   expect_true(all(term[5:7] == 0))
   expect_equal(as.numeric(term[4]), -dnorm(devs[4], devs[3], 0.35, log = TRUE), tolerance = 1e-10)
 })
@@ -122,23 +122,23 @@ test_that("the diffuse start sits on year one and fixing it leaves the level fre
   sigma <- rep(0.4, n_yrs)
   all_est <- rep(1, n_yrs)
 
-  got <- SPoRC:::get_recdev_pe_nLL(devs, all_est, sigma, rep(0, n_yrs), 2)
+  got <- SPoRC:::get_dev_pe_nLL(devs, all_est, sigma, rep(0, n_yrs), 2)
   expect_equal(as.numeric(got[1]), -dnorm(devs[1], 0, 5, log = TRUE), tolerance = 1e-10)
 
   # widening the start weakens that term, and only that term changes
-  wide <- SPoRC:::get_recdev_pe_nLL(devs, all_est, sigma, rep(0, n_yrs), 2, init_sd = 500)
+  wide <- SPoRC:::get_dev_pe_nLL(devs, all_est, sigma, rep(0, n_yrs), 2, init_sd = 500)
   expect_equal(as.numeric(wide[1]), -dnorm(devs[1], 0, 500, log = TRUE), tolerance = 1e-10)
   expect_equal(as.numeric(wide[2:n_yrs]), as.numeric(got[2:n_yrs]), tolerance = 1e-14)
 
   # NA starts the walk at zero under its own sigma instead
-  own <- SPoRC:::get_recdev_pe_nLL(devs, all_est, sigma, rep(0, n_yrs), 2, init_sd = NA)
+  own <- SPoRC:::get_dev_pe_nLL(devs, all_est, sigma, rep(0, n_yrs), 2, init_sd = NA)
   expect_equal(as.numeric(own[1]), -dnorm(devs[1], 0, sigma[1], log = TRUE), tolerance = 1e-10)
 
   # fixing year one removes the only term that reads the level, so every remaining term is a
   # difference and shifting the whole series does not change the penalty. this is SAM's flat prior
   is_est <- c(0, rep(1, n_yrs - 1))
-  base <- sum(SPoRC:::get_recdev_pe_nLL(devs, is_est, sigma, rep(0, n_yrs), 2))
-  shifted <- sum(SPoRC:::get_recdev_pe_nLL(devs + 2.5, is_est, sigma, rep(0, n_yrs), 2))
+  base <- sum(SPoRC:::get_dev_pe_nLL(devs, is_est, sigma, rep(0, n_yrs), 2))
+  shifted <- sum(SPoRC:::get_dev_pe_nLL(devs + 2.5, is_est, sigma, rep(0, n_yrs), 2))
   expect_equal(as.numeric(base), as.numeric(shifted), tolerance = 1e-10)
 })
 

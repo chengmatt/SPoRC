@@ -59,31 +59,31 @@ ages read the early one.}
 
 \item{bias_ramp}{Numeric vector \code{[year]} of bias ramp adjustment factors.}
 
-\item{sigmaR_switch}{Integer year index at which the deviations switch from
-the early to the late sigma regime.}
+\item{sigmaR_switch}{Integer year index the deviations switch from the early to
+the late sigma at.}
 
 \item{ln_RecDevs}{Array \code{[pop, region, year]} of recruitment deviations.}
 
-\item{sigmaR2_early, sigmaR2_late}{Arrays \code{[pop, region]} of squared sigma
+\item{sigmaR2_early, sigmaR2_late}{Arrays \code{[pop, region]} of squared sigma,
 used for the bias-corrected mean.}
 
 \item{do_rec_bias_ramp}{Integer switch enabling the bias ramp log sigma term.}
 
 \item{map_ln_RecDevs}{Array \code{[pop, region, year]} mirroring
-\code{map$ln_RecDevs}. Cells that are \code{NA} are fixed rather than
-estimated and go unpenalized; cells sharing a level split one penalty.
-\code{NULL} penalizes every cell in full.}
+\code{map$ln_RecDevs}. \code{NA} cells are fixed rather than estimated and go
+unpenalized, and cells sharing a level split one penalty. \code{NULL}
+penalizes every cell in full.}
 
 \item{RecDevs_model}{Integer process error structure: \code{1} independent,
 \code{2} random walk, \code{3} AR1.}
 
 \item{RecDevs_rho}{Array \code{[pop, region]} of unconstrained AR1
-correlations, transformed to \eqn{(-1, 1)} here. Read when
+correlations, transformed to \eqn{(-1, 1)} here. Read under
 \code{RecDevs_model = 3}.}
 
 \item{RecDevs_rw_init_sigma}{Standard deviation given to year one of a random
 walk. Default \code{5}, which leaves the level of the series effectively
-free. \code{NA} starts the walk at zero under its own sigma. Read when
+free; \code{NA} starts the walk at zero under its own sigma. Read under
 \code{RecDevs_model = 2}.}
 
 \item{RecDevs_pen_center}{Integer. \code{1} centers on the deviations' own

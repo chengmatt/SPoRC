@@ -40,136 +40,62 @@ do_retrospective(
 )
 }
 \arguments{
-\item{n_retro}{Integer specifying the number of retrospective peels to perform.
-A value of \code{n_retro = 0} fits the model using the full dataset only.}
+\item{n_retro}{Number of peels. \code{0} fits the full dataset only.}
 
-\item{data}{List containing the data supplied to the RTMB model.}
+\item{data}{List of data supplied to the RTMB model.}
 
-\item{parameters}{List containing the model parameters.}
+\item{parameters}{List of model parameters.}
 
-\item{mapping}{List defining parameter mappings used during estimation.}
+\item{mapping}{List of parameter mappings used during estimation.}
 
-\item{random}{Character vector identifying random-effect parameters in the model.
-Default is \code{NULL}.}
+\item{random}{Character vector of random-effect parameters. Default
+\code{NULL}.}
 
-\item{do_par}{Logical indicating whether retrospective peels should be run
-in parallel. Default is \code{FALSE}.}
+\item{do_par}{Logical, whether the peels run in parallel. Default
+\code{FALSE}.}
 
-\item{n_cores}{Integer specifying the number of cores to use when
-\code{do_par = TRUE}.}
+\item{n_cores}{Cores used when \code{do_par = TRUE}.}
 
-\item{newton_loops}{Integer specifying the number of Newton optimization
-loops used during model fitting. Default is \code{3}.}
+\item{newton_loops}{Newton optimization loops per fit. Default \code{3}.}
 
-\item{do_francis}{Logical indicating whether Francis composition
-reweighting should be applied within each retrospective peel.
-Default is \code{FALSE}.}
+\item{do_francis}{Logical, whether Francis reweighting runs within each peel.
+Default \code{FALSE}.}
 
-\item{n_francis_iter}{Integer specifying the number of Francis reweighting
-iterations. Required if \code{do_francis = TRUE}.}
+\item{n_francis_iter}{Francis reweighting iterations, required when
+\code{do_francis = TRUE}.}
 
-\item{nlminb_control}{List of control arguments passed to \code{stats::nlminb}
-during model fitting. Default is
+\item{nlminb_control}{Control list passed to \code{stats::nlminb}. Default
 \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.}
 
-\item{do_sdrep}{Logical indicating whether standard errors should be
-calculated using \code{RTMB::sdreport}. Default is \code{FALSE}.}
+\item{do_sdrep}{Logical, whether standard errors are computed through
+\code{RTMB::sdreport}. Default \code{FALSE}.}
 
-\item{fishidx_datalag}{Integer array specifying lags applied to fishery
-index data \eqn{[region \times fleet]}. Default is zeros.}
+\item{fishidx_datalag, fishage_datalag, fishlen_datalag, fishage_discard_datalag, fishlen_discard_datalag, srvidx_datalag, srvage_datalag, srvlen_datalag}{Integer arrays \eqn{[region \times fleet]} of the lag applied to each pooled
+data source. Default zeros.}
 
-\item{fishage_datalag}{Integer array specifying lags applied to fishery
-age-composition data \eqn{[region \times fleet]}. Default is zeros.}
+\item{fishidx_pop_datalag, fishage_pop_datalag, fishlen_pop_datalag, fishage_discard_pop_datalag, fishlen_discard_pop_datalag, srvidx_pop_datalag, srvage_pop_datalag, srvlen_pop_datalag}{The population-specific counterparts, \eqn{[n\_pop \times region \times
+fleet]}. Default zeros.}
 
-\item{fishlen_datalag}{Integer array specifying lags applied to fishery
-length-composition data \eqn{[region \times fleet]}. Default is zeros.}
+\item{conv_tag_datalag}{Integer lag applied to the conventional tagging data.
+Default \code{0}.}
 
-\item{fishage_discard_datalag}{Integer array specifying lags applied to
-fishery discard age-composition data \eqn{[region \times fleet]}.
-Default is zeros.}
-
-\item{fishlen_discard_datalag}{Integer array specifying lags applied to
-fishery discard length-composition data \eqn{[region \times fleet]}.
-Default is zeros.}
-
-\item{srvidx_datalag}{Integer array specifying lags applied to survey
-index data \eqn{[region \times fleet]}. Default is zeros.}
-
-\item{srvage_datalag}{Integer array specifying lags applied to survey
-age-composition data \eqn{[region \times fleet]}. Default is zeros.}
-
-\item{srvlen_datalag}{Integer array specifying lags applied to survey
-length-composition data \eqn{[region \times fleet]}. Default is zeros.}
-
-\item{fishidx_pop_datalag}{Integer array specifying lags applied to
-population-specific fishery index data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{fishage_pop_datalag}{Integer array specifying lags applied to
-population-specific fishery age-composition data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{fishlen_pop_datalag}{Integer array specifying lags applied to
-population-specific fishery length-composition data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{fishage_discard_pop_datalag}{Integer array specifying lags applied to
-population-specific fishery discard age-composition data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{fishlen_discard_pop_datalag}{Integer array specifying lags applied to
-population-specific fishery discard length-composition data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{srvidx_pop_datalag}{Integer array specifying lags applied to
-population-specific survey index data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{srvage_pop_datalag}{Integer array specifying lags applied to
-population-specific survey age-composition data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{srvlen_pop_datalag}{Integer array specifying lags applied to
-population-specific survey length-composition data
-\eqn{[n\_pop \times region \times fleet]}. Default is zeros.}
-
-\item{conv_tag_datalag}{Integer specifying the lag applied to conventional
-tagging data. Default is \code{0}.}
-
-\item{return_models}{Logical indicating whether fitted model objects should
-be returned for each retrospective peel. Default is \code{FALSE}. When
-\code{TRUE}, the function returns a named list with two elements:
-\code{retro_df} (the long-format \code{data.frame} of SSB and recruitment
-estimates) and \code{retro_models} (a named list of fitted model objects,
-indexed as \code{peel_0}, \code{peel_1}, ..., \code{peel_n}). When
-\code{FALSE}, only the \code{data.frame} is returned.}
+\item{return_models}{Logical, whether the fitted objects are returned per peel.
+Default \code{FALSE}. \code{TRUE} returns a list of \code{retro_df} and
+\code{retro_models}, the latter indexed \code{peel_0}, \code{peel_1} and so
+on.}
 }
 \value{
-A long-format \code{data.frame} containing retrospective estimates
-  of spawning stock biomass and recruitment. Columns include:
-  \itemize{
-    \item \code{Pop}: Population index.
-    \item \code{Region}: Region index.
-    \item \code{Year}: Model year.
-    \item \code{Type}: Quantity reported (\code{"SSB"} or \code{"Recruitment"}).
-    \item \code{peel}: Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
-    \item \code{value}: Estimated value of the quantity.
-    \item \code{pdHess}: Logical indicator of positive-definite Hessian
-      (only present when \code{do_sdrep = TRUE}).
-    \item \code{max_grad}: Maximum absolute gradient of fixed effects
-      (only present when \code{do_sdrep = TRUE}).
-  }
+A long-format data frame of retrospective spawning stock biomass and
+  recruitment, with columns \code{Pop}, \code{Region}, \code{Year},
+  \code{Type} (\code{"SSB"} or \code{"Recruitment"}), \code{peel} (0 for the
+  full data), and \code{value}. Under \code{do_sdrep = TRUE} it also holds
+  \code{pdHess} and \code{max_grad}, the maximum absolute gradient of the fixed
+  effects.
 }
 \description{
-Conducts retrospective analyses by sequentially removing terminal years
-("peels") from the dataset and refitting the model. For each peel, the
-function truncates the model inputs, optionally applies data lags and
-Francis composition reweighting, fits the model, and extracts estimates
-of spawning stock biomass (SSB) and recruitment.
-}
-\details{
-Retrospective analyses are commonly used to evaluate the stability of
-model estimates through time and to diagnose potential model misspecification.
+Refits the model with terminal years removed one peel at a time, truncating the
+inputs, applying any data lags and Francis reweighting, and extracting spawning
+stock biomass and recruitment from each fit.
 }
 \seealso{
 Other Model Diagnostics:

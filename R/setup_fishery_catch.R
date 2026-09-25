@@ -637,326 +637,203 @@ do_dmr_mean_mapping <- function(input_list, dmr_mean_spec) {
 
 #' Set up fishing mortality, discard mortality, and catch observation inputs
 #'
-#' Populates \code{input_list} with observed catch, catch usage indicators,
-#' fishing mortality parameters (\code{ln_F_mean}, \code{ln_F_devs}), and
-#' observation/process error structures (\code{ln_sigmaC}, \code{ln_sigmaC_pop},
-#' \code{ln_sigmaF}). Also populates discard observations, discard mortality
-#' rate parameters (\code{logit_dmr_mean}, \code{logit_dmr_devs}), and
-#' discard observation/process error structures (\code{ln_sigmaD},
-#' \code{ln_sigmaD_pop}, \code{ln_sigma_dmr}).
-#' Must be called after \code{\link{Setup_Mod_Biologicals}}.
+#' Sets the observed catch and discards with their use flags, the fishing
+#' mortality parameters (\code{ln_F_mean}, \code{ln_F_devs}) and their observation
+#' and process error, the catch and discard at age data sources, and the discard
+#' mortality rate parameters. Call after \code{\link{Setup_Mod_Biologicals}}.
 #'
-#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map},
-#'   and \code{$verbose} sublists, as returned by upstream setup functions.
-#' @param ObsCatch Observed aggregated catch array
-#'   \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
-#'   Values should be in the units specified by \code{catch_units}. For a
-#'   cell with \code{UseCatch == 0} (and no population-specific catch
-#'   used), an \code{NA} entry here is treated as a missing
-#'   observation; fishing is assumed to have continued and \code{Fmort}/
-#'   \code{ln_F_devs} are estimated normally for that year, whereas a
-#'   true recorded value (typically \code{0}) is treated as a real
-#'   closure: \code{Fmort} is forced to zero and no deviation is estimated.
-#'   See \code{\link{Get_Fdev_PE_loglik}}.
-#' @param ObsCatch_pop Observed population-specific catch array
-#'   \code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]}.
-#'   Values should be in the units specified by \code{catch_units}.
-#' @param UseCatch Binary indicator array
-#'   \code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
+#' @param input_list Named list with \code{$data}, \code{$par}, \code{$map} and
+#'   \code{$verbose}.
+#' @param ObsCatch Observed aggregated catch array \code{[n_regions x n_years x
+#'   n_seas x n_fish_fleets]} in the units \code{catch_units} names. Where
+#'   \code{UseCatch == 0} and no population-specific catch is used, an \code{NA}
+#'   here is a missing observation: fishing is assumed to have continued and
+#'   \code{Fmort} and \code{ln_F_devs} are estimated as usual. A recorded value,
+#'   typically \code{0}, is a real closure: \code{Fmort} is forced to zero and no
+#'   deviation is estimated. See \code{\link{Get_Fdev_PE_loglik}}.
+#' @param ObsCatch_pop Observed population-specific catch array \code{[n_pop x
+#'   n_regions x n_years x n_seas x n_fish_fleets]}, in \code{catch_units}.
+#' @param UseCatch Binary array dimensioned like \code{ObsCatch} controlling which
 #'   aggregated catch observations enter the likelihood and whether
-#'   \code{ln_F_devs} are estimated for each cell. \code{1} = use;
-#'   \code{0} = exclude, unless \code{ObsCatch} is \code{NA} at that cell
-#'   (see \code{ObsCatch} above), in which case \code{ln_F_devs} is still
-#'   estimated as an ordinary active year despite not being fit against an
-#'   observation.
-#' @param UseCatch_pop Binary indicator array
-#'   \code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]} controlling
-#'   which population-specific catch observations enter the likelihood.
-#'   \code{1} = use; \code{0} = exclude.
-#' @param catch_units Character array \code{[n_fish_fleets]} specifying catch
-#'   units per fleet. \code{"biom"} = biomass (default); \code{"abd"} =
-#'   abundance. Converted internally to \code{0}/\code{1} integer codes.
-#' @param Use_F_pen Integer flag for applying a fishing mortality penalty to
-#'   penalize large deviations in \code{ln_F_devs}. \code{1} = apply
-#'   (default); \code{0} = do not apply.
-#' @param sigmaC_spec Character string specifying the sharing structure for
-#'   \code{ln_sigmaC} (aggregated catch observation error SD). Default
-#'   \code{"fix"} holds \code{ln_sigmaC} at its starting value
-#'   (\code{log(0.01)} unless overridden via \code{...}). Sharing options
-#'   follow the convention \code{"est_shared_<dims>"} where \code{<dims>} is
-#'   an underscore-separated list of dimensions to collapse: \code{"r"}
-#'   (regions), \code{"y"} (years), \code{"seas"} (seasons), \code{"f"}
-#'   (fleets), or any combination (e.g., \code{"est_shared_r_y"},
-#'   \code{"est_shared_r_y_seas_f"}). Use \code{"est_all"} for a fully
-#'   independent parameter per cell. A warning is issued if \code{"fix"} is
-#'   selected without providing a starting value in \code{...}.
-#' @param sigmaC_pop_spec Character string specifying the sharing structure for
-#'   \code{ln_sigmaC_pop} (population-specific catch observation error SD).
-#'   Default \code{"fix"} holds \code{ln_sigmaC_pop} at its starting value
-#'   (\code{log(0.01)} unless overridden via \code{...}). Sharing options
-#'   follow the same convention as \code{sigmaC_spec} but with an additional
-#'   population dimension: e.g., \code{"est_shared_pop"} shares across
-#'   populations, \code{"est_shared_pop_r"} shares across populations and
-#'   regions, and \code{"est_shared_pop_r_y_seas_f"} collapses all dimensions
-#'   into a single parameter. A warning is issued if \code{"fix"} is selected
-#'   without providing a starting value in \code{...}.
-#' @param sigmaF_spec Character string specifying the sharing structure for
-#'   \code{ln_sigmaF} (fishing mortality process error SD). Default
-#'   \code{"fix"} holds \code{ln_sigmaF} at its starting value (\code{log(1)},
-#'   i.e., \eqn{\sigma_F = 1}, unless overridden via \code{...}). A warning is
-#'   issued if \code{"fix"} is selected without providing a starting value
-#'   in \code{...}.
+#'   \code{ln_F_devs} is estimated in each cell. \code{0} excludes the
+#'   observation, unless \code{ObsCatch} is \code{NA} there, in which case the
+#'   deviation is still estimated.
+#' @param UseCatch_pop Binary array dimensioned like \code{ObsCatch_pop}.
+#' @param catch_units Character array \code{[n_fish_fleets]}: \code{"biom"}
+#'   (default) or \code{"abd"}, stored as \code{0}/\code{1}.
+#' @param Use_F_pen Integer flag for the fishing mortality penalty on
+#'   \code{ln_F_devs}. \code{1} (default) applies it.
+#' @param sigmaC_spec Sharing structure for \code{ln_sigmaC}, the aggregated catch
+#'   observation error sd. \code{"fix"} (default) holds it at its starting value,
+#'   \code{log(0.01)} unless supplied through \code{...}, and warns when no
+#'   starting value was given. Estimated options are
+#'   \code{"est_shared_<dims>"} over any of \code{"r"} (regions), \code{"y"}
+#'   (years), \code{"seas"} and \code{"f"} (fleets), e.g.
+#'   \code{"est_shared_r_y_seas_f"}, or \code{"est_all"} for one parameter per
+#'   cell.
+#' @param sigmaC_pop_spec Sharing structure for \code{ln_sigmaC_pop}, as
+#'   \code{sigmaC_spec} with an added population dim, e.g.
+#'   \code{"est_shared_pop_r"} or \code{"est_shared_pop_r_y_seas_f"}.
+#' @param sigmaF_spec Sharing structure for \code{ln_sigmaF}, the fishing mortality
+#'   process error sd, following \code{sigmaC_spec}. \code{"fix"} (default) holds
+#'   it at \code{log(1)} unless supplied through \code{...}, and warns.
 #' @param Fdev_pen_center Where the fishing mortality deviation penalty is
-#'   centered. \code{"fixed"} (default) centers on zero, constraining both the
-#'   level and the spread of the deviations. \code{"own_mean"} centers on the
-#'   mean of the estimated deviations, penalizing only their spread and leaving
-#'   the level free, which is what a sum of squares about the series' own mean
-#'   amounts to. Under a mean-plus-deviations parameterization the level is
-#'   already set by \code{ln_F_mean}, so \code{"own_mean"} avoids
-#'   penalizing it twice; note that it also leaves \code{ln_F_mean} and the
-#'   deviations' level mutually unidentified unless one of them is fixed,
-#'   which \code{ln_F_mean_spec = "fix"} does.
-#' @param ln_F_mean_spec Character string, matched by exact name only because it
-#'   sits after \code{...}. \code{"est"} (default, the previous
-#'   and only behavior) or \code{"fix"}. \code{"fix"} maps \code{ln_F_mean}
-#'   off at its starting value, which defaults to \code{0} under this spec
-#'   unless supplied through \code{...}, so the deviations have all of log
-#'   fishing mortality: \code{F = exp(ln_F_devs)}, where it follows a free annual log-F
-#'   parameterization. It must be paired with \code{Fdev_pen_center = "own_mean"}
-#'   (penalize only the spread about the deviations' own mean),
-#'   \code{Fdev_model = "rw"}, or \code{Use_F_pen = 0}: an \code{"iid"} or
-#'   \code{"ar1"} penalty centered on a fixed zero mean would shrink the
-#'   deviations toward \code{F = 1}, so that combination is rejected at setup.
-#'   \code{"est"} keeps the mean-plus-deviations form, where the \code{"iid"}
-#'   penalty shrinks each year toward the estimated average F.
-#' @param Fdev_model Character string specifying the process error structure
-#'   for \code{ln_F_devs}. One of \code{"iid"} (default; independent
-#'   deviations), \code{"rw"} (random walk; the first catch-active year per
-#'   region/season/fleet is initialized with a diffuse \eqn{N(0,5)} prior),
-#'   or \code{"ar1"} (first-order autoregressive; the first catch-active year
-#'   is drawn from its stationary marginal distribution, and \code{Fdev_rho_spec}
-#'   controls the AR1 correlation parameter). Catch-active years do not need
-#'   to be contiguous for \code{"rw"} or \code{"ar1"}: the transition between
-#'   two active years spanning a gap of \eqn{d} closed years is taken over
-#'   the elapsed gap directly (the same marginal transition as estimating
-#'   deviations for the closed years and integrating them out, without
-#'   actually estimating them), see \code{\link{Get_Fdev_PE_loglik}}.
-#'   A warning is issued if \code{"rw"} or \code{"ar1"} is selected but
-#'   \code{Use_F_pen = 0} (the penalty is never evaluated, so the process
-#'   structure has no effect), \code{sigmaF_spec = "fix"} (the process error
-#'   SD is not estimated), or (for \code{"ar1"}) \code{Fdev_rho_spec =
-#'   "fix"} (the correlation is not estimated), any of these may be
-#'   intentional, but are common oversights when switching away from
-#'   \code{"iid"}.
-#' @param Fdev_rho_spec Character string specifying the sharing structure for
-#'   the AR1 correlation parameter \code{Fdev_rho}, following the same
-#'   convention as \code{sigmaF_spec}. Only used when \code{Fdev_model =
-#'   "ar1"}; ignored (and mapped entirely to \code{NA}) otherwise.
-#' @param ObsDiscard Observed aggregated discard array
-#'   \code{[n_regions x n_years x n_seas x n_fish_fleets]}.
-#'   Values should be in the units specified by \code{discard_units}.
-#'   Default: \code{NULL} (no discard observations).
-#' @param UseDiscard Binary indicator array
-#'   \code{[n_regions x n_years x n_seas x n_fish_fleets]} controlling which
-#'   aggregated discard observations enter the likelihood. \code{1} = use;
-#'   \code{0} = exclude. Default: all zeros.
-#' @param discard_units Character array \code{[n_fish_fleets]} specifying
-#'   discard units per fleet. \code{"abd"} = abundance (\code{0}),
-#'   \code{"biom"} = biomass (\code{1}), \code{"abd_frac"} = abundance
-#'   fraction (\code{2}), \code{"biom_frac"} = biomass fraction (\code{3},
-#'   default). Converted internally to integer codes.
-#' @param UseDiscard_pop Binary indicator array
-#'   \code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]} controlling
-#'   which population-specific discard observations enter the likelihood.
-#'   \code{1} = use; \code{0} = exclude. Default: all zeros.
-#' @param ObsDiscard_pop Observed population-specific discard array
-#'   \code{[n_pop x n_regions x n_years x n_seas x n_fish_fleets]}.
-#'   Values should be in the units specified by \code{discard_units}.
-#'   Default: \code{NULL} (no population-specific discard observations).
-#' @param Use_dmr_pen Integer flag for applying a discard mortality rate
-#'   penalty to penalize large deviations in \code{logit_dmr_devs}.
-#'   \code{1} = apply; \code{0} = do not apply (default). Must be \code{1}
-#'   when \code{dmr_dev_spec = "est_all"} and \code{0} when
-#'   \code{dmr_dev_spec = "fix"}.
-#' @param sigmaD_spec Character string specifying the sharing structure for
-#'   \code{ln_sigmaD} (aggregated discard observation error SD). Default
-#'   \code{"fix"} holds \code{ln_sigmaD} at its starting value
-#'   (\code{log(0.01)} unless overridden via \code{...}). Sharing options
-#'   follow the same convention as \code{sigmaC_spec}. A warning is issued
-#'   if \code{"fix"} is selected without providing a starting value in
-#'   \code{...}.
-#' @param sigmaD_pop_spec Character string specifying the sharing structure for
-#'   \code{ln_sigmaD_pop} (population-specific discard observation error SD).
-#'   Default \code{"fix"} holds \code{ln_sigmaD_pop} at its starting value
-#'   (\code{log(0.01)} unless overridden via \code{...}). Sharing options
-#'   follow the same convention as \code{sigmaC_pop_spec}. A warning is
-#'   issued if \code{"fix"} is selected without providing a starting value
-#'   in \code{...}.
-#' @param sigma_dmr_spec Character string specifying the sharing structure for
-#'   \code{ln_sigma_dmr} (discard mortality rate process error SD). Default
-#'   \code{"fix"} holds \code{ln_sigma_dmr} at its starting value
-#'   (\code{log(1)} unless overridden via \code{...}). Sharing options
-#'   follow the same convention as \code{sigmaF_spec}. A warning is issued
-#'   if \code{"fix"} is selected without providing a starting value in
-#'   \code{...}.
-#' @param dmr_mean_spec Character string specifying the sharing/estimation
-#'   structure for \code{logit_dmr_mean} (logit-scale mean discard mortality
-#'   rate). Default \code{"fix"} holds at its starting value (\code{0},
-#'   i.e., DMR = 0.5 on the natural scale, unless overridden via \code{...}).
-#'   See \code{\link{do_dmr_mean_mapping}} for sharing options.
-#' @param dmr_dev_spec Character string specifying the sharing/estimation
-#'   structure for \code{logit_dmr_devs} (logit-scale annual discard mortality
-#'   rate deviations). Default \code{"fix"} holds deviations at zero
-#'   (unless overridden via \code{...}). Use \code{"est_all"} to estimate a
-#'   deviation in every fished cell; requires \code{Use_dmr_pen = 1}. See
-#'   \code{\link{do_dmr_dev_mapping}} for sharing options.
-#' @param ... Optional starting value overrides for catch and discard related parameters.
-#'
-#' @return The input \code{input_list} with \code{$data}, \code{$par}, and
-#'   \code{$map} updated. Key additions:
-#'   \describe{
-#'     \item{\code{$data}}{
-#'       \code{ObsCatch}, \code{ObsCatch_pop}, \code{UseCatch},
-#'       \code{UseCatch_pop}, \code{Use_F_pen}, \code{catch_units},
-#'       \code{Fdev_model},
-#'       \code{ObsDiscard}, \code{ObsDiscard_pop}, \code{UseDiscard},
-#'       \code{UseDiscard_pop}, \code{Use_dmr_pen}, \code{discard_units}.}
-#'     \item{\code{$par}}{
-#'       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
-#'       \code{Fdev_rho},
-#'       \code{ln_F_mean}, \code{ln_F_devs},
-#'       \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
-#'       \code{logit_dmr_mean}, \code{logit_dmr_devs}.}
-#'     \item{\code{$map}}{
-#'       \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF},
-#'       \code{Fdev_rho},
-#'       \code{ln_F_mean}, \code{ln_F_devs},
-#'       \code{ln_sigmaD}, \code{ln_sigmaD_pop}, \code{ln_sigma_dmr},
-#'       \code{logit_dmr_mean}, \code{logit_dmr_devs}.}
-#'   }
-#'
-#' @param ObsCatchAA Observed catch at age, an array with dimensions
-#'   \code{[n_regions, n_years, n_seas, n_obs_ages, n_sexes, n_fish_fleets]}.
-#'   The ages are the observed ages, the columns of the fleet's ageing error
-#'   matrix (\code{AgeingError_fish}, or the shared \code{AgeingError}), which
-#'   are the model ages unless an ageing error is supplied. The predicted catch
-#'   at each model age is read onto those ages through that matrix before it is
-#'   compared, as for the age compositions. The
-#'   sex dim is required whatever the fleet reports: a data source summed over
-#'   sexes has its observation in sex slot one. Supplying this
-#'   fits the catch at age directly, every age its own lognormal observation, in
-#'   place of an aggregated catch with compositions. This is the native form for
-#'   ICES age-structured assessments. The two statements are not interchangeable: the
-#'   exact factorization of an at-age observation into a total and a composition
-#'   holds for Poisson and multinomial, not for lognormal, so a fleet must use
-#'   one or the other and supplying both for the same fleet is an error.
-#'   \code{NULL} (default) leaves the fleet on aggregated catch.
-#'
-#' @param UseCatchAA Integer array shaped like \code{ObsCatchAA}, \code{1} where
-#'   an observation is fit and \code{0} otherwise. A cell that is not fit is also
-#'   not fished, so this governs closures the way \code{UseCatch} does for the
-#'   aggregated data source.
-#'
+#'   centered. \code{"fixed"} (default) centers on zero, constraining the level
+#'   and the spread. \code{"own_mean"} centers on the deviations' own mean,
+#'   penalizing only their spread; the level is then already set by
+#'   \code{ln_F_mean}, so it is not penalized twice, but the two are mutually
+#'   unidentified unless one is fixed, which \code{ln_F_mean_spec = "fix"} does.
+#' @param ln_F_mean_spec \code{"est"} (default) or \code{"fix"}, matched by exact
+#'   name only because it sits after \code{...}. \code{"fix"} maps
+#'   \code{ln_F_mean} off at its starting value, \code{0} unless supplied through
+#'   \code{...}, so the deviations hold all of log fishing mortality,
+#'   \code{F = exp(ln_F_devs)}. It must be paired with
+#'   \code{Fdev_pen_center = "own_mean"}, \code{Fdev_model = "rw"} or
+#'   \code{Use_F_pen = 0}: an \code{"iid"} or \code{"ar1"} penalty centered on a
+#'   fixed zero would shrink the deviations toward \code{F = 1}, so that
+#'   combination is rejected at setup.
+#' @param Fdev_model Process error on \code{ln_F_devs}: \code{"iid"} (default),
+#'   \code{"rw"} (the first catch-active year per region, season and fleet takes a
+#'   diffuse \eqn{N(0,5)}), or \code{"ar1"} (that year is drawn from the
+#'   stationary marginal, with \code{Fdev_rho_spec} setting the correlation).
+#'   Catch-active years need not be contiguous under \code{"rw"} or \code{"ar1"}:
+#'   the transition across a gap of \eqn{d} closed years is taken over the elapsed
+#'   gap, the same marginal as estimating the closed years and integrating them
+#'   out. See \code{\link{Get_Fdev_PE_loglik}}. Warns under \code{Use_F_pen = 0}
+#'   (the penalty is never evaluated), \code{sigmaF_spec = "fix"}, or, for
+#'   \code{"ar1"}, \code{Fdev_rho_spec = "fix"}.
+#' @param Fdev_rho_spec Sharing structure for \code{Fdev_rho}, following
+#'   \code{sigmaF_spec}. Only read under \code{Fdev_model = "ar1"} and mapped
+#'   entirely to \code{NA} otherwise.
+#' @param ObsDiscard Observed aggregated discard array \code{[n_regions x n_years x
+#'   n_seas x n_fish_fleets]} in \code{discard_units}. Default \code{NULL}.
+#' @param UseDiscard Binary array dimensioned like \code{ObsDiscard}. Default all
+#'   zeros.
+#' @param discard_units Character array \code{[n_fish_fleets]}: \code{"abd"}
+#'   (\code{0}), \code{"biom"} (\code{1}), \code{"abd_frac"} (\code{2}) or
+#'   \code{"biom_frac"} (\code{3}, default).
+#' @param UseDiscard_pop Binary array \code{[n_pop x n_regions x n_years x n_seas x
+#'   n_fish_fleets]}. Default all zeros.
+#' @param ObsDiscard_pop Observed population-specific discard array, same dims, in
+#'   \code{discard_units}. Default \code{NULL}.
+#' @param Use_dmr_pen Integer flag for the penalty on \code{logit_dmr_devs}.
+#'   Default \code{0}. Must be \code{1} under \code{dmr_dev_spec = "est_all"} and
+#'   \code{0} under \code{"fix"}.
+#' @param sigmaD_spec,sigmaD_pop_spec Sharing structures for \code{ln_sigmaD} and
+#'   \code{ln_sigmaD_pop}, the discard observation error sds, following
+#'   \code{sigmaC_spec} and \code{sigmaC_pop_spec}. \code{"fix"} (default) holds
+#'   them at \code{log(0.01)} and warns when no starting value was given.
+#' @param sigma_dmr_spec Sharing structure for \code{ln_sigma_dmr}, the discard
+#'   mortality rate process error sd, following \code{sigmaF_spec}. \code{"fix"}
+#'   (default) holds it at \code{log(1)} and warns.
+#' @param dmr_mean_spec Sharing structure for \code{logit_dmr_mean}. \code{"fix"}
+#'   (default) holds it at \code{0}, a rate of 0.5 on the natural scale. See
+#'   \code{\link{do_dmr_mean_mapping}}.
+#' @param dmr_dev_spec Sharing structure for \code{logit_dmr_devs}. \code{"fix"}
+#'   (default) holds the deviations at zero; \code{"est_all"} estimates one in
+#'   every fished cell and requires \code{Use_dmr_pen = 1}. See
+#'   \code{\link{do_dmr_dev_mapping}}.
+#' @param ObsCatchAA Observed catch at age \code{[n_regions, n_years, n_seas,
+#'   n_obs_ages, n_sexes, n_fish_fleets]}, the ages being the columns of the
+#'   fleet's ageing error matrix, through which the predicted catch at each model
+#'   age is read before it is compared. The sex dim is required whatever the fleet
+#'   reports: a data source summed over sexes has its observation in sex slot one.
+#'   Supplying this fits the catch at age directly, every age its own lognormal
+#'   observation, in place of an aggregated catch with compositions, which is the
+#'   native form for ICES age-structured assessments. The exact factorization of an
+#'   at-age observation into a total and a composition holds for Poisson and
+#'   multinomial but not lognormal, so a fleet must use one or the other and
+#'   supplying both is an error. \code{NULL} (default) keeps the fleet on
+#'   aggregated catch.
+#' @param UseCatchAA Integer array shaped like \code{ObsCatchAA}, \code{1} where an
+#'   observation is fit. A cell that is not fit is also not fished, so this governs
+#'   closures the way \code{UseCatch} does.
 #' @param sigmaCAA_key Integer array \code{[n_obs_ages, n_sexes, n_fish_fleets]}
-#'   coupling the catch at age observation error, the key matrix convention ICES
-#'   assessments use. Equal entries share a parameter and \code{NA} excludes one.
-#'   The sex dim is required; a key coupling the sexes repeats its entries across
-#'   them. Along the age dim, \code{1 2 3 4 5} gives one standard deviation per
-#'   age, \code{1 1 2 2 2} gives standard deviations by age group as several ICES
-#'   assessments do, and \code{1 1 1 1 1} gives one for the fleet. Defaults to one
-#'   parameter per fleet, shared across ages and sexes. A parameter informed by
-#'   fewer than two observations is refused, since an observation error standard
-#'   deviation with a single observation drives the likelihood to negative
+#'   coupling the catch at age observation error, the key matrix ICES assessments
+#'   use. Equal entries share a parameter and \code{NA} excludes one. The sex dim
+#'   is required; a key coupling the sexes repeats its entries across them. Along
+#'   ages, \code{1 2 3 4 5} gives one sd per age, \code{1 1 2 2 2} gives sds by age
+#'   group, and \code{1 1 1 1 1} gives one for the fleet. Defaults to one parameter
+#'   per fleet. A parameter informed by fewer than two observations is refused,
+#'   since an sd with a single observation drives the likelihood to negative
 #'   infinity rather than failing outright.
-#'
-#' @param sigmaCAA_spec Character string, \code{"est"} (default) to estimate the
-#'   coupled standard deviations, or \code{"fix"} to hold them at their starting
-#'   values. Starting values are supplied through \code{...} as
-#'   \code{ln_sigmaCAA}.
-#'
+#' @param sigmaCAA_spec \code{"est"} (default) or \code{"fix"}. Starting values go
+#'   through \code{...} as \code{ln_sigmaCAA}.
 #' @param ObsDiscardAA,UseDiscardAA Observed discard at age and its use flags,
-#'   shaped like \code{ObsCatchAA}. The discard counterpart of catch at age,
-#'   read through the same fishery ageing error.
+#'   shaped like \code{ObsCatchAA} and read through the same fishery ageing error.
 #' @param ObsDiscardAA_pop,UseDiscardAA_pop,ObsCatchAA_pop,UseCatchAA_pop
-#'   Population-specific counterparts, with a leading population dimension.
+#'   Population-specific counterparts, with a leading population dim.
 #' @param sigmaCAA_pop_key,sigmaDAA_key,sigmaDAA_pop_key Integer arrays coupling
-#'   the observation error for the population-specific catch, the discards, and
-#'   the population-specific discards, following the same convention as
-#'   \code{sigmaCAA_key}. \code{sigmaDAA_key} is shaped
-#'   \code{[n_obs_ages, n_sexes, n_fish_fleets]}; the two population-specific keys
-#'   take a leading population dim, \code{[n_pop, n_obs_ages, n_sexes, n_fish_fleets]}.
+#'   the observation error for the population-specific catch, the discards and the
+#'   population-specific discards, following \code{sigmaCAA_key}.
+#'   \code{sigmaDAA_key} is \code{[n_obs_ages, n_sexes, n_fish_fleets]}; the two
+#'   population-specific keys take a leading population dim.
 #' @param sigmaCAA_pop_spec,sigmaDAA_spec,sigmaDAA_pop_spec \code{"est"} or
 #'   \code{"fix"}.
 #' @param AgeObsCorr_catch,AgeObsCorr_discard,AgeObsCorr_catch_pop,AgeObsCorr_discard_pop
-#'   Correlation across ages within a cell, one setting for every fleet or one
-#'   per fleet. \code{"iid"} (default) treats ages as independent,
-#'   \code{"1dar1"} correlates them as an AR(1) in age distance, \code{"us"}
-#'   estimates an unstructured correlation across ages, and \code{"2dar1"}
-#'   correlates over ages and years jointly through a separable AR(1), which
-#'   requires the fleet's observed ages and years to form a complete grid. A cell
-#'   with a single observed age falls back to independent. The
-#'   population-specific data sources have their own settings rather than borrowing
-#'   the aggregated ones. The fishery and survey index data sources are set in
-#'   \code{\link{Setup_Mod_FishIdx_and_Comps}} and
+#'   Correlation across ages within a cell, one setting for every fleet or one per
+#'   fleet. \code{"iid"} (default) treats ages as independent, \code{"1dar1"}
+#'   correlates them as an AR(1) in age distance, \code{"us"} estimates an
+#'   unstructured correlation, and \code{"2dar1"} correlates over ages and years
+#'   jointly through a separable AR(1), which needs the fleet's observed ages and
+#'   years to form a complete grid. A cell with one observed age falls back to
+#'   independent. The population-specific data sources have their own settings. The
+#'   index data sources are set in \code{\link{Setup_Mod_FishIdx_and_Comps}} and
 #'   \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
-#'
 #' @param rho_catch_spec,rho_discard_spec,rho_catch_pop_spec,rho_discard_pop_spec
-#'   How each data source's correlation parameters are shared, using the same spec
-#'   strings as \code{sigmaF_spec} and \code{Fdev_rho_spec}. The correlations
-#'   sit over region, sex and fleet, with a leading population dim for the
-#'   population-specific data sources, so \code{"est_shared_r_s"} gives one per fleet,
-#'   \code{"est_shared_s"} one per region and fleet, \code{"est_shared_r_s_f"} a
-#'   single value, \code{"est_all"} one per cell, and \code{"fix"} holds them.
-#'   \code{NULL} (the default) takes \code{"est_shared_r_s"}, or
-#'   \code{"est_shared_p_r_s"} for the population data sources, both one per fleet.
-#'   The spec governs the across-age correlation, the across-year correlation and
-#'   the unstructured matrix together, so fleets sharing under \code{"us"} share
-#'   a whole matrix. A region, sex or population a fleet never observes has no
-#'   parameter, which is what holds the unused slots of a summed dim out.
-#'
+#'   How each data source's correlation parameters are shared, in the spec strings
+#'   \code{sigmaF_spec} uses. The correlations sit over region, sex and fleet, with
+#'   a leading population dim for the population-specific data sources, so
+#'   \code{"est_shared_r_s"} gives one per fleet, \code{"est_shared_s"} one per
+#'   region and fleet, \code{"est_shared_r_s_f"} a single value, \code{"est_all"}
+#'   one per cell, and \code{"fix"} holds them. \code{NULL} (default) takes
+#'   \code{"est_shared_r_s"}, or \code{"est_shared_p_r_s"} for the population data
+#'   sources. The spec governs the across-age correlation, the across-year
+#'   correlation and the unstructured matrix together, so fleets sharing under
+#'   \code{"us"} share a whole matrix. A region, sex or population a fleet never
+#'   observes has no parameter.
 #' @param ObsCatchAA_SE,ObsDiscardAA_SE,ObsCatchAA_pop_SE,ObsDiscardAA_pop_SE
 #'   Reported standard errors shaped like their observation array, read only when
-#'   the data source's \code{sigma_form} asks for them.
-#'
+#'   that data source's \code{sigma_form} asks for them.
 #' @param Catch_seas_Type,Catch_pop_seas_Type,Discard_seas_Type,Discard_pop_seas_Type,CatchAA_seas_Type,CatchAA_pop_seas_Type,DiscardAA_seas_Type,DiscardAA_pop_seas_Type
 #'   Whether a seasonal model reports this data source once a season or once a
-#'   year. One value for every fleet or one per fleet.
-#'   \describe{
-#'     \item{\code{"spltSeas"}}{Fit the observation against the prediction for the
-#'       season it sits in. This is the default and what every data source did
-#'       before this setting existed.}
-#'     \item{\code{"aggSeas"}}{Sum the prediction over every season of the year
-#'       and fit it against a single observation, which is how a fleet that lands
-#'       catch all year but reports one annual total is usually recorded.}
-#'   }
-#'   Under \code{"aggSeas"} the observation still lives in whichever season it was
-#'   placed in, and exactly one season per region and year may be turned on in the
-#'   matching \code{Use} array; more than one is an error, because each would be
-#'   fit against the same year total. The likelihood and the reported negative log
-#'   likelihood land in that season. Fishing mortality is still estimated season by
+#'   year, one value for every fleet or one per fleet. \code{"spltSeas"} (default)
+#'   fits the observation against the prediction for the season it sits in;
+#'   \code{"aggSeas"} sums the prediction over the year's seasons and fits one
+#'   observation, which is how a fleet that lands catch all year but reports one
+#'   annual total is usually recorded. Under \code{"aggSeas"} the observation stays
+#'   in the season it was placed in and exactly one season per region and year may
+#'   be on in the matching \code{Use} array, since more than one would be fit
+#'   against the same year total. Fishing mortality is still estimated season by
 #'   season, so a fleet with one annual observation and free seasonal deviations
-#'   leaves the split between seasons unidentified: share the deviations or fix
-#'   the seasonal pattern.
-#'
-#' @param CatchAA_Type,DiscardAA_Type,CatchAA_pop_Type,DiscardAA_pop_Type
-#'   Which dims the fleet reports separately, following the composition
-#'   vocabulary. Give it as one setting for every fleet, one per fleet, or as
-#'   year and fleet specifications such as
-#'   \code{"spltRaggS_Year_1-20_Fleet_1"} when the setting changes part way
-#'   through the series. \code{"agg"} sums over
-#'   regions and sexes, \code{"spltRaggS"} (default) splits regions and sums over
-#'   sexes, \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits
-#'   both. An observation summed over a dim belongs in slot one of it.
-#'
+#'   leaves the split between seasons unidentified: share the deviations or fix the
+#'   seasonal pattern.
+#' @param CatchAA_Type,DiscardAA_Type,CatchAA_pop_Type,DiscardAA_pop_Type Which
+#'   dims the fleet reports separately, in the composition vocabulary, as one
+#'   setting for every fleet, one per fleet, or year and fleet specifications such
+#'   as \code{"spltRaggS_Year_1-20_Fleet_1"}. \code{"agg"} sums over regions and
+#'   sexes, \code{"spltRaggS"} (default) splits regions and sums over sexes,
+#'   \code{"aggRspltS"} does the reverse, and \code{"spltRspltS"} splits both. An
+#'   observation summed over a dim belongs in slot one of it.
 #' @param CatchAA_LikeType,DiscardAA_LikeType,CatchAA_pop_LikeType,DiscardAA_pop_LikeType
-#'   \code{"lognormal"} (default) or \code{"normal"}, one setting for every
-#'   fleet or one per fleet.
-#'
+#'   \code{"lognormal"} (default) or \code{"normal"}, one setting for every fleet
+#'   or one per fleet.
 #' @param CatchAA_sigma_form,DiscardAA_sigma_form,CatchAA_pop_sigma_form,DiscardAA_pop_sigma_form
 #'   Where the observation error comes from. \code{"none"} (default) uses the
 #'   estimated parameter alone, \code{"data"} the reported standard errors alone,
 #'   and \code{"est_additive"} or \code{"est_quadrature"} both. Naming
 #'   \code{"data"} holds the parameter fixed, since nothing reads it.
+#' @param ... Optional starting values for the catch and discard parameters.
+#'
+#' @return \code{input_list} with \code{$data}, \code{$par} and \code{$map}
+#'   updated. \code{$data} gains \code{ObsCatch}, \code{ObsCatch_pop},
+#'   \code{UseCatch}, \code{UseCatch_pop}, \code{Use_F_pen}, \code{catch_units},
+#'   \code{Fdev_model}, \code{ObsDiscard}, \code{ObsDiscard_pop},
+#'   \code{UseDiscard}, \code{UseDiscard_pop}, \code{Use_dmr_pen} and
+#'   \code{discard_units}. \code{$par} and \code{$map} both gain
+#'   \code{ln_sigmaC}, \code{ln_sigmaC_pop}, \code{ln_sigmaF}, \code{Fdev_rho},
+#'   \code{ln_F_mean}, \code{ln_F_devs}, \code{ln_sigmaD}, \code{ln_sigmaD_pop},
+#'   \code{ln_sigma_dmr}, \code{logit_dmr_mean} and \code{logit_dmr_devs}.
 #'
 #' @export Setup_Mod_Catch_and_F
 #' @family Model Setup

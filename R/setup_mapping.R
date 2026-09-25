@@ -554,45 +554,35 @@ do_at_age_like_setup <- function(input_list, like_type, sigma_form, data_source,
 
 #' Set the correlation structure for one at-age data source
 #'
-#' Each data source is configured where its data are configured, so the catch and
-#' discard data sources are set in \code{\link{Setup_Mod_Catch_and_F}} and the index
-#' data sources in their own setup functions. The population-specific form has its
-#' own setting rather than borrowing the aggregated one.
-#'
-#' Four structures are available, per fleet. \code{"iid"} treats ages as
-#' independent. \code{"1dar1"} correlates them as an AR(1) in age distance, so a
-#' fleet skipping ages is spaced correctly rather than treated as consecutive.
-#' \code{"us"} estimates an unstructured correlation across ages, the third
-#' structure ICES age-structured assessments offer. \code{"2dar1"} correlates
-#' over ages and years jointly through a separable AR(1), which is defined on a
-#' complete grid and so requires the fleet's observed ages and years to form one.
-#'
-#' How the correlations are shared follows the package's spec strings rather than
-#' a structure of its own. They sit over region, sex and fleet, with a leading
-#' population dim for the population-specific data sources, so
-#' \code{"est_shared_r_s"} (the default, \code{"est_shared_p_r_s"} for the
-#' population form) gives one per fleet, \code{"est_shared_r_s_f"} a single
-#' value, \code{"est_all"} a free one per cell, and \code{"fix"} holds them all.
-#' One spec governs the data source's across-age correlation, its across-year
-#' correlation and its unstructured matrix together, so two fleets sharing a
-#' correlation share a whole matrix under \code{"us"}. A region, sex or
-#' population a fleet never observes has no parameter whatever the spec says,
-#' which is what holds the unused slots of a summed dim out.
+#' Each data source is configured where its data are, so the catch and discard
+#' data sources are set in \code{\link{Setup_Mod_Catch_and_F}} and the index ones
+#' in their own setup functions, and the population-specific form has its own
+#' setting rather than borrowing the aggregated one.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
-#' @param corr \code{"iid"}, \code{"1dar1"}, \code{"us"} or \code{"2dar1"},
-#'   either one setting for every fleet or one per fleet.
+#' @param corr Correlation across ages, one setting for every fleet or one per
+#'   fleet. \code{"iid"} treats ages as independent. \code{"1dar1"} correlates
+#'   them as an AR(1) in age distance, so a fleet skipping ages is spaced
+#'   correctly rather than treated as consecutive. \code{"us"} estimates an
+#'   unstructured correlation across ages. \code{"2dar1"} correlates over ages and
+#'   years jointly through a separable AR(1), which is defined on a complete grid
+#'   and so needs the fleet's observed ages and years to form one.
 #' @param data_source Data source tag: \code{"catch"}, \code{"discard"},
 #'   \code{"fish_idx"} or \code{"srv_idx"}.
 #' @param fleet_field \code{"n_fish_fleets"} or \code{"n_srv_fleets"}.
 #' @param use_field Name of the use array for this data source.
 #' @param starting_values Named list from the caller's \code{...}.
-#' @param rho_spec Character string controlling how the correlation parameters
-#'   are shared: \code{"est_all"}, \code{"fix"}, or \code{"est_shared_"}
-#'   followed by any combination of \code{r}, \code{s} and \code{f}, gaining
-#'   \code{p} for the population-specific data sources. \code{NULL} (the default)
-#'   takes \code{"est_shared_r_s"}, or \code{"est_shared_p_r_s"} when
-#'   \code{pop}, both of which give one correlation per fleet.
+#' @param rho_spec How the correlation parameters are shared: \code{"est_all"},
+#'   \code{"fix"}, or \code{"est_shared_"} followed by any combination of
+#'   \code{r}, \code{s} and \code{f}, gaining \code{p} for the
+#'   population-specific data sources. They sit over region, sex and fleet, so
+#'   \code{"est_shared_r_s"} gives one per fleet and \code{"est_shared_r_s_f"} a
+#'   single value. \code{NULL} (default) takes \code{"est_shared_r_s"}, or
+#'   \code{"est_shared_p_r_s"} under \code{pop}. One spec governs the across-age
+#'   correlation, the across-year correlation and the unstructured matrix
+#'   together, so two fleets sharing under \code{"us"} share a whole matrix. A
+#'   region, sex or population a fleet never observes has no parameter whatever
+#'   the spec says.
 #' @param pop Logical. \code{TRUE} for the population-specific data source.
 #'
 #' @return \code{input_list} with the data source's correlation flag and its
@@ -1549,66 +1539,56 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 
 #' Map selectivity process error hyperparameters (fishery, retention, or survey)
 #'
-#' Constructs the factor map for the variance/correlation hyperparameters
-#' governing continuous time-varying selectivity (\code{fishsel_pe_pars},
-#' \code{retsel_pe_pars}, or \code{srvsel_pe_pars}). The set of active
-#' parameters depends on the time-variation type: iid/random-walk forms use
-#' up to 2 parameters (log-sigma); 3D GMRF forms use up to 4 (partial
-#' correlations for age, year, cohort dimensions plus log-sigma); the 2D AR1
-#' form uses 3 (bin AR1, year AR1, log-sigma). Correlation components can be
-#' selectively suppressed via \code{corr_opt_semipar}. Fleet sharing
-#' (\code{"est_shared_f_x"}) is handled in a second pass.
+#' Builds the factor map for the variance and correlation hyperparameters of
+#' continuous time-varying selectivity (\code{fishsel_pe_pars},
+#' \code{retsel_pe_pars} or \code{srvsel_pe_pars}), selected by \code{prefix}
+#' exactly as in \code{\link{do_fixed_sel_pars_mapping}}. Which parameters are
+#' active follows the time-variation form: the iid and random walk forms use up to
+#' two log sigmas, the 3D GMRF forms up to four (the partial correlations over
+#' age, year and cohort plus a log sigma), and the 2D AR1 form three (the bin and
+#' year correlations plus a log sigma). Fleet sharing is handled in a second pass.
 #'
-#' The hyperparameters have to match the deviation series the likelihood
-#' actually evaluates, which is one per shared group, read at the group's lowest
-#' bin and first sex. Under iid or a random walk on a non-parametric fleet the
-#' log-sigmas are indexed by bin, so \code{"est_shared_b"} leaves one log-sigma
-#' per bin group. Sharing deviations across sexes (\code{"est_shared_s"} and its
-#' combinations) leaves one set for the first sex, under every time-variation
+#' The hyperparameters have to match the deviation series the likelihood actually
+#' evaluates, which is one per shared group read at the group's lowest bin and
+#' first sex. Under iid or a random walk on a non-parametric fleet the log sigmas
+#' are indexed by bin, so \code{"est_shared_b"} leaves one per bin group, and
+#' sharing deviations across sexes leaves one set for the first sex under every
 #' form. The rest are fixed.
 #'
-#' Serves fishery, retention, and survey selectivity, selected by
-#' \code{prefix} exactly as in \code{\link{do_fixed_sel_pars_mapping}}.
-#'
-#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
-#'   sublists.
-#' @param pe_pars_spec Character vector of length \code{n_<fleet_field>}.
-#'   Options: \code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
-#'   \code{"est_shared_r_s"}, the same four with \code{_b} added
-#'   (\code{"est_shared_b"}, \code{"est_shared_r_b"}, \code{"est_shared_b_s"},
-#'   \code{"est_shared_r_b_s"}), which put one standard deviation across every
-#'   bin the fleet reads, \code{"fix"}/\code{"none"}, or
+#' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
+#' @param pe_pars_spec Character vector, one entry per fleet: \code{"est_all"},
+#'   \code{"est_shared_r"}, \code{"est_shared_s"}, \code{"est_shared_r_s"}, those
+#'   four with \code{_b} added, which put one standard deviation across every bin
+#'   the fleet reads, \code{"fix"} or \code{"none"}, or
 #'   \code{"est_shared_f_x"}.
-#' @param corr_opt_semipar Character vector of length \code{n_<fleet_field>}
-#'   specifying which correlation components to suppress for semi-parametric
-#'   models (\code{NA}, \code{"corr_zero_y"}, \code{"corr_zero_b"},
+#' @param corr_opt_semipar Character vector, one entry per fleet, of which
+#'   correlation components to suppress under the semi-parametric forms:
+#'   \code{NA}, \code{"corr_zero_y"}, \code{"corr_zero_b"},
 #'   \code{"corr_zero_y_b"}, \code{"corr_zero_c"}, \code{"corr_zero_y_c"},
-#'   \code{"corr_zero_b_c"}, \code{"corr_zero_y_b_c"}). Cohort options are
-#'   only valid for 3D GMRF forms.
+#'   \code{"corr_zero_b_c"} or \code{"corr_zero_y_b_c"}. The cohort options are
+#'   valid for the 3D GMRF forms only.
 #' @param bins Number of selectivity bins.
-#' @param sel_devs_spec Character vector of length \code{n_<fleet_field>}, the
-#'   deviation specification passed to \code{\link{do_sel_devs_mapping}}. Read
-#'   only to recognize which dimensions the deviations are shared over.
-#'   \code{"est_shared_f_x"} resolves to the referenced fleet's specification.
-#' @param sel_devs_shared_bins List of integer vectors grouping bins that share
-#'   a single estimated deviation, as passed to
+#' @param sel_devs_spec Character vector, one entry per fleet, the deviation
+#'   specification passed to \code{\link{do_sel_devs_mapping}}. Read only to
+#'   recognize which dims the deviations are shared over, and
+#'   \code{"est_shared_f_x"} resolves to the referenced fleet's.
+#' @param sel_devs_shared_bins List of integer vectors grouping the bins that
+#'   share one estimated deviation, as passed to
 #'   \code{\link{do_sel_devs_mapping}}.
-#' @param prefix Character, one of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
-#'   Drives the domain-specific field names: \code{cont_tv_<prefix>_sel},
-#'   \code{<prefix>_sel_model}, \code{<prefix>_selex_type},
-#'   \code{<prefix>sel_pe_pars} (par/map name, no underscore before "sel").
-#' @param fleet_field Character. Name of the \code{$data} field giving the
-#'   number of fleets (\code{"n_fish_fleets"} for \code{"fish"}/\code{"ret"};
-#'   \code{"n_srv_fleets"} for \code{"srv"}).
-#' @param use_field Character. Stub for the usage-indicator fields read by
-#'   \code{\link{sel_has_data}}: \code{Use<use_field>} and its at-age
-#'   counterpart \code{Use<use_field>AA}, each with a \code{_pop} variant.
-#'   \code{"Catch"} for \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for
-#'   \code{"srv"}.
-#' @param fleet_label Character. Used only in the collected setup message.
+#' @param prefix \code{"fish"}, \code{"ret"} or \code{"srv"}, which drives the
+#'   field names \code{cont_tv_<prefix>_sel}, \code{<prefix>_sel_model},
+#'   \code{<prefix>_selex_type} and \code{<prefix>sel_pe_pars}.
+#' @param fleet_field Name of the \code{$data} field giving the number of fleets:
+#'   \code{"n_fish_fleets"} for \code{"fish"} and \code{"ret"},
+#'   \code{"n_srv_fleets"} for \code{"srv"}.
+#' @param use_field Stub for the use indicator fields \code{\link{sel_has_data}}
+#'   reads, \code{Use<use_field>} and \code{Use<use_field>AA} with their
+#'   \code{_pop} variants: \code{"Catch"} for \code{"fish"} and \code{"ret"},
+#'   \code{"SrvIdx"} for \code{"srv"}.
+#' @param fleet_label Used only in the collected setup message.
 #'
-#' @return The input \code{input_list} with \code{$map$<prefix>sel_pe_pars}
-#'   set to a factor vector.
+#' @return \code{input_list} with \code{$map$<prefix>sel_pe_pars} set to a factor
+#'   vector.
 #'
 #' @keywords internal
 #' @importFrom stringr str_detect str_extract_all
@@ -2181,11 +2161,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
 #' Those copies are written at setup, so a map edited by hand afterwards would
 #' otherwise leave the penalty evaluating deviations that are no longer
 #' estimated. Rebuilding the mirrors from the map immediately before the model
-#' is constructed keeps the two in step, with the map treated as authoritative.
+#' is constructed keeps the two in sync. Anything not previously in map is left untouched.
 #'
-#' A mirror whose parameter has no entry in \code{mapping}, or whose length no
-#' longer matches (as when a caller has truncated one but not the other), is
-#' left untouched.
 #'
 #' @param data Named list of model data, as passed to \code{RTMB::MakeADFun}.
 #' @param mapping Named list of factor maps, as passed to
@@ -2204,8 +2181,10 @@ sync_dev_map_data <- function(data, mapping) {
     data[[mirror_name]] <- array(as.numeric(mapping[[par_name]]), dim = dim(data[[mirror_name]]))
   }
 
-  # years deliberately left out of the recruitment penalty are still estimated, so the refresh
-  # above puts them back. re-apply them, otherwise the setting is silently undone here
+  # deviations a dsem takes over lose their own penalty (i.e., wt_rec etc)
+  data <- apply_dsem_link_switch(data)
+
+  # update the penalization for rec devs in early years
   if(!is.null(data$dont_pen_recdev_first) && data$dont_pen_recdev_first > 0 && !is.null(data$map_ln_RecDevs)) {
     data$map_ln_RecDevs[,,seq_len(data$dont_pen_recdev_first)] <- NA
   }

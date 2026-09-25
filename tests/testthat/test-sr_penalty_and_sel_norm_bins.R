@@ -52,7 +52,7 @@ test_that("Setup_Mod_Rec encodes sr_R0_spec and maps ln_sr_R0 to match", {
     ...
   ))
 
-  # ln_sr_R0 is only ever in the parameter vector when the curve owns a scale of
+  # ln_sr_R0 is only ever in the parameter vector when the curve has a scale of
   # its own; under the other settings it is mapped off so it cannot move.
   shared <- rec(sr_penalty = "bh", sr_pen_sigma = 0.5, sr_R0_spec = "shared", use_rinit = 0)
   expect_equal(shared$data$sr_R0_spec, 0)

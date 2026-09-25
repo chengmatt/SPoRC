@@ -5,266 +5,140 @@
 
 #' Setup Simulation Fishing Inputs
 #'
-#' Initializes and validates fishing-related inputs for a simulation list (`sim_list`).
-#' This includes fishing mortality, selectivity, catchability, observation error,
-#' and age- and length-composition parameters for both aggregate and population-specific data.
+#' Sets and validates the fishing inputs of a `sim_list`: fishing mortality,
+#' selectivity, catchability, observation error, and the age and length
+#' composition settings for the aggregate and population-specific data sources.
 #'
-#' @param sim_list A list containing simulation settings, including the number of populations
-#'   (`n_pop`), regions (`n_regions`), years (`n_yrs`), seasons (`n_seas`), ages (`n_ages`),
-#'   sexes (`n_sexes`), fishing fleets (`n_fish_fleets`), and simulations (`n_sims`).
-#'
-#' @param ln_sigmaC Numeric array. Log-scale observation SD for total catch,
-#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
-#' @param ln_sigmaC_pop Numeric array. Log-scale observation SD for population-specific catch,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
-#' @param catch_units Numeric vector. Catch units (0 = abundance, 1 = biomass),
-#'   length `n_fish_fleets`. Default: 1.
-#'
-#' @param init_F_val Numeric array. Initial fishing mortality,
-#'   dimensions `n_regions x n_seas x n_fish_fleets`. Default: 0.
-#' @param Fmort_input Numeric array. Fishing mortality,
-#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets x n_sims`. Default: 0.1.
-#' @param fish_sel_input Numeric array. Fishery selectivity,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets x n_sims`.
-#' @param fish_q_input Numeric array. Catchability,
-#'   dimensions `n_regions x n_yrs x n_fish_fleets x n_sims`. Default: 1.
-#'
-#' @param ObsFishIdx_SE Numeric array. Observation SD for fishery indices,
-#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.
-#' @param ObsFishIdx_pop_SE Numeric array. Observation SD for population-specific fishery indices,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: 0.2.
-#' @param fish_idx_type Numeric array. Index type (0 = abundance, 1 = biomass),
-#'   dimensions `n_regions x n_fish_fleets`. Default: 1.
+#' @param sim_list Simulation list holding `n_pop`, `n_regions`, `n_yrs`, `n_seas`,
+#'   `n_ages`, `n_sexes`, `n_fish_fleets` and `n_sims`.
+#' @param ln_sigmaC,ln_sigmaC_pop Log-scale observation sd for total and
+#'   population-specific catch, `n_regions x n_yrs x n_seas x n_fish_fleets` with a
+#'   leading `n_pop` for the second. Default log(0.02).
+#' @param catch_units Catch units per fleet, 0 = abundance, 1 = biomass (default).
+#' @param init_F_val Initial fishing mortality, `n_regions x n_seas x
+#'   n_fish_fleets`. Default 0.
+#' @param Fmort_input Fishing mortality, `n_regions x n_yrs x n_seas x
+#'   n_fish_fleets x n_sims`. Default 0.1.
+#' @param fish_sel_input Fishery selectivity, `n_pop x n_regions x n_yrs x n_seas x
+#'   n_ages x n_sexes x n_fish_fleets x n_sims`.
+#' @param fish_q_input Catchability, `n_regions x n_yrs x n_fish_fleets x n_sims`.
+#'   Default 1.
+#' @param ObsFishIdx_SE,ObsFishIdx_pop_SE Observation sd for the fishery indices,
+#'   `n_regions x n_yrs x n_seas x n_fish_fleets` with a leading `n_pop` for the
+#'   second. Default 0.2.
+#' @param fish_idx_type Index type, 0 = abundance, 1 = biomass (default),
+#'   `n_regions x n_fish_fleets`.
 #' @param Catch_seas_Type,Catch_pop_seas_Type,FishIdx_seas_Type,FishIdx_pop_seas_Type,FishAgeComps_seas_Type
 #'   Whether the operating model reports a data source once a season
-#'   (\code{"spltSeas"}, the default) or once a year as a season total
-#'   (\code{"aggSeas"}). One value for every fleet or one per fleet. An annual
-#'   total is written into season one with the other seasons left at zero, and the
-#'   observation error is applied once to that total rather than to each season,
-#'   so an estimation model reading it should mark season one in its \code{Use}
-#'   array and set the matching argument in \code{\link{Setup_Mod_Catch_and_F}}
-#'   or \code{\link{Setup_Mod_FishIdx_and_Comps}}.
-#' @param FishIdx_LikeType Character or numeric vector, length `n_fish_fleets`.
-#'   Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
-#'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
-#'   \code{FishIdx_LikeType}. An mvn fleet draws from \code{FishIdx_Cov} through
-#'   a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
-#'   \code{ObsFishIdx_SE}, and its population-specific data source stays lognormal.
-#'   Default: lognormal for every fleet.
-#' @param FishIdx_Cov List with one element per fishery fleet holding the fixed
-#'   covariance over that fleet's fitted index observations, ordered by scanning
-#'   \code{UseFishIdx} in array order (region fastest, then year, then season).
-#'   Required for mvn fleets. Default: \code{NULL}.
-#' @param UseFishIdx Numeric array \code{[n_regions x n_yrs x n_seas x n_fish_fleets]}
-#'   of fit flags from the estimation model, used to position each simulated cell
-#'   in the covariance. Its year dimension may be shorter than the simulation,
-#'   in which case later years draw with the mean factor scale and loading.
-#'   Required for mvn fleets. Default: \code{NULL}.
+#'   (`"spltSeas"`, the default) or once a year as a season total (`"aggSeas"`),
+#'   one value for every fleet or one per fleet. An annual total is written into
+#'   season one with the other seasons left at zero and the observation error
+#'   applied once to that total, so an estimation model reading it should mark
+#'   season one in its `Use` array and set the matching argument in
+#'   \code{\link{Setup_Mod_Catch_and_F}} or
+#'   \code{\link{Setup_Mod_FishIdx_and_Comps}}.
+#' @param FishIdx_LikeType Error structure each fleet's index is drawn under:
+#'   `"lognormal"` (0, default), `"normal"` (1) or `"mvn"` (2), matching the
+#'   estimation model. An mvn fleet draws from `FishIdx_Cov` through a
+#'   common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
+#'   `ObsFishIdx_SE`, and its population-specific data source stays lognormal.
+#' @param FishIdx_Cov List with one element per fleet holding the fixed covariance
+#'   over that fleet's fitted index observations, ordered by scanning
+#'   `UseFishIdx` in array order. Required for mvn fleets. Default `NULL`.
+#' @param UseFishIdx Fit flags `n_regions x n_yrs x n_seas x n_fish_fleets` from the
+#'   estimation model, used to place each simulated cell in the covariance. Its
+#'   year dim may be shorter than the simulation, in which case later years draw
+#'   with the mean factor scale and loading. Required for mvn fleets. Default
+#'   `NULL`.
+#' @param t_fish Fishery index timing, `n_regions x n_seas x n_fish_fleets`, the
+#'   fraction of the season elapsed when the index is observed. Numbers at age are
+#'   decayed by `exp(-t_fish * ZAA)` before the index is formed, matching `t_srv`
+#'   and the estimation model's own `t_fish`. Default 0.
+#' @param comp_fishage_like,comp_fishlen_like,comp_fishage_pop_like,comp_fishlen_pop_like,comp_fishage_discard_like,comp_fishlen_discard_like,comp_fishage_discard_pop_like,comp_fishlen_discard_pop_like
+#'   Composition likelihood per fleet for the eight fishery composition data
+#'   sources: 0 = multinomial (default), 1 = Dirichlet-multinomial, 2-4 =
+#'   logistic-normal, 999 = none.
+#' @param ISS_FishAgeComps,ISS_FishLenComps,ISS_FishAgeComps_discard,ISS_FishLenComps_discard
+#'   Input sample sizes, `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x
+#'   n_sims`. Default 100.
+#' @param ISS_FishAgeComps_pop,ISS_FishLenComps_pop,ISS_FishAgeComps_discard_pop,ISS_FishLenComps_discard_pop
+#'   The population-specific counterparts, with a leading `n_pop` dim. Default 100.
+#' @param ln_FishAge_theta,ln_FishLen_theta,ln_FishAge_discard_theta,ln_FishLen_discard_theta
+#'   Log-scale overdispersion, `n_regions x n_sexes x n_fish_fleets`. Default
+#'   log(1).
+#' @param ln_FishAge_theta_agg,ln_FishLen_theta_agg,ln_FishAge_discard_theta_agg,ln_FishLen_discard_theta_agg
+#'   The aggregated types' counterparts, length `n_fish_fleets`. Default log(1).
+#' @param ln_FishAge_pop_theta,ln_FishLen_pop_theta,ln_FishAge_discard_pop_theta,ln_FishLen_discard_pop_theta
+#'   Log-scale overdispersion for the population-specific data sources, `n_pop x
+#'   n_regions x n_sexes x n_fish_fleets`. Default log(1).
+#' @param ln_FishAge_pop_theta_agg,ln_FishLen_pop_theta_agg,ln_FishAge_discard_pop_theta_agg,ln_FishLen_discard_pop_theta_agg
+#'   Their aggregated counterparts, `n_pop x n_fish_fleets`. Default log(1).
+#' @param FishAge_corr_pars,FishLen_corr_pars,FishAge_discard_corr_pars,FishLen_discard_corr_pars
+#'   Correlation parameters, `n_regions x n_sexes x n_fish_fleets x 2`. Default
+#'   0.01.
+#' @param FishAge_corr_pars_agg,FishLen_corr_pars_agg,FishAge_discard_corr_pars_agg,FishLen_discard_corr_pars_agg
+#'   Their aggregated counterparts, length `n_fish_fleets`. Default 0.01.
+#' @param FishAge_pop_corr_pars,FishLen_pop_corr_pars,FishAge_discard_pop_corr_pars,FishLen_discard_pop_corr_pars
+#'   Correlation parameters for the population-specific data sources, `n_pop x
+#'   n_regions x n_sexes x n_fish_fleets x 2`. Default 0.01.
+#' @param FishAge_pop_corr_pars_agg,FishLen_pop_corr_pars_agg,FishAge_discard_pop_corr_pars_agg,FishLen_discard_pop_corr_pars_agg
+#'   Their aggregated counterparts, `n_pop x n_fish_fleets`. Default 0.01.
+#' @param FishAgeComps_Type,FishLenComps_Type,FishAgeComps_pop_Type,FishLenComps_pop_Type,FishAgeComps_discard_Type,FishLenComps_discard_Type,FishAgeComps_discard_pop_Type,FishLenComps_discard_pop_Type
+#'   Composition structure per year and fleet, `n_yrs x n_fish_fleets`: 0 =
+#'   aggregated, 1 = split region and sex, 2 = split region joint sex (default),
+#'   999 = none.
+#' @param ret_sel_input Retained selectivity at age, `n_pop x n_regions x n_yrs x
+#'   n_seas x n_ages x n_sexes x n_fish_fleets x n_sims`. Default 1.
+#' @param dmr_input Discard mortality rate, `n_regions x n_yrs x n_seas x
+#'   n_fish_fleets x n_sims`. Default 0.
+#' @param discard_units Discard units per fleet: 0 = abundance, 1 = biomass, 2 =
+#'   abundance fraction, 3 = biomass fraction (default).
+#' @param ln_sigmaD,ln_sigmaD_pop Log-scale observation sd for discards, `n_regions
+#'   x n_yrs x n_seas x n_fish_fleets` with a leading `n_pop` for the second.
+#'   Default log(0.02).
+#' @param UseCatchAA,UseDiscardAA Integer arrays `n_regions x n_yrs x n_seas x
+#'   n_obs_ages x n_sexes x n_fish_fleets`, `1` where an at-age observation is
+#'   drawn. The draws sit on the observed ages from `Setup_Sim_Dim`, read through
+#'   `AgeingError_fish_input` the way the estimation model reads them. The sex dim
+#'   is required: a data source summed over sexes has its flag in sex slot one.
+#' @param use_catch_aa,use_discard_aa Integer vectors `n_fish_fleets`, `1` for
+#'   fleets whose at-age data sources are drawn.
+#' @param ln_sigmaCAA,ln_sigmaDAA Log-scale observation error for the at-age data
+#'   sources, `n_obs_ages x n_sexes x n_fish_fleets`. The sex dim is required.
+#' @param ObsCatchAA_SE,ObsDiscardAA_SE Reported standard errors shaped like the use
+#'   arrays, read only when the data source's `sigma_form` asks for them.
+#' @param CatchAA_Type,DiscardAA_Type Which dims each fleet reports separately:
+#'   `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or `"spltRspltS"`. A summed dim
+#'   is drawn once, into slot one.
+#' @param CatchAA_LikeType,DiscardAA_LikeType `"lognormal"` (default) or
+#'   `"normal"`, per fleet.
+#' @param CatchAA_sigma_form,DiscardAA_sigma_form Where the observation error comes
+#'   from: `"none"` (default), `"data"`, `"est_additive"` or `"est_quadrature"`.
+#' @param comp_fish_caal_like Conditional age-at-length likelihood per fleet:
+#'   `"Multinomial"` (0), `"Dirichlet-Multinomial"` (1) or `"none"` (999, default).
+#'   Only these two families exist for CAAL, since a CAAL row is the age
+#'   composition of the otoliths from one length bin, usually a small and mostly
+#'   zero sample.
+#' @param ISS_Fish_caal Number of fish aged within each length bin, `n_regions x
+#'   n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`. A bin whose sample
+#'   size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
+#'   alongside a likelihood other than `"none"` is what switches `do_fish_caal` on.
+#'   Requires `n_lens`.
+#' @param Fish_caal_Type Composition structure per year and fleet, `n_yrs x
+#'   n_fish_fleets`: `"agg"` (0) pools regions and sexes and is drawn once when the
+#'   region loop reaches the last region, `"spltRspltS"` (1) draws each sex in a bin
+#'   as its own sample, `"spltRjntS"` (2) draws one sample across the age by sex
+#'   stack, and `"none"` (999, default) skips the fleet that year. The simulator
+#'   takes the year by fleet array directly rather than the estimation model's
+#'   `"CompType_Year_x-y_Fleet_z"` strings.
+#' @param ln_Fish_caal_theta Log overdispersion for the Dirichlet-multinomial,
+#'   `n_regions x n_sexes x n_fish_fleets`. Read under the split types, `[r, s, f]`
+#'   when sexes are split and `[r, 1, f]` when they are joint, and ignored under the
+#'   multinomial. Default log(1).
+#' @param ln_Fish_caal_theta_agg The aggregated type's counterpart, length
+#'   `n_fish_fleets`. Default log(1).
 #'
-#' @param t_fish Numeric array \code{[n_regions x n_seas x n_fish_fleets]} giving
-#'   the fishery index timing, the fraction of the season elapsed when the index
-#'   is observed. Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before
-#'   the index is formed, matching \code{t_srv} for surveys and the estimation
-#'   model's own \code{t_fish}. Defaults to \code{0} (start of season).
-#' @param comp_fishage_like Numeric vector. Likelihood for age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishAgeComps Numeric array. Effective sample sizes for age compositions,
-#'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishAge_theta Numeric array. Log-scale overdispersion for fishery age compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishAge_theta_agg Numeric vector. Aggregated log-scale overdispersion for fishery age compositions,
-#'   length `n_fish_fleets`. Default: log(1).
-#' @param FishAge_corr_pars Numeric array. Correlation parameters for fishery age compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishAge_corr_pars_agg Numeric vector. Aggregated correlation parameters for fishery age compositions,
-#'   length `n_fish_fleets`. Default: 0.01.
-#' @param FishAgeComps_Type Numeric array. Composition structure for fishery age compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param comp_fishlen_like Numeric vector. Likelihood for length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishLenComps Numeric array. Effective sample sizes for length compositions,
-#'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishLen_theta Numeric array. Log-scale overdispersion for fishery length compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishLen_theta_agg Numeric vector. Aggregated log-scale overdispersion for fishery length compositions,
-#'   length `n_fish_fleets`. Default: log(1).
-#' @param FishLen_corr_pars Numeric array. Correlation parameters for fishery length compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishLen_corr_pars_agg Numeric vector. Aggregated correlation parameters for fishery length compositions,
-#'   length `n_fish_fleets`. Default: 0.01.
-#' @param FishLenComps_Type Numeric array. Composition structure for fishery length compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param comp_fishage_pop_like Numeric vector. Likelihood for population-specific fishery age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishAgeComps_pop Numeric array. Effective sample sizes for population-specific fishery age compositions,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishAge_pop_theta Numeric array. Log-scale overdispersion for population-specific fishery age compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishAge_pop_theta_agg Numeric array. Aggregated log-scale overdispersion for population-specific fishery age compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: log(1).
-#' @param FishAge_pop_corr_pars Numeric array. Correlation parameters for population-specific fishery age compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishAge_pop_corr_pars_agg Numeric array. Aggregated correlation parameters for population-specific fishery age compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: 0.01.
-#' @param FishAgeComps_pop_Type Numeric array. Composition structure for population-specific fishery age compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param comp_fishlen_pop_like Numeric vector. Likelihood for population-specific fishery length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishLenComps_pop Numeric array. Effective sample sizes for population-specific fishery length compositions,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishLen_pop_theta Numeric array. Log-scale overdispersion for population-specific fishery length compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishLen_pop_theta_agg Numeric array. Aggregated log-scale overdispersion for population-specific fishery length compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: log(1).
-#' @param FishLen_pop_corr_pars Numeric array. Correlation parameters for population-specific fishery length compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishLen_pop_corr_pars_agg Numeric array. Aggregated correlation parameters for population-specific fishery length compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: 0.01.
-#' @param FishLenComps_pop_Type Numeric array. Composition structure for population-specific fishery length compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param ret_sel_input Numeric array. Retained selectivity at age,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_ages x n_sexes x n_fish_fleets x n_sims`.
-#'   Default: 1.
-#' @param dmr_input Numeric array. Discard mortality rate,
-#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets x n_sims`. Default: 0.
-#' @param discard_units Numeric vector. Discard units
-#'   (0 = abundance, 1 = biomass, 2 = abundance fraction, 3 = biomass fraction),
-#'   length `n_fish_fleets`. Default: 3.
-#' @param ln_sigmaD Numeric array. Log-scale observation SD for discards,
-#'   dimensions `n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
-#' @param ln_sigmaD_pop Numeric array. Log-scale observation SD for population-specific discards,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_fish_fleets`. Default: log(0.02).
-#'
-#' @param comp_fishage_discard_like Numeric vector. Likelihood for discard age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishAgeComps_discard Numeric array. Effective sample sizes for discard age compositions,
-#'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishAge_discard_theta Numeric array. Log-scale overdispersion for discard age compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishAge_discard_theta_agg Numeric vector. Aggregated log-scale overdispersion for discard age compositions,
-#'   length `n_fish_fleets`. Default: log(1).
-#' @param FishAge_discard_corr_pars Numeric array. Correlation parameters for discard age compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishAge_discard_corr_pars_agg Numeric vector. Aggregated correlation parameters for discard age compositions,
-#'   length `n_fish_fleets`. Default: 0.01.
-#' @param FishAgeComps_discard_Type Numeric array. Composition structure for discard age compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param comp_fishlen_discard_like Numeric vector. Likelihood for discard length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishLenComps_discard Numeric array. Effective sample sizes for discard length compositions,
-#'   dimensions `n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishLen_discard_theta Numeric array. Log-scale overdispersion for discard length compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishLen_discard_theta_agg Numeric vector. Aggregated log-scale overdispersion for discard length compositions,
-#'   length `n_fish_fleets`. Default: log(1).
-#' @param FishLen_discard_corr_pars Numeric array. Correlation parameters for discard length compositions,
-#'   dimensions `n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishLen_discard_corr_pars_agg Numeric vector. Aggregated correlation parameters for discard length compositions,
-#'   length `n_fish_fleets`. Default: 0.01.
-#' @param FishLenComps_discard_Type Numeric array. Composition structure for discard length compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param comp_fishage_discard_pop_like Numeric vector. Likelihood for population-specific discard age composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishAgeComps_discard_pop Numeric array. Effective sample sizes for population-specific discard age compositions,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishAge_discard_pop_theta Numeric array. Log-scale overdispersion for population-specific discard age compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishAge_discard_pop_theta_agg Numeric array. Aggregated log-scale overdispersion for population-specific discard age compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: log(1).
-#' @param FishAge_discard_pop_corr_pars Numeric array. Correlation parameters for population-specific discard age compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishAge_discard_pop_corr_pars_agg Numeric array. Aggregated correlation parameters for population-specific discard age compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: 0.01.
-#' @param FishAgeComps_discard_pop_Type Numeric array. Composition structure for population-specific discard age compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param comp_fishlen_discard_pop_like Numeric vector. Likelihood for population-specific discard length composition
-#'   (0 = Multinomial, 1 = Dirichlet-Multinomial, 2-4 = Logistic-Normal variants, 999 = none),
-#'   length `n_fish_fleets`. Default: 0.
-#' @param ISS_FishLenComps_discard_pop Numeric array. Effective sample sizes for population-specific discard length compositions,
-#'   dimensions `n_pop x n_regions x n_yrs x n_seas x n_sexes x n_fish_fleets x n_sims`. Default: 100.
-#' @param ln_FishLen_discard_pop_theta Numeric array. Log-scale overdispersion for population-specific discard length compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets`. Default: log(1).
-#' @param ln_FishLen_discard_pop_theta_agg Numeric array. Aggregated log-scale overdispersion for population-specific discard length compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: log(1).
-#' @param FishLen_discard_pop_corr_pars Numeric array. Correlation parameters for population-specific discard length compositions,
-#'   dimensions `n_pop x n_regions x n_sexes x n_fish_fleets x 2`. Default: 0.01.
-#' @param FishLen_discard_pop_corr_pars_agg Numeric array. Aggregated correlation parameters for population-specific discard length compositions,
-#'   dimensions `n_pop x n_fish_fleets`. Default: 0.01.
-#' @param FishLenComps_discard_pop_Type Numeric array. Composition structure for population-specific discard length compositions
-#'   (0 = aggregated, 1 = split region/sex, 2 = split region joint sex, 999 = none),
-#'   dimensions `n_yrs x n_fish_fleets`. Default: 2.
-#'
-#' @param UseCatchAA,UseDiscardAA Integer arrays
-#'   `n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x n_fish_fleets`, `1` where an
-#'   at-age observation is drawn. The draws sit on the observed ages, `n_obs_ages`
-#'   from `Setup_Sim_Dim`, read through `AgeingError_fish_input` the way the
-#'   estimation model reads them. The sex dim is required: a data source summed
-#'   over sexes has its flag in sex slot one.
-#' @param use_catch_aa,use_discard_aa Integer vectors
-#'   `n_fish_fleets`, `1` for fleets whose at-age data sources are drawn.
-#' @param ln_sigmaCAA,ln_sigmaDAA Log-scale observation error
-#'   for the at-age data sources, `n_obs_ages x n_sexes x n_fish_fleets`. The sex
-#'   dim is required.
-#' @param ObsCatchAA_SE,ObsDiscardAA_SE Reported standard errors
-#'   shaped like the use arrays, read only when the data source's `sigma_form` asks
-#'   for them.
-#' @param CatchAA_Type,DiscardAA_Type Which dims each fleet
-#'   reports separately: `"agg"`, `"spltRaggS"` (default), `"aggRspltS"` or
-#'   `"spltRspltS"`. A summed dim is drawn once, into slot one.
-#' @param CatchAA_LikeType,DiscardAA_LikeType `"lognormal"`
-#'   (default) or `"normal"`, per fleet.
-#' @param CatchAA_sigma_form,DiscardAA_sigma_form Where the
-#'   observation error comes from: `"none"` (default), `"data"`,
-#'   `"est_additive"` or `"est_quadrature"`.
-#'
-#' @param comp_fish_caal_like Character or numeric vector `n_fish_fleets` giving the
-#'   conditional age-at-length likelihood per fleet: `"Multinomial"` (0),
-#'   `"Dirichlet-Multinomial"` (1), or `"none"` (999). Only these two families exist
-#'   for CAAL: a CAAL row is the age composition of the otoliths taken from one
-#'   length bin, usually a small and mostly zero sample, which the logistic-normal
-#'   forms cannot support. Default: `"none"` for every fleet.
-#' @param ISS_Fish_caal Numeric array. Number of fish aged within each length bin,
-#'   dimensions `n_regions x n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`.
-#'   A bin whose sample size rounds to zero is skipped. `NULL` (the default) draws no
-#'   CAAL; supplying it alongside a likelihood other than `"none"` is what switches
-#'   `do_fish_caal` on. Requires `n_lens`.
-#' @param Fish_caal_Type Numeric or character array giving the composition structure
-#'   per year and fleet, dimensions `n_yrs x n_fish_fleets`: `"agg"` (0) pools regions
-#'   and sexes and is drawn once when the region loop reaches the last region,
-#'   `"spltRspltS"` (1) draws each sex in a bin as its own sample, `"spltRjntS"` (2)
-#'   draws one sample across the age by sex stack, and `"none"` (999) skips the fleet
-#'   in that year. Unlike the estimation model, which parses
-#'   `"CompType_Year_x-y_Fleet_z"` strings, the simulator takes the year by fleet
-#'   array directly. Default: `"none"` throughout.
-#' @param ln_Fish_caal_theta Numeric array. Log overdispersion for the
-#'   Dirichlet-multinomial, dimensions `n_regions x n_sexes x n_fish_fleets`. Read
-#'   under the split types, `[r, s, f]` when sexes are split and `[r, 1, f]` when they
-#'   are joint, and ignored under the multinomial. Default: log(1).
-#' @param ln_Fish_caal_theta_agg Numeric vector `n_fish_fleets`. The aggregated type's
-#'   counterpart to `ln_Fish_caal_theta`. Default: log(1).
-#'
-#' @return A modified `sim_list` with validated fishing-related inputs.
+#' @return A modified `sim_list` with validated fishing inputs.
 #'
 #' @export Setup_Sim_Fishing
 #' @family Simulation Setup
@@ -1023,134 +897,82 @@ Setup_Sim_Fishing <- function(sim_list,
 
 #' Set up survey parameterization for the operating model simulation
 #'
-#' Populates \code{sim_list} with all survey-related inputs needed by the
-#' operating model: catchability, selectivity, survey timing, index type,
-#' and age/length composition likelihood settings including overdispersion
-#' and correlation parameters. Must be called after \code{\link{Setup_Sim_Dim}}.
+#' Sets the survey catchability, selectivity, timing, index type and the age and
+#' length composition settings, with their overdispersion and correlation
+#' parameters. Call after \code{\link{Setup_Sim_Dim}}.
 #'
 #' @param sim_list Simulation list returned by \code{\link{Setup_Sim_Dim}}.
-#' @param srv_sel_input Survey selectivity array
-#'   \code{[n_pop x n_regions x n_yrs x n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.
-#'   No default; must be provided.
-#' @param srv_q_input Survey catchability array
-#'   \code{[n_regions × n_yrs × n_srv_fleets × n_sims]}. Default: 1 for all cells.
-#' @param ObsSrvIdx_SE Lognormal observation error SD for survey index,
-#'   array \code{[n_regions × n_yrs × n_seas × n_srv_fleets]}. Default: 0.2.
-#' @param ObsSrvIdx_pop_SE As above, but for population-specific indices,
-#'   array \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets]}.
-#' @param t_srv Survey timing as fraction of year or season, array
-#'   \code{[n_regions × n_seas × n_srv_fleets]}. Default: 1.
-#' @param srv_idx_type Integer vector \code{[n_srv_fleets]} specifying survey
-#'   index type. Default: all 1 (biomass). Options: 0/“abd” (abundance),
-#'   1/“biom” (biomass).
-#' @param SrvIdx_seas_Type,SrvIdx_pop_seas_Type,SrvAgeComps_seas_Type
-#'   Whether the operating model reports a survey data source once a season
-#'   (\code{"spltSeas"}, the default) or once a year as a season total
-#'   (\code{"aggSeas"}). One value for every survey or one per survey. An annual
-#'   total is written into season one with the other seasons left at zero, and the
-#'   observation error is applied once to that total, so an estimation model
-#'   reading it should mark season one in its \code{Use} array and set the
-#'   matching argument in \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
-#' @param SrvIdx_LikeType Character or numeric vector, length `n_srv_fleets`.
-#'   Error structure each fleet's index is drawn under: \code{"lognormal"} (0),
-#'   \code{"normal"} (1), or \code{"mvn"} (2), matching the estimation model's
-#'   \code{SrvIdx_LikeType}. An mvn fleet draws from \code{SrvIdx_Cov} through
-#'   a common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
-#'   \code{ObsSrvIdx_SE}, and its population-specific data source stays lognormal.
-#'   Default: lognormal for every fleet.
-#' @param SrvIdx_Cov List with one element per survey fleet holding the fixed
-#'   covariance over that fleet's fitted index observations, ordered by scanning
-#'   \code{UseSrvIdx} in array order (region fastest, then year, then season).
-#'   Required for mvn fleets. Default: \code{NULL}.
-#' @param UseSrvIdx Numeric array \code{[n_regions x n_yrs x n_seas x n_srv_fleets]}
-#'   of fit flags from the estimation model, used to position each simulated cell
-#'   in the covariance. Its year dimension may be shorter than the simulation,
-#'   in which case later years draw with the mean factor scale and loading.
-#'   Required for mvn fleets. Default: \code{NULL}.
-#' @param comp_srvage_like Integer or character vector \code{[n_srv_fleets]}
-#'   specifying likelihood for survey age compositions. Default: all 0
-#'   (multinomial). Options: 0/“Multinomial”, 1/“Dirichlet-Multinomial”,
-#'   2/“iid-Logistic-Normal”, 3/“1d-Logistic-Normal”, 4/“2d-Logistic-Normal”.
-#' @param ISS_SrvAgeComps Array \code{[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
-#'   of sample sizes or overdispersion for survey age compositions. Default: 100.
-#' @param ln_SrvAge_theta Log-scale overdispersion array
-#'   \code{[n_regions × n_sexes × n_srv_fleets]}. Used for likelihoods 1-4.
-#'   Default: log(1).
-#' @param ln_SrvAge_theta_agg Log-scale overdispersion for aggregated survey
-#'   age compositions, vector \code{[n_srv_fleets]}. Default: log(1).
-#' @param SrvAge_corr_pars Correlation parameters array
-#'   \code{[n_regions × n_sexes × n_srv_fleets × 2]} (age AR1, sex). Only for
-#'   likelihoods 3-4. Default: 0.01.
-#' @param SrvAge_corr_pars_agg Vector \code{[n_srv_fleets]} for aggregated
-#'   survey age correlations. Only for likelihood 3. Default: 0.01.
-#' @param SrvAgeComps_Type Array \code{[n_yrs × n_srv_fleets]} specifying
-#'   composition structure. Default: 2 (split by region, joint sexes).
-#'   Options: 0/“agg”, 1/“spltRspltS”, 2/“spltRjntS”, 999/“none”.
-#' @param comp_srvlen_like Integer or character vector \code{[n_srv_fleets]}
-#'   specifying likelihood for survey length compositions. Default: all 0.
-#' @param ISS_SrvLenComps Array \code{[n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
-#'   of sample sizes or overdispersion for survey length compositions. Default: 100.
-#' @param ln_SrvLen_theta Log-scale overdispersion array
-#'   \code{[n_regions × n_sexes × n_srv_fleets]}. Default: log(1).
-#' @param ln_SrvLen_theta_agg Vector \code{[n_srv_fleets]} for aggregated
-#'   length composition overdispersion. Default: log(1).
-#' @param SrvLen_corr_pars Array \code{[n_regions × n_sexes × n_srv_fleets × 2]}
-#'   correlation parameters for length comps. Default: 0.01.
-#' @param SrvLen_corr_pars_agg Vector \code{[n_srv_fleets]} for aggregated
-#'   length composition correlations. Default: 0.01.
-#' @param SrvLenComps_Type Array \code{[n_yrs × n_srv_fleets]} specifying
-#'   length composition structure. Default: 2.
-#'
-#' @param comp_srvage_pop_like Integer or character vector \code{[n_srv_fleets]}
-#'   specifying likelihood for population-specific survey age compositions. Default: all 0.
-#' @param ISS_SrvAgeComps_pop Array \code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
-#'   of population-specific sample sizes or overdispersion. Default: 100.
-#' @param ln_SrvAge_pop_theta Log-scale overdispersion array
-#'   \code{[n_pop × n_regions × n_sexes × n_srv_fleets]}. Default: log(1).
-#' @param ln_SrvAge_pop_theta_agg Array \code{[n_pop × n_srv_fleets]} for
-#'   aggregated population-specific overdispersion. Default: log(1).
-#' @param SrvAge_pop_corr_pars Array \code{[n_pop × n_regions × n_sexes × n_srv_fleets × 2]}
-#'   correlation parameters (age AR1, sex) for population-specific age compositions. Default: 0.01.
-#' @param SrvAge_pop_corr_pars_agg Array \code{[n_pop × n_srv_fleets]} for
-#'   aggregated population-specific age correlations. Default: 0.01.
-#' @param SrvAgeComps_pop_Type Array \code{[n_yrs × n_srv_fleets]} specifying
-#'   population-specific age composition structure. Default: 2.
-#' @param comp_srvlen_pop_like Integer or character vector \code{[n_srv_fleets]}
-#'   specifying likelihood for population-specific survey length compositions. Default: all 0.
-#' @param ISS_SrvLenComps_pop Array \code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}
-#'   of population-specific sample sizes or overdispersion. Default: 100.
-#' @param ln_SrvLen_pop_theta Array \code{[n_pop × n_regions × n_sexes × n_srv_fleets]}
-#'   log-scale overdispersion for population-specific lengths. Default: log(1).
-#' @param ln_SrvLen_pop_theta_agg Array \code{[n_pop × n_srv_fleets]} for
-#'   aggregated population-specific length overdispersion. Default: log(1).
-#' @param SrvLen_pop_corr_pars Array \code{[n_pop × n_regions × n_sexes × n_srv_fleets × 2]}
-#'   correlation parameters for population-specific length comps. Default: 0.01.
-#' @param SrvLen_pop_corr_pars_agg Array \code{[n_pop × n_srv_fleets]} for
-#'   aggregated population-specific length correlations. Default: 0.01.
-#' @param SrvLenComps_pop_Type Array \code{[n_yrs × n_srv_fleets]} specifying
-#'   population-specific length composition structure. Default: 2.
-#'
-#' @return The input \code{sim_list} with survey-related fields appended:
-#'   \code{$srv_sel}, \code{$srv_q}, \code{$ObsSrvIdx_SE}, \code{$ObsSrvIdx_pop_SE},
-#'   \code{$t_srv}, \code{$srv_idx_type}, \code{$comp_srvage_like}, \code{$ISS_SrvAgeComps},
-#'   \code{$ln_SrvAge_theta}, \code{$ln_SrvAge_theta_agg}, \code{$SrvAge_corr_pars_agg},
-#'   \code{$SrvAge_corr_pars}, \code{$SrvAgeComps_Type}, \code{$comp_srvlen_like},
-#'   \code{$ISS_SrvLenComps}, \code{$ln_SrvLen_theta}, \code{$ln_SrvLen_theta_agg},
-#'   \code{$SrvLen_corr_pars_agg}, \code{$SrvLen_corr_pars}, \code{$SrvLenComps_Type},
-#'   \code{$comp_srvage_pop_like}, \code{$ISS_SrvAgeComps_pop}, \code{$ln_SrvAge_pop_theta},
-#'   \code{$ln_SrvAge_pop_theta_agg}, \code{$SrvAge_pop_corr_pars_agg}, \code{$SrvAge_pop_corr_pars},
-#'   \code{$SrvAgeComps_pop_Type}, \code{$comp_srvlen_pop_like}, \code{$ISS_SrvLenComps_pop},
-#'   \code{$ln_SrvLen_pop_theta}, \code{$ln_SrvLen_pop_theta_agg}, \code{$SrvLen_pop_corr_pars_agg},
-#'   \code{$SrvLen_pop_corr_pars}, \code{$SrvLenComps_pop_Type}. Character-coded
-#'   inputs are converted to integer equivalents before storage.
-#'
-#' @param UseSrvIdxAA Integer array
-#'   `n_regions x n_yrs x n_seas x n_obs_ages x n_sexes x n_srv_fleets`, `1` where a
-#'   survey index at age is drawn, on the observed ages that `AgeingError_srv_input`
-#'   reads onto. The sex dim is required: a data source summed over sexes has its
-#'   flag in sex slot one.
-#' @param use_srv_idx_aa Integer vector `n_srv_fleets`, `1` for fleets whose
-#'   index at age is drawn.
+#' @param srv_sel_input Survey selectivity array \code{[n_pop x n_regions x n_yrs x
+#'   n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}. No default.
+#' @param srv_q_input Survey catchability array \code{[n_regions × n_yrs ×
+#'   n_srv_fleets × n_sims]}. Default 1.
+#' @param ObsSrvIdx_SE,ObsSrvIdx_pop_SE Lognormal observation error sd for the
+#'   survey indices, \code{[n_regions × n_yrs × n_seas × n_srv_fleets]} with a
+#'   leading \code{n_pop} for the second. Default 0.2.
+#' @param t_srv Survey timing as a fraction of the year or season, \code{[n_regions
+#'   × n_seas × n_srv_fleets]}. Default 1.
+#' @param srv_idx_type Index type per fleet: 0/\code{"abd"} or 1/\code{"biom"}
+#'   (default).
+#' @param SrvIdx_seas_Type,SrvIdx_pop_seas_Type,SrvAgeComps_seas_Type Whether the
+#'   operating model reports a survey data source once a season (\code{"spltSeas"},
+#'   the default) or once a year as a season total (\code{"aggSeas"}), one value
+#'   for every survey or one per survey. An annual total is written into season one
+#'   with the other seasons left at zero and the observation error applied once to
+#'   that total, so an estimation model reading it should mark season one in its
+#'   \code{Use} array and set the matching argument in
+#'   \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
+#' @param SrvIdx_LikeType Error structure each fleet's index is drawn under:
+#'   \code{"lognormal"} (0, default), \code{"normal"} (1) or \code{"mvn"} (2),
+#'   matching the estimation model. An mvn fleet draws from \code{SrvIdx_Cov}
+#'   through a common-factor decomposition (see \code{\link{cov_to_factor}})
+#'   instead of \code{ObsSrvIdx_SE}, and its population-specific data source stays
+#'   lognormal.
+#' @param SrvIdx_Cov List with one element per fleet holding the fixed covariance
+#'   over that fleet's fitted index observations, ordered by scanning
+#'   \code{UseSrvIdx} in array order. Required for mvn fleets. Default \code{NULL}.
+#' @param UseSrvIdx Fit flags \code{[n_regions x n_yrs x n_seas x n_srv_fleets]}
+#'   from the estimation model, used to place each simulated cell in the
+#'   covariance. Its year dim may be shorter than the simulation, in which case
+#'   later years draw with the mean factor scale and loading. Required for mvn
+#'   fleets. Default \code{NULL}.
+#' @param comp_srvage_like,comp_srvlen_like,comp_srvage_pop_like,comp_srvlen_pop_like
+#'   Composition likelihood per fleet for the four survey composition data sources:
+#'   0/\code{"Multinomial"} (default), 1/\code{"Dirichlet-Multinomial"},
+#'   2/\code{"iid-Logistic-Normal"}, 3/\code{"1d-Logistic-Normal"} or
+#'   4/\code{"2d-Logistic-Normal"}.
+#' @param ISS_SrvAgeComps,ISS_SrvLenComps Input sample sizes \code{[n_regions ×
+#'   n_yrs × n_seas × n_sexes × n_srv_fleets × n_sims]}. Default 100.
+#' @param ISS_SrvAgeComps_pop,ISS_SrvLenComps_pop The population-specific
+#'   counterparts, with a leading \code{n_pop} dim. Default 100.
+#' @param ln_SrvAge_theta,ln_SrvLen_theta Log-scale overdispersion \code{[n_regions
+#'   × n_sexes × n_srv_fleets]}, read under likelihoods 1-4. Default log(1).
+#' @param ln_SrvAge_theta_agg,ln_SrvLen_theta_agg The aggregated types'
+#'   counterparts, length \code{n_srv_fleets}. Default log(1).
+#' @param ln_SrvAge_pop_theta,ln_SrvLen_pop_theta Log-scale overdispersion for the
+#'   population-specific data sources \code{[n_pop × n_regions × n_sexes ×
+#'   n_srv_fleets]}. Default log(1).
+#' @param ln_SrvAge_pop_theta_agg,ln_SrvLen_pop_theta_agg Their aggregated
+#'   counterparts \code{[n_pop × n_srv_fleets]}. Default log(1).
+#' @param SrvAge_corr_pars,SrvLen_corr_pars Correlation parameters \code{[n_regions
+#'   × n_sexes × n_srv_fleets × 2]}, the age AR1 and the sex correlation, read
+#'   under likelihoods 3 and 4. Default 0.01.
+#' @param SrvAge_corr_pars_agg,SrvLen_corr_pars_agg The aggregated types'
+#'   counterparts, length \code{n_srv_fleets}, read under likelihood 3. Default
+#'   0.01.
+#' @param SrvAge_pop_corr_pars,SrvLen_pop_corr_pars Correlation parameters for the
+#'   population-specific data sources \code{[n_pop × n_regions × n_sexes ×
+#'   n_srv_fleets × 2]}. Default 0.01.
+#' @param SrvAge_pop_corr_pars_agg,SrvLen_pop_corr_pars_agg Their aggregated
+#'   counterparts \code{[n_pop × n_srv_fleets]}. Default 0.01.
+#' @param SrvAgeComps_Type,SrvLenComps_Type,SrvAgeComps_pop_Type,SrvLenComps_pop_Type
+#'   Composition structure \code{[n_yrs × n_srv_fleets]}: 0/\code{"agg"},
+#'   1/\code{"spltRspltS"}, 2/\code{"spltRjntS"} (default) or 999/\code{"none"}.
+#' @param UseSrvIdxAA Integer array `n_regions x n_yrs x n_seas x n_obs_ages x
+#'   n_sexes x n_srv_fleets`, `1` where a survey index at age is drawn, on the
+#'   observed ages `AgeingError_srv_input` reads onto. The sex dim is required: a
+#'   data source summed over sexes has its flag in sex slot one.
+#' @param use_srv_idx_aa Integer vector `n_srv_fleets`, `1` for fleets whose index
+#'   at age is drawn.
 #' @param ln_sigmaSrvIdxAA Log-scale observation error for the index at age,
 #'   `n_obs_ages x n_sexes x n_srv_fleets`. The sex dim is required.
 #' @param ObsSrvIdxAA_SE Reported standard errors shaped like `UseSrvIdxAA`, read
@@ -1160,28 +982,30 @@ Setup_Sim_Fishing <- function(sim_list,
 #' @param SrvIdxAA_LikeType `"lognormal"` (default) or `"normal"`, per fleet.
 #' @param SrvIdxAA_sigma_form Where the observation error comes from: `"none"`
 #'   (default), `"data"`, `"est_additive"` or `"est_quadrature"`.
+#' @param comp_srv_caal_like Conditional age-at-length likelihood per fleet:
+#'   `"Multinomial"` (0), `"Dirichlet-Multinomial"` (1) or `"none"` (999, default).
+#'   The survey twin of `comp_fish_caal_like`, and only these two families exist
+#'   for CAAL.
+#' @param ISS_Srv_caal Number of fish aged within each length bin, `n_regions x
+#'   n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x n_sims`. A bin whose sample
+#'   size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
+#'   alongside a likelihood other than `"none"` switches `do_srv_caal` on. Requires
+#'   `n_lens`.
+#' @param Srv_caal_Type Composition structure per year and fleet, `n_yrs x
+#'   n_srv_fleets`, with the codes of `Fish_caal_Type`: `"agg"` (0),
+#'   `"spltRspltS"` (1), `"spltRjntS"` (2) or `"none"` (999, default). The
+#'   simulator takes the year by fleet array directly.
+#' @param ln_Srv_caal_theta Log overdispersion for the Dirichlet-multinomial,
+#'   `n_regions x n_sexes x n_srv_fleets`, read under the split types and ignored
+#'   under the multinomial. Default log(1).
+#' @param ln_Srv_caal_theta_agg The aggregated type's counterpart, length
+#'   `n_srv_fleets`. Default log(1).
 #'
-#' @param comp_srv_caal_like Character or numeric vector `n_srv_fleets` giving the
-#'   conditional age-at-length likelihood per fleet: `"Multinomial"` (0),
-#'   `"Dirichlet-Multinomial"` (1), or `"none"` (999). The survey twin of
-#'   `comp_fish_caal_like`, and only these two families exist for CAAL. Default:
-#'   `"none"` for every fleet.
-#' @param ISS_Srv_caal Numeric array. Number of fish aged within each length bin,
-#'   dimensions `n_regions x n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x n_sims`.
-#'   A bin whose sample size rounds to zero is skipped. `NULL` (the default) draws no
-#'   CAAL; supplying it alongside a likelihood other than `"none"` switches
-#'   `do_srv_caal` on. Requires `n_lens`.
-#' @param Srv_caal_Type Numeric or character array giving the composition structure
-#'   per year and fleet, dimensions `n_yrs x n_srv_fleets`, with the same codes as
-#'   `Fish_caal_Type`: `"agg"` (0), `"spltRspltS"` (1), `"spltRjntS"` (2), `"none"`
-#'   (999). The simulator takes the year by fleet array directly rather than the
-#'   estimation model's `"CompType_Year_x-y_Fleet_z"` strings. Default: `"none"`
-#'   throughout.
-#' @param ln_Srv_caal_theta Numeric array. Log overdispersion for the
-#'   Dirichlet-multinomial, dimensions `n_regions x n_sexes x n_srv_fleets`, read under
-#'   the split types and ignored under the multinomial. Default: log(1).
-#' @param ln_Srv_caal_theta_agg Numeric vector `n_srv_fleets`. The aggregated type's
-#'   counterpart to `ln_Srv_caal_theta`. Default: log(1).
+#' @return \code{sim_list} with the survey fields appended: \code{$srv_sel},
+#'   \code{$srv_q}, \code{$ObsSrvIdx_SE}, \code{$ObsSrvIdx_pop_SE}, \code{$t_srv},
+#'   \code{$srv_idx_type}, and, for each of the four composition data sources, its
+#'   likelihood, input sample sizes, overdispersion, correlation parameters and
+#'   composition type. Character codes are converted to integers before storage.
 #'
 #' @export Setup_Sim_Survey
 #' @family Simulation Setup

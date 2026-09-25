@@ -87,8 +87,10 @@ fit_model <- function(
   # check par n map len
   check_par_map_lengths(parameters, mapping)
 
-  # the deviation penalties key on the map mirrors in the data list, so refresh
-  # them from the map actually being handed to MakeADFun
+  # check if dse is declared
+  if(length(data$dsem_declared) > 0 && is.null(data$dsem_model)) stop(paste0("The ", paste(data$dsem_declared, collapse = ", "), " module declared 'dsem' but no dsem was set up, so those deviations have no density. Call Setup_Mod_DSEM with the arrows, or take the declaration back."))
+
+  # refresh data mapping stuff if mapping declared after setup
   data <- sync_dev_map_data(data, mapping)
 
   # make AD model function

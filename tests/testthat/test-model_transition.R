@@ -268,7 +268,7 @@ test_that("Get_Movement scales the generator by seasdur when asked", {
       n_sexes = 1,
       n_seas = n_seas,
       move_pars = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, 2, 1)),
-      move_devs = array(0, c(1, n_regions, n_regions - 1, 1, n_seas, 2, 1)),
+      move_devs = array(0, c(1, n_regions, 1, 1, n_seas, 2, 1)),
       use_fixed_movement = 0,
       Fixed_Movement = NULL,
       ctmc_move_dat = dat,

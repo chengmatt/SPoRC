@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = FALSE, message = FALSE, warning = FALSE)
 library(SPoRC)
 ```
 
-Every argument the eleven `Setup_Mod_*` stages accept, with its default and its own
+Every argument the twelve `Setup_Mod_*` stages accept, with its default and its own
 documentation. Read this one to find out what a setting is. Read
 [Overview of Model Options](t_model_options.html) to find out why it exists and which
 to specify. 

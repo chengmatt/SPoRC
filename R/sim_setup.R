@@ -74,15 +74,13 @@ Setup_sim_env <- function(sim_list) {
   if(is.null(sim_list$naa_rho)) sim_list$naa_rho <- c(age = 0, year = 0, cohort = 0)
   for(opt_name in c("NAA_re_pop", "NAA_re_region", "NAA_re_sex", "NAA_re_season")) if(is.null(sim_list[[opt_name]])) sim_list[[opt_name]] <- 0
   for(opt_name in c("naa_pop_corr", "naa_region_corr", "naa_sex_corr", "naa_season_corr")) if(is.null(sim_list[[opt_name]])) sim_list[[opt_name]] <- 0
-  # isTRUE rather than a bare comparison: a minimal list assembled for one component has no
-  # dimensions, and NULL > 1 is logical(0), which if() rejects rather than treating as false
   if(is.null(sim_list$naa_re_ages)) sim_list$naa_re_ages <- if(isTRUE(sim_list$n_ages > 1)) 2:sim_list$n_ages else integer(0)
   if(is.null(sim_list$naa_re_yrs)) sim_list$naa_re_yrs <- if(isTRUE(sim_list$n_yrs > 1)) 2:sim_list$n_yrs else integer(0)
-  # season one alone is the annual state, which is what a list without the field describes
   if(is.null(sim_list$naa_re_seas)) sim_list$naa_re_seas <- 1L
 
   # recruitment deviation process error; lists built before the option existed drew independently
   if(is.null(sim_list$RecDevs_model)) sim_list$RecDevs_model <- 1
+  if(is.null(sim_list$rec_bias_correct)) sim_list$rec_bias_correct <- 1
   if(is.null(sim_list$RecDevs_rho)) sim_list$RecDevs_rho <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
 
   # output into simulation environment
@@ -95,11 +93,48 @@ Setup_sim_env <- function(sim_list) {
     sim_env$NAA_pred <- array(0, dim = naa_dims)
   }
 
-  # list2env drops a NULL, but the movement-timing branches reference Mrate unconditionally, so
-  # bind it explicitly to NULL rather than letting it escape to the enclosing frame
+  # catchability deviations; lists built before the option existed have none, so every fleet is "none"
+  for(prefix in c("fish", "srv")) {
+    n_fleets <- sim_env[[paste0("n_", prefix, "_fleets")]]
+    if(is.null(n_fleets) || is.null(sim_env[[paste0(prefix, "_q")]])) next
+    if(is.null(sim_env[[paste0(prefix, "_q_model")]])) sim_env[[paste0(prefix, "_q_model")]] <- rep(1L, n_fleets)
+    if(is.null(sim_env[[paste0("sigma_", prefix, "_q")]])) sim_env[[paste0("sigma_", prefix, "_q")]] <- array(0, dim = c(sim_env$n_regions, n_fleets))
+    if(is.null(sim_env[[paste0(prefix, "_q_rho")]])) sim_env[[paste0(prefix, "_q_rho")]] <- array(0, dim = c(sim_env$n_regions, n_fleets))
+
+    # a self test or closed loop supplies the fit's own deviations here; everything else starts at zero
+    devs_name <- paste0("ln_", prefix, "_q_devs")
+    q_dim <- dim(sim_env[[paste0(prefix, "_q")]])
+    if(is.null(sim_env[[devs_name]])) sim_env[[devs_name]] <- array(0, dim = q_dim)
+    else if(!identical(dim(sim_env[[devs_name]]), q_dim))
+      stop(devs_name, " is [", paste(dim(sim_env[[devs_name]]), collapse = ", "), "] and ", prefix, "_q is [",
+           paste(q_dim, collapse = ", "), "]. The deviations must sit on the same region, year, fleet and ",
+           "replicate grid as the catchability they scale.")
+
+  } # end prefix loop
+
+  # dsem stuff
+  sim_env$dsem_drawn <- list()
+  for(entry in dsem_process_table()) {
+    if(is.null(sim_env[[entry$sim_par]])) next
+    dims <- dim(sim_env[[entry$sim_par]])
+    sim_env$dsem_drawn[[entry$sim_par]] <- array(FALSE, dim = dims[-length(dims)]) # every dim but the replicate
+  } # end entry loop
+
+  # the conditioning years reproduce the fit's reported catchability, so a dsem does not rewrite them
+  q_devs_cond <- stats::setNames(lapply(q_dev_par_names(), function(nm) sim_env[[nm]]), q_dev_par_names())
+  if(!is.null(sim_env$dsem_model)) draw_dsem_sim(sim_env)
+  n_cond_q <- if(is.null(sim_env$n_cond_yrs)) 0L else as.integer(sim_env$n_cond_yrs)
+  for(nm in names(q_devs_cond)) {
+    if(is.null(q_devs_cond[[nm]]) || n_cond_q < 1) next
+    cond_yr <- seq_len(min(n_cond_q, dim(q_devs_cond[[nm]])[2]))
+    sim_env[[nm]][,cond_yr,,] <- q_devs_cond[[nm]][,cond_yr,,,drop = FALSE]
+  } # end nm loop
+
+  check_q_dsem_drawable(sim_env) # check to see if dsem can do draws
+
+  # movement stuff
   if(is.null(sim_env$Mrate)) sim_env$Mrate <- NULL
-  if(sim_env$move_timing == 2 && is.null(sim_env$Mrate))
-    stop("move_timing == 2 (continuous movement) requires Mrate, the instantaneous rate matrix, in the simulation list.")
+  if(sim_env$move_timing == 2 && is.null(sim_env$Mrate)) stop("move_timing == 2 (continuous movement) requires Mrate, the instantaneous rate matrix, in the simulation list.")
 
   return(sim_env)
 }

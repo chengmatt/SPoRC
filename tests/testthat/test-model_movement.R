@@ -211,7 +211,8 @@ test_that("Get_Movement works", {
     if (is.null(pref_pars)) pref_pars <- 0
     if (is.null(diff_pars)) diff_pars <- 0
 
-    md <- if (is.null(move_devs)) array(0, c(n_pop, n_regions, n_regions - 1, n_total, n_seas, n_ages, n_sexes)) else move_devs
+    # a CTMC deviation belongs to a region's preference, so the destination axis holds one level
+    md <- if (is.null(move_devs)) array(0, c(n_pop, n_regions, 1, n_total, n_seas, n_ages, n_sexes)) else move_devs
 
     Get_Movement(
       move_type               = 1,
@@ -412,29 +413,31 @@ test_that("Get_Movement works", {
     expect_equal(steep("upwind"), 1) # theta = exp(0) / area 1
   })
 
-  test_that("CTMC movement: a move_dev scales the diffusion rate of its own edge only", {
-    # counter runs through the non-diagonal destinations of each origin in region
-    # order, so for origin 2 with 3 regions counter 1 is destination 1 and counter 2
-    # is destination 3
-    md <- array(0, c(1, 3, 2, 2, 1, 2, 1))
-    md[1, 2, 2, , , , ] <- log(3)
+  test_that("CTMC movement: a move_dev shifts its own region's preference, on every edge that touches it", {
+    # the deviation belongs to region 2, so it raises the rate into region 2 from each neighbour and
+    # lowers the rate out of it by the same amount, while the edge between 1 and 3 never sees it
+    md <- array(0, c(1, 3, 1, 2, 1, 2, 1))
+    md[1, 2, 1, , , , ] <- 0.4
     base <- make_ctmc_call()$Mrate[1, , , 1, 1, 2, 1]
     dev <- make_ctmc_call(move_devs = md)$Mrate[1, , , 1, 1, 2, 1]
-    expect_equal(dev[2, 3], 3 * base[2, 3], tolerance = 1e-9) # Mrate is [origin, destination]
-    off <- row(base) != col(base)
-    off[2, 3] <- FALSE
-    expect_equal(dev[off], base[off], tolerance = 1e-9)
+    for (r in c(1, 3)) {
+      expect_equal(unname(dev[r, 2]), unname(base[r, 2]) + 0.4, tolerance = 1e-9) # Mrate is [origin, destination]
+      expect_equal(unname(dev[2, r]), unname(base[2, r]) - 0.4, tolerance = 1e-9)
+    }
+    expect_equal(dev[1, 3], base[1, 3], tolerance = 1e-9)
+    expect_equal(dev[3, 1], base[3, 1], tolerance = 1e-9)
 
-    # and it multiplies diffusion before the flow transform, for every bound form
+    # and it lands on the preference before the flow transform, for every bound form
     for (bf in c("none", "softplus", "upwind")) {
       q <- make_ctmc_call(
         ctmc_diffusion_bounds = bf,
         move_devs = md,
-        pref_pars = c(0, 1, 0),
+        pref_pars = c(0, 0.5, 0),
         preference_formula = ~ 0 + factor(regions)
       )$Mrate[1, , , 1, 1, 2, 1]
-      d <- c(0, 1, 0)[3] - c(0, 1, 0)[2] # gradient on the 2 -> 3 edge
-      theta <- 3 # exp(0) / area 1, scaled by the deviation
+      h <- c(0, 0.5 + 0.4, 0) # the deviation sits on top of region 2's preference
+      d <- h[3] - h[2] # gradient on the 2 -> 3 edge
+      theta <- 1 # exp(0) / area 1, which the deviation no longer touches
       expect_equal(unname(q[2, 3]), switch(
         bf,
         none = theta + d,
@@ -446,6 +449,12 @@ test_that("Get_Movement works", {
       ),
         tolerance = 1e-9, label = sprintf("%s deviation on the 2 -> 3 edge", bf))
     }
+  })
+
+  test_that("CTMC movement: a deviation shared by every region leaves the generator alone", {
+    # only differences in preference reach the generator, so the level of the field is free
+    md <- array(0.6, c(1, 3, 1, 2, 1, 2, 1))
+    expect_equal(make_ctmc_call(move_devs = md)$Mrate, make_ctmc_call()$Mrate, tolerance = 1e-12)
   })
 
   test_that("CTMC movement: Mrate is NULL when use_fixed_movement = 1", {

@@ -235,7 +235,7 @@ do_likelihood_profile <- function(data,
   # The map the model was fitted with. Every grid value rebuilds `mapping[[what]]` from
   # this copy, so the rebuild never reads back the map a previous grid value left behind.
   fitted_map <- mapping[[what]]
-  if(!is.null(dim(parameters[[what]]))) check_profile_mirrors(parameters[[what]], fitted_map, what, idx)
+  if(length(parameters[[what]]) > 1) check_profile_mirrors(parameters[[what]], fitted_map, what, idx)
 
   # create values to profile across
   vals <- seq(min_val, max_val, inc)
@@ -292,7 +292,7 @@ do_likelihood_profile <- function(data,
   if(do_par == FALSE) {
     for(j in seq_along(vals)) {
 
-      if(!is.null(dim(parameters[[what]]))) {
+      if(length(parameters[[what]]) > 1) {
         # Input fixed values for all indices
         for(k in seq_along(idx)) {
           parameters[[what]] <- do.call(`[<-`, c(list(parameters[[what]]), idx[k], list(vals[j])))
@@ -441,7 +441,7 @@ do_likelihood_profile <- function(data,
           SrvLen_pop_nLL  = data.frame()
         )
 
-        if(!is.null(dim(local_parameters[[what]]))) {
+        if(length(local_parameters[[what]]) > 1) {
           # Input fixed values for all indices
           for(k in seq_along(idx)) {
             local_parameters[[what]] <- do.call(`[<-`, c(list(local_parameters[[what]]), idx[k], list(vals[j])))

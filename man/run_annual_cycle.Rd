@@ -11,31 +11,25 @@ run_annual_cycle(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by
-\code{\link{Setup_sim_env}} and passed by reference. All annual-cycle
-helper functions modify this environment in place.}
+\item{sim_env}{Simulation environment from \code{\link{Setup_sim_env}}, passed
+by reference and modified in place by every annual-cycle helper.}
 }
 \value{
 \code{invisible(NULL)}.
 }
 \description{
-Orchestrates the complete annual sequence of operating model processes for
-year \code{y} and simulation replicate \code{sim}: initializes age
-structure and generates first-year recruitment at \code{y = 1}; applies
-population dynamics (movement, mortality, biomass); generates fishery
-catches, indices, and compositions; generates survey indices and
-compositions; releases conventional tags; generates fishery tag
-recaptures (when any \code{use_conv_fish_tagging = 1}); and generates
-recruitment for the following year (\code{y + 1}) when \code{y < n_yrs}.
+Runs the operating model's processes for year \code{y} and replicate
+\code{sim} in order: initial age structure and first-year recruitment at
+\code{y = 1}, population dynamics, fishery catches, indices and compositions,
+survey indices and compositions, tag releases, fishery tag recaptures when any
+\code{use_conv_fish_tagging = 1}, and next year's recruitment when
+\code{y < n_yrs}.
 }
 \details{
-The two standalone \code{generate_recruitment()} calls described above
-(at \code{y = 1} and for \code{y + 1}) only run when \code{rec_lag != 0}.
-For \code{rec_lag = 0} (age-0 recruitment), recruitment for year \code{y}
-depends on year \code{y}'s own SSB, which isn't known until
-\code{\link{apply_pop_dy}} reaches \code{spawn_seas} within that year -
-\code{generate_recruitment()} is called from inside \code{apply_pop_dy()}
-instead, once that SSB is available.
+Those two standalone \code{generate_recruitment()} calls only run when
+\code{rec_lag != 0}. Under \code{rec_lag = 0} recruitment depends on year
+\code{y}'s own SSB, which is not known until \code{\link{apply_pop_dy}} reaches
+\code{spawn_seas}, so it is called from inside \code{apply_pop_dy()} instead.
 }
 \seealso{
 Other Simulation Setup:

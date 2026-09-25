@@ -7,94 +7,56 @@
 simulation_data_to_SPoRC(sim_env, y, sim)
 }
 \arguments{
-\item{sim_env}{Simulation environment or list (e.g., output from
-\code{\link{Simulate_Pop_Static}} or a \code{\link{Setup_sim_env}}
-environment) containing all operating model arrays.}
+\item{sim_env}{Simulation environment or list, from
+\code{\link{Simulate_Pop_Static}} or \code{\link{Setup_sim_env}}, holding the
+operating model arrays.}
 
-\item{y}{Integer. Last year to include; years \code{1:y} are retained.}
+\item{y}{Integer. Last year to include; years \code{1:y} are kept.}
 
-\item{sim}{Integer. Simulation replicate index to extract.}
+\item{sim}{Integer. Simulation replicate to extract.}
 }
 \value{
-Named list with the following elements (all arrays have \code{y}
-  in the year dimension unless noted):
-  \code{WAA} \code{[n_pop x n_regions x y x n_seas x n_ages x n_sexes]},
-  \code{WAA_fish} \code{[... x n_fish_fleets]},
-  \code{WAA_srv} \code{[... x n_srv_fleets]},
-  \code{MatAA}, \code{SizeAgeTrans} (or \code{NULL}),
-  \code{AgeingError} \code{[y x n_ages x n_obs_ages]}, the observed ages being
-  the columns the model ages are read onto,
-  \code{AgeingError_fish} \code{[... x n_fish_fleets]},
-  \code{AgeingError_srv} \code{[... x n_srv_fleets]} (both \code{NULL} when the
-  fleets share one matrix),
-  \code{use_conv_fish_tagging},
-  \code{conv_tag_release_indicator}, \code{obs_conv_tag_fish_recap},
-  \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
-  \code{n_tag_cohorts} (all \code{NULL} when tagging inactive),
-  \code{ObsCatch}, \code{ln_sigmaC}, \code{UseCatch},
-  \code{ObsCatch_pop}, \code{ln_sigmaC_pop}, \code{UseCatch_pop},
-  \code{ObsDiscard}, \code{ln_sigmaD}, \code{UseDiscard},
-  \code{ObsDiscard_pop}, \code{ln_sigmaD_pop}, \code{UseDiscard_pop},
-  \code{ObsFishIdx}, \code{ObsFishIdx_SE}, \code{UseFishIdx},
-  \code{ObsFishIdx_pop}, \code{ObsFishIdx_pop_SE}, \code{UseFishIdx_pop},
-  \code{ObsFishAgeComps}, \code{ISS_FishAgeComps}, \code{UseFishAgeComps},
-  \code{ObsFishAgeComps_pop}, \code{ISS_FishAgeComps_pop},
-  \code{UseFishAgeComps_pop},
-  \code{ObsFishLenComps} (or \code{NULL}), \code{ISS_FishLenComps} (or \code{NULL}),
-  \code{UseFishLenComps},
-  \code{ObsFishLenComps_pop} (or \code{NULL}), \code{ISS_FishLenComps_pop} (or \code{NULL}),
-  \code{UseFishLenComps_pop},
-  \code{ObsFishAgeComps_discard}, \code{ISS_FishAgeComps_discard}, \code{UseFishAgeComps_discard},
-  \code{ObsFishAgeComps_discard_pop}, \code{ISS_FishAgeComps_discard_pop},
-  \code{UseFishAgeComps_discard_pop},
-  \code{ObsFishLenComps_discard} (or \code{NULL}), \code{ISS_FishLenComps_discard} (or \code{NULL}),
-  \code{UseFishLenComps_discard},
-  \code{ObsFishLenComps_discard_pop} (or \code{NULL}), \code{ISS_FishLenComps_discard_pop} (or \code{NULL}),
-  \code{UseFishLenComps_discard_pop},
-  \code{ObsSrvIdx}, \code{ObsSrvIdx_SE}, \code{UseSrvIdx},
-  \code{ObsSrvIdx_pop}, \code{ObsSrvIdx_pop_SE}, \code{UseSrvIdx_pop},
-  \code{ObsSrvAgeComps}, \code{ISS_SrvAgeComps}, \code{UseSrvAgeComps},
-  \code{ObsSrvAgeComps_pop}, \code{ISS_SrvAgeComps_pop},
-  \code{UseSrvAgeComps_pop},
-  \code{ObsSrvLenComps} (or \code{NULL}), \code{ISS_SrvLenComps} (or \code{NULL}),
-  \code{UseSrvLenComps},
-  \code{ObsSrvLenComps_pop} (or \code{NULL}), \code{ISS_SrvLenComps_pop} (or \code{NULL}),
-  \code{UseSrvLenComps_pop}.
+Named list, every array with \code{y} in its year dim. The
+  biological elements are \code{WAA} \code{[n_pop x n_regions x y x n_seas x
+  n_ages x n_sexes]}, \code{WAA_fish} and \code{WAA_srv} with a trailing fleet
+  dim, \code{MatAA}, \code{SizeAgeTrans}, \code{AgeingError} \code{[y x n_ages x
+  n_obs_ages]}, whose columns are the observed ages the model ages are read
+  onto, and \code{AgeingError_fish} and \code{AgeingError_srv}, \code{NULL} when
+  the fleets share one matrix. The tagging elements are
+  \code{use_conv_fish_tagging}, \code{conv_tag_release_indicator},
+  \code{obs_conv_tag_fish_recap}, \code{conv_tagged_fish},
+  \code{conv_tagged_fish_attr} and \code{n_tag_cohorts}.
+
+  Each fishery and survey data source contributes its observations, its
+  observation error or input sample sizes, and its use flag: \code{ObsCatch}
+  with \code{ln_sigmaC} and \code{UseCatch}, \code{ObsDiscard} with
+  \code{ln_sigmaD} and \code{UseDiscard}, \code{ObsFishIdx} and
+  \code{ObsSrvIdx} with their \code{_SE} and use arrays, and the four
+  composition streams (fishery and survey age and length) with their
+  \code{ISS_*} and \code{Use*} arrays. Each has a \code{_pop} counterpart, and
+  the fishery compositions also have \code{_discard} and \code{_discard_pop}
+  ones. The length composition elements and their input sample sizes are
+  \code{NULL} when no size-age transition matrix is present.
 }
 \description{
-Subsets and reshapes biological, tagging, fishery, and survey arrays from a
-simulation environment or output list to cover years \code{1:y} and
-simulation replicate \code{sim}, producing a named list ready for direct
-use in \code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Catch_and_F}},
-\code{\link{Setup_Mod_SrvIdx_and_Comps}}, and \code{\link{Setup_Mod_Tagging}}.
-Binary \code{Use*} indicator arrays are derived automatically from the
-extracted observation arrays (non-NA, positive values set to 1).
+Subsets and reshapes the biological, tagging, fishery and survey arrays of a
+simulation environment to years \code{1:y} and replicate \code{sim}, giving a
+list ready for \code{\link{Setup_Mod_Biologicals}},
+\code{\link{Setup_Mod_Catch_and_F}}, \code{\link{Setup_Mod_SrvIdx_and_Comps}}
+and \code{\link{Setup_Mod_Tagging}}. The \code{Use*} flags are derived from the
+extracted observations, 1 where a value is present and positive.
 }
 \details{
-Population-specific arrays (\code{ObsCatch_pop}, \code{ObsFishIdx_pop},
-\code{ObsFishAgeComps_pop}, \code{ObsFishLenComps_pop}, \code{ObsSrvIdx_pop},
-\code{ObsSrvAgeComps_pop}, \code{ObsSrvLenComps_pop}) are extracted when
-present in \code{sim_env}; corresponding \code{Use*_PopSpec} flags are
-derived automatically.
-
-Input sample sizes for age and length compositions are extracted for both
-aggregate and population-specific data sources, including retained
-(\code{ISS_FishAgeComps}, \code{ISS_FishLenComps}, \code{ISS_FishAgeComps_pop},
-\code{ISS_FishLenComps_pop}, \code{ISS_SrvAgeComps}, \code{ISS_SrvLenComps},
-\code{ISS_SrvAgeComps_pop}, \code{ISS_SrvLenComps_pop}) and discard
-(\code{ISS_FishAgeComps_discard}, \code{ISS_FishLenComps_discard},
-\code{ISS_FishAgeComps_discard_pop}, \code{ISS_FishLenComps_discard_pop})
-data sources.
-
-Length composition outputs (\code{ObsFishLenComps}, \code{ObsSrvLenComps},
-and their population-specific and discard variants) and \code{SizeAgeTrans}
-are \code{NULL} when no size-age transition matrix is present in
-\code{sim_env}. Tagging outputs are \code{NULL} when
-\code{use_conv_fish_tagging = 0}; otherwise, only cohorts with release
-years in \code{1:y} are retained.
+Population-specific arrays are extracted when \code{sim_env} holds them, with
+their own flags derived the same way. The length composition outputs and
+\code{SizeAgeTrans} are \code{NULL} when the environment holds no size-age
+transition matrix, and the tagging outputs are \code{NULL} under
+\code{use_conv_fish_tagging = 0}; otherwise only cohorts released in
+\code{1:y} are kept.
 }
 \seealso{
-\code{\link{Setup_Mod_Biologicals}}, \code{\link{Setup_Mod_Catch_and_F}},
+\code{\link{Setup_Mod_Biologicals}},
+  \code{\link{Setup_Mod_Catch_and_F}},
   \code{\link{Setup_Mod_SrvIdx_and_Comps}}, \code{\link{Setup_Mod_Tagging}},
   \code{\link{Simulate_Pop_Static}}, \code{\link{Setup_sim_env}}
 }

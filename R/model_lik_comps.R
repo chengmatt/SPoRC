@@ -503,40 +503,36 @@ Get_Comp_Likelihoods = function(Exp,
 
 #' Composition Data Likelihood (OSA variant)
 #'
-#' Computes multinomial (0), Dirichlet-multinomial (1), and logistic-normal
-#' (2 iid, 3 AR1, 4 2D‑AR1) composition likelihoods for one‑step‑ahead (OSA)
-#' residuals using \code{RTMB::oneStepPredict}. The function evaluates the
-#' likelihood for a single flat tracked OBS vector, respecting the reduced
-#' logistic‑normal block lengths used during packing.
+#' Evaluates the multinomial (0), Dirichlet-multinomial (1) and logistic-normal
+#' (2 iid, 3 AR1, 4 2D-AR1) composition likelihoods on one flat tracked OBS
+#' vector for \code{RTMB::oneStepPredict}, respecting the reduced
+#' logistic-normal block lengths the packer used.
 #'
-#' The tracked \code{Obs} vector is **never reshaped**. All expectation‑side
-#' quantities (\code{Exp}, \code{ISS}, \code{ln_theta}, \code{LN_corr_pars},
-#' ageing error) are reshaped and filtered by \code{use}, exactly as in fitting.
+#' The tracked \code{Obs} vector is never reshaped. Everything on the expectation
+#' side (\code{Exp}, \code{ISS}, \code{ln_theta}, \code{LN_corr_pars}, the ageing
+#' error) is reshaped and filtered by \code{use} exactly as in fitting.
 #'
-#' **Logistic‑normal note:** Because \code{RTMB::OBS()} cannot be altered after
-#' tracking, the additive‑log‑ratio (ALR) transform of the *observation* is
-#' performed in the packer. Thus, \code{Obs[idx]} is **already ALR‑transformed**
-#' (last bin dropped). Here we only ALR‑transform the expectation, construct the
-#' covariance matrix \code{Sigma} (dropping its last row/column), and evaluate
-#' the multivariate normal density.
+#' Because \code{RTMB::OBS()} cannot be altered after tracking, the additive log
+#' ratio transform of the observation happens in the packer, so \code{Obs[idx]}
+#' arrives already transformed with its last bin dropped. Here only the
+#' expectation is transformed, \code{Sigma} is built with its last row and column
+#' dropped, and the multivariate normal density is evaluated. A block is
+#' \code{n_fit_bins - 1} long under comp type 0, the same per region and sex under
+#' type 1, and \code{n_fit_bins * n_sexes - 1} per region under type 2, which
+#' takes one joint reference. \code{n_fit_bins} is the number of bins
+#' \code{comp_bins} names, equal to \code{n_obs_bins} when the fleet fits every
+#' bin, and the packer applies the same restriction before transforming, so the
+#' reference is the last fitted bin rather than the last observed one.
 #'
-#' Reduced LN block lengths:
-#'   * Comp_Type 0: \code{n_fit_bins - 1}
-#'   * Comp_Type 1: \code{n_fit_bins - 1} per region/sex
-#'   * Comp_Type 2: \code{n_fit_bins * n_sexes - 1} per region (one joint reference)
-#'
-#' where \code{n_fit_bins} is the number of bins named by \code{comp_bins},
-#' equal to \code{n_obs_bins} when the fleet fits every bin. The packer applies
-#' the same restriction before transforming, so the ALR reference is the last
-#' fitted bin rather than the last observed one.
-#'
-#' @param Exp Expected proportions [n_regions × n_model_bins × n_sexes].
-#' @param Obs Flat tracked observation vector (already ALR‑transformed for LN).
-#' @param ISS Input sample size [n_regions × n_sexes].
-#' @param ln_theta Log overdispersion [n_regions × n_sexes].
-#' @param ln_theta_agg Log overdispersion scalar for aggregated comps.
-#' @param LN_corr_pars LN correlation parameters [n_regions × n_sexes × 3].
-#' @param LN_corr_pars_agg LN aggregated correlation scalar(s).
+#' @param Exp Expected proportions \code{[n_regions × n_model_bins × n_sexes]}.
+#' @param Obs Flat tracked observation vector, already transformed for the
+#'   logistic normal.
+#' @param ISS Input sample size \code{[n_regions × n_sexes]}.
+#' @param ln_theta Log overdispersion \code{[n_regions × n_sexes]}.
+#' @param ln_theta_agg Log overdispersion scalar for the aggregated comps.
+#' @param LN_corr_pars Logistic-normal correlation parameters \code{[n_regions ×
+#'   n_sexes × 3]}.
+#' @param LN_corr_pars_agg Its aggregated counterpart.
 #' @inheritParams Get_Comp_Likelihoods
 #' @keywords internal
 Get_Comp_Likelihoods_OSA = function(Exp,
@@ -726,62 +722,47 @@ Get_Comp_Likelihoods_OSA = function(Exp,
 
 #' Pack observed composition data into a single flat OBS vector (OSA)
 #'
-#' Produces the flat tracked OBS vector required by \code{RTMB::oneStepPredict}.
-#' Population is the outermost dimension, so the entire result is one continuous
-#' vector with a single pointer.
+#' Builds the flat tracked OBS vector \code{RTMB::oneStepPredict} needs, ordered
+#' region-fastest with population outermost so the evaluator can use strided
+#' indexing over one continuous vector.
 #'
-#' Discrete families (LikeType 0,1):
-#' \itemize{
-#'   \item Multinomial (0): counts = round(prop x ISS x Wt)
-#'   \item Dirichlet-multinomial (1): counts = round(prop x ISS)
-#' }
-#'
-#' Continuous families (LikeType 2,3,4): logistic-normal
-#' The ALR transform is performed here, because the tracked OBS vector
-#' cannot be modified later. Proportions receive \code{+addtocomp}, are
-#' renormalized, then transformed to \code{log(p_k / p_K)} for k = 1..K-1.
-#' The last bin is the ALR reference and is dropped:
-#' \itemize{
-#'   \item Comp_Type 0: length = \code{n_obs_bins - 1}
-#'   \item Comp_Type 1: length = \code{n_ru x (n_obs_bins - 1) x n_sexes}
-#'   \item Comp_Type 2: joint ALR of the full [bin x sex] stack ->
-#'         length = \code{n_obs_bins x n_sexes - 1}
-#'         (Joint drops one reference for the whole stack -> length \code{n_obs_bins * n_sexes - 1})
-#' }
-#'
-#' The resulting vector is ordered region-fastest so that the likelihood
-#' evaluator can use simple strided indexing.
+#' The discrete families pack counts: the multinomial as
+#' \code{round(prop x ISS x Wt)} and the Dirichlet-multinomial as
+#' \code{round(prop x ISS)}. The logistic-normal families pack the additive log
+#' ratio of the observation, which has to happen here because a tracked OBS
+#' vector cannot be changed later: proportions take \code{+addtocomp}, are
+#' renormalized, and become \code{log(p_k / p_K)} for k = 1..K-1, with the last
+#' bin the reference and dropped. A block is then \code{n_obs_bins - 1} long under
+#' comp type 0, \code{n_ru x (n_obs_bins - 1) x n_sexes} under type 1, and
+#' \code{n_obs_bins * n_sexes - 1} under type 2, which takes one joint reference
+#' for the whole bin by sex stack.
 #'
 #' @param ObsArr Observed proportions or counts.
 #' @param ISSArr Input sample sizes.
-#' @param WtArr Optional weighting for multinomial.
+#' @param WtArr Optional weighting for the multinomial.
 #' @param UseArr Region-use flags.
-#' @param TypeMat Composition type matrix (0,1,2).
+#' @param TypeMat Composition type matrix (0, 1, 2).
 #' @param LikeTypeVec Likelihood type per fleet.
-#' @param n_yrs Number of model years.
-#' @param n_seas Number of seasons per year.
-#' @param n_fleets Total number of fishing fleets.
-#' @param n_sexes Number of biological sexes.
-#' @param addtocomp Small constant added to proportions before normalization.
-#' @param family Character string specifying the likelihood type, either "discrete" or "continuous".
-#' @param pop Logical; if TRUE, the population dimension is treated as the outermost layer.
-#' @param n_pop Number of population structures or pools.
+#' @param n_yrs,n_seas,n_fleets,n_sexes,n_pop Model dimensions.
+#' @param addtocomp Small constant added to the proportions before
+#'   normalization.
+#' @param family \code{"discrete"} or \code{"continuous"}.
+#' @param pop Logical; \code{TRUE} treats the population dim as the outermost
+#'   layer.
 #' @param BinsArr Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 #'   observed bins each fleet is fitted over, or \code{NULL} (default) for all
-#'   bins. Restricted fleets pack a shorter block, and \code{eval_comp_osa} must
-#'   be handed the same array so its strides stay in step with the packer.
-#' @param return_labels Logical; if TRUE, also builds a per-element label
-#'   data.frame identifying the origin (pop, region, year, season, fleet, sex,
-#'   bin, comp_type, likelihood_type, family, last_in_group) of every entry in
-#'   the tracked vector, in the same order. Intended for post-hoc relabeling of
-#'   \code{TMB::oneStepPredict()} residuals (see [get_osa()]); left \code{FALSE}
-#'   (default) inside the model itself to avoid the extra residual tracking cost.
+#'   bins. A restricted fleet packs a shorter block, and \code{eval_comp_osa} must
+#'   be handed the same array so its strides stay in step.
+#' @param return_labels Logical; \code{TRUE} also builds a per-element label data
+#'   frame giving the pop, region, year, season, fleet, sex, bin, comp_type,
+#'   likelihood_type, family and last_in_group of every entry, in the same order,
+#'   for relabeling \code{TMB::oneStepPredict()} residuals afterwards (see
+#'   [get_osa()]). Left \code{FALSE} (default) inside the model to avoid the extra
+#'   tracking cost.
 #'
-#' @return If \code{return_labels = FALSE} (default): flat OBS vector, or
-#'   \code{NULL} if no fleet of this family is present (unchanged behavior).
-#'   If \code{return_labels = TRUE}: a list with elements \code{vec} (the flat
-#'   OBS vector) and \code{labels} (a data.frame with one row per element of
-#'   \code{vec}), or \code{NULL} if no fleet of this family is present.
+#' @return The flat OBS vector, or, under \code{return_labels = TRUE}, a list of
+#'   \code{vec} and \code{labels}. \code{NULL} when no fleet of this family is
+#'   present.
 #' @keywords internal
 pack_comp_osa = function(
   ObsArr,
@@ -989,65 +970,48 @@ pack_comp_osa = function(
 
 #' Evaluate OSA composition negative log-likelihood from a flat tracked vector
 #'
-#' Walks the same group order used by \code{pack_comp_osa()}, keeping the
-#' pointer \code{k} synchronized with the packed slice lengths. Evaluates the
-#' multinomial, Dirichlet-multinomial, or logistic-normal likelihood for each
-#' region/sex/fleet/season block.
+#' Walks the group order \code{pack_comp_osa()} used, keeping the pointer
+#' \code{k} in step with the packed slice lengths, and evaluates the multinomial,
+#' Dirichlet-multinomial or logistic-normal likelihood for each region, sex, fleet
+#' and season block.
 #'
-#' Slice lengths must match the packer exactly:
+#' The slice lengths have to match the packer exactly. A discrete family takes
+#' \code{n_fit_bins} under comp type 0 and \code{n_ru x n_fit_bins x n_sexes}
+#' under types 1 and 2. A logistic-normal family takes one fewer bin, since the
+#' tracked \code{Obs} vector arrives already transformed with its reference bin
+#' dropped: \code{n_fit_bins - 1} under type 0,
+#' \code{n_ru x (n_fit_bins - 1) x n_sexes} under type 1, and
+#' \code{n_ru x (n_fit_bins x n_sexes - 1)} under type 2. \code{n_fit_bins} comes
+#' from \code{BinsArr} and equals \code{n_obs_bins} when the fleet fits every bin.
 #'
-#' Discrete (LikeType 0,1):
-#' \itemize{
-#'   \item Comp_Type 0: \code{n_fit_bins}
-#'   \item Comp_Type 1/2: \code{n_ru x n_fit_bins x n_sexes}
-#' }
-#'
-#' Logistic-normal (LikeType 2,3,4):
-#' \itemize{
-#'   \item Comp_Type 0: \code{n_fit_bins - 1}
-#'   \item Comp_Type 1: \code{n_ru x (n_fit_bins - 1) x n_sexes}
-#'   \item Comp_Type 2: \code{n_ru x (n_fit_bins x n_sexes - 1)}
-#' }
-#'
-#' \code{n_fit_bins} is the number of bins the fleet is fitted over, taken from
-#' \code{BinsArr} and equal to \code{n_obs_bins} when the fleet fits every bin.
-#'
-#' These reduced lengths reflect that the tracked \code{Obs} vector is already
-#' ALR-transformed (the last reference bin is dropped).
-#'
-#' @param nLL_arr Array receiving negative log-likelihood contributions.
+#' @param nLL_arr Array receiving the negative log-likelihood contributions.
 #' @param tracked Flat tracked OBS vector.
-#' @param ExpArrFn Function returning expected proportions for (p,y,seas,f).
+#' @param ExpArrFn Function returning the expected proportions for
+#'   \code{(p, y, seas, f)}.
 #' @param UseArr Region-use flags.
 #' @param TypeMat Composition type matrix.
 #' @param LikeTypeVec Likelihood type per fleet.
 #' @param ISSArr Input sample sizes.
-#' @param lnThetaArr Log overdispersion.
-#' @param lnThetaAggVec Aggregated log overdispersion.
-#' @param LNcorrArr LN correlation parameters.
-#' @param LNcorrAggVec Aggregated LN correlation parameters.
-#' @param n_regions Total number of structural regions.
-#' @param n_yrs Number of model years.
-#' @param n_seas Number of seasons per year.
-#' @param n_fleets Total number of fishing fleets.
-#' @param n_sexes Number of biological sexes.
-#' @param n_model_bins Number of internal model bins.
-#' @param n_obs_bins Number of observational bins.
-#' @param age_or_len Flag indicating age-based or length-based composition.
-#' @param AgeingErrorFn Function \code{(y, f)} returning the ageing error matrix
-#'   for a given year and fleet, or the length bin map, which ignores both. Fleet
+#' @param lnThetaArr,lnThetaAggVec Log overdispersion and its aggregated
+#'   counterpart.
+#' @param LNcorrArr,LNcorrAggVec Logistic-normal correlation parameters and their
+#'   aggregated counterpart.
+#' @param n_regions,n_yrs,n_seas,n_fleets,n_sexes,n_pop Model dimensions.
+#' @param n_model_bins,n_obs_bins Numbers of model and observed bins.
+#' @param age_or_len Flag for an age-based or length-based composition.
+#' @param AgeingErrorFn Function \code{(y, f)} returning that year and fleet's
+#'   ageing error matrix, or the length bin map, which ignores both. It is fleet
 #'   specific because a fishery and a survey need not read ages the same way.
-#' @param addtocomp Small constant added to proportions before normalization.
+#' @param addtocomp Small constant added to the proportions before normalization.
 #' @param BinsArr Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 #'   observed bins each fleet is fitted over, or \code{NULL} (default) for all
-#'   bins. Must be the same array handed to \code{\link{pack_comp_osa}}, since
-#'   the strides walked here are sized on it.
-#' @param family Character string specifying the likelihood type, either "discrete" or "continuous".
-#' @param zero_init Logical; whether to zero out the nLL array on entry.
-#' @param pop Logical; if TRUE, evaluations account for the population structure layer.
-#' @param n_pop Number of population structures or pools.
+#'   bins. Must be the array handed to \code{\link{pack_comp_osa}}, since the
+#'   strides walked here are sized on it.
+#' @param family \code{"discrete"} or \code{"continuous"}.
+#' @param zero_init Logical; whether the nLL array is zeroed on entry.
+#' @param pop Logical; \code{TRUE} accounts for the population layer.
 #'
-#' @return Updated \code{nLL_arr} containing the evaluated negative log-likelihood values.
+#' @return \code{nLL_arr} with the evaluated values.
 #' @keywords internal
 eval_comp_osa = function(
   nLL_arr,

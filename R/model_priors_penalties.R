@@ -212,77 +212,43 @@ Get_Selex_Smoothness_Penalty <- function(
 
 #' Compute Process Error Log-Likelihood for a Deviation Surface (Positive Scale)
 #'
-#' Calculates the positive log-likelihood contribution for a surface of
-#' deviations indexed by year and by some second dimension, under a variety of
-#' temporal and spatiotemporal structures. Selectivity deviations use it over
-#' years and bins, growth's semi-parametric deviations over years and ages, and
-#' a time-varying growth parameter over years alone (a surface one column wide).
-#' The argument names still read \code{bin} for that second dimension.
+#' The positive log-likelihood of a surface of deviations indexed by year and a
+#' second dim, under iid, random walk, 3D GMRF (marginal or conditional variance)
+#' or separable 2D AR(1) process error. Selectivity deviations use it over years
+#' and bins, growth's semi-parametric deviations over years and ages, and a
+#' time-varying growth parameter over years alone, a surface one column wide; the
+#' argument names read \code{bin} for that second dim throughout. The caller
+#' negates the result.
 #'
-#' The function supports:
-#' \itemize{
-#'   \item IID process error
-#'   \item Random walk process error
-#'   \item 3D Gaussian Markov Random Field (GMRF) models (marginal or conditional variance)
-#'   \item Separable 2D AR(1) models
-#' }
-#'
-#'
-#' \strong{Note:} The returned value is on the \emph{positive} log-likelihood scale.
-#' It must be negated to obtain a negative log-likelihood contribution, which is
-#' handled outside this function.
-#'
-#' @param PE_model Integer specifying the process error structure:
-#' \itemize{
-#'   \item 1 = IID: deviations drawn independently as \eqn{N(0, \sigma^2)}.
-#'   \item 2 = Random walk: deviations follow a first-order random walk initialized
-#'     with a diffuse prior (\eqn{\sigma = 5}) at \code{y = 1}.
-#'   \item 3 = 3D GMRF with marginal variance parameterization.
-#'   \item 4 = 3D GMRF with conditional variance parameterization.
-#'   \item 5 = Separable 2D AR(1) across bins and years.
-#' }
-#'
-#' @param PE_pars Array of process error parameters dimensioned
-#'   \code{[1, par_index, sex, 1]}. The \code{par_index} slot meaning
-#'   depends on \code{PE_model}:
-#' \itemize{
-#'   \item Models 1-2: \code{[1,1,s,1]} = log standard deviation (\eqn{\log \sigma})
-#'     for sex \code{s}, indexed by bin/age.
-#'   \item Models 3-4: \code{[1,1,s,1]} = unconstrained partial correlation by age/bin;
-#'     \code{[1,2,s,1]} = unconstrained partial correlation by year;
-#'     \code{[1,3,s,1]} = unconstrained partial correlation by cohort;
-#'     \code{[1,4,s,1]} = log variance.
-#'   \item Model 5: \code{[1,1,s,1]} = unconstrained bin correlation (transformed via
-#'     \eqn{2/(1+e^{-2x})-1}); \code{[1,2,s,1]} = unconstrained year correlation;
-#'     \code{[1,4,s,1]} = log standard deviation.
-#' }
-#'
-#' @param ln_devs Array of log-scale selectivity deviations dimensioned
-#'   \code{[1, year, bin, sex, 1]}.
-#'
-#' @param map_sel_devs Integer array dimensioned \code{[fleet, year, bin, sex]}
-#'   mapping deviations to unique estimated parameters. Shared deviations
-#'   hold the same integer value; \code{NA} entries are treated as fixed
-#'   and excluded from likelihood evaluation.
-#'
+#' @param PE_model Integer process error structure: \code{1} iid, \code{2} random
+#'   walk with a diffuse prior at \code{y = 1}, \code{3} and \code{4} the 3D GMRF
+#'   on the marginal or conditional variance, \code{5} the separable 2D AR(1) over
+#'   bins and years.
+#' @param PE_pars Array of process error parameters \code{[1, par_index, sex, 1]},
+#'   whose \code{par_index} slots depend on \code{PE_model}. Models 1 and 2 hold a
+#'   log standard deviation in slot 1, indexed by bin. Models 3 and 4 hold the
+#'   unconstrained partial correlations by bin, year and cohort in slots 1 to 3 and
+#'   a log variance in slot 4. Model 5 holds the unconstrained bin and year
+#'   correlations in slots 1 and 2 and a log standard deviation in slot 4.
+#' @param ln_devs Array of log-scale deviations \code{[1, year, bin, sex, 1]}.
+#' @param map_sel_devs Integer array \code{[fleet, year, bin, sex]} mapping the
+#'   deviations to estimated parameters. Shared deviations hold the same integer,
+#'   and \code{NA} entries are fixed and left out of the likelihood.
 #' @param map_sel_devs_full The same map across every unit this penalty is
 #'   evaluated over, that unit being the first dim: regions for selectivity,
-#'   populations by region for growth. A deviation shared over those units is
-#'   one parameter appearing in each of their slices, and this function runs one
-#'   unit at a time, so its contribution is divided by the number holding it.
-#'   Without the split, a series shared over \code{n} units is penalized
-#'   \code{n} times, an implicit \eqn{\sigma / \sqrt{n}}. A deviation that is
-#'   not shared appears once, divides by one, and is unaffected.
+#'   populations by region for growth. A deviation shared over those units is one
+#'   parameter appearing in each of their slices, and this function runs one unit
+#'   at a time, so its contribution is divided by the number holding it. Without
+#'   the split, a series shared over \code{n} units is penalized \code{n} times, an
+#'   implicit \eqn{\sigma / \sqrt{n}}.
 #' @param rw_init_sigma Standard deviation given to the first year of a random
 #'   walk. A number (5 by default) leaves that year effectively unconstrained;
-#'   \code{NA} starts the walk at zero under its own sigma instead.
-#' @param min_sel_devs_shared_bins Integer vector. Indices of the reference (minimum) bin
-#'   within each shared deviation group, used to subset the bin dimension when
-#'   evaluating GMRF or 2D AR(1) likelihoods (PE models 3-5). When no bin sharing
-#'   is specified, defaults to \code{1:n_bins} (i.e., all bins are included).
+#'   \code{NA} starts the walk at zero under its own sigma.
+#' @param min_sel_devs_shared_bins Integer vector of the reference bin within each
+#'   shared deviation group, used to subset the bin dim under process error models
+#'   3 to 5. Defaults to \code{1:n_bins} when no bin sharing is set.
 #'
-#' @return Numeric scalar: the positive log-likelihood contribution from selectivity
-#'   process error. Negated externally to form the negative log-likelihood.
+#' @return Numeric scalar, the positive log-likelihood, negated by the caller.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -419,37 +385,31 @@ Get_PE_loglik <- function(PE_model,
 #' process error deviations under multiple IID structural assumptions.
 #' Deviations are penalized as \eqn{N(0, \sigma^2)} where \eqn{\sigma}
 #' is drawn from \code{PE_pars} according to the selected model structure.
-#' Only origin-destination pairs that are adjacent (non-zero in
-#' \code{adjacency_collapsed}) contribute to the likelihood.
+#' Under unstructured movement, only origin-destination pairs that are adjacent
+#' (non-zero in \code{adjacency_collapsed}) contribute to the likelihood; under
+#' CTMC movement the deviations sit on each region's preference, and every
+#' region the map keeps contributes.
 #'
 #' \strong{Note:} The returned value is on the \emph{positive} log-likelihood
 #' scale. It must be negated externally to form the negative log-likelihood.
 #'
-#' @param PE_model Integer specifying the movement process error structure.
-#'   All models are IID; they differ in which dimensions share a common
-#'   standard deviation. Models 1-5 are single-population (fix \code{pop = 1});
-#'   models 6-10 estimate separate parameters per population:
-#' \itemize{
-#'   \item \strong{1}: IID across years (single \eqn{\sigma} per origin region)
-#'   \item \strong{2}: IID across ages (single \eqn{\sigma} per origin region and age)
-#'   \item \strong{3}: IID across years and ages
-#'   \item \strong{4}: IID across years, ages, and sexes
-#'   \item \strong{5}: IID across years, seasons, ages, and sexes
-#'   \item \strong{6}: IID across populations and years
-#'   \item \strong{7}: IID across populations and ages
-#'   \item \strong{8}: IID across populations, years, and ages
-#'   \item \strong{9}: IID across populations, years, ages, and sexes
-#'   \item \strong{10}: IID across populations, years, seasons, ages, and sexes
-#' }
+#' @param cont_vary_movement Character string specifying the movement process
+#'   error structure, \code{"iid_"} followed by the dims the deviations vary
+#'   over, any of p (population), y (year), seas (season), a (age), s (sex):
+#'   \code{"iid_y"} is one \eqn{\sigma} per origin region, \code{"iid_p_y_seas_a_s"}
+#'   one per population, origin region, season, age and sex. A dim left out
+#'   shares one deviation, and one \eqn{\sigma}, across it.
 #'
 #' @param PE_pars Array of movement process error parameters (log standard
 #'   deviations) dimensioned \code{[pop, from_region, seas, age, sex]}.
 #'   Exponentiated internally to obtain \eqn{\sigma}. Which dimensions
-#'   are active depends on \code{PE_model}; unused dimensions should be
+#'   are active depends on \code{cont_vary_movement}; unused dimensions should be
 #'   fixed at a constant (e.g., index 1) via the parameter map.
 #'
 #' @param move_devs Movement deviation array dimensioned
-#'   \code{[pop, from_region, to_region, year, seas, age, sex]}.
+#'   \code{[pop, from_region, to_region, year, seas, age, sex]}. Under CTMC
+#'   movement a deviation sits on a region's preference rather than on a pair,
+#'   so \code{from_region} is that region and \code{to_region} has length one.
 #'
 #' @param map_move_devs Integer array dimensioned
 #'   \code{[pop, from_region, to_region, year, seas, age, sex]}
@@ -461,18 +421,18 @@ Get_PE_loglik <- function(PE_model,
 #'   age-1 recruits are excluded from the likelihood (loop starts at age 2).
 #'   If \code{1}, all ages including recruits are penalized.
 #'
-#' @param adjacency_collapsed Square \code{[n_regions x n_regions]} matrix
-#'   of allowable movement connections among regions, excluding self-retention
-#'   (diagonal entries should be 0). Origin-destination pairs with a value
-#'   of 0 are skipped and contribute nothing to the likelihood.
+#' @param adjacency_collapsed \code{[n_regions x (n_regions - 1)]} matrix
+#'   of allowable movement connections among regions, with self-retention
+#'   collapsed out. Origin-destination pairs with a value of 0 are skipped and
+#'   contribute nothing to the likelihood. Read only when \code{move_type == 0}.
 #'
 #' @param move_type Integer specifying the movement formulation:
 #' \itemize{
 #'   \item \strong{0} = Unstructured multinomial logit movement
 #'   \item \strong{1} = CTMC-based movement
 #' }
-#'   Currently used for dispatch context; likelihood computation is
-#'   identical across movement types within this function.
+#'   Decides whether \code{adjacency_collapsed} is read: an unstructured
+#'   deviation belongs to a region pair, a CTMC deviation to a single region.
 #'
 #' @return Numeric scalar: the positive log-likelihood contribution from
 #'   movement process error deviations. Negated externally to form the
@@ -480,7 +440,7 @@ Get_PE_loglik <- function(PE_model,
 #'
 #' @keywords internal
 #' @import RTMB
-Get_move_PE_loglik <- function(PE_model,
+Get_move_PE_loglik <- function(cont_vary_movement,
                                PE_pars,
                                move_devs,
                                map_move_devs,
@@ -509,16 +469,9 @@ Get_move_PE_loglik <- function(PE_model,
   # whether recruits move
   age_start = ifelse(do_recruits_move == 0 && n_ages >= 2, 2, 1)
 
-  # dims named in each PE_model's spec (see cont_move_map in Setup_Movement.R for the type to
-  # integer correspondence); dims absent from a model's name are shared across, kept at index 1
-  key_dims_by_model <- list(
-    `1` = "year", `2` = "age", `3` = c("year","age"), `4` = c("year","age","sex"),
-    `5` = c("year","season","age","sex"),
-    `6` = c("pop","year"), `7` = c("pop","age"), `8` = c("pop","year","age"),
-    `9` = c("pop","year","age","sex"), `10` = c("pop","year","season","age","sex")
-  )
-  key_dims <- key_dims_by_model[[as.character(PE_model)]]
-
+  # get dimensions penalized over. a dim the form leaves out is shared, so only index 1 is read
+  abbrev = c(p = "pop", y = "year", seas = "season", a = "age", s = "sex")
+  key_dims = unname(abbrev[strsplit(sub("^iid_", "", cont_vary_movement), "_")[[1]]])
   pop_idx  = if("pop"    %in% key_dims) 1:n_pop   else 1
   yr_idx   = if("year"   %in% key_dims) 1:n_yrs   else 1
   seas_idx = if("season" %in% key_dims) 1:n_seas  else 1
@@ -529,13 +482,14 @@ Get_move_PE_loglik <- function(PE_model,
   for(rr in 1:n_regions_to) {
     for(r in 1:n_regions_from) {
 
-      if(adjacency_collapsed[r,rr] == 0) next # skip
+      if(move_type == 0 && adjacency_collapsed[r,rr] == 0) next # skip
 
       for(p in pop_idx) {
         for(y in yr_idx) {
           for(seas in seas_idx) {
             for(a in age_idx) {
               for(s in sex_idx) {
+                if(is.na(map_move_devs[p,r,rr,y,seas,a,s])) next # estimated but not penalized here, which is how a dsem takes a cell over
                 loglik = loglik + RTMB::dnorm(move_devs[p,r,rr,y,seas,a,s], 0, exp(PE_pars[p,r,seas,a,s]), TRUE)
               } # end s loop
             } # end a loop
@@ -551,57 +505,43 @@ Get_move_PE_loglik <- function(PE_model,
 
 #' Compute Fishing Mortality Deviation Process Error Log-Likelihood (Negative Scale)
 #'
-#' Calculates the negative log-likelihood contribution for fishing mortality
-#' deviations (\code{ln_F_devs}) under an iid, random walk, or AR1 process
-#' error structure.
+#' The negative log-likelihood of \code{ln_F_devs} under an iid, random walk or
+#' AR1 process. Unlike \code{\link{Get_PE_loglik}} and
+#' \code{\link{Get_move_PE_loglik}}, which return one positive scalar for the
+#' caller to negate, this returns an already-negated array shaped like
+#' \code{ln_F_devs}, zero where catch is not used, matching the
+#' \code{Fmort_nLL} reporting.
 #'
-#' \strong{Note:} Unlike \code{\link{Get_PE_loglik}} and
-#' \code{\link{Get_move_PE_loglik}}, which return a single positive
-#' log-likelihood scalar to be negated by the caller, this function returns
-#' an already-negated array with the same dimensions as \code{ln_F_devs}
-#' (one value per region/year/season/fleet cell, \code{0} where catch is not
-#' used), matching the existing \code{Fmort_nLL} reporting convention.
+#' The walk and the AR1 do not need catch-active years to be contiguous: the
+#' transition between two active years is taken over the elapsed gap between
+#' them, which is the same marginal as estimating deviations for the closed years
+#' and integrating them out, and reduces to the single-step transition when the
+#' gap is one year.
 #'
-#' Random walk and AR1 do not require catch-active years to be contiguous.
-#' Instead, the transition between two active years is taken over the
-#' elapsed gap \eqn{d} between them, exactly the marginal transition you
-#' would get from estimating deviations for the closed years in between and
-#' integrating them out, without actually estimating them:
-#' \describe{
-#'   \item{Random walk}{\eqn{\delta_t \mid \delta_s \sim N(\delta_s, d\sigma^2)}}
-#'   \item{AR1}{\eqn{\delta_t \mid \delta_s \sim N(\rho^d \delta_s, \sigma^2
-#'     \sum_{i=0}^{d-1} \rho^{2i})}, where the sum has closed form
-#'     \eqn{(1 - \rho^{2d}) / (1 - \rho^2)}}
-#' }
-#' Both reduce exactly to the standard single-step transition when \eqn{d = 1}.
-#'
-#' @param PE_model Integer specifying the process error structure: \code{1} =
-#'   IID (deviations drawn independently as \eqn{N(0, \sigma^2)}); \code{2} =
-#'   random walk (first active year initialized with a diffuse \eqn{N(0, 5)}
-#'   prior); \code{3} = AR1 (first active year drawn from its stationary
-#'   marginal distribution \eqn{N(0, \sigma^2 / (1 - \rho^2))}).
-#' @param ln_sigmaF Array \code{[n_regions x n_seas x n_fish_fleets]} of
-#'   log-scale process error SD.
+#' @param PE_model Integer process error structure: \code{1} iid, \code{2} random
+#'   walk with the first active year on a diffuse \eqn{N(0, 5)}, \code{3} AR1 with
+#'   the first active year drawn from its stationary marginal.
+#' @param ln_sigmaF Array \code{[n_regions x n_seas x n_fish_fleets]} of log-scale
+#'   process error sd.
 #' @param Fdev_rho Array \code{[n_regions x n_seas x n_fish_fleets]} of
-#'   unconstrained AR1 partial correlation (only used when \code{PE_model ==
-#'   3}); transformed to \eqn{(-1, 1)} via \eqn{2 / (1 + e^{-2x}) - 1}.
-#' @param ln_F_devs Array \code{[n_regions x n_years x n_seas x
-#'   n_fish_fleets]} of log-scale fishing mortality deviations.
-#' @param map_ln_F_devs Array \code{[n_regions x n_years x n_seas x
-#'   n_fish_fleets]} mirroring \code{$map$ln_F_devs}: an estimation index
-#'   where a deviation is estimated, \code{NA} where it is fixed. Only
-#'   estimated deviations are penalized, and they alone form the active
-#'   sequence, so a fixed cell is skipped and widens the gap \eqn{d} between
-#'   the deviations either side of it. \code{\link{do_Fmort_mapping}} builds
-#'   this from the catch-usage indicators, estimating a deviation wherever
-#'   aggregated or any population-specific catch is used, or where the
-#'   aggregate catch observation (\code{ObsCatch}) is missing (\code{NA})
-#'   rather than a true recorded zero (fishing presumably continued, we
-#'   simply lack a value to fit), while a true recorded zero is a real
-#'   closure and is excluded.
+#'   unconstrained AR1 partial correlation, transformed to \eqn{(-1, 1)} here and
+#'   read under \code{PE_model == 3} only.
+#' @param ln_F_devs Array \code{[n_regions x n_years x n_seas x n_fish_fleets]} of
+#'   log-scale fishing mortality deviations.
+#' @param map_ln_F_devs Array shaped like \code{ln_F_devs} mirroring
+#'   \code{$map$ln_F_devs}: an estimation index where a deviation is estimated and
+#'   \code{NA} where it is fixed. Only estimated deviations are penalized and they
+#'   alone form the active sequence, so a fixed cell is skipped and widens the gap
+#'   between the deviations either side of it. \code{\link{do_Fmort_mapping}}
+#'   builds it from the catch use indicators, estimating a deviation wherever
+#'   aggregated or population-specific catch is used, or where \code{ObsCatch} is
+#'   \code{NA}, which is a missing value rather than a real closure; a recorded
+#'   zero is a closure and is excluded.
+#' @param Fdev_pen_center Integer. \code{1} centers on the deviations' own mean,
+#'   \code{0} on zero.
 #'
-#' @return Array with the same dimensions as \code{ln_F_devs}: the negative
-#'   log-likelihood contribution per cell.
+#' @return Array shaped like \code{ln_F_devs} of the negative log-likelihood per
+#'   cell.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -735,49 +675,42 @@ get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
 
 #' Prior on selectivity, on the parameters or on realized values
 #'
-#' Shared across the total fishery, retained fishery, and survey "Selectivity
-#' (Prior)" blocks in \code{SPoRC_rtmb.R} since all three prior tables and
-#' their corresponding parameter arrays share the same
-#' \code{[region, par, block, sex, fleet]} layout. Each row of the table is one
-#' prior, and its optional \code{type} column selects what the row constrains:
-#' \describe{
-#'   \item{\code{"par"} (the default when the column is absent)}{A lognormal
-#'     prior on one fixed selectivity parameter,
-#'     \code{dnorm(pars[region,par,block,sex,fleet], log(mu), sd)}, with
-#'     \code{mu} on the natural scale and \code{sd} on the log scale.}
-#'   \item{\code{"value"}}{A normal prior on the realized selectivity value at
-#'     one bin, \code{dnorm(sel[bin], mu, sd)}, with both hyperparameters on
-#'     the natural scale. \code{par} instead names the bin, on the grid the
-#'     data source's selectivity is parameterized on (ages or lengths per its
-#'     selectivity type), and the value is read at the first model year of
-#'     \code{block} (blocked and time-invariant selectivity are constant within
-#'     a block). This is a constraint on a derived quantity rather than on the
-#'     parameters (the ADMB rockfish convention of pinning survey selectivity
-#'     at a reference age near one is its motivating case), so it can express
-#'     statements no set of independent parameter priors can, e.g. the rank-one
-#'     ridge in (a50, slope) space implied by constraining a logistic curve's
-#'     value at one age.}
-#' }
+#' Shared by the total fishery, retained fishery and survey selectivity prior
+#' blocks in \code{SPoRC_rtmb.R}, since all three tables and their parameter
+#' arrays are laid out over \code{[region, par, block, sex, fleet]}. Each row is
+#' one prior, and its optional \code{type} column says what the row constrains.
 #'
 #' @param selex_prior Data frame with columns \code{region}, \code{par},
-#'   \code{block}, \code{sex}, \code{fleet}, \code{mu}, \code{sd}, and
-#'   optionally \code{type} (\code{"par"}/\code{"value"}), one row per prior.
+#'   \code{block}, \code{sex}, \code{fleet}, \code{mu}, \code{sd} and optionally
+#'   \code{type}, one row per prior. A \code{"par"} row (the default when the
+#'   column is absent) is a lognormal prior on one fixed selectivity parameter,
+#'   \code{dnorm(pars[region,par,block,sex,fleet], log(mu), sd)}, with \code{mu}
+#'   on the natural scale and \code{sd} on the log scale. A \code{"value"} row is
+#'   a normal prior on the realized selectivity at one bin,
+#'   \code{dnorm(sel[bin], mu, sd)}, with both on the natural scale; \code{par}
+#'   then names the bin on whichever grid the data source is parameterized over,
+#'   and the value is read at the first model year of \code{block}, selectivity
+#'   being constant within a block. A \code{"value"} row constrains a derived
+#'   quantity rather than the parameters, which is the ADMB convention of pinning
+#'   survey selectivity at a reference age near one, and expresses statements no
+#'   set of independent parameter priors can, such as the rank-one ridge in
+#'   (a50, slope) space a logistic curve's value at one age implies.
 #' @param fixed_sel_pars Array \code{[region, par, block, sex, fleet]} of fixed
 #'   selectivity parameters on the log scale, read by \code{"par"} rows.
-#' @param sel Array \code{[pop, region, year, seas, age, sex, fleet]} of
-#'   realized age-based selectivity, read by \code{"value"} rows at pop 1 and
-#'   season 1, matching the smoothness penalties.
+#' @param sel Array \code{[pop, region, year, seas, age, sex, fleet]} of realized
+#'   age-based selectivity, read by \code{"value"} rows at pop 1 and season 1,
+#'   matching the smoothness penalties.
 #' @param sel_l Array \code{[region, year, len, sex, fleet]} of realized
-#'   length-based selectivity, read by \code{"value"} rows instead of
-#'   \code{sel} when the data source is length-based.
+#'   length-based selectivity, read by \code{"value"} rows in place of \code{sel}
+#'   when the data source is length-based.
 #' @param selex_type Integer. \code{0} reads \code{sel}, \code{1} reads
 #'   \code{sel_l}.
 #' @param sel_blocks Integer array \code{[region, year, fleet]} mapping model
-#'   years to selectivity blocks, used to resolve a \code{"value"} row's
-#'   \code{block} to the first year in it.
+#'   years to selectivity blocks, resolving a \code{"value"} row's \code{block} to
+#'   its first year.
 #'
-#' @return Numeric scalar negative log-likelihood contribution, summed across
-#'   all rows of \code{selex_prior}.
+#' @return Numeric scalar negative log-likelihood, summed over the rows of
+#'   \code{selex_prior}.
 #'
 #' @keywords internal
 #' @import RTMB
@@ -857,13 +790,13 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 
 # Recruitment Penalties -----------------------------------------------------
 
-#' Process error density for one series of recruitment deviations
+#' Process error density for one series of deviations
 #'
-#' The recruitment deviations of one population and region are either
+#' The recruitment or catchability deviations of one series are either
 #' independent draws about a supplied mean, a random walk, or an AR1 process.
 #' The walk and the AR1 always step from the previous year, whether or not that
-#' year's deviation is estimated: every year has a recruitment, so a deviation
-#' fixed at a value is a year the walk passes through rather than a gap in the
+#' year's deviation is estimated: every year has a value, so a deviation fixed
+#' at a value is a year the walk passes through rather than a gap in the
 #' series. A year whose own deviation is fixed contributes no density.
 #'
 #' A walk has no stationary distribution to start from, so year one is given a
@@ -872,7 +805,7 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #' with no penalty on its level at all, which is what SAM's flat prior on the
 #' first year amounts to.
 #'
-#' @param devs Numeric vector of deviations for one population and region, by year.
+#' @param devs Numeric vector of deviations for one series, by year.
 #' @param is_est Numeric vector the same length, \code{1} where the deviation is
 #'   estimated and \code{0} where it is fixed.
 #' @param sigma Numeric vector the same length of standard deviations, so the
@@ -893,7 +826,7 @@ get_selex_fixed_penalty <- function(selex_penalty, fixed_sel_pars) {
 #'
 #' @keywords internal
 #' @import RTMB
-get_recdev_pe_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init_sd = 5) {
+get_dev_pe_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init_sd = 5) {
 
   "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
   "[<-" <- RTMB::ADoverload("[<-")
@@ -1073,15 +1006,15 @@ get_init_devs_penalty <- function(
   else if(equil_init_age_strc == 2) init_idx <- 1:n_init_ages
   else init_idx <- unique(init_age_devs_shared[!is.na(init_age_devs_shared)])
 
-  # a cell outside the penalty owns no share of it, so it drops out of the map before the split
+  # a cell outside the penalty has no share of it, so it drops out of the map before the split
   init_map_active <- map_ln_InitDevs
   if(!is.null(init_map_active)) {
     init_map_active[init_devs_pen_use == 0] <- NA # sexes that share the first sex's parameter
     unpenalized_ages <- setdiff(seq_len(n_init_ages), init_idx) # ages this setting leaves out
     if(length(unpenalized_ages) > 0) init_map_active[,,unpenalized_ages,] <- NA
   }
-  init_wt <- dev_share_weights(init_map_active, dim(ln_InitDevs)) # a shared deviation splits one penalty
 
+  init_wt <- dev_share_weights(init_map_active, dim(ln_InitDevs)) # shared dev splits penalty between shared pars
   # the ramp read at the year each initial age was born, or the first model year's value at every age
   ramp_init <- if(is.null(init_bias_ramp)) rep(bias_ramp[1], length(init_idx)) else init_bias_ramp[init_idx]
 
@@ -1106,7 +1039,7 @@ get_init_devs_penalty <- function(
       # and the tie pulling each later sex's curve toward the first sex's at the same ages
       if(Use_init_sex_pen == 1 && n_init_sexes > 1) {
         for(s_init in 2:n_init_sexes) {
-          sex_diff <- ln_InitDevs[p,r,init_idx,s_init] - ln_InitDevs[p,r,init_idx,1] # departure from the first sex
+          sex_diff <- ln_InitDevs[p,r,init_idx,s_init] - ln_InitDevs[p,r,init_idx,1] # deviation from the first sex
           sex_dnorm <- -RTMB::dnorm(sex_diff, 0, exp(ln_sigma_init_sex), TRUE)
           Init_Sex_nLL[p,r,init_idx,s_init] <- sex_dnorm * init_devs_pen_use[p,r,init_idx,s_init]
         } # end s_init loop
@@ -1120,56 +1053,44 @@ get_init_devs_penalty <- function(
 
 #' Recruitment deviation penalties
 #'
-#' Population and region specific penalties on the recruitment deviations
-#' (\code{ln_RecDevs}), independent or as a process over time. Called from
-#' \code{\link{get_recruitment_penalty}}.
+#' Penalties on \code{ln_RecDevs} by population and region, independent or as a
+#' process over time. Called from \code{\link{get_recruitment_penalty}}.
 #'
-#' Under \code{RecDevs_model = 1} the deviations are independent and split into
-#' an early and a late sigma regime at \code{sigmaR_switch}. Both regimes are the
-#' same penalty read at a different sigma over different years,
-#' \eqn{-\log \phi(\varepsilon_y \mid \mu_y, \sigma_{R,k})} with an extra
-#' \eqn{-(1 - b_y / 2)\log \sigma_{R,k}} when the bias ramp is on, where
-#'
-#' \itemize{
-#'   \item \eqn{\varepsilon_y} is the deviation in year \eqn{y}, log scale, estimated.
-#'   \item \eqn{k} is 1 for years before \code{sigmaR_switch} and 2 from it on.
-#'   \item \eqn{\sigma_{R,k} = \exp(\code{ln_sigmaR[k,p,r]})} is that regime's sigma, log scale.
-#'   \item \eqn{b_y} is the Methot and Taylor bias ramp in year \eqn{y}, between 0 and 1, data.
-#'   \item \eqn{\mu_y = -\sigma_{R,k}^2 b_y / 2} is the bias-corrected mean, or the deviations'
-#'     own weighted mean over the regime's years.
-#' }
-#'
-#' The \eqn{\log \sigma} term is what makes the sigma estimable: without it a
-#' larger sigma always reduces the penalty. Under \code{RecDevs_model = 2} or
-#' \code{3} the deviations are a walk or an AR1 process instead, each year
-#' centered on the one before it, so neither the bias ramp nor the own-mean
-#' center applies.
+#' Under \code{RecDevs_model = 1} the deviations are independent, on an early and
+#' a late sigma either side of \code{sigmaR_switch}. Both regimes are the same
+#' normal penalty read at a different sigma over different years, with an extra
+#' log sigma term when the bias ramp is on; that term is what makes the sigma
+#' estimable, since without it a larger sigma always reduces the penalty. Under
+#' \code{RecDevs_model = 2} or \code{3} each year is centered on the one before
+#' it, so neither the bias ramp nor the own-mean center applies. The equations are
+#' in the model equations vignette.
 #'
 #' @param n_pop,n_regions,n_est_rec_devs Dimension sizes.
-#' @param rec_region_prop_spec Integer switch; when \code{1}, populations and
-#'   regions with a fixed zero recruitment proportion are skipped.
-#' @param rec_region_prop Array \code{[pop, region]} of recruitment regional
+#' @param rec_region_prop_spec Integer switch; \code{1} skips populations and
+#'   regions with a fixed zero recruitment proportion.
+#' @param rec_region_prop Array \code{[pop, region]} of the regional
 #'   apportionment.
 #' @param ln_sigmaR Array \code{[early/late, pop, region]} of log sigma.
-#' @param bias_ramp Numeric vector \code{[year]} of bias ramp adjustment factors.
-#' @param sigmaR_switch Integer year index at which the deviations switch from
-#'   the early to the late sigma regime.
+#' @param bias_ramp Numeric vector \code{[year]} of bias ramp factors, between 0
+#'   and 1.
+#' @param sigmaR_switch Integer year index the deviations switch from the early to
+#'   the late sigma at.
 #' @param ln_RecDevs Array \code{[pop, region, year]} of recruitment deviations.
-#' @param sigmaR2_early,sigmaR2_late Arrays \code{[pop, region]} of squared sigma
+#' @param sigmaR2_early,sigmaR2_late Arrays \code{[pop, region]} of squared sigma,
 #'   used for the bias-corrected mean.
 #' @param do_rec_bias_ramp Integer switch enabling the bias ramp log sigma term.
 #' @param map_ln_RecDevs Array \code{[pop, region, year]} mirroring
-#'   \code{map$ln_RecDevs}. Cells that are \code{NA} are fixed rather than
-#'   estimated and go unpenalized; cells sharing a level split one penalty.
-#'   \code{NULL} penalizes every cell in full.
+#'   \code{map$ln_RecDevs}. \code{NA} cells are fixed rather than estimated and go
+#'   unpenalized, and cells sharing a level split one penalty. \code{NULL}
+#'   penalizes every cell in full.
 #' @param RecDevs_model Integer process error structure: \code{1} independent,
 #'   \code{2} random walk, \code{3} AR1.
 #' @param RecDevs_rho Array \code{[pop, region]} of unconstrained AR1
-#'   correlations, transformed to \eqn{(-1, 1)} here. Read when
+#'   correlations, transformed to \eqn{(-1, 1)} here. Read under
 #'   \code{RecDevs_model = 3}.
 #' @param RecDevs_rw_init_sigma Standard deviation given to year one of a random
 #'   walk. Default \code{5}, which leaves the level of the series effectively
-#'   free. \code{NA} starts the walk at zero under its own sigma. Read when
+#'   free; \code{NA} starts the walk at zero under its own sigma. Read under
 #'   \code{RecDevs_model = 2}.
 #' @param RecDevs_pen_center Integer. \code{1} centers on the deviations' own
 #'   weighted mean, \code{0} on the bias-corrected mean. Read under
@@ -1207,7 +1128,7 @@ get_rec_devs_penalty <- function(
 
   # a deviation mapped off by hand is fixed rather than estimated, so it loses its penalty too
   is_est <- if(is.null(map_ln_RecDevs)) array(1, dim = dim(ln_RecDevs)) else array(as.numeric(!is.na(map_ln_RecDevs)), dim = dim(ln_RecDevs))
-  rec_wt <- dev_share_weights(map_ln_RecDevs, dim(ln_RecDevs)) # a shared deviation splits one penalty
+  rec_wt <- dev_share_weights(map_ln_RecDevs, dim(ln_RecDevs)) # a shared deviation splits penalty across pars
 
   early_idx <- seq_len(sigmaR_switch - 1) # years under the early sigma, empty when the switch is year one
   late_idx <- sigmaR_switch:n_est_rec_devs # years under the late sigma
@@ -1254,7 +1175,7 @@ get_rec_devs_penalty <- function(
 
         rho <- if(RecDevs_model == 3) 2 / (1 + exp(-2 * RecDevs_rho[p,r])) - 1 else 0 # constrain to (-1, 1)
 
-        Rec_nLL[p,r,pen_idx] <- get_recdev_pe_nLL(
+        Rec_nLL[p,r,pen_idx] <- get_dev_pe_nLL(
           devs = ln_RecDevs[p,r,pen_idx],   # the deviations themselves
           is_est = is_est[p,r,pen_idx],     # only estimated years are stepped through
           sigma = sigma_yr,                 # early or late sigma, by year
@@ -1840,6 +1761,8 @@ get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_par
 #'   separable AR(1) over ages and years, \code{5} and \code{6} the
 #'   three-dimensional Gaussian Markov random field on the conditional and the
 #'   marginal variance respectively.
+#' @param map_ln_NAA Mirror of \code{map$ln_NAA}, \code{NA} where a cell is
+#'   estimated but left out of this penalty. \code{NULL} penalizes every cell.
 #' @param NAA_pe_pars Array \code{[pop, region, 3, sex]} of correlation
 #'   parameters on the unconstrained scale, read as age, year and cohort. Unused
 #'   under \code{NAA_re = 1}.
@@ -1882,6 +1805,7 @@ Get_NAA_state_penalty <- function(
   naa_re_seas,
   NAA_re = 1,
   NAA_pe_pars = NULL,
+  map_ln_NAA = NULL,
   NAA_re_region = 0,
   NAA_region_corr_pars = NULL,
   NAA_re_pop = 0,
@@ -1908,6 +1832,20 @@ Get_NAA_state_penalty <- function(
   # penalize and the logarithm below would be taken on a structural zero
   if(is.null(naa_re_where)) naa_re_where <- base::matrix(1, n_pop, n_regions)
   keep <- array(rep(as.vector(naa_re_where), times = ny * nk * na * n_sexes), dim = c(n_pop, n_regions, ny, nk, na, n_sexes))
+
+  # penalize only if map is not NA
+  if(!is.null(map_ln_NAA)) {
+    penalized <- !is.na(map_ln_NAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE])
+    if(!any(penalized)) return(0) # every cell taken over, so the whole penalty goes, whatever the form
+    if(!all(penalized)) {
+      if(NAA_re != 1 || NAA_re_region > 0 || NAA_re_pop > 0 || NAA_re_sex > 0 || NAA_re_season > 0)
+        stop("map_ln_NAA leaves some numbers at age cells out of the penalty while the state is ",
+             "correlated over ages, years or another dim. A cell left out sits inside that joint ",
+             "density, so it cannot be dropped one at a time. Use NAA_re = 'iid' with no other ",
+             "correlation, or leave every cell in the penalty.")
+      keep[!penalized] <- 0
+    }
+  }
 
   pred <- NAA_pred[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE]
   pred[keep == 0] <- 1 # never read, and it keeps the logarithm and value finite
@@ -2035,3 +1973,76 @@ penalize_naa_age_year <- function(eps_ya, sd_prs, NAA_re, pe, ny, na) {
 
   stop("NAA_re code ", NAA_re, " has no penalty branch.")
 }
+
+#' Penalty on catchability deviations
+#'
+#' Annual deviations from a fleet's block catchability, taken as independent,
+#' a random walk or an ar1. A fleet whose deviations a dsem has
+#' taken over reads no penalty here, since the mirror blanks those cells.
+#'
+#' @param ln_q_devs Array \code{[n_regions, n_yrs_total, n_fleets]} of log-scale
+#'   catchability deviations.
+#' @param ln_sigma_q Array \code{[n_regions, n_fleets]} of log-scale deviation
+#'   standard deviations.
+#' @param q_rho Array \code{[n_regions, n_fleets]} of unconstrained ar1
+#'   correlations, read only where \code{q_model} is ar1.
+#' @param q_model Integer vector \code{[n_fleets]}: 1 none, 2 iid, 3 random
+#'   walk, 4 ar1, 5 dsem.
+#' @param map_ln_q_devs Numeric array of map levels the same shape as
+#'   \code{ln_q_devs}, \code{NA} where a cell is not penalized.
+#' @param q_rw_init_sigma Standard deviation of the first estimated year of a
+#'   random walk, or \code{NA} to start it at zero under its own sigma.
+#'
+#' @return Negative log density, summed over regions, years and fleets.
+#'
+#' @keywords internal
+#' @export
+Get_q_dev_penalty <- function(ln_q_devs,
+                              ln_sigma_q,
+                              q_rho,
+                              q_model,
+                              map_ln_q_devs = NULL,
+                              q_rw_init_sigma = NA) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  d <- dim(ln_q_devs)
+  n_regions <- d[1]
+  n_yrs <- d[2]
+  n_fleets <- d[3]
+
+  nLL <- 0
+  if(all(q_model %in% c(1, 5))) return(nLL) # not a q ,odel that uses
+
+  wt <- dev_share_weights(map_ln_q_devs, d) # a deviation shared across pars splits the penalty evenly between (to avoid dbl counting)
+  is_est <- array(as.numeric(wt > 0), dim = d)
+
+  for(f in 1:n_fleets) {
+
+    if(q_model[f] %in% c(1, 5)) next
+    pe_model <- q_model[f] - 1 # 1 iid, 2 random walk, 3 ar1, as get_dev_pe_nLL reads them
+
+    for(r in 1:n_regions) {
+
+      if(sum(is_est[r,,f]) == 0) next
+      rho <- if(q_model[f] == 4) 2 / (1 + exp(-2 * q_rho[r,f])) - 1 else 0 # constrain to (-1, 1)
+
+      yr_nLL <- get_dev_pe_nLL(
+        devs = ln_q_devs[r,,f],
+        is_est = is_est[r,,f],
+        sigma = rep(exp(ln_sigma_q[r,f]), n_yrs),
+        dev_mu = rep(0, n_yrs), # fixed at 0 since mean = estimated q
+        PE_model = pe_model,
+        rho = rho,
+        init_sd = q_rw_init_sigma
+      )
+
+      nLL <- nLL + sum(yr_nLL * wt[r,,f])
+
+    } # end r loop
+  } # end f loop
+
+  return(nLL)
+
+} # end function

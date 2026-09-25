@@ -18,8 +18,13 @@ do_age_corr_setup(
 \arguments{
 \item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{corr}{\code{"iid"}, \code{"1dar1"}, \code{"us"} or \code{"2dar1"},
-either one setting for every fleet or one per fleet.}
+\item{corr}{Correlation across ages, one setting for every fleet or one per
+fleet. \code{"iid"} treats ages as independent. \code{"1dar1"} correlates
+them as an AR(1) in age distance, so a fleet skipping ages is spaced
+correctly rather than treated as consecutive. \code{"us"} estimates an
+unstructured correlation across ages. \code{"2dar1"} correlates over ages and
+years jointly through a separable AR(1), which is defined on a complete grid
+and so needs the fleet's observed ages and years to form one.}
 
 \item{data_source}{Data source tag: \code{"catch"}, \code{"discard"},
 \code{"fish_idx"} or \code{"srv_idx"}.}
@@ -30,12 +35,17 @@ either one setting for every fleet or one per fleet.}
 
 \item{starting_values}{Named list from the caller's \code{...}.}
 
-\item{rho_spec}{Character string controlling how the correlation parameters
-are shared: \code{"est_all"}, \code{"fix"}, or \code{"est_shared_"}
-followed by any combination of \code{r}, \code{s} and \code{f}, gaining
-\code{p} for the population-specific data sources. \code{NULL} (the default)
-takes \code{"est_shared_r_s"}, or \code{"est_shared_p_r_s"} when
-\code{pop}, both of which give one correlation per fleet.}
+\item{rho_spec}{How the correlation parameters are shared: \code{"est_all"},
+\code{"fix"}, or \code{"est_shared_"} followed by any combination of
+\code{r}, \code{s} and \code{f}, gaining \code{p} for the
+population-specific data sources. They sit over region, sex and fleet, so
+\code{"est_shared_r_s"} gives one per fleet and \code{"est_shared_r_s_f"} a
+single value. \code{NULL} (default) takes \code{"est_shared_r_s"}, or
+\code{"est_shared_p_r_s"} under \code{pop}. One spec governs the across-age
+correlation, the across-year correlation and the unstructured matrix
+together, so two fleets sharing under \code{"us"} share a whole matrix. A
+region, sex or population a fleet never observes has no parameter whatever
+the spec says.}
 
 \item{pop}{Logical. \code{TRUE} for the population-specific data source.}
 }
@@ -44,30 +54,9 @@ takes \code{"est_shared_r_s"}, or \code{"est_shared_p_r_s"} when
   correlation parameters set.
 }
 \description{
-Each data source is configured where its data are configured, so the catch and
-discard data sources are set in \code{\link{Setup_Mod_Catch_and_F}} and the index
-data sources in their own setup functions. The population-specific form has its
-own setting rather than borrowing the aggregated one.
-}
-\details{
-Four structures are available, per fleet. \code{"iid"} treats ages as
-independent. \code{"1dar1"} correlates them as an AR(1) in age distance, so a
-fleet skipping ages is spaced correctly rather than treated as consecutive.
-\code{"us"} estimates an unstructured correlation across ages, the third
-structure ICES age-structured assessments offer. \code{"2dar1"} correlates
-over ages and years jointly through a separable AR(1), which is defined on a
-complete grid and so requires the fleet's observed ages and years to form one.
-
-How the correlations are shared follows the package's spec strings rather than
-a structure of its own. They sit over region, sex and fleet, with a leading
-population dim for the population-specific data sources, so
-\code{"est_shared_r_s"} (the default, \code{"est_shared_p_r_s"} for the
-population form) gives one per fleet, \code{"est_shared_r_s_f"} a single
-value, \code{"est_all"} a free one per cell, and \code{"fix"} holds them all.
-One spec governs the data source's across-age correlation, its across-year
-correlation and its unstructured matrix together, so two fleets sharing a
-correlation share a whole matrix under \code{"us"}. A region, sex or
-population a fleet never observes has no parameter whatever the spec says,
-which is what holds the unused slots of a summed dim out.
+Each data source is configured where its data are, so the catch and discard
+data sources are set in \code{\link{Setup_Mod_Catch_and_F}} and the index ones
+in their own setup functions, and the population-specific form has its own
+setting rather than borrowing the aggregated one.
 }
 \keyword{internal}

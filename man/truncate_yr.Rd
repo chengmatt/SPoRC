@@ -7,50 +7,22 @@
 truncate_yr(j, data, parameters, mapping)
 }
 \arguments{
-\item{j}{Integer specifying the number of terminal years to remove from the
-dataset. A value of \code{0} returns the full dataset with no truncation.}
+\item{j}{Integer terminal years to remove. \code{0} returns the full dataset.}
 
-\item{data}{List containing model data supplied to the RTMB model.}
+\item{data}{List of model data supplied to the RTMB model.}
 
-\item{parameters}{List containing model parameters supplied to the RTMB
-model.}
+\item{parameters}{List of model parameters.}
 
-\item{mapping}{List defining parameter mappings used during estimation.}
+\item{mapping}{List of parameter mappings used during estimation.}
 }
 \value{
-A list containing truncated versions of the RTMB inputs:
-\itemize{
-  \item \code{retro_data}: Modified data list with terminal years removed.
-  \item \code{retro_parameters}: Parameter list truncated to match the
-  shortened time series.
-  \item \code{retro_mapping}: Mapping list updated to match truncated
-  parameter dimensions.
-}
+A list of \code{retro_data}, \code{retro_parameters} and
+  \code{retro_mapping}, each truncated to the shortened series.
 }
 \description{
-Internal helper used by \code{do_retrospective()} to truncate model inputs
-when conducting retrospective diagnostics. The function removes the last
-\code{j} years from the terminal portion of the time series and updates all
-associated data objects, parameter arrays, and parameter mappings so that
-their dimensions remain internally consistent.
-}
-\details{
-Specifically, the function adjusts the model \code{data}, \code{parameters},
-and \code{mapping} lists used by the RTMB model by:
-\itemize{
-  \item Truncating the \code{years} vector.
-  \item Removing terminal years from observations (catch, indices, and
-  composition data).
-  \item Truncating time-varying parameter arrays (e.g., recruitment
-  deviations, fishing mortality deviations, selectivity deviations,
-  movement parameters).
-  \item Updating parameter mappings to match the truncated parameter
-  dimensions.
-  \item Adjusting block structures and auxiliary objects that depend on
-  the number of modeled years.
-}
-
-The resulting objects can be passed directly to the model to fit a
-retrospective peel.
+Removes the last \code{j} years from the model inputs and updates the data,
+parameter arrays, maps, block structures and anything else dimensioned by the
+number of years, so the result can be handed straight to the model as one
+retrospective peel. Called by \code{do_retrospective()}.
 }
 \keyword{internal}

@@ -118,6 +118,9 @@ reference:
       - Setup_Mod_Srvsel_and_Q
       - Setup_Mod_Tagging
       - Setup_Mod_Dim
+      - Setup_Mod_DSEM
+      - read_dsem_arrows
+      - dsem_series
 
   - title: "Reference Points and Projections"
     desc: "Functions for deriving reference points and catch projections"
@@ -138,6 +141,8 @@ reference:
       - Setup_Sim_Survey
       - Setup_Sim_Tagging
       - Setup_Sim_Dim
+      - Setup_Sim_DSEM
+      - Setup_Sim_q_devs
       - Setup_sim_env
       - run_annual_cycle
       - Simulate_Pop_Static
@@ -198,6 +203,7 @@ reference:
       - get_biological_plot
       - get_data_fitted_plot
       - plot_all_basic
+      - plot_dsem_dag
       - theme_sablefish
 
   - title: "Data"

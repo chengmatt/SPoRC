@@ -14,9 +14,7 @@ get_survey_observation_model(
   srv_q_blocks,
   ln_srv_q,
   srv_q,
-  do_srv_q_cov,
-  srv_q_cov,
-  srv_q_coeff,
+  ln_srv_q_devs,
   srv_selex_type,
   srv_sel,
   srv_sel_l,
@@ -56,14 +54,8 @@ catchability.}
 
 \item{srv_q}{Array \code{[region, year, srv_fleet]}, output container.}
 
-\item{do_srv_q_cov}{Integer (0/1) switch for a catchability covariate
-effect.}
-
-\item{srv_q_cov}{Array \code{[region, year, srv_fleet, covariate]} of
-covariate values.}
-
-\item{srv_q_coeff}{Array \code{[region, srv_fleet, covariate]} of
-covariate coefficients.}
+\item{ln_srv_q_devs}{Array \code{[region, year, srv_fleet]} of log-scale
+annual catchability deviations, or \code{NULL} for none.}
 
 \item{srv_selex_type}{Integer (0 = age-based, 1 = length-based) switch.}
 

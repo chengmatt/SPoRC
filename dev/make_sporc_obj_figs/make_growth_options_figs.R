@@ -330,13 +330,13 @@ sp_ages <- 1:spcfg$n_ages; sp_yrs <- 1:spcfg$n_yrs
 sp_est <- sp_fit$rep$mean_LAA_srv[1, 1, , 1, , 1, 1]
 sp_par <- sp_flat$rep$mean_LAA_srv[1, 1, , 1, , 1, 1]
 
-# (a) the surface that was simulated, as a proportional departure from the curve
+# (a) the surface that was simulated, as a proportional deviation from the curve
 surf_df <- expand.grid(Year = sp_yrs, Age = sp_ages) %>% mutate(dev = as.vector(sp_sim$devs))
 p_surf <- ggplot(surf_df, aes(Year, Age, fill = dev)) +
   geom_raster() +
   scale_fill_gradient2(low = "#3B4CC0", mid = "gray95", high = "#B40426") +
   scale_y_continuous(breaks = seq(2, 12, 2)) +
-  labs(x = "Year", y = "Age", fill = "Departure from the curve,\nlog mean length at age") +
+  labs(x = "Year", y = "Age", fill = "Deviation from the curve,\nlog mean length at age") +
   thm + theme(legend.key.width = unit(1.5, "cm"))
 
 # (b) mean length at age recovered, against the truth, in three years

@@ -5,182 +5,59 @@
 
 #' Construct and Condition Closed-Loop Simulation Inputs
 #'
-#' Initializes and conditions a simulation object used for closed-loop
-#' population projections. The function reconstructs fitted model quantities,
-#' extends time-varying processes into projection years, and prepares all
-#' simulation components required by the operating model.
+#' Builds the simulation object a closed-loop projection runs on. Historical years
+#' are conditioned on the fitted model's report, and projection years are extended
+#' by the \code{*_fill} rules or by inputs supplied through \code{...}, which
+#' replace any internally generated component.
 #'
-#' Simulation inputs are generated for biological dynamics, fishing,
-#' surveys, recruitment, tagging, and movement processes. Historical years
-#' are conditioned on outputs from the fitted assessment model, while
-#' projection years are initialized using extension rules or user-supplied
-#' overrides.
-#'
-#' Users may replace any internally generated component by supplying a
-#' correctly named object via \code{...}.
-#'
-#' @param closed_loop_yrs Integer. Number of projection years added beyond
-#'   the fitted data period.
-#' @param n_sims Integer. Number of stochastic simulation replicates.
+#' @param closed_loop_yrs Integer projection years beyond the fitted data period.
+#' @param n_sims Integer number of stochastic replicates.
 #' @param data List. Data object used to fit the assessment model.
 #' @param parameters List. Parameter vector from the fitted model.
-#' @param mapping List. Parameter mapping object used during estimation.
+#' @param mapping List. Parameter mapping used during estimation.
 #' @param sd_rep List. Standard deviation report from the fitted model.
-#' @param rep List. Model report object produced by the fitted model.
+#' @param rep List. Report object from the fitted model.
 #' @param random Character vector of estimated random effects.
+#' @param FishIdx_SE_fill,SrvIdx_SE_fill,FishIdx_SE_pop_fill,SrvIdx_SE_pop_fill How
+#'   the pooled and population-specific index standard errors are extended into the
+#'   projection years. The population ones default to \code{"mean"}.
+#' @param ISS_FishAgeComps_fill,ISS_FishLenComps_fill,ISS_SrvAgeComps_fill,ISS_SrvLenComps_fill,ISS_FishAgeComps_discard_fill,ISS_FishLenComps_discard_fill
+#'   How the pooled input sample sizes are extended into the projection years.
+#' @param ISS_FishAgeComps_pop_fill,ISS_FishLenComps_pop_fill,ISS_SrvAgeComps_pop_fill,ISS_SrvLenComps_pop_fill,ISS_FishAgeComps_discard_pop_fill,ISS_FishLenComps_discard_pop_fill
+#'   The population-specific counterparts, each defaulting to \code{"mean"}.
 #'
-#' @param FishIdx_SE_fill Character or numeric specifying how pooled fishery
-#'   index standard errors are extended into projection years.
-#' @param SrvIdx_SE_fill Character or numeric specifying how pooled survey
-#'   index standard errors are extended into projection years.
-#' @param FishIdx_SE_pop_fill Character or numeric specifying how
-#'   population-specific fishery index standard errors are extended into
-#'   projection years. Default \code{"mean"}.
-#' @param SrvIdx_SE_pop_fill Character or numeric specifying how
-#'   population-specific survey index standard errors are extended into
-#'   projection years. Default \code{"mean"}.
-#' @param ISS_FishAgeComps_fill Character or numeric specifying how pooled
-#'   fishery age-composition input sample sizes are extended into projection
-#'   years.
-#' @param ISS_FishLenComps_fill Same behavior as \code{ISS_FishAgeComps_fill}
-#'   for pooled fishery length compositions.
-#' @param ISS_SrvAgeComps_fill Character or numeric specifying how pooled
-#'   survey age-composition input sample sizes are extended into projection
-#'   years.
-#' @param ISS_SrvLenComps_fill Same behavior as \code{ISS_SrvAgeComps_fill}
-#'   for pooled survey length compositions.
-#' @param ISS_FishAgeComps_pop_fill Character or numeric specifying how
-#'   population-specific fishery age-composition input sample sizes are
-#'   extended into projection years. Default \code{"mean"}.
-#' @param ISS_FishLenComps_pop_fill Same behavior as
-#'   \code{ISS_FishAgeComps_pop_fill} for population-specific fishery length
-#'   compositions. Default \code{"mean"}.
-#' @param ISS_SrvAgeComps_pop_fill Character or numeric specifying how
-#'   population-specific survey age-composition input sample sizes are
-#'   extended into projection years. Default \code{"mean"}.
-#' @param ISS_SrvLenComps_pop_fill Same behavior as
-#'   \code{ISS_SrvAgeComps_pop_fill} for population-specific survey length
-#'   compositions. Default \code{"mean"}.
-#' @param ISS_FishAgeComps_discard_fill Same behavior as \code{ISS_FishAgeComps_fill}
-#'   for pooled fishery length compositions.
-#' @param ISS_FishLenComps_discard_fill Same behavior as \code{ISS_FishAgeComps_fill}
-#'   for pooled fishery length compositions.
-#' @param ISS_FishAgeComps_discard_pop_fill Same behavior as
-#'   \code{ISS_FishAgeComps_pop_fill} for population-specific fishery length
-#'   compositions. Default \code{"mean"}.
-#' @param ISS_FishLenComps_discard_pop_fill Same behavior as
-#'   \code{ISS_FishLenComps_pop_fill} for population-specific fishery length
-#'   compositions. Default \code{"mean"}.
-#'
-#' Extension rules for all \code{*_fill} arguments may be:
-#'
-#' \describe{
-#'   \item{\code{"zeros"}}{Fill projection years with zeros.}
-#'   \item{\code{"last"}}{Repeat the final observed year.}
-#'   \item{\code{"mean"}}{Use the mean of the historical series.}
-#'   \item{\code{"F_pattern"}}{Scale fishery composition sample sizes
-#'     proportionally to the simulated fishing mortality pattern (pooled
-#'     fishery ISS only).}
-#'   \item{numeric}{Use a supplied constant or array.}
-#' }
-#'
-#' If a fill argument receives an array directly, it is interpreted as the
-#' fully specified input and stored accordingly; the fill rule is ignored.
-#'
-#' @param ... Optional named simulation inputs that override internally
-#'   generated components. Any argument expected by
-#'   \code{\link{Setup_Sim_Fishing}}, \code{\link{Setup_Sim_Survey}},
-#'   \code{\link{Setup_Sim_Biologicals}}, \code{\link{Setup_Sim_Rec}}, or
-#'   \code{\link{Setup_Sim_Tagging}} may be provided.
-#'
-#'   Common overrides include:
-#'
-#'   \strong{Fishing processes}
-#'   \itemize{
-#'     \item \code{Fmort_input}
-#'     \item \code{fish_sel_input}
-#'     \item \code{fish_q_input}
-#'   }
-#'
-#'   \strong{Survey processes}
-#'   \itemize{
-#'     \item \code{srv_sel_input}
-#'     \item \code{srv_q_input}
-#'   }
-#'
-#'   \strong{Biological processes}
-#'   \itemize{
-#'     \item \code{WAA_input}
-#'     \item \code{MatAA_input}
-#'     \item \code{natmort_input}
-#'   }
-#'
-#'   \strong{Recruitment processes}
-#'   \itemize{
-#'     \item \code{R0_input}
-#'     \item \code{rinit_input}
-#'     \item \code{h_input}
-#'     \item \code{Rec_input}
-#'   }
-#'
-#'   \strong{Tagging processes}
-#'   \itemize{
-#'     \item \code{conv_tag_fish_reporting_input}
-#'   }
-#'
-#'   \strong{Movement processes}
-#'   \itemize{
-#'     \item \code{Movement}
-#'   }
-#'
-#'   Supplied objects must have dimensions consistent with model structure,
-#'   the total number of years (\code{length(data$years) + closed_loop_yrs}),
-#'   and the number of simulations (\code{n_sims}).
+#'   Every \code{*_fill} argument takes \code{"zeros"}, \code{"last"} (repeat the
+#'   final observed year), \code{"mean"}, \code{"F_pattern"} (scale the sample
+#'   sizes with the simulated fishing mortality pattern, pooled fishery input
+#'   sample sizes only), or a constant. An array passed instead is taken as the
+#'   fully specified input and the fill rule is ignored.
+#' @param ... Optional named simulation inputs overriding what is generated
+#'   internally. Any argument of \code{\link{Setup_Sim_Fishing}},
+#'   \code{\link{Setup_Sim_Survey}}, \code{\link{Setup_Sim_Biologicals}},
+#'   \code{\link{Setup_Sim_Rec}} or \code{\link{Setup_Sim_Tagging}} may be given;
+#'   the common ones are \code{Fmort_input}, \code{fish_sel_input},
+#'   \code{fish_q_input}, \code{srv_sel_input}, \code{srv_q_input},
+#'   \code{WAA_input}, \code{MatAA_input}, \code{natmort_input}, \code{R0_input},
+#'   \code{rinit_input}, \code{h_input}, \code{Rec_input},
+#'   \code{conv_tag_fish_reporting_input} and \code{Movement}. Dimensions must
+#'   match the model structure, \code{length(data$years) + closed_loop_yrs} years
+#'   and \code{n_sims} simulations.
 #'
 #' @details
-#' Simulation years consist of two periods:
+#' The conditioning years are the fitted model's own, reconstructed from its report
+#' objects; the projection years are simulated under closed-loop management and
+#' extended by the fill rules or the supplied inputs. By default the biological
+#' inputs, selectivity and catchability are extended at the final estimated year's
+#' values, fishing mortality starts at zero in the projection years, recruitment is
+#' simulated forward unless \code{Rec_input} specifies it, and the
+#' population-specific data sources fall back to uninformative defaults when their
+#' \code{Use*_pop} flags hold no ones. Feedback begins in the first projection
+#' year.
 #'
-#' \itemize{
-#'   \item \strong{Conditioning years}: historical years corresponding to
-#'     the fitted assessment model.
-#'   \item \strong{Projection years}: future years simulated under
-#'     closed-loop management.
-#' }
-#'
-#' During conditioning years, model processes are reconstructed from the
-#' fitted model report objects. For projection years, quantities are extended
-#' using the specified fill rules or user-supplied inputs.
-#'
-#' By default:
-#'
-#' \itemize{
-#'   \item Biological inputs, selectivity, and catchability are extended
-#'     using values from the final estimated year.
-#'   \item Fishing mortality is initialized to zero in projection years.
-#'   \item Recruitment is simulated forward when not fully specified by
-#'     \code{Rec_input}.
-#'   \item Population-specific data sources (\code{ObsFishIdx_pop_SE},
-#'     \code{ObsSrvIdx_pop_SE}, and all \code{*_pop} ISS arrays) fall back
-#'     to uninformative defaults when the corresponding \code{Use*_pop}
-#'     flags contain no ones.
-#' }
-#'
-#' Closed-loop feedback begins in the first projection year and allows
-#' management actions (e.g., fishing mortality adjustments) to update
-#' dynamically during the simulation.
-#'
-#' @return
-#' A fully initialized \code{sim_list} object containing:
-#'
-#' \itemize{
-#'   \item model dimensions and simulation containers
-#'   \item biological process inputs
-#'   \item pooled and population-specific fishing and survey processes
-#'   \item recruitment dynamics
-#'   \item tagging processes
-#'   \item spatial movement structures
-#'   \item replicated arrays across \code{n_sims}
-#' }
+#' @return A \code{sim_list} holding the model dimensions and simulation
+#'   containers, the biological inputs, the pooled and population-specific fishing
+#'   and survey processes, recruitment, tagging and movement, each replicated
+#'   across \code{n_sims}.
 #'
 #' @export condition_closed_loop_simulations
 #' @family Closed Loop Simulations
@@ -375,9 +252,17 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   ret_sel_input <- if(!"ret_sel_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, rep$ret_sel[,,seq_along(data$years),,,,,drop = FALSE]), n_years = closed_loop_yrs, 3, fill = 'last')
   } else args$ret_sel_input
+  # Catchability: the reported value is the block mean times the fit's deviation, and the operating
+  # model takes the mean as its level, with the deviations read back over the conditioning years
+  fit_yrs <- seq_along(data$years)
+  fish_q_fit <- split_reported_q(rep$fish_q[,fit_yrs,,drop = FALSE], optim_parameters_list$ln_fish_q,
+                                 data$fish_q_blocks[,fit_yrs,,drop = FALSE], data$fish_q_type)
+  srv_q_fit <- split_reported_q(rep$srv_q[,fit_yrs,,drop = FALSE], optim_parameters_list$ln_srv_q,
+                                data$srv_q_blocks[,fit_yrs,,drop = FALSE], data$srv_q_type)
+
   # Fishery catchability
   fish_q_input <- if(!"fish_q_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, rep$fish_q[,seq_along(data$years),,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'last')
+    extend_years(replicate(n = sim_list$n_sims, fish_q_fit$q_mean), n_years = closed_loop_yrs, 2, fill = 'last')
   } else args$fish_q_input
   # Fishery index uncertainty
   ObsFishIdx_SE <- if(!"ObsFishIdx_SE" %in% names(args)) {
@@ -614,7 +499,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$srv_sel_input
   # Survey catchability / q
   srv_q_input <- if(!"srv_q_input" %in% names(args)) {
-    extend_years(replicate(n = sim_list$n_sims, rep$srv_q[,seq_along(data$years),,drop = FALSE]), closed_loop_yrs, 2, 'last')
+    extend_years(replicate(n = sim_list$n_sims, srv_q_fit$q_mean), closed_loop_yrs, 2, 'last')
   } else args$srv_q_input
   # Survey index uncertainty
   ObsSrvIdx_SE <- if(!"ObsSrvIdx_SE" %in% names(args)) {
@@ -988,6 +873,35 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     if(!state_on || !isTRUE(sim_list$NAA_re_season == 1)) 0
     else corr_from(optim_parameters_list$NAA_season_corr_pars, length(sim_list$naa_re_seas))
   }
+
+  # number of conditioning years
+  sim_list$n_cond_yrs <- if("n_cond_yrs" %in% names(args)) args$n_cond_yrs else length(data$years)
+
+  # the fit's own deviations over the conditioning years and zero after, so a projection walk starts
+  # from the fit's last one. a supplied catchability is taken as it stands and gets none
+  if(!"fish_q_input" %in% names(args))
+    sim_list$ln_fish_q_devs <- extend_years(replicate(n = sim_list$n_sims, fish_q_fit$devs), closed_loop_yrs, 2)
+  if(!"srv_q_input" %in% names(args))
+    sim_list$ln_srv_q_devs <- extend_years(replicate(n = sim_list$n_sims, srv_q_fit$devs), closed_loop_yrs, 2)
+
+  # conditioning on the numbers-at-age process error
+  state_estimates_known <- state_on && !is.null(sd_rep$par.random) && "ln_NAA" %in% names(sd_rep$par.random)
+  if(state_on && !state_estimates_known && !("naa_eta_input" %in% names(args)))
+    warning("The fit has a state on the numbers at age, but sd_rep carries no random effects for it, so its ",
+            "innovations cannot be read and the conditioning years will draw their own. Pass sd_rep with ",
+            "par.random, or naa_eta_input directly, for the conditioning years to reproduce the fit.", call. = FALSE)
+
+  # derive NAA PE to use in conditioning period
+  if(state_on && state_estimates_known && !("naa_eta_input" %in% names(args)) && !is.null(rep$NAA_pred)) {
+    ln_NAA <- optim_parameters_list$ln_NAA
+    n_cond <- dim(ln_NAA)[3]
+    pred <- rep$NAA_pred[,,seq_len(n_cond),,,,drop = FALSE]
+    fit_eta <- array(0, dim = dim(ln_NAA))
+    fit_eta[pred > 0] <- ln_NAA[pred > 0] - log(pred[pred > 0])
+    eta <- array(0, dim = c(dim(ln_NAA), sim_list$n_sims))
+    for(i in seq_len(sim_list$n_sims)) eta[,,,,,,i] <- fit_eta
+    sim_list$naa_eta_input <- eta
+  } else if("naa_eta_input" %in% names(args)) sim_list$naa_eta_input <- args$naa_eta_input
 
   return(sim_list)
 }

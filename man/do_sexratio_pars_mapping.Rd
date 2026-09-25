@@ -7,48 +7,27 @@
 do_sexratio_pars_mapping(input_list, sexratio_spec)
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{$data$n_sexes}, \code{$data$n_pop},
-\code{$data$n_regions}, \code{$data$sexratio_blocks}, and
-\code{$data$rec_region_prop_spec} to be set by upstream setup functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.
+Requires \code{$data$n_sexes}, \code{$data$n_pop}, \code{$data$n_regions},
+\code{$data$sexratio_blocks} and \code{$data$rec_region_prop_spec}.}
 
-\item{sexratio_spec}{Character string specifying the estimation structure
-for \code{sexratio_pars}. One of:
-\describe{
-  \item{\code{"est_all"}}{Separate sex ratio parameter per population x
-    region x block. Not permitted when \code{rec_region_prop_spec = 1}
-    and \code{n_pop > 1}.}
-  \item{\code{"est_shared_r"}}{Separate sex ratio per population x block,
-    shared across regions within each population. Block membership is
-    checked per region to ensure only valid blocks are assigned.}
-  \item{\code{"est_shared_pop_r"}}{Single sex ratio per block, shared
-    across all populations and regions. Requires identical block
-    structures across all population-region combinations.}
-  \item{\code{"fix"}}{All \code{sexratio_pars} fixed at their starting
-    values (mapped to \code{NA}). Required when \code{n_sexes = 1}.}
-}}
+\item{sexratio_spec}{Estimation structure for \code{sexratio_pars}.
+\code{"est_all"} gives one parameter per population, region and block, and is
+not permitted when \code{rec_region_prop_spec = 1} and \code{n_pop > 1}.
+\code{"est_shared_r"} gives one per population and block, shared across its
+regions. \code{"est_shared_pop_r"} gives one per block across every population
+and region, and requires identical block structures. \code{"fix"} holds every
+parameter at its starting value and is required when \code{n_sexes = 1}.}
 }
 \value{
-The input \code{input_list} with \code{$map$sexratio_pars} set to
-  a factor vector of length \code{prod(dim(par$sexratio_pars))}. Active
-  parameters receive sequential integer indices; fixed or invalid cells
-  are \code{NA}.
+\code{input_list} with \code{$map$sexratio_pars} set to a factor vector
+  of length \code{prod(dim(par$sexratio_pars))}. Active parameters take
+  sequential integers, fixed or invalid cells are \code{NA}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Rec}} to construct
-the TMB/RTMB factor map for \code{sexratio_pars}, the proportion of
-recruits assigned to the first sex. The \code{sexratio_pars} array has
-dimensions \code{[n_pop x n_regions x n_sexratio_blocks]}, where
-\code{n_sexratio_blocks} is the maximum number of time blocks across all
-population-region combinations as defined in \code{$data$sexratio_blocks}.
-}
-\details{
-When \code{n_sexes = 1}, estimation is meaningless and \code{sexratio_spec}
-must be \code{"fix"}. Under the no-dispersal constraint
-(\code{rec_region_prop_spec = 1} with \code{n_pop > 1}), \code{"est_all"}
-is prohibited because non-natal regions receive no recruitment and cannot
-support independent sex ratio estimates. The \code{"est_shared_pop_r"}
-option additionally requires that all population-region combinations share
-the same block structure; a mismatch raises an error.
+Builds the factor map for \code{sexratio_pars} \code{[n_pop x n_regions x
+n_sexratio_blocks]}, the proportion of recruits assigned to the first sex, where
+\code{n_sexratio_blocks} is the largest number of time blocks across population
+and region in \code{$data$sexratio_blocks}. Called by \code{\link{Setup_Mod_Rec}}.
 }
 \keyword{internal}

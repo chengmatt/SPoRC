@@ -18,77 +18,67 @@ do_sel_pe_pars_mapping(
 )
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{pe_pars_spec}{Character vector of length \code{n_<fleet_field>}.
-Options: \code{"est_all"}, \code{"est_shared_r"}, \code{"est_shared_s"},
-\code{"est_shared_r_s"}, the same four with \code{_b} added
-(\code{"est_shared_b"}, \code{"est_shared_r_b"}, \code{"est_shared_b_s"},
-\code{"est_shared_r_b_s"}), which put one standard deviation across every
-bin the fleet reads, \code{"fix"}/\code{"none"}, or
+\item{pe_pars_spec}{Character vector, one entry per fleet: \code{"est_all"},
+\code{"est_shared_r"}, \code{"est_shared_s"}, \code{"est_shared_r_s"}, those
+four with \code{_b} added, which put one standard deviation across every bin
+the fleet reads, \code{"fix"} or \code{"none"}, or
 \code{"est_shared_f_x"}.}
 
-\item{corr_opt_semipar}{Character vector of length \code{n_<fleet_field>}
-specifying which correlation components to suppress for semi-parametric
-models (\code{NA}, \code{"corr_zero_y"}, \code{"corr_zero_b"},
+\item{corr_opt_semipar}{Character vector, one entry per fleet, of which
+correlation components to suppress under the semi-parametric forms:
+\code{NA}, \code{"corr_zero_y"}, \code{"corr_zero_b"},
 \code{"corr_zero_y_b"}, \code{"corr_zero_c"}, \code{"corr_zero_y_c"},
-\code{"corr_zero_b_c"}, \code{"corr_zero_y_b_c"}). Cohort options are
-only valid for 3D GMRF forms.}
+\code{"corr_zero_b_c"} or \code{"corr_zero_y_b_c"}. The cohort options are
+valid for the 3D GMRF forms only.}
 
 \item{bins}{Number of selectivity bins.}
 
-\item{sel_devs_spec}{Character vector of length \code{n_<fleet_field>}, the
-deviation specification passed to \code{\link{do_sel_devs_mapping}}. Read
-only to recognize which dimensions the deviations are shared over.
-\code{"est_shared_f_x"} resolves to the referenced fleet's specification.}
+\item{sel_devs_spec}{Character vector, one entry per fleet, the deviation
+specification passed to \code{\link{do_sel_devs_mapping}}. Read only to
+recognize which dims the deviations are shared over, and
+\code{"est_shared_f_x"} resolves to the referenced fleet's.}
 
-\item{sel_devs_shared_bins}{List of integer vectors grouping bins that share
-a single estimated deviation, as passed to
+\item{sel_devs_shared_bins}{List of integer vectors grouping the bins that
+share one estimated deviation, as passed to
 \code{\link{do_sel_devs_mapping}}.}
 
-\item{prefix}{Character, one of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
-Drives the domain-specific field names: \code{cont_tv_<prefix>_sel},
-\code{<prefix>_sel_model}, \code{<prefix>_selex_type},
-\code{<prefix>sel_pe_pars} (par/map name, no underscore before "sel").}
+\item{prefix}{\code{"fish"}, \code{"ret"} or \code{"srv"}, which drives the
+field names \code{cont_tv_<prefix>_sel}, \code{<prefix>_sel_model},
+\code{<prefix>_selex_type} and \code{<prefix>sel_pe_pars}.}
 
-\item{fleet_field}{Character. Name of the \code{$data} field giving the
-number of fleets (\code{"n_fish_fleets"} for \code{"fish"}/\code{"ret"};
-\code{"n_srv_fleets"} for \code{"srv"}).}
+\item{fleet_field}{Name of the \code{$data} field giving the number of fleets:
+\code{"n_fish_fleets"} for \code{"fish"} and \code{"ret"},
+\code{"n_srv_fleets"} for \code{"srv"}.}
 
-\item{use_field}{Character. Stub for the usage-indicator fields read by
-\code{\link{sel_has_data}}: \code{Use<use_field>} and its at-age
-counterpart \code{Use<use_field>AA}, each with a \code{_pop} variant.
-\code{"Catch"} for \code{"fish"}/\code{"ret"}; \code{"SrvIdx"} for
-\code{"srv"}.}
+\item{use_field}{Stub for the use indicator fields \code{\link{sel_has_data}}
+reads, \code{Use<use_field>} and \code{Use<use_field>AA} with their
+\code{_pop} variants: \code{"Catch"} for \code{"fish"} and \code{"ret"},
+\code{"SrvIdx"} for \code{"srv"}.}
 
-\item{fleet_label}{Character. Used only in the collected setup message.}
+\item{fleet_label}{Used only in the collected setup message.}
 }
 \value{
-The input \code{input_list} with \code{$map$<prefix>sel_pe_pars}
-  set to a factor vector.
+\code{input_list} with \code{$map$<prefix>sel_pe_pars} set to a factor
+  vector.
 }
 \description{
-Constructs the factor map for the variance/correlation hyperparameters
-governing continuous time-varying selectivity (\code{fishsel_pe_pars},
-\code{retsel_pe_pars}, or \code{srvsel_pe_pars}). The set of active
-parameters depends on the time-variation type: iid/random-walk forms use
-up to 2 parameters (log-sigma); 3D GMRF forms use up to 4 (partial
-correlations for age, year, cohort dimensions plus log-sigma); the 2D AR1
-form uses 3 (bin AR1, year AR1, log-sigma). Correlation components can be
-selectively suppressed via \code{corr_opt_semipar}. Fleet sharing
-(\code{"est_shared_f_x"}) is handled in a second pass.
+Builds the factor map for the variance and correlation hyperparameters of
+continuous time-varying selectivity (\code{fishsel_pe_pars},
+\code{retsel_pe_pars} or \code{srvsel_pe_pars}), selected by \code{prefix}
+exactly as in \code{\link{do_fixed_sel_pars_mapping}}. Which parameters are
+active follows the time-variation form: the iid and random walk forms use up to
+two log sigmas, the 3D GMRF forms up to four (the partial correlations over
+age, year and cohort plus a log sigma), and the 2D AR1 form three (the bin and
+year correlations plus a log sigma). Fleet sharing is handled in a second pass.
 }
 \details{
-The hyperparameters have to match the deviation series the likelihood
-actually evaluates, which is one per shared group, read at the group's lowest
-bin and first sex. Under iid or a random walk on a non-parametric fleet the
-log-sigmas are indexed by bin, so \code{"est_shared_b"} leaves one log-sigma
-per bin group. Sharing deviations across sexes (\code{"est_shared_s"} and its
-combinations) leaves one set for the first sex, under every time-variation
+The hyperparameters have to match the deviation series the likelihood actually
+evaluates, which is one per shared group read at the group's lowest bin and
+first sex. Under iid or a random walk on a non-parametric fleet the log sigmas
+are indexed by bin, so \code{"est_shared_b"} leaves one per bin group, and
+sharing deviations across sexes leaves one set for the first sex under every
 form. The rest are fixed.
-
-Serves fishery, retention, and survey selectivity, selected by
-\code{prefix} exactly as in \code{\link{do_fixed_sel_pars_mapping}}.
 }
 \keyword{internal}

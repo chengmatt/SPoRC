@@ -21,11 +21,11 @@ sp_pars <- c(L1 = 14, L2 = 68, K = 0.25, CV1 = 0.12, CV2 = 0.07)
 
 #' The true deviation surface: a wave over years scaled by a gradient over ages
 #'
-#' Older fish depart more than young ones, and the departure swings slowly over
+#' Older fish deviate more than young ones, and the deviation swings slowly over
 #' the series, so a correlated process error has real structure to find.
 #'
 #' @param n_yrs,n_ages dimensions
-#' @param amp largest departure in mean length at age, on the log scale
+#' @param amp largest deviation in mean length at age, on the log scale
 #' @keywords internal
 sp_true_devs <- function(n_yrs = spcfg$n_yrs, n_ages = spcfg$n_ages, amp = 0.12) {
   wave <- sin(2 * pi * (seq_len(n_yrs) - 1) / (n_yrs / 1.5))

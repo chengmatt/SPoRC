@@ -10,7 +10,7 @@ setup_stage_order <- function() {
   c("Setup_Mod_Dim", "Setup_Mod_Rec", "Setup_Mod_Biologicals", "Setup_Mod_Movement",
     "Setup_Mod_Tagging", "Setup_Mod_Catch_and_F", "Setup_Mod_FishIdx_and_Comps",
     "Setup_Mod_SrvIdx_and_Comps", "Setup_Mod_Fishsel_and_Q", "Setup_Mod_Srvsel_and_Q",
-    "Setup_Mod_Weighting")
+    "Setup_Mod_DSEM", "Setup_Mod_Weighting")
 }
 
 #' The package's Rd database, wherever it is being read from

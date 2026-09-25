@@ -7,40 +7,26 @@
 do_stray_rate_mapping(input_list, stray_rate_spec)
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{$data$n_pop}, \code{$data$stray_rate_blocks},
-and \code{$data$use_fixed_stray_rate} to be set by upstream functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.
+Requires \code{$data$n_pop}, \code{$data$stray_rate_blocks} and
+\code{$data$use_fixed_stray_rate}.}
 
-\item{stray_rate_spec}{Character string specifying the estimation structure.
-One of:
-\describe{
-  \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
-    \code{NA}).}
-  \item{\code{"est_all"}}{Estimate independently per population x block.
-    Produces \code{n_pop x n_unique_blocks} estimated parameters.}
-  \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
-    all populations. Requires identical block structures across all
-    populations. An error is raised if block indices differ.}
-}}
+\item{stray_rate_spec}{Estimation structure. \code{"fix"} holds every parameter
+at its starting value, \code{"est_all"} estimates per population and block, and
+\code{"est_shared_pop"} gives one parameter per block shared across
+populations, which requires identical block structures and errors otherwise.}
 }
 \value{
-The input \code{input_list} with \code{$map$stray_rate_pars} set to
-  a factor vector of length \code{prod(dim(par$stray_rate_pars))}. Active
-  parameters receive sequential integer indices; fixed parameters are
-  \code{NA}.
+\code{input_list} with \code{$map$stray_rate_pars} set to a factor vector
+  of length \code{prod(dim(par$stray_rate_pars))}. Active parameters take
+  sequential integers, fixed ones are \code{NA}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
-TMB/RTMB factor map for \code{stray_rate_pars}, the logit-scale stray rate
-parameters. The array has dimensions \code{[n_pop x max_stray_blocks]},
-where \code{max_stray_blocks} is the maximum number of time blocks across
-all populations as defined by \code{$data$stray_rate_blocks}.
-}
-\details{
-When \code{n_pop = 1}, straying is not applicable and all parameters are
-automatically fixed to \code{NA}. When \code{use_fixed_stray_rate = 1},
-the objective function reads from \code{fixed_stray_rate} directly and
-\code{stray_rate_pars} are not used; all elements are fixed regardless
-of \code{stray_rate_spec}.
+Builds the factor map for \code{stray_rate_pars} \code{[n_pop x
+max_stray_blocks]}, the logit-scale stray rates, where \code{max_stray_blocks} is
+the largest number of time blocks across populations in
+\code{$data$stray_rate_blocks}. Every parameter is fixed when \code{n_pop = 1} or
+\code{use_fixed_stray_rate = 1}, whatever \code{stray_rate_spec} asks for. Called
+by \code{\link{Setup_Mod_Rec}}.
 }
 \keyword{internal}

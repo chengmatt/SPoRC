@@ -5,45 +5,18 @@
 
 #' Truncate Model Inputs for Retrospective Diagnostics
 #'
-#' Internal helper used by \code{do_retrospective()} to truncate model inputs
-#' when conducting retrospective diagnostics. The function removes the last
-#' \code{j} years from the terminal portion of the time series and updates all
-#' associated data objects, parameter arrays, and parameter mappings so that
-#' their dimensions remain internally consistent.
+#' Removes the last \code{j} years from the model inputs and updates the data,
+#' parameter arrays, maps, block structures and anything else dimensioned by the
+#' number of years, so the result can be handed straight to the model as one
+#' retrospective peel. Called by \code{do_retrospective()}.
 #'
-#' Specifically, the function adjusts the model \code{data}, \code{parameters},
-#' and \code{mapping} lists used by the RTMB model by:
-#' \itemize{
-#'   \item Truncating the \code{years} vector.
-#'   \item Removing terminal years from observations (catch, indices, and
-#'   composition data).
-#'   \item Truncating time-varying parameter arrays (e.g., recruitment
-#'   deviations, fishing mortality deviations, selectivity deviations,
-#'   movement parameters).
-#'   \item Updating parameter mappings to match the truncated parameter
-#'   dimensions.
-#'   \item Adjusting block structures and auxiliary objects that depend on
-#'   the number of modeled years.
-#' }
+#' @param j Integer terminal years to remove. \code{0} returns the full dataset.
+#' @param data List of model data supplied to the RTMB model.
+#' @param parameters List of model parameters.
+#' @param mapping List of parameter mappings used during estimation.
 #'
-#' The resulting objects can be passed directly to the model to fit a
-#' retrospective peel.
-#'
-#' @param j Integer specifying the number of terminal years to remove from the
-#'   dataset. A value of \code{0} returns the full dataset with no truncation.
-#' @param data List containing model data supplied to the RTMB model.
-#' @param parameters List containing model parameters supplied to the RTMB
-#'   model.
-#' @param mapping List defining parameter mappings used during estimation.
-#'
-#' @returns A list containing truncated versions of the RTMB inputs:
-#' \itemize{
-#'   \item \code{retro_data}: Modified data list with terminal years removed.
-#'   \item \code{retro_parameters}: Parameter list truncated to match the
-#'   shortened time series.
-#'   \item \code{retro_mapping}: Mapping list updated to match truncated
-#'   parameter dimensions.
-#' }
+#' @returns A list of \code{retro_data}, \code{retro_parameters} and
+#'   \code{retro_mapping}, each truncated to the shortened series.
 #'
 #' @keywords internal
 truncate_yr <- function(j,
@@ -280,6 +253,16 @@ truncate_yr <- function(j,
   retro_mapping$ln_srvsel_devs <- factor(array(mapping$ln_srvsel_devs, dim = dim(parameters$ln_srvsel_devs))[,1:(length(data$years) - j),,,,drop = FALSE]) # modify map
   retro_data$map_ln_srvsel_devs <- data$map_ln_srvsel_devs[,1:(length(data$years) - j),,,,drop = FALSE]
 
+  # Catchability deviations, both fleets
+  for(prefix in c("fish", "srv")) {
+    devs_name <- paste0("ln_", prefix, "_q_devs")
+    if(is.null(parameters[[devs_name]])) next
+    keep_yr <- 1:(dim(parameters[[devs_name]])[2] - j)
+    retro_parameters[[devs_name]] <- parameters[[devs_name]][,keep_yr,,drop = FALSE]
+    if(!is.null(mapping[[devs_name]])) retro_mapping[[devs_name]] <- factor(array(mapping[[devs_name]], dim = dim(parameters[[devs_name]]))[,keep_yr,,drop = FALSE])
+    if(!is.null(data[[paste0("map_", devs_name)]])) retro_data[[paste0("map_", devs_name)]] <- data[[paste0("map_", devs_name)]][,keep_yr,,drop = FALSE]
+  } # end prefix loop
+
   # Survey selectivity and catchability blocks
   retro_data$srv_q_blocks <- data$srv_q_blocks[,1:(length(data$years) - j),, drop = FALSE]
   retro_data$srv_sel_blocks <- data$srv_sel_blocks[,1:(length(data$years) - j),, drop = FALSE]
@@ -468,6 +451,14 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
   retro_data$ISS_SrvLenComps_pop <- data$ISS_SrvLenComps_pop[,,1:(length(data$years) - j),,,,drop = FALSE]
 
 
+  # DSEM --------------------------------------------------------------------
+  if(!is.null(retro_data$dsem_model)) {
+    peeled <- peel_dsem_years(retro_data, retro_parameters, retro_mapping, length(retro_data$years) + retro_data$n_proj_yrs_devs)
+    retro_data <- peeled$data
+    retro_parameters <- peeled$parameters
+    retro_mapping <- peeled$mapping
+  }
+
   return(list(retro_data = retro_data,
               retro_parameters = retro_parameters,
               retro_mapping = retro_mapping))
@@ -528,105 +519,47 @@ truncate_idx_cov <- function(retro_data, data) {
 
 #' Run Retrospective Diagnostics for RTMB Models
 #'
-#' Conducts retrospective analyses by sequentially removing terminal years
-#' ("peels") from the dataset and refitting the model. For each peel, the
-#' function truncates the model inputs, optionally applies data lags and
-#' Francis composition reweighting, fits the model, and extracts estimates
-#' of spawning stock biomass (SSB) and recruitment.
+#' Refits the model with terminal years removed one peel at a time, truncating the
+#' inputs, applying any data lags and Francis reweighting, and extracting spawning
+#' stock biomass and recruitment from each fit.
 #'
-#' Retrospective analyses are commonly used to evaluate the stability of
-#' model estimates through time and to diagnose potential model misspecification.
-#'
-#' @param n_retro Integer specifying the number of retrospective peels to perform.
-#'   A value of \code{n_retro = 0} fits the model using the full dataset only.
-#' @param data List containing the data supplied to the RTMB model.
-#' @param parameters List containing the model parameters.
-#' @param mapping List defining parameter mappings used during estimation.
-#' @param random Character vector identifying random-effect parameters in the model.
-#'   Default is \code{NULL}.
-#' @param do_par Logical indicating whether retrospective peels should be run
-#'   in parallel. Default is \code{FALSE}.
-#' @param n_cores Integer specifying the number of cores to use when
-#'   \code{do_par = TRUE}.
-#' @param newton_loops Integer specifying the number of Newton optimization
-#'   loops used during model fitting. Default is \code{3}.
-#' @param do_francis Logical indicating whether Francis composition
-#'   reweighting should be applied within each retrospective peel.
-#'   Default is \code{FALSE}.
-#' @param n_francis_iter Integer specifying the number of Francis reweighting
-#'   iterations. Required if \code{do_francis = TRUE}.
-#' @param nlminb_control List of control arguments passed to \code{stats::nlminb}
-#'   during model fitting. Default is
+#' @param n_retro Number of peels. \code{0} fits the full dataset only.
+#' @param data List of data supplied to the RTMB model.
+#' @param parameters List of model parameters.
+#' @param mapping List of parameter mappings used during estimation.
+#' @param random Character vector of random-effect parameters. Default
+#'   \code{NULL}.
+#' @param do_par Logical, whether the peels run in parallel. Default
+#'   \code{FALSE}.
+#' @param n_cores Cores used when \code{do_par = TRUE}.
+#' @param newton_loops Newton optimization loops per fit. Default \code{3}.
+#' @param do_francis Logical, whether Francis reweighting runs within each peel.
+#'   Default \code{FALSE}.
+#' @param n_francis_iter Francis reweighting iterations, required when
+#'   \code{do_francis = TRUE}.
+#' @param nlminb_control Control list passed to \code{stats::nlminb}. Default
 #'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
-#' @param do_sdrep Logical indicating whether standard errors should be
-#'   calculated using \code{RTMB::sdreport}. Default is \code{FALSE}.
+#' @param do_sdrep Logical, whether standard errors are computed through
+#'   \code{RTMB::sdreport}. Default \code{FALSE}.
+#' @param fishidx_datalag,fishage_datalag,fishlen_datalag,fishage_discard_datalag,fishlen_discard_datalag,srvidx_datalag,srvage_datalag,srvlen_datalag
+#'   Integer arrays \eqn{[region \times fleet]} of the lag applied to each pooled
+#'   data source. Default zeros.
+#' @param fishidx_pop_datalag,fishage_pop_datalag,fishlen_pop_datalag,fishage_discard_pop_datalag,fishlen_discard_pop_datalag,srvidx_pop_datalag,srvage_pop_datalag,srvlen_pop_datalag
+#'   The population-specific counterparts, \eqn{[n\_pop \times region \times
+#'   fleet]}. Default zeros.
+#' @param conv_tag_datalag Integer lag applied to the conventional tagging data.
+#'   Default \code{0}.
+#' @param return_models Logical, whether the fitted objects are returned per peel.
+#'   Default \code{FALSE}. \code{TRUE} returns a list of \code{retro_df} and
+#'   \code{retro_models}, the latter indexed \code{peel_0}, \code{peel_1} and so
+#'   on.
 #'
-#' @param fishidx_datalag Integer array specifying lags applied to fishery
-#'   index data \eqn{[region \times fleet]}. Default is zeros.
-#' @param fishage_datalag Integer array specifying lags applied to fishery
-#'   age-composition data \eqn{[region \times fleet]}. Default is zeros.
-#' @param fishlen_datalag Integer array specifying lags applied to fishery
-#'   length-composition data \eqn{[region \times fleet]}. Default is zeros.
-#' @param fishage_discard_datalag Integer array specifying lags applied to
-#'   fishery discard age-composition data \eqn{[region \times fleet]}.
-#'   Default is zeros.
-#' @param fishlen_discard_datalag Integer array specifying lags applied to
-#'   fishery discard length-composition data \eqn{[region \times fleet]}.
-#'   Default is zeros.
-#' @param srvidx_datalag Integer array specifying lags applied to survey
-#'   index data \eqn{[region \times fleet]}. Default is zeros.
-#' @param srvage_datalag Integer array specifying lags applied to survey
-#'   age-composition data \eqn{[region \times fleet]}. Default is zeros.
-#' @param srvlen_datalag Integer array specifying lags applied to survey
-#'   length-composition data \eqn{[region \times fleet]}. Default is zeros.
-#' @param fishidx_pop_datalag Integer array specifying lags applied to
-#'   population-specific fishery index data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param fishage_pop_datalag Integer array specifying lags applied to
-#'   population-specific fishery age-composition data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param fishlen_pop_datalag Integer array specifying lags applied to
-#'   population-specific fishery length-composition data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param fishage_discard_pop_datalag Integer array specifying lags applied to
-#'   population-specific fishery discard age-composition data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param fishlen_discard_pop_datalag Integer array specifying lags applied to
-#'   population-specific fishery discard length-composition data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param srvidx_pop_datalag Integer array specifying lags applied to
-#'   population-specific survey index data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param srvage_pop_datalag Integer array specifying lags applied to
-#'   population-specific survey age-composition data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param srvlen_pop_datalag Integer array specifying lags applied to
-#'   population-specific survey length-composition data
-#'   \eqn{[n\_pop \times region \times fleet]}. Default is zeros.
-#' @param conv_tag_datalag Integer specifying the lag applied to conventional
-#'   tagging data. Default is \code{0}.
-#' @param return_models Logical indicating whether fitted model objects should
-#'   be returned for each retrospective peel. Default is \code{FALSE}. When
-#'   \code{TRUE}, the function returns a named list with two elements:
-#'   \code{retro_df} (the long-format \code{data.frame} of SSB and recruitment
-#'   estimates) and \code{retro_models} (a named list of fitted model objects,
-#'   indexed as \code{peel_0}, \code{peel_1}, ..., \code{peel_n}). When
-#'   \code{FALSE}, only the \code{data.frame} is returned.
-#'
-#' @return A long-format \code{data.frame} containing retrospective estimates
-#'   of spawning stock biomass and recruitment. Columns include:
-#'   \itemize{
-#'     \item \code{Pop}: Population index.
-#'     \item \code{Region}: Region index.
-#'     \item \code{Year}: Model year.
-#'     \item \code{Type}: Quantity reported (\code{"SSB"} or \code{"Recruitment"}).
-#'     \item \code{peel}: Retrospective peel number (0 = full data, 1 = one-year peel, etc.).
-#'     \item \code{value}: Estimated value of the quantity.
-#'     \item \code{pdHess}: Logical indicator of positive-definite Hessian
-#'       (only present when \code{do_sdrep = TRUE}).
-#'     \item \code{max_grad}: Maximum absolute gradient of fixed effects
-#'       (only present when \code{do_sdrep = TRUE}).
-#'   }
+#' @return A long-format data frame of retrospective spawning stock biomass and
+#'   recruitment, with columns \code{Pop}, \code{Region}, \code{Year},
+#'   \code{Type} (\code{"SSB"} or \code{"Recruitment"}), \code{peel} (0 for the
+#'   full data), and \code{value}. Under \code{do_sdrep = TRUE} it also holds
+#'   \code{pdHess} and \code{max_grad}, the maximum absolute gradient of the fixed
+#'   effects.
 #'
 #' @export do_retrospective
 #' @family Model Diagnostics

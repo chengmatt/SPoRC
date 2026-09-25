@@ -7,101 +7,38 @@
 single_region_SPR(pars, data)
 }
 \arguments{
-\item{pars}{Named list of RTMB parameters. Must contain:
-\describe{
-  \item{\code{log_F_x}}{Log-scale trial fishing mortality.}
-}}
+\item{pars}{Named list of RTMB parameters, holding \code{log_F_x}, the
+log-scale trial fishing mortality.}
 
-\item{data}{Named list of RTMB data. Must contain:
-  \describe{
-    \item{\code{n_pop}}{Integer. Number of populations.}
-    \item{\code{n_ages}}{Integer. Number of age classes.}
-    \item{\code{n_seas}}{Integer. Number of seasons.}
-    \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
-    \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
-    \item{\code{t_spawn}}{Numeric. Fraction of spawning season elapsed
-      before spawning (mid-season mortality correction).}
-
-    \item{\code{F_fract_flt}}{Numeric array
-      \code{[n_seas, n_fish_fleets]}. Fleet F fractions.}
-
-    \item{\code{fish_sel}}{Numeric array
-      \code{[n_pop, n_seas, n_ages, n_fish_fleets]}.
-      Fishery selectivity at age for females.}
-
-    \item{\code{ret_sel}}{Numeric array
-      \code{[n_pop, n_seas, n_ages, n_fish_fleets]}.
-      Retention selectivity (fraction of selected fish retained).}
-
-    \item{\code{dmr}}{Numeric array
-      \code{[n_seas, n_fish_fleets]}. Discard mortality rate (fraction of
-      discarded fish that die).}
-
-    \item{\code{natmort}}{Numeric array
-      \code{[n_pop, n_ages]}. Female natural mortality at age.}
-
-    \item{\code{WAA}}{Numeric array
-      \code{[n_pop, n_seas, n_ages]}. Female weight at age.}
-
-    \item{\code{MatAA}}{Numeric array
-      \code{[n_pop, n_seas, n_ages]}. Maturity at age.}
-
-    \item{\code{sex_ratio_f}}{Numeric vector
-      \code{[n_pop]}. Female sex ratio at recruitment.}
-
-    \item{\code{rec_seas_prop}}{Numeric array
-      \code{[n_pop, n_seas]}. Proportion of annual recruitment entering
-      in each season.}
-
-    \item{\code{stray_rate}}{Numeric vector
-      \code{[n_pop]}. Per-population stray rate used to compute effective
-      SSB across populations.}
-
-    \item{\code{natal_region}}{Integer vector
-      \code{[n_pop]}. Natal region index for each population.}
-
-    \item{\code{n_pop_in_region}}{Integer vector
-      \code{[n_regions]}. Number of populations per natal region.}
-
-    \item{\code{SPR_x}}{Numeric. Target SPR fraction (e.g. 0.4).}
-  }}
+\item{data}{Named list of RTMB data: the dimensions \code{n_pop}, \code{n_ages}
+and \code{n_seas}; \code{seasdur} \code{[n_seas]}; \code{spawn_seas} and
+\code{t_spawn}; \code{F_fract_flt} \code{[n_seas, n_fish_fleets]};
+\code{fish_sel} and \code{ret_sel} \code{[n_pop, n_seas, n_ages,
+n_fish_fleets]}, the female selectivity and the retained fraction of it;
+\code{dmr} \code{[n_seas, n_fish_fleets]}, the fraction of discards that die;
+\code{natmort} \code{[n_pop, n_ages]}; \code{WAA} and \code{MatAA}
+\code{[n_pop, n_seas, n_ages]}; \code{sex_ratio_f} \code{[n_pop]};
+\code{rec_seas_prop} \code{[n_pop, n_seas]}; \code{stray_rate} and
+\code{natal_region} \code{[n_pop]}; \code{n_pop_in_region}
+\code{[n_regions]}; and the target \code{SPR_x}.}
 }
 \value{
-Numeric scalar. Squared penalty \eqn{(SPR - SPR_x)^2}.
-  Minimized to zero at \eqn{F = F_{SPR_x}}.
+Numeric scalar, the squared penalty \eqn{(SPR - SPR_x)^2}, zero at
+  \eqn{F = F_{SPR_x}}.
 }
 \description{
-Calculates the spawning potential ratio (SPR) as a function of a trial
-fishing mortality \eqn{F_x}, then returns a squared penalty
-\eqn{100 (SPR - SPR_x)^2} that is minimized by the outer optimizer to find
-\eqn{F_{SPR_x}}. Supports multiple populations via stray rates but does not
-include spatial movement.
+The spawning potential ratio at a trial fishing mortality \eqn{F_x}, returned as
+the squared penalty \eqn{100 (SPR - SPR_x)^2} the outer optimizer minimizes to
+find \eqn{F_{SPR_x}}. Several populations are covered through stray rates, but
+there is no spatial movement.
 }
 \details{
-**Fishing mortality decomposition**
-
-Fishing mortality at age is split into:
-
-- retained fishing mortality
-  \code{F_ret = F * selectivity * retention}
-
-- discard fishing mortality (dead discards only)
-  \code{F_disc = F * selectivity * (1 - retention) * dmr}
-
-where \code{dmr} is the discard mortality rate (fraction of discarded fish
-that die). Only the dead fraction contributes to total instantaneous
-mortality \code{Z}.
-
-The total mortality used for survival is:
-
-\code{Z = M + F_ret + F_disc}
-
-This formulation assumes:
-
-- retained fish always die,
-- only a fraction \code{dmr} of discarded fish die,
-- the surviving fraction \code{(1 - dmr)} of discards remains in the
-  population and continues aging and contributing to spawning biomass.
+Fishing mortality at age splits into retained,
+\code{F_ret = F * selectivity * retention}, and dead discards,
+\code{F_disc = F * selectivity * (1 - retention) * dmr}, so survival runs on
+\code{Z = M + F_ret + F_disc}. Retained fish always die, only the fraction
+\code{dmr} of discards die, and the surviving \code{(1 - dmr)} keeps ageing and
+spawning.
 }
 \seealso{
 \code{\link{Get_Reference_Points}}

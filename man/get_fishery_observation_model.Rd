@@ -41,9 +41,7 @@ get_fishery_observation_model(
   t_fish = NULL,
   fish_idx_ages = NULL,
   fish_q_type = NULL,
-  do_fish_q_cov = 0,
-  fish_q_cov = NULL,
-  fish_q_coeff = NULL,
+  ln_fish_q_devs = NULL,
   ObsFishIdx = NULL,
   UseFishIdx = NULL,
   do_caal = 0,
@@ -113,6 +111,9 @@ timing, the fraction of the season elapsed when the index is observed.
 Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before the index is
 formed, mirroring \code{t_srv} for surveys. \code{NULL} (the default) skips
 the decay entirely and reproduces a start-of-season index.}
+
+\item{ln_fish_q_devs}{Array \code{[region, year, fish_fleet]} of log-scale
+annual catchability deviations, or \code{NULL} for none.}
 
 \item{do_caal}{Integer (0/1) switch for building the joint catch at length
 and age arrays. Off by default.}

@@ -17,11 +17,13 @@ make_move_input_list <- function(
   n_sexes = 2,
   do_recruits_move = 0,
   move_type = 0,
-  cont_vary_movement_val,
-  adjacency_collapsed = matrix(1, n_regions, n_regions - 1)
+  cont_vary_movement,
+  adjacency_collapsed = matrix(1, n_regions, n_regions - 1),
+  adjacency_mat = matrix(1, n_regions, n_regions) - diag(n_regions)
 ) {
 
   n_yrs_devs <- n_yrs + n_proj
+  n_dev_to <- ifelse(move_type == 1, 1, n_regions - 1) # CTMC deviations sit on a region's preference
 
   list(
     data = list(
@@ -35,22 +37,17 @@ make_move_input_list <- function(
       do_recruits_move = do_recruits_move,
       use_fixed_movement = 0,
       move_type = move_type,
-      cont_vary_movement = cont_vary_movement_val,
-      adjacency_collapsed = adjacency_collapsed
+      cont_vary_movement = cont_vary_movement,
+      adjacency_collapsed = adjacency_collapsed,
+      adjacency_mat = adjacency_mat
     ),
     par = list(
-      move_devs = array(0, dim = c(n_pop, n_regions, n_regions - 1, n_yrs_devs, n_seas, n_ages, n_sexes)),
+      move_devs = array(0, dim = c(n_pop, n_regions, n_dev_to, n_yrs_devs, n_seas, n_ages, n_sexes)),
       move_pe_pars = array(0, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
     ),
     map = list()
   )
 }
-
-cont_move_map <- data.frame(
-  type = c("none", "iid_y", "iid_a", "iid_y_a", "iid_y_a_s", "iid_y_seas_a_s",
-           "iid_p_y", "iid_p_a", "iid_p_y_a", "iid_p_y_a_s", "iid_p_y_seas_a_s"),
-  num = 0:10
-)
 
 # ── do_cont_vary_move_mapping: sharing structure ────────────────────────────
 
@@ -80,7 +77,6 @@ test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
   )
 
   for (spec_name in names(expected_groups_per_pair)) {
-    val <- cont_move_map$num[cont_move_map$type == spec_name]
     il <- make_move_input_list(
       n_pop = n_pop,
       n_regions = n_regions,
@@ -88,7 +84,7 @@ test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
       n_seas = n_seas,
       n_ages = n_ages,
       n_sexes = n_sexes,
-      cont_vary_movement_val = val
+      cont_vary_movement = spec_name
     )
     il <- SPoRC:::do_cont_vary_move_mapping(il, spec_name, "fix")
 
@@ -113,32 +109,68 @@ test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
 })
 
 test_that("do_cont_vary_move_mapping returns all-NA map when cont_vary_movement is 'none'", {
-  il <- make_move_input_list(cont_vary_movement_val = 0)
+  il <- make_move_input_list(cont_vary_movement = "none")
   il <- SPoRC:::do_cont_vary_move_mapping(il, "none", "fix")
   expect_true(all(is.na(il$data$map_move_devs)))
 })
 
-test_that("do_cont_vary_move_mapping respects CTMC adjacency masking", {
+test_that("a CTMC deviation belongs to a region, and only an isolated region loses it", {
+  # region 3 is cut off from both others, so shifting its preference moves nothing. regions 1 and 2
+  # still trade, and each keeps its own deviation
   n_regions <- 3
-  adjacency_collapsed <- matrix(1, n_regions, n_regions - 1)
-  adjacency_collapsed[1, 1] <- 0 # region 1 -> its first "other" region is not adjacent
+  adjacency_mat <- matrix(0, n_regions, n_regions)
+  adjacency_mat[1, 2] <- adjacency_mat[2, 1] <- 1
 
   il <- make_move_input_list(
     n_regions = n_regions,
     move_type = 1,
-    cont_vary_movement_val = 1,
-    adjacency_collapsed = adjacency_collapsed
+    cont_vary_movement = "iid_y",
+    adjacency_mat = adjacency_mat
   )
   il <- SPoRC:::do_cont_vary_move_mapping(il, "iid_y", "fix")
 
   map_arr <- il$data$map_move_devs
-  expect_true(all(is.na(map_arr[, 1, 1, , , , ])))
-  expect_false(all(is.na(map_arr[, 1, 2, , , , ])))
+  expect_equal(dim(map_arr)[3], 1) # one deviation per region, not per pair
+  expect_true(all(is.na(map_arr[, 3, , , , , ])))
+  expect_false(any(is.na(map_arr[, 1:2, , , , , ])))
+})
+
+test_that("a CTMC deviation reaches every edge of its own region", {
+  # the payoff of holding the deviation on preference: raising region 1's preference pulls fish in
+  # from both neighbours at once, where a diffusion deviation would have moved one edge
+  A <- matrix(1, 3, 3) - diag(3)
+  move_ctmc <- function(devs) {
+    mv <- SPoRC:::Get_Movement(
+      move_type = 1, do_recruits_move = 1, n_pop = 1, n_regions = 3, n_yrs = 1, n_proj_yrs_devs = 0,
+      n_ages = 1, n_sexes = 1, n_seas = 1, move_pars = NULL,
+      move_devs = array(devs, dim = c(1, 3, 1, 1, 1, 1, 1)), use_fixed_movement = 0,
+      ctmc_move_dat = expand.grid(pop = 1, regions = 1:3, years = 1, seas = 1, ages = 1, sexes = 1),
+      preference_formula = ~0, diffusion_formula = ~1,
+      log_move_diffusion_pars = array(log(0.3), dim = c(1, 1)),
+      move_preference_pars = array(0, dim = c(1, 1)), area_r = rep(1, 3), adjacency_mat = A,
+      ctmc_diffusion_bounds = 0
+    )
+    list(M = matrix(mv$Movement[1, , , 1, 1, 1, 1], 3, 3), # [origin, destination]
+         Q = matrix(mv$Mrate[1, , , 1, 1, 1, 1], 3, 3))
+  }
+
+  flat <- move_ctmc(rep(0, 3))
+  lifted <- move_ctmc(c(0.02, 0, 0)) # well under the 0.09 diffusion rate, so every rate stays positive
+
+  expect_equal(rowSums(lifted$M), rep(1, 3), tolerance = 1e-10)
+  expect_true(lifted$Q[2, 1] > flat$Q[2, 1]) # region 2 sends faster to region 1
+  expect_true(lifted$Q[3, 1] > flat$Q[3, 1]) # and so does region 3, off the one deviation
+  expect_true(lifted$Q[1, 2] < flat$Q[1, 2]) # while region 1 lets go of fish more slowly
+  expect_equal(lifted$Q[2, 3], flat$Q[2, 3], tolerance = 1e-12) # the edge that misses region 1 keeps its rate
+  expect_true(lifted$M[1, 1] > flat$M[1, 1]) # region 1 holds a larger share of itself
+
+  # a constant added to every region is a level shift of the surface, which the gradient drops
+  expect_equal(move_ctmc(rep(0.4, 3))$M, flat$M, tolerance = 1e-12)
 })
 
 # ── Get_move_PE_loglik: likelihood values against a hand-computed baseline ──
 
-test_that("Get_move_PE_loglik matches a hand-computed dnorm sum for each PE_model", {
+test_that("Get_move_PE_loglik matches a hand-computed dnorm sum for every form", {
 
   n_pop <- 2
   n_regions <- 2
@@ -154,31 +186,34 @@ test_that("Get_move_PE_loglik matches a hand-computed dnorm sum for each PE_mode
   PE_pars <- array(log(seq(0.2, 0.6, length.out = n_pop * n_regions * n_seas * n_ages * n_sexes)),
                    dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
 
-  hand_ll <- function(PE_model, do_recruits_move) {
+  hand_ll <- function(form, do_recruits_move) {
     age_start <- if (do_recruits_move == 0 && n_ages >= 2) 2 else 1
     ll <- 0
     for (rr in 1:(n_regions - 1)) {
       for (r in 1:n_regions) {
-        if (PE_model == 1) for (y in 1:n_yrs) ll <- ll + dnorm(move_devs[1, r, rr, y, 1, 1, 1], 0, exp(PE_pars[1, r, 1, 1, 1]), TRUE)
-        if (PE_model == 2) for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[1, r, rr, 1, 1, a, 1], 0, exp(PE_pars[1, r, 1, a, 1]), TRUE)
-        if (PE_model == 3) for (y in 1:n_yrs) for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[1, r, rr, y, 1, a, 1], 0, exp(PE_pars[1, r, 1, a, 1]), TRUE)
-        if (PE_model == 4) for (y in 1:n_yrs) for (a in age_start:n_ages) for (s in 1:n_sexes) ll <- ll + dnorm(move_devs[1, r, rr, y, 1, a, s], 0, exp(PE_pars[1, r, 1, a, s]), TRUE)
-        if (PE_model == 5) for (y in 1:n_yrs) for (seas in 1:n_seas) for (a in age_start:n_ages) for (s in 1:n_sexes) ll <- ll + dnorm(move_devs[1, r, rr, y, seas, a, s], 0, exp(PE_pars[1, r, seas, a, s]), TRUE)
-        if (PE_model == 6) for (p in 1:n_pop) for (y in 1:n_yrs) ll <- ll + dnorm(move_devs[p, r, rr, y, 1, 1, 1], 0, exp(PE_pars[p, r, 1, 1, 1]), TRUE)
-        if (PE_model == 7) for (p in 1:n_pop) for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[p, r, rr, 1, 1, a, 1], 0, exp(PE_pars[p, r, 1, a, 1]), TRUE)
-        if (PE_model == 8) for (p in 1:n_pop) for (y in 1:n_yrs) for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[p, r, rr, y, 1, a, 1], 0, exp(PE_pars[p, r, 1, a, 1]), TRUE)
-        if (PE_model == 9) for (p in 1:n_pop) for (y in 1:n_yrs) for (a in age_start:n_ages) for (s in 1:n_sexes) ll <- ll + dnorm(move_devs[p, r, rr, y, 1, a, s], 0, exp(PE_pars[p, r, 1, a, s]), TRUE)
-        if (PE_model == 10) for (p in 1:n_pop) for (y in 1:n_yrs) for (seas in 1:n_seas) for (a in age_start:n_ages) for (s in 1:n_sexes)
+        if (form == "iid_y") for (y in 1:n_yrs) ll <- ll + dnorm(move_devs[1, r, rr, y, 1, 1, 1], 0, exp(PE_pars[1, r, 1, 1, 1]), TRUE)
+        if (form == "iid_a") for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[1, r, rr, 1, 1, a, 1], 0, exp(PE_pars[1, r, 1, a, 1]), TRUE)
+        if (form == "iid_y_a") for (y in 1:n_yrs) for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[1, r, rr, y, 1, a, 1], 0, exp(PE_pars[1, r, 1, a, 1]), TRUE)
+        if (form == "iid_y_a_s") for (y in 1:n_yrs) for (a in age_start:n_ages) for (s in 1:n_sexes) ll <- ll + dnorm(move_devs[1, r, rr, y, 1, a, s], 0, exp(PE_pars[1, r, 1, a, s]), TRUE)
+        if (form == "iid_y_seas_a_s") for (y in 1:n_yrs) for (seas in 1:n_seas) for (a in age_start:n_ages) for (s in 1:n_sexes) ll <- ll + dnorm(move_devs[1, r, rr, y, seas, a, s], 0, exp(PE_pars[1, r, seas, a, s]), TRUE)
+        if (form == "iid_p_y") for (p in 1:n_pop) for (y in 1:n_yrs) ll <- ll + dnorm(move_devs[p, r, rr, y, 1, 1, 1], 0, exp(PE_pars[p, r, 1, 1, 1]), TRUE)
+        if (form == "iid_p_a") for (p in 1:n_pop) for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[p, r, rr, 1, 1, a, 1], 0, exp(PE_pars[p, r, 1, a, 1]), TRUE)
+        if (form == "iid_p_y_a") for (p in 1:n_pop) for (y in 1:n_yrs) for (a in age_start:n_ages) ll <- ll + dnorm(move_devs[p, r, rr, y, 1, a, 1], 0, exp(PE_pars[p, r, 1, a, 1]), TRUE)
+        if (form == "iid_p_y_a_s") for (p in 1:n_pop) for (y in 1:n_yrs) for (a in age_start:n_ages) for (s in 1:n_sexes) ll <- ll + dnorm(move_devs[p, r, rr, y, 1, a, s], 0, exp(PE_pars[p, r, 1, a, s]), TRUE)
+        if (form == "iid_p_y_seas_a_s") for (p in 1:n_pop) for (y in 1:n_yrs) for (seas in 1:n_seas) for (a in age_start:n_ages) for (s in 1:n_sexes)
           ll <- ll + dnorm(move_devs[p, r, rr, y, seas, a, s], 0, exp(PE_pars[p, r, seas, a, s]), TRUE)
       }
     }
     ll
   }
 
-  for (PE_model in 1:10) {
+  forms <- c("iid_y", "iid_a", "iid_y_a", "iid_y_a_s", "iid_y_seas_a_s",
+             "iid_p_y", "iid_p_a", "iid_p_y_a", "iid_p_y_a_s", "iid_p_y_seas_a_s")
+
+  for (form in forms) {
     do_recruits_move <- 0
     got <- SPoRC:::Get_move_PE_loglik(
-      PE_model = PE_model,
+      cont_vary_movement = form,
       PE_pars = PE_pars,
       move_devs = move_devs,
       map_move_devs = array(0, dim = dims), # unused by the current implementation's math, only dims are read
@@ -186,7 +221,7 @@ test_that("Get_move_PE_loglik matches a hand-computed dnorm sum for each PE_mode
       adjacency_collapsed = adjacency_collapsed,
       move_type = 0
     )
-    expect_equal(got, hand_ll(PE_model, do_recruits_move), tolerance = 1e-10,
-                info = paste("PE_model:", PE_model))
+    expect_equal(got, hand_ll(form, do_recruits_move), tolerance = 1e-10,
+                info = paste("form:", form))
   }
 })

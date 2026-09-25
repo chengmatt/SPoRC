@@ -235,91 +235,65 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
 
 #' Simulate age or length compositions
 #'
-#' Draws observed composition samples (by age or length) for a single
-#' region-year-fleet-season-simulation cell, supporting multinomial,
-#' Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
-#' optionally applied post-draw. Three composition aggregation structures are
-#' handled: sex-split (\code{comp_type = 1}), joint across sexes
-#' (\code{comp_type = 2}), and spatially aggregated across all regions
-#' (\code{comp_type = 0}). The flag value \code{comp_type = 999} or
-#' \code{comp_like = 999} causes the function to return \code{Obs} unchanged.
+#' Draws composition samples for one region, year, fleet, season and replicate
+#' under the multinomial, Dirichlet-multinomial or logistic-normal likelihoods,
+#' applying ageing error after the draw for age compositions. A
+#' \code{comp_type} or \code{comp_like} of \code{999} returns \code{Obs}
+#' unchanged.
 #'
-#' When \code{pop_specific = TRUE}, compositions are simulated separately for
-#' each population, extending all relevant inputs (e.g., sample size,
-#' dispersion, and correlation parameters) to include a population dimension.
-#' In this case, aggregation across regions (\code{comp_type = 0}) is performed
-#' within population, and results are written to \code{Obs[p, ...]}.
+#' Joint compositions (\code{comp_type = 2}) apply ageing error across the
+#' combined age by sex vector through the Kronecker product
+#' \code{diag(n_sexes)} and \code{AgeingError}. Aggregated compositions
+#' (\code{comp_type = 0}) are drawn only on the final region pass, from expected
+#' proportions marginalized over regions and sexes. Under
+#' \code{pop_specific = TRUE} each population is drawn separately from its own
+#' sample sizes, dispersion and correlations, and that aggregation happens within
+#' a population.
 #'
-#' For joint compositions (\code{comp_type = 2}), the Kronecker product
-#' \code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
-#' the combined age-sex vector. For aggregated compositions
-#' (\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
-#' (i.e., on the final region pass), and uses region- and sex-marginalized
-#' expected proportions.
+#' @param r,y,f,seas,sim Region, year, fleet, season and replicate indices.
+#' @param Exp Expected compositions \code{[n_pop × n_regions × n_yrs × n_seas ×
+#'   n_cat × n_sexes × n_fleets × n_sims]}.
+#' @param ISS Integer sample sizes \code{[n_regions × n_yrs × n_seas × n_sexes ×
+#'   n_fleets × n_sims]}, read when \code{pop_specific = FALSE}.
+#' @param AgeingError Ageing error matrices \code{[n_yrs × n_obs_ages × n_ages ×
+#'   n_sims]}, ignored when \code{age_or_len = 1}.
+#' @param comp_like Integer vector \code{[n_fleets]} of the likelihood per fleet:
+#'   \code{0} multinomial, \code{1} Dirichlet-multinomial, \code{2}-\code{4} the
+#'   logistic-normal forms.
+#' @param ln_theta Log overdispersion \code{[n_regions × n_sexes × n_fleets]},
+#'   read when \code{pop_specific = FALSE}.
+#' @param corr_pars Logistic-normal correlation parameters \code{[n_regions ×
+#'   n_sexes × n_fleets × n_corr_pars]}.
+#' @param ln_theta_agg,corr_pars_agg Their counterparts for the aggregated
+#'   compositions, each of length \code{n_fleets}.
+#' @param comp_type Integer matrix \code{[n_yrs × n_fleets]}: \code{0} aggregated
+#'   across regions, \code{1} split by sex, \code{2} joint across sexes,
+#'   \code{999} no data.
+#' @param n_sexes,n_pop,n_regions,n_cat Model dimensions, \code{n_cat} being the
+#'   number of ages or lengths.
+#' @param Obs Observed composition container, dimensioned like \code{Exp} and
+#'   written in place.
+#' @param pop_specific Logical. \code{TRUE} simulates each population separately
+#'   from population-specific inputs.
+#' @param age_or_len Integer. \code{0} for age compositions, which take ageing
+#'   error, \code{1} for length compositions, which do not.
+#' @param ISS_pop Population-specific sample sizes \code{[n_pop × n_regions ×
+#'   n_yrs × n_seas × n_sexes × n_fleets × n_sims]}, read when
+#'   \code{pop_specific = TRUE}.
+#' @param pop_comp_like,pop_comp_type The likelihood and aggregation structure for
+#'   the population-specific compositions, shaped as their aggregate
+#'   counterparts.
+#' @param ln_pop_theta Log overdispersion \code{[n_pop × n_regions × n_sexes ×
+#'   n_fleets]}.
+#' @param pop_corr_pars Logistic-normal correlation parameters \code{[n_pop ×
+#'   n_regions × n_sexes × n_fleets × n_corr_pars]}.
+#' @param ln_pop_theta_agg,pop_corr_pars_agg Their counterparts for the
+#'   population-specific aggregated compositions, each \code{[n_pop ×
+#'   n_fleets]}.
 #'
-#' @param r Integer. Region index.
-#' @param y Integer. Year index.
-#' @param f Integer. Fleet index (fishery or survey).
-#' @param seas Integer. Season index.
-#' @param sim Integer. Simulation replicate index.
-#' @param Exp Array. Expected compositions
-#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_cat × n_sexes × n_fleets × n_sims]}.
-#' @param ISS Array. Integer sample sizes
-#'   \code{[n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]}.
-#'   Used when \code{pop_specific = FALSE}.
-#' @param AgeingError Array. Ageing error transition matrices
-#'   \code{[n_yrs × n_obs_ages × n_ages × n_sims]}. Ignored when
-#'   \code{age_or_len = 1}.
-#' @param comp_like Integer vector \code{[n_fleets]}. Likelihood type per
-#'   fleet: \code{0} = multinomial, \code{1} = Dirichlet-multinomial,
-#'   \code{2}-\code{4} = logistic-normal variants.
-#' @param ln_theta Array. Log overdispersion or log-variance parameters
-#'   \code{[n_regions × n_sexes × n_fleets]}. Used when
-#'   \code{pop_specific = FALSE}.
-#' @param corr_pars Array. Correlation parameters for logistic-normal
-#'   likelihoods \code{[n_regions × n_sexes × n_fleets × n_corr_pars]}.
-#' @param ln_theta_agg Numeric vector \code{[n_fleets]}. Log overdispersion
-#'   for spatially aggregated compositions (\code{comp_type = 0}).
-#' @param corr_pars_agg Numeric vector \code{[n_fleets]}. Correlation
-#'   parameter(s) for aggregated logistic-normal compositions.
-#' @param comp_type Integer matrix \code{[n_yrs × n_fleets]}. Aggregation
-#'   structure: \code{0} = aggregated across regions, \code{1} = split by
-#'   sex, \code{2} = joint across sexes, \code{999} = no data (skip).
-#' @param n_sexes Integer. Number of sexes.
-#' @param n_pop Integer. Number of populations.
-#' @param n_regions Integer. Number of regions.
-#' @param n_cat Integer. Number of composition categories (ages or lengths).
-#' @param Obs Array. Observed compositions container with the same dimensions
-#'   as \code{Exp}. Simulated values are written in-place.
-#' @param pop_specific Logical. If \code{TRUE}, simulate compositions
-#'   separately for each population using population-specific inputs.
-#' @param age_or_len Integer. Indicator for composition type:
-#'   \code{0} = age compositions (apply ageing error),
-#'   \code{1} = length compositions (no ageing error).
-#'
-#' @param ISS_pop Array. Population-specific sample sizes
-#'   \code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]}.
-#'   Used when \code{pop_specific = TRUE}.
-#' @param pop_comp_like Integer vector \code{[n_fleets]}. Likelihood type per
-#'   fleet for population-specific compositions.
-#' @param pop_comp_type Integer matrix \code{[n_yrs × n_fleets]}. Aggregation
-#'   structure for population-specific compositions.
-#' @param ln_pop_theta Array. Log overdispersion parameters
-#'   \code{[n_pop × n_regions × n_sexes × n_fleets]}.
-#' @param pop_corr_pars Array. Correlation parameters for logistic-normal
-#'   likelihoods
-#'   \code{[n_pop × n_regions × n_sexes × n_fleets × n_corr_pars]}.
-#' @param ln_pop_theta_agg Numeric array \code{[n_pop × n_fleets]}. Log
-#'   overdispersion for population-specific aggregated compositions.
-#' @param pop_corr_pars_agg Numeric array \code{[n_pop × n_fleets]}.
-#'   Correlation parameter(s) for population-specific aggregated
-#'   logistic-normal compositions.
-#'
-#' @return The \code{Obs} array with simulated composition draws filled in at
-#'   the appropriate slice. When \code{pop_specific = FALSE}, values are written
-#'   to \code{[r, y, seas, , , f, sim]}; when \code{pop_specific = TRUE}, values
-#'   are written to \code{[p, r, y, seas, , , f, sim]}. All other slices are
-#'   unchanged.
+#' @return \code{Obs} with the draws filled in at \code{[r, y, seas, , , f, sim]},
+#'   or \code{[p, r, y, seas, , , f, sim]} under \code{pop_specific = TRUE}. Every
+#'   other slice is unchanged.
 #'
 #' @keywords internal
 simulate_comps <- function(r,
@@ -748,62 +722,44 @@ simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingEr
 
 #' Simulate conventional tag recaptures for fishery fleets
 #'
-#' Draws observed tag recapture counts for a single liberty-season-cohort cell
-#' from predicted recapture arrays, supporting six likelihood structures:
-#' Poisson, negative binomial, and release- or recovery-conditioned
-#' multinomial and Dirichlet-multinomial. Dimensions absent from
-#' \code{tag_recaptures_attr} are marginalized by summing over them, and all
-#' recaptures are placed into index 1 of the corresponding dimension in the
-#' output array.
+#' Draws observed recapture counts for one liberty, season and cohort cell from
+#' the predicted recaptures, under the Poisson, negative binomial, or the
+#' release- and recovery-conditioned multinomial and Dirichlet-multinomial. Dims
+#' absent from \code{tag_recaptures_attr} are summed over and the recaptures are
+#' written into index 1 of each.
 #'
-#' For release-conditioned likelihoods (\code{2}, \code{4}), predicted
-#' recaptures are expressed as proportions of total tags released. A
-#' "not-recaptured" bin is appended to complete the probability vector before
-#' drawing and removed before assignment. For recovery-conditioned likelihoods
-#' (\code{3}, \code{5}), the draw is conditioned on the total predicted
-#' recapture count with no not-recaptured bin needed. The overdispersion
-#' parameter \code{ln_conv_fish_tag_theta} governs the negative-binomial size
-#' parameter and the Dirichlet-multinomial concentration scaling, and is
-#' ignored for Poisson and multinomial likelihoods.
+#' The release-conditioned forms express the predictions as proportions of the
+#' tags released, appending a not-recaptured bin to complete the probability
+#' vector before the draw and removing it afterwards. The recovery-conditioned
+#' forms condition on the total predicted recaptures and need no such bin.
 #'
-#' @param conv_fish_tag_like Integer. Likelihood for tag recaptures:
-#'   \code{0} = Poisson, \code{1} = negative binomial,
-#'   \code{2} = multinomial (release-conditioned),
-#'   \code{3} = multinomial (recovery-conditioned),
-#'   \code{4} = Dirichlet-multinomial (release-conditioned),
-#'   \code{5} = Dirichlet-multinomial (recovery-conditioned).
-#' @param tag_recaptures_attr Character string specifying which biological
-#'   dimensions are attended in the recapture likelihood. Built from any
-#'   combination of \code{"p"} (population), \code{"a"} (age), and \code{"s"}
-#'   (sex), joined by underscores. Region and fleet are always retained.
-#'   Unattended dimensions are marginalized and output into index 1.
-#' @param conv_tagged_fish Array of released tagged fish
-#'   \code{[n_conv_tag_cohorts × n_pop × n_ages × n_sexes × n_sims]}. Used
-#'   as the release sample size for release-conditioned likelihoods.
-#' @param pred_conv_tag_fish_recap Array of predicted recaptures
+#' @param conv_fish_tag_like Integer likelihood: \code{0} Poisson, \code{1}
+#'   negative binomial, \code{2} and \code{3} the release- and
+#'   recovery-conditioned multinomial, \code{4} and \code{5} the two
+#'   Dirichlet-multinomials.
+#' @param tag_recaptures_attr Which dims are attended in the recapture
+#'   likelihood, built from \code{"p"}, \code{"a"} and \code{"s"} joined by
+#'   underscores. Region and fleet are always kept, and the rest are summed over
+#'   into index 1.
+#' @param conv_tagged_fish Released tagged fish \code{[n_conv_tag_cohorts ×
+#'   n_pop × n_ages × n_sexes × n_sims]}, the release sample size for the
+#'   release-conditioned forms.
+#' @param pred_conv_tag_fish_recap Predicted recaptures
 #'   \code{[conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_pop ×
 #'   n_regions × n_ages × n_sexes × n_fish_fleets × n_sims]}.
-#' @param obs_conv_tag_fish_recap Array of observed recaptures with the same
-#'   dimensions as \code{pred_conv_tag_fish_recap}. Simulated values are
-#'   written in-place at the \code{[ry, rseas, tc, ...]} slice.
-#' @param ln_conv_fish_tag_theta Numeric. Log overdispersion: negative
-#'   binomial size = \code{exp(ln_conv_fish_tag_theta)}; Dirichlet-multinomial
-#'   concentration = \code{exp(ln_conv_fish_tag_theta) × N × p}.
-#' @param ry Integer. Years-at-liberty index (first dimension of recapture
-#'   arrays).
-#' @param rseas Integer. Recovery season index.
-#' @param tc Integer. Tag cohort index.
-#' @param sim Integer. Simulation replicate index.
-#' @param n_pop Integer. Number of populations.
-#' @param n_regions Integer. Number of regions.
-#' @param n_ages Integer. Number of age classes.
-#' @param n_sexes Integer. Number of sexes.
-#' @param n_fish_fleets Integer. Number of fishery fleets.
+#' @param obs_conv_tag_fish_recap Observed recaptures on the same dims, written
+#'   in place at the \code{[ry, rseas, tc, ...]} slice.
+#' @param ln_conv_fish_tag_theta Log overdispersion: the negative binomial size
+#'   is \code{exp(ln_conv_fish_tag_theta)} and the Dirichlet-multinomial
+#'   concentration \code{exp(ln_conv_fish_tag_theta) × N × p}. Ignored by the
+#'   Poisson and the multinomial.
+#' @param ry,rseas,tc,sim Years at liberty, recovery season, tag cohort and
+#'   replicate indices.
+#' @param n_pop,n_regions,n_ages,n_sexes,n_fish_fleets Dimension sizes.
 #'
-#' @return The \code{obs_conv_tag_fish_recap} array with simulated recaptures
-#'   filled in at \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx,
-#'   flt_idx, sim]}. Marginalized dimensions are fixed at index 1.
-#'
+#' @return \code{obs_conv_tag_fish_recap} with the draws filled in at
+#'   \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim]},
+#'   the summed dims fixed at index 1.
 #'
 #' @keywords internal
 simulate_conv_tag_fish_recaptures <- function(conv_fish_tag_like,
@@ -961,64 +917,34 @@ marginalize_conv_fish_tags <- function(vals,
 
 #' Generate fishery catches, compositions, and indices in simulation
 #'
-#' Applies Baranov's catch equation to compute retained catch-at-age
-#' (\code{CAA}) and dead discard catch-at-age (\code{DAA}) for all
-#' populations, regions, seasons, and fleets, derives catch-at-length
-#' (\code{CAL} and \code{DAL}) when a size-age transition matrix is available,
-#' and generates observed catch and discard indices (with lognormal error),
-#' fishery abundance or biomass indices, and age and length composition
-#' samples for both retained and discarded catch. Composition sampling calls
-#' \code{\link{simulate_comps}} and respects the likelihood type
-#' (\code{comp_fishage_like}, \code{comp_fishlen_like}) and aggregation
-#' structure (\code{FishAgeComps_Type}, \code{FishLenComps_Type}) specified in
-#' \code{sim_env}.
+#' Takes retained and dead discard catch at age from Baranov's equation for every
+#' population, region, season and fleet, converts them to catch at length when a
+#' size-age key is available, and draws the observed catch, discard and fishery
+#' indices under lognormal error together with the age and length compositions of
+#' both retained and discarded catch. The composition draws go through
+#' \code{\link{simulate_comps}} and follow the likelihood and aggregation type set
+#' in \code{sim_env}.
 #'
-#' Composition draws are skipped for fleet-season cells with zero fishing
-#' mortality (\code{Fmort = 0}). Discard composition draws are additionally
-#' skipped when retention selectivity is fully 1 for the fleet-region-year-
-#' season cell (i.e., no discarding occurs). Discard indices support four
-#' unit types: abundance (\code{discard_units = 0}), biomass (\code{1}),
-#' abundance fraction (\code{2}), and biomass fraction (\code{3}).
-#'
-#' When \code{ISS_FishAgeComps_fill = "F_pattern"} and feedback is active,
-#' sample sizes for retained and discard compositions in the current and
-#' prior years are updated via \code{\link{predict_sim_fish_iss_fmort}}
-#' (scaled by fishing mortality) before sampling.
+#' Composition draws are skipped where \code{Fmort = 0}, and the discard ones also
+#' where retention selectivity is fully 1, so nothing is discarded. Discard
+#' indices come in four units: abundance, biomass, abundance fraction and biomass
+#' fraction. Under \code{ISS_FishAgeComps_fill = "F_pattern"} with feedback
+#' active, the sample sizes for the current and prior years are rescaled by
+#' \code{\link{predict_sim_fish_iss_fmort}} before sampling.
 #'
 #' @param y Integer. Year index.
-#'
 #' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place. It gains the retained and dead discard catch at age
+#'   \code{CAA} and \code{DAA}, their at-length counterparts \code{CAL} and
+#'   \code{DAL} when a size-age key is present, the true and observed regional
+#'   catch, discard and fishery indices with their population-specific
+#'   counterparts, the observed retained and discard age and length compositions
+#'   with theirs, and the input sample sizes of all eight composition data
+#'   sources.
 #'
-#' @param sim_env Simulation environment created by \code{\link{Setup_sim_env}}.
-#'   Modified in place. The following elements are updated:
-#'   \describe{
-#'     \item{\code{CAA}, \code{DAA}}{Retained and dead discard catch-at-age for all populations, regions, seasons, and fleets.}
-#'     \item{\code{CAL} and \code{DAL}}{Retained and dead discard catch-at-length if \code{SizeAgeTrans} is present.}
-#'     \item{\code{TrueCatch}, \code{ObsCatch}}{Regional retained catch indices (abundance or biomass).}
-#'     \item{\code{TrueCatch_pop}, \code{ObsCatch_pop}}{Population-specific retained catch indices.}
-#'     \item{\code{TrueDiscard}, \code{ObsDiscard}}{Regional discard indices (abundance, biomass, or fraction).}
-#'     \item{\code{TrueDiscard_pop}, \code{ObsDiscard_pop}}{Population-specific discard indices.}
-#'     \item{\code{TrueFishIdx}, \code{ObsFishIdx}}{Regional fishery indices (abundance or biomass).}
-#'     \item{\code{TrueFishIdx_pop}, \code{ObsFishIdx_pop}}{Population-specific fishery indices.}
-#'     \item{\code{ObsFishAgeComps}, \code{ObsFishAgeComps_pop}}{Observed retained fishery age compositions.}
-#'     \item{\code{ObsFishLenComps}, \code{ObsFishLenComps_pop}}{Observed retained fishery length compositions if \code{SizeAgeTrans} is available.}
-#'     \item{\code{ObsFishAgeComps_discard}, \code{ObsFishAgeComps_discard_pop}}{Observed discard fishery age compositions.}
-#'     \item{\code{ObsFishLenComps_discard}, \code{ObsFishLenComps_discard_pop}}{Observed discard fishery length compositions if \code{SizeAgeTrans} is available.}
-#'     \item{\code{ISS_FishAgeComps}, \code{ISS_FishAgeComps_pop}, \code{ISS_FishLenComps}, \code{ISS_FishLenComps_pop}, \code{ISS_FishAgeComps_discard}, \code{ISS_FishAgeComps_discard_pop}, \code{ISS_FishLenComps_discard}, \code{ISS_FishLenComps_discard_pop}}{Effective sample sizes for retained and discard age and length compositions.}
-#'   }
-#'
-#' @details For each combination of season, region, and fleet, the function:
-#' \enumerate{
-#'   \item Applies Baranov's catch equation to compute retained and dead discard catch-at-age.
-#'   \item Converts catch-at-age to catch-at-length if \code{SizeAgeTrans} is available.
-#'   \item Calculates true regional and population-specific catch, discard, and fishery indices.
-#'   \item Applies lognormal observation error to generate observed indices.
-#'   \item Simulates retained age and length compositions using \code{\link{simulate_comps}}, skipping fleet-season cells with zero fishing mortality.
-#'   \item Simulates discard age and length compositions when retention selectivity is not fully 1.
-#' }
-#'
-#' @return \code{invisible(NULL)}. All modifications are made by reference
-#'   within \code{sim_env}.
+#' @return \code{invisible(NULL)}; everything is modified by reference within
+#'   \code{sim_env}.
 #'
 #' @keywords internal
 generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
@@ -1672,8 +1598,6 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
           # Survey Index - Regional
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim]) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim] * WAA_srv[,r,y,seas,,,sf,sim]) # True Survey Index (biomass)
-          # a year class strength index reads the recruitment deviation rather than the population.
-          # the operating model draws that deviation about zero, with bias correction in recruitment
           if(srv_idx_type[sf] == 2) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(ln_RecDevs[,r,y,sim]) # True Survey Index (recruitment deviations)
 
           # observed index. an mvn fleet takes its scale from the covariance's factor decomposition
@@ -1882,33 +1806,26 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 
 #' Release conventional tags in the simulation
 #'
-#' For each tag cohort scheduled for release in year \code{y}, distributes
-#' \code{n_tags} (or \code{n_tags_rel_input} if provided) across populations,
-#' ages, and sexes proportional to the selectivity-weighted abundance
-#' (\code{NAA_bef}) of the release platform (survey, fishery, or population).
-#' Tagged fish counts are rounded to integers. The attended attribute string
-#' \code{conv_fish_tag_attr} is then applied via
-#' \code{\link{marginalize_conv_fish_tags}} to produce the observation-level
-#' release array \code{conv_tagged_fish_attr}, which is consistent with the
-#' dimension resolution of the recapture likelihood.
+#' Spreads each cohort's \code{n_tags}, or \code{n_tags_rel_input} when supplied,
+#' across populations, ages and sexes in proportion to the selectivity-weighted
+#' abundance \code{NAA_bef} of the release platform, rounding to integers.
+#' \code{conv_fish_tag_attr} is then applied through
+#' \code{\link{marginalize_conv_fish_tags}} to give the observation-level release
+#' array \code{conv_tagged_fish_attr}, at the resolution the recapture likelihood
+#' reads.
 #'
-#' For survey and fishery platforms, total tags in the release region are
-#' scaled relative to the selectivity-weighted global abundance to allocate
-#' region-specific cohort sizes when \code{n_tags_rel_input} is not provided.
-#' For the population platform, scaling is proportional to the region's share
-#' of total abundance.
+#' Without \code{n_tags_rel_input}, a survey or fishery platform scales the
+#' region's total against the selectivity-weighted global abundance, and a
+#' population platform against the region's share of total abundance.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
-#' @param sim_env Simulation environment created by
-#'   \code{\link{Setup_sim_env}}. Modified in place:
-#'   \code{$conv_tagged_fish[tc, , , , sim]} and
-#'   \code{$conv_tagged_fish_attr[tc, , , , sim]} for each cohort released
-#'   in year \code{y}.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place: \code{$conv_tagged_fish} and
+#'   \code{$conv_tagged_fish_attr} for each cohort released in year \code{y}.
 #'
-#' @return \code{invisible(NULL)}. All modifications are made by reference
-#'   within \code{sim_env}.
-#'
+#' @return \code{invisible(NULL)}; everything is modified by reference within
+#'   \code{sim_env}.
 #'
 #' @keywords internal
 release_conv_tags <- function(y, sim, sim_env) {
@@ -2010,57 +1927,44 @@ release_conv_tags <- function(y, sim, sim_env) {
 
 #' Generate conventional tag recaptures from fisheries in simulation
 #'
-#' For each tag cohort (\code{tc}) and recovery season (\code{rseas}) in year
-#' \code{y}, advances available tagged fish through movement and mortality,
-#' applies Baranov's equation to compute predicted recaptures
-#' (\code{pred_conv_tag_fish_recap}), and draws observed recaptures
-#' (\code{obs_conv_tag_fish_recap}) via
+#' For each tag cohort and recovery season in year \code{y}, advances the
+#' available tagged fish through movement and mortality, applies Baranov's
+#' equation for the predicted recaptures, and draws the observed ones through
 #' \code{\link{simulate_conv_tag_fish_recaptures}}. Cohorts not yet released,
-#' already at \code{conv_tag_max_liberty}, or with release year in the future
-#' are silently skipped.
-#'
-#' Total fishing mortality entering Z is decomposed into retained
-#' (\eqn{F \cdot s_{\text{fish}} \cdot s_{\text{ret}}}) and dead discard
-#' (\eqn{F \cdot s_{\text{fish}} \cdot (1 - s_{\text{ret}}) \cdot \text{dmr}})
-#' components, consistent with \code{\link{apply_pop_dy}}. Predicted
-#' recaptures use only the retained component in the Baranov numerator,
-#' reflecting that tags are recovered from retained catch only.
-#'
-#' At initial release (\code{ry = 1}, \code{rseas = tseas}), tags are
-#' placed into \code{conv_tag_fish_avail[1, rseas, tc, ...]} after discounting
-#' for initial tag-induced mortality (\code{ln_init_conv_tag_mort[tc]}). When
-#' \code{conv_tag_t_tagging[tc] < 1}, total mortality is scaled by the
-#' fraction of the season remaining at release for that cell only. Chronic
-#' shedding (\code{ln_conv_tag_shed[tc]}) enters the total mortality rate
-#' alongside natural and fishing mortality. \code{conv_tag_t_tagging},
-#' \code{ln_init_conv_tag_mort}, and \code{ln_conv_tag_shed} are each vectors
-#' of length \code{n_tag_rel_events}, indexed by release event (\code{tc}),
-#' so timing, initial mortality, and shedding can differ across release
-#' cohorts. At the end of each season, survivors advance to the next season
-#' or the next year's first season with plus-group accumulation. Tag
-#' reporting rates from \code{conv_tag_fish_reporting} are applied fleet- and
-#' region-specifically.
+#' already at \code{conv_tag_max_liberty}, or released in a future year are
+#' skipped.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
-#' @param sim_env Simulation environment created by \code{\link{Setup_sim_env}}.
-#'   Modified in place. The following elements are updated:
-#'   \describe{
-#'     \item{\code{conv_tag_fish_avail}}{Available tagged fish at age/region/season/fleet for each cohort.}
-#'     \item{\code{pred_conv_tag_fish_recap}}{Predicted conventional tag recaptures by fleet, region, season, and cohort.}
-#'     \item{\code{obs_conv_tag_fish_recap}}{Observed conventional tag recaptures after sampling error.}
-#'     \item{\code{conv_tag_fish_surv}}{Surviving tagged fish after mortality and movement.}
-#'     \item{\code{conv_tag_fish_reported}}{Reporting-adjusted recapture counts by fleet and region.}
-#'   }
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place. It gains \code{conv_tag_fish_avail}, the tagged fish
+#'   available by age, region, season and fleet for each cohort;
+#'   \code{pred_conv_tag_fish_recap} and \code{obs_conv_tag_fish_recap}, the
+#'   predicted recaptures and the observed ones after sampling error;
+#'   \code{conv_tag_fish_surv}, the survivors after mortality and movement; and
+#'   \code{conv_tag_fish_reported}, the reporting-adjusted counts by fleet and
+#'   region.
 #'
-#' @return \code{invisible(NULL)}. All modifications are made by reference
-#'   within \code{sim_env}.
+#' @return \code{invisible(NULL)}; everything is modified by reference within
+#'   \code{sim_env}.
 #'
-#' @details Tagged fish dynamics follow the same seasonal progression logic
-#' as the population projection, including natural mortality, fishing mortality,
-#' movement, and tag shedding. Recaptures are computed only from the retained
-#' catch component, consistent with tag return processes. Cohorts exceeding
-#' \code{conv_tag_max_liberty} are removed from the active tracking pool.
+#' @details
+#' Total fishing mortality entering \eqn{Z} splits into retained,
+#' \eqn{F \cdot s_{\text{fish}} \cdot s_{\text{ret}}}, and dead discards,
+#' \eqn{F \cdot s_{\text{fish}} \cdot (1 - s_{\text{ret}}) \cdot \text{dmr}}, as in
+#' \code{\link{apply_pop_dy}}, and the Baranov numerator takes the retained
+#' component alone, since tags come back from retained catch.
+#'
+#' At release, tags enter \code{conv_tag_fish_avail[1, rseas, tc, ...]} discounted
+#' by the initial tag-induced mortality \code{ln_init_conv_tag_mort[tc]}, and when
+#' \code{conv_tag_t_tagging[tc] < 1} total mortality is scaled by the fraction of
+#' the season remaining, for that cell alone. Chronic shedding
+#' \code{ln_conv_tag_shed[tc]} joins natural and fishing mortality in the total
+#' rate. All three are vectors of length \code{n_tag_rel_events} indexed by
+#' release event, so timing, initial mortality and shedding may differ across
+#' cohorts. At the end of a season the survivors advance to the next season, or to
+#' the next year's first season with plus group accumulation, and the reporting
+#' rates in \code{conv_tag_fish_reporting} are applied by fleet and region.
 #'
 #' @keywords internal
 generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {

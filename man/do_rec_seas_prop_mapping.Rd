@@ -7,58 +7,30 @@
 do_rec_seas_prop_mapping(input_list, rec_seas_prop_spec)
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{$data$n_pop}, \code{$data$n_seas}, and
-\code{$data$use_fixed_rec_seas_prop} to be set by upstream setup
-functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.
+Requires \code{$data$n_pop}, \code{$data$n_seas} and
+\code{$data$use_fixed_rec_seas_prop}.}
 
-\item{rec_seas_prop_spec}{Character string specifying the seasonal
-apportionment structure, or \code{NULL} to estimate all proportions
-independently across populations and seasons. Options when
-non-\code{NULL}:
-\describe{
-  \item{\code{"est_shared_pop"}}{Estimate seasonal proportions but share
-    them across populations, so a single set of \code{n_seas - 1}
-    parameters applies to all populations. Only valid for seasonal models
-    (\code{n_seas > 1}). Also resets \code{use_fixed_rec_seas_prop} to
-    \code{0} if it was previously \code{1}.}
-  \item{\code{"fix"}}{All \code{rec_seas_prop_pars} fixed at their
-    starting values (mapped to \code{NA}).}
-  \item{\code{NULL}}{Estimate all \code{n_pop x (n_seas - 1)} parameters
-    independently. Also resets \code{use_fixed_rec_seas_prop} to
-    \code{0} if it was previously \code{1}.}
-}}
+\item{rec_seas_prop_spec}{Seasonal apportionment structure.
+\code{"est_shared_pop"} estimates one set of \code{n_seas - 1} parameters for
+every population and is only valid when \code{n_seas > 1}. \code{"fix"} holds
+every parameter at its starting value. \code{NULL} estimates all
+\code{n_pop x (n_seas - 1)} independently. The first and last reset
+\code{use_fixed_rec_seas_prop} to \code{0} with a warning if it was \code{1}.}
 }
 \value{
-The input \code{input_list} with \code{$map$rec_seas_prop_pars}
-  set to a factor vector of length \code{n_pop * (n_seas - 1)}, or
-  \code{NULL} when \code{n_seas = 1}. \code{$data$use_fixed_rec_seas_prop}
-  may be modified as a side effect when estimation is requested alongside
-  a previously fixed seasonal proportion flag.
+\code{input_list} with \code{$map$rec_seas_prop_pars} set to a factor
+  vector of length \code{n_pop * (n_seas - 1)}, or \code{NULL} when
+  \code{n_seas = 1}. Both \code{$par$rec_seas_prop_pars} and its map are
+  \code{NULL} in that case. \code{$data$use_fixed_rec_seas_prop} may change as a
+  side effect.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
-TMB/RTMB factor map for \code{rec_seas_prop_pars}, the logit-scale
-parameters controlling the proportion of annual recruitment assigned to
-each season. The array has dimensions \code{[n_pop x (n_seas - 1)]},
-using a sum-to-one soft-max parameterization with one reference season
-omitted.
-}
-\details{
-When \code{n_seas = 1}, the parameter is structurally irrelevant and both
-\code{$par$rec_seas_prop_pars} and \code{$map$rec_seas_prop_pars} are set
-to \code{NULL}. If estimation is requested but
-\code{use_fixed_rec_seas_prop = 1}, a warning is issued and
-\code{$data$use_fixed_rec_seas_prop} is automatically reset to \code{0}.
-
-When \code{$data$rec_lag = 0} (age-0 recruitment) and
-\code{$data$spawn_seas > 1}, seasons before \code{spawn_seas} are
-structurally fixed at zero by a restricted softmax in the RTMB model
-function (recruits can't predate the spawning event that produced them),
-so only the first \code{n_seas - spawn_seas} columns of
-\code{rec_seas_prop_pars} are ever used as free logits. This function
-forces the remaining, structurally-unused trailing columns to \code{NA}
-regardless of \code{rec_seas_prop_spec}, so they can't silently soak up
-estimation/gradient.
+Builds the factor map for \code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
+the logit-scale share of annual recruitment per season, under a softmax with one
+reference season omitted. Called by \code{\link{Setup_Mod_Rec}}. When
+\code{rec_lag = 0} and \code{spawn_seas > 1} the seasons before \code{spawn_seas}
+are fixed at zero by a restricted softmax in the model, so the trailing unused
+columns are forced to \code{NA} whatever \code{rec_seas_prop_spec} asks for.
 }
 \keyword{internal}

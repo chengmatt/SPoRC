@@ -32,6 +32,12 @@
 #'   strict lower triangle is filled by column. A single value is recycled.
 #' @param NAA_re_ages,NAA_re_years Ages and year indices the state covers.
 #'   \code{NULL} (default) uses everything from the second onward.
+#' @param naa_eta_input Array \code{[n_pop, n_regions, n_cond_yrs, n_seas, n_ages, n_sexes, n_sims]}
+#'   of log-scale state innovations, or \code{NULL} (default) to draw every year. Supplying a fit's own
+#'   innovations, \eqn{\ln N - \ln \hat{N}}, makes the operating model reproduce that fit's numbers at
+#'   age rather than a fresh realization of the same process. The year extent says how many leading
+#'   years are held: give the fitted years and any year beyond them is still drawn, which is what a
+#'   closed loop running past the data needs.
 #' @param NAA_re_seasons Seasons the state covers. \code{"annual"} (default) puts
 #'   a state at season one only, leaving the numbers deterministic between
 #'   seasons; \code{"all"} puts one at the start of every season, and an integer
@@ -57,7 +63,8 @@ Setup_Sim_NAA_state <- function(sim_list,
                                 season_corr = 0,
                                 NAA_re_ages = NULL,
                                 NAA_re_years = NULL,
-                                NAA_re_seasons = "annual") {
+                                NAA_re_seasons = "annual",
+                                naa_eta_input = NULL) {
 
   codes <- c(none = 0, iid = 1, `1dar1_a` = 2, `1dar1_y` = 3, `2dar1` = 4, `3dcond` = 5, `3dmarg` = 6)
   if(length(NAA_re) != 1 || !NAA_re %in% names(codes))
@@ -98,6 +105,19 @@ Setup_Sim_NAA_state <- function(sim_list,
   if(!all(sim_list$naa_re_seas %in% seq_len(n_seas)))
     stop("NAA_re_seasons is read as season indices into 1:", n_seas, ", or the strings ",
          "\"annual\" and \"all\". It was: ", paste(NAA_re_seasons, collapse = ", "))
+
+  # innovations supplied rather than drawn. the year extent says how many leading years are held: give the
+  # fitted years and the rest of the run still draws, which is what a closed loop past the data needs
+  if(!is.null(naa_eta_input)) {
+    d <- as.integer(dim(naa_eta_input))
+    want <- c(sim_list$n_pop, sim_list$n_regions, NA, n_seas, n_ages, sim_list$n_sexes, sim_list$n_sims)
+    if(length(d) != 7 || !identical(d[-3], as.integer(want[-3])))
+      stop("naa_eta_input should be [", paste(replace(want, 3, "n_cond_yrs"), collapse = ", "), "], population, ",
+           "region, the years to hold, season, age, sex and replicate. It was [", paste(d, collapse = ", "), "].")
+    if(d[3] > n_yrs)
+      stop("naa_eta_input holds ", d[3], " years but the operating model runs ", n_yrs, ".")
+    sim_list$naa_eta_input <- naa_eta_input
+  }
 
   sim_list
 }

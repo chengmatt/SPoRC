@@ -50,7 +50,7 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
     pool_den = 1
   }
 
-  # sums over the observations each block owns. arith is the ratio of the two means, so the counts
+  # sums over the observations in each block. arith is the ratio of the two means, so the counts
   # cancel and only the sums are needed; geo is the mean log ratio, so it needs the count
   num = vector("list", n_blk)
   den = vector("list", n_blk)
@@ -100,6 +100,8 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
 #' @param ln_fish_q Array \code{[region, block, fish_fleet]} of log fishery
 #'   catchability.
 #' @param fish_q Array \code{[region, year, fish_fleet]}, output container.
+#' @param ln_fish_q_devs Array \code{[region, year, fish_fleet]} of log-scale
+#'   annual catchability deviations, or \code{NULL} for none.
 #' @param ret_FAA,disc_FAA Arrays \code{[pop, region, year, season, age, sex,
 #'   fish_fleet]} of retained/discarded fishing mortality at age.
 #' @param ZAA Array \code{[pop, region, year, season, age, sex]} of total
@@ -197,9 +199,7 @@ get_fishery_observation_model <- function(
   t_fish = NULL,
   fish_idx_ages = NULL,
   fish_q_type = NULL,
-  do_fish_q_cov = 0,
-  fish_q_cov = NULL,
-  fish_q_coeff = NULL,
+  ln_fish_q_devs = NULL,
   ObsFishIdx = NULL,
   UseFishIdx = NULL,
   do_caal = 0,
@@ -254,8 +254,8 @@ get_fishery_observation_model <- function(
           else {
             fish_q_blk_idx <- fish_q_blocks[r,y,f] # get time-block catchability index
             ln_q_y <- ln_fish_q[r,fish_q_blk_idx,f]
-            fish_q[r,y,f] <- exp(ln_q_y) # Input into fishery catchability container
-            if(do_fish_q_cov == 1) fish_q[r,y,f] <- fish_q[r,y,f] * exp(sum(fish_q_cov[r,y,f,] * fish_q_coeff[r,f,])) # adding covariate effects
+            dev_y <- if(is.null(ln_fish_q_devs)) 0 else ln_fish_q_devs[r,y,f] # devs
+            fish_q[r,y,f] <- exp(ln_q_y + dev_y) # Input into fishery catchability container
           }
 
           for(seas in 1:n_seas) {
@@ -364,8 +364,7 @@ get_fishery_observation_model <- function(
           pred_vec[i] <- sum(PredFishIdx[,r,y,seas,f])
         } # end i loop
 
-        # one solved catchability per time block, from the observations that
-        # block owns
+        # one solved catchability per time block, from the observations in that block
         blk_yr <- fish_q_blocks[r,,f]
         q_yr <- get_blocked_analytic_q(
           q_type = fish_q_type[f],
@@ -412,12 +411,8 @@ get_fishery_observation_model <- function(
 #' @param ln_srv_q Array \code{[region, block, srv_fleet]} of log survey
 #'   catchability.
 #' @param srv_q Array \code{[region, year, srv_fleet]}, output container.
-#' @param do_srv_q_cov Integer (0/1) switch for a catchability covariate
-#'   effect.
-#' @param srv_q_cov Array \code{[region, year, srv_fleet, covariate]} of
-#'   covariate values.
-#' @param srv_q_coeff Array \code{[region, srv_fleet, covariate]} of
-#'   covariate coefficients.
+#' @param ln_srv_q_devs Array \code{[region, year, srv_fleet]} of log-scale
+#'   annual catchability deviations, or \code{NULL} for none.
 #' @param srv_selex_type Integer (0 = age-based, 1 = length-based) switch.
 #' @param srv_sel Array \code{[pop, region, year, season, age, sex,
 #'   srv_fleet]} of survey selectivity at age; when \code{srv_selex_type == 1}
@@ -491,9 +486,7 @@ get_survey_observation_model <- function(
   srv_q_blocks,
   ln_srv_q,
   srv_q,
-  do_srv_q_cov,
-  srv_q_cov,
-  srv_q_coeff,
+  ln_srv_q_devs,
   srv_selex_type,
   srv_sel,
   srv_sel_l,
@@ -565,8 +558,8 @@ get_survey_observation_model <- function(
           else {
             srv_q_blk_idx <- srv_q_blocks[r,y,sf] # get time-block catchability index
             ln_q_y <- ln_srv_q[r,srv_q_blk_idx,sf]
-            srv_q[r,y,sf] <- exp(ln_q_y) # Input into survey catchability container
-            if(do_srv_q_cov == 1) srv_q[r,y,sf] <- srv_q[r,y,sf] * exp(sum(srv_q_cov[r,y,sf,] * srv_q_coeff[r,sf,])) # adding covariate effects
+            dev_y <- if(is.null(ln_srv_q_devs)) 0 else ln_srv_q_devs[r,y,sf] # devs
+            srv_q[r,y,sf] <- exp(ln_q_y + dev_y) # Input into survey catchability container
           }
 
           for(seas in 1:n_seas) {
@@ -641,8 +634,7 @@ get_survey_observation_model <- function(
           pred_vec[i] <- sum(PredSrvIdx[,r,y,seas,sf])
         } # end i loop
 
-        # one solved catchability per time block, from the observations that
-        # block owns
+        # one solved catchability per time block, from the observations in that block
         blk_yr <- srv_q_blocks[r,,sf]
         q_yr <- get_blocked_analytic_q(
           q_type = srv_q_type[sf],

@@ -31,157 +31,117 @@ get_osa(
 )
 }
 \arguments{
-\item{obs_mat}{Array of observed compositions, dimensioned by
-\code{[region, year, bin, sex, fleet]}. May contain \code{NA}s, which are
-removed when filtering by \code{years}.}
-
-\item{exp_mat}{Array of expected compositions, dimensioned the same as
-\code{obs_mat}. May contain \code{NA}s, which are removed when filtering by
+\item{obs_mat, exp_mat}{Observed and expected composition arrays \code{[region,
+year, bin, sex, fleet]}. \code{NA}s are removed when filtering by
 \code{years}.}
 
-\item{N}{Input (or effective if Multinomial) sample size, at the model's full
-year dimension in every case: \code{years} (or \code{years_by_region})
-selects the years actually used, the same way it selects them from
-\code{obs_mat}/\code{exp_mat}, so \code{N} is never pre-filtered by the
-caller. Dimensions depend on \code{comp_type}:
-\itemize{
-  \item \code{comp_type = 0} (aggregated): vector of length \code{n_years}
-    (the model's, not the length of \code{years}).
-  \item \code{comp_type = 1} (split by region and sex): array
-    \code{[n_regions, n_years, n_sexes]}.
-  \item \code{comp_type = 2} (split by region, joint by sex): matrix
-    \code{[n_regions, n_years]}.
-}
-For years without data, users can simply input an NA or any abritary number (it gets filtered out within the function). This is the same array \code{ISS_*Comps} already is in the model's data list, so it can usually be passed straight through.}
+\item{N}{Input sample size, or the effective one under the multinomial, always
+at the model's full year dim: \code{years} selects the years used, the same
+way it selects them from \code{obs_mat}, so \code{N} is never pre-filtered.
+It is a vector of length \code{n_years} under \code{comp_type = 0}, an array
+\code{[n_regions, n_years, n_sexes]} under \code{1}, and a matrix
+\code{[n_regions, n_years]} under \code{2}. Years without data may hold
+\code{NA} or anything else, since they are filtered out. This is the
+\code{ISS_*Comps} array from the model's data list, so it usually passes
+straight through.}
 
-\item{DM_theta}{Dirichlet-multinomial overdispersion parameter(s). Dimensions
-must match \code{N}:
-\itemize{
-  \item aggregated: scalar
-  \item split by sex: matrix \code{[n_regions, n_sexes]}
-  \item joint by sex: vector of length \code{n_regions}
-}}
+\item{DM_theta}{Dirichlet-multinomial overdispersion, dimensioned to match
+\code{N}: a scalar when aggregated, a matrix \code{[n_regions, n_sexes]} when
+split by sex, and a vector of length \code{n_regions} when joint by sex.}
 
-\item{LN_Sigma}{Logistic-normal covariance matrix. Dimensions depend on
-\code{comp_type}:
-\itemize{
-  \item aggregated: matrix \code{[n_bins, n_bins]}
-  \item split by region and sex: array \code{[n_regions, n_bins, n_bins, n_sexes]}
-  \item joint by sex: array \code{[n_regions, n_bins, n_bins]}
-}
-Use [get_logistN_Sigma()] to help construct this input.}
+\item{LN_Sigma}{Logistic-normal covariance: a matrix \code{[n_bins, n_bins]}
+when aggregated, an array \code{[n_regions, n_bins, n_bins, n_sexes]} when
+split by region and sex, and \code{[n_regions, n_bins, n_bins]} when joint by
+sex. Use [get_logistN_Sigma()] to build it.}
 
-\item{years}{Years with composition data. Either a plain vector, used for every region, or a list with one vector of years per region when the regions have different years. Both forms work for every composition type. A region with no years is skipped.}
+\item{years}{Years with composition data, either a plain vector used for every
+region or a list with one vector per region. Both forms work for every
+composition type, and a region with no years is skipped.}
 
-\item{seas}{Season index}
+\item{seas}{Season index.}
 
-\item{fleet}{Fleet identifier (character or numeric) to filter to.}
+\item{fleet}{Fleet identifier, character or numeric, to filter to.}
 
-\item{bins}{Vector of age or length bin labels corresponding to the
-composition categories.}
+\item{bins}{Age or length bin labels for the composition categories.}
 
-\item{comp_type}{Integer specifying how compositions are structured:
-\itemize{
-  \item 0 = aggregated across regions and sexes
-  \item 1 = split by region and sex
-  \item 2 = split by region, joint by sex
-}}
+\item{comp_type}{Integer: 0 aggregated across regions and sexes, 1 split by
+region and sex, 2 split by region and joint by sex.}
 
-\item{bin_label}{Character label describing whether bins represent ages or
-lengths.}
+\item{bin_label}{Character label saying whether the bins are ages or lengths.}
 
-\item{comp_like}{Integer specifying the likelihood type (defaults to 0):
-\itemize{
-  \item 0 = multinomial
-  \item 1 = Dirichlet-multinomial
-  \item 2-4 = logistic-normal variants
-}}
+\item{comp_like}{Integer likelihood: 0 multinomial (default), 1
+Dirichlet-multinomial, 2-4 the logistic-normal forms.}
 
-\item{addtocomp}{Constant that is added to compositions}
+\item{addtocomp}{Constant added to the compositions.}
 
-\item{model}{A fitted RTMB model object from \code{\link{fit_model}}
-(built with \code{do_internal_comp_osa = TRUE} or
-\code{do_internal_conv_tag_osa = TRUE}). Supplying \code{model} switches
-\code{get_osa()} from the default external (post-hoc, compResidual-based)
-path to the internal path, which calls \code{RTMB::oneStepPredict()}
-directly on the model's internally tracked OSA vector. All \code{obs_mat}/
-\code{exp_mat}/\code{N}/\code{DM_theta}/\code{LN_Sigma}/\code{years}/
-\code{comp_type}/\code{comp_like} arguments above are ignored in this mode.}
+\item{model}{A fitted RTMB model from \code{\link{fit_model}}, built with
+\code{do_internal_comp_osa = TRUE} or \code{do_internal_conv_tag_osa = TRUE}.
+Supplying it switches to the internal path and every argument above is
+ignored.}
 
-\item{data}{The model \code{data} list (e.g. \code{input_list$data}) used to
-build \code{model}. Required when \code{model} is supplied.}
-
-\item{comp_source}{One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"},
-\code{"SrvLen"}, identifying which composition data source to pull
-internal OSA residuals for. Conditional age-at-length uses
-\code{"Fish_caal"} or \code{"Srv_caal"}, which return an extra
-\code{len} column giving the length bin each age composition was
-conditioned on and ignore \code{family}, since CAAL has only the
-discrete likelihoods. Required when \code{model} is supplied and
-\code{index_source} is \code{NULL} and \code{tag = FALSE}.}
-
-\item{index_source}{One of \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"},
-\code{"SrvIdx"}, identifying which continuous (log-normal) index-type
-data source to pull internal OSA residuals for. When supplied, takes
-precedence over \code{comp_source}/\code{tag}. Only used when
+\item{data}{The model \code{data} list used to build \code{model}. Required when
 \code{model} is supplied.}
 
-\item{family}{Character, \code{"discrete"} or \code{"continuous"}; which of
-the two internally-tracked OSA vectors to use for \code{comp_source} (a
-source can have both, e.g. some fleets multinomial and others
-logistic-normal). Only used when \code{model} is supplied, \code{tag =
-FALSE}, and \code{index_source} is \code{NULL}.}
+\item{comp_source}{Which composition data source to pull internal residuals for:
+\code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"} or \code{"SrvLen"}.
+Conditional age-at-length takes \code{"Fish_caal"} or \code{"Srv_caal"}, which
+return an extra \code{len} column giving the length bin each age composition
+was conditioned on and ignore \code{family}, CAAL having only the discrete
+likelihoods. Required when \code{model} is supplied, \code{index_source} is
+\code{NULL} and \code{tag = FALSE}.}
 
-\item{pop}{Logical; population-specific composition or index source. Only
-used when \code{model} is supplied and \code{tag = FALSE}. Default \code{FALSE}.}
+\item{index_source}{Which continuous index-type data source to pull internal
+residuals for: \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"} or
+\code{"SrvIdx"}. Takes precedence over \code{comp_source} and \code{tag}.}
 
-\item{discard}{Logical; discard composition source (only valid for
-\code{comp_source \%in\% c("FishAge","FishLen")}). Only used when
-\code{model} is supplied, \code{tag = FALSE}, and \code{index_source} is
-\code{NULL}. Default \code{FALSE}.}
+\item{family}{\code{"discrete"} or \code{"continuous"}, which of the two tracked
+OSA vectors to read for \code{comp_source}, since a source can have both.
+Read when \code{model} is supplied, \code{tag = FALSE} and
+\code{index_source} is \code{NULL}.}
 
-\item{tag}{Logical; if \code{TRUE} (and \code{model} is supplied, and
-\code{index_source} is \code{NULL}), compute internal OSA residuals for
-conventional tag recapture data instead of composition data. Default
+\item{pop}{Logical, whether the source is population-specific. Read when
+\code{model} is supplied and \code{tag = FALSE}. Default \code{FALSE}.}
+
+\item{discard}{Logical, whether the source is the discard compositions, valid
+for \code{comp_source \%in\% c("FishAge","FishLen")} only. Default
 \code{FALSE}.}
 
-\item{osa_method}{Optional override for \code{RTMB::oneStepPredict}'s
-\code{method}, used only in internal mode. Must be one of
-\code{"oneStepGeneric"}, \code{"oneStepGaussianOffMode"}, or
-\code{"oneStepGaussian"}; the \code{"cdf"} method is not permitted (it is
-numerically fragile for the discrete likelihoods used here). Defaults to
-\code{"oneStepGeneric"} for discrete families/tags and
-\code{"oneStepGaussianOffMode"} for continuous (logistic-normal)
-composition families.}
+\item{tag}{Logical, \code{TRUE} to compute internal residuals for conventional
+tag recaptures instead of compositions. Default \code{FALSE}.}
 
-\item{parallel}{Whether or not to parallelize OSA computation in internal
-mode. Defaults to \code{FALSE}.}
+\item{osa_method}{Optional override for \code{RTMB::oneStepPredict}'s
+\code{method} in internal mode: \code{"oneStepGeneric"},
+\code{"oneStepGaussianOffMode"} or \code{"oneStepGaussian"}. The \code{"cdf"}
+method is not permitted, being numerically fragile for the discrete
+likelihoods. Defaults to \code{"oneStepGeneric"} for the discrete families
+and tags, and \code{"oneStepGaussianOffMode"} for the continuous ones.}
+
+\item{parallel}{Whether to parallelize the internal computation. Default
+\code{FALSE}.}
 }
 \value{
-A list with one element:
-\describe{
-  \item{res}{Data frame of OSA residuals. Columns include:
-    \code{fleet}, \code{index_label}, \code{year}, \code{index},
-    \code{resid}, \code{region}, \code{seas}, \code{sex}, and \code{comp_type}
-    (composition sources, external or internal); \code{fleet}, \code{region},
-    \code{cohort}, \code{release_year}/\code{release_region}/\code{release_season},
-    \code{recovery_year}/\code{recovery_season}, \code{years_at_liberty}, \code{resid},
-    and \code{comp_type = "Tag"} (\code{tag = TRUE}); or \code{fleet}, \code{region},
-    \code{year}, \code{season}, \code{pop}, \code{resid}, and \code{idx_type}
-    set to \code{index_source} (\code{index_source} supplied.}
-}
+A list with one element, \code{res}, a data frame of residuals. A
+  composition source gives \code{fleet}, \code{index_label}, \code{year},
+  \code{index}, \code{resid}, \code{region}, \code{seas}, \code{sex} and
+  \code{comp_type}. \code{tag = TRUE} gives \code{fleet}, \code{region},
+  \code{cohort}, the release and recovery year, region and season,
+  \code{years_at_liberty}, \code{resid} and \code{comp_type = "Tag"}. An
+  \code{index_source} gives \code{fleet}, \code{region}, \code{year},
+  \code{season}, \code{pop}, \code{resid} and \code{idx_type}.
 }
 \description{
-Formats observed and expected composition data and calculates one-step-ahead
-(OSA) residuals using multinomial, Dirichlet-multinomial, or logistic-normal
-likelihoods. This function is the main interface for residual diagnostics,
-internally calling [run_external_comp_osa()] to perform the residual calculations.
+One-step-ahead residuals under the multinomial, Dirichlet-multinomial or
+logistic-normal likelihoods. The external path formats the observed and
+expected compositions and calls [run_external_comp_osa()]; supplying
+\code{model} switches to the internal path, which calls
+\code{RTMB::oneStepPredict()} on the model's own tracked OSA vector.
 }
 \details{
-When computing OSA residuals for population-specific composition data,
-slice the leading population dimension from the \code{obs_mat} and
-\code{exp_mat} arrays before passing them to this function. For example,
-to compute residuals for population \code{p}:
+For population-specific compositions, slice the leading population dim off
+\code{obs_mat} and \code{exp_mat} first. The arrays
+\code{\link{get_comp_prop}} returns are \code{[n_pop × n_regions × n_years ×
+n_seas × n_bins × n_sexes × n_fleets]}, so slicing on \code{p} gives the 6D
+array this function expects:
 
 \preformatted{
 get_osa(obs_mat = Obs_FishAge_pop_mat[p,,,,,,],
@@ -189,14 +149,8 @@ get_osa(obs_mat = Obs_FishAge_pop_mat[p,,,,,,],
         ...)
 }
 
-Population-specific composition arrays returned by
-\code{\link{get_comp_prop}} are dimensioned
-\code{[n_pop × n_regions × n_years × n_seas × n_bins × n_sexes × n_fleets]}.
-Slicing on \code{p} yields a 6D array matching the expected input dimensions.
-
-For internal (model-based) OSA residuals, fit the model with
-\code{do_internal_comp_osa = TRUE} and/or \code{do_internal_conv_tag_osa =
-TRUE} (set in \code{\link{Setup_Mod_Dim}}), then call, e.g.:
+For internal residuals, fit with \code{do_internal_comp_osa = TRUE} or
+\code{do_internal_conv_tag_osa = TRUE}, set in \code{\link{Setup_Mod_Dim}}:
 
 \preformatted{
 get_osa(model = fitted_obj, data = input_list$data, comp_source = "FishAge",

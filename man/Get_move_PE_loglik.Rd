@@ -5,7 +5,7 @@
 \title{Compute Movement Process Error Log-Likelihood (Positive Scale)}
 \usage{
 Get_move_PE_loglik(
-  PE_model,
+  cont_vary_movement,
   PE_pars,
   move_devs,
   map_move_devs,
@@ -15,31 +15,23 @@ Get_move_PE_loglik(
 )
 }
 \arguments{
-\item{PE_model}{Integer specifying the movement process error structure.
-  All models are IID; they differ in which dimensions share a common
-  standard deviation. Models 1-5 are single-population (fix \code{pop = 1});
-  models 6-10 estimate separate parameters per population:
-\itemize{
-  \item \strong{1}: IID across years (single \eqn{\sigma} per origin region)
-  \item \strong{2}: IID across ages (single \eqn{\sigma} per origin region and age)
-  \item \strong{3}: IID across years and ages
-  \item \strong{4}: IID across years, ages, and sexes
-  \item \strong{5}: IID across years, seasons, ages, and sexes
-  \item \strong{6}: IID across populations and years
-  \item \strong{7}: IID across populations and ages
-  \item \strong{8}: IID across populations, years, and ages
-  \item \strong{9}: IID across populations, years, ages, and sexes
-  \item \strong{10}: IID across populations, years, seasons, ages, and sexes
-}}
+\item{cont_vary_movement}{Character string specifying the movement process
+error structure, \code{"iid_"} followed by the dims the deviations vary
+over, any of p (population), y (year), seas (season), a (age), s (sex):
+\code{"iid_y"} is one \eqn{\sigma} per origin region, \code{"iid_p_y_seas_a_s"}
+one per population, origin region, season, age and sex. A dim left out
+shares one deviation, and one \eqn{\sigma}, across it.}
 
 \item{PE_pars}{Array of movement process error parameters (log standard
 deviations) dimensioned \code{[pop, from_region, seas, age, sex]}.
 Exponentiated internally to obtain \eqn{\sigma}. Which dimensions
-are active depends on \code{PE_model}; unused dimensions should be
+are active depends on \code{cont_vary_movement}; unused dimensions should be
 fixed at a constant (e.g., index 1) via the parameter map.}
 
 \item{move_devs}{Movement deviation array dimensioned
-\code{[pop, from_region, to_region, year, seas, age, sex]}.}
+\code{[pop, from_region, to_region, year, seas, age, sex]}. Under CTMC
+movement a deviation sits on a region's preference rather than on a pair,
+so \code{from_region} is that region and \code{to_region} has length one.}
 
 \item{map_move_devs}{Integer array dimensioned
 \code{[pop, from_region, to_region, year, seas, age, sex]}
@@ -51,18 +43,18 @@ array to determine loop bounds.}
 age-1 recruits are excluded from the likelihood (loop starts at age 2).
 If \code{1}, all ages including recruits are penalized.}
 
-\item{adjacency_collapsed}{Square \code{[n_regions x n_regions]} matrix
-of allowable movement connections among regions, excluding self-retention
-(diagonal entries should be 0). Origin-destination pairs with a value
-of 0 are skipped and contribute nothing to the likelihood.}
+\item{adjacency_collapsed}{\code{[n_regions x (n_regions - 1)]} matrix
+of allowable movement connections among regions, with self-retention
+collapsed out. Origin-destination pairs with a value of 0 are skipped and
+contribute nothing to the likelihood. Read only when \code{move_type == 0}.}
 
 \item{move_type}{Integer specifying the movement formulation:
 \itemize{
   \item \strong{0} = Unstructured multinomial logit movement
   \item \strong{1} = CTMC-based movement
 }
-  Currently used for dispatch context; likelihood computation is
-  identical across movement types within this function.}
+  Decides whether \code{adjacency_collapsed} is read: an unstructured
+  deviation belongs to a region pair, a CTMC deviation to a single region.}
 }
 \value{
 Numeric scalar: the positive log-likelihood contribution from
@@ -74,8 +66,10 @@ Calculates the positive log-likelihood contribution for movement
 process error deviations under multiple IID structural assumptions.
 Deviations are penalized as \eqn{N(0, \sigma^2)} where \eqn{\sigma}
 is drawn from \code{PE_pars} according to the selected model structure.
-Only origin-destination pairs that are adjacent (non-zero in
-\code{adjacency_collapsed}) contribute to the likelihood.
+Under unstructured movement, only origin-destination pairs that are adjacent
+(non-zero in \code{adjacency_collapsed}) contribute to the likelihood; under
+CTMC movement the deviations sit on each region's preference, and every
+region the map keeps contributes.
 }
 \details{
 \strong{Note:} The returned value is on the \emph{positive} log-likelihood

@@ -34,11 +34,12 @@ eval_comp_osa(
 )
 }
 \arguments{
-\item{nLL_arr}{Array receiving negative log-likelihood contributions.}
+\item{nLL_arr}{Array receiving the negative log-likelihood contributions.}
 
 \item{tracked}{Flat tracked OBS vector.}
 
-\item{ExpArrFn}{Function returning expected proportions for (p,y,seas,f).}
+\item{ExpArrFn}{Function returning the expected proportions for
+\code{(p, y, seas, f)}.}
 
 \item{UseArr}{Region-use flags.}
 
@@ -48,78 +49,52 @@ eval_comp_osa(
 
 \item{ISSArr}{Input sample sizes.}
 
-\item{lnThetaArr}{Log overdispersion.}
+\item{lnThetaArr, lnThetaAggVec}{Log overdispersion and its aggregated
+counterpart.}
 
-\item{lnThetaAggVec}{Aggregated log overdispersion.}
+\item{LNcorrArr, LNcorrAggVec}{Logistic-normal correlation parameters and their
+aggregated counterpart.}
 
-\item{LNcorrArr}{LN correlation parameters.}
+\item{n_regions, n_yrs, n_seas, n_fleets, n_sexes, n_pop}{Model dimensions.}
 
-\item{LNcorrAggVec}{Aggregated LN correlation parameters.}
+\item{n_model_bins, n_obs_bins}{Numbers of model and observed bins.}
 
-\item{n_regions}{Total number of structural regions.}
+\item{age_or_len}{Flag for an age-based or length-based composition.}
 
-\item{n_yrs}{Number of model years.}
-
-\item{n_seas}{Number of seasons per year.}
-
-\item{n_fleets}{Total number of fishing fleets.}
-
-\item{n_sexes}{Number of biological sexes.}
-
-\item{n_model_bins}{Number of internal model bins.}
-
-\item{n_obs_bins}{Number of observational bins.}
-
-\item{age_or_len}{Flag indicating age-based or length-based composition.}
-
-\item{AgeingErrorFn}{Function \code{(y, f)} returning the ageing error matrix
-for a given year and fleet, or the length bin map, which ignores both. Fleet
+\item{AgeingErrorFn}{Function \code{(y, f)} returning that year and fleet's
+ageing error matrix, or the length bin map, which ignores both. It is fleet
 specific because a fishery and a survey need not read ages the same way.}
 
-\item{addtocomp}{Small constant added to proportions before normalization.}
+\item{addtocomp}{Small constant added to the proportions before normalization.}
 
 \item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 observed bins each fleet is fitted over, or \code{NULL} (default) for all
-bins. Must be the same array handed to \code{\link{pack_comp_osa}}, since
-the strides walked here are sized on it.}
+bins. Must be the array handed to \code{\link{pack_comp_osa}}, since the
+strides walked here are sized on it.}
 
-\item{family}{Character string specifying the likelihood type, either "discrete" or "continuous".}
+\item{family}{\code{"discrete"} or \code{"continuous"}.}
 
-\item{zero_init}{Logical; whether to zero out the nLL array on entry.}
+\item{zero_init}{Logical; whether the nLL array is zeroed on entry.}
 
-\item{pop}{Logical; if TRUE, evaluations account for the population structure layer.}
-
-\item{n_pop}{Number of population structures or pools.}
+\item{pop}{Logical; \code{TRUE} accounts for the population layer.}
 }
 \value{
-Updated \code{nLL_arr} containing the evaluated negative log-likelihood values.
+\code{nLL_arr} with the evaluated values.
 }
 \description{
-Walks the same group order used by \code{pack_comp_osa()}, keeping the
-pointer \code{k} synchronized with the packed slice lengths. Evaluates the
-multinomial, Dirichlet-multinomial, or logistic-normal likelihood for each
-region/sex/fleet/season block.
+Walks the group order \code{pack_comp_osa()} used, keeping the pointer
+\code{k} in step with the packed slice lengths, and evaluates the multinomial,
+Dirichlet-multinomial or logistic-normal likelihood for each region, sex, fleet
+and season block.
 }
 \details{
-Slice lengths must match the packer exactly:
-
-Discrete (LikeType 0,1):
-\itemize{
-  \item Comp_Type 0: \code{n_fit_bins}
-  \item Comp_Type 1/2: \code{n_ru x n_fit_bins x n_sexes}
-}
-
-Logistic-normal (LikeType 2,3,4):
-\itemize{
-  \item Comp_Type 0: \code{n_fit_bins - 1}
-  \item Comp_Type 1: \code{n_ru x (n_fit_bins - 1) x n_sexes}
-  \item Comp_Type 2: \code{n_ru x (n_fit_bins x n_sexes - 1)}
-}
-
-\code{n_fit_bins} is the number of bins the fleet is fitted over, taken from
-\code{BinsArr} and equal to \code{n_obs_bins} when the fleet fits every bin.
-
-These reduced lengths reflect that the tracked \code{Obs} vector is already
-ALR-transformed (the last reference bin is dropped).
+The slice lengths have to match the packer exactly. A discrete family takes
+\code{n_fit_bins} under comp type 0 and \code{n_ru x n_fit_bins x n_sexes}
+under types 1 and 2. A logistic-normal family takes one fewer bin, since the
+tracked \code{Obs} vector arrives already transformed with its reference bin
+dropped: \code{n_fit_bins - 1} under type 0,
+\code{n_ru x (n_fit_bins - 1) x n_sexes} under type 1, and
+\code{n_ru x (n_fit_bins x n_sexes - 1)} under type 2. \code{n_fit_bins} comes
+from \code{BinsArr} and equals \code{n_obs_bins} when the fleet fits every bin.
 }
 \keyword{internal}

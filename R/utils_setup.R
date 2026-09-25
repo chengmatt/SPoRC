@@ -1100,34 +1100,25 @@ fleet_bins_or_null <- function(bins_arr, f) {
 #' Validate a model-bin to observed-bin map
 #'
 #' \code{AgeingError} and \code{LenBinMap} are the same operation on different
-#' axes: an \code{[n_model_bins x n_obs_bins]} matrix that the expected
-#' composition is multiplied through so it lands on the bins the observations
-#' were recorded on. The likelihood does not distinguish them, and neither does
-#' this check, so a mistake in either one is reported the same way.
+#' axes: an \code{[n_model_bins x n_obs_bins]} matrix the expected composition is
+#' multiplied through so it lands on the bins the observations were recorded on.
+#' The likelihood does not distinguish them, and neither does this check.
 #'
 #' A row is one model bin's share across the observed bins, so it sums to one. A
-#' row of zeros is allowed and drops that model bin from the observations
-#' entirely, which is how observed bins that start above the first model bin are
-#' expressed (a shifted identity such as \code{diag(1, 10)[, 2:10]}).
+#' row of zeros is allowed and drops that model bin from the observations, which
+#' is how observed bins starting above the first model bin are expressed, as a
+#' shifted identity such as \code{diag(1, 10)[, 2:10]}. A column of zeros is an
+#' observed bin nothing maps into, whose expected proportion is a structural zero
+#' the composition likelihood cannot fit, and a negative entry is fatal either
+#' way since nothing downstream can read one.
 #'
-#' The row-sum tolerance is a caller's choice. Published ageing error matrices
-#' are rounded at source, and real ones come in with rows summing to 0.997 or
-#' 1.002; the likelihood renormalizes the expectation after the multiply, so a
-#' row off by that much reweights nothing, and \code{AgeingError} passes
-#' \code{tol = 0.05}. A length bin map is written by hand rather than read from a
-#' rounded table, so \code{LenBinMap} keeps the \code{1e-8} it has always been
-#' kept to. Only a row off by more than \code{tol} is reported, since that means
-#' the matrix is not the map its author thought it was.
-#'
-#' \code{strict} decides whether that is fatal. \code{LenBinMap} has always
-#' rejected such a matrix outright and keeps doing so. \code{AgeingError} has
-#' not been checked before, so a bad row is reported through the setup messages
-#' rather than stopping a model that ran yesterday.
-#'
-#' A column of zeros is an observed bin nothing maps into, whose expected
-#' proportion is a structural zero the composition likelihood cannot fit. It
-#' follows \code{strict} for the same reason the row sums do. A negative entry is
-#' fatal either way, since nothing downstream can interpret one.
+#' The row-sum tolerance is the caller's choice. Published ageing error matrices
+#' are rounded at source and come in with rows summing to 0.997 or 1.002, and the
+#' likelihood renormalizes after the multiply, so \code{AgeingError} passes
+#' \code{tol = 0.05}. A length bin map is written by hand, so \code{LenBinMap}
+#' keeps its \code{1e-8}. \code{strict} decides whether a row outside the
+#' tolerance is fatal: \code{LenBinMap} rejects such a matrix outright, while
+#' \code{AgeingError} reports it through the setup messages.
 #'
 #' @param x The matrix to check.
 #' @param n_model_bins Integer. Number of model bins, the required row count.
@@ -1594,6 +1585,17 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   # CAAL
   if(!has("do_caal")) set("do_caal", 0)
 
+  # Dynamic structural equation model. NULL means no dsem, read where the density is evaluated
+  if(!has("dsem_model")) set("dsem_model", NULL)
+  if(!has("dsem_declared")) set("dsem_declared", character(0))
+  if(!has("dsem_x_known")) set("dsem_x_known", NULL) # a dsem list from before the recruitment correction
+  if(!has("dsem_link_sd_arrow")) set("dsem_link_sd_arrow", NULL) # or from before sigmaR was read off the arrows
+  if(!has("dsem_cov_link")) set("dsem_cov_link", NULL) # or from before links and the fixed-sd normal: each family's default link
+  if(!has("dsem_cov_fixed_sd")) set("dsem_cov_fixed_sd", NULL)
+
+  # Numbers at age penalty mirror. NULL penalizes every cell, which is what it did before it existed
+  if(!has("map_ln_NAA")) set("map_ln_NAA", NULL)
+
   # R0 time blocks
   if(!has("R0_blocks")) set("R0_blocks", NULL) # NULL means one block, read where R0 is built
   if(!has("R0_ref_block")) set("R0_ref_block", 1L)
@@ -1712,9 +1714,6 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   # absent on older input lists, where every fishery q was estimated with no covariates
   n_fish_bc <- get("n_fish_fleets", envir = env)
   if(!has("fish_q_type")) set("fish_q_type", rep(0, n_fish_bc))
-  if(!has("do_fish_q_cov")) set("do_fish_q_cov", 0)
-  if(!has("fish_q_cov")) set("fish_q_cov", array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)), n_fish_bc, 1)))
-  if(!has("fish_q_coeff")) set("fish_q_coeff", array(0, dim = c(get("n_regions", envir = env), n_fish_bc, 1)))
   if(!has("SrvIdx_LikeType")) set("SrvIdx_LikeType", rep(0, n_srv_bc))
   if(!has("FishIdx_LikeType")) set("FishIdx_LikeType", rep(0, n_fish_bc))
   if(!has("SrvIdx_Cov")) set("SrvIdx_Cov", vector("list", n_srv_bc))
@@ -2003,6 +2002,18 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     spec$normalize <- TRUE
     set(data_name, rep(list(spec), n_fleets_bc))
   } # end data_name loop
+
+  # Catchability dev stuff
+  n_reg_bc <- get("n_regions", envir = env)
+  for(prefix in c("fish", "srv")) {
+    n_fleet_bc <- get(paste0("n_", prefix, "_fleets"), envir = env)
+    if(!has(paste0(prefix, "_q_model"))) set(paste0(prefix, "_q_model"), rep(1L, n_fleet_bc))
+    if(!has(paste0("ln_", prefix, "_q_devs"))) set(paste0("ln_", prefix, "_q_devs"), NULL)
+    if(!has(paste0("map_ln_", prefix, "_q_devs"))) set(paste0("map_ln_", prefix, "_q_devs"), NULL)
+    if(!has(paste0("ln_sigma_", prefix, "_q"))) set(paste0("ln_sigma_", prefix, "_q"), array(log(0.1), dim = c(n_reg_bc, n_fleet_bc)))
+    if(!has(paste0(prefix, "_q_rho"))) set(paste0(prefix, "_q_rho"), array(0, dim = c(n_reg_bc, n_fleet_bc)))
+    if(!has(paste0(prefix, "_q_rw_init_sigma"))) set(paste0(prefix, "_q_rw_init_sigma"), NA)
+  } # end prefix loop
 
   invisible(NULL)
 }

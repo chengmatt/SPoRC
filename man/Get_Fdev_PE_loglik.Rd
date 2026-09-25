@@ -14,63 +14,50 @@ Get_Fdev_PE_loglik(
 )
 }
 \arguments{
-\item{PE_model}{Integer specifying the process error structure: \code{1} =
-IID (deviations drawn independently as \eqn{N(0, \sigma^2)}); \code{2} =
-random walk (first active year initialized with a diffuse \eqn{N(0, 5)}
-prior); \code{3} = AR1 (first active year drawn from its stationary
-marginal distribution \eqn{N(0, \sigma^2 / (1 - \rho^2))}).}
+\item{PE_model}{Integer process error structure: \code{1} iid, \code{2} random
+walk with the first active year on a diffuse \eqn{N(0, 5)}, \code{3} AR1 with
+the first active year drawn from its stationary marginal.}
 
-\item{ln_sigmaF}{Array \code{[n_regions x n_seas x n_fish_fleets]} of
-log-scale process error SD.}
+\item{ln_sigmaF}{Array \code{[n_regions x n_seas x n_fish_fleets]} of log-scale
+process error sd.}
 
 \item{Fdev_rho}{Array \code{[n_regions x n_seas x n_fish_fleets]} of
-unconstrained AR1 partial correlation (only used when \code{PE_model ==
-3}); transformed to \eqn{(-1, 1)} via \eqn{2 / (1 + e^{-2x}) - 1}.}
+unconstrained AR1 partial correlation, transformed to \eqn{(-1, 1)} here and
+read under \code{PE_model == 3} only.}
 
-\item{ln_F_devs}{Array \code{[n_regions x n_years x n_seas x
-n_fish_fleets]} of log-scale fishing mortality deviations.}
+\item{ln_F_devs}{Array \code{[n_regions x n_years x n_seas x n_fish_fleets]} of
+log-scale fishing mortality deviations.}
 
-\item{map_ln_F_devs}{Array \code{[n_regions x n_years x n_seas x
-n_fish_fleets]} mirroring \code{$map$ln_F_devs}: an estimation index
-where a deviation is estimated, \code{NA} where it is fixed. Only
-estimated deviations are penalized, and they alone form the active
-sequence, so a fixed cell is skipped and widens the gap \eqn{d} between
-the deviations either side of it. \code{\link{do_Fmort_mapping}} builds
-this from the catch-usage indicators, estimating a deviation wherever
-aggregated or any population-specific catch is used, or where the
-aggregate catch observation (\code{ObsCatch}) is missing (\code{NA})
-rather than a true recorded zero (fishing presumably continued, we
-simply lack a value to fit), while a true recorded zero is a real
-closure and is excluded.}
+\item{map_ln_F_devs}{Array shaped like \code{ln_F_devs} mirroring
+\code{$map$ln_F_devs}: an estimation index where a deviation is estimated and
+\code{NA} where it is fixed. Only estimated deviations are penalized and they
+alone form the active sequence, so a fixed cell is skipped and widens the gap
+between the deviations either side of it. \code{\link{do_Fmort_mapping}}
+builds it from the catch use indicators, estimating a deviation wherever
+aggregated or population-specific catch is used, or where \code{ObsCatch} is
+\code{NA}, which is a missing value rather than a real closure; a recorded
+zero is a closure and is excluded.}
+
+\item{Fdev_pen_center}{Integer. \code{1} centers on the deviations' own mean,
+\code{0} on zero.}
 }
 \value{
-Array with the same dimensions as \code{ln_F_devs}: the negative
-  log-likelihood contribution per cell.
+Array shaped like \code{ln_F_devs} of the negative log-likelihood per
+  cell.
 }
 \description{
-Calculates the negative log-likelihood contribution for fishing mortality
-deviations (\code{ln_F_devs}) under an iid, random walk, or AR1 process
-error structure.
+The negative log-likelihood of \code{ln_F_devs} under an iid, random walk or
+AR1 process. Unlike \code{\link{Get_PE_loglik}} and
+\code{\link{Get_move_PE_loglik}}, which return one positive scalar for the
+caller to negate, this returns an already-negated array shaped like
+\code{ln_F_devs}, zero where catch is not used, matching the
+\code{Fmort_nLL} reporting.
 }
 \details{
-\strong{Note:} Unlike \code{\link{Get_PE_loglik}} and
-\code{\link{Get_move_PE_loglik}}, which return a single positive
-log-likelihood scalar to be negated by the caller, this function returns
-an already-negated array with the same dimensions as \code{ln_F_devs}
-(one value per region/year/season/fleet cell, \code{0} where catch is not
-used), matching the existing \code{Fmort_nLL} reporting convention.
-
-Random walk and AR1 do not require catch-active years to be contiguous.
-Instead, the transition between two active years is taken over the
-elapsed gap \eqn{d} between them, exactly the marginal transition you
-would get from estimating deviations for the closed years in between and
-integrating them out, without actually estimating them:
-\describe{
-  \item{Random walk}{\eqn{\delta_t \mid \delta_s \sim N(\delta_s, d\sigma^2)}}
-  \item{AR1}{\eqn{\delta_t \mid \delta_s \sim N(\rho^d \delta_s, \sigma^2
-    \sum_{i=0}^{d-1} \rho^{2i})}, where the sum has closed form
-    \eqn{(1 - \rho^{2d}) / (1 - \rho^2)}}
-}
-Both reduce exactly to the standard single-step transition when \eqn{d = 1}.
+The walk and the AR1 do not need catch-active years to be contiguous: the
+transition between two active years is taken over the elapsed gap between
+them, which is the same marginal as estimating deviations for the closed years
+and integrating them out, and reduces to the single-step transition when the
+gap is one year.
 }
 \keyword{internal}

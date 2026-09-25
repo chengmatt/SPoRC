@@ -79,6 +79,9 @@ Note that `fish_fixed_sel_pars` holds parameters on the scale of the chosen func
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
 | `ln_fish_q` | `n_regions × max_fishq_blks × n_fish_fleets` | Log-scale fishery catchability coefficient | 0 |
+| `ln_fish_q_devs` | `n_regions × n_years × n_fish_fleets` | Log-scale annual deviations about the mean fishery catchability, under `fish_q_model` | 0 |
+| `ln_sigma_fish_q` | `n_regions × n_fish_fleets` | Log-scale standard deviation of the fishery catchability deviations | log(0.1) |
+| `fish_q_rho` | `n_regions × n_fish_fleets` | Unconstrained ar1 correlation of the fishery catchability deviations, read only under `fish_q_model = "ar1"` | 0 |
 
 ## Fishery Composition Likelihoods
 
@@ -136,7 +139,9 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
 | `ln_srv_q` | `n_regions × max_srvq_blks × n_srv_fleets` | Log-scale survey catchability coefficient. Automatically fixed (not estimated) for fleets whose catchability is solved analytically via `srv_q_type` | 0 |
-| `srv_q_coeff` | `n_regions × n_srv_fleets × n_covariates` | Regression coefficients for covariate-based survey catchability | 0 |
+| `ln_srv_q_devs` | `n_regions × n_years × n_srv_fleets` | Log-scale annual deviations about the mean survey catchability, under `srv_q_model` | 0 |
+| `ln_sigma_srv_q` | `n_regions × n_srv_fleets` | Log-scale standard deviation of the survey catchability deviations | log(0.1) |
+| `srv_q_rho` | `n_regions × n_srv_fleets` | Unconstrained ar1 correlation of the survey catchability deviations, read only under `srv_q_model = "ar1"` | 0 |
 
 ## Survey Composition Likelihoods
 
@@ -190,6 +195,20 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | `sexratio_pars` | `n_pop × n_regions × n_blocks` | Logit-scale sex ratio parameters (defaults to 50:50 when n_sexes = 1) | 0 |
 | `stray_rate_pars` | `n_pop × n_stray_blocks` | Logit-scale stray rate parameters controlling the proportion of population p's spawning biomass in a non-natal region that contributes to other populations' effective SSB at their natal regions. Only estimated when `use_fixed_stray_rate == 0`. Note: stray rate is likely unidentifiable from fishery and survey data alone and should be fixed or given an informative prior. | 0 |
 
+## Dynamic Structural Equation Model
+
+Only present when `Setup_Mod_DSEM()` was called. The grid has one column per series, covariates first, then the linked deviation series.
+
+| Parameter | Dimension | Description | Default |
+|-----------|-----------|-------------|---------|
+| `dsem_beta` | `n_paths` | Path coefficients, one per named path or covariance arrow, in the order the arrows name them (`data$dsem_model$beta_names`). A fixed arrow (`NA` name, value in the fourth field) has no entry here. | 0, or the arrow's start value |
+| `ln_dsem_sd` | `n_sd_lines` | Log innovation standard deviations, one per sd line (`data$dsem_model$ln_sd_names`). | log(1), or the arrow's start value |
+| `dsem_mu` | `n_series` | Series means. Estimated for the covariates `dsem_mu_spec` names, kept at the observed mean otherwise, and always zero for a deviation series. | observed mean, 0 |
+| `dsem_x` | `n_grid_years × n_series` | The dsem grid. Known covariate cells and linked deviation cells are mapped off (the objective writes the deviations in); missing covariate years, `"normal"` covariates and the rows a linked series does not reach (the forecast) are estimated. | the series means |
+| `logit_dsem_tweedie_p` | `n_covariates` | Tweedie power as `1 + plogis(.)`, estimated for `dsem_family = "tweedie"` only. |
+| `ln_dsem_obs_sd` | `n_covariates` | Log spread of each covariate's observations on its family's scale: sd (`"normal"`), CV (`"gamma"`), sd of the log (`"lognormal"`), dispersion (`"tweedie"`); mapped off for `"fixed"`. | log(sd / 2) |
+| `dsem_delta0` | `n_series` | First-year offset of each series, estimated for those `dsem_delta0_spec` names. | 0 |
+
 ## Movement
 
 | Parameter | Dimension | Description | Default |
@@ -197,7 +216,7 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | `move_pars` | `n_pop × n_regions × (n_regions - 1) × n_years × n_seas × n_ages × n_sexes` | Logit-scale movement probabilities (unstructured Markov; move_type = 0) | 0 |
 | `log_move_diffusion_pars` | (Vector; depends on formula) | Log-scale diffusion parameters for CTMC movement (move_type = 1) | log(0.1) |
 | `move_preference_pars` | (Vector; depends on formula) | Preference parameters for CTMC movement (move_type = 1) | 0 |
-| `move_devs` | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes` | Movement deviations w/ projection years (can be specified as random effects); IID process error only, sharing structure set via `cont_vary_movement` | 0 |
+| `move_devs` | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes`, the third dim `1` under CTMC movement | Movement deviations w/ projection years (can be specified as random effects); offsets on the logit of a region pair (unstructured) or on a region's preference (CTMC); IID process error only, sharing structure set via `cont_vary_movement` | 0 |
 | `move_pe_pars` | `n_pop × n_regions × n_seas × n_ages × n_sexes` | Standard deviations for continuously varying movement (IID). Which dimensions are actively estimated vs. kept fixed at index 1 is determined by `cont_vary_movement` (e.g. `"iid_y"` only varies over year) | 0 |
 
 ## Tagging

@@ -118,7 +118,7 @@ build_om <- function(move_timing, seed = 1234) {
     n_pop = 1, n_regions = N_REGIONS, n_yrs = N_YRS, n_proj_yrs_devs = 0,
     n_ages = N_AGES, n_sexes = 1, n_seas = 1,
     move_pars = array(0, c(1, N_REGIONS, N_REGIONS - 1, N_YRS, 1, N_AGES, 1)),
-    move_devs = array(0, c(1, N_REGIONS, N_REGIONS - 1, N_YRS, 1, N_AGES, 1)),
+    move_devs = array(0, c(1, N_REGIONS, 1, N_YRS, 1, N_AGES, 1)),
     use_fixed_movement = 0, Fixed_Movement = NULL,
     ctmc_move_dat = expand.grid(
       pop = 1,

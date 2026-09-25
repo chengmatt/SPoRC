@@ -570,7 +570,7 @@ parametric mean length at age,
 $$\bar{L}_{y,a}^{\ast} = \bar{L}_{y,a}\exp\left( \varepsilon_{y,a} \right)$$
 
 applied after the curve and after any cohort propagation. The curve remains the
-parametric part and $\varepsilon$ holds departures from it. This represents
+parametric part and $\varepsilon$ holds the deviations from it. This represents
 changes in the shape of size at age that no parameter of the curve can express:
 a curve with five parameters cannot fit a year in which only the four-year-olds
 were small, and an unconstrained transition per year is not identified.

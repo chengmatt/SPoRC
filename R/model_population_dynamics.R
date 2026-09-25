@@ -174,107 +174,90 @@ compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex
 
 #' Population projection (numbers-at-age dynamics)
 #'
-#' Advances numbers-at-age forward through all modeled years and seasons:
-#' inserts recruitment (timing controlled by \code{rec_lag}), applies
-#' movement, computes SSB/biomass quantities via \code{compute_biom_y}, and
-#' applies mortality/ageing. Called once from the "Population Projection"
-#' section of \code{SPoRC_rtmb.R}. \code{ZAA} (total mortality at age) must
-#' already be computed before calling this, since it is treated as an input
-#' here rather than derived from \code{NAA}.
+#' Advances numbers at age through every modeled year and season: inserts
+#' recruitment at the timing \code{rec_lag} sets, applies movement, computes the
+#' biomass quantities through \code{compute_biom_y}, and applies mortality and
+#' ageing. \code{ZAA} is an input here, not derived from \code{NAA}, so it must
+#' already be computed. Called once from the population projection section of
+#' \code{SPoRC_rtmb.R}.
 #'
-#' All array arguments matching an output name (\code{NAA}, \code{NAA0},
-#' \code{NAA_bef}, \code{NAA_aft}, \code{Rec}, \code{SSB}, \code{Total_Biom},
-#' \code{Dynamic_SSB0}, \code{eff_SSB}) are passed in already dimensioned
-#' (typically all-zero, aside from any initial-year values already inserted
-#' upstream) and returned fully populated over \code{1:n_yrs}.
+#' Every array argument matching an output name is passed in already dimensioned,
+#' usually all zero aside from any initial-year values inserted upstream, and comes
+#' back filled over \code{1:n_yrs}.
 #'
-#' @param n_pop,n_regions,n_seas,n_ages,n_sexes,n_yrs,n_fish_fleets
-#'   Dimension sizes.
-#' @param rec_lag Integer. Recruitment timing: \code{0} inserts recruitment
-#'   within the spawning-season biomass computation; non-zero inserts
-#'   recruitment once per year ahead of the seasonal loop.
-#' @param R0_yr Matrix \code{[n_pop x n_yrs]} of R0 by year when R0 has time
-#'   blocks, or \code{NULL} to use the single \code{R0} in every
-#'   year. Only the recruitment computed each year reads it; everything that needs one
-#'   value still uses \code{R0}.
+#' @param n_pop,n_regions,n_seas,n_ages,n_sexes,n_yrs,n_fish_fleets Dimension sizes.
+#' @param rec_lag Integer. \code{0} inserts recruitment inside the spawning-season
+#'   biomass computation; non-zero inserts it once a year ahead of the seasonal
+#'   loop.
+#' @param R0_yr Matrix \code{[n_pop x n_yrs]} of R0 by year when R0 has time blocks,
+#'   or \code{NULL} for the single \code{R0}. Only the recruitment computed each
+#'   year reads it; everything needing one value still uses \code{R0}.
 #' @param rec_model,rec_dd,R0,rec_region_prop,rec_seas_prop,h_trans,natal_region,t_spawn,spawn_seas,seasdur,init_F
 #'   Recruitment and timing arguments passed through to
 #'   \code{Get_Det_Recruitment}.
 #' @param n_est_rec_devs Number of estimated recruitment deviations.
-#' @param ln_RecDevs Array \code{[pop, region, year]} of log recruitment
-#'   deviations; applied multiplicatively to deterministic recruitment for
+#' @param ln_RecDevs Array \code{[pop, region, year]} of log recruitment deviations,
+#'   applied multiplicatively to deterministic recruitment for
 #'   \code{y <= n_est_rec_devs}.
-#' @param sexratio Array \code{[pop, region, year, sex]} of recruitment sex
+#' @param sexratio Array \code{[pop, region, year, sex]} of the recruitment sex
 #'   ratio.
-#' @param WAA,MatAA Arrays \code{[pop, region, year, season, age, sex]} of
-#'   weight-at-age and maturity-at-age.
-#' @param natmort Array \code{[pop, region, year, season, age, sex]} of natural
-#'   mortality at age.
-#' @param Movement Array \code{[pop, region_from, region_to, year, season,
-#'   age, sex]} of movement rates.
+#' @param WAA,MatAA,natmort Arrays \code{[pop, region, year, season, age, sex]} of
+#'   weight at age, maturity at age and natural mortality.
+#' @param Movement Array \code{[pop, region_from, region_to, year, season, age,
+#'   sex]} of movement rates.
 #' @param stray_rate Array \code{[pop, year]} of stray rate.
-#' @param sgl_seas_spawning_movement Array \code{[pop, region_from,
-#'   region_to, year, age, sex]} of single-season-spawning movement rates.
-#' @param do_recruits_move Integer (0/1) switch for whether age-1 recruits
-#'   are subject to movement.
+#' @param sgl_seas_spawning_movement Array \code{[pop, region_from, region_to, year,
+#'   age, sex]} of single-season spawning movement.
+#' @param do_recruits_move Integer (0/1) for whether age-1 recruits move.
 #' @param fish_sel,ret_sel Arrays \code{[pop, region, year, season, age, sex,
-#'   fish_fleet]} of total/retained fishery selectivity.
-#' @param dmr Array \code{[region, year, season, fish_fleet]} of discard
-#'   mortality rate.
-#' @param ZAA Array \code{[pop, region, year, season, age, sex]} of total
-#'   mortality at age (precomputed).
-#' @param NAA,NAA0 Arrays \code{[pop, region, year+1, season, age, sex]},
-#'   output containers for fished/unfished numbers at age.
-#' @param NAA_bef,NAA_aft Arrays \code{[pop, region, year+1, season, age,
-#'   sex]}, output containers for numbers at age immediately before/after
-#'   movement.
-#' @param Rec Array \code{[pop, region, year]}, output container for total
+#'   fish_fleet]} of total and retained fishery selectivity.
+#' @param dmr Array \code{[region, year, season, fish_fleet]} of discard mortality
+#'   rate.
+#' @param ZAA Array \code{[pop, region, year, season, age, sex]} of total mortality
+#'   at age, precomputed.
+#' @param NAA,NAA0,NAA_bef,NAA_aft Arrays \code{[pop, region, year+1, season, age,
+#'   sex]}, the output containers for the fished and unfished numbers at age and for
+#'   the numbers immediately before and after movement.
+#' @param Rec Array \code{[pop, region, year]}, the output container for total
 #'   recruitment before seasonal apportionment.
-#' @param SSB,Total_Biom,Dynamic_SSB0 Arrays \code{[pop, region, year]},
-#'   output containers.
-#' @param eff_SSB Array \code{[pop, year]}, output container for effective
+#' @param SSB,Total_Biom,Dynamic_SSB0 Arrays \code{[pop, region, year]}, output
+#'   containers.
+#' @param eff_SSB Array \code{[pop, year]}, the output container for effective
 #'   (natal-homing-adjusted) SSB.
-#' @param SR_ref_yr Integer year index supplying the biological inputs, weight
-#'   at age, maturity, natural mortality and movement, to unfished spawning
-#'   biomass per recruit, and so to \code{S0} and the scale of the stock-recruit
-#'   curve. Default \code{1}, the first model year, which is what the function
-#'   used to hardcode. Set to \code{n_yrs} to condition the curve on terminal
-#'   weight at age, which is what several ADMB assessments do; with time-varying
-#'   weight at age the two differ and the whole curve shifts with them. It is a
-#'   year INDEX, not a calendar year, so callers that truncate the year
-#'   dimension (retrospectives) must clamp it.
-#' @param growth_mortality_year_fn Optional function of \code{(y, NAA_y, growth_mortality_state)} called at
-#'   the top of every year with the numbers at age at the start of that year,
-#'   array \code{[pop, region, age, sex]}, and the state kept from the
-#'   previous year. It returns a list with \code{state}, advanced to the
-#'   next call and returned to the caller, and \code{ZAA_y}, \code{WAA_y} and
-#'   \code{MatAA_y}, the year's slices of total mortality, weight and maturity
-#'   at age, which replace those handed in for that year. Passing the state in
-#'   and out keeps the per-year step a function of its arguments.
-#' @param growth_mortality_state Initial state for \code{growth_mortality_year_fn}, passed through the
-#'   year loop and returned as \code{growth_mortality_state}. Ignored when
-#'   \code{growth_mortality_year_fn} is \code{NULL}.
-#'   This is how cohort growth, whose plus group blends by numbers, is evaluated
-#'   inside the year loop. \code{NULL} (the default) uses the arrays as given.
+#' @param SR_ref_yr Integer year index supplying the biological inputs (weight at
+#'   age, maturity, natural mortality and movement) to unfished spawning biomass per
+#'   recruit, and so to \code{S0} and the curve's scale. Default \code{1}. Set it to
+#'   \code{n_yrs} to condition the curve on terminal weight at age, as several ADMB
+#'   assessments do. It is an index, not a calendar year, so a caller that truncates
+#'   the year dim must clamp it.
+#' @param growth_mortality_year_fn Optional function of \code{(y, NAA_y,
+#'   growth_mortality_state)} called at the top of every year with the numbers at
+#'   age at the start of that year, array \code{[pop, region, age, sex]}, and the
+#'   state kept from the previous year. It returns a list with \code{state},
+#'   advanced to the next call and returned to the caller, and \code{ZAA_y},
+#'   \code{WAA_y} and \code{MatAA_y}, which replace that year's slices. Passing the
+#'   state in and out keeps the per-year step a function of its arguments.
+#' @param growth_mortality_state Initial state for
+#'   \code{growth_mortality_year_fn}, passed through the year loop and returned.
+#'   \code{NULL} (default) uses the arrays as given. This is how cohort growth,
+#'   whose plus group blends by numbers, is evaluated inside the year loop.
 #' @param n_est_naa_re Number of estimated state-space numbers at age. Zero leaves
 #'   the numbers deterministic. Never inferred from \code{dim(ln_NAA)}, which is
 #'   non-zero once the setup function has run at all.
 #' @param ln_NAA Array \code{[pop, region, year, season, age, sex]} of log numbers
-#'   at the start of a season, overwriting the deterministic prediction wherever
-#'   the state is active. Season one is the year boundary, after ageing and the
-#'   plus group; later seasons are states on the within-year survival step.
+#'   at the start of a season, overwriting the deterministic prediction wherever the
+#'   state is active. Season one is the year boundary, after ageing and the plus
+#'   group; later seasons are states on the within-year survival step.
 #' @param naa_re_ages,naa_re_yrs,naa_re_seas Integer index vectors the state is
 #'   active over.
 #'
-#' @return List with elements \code{NAA}, \code{NAA0}, \code{NAA_bef},
-#'   \code{NAA_aft}, \code{Rec}, \code{SSB}, \code{Total_Biom},
-#'   \code{Dynamic_SSB0}, \code{eff_SSB}, \code{Aggregated_SSB} (array
-#'   \code{[year]}, SSB summed across pop/region),
-#'   \code{Dynamic_Aggregated_SSB0} (array \code{[year]}, likewise for
-#'   \code{Dynamic_SSB0}), and \code{NAA_int} (array \code{[pop, region, year,
-#'   season, age, sex]}). \code{NAA_int} holds the season-integrated abundance
-#'   needed by the spatial Baranov catch equation and is populated only when
-#'   \code{move_timing = 2}; it is all zeros otherwise.
+#' @return List with \code{NAA}, \code{NAA0}, \code{NAA_bef}, \code{NAA_aft},
+#'   \code{Rec}, \code{SSB}, \code{Total_Biom}, \code{Dynamic_SSB0},
+#'   \code{eff_SSB}, \code{Aggregated_SSB} and \code{Dynamic_Aggregated_SSB0}
+#'   (arrays \code{[year]}, summed across population and region), and
+#'   \code{NAA_int} \code{[pop, region, year, season, age, sex]}, the
+#'   season-integrated abundance the spatial Baranov equation needs, populated only
+#'   under \code{move_timing = 2} and all zeros otherwise.
 #'
 #' @keywords internal
 #' @import RTMB

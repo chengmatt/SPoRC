@@ -119,7 +119,7 @@ test_that("Get_Movement returns a usable generator for every timing", {
     n_sexes = n_sexes,
     n_seas = n_seas,
     move_pars = array(0, c(1, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes)),
-    move_devs = array(0, c(1, n_regions, n_regions - 1, n_yrs, n_seas, n_ages, n_sexes)),
+    move_devs = array(0, c(1, n_regions, 1, n_yrs, n_seas, n_ages, n_sexes)),
     use_fixed_movement = 0,
     Fixed_Movement = NULL,
     ctmc_move_dat = dat,

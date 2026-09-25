@@ -11,62 +11,34 @@ generate_fishery_catch_comp_idx(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by \code{\link{Setup_sim_env}}.
-Modified in place. The following elements are updated:
-\describe{
-  \item{\code{CAA}, \code{DAA}}{Retained and dead discard catch-at-age for all populations, regions, seasons, and fleets.}
-  \item{\code{CAL} and \code{DAL}}{Retained and dead discard catch-at-length if \code{SizeAgeTrans} is present.}
-  \item{\code{TrueCatch}, \code{ObsCatch}}{Regional retained catch indices (abundance or biomass).}
-  \item{\code{TrueCatch_pop}, \code{ObsCatch_pop}}{Population-specific retained catch indices.}
-  \item{\code{TrueDiscard}, \code{ObsDiscard}}{Regional discard indices (abundance, biomass, or fraction).}
-  \item{\code{TrueDiscard_pop}, \code{ObsDiscard_pop}}{Population-specific discard indices.}
-  \item{\code{TrueFishIdx}, \code{ObsFishIdx}}{Regional fishery indices (abundance or biomass).}
-  \item{\code{TrueFishIdx_pop}, \code{ObsFishIdx_pop}}{Population-specific fishery indices.}
-  \item{\code{ObsFishAgeComps}, \code{ObsFishAgeComps_pop}}{Observed retained fishery age compositions.}
-  \item{\code{ObsFishLenComps}, \code{ObsFishLenComps_pop}}{Observed retained fishery length compositions if \code{SizeAgeTrans} is available.}
-  \item{\code{ObsFishAgeComps_discard}, \code{ObsFishAgeComps_discard_pop}}{Observed discard fishery age compositions.}
-  \item{\code{ObsFishLenComps_discard}, \code{ObsFishLenComps_discard_pop}}{Observed discard fishery length compositions if \code{SizeAgeTrans} is available.}
-  \item{\code{ISS_FishAgeComps}, \code{ISS_FishAgeComps_pop}, \code{ISS_FishLenComps}, \code{ISS_FishLenComps_pop}, \code{ISS_FishAgeComps_discard}, \code{ISS_FishAgeComps_discard_pop}, \code{ISS_FishLenComps_discard}, \code{ISS_FishLenComps_discard_pop}}{Effective sample sizes for retained and discard age and length compositions.}
-}}
+\item{sim_env}{Simulation environment from \code{\link{Setup_sim_env}},
+modified in place. It gains the retained and dead discard catch at age
+\code{CAA} and \code{DAA}, their at-length counterparts \code{CAL} and
+\code{DAL} when a size-age key is present, the true and observed regional
+catch, discard and fishery indices with their population-specific
+counterparts, the observed retained and discard age and length compositions
+with theirs, and the input sample sizes of all eight composition data
+sources.}
 }
 \value{
-\code{invisible(NULL)}. All modifications are made by reference
-  within \code{sim_env}.
+\code{invisible(NULL)}; everything is modified by reference within
+  \code{sim_env}.
 }
 \description{
-Applies Baranov's catch equation to compute retained catch-at-age
-(\code{CAA}) and dead discard catch-at-age (\code{DAA}) for all
-populations, regions, seasons, and fleets, derives catch-at-length
-(\code{CAL} and \code{DAL}) when a size-age transition matrix is available,
-and generates observed catch and discard indices (with lognormal error),
-fishery abundance or biomass indices, and age and length composition
-samples for both retained and discarded catch. Composition sampling calls
-\code{\link{simulate_comps}} and respects the likelihood type
-(\code{comp_fishage_like}, \code{comp_fishlen_like}) and aggregation
-structure (\code{FishAgeComps_Type}, \code{FishLenComps_Type}) specified in
-\code{sim_env}.
+Takes retained and dead discard catch at age from Baranov's equation for every
+population, region, season and fleet, converts them to catch at length when a
+size-age key is available, and draws the observed catch, discard and fishery
+indices under lognormal error together with the age and length compositions of
+both retained and discarded catch. The composition draws go through
+\code{\link{simulate_comps}} and follow the likelihood and aggregation type set
+in \code{sim_env}.
 }
 \details{
-Composition draws are skipped for fleet-season cells with zero fishing
-mortality (\code{Fmort = 0}). Discard composition draws are additionally
-skipped when retention selectivity is fully 1 for the fleet-region-year-
-season cell (i.e., no discarding occurs). Discard indices support four
-unit types: abundance (\code{discard_units = 0}), biomass (\code{1}),
-abundance fraction (\code{2}), and biomass fraction (\code{3}).
-
-When \code{ISS_FishAgeComps_fill = "F_pattern"} and feedback is active,
-sample sizes for retained and discard compositions in the current and
-prior years are updated via \code{\link{predict_sim_fish_iss_fmort}}
-(scaled by fishing mortality) before sampling.
-
-For each combination of season, region, and fleet, the function:
-\enumerate{
-  \item Applies Baranov's catch equation to compute retained and dead discard catch-at-age.
-  \item Converts catch-at-age to catch-at-length if \code{SizeAgeTrans} is available.
-  \item Calculates true regional and population-specific catch, discard, and fishery indices.
-  \item Applies lognormal observation error to generate observed indices.
-  \item Simulates retained age and length compositions using \code{\link{simulate_comps}}, skipping fleet-season cells with zero fishing mortality.
-  \item Simulates discard age and length compositions when retention selectivity is not fully 1.
-}
+Composition draws are skipped where \code{Fmort = 0}, and the discard ones also
+where retention selectivity is fully 1, so nothing is discarded. Discard
+indices come in four units: abundance, biomass, abundance fraction and biomass
+fraction. Under \code{ISS_FishAgeComps_fill = "F_pattern"} with feedback
+active, the sample sizes for the current and prior years are rescaled by
+\code{\link{predict_sim_fish_iss_fmort}} before sampling.
 }
 \keyword{internal}

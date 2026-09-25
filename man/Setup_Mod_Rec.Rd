@@ -88,586 +88,313 @@ Setup_Mod_Rec(
 )
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map},
-and \code{$verbose} sublists, as returned by upstream setup functions.
-Population, region, age, year, and season dimensions must already be
-defined in \code{$data}.}
+\item{input_list}{Named list with \code{$data}, \code{$par}, \code{$map} and
+\code{$verbose}. Dimensions must already be set in \code{$data}.}
 
-\item{rec_model}{Character string (required). Stock-recruit relationship:
-\describe{
-  \item{\code{"mean_rec"}}{Fixed mean recruitment; no stock-recruit
-    relationship. Steepness is automatically fixed and not estimated.}
-  \item{\code{"bh_rec"}}{Beverton-Holt stock-recruit relationship.}
-  \item{\code{"ricker_rec"}}{Ricker stock-recruit relationship, in the
-    depletion form \eqn{R = R_0 (S/S_0) \exp(\alpha (1 - S/S_0))} with
-    \eqn{\alpha = \log(4h/(1-h))}. Steepness is not interchangeable with
-    \code{"bh_rec"}; see \code{\link{Get_Det_Recruitment}}.}
-}}
+\item{rec_model}{Character, required. \code{"mean_rec"} (steepness fixed and not
+estimated), \code{"bh_rec"}, or \code{"ricker_rec"}. Steepness is not
+interchangeable between the last two, see \code{\link{Get_Det_Recruitment}}.}
 
-\item{rec_dd}{Density-dependence structure. Default \code{"global"}.
-\describe{
-  \item{\code{"local"}}{Independent stock-recruit relationship per
-    population. Required when \code{n_pop > 1}.}
-  \item{\code{"global"}}{Single pooled spawner-recruit relationship
-    across all regions. Constrains \code{h_spec},
-    \code{RecDevs_spec}, and \code{InitDevs_spec} to shared or fixed
-    options when \code{n_regions > 1}.}
-}}
+\item{rec_dd}{Density dependence. \code{"local"} is one stock-recruit relationship
+per population, required when \code{n_pop > 1}. \code{"global"} (default) pools
+across regions and restricts \code{h_spec}, \code{RecDevs_spec} and
+\code{InitDevs_spec} to shared or fixed options when \code{n_regions > 1}.}
 
-\item{rec_lag}{Integer. Lag between spawning biomass and recruitment (in
-seasons). \code{1} (default) is the classic lagged case: recruitment uses
-SSB from \code{rec_lag} seasons prior and may enter in any season.
-\code{0} is age-0 recruitment: recruitment uses the SAME year's SSB, and
-because that SSB isn't known until \code{spawn_seas} is reached, recruits
-may only enter in \code{spawn_seas} itself or a later season, when
-\code{use_fixed_rec_seas_prop = 1}, \code{fixed_rec_seas_prop} must be
-zero before \code{spawn_seas}; when estimated, this is enforced
-structurally via a restricted softmax (see
-\code{\link{do_rec_seas_prop_mapping}}).}
+\item{rec_lag}{Integer lag in seasons between spawning biomass and recruitment.
+\code{1} (default) uses SSB from that many seasons prior. \code{0} is age-0
+recruitment on the same year's SSB, so recruits may only enter in
+\code{spawn_seas} or later.}
 
 \item{SR_ref_yr}{Integer year index supplying every input to unfished spawning
-biomass per recruit, and so to \code{S0} and the scale of the stock-recruit
-curve. Matches the estimation model's \code{SR_ref_yr}. Default \code{1}.}
+biomass per recruit, and so to \code{S0} and the curve's scale: weight-at-age,
+maturity, natural mortality, movement, stray rate, sex ratio, and what enters
+through \code{init_F}. \code{R0} is the exception and is always the year's own
+value. Default \code{1}. Ignored under \code{rec_model = "mean_rec"}.}
 
-\item{Use_h_prior}{Integer (0/1). Whether normal priors on steepness are
-applied. Only relevant when a stock-recruit curve is used
-(\code{rec_model = "bh_rec"} or \code{"ricker_rec"}). Default \code{0}.}
+\item{Use_h_prior}{Integer (0/1). Normal priors on steepness. Default \code{0}.}
 
-\item{h_prior}{Data frame of steepness prior parameters. Required columns:
-\code{pop}, \code{region}, \code{mu}, \code{sd}. Ignored when
-\code{Use_h_prior = 0}. Default \code{NULL}.}
+\item{h_prior}{Data frame with columns \code{pop}, \code{region}, \code{mu} and
+\code{sd}. Default \code{NULL}.}
 
-\item{rec_region_prop_spec}{Character or \code{NULL}. Regional recruitment
-dispersal structure. Default \code{NULL} (estimate all proportions
-freely). See \code{\link{do_rec_region_prop_mapping}} for full option
-descriptions including \code{"no_dispersal"}. Stored as
-\code{$data$rec_region_prop_spec}: \code{0} = full dispersal,
-\code{1} = no dispersal.}
+\item{rec_region_prop_spec}{Character or \code{NULL}. Regional recruitment dispersal
+structure, default \code{NULL} (all estimated freely). Stored as
+\code{$data$rec_region_prop_spec}, \code{0} = full dispersal, \code{1} = none. See
+\code{\link{do_rec_region_prop_mapping}}.}
 
-\item{use_rec_region_prop_prior}{Integer (0/1). Whether Dirichlet priors
-are applied to regional recruitment proportions. Not valid when
-\code{n_regions = 1}. Default \code{0}.}
+\item{use_rec_region_prop_prior}{Integer (0/1). Dirichlet priors on regional
+recruitment proportions. Not valid when \code{n_regions = 1}. Default \code{0}.}
 
-\item{rec_region_prop_prior}{Data frame of Dirichlet prior concentration
-parameters. Required columns: \code{pop} and \code{alpha}, where
-\code{alpha} is a list-column of length-\code{n_regions} vectors.
-Ignored when \code{use_rec_region_prop_prior = 0}. Default \code{NULL}.}
+\item{rec_region_prop_prior}{Data frame of Dirichlet concentrations with columns
+\code{pop} and \code{alpha}, a list-column of length-\code{n_regions} vectors.
+Default \code{NULL}.}
 
-\item{rec_seas_prop_spec}{Character or \code{NULL}. Seasonal recruitment
-apportionment structure. Default \code{"fix"}. See
-\code{\link{do_rec_seas_prop_mapping}} for full option descriptions
-including \code{"est_shared_pop"}.}
+\item{rec_seas_prop_spec}{Character or \code{NULL}. Seasonal apportionment
+structure, default \code{"fix"}. See \code{\link{do_rec_seas_prop_mapping}}.}
 
-\item{use_rec_seas_prop_prior}{Integer (0/1). Whether Dirichlet priors are
-applied to seasonal recruitment proportions. Not valid when
-\code{n_seas = 1}. When \code{rec_lag = 0} and \code{spawn_seas > 1}, the
-prior is evaluated only over seasons \code{spawn_seas:n_seas} (the
-seasons before \code{spawn_seas} are structurally zero, not estimated).
+\item{use_rec_seas_prop_prior}{Integer (0/1). Dirichlet priors on seasonal
+proportions. Not valid when \code{n_seas = 1}. Evaluated only over
+\code{spawn_seas:n_seas} when \code{rec_lag = 0} and \code{spawn_seas > 1}.
 Default \code{0}.}
 
-\item{rec_seas_prop_prior}{Data frame of Dirichlet prior concentration
-parameters for seasonal proportions. Required columns: \code{pop} and
-\code{alpha}. Ignored when \code{use_rec_seas_prop_prior = 0}. Default
-\code{NULL}.}
+\item{rec_seas_prop_prior}{Data frame of Dirichlet concentrations with columns
+\code{pop} and \code{alpha}. Default \code{NULL}.}
 
-\item{use_fixed_rec_seas_prop}{Integer (0/1). Whether fixed (non-estimated)
-seasonal proportions from \code{fixed_rec_seas_prop} are used. Automatically
-reset to \code{0} with a warning if \code{rec_seas_prop_spec} requests
-estimation. Default \code{1}.}
+\item{use_fixed_rec_seas_prop}{Integer (0/1). Whether \code{fixed_rec_seas_prop} is
+used. Reset to \code{0} with a warning if \code{rec_seas_prop_spec} estimates.
+Default \code{1}.}
 
-\item{fixed_rec_seas_prop}{Array \code{[n_pop x n_seas]}. Fixed seasonal
-recruitment proportions used when \code{use_fixed_rec_seas_prop = 1}.
-Default: all recruitment assigned to season 1. When \code{rec_lag = 0}
-and \code{spawn_seas > 1}, must be zero for every season before
-\code{spawn_seas}. An error is raised otherwise.}
+\item{fixed_rec_seas_prop}{Array \code{[n_pop x n_seas]} of fixed seasonal
+proportions, default all recruitment in season 1. Must be zero before
+\code{spawn_seas} when \code{rec_lag = 0} and \code{spawn_seas > 1}.}
 
-\item{do_rec_bias_ramp}{Integer (0/1). Whether a recruitment bias ramp is
-applied to \code{ln_RecDevs} to account for reduced information in early
-and terminal years. Default \code{0}.}
+\item{do_rec_bias_ramp}{Integer (0/1). Whether a bias ramp is applied to
+\code{ln_RecDevs}. Under \code{0} every penalty is centered on the full
+\eqn{-\sigma_R^2/2}, under \code{1} the center follows the ramp. Default \code{0}.}
 
-\item{bias_year}{Numeric. Calendar year at which the bias ramp reaches its
-maximum correction. Only used when \code{do_rec_bias_ramp = 1}. Default
-\code{NA}.}
+\item{bias_year}{Numeric calendar year at which the ramp reaches its maximum
+correction. Default \code{NA}.}
 
-\item{max_bias_ramp_fct}{Numeric in \eqn{[0, 1]}. Maximum bias correction
-factor applied at \code{bias_year}. Default \code{1}.}
+\item{max_bias_ramp_fct}{Numeric in \eqn{[0, 1]}, the maximum correction applied at
+\code{bias_year}. Default \code{1}.}
 
-\item{sigmaR_switch}{Integer. Year index at which \eqn{\sigma_R} switches
-from the early-period value (index 1) to the late-period value (index 2).
-If \eqn{\leq 1}, a single \eqn{\sigma_R} is applied throughout. Default
-\code{1}.}
+\item{sigmaR_switch}{Integer year index at which \eqn{\sigma_R} switches from the
+early to the late value. \eqn{\leq 1} (default) uses one value throughout.}
 
-\item{dont_est_recdev_last}{Non-negative integer. Number of terminal years
-for which recruitment deviations are not estimated. Automatically
-overridden to \code{0} if \code{n_proj_yrs_devs > 0}, since projected
-deviation years are penalized toward the mean and are effectively
-estimated regardless. Default \code{0}.}
+\item{dont_est_recdev_last}{Non-negative integer. Terminal years for which
+recruitment deviations are not estimated. Forced to \code{0} when
+\code{n_proj_yrs_devs > 0}, refused under \code{RecDevs_model = "dsem"}. Default
+\code{0}.}
 
 \item{dont_pen_recdev_first}{Integer. How many leading years of recruitment
-  deviations are estimated but left out of the recruitment penalty. \code{0}
-  (default) penalizes every year.
+deviations are estimated but left out of the penalty. \code{0} (default) penalizes
+every year.}
 
-  The first year's recruitment is the first year's age one abundance, which in
-  an equilibrium initialization belongs to the initial condition rather than to
-  the recruitment process. WHAM keeps it as a separate initial numbers at age
-  parameter and gives it no process error at all, and setting this to \code{1}
-  is the same statement: the deviation is still estimated, so the data set the
-  first year's recruitment freely, but it takes no prior from
-  \code{ln_sigmaR}. Mapping the deviation off instead would fix it at its
-  starting value rather than leave it free.
+\item{init_age_strc}{Initialization method, default \code{2}.
+\code{0}/\code{"iterative"} iterates to approximate equilibrium,
+\code{1}/\code{"scalar_no_move"} is a scalar geometric series without movement,
+\code{2}/\code{"matrix"} is the matrix series with movement, and
+\code{3}/\code{"scalar_plus_only"} moves only the plus group; all four treat
+\code{ln_InitDevs} as multiplicative deviations from the equilibrium.
+\code{4}/\code{"free"} projects no equilibrium: ages 2 and older are
+\code{exp(ln_InitDevs)} apportioned by sex ratio, so the deviations are on the
+scale of numbers and \code{equil_init_age_strc} becomes a prior on log abundance.}
 
-  Leaving years out only removes their penalty, never their estimation, so this
-  is separate from \code{dont_est_recdev_last}, which does the opposite at the
-  other end of the series.}
-
-\item{init_age_strc}{Initialization method. Default \code{2}. Options
-\code{0}/\code{"iterative"}, \code{1}/\code{"scalar_no_move"},
-\code{2}/\code{"matrix"}, and \code{3}/\code{"scalar_plus_only"} all
-project an equilibrium age structure forward from \code{R0} and treat
-\code{ln_InitDevs} as multiplicative deviations from it.
-\code{4}/\code{"free"} projects no equilibrium at all: the numbers at age
-2 and older are \code{exp(ln_InitDevs)}, apportioned by sex ratio,
-with age 1 still taken from recruitment. Use it when the initial age
-structure has no information about \code{R0} and should not be pulled
-toward an equilibrium.
-Note that under \code{4} the deviations are on the scale of numbers rather
-than of log ratios, so the penalty applied through
-\code{equil_init_age_strc} is a prior on log abundance; pair it with
-\code{equil_init_age_strc = 0} if no such prior is wanted.
-\describe{
-  \item{\code{0}/\code{"iterative"}}{Iterates the population to
-    approximate equilibrium. Slowest but most general.}
-  \item{\code{1}/\code{"scalar_no_move"}}{Scalar geometric series
-    assuming no movement.}
-  \item{\code{2}/\code{"matrix"}}{Matrix geometric series incorporating
-    movement. Recommended default for spatial models.}
-  \item{\code{3}/\code{"scalar_plus_only"}}{Scalar geometric series
-    with movement only in the plus group.}
-}}
-
-\item{equil_init_age_strc}{Plus-group treatment during stochastic
-initialization. Default \code{1}.
-\describe{
-  \item{\code{0}/\code{"equil"}}{Deterministic equilibrium; no
-    \code{ln_InitDevs} are estimated.}
-  \item{\code{1}/\code{"stoch_no_plus"}}{Stochastic deviations for all
-    ages except the plus group.}
-  \item{\code{2}/\code{"stoch_all"}}{Stochastic deviations for all ages
-    including the plus group.}
-  \item{\code{3}/\code{"stoch_shared_ages"}}{Stochastic deviations with
-    user-defined age sharing via \code{init_age_devs_shared}. Deviations
-    are estimated independently across all populations and regions, but
-    ages sharing the same value in \code{init_age_devs_shared} are
-    constrained to a single parameter. The plus group is not automatically
-    fixed; include an \code{NA} in \code{init_age_devs_shared} at the
-    plus-group position to fix it, or share it with the preceding age by
-    repeating that index (e.g. \code{c(1:42, rep(42, 9))}). Requires
-    \code{init_age_devs_shared} to be non-\code{NULL}.}
-  \item{\code{4}/\code{"stoch_all_no_pen"}}{Deviations estimated for all
-    ages including the plus group, and none of them penalized. The same
-    cells \code{"stoch_all"} estimates, with no prior on any of them.
-    Pair it with \code{init_age_strc = "free"}, where the deviations are
-    the initial log numbers at age rather than departures from an
-    equilibrium, so a penalty on them would be a prior on initial
-    abundance rather than on the shape of the age structure. This is what
-    ICES assessments in the SAM family do with their first year.}
-}
-\code{"equil"} means both no penalty and no estimation, which are the same
-statement about an equilibrium age structure and two different ones about a
-free age structure. \code{"stoch_all_no_pen"} is the second of them.}
+\item{equil_init_age_strc}{Plus-group treatment during stochastic initialization,
+default \code{1}. \code{0}/\code{"equil"} estimates no \code{ln_InitDevs},
+\code{1}/\code{"stoch_no_plus"} estimates every age but the plus group,
+\code{2}/\code{"stoch_all"} estimates every age, \code{3}/\code{"stoch_shared_ages"}
+shares ages through \code{init_age_devs_shared} (non-\code{NULL} required; the plus
+group is not fixed automatically), and \code{4}/\code{"stoch_all_no_pen"} estimates
+every age and penalizes none, for pairing with \code{init_age_strc = "free"}.}
 
 \item{init_F_prop}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]}.
-\strong{Legacy interface, retained for backwards compatibility.} A fixed
-proportion of the estimated mean F applied during equilibrium initialization.
-When supplied non-zero (and \code{init_F_par} is not given) it is converted to
-\code{ln_init_F = log(init_F_prop)} with \code{init_F_form = "prop"}, which
-reproduces the previous behavior exactly. Prefer \code{init_F_par}.
-Default: zero for all seasons and fleets.}
+Legacy interface. A non-zero value without \code{init_F_par} is converted to
+\code{ln_init_F = log(init_F_prop)} with \code{init_F_form = "prop"}. Prefer
+\code{init_F_par}. Default zero.}
 
-\item{init_F_form}{Character. What the \code{init_F_par} parameter MEANS:
-  \itemize{
-    \item \code{"prop"} (default): \code{init_F = exp(ln_init_F) * exp(ln_F_mean)},
-      a proportion of the estimated mean F, so the initial age structure moves
-      with it.
-    \item \code{"abs"}: \code{init_F = exp(ln_init_F)}, an absolute fishing
-      mortality independent of \code{ln_F_mean}.
-  }
+\item{init_F_form}{What \code{init_F_par} means. \code{"prop"} (default) gives
+\code{init_F = exp(ln_init_F) * exp(ln_F_mean)}, a proportion of the estimated
+mean F. \code{"abs"} gives \code{init_F = exp(ln_init_F)}, independent of
+\code{ln_F_mean}. Use \code{"abs"} when bridging an assessment with a separate
+historical F; under \code{"prop"} the two collapse into one parameter and catch
+constrains only their product.}
 
-  Use \code{"abs"} when bridging an assessment that has a separate
-  historical F (one estimated as its own parameter, distinct from the mean
-  log fishing mortality). Under
-  \code{"prop"} those two quantities collapse into a single parameter, and
-  because catch constrains only the PRODUCT of numbers and fishing mortality,
-  the optimizer can raise \code{ln_F_mean} to deplete the initial age structure
-  and raise F together, fitting catch just as well with a smaller,
-  harder-fished stock. That is a genuine second solution branch, not a rounding
-  difference.}
+\item{init_F_spec}{\code{"fix"} (default) or \code{"est"}, whether
+\code{init_F_par} is estimated. Sets only the mapping, so it combines freely with
+\code{init_F_form}. Refused under \code{init_age_strc = "free"}. The value comes
+from \code{init_F_par} \code{[n_regions x n_seas x n_fish_fleets]}, passed through
+\code{...}, on the logit scale under \code{"prop"} and the log scale under
+\code{"abs"}.}
 
-\item{init_F_spec}{Character, \code{"fix"} (default) or \code{"est"}. Whether
-  \code{init_F_par} is estimated. This sets only the mapping, so it combines
-  freely with \code{init_F_form}, including estimating the proportion itself
-  (\code{init_F_form = "prop"}, \code{init_F_spec = "est"}). Note \code{init_F}
-  is generally weakly identified, which is why assessments commonly fix it.
-  \code{"est"} is refused under \code{init_age_strc = "free"}, where no
-  equilibrium is projected and \code{init_F_par} never reaches the objective.
-
-  The value is set by the parameter \code{init_F_par}
-  \code{[n_regions x n_seas x n_fish_fleets]}, supplied through \code{...} like
-  any other starting value, e.g.
-  \code{Setup_Mod_Rec(..., init_F_form = "abs", init_F_spec = "fix", init_F_par = array(log(0.01), dim = c(1, 1, 1)))}.
-  Its SCALE depends on \code{init_F_form}, logit under \code{"prop"} (so the
-  proportion is bounded to (0, 1)) and log under \code{"abs"}, which is why it
-  is not named \code{ln_} or \code{logit_}. Defaults to effectively no initial
-  fishing mortality.}
-
-\item{sigmaR_spec}{Character. Estimation structure for \eqn{\sigma_R},
-stored in \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, where index
-1 = initial deviation period and index 2 = annual deviation period.
-Default \code{"est_all"}. See \code{\link{do_sigmaR_mapping}} for full
-option descriptions.}
+\item{sigmaR_spec}{Character. Estimation structure for \eqn{\sigma_R}, stored in
+\code{ln_sigmaR} \code{[2 x n_pop x n_regions]} with index 1 the initial period
+and 2 the annual period. Default \code{"est_all"}, see
+\code{\link{do_sigmaR_mapping}}.}
 
 \item{InitDevs_spec}{Character or \code{NULL}. Sharing structure for
-initial age-structure deviations \code{ln_InitDevs} \code{[n_pop x
-n_regions x (n_ages - 1) x n_sexes]}. Default \code{NULL} (estimate all
-independently). See \code{\link{do_InitDevs_mapping}} for full option
-descriptions.}
+\code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1) x n_sexes]}. Default
+\code{NULL} (all independent), see \code{\link{do_InitDevs_mapping}}.}
 
-\item{InitDevs_sex_spec}{Character. \code{"est_shared_s"} (default)
-estimates one initial age deviation curve read by every sex, which is how
-the model has always behaved. \code{"est_all"} gives each sex its own
-curve, each penalized under the initial-age penalty, with an
-\code{"own_mean"} \code{InitDevs_pen_center} pooled across sexes so the
-sexes share one estimated level the way assessments with a common
-mean-log-initial and sex-specific deviations are written. Requires
-\code{n_sexes > 1}.}
+\item{InitDevs_sex_spec}{\code{"est_shared_s"} (default) estimates one initial age
+deviation curve read by every sex; \code{"est_all"} gives each sex its own,
+pooling the level across sexes under an \code{"own_mean"}
+\code{InitDevs_pen_center}. Requires \code{n_sexes > 1}.}
 
-\item{RecDevs_spec}{Character or \code{NULL}. Sharing structure for annual
-recruitment deviations \code{ln_RecDevs} \code{[n_pop x n_regions x
-n_years]}. Default \code{NULL} (estimate all independently). See
-\code{\link{do_RecDevs_mapping}} for full option descriptions.}
+\item{RecDevs_spec}{Character or \code{NULL}. Sharing structure for
+\code{ln_RecDevs} \code{[n_pop x n_regions x n_years]}. Default \code{NULL}
+(all independent), see \code{\link{do_RecDevs_mapping}}.}
 
-\item{RecDevs_model}{Character string giving the process error structure on
-the recruitment deviations \code{ln_RecDevs}. The same three forms
-\code{Fdev_model} offers:
-\describe{
-  \item{\code{"iid"}}{Default. Independent deviations about the prior mean
-    set by \code{RecDevs_pen_center}, which is the classic mean recruitment
-    with lognormal deviations.}
-  \item{\code{"rw"}}{Random walk. Each deviation is centered on the previous
-    estimated one, so recruitment is free to move but not to jump, which is
-    the state-space recruitment SAM fits by default. The first estimated
-    deviation is given a diffuse normal, so the level of the series is set
-    by \code{R0} and the data rather than by the penalty.}
-  \item{\code{"ar1"}}{AR1. As the walk, but each deviation reverts toward
-    zero at rate \code{RecDevs_rho}, and the first estimated deviation is
-    drawn from the stationary marginal distribution.}
-}
-A step spans the gap between estimated years rather than calendar years, so
-mapping deviations off through \code{RecDevs_spec} or
-\code{dont_est_recdev_last} closes the gap rather than splitting the series.
-The walk and the AR1 center each deviation on the previous one, so neither
-can be combined with \code{do_rec_bias_ramp = 1} or
-\code{RecDevs_pen_center = "own_mean"}, both of which assert a mean about
-zero; each combination is rejected. \code{sigmaR_switch} still applies, so
-the walk can take one standard deviation early and another late.}
+\item{RecDevs_model}{Process error on \code{ln_RecDevs}. \code{"iid"} (default) is
+independent about the prior mean, \code{"rw"} centers each deviation on the
+previous one with a diffuse first year, \code{"ar1"} reverts toward zero at rate
+\code{RecDevs_rho} with a stationary first year, and \code{"dsem"} takes the
+density from the arrows in \code{\link{Setup_Mod_DSEM}}. Steps span estimated
+years, not calendar years. \code{"rw"} and \code{"ar1"} are refused alongside
+\code{do_rec_bias_ramp = 1} or \code{RecDevs_pen_center = "own_mean"};
+\code{"dsem"} reads \code{sigmaR} off the arrows, so \code{sigmaR_spec} other
+than \code{"fix"}, \code{dont_est_recdev_last > 0} and a nonzero ramp are refused.}
 
-\item{RecDevs_rho_spec}{Character string specifying the sharing structure for
-the AR1 correlation parameter \code{RecDevs_rho} \code{[n_pop x
-n_regions]}: one of \code{"est_all"}, \code{"est_shared_pop"},
-\code{"est_shared_r"}, \code{"est_shared_pop_r"}, or \code{"fix"}
-(default). Only read when \code{RecDevs_model = "ar1"}; every other
-\code{RecDevs_model} maps the parameter off. See
-\code{\link{do_RecDevs_rho_mapping}}.}
+\item{RecDevs_rho_spec}{Sharing structure for \code{RecDevs_rho} \code{[n_pop x
+n_regions]}: \code{"est_all"}, \code{"est_shared_pop"}, \code{"est_shared_r"},
+\code{"est_shared_pop_r"} or \code{"fix"} (default). Only read under
+\code{RecDevs_model = "ar1"}, see \code{\link{do_RecDevs_rho_mapping}}.}
 
-\item{RecDevs_rw_init_sigma}{Numeric. Standard deviation given to year one of
-a random walk, which is what sets the level of the recruitment series.
-Default \code{5}, wide enough that the level is decided by \code{R0} and
-the data. \code{NA} instead starts the walk at zero under its own sigma,
-which pulls the first year toward mean recruitment. Only read when
-\code{RecDevs_model = "rw"}.}
+\item{RecDevs_rw_init_sigma}{Standard deviation given to year one of a random walk,
+which sets the level of the series. Default \code{5}; \code{NA} instead starts the
+walk at zero under its own sigma. Only read under \code{RecDevs_model = "rw"}.}
 
-\item{RecDevs_pen_center, InitDevs_pen_center}{Where the recruitment and
-initial age deviation penalties are centered. \code{"fixed"} (default)
-centers on the asserted prior mean, zero or the bias-corrected
-\eqn{-\sigma_R^2/2}, which constrains both the level and the spread of the
-deviations. \code{"own_mean"} centers on the mean of the estimated
-deviations themselves, so only their spread is penalized and their level is
-left free; that is what a sum of squares about the series' own mean
-amounts to. The level
-being unpenalized means it must be pinned elsewhere, by a prior on
-\code{R0} or by fixing a deviation, or the likelihood is flat along it.
-Cannot be combined with \code{do_rec_bias_ramp = 1}, whose offset is
-meaningless once the mean is estimated rather than asserted.}
+\item{RecDevs_pen_center, InitDevs_pen_center}{Where the recruitment and initial age
+deviation penalties are centered. \code{"fixed"} (default) centers on zero or the
+bias-corrected \eqn{-\sigma_R^2/2}; \code{"own_mean"} centers on the estimated
+deviations' own mean, leaving their level free to be set elsewhere. Cannot be
+combined with \code{do_rec_bias_ramp = 1}.}
 
-\item{Use_rec_level_pen}{Integer (0/1). Whether a penalty is applied to the
-log recruitment series itself, separately from the deviation penalty.
-Under a stock-recruit relationship the deviations are residuals about the
-predicted curve, so this is the only way to also say that the recruitment
-series should not wander. Default \code{0}.}
+\item{Use_rec_level_pen}{Integer (0/1). Whether the log recruitment series itself
+is penalized, separately from the deviation penalty. Default \code{0}.}
 
-\item{rec_level_pen_sigma}{Numeric standard deviation of that penalty. A sum
-of squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
-\code{1}.}
+\item{rec_level_pen_sigma}{Numeric standard deviation of that penalty. A sum of
+squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default \code{1}.}
 
-\item{rec_level_pen_center}{Either \code{"own_mean"} (default), centering on
-the mean of the log recruitment series so only its variability is
-penalized, or \code{"fixed"}, centering on zero.}
+\item{rec_level_pen_center}{\code{"own_mean"} (default) centers on the mean of the
+log recruitment series, \code{"fixed"} centers on zero.}
 
-\item{rec_level_pen_yrs}{Vector of years the penalty applies over, or
-\code{NULL} (default) for every year.}
+\item{rec_level_pen_yrs}{Years the penalty applies over, or \code{NULL} (default)
+for every year.}
 
 \item{Use_init_sex_pen}{Integer (0/1). Whether each later sex's initial age
-deviations are tied to the first sex's, through a Gaussian on their
-difference at every age the initial-age penalty covers. A statement about
-how different the sexes' initial age structures may be, separate from the
-initial-age penalty's statement about how variable each curve is.
-Requires \code{n_sexes > 1} and \code{InitDevs_sex_spec = "est_all"}
-(under \code{"est_shared_s"} the difference is identically zero). Enters
-the objective unweighted. Default \code{0}.}
+deviations are tied to the first sex's by a Gaussian on their difference.
+Requires \code{n_sexes > 1} and \code{InitDevs_sex_spec = "est_all"}. Enters the
+objective unweighted. Default \code{0}.}
 
-\item{init_sex_pen_sigma}{Numeric standard deviation of that tie. A sum of
-squares with weight \eqn{w} corresponds to \eqn{1/\sqrt{2w}}. Default
-\code{1}.}
+\item{init_sex_pen_sigma}{Numeric standard deviation of that tie. Default \code{1}.}
 
 \item{sr_penalty}{Character. \code{"none"} (default), \code{"bh"} or
-\code{"ricker"}. Only valid with \code{rec_model = "mean_rec"}. Fits a
-stock-recruit curve as a LIKELIHOOD on the log residual
-\eqn{\log R_y - \log\widehat{R}_y} without letting it generate
-recruitment, which is how several AFSC templates treat a weakly determined
-relationship: it informs the recruitment series rather than dictating it.
-Under \code{rec_model = "bh_rec"} or \code{"ricker_rec"} the curve already
-generates recruitment and this must stay \code{"none"}.}
+\code{"ricker"}. Only valid under \code{rec_model = "mean_rec"}. Fits the curve
+as a likelihood on \eqn{\log R_y - \log\widehat{R}_y} without letting it
+generate recruitment.}
 
 \item{sr_pen_sigma}{Numeric standard deviation of that residual.}
 
-\item{sr_pen_yrs}{Vector of years the stock-recruit penalty applies over, or
-\code{NULL} (default) for every year that has a lagged spawning biomass,
-i.e. all but the first \code{rec_lag}. Years outside it keep their
-recruitment deviation estimated but contribute nothing to the penalty,
-which is how a restricted stock-recruit window is expressed. Naming a year
-with no lagged spawning biomass is an error rather than a silent fallback
-to the equilibrium.}
+\item{sr_pen_yrs}{Years the stock-recruit penalty applies over, or \code{NULL}
+(default) for every year with a lagged spawning biomass. Naming a year without
+one is an error.}
 
-\item{sr_R0_spec}{Character. \code{"shared"} (default) reuses
-\code{ln_global_R0}, which under mean recruitment is the recruitment level,
-as the curve's scale, giving one scale parameter. \code{"est"} gives the
-curve its own estimated \code{ln_sr_R0}, identified by the curve fit
-itself. \code{"rinit"} takes the scale from \code{ln_rinit}, the initial
-equilibrium recruitment, so one parameter sets both the unfished age
-structure and the curve; it requires \code{use_rinit = 1}. \code{"shared"}
-is the better posed of the first two; \code{"est"} reproduces templates
-that have separate mean-recruitment and unfished-recruitment parameters,
-and \code{"rinit"} reproduces those that use the unfished recruitment in
-both places, which is the usual ADMB arrangement.}
+\item{sr_R0_spec}{Character. \code{"shared"} (default) takes the curve's scale
+from \code{ln_global_R0}, \code{"est"} gives it its own \code{ln_sr_R0}, and
+\code{"rinit"} takes it from \code{ln_rinit} and requires \code{use_rinit = 1}.}
 
-\item{h_spec}{Character or \code{NULL}. Sharing structure for
-stock-recruit steepness \code{steepness_h} \code{[n_pop x n_regions]},
-parameterized in bounded logit space \eqn{(0.2, 1)}. Default \code{NULL}
-(estimate by population when \code{n_pop > 1}, by region when
-\code{n_pop = 1}). Ignored when \code{rec_model = "mean_rec"}. See
-\code{\link{do_h_mapping}} for full option descriptions.}
+\item{h_spec}{Character or \code{NULL}. Sharing structure for \code{steepness_h}
+\code{[n_pop x n_regions]}, on a logit scale bounded to \eqn{(0.2, 1)}. Default
+\code{NULL}, ignored under \code{rec_model = "mean_rec"}. See
+\code{\link{do_h_mapping}}.}
 
-\item{sgl_seas_spawning_movement}{Spawning movement array
-\code{[n_pop x n_regions x n_regions x n_years x n_ages x n_sexes]}.
-Each \code{[p, , r, y, a, s]} slice is a row-stochastic movement matrix
-giving the probability of fish from each origin region spawning in region
-\code{r}. If \code{NA} (default), 100\% natal homing is assumed and the
-array is constructed internally.}
+\item{sgl_seas_spawning_movement}{Array \code{[n_pop x n_regions x n_regions x
+n_years x n_ages x n_sexes]}, each \code{[p, , r, y, a, s]} slice row-stochastic.
+\code{NA} (default) assumes complete natal homing and builds the array internally.}
 
-\item{t_spawn}{Numeric. Spawn timing as a fraction of the season elapsed
-before spawning. \code{0} (default) = spawning before any mortality;
-\code{1} = spawning after all mortality.}
+\item{t_spawn}{Numeric fraction of the spawning season elapsed before spawning.
+\code{0} (default) spawns before any mortality, \code{1} after all of it.}
 
-\item{stray_rate_spec}{Character string. Estimation structure for
-\code{stray_rate_pars} \code{[n_pop x max_stray_blocks]}, parameterized
-on the logit scale. Ignored when \code{use_fixed_stray_rate = 1} or
-\code{n_pop = 1}. Default \code{"fix"}. Options:
-\describe{
-  \item{\code{"fix"}}{All parameters fixed at starting values (mapped to
-    \code{NA}). Use this alongside \code{use_fixed_stray_rate = 0} to
-    hold stray rates at a specified value without estimating.}
-  \item{\code{"est_all"}}{Estimate independently per population x block.
-    Produces one parameter per population per unique block.}
-  \item{\code{"est_shared_pop"}}{Single parameter per block, shared across
-    all populations. Requires identical block structures across all
-    populations. An error is raised if block indices differ.}
-}}
+\item{stray_rate_spec}{Estimation structure for \code{stray_rate_pars} \code{[n_pop
+x max_stray_blocks]} on the logit scale. \code{"fix"} (default) holds every value,
+\code{"est_all"} estimates per population and block, and \code{"est_shared_pop"}
+gives one parameter per block shared across populations, which requires identical
+block structures. Ignored when \code{use_fixed_stray_rate = 1} or \code{n_pop = 1}.}
 
-\item{stray_rate_blocks}{Character vector of length \code{n_pop} defining
-the temporal block structure for stray rate parameters. Valid formats:
-\describe{
-  \item{\code{"none_Pop_x"}}{Constant stray rate for population \code{x}
-    across all years (single block).}
-  \item{\code{"Block_k_Year_a-b_Pop_x"}}{Block \code{k} applies to years
-    \code{a} through \code{b} for population \code{x}. Use
-    \code{"terminal"} in place of the end year to extend through the
-    final model year.}
-}
-Default: a single constant block for every population.
-\strong{Note:} stray rate is generally unidentifiable from fisheries data
-alone. Time-blocking is provided for completeness but regularization via
-\code{use_stray_rate_prior} in the penalty setup is strongly recommended
-whenever \code{stray_rate_spec != "fix"}.}
+\item{stray_rate_blocks}{Character vector of length \code{n_pop}, either
+\code{"none_Pop_x"} for one block or \code{"Block_k_Year_a-b_Pop_x"}, with
+\code{"terminal"} allowed as the end year. Default one block each. Stray rate is
+generally unidentifiable from fisheries data alone, so use
+\code{use_stray_rate_prior} whenever \code{stray_rate_spec != "fix"}.}
 
-\item{use_fixed_stray_rate}{Integer (0/1). Whether stray rates are supplied
-as a fixed external array (\code{fixed_stray_rate}) rather than estimated
-as model parameters. Default \code{1} (fixed), preserving existing
-behavior. Set to \code{0} to estimate stray rates via
-\code{stray_rate_pars}.}
+\item{use_fixed_stray_rate}{Integer (0/1). Whether stray rates come from
+\code{fixed_stray_rate} rather than being estimated. Default \code{1}.}
 
-\item{fixed_stray_rate}{Array \code{[n_pop x n_years]}. Fixed stray rate
-values used when \code{use_fixed_stray_rate = 1}. Values should be in
-\eqn{[0, 1]}. Default: \code{0} (no straying) for all populations and
-years. Ignored when \code{use_fixed_stray_rate = 0}.}
+\item{fixed_stray_rate}{Array \code{[n_pop x n_years]} of stray rates in
+\eqn{[0, 1]}. Default \code{0}.}
 
-\item{use_stray_rate_prior}{Integer (0/1). Whether Beta priors are applied
-to estimated stray rate parameters. Only relevant when
-\code{use_fixed_stray_rate = 0} and \code{n_pop > 1}. An error is raised
-if \code{use_stray_rate_prior = 1} alongside \code{use_fixed_stray_rate = 1}
-since \code{stray_rate_pars} would not be estimated. Default \code{0}.}
+\item{use_stray_rate_prior}{Integer (0/1). Beta priors on estimated stray rates.
+Only relevant when \code{use_fixed_stray_rate = 0} and \code{n_pop > 1}; an error
+is raised alongside \code{use_fixed_stray_rate = 1}. Default \code{0}.}
 
-\item{stray_rate_prior}{Data frame of Beta prior parameters for stray rates.
-Required columns: \code{pop} (population index), \code{block} (block
-index matching \code{stray_rate_blocks}), \code{mu} (prior mean, in
-\eqn{(0,1)}), \code{sd} (prior standard deviation). One row per
-population x block combination to penalize. Ignored when
-\code{use_stray_rate_prior = 0}. Default \code{NULL}.}
+\item{stray_rate_prior}{Data frame with columns \code{pop}, \code{block},
+\code{mu} in \eqn{(0,1)} and \code{sd}, one row per population and block.
+Default \code{NULL}.}
 
-\item{spawn_seas}{Integer. Season index in which spawning occurs. Default
-\code{1}.}
+\item{spawn_seas}{Integer season index in which spawning occurs. Default \code{1}.}
 
-\item{sexratio_spec}{Character. Estimation structure for sex ratio
-parameters \code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
-Default \code{"fix"}. See \code{\link{do_sexratio_pars_mapping}} for
-full option descriptions. Must be \code{"fix"} when \code{n_sexes = 1}.}
+\item{sexratio_spec}{Estimation structure for \code{sexratio_pars} \code{[n_pop x
+n_regions x n_blocks]}. Default \code{"fix"}, which is required when
+\code{n_sexes = 1}. See \code{\link{do_sexratio_pars_mapping}}.}
 
-\item{sexratio_blocks}{Character vector defining temporal block structure
-for sex ratio parameters. One entry per population-region combination.
-Valid formats:
-\describe{
-  \item{\code{"none_Pop_x_Region_x"}}{Constant sex ratio for population
-    \code{x} and region \code{x} (single block across all years).}
-  \item{\code{"Block_k_Year_a-b_Pop_x_Region_x"}}{Block \code{k}
-    applies to years \code{a} through \code{b}. Use \code{"terminal"}
-    in place of the end year to extend through the final model year.}
-}
-Default: a single constant block for every population-region combination.}
+\item{sexratio_blocks}{Character vector, one entry per population and region, either
+\code{"none_Pop_x_Region_x"} or \code{"Block_k_Year_a-b_Pop_x_Region_x"}, with
+\code{"terminal"} allowed as the end year. Default one block each.}
 
-\item{use_rinit}{Integer (0/1). Whether a separate initial recruitment
-scalar \code{ln_rinit} is used to initialize the population
-independently of the recruitment \code{ln_global_R0}. When \code{0}
-(default), \code{ln_rinit} is fixed and \code{ln_global_R0}
-governs both initialization and recruitment. When \code{1}, both
-\code{ln_rinit} and \code{ln_global_R0} are estimated, with
-\code{ln_rinit} used exclusively for equilibrium initialization
-and \code{ln_global_R0} used for the stock-recruit relationship.}
+\item{use_rinit}{Integer (0/1). Whether \code{ln_rinit} initializes the population
+separately from \code{ln_global_R0}. Under \code{0} (default) \code{ln_rinit} is
+fixed and \code{ln_global_R0} does both jobs.}
 
-\item{init_age_devs_shared}{Integer vector of length \code{n_ages - 1}
-specifying an explicit parameter-sharing structure for \code{ln_InitDevs}
-along the age dimension. Each element gives the factor level assigned to
-that age position; positions sharing the same integer value are constrained
-to a single estimated parameter. Used in conjunction with
-\code{equil_init_age_strc = 3} (\code{"stoch_shared_ages"}), which
-activates user-defined age sharing while still estimating deviations
-independently across populations and regions. The sharing structure is
-also respected by \code{InitDevs_spec} options: \code{"est_shared_r"}
-applies the vector per population (with a population-level offset so pops
-remain independent), and \code{"est_shared_pop_r"} applies it globally
-(no offset, all pops and regions share the same parameters). A typical
-use case is replicating ADMB models where ages beyond the data plus group
-share the last estimated deviation, e.g.
-\code{c(1:42, rep(42, 9))} for a 52-age model with 43 data ages, giving
-42 free parameters. When \code{NULL} (default), age sharing follows the
-standard behavior determined by \code{equil_init_age_strc} alone.}
+\item{init_age_devs_shared}{Integer vector of length \code{n_ages - 1} giving the
+factor level of each age position for \code{ln_InitDevs}; positions sharing a
+value share one parameter. Read under \code{equil_init_age_strc = 3}, and also
+respected by \code{InitDevs_spec = "est_shared_r"} (applied per population, with a
+population offset) and \code{"est_shared_pop_r"} (applied globally, no offset).
+\code{c(1:42, rep(42, 9))} gives 42 free parameters for a 52-age model with 43
+data ages. Default \code{NULL}.}
 
-\item{R0_blocks}{Character vector giving time blocks for \code{R0}, one entry
-per population, in the same vocabulary as the selectivity blocks:
-\code{"none_Pop_<p>"}, \code{"Block_<b>_Year_<a>-<e>_Pop_<p>"} (1-based year
-indices, \code{"terminal"} allowed for the end year).
-Under \code{rec_model = "mean_rec"} \code{R0} IS mean recruitment, so a block
-is a productivity regime. Under a stock-recruit form it is the curve's scale, so
-blocking it makes the curve time-varying: \code{S0} moves with the block, and
-depletion and any reference point built on the curve step at its boundary. A
-curve fitted as a penalty instead (\code{sr_penalty} with
-\code{sr_R0_spec = "shared"}) takes its scale from \code{R0_ref_block} and
-stays put. Default \code{NULL}, a single block.}
+\item{R0_blocks}{Character vector of time blocks for \code{R0}, one per population,
+in the selectivity block vocabulary: \code{"none_Pop_<p>"} or
+\code{"Block_<b>_Year_<a>-<e>_Pop_<p>"} on 1-based year indices, with
+\code{"terminal"} allowed. Under \code{"mean_rec"} a block is a productivity
+regime; under a stock-recruit form it makes the curve time-varying, so \code{S0},
+depletion and any reference point step at the boundary. Default \code{NULL}.}
 
-\item{R0_ref_block}{Integer, the block whose \code{R0} is used everywhere a single
-value is needed rather than a year's value: the initial age structure, the
-regional apportionment, the \code{R0} prior, the \code{ln_rinit} penalty and the
-stock-recruit scale when \code{sr_R0_spec = "shared"}. Default 1. Only the
-recruitment computed each year uses that year's block.}
+\item{R0_ref_block}{Integer, the block whose \code{R0} is used wherever a single
+value is needed: the initial age structure, the regional apportionment, the
+\code{R0} prior, the \code{ln_rinit} penalty, and the stock-recruit scale under
+\code{sr_R0_spec = "shared"}. Default 1.}
 
-\item{use_r0_prior}{Integer (0/1). Whether to apply a lognormal prior on R0 for any populations. Default 0.}
+\item{use_r0_prior}{Integer (0/1). Lognormal prior on \code{R0}. Default 0.}
 
-\item{r0_prior}{Data frame with columns \code{pop} (population index), \code{mu} (prior mean on natural scale), and \code{sd} (prior SD on log scale). Required when \code{use_r0_prior = 1}.}
+\item{r0_prior}{Data frame with columns \code{pop}, \code{mu} on the natural scale
+and \code{sd} on the log scale. Required when \code{use_r0_prior = 1}.}
 
-\item{Use_rinit_pen}{Integer (0/1). Whether to penalize the initial
-equilibrium recruitment's offset from the recruitment level,
-\eqn{\log(R_{init} / R_0) \sim N(0, \mathrm{rinit\_pen\_sd}^2)}, under
-\code{use_rinit = 1}. An equilibrium recruitment stands for the average of
-several years of recruitment, so its spread is smaller than a single
-year's; \eqn{\sigma_R / (1 / M - 0.5)}, with \eqn{1/M - 0.5} the average
-age of the stock, is a reasonable choice. Default 0.}
+\item{Use_rinit_pen}{Integer (0/1). Whether \eqn{\log(R_{init} / R_0)} is penalized
+under \code{use_rinit = 1}. An equilibrium recruitment stands for an average of
+several years, so \eqn{\sigma_R / (1 / M - 0.5)} is a reasonable sd. Default 0.}
 
 \item{rinit_pen_sd}{Standard deviation of that penalty, log scale. Default 1.}
 
-\item{...}{Optional named starting values for parameters. Any of:
-\code{ln_global_R0} \code{[n_pop]},
-\code{ln_rinit} \code{[n_pop]},
-\code{rec_region_prop_pars} \code{[n_pop x (n_regions - 1)]},
-\code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
-\code{steepness_h} \code{[n_pop x n_regions]} (bounded logit scale),
-\code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1) x n_sexes]} (a 3-D array is broadcast across sexes),
-\code{ln_RecDevs} \code{[n_pop x n_regions x n_years]},
-\code{ln_sigmaR} \code{[2 x n_pop x n_regions]},
-\code{sexratio_pars} \code{[n_pop x n_regions x n_blocks]}.
-Unspecified parameters use internal defaults.}
+\item{...}{Optional named starting values: \code{ln_global_R0} \code{[n_pop]},
+\code{ln_rinit} \code{[n_pop]}, \code{rec_region_prop_pars} \code{[n_pop x
+(n_regions - 1)]}, \code{rec_seas_prop_pars} \code{[n_pop x (n_seas - 1)]},
+\code{steepness_h} \code{[n_pop x n_regions]} on the bounded logit scale,
+\code{ln_InitDevs} \code{[n_pop x n_regions x (n_ages - 1) x n_sexes]} (a 3-D
+array is expanded across sexes), \code{ln_RecDevs} \code{[n_pop x n_regions x
+n_years]}, \code{ln_sigmaR} \code{[2 x n_pop x n_regions]}, \code{sexratio_pars}
+\code{[n_pop x n_regions x n_blocks]}.}
 
-\item{ln_global_R0_spec}{Character string, \code{"est"} (default) or
-  \code{"fix"}. \code{"fix"} maps \code{ln_global_R0} off at its starting
-  value, so the recruitment deviations hold log recruitment rather
-  than as departures from a level. That is how SAM writes recruitment, where
-  the first year's log numbers at age are the recruitment itself and there is
-  no separate level parameter. The recruitment counterpart of
-  \code{ln_F_mean_spec} in \code{\link{Setup_Mod_Catch_and_F}}.
-
-  Under \code{rec_model = "mean_rec"} the level and the deviations are only
-  both estimable when something reads the deviations' level. An \code{"iid"}
-  or \code{"ar1"} penalty does; a random walk does not, since it penalizes
-  only the change from one deviation to the next. Combining a walk with
-  \code{dont_pen_recdev_first >= 1}, which removes the first year's term,
-  leaves the two exactly unidentified, and that combination is rejected rather
-  than fitted: it converges to a singular Hessian and standard errors of
-  \code{NA}. A walk with the first year still penalized is accepted with a
-  warning, since the level is then readable only through that one term and its
-  standard error comes back near \code{RecDevs_rw_init_sigma}.}
+\item{ln_global_R0_spec}{\code{"est"} (default) or \code{"fix"}. \code{"fix"} maps
+\code{ln_global_R0} off at its starting value, so the deviations hold log
+recruitment outright. Under \code{rec_model = "mean_rec"} a random walk with
+\code{dont_pen_recdev_first >= 1} leaves the level unidentified and is refused; a
+walk with the first year still penalized is accepted with a warning.}
 }
 \value{
-The input \code{input_list} with all recruitment-related fields
-  populated in \code{$data} and \code{$par}, and factor maps constructed
-  in \code{$map} for: \code{rec_region_prop_pars}, \code{rec_seas_prop_pars},
-  \code{ln_sigmaR}, \code{ln_InitDevs}, \code{ln_RecDevs},
-  \code{RecDevs_rho}, \code{steepness_h}, \code{sexratio_pars}, and
-  \code{stray_rate_pars}. Character-coded inputs
-  for \code{init_age_strc} and \code{equil_init_age_strc} are converted to
-  integer codes before storage.
+\code{input_list} with recruitment fields set in \code{$data} and
+  \code{$par}, and maps built in \code{$map} for \code{rec_region_prop_pars},
+  \code{rec_seas_prop_pars}, \code{ln_sigmaR}, \code{ln_InitDevs},
+  \code{ln_RecDevs}, \code{RecDevs_rho}, \code{steepness_h}, \code{sexratio_pars}
+  and \code{stray_rate_pars}. Character codes for \code{init_age_strc} and
+  \code{equil_init_age_strc} are converted to integers before storage.
 }
 \description{
-Configures all recruitment-related components of the estimation model:
-stock-recruit relationship type and density-dependence structure,
-Beverton-Holt steepness and priors, recruitment variability
-(\eqn{\sigma_R}), annual and initial age-structure deviations, regional
-and seasonal recruitment apportionment, spawning movement and stray rates,
-sex ratio dynamics, equilibrium initialization method, and the recruitment
-bias ramp. Delegates parameter mapping to a family of internal helpers
-(\code{\link{do_sigmaR_mapping}}, \code{\link{do_RecDevs_mapping}},
-\code{\link{do_InitDevs_mapping}}, \code{\link{do_h_mapping}},
-\code{\link{do_sexratio_pars_mapping}},
-\code{\link{do_rec_region_prop_mapping}},
-\code{\link{do_rec_seas_prop_mapping}}). Must be called after
-\code{\link{Setup_Mod_Dim}} and \code{\link{Setup_Mod_Biologicals}}, and
-before model compilation.
+Sets the stock-recruit form and density dependence, steepness and its prior,
+\eqn{\sigma_R}, annual and initial deviations, regional and seasonal
+apportionment, spawning movement, stray rates, sex ratio, the equilibrium
+initialization and the bias ramp. Call after \code{\link{Setup_Mod_Dim}} and
+\code{\link{Setup_Mod_Biologicals}}.
 }
 \seealso{
 Other Model Setup:

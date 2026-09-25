@@ -16,53 +16,39 @@ do_natmort_mapping(
 )
 }
 \arguments{
-\item{input_list}{Named list containing \code{$data}, \code{$par}, and \code{$map}
-sublists, as constructed by upstream setup functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
-\item{M_spec}{Character string controlling whether \code{ln_M} is estimated or
-fixed. One of:
-\describe{
-  \item{\code{"est_ln_M"}}{Freely estimate \code{ln_M} across all defined blocks.}
-  \item{\code{"fix"}}{Fix all \code{ln_M} parameters by mapping them to \code{NA}.}
-}}
+\item{M_spec}{\code{"est_ln_M"} estimates \code{ln_M} across the blocks,
+\code{"fix"} maps every parameter to \code{NA}.}
 
 \item{M_popblk_spec_vals}{List of integer vectors assigning population indices to
-blocks, e.g., \code{list(1, 2)} for two population-specific blocks or
-\code{list(1:2)} for a single shared block.}
+blocks, e.g. \code{list(1, 2)} or \code{list(1:2)}.}
 
 \item{M_regionblk_spec_vals}{List of integer vectors assigning region indices to
-blocks, e.g., \code{list(1:3, 4:5)} for two region blocks.}
+blocks, e.g. \code{list(1:3, 4:5)}.}
 
 \item{M_yearblk_spec_vals}{List of integer vectors assigning year indices to
-blocks, e.g., \code{list(1:10, 11:30)} for two time periods.}
+blocks, e.g. \code{list(1:10, 11:30)}.}
 
 \item{M_seasblk_spec_vals}{List of integer vectors assigning season indices to
-blocks, e.g., \code{list(1, 2)} for two season-specific rates.}
+blocks, e.g. \code{list(1, 2)}.}
 
 \item{M_ageblk_spec_vals}{List of integer vectors assigning age indices to
-blocks, e.g., \code{list(1:5, 6:10)} for two age groups.}
+blocks, e.g. \code{list(1:5, 6:10)}.}
 
 \item{M_sexblk_spec_vals}{List of integer vectors assigning sex indices to
-blocks. Use \code{list(1:2)} for a sex-invariant block or \code{list(1, 2)}
-for sex-specific mortality.}
+blocks, \code{list(1:2)} for one shared rate or \code{list(1, 2)} for
+sex-specific mortality.}
 }
 \value{
-The input \code{input_list} with two fields updated:
-  \describe{
-    \item{\code{$map$ln_M}}{Factor vector of length equal to \code{prod(dim(par$ln_M))}.
-      Each element is an integer estimation index when \code{M_spec = "est_ln_M"},
-      or \code{NA} when \code{M_spec = "fix"}.}
-    \item{\code{$data$M_blocks}}{Integer array of dimensions
-      \code{[n_pop × n_regions × n_years × n_seas × n_ages × n_sexes]} mapping each
-      population-region-year-season-age-sex cell to its corresponding \code{ln_M}
-      parameter index.}
-  }
+\code{input_list} with \code{$map$ln_M}, a factor vector of length
+  \code{prod(dim(par$ln_M))} holding estimation indices or \code{NA}, and
+  \code{$data$M_blocks}, an integer array \code{[n_pop × n_regions × n_years ×
+  n_seas × n_ages × n_sexes]} giving each cell's \code{ln_M} index.
 }
 \description{
-Constructs the \code{M_blocks} index array and the \code{ln_M} factor map used
-by the TMB/RTMB objective function to share or fix natural mortality parameters
-across population, region, year, season, age, and sex dimensions. Each unique
-combination of blocks is assigned a sequential integer ID; all cells within a
-block share the same \code{ln_M} parameter.
+Builds the \code{M_blocks} index array and the \code{ln_M} factor map. Each
+combination of blocks takes a sequential integer, and every cell in a block
+shares one \code{ln_M}.
 }
 \keyword{internal}

@@ -7,117 +7,44 @@
 global_Fmsy(pars, data)
 }
 \arguments{
-\item{pars}{Named list of RTMB parameters. Must contain:
-\describe{
-  \item{\code{log_Fmsy}}{Log-scale trial \eqn{F_{MSY}}.}
-}}
+\item{pars}{Named list of RTMB parameters, holding \code{log_Fmsy}, the
+log-scale trial \eqn{F_{MSY}}.}
 
-\item{data}{Named list of RTMB data. Must contain:
-  \describe{
-    \item{\code{n_regions}}{Integer. Number of spatial regions.}
-    \item{\code{n_ages}}{Integer. Number of age classes.}
-    \item{\code{n_seas}}{Integer. Number of seasons.}
-    \item{\code{seasdur}}{Numeric vector \code{[n_seas]}. Season durations.}
-    \item{\code{spawn_seas}}{Integer. Index of the spawning season.}
-    \item{\code{t_spawn}}{Numeric. Mid-season spawning timing correction.}
-
-    \item{\code{F_fract_flt}}{Numeric array
-      \code{[n_regions, n_seas, n_fish_fleets]}. Fleet F fractions by region.}
-
-    \item{\code{fish_sel}}{Numeric array
-      \code{[1, n_regions, n_seas, n_ages, n_fish_fleets]}.
-      Fishery selectivity at age for females.}
-
-    \item{\code{ret_sel}}{Numeric array
-      \code{[1, n_regions, n_seas, n_ages, n_fish_fleets]}.
-      Retention selectivity (fraction of selected fish retained).}
-
-    \item{\code{dmr}}{Numeric array
-      \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rate
-      (fraction of discarded fish that die).}
-
-    \item{\code{natmort}}{Numeric array
-      \code{[n_regions, n_ages]}. Female natural mortality at age.}
-
-    \item{\code{WAA}}{Numeric array
-      \code{[n_regions, n_seas, n_ages]}. Female weight at age.}
-
-    \item{\code{MatAA}}{Numeric array
-      \code{[n_regions, n_seas, n_ages]}. Maturity at age.}
-
-    \item{\code{Movement}}{Numeric array
-      \code{[n_regions, n_regions, n_seas, n_ages]}. Seasonal movement
-      transition matrices.}
-
-    \item{\code{rec_region_prop}}{Numeric vector
-      \code{[n_regions]}. Proportion of recruitment entering each region.}
-
-    \item{\code{sex_ratio_f}}{Numeric vector
-      \code{[n_regions]}. Female sex ratio at recruitment.}
-
-    \item{\code{rec_seas_prop}}{Numeric vector
-      \code{[n_seas]}. Seasonal recruitment proportions.}
-
-    \item{\code{h}}{Numeric. Beverton-Holt steepness.}
-
-    \item{\code{R0}}{Numeric. Unfished equilibrium recruitment.}
-
-    \item{\code{is_discard_fleet}}{Integer vector
-      \code{[n_fish_fleets]}. Indicator for fleets whose catch is excluded
-      from landed yield (0 = landing fleet, 1 = discard-only fleet). These
-      fleets still contribute to total fishing mortality \code{Z} and
-      affect population dynamics and spawning biomass.}
-  }}
+\item{data}{Named list of RTMB data: the dimensions \code{n_regions},
+\code{n_ages} and \code{n_seas}; \code{seasdur} \code{[n_seas]};
+\code{spawn_seas} and \code{t_spawn}; \code{F_fract_flt} \code{[n_regions,
+n_seas, n_fish_fleets]}, the fleet F fractions by region; \code{fish_sel} and
+\code{ret_sel} \code{[1, n_regions, n_seas, n_ages, n_fish_fleets]}, the
+female selectivity and the retained fraction of it; \code{dmr}
+\code{[n_regions, n_seas, n_fish_fleets]}, the fraction of discards that die;
+\code{natmort} \code{[n_regions, n_ages]}; \code{WAA} and \code{MatAA}
+\code{[n_regions, n_seas, n_ages]}; \code{Movement} \code{[n_regions,
+n_regions, n_seas, n_ages]}; \code{rec_region_prop} and \code{sex_ratio_f}
+\code{[n_regions]}; \code{rec_seas_prop} \code{[n_seas]}; the steepness
+\code{h} and unfished recruitment \code{R0}; and \code{is_discard_fleet}
+\code{[n_fish_fleets]}, 1 for fleets whose catch is left out of landed yield
+while still contributing to \eqn{Z}.}
 }
 \value{
-Numeric scalar. Negative total equilibrium yield (minimized to
-  find \eqn{F_{MSY}}).
+Numeric scalar, the negative equilibrium yield, minimized to find
+  \eqn{F_{MSY}}.
 }
 \description{
-Calculates \eqn{F_{MSY}} by maximizing equilibrium yield under a
-Beverton-Holt stock-recruit relationship. Yield is computed from
-spawning biomass per recruit (\eqn{\phi_F}), the BH equilibrium
-recruitment formula, and catch-at-age integrated across all regions,
-seasons, and movement transitions. Yield includes only landings from
-fleets where \code{is_discard_fleet == 0}; discard-only fleets
-contribute to total mortality but not to the yield being maximized.
+Equilibrium yield under a Beverton-Holt stock-recruit relationship, built from
+spawning biomass per recruit, the equilibrium recruitment formula and catch at
+age integrated over regions, seasons and movement. Yield counts landings from
+fleets with \code{is_discard_fleet == 0} only; a discard-only fleet's F stays in
+the \eqn{Z} denominator, so the two mortality sources compete correctly. Covers
+multi-region single-population models with seasonal movement; straying needs
+\code{single_region_Fmsy}.
 }
 \details{
-Supports multi-region, single-population models with seasonal movement.
-Straying is not included here (use \code{single_region_Fmsy} for
-multi-population non-spatial models).
-
-
-**Fishing mortality decomposition**
-
-Fishing mortality at age is split into:
-
-- retained fishing mortality
-  \code{F_ret = F * selectivity * retention}
-
-- discard fishing mortality (dead discards only)
-  \code{F_disc = F * selectivity * (1 - retention) * dmr}
-
-where \code{dmr} is the discard mortality rate (fraction of discarded fish
-that die). Only the dead fraction contributes to total instantaneous
-mortality \code{Z}.
-
-The total mortality used for survival is:
-
-\code{Z = M + F_ret + F_disc}
-
-This formulation assumes:
-
-- retained fish always die,
-- only a fraction \code{dmr} of discarded fish die,
-- the surviving fraction \code{(1 - dmr)} of discards remains in the
-  population and continues aging, moving, and contributing to spawning
-  biomass.
-
-Landed yield used in the objective function is computed via the Baranov
-catch equation using only the landed fraction of fishing mortality
-(excluding fleets where \code{is_discard_fleet == 1}). The discard
-fleet's F remains in the Z denominator, so the partitioning correctly
-accounts for competition between landing and discard mortality sources.
+Fishing mortality at age splits into retained,
+\code{F_ret = F * selectivity * retention}, and dead discards,
+\code{F_disc = F * selectivity * (1 - retention) * dmr}, so survival runs on
+\code{Z = M + F_ret + F_disc}. Retained fish always die, only the fraction
+\code{dmr} of discards die, and the surviving \code{(1 - dmr)} keeps ageing,
+moving and spawning. Landed yield comes from the Baranov equation on the landed
+fraction alone.
 }
 \keyword{internal}

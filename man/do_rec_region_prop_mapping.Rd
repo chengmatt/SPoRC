@@ -7,41 +7,26 @@
 do_rec_region_prop_mapping(input_list, rec_region_prop_spec)
 }
 \arguments{
-\item{input_list}{Named list with \code{$data}, \code{$par}, and \code{$map}
-sublists. Requires \code{$data$n_pop}, \code{$data$n_regions}, and
-\code{$data$natal_region} to be set by upstream setup functions.}
+\item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.
+Requires \code{$data$n_pop}, \code{$data$n_regions} and
+\code{$data$natal_region}.}
 
-\item{rec_region_prop_spec}{Character string specifying the dispersal
-structure, or \code{NULL} to estimate all regional proportions freely.
-Options when non-\code{NULL}:
-\describe{
-  \item{\code{"no_dispersal"}}{Recruits are assigned entirely to their
-    natal region. Starting values for \code{rec_region_prop_pars} are
-    overwritten with large-magnitude values (\code{-20} for non-natal
-    regions, \code{+20} for the natal region when
-    \code{natal_region > 1}), and all elements are mapped to \code{NA}
-    so the parameters are not estimated. Requires \code{n_regions > 1};
-    a single population apportioned over several regions is allowed.}
-  \item{\code{NULL}}{All \code{rec_region_prop_pars} are estimated
-    independently. Only available when \code{n_regions > 1}.}
-}}
+\item{rec_region_prop_spec}{Dispersal structure. \code{"no_dispersal"} assigns
+recruits entirely to their natal region, overwriting the starting values with
+\code{-20} for non-natal regions and \code{+20} for the natal region when
+\code{natal_region > 1}, and mapping every element to \code{NA}. \code{NULL}
+estimates all independently. Both require \code{n_regions > 1}.}
 }
 \value{
-The input \code{input_list} with \code{$map$rec_region_prop_pars}
-  set to a factor vector of length \code{n_pop * (n_regions - 1)}, or
-  \code{NULL} when \code{n_regions = 1}. Under \code{"no_dispersal"},
-  \code{$par$rec_region_prop_pars} starting values are also overwritten.
+\code{input_list} with \code{$map$rec_region_prop_pars} set to a factor
+  vector of length \code{n_pop * (n_regions - 1)}, or \code{NULL} when
+  \code{n_regions = 1}. Starting values are overwritten under
+  \code{"no_dispersal"}.
 }
 \description{
-Internal helper called by \code{\link{Setup_Mod_Rec}} to construct the
-TMB/RTMB factor map for \code{rec_region_prop_pars}, the logit-scale
-parameters controlling the proportion of recruits assigned to each region.
-The array has dimensions \code{[n_pop x (n_regions - 1)]}, using a
-sum-to-one soft-max parameterization with one reference region omitted.
-}
-\details{
-When \code{n_regions = 1}, the parameter is structurally irrelevant and
-both \code{$par$rec_region_prop_pars} and \code{$map$rec_region_prop_pars}
-are set to \code{NULL}.
+Builds the factor map for \code{rec_region_prop_pars} \code{[n_pop x
+(n_regions - 1)]}, the logit-scale share of recruits per region, under a softmax
+with one reference region omitted. Both the parameter and its map are
+\code{NULL} when \code{n_regions = 1}. Called by \code{\link{Setup_Mod_Rec}}.
 }
 \keyword{internal}

@@ -11,40 +11,32 @@ apply_pop_dy(y, sim, sim_env)
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by
-\code{\link{Setup_sim_env}}. Modified in place: \code{$ZAA},
-\code{$NAA}, \code{$NAA0}, \code{$NAA_bef}, \code{$NAA_aft},
-\code{$Total_Biom}, \code{$SSB}, \code{$Dynamic_SSB0}, and
-\code{$eff_SSB} are updated.}
+\item{sim_env}{Simulation environment from \code{\link{Setup_sim_env}},
+modified in place: \code{$ZAA}, \code{$NAA}, \code{$NAA0}, \code{$NAA_bef},
+\code{$NAA_aft}, \code{$Total_Biom}, \code{$SSB}, \code{$Dynamic_SSB0} and
+\code{$eff_SSB}.}
 }
 \value{
-\code{invisible(NULL)}. All modifications are made by reference
-  within \code{sim_env}.
+\code{invisible(NULL)}; everything is modified by reference within
+  \code{sim_env}.
 }
 \description{
-Executes the full within-year population dynamics loop for year \code{y}:
-seasonal recruitment apportionment (seasons 2+), movement, Baranov
-catch-equation mortality, age advancement into the following year, and
-spawning-season biomass calculations (total biomass, SSB, dynamic \eqn{B_0},
-and effective SSB for multi-population natal homing). Both fished
-(\code{NAA}) and unfished (\code{NAA0}) trajectories are tracked in
-parallel. For single-season multi-population models,
-\code{sgl_seas_spawning_movement} is applied to \code{NAA} and
-\code{NAA0} prior to computing spawning biomass quantities. Single-sex
-models have SSB and \eqn{B_0} multiplied by 0.5 to obtain female-only
-spawning biomass.
+Runs the within-year loop for year \code{y}: seasonal recruitment
+apportionment from season two on, movement, Baranov mortality, age advancement
+into the following year, and the spawning-season biomass quantities (total
+biomass, SSB, dynamic \eqn{B_0} and effective SSB under natal homing). The
+fished and unfished trajectories are tracked together, with the snapshots
+before and after movement stored in \code{NAA_bef} and \code{NAA_aft}. Movement
+runs only when \code{n_regions > 1}, and recruits are left out of it when
+\code{do_recruits_move = 0}. With one season and several populations,
+\code{sgl_seas_spawning_movement} is applied to both trajectories before the
+biomass quantities; with one sex, SSB and \eqn{B_0} are halved to give
+female-only spawning biomass.
 }
 \details{
-Pre- and post-movement snapshots are stored in \code{NAA_bef} and
-\code{NAA_aft} respectively. Movement is only applied when
-\code{n_regions > 1}; recruits (\code{a = 1}) are excluded from movement
-when \code{do_recruits_move = 0}.
-
-When \code{rec_lag == 0} (age-0 recruitment), this year's recruitment
-can't be known until \code{spawn_seas} is reached (it depends on this
-year's own SSB), so \code{\link{generate_recruitment}} is called from
-inside this function at \code{seas == spawn_seas} instead of beforehand -
-see the "rec_lag == 0" block below, which mirrors the equivalent
-restructuring in the estimation model (\code{SPoRC_rtmb.R}).
+Under \code{rec_lag == 0} this year's recruitment is not knowable until
+\code{spawn_seas}, since it depends on this year's own SSB, so
+\code{\link{generate_recruitment}} is called from inside this function at
+\code{seas == spawn_seas}, mirroring the estimation model.
 }
 \keyword{internal}

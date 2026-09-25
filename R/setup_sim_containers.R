@@ -5,132 +5,46 @@
 
 #' Initialize output containers for the operating model simulation
 #'
-#' Allocates and appends zero-initialized arrays to \code{sim_list} for all
-#' biological, fishery, and survey quantities tracked during simulation. This
-#' function should be called after \code{\link{Setup_Sim_Dim}} and before any
-#' operating model dynamics are run. All arrays are pre-allocated and populated
-#' in subsequent simulation steps.
+#' Allocates the zero-filled arrays the simulation writes into, sized off the
+#' dimensions in \code{sim_list}. Call after \code{\link{Setup_Sim_Dim}} and before
+#' any operating model dynamics.
 #'
-#' @param sim_list A simulation list returned by \code{\link{Setup_Sim_Dim}}.
-#'   Dimension elements (e.g., \code{n_pop}, \code{n_regions}, \code{n_yrs},
-#'   \code{n_seas}, \code{n_ages}, \code{n_sexes}, \code{n_sims},
-#'   \code{n_fish_fleets}, \code{n_srv_fleets}, \code{n_obs_ages},
-#'   \code{n_lens}) are used to size all output containers.
+#' @param sim_list A simulation list returned by \code{\link{Setup_Sim_Dim}}, whose
+#'   \code{n_pop}, \code{n_regions}, \code{n_yrs}, \code{n_seas}, \code{n_ages},
+#'   \code{n_sexes}, \code{n_sims}, \code{n_fish_fleets}, \code{n_srv_fleets},
+#'   \code{n_obs_ages} and \code{n_lens} size every container.
 #'
+#' @return \code{sim_list} with the containers added.
 #'
-#' @return The input \code{sim_list} with the following zero-initialized arrays added:
+#'   Biological: \code{$NAA} \code{[n_pop × n_regions × (n_yrs+1) × n_seas × n_ages
+#'   × n_sexes × n_sims]}, whose extra year holds the initial conditions and
+#'   advances the population through the final year; \code{$NAA_bef} and
+#'   \code{$NAA_aft}, the numbers before and after fishing mortality; \code{$NAA0},
+#'   the unfished numbers, for dynamic \eqn{B_0}; \code{$ZAA}, total mortality at
+#'   age over \code{n_yrs}; and \code{$Rec}, \code{$SSB}, \code{$Dynamic_SSB0} and
+#'   \code{$Total_Biom} \code{[n_pop × n_regions × n_yrs × n_sims]}, with
+#'   \code{$eff_SSB} \code{[n_pop × n_yrs × n_sims]}, \code{$ln_RecDevs} on the SSB
+#'   dims and \code{$ln_InitDevs} \code{[n_pop × n_regions × (n_ages - 1) × n_sexes
+#'   × n_sims]}.
 #'
-#'   **Biological containers**
-#'   \describe{
-#'     \item{\code{$NAA}}{Numbers-at-age
-#'       \code{[n_pop × n_regions × (n_yrs+1) × n_seas × n_ages × n_sexes × n_sims]}.
-#'       The \code{+1} year dimension stores initial conditions and propagates
-#'       population state through the final year.}
-#'     \item{\code{$NAA_bef}, \code{$NAA_aft}}{Numbers-at-age immediately before and
-#'       after fishing mortality is applied; same dimensions as \code{$NAA}.}
-#'     \item{\code{$NAA0}}{Unfished numbers-at-age; same dimensions as \code{$NAA}.
-#'       Used to compute dynamic \eqn{B_0} reference quantities.}
-#'     \item{\code{$ZAA}}{Total instantaneous mortality-at-age
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_sims]}.}
-#'     \item{\code{$Rec}}{Recruitment
-#'       \code{[n_pop × n_regions × n_yrs × n_sims]}.}
-#'     \item{\code{$SSB}}{Spawning stock biomass
-#'       \code{[n_pop × n_regions × n_yrs × n_sims]}.}
-#'     \item{\code{$eff_SSB}}{Effective (population-aggregated) spawning stock biomass
-#'       \code{[n_pop × n_yrs × n_sims]}.}
-#'     \item{\code{$Dynamic_SSB0}}{Dynamic unfished spawning stock biomass
-#'       \code{[n_pop × n_regions × n_yrs × n_sims]}.}
-#'     \item{\code{$Total_Biom}}{Total biomass
-#'       \code{[n_pop × n_regions × n_yrs × n_sims]}.}
-#'     \item{\code{$ln_RecDevs}}{Log-scale recruitment deviations
-#'       \code{[n_pop × n_regions × n_yrs × n_sims]}.}
-#'     \item{\code{$ln_InitDevs}}{Log-scale initial age-structure deviations
-#'       \code{[n_pop × n_regions × (n_ages - 1) × n_sexes × n_sims]}.}
-#'   }
+#'   Fishery: \code{$ObsCatch} and \code{$TrueCatch} \code{[n_regions × n_yrs ×
+#'   n_seas × n_fish_fleets × n_sims]}, with \code{$ObsFishIdx},
+#'   \code{$TrueFishIdx}, \code{$ObsDiscard} and \code{$TrueDiscard} on the same
+#'   dims; \code{$ObsFishAgeComps} and \code{$ObsFishAgeComps_discard} with
+#'   \code{n_obs_ages × n_sexes} before the fleet dim, and
+#'   \code{$ObsFishLenComps} and \code{$ObsFishLenComps_discard} with
+#'   \code{n_lens × n_sexes}. Each has a \code{_pop} counterpart with a leading
+#'   \code{n_pop}. The true catch and discards at age and length are \code{$CAA},
+#'   \code{$DAA} \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes ×
+#'   n_fish_fleets × n_sims]} and \code{$CAL}, \code{$DAL} with \code{n_lens} in
+#'   place of \code{n_ages}.
 #'
-#'   **Fishery containers**
-#'
-#'   *Retained catch and indices (aggregated)*
-#'   \describe{
-#'     \item{\code{$ObsCatch}, \code{$TrueCatch}}{Observed and true catch
-#'       \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.}
-#'     \item{\code{$ObsFishIdx}, \code{$TrueFishIdx}}{Observed and true fishery CPUE index;
-#'       same dimensions as \code{$ObsCatch}.}
-#'     \item{\code{$ObsFishAgeComps}}{Observed fishery age compositions
-#'       \code{[n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_fish_fleets × n_sims]}.}
-#'     \item{\code{$ObsFishLenComps}}{Observed fishery length compositions
-#'       \code{[n_regions × n_yrs × n_seas × n_lens × n_sexes × n_fish_fleets × n_sims]}.}
-#'   }
-#'
-#'   *Discards (aggregated)*
-#'   \describe{
-#'     \item{\code{$ObsDiscard}, \code{$TrueDiscard}}{Observed and true discard
-#'       \code{[n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.}
-#'     \item{\code{$ObsFishAgeComps_discard}}{Observed discard age compositions;
-#'       same dimensions as \code{$ObsFishAgeComps}.}
-#'     \item{\code{$ObsFishLenComps_discard}}{Observed discard length compositions;
-#'       same dimensions as \code{$ObsFishLenComps}.}
-#'   }
-#'
-#'   *Population-specific quantities*
-#'   \describe{
-#'     \item{\code{$ObsCatch_pop}, \code{$TrueCatch_pop}}{Observed and true catch
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_fish_fleets × n_sims]}.}
-#'     \item{\code{$ObsFishIdx_pop}, \code{$TrueFishIdx_pop}}{Observed and true fishery index;
-#'       same dimensions as \code{$ObsCatch_pop}.}
-#'     \item{\code{$ObsFishAgeComps_pop}}{Observed fishery age compositions
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_fish_fleets × n_sims]}.}
-#'     \item{\code{$ObsFishLenComps_pop}}{Observed fishery length compositions
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_sexes × n_fish_fleets × n_sims]}.}
-#'   }
-#'
-#'   *Discards (population-specific)*
-#'   \describe{
-#'     \item{\code{$ObsDiscard_pop}, \code{$TrueDiscard_pop}}{Observed and true discard;
-#'       same dimensions as \code{$ObsCatch_pop}.}
-#'     \item{\code{$ObsFishAgeComps_discard_pop}}{Observed discard age compositions;
-#'       same dimensions as \code{$ObsFishAgeComps_pop}.}
-#'     \item{\code{$ObsFishLenComps_discard_pop}}{Observed discard length compositions;
-#'       same dimensions as \code{$ObsFishLenComps_pop}.}
-#'   }
-#'
-#'   *True catch/discard at age and length*
-#'   \describe{
-#'     \item{\code{$CAA}, \code{$DAA}}{Catch- and discard-at-age (true)
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims]}.}
-#'     \item{\code{$CAL}, \code{$DAL}}{Catch- and discard-at-length (true)
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_sexes × n_fish_fleets × n_sims]}.}
-#'   }
-#'
-#'   **Survey containers**
-#'
-#'   *Aggregated*
-#'   \describe{
-#'     \item{\code{$ObsSrvIdx}, \code{$TrueSrvIdx}}{Observed and true survey index
-#'       \code{[n_regions × n_yrs × n_seas × n_srv_fleets × n_sims]}.}
-#'     \item{\code{$ObsSrvAgeComps}}{Observed survey age compositions
-#'       \code{[n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_srv_fleets × n_sims]}.}
-#'     \item{\code{$ObsSrvLenComps}}{Observed survey length compositions
-#'       \code{[n_regions × n_yrs × n_seas × n_lens × n_sexes × n_srv_fleets × n_sims]}.}
-#'   }
-#'
-#'   *Population-specific*
-#'   \describe{
-#'     \item{\code{$ObsSrvIdx_pop}, \code{$TrueSrvIdx_pop}}{Observed and true survey index
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_srv_fleets × n_sims]}.}
-#'     \item{\code{$ObsSrvAgeComps_pop}}{Observed survey age compositions
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_obs_ages × n_sexes × n_srv_fleets × n_sims]}.}
-#'     \item{\code{$ObsSrvLenComps_pop}}{Observed survey length compositions
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_lens × n_sexes × n_srv_fleets × n_sims]}.}
-#'   }
-#'
-#'   *True index at age and length*
-#'   \describe{
-#'     \item{\code{$SrvIAA}}{Survey index-at-age (true)
-#'       \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}.}
-#'     \item{\code{$SrvIAL}}{Survey index-at-length (true), same structure as
-#'       \code{$SrvIAA} with \code{n_lens} replacing \code{n_ages}.}
-#'   }
+#'   Survey: \code{$ObsSrvIdx} and \code{$TrueSrvIdx} \code{[n_regions × n_yrs ×
+#'   n_seas × n_srv_fleets × n_sims]}, \code{$ObsSrvAgeComps} and
+#'   \code{$ObsSrvLenComps} with the bin and sex dims before the fleet dim, each
+#'   with a \code{_pop} counterpart, and the true \code{$SrvIAA} \code{[n_pop ×
+#'   n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]} and
+#'   \code{$SrvIAL} with \code{n_lens} in place of \code{n_ages}.
 #'
 #' @export Setup_Sim_Containers
 #' @family Simulation Setup

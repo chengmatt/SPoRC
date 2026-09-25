@@ -43,6 +43,11 @@
 # Expanded model to include populations and season partitions (natal homing
 # and seasonality dynamics)
 # Incorporated functionality to allow movement to be a continuous process, in addition to movement after mortality
+# Functionality to fit catch-at-age and index-at-age data (SAM style), as well as Conditional age-at-length data
+# Incorporated ability to estimate growth internally
+
+# version 7 - (M.LH Cheng)
+# Incorporated DSEM into recruitment growth, NAA, and movement processes
 
 #' Generalized RTMB spatial age-structured model
 #'
@@ -213,6 +218,8 @@ SPoRC_rtmb = function(pars, data) {
   growth_tv_nLL = 0 # penalty for time-varying growth deviations
   growth_semipar_nLL = 0 # process error for the semi-parametric deviations on mean length at age
   rinit_nLL = 0 # penalty on the initial recruitment offset from R0
+  dsem_nLL = 0
+  dsem_obs_nLL = 0
   jnLL = 0 # Joint negative log likelihood
 
   # Parameter Transformations -----------------------------------------------
@@ -301,7 +308,7 @@ SPoRC_rtmb = function(pars, data) {
 
     # get growth function
     tmp_growth = do.call(Get_Growth, c(growth_args, list(
-      n_yrs = n_yrs,
+      n_yrs = if(use_cohort_growth) n_yrs else n_yrs + n_proj_yrs_devs,
       n_fish_fleets = n_fish_fleets,
       n_srv_fleets = n_srv_fleets,
       growth_tv_type = growth_tv_type,
@@ -529,6 +536,12 @@ SPoRC_rtmb = function(pars, data) {
   h_trans = array(0, dim = c(n_pop, n_regions))
   for(p in 1:n_pop) for(r in 1:n_regions) h_trans[p,r] = 0.2 + (1 - 0.2) * RTMB::plogis(steepness_h[p,r]) # bound steepness between 0.2 and 1
 
+  # recruitment variance is coming from dsem instead of model estimated (need to input here b/c sigmaR used later elsewhere)
+  if("rec" %in% dsem_declared && !is.null(dsem_link_sd_arrow)) {
+    dsem_arrow_value = get_dsem_arrow_values(dsem_beta, ln_dsem_sd, dsem_model)
+    for(s in which(dsem_link_par == "ln_RecDevs" & dsem_link_sd_arrow > 0)) ln_sigmaR[,dsem_link_idx[[s]][1],dsem_link_idx[[s]][2]] = log(dsem_arrow_value[dsem_link_sd_arrow[s]])
+  } # end if recruitment is declared
+
   # Recruitment SD
   sigmaR2_early = array(exp(ln_sigmaR[1,,])^2, dim = c(n_pop, n_regions)) # recruitment variability for early period
   sigmaR2_late = array(exp(ln_sigmaR[2,,])^2, dim = c(n_pop, n_regions)) # recruitment variability for late period
@@ -559,29 +572,10 @@ SPoRC_rtmb = function(pars, data) {
   if(use_fixed_stray_rate == 1) stray_rate = fixed_stray_rate # Using fixed stray rates
 
   ### Bias ramp --------------------------------------------------------------
-  if (do_rec_bias_ramp == 0) {
-    bias_ramp = rep(1, n_est_rec_devs) # don't do bias ramp, set values to 1
-  } else if (do_rec_bias_ramp == 1) {
+  bias_ramp = get_rec_bias_ramp(do_rec_bias_ramp, bias_year, n_est_rec_devs, max_bias_ramp_fct) # the correction each year's penalty is centered on, 1 everywhere under 0
 
-    bias_ramp = rep(0, n_est_rec_devs) # set up bias ramp values
-
-    # setup bias ramp year ranges
-    years = 1:n_est_rec_devs # years for indexing
-    range1 = which(years >= bias_year[1] & years < bias_year[2])  # ascending limb
-    range2 = which(years >= bias_year[2] & years < bias_year[3])  # full bias correction
-    range3 = which(years >= bias_year[3] & years < bias_year[4])  # descending limb
-
-    # Apply bias ramp to the different ramp year ranges
-    if (length(range1) > 0) bias_ramp[range1] = (years[range1] - bias_year[1]) / (bias_year[2] - bias_year[1]) # ascending limb
-    if (length(range2) > 0) bias_ramp[range2] = 1 # full bias correction
-    if (length(range3) > 0) bias_ramp[range3] = 1 - ((years[range3] - bias_year[3]) / (bias_year[4] - bias_year[3])) # descending limb
-
-    bias_ramp = bias_ramp * max_bias_ramp_fct # scale bias ramp by a factor
-
-  } # end if doing bias ramp
-
-  # The initial age deviations are techincally based on years before the first model year; option to construct bias ramp on initial deviations as well, based on
-  # the recruitment bias ramp values
+  # The initial age deviations are techincally based on years before the first model year;
+  # option to construct bias ramp on initial deviations as well, based on the recruitment bias ramp values
   init_bias_ramp = rep(1, n_ages - 1)
   if(do_rec_bias_ramp == 1) {
     d_init = 1 - (1:(n_ages - 1)) # deviation index of the year each initial age was born
@@ -986,6 +980,7 @@ SPoRC_rtmb = function(pars, data) {
       naa_re_seas = naa_re_seas, # seasons the state runs over
       NAA_re = NAA_re, # process error form over ages and years
       NAA_pe_pars = NAA_pe_pars, # parameters of that form
+      map_ln_NAA = map_ln_NAA, # NA where a cell is estimated but left out of this penalty
       NAA_re_region = NAA_re_region, # correlation across regions
       NAA_region_corr_pars = NAA_region_corr_pars,
       NAA_re_pop = NAA_re_pop, # correlation across populations
@@ -1000,6 +995,71 @@ SPoRC_rtmb = function(pars, data) {
   } # end if estimating a state on numbers at age
 
   # Observation Models ------------------------------------------------------
+
+  ## Dynamic Structural Equation Model ---------------------------------------
+  if(!is.null(dsem_model)) {
+
+    # extract dsem stuff out
+    n_dsem_yrs = dsem_n_grid_yrs
+    dsem_x_grid = dsem_x # [year, series]: covariate values, latent cells, etc
+    dsem_mu_grid = matrix(rep(dsem_mu, each = n_dsem_yrs), n_dsem_yrs, ncol(dsem_x_grid)) # get mean of time-series (0 for devs, mean for not devs)
+
+    # extract out the dsem linked series into x and mu grids
+    for(s in seq_along(dsem_link_par)) {
+      dsem_x_grid[dsem_link_row[[s]], dsem_link_col[s]] = pars[[dsem_link_par[s]]][dsem_link_cell[[s]]] # put estimated deviations (the state, for NAA) into the x grid
+      if(dsem_link_par[s] == "ln_NAA") dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = log(NAA_pred[dsem_link_cell[[s]]]) # if NAA, the mean is the prediction
+    } # end s loop
+
+    # doing bias correction (marginla sigma) for recruitment
+    dsem_margvar_grid = matrix(0, n_dsem_yrs, ncol(dsem_x_grid))
+    rec_links = which(dsem_link_par == "ln_RecDevs")
+    if(length(rec_links) > 0 && RecDevs_model == 1 && RecDevs_pen_center != 1 && any(bias_ramp != 0)) { # none when the penalty takes none
+      dsem_margvar_grid = get_dsem_margvar(dsem_beta, ln_dsem_sd, dsem_x_grid, dsem_model, dsem_cells, as.vector(dsem_x_known)) # figure out marginal variance for recruitment
+      for(s in rec_links) dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]] # add lognormal bias correction for recruitment here
+    }
+
+    # some q series are deterministic (i.e., fixed effects w/ covariate so need to compute the q's here; not penalized in dsem)
+    if(any(dsem_model$derived)) {
+      dsem_x_grid = fill_dsem_derived(dsem_x_grid, dsem_mu_grid, get_dsem_arrow_values(dsem_beta, ln_dsem_sd, dsem_model), dsem_model)
+      for(s in seq_along(dsem_link_par)) {
+        if(!dsem_model$derived[dsem_link_col[s]]) next # only a derived series is computed rather than estimated
+        dsem_derived_value = dsem_x_grid[dsem_link_row[[s]], dsem_link_col[s]]
+        if(dsem_link_par[s] == "ln_fish_q_devs") ln_fish_q_devs[dsem_link_cell[[s]]] = dsem_derived_value
+        if(dsem_link_par[s] == "ln_srv_q_devs") ln_srv_q_devs[dsem_link_cell[[s]]] = dsem_derived_value
+      } # end s loop
+    } # end if any series has no innovation
+
+    # get nLL for state process here
+    dsem_nLL = get_dsem_nLL(dsem_beta = dsem_beta,
+                            ln_dsem_sd = ln_dsem_sd,
+                            x_grid = dsem_x_grid,
+                            mu_grid = dsem_mu_grid,
+                            dsem_model = dsem_model,
+                            dsem_cells = dsem_cells,
+                            delta0 = if(is.null(dsem_delta0_use) || dsem_delta0_use == 0) NULL else dsem_delta0
+                            )
+
+    # nll for covariates observed through a family and link (a fixed covariate carries none)
+    for(k in seq_along(dsem_cov_var_idx)) {
+      if(dsem_cov_family[k] == 0) next
+      obs_yrs = which(!is.na(dsem_cov_obs[,k]))
+      cov_link = if(is.null(dsem_cov_link)) dsem_default_link(dsem_cov_family[k]) else dsem_cov_link[k] # a list from before links has each family's default
+      cov_tweedie_p = if(dsem_cov_family[k] == 7) 1 + 1 / (1 + exp(-logit_dsem_tweedie_p[k])) else 1.5 # power in (1, 2), read for the tweedie only
+      dsem_obs_nLL = dsem_obs_nLL + get_dsem_obs_nLL(y = dsem_cov_obs[obs_yrs,k],
+                                                     x = dsem_x[obs_yrs,dsem_cov_var_idx[k]],
+                                                     family = dsem_cov_family[k],
+                                                     link = cov_link,
+                                                     obs_sd = exp(ln_dsem_obs_sd[k]),
+                                                     tweedie_p = cov_tweedie_p,
+                                                     fixed_sd = if(dsem_cov_family[k] == 5) dsem_cov_fixed_sd[obs_yrs,k] else NULL)
+    } # end k loop
+
+    # dsem specific reporting stuff
+    RTMB::REPORT(dsem_x_grid)
+    RTMB::REPORT(dsem_margvar_grid)
+
+  } # end if a dsem is set up
+
   ## Fishery Observation Model -----------------------------------------------
   tmp_fish_obs = get_fishery_observation_model(
     n_pop = n_pop,
@@ -1046,9 +1106,7 @@ SPoRC_rtmb = function(pars, data) {
     t_fish = t_fish,
     fish_idx_ages = fish_idx_ages,
     fish_q_type = fish_q_type,
-    do_fish_q_cov = do_fish_q_cov,
-    fish_q_cov = fish_q_cov,
-    fish_q_coeff = fish_q_coeff,
+    ln_fish_q_devs = ln_fish_q_devs,
     ObsFishIdx = ObsFishIdx,
     UseFishIdx = UseFishIdx,
     do_caal = do_caal,
@@ -1093,9 +1151,7 @@ SPoRC_rtmb = function(pars, data) {
     srv_q_blocks = srv_q_blocks,
     ln_srv_q = ln_srv_q,
     srv_q = srv_q,
-    do_srv_q_cov = do_srv_q_cov,
-    srv_q_cov = srv_q_cov,
-    srv_q_coeff = srv_q_coeff,
+    ln_srv_q_devs = ln_srv_q_devs,
     srv_selex_type = srv_selex_type,
     srv_sel = srv_sel,
     srv_sel_l = srv_sel_l,
@@ -2734,7 +2790,7 @@ SPoRC_rtmb = function(pars, data) {
           block_yrs = min(bicubic_yrs):max(bicubic_yrs)
           # Restrict to the actual fit range and bins from the penalty
           selstyr_this = unique(fish_sel_bicubic_selstyr[r, block_yrs, f])
-          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(data$years == selstyr_this)]
+          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(years == selstyr_this)]
           nselbins_this = unique(fish_sel_bicubic_nselbins[r, block_yrs, f])
           n_fit_bins = if(nselbins_this == 0) (if(fish_selex_type == 0) n_ages else dim(fish_sel_l)[3]) else nselbins_this
         } else {
@@ -2772,7 +2828,7 @@ SPoRC_rtmb = function(pars, data) {
           block_yrs = min(bicubic_yrs):max(bicubic_yrs)
           # Restrict to the actual fit range and bins from the penalty
           selstyr_this = unique(ret_sel_bicubic_selstyr[r, block_yrs, f])
-          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(data$years == selstyr_this)]
+          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(years == selstyr_this)]
           nselbins_this = unique(ret_sel_bicubic_nselbins[r, block_yrs, f])
           n_fit_bins = if(nselbins_this == 0) (if(ret_selex_type == 0) n_ages else dim(ret_sel_l)[3]) else nselbins_this
         } else {
@@ -2808,7 +2864,7 @@ SPoRC_rtmb = function(pars, data) {
         if(has_bicubic) {
           block_yrs = min(bicubic_yrs):max(bicubic_yrs)
           selstyr_this = unique(srv_sel_bicubic_selstyr[r, block_yrs, sf])
-          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(data$years == selstyr_this)]
+          y_range = if(selstyr_this == 0) block_yrs else block_yrs[block_yrs >= which(years == selstyr_this)]
           nselbins_this = unique(srv_sel_bicubic_nselbins[r, block_yrs, sf])
           n_fit_bins = if(nselbins_this == 0) (if(srv_selex_type == 0) n_ages else dim(srv_sel_l)[3]) else nselbins_this
         } else {
@@ -2954,6 +3010,13 @@ SPoRC_rtmb = function(pars, data) {
   ### Survey Catchability (Prior) --------------------------------------------
   if(Use_srv_q_prior == 1) srv_q_nLL = srv_q_nLL + get_q_prior(srv_q_prior, ln_srv_q)
 
+  ### Catchability Deviations (Process Error) --------------------------------
+  if(!is.null(ln_fish_q_devs)) fish_q_nLL = fish_q_nLL + Get_q_dev_penalty(ln_q_devs = ln_fish_q_devs, ln_sigma_q = ln_sigma_fish_q, q_rho = fish_q_rho,
+                                                                          q_model = fish_q_model, map_ln_q_devs = map_ln_fish_q_devs, q_rw_init_sigma = fish_q_rw_init_sigma)
+
+  if(!is.null(ln_srv_q_devs)) srv_q_nLL = srv_q_nLL + Get_q_dev_penalty(ln_q_devs = ln_srv_q_devs, ln_sigma_q = ln_sigma_srv_q, q_rho = srv_q_rho,
+                                                                        q_model = srv_q_model, map_ln_q_devs = map_ln_srv_q_devs, q_rw_init_sigma = srv_q_rw_init_sigma)
+
   ### Natural Mortality (Prior) ----------------------------------------------
   if(Use_M_prior == 1) M_nLL = M_nLL + get_natmort_prior(M_prior, ln_M, M_blocks)
 
@@ -2962,8 +3025,8 @@ SPoRC_rtmb = function(pars, data) {
 
   ## Movement ----------------------------------------------------------------
   ### Movement Rates (Penalty) -----------------------------------------------
-  if(cont_vary_movement > 0) {
-    Movement_nLL = Movement_nLL + - Get_move_PE_loglik(PE_model = cont_vary_movement,
+  if(cont_vary_movement != "none") {
+    Movement_nLL = Movement_nLL + - Get_move_PE_loglik(cont_vary_movement = cont_vary_movement,
                                                        PE_pars = move_pe_pars,
                                                        move_devs = move_devs,
                                                        map_move_devs = map_move_devs,
@@ -3001,6 +3064,7 @@ SPoRC_rtmb = function(pars, data) {
 
   ### Tag Reporting Rate (Prior) ---------------------------------------------
   if(use_conv_tag_fishrep_prior == 1) TagRep_nLL = TagRep_nLL + get_tagrep_prior(conv_tag_fishrep_prior, conv_tag_fish_reporting_pars)
+
 
   # Joint Negative Log Likelihood -------------------------------------------
   jnLL = sum(Wt_Catch * Catch_nLL) +             # Aggregated catch likelihoods
@@ -3046,12 +3110,14 @@ SPoRC_rtmb = function(pars, data) {
     h_nLL +                                    # Steepness prior
     Movement_nLL +                             # Movement prior
     TagRep_nLL +                               # Tag reporting rate prior
-    fish_q_nLL +                               # Fishery q prior
-    srv_q_nLL +                                # Survey q prior
+    fish_q_nLL +                               # Fishery q prior and deviation penalty
+    srv_q_nLL +                                # Survey q prior and deviation penalty
     rec_prop_nLL +                             # Recruitment proportion prior
     growth_tv_nLL +                            # Time-varying growth process error
     growth_semipar_nLL +                       # Semi-parametric growth process error
-    rinit_nLL                                  # Initial recruitment offset penalty
+    rinit_nLL +                                # Initial recruitment offset penalty
+    dsem_nLL +                                 # Dynamic structural equation model density
+    dsem_obs_nLL                               # Covariates observed with error
 
   # Report Section ----------------------------------------------------------
   ## Biological Processes ----------------------------------------------------
@@ -3229,6 +3295,8 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(Movement_nLL)
   RTMB::REPORT(TagRep_nLL)
   RTMB::REPORT(rec_prop_nLL)
+  RTMB::REPORT(dsem_nLL)
+  RTMB::REPORT(dsem_obs_nLL)
   RTMB::REPORT(jnLL)
 
   ## Derived Quantities ------------------------------------------------------

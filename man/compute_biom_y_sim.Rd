@@ -16,12 +16,8 @@ compute_biom_y_sim(y, seas, sim, sim_env)
 \item{sim_env}{Simulation environment}
 }
 \description{
-Computes Total_Biom, SSB, Dynamic_SSB0, and eff_SSB for year \code{y} at
-season \code{seas} (always called with \code{seas == spawn_seas}) from the
-current \code{NAA}/\code{NAA0} state in \code{sim_env}. Factored out of
-\code{\link{apply_pop_dy}} so it can be evaluated either before or after
-that season's mortality/ageing step depending on \code{rec_lag}, without
-duplicating the underlying math. Pure/read-only: returns a list rather
-than modifying \code{sim_env}.
+The operating model's state at year \code{y} and season \code{seas}, always the spawning
+season, sliced at replicate \code{sim} and given to \code{\link{biom_at_spawn}}, which the
+estimation model and the forward projection also run.
 }
 \keyword{internal}

@@ -26,19 +26,21 @@ Get_Comp_Likelihoods_OSA(
 )
 }
 \arguments{
-\item{Exp}{Expected proportions [n_regions × n_model_bins × n_sexes].}
+\item{Exp}{Expected proportions \code{[n_regions × n_model_bins × n_sexes]}.}
 
-\item{Obs}{Flat tracked observation vector (already ALR‑transformed for LN).}
+\item{Obs}{Flat tracked observation vector, already transformed for the
+logistic normal.}
 
-\item{ISS}{Input sample size [n_regions × n_sexes].}
+\item{ISS}{Input sample size \code{[n_regions × n_sexes]}.}
 
-\item{ln_theta}{Log overdispersion [n_regions × n_sexes].}
+\item{ln_theta}{Log overdispersion \code{[n_regions × n_sexes]}.}
 
-\item{ln_theta_agg}{Log overdispersion scalar for aggregated comps.}
+\item{ln_theta_agg}{Log overdispersion scalar for the aggregated comps.}
 
-\item{LN_corr_pars}{LN correlation parameters [n_regions × n_sexes × 3].}
+\item{LN_corr_pars}{Logistic-normal correlation parameters \code{[n_regions ×
+n_sexes × 3]}.}
 
-\item{LN_corr_pars_agg}{LN aggregated correlation scalar(s).}
+\item{LN_corr_pars_agg}{Its aggregated counterpart.}
 
 \item{Comp_Type}{Integer specifying the composition parameterization:
 \itemize{
@@ -99,32 +101,26 @@ bins and then cut down to the fitted ones, so a gap in \code{comp_bins}
 still counts towards the AR1 lag between the bins on either side of it.}
 }
 \description{
-Computes multinomial (0), Dirichlet-multinomial (1), and logistic-normal
-(2 iid, 3 AR1, 4 2D‑AR1) composition likelihoods for one‑step‑ahead (OSA)
-residuals using \code{RTMB::oneStepPredict}. The function evaluates the
-likelihood for a single flat tracked OBS vector, respecting the reduced
-logistic‑normal block lengths used during packing.
+Evaluates the multinomial (0), Dirichlet-multinomial (1) and logistic-normal
+(2 iid, 3 AR1, 4 2D-AR1) composition likelihoods on one flat tracked OBS
+vector for \code{RTMB::oneStepPredict}, respecting the reduced
+logistic-normal block lengths the packer used.
 }
 \details{
-The tracked \code{Obs} vector is **never reshaped**. All expectation‑side
-quantities (\code{Exp}, \code{ISS}, \code{ln_theta}, \code{LN_corr_pars},
-ageing error) are reshaped and filtered by \code{use}, exactly as in fitting.
+The tracked \code{Obs} vector is never reshaped. Everything on the expectation
+side (\code{Exp}, \code{ISS}, \code{ln_theta}, \code{LN_corr_pars}, the ageing
+error) is reshaped and filtered by \code{use} exactly as in fitting.
 
-**Logistic‑normal note:** Because \code{RTMB::OBS()} cannot be altered after
-tracking, the additive‑log‑ratio (ALR) transform of the *observation* is
-performed in the packer. Thus, \code{Obs[idx]} is **already ALR‑transformed**
-(last bin dropped). Here we only ALR‑transform the expectation, construct the
-covariance matrix \code{Sigma} (dropping its last row/column), and evaluate
-the multivariate normal density.
-
-Reduced LN block lengths:
-  * Comp_Type 0: \code{n_fit_bins - 1}
-  * Comp_Type 1: \code{n_fit_bins - 1} per region/sex
-  * Comp_Type 2: \code{n_fit_bins * n_sexes - 1} per region (one joint reference)
-
-where \code{n_fit_bins} is the number of bins named by \code{comp_bins},
-equal to \code{n_obs_bins} when the fleet fits every bin. The packer applies
-the same restriction before transforming, so the ALR reference is the last
-fitted bin rather than the last observed one.
+Because \code{RTMB::OBS()} cannot be altered after tracking, the additive log
+ratio transform of the observation happens in the packer, so \code{Obs[idx]}
+arrives already transformed with its last bin dropped. Here only the
+expectation is transformed, \code{Sigma} is built with its last row and column
+dropped, and the multivariate normal density is evaluated. A block is
+\code{n_fit_bins - 1} long under comp type 0, the same per region and sex under
+type 1, and \code{n_fit_bins * n_sexes - 1} per region under type 2, which
+takes one joint reference. \code{n_fit_bins} is the number of bins
+\code{comp_bins} names, equal to \code{n_obs_bins} when the fleet fits every
+bin, and the packer applies the same restriction before transforming, so the
+reference is the last fitted bin rather than the last observed one.
 }
 \keyword{internal}

@@ -20,70 +20,43 @@ release_conv_tag_attr(
 )
 }
 \arguments{
-\item{tagged_fish}{Numeric vector or array of released tagged fish for a
-single tag cohort. Unattended dimensions are expected to be collapsed
-to index 1. Reshaped internally to \code{[n_pop, n_ages, n_sexes]}.}
+\item{tagged_fish}{Released tagged fish for one cohort, with the unattended
+dims collapsed to index 1 and reshaped internally to \code{[n_pop, n_ages,
+n_sexes]}.}
 
-\item{tag_attr}{Character string specifying which population dimensions
-are attended in \code{tagged_fish}. Constructed from any combination of
-\code{"p"} (population), \code{"a"} (age), and \code{"s"} (sex),
-joined by underscores (e.g. \code{"p_a_s"}, \code{"a"}, \code{"p_a"}).
-See \code{\link{Setup_Mod_Tagging}} for the full set of valid strings.}
+\item{tag_attr}{Which dims are attended, built from \code{"p"}, \code{"a"} and
+\code{"s"} joined by underscores. See \code{\link{Setup_Mod_Tagging}}.}
 
-\item{tag_release_platform}{Character vector of length 2. Element 1 is
-the release platform: one of \code{"population"}, \code{"fishery"}, or
-\code{"survey"}. Element 2 is the fleet index as a character string
-(coerced to integer internally), or \code{NA} when
-\code{platform = "population"}.}
+\item{tag_release_platform}{Character vector of length 2: the platform,
+\code{"population"}, \code{"fishery"} or \code{"survey"}, and the fleet index
+as a string, or \code{NA} under \code{"population"}.}
 
-\item{srv_sel}{Numeric array of survey selectivity
-\code{[n_regions, n_yrs, n_ages, n_sexes, n_srv_fleets]}. Used as the
-age-sex apportionment weight when \code{platform = "survey"}.}
+\item{srv_sel, fish_sel}{Survey and fishery selectivity \code{[n_regions,
+n_yrs, n_ages, n_sexes, n_fleets]}, used as the age and sex weight under
+their own platform.}
 
-\item{fish_sel}{Numeric array of fishery selectivity
-\code{[n_regions, n_yrs, n_ages, n_sexes, n_fish_fleets]}. Used as the
-age-sex apportionment weight when \code{platform = "fishery"}.}
+\item{NAA}{Numbers at age before movement \code{[n_pop, n_regions, n_yrs,
+n_seas, n_ages, n_sexes]}, the weights themselves under
+\code{"population"} and multiplied by selectivity otherwise.}
 
-\item{NAA}{Numeric array of numbers-at-age prior to movement
-\code{[n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes]}. Used
-directly as weights when \code{platform = "population"}, and multiplied
-by selectivity for fishery and survey platforms.}
+\item{ty, tseas, tr}{Year, season and region indices of the release cohort.}
 
-\item{ty}{Integer. Model year index of the tag release cohort.}
-
-\item{tseas}{Integer. Season index of the tag release cohort.}
-
-\item{tr}{Integer. Region index of the tag release cohort.}
-
-\item{n_pop}{Integer. Number of populations.}
-
-\item{n_ages}{Integer. Number of age classes.}
-
-\item{n_sexes}{Integer. Number of sexes (1 or 2).}
+\item{n_pop, n_ages, n_sexes}{Dimension sizes.}
 }
 \description{
-When tag release data are not recorded at full population resolution,
-i.e. when one or more of the population, age, or sex dimensions are
-unattended in \code{tag_attr}, this function distributes the known tag
-totals to full \code{[n_pop, n_ages, n_sexes]} resolution using
-apportionment weights derived from the release platform (population
-abundance, fishery catch-at-age, or survey index-at-age). If all three
-dimensions are attended (\code{tag_attr = "p_a_s"}), \code{tagged_fish}
-is returned unchanged with no computation performed.
+Spreads tag totals recorded at less than full resolution out to
+\code{[n_pop, n_ages, n_sexes]}, using weights from the release platform.
+\code{tagged_fish} comes back unchanged when every dim is attended
+(\code{tag_attr = "p_a_s"}).
 }
 \details{
-Apportionment weights are constructed from numbers-at-age
-(\code{platform = "population"}), numbers-at-age multiplied by fishery
-selectivity (\code{platform = "fishery"}), or numbers-at-age multiplied
-by survey selectivity (\code{platform = "survey"}), all evaluated at the
-release region, year, and season. Weights are then normalized
-conditionally on the attended dimensions: the denominator for cell
-\code{[p, a, s]} is the sum of raw weights across all cells that share
-the same indices in the attended dimensions. This ensures that the
-marginal totals of \code{tagged_fish} are preserved exactly along every
-attended dimension. For example, if only age is attended
-(\code{tag_attr = "a"}), age-specific totals in \code{tagged_fish} are
-preserved while tags are distributed across population and sex in
-proportion to the platform weights.
+The weights are the numbers at age under \code{"population"}, or the numbers
+at age times fishery or survey selectivity under the other two platforms, all
+read at the release region, year and season. They are normalized conditionally
+on the attended dims: the denominator for cell \code{[p, a, s]} sums the raw
+weights over every cell sharing its indices in those dims, so the marginal
+totals of \code{tagged_fish} are preserved exactly along each of them. With
+only age attended, for instance, the age totals are kept and the tags are
+spread over population and sex in proportion to the weights.
 }
 \keyword{internal}

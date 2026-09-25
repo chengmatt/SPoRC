@@ -100,8 +100,8 @@ every year.}
 \item{ln_growth_semipar_devs}{Array \code{[pop, region, year, age, sex]} of
 log deviations on mean length at age, or \code{NULL} for none. Multiplies
 the parametric mean at age, so the curve stays the parametric part and the
-deviations have departures from it; the spread at age follows the deviated
-mean, leaving the coefficient of variation at age alone.}
+deviations move mean length around it; the spread at age follows the
+deviated mean, leaving the coefficient of variation at age alone.}
 
 \item{growth_semipar}{Integer process error code for those deviations,
 \code{0} for none. Only its being nonzero is read here; the structure is

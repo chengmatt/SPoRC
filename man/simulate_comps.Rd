@@ -36,119 +36,84 @@ simulate_comps(
 )
 }
 \arguments{
-\item{r}{Integer. Region index.}
+\item{r, y, f, seas, sim}{Region, year, fleet, season and replicate indices.}
 
-\item{y}{Integer. Year index.}
+\item{Exp}{Expected compositions \code{[n_pop × n_regions × n_yrs × n_seas ×
+n_cat × n_sexes × n_fleets × n_sims]}.}
 
-\item{f}{Integer. Fleet index (fishery or survey).}
+\item{ISS}{Integer sample sizes \code{[n_regions × n_yrs × n_seas × n_sexes ×
+n_fleets × n_sims]}, read when \code{pop_specific = FALSE}.}
 
-\item{seas}{Integer. Season index.}
+\item{AgeingError}{Ageing error matrices \code{[n_yrs × n_obs_ages × n_ages ×
+n_sims]}, ignored when \code{age_or_len = 1}.}
 
-\item{sim}{Integer. Simulation replicate index.}
+\item{comp_like}{Integer vector \code{[n_fleets]} of the likelihood per fleet:
+\code{0} multinomial, \code{1} Dirichlet-multinomial, \code{2}-\code{4} the
+logistic-normal forms.}
 
-\item{Exp}{Array. Expected compositions
-\code{[n_pop × n_regions × n_yrs × n_seas × n_cat × n_sexes × n_fleets × n_sims]}.}
+\item{ln_theta}{Log overdispersion \code{[n_regions × n_sexes × n_fleets]},
+read when \code{pop_specific = FALSE}.}
 
-\item{ISS}{Array. Integer sample sizes
-\code{[n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]}.
-Used when \code{pop_specific = FALSE}.}
+\item{corr_pars}{Logistic-normal correlation parameters \code{[n_regions ×
+n_sexes × n_fleets × n_corr_pars]}.}
 
-\item{AgeingError}{Array. Ageing error transition matrices
-\code{[n_yrs × n_obs_ages × n_ages × n_sims]}. Ignored when
-\code{age_or_len = 1}.}
+\item{ln_theta_agg, corr_pars_agg}{Their counterparts for the aggregated
+compositions, each of length \code{n_fleets}.}
 
-\item{comp_like}{Integer vector \code{[n_fleets]}. Likelihood type per
-fleet: \code{0} = multinomial, \code{1} = Dirichlet-multinomial,
-\code{2}-\code{4} = logistic-normal variants.}
+\item{comp_type}{Integer matrix \code{[n_yrs × n_fleets]}: \code{0} aggregated
+across regions, \code{1} split by sex, \code{2} joint across sexes,
+\code{999} no data.}
 
-\item{ln_theta}{Array. Log overdispersion or log-variance parameters
-\code{[n_regions × n_sexes × n_fleets]}. Used when
-\code{pop_specific = FALSE}.}
+\item{n_sexes, n_pop, n_regions, n_cat}{Model dimensions, \code{n_cat} being the
+number of ages or lengths.}
 
-\item{corr_pars}{Array. Correlation parameters for logistic-normal
-likelihoods \code{[n_regions × n_sexes × n_fleets × n_corr_pars]}.}
+\item{Obs}{Observed composition container, dimensioned like \code{Exp} and
+written in place.}
 
-\item{ln_theta_agg}{Numeric vector \code{[n_fleets]}. Log overdispersion
-for spatially aggregated compositions (\code{comp_type = 0}).}
+\item{pop_specific}{Logical. \code{TRUE} simulates each population separately
+from population-specific inputs.}
 
-\item{corr_pars_agg}{Numeric vector \code{[n_fleets]}. Correlation
-parameter(s) for aggregated logistic-normal compositions.}
+\item{ISS_pop}{Population-specific sample sizes \code{[n_pop × n_regions ×
+n_yrs × n_seas × n_sexes × n_fleets × n_sims]}, read when
+\code{pop_specific = TRUE}.}
 
-\item{comp_type}{Integer matrix \code{[n_yrs × n_fleets]}. Aggregation
-structure: \code{0} = aggregated across regions, \code{1} = split by
-sex, \code{2} = joint across sexes, \code{999} = no data (skip).}
+\item{pop_comp_like, pop_comp_type}{The likelihood and aggregation structure for
+the population-specific compositions, shaped as their aggregate
+counterparts.}
 
-\item{n_sexes}{Integer. Number of sexes.}
+\item{ln_pop_theta}{Log overdispersion \code{[n_pop × n_regions × n_sexes ×
+n_fleets]}.}
 
-\item{n_pop}{Integer. Number of populations.}
+\item{pop_corr_pars}{Logistic-normal correlation parameters \code{[n_pop ×
+n_regions × n_sexes × n_fleets × n_corr_pars]}.}
 
-\item{n_regions}{Integer. Number of regions.}
+\item{ln_pop_theta_agg, pop_corr_pars_agg}{Their counterparts for the
+population-specific aggregated compositions, each \code{[n_pop ×
+n_fleets]}.}
 
-\item{n_cat}{Integer. Number of composition categories (ages or lengths).}
-
-\item{Obs}{Array. Observed compositions container with the same dimensions
-as \code{Exp}. Simulated values are written in-place.}
-
-\item{pop_specific}{Logical. If \code{TRUE}, simulate compositions
-separately for each population using population-specific inputs.}
-
-\item{ISS_pop}{Array. Population-specific sample sizes
-\code{[n_pop × n_regions × n_yrs × n_seas × n_sexes × n_fleets × n_sims]}.
-Used when \code{pop_specific = TRUE}.}
-
-\item{pop_comp_like}{Integer vector \code{[n_fleets]}. Likelihood type per
-fleet for population-specific compositions.}
-
-\item{pop_comp_type}{Integer matrix \code{[n_yrs × n_fleets]}. Aggregation
-structure for population-specific compositions.}
-
-\item{ln_pop_theta}{Array. Log overdispersion parameters
-\code{[n_pop × n_regions × n_sexes × n_fleets]}.}
-
-\item{pop_corr_pars}{Array. Correlation parameters for logistic-normal
-likelihoods
-\code{[n_pop × n_regions × n_sexes × n_fleets × n_corr_pars]}.}
-
-\item{ln_pop_theta_agg}{Numeric array \code{[n_pop × n_fleets]}. Log
-overdispersion for population-specific aggregated compositions.}
-
-\item{pop_corr_pars_agg}{Numeric array \code{[n_pop × n_fleets]}.
-Correlation parameter(s) for population-specific aggregated
-logistic-normal compositions.}
-
-\item{age_or_len}{Integer. Indicator for composition type:
-\code{0} = age compositions (apply ageing error),
-\code{1} = length compositions (no ageing error).}
+\item{age_or_len}{Integer. \code{0} for age compositions, which take ageing
+error, \code{1} for length compositions, which do not.}
 }
 \value{
-The \code{Obs} array with simulated composition draws filled in at
-  the appropriate slice. When \code{pop_specific = FALSE}, values are written
-  to \code{[r, y, seas, , , f, sim]}; when \code{pop_specific = TRUE}, values
-  are written to \code{[p, r, y, seas, , , f, sim]}. All other slices are
-  unchanged.
+\code{Obs} with the draws filled in at \code{[r, y, seas, , , f, sim]},
+  or \code{[p, r, y, seas, , , f, sim]} under \code{pop_specific = TRUE}. Every
+  other slice is unchanged.
 }
 \description{
-Draws observed composition samples (by age or length) for a single
-region-year-fleet-season-simulation cell, supporting multinomial,
-Dirichlet-multinomial, and logistic-normal likelihoods. Ageing error is
-optionally applied post-draw. Three composition aggregation structures are
-handled: sex-split (\code{comp_type = 1}), joint across sexes
-(\code{comp_type = 2}), and spatially aggregated across all regions
-(\code{comp_type = 0}). The flag value \code{comp_type = 999} or
-\code{comp_like = 999} causes the function to return \code{Obs} unchanged.
+Draws composition samples for one region, year, fleet, season and replicate
+under the multinomial, Dirichlet-multinomial or logistic-normal likelihoods,
+applying ageing error after the draw for age compositions. A
+\code{comp_type} or \code{comp_like} of \code{999} returns \code{Obs}
+unchanged.
 }
 \details{
-When \code{pop_specific = TRUE}, compositions are simulated separately for
-each population, extending all relevant inputs (e.g., sample size,
-dispersion, and correlation parameters) to include a population dimension.
-In this case, aggregation across regions (\code{comp_type = 0}) is performed
-within population, and results are written to \code{Obs[p, ...]}.
-
-For joint compositions (\code{comp_type = 2}), the Kronecker product
-\code{diag(n_sexes) ⊗ AgeingError} is used to apply ageing error across
-the combined age-sex vector. For aggregated compositions
-(\code{comp_type = 0}), the draw is only executed when \code{r == n_regions}
-(i.e., on the final region pass), and uses region- and sex-marginalized
-expected proportions.
+Joint compositions (\code{comp_type = 2}) apply ageing error across the
+combined age by sex vector through the Kronecker product
+\code{diag(n_sexes)} and \code{AgeingError}. Aggregated compositions
+(\code{comp_type = 0}) are drawn only on the final region pass, from expected
+proportions marginalized over regions and sexes. Under
+\code{pop_specific = TRUE} each population is drawn separately from its own
+sample sizes, dispersion and correlations, and that aggregation happens within
+a population.
 }
 \keyword{internal}

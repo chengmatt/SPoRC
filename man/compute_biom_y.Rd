@@ -34,8 +34,35 @@ compute_biom_y(
 \item{y}{Year integer}
 
 \item{seas}{Season integer}
+
+\item{NAA, NAA0}{Abundance arrays \code{[pop, region, year, season, age, sex]}, fished and unfished.}
+
+\item{WAA, MatAA, ZAA, natmort}{Weight, maturity, total mortality and the natural mortality rate on
+the same dims.}
+
+\item{t_spawn}{Fraction of the season elapsed at spawning.}
+
+\item{seasdur}{Numeric vector of season durations.}
+
+\item{n_seas, n_pop, n_regions, n_ages, n_sexes}{Model dimensions.}
+
+\item{sgl_seas_spawning_movement}{Natal homing movement \code{[pop, region, region, year, age, sex]}.}
+
+\item{natal_region}{Integer vector of each population's natal region.}
+
+\item{stray_rate}{Matrix \code{[pop, year]} of stray rates.}
+
+\item{Movement, Mrate}{Movement fractions and generator
+\code{[pop, region, region, year, season, age, sex]}, or \code{NULL}.}
+
+\item{move_timing, do_recruits_move, expm_nsub}{Movement timing, whether age one moves, and
+substeps for the implicit matrix exponential.}
+}
+\value{
+List of \code{Total_Biom_y}, \code{SSB_y}, \code{Dynamic_SSB0_y} and \code{eff_SSB_y}.
 }
 \description{
-Compute Biomass
+Spawning-time biomass quantities for year \code{y} from the annual cycle's current state at
+season \code{seas}, always the spawning season.
 }
 \keyword{internal}

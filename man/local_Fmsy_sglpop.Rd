@@ -8,90 +8,53 @@ single-population model}
 local_Fmsy_sglpop(pars, data)
 }
 \arguments{
-\item{pars}{Named list of RTMB parameters. Must contain:
-\describe{
-  \item{\code{log_Fmsy}}{Numeric vector \code{[n_regions]}. Log-scale
-    trial \eqn{F_{MSY}} values, one per region.}
-}}
+\item{pars}{Named list of RTMB parameters, holding \code{log_Fmsy}
+\code{[n_regions]}, the log-scale trial values.}
 
-\item{data}{Named list of RTMB data. Must contain all spatial fields required
-by \code{\link{global_SPR}} (excluding \code{SPR_x}, \code{stray_rate},
-and \code{natal_region}) plus:
-\describe{
-  \item{\code{h}}{Numeric vector \code{[n_regions]}. Beverton-Holt
-    steepness by region.}
-  \item{\code{R0}}{Numeric scalar. Total unfished equilibrium recruitment.}
-  \item{\code{rec_region_prop}}{Numeric vector \code{[n_regions]}.
-    Proportion of annual recruitment entering each region.}
-  \item{\code{newton_steps}}{Integer. Number of Newton-Raphson iterations
-    used to solve for equilibrium recruitment by origin region.}
-  \item{\code{is_discard_fleet}}{Integer vector \code{[n_fish_fleets]}.
-    Indicator for fleets whose catch is excluded from landed yield
-    (0 = landing fleet, 1 = discard-only fleet). These fleets still
-    contribute to total fishing mortality \code{Z} and affect population
-    dynamics and spawning biomass.}
-}}
+\item{data}{Named list of RTMB data, holding every spatial field
+\code{\link{global_SPR}} needs apart from \code{SPR_x}, \code{stray_rate} and
+\code{natal_region}, plus \code{h} \code{[n_regions]}, the scalar \code{R0},
+\code{rec_region_prop} \code{[n_regions]}, \code{newton_steps}, and
+\code{is_discard_fleet} \code{[n_fish_fleets]}, 1 for fleets whose catch is
+left out of landed yield while still contributing to \eqn{Z}.}
 }
 \value{
-Numeric scalar. Negative total equilibrium yield across all regions.
-  This is minimized to obtain the vector of regional \eqn{F_{MSY}} values.
+Numeric scalar, the negative total equilibrium yield across regions,
+  minimized to obtain the regional \eqn{F_{MSY}} vector.
 }
 \description{
-Computes the vector of regional \eqn{F_{MSY}} values that jointly maximize
-total equilibrium yield across all regions under a spatially explicit
-Beverton-Holt stock-recruit relationship. Unlike \code{\link{global_Fmsy}},
-which constrains all regions to share a single fishing mortality, this
-function allows each region to have its own optimal \eqn{F}.
+The vector of regional \eqn{F_{MSY}} values that jointly maximize total
+equilibrium yield, where \code{\link{global_Fmsy}} constrains every region to
+one fishing mortality. The objective is the negative of that yield.
 }
 \details{
-Cohorts originating in each region are tracked separately through seasonal
-movement, mortality, and ageing using an \code{[origin, destination]}
-per-recruit accounting framework. Spawning biomass per recruit is accumulated
-by origin and destination region, and the plus group is solved analytically
-using \code{\link{build_plus_group_T}} and \code{\link{solve_plus_group}}.
+Cohorts from each region are tracked separately through seasonal movement,
+mortality and ageing on an \code{[origin, destination]} per-recruit accounting,
+with spawning biomass per recruit accumulated by origin and destination and the
+plus group solved analytically through \code{\link{build_plus_group_T}} and
+\code{\link{solve_plus_group}}. Movement uses \code{Movement[origin, dest, seas,
+age]}, recruits move immediately or from age one depending on
+\code{do_recruits_move}, and spawning biomass accumulates at \code{spawn_seas}
+under the fractional mortality \code{t_spawn}.
 
-Equilibrium recruitment by origin region \eqn{R_{eq,o}} is solved using a
-Newton-Raphson algorithm applied to the fixed-point condition that
-recruitment produced at each destination region (via the BH relationship
-applied to effective SSB) equals the recruitment attributed to that origin.
-The Jacobian is derived analytically using the quotient rule and the chain
-rule through the spatial redistribution of spawning biomass.
+Equilibrium recruitment by origin region is solved by Newton-Raphson on the
+fixed point where the recruitment each destination produces, through the curve
+applied to effective SSB, equals the recruitment attributed to that origin. The
+Jacobian is derived analytically with the quotient and chain rules through the
+spatial redistribution of spawning biomass.
 
-Yield is computed using only the landed fraction of fishing mortality,
-excluding fleets flagged as discard-only via \code{is_discard_fleet}.
-Discard-only fleets still contribute to total mortality \code{Z} and
-affect population dynamics and spawning biomass.
-
-
-Fishing mortality is decomposed into retained and discarded components:
-
-\itemize{
-  \item Retained fishing mortality:
-    \deqn{F^{\mathrm{ret}}_{r,a,s,f} = F_{MSY,r} \, F_{\mathrm{fract},r,s,f} \,
-          \mathrm{sel}_{r,a,s,f} \, \mathrm{ret}_{r,a,s,f}}
-
-  \item Discard fishing mortality (dead discards only):
-    \deqn{F^{\mathrm{disc}}_{r,a,s,f} =
-          F_{MSY,r} \, F_{\mathrm{fract},r,s,f} \,
-          \mathrm{sel}_{r,a,s,f} \, (1 - \mathrm{ret}_{r,a,s,f}) \,
-          \mathrm{dmr}_{r,s,f}}
-
-  \item Total instantaneous mortality:
-    \deqn{Z_{r,a,s} = M_{r,a} \, \mathrm{seasdur}_s +
-          F^{\mathrm{ret}}_{r,a,s} + F^{\mathrm{disc}}_{r,a,s}}
-}
-
-Landed yield used in the objective function excludes catch from fleets
-where \code{is_discard_fleet == 1}. The Baranov catch equation partitions
-landed F out of total Z, so the discard fleet's contribution to mortality
-is properly accounted for in the denominator.
-
-Seasonal movement is applied using the \code{Movement[origin, dest, seas, age]}
-array. Recruitment may move immediately or only after age-1 depending on
-\code{do_recruits_move}. Spawning biomass is accumulated at
-\code{spawn_seas} with fractional mortality \code{t_spawn}.
-
-The plus group is solved analytically using the transition matrices produced
-by \code{\link{build_plus_group_T}} and the solver \code{\link{solve_plus_group}}.
+Fishing mortality splits into
+\deqn{F^{\mathrm{ret}}_{r,a,s,f} = F_{MSY,r} \, F_{\mathrm{fract},r,s,f} \,
+      \mathrm{sel}_{r,a,s,f} \, \mathrm{ret}_{r,a,s,f}}
+and the dead discards
+\deqn{F^{\mathrm{disc}}_{r,a,s,f} = F_{MSY,r} \, F_{\mathrm{fract},r,s,f} \,
+      \mathrm{sel}_{r,a,s,f} \, (1 - \mathrm{ret}_{r,a,s,f}) \,
+      \mathrm{dmr}_{r,s,f}}
+giving
+\deqn{Z_{r,a,s} = M_{r,a} \, \mathrm{seasdur}_s + F^{\mathrm{ret}}_{r,a,s} +
+      F^{\mathrm{disc}}_{r,a,s}}
+Landed yield leaves out the catch of fleets with
+\code{is_discard_fleet == 1}, while the Baranov equation keeps their F in the
+\eqn{Z} denominator, so the two mortality sources compete correctly.
 }
 \keyword{internal}

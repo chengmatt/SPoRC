@@ -19,75 +19,52 @@ do_jitter(
 )
 }
 \arguments{
-\item{data}{A list of model data used to construct the \code{RTMB} objective
-function.}
+\item{data}{List of model data for the \code{RTMB} objective function.}
 
-\item{parameters}{A named list of model parameters used to initialize
-\code{RTMB::MakeADFun()}.}
+\item{parameters}{Named list of parameters for \code{RTMB::MakeADFun()}.}
 
-\item{mapping}{A named list defining parameter mappings for
-\code{RTMB::MakeADFun()}.}
+\item{mapping}{Named list of parameter mappings.}
 
-\item{random}{Character vector specifying random-effect parameters.}
+\item{random}{Character vector of random-effect parameters.}
 
-\item{sd}{Numeric value specifying the standard deviation of the additive
-normal noise used to jitter parameters.}
+\item{sd}{Standard deviation of the additive normal noise.}
 
-\item{n_jitter}{Integer specifying the number of jittered optimization runs.}
+\item{n_jitter}{Number of jittered runs.}
 
-\item{n_newton_loops}{Integer specifying the number of additional Newton
-optimization steps performed after \code{nlminb()} convergence. Default = 0.}
+\item{n_newton_loops}{Extra Newton steps after \code{nlminb()} converges.
+Default 0.}
 
-\item{do_par}{Logical indicating whether jitter iterations should be
-executed in parallel.}
+\item{do_par}{Logical, whether the iterations run in parallel.}
 
-\item{n_cores}{Integer specifying the number of parallel workers to use
-when \code{do_par = TRUE}.}
+\item{n_cores}{Parallel workers used when \code{do_par = TRUE}.}
 
-\item{par_vec}{Optional numeric vector of starting values to jitter. Accepts
-either the fixed-effect vector (\code{length(obj$par)}, for example
-\code{fit$optim$par}) or the joint fixed and random vector
-(\code{length(obj$env$par)}, for example \code{fit$env$last.par.best}).
-Any other length is an error. \code{NULL} uses the model's own start.}
+\item{par_vec}{Optional starting values to jitter, either the fixed-effect
+vector (\code{length(obj$par)}, such as \code{fit$optim$par}) or the joint
+fixed and random vector (\code{length(obj$env$par)}, such as
+\code{fit$env$last.par.best}). Any other length is an error, and \code{NULL}
+uses the model's own start.}
 
-\item{jitter_random}{Logical indicating whether the random effects are
-perturbed alongside the fixed effects. Only the fixed effects are searched
-by \code{nlminb()}, so the random draws move the starting point of the
-inner Laplace solve and check whether it settles on the same modes. Either
-way the inner solve starts from the random values in \code{par_vec}, or
-from the model's own start when \code{par_vec} holds no random effects.
-Default is \code{FALSE}.}
+\item{jitter_random}{Logical, whether the random effects are perturbed
+alongside the fixed effects. Only the fixed effects are searched by
+\code{nlminb()}, so the random draws move the starting point of the inner
+Laplace solve and check whether it settles on the same modes. Either way the
+inner solve starts from the random values in \code{par_vec}, or from the
+model's own start when \code{par_vec} holds none. Default \code{FALSE}.}
 }
 \value{
-A \code{data.frame} containing jitter iteration results. The output
-includes time series of spawning stock biomass (SSB) and recruitment,
-along with diagnostic information for each jitter run, including:
-\itemize{
-  \item Jitter index
-  \item Whether the Hessian is positive definite
-  \item Joint negative log-likelihood
-  \item Maximum absolute gradient of fixed effects
-}
+A data frame of the jitter results: the spawning stock biomass and
+  recruitment series of each run, with its jitter index, whether the Hessian
+  was positive definite, the joint negative log-likelihood, and the maximum
+  absolute gradient of the fixed effects.
 }
 \description{
-Performs a jitter analysis to evaluate sensitivity of model optimization
-to starting parameter values. The function repeatedly perturbs the
-parameter vector with additive normal noise, refits the model, and records
-resulting time series and diagnostic metrics.
-}
-\details{
-Each jitter iteration:
-\itemize{
-  \item Perturbs the fixed effects with additive normal noise, and the
-  random effects too when \code{jitter_random = TRUE}.
-  \item Optimizes the objective function using \code{stats::nlminb()}.
-  \item Optionally performs additional Newton steps to refine the solution.
-  \item Extracts reported quantities (e.g., spawning biomass and recruitment)
-  and diagnostic statistics.
-}
-
-The analysis can be executed sequentially or in parallel using the
-\code{future} framework.
+Tests how sensitive the optimization is to its starting values by perturbing
+the parameter vector with additive normal noise, refitting, and recording the
+resulting series and diagnostics. Each iteration perturbs the fixed effects,
+and the random effects too under \code{jitter_random = TRUE}, optimizes with
+\code{stats::nlminb()}, optionally takes extra Newton steps, and extracts the
+reported quantities. Iterations run sequentially or in parallel through
+\code{future}.
 }
 \seealso{
 Other Model Diagnostics:

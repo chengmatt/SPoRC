@@ -23,77 +23,53 @@ simulate_conv_tag_fish_recaptures(
 )
 }
 \arguments{
-\item{conv_fish_tag_like}{Integer. Likelihood for tag recaptures:
-\code{0} = Poisson, \code{1} = negative binomial,
-\code{2} = multinomial (release-conditioned),
-\code{3} = multinomial (recovery-conditioned),
-\code{4} = Dirichlet-multinomial (release-conditioned),
-\code{5} = Dirichlet-multinomial (recovery-conditioned).}
+\item{conv_fish_tag_like}{Integer likelihood: \code{0} Poisson, \code{1}
+negative binomial, \code{2} and \code{3} the release- and
+recovery-conditioned multinomial, \code{4} and \code{5} the two
+Dirichlet-multinomials.}
 
-\item{tag_recaptures_attr}{Character string specifying which biological
-dimensions are attended in the recapture likelihood. Built from any
-combination of \code{"p"} (population), \code{"a"} (age), and \code{"s"}
-(sex), joined by underscores. Region and fleet are always retained.
-Unattended dimensions are marginalized and output into index 1.}
+\item{tag_recaptures_attr}{Which dims are attended in the recapture
+likelihood, built from \code{"p"}, \code{"a"} and \code{"s"} joined by
+underscores. Region and fleet are always kept, and the rest are summed over
+into index 1.}
 
-\item{conv_tagged_fish}{Array of released tagged fish
-\code{[n_conv_tag_cohorts × n_pop × n_ages × n_sexes × n_sims]}. Used
-as the release sample size for release-conditioned likelihoods.}
+\item{conv_tagged_fish}{Released tagged fish \code{[n_conv_tag_cohorts ×
+n_pop × n_ages × n_sexes × n_sims]}, the release sample size for the
+release-conditioned forms.}
 
-\item{pred_conv_tag_fish_recap}{Array of predicted recaptures
+\item{pred_conv_tag_fish_recap}{Predicted recaptures
 \code{[conv_tag_max_liberty × n_seas × n_conv_tag_cohorts × n_pop ×
 n_regions × n_ages × n_sexes × n_fish_fleets × n_sims]}.}
 
-\item{obs_conv_tag_fish_recap}{Array of observed recaptures with the same
-dimensions as \code{pred_conv_tag_fish_recap}. Simulated values are
-written in-place at the \code{[ry, rseas, tc, ...]} slice.}
+\item{obs_conv_tag_fish_recap}{Observed recaptures on the same dims, written
+in place at the \code{[ry, rseas, tc, ...]} slice.}
 
-\item{ln_conv_fish_tag_theta}{Numeric. Log overdispersion: negative
-binomial size = \code{exp(ln_conv_fish_tag_theta)}; Dirichlet-multinomial
-concentration = \code{exp(ln_conv_fish_tag_theta) × N × p}.}
+\item{ln_conv_fish_tag_theta}{Log overdispersion: the negative binomial size
+is \code{exp(ln_conv_fish_tag_theta)} and the Dirichlet-multinomial
+concentration \code{exp(ln_conv_fish_tag_theta) × N × p}. Ignored by the
+Poisson and the multinomial.}
 
-\item{ry}{Integer. Years-at-liberty index (first dimension of recapture
-arrays).}
+\item{ry, rseas, tc, sim}{Years at liberty, recovery season, tag cohort and
+replicate indices.}
 
-\item{rseas}{Integer. Recovery season index.}
-
-\item{tc}{Integer. Tag cohort index.}
-
-\item{sim}{Integer. Simulation replicate index.}
-
-\item{n_pop}{Integer. Number of populations.}
-
-\item{n_regions}{Integer. Number of regions.}
-
-\item{n_ages}{Integer. Number of age classes.}
-
-\item{n_sexes}{Integer. Number of sexes.}
-
-\item{n_fish_fleets}{Integer. Number of fishery fleets.}
+\item{n_pop, n_regions, n_ages, n_sexes, n_fish_fleets}{Dimension sizes.}
 }
 \value{
-The \code{obs_conv_tag_fish_recap} array with simulated recaptures
-  filled in at \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx,
-  flt_idx, sim]}. Marginalized dimensions are fixed at index 1.
+\code{obs_conv_tag_fish_recap} with the draws filled in at
+  \code{[ry, rseas, tc, pop_idx, reg_idx, age_idx, sex_idx, flt_idx, sim]},
+  the summed dims fixed at index 1.
 }
 \description{
-Draws observed tag recapture counts for a single liberty-season-cohort cell
-from predicted recapture arrays, supporting six likelihood structures:
-Poisson, negative binomial, and release- or recovery-conditioned
-multinomial and Dirichlet-multinomial. Dimensions absent from
-\code{tag_recaptures_attr} are marginalized by summing over them, and all
-recaptures are placed into index 1 of the corresponding dimension in the
-output array.
+Draws observed recapture counts for one liberty, season and cohort cell from
+the predicted recaptures, under the Poisson, negative binomial, or the
+release- and recovery-conditioned multinomial and Dirichlet-multinomial. Dims
+absent from \code{tag_recaptures_attr} are summed over and the recaptures are
+written into index 1 of each.
 }
 \details{
-For release-conditioned likelihoods (\code{2}, \code{4}), predicted
-recaptures are expressed as proportions of total tags released. A
-"not-recaptured" bin is appended to complete the probability vector before
-drawing and removed before assignment. For recovery-conditioned likelihoods
-(\code{3}, \code{5}), the draw is conditioned on the total predicted
-recapture count with no not-recaptured bin needed. The overdispersion
-parameter \code{ln_conv_fish_tag_theta} governs the negative-binomial size
-parameter and the Dirichlet-multinomial concentration scaling, and is
-ignored for Poisson and multinomial likelihoods.
+The release-conditioned forms express the predictions as proportions of the
+tags released, appending a not-recaptured bin to complete the probability
+vector before the draw and removing it afterwards. The recovery-conditioned
+forms condition on the total predicted recaptures and need no such bin.
 }
 \keyword{internal}

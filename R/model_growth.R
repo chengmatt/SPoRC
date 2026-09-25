@@ -7,50 +7,36 @@
 
 #' Mean length and its spread at a set of real ages
 #'
-#' Schnute-form von Bertalanffy growth: \code{L1} is the mean length at age
-#' \code{A1}, \code{L2} the mean length at age \code{A2}, and \code{K} the
-#' growth rate, so
-#' \deqn{L_\infty = L_1 + \frac{L_2 - L_1}{1 - e^{-K(A_2 - A_1)}}}
-#' and \eqn{L(x) = L_\infty + (L_1 - L_\infty) e^{-K(x - A_1)}} for real ages
-#' \eqn{x \ge A_1}. Below \code{A1} growth is linear from \code{L0} at age zero,
-#' \eqn{L(x) = L_0 + (x / A_1)(L_1 - L_0)}, the linear phase.
-#' \code{L2_asymptote = 1} reads \code{L2} as the asymptote directly, with no
-#' second reference age to solve it from.
+#' Von Bertalanffy growth in Schnute's form, with \code{L1} the mean length at
+#' age \code{A1}, \code{L2} the mean length at age \code{A2} and \code{K} the
+#' growth rate. Below \code{A1} growth is linear from \code{L0} at age zero, and a
+#' Richards coefficient other than one applies the same form to the lengths raised
+#' to that power. The coefficient of variation is \code{CV1} below \code{A1} and
+#' \code{CV2} at and above \code{A2}, interpolating between them. Equations are in
+#' the model equations vignette.
 #'
-#' With a Richards coefficient \code{rho} other than one the curve is the
-#' Richards generalization, which applies the same form to the lengths raised to
-#' that power,
-#' \deqn{L(x)^\rho = L_\infty^\rho + (L_1^\rho - L_\infty^\rho) e^{-K(x - A_1)}}
-#' with \eqn{L_\infty^\rho = L_1^\rho + (L_2^\rho - L_1^\rho) / (1 - e^{-K(A_2 - A_1)})}
-#' when \code{A2} is a real age. \code{rho = 1} is the von Bertalanffy curve.
-#'
-#' The coefficient of variation is \code{CV1} below \code{A1}, \code{CV2} at and
-#' above \code{A2}, and in between interpolates linearly on mean length
-#' (\code{cv_type = 0}) or on age (\code{cv_type = 1}).
-#' The spread is \code{CV * L} under \code{sd_type = 0} and the parameter itself
-#' under \code{sd_type = 1}.
-#'
-#' @param x Numeric vector of real ages (data, not parameters).
+#' @param x Numeric vector of real ages, data rather than parameters.
 #' @param L0 Length at age zero, the anchor of the linear phase.
-#' @param L1,L2,K,CV1,CV2 Growth parameters, natural scale, possibly AD.
-#' @param A1,A2 Reference ages for \code{L1} and \code{L2}. Ignored for the
-#'   asymptote under \code{L2_asymptote}, though \code{A2} still bounds the CV
+#' @param L1,L2,K,CV1,CV2 Growth parameters on the natural scale, possibly AD.
+#' @param A1,A2 Reference ages for \code{L1} and \code{L2}. \code{A2} is ignored
+#'   for the asymptote under \code{L2_asymptote}, but still bounds the CV
 #'   interpolation.
-#' @param cv_type Integer, 0 interpolate the CV on length, 1 scale by age.
-#' @param sd_type Integer, 0 the CV parameters scale the mean, 1 they are SDs.
-#' @param A2_cv Age at and above which \code{CV2} applies. Defaults to \code{A2}.
-#'   Under \code{L2_asymptote} there is no second reference age, so
-#'   \code{\link{Setup_Mod_Biologicals}} sets \code{A2} to the accumulator age
-#'   and the interpolation runs to there.
-#' @param rho Richards coefficient, natural scale, possibly AD. One (the default)
-#'   is the von Bertalanffy curve.
+#' @param cv_type Integer, 0 interpolates the CV on length, 1 on age.
+#' @param sd_type Integer, 0 has the CV parameters scale the mean, 1 reads them as
+#'   standard deviations.
+#' @param A2_cv Age at and above which \code{CV2} applies, defaulting to
+#'   \code{A2}. Under \code{L2_asymptote} there is no second reference age, so
+#'   \code{\link{Setup_Mod_Biologicals}} sets \code{A2} to the accumulator age and
+#'   the interpolation runs to there.
+#' @param rho Richards coefficient on the natural scale, possibly AD. One (the
+#'   default) is the von Bertalanffy curve.
 #' @param cv_ref Optional vector of the coefficient of variation at each element
-#'   of \code{x}, used in place of the one this curve implies. Holds the spread
+#'   of \code{x}, used in place of the one this curve implies. It holds the spread
 #'   at age at a reference year's while the mean moves, which is the convention
 #'   for a time-varying growth curve.
-#' @param L2_asymptote Integer, 0 (default) solves \eqn{L_\infty} from
-#'   \code{L1} and \code{L2} at their reference ages, 1 reads \code{L2} as
-#'   \eqn{L_\infty} itself. Set from \code{growth_A2 = "Linf"} in
+#' @param L2_asymptote Integer, 0 (default) solves \eqn{L_\infty} from \code{L1}
+#'   and \code{L2} at their reference ages, 1 reads \code{L2} as \eqn{L_\infty}
+#'   itself. Set from \code{growth_A2 = "Linf"} in
 #'   \code{\link{Setup_Mod_Biologicals}}.
 #'
 #' @return List with \code{L} (mean length), \code{sd} (spread), \code{Linf} and
@@ -356,7 +342,7 @@ growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, 
   }
 
   # semi-parametric growth: the parametric mean at age times a year-by-age deviation surface,
-  # applied after the curve so the deviations are departures from parametric growth
+  # applied after the curve so the deviations are relative to parametric growth
   if(!is.null(len_devs)) L = L * exp(len_devs)
 
   # the spread follows the CV rule at the size reached, or the first year's CV at age
@@ -426,8 +412,8 @@ growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, 
 #' @param ln_growth_semipar_devs Array \code{[pop, region, year, age, sex]} of
 #'   log deviations on mean length at age, or \code{NULL} for none. Multiplies
 #'   the parametric mean at age, so the curve stays the parametric part and the
-#'   deviations have departures from it; the spread at age follows the deviated
-#'   mean, leaving the coefficient of variation at age alone.
+#'   deviations move mean length around it; the spread at age follows the
+#'   deviated mean, leaving the coefficient of variation at age alone.
 #' @param growth_semipar Integer process error code for those deviations,
 #'   \code{0} for none. Only its being nonzero is read here; the structure is
 #'   penalized in the objective.

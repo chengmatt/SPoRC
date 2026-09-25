@@ -7,49 +7,40 @@
 generate_recruitment(y, sim, sim_env, seas = 1)
 }
 \arguments{
-\item{y}{Integer. Year index for which recruitment is generated.}
+\item{y}{Integer. Year index.}
 
 \item{sim}{Integer. Simulation replicate index.}
 
-\item{sim_env}{Simulation environment created by
-\code{\link{Setup_sim_env}}. Modified in place:
-\code{$ln_RecDevs[p, r, y, sim]}, \code{$Rec[p, r, y, sim]},
-\code{$NAA[p, r, y, seas, 1, s, sim]}, and
-\code{$NAA0[p, r, y, seas, 1, s, sim]} are updated.}
+\item{sim_env}{Simulation environment from \code{\link{Setup_sim_env}},
+modified in place: \code{$ln_RecDevs}, \code{$Rec}, \code{$NAA} and
+\code{$NAA0}.}
 
-\item{seas}{Integer. Season this recruitment first enters the population
-in, using \code{rec_seas_prop[p, seas, sim]}. Default \code{1}, matching
-the classic \code{rec_lag >= 1} case where recruitment for the whole year
-is already known before season 1 starts. \code{rec_lag = 0} (age-0
-recruitment) instead calls this with \code{seas = spawn_seas}, since that
-is the earliest season this year's own SSB (and hence recruitment) is
-knowable, see \code{\link{apply_pop_dy}}.}
+\item{seas}{Integer. Season this recruitment first enters in, through
+\code{rec_seas_prop[p, seas, sim]}. Default \code{1}, the classic
+\code{rec_lag >= 1} case where the whole year's recruitment is known before
+season one. \code{rec_lag = 0} instead calls this with
+\code{seas = spawn_seas}, the earliest season this year's own SSB is
+knowable. See \code{\link{apply_pop_dy}}.}
 }
 \value{
-\code{invisible(NULL)}. All modifications are made by reference
-  within \code{sim_env}.
+\code{invisible(NULL)}; everything is modified by reference within
+  \code{sim_env}.
 }
 \description{
-Computes total recruitment for year \code{y} by first obtaining
-deterministic expected recruitment from \code{\link{Get_Det_Recruitment}}
-and then multiplying by lognormal deviations (bias-corrected). Recruitment
-is apportioned across sexes and seasons and written into
-\code{sim_env$NAA[p, r, y, 1, 1, s, sim]} (first season, age-1 slot).
-Unfished NAA (\code{NAA0}) is synchronized to match fished NAA at
-recruitment. If \code{Rec_input} exists in the environment and covers year
-\code{y}, those values override the stochastic draw entirely.
+Takes deterministic recruitment from \code{\link{Get_Det_Recruitment}},
+multiplies it by lognormal deviations, apportions it across sexes and seasons,
+and writes it into the age-one slot of \code{sim_env$NAA}, with \code{NAA0}
+synchronized to match. A \code{Rec_input} covering year \code{y} overrides the
+draw entirely.
 }
 \details{
-Recruitment deviation sharing follows the same population/region logic as
-\code{\link{generate_initial_age_structure}}: deviations are drawn once
-per population (\code{n_pop > 1}) or once per region (\code{n_pop = 1},
-local density-dependence). Populations with \code{R0 = 0} receive zero
-deviations. \code{sigma_idx} selects the natal region's \code{ln_sigmaR}
-for the bias-correction term.
-
-\code{RecDevs_model} sets what the draw is centered on: zero for independent
-deviations, the previous year's deviation for a random walk, and
-\code{RecDevs_rho} times it for an AR1. Only independent draws are bias
-corrected, since a random walk's deviation is not mean zero.
+Deviation sharing follows \code{\link{generate_initial_age_structure}}: one
+draw per population when \code{n_pop > 1}, or one per region when
+\code{n_pop = 1} under local density dependence. Populations with
+\code{R0 = 0} get zero deviations, and \code{sigma_idx} picks the natal
+region's \code{ln_sigmaR} for the bias correction. \code{RecDevs_model} sets
+what the draw is centered on: zero for independent deviations, the previous
+year's for a random walk, and \code{RecDevs_rho} times it for an AR1. Only the
+independent draws are bias corrected, a walk's deviation not being mean zero.
 }
 \keyword{internal}

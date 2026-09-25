@@ -21,7 +21,8 @@ Setup_Sim_NAA_state(
   season_corr = 0,
   NAA_re_ages = NULL,
   NAA_re_years = NULL,
-  NAA_re_seasons = "annual"
+  NAA_re_seasons = "annual",
+  naa_eta_input = NULL
 )
 }
 \arguments{
@@ -56,6 +57,13 @@ strict lower triangle is filled by column. A single value is recycled.}
 a state at season one only, leaving the numbers deterministic between
 seasons; \code{"all"} puts one at the start of every season, and an integer
 vector selects specific seasons.}
+
+\item{naa_eta_input}{Array \code{[n_pop, n_regions, n_cond_yrs, n_seas, n_ages, n_sexes, n_sims]}
+of log-scale state innovations, or \code{NULL} (default) to draw every year. Supplying a fit's own
+innovations, \eqn{\ln N - \ln \hat{N}}, makes the operating model reproduce that fit's numbers at
+age rather than a fresh realization of the same process. The year extent says how many leading
+years are held: give the fitted years and any year beyond them is still drawn, which is what a
+closed loop running past the data needs.}
 }
 \value{
 \code{sim_list} with the state-space settings attached.

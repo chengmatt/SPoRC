@@ -5,408 +5,258 @@
 
 #' Do Population Projections
 #'
-#' Projects population dynamics forward in time under alternative recruitment
-#' and fishing mortality scenarios. The model initializes from terminal
-#' assessment quantities and advances numbers-at-age through recruitment,
-#' seasonal movement, mortality, ageing, and harvest control rules across
-#' multiple seasons and years.
-#'
-#' Population dynamics are tracked over
-#' \code{[population x region x year x season x age x sex]}. Recruitment is
-#' generated annually and then distributed across seasons using
-#' \code{rec_seas_prop}, allowing intra-annual timing of recruitment within
-#' the first age class.
+#' Projects the population forward under a recruitment and a fishing mortality
+#' scenario, starting from the terminal assessment year and advancing numbers at
+#' age over \code{[population x region x year x season x age x sex]} through
+#' recruitment, movement, mortality, ageing and a harvest control rule. Recruitment
+#' is generated annually and spread over seasons by \code{rec_seas_prop}.
 #'
 #' @param n_proj_yrs Integer. Number of projection years.
-#' @param n_pop Integer. Number of populations (may exceed regions when
-#'   natal homing is modeled).
+#' @param n_pop Integer. Number of populations, which may exceed the number of
+#'   regions under natal homing.
 #' @param n_regions Integer. Number of spatial regions.
 #' @param n_ages Integer. Number of age classes including the plus group.
 #' @param n_sexes Integer. Number of sexes.
-#' @param sexratio Array `[n_pop, n_regions, n_proj_yrs, n_sexes]`.
-#'   Recruitment sex ratio used to allocate projected recruits by sex.
+#' @param sexratio Array `[n_pop, n_regions, n_proj_yrs, n_sexes]` allocating
+#'   projected recruits by sex.
 #' @param n_fish_fleets Integer. Number of fishing fleets.
-#' @param do_recruits_move Integer (0 or 1). Whether age-1 recruits are
-#'   subject to movement. Default = 0.
-#' @param rec_seas_prop Array `[n_pop, n_seas]`. Proportion of annual
-#'   recruitment entering in each season. Must sum to 1 across seasons for
-#'   each population.
-#' @param recruitment Array `[n_pop, n_regions, n_yrs]`. Historical
-#'   recruitment used to condition stochastic projection options.
-#' @param terminal_NAA Array `[n_pop, n_regions, n_seas, n_ages, n_sexes]`.
-#'   Fished numbers-at-age in the terminal assessment year.
-#' @param terminal_NAA0 Array `[n_pop, n_regions, n_seas, n_ages, n_sexes]`.
-#'   Unfished numbers-at-age in the terminal assessment year.
-#' @param terminal_F Array `[n_regions, n_seas, n_fish_fleets]`. Terminal
-#'   fishing mortality; sets F in projection year 1 and defines the seasonal
-#'   F ratios applied in subsequent years.
-#' @param natmort Array of natural mortality, a rate per year in each season.
-#'   Either `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]` or the same
-#'   without the season dim, which is expanded across seasons.
-#'   Annual natural mortality-at-age, scaled internally by season duration.
-#' @param WAA Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
-#'   Weight-at-age used in spawning biomass calculations.
-#' @param WAA_fish Array
-#'   `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]`.
-#'   Fishery weight-at-age used in catch biomass calculations.
-#' @param MatAA Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
-#'   Maturity-at-age.
-#' @param fish_sel Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]`.
-#'   Fishery selectivity-at-age.
-#' @param Movement Array
-#'   `[n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]`.
-#'   Seasonal movement transition matrices.
-#' @param Mrate Array dimensioned like `Movement`, holding the instantaneous
-#'   movement rates (the generator) rather than the realized transition
-#'   fractions. Only read when `move_timing` is 1 or 2. `NULL` (default) is
-#'   valid for `move_timing = 0`, where movement is applied as a transition
-#'   matrix and no generator is needed.
-#' @param expm_nsub Integer controlling how the matrix exponential is evaluated under
-#'   `move_timing = 2`: `0` uses `Matrix::expm`, `n >= 1` uses `n` implicit backward
-#'   Euler substeps. See [mat_exp()].
-#' @param move_timing Integer. When movement happens relative to mortality
-#'   within a season. `0` (default) applies movement first and mortality
-#'   afterwards; `1` applies mortality first and movement afterwards; `2`
-#'   runs the two continuously and simultaneously, which also switches
-#'   catch-at-age to the spatial Baranov form built on season-integrated
-#'   abundance. Must match the timing used to derive the reference points the
-#'   projection is run against.
-#' @param sgl_seas_spawning_movement Array
-#'   `[n_pop, n_regions, n_regions, n_proj_yrs, n_ages, n_sexes]`.
-#'   Spawning movement matrix applied when `n_seas = 1` and `n_pop > 1`
-#'   to redistribute fish to natal grounds prior to SSB calculation. Only read in
-#'   that case, so `NULL` (the default) is valid otherwise.
-#' @param stray_rate Array `[n_pop, n_proj_yrs]`. Per-population stray rate
-#'   used when accumulating effective SSB contributions across populations. Only
-#'   read when `n_pop > 1`, so `NULL` (the default) is valid otherwise.
-#' @param f_ref_pt Array `[n_regions, n_proj_yrs]`. Fishing mortality
-#'   reference point (e.g., F_MSY) or fixed input F, depending on
-#'   `fmort_opt`.
-#' @param b_ref_pt Array `[n_pop, n_regions, n_proj_yrs]`. Biomass reference
-#'   point used in harvest control rules.
-#' @param HCR_function Function. Harvest control rule with arguments `x`
-#'   (SSB), `frp` (F reference point), and `brp` (B reference point). A rule that
-#'   also declares a `state` argument (or `...`) is handed this year's population
-#'   as a named list, so a rule can be written on more than spawning biomass:
-#'   `y` (projection year), `r` (region the F is being set for), `NAA`, `SSB`,
-#'   `Total_Biom` and `Catch`. Mean weight, age structure and last year's catch
-#'   all follow from those. Rules that do not declare it are called exactly as
-#'   before and the state is not assembled.
-#' @param recruitment_opt Character. Recruitment scenario:
-#'   `"inv_gauss"`, `"mean_rec"`, `"zero"`, or `"bh_rec"`.
-#' @param fmort_opt Character. Fishing mortality scenario:
-#'   `"HCR"`, `"HCR_global"`, `"Input"`, or `"Catch"`. `"Catch"` solves each
-#'   projection year's fishing mortality so that realized catch matches
-#'   `catch_input`, leaving every other model quantity untouched.
-#' @param catch_input Catch targets in biomass, used when `fmort_opt = "Catch"`
-#'   and ignored otherwise. Either an array `[n_regions, n_proj_yrs]` of annual
-#'   targets or `[n_regions, n_proj_yrs, n_seas]` of seasonal ones; which shape
-#'   is supplied decides what gets solved. `catch_input[r, y]` is the catch
-#'   removed from region `r` during projection year `y`, indexed the same way
-#'   `proj_Catch` is in the returned list rather than with the one year lag
-#'   `f_ref_pt` does. Targets are totals over populations and fleets, and over
-#'   seasons too in the annual case. A target of 0 sets `F = 0` there without a
-#'   solve.
+#' @param do_recruits_move Integer (0 or 1). Whether age-1 recruits move. Default 0.
+#' @param rec_seas_prop Array `[n_pop, n_seas]` of the share of annual recruitment
+#'   entering in each season, summing to 1 for each population.
+#' @param recruitment Array `[n_pop, n_regions, n_yrs]` of historical recruitment,
+#'   used to condition the stochastic options.
+#' @param terminal_NAA Array `[n_pop, n_regions, n_seas, n_ages, n_sexes]` of fished
+#'   numbers at age in the terminal assessment year.
+#' @param terminal_NAA0 As \code{terminal_NAA}, unfished.
+#' @param terminal_F Array `[n_regions, n_seas, n_fish_fleets]`. Sets F in
+#'   projection year 1 and the seasonal F ratios used in later years.
+#' @param natmort Natural mortality, a rate per year in each season, either
+#'   `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]` or the same without
+#'   the season dim, which is expanded across seasons. Scaled internally by season
+#'   duration.
+#' @param WAA Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes]` of
+#'   weight-at-age, used for spawning biomass.
+#' @param WAA_fish As \code{WAA} with a trailing `n_fish_fleets` dim, used for catch
+#'   biomass.
+#' @param MatAA Array dimensioned like \code{WAA}, maturity-at-age.
+#' @param fish_sel Array `[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes,
+#'   n_fish_fleets]` of fishery selectivity-at-age.
+#' @param Movement Array `[n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages,
+#'   n_sexes]` of seasonal movement transition matrices.
+#' @param Mrate Array dimensioned like \code{Movement} holding the generator rather
+#'   than the realized fractions. Only read when `move_timing` is 1 or 2, so `NULL`
+#'   (default) is valid under `move_timing = 0`.
+#' @param expm_nsub Integer controlling how the matrix exponential is evaluated
+#'   under `move_timing = 2`: `0` uses `Matrix::expm`, `n >= 1` uses `n` implicit
+#'   backward Euler substeps. See [mat_exp()].
+#' @param move_timing When movement happens relative to mortality within a season.
+#'   `0` (default) moves then kills, `1` kills then moves, and `2` runs the two
+#'   continuously, which also switches catch at age to the spatial Baranov form on
+#'   season-integrated abundance. Must match the timing the reference points were
+#'   derived under.
+#' @param sgl_seas_spawning_movement Array `[n_pop, n_regions, n_regions,
+#'   n_proj_yrs, n_ages, n_sexes]` redistributing fish to natal grounds before SSB.
+#'   Only read when `n_seas = 1` and `n_pop > 1`, so `NULL` (default) is otherwise
+#'   valid.
+#' @param stray_rate Array `[n_pop, n_proj_yrs]` used when accumulating effective
+#'   SSB across populations. Only read when `n_pop > 1`, so `NULL` (default) is
+#'   otherwise valid.
+#' @param f_ref_pt Array `[n_regions, n_proj_yrs]` of the fishing mortality
+#'   reference point or fixed input F, depending on `fmort_opt`.
+#' @param b_ref_pt Array `[n_pop, n_regions, n_proj_yrs]` of the biomass reference
+#'   point used in the control rule.
+#' @param HCR_function Harvest control rule taking `x` (SSB), `frp` and `brp`. A
+#'   rule that also declares a `state` argument (or `...`) is handed this year's
+#'   population as a named list, holding `y`, `r`, `NAA`, `SSB`, `Total_Biom` and
+#'   `Catch`, so it can be written on more than spawning biomass. Rules without it
+#'   are called as before and no state is assembled.
+#' @param recruitment_opt Recruitment scenario: `"inv_gauss"`, `"mean_rec"`,
+#'   `"zero"`, or `"bh_rec"`.
+#' @param fmort_opt Fishing mortality scenario: `"HCR"`, `"HCR_global"`, `"Input"`,
+#'   or `"Catch"`, which solves each year's F so realized catch matches
+#'   `catch_input` and leaves every other quantity untouched.
+#' @param catch_input Catch targets in biomass, read under `fmort_opt = "Catch"`.
+#'   Either `[n_regions, n_proj_yrs]` of annual targets or `[n_regions,
+#'   n_proj_yrs, n_seas]` of seasonal ones, and the shape decides what is solved.
+#'   `catch_input[r, y]` is the catch removed in projection year `y`, indexed as
+#'   `proj_Catch` is rather than with the one year lag `f_ref_pt` uses. Targets are
+#'   totals over populations and fleets, and over seasons in the annual case; a
+#'   target of 0 sets `F = 0` without a solve.
 #'
-#'   With annual targets one annual F per region is solved for and split over
-#'   seasons at the terminal year seasonal shares, exactly as the other
-#'   `fmort_opt` settings do. With seasonal targets that constraint is released
-#'   and a separate F is solved per region and season; the split across fleets
-#'   within a season still stays at terminal year ratios, so fleet specific
-#'   targets are not supported either way. A season the terminal year did not
-#'   fish has no fleet split to inherit and so can take no catch, which is an
-#'   error rather than a silent zero.
+#'   Annual targets solve one F per region, split over seasons at the terminal year
+#'   shares. Seasonal targets solve an F per region and season, with the fleet split
+#'   within a season still at terminal year ratios, so fleet-specific targets are
+#'   not supported either way. A season the terminal year did not fish has no fleet
+#'   split to inherit and can take no catch, which is an error.
 #'
-#'   Not every projection year has to have a target. Set a year to `NA` and it
-#'   falls back to `catch_fallback_opt` instead, which is the usual shape of catch
-#'   advice: a year or two of agreed catch followed by the harvest control rule.
-#'   `NA` (no target, use the fallback) and `0` (a target of no fishing) are
-#'   different things. A year has to be all target or all `NA` across regions and
-#'   seasons, since splitting one annual fallback F across only some seasons has
-#'   no defensible reading; a partly specified year is an error.
-#'
-#'   Column 1 is only used when `catch_terminal_yr = TRUE`; see that argument.
-#' @param catch_fallback_opt Character. Which rule sets F in the projection years
-#'   `catch_input` leaves `NA`: `"HCR"`, `"HCR_global"`, or `"Input"`. Defaults to
-#'   `"HCR"` under `fmort_opt = "Catch"` and to `fmort_opt` itself otherwise,
-#'   where it is unused.
-#'   Ignored unless `fmort_opt = "Catch"`, and its usual inputs (`f_ref_pt`,
-#'   `b_ref_pt`, `HCR_function`) are only needed if some year actually falls back.
-#'   Mind the indexing difference when mixing the two: `catch_input[r, y]` is the
-#'   catch taken in year `y`, but `f_ref_pt[r, y]` sets F in year `y + 1`, which
-#'   is the lag the HCR and Input options have always kept.
+#'   A year set to `NA` falls back to `catch_fallback_opt`, which is the usual shape
+#'   of catch advice. `NA` and `0` are different things. A year must be all target
+#'   or all `NA` across regions and seasons; a partly specified year is an error.
+#'   Column 1 is read only when `catch_terminal_yr = TRUE`.
+#' @param catch_fallback_opt Which rule sets F in the years `catch_input` leaves
+#'   `NA`: `"HCR"`, `"HCR_global"` or `"Input"`. Defaults to `"HCR"` under
+#'   `fmort_opt = "Catch"` and to `fmort_opt` itself otherwise, where it is unused.
+#'   Mind the indexing when mixing the two: `catch_input[r, y]` is the catch taken
+#'   in year `y`, while `f_ref_pt[r, y]` sets F in year `y + 1`.
 #' @param catch_terminal_yr Logical. Whether projection year 1, which replays the
-#'   terminal assessment year, is also solved against its catch target rather
-#'   than fished at `terminal_F`. Default `FALSE`. Set it `TRUE` for the common
-#'   assessment case where the terminal year's catch is itself a projection
-#'   because the year is not yet complete. Note that this overrides the F the
-#'   assessment estimated for that year, and so changes the numbers-at-age
-#'   entering year 2. Note also that with `n_seas > 1` the terminal year takes
-#'   all its seasons from `terminal_NAA` rather than propagating them, so only
-#'   the last season's F feeds year 2; the earlier seasons still take their
-#'   catch, but do not otherwise propagate.
-#' @param catch_f_max Numeric. Upper bound on the F searched when
-#'   `fmort_opt = "Catch"`. Default 5. A target that cannot be taken even at this
-#'   F is unreachable, in which case F is capped here, the target is undershot,
-#'   and a warning names the regions involved.
-#' @param catch_tol Numeric. Relative catch tolerance for the F solver.
-#'   Default 1e-6.
-#' @param catch_max_iter Integer. Maximum solver iterations per projection year.
-#'   Default 100.
-#' @param t_spawn Numeric scalar. Fraction of the spawning season elapsed
-#'   before spawning; used for mid-season SSB calculations.
-#' @param srr_opt Named list of inputs for deterministic stock-recruit
-#'   recruitment when `recruitment_opt` is `"bh_rec"` or `"ricker_rec"`.
-#'   The curve itself is taken from `recruitment_opt`, so the same list serves
-#'   both. Formerly `bh_rec_opt`.
-#' @param bh_rec_opt Deprecated. Former name of `srr_opt`; supplying it warns
-#'   and forwards. Supplying both is an error. This list is passed
-#'   directly to \code{\link{Get_Det_Recruitment}} and must contain all
-#'   required arguments for that function.
+#'   terminal assessment year, is solved against its catch target rather than fished
+#'   at `terminal_F`. Default `FALSE`. `TRUE` suits the common case where the
+#'   terminal year is not yet complete, but it overrides the F the assessment
+#'   estimated and so changes the numbers entering year 2. With `n_seas > 1` the
+#'   terminal year takes all its seasons from `terminal_NAA`, so only the last
+#'   season's F feeds year 2.
+#' @param catch_f_max Upper bound on the F searched under `fmort_opt = "Catch"`.
+#'   Default 5. An unreachable target caps F here, undershoots, and warns with the
+#'   regions named.
+#' @param catch_tol Relative catch tolerance for the F solver. Default 1e-6.
+#' @param catch_max_iter Maximum solver iterations per projection year. Default 100.
+#' @param t_spawn Fraction of the spawning season elapsed before spawning.
+#' @param srr_opt Named list of inputs for deterministic stock-recruit recruitment
+#'   under `recruitment_opt = "bh_rec"` or `"ricker_rec"`, passed straight to
+#'   \code{\link{Get_Det_Recruitment}} and holding every argument that function
+#'   needs. Formerly `bh_rec_opt`. The arrays are \code{R0} \code{[n_pop]}, \code{h}
+#'   and \code{rec_region_prop} \code{[n_pop, n_regions]}, \code{rec_seas_prop}
+#'   \code{[n_pop, n_seas]}, \code{SSB} \code{[n_pop, n_regions, n_yrs]},
+#'   \code{WAA}, \code{MatAA} and \code{natmort} \code{[n_pop, n_regions, n_seas,
+#'   n_ages]} (natmort also accepted without the season dim), \code{Movement}
+#'   \code{[n_pop, n_regions, n_regions, n_seas, n_ages]},
+#'   \code{sgl_seas_spawning_movement} \code{[n_pop, n_regions, n_regions,
+#'   n_ages]}, \code{stray_rate} \code{[n_pop]}, \code{init_F} \code{[n_regions,
+#'   n_seas, n_fish_fleets]}, \code{fish_sel} and \code{ret_sel} \code{[n_pop,
+#'   n_regions, n_seas, n_ages, n_fish_fleets]}, \code{dmr} \code{[n_regions,
+#'   n_seas, n_fish_fleets]} and \code{sex_ratio_f} \code{[n_pop, n_regions]}. The
+#'   scalars are \code{rec_dd}, \code{rec_lag}, \code{n_pop}, \code{n_regions},
+#'   \code{n_ages}, \code{n_seas}, \code{spawn_seas}, \code{seasdur},
+#'   \code{t_spawn} and \code{do_recruits_move}. Spawning biomass is built
+#'   internally by appending projected SSB to \code{srr_opt$SSB}.
 #'
-#'   Required elements and their expected dimensions include:
-#'   \describe{
-#'     \item{\code{R0}}{Numeric vector \code{[n_pop]}. Unfished recruitment.}
-#'     \item{\code{h}}{Numeric array \code{[n_pop, n_regions]}. Steepness.}
-#'     \item{\code{rec_region_prop}}{Numeric array
-#'       \code{[n_pop, n_regions]}. Recruitment allocation across regions
-#'       (sums to 1 across regions).}
-#'     \item{\code{rec_seas_prop}}{Numeric array
-#'       \code{[n_pop, n_seas]}. Seasonal recruitment proportions
-#'       (sums to 1 across seasons).}
-#'     \item{\code{SSB}}{Numeric array
-#'       \code{[n_pop, n_regions, n_yrs]}. Historical spawning biomass,
-#'       to which projected SSB is appended internally.}
-#'     \item{\code{WAA}}{Array
-#'       \code{[n_pop, n_regions, n_seas, n_ages]}. Weight-at-age.}
-#'     \item{\code{MatAA}}{Array
-#'       \code{[n_pop, n_regions, n_seas, n_ages]}. Maturity-at-age.}
-#'     \item{\code{natmort}}{Array
-#'       \code{[n_pop, n_regions, n_seas, n_ages]}. Natural mortality, a rate per
-#'       year in each season. Also accepted without the season dim.}
-#'     \item{\code{Movement}}{Array
-#'       \code{[n_pop, n_regions, n_regions, n_seas, n_ages]}. Movement
-#'       transition matrices.}
-#'     \item{\code{sgl_seas_spawning_movement}}{Array
-#'       \code{[n_pop, n_regions, n_regions, n_ages]}. Spawning movement
-#'       (single-season case).}
-#'     \item{\code{stray_rate}}{Numeric vector \code{[n_pop]}. Straying rates.}
-#'     \item{\code{init_F}}{Array
-#'       \code{[n_regions, n_seas, n_fish_fleets]}. Initial fishing mortality.}
-#'     \item{\code{fish_sel}}{Array
-#'       \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}. Total selectivity.}
-#'     \item{\code{ret_sel}}{Array
-#'       \code{[n_pop, n_regions, n_seas, n_ages, n_fish_fleets]}. Retention selectivity.}
-#'     \item{\code{dmr}}{Array
-#'       \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rates.}
-#'     \item{\code{sex_ratio_f}}{Numeric array
-#'       \code{[n_pop, n_regions]}. Female recruitment proportion.}
-#'   }
-#'
-#'   Additional scalar inputs include \code{rec_dd}, \code{rec_lag},
-#'   \code{n_pop}, \code{n_regions}, \code{n_ages}, \code{n_seas},
-#'   \code{spawn_seas}, \code{seasdur}, \code{t_spawn}, and
-#'   \code{do_recruits_move}.
-#'
-#'   Spawning biomass used in recruitment is constructed internally by
-#'   combining \code{srr_opt$SSB} with projected SSB values during the
-#'   simulation.
-#'
-#'   \code{srr_opt$rec_lag = 1} is the classic lagged case: each
-#'   projection year's recruitment is computed up front from the prior
-#'   year's SSB, exactly as \code{recruitment_opt = "inv_gauss"}/
-#'   \code{"mean_rec"} are. \code{srr_opt$rec_lag = 0} is age-0
-#'   recruitment: recruitment for year \code{y} is computed from year
-#'   \code{y}'s own SSB once \code{spawn_seas} is reached within that year's
-#'   season loop, and is inserted no earlier than \code{spawn_seas}
-#'   (\code{rec_seas_prop} must be zero for every season before
-#'   \code{spawn_seas} in that case). Reference points and the seasonal SBPR
-#'   calculation used to get \code{srr_opt$WAA}/\code{MatAA}/etc. are
-#'   unaffected by this choice, \code{rec_lag} only changes which year's
-#'   SSB feeds the Beverton-Holt curve, not the per-recruit math itself.
-#'
-#' @param n_seas Integer. Number of seasons. Default = 1.
-#' @param seasdur Numeric vector `[n_seas]`. Duration of each season as a
-#'   fraction of the year.
-#' @param spawn_seas Integer. Spawning season index.
-#' @param natal_region Integer vector `[n_pop]`. Natal region for each
-#'   population. Only read when `n_pop > 1`, so `NULL` (the default) is valid for
-#'   single-population models.
-#' @param dmr Array \code{[n_regions, n_seas, n_fish_fleets]}. Discard mortality rate.
-#'   Default behavior is no discard mortality (\code{dmr = 0}). When combined with
-#'   \code{ret_sel = 1}, this implies no discarding within a given fleet (all catch is retained).
-#' @param ret_sel Array \code{[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]}. Retention
-#'   selectivity-at-age. Default behavior corresponds to full retention (\code{ret_sel = 1}),
-#'   meaning all captured fish are retained unless otherwise specified.
-#'
+#'   \code{srr_opt$rec_lag = 1} computes each year's recruitment up front from the
+#'   prior year's SSB, as \code{"inv_gauss"} and \code{"mean_rec"} do.
+#'   \code{srr_opt$rec_lag = 0} computes it from the year's own SSB once
+#'   \code{spawn_seas} is reached, and inserts recruits no earlier than that season,
+#'   so \code{rec_seas_prop} must be zero before it. Reference points and the
+#'   seasonal SBPR are unaffected either way.
+#' @param bh_rec_opt Deprecated former name of \code{srr_opt}; supplying it warns
+#'   and forwards, and supplying both is an error.
+#' @param n_seas Integer. Number of seasons. Default 1.
+#' @param seasdur Numeric vector `[n_seas]` of season durations as fractions of a
+#'   year.
+#' @param spawn_seas Integer spawning season index.
+#' @param natal_region Integer vector `[n_pop]` of each population's natal region.
+#'   Only read when `n_pop > 1`, so `NULL` (default) is otherwise valid.
+#' @param dmr Array \code{[n_regions, n_seas, n_fish_fleets]} of discard mortality
+#'   rate. Default \code{0}, which with \code{ret_sel = 1} means a fleet discards
+#'   nothing.
+#' @param ret_sel Array \code{[n_pop, n_regions, n_proj_yrs, n_seas, n_ages,
+#'   n_sexes, n_fish_fleets]} of retention selectivity-at-age. Default \code{1},
+#'   full retention.
+#' @param rec_devs Optional array \code{[n_pop, n_regions, n_proj_yrs]} of
+#'   multiplicative deviations applied to whatever recruitment
+#'   \code{recruitment_opt} produces, so a deterministic option becomes stochastic
+#'   under deviations the caller draws. \code{NULL} (default) leaves recruitment as
+#'   the option gives it. Year 1 generates no recruitment, so its slice is never
+#'   read. Drawing outside is what lets replicates share recruitment across
+#'   management procedures, and what lets the projection be differentiated with
+#'   respect to the rule with the deviations kept fixed.
 #'
 #' @return A named list of projected quantities. Year index 1 is the terminal
-#'   assessment year replayed, so year 2 is the first projected year
-#'   and catch advice for terminal year + 1 is read from index 2.
-#'
-#'   Several arrays have a trailing `n_proj_yrs + 1` year slot, which is used
-#'   inconsistently and is noted per element below. In short: `proj_NAA`,
-#'   `proj_NAA0`, `proj_F` and `proj_F_seas` fill it, and `proj_ZAA`,
-#'   `proj_ret_FAA` and `proj_disc_FAA` leave it at 0.
+#'   assessment year replayed, so year 2 is the first projected year and catch
+#'   advice for terminal year + 1 is read from index 2. \code{proj_NAA},
+#'   \code{proj_NAA0}, \code{proj_F} and \code{proj_F_seas} fill their trailing
+#'   \code{n_proj_yrs + 1} year slot; \code{proj_ZAA}, \code{proj_ret_FAA} and
+#'   \code{proj_disc_FAA} leave it at 0.
 #'
 #' \describe{
-#'   \item{\code{proj_F}}{Array `[n_regions, n_proj_yrs + 1]`. Annual fishing
-#'     mortality by region, summed over seasons and fleets. The trailing column
-#'     holds the F the harvest control rule or input would apply in the year
-#'     after the projection; it stays 0 under `fmort_opt = "Catch"`, where there
-#'     is no further year to solve a target for.}
-#'   \item{\code{proj_F_seas}}{Array `[n_regions, n_proj_yrs + 1, n_seas]`. The
-#'     same fishing mortality broken out by season, so
-#'     `rowSums(proj_F_seas[, y, ])` recovers `proj_F[, y]` for every `y`,
-#'     including the trailing column. This is the only
-#'     place the answer lives when seasonal catch targets are used, since an
-#'     annual total cannot represent a seasonal solve.}
-#'   \item{\code{proj_ret_FAA}}{Array
-#'     `[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes, n_fish_fleets]`.
-#'     Retained fishing mortality-at-age, i.e. the component that generates
-#'     landed catch. Only years `1:n_proj_yrs` are filled; the trailing year slot
-#'     stays 0.}
-#'   \item{\code{proj_disc_FAA}}{Array dimensioned as `proj_ret_FAA`, and filled
-#'     over the same years. Discard fishing mortality-at-age, i.e. the component
-#'     killed but not landed, set by `ret_sel` and `dmr`. Total fishing
-#'     mortality-at-age is the sum of the two.}
-#'   \item{\code{proj_Catch}}{Array
-#'     `[n_pop, n_regions, n_proj_yrs, n_seas, n_fish_fleets]`. Retained catch in
-#'     biomass. Built from `proj_ret_FAA`, so discard mortality acts on the
-#'     population but is not counted here, and this is the quantity
-#'     `catch_input` is matched against.}
-#'   \item{\code{proj_SSB}}{Array `[n_pop, n_regions, n_proj_yrs]`. Female
-#'     spawning biomass, accumulated in `spawn_seas` with the `t_spawn` mortality
-#'     correction. Halved when `n_sexes = 1`.}
-#'   \item{\code{proj_eff_SSB}}{Array `[n_pop, n_proj_yrs]`. Effective spawning
-#'     biomass at each population's natal region, aggregating contributions from
-#'     every population with cross-population terms scaled by `stray_rate`. Equal
-#'     to spawning biomass summed across regions when `n_pop = 1`.}
-#'   \item{\code{proj_Total_Biom}}{Array `[n_pop, n_regions, n_proj_yrs]`. Total
-#'     biomass over all ages and both sexes, accumulated at the same point in the
-#'     season as `proj_SSB` and using the same definition the estimation model
-#'     uses for `Total_Biom`, so the projected series continues the estimated one
-#'     without a discontinuity at the terminal year.}
-#'   \item{\code{proj_Dynamic_SSB0}}{Array `[n_pop, n_regions, n_proj_yrs]`.
-#'     Spawning biomass the population would have kept under the same realized
-#'     recruitment but no fishing, for dynamic depletion.}
-#'   \item{\code{proj_NAA}}{Array
-#'     `[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes]`. Fished
-#'     numbers-at-age kept at the start of each season, before that season's
-#'     mortality and ageing. Under the default `move_timing = 0` movement has
-#'     already been applied at this point; under `move_timing` 1 and 2 it has
-#'     not, since movement is deferred into the mortality step. The trailing year
-#'     slot is filled, and holds the numbers passed into the year after the
-#'     projection ends.}
-#'   \item{\code{proj_NAA0}}{Array dimensioned as `proj_NAA`. The unfished
-#'     counterpart, decremented by natural mortality alone.}
-#'   \item{\code{proj_ZAA}}{Array
-#'     `[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages, n_sexes]`. Total
-#'     mortality-at-age for the season: natural mortality scaled by season
-#'     duration, plus retained and discard fishing mortality summed over fleets.
-#'     Only years `1:n_proj_yrs` are filled; the trailing year slot stays 0.}
-#'   \item{\code{proj_catch_resid}}{Array shaped like `catch_input`:
-#'     `[n_regions, n_proj_yrs]` for annual targets, `[n_regions, n_proj_yrs, n_seas]`
-#'     for seasonal ones. Relative miss on each catch target,
-#'     `(realized - target) / target`, and `NA` for years with no target
-#'     (including every year when `fmort_opt != "Catch"`). Should be at or below
-#'     `catch_tol` wherever the solve converged, and is worth checking directly
-#'     rather than relying on warnings alone.}
+#'   \item{\code{proj_F}}{`[n_regions, n_proj_yrs + 1]`. Annual F by region, summed
+#'     over seasons and fleets. The trailing column holds the F the rule or input
+#'     would apply in the year after the projection, and stays 0 under
+#'     `fmort_opt = "Catch"`.}
+#'   \item{\code{proj_F_seas}}{`[n_regions, n_proj_yrs + 1, n_seas]`. The same F by
+#'     season, so `rowSums(proj_F_seas[, y, ])` recovers `proj_F[, y]`. The only
+#'     place the answer lives under seasonal catch targets.}
+#'   \item{\code{proj_ret_FAA}}{`[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages,
+#'     n_sexes, n_fish_fleets]`. Retained fishing mortality-at-age, the component
+#'     that lands catch.}
+#'   \item{\code{proj_disc_FAA}}{Dimensioned as `proj_ret_FAA`. Discard fishing
+#'     mortality-at-age, set by `ret_sel` and `dmr`. Total F at age is the sum of
+#'     the two.}
+#'   \item{\code{proj_Catch}}{`[n_pop, n_regions, n_proj_yrs, n_seas,
+#'     n_fish_fleets]`. Retained catch in biomass, built from `proj_ret_FAA`, and
+#'     the quantity `catch_input` is matched against.}
+#'   \item{\code{proj_SSB}}{`[n_pop, n_regions, n_proj_yrs]`. Female spawning
+#'     biomass, accumulated in `spawn_seas` with the `t_spawn` correction. Halved
+#'     when `n_sexes = 1`.}
+#'   \item{\code{proj_eff_SSB}}{`[n_pop, n_proj_yrs]`. Effective spawning biomass at
+#'     each population's natal region, with cross-population terms scaled by
+#'     `stray_rate`. Equal to SSB summed across regions when `n_pop = 1`.}
+#'   \item{\code{proj_Total_Biom}}{`[n_pop, n_regions, n_proj_yrs]`. Total biomass
+#'     over all ages and sexes, at the same point in the season as `proj_SSB` and
+#'     on the estimation model's definition, so the series continues without a
+#'     discontinuity at the terminal year.}
+#'   \item{\code{proj_Dynamic_SSB0}}{`[n_pop, n_regions, n_proj_yrs]`. Spawning
+#'     biomass under the same realized recruitment but no fishing, for dynamic
+#'     depletion.}
+#'   \item{\code{proj_NAA}}{`[n_pop, n_regions, n_proj_yrs + 1, n_seas, n_ages,
+#'     n_sexes]`. Fished numbers at age at the start of each season, before that
+#'     season's mortality and ageing. Movement has already been applied under
+#'     `move_timing = 0` and not under 1 or 2. The trailing slot holds the numbers
+#'     passed into the year after the projection.}
+#'   \item{\code{proj_NAA0}}{Dimensioned as `proj_NAA`, decremented by natural
+#'     mortality alone.}
+#'   \item{\code{proj_ZAA}}{Dimensioned as `proj_NAA`. Total mortality-at-age for
+#'     the season: natural mortality scaled by season duration plus retained and
+#'     discard F summed over fleets.}
+#'   \item{\code{proj_catch_resid}}{Shaped like `catch_input`. Relative miss on each
+#'     target, `(realized - target) / target`, and `NA` for years with no target.
+#'     Should be at or below `catch_tol` wherever the solve converged, and is worth
+#'     checking directly rather than relying on warnings.}
 #' }
 #'
 #' @details
-#' Each projection year proceeds as follows when
-#' \code{recruitment_opt != "bh_rec"} or \code{srr_opt$rec_lag != 0}
-#' (the classic case):
-#' \enumerate{
-#'   \item Annual recruitment is generated and allocated across regions and
-#'   sexes. Seasonal recruitment is then distributed within the first age
-#'   class using \code{rec_seas_prop}, with additional recruits entering in
-#'   seasons \code{seas > 1}.
-#'   \item Fishing mortality-at-age is constructed from annual F, seasonal
-#'   F ratios derived from the terminal year, and selectivity.
-#'   \item Movement is applied at each seasonal step via transition matrices.
-#'   Age-1 movement is optional via \code{do_recruits_move}.
-#'   \item Within-season mortality is applied using exponential decay. At the
-#'   end of the final season, individuals age forward and the plus group
-#'   accumulates survivors.
-#'   \item Spawning biomass is computed in \code{spawn_seas} using a
-#'   mid-season mortality correction. For natal homing models with a single
-#'   season, spawning movement is applied prior to SSB calculation.
-#'   \item Catch is calculated using the Baranov equation and aggregated to
-#'   biomass using fishery-specific weights.
-#'   \item Fishing mortality for the next year is updated via the specified
-#'   harvest control rule or fixed input.
-#' }
+#' A projection year generates and allocates recruitment, builds F at age from the
+#' annual F, the terminal year's seasonal ratios and selectivity, moves fish each
+#' season, applies within-season mortality and ages the survivors at the end of the
+#' final season, computes spawning biomass in \code{spawn_seas} with a mid-season
+#' correction (after spawning movement under natal homing with one season), takes
+#' catch by the Baranov equation, and sets next year's F from the control rule or
+#' input.
 #'
-#' When \code{srr_opt$rec_lag == 0} (age-0 recruitment), steps 1 and 5
-#' above are reordered within \code{spawn_seas}: movement is applied first,
-#' spawning biomass is computed from the survivor population alone (no new
-#' recruits exist yet), that SSB is used to generate this year's
-#' recruitment, and only then are the recruits inserted (no earlier than
-#' \code{spawn_seas}) - immediately before mortality/ageing runs for that
-#' season, so the new cohort is advanced exactly like any other
-#' seasonal recruit pulse. Years \code{y > 1} generate recruitment this way;
-#' year 1 holds the supplied terminal assessment state forward with no new
-#' recruitment event, matching the classic case.
+#' Under \code{srr_opt$rec_lag == 0} the recruitment and spawning steps are
+#' reordered within \code{spawn_seas}: movement runs first, spawning biomass is
+#' computed from the survivors alone, that SSB generates this year's recruitment,
+#' and the recruits are inserted immediately before mortality and ageing. Year 1
+#' holds the terminal state forward with no recruitment event.
 #'
-#' Under \code{fmort_opt = "Catch"} step 7 moves to the front of the following
-#' year instead: the F that lands a catch target depends on that year's own
-#' numbers-at-age, not on the previous year's spawning biomass, so it cannot be
-#' set at the end of the previous year the way the HCR and Input options are.
-#' The year is run repeatedly at trial F values until realized catch matches the
-#' target, then run once more at the accepted F and committed. Steps 1 to 6 are
-#' otherwise unchanged, and no demographic input is modified: only F moves.
-#' Regions are solved jointly rather than one at a time, because between-season
-#' movement (and, under \code{move_timing = 2}, the season-integrated abundance)
-#' makes each region's catch depend on the F set in every other region. Seasonal
-#' targets are instead swept forward one season at a time, which is exact because
-#' a season's catch depends only on the F in that season and earlier ones.
+#' Under \code{fmort_opt = "Catch"} the F step moves to the front of the following
+#' year, since the F that lands a target depends on that year's own numbers at age
+#' rather than the previous year's spawning biomass. The year is run at trial F
+#' values until realized catch matches the target, then run once more at the
+#' accepted F and committed; no demographic input is modified. Regions are solved
+#' jointly, because movement (and, under \code{move_timing = 2}, the
+#' season-integrated abundance) makes each region's catch depend on every other
+#' region's F. Seasonal targets are swept forward one season at a time, which is
+#' exact because a season's catch depends only on the F in that season and earlier
+#' ones. The catch solved against is retained catch, so a fleet that discards
+#' exerts more total F than the target implies.
 #'
-#' Note that the catch solved against is retained catch, matching
-#' \code{proj_Catch}. Discard mortality still acts on the population through
-#' \code{dmr} and \code{ret_sel}, so a fleet that discards will exert more total
-#' F than the target alone implies.
-#'
-#' Effective spawning biomass at each population's natal region aggregates
-#' contributions from all populations, with cross-population contributions
-#' scaled by \code{stray_rate} and normalized by the number of populations
-#' in each natal region.
-#'
-#' When \code{n_sexes = 1}, spawning biomass is multiplied by 0.5. When
-#' \code{n_regions = 1}, movement is skipped.
+#' Spawning biomass is multiplied by 0.5 when \code{n_sexes = 1}, and movement is
+#' skipped when \code{n_regions = 1}.
 #'
 #' @section Differentiating through the projection:
 #'
 #' The projection uses RTMB's replacement operators, so it can be taped with
-#' \code{\link[RTMB]{MakeTape}} or \code{\link[RTMB]{MakeADFun}} and handed to an
-#' optimizer with an exact gradient. That gives an F schedule solved against an
-#' objective rather than scanned over a grid, and the delta method on projected
-#' quantities from a fitted model's parameters.
+#' \code{\link[RTMB]{MakeTape}} or \code{\link[RTMB]{MakeADFun}} and optimized with
+#' an exact gradient, giving an F schedule solved against an objective rather than
+#' scanned over a grid.
 #'
-#' Two options are refused when the inputs are AD types, because neither has a
-#' derivative and both would otherwise return a gradient that is wrong rather
-#' than an error. \code{recruitment_opt = "inv_gauss"} draws recruitment at
-#' random, and \code{fmort_opt = "Catch"} inverts the catch target with a
-#' numerical solve, so the F it hands back has no derivative. Tape under
+#' Two options are refused on AD types, since neither has a derivative and both
+#' would otherwise return a wrong gradient rather than an error:
+#' \code{recruitment_opt = "inv_gauss"} draws at random, and
+#' \code{fmort_opt = "Catch"} inverts the target numerically. Tape under
 #' \code{"mean_rec"}, \code{"bh_rec"} or \code{"ricker_rec"} with
-#' \code{fmort_opt = "Input"}.
-#'
-#' A control rule stops on its own rather than being refused here. The usual
-#' threshold rule branches on stock status, and a comparison against an AD
-#' spawning biomass raises an error inside RTMB. Optimizing through a control
-#' rule means writing a smooth one.
-#'
-#' @param rec_devs Optional array \code{[n_pop, n_regions, n_proj_yrs]} of
-#'   multiplicative deviations applied to whatever recruitment
-#'   \code{recruitment_opt} produces, so a deterministic option becomes a
-#'   stochastic one under deviations the caller draws and owns. Defaults to
-#'   \code{NULL}, which leaves recruitment as the option alone gives it.
-#'   Projection year 1 replays the terminal assessment year and generates no
-#'   recruitment, so its slice is never read. Drawing the deviations outside is
-#'   what makes a set of replicates share the same recruitment across management
-#'   procedures, and what lets the projection be differentiated with respect to
-#'   the rule while the deviations are kept fixed.
+#' \code{fmort_opt = "Input"}. A control rule that branches on stock status stops
+#' on its own, since comparing an AD spawning biomass raises an error inside RTMB,
+#' so optimizing through a rule means writing a smooth one.
 #'
 #' @export Do_Population_Projection
 #' @family Reference Points and Projections

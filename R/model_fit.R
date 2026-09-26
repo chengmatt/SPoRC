@@ -77,7 +77,7 @@ fit_model <- function(
   newton_loops = 3,
   silent = FALSE,
   do_optim = TRUE,
-  nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15),
+  nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-8),
   lower = NULL,
   upper = NULL,
   model = SPoRC_rtmb,

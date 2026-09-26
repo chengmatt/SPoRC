@@ -35,6 +35,7 @@ diagnostic). A stale architecture document should be treated as a bug.
        -> Setup_Mod_SrvIdx_and_Comps()
        -> Setup_Mod_Srvsel_and_Q()
        -> Setup_Mod_Weighting()
+       -> Setup_Mod_DSEM()                [optional, gives a process a dsem density]
             |
             v  input_list$data, input_list$par, input_list$map
        fit_model(data, parameters, mapping)

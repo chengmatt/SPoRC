@@ -2017,3 +2017,50 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
 
   invisible(NULL)
 }
+
+#' Handle the optional modules when they were not set up
+#'
+#' Movement, tagging and the dsem are all optional. A model with one region has no
+#' movement to estimate and a model with no tagging data needs none of the tagging
+#' settings, so \code{\link{fit_model}} calls those two setups with their off
+#' settings rather than requiring the user to. Movement is only defaulted for one
+#' region, since more than one has no population dynamics without it. The dsem needs
+#' no settings when it was not set up, since the objective skips its density
+#' entirely, so the only case to catch is a module that declared \code{"dsem"}
+#' without one being given.
+#'
+#' @param data,parameters,mapping The three lists \code{\link{fit_model}} was given.
+#'
+#' @return List with \code{data}, \code{par} and \code{map}, unchanged where the
+#'   module was already set up.
+#'
+#' @keywords internal
+fill_optional_modules <- function(data,
+                                  parameters,
+                                  mapping) {
+
+  # a module asked for its deviations to sit under arrows that were never given, so they would have no density
+  if(length(data$dsem_declared) > 0 && is.null(data$dsem_model)) {
+    stop("The ", paste(data$dsem_declared, collapse = ", "), " module declared 'dsem' but no dsem was set up, so those ",
+         "deviations have no density. Call Setup_Mod_DSEM with the arrows, or take the declaration back.")
+  }
+
+  need_move <- is.null(data$use_fixed_movement) # the field Setup_Mod_Movement always writes
+  need_tag <- is.null(data$use_conv_fish_tagging) # likewise for Setup_Mod_Tagging
+
+  if(!need_move && !need_tag) return(list(data = data, par = parameters, map = mapping))
+
+  if(need_move && data$n_regions > 1) {
+    stop("Setup_Mod_Movement was not called and n_regions is ", data$n_regions, ", so nothing moves fish ",
+         "between regions and the population dynamics are not defined. Call it, or use one region.")
+  }
+
+  il <- list(data = data, par = parameters, map = mapping, verbose = FALSE, store_config = FALSE)
+
+  # one region, so movement is the identity and every movement parameter is mapped off
+  if(need_move) il <- Setup_Mod_Movement(il, use_fixed_movement = 1)
+  if(need_tag) il <- Setup_Mod_Tagging(il) # every fleet off, so the tagging likelihood drops out
+
+  return(list(data = il$data, par = il$par, map = il$map))
+
+} # end function

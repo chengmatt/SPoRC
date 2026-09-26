@@ -22,7 +22,9 @@ get_init_devs_penalty(
   init_bias_ramp = NULL,
   map_ln_InitDevs = NULL,
   init_sigmaR_dsem = NULL,
-  init_sigmaR_dsem_use = NULL
+  init_sigmaR_dsem_use = NULL,
+  RecDevs_model = 1,
+  RecDevs_rho = NULL
 )
 }
 \arguments{
@@ -77,6 +79,10 @@ one penalty between them. \code{NULL} penalizes every cell in full.}
 \item{init_sigmaR_dsem, init_sigmaR_dsem_use}{Array \code{[pop, region]} of the
 settled marginal sd of the recruitment series under the arrows, and \code{1} where a
 cell reads it in place of \code{ln_sigmaR}. \code{NULL} without a dsem.}
+
+\item{RecDevs_model, RecDevs_rho}{Recruitment process error form and its
+unconstrained AR1 correlation. Under \code{3} the initial ages read the
+stationary sd \eqn{\sigma_R / \sqrt{1 - \rho^2}}.}
 }
 \value{
 List with \code{Init_Rec_nLL} (array \code{[pop, region, age, sex]})

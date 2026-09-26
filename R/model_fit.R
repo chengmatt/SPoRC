@@ -87,8 +87,11 @@ fit_model <- function(
   # check par n map len
   check_par_map_lengths(parameters, mapping)
 
-  # check if dse is declared
-  if(length(data$dsem_declared) > 0 && is.null(data$dsem_model)) stop(paste0("The ", paste(data$dsem_declared, collapse = ", "), " module declared 'dsem' but no dsem was set up, so those deviations have no density. Call Setup_Mod_DSEM with the arrows, or take the declaration back."))
+  # movement, tagging and the dsem are optional, so figure out what each needs when not set up
+  filled <- fill_optional_modules(data, parameters, mapping)
+  data <- filled$data
+  parameters <- filled$par
+  mapping <- filled$map
 
   # refresh data mapping stuff if mapping declared after setup
   data <- sync_dev_map_data(data, mapping)

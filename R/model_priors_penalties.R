@@ -951,6 +951,9 @@ dev_own_mean <- function(devs, wt) {
 #' @param init_sigmaR_dsem,init_sigmaR_dsem_use Array \code{[pop, region]} of the
 #'   settled marginal sd of the recruitment series under the arrows, and \code{1} where a
 #'   cell reads it in place of \code{ln_sigmaR}. \code{NULL} without a dsem.
+#' @param RecDevs_model,RecDevs_rho Recruitment process error form and its
+#'   unconstrained AR1 correlation. Under \code{3} the initial ages read the
+#'   stationary sd \eqn{\sigma_R / \sqrt{1 - \rho^2}}.
 #' @param init_bias_ramp Numeric vector of length \code{n_ages - 1}, the bias
 #'   ramp read at the year each initial age was born (deviation index
 #'   \code{1 - age}). \code{NULL} reads the first model year's ramp value at
@@ -984,7 +987,9 @@ get_init_devs_penalty <- function(
   init_bias_ramp = NULL,
   map_ln_InitDevs = NULL,
   init_sigmaR_dsem = NULL,
-  init_sigmaR_dsem_use = NULL
+  init_sigmaR_dsem_use = NULL,
+  RecDevs_model = 1,
+  RecDevs_rho = NULL
 ) {
 
   "c" <- RTMB::ADoverload("c")
@@ -1030,6 +1035,12 @@ get_init_devs_penalty <- function(
       if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next # no recruits here, no penalty
 
       sigma_init <- exp(ln_sigmaR[1,p,r]) # initial ages read the early recruitment sigma
+
+      # an ar1 is the stationary sd, which year one of the recruitment penalty also uses
+      if(RecDevs_model == 3 && !is.null(RecDevs_rho)) {
+        rho_init <- 2 / (1 + exp(-2 * RecDevs_rho[p,r])) - 1 # constrain to (-1, 1), as the recruitment penalty does
+        sigma_init <- sigma_init / sqrt(1 - rho_init^2)
+      }
 
       # the marginal variance of a series under the arrows is wider than its sd line, and these ages were born before it starts
       if(!is.null(init_sigmaR_dsem) && init_sigmaR_dsem_use[p,r] == 1) sigma_init <- init_sigmaR_dsem[p,r]
@@ -1274,7 +1285,9 @@ get_recruitment_penalty <- function(
     init_bias_ramp = init_bias_ramp, # ramp read at the year each age was born
     map_ln_InitDevs = map_ln_InitDevs, # map levels, for the shared-penalty split
     init_sigmaR_dsem = init_sigmaR_dsem, # settled marginal sd of the recruitment series under the arrows
-    init_sigmaR_dsem_use = init_sigmaR_dsem_use # cells that read it in place of ln_sigmaR
+    init_sigmaR_dsem_use = init_sigmaR_dsem_use, # cells that read it in place of ln_sigmaR
+    RecDevs_model = RecDevs_model, # an ar1 hands the initial ages its stationary sd
+    RecDevs_rho = RecDevs_rho
   )
 
   Rec_nLL <- get_rec_devs_penalty(

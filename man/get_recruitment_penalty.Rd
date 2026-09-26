@@ -76,12 +76,9 @@ used for the bias-corrected mean.}
 unpenalized, and cells sharing a level split one penalty. \code{NULL}
 penalizes every cell in full.}
 
-\item{RecDevs_model}{Integer process error structure: \code{1} independent,
-\code{2} random walk, \code{3} AR1.}
-
-\item{RecDevs_rho}{Array \code{[pop, region]} of unconstrained AR1
-correlations, transformed to \eqn{(-1, 1)} here. Read under
-\code{RecDevs_model = 3}.}
+\item{RecDevs_model, RecDevs_rho}{Recruitment process error form and its
+unconstrained AR1 correlation. Under \code{3} the initial ages read the
+stationary sd \eqn{\sigma_R / \sqrt{1 - \rho^2}}.}
 
 \item{RecDevs_rw_init_sigma}{Standard deviation given to year one of a random
 walk. Default \code{5}, which leaves the level of the series effectively

@@ -62,8 +62,10 @@ generate_initial_age_structure <- function(y,
           init_sex_spec <- if(exists("InitDevs_sex_spec")) InitDevs_sex_spec else "est_shared_s"
           if(is.null(tmp_ln_init_devs)) {
             n_dev_draws <- if(init_sex_spec == "est_all") n_sexes else 1
-            init_center <- if(isTRUE(rec_bias_correct == 0)) 0 else -exp(ln_sigmaR[1,p,sigma_idx])^2 / 2 # whether to do bias correction
-            init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), init_center, exp(ln_sigmaR[1,p,sigma_idx]))
+            init_sigma <- exp(ln_sigmaR[1,p,sigma_idx])
+            if(RecDevs_model == 3) init_sigma <- init_sigma / sqrt(1 - RecDevs_rho[p,r]^2) # an ar1 settles at its stationary sd, as year one does
+            init_center <- if(isTRUE(rec_bias_correct == 0)) 0 else -init_sigma^2 / 2 # whether to do bias correction
+            init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), init_center, init_sigma)
             tmp_ln_init_devs <- array(init_draws, dim = c(n_ages - 1, n_sexes)) # recycled across sexes when one curve was drawn
           }
         }

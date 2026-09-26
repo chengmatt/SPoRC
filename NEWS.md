@@ -65,6 +65,8 @@
 
 ### Model fitting and diagnostics
 
+* Added dynamic structural equation models via `Setup_Mod_DSEM`, linking recruitment, growth, movement, catchability and the numbers at age to each other and to covariates through arrow notation.
+* `Setup_Mod_Movement` and `Setup_Mod_Tagging` no longer need to be specified; `fit_model` fills their off settings, movement for one region only.
 * Improved Newton refinement in `fit_model` by obtaining the Hessian directly from the AD tape rather than finite differencing.
 * Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.
 * Added OSA residuals for time-series observations, compositions, and tagging data.

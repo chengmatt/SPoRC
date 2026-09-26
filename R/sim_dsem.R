@@ -205,8 +205,7 @@ Setup_Sim_DSEM <- function(sim_list,
   sim_list$ln_dsem_obs_sd <- pars$ln_dsem_obs_sd
   sim_list$logit_dsem_tweedie_p <- pars$logit_dsem_tweedie_p # absent from a fit before the tweedie family existed
 
-  # RecDevs_model = 'dsem' reads sigmaR off the arrows' recruitment sd, so the operating model's
-  # initial age deviations read the same value
+  # RecDevs_model = 'dsem' reads sigmaR off the arrows' recruitment sd, so the operating model's initial age deviations uses the same value
   if("rec" %in% data$dsem_declared && !is.null(sim_list$ln_sigmaR)) {
 
     arrow_value <- as.numeric(get_dsem_arrow_values(pars$dsem_beta, pars$ln_dsem_sd, data$dsem_model))
@@ -264,6 +263,24 @@ Setup_Sim_DSEM <- function(sim_list,
     fit_ramp <- get_rec_bias_ramp(data$do_rec_bias_ramp, data$bias_year, n_fit_yrs, data$max_bias_ramp_fct)
   }
   sim_list$dsem_rec_corr_on <- any(fit_ramp != 0) && !isTRUE(data$RecDevs_model != 1) && !isTRUE(data$RecDevs_pen_center == 1)
+
+  # the initial age deviations read the recruitment series' settled marginal variance, the value the fit's penalty takes
+  if("rec" %in% data$dsem_declared && !is.null(sim_list$ln_sigmaR) && isTRUE(sim_list$dsem_rec_corr_on)) {
+
+    init_mu_grid <- matrix(0, n_sim_yrs, length(data$dsem_model$variables)) # a moderating series sits at its mean
+    for(k in seq_len(n_cov)) init_mu_grid[,data$dsem_cov_var_idx[k]] <- pars$dsem_mu[data$dsem_cov_var_idx[k]]
+
+    init_margvar <- get_dsem_margvar(pars$dsem_beta, pars$ln_dsem_sd, init_mu_grid, data$dsem_model,
+                                     get_dsem_cells(data$dsem_model, n_sim_yrs), as.vector(x_known))
+
+    for(s in which(data$dsem_link_par == "ln_RecDevs")) {
+      if(!isTRUE(data$dsem_link_sd_arrow[s] > 0)) next # a moderated sd leaves the list's own sigmaR in place
+      pop <- data$dsem_link_idx[[s]][1]
+      region <- data$dsem_link_idx[[s]][2]
+      sim_list$ln_sigmaR[,pop,region] <- log(sqrt(as.numeric(init_margvar[max(data$dsem_link_row[[s]]),data$dsem_link_col[s]])))
+    } # end s loop
+
+  } # end if the correction is on
 
   # fitted values of every series, the cells a conditioned draw is given
   x_fit <- matrix(0, n_fit_yrs, length(data$dsem_model$variables))

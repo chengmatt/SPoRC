@@ -20,7 +20,9 @@ get_init_devs_penalty(
   Use_init_sex_pen = 0,
   ln_sigma_init_sex = 0,
   init_bias_ramp = NULL,
-  map_ln_InitDevs = NULL
+  map_ln_InitDevs = NULL,
+  init_sigmaR_dsem = NULL,
+  init_sigmaR_dsem_use = NULL
 )
 }
 \arguments{
@@ -71,6 +73,10 @@ every age.}
 \item{map_ln_InitDevs}{Numeric array matching \code{ln_InitDevs} of map levels
 (\code{NA} where fixed). Cells sharing a level hold one parameter and split
 one penalty between them. \code{NULL} penalizes every cell in full.}
+
+\item{init_sigmaR_dsem, init_sigmaR_dsem_use}{Array \code{[pop, region]} of the
+settled marginal sd of the recruitment series under the arrows, and \code{1} where a
+cell reads it in place of \code{ln_sigmaR}. \code{NULL} without a dsem.}
 }
 \value{
 List with \code{Init_Rec_nLL} (array \code{[pop, region, age, sex]})

@@ -1100,9 +1100,11 @@ dsem_cov_sd_start <- function(y,
 #'   \code{"conditional"} (default) reads each sd line as the innovation sd;
 #'   \code{"diagonal"} and \code{"marginal"} read it as the series' marginal sd,
 #'   solving the innovation sd so the series comes out at that spread, and differ
-#'   only when covariance lines are present. Under either, a linked recruitment
-#'   cell's correction is half its sd line squared, as under the iid penalty,
-#'   whatever paths feed it. A random walk cannot be written under them, since its
+#'   only when covariance lines are present. A linked recruitment cell's lognormal
+#'   correction is half its marginal variance under the arrows, which
+#'   \code{dsem_margvar_grid} reports and the marginal forms hold at the sd line
+#'   squared; the initial age deviations read its settled value. A random walk
+#'   cannot be written under them, since its
 #'   paths alone carry a cell past any fixed spread after year one, and setup
 #'   checks the starting values and refuses.
 #'
@@ -1589,6 +1591,19 @@ Setup_Mod_DSEM <- function(input_list,
                     "series, and the innovation sd is solved for year by year", approx_note, ".")
 
   } # end if an sd line is a marginal sd
+
+  # under the conditional form the correction reads each cell's marginal variance, not the sd line
+  if(dsem_variance == "conditional" && any(link$par == "ln_RecDevs")) {
+
+    rec_vars <- variables[link_col[link$par == "ln_RecDevs"]]
+    rec_paths <- arrows$type == "path" & arrows$to %in% rec_vars
+
+    if(any(rec_paths)) {
+      collect_message("dsem_variance = 'conditional' with a path into recruitment: the lognormal correction is half each ",
+                      "cell's marginal variance under the arrows (dsem_margvar_grid), not half the sd line squared.")
+    }
+
+  } # end if a path points into recruitment
 
   # Mapping Options ---------------------------------------------------------
 

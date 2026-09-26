@@ -24,7 +24,8 @@ cell. Once a series has an sd of zero
 \eqn{V} is singular and that product does not exist. Substituting the solved
 cells into the remaining rows leaves \eqn{S(x_o - \mu_o) = \varepsilon_o} with
 \deqn{S = (I - B)_{oo} - (I - B)_{ou}(I - B)_{uu}^{-1}(I - B)_{uo},}
-so those cells are normal with precision \eqn{S^{\top}V_{oo}^{-1}S}, Building it rather than reading the density off the
+so those cells are normal with precision \eqn{S^{\top}V_{oo}^{-1}S}.
+Building it rather than reading the density off the
 innovations is what accounts for the determinant of \eqn{S}, which is not one
 once the arrows loop within a year.
 }

@@ -72,7 +72,8 @@ log-scale sd; \code{"tweedie"} takes non-negative values including zeros with
 the cell the log mean, \code{exp(ln_dsem_obs_sd)} the dispersion and
 \code{logit_dsem_tweedie_p} the power as \eqn{1 + \mathrm{plogis}(\cdot)}, in
 (1, 2) and starting at 1.5; and \code{"gaussian_fixed_sd"} is normal about the
-cell with a known sd per observed year from \code{dsem_fixed_sd}. The names \code{"gaussian"} and \code{"Gamma"} are accepted as well. Under a family whose
+cell with a known sd per observed year from \code{dsem_fixed_sd}. The names
+\code{"gaussian"} and \code{"Gamma"} are accepted as well. Under a family whose
 link is not the identity the arrows, the mean under \code{dsem_mu_spec} and the
 grid are all on the link scale, and every latent cell starts at the series
 mean. The sd and power parameters are mapped off for the families with none.}
@@ -80,7 +81,8 @@ mean. The sd and power parameters are mapped off for the families with none.}
 \item{dsem_link}{Optional named character vector, one entry per covariate, the
 link from the cell to the observation's mean: \code{"identity"}, \code{"log"},
 \code{"logit"} or \code{"cloglog"}. Defaults to each family's own: identity for
-fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A link applies whatever the family, so a Poisson under the identity
+fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A
+link applies whatever the family, so a Poisson under the identity
 can be handed a negative mean.}
 
 \item{dsem_fixed_sd}{Data frame with a \code{year} column and one column per
@@ -106,9 +108,11 @@ sd is the exponential of its series.}
 \code{"conditional"} (default) reads each sd line as the innovation sd;
 \code{"diagonal"} and \code{"marginal"} read it as the series' marginal sd,
 solving the innovation sd so the series comes out at that spread, and differ
-only when covariance lines are present. Under either, a linked recruitment
-cell's correction is half its sd line squared, as under the iid penalty,
-whatever paths feed it. A random walk cannot be written under them, since its
+only when covariance lines are present. A linked recruitment cell's lognormal
+correction is half its marginal variance under the arrows, which
+\code{dsem_margvar_grid} reports and the marginal forms hold at the sd line
+squared; the initial age deviations read its settled value. A random walk
+cannot be written under them, since its
 paths alone carry a cell past any fixed spread after year one, and setup
 checks the starting values and refuses.}
 }

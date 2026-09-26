@@ -948,6 +948,9 @@ dev_own_mean <- function(devs, wt) {
 #'   tied to the first sex's through a Gaussian on their difference at every
 #'   penalized age. Only meaningful when the sexes have their own curves.
 #' @param ln_sigma_init_sex Log standard deviation of that tie.
+#' @param init_sigmaR_dsem,init_sigmaR_dsem_use Array \code{[pop, region]} of the
+#'   settled marginal sd of the recruitment series under the arrows, and \code{1} where a
+#'   cell reads it in place of \code{ln_sigmaR}. \code{NULL} without a dsem.
 #' @param init_bias_ramp Numeric vector of length \code{n_ages - 1}, the bias
 #'   ramp read at the year each initial age was born (deviation index
 #'   \code{1 - age}). \code{NULL} reads the first model year's ramp value at
@@ -979,7 +982,9 @@ get_init_devs_penalty <- function(
   Use_init_sex_pen = 0,
   ln_sigma_init_sex = 0,
   init_bias_ramp = NULL,
-  map_ln_InitDevs = NULL
+  map_ln_InitDevs = NULL,
+  init_sigmaR_dsem = NULL,
+  init_sigmaR_dsem_use = NULL
 ) {
 
   "c" <- RTMB::ADoverload("c")
@@ -1025,6 +1030,9 @@ get_init_devs_penalty <- function(
       if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next # no recruits here, no penalty
 
       sigma_init <- exp(ln_sigmaR[1,p,r]) # initial ages read the early recruitment sigma
+
+      # the marginal variance of a series under the arrows is wider than its sd line, and these ages were born before it starts
+      if(!is.null(init_sigmaR_dsem) && init_sigmaR_dsem_use[p,r] == 1) sigma_init <- init_sigmaR_dsem[p,r]
 
       # the center is the deviations' own mean, pooled over ages and sexes, or the bias-corrected mean
       if(InitDevs_pen_center == 1) init_mu <- dev_own_mean(ln_InitDevs[p,r,init_idx,], init_devs_pen_use[p,r,init_idx,])
@@ -1243,7 +1251,9 @@ get_recruitment_penalty <- function(
   Use_init_sex_pen = 0,
   ln_sigma_init_sex = 0,
   init_bias_ramp = NULL,
-  map_ln_InitDevs = NULL
+  map_ln_InitDevs = NULL,
+  init_sigmaR_dsem = NULL,
+  init_sigmaR_dsem_use = NULL
 ) {
 
   init_pen <- get_init_devs_penalty(
@@ -1262,7 +1272,9 @@ get_recruitment_penalty <- function(
     Use_init_sex_pen = Use_init_sex_pen, # whether later sexes are tied to the first
     ln_sigma_init_sex = ln_sigma_init_sex, # log sd of that tie
     init_bias_ramp = init_bias_ramp, # ramp read at the year each age was born
-    map_ln_InitDevs = map_ln_InitDevs # map levels, for the shared-penalty split
+    map_ln_InitDevs = map_ln_InitDevs, # map levels, for the shared-penalty split
+    init_sigmaR_dsem = init_sigmaR_dsem, # settled marginal sd of the recruitment series under the arrows
+    init_sigmaR_dsem_use = init_sigmaR_dsem_use # cells that read it in place of ln_sigmaR
   )
 
   Rec_nLL <- get_rec_devs_penalty(

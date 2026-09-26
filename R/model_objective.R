@@ -997,6 +997,10 @@ SPoRC_rtmb = function(pars, data) {
   # Observation Models ------------------------------------------------------
 
   ## Dynamic Structural Equation Model ---------------------------------------
+  # initial sigR if doing dsem stuff
+  init_sigmaR_dsem = NULL
+  init_sigmaR_dsem_use = NULL
+
   if(!is.null(dsem_model)) {
 
     # extract dsem stuff out
@@ -1010,12 +1014,30 @@ SPoRC_rtmb = function(pars, data) {
       if(dsem_link_par[s] == "ln_NAA") dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = log(NAA_pred[dsem_link_cell[[s]]]) # if NAA, the mean is the prediction
     } # end s loop
 
-    # doing bias correction (marginal sigma) for recruitment
+    # doing bias correction (marginal sigma) for recruitment and inital age devs
     dsem_margvar_grid = matrix(0, n_dsem_yrs, ncol(dsem_x_grid))
     rec_links = which(dsem_link_par == "ln_RecDevs")
+
     if(length(rec_links) > 0 && RecDevs_model == 1 && RecDevs_pen_center != 1 && any(bias_ramp != 0)) { # none when the penalty takes none
       dsem_margvar_grid = get_dsem_margvar(dsem_beta, ln_dsem_sd, dsem_x_grid, dsem_model, dsem_cells, as.vector(dsem_x_known)) # figure out marginal variance for recruitment
       for(s in rec_links) dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]] # add lognormal bias correction for recruitment here
+
+      # the initial ages were born before the grid starts, so they read a declared series' settled marginal variance
+      if("rec" %in% dsem_declared && !is.null(dsem_link_sd_arrow)) {
+
+        init_sigmaR_dsem = array(0, dim = c(n_pop, n_regions))
+        init_sigmaR_dsem_use = array(0, dim = c(n_pop, n_regions)) # data, so the penalty branches on the link and not on a value
+
+        for(s in rec_links) {
+          if(!isTRUE(dsem_link_sd_arrow[s] > 0)) next # a moderated series sd leaves ln_sigmaR's own value and doesn't mess w/ it
+          p_rec = dsem_link_idx[[s]][1]
+          r_rec = dsem_link_idx[[s]][2]
+          init_sigmaR_dsem[p_rec,r_rec] = sqrt(dsem_margvar_grid[max(dsem_link_row[[s]]),dsem_link_col[s]]) # the last year the link covers, where the marginal variance has settled
+          init_sigmaR_dsem_use[p_rec,r_rec] = 1
+        } # end s loop
+
+      } # end if recruitment is declared
+
     }
 
     # a solved series (an sd of zero) is deterministic (i.e., catchability series below or covariates w/ zero error)
@@ -2941,7 +2963,9 @@ SPoRC_rtmb = function(pars, data) {
     init_bias_ramp = init_bias_ramp,
     map_ln_InitDevs = map_ln_InitDevs,
     Use_init_sex_pen = Use_init_sex_pen,
-    ln_sigma_init_sex = ln_sigma_init_sex
+    ln_sigma_init_sex = ln_sigma_init_sex,
+    init_sigmaR_dsem = init_sigmaR_dsem,
+    init_sigmaR_dsem_use = init_sigmaR_dsem_use
   )
   Init_Rec_nLL = tmp_rec_pen$Init_Rec_nLL
   Init_Sex_nLL = tmp_rec_pen$Init_Sex_nLL

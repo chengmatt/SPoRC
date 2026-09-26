@@ -20,10 +20,12 @@ per line of a string. \code{#} starts a comment.}
 
 \item{covs}{Character vector of series groups whose innovations are allowed
 to covary, each group written as one string, for example \code{"a, b"}.
-A covariance term is added for every pair in a group. Series with no sd line of their own get one added.}
+A covariance term is added for every pair in a group. Series with no sd line
+of their own get one added.}
 
 \item{mod_var_logscale}{Whether a moderated sd or covariance is the
-exponential of its series. \code{FALSE} (default) reads it on the natural scale.}
+exponential of its series. \code{FALSE} (default) reads it on the natural
+scale.}
 
 \item{variance}{What an sd line means. \code{"conditional"} (default) makes
 it the innovation sd, so a series' spread is that plus whatever its paths
@@ -55,6 +57,7 @@ A lag may be negative, which reads \code{from} in a later year rather than an
 earlier one. On a time axis that says the future affects the present, so it is
 for axes that are not time, such as ages or length bins.
 \code{"a <-> a, 0, name, start"} is the innovation sd of series \code{a}, and
-\code{"a <-> b, 0, name, start"} a covariance term between two innovations. A name of \code{NA} fixes the arrow at \code{start},
+\code{"a <-> b, 0, name, start"} a covariance term between two innovations.
+A name of \code{NA} fixes the arrow at \code{start},
 and a name used on several arrows is one shared parameter.
 }

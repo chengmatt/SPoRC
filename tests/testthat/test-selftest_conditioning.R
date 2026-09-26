@@ -46,7 +46,8 @@ test_that("a state space fit is reproduced by the self test's operating model", 
   il <- suppressWarnings(suppressMessages(naaom_build_em(naaom_om_data(om), NAA_re = "2dar1")))
   fit <- suppressWarnings(suppressMessages(fit_model(il$data, il$par, il$map, random = "ln_NAA",
                                                      do_optim = TRUE, newton_loops = 1, silent = TRUE)))
-  pars <- fit$env$parList()
+  # parList() reads last.par, the last point evaluated; the report below is at last.par.best
+  pars <- fit$env$parList(par = fit$env$last.par.best)
   n_yrs <- length(fit$data$years)
 
   eta <- as.numeric(pars$ln_NAA - log(fit$rep$NAA_pred[,,seq_len(dim(pars$ln_NAA)[3]),,,,drop = FALSE]))
@@ -75,7 +76,8 @@ test_that("a state space fit is reproduced by the self test's operating model", 
   ssb_om <- as.numeric(om_run$SSB[1, 1, seq_len(n_yrs), 1])
 
   # without the state the operating model's biomass ran 33% away from the fit on average
-  expect_equal(ssb_om, ssb_fit, tolerance = 1e-8)
+  # 1e-6 rather than machine precision, since the states come out of the inner Laplace solve
+  expect_equal(ssb_om, ssb_fit, tolerance = 1e-6)
 })
 
 test_that("a state space self test runs end to end and recovers", {
@@ -115,7 +117,8 @@ test_that("a closed loop reproduces a state space fit over its conditioning year
 
   sl <- suppressWarnings(suppressMessages(
     condition_closed_loop_simulations(closed_loop_yrs = 5, n_sims = 2, data = fit$data,
-                                      parameters = fit$env$parList(), mapping = fit$mapping,
+                                      parameters = fit$env$parList(par = fit$env$last.par.best),
+                                      mapping = fit$mapping,
                                       sd_rep = list(par.fixed = fit$optim$par,
                                                     par.random = fit$env$last.par.best[fit$env$random]),
                                       rep = fit$rep, random = "ln_NAA")))
@@ -127,7 +130,7 @@ test_that("a closed loop reproduces a state space fit over its conditioning year
   res <- suppressWarnings(suppressMessages(Simulate_Pop_Static(sim_list = sl, output_path = NULL)))
   ssb_fit <- as.numeric(fit$rep$SSB[1, 1, seq_len(n_yrs)])
 
-  for(i in 1:2) expect_equal(as.numeric(res$SSB[1, 1, seq_len(n_yrs), i]), ssb_fit, tolerance = 1e-8)
+  for(i in 1:2) expect_equal(as.numeric(res$SSB[1, 1, seq_len(n_yrs), i]), ssb_fit, tolerance = 1e-6)
 
   # and the years past the fit are the operating model's own, not the fit's
   proj <- (n_yrs + 1):dim(res$SSB)[3]

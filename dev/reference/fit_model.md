@@ -18,7 +18,7 @@ fit_model(
   newton_loops = 3,
   silent = FALSE,
   do_optim = TRUE,
-  nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-15),
+  nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-12),
   lower = NULL,
   upper = NULL,
   model = SPoRC_rtmb,
@@ -77,7 +77,7 @@ fit_model(
 
   Named list of control parameters passed to
   [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html). Default
-  `list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)`.
+  `list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-12)`.
 
 - lower:
 

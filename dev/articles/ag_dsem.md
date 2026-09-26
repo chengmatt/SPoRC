@@ -1,9 +1,9 @@
 # Dynamic Structural Equation Models
 
-A dynamic structurel equation model (dsem) specifies how a set of
+A dynamic structural equation model (dsem) specifies how a set of
 time-series affect each other using an arrow lag notation, and computes
 a joint density over all time-series. Within the context of a stock
-assessment, the time-series we primarily are focused on are deviation
+assessment, the time-series we are primarily focused on are deviation
 process errors (e.g., recruitment), and how these process errors might
 be explained by environmental covariates. In `SPoRC`, various population
 processes can be linked to a dsem model, thereby replacing the process
@@ -11,7 +11,7 @@ error penalty a given process originally had (e.g., iid recruitment
 deviations) with a dsem density (which can express iid recruitment
 deviations and more). In the following, we demonstrate how a dsem can be
 specified (Thorson et al. 2024) using `SPoRC`, and the various processes
-to which a dsem can be linked to. Specifically, we first demonstrate the
+to which a dsem can be linked. Specifically, we first demonstrate the
 dsem model and the mathematical underpinnings of it, fit a dsem within
 the context of a stock assessment model, conduct a self test and cross
 test (more on this later), illustrate dsem forecasting capabilities
@@ -30,21 +30,22 @@ library(RTMB)
 
 In general, a dsem can be specified using arrow and lag notation (and
 see Thorson et al. 2024 for further details). Here, we specify one arrow
-per line, which follows the nomencalture of
+per line, which follows the nomenclature of
 `from -> to, lag, name, start`. The time-series `from`, `lag` years
 earlier, affects the time-series `to`. The coefficient is the parameter
-`name` os is fixed at `start` when the name is set to `NA`. This
-formulation therefore specifie a path coefficient in a dsem model (i.e.,
-analgous to a regression coefficient in a linear model). An sd line can
-then be specified using a double-head arrow notation
+`name`, or is fixed at `start` when the name is set to `NA`. This
+formulation therefore specifies a path coefficient in a dsem model
+(i.e., analogous to a regression coefficient in a linear model). An sd
+line can then be specified using a double-headed arrow notation
 `a <-> a, 0, name, start`, while a covariance between two series’
 innovations is `a <-> b, 0, name, start`. A name used on two arrows is
 one shared parameter (i.e., the same name in two lines). An example is
 provided below where we specify that an environmental covariate in year
-`x` has an imapct on recruitment in year `x`, while the environmental
+`x` has an impact on recruitment in year `x`, while the environmental
 covariate itself follows an AR(1) like process
-`x_t = \rho x_{t-1} + \epsilon_t`. Process error for the environmental
-covariate and recruitment deviations is then specified as well.
+$`x_t = \rho x_{t-1} + \varepsilon_t`$. Process error for the
+environmental covariate and recruitment deviations is then specified as
+well.
 
 ``` r
 
@@ -84,12 +85,22 @@ Note that each cell has an innovation (i.e., the part that the arrows
 themselves do not explain). For example, the recruitment innovation in
 year 2 is cell 5 minus `b_env` times cell 2, because `env -> rec, 0`:
 
-\$\$ \epsilon^{rec}\_2 = rec_2 - b\_{env}env_2 \\ rec_2 = b\_{env}env +
-\epsilon^{rec}\_2 \$\$ The covariate innovation in year 2 is cell 2
-minus `rho` times cell 1, given that `env -> env, 1`:
+``` math
+\begin{aligned}
+\varepsilon^{rec}_2 &= rec_2 - b_{env}\,env_2 \\
+rec_2 &= b_{env}\,env_2 + \varepsilon^{rec}_2
+\end{aligned}
+```
 
-\$\$ \epsilon^{env}\_2 = env_2 - \rho env_1\\ env_2 = \rho env_1 +
-\epsilon^{env}\_2 \$\$
+The covariate innovation in year 2 is cell 2 minus `rho` times cell 1,
+given that `env -> env, 1`:
+
+``` math
+\begin{aligned}
+\varepsilon^{env}_2 &= env_2 - \rho\,env_1 \\
+env_2 &= \rho\,env_1 + \varepsilon^{env}_2
+\end{aligned}
+```
 
 Note that year 1 has nothing before it so the covariate innovation is
 just cell 1. We can then collect all those subtractions into a matrix
@@ -132,7 +143,7 @@ b_{env} & 0 & 0 & 0 & 0 & 0 \\
 \end{matrix}
 ```
 
-Rows 2–3 hold `env -> env, 1, rho` (one step off the diagonal within the
+Rows 2-3 hold `env -> env, 1, rho` (one step off the diagonal within the
 `env` block), rows 4–6 hold `env -> rec, 0, b_env` (the diagonal of the
 lower-left block, since the lag is 0), and row 1 is empty because year 1
 has no previous values. Given that, it follows that:
@@ -152,8 +163,9 @@ I - B =
 \end{matrix}
 ```
 
-Writing the centered values as $`\tilde{x} = x - \mu`$, multiplying
-through recovers every innovation at once:
+Writing the centered values as $`\tilde{x} = x - \mu`$, and taking
+$`\mu = 0`$ as it is for a deviation series, multiplying through
+recovers every innovation at once:
 
 ``` math
 \varepsilon = (I - B)\,x =
@@ -179,7 +191,7 @@ rec_3 - b_{env}\,env_3
 \end{pmatrix}
 =
 \begin{pmatrix}
-\epsilon^{env}_1 \\ \epsilon^{env}_2 \\ \epsilon^{env}_3 \\ \epsilon^{rec}_1 \\ \epsilon^{rec}_2 \\ \epsilon^{rec}_3
+\varepsilon^{env}_1 \\ \varepsilon^{env}_2 \\ \varepsilon^{env}_3 \\ \varepsilon^{rec}_1 \\ \varepsilon^{rec}_2 \\ \varepsilon^{rec}_3
 \end{pmatrix}
 \begin{matrix}
 \leftarrow env_1 \\ \leftarrow env_2 \\ \leftarrow env_3 \\ \leftarrow rec_1 \\ \leftarrow rec_2 \\ \leftarrow rec_3
@@ -192,22 +204,22 @@ standard deviations:
 ``` math
 \Gamma = \mathrm{diag}(sd_{env},\, sd_{env},\, sd_{env},\, sd_{rec},\, sd_{rec},\, sd_{rec}), \qquad \varepsilon \sim \mathrm{MVN}(0,\, \Gamma\Gamma^\top)
 ```
+
 The two `<->` lines give the variance of each innovation:
-$`\mathrm{Var}(\epsilon^{env}_t) = sd_{env}^2`$ and
-$`\mathrm{Var}(\epsilon^{rec}_t) = sd_{rec}^2`$, with all innovations
+$`\mathrm{Var}(\varepsilon^{env}_t) = sd_{env}^2`$ and
+$`\mathrm{Var}(\varepsilon^{rec}_t) = sd_{rec}^2`$, with all innovations
 assumed to be independent. From these, we can work out the variance of
 the time-series themselves, one cell at a time, using the same equations
 as above.
 
-In the case of the covariate, during year 1 is only its own innovation,
-so:
+In the case of the covariate, year 1 is only its own innovation, so:
 
 ``` math
 \mathrm{Var}(env_1) = sd_{env}^2
 ```
 
-Year 2 is $`env_2 = \rho\, env_1 + \epsilon^{env}_2`$. The two terms are
-independent, so their variances add:
+Year 2 is $`env_2 = \rho\, env_1 + \varepsilon^{env}_2`$. The two terms
+are independent, so their variances add:
 
 ``` math
 \mathrm{Var}(env_2) = \rho^2\,\mathrm{Var}(env_1) + sd_{env}^2 = (1 + \rho^2)\, sd_{env}^2
@@ -224,7 +236,7 @@ adds a new shock. For $`|\rho| < 1`$, this levels off at
 $`sd_{env}^2 / (1 - \rho^2)`$ (i.e., it is stationary).
 
 For recruitment defined as
-$`rec_t = b_{env}\, env_t + \epsilon^{rec}_t`$, the variance can be
+$`rec_t = b_{env}\, env_t + \varepsilon^{rec}_t`$, the variance can be
 written as:
 
 ``` math
@@ -273,7 +285,7 @@ b_{env}\rho^2 & b_{env}\rho & b_{env} & 0 & 0 & 1
 ```
 
 For example, row 3 says
-$`env_3 = \rho^2\epsilon^{env}_1 + \rho\,\epsilon^{env}_2 + \epsilon^{env}_3`$.
+$`env_3 = \rho^2\varepsilon^{env}_1 + \rho\,\varepsilon^{env}_2 + \varepsilon^{env}_3`$.
 The innovations themselves are independent, with variance:
 
 ``` math
@@ -308,7 +320,7 @@ b_{env}\rho^2 v_1 & b_{env}\rho v_2 & b_{env} v_3 & b_{env}^2\rho^2 v_1 & b_{env
 \end{matrix}
 ```
 
-The structure of the covariacnce can then be seen as:
+The structure of the covariance can then be seen as:
 
 - The top-left block is the covariate’s AR(1) variance.
 - The off-diagonal blocks are that same block scaled by $`b_{env}`$.
@@ -367,20 +379,20 @@ parts$sd_cell
 
 ### Conditional and Marginal Variance in dsem
 
-A dsem time-series has two types of way to represent spread, and the sd
-line (e.g., `rec <-> rec, 0, sd_rec, 0.5`) can describe either one:
+A dsem time-series has two ways to represent spread, and the sd line
+(e.g., `rec <-> rec, 0, sd_rec, 0.5`) can describe either one:
 
 - Conditional (the default): the sd line is the size of each year’s new
   shock, $`\varepsilon_t`$. It is “conditional” because it is how much
   the series would still vary if we already knew last year’s value and
-  any covariates pointing in. It is analogous the residual sd in a
+  any covariates pointing in. It is analogous to the residual sd in a
   regression. The series itself ends up more variable than this, because
-  the arrows carry any variability from the past.
+  the arrows pass variability forward from the past.
 - Marginal: the sd line is the size of the series itself, $`x_t`$, i.e.,
   how much the series itself varies overall, including what goes in
-  through the arrows. It is analogous raw sd of $`y`$ in a regression.
-  The model then works out how big each year’s shock must be to hit that
-  target.
+  through the arrows. It is analogous to the raw sd of $`y`$ in a
+  regression. The model then works out how big each year’s shock must be
+  to hit that target.
 
 The two are equal only when no arrows point into the series. The
 `dsem_variance` setting in the setup functions (introduced later)
@@ -404,7 +416,7 @@ The two parameterizations fix opposite sides of this equation:
 - `"conditional"` (the default) sets
   $`\mathrm{var}(\varepsilon_t) = s^2`$ every year. The series’ spread
   then grows and settles at $`s^2 / (1 - \rho^2)`$ (i.e., the stationary
-  variance of $`x_t`$.
+  variance of $`x_t`$).
 - `"diagonal"` / `"marginal"` set $`\mathrm{var}(x_t) = s^2`$ every year
   and then solve backwards for the innovation (i.e., figures out what
   the innovations should be to satisfy the condition).
@@ -528,7 +540,7 @@ take a logit link instead.
 
 | `dsem_family` | link | mean of $`y_t`$ | extra spread |
 |----|----|----|----|
-| `fixed` | identity | $`x_t`$ itself | none, and no second line |
+| `fixed` | identity | $`x_t`$ itself | none, and no observation density |
 | `normal`, `gaussian` | identity | $`x_t`$ | estimated sd |
 | `gaussian_fixed_sd` | identity | $`x_t`$ | one supplied per observation |
 | `lognormal` | log | median $`e^{x_t}`$ | estimated sd, log scale |
@@ -544,13 +556,14 @@ year has an observation. Thus, $`x_t`$ becomes the random effect for
 that time-series, and the years you did not observe are interpolated by
 the arrow-lag notation specified. In the case where a year with no
 observation contributes no $`y_t \sim f(x_t)`$ term, the arrows decide
-what that value should be (i.e., the deterministic state). For instance,
-under an AR1 it comes back as $`\rho(x_{t-1} + x_{t+1})/(1+\rho^2)`$
-with standard deviation $`\sigma/\sqrt{1+\rho^2}`$. Under independent
-deviations it returns the series mean at the full $`\sigma`$. Supplying
-known values is the one case with no observation density at all, and
-there the series is the data and nothing is estimated for it (i.e.,
-`dsem_family = fixed`).
+what that value should be (i.e., its conditional mean given the other
+years). For instance, under an AR1 it comes back as
+$`\rho(x_{t-1} + x_{t+1})/(1+\rho^2)`$ with standard deviation
+$`\sigma/\sqrt{1+\rho^2}`$, where $`\sigma`$ is the innovation sd. Under
+independent deviations it returns the series mean at the full
+$`\sigma`$. Supplying known values is the one case with no observation
+density at all, and there the series is the data and nothing is
+estimated for it (i.e., `dsem_family = fixed`).
 
 ## Using dsem inside an assessment model
 
@@ -739,7 +752,7 @@ pen_recdev_mod$sd_rep
 #> srv_fixed_sel_pars   2.221258e+00 0.03451709
 #> srv_fixed_sel_pars   1.544718e+00 0.09499803
 #> ln_srv_q            -2.789523e-01 0.11272184
-#> Maximum gradient component: 2.375476e-12
+#> Maximum gradient component: 1.372117e-12
 
 # check if fit with dsem is the same with previous penalized fit (should be)
 pen_recdev_mod$rep$jnLL # dsem
@@ -748,8 +761,8 @@ dusky_rtmb_model$rep$jnLL # original
 #> [1] 1425.732
 
 # show plot
-plot(pen_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev')
-lines(dusky_rtmb_model$rep$ln_RecDevs)
+plot(pen_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year')
+lines(as.vector(dusky_rtmb_model$rep$ln_RecDevs))
 ```
 
 ![](ag_dsem_files/figure-html/dusky_base-1.png)
@@ -881,7 +894,7 @@ re_dsem_recdev_mod$sd_rep
 #> srv_fixed_sel_pars   1.540144173 0.09500949
 #> ln_srv_q            -0.276813841 0.11249676
 #> ln_dsem_sd          -0.101665306 0.10025550
-#> Maximum gradient component: 3.041123e-12
+#> Maximum gradient component: 1.549452e-09
 
 # setup w/o dsem. one sigmaR across the early and late period
 nodsem_base <- Setup_Mod_Rec(
@@ -994,7 +1007,7 @@ re_nodsem_recdev_mod$sd_rep
 #> srv_fixed_sel_pars   2.219947359 0.03440640
 #> srv_fixed_sel_pars   1.540144173 0.09500949
 #> ln_srv_q            -0.276813841 0.11249676
-#> Maximum gradient component: 1.051603e-12
+#> Maximum gradient component: 4.311929e-10
 
 # should give equivalent results
 re_dsem_recdev_mod$rep$jnLL
@@ -1003,8 +1016,8 @@ re_nodsem_recdev_mod$rep$jnLL
 #> [1] 1432.773
 
 # show plot
-plot(re_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev')
-lines(re_dsem_recdev_mod$rep$ln_RecDevs)
+plot(re_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year')
+lines(as.vector(re_nodsem_recdev_mod$rep$ln_RecDevs))
 ```
 
 ![](ag_dsem_files/figure-html/dusky_dsem_comparison-1.png)
@@ -1051,96 +1064,96 @@ re_ar1_dsem_recdev_mod$sd_rep <- sdreport(re_ar1_dsem_recdev_mod)
 re_ar1_dsem_recdev_mod$sd_rep
 #> sdreport(.) result
 #>                         Estimate  Std. Error
-#> ln_global_R0         0.015210012 0.150267651
-#> ln_InitDevs          0.017970560 0.247186956
-#> ln_InitDevs          0.028529274 0.248560746
-#> ln_InitDevs          0.030321499 0.249041242
-#> ln_InitDevs          0.016317748 0.248012850
-#> ln_InitDevs         -0.005425593 0.246432051
-#> ln_InitDevs         -0.024975858 0.244573790
-#> ln_InitDevs         -0.048237874 0.243456867
-#> ln_InitDevs         -0.061028685 0.242559179
-#> ln_InitDevs         -0.064452680 0.242494823
-#> ln_InitDevs         -0.063734543 0.242776041
-#> ln_InitDevs         -0.061676088 0.243007060
-#> ln_InitDevs         -0.059537566 0.243212909
-#> ln_InitDevs         -0.057500613 0.243423508
-#> ln_InitDevs         -0.055798666 0.243600656
-#> ln_InitDevs         -0.054303358 0.243758323
-#> ln_InitDevs         -0.052908621 0.243907015
-#> ln_InitDevs         -0.051537045 0.244053447
-#> ln_InitDevs         -0.050227844 0.244193680
-#> ln_InitDevs         -0.048995258 0.244326248
-#> ln_InitDevs         -0.047823821 0.244452643
-#> ln_InitDevs         -0.046710197 0.244573161
-#> ln_InitDevs         -0.045644303 0.244688771
-#> ln_InitDevs         -0.044638622 0.244798192
-#> ln_InitDevs         -0.043696568 0.244901048
-#> ln_InitDevs         -0.042813853 0.244997736
-#> ln_InitDevs         -0.041989311 0.245088343
-#> ln_InitDevs         -0.041222777 0.245172863
-#> ln_InitDevs         -0.040505237 0.245252184
-#> ln_F_mean           -3.197452020 0.131565020
-#> ln_F_devs           -0.177987861 0.367405904
-#> ln_F_devs           -0.621544052 0.364379477
-#> ln_F_devs           -0.455414272 0.363208520
-#> ln_F_devs            0.048172105 0.362449622
-#> ln_F_devs            0.239489247 0.362033411
-#> ln_F_devs            0.259904218 0.362002547
-#> ln_F_devs            0.358998206 0.362234092
-#> ln_F_devs           -0.005361773 0.361392984
-#> ln_F_devs           -1.419179039 0.358986751
+#> ln_global_R0         0.015210019 0.150267651
+#> ln_InitDevs          0.017970558 0.247186935
+#> ln_InitDevs          0.028529269 0.248560725
+#> ln_InitDevs          0.030321494 0.249041220
+#> ln_InitDevs          0.016317745 0.248012829
+#> ln_InitDevs         -0.005425592 0.246432031
+#> ln_InitDevs         -0.024975855 0.244573769
+#> ln_InitDevs         -0.048237866 0.243456847
+#> ln_InitDevs         -0.061028675 0.242559159
+#> ln_InitDevs         -0.064452669 0.242494803
+#> ln_InitDevs         -0.063734532 0.242776020
+#> ln_InitDevs         -0.061676078 0.243007040
+#> ln_InitDevs         -0.059537557 0.243212889
+#> ln_InitDevs         -0.057500604 0.243423488
+#> ln_InitDevs         -0.055798657 0.243600636
+#> ln_InitDevs         -0.054303350 0.243758303
+#> ln_InitDevs         -0.052908613 0.243906995
+#> ln_InitDevs         -0.051537037 0.244053427
+#> ln_InitDevs         -0.050227836 0.244193659
+#> ln_InitDevs         -0.048995250 0.244326228
+#> ln_InitDevs         -0.047823814 0.244452623
+#> ln_InitDevs         -0.046710190 0.244573140
+#> ln_InitDevs         -0.045644295 0.244688750
+#> ln_InitDevs         -0.044638615 0.244798171
+#> ln_InitDevs         -0.043696561 0.244901028
+#> ln_InitDevs         -0.042813846 0.244997715
+#> ln_InitDevs         -0.041989304 0.245088322
+#> ln_InitDevs         -0.041222770 0.245172842
+#> ln_InitDevs         -0.040505230 0.245252163
+#> ln_F_mean           -3.197452025 0.131565021
+#> ln_F_devs           -0.177987864 0.367405904
+#> ln_F_devs           -0.621544056 0.364379477
+#> ln_F_devs           -0.455414276 0.363208520
+#> ln_F_devs            0.048172102 0.362449622
+#> ln_F_devs            0.239489245 0.362033411
+#> ln_F_devs            0.259904216 0.362002547
+#> ln_F_devs            0.358998203 0.362234092
+#> ln_F_devs           -0.005361776 0.361392984
+#> ln_F_devs           -1.419179041 0.358986751
 #> ln_F_devs           -1.841570430 0.357217583
-#> ln_F_devs           -1.872790888 0.355458333
-#> ln_F_devs           -0.026569402 0.338955464
-#> ln_F_devs            0.132739308 0.335065093
+#> ln_F_devs           -1.872790886 0.355458333
+#> ln_F_devs           -0.026569402 0.338955463
+#> ln_F_devs            0.132739307 0.335065092
 #> ln_F_devs           -0.018916533 0.325336536
-#> ln_F_devs            0.082485970 0.322454246
-#> ln_F_devs            1.016092412 0.130985162
-#> ln_F_devs            0.933277879 0.131258524
-#> ln_F_devs            0.844881348 0.130423404
+#> ln_F_devs            0.082485967 0.322454246
+#> ln_F_devs            1.016092417 0.130985162
+#> ln_F_devs            0.933277882 0.131258524
+#> ln_F_devs            0.844881349 0.130423404
 #> ln_F_devs            0.737595677 0.129732688
 #> ln_F_devs            0.404809068 0.130073468
-#> ln_F_devs            0.345743087 0.129680082
-#> ln_F_devs            0.474772553 0.129025013
-#> ln_F_devs            0.824164906 0.128258507
-#> ln_F_devs            0.594464210 0.127869436
-#> ln_F_devs            0.346008624 0.127444071
-#> ln_F_devs            0.401175788 0.127151812
-#> ln_F_devs            0.274589795 0.127028547
+#> ln_F_devs            0.345743090 0.129680082
+#> ln_F_devs            0.474772556 0.129025013
+#> ln_F_devs            0.824164908 0.128258507
+#> ln_F_devs            0.594464211 0.127869436
+#> ln_F_devs            0.346008625 0.127444071
+#> ln_F_devs            0.401175789 0.127151812
+#> ln_F_devs            0.274589796 0.127028547
 #> ln_F_devs            0.101533520 0.126948176
-#> ln_F_devs           -0.127864378 0.127302669
-#> ln_F_devs           -0.097574192 0.127169225
-#> ln_F_devs            0.167873924 0.127121739
-#> ln_F_devs            0.203331255 0.127160214
-#> ln_F_devs           -0.002297126 0.126990635
-#> ln_F_devs           -0.008071042 0.127011427
-#> ln_F_devs           -0.234415129 0.127032911
-#> ln_F_devs            0.205785442 0.127050462
+#> ln_F_devs           -0.127864377 0.127302669
+#> ln_F_devs           -0.097574191 0.127169225
+#> ln_F_devs            0.167873925 0.127121739
+#> ln_F_devs            0.203331256 0.127160215
+#> ln_F_devs           -0.002297125 0.126990635
+#> ln_F_devs           -0.008071041 0.127011427
+#> ln_F_devs           -0.234415128 0.127032911
+#> ln_F_devs            0.205785443 0.127050462
 #> ln_F_devs           -0.003344734 0.128005000
 #> ln_F_devs           -0.018183473 0.128571272
 #> ln_F_devs           -0.100122386 0.129496050
-#> ln_F_devs            0.070425366 0.130149110
-#> ln_F_devs           -0.174847494 0.131032560
-#> ln_F_devs           -0.104684356 0.131735867
-#> ln_F_devs           -0.283553302 0.133310943
+#> ln_F_devs            0.070425365 0.130149110
+#> ln_F_devs           -0.174847495 0.131032560
+#> ln_F_devs           -0.104684357 0.131735867
+#> ln_F_devs           -0.283553303 0.133310943
 #> ln_F_devs           -0.441363024 0.134278173
 #> ln_F_devs           -0.190941404 0.136196142
 #> ln_F_devs           -0.325970317 0.137737910
-#> ln_F_devs           -0.037052357 0.140449170
-#> ln_F_devs           -0.478694946 0.142641873
+#> ln_F_devs           -0.037052356 0.140449170
+#> ln_F_devs           -0.478694944 0.142641873
 #> fish_fixed_sel_pars  2.309180548 0.014663319
-#> fish_fixed_sel_pars  0.897264867 0.076046606
+#> fish_fixed_sel_pars  0.897264867 0.076046607
 #> srv_fixed_sel_pars   2.230364273 0.035223796
-#> srv_fixed_sel_pars   1.556844623 0.095848071
-#> ln_srv_q            -0.353060147 0.125016418
-#> dsem_beta            1.032106175 0.009070686
-#> ln_dsem_sd          -1.401609997 0.163822230
-#> Maximum gradient component: 0.0001641232
+#> srv_fixed_sel_pars   1.556844629 0.095848072
+#> ln_srv_q            -0.353060150 0.125016419
+#> dsem_beta            1.032106186 0.009070677
+#> ln_dsem_sd          -1.401610082 0.163822222
+#> Maximum gradient component: 1.994308e-07
 
 # compare with iid version
-plot(re_ar1_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', col = 'blue', ylim = c(-2, 3), type = 'l')
-lines(re_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', col = 'red')
+plot(re_ar1_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year', col = 'blue', ylim = c(-2, 3), type = 'l')
+lines(re_dsem_recdev_mod$rep$dsem_x_grid, col = 'red')
 ```
 
 ![](ag_dsem_files/figure-html/dusky_dsem_ar1_comparison-1.png)
@@ -1170,9 +1183,10 @@ where $`x_t`$ and $`y_t`$ are the two covariates in year $`t`$,
 $`rec_t`$ is the recruitment deviation, each $`b`$ is the path
 coefficient named on its arrow, and each $`\varepsilon`$ is that series’
 innovation. The direct effect of `x` is $`b_{x,rec}`$ and its indirect
-effect is $`b_{xy} \times b_{y,rec}`$. Under full mediation the direct
-effect is zero by the way we have defined this model (i.e.,
-$`b_{x,rec}x_t`$).
+effect is $`b_{xy} \times b_{y,rec}`$. Under full mediation
+$`b_{x,rec} = 0`$ by the way we have defined this model, so the
+$`b_{x,rec}\,x_t`$ term drops out and recruitment depends on `x` only
+through `y`.
 
 We use the packaged dusky recruitment deviations and build two contrived
 simulated covariates. `y` is those deviations plus noise, so it relates
@@ -1265,7 +1279,7 @@ lapply(list(x_only = x_only, both = both), function(m) {
 #> sd_rec   -0.2638     0.1121
 ```
 
-Regresssed on its own, `x` gets a direct effect of 0.664 with a standard
+Regressed on its own, `x` gets a direct effect of 0.664 with a standard
 error of 0.158. Put `y` in beside it and the same coefficient is -0.030
 against a standard error of 0.408, while `y` takes 0.718. The path from
 `x` to `y` comes back at 0.919 in both fits, since it is just the path

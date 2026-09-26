@@ -78,7 +78,7 @@ optimizer output, and model report are attached to the returned object.</p>
 <span>  newton_loops <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  do_optim <span class="op">=</span> <span class="cn">TRUE</span>,</span>
-<span>  nlminb_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>iter.max <span class="op">=</span> <span class="fl">1e+05</span>, eval.max <span class="op">=</span> <span class="fl">1e+05</span>, rel.tol <span class="op">=</span> <span class="fl">1e-15</span><span class="op">)</span>,</span>
+<span>  nlminb_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>iter.max <span class="op">=</span> <span class="fl">1e+05</span>, eval.max <span class="op">=</span> <span class="fl">1e+05</span>, rel.tol <span class="op">=</span> <span class="fl">1e-12</span><span class="op">)</span>,</span>
 <span>  lower <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  upper <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  model <span class="op">=</span> <span class="va">SPoRC_rtmb</span>,</span>
@@ -140,7 +140,7 @@ and Newton refinement. If <code>FALSE</code>, returns the un-optimized
 <dt id="arg-nlminb-control">nlminb_control<a class="anchor" aria-label="anchor" href="#arg-nlminb-control"></a></dt>
 <dd><p>Named list of control parameters passed to
 <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code>. Default
-<code>list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)</code>.</p></dd>
+<code>list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-12)</code>.</p></dd>
 
 
 <dt id="arg-lower">lower<a class="anchor" aria-label="anchor" href="#arg-lower"></a></dt>

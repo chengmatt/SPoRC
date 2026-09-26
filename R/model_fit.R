@@ -39,7 +39,7 @@
 #'   \code{MakeADFun} object only.
 #' @param nlminb_control Named list of control parameters passed to
 #'   \code{stats::nlminb}. Default
-#'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.
+#'   \code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-12)}.
 #' @param lower Numeric vector of lower bounds for \code{obj$par} (the
 #'   estimated parameter vector, i.e. after mapping and random-effects
 #'   marginalization), passed to \code{stats::nlminb} and used to clamp each
@@ -77,7 +77,7 @@ fit_model <- function(
   newton_loops = 3,
   silent = FALSE,
   do_optim = TRUE,
-  nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-8),
+  nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-12),
   lower = NULL,
   upper = NULL,
   model = SPoRC_rtmb,

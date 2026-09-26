@@ -27,7 +27,7 @@ seasonal_M_replicates <- function(M_true, sigmaR, idx_se, iss, n_reps, seed0 = 4
       random = NULL,
       silent = TRUE,
       do_optim = TRUE,
-      newton_loops = 1
+      newton_loops = 3
     )
     c(unique(as.vector(fit$rep$natmort[,,,1,,])),
       unique(as.vector(fit$rep$natmort[,,,2,,])),

@@ -12,7 +12,7 @@ fit_model(
   newton_loops = 3,
   silent = FALSE,
   do_optim = TRUE,
-  nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-15),
+  nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-12),
   lower = NULL,
   upper = NULL,
   model = SPoRC_rtmb,
@@ -55,7 +55,7 @@ and Newton refinement. If \code{FALSE}, returns the un-optimized
 
 \item{nlminb_control}{Named list of control parameters passed to
 \code{stats::nlminb}. Default
-\code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)}.}
+\code{list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-12)}.}
 
 \item{lower}{Numeric vector of lower bounds for \code{obj$par} (the
 estimated parameter vector, i.e. after mapping and random-effects

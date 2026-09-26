@@ -260,7 +260,7 @@ fit_seasonal_M <- function(M_true, sigmaR, idx_se, iss, seed = 411) {
   il <- suppressWarnings(seasonal_M_input(sim_obj, list(M_spec = "est_ln_M", M_seasblk_spec = list(1, 2)),
                                           sigmaR = sigmaR))
   il$par$ln_M[] <- log(0.3) # start away from both truths, and at one value for both seasons
-  fit <- fit_model(il$data, il$par, il$map, random = NULL, silent = TRUE, do_optim = TRUE, newton_loops = 1)
+  fit <- fit_model(il$data, il$par, il$map, random = NULL, silent = TRUE, do_optim = TRUE, newton_loops = 3)
   list(fit = fit,
        M_hat = c(unique(as.vector(fit$rep$natmort[,,,1,,])), unique(as.vector(fit$rep$natmort[,,,2,,]))))
 }

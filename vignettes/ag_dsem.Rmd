@@ -20,8 +20,8 @@ knitr::opts_chunk$set(
 ```
 
 
-A dynamic structurel equation model (dsem) specifies how a set of time-series affect each other using an arrow lag notation, and computes
-a joint density over all time-series. Within the context of a stock assessment, the time-series we primarily are focused on are deviation process errors (e.g., recruitment), and how these process errors might be explained by environmental covariates. In `SPoRC`, various population processes can be linked to a dsem model, thereby replacing the process error penalty a given process originally had (e.g., iid recruitment deviations) with a dsem density (which can express iid recruitment deviations and more). In the following, we demonstrate how a dsem can be specified (Thorson et al. 2024) using `SPoRC`, and the various processes to which a dsem can be linked to. Specifically, we first demonstrate the dsem model and the mathematical underpinnings of it, fit a dsem within the context of a stock assessment model, conduct a self test and cross test (more on this later), illustrate dsem forecasting capabilities (more on this later), and conclude with a closed loop simulation using a dsem integrated model (more on this later). 
+A dynamic structural equation model (dsem) specifies how a set of time-series affect each other using an arrow lag notation, and computes
+a joint density over all time-series. Within the context of a stock assessment, the time-series we are primarily focused on are deviation process errors (e.g., recruitment), and how these process errors might be explained by environmental covariates. In `SPoRC`, various population processes can be linked to a dsem model, thereby replacing the process error penalty a given process originally had (e.g., iid recruitment deviations) with a dsem density (which can express iid recruitment deviations and more). In the following, we demonstrate how a dsem can be specified (Thorson et al. 2024) using `SPoRC`, and the various processes to which a dsem can be linked. Specifically, we first demonstrate the dsem model and the mathematical underpinnings of it, fit a dsem within the context of a stock assessment model, conduct a self test and cross test (more on this later), illustrate dsem forecasting capabilities (more on this later), and conclude with a closed loop simulation using a dsem integrated model (more on this later). 
 
 ```{r setup, warning = FALSE, message = FALSE}
 library(SPoRC)
@@ -32,7 +32,7 @@ library(RTMB)
 
 ### Arrow and Lag notation
 
-In general, a dsem can be specified using arrow and lag notation (and see Thorson et al. 2024 for further details). Here, we specify one arrow per line, which follows the nomencalture of `from -> to, lag, name, start`.  The time-series `from`, `lag` years earlier, affects the time-series `to`. The coefficient is the parameter `name` os is fixed at `start` when the name is set to `NA`. This formulation therefore specifie a path coefficient in a dsem model (i.e., analgous to a regression coefficient in a linear model). An sd line can then be specified using a double-head arrow notation `a <-> a, 0, name, start`, while a covariance between two series' innovations is `a <-> b, 0, name, start`. A name used on two arrows is one shared parameter (i.e., the same name in two lines). An example is provided below where we specify that an environmental covariate in year `x` has an imapct on recruitment in year `x`, while the environmental covariate itself follows an AR(1) like process `x_t = \rho x_{t-1} + \epsilon_t`. Process error for the environmental covariate and recruitment deviations is then specified as well.
+In general, a dsem can be specified using arrow and lag notation (and see Thorson et al. 2024 for further details). Here, we specify one arrow per line, which follows the nomenclature of `from -> to, lag, name, start`.  The time-series `from`, `lag` years earlier, affects the time-series `to`. The coefficient is the parameter `name`, or is fixed at `start` when the name is set to `NA`. This formulation therefore specifies a path coefficient in a dsem model (i.e., analogous to a regression coefficient in a linear model). An sd line can then be specified using a double-headed arrow notation `a <-> a, 0, name, start`, while a covariance between two series' innovations is `a <-> b, 0, name, start`. A name used on two arrows is one shared parameter (i.e., the same name in two lines). An example is provided below where we specify that an environmental covariate in year `x` has an impact on recruitment in year `x`, while the environmental covariate itself follows an AR(1) like process $x_t = \rho x_{t-1} + \varepsilon_t$. Process error for the environmental covariate and recruitment deviations is then specified as well.
 
 ```{r arrows}
 arrows <- c("env -> rec, 0, b_env, 0.5",     # this year's covariate affects this year's recruitment
@@ -61,14 +61,19 @@ year 3    3       6
 Note that each cell has an innovation (i.e., the part that the arrows themselves do not explain). For example, the recruitment innovation in year 2 is cell 5 minus `b_env` times cell 2, because `env -> rec, 0`:
 
 $$
-\epsilon^{rec}_2 = rec_2 - b_{env}env_2 \\
-rec_2 = b_{env}env + \epsilon^{rec}_2
+\begin{aligned}
+\varepsilon^{rec}_2 &= rec_2 - b_{env}\,env_2 \\
+rec_2 &= b_{env}\,env_2 + \varepsilon^{rec}_2
+\end{aligned}
 $$
+
 The covariate innovation in year 2 is cell 2 minus `rho` times cell 1, given that `env -> env, 1`:
 
 $$
-\epsilon^{env}_2 = env_2 - \rho env_1\\
-env_2 = \rho env_1 + \epsilon^{env}_2
+\begin{aligned}
+\varepsilon^{env}_2 &= env_2 - \rho\,env_1 \\
+env_2 &= \rho\,env_1 + \varepsilon^{env}_2
+\end{aligned}
 $$
 
 Note that year 1 has nothing before it so the covariate innovation is just cell 1. We can then collect all those subtractions into a matrix called `B` with one row per cell: e.g., row 5 has `b_env` in column 2, row 2 has `rho` in column 1. Then the vector of innovations can be expressed as:
@@ -102,7 +107,7 @@ b_{env} & 0 & 0 & 0 & 0 & 0 \\
 \end{matrix}
 $$
 
-Rows 2–3 hold `env -> env, 1, rho` (one step off the diagonal within the `env` block), rows 4–6 hold `env -> rec, 0, b_env` (the diagonal of the lower-left block, since the lag is 0), and row 1 is empty because year 1 has no previous values. Given that, it follows that:
+Rows 2-3 hold `env -> env, 1, rho` (one step off the diagonal within the `env` block), rows 4–6 hold `env -> rec, 0, b_env` (the diagonal of the lower-left block, since the lag is 0), and row 1 is empty because year 1 has no previous values. Given that, it follows that:
 
 $$
 I - B =
@@ -120,7 +125,7 @@ I - B =
 $$
 
 
-Writing the centered values as $\tilde{x} = x - \mu$, multiplying through recovers every innovation at once:
+Writing the centered values as $\tilde{x} = x - \mu$, and taking $\mu = 0$ as it is for a deviation series, multiplying through recovers every innovation at once:
 
 $$
 \varepsilon = (I - B)\,x =
@@ -146,7 +151,7 @@ rec_3 - b_{env}\,env_3
 \end{pmatrix}
 =
 \begin{pmatrix}
-\epsilon^{env}_1 \\ \epsilon^{env}_2 \\ \epsilon^{env}_3 \\ \epsilon^{rec}_1 \\ \epsilon^{rec}_2 \\ \epsilon^{rec}_3
+\varepsilon^{env}_1 \\ \varepsilon^{env}_2 \\ \varepsilon^{env}_3 \\ \varepsilon^{rec}_1 \\ \varepsilon^{rec}_2 \\ \varepsilon^{rec}_3
 \end{pmatrix}
 \begin{matrix}
 \leftarrow env_1 \\ \leftarrow env_2 \\ \leftarrow env_3 \\ \leftarrow rec_1 \\ \leftarrow rec_2 \\ \leftarrow rec_3
@@ -158,15 +163,16 @@ Next, the two `<->` lines then fill a diagonal matrix of innovation standard dev
 $$
 \Gamma = \mathrm{diag}(sd_{env},\, sd_{env},\, sd_{env},\, sd_{rec},\, sd_{rec},\, sd_{rec}), \qquad \varepsilon \sim \mathrm{MVN}(0,\, \Gamma\Gamma^\top)
 $$
-The two `<->` lines give the variance of each innovation: $\mathrm{Var}(\epsilon^{env}_t) = sd_{env}^2$ and $\mathrm{Var}(\epsilon^{rec}_t) = sd_{rec}^2$, with all innovations assumed to be independent. From these, we can work out the variance of the time-series themselves, one cell at a time, using the same equations as above.
 
-In the case of the covariate, during year 1 is only its own innovation, so:
+The two `<->` lines give the variance of each innovation: $\mathrm{Var}(\varepsilon^{env}_t) = sd_{env}^2$ and $\mathrm{Var}(\varepsilon^{rec}_t) = sd_{rec}^2$, with all innovations assumed to be independent. From these, we can work out the variance of the time-series themselves, one cell at a time, using the same equations as above.
+
+In the case of the covariate, year 1 is only its own innovation, so:
 
 $$
 \mathrm{Var}(env_1) = sd_{env}^2
 $$
 
-Year 2 is $env_2 = \rho\, env_1 + \epsilon^{env}_2$. The two terms are independent, so their variances add:
+Year 2 is $env_2 = \rho\, env_1 + \varepsilon^{env}_2$. The two terms are independent, so their variances add:
 
 $$
 \mathrm{Var}(env_2) = \rho^2\,\mathrm{Var}(env_1) + sd_{env}^2 = (1 + \rho^2)\, sd_{env}^2
@@ -180,7 +186,7 @@ $$
 
 In words, each year keeps a shrunken copy of last year's variability and adds a new shock. For $|\rho| < 1$, this levels off at $sd_{env}^2 / (1 - \rho^2)$ (i.e., it is stationary).
 
-For recruitment defined as $rec_t = b_{env}\, env_t + \epsilon^{rec}_t$, the variance can be written as:
+For recruitment defined as $rec_t = b_{env}\, env_t + \varepsilon^{rec}_t$, the variance can be written as:
 
 $$
 \mathrm{Var}(rec_t) = b_{env}^2\,\mathrm{Var}(env_t) + sd_{rec}^2
@@ -219,7 +225,7 @@ b_{env}\rho^2 & b_{env}\rho & b_{env} & 0 & 0 & 1
 \end{matrix}
 $$
 
-For example, row 3 says $env_3 = \rho^2\epsilon^{env}_1 + \rho\,\epsilon^{env}_2 + \epsilon^{env}_3$. The innovations themselves are independent, with variance:
+For example, row 3 says $env_3 = \rho^2\varepsilon^{env}_1 + \rho\,\varepsilon^{env}_2 + \varepsilon^{env}_3$. The innovations themselves are independent, with variance:
 
 $$
 \Gamma\Gamma^\top =
@@ -250,7 +256,7 @@ b_{env}\rho^2 v_1 & b_{env}\rho v_2 & b_{env} v_3 & b_{env}^2\rho^2 v_1 & b_{env
 \end{matrix}
 $$
 
-The structure of the covariacnce can then be seen as:
+The structure of the covariance can then be seen as:
 
 - The top-left block is the covariate's AR(1) variance.
 - The off-diagonal blocks are that same block scaled by $b_{env}$.
@@ -287,10 +293,10 @@ parts$sd_cell
 
 ### Conditional and Marginal Variance in dsem
 
-A dsem time-series has two types of way to represent spread, and the sd line (e.g., `rec <-> rec, 0, sd_rec, 0.5`) can describe either one:
+A dsem time-series has two ways to represent spread, and the sd line (e.g., `rec <-> rec, 0, sd_rec, 0.5`) can describe either one:
 
-- Conditional (the default): the sd line is the size of each year's new shock, $\varepsilon_t$. It is "conditional" because it is how much the series would still vary if we already knew last year's value and any covariates pointing in. It is analogous the residual sd in a regression. The series itself ends up more variable than this, because the arrows carry any variability from the past.
-- Marginal: the sd line is the size of the series itself, $x_t$, i.e., how much the series itself varies overall, including what goes in through the arrows. It is analogous raw sd of $y$ in a regression. The model then works out how big each year's shock must be to hit that target.
+- Conditional (the default): the sd line is the size of each year's new shock, $\varepsilon_t$. It is "conditional" because it is how much the series would still vary if we already knew last year's value and any covariates pointing in. It is analogous to the residual sd in a regression. The series itself ends up more variable than this, because the arrows pass variability forward from the past.
+- Marginal: the sd line is the size of the series itself, $x_t$, i.e., how much the series itself varies overall, including what goes in through the arrows. It is analogous to the raw sd of $y$ in a regression. The model then works out how big each year's shock must be to hit that target.
 
 The two are equal only when no arrows point into the series. The `dsem_variance` setting in the setup functions (introduced later) chooses which one the sd line fixes.
 
@@ -306,7 +312,7 @@ $$
 
 The two parameterizations fix opposite sides of this equation:
 
-- `"conditional"` (the default) sets $\mathrm{var}(\varepsilon_t) = s^2$ every year. The series' spread then grows and settles at $s^2 / (1 - \rho^2)$ (i.e., the stationary variance of $x_t$.
+- `"conditional"` (the default) sets $\mathrm{var}(\varepsilon_t) = s^2$ every year. The series' spread then grows and settles at $s^2 / (1 - \rho^2)$ (i.e., the stationary variance of $x_t$).
 - `"diagonal"` / `"marginal"` set $\mathrm{var}(x_t) = s^2$ every year and then solve backwards for the innovation (i.e., figures out what the innovations should be to satisfy the condition). 
 
 With $\rho = 0.5$ and $s = 1$:
@@ -383,7 +389,7 @@ that $x_t$ sits on a scale where a normal makes sense: counts take a log and $x_
 
 | `dsem_family` | link | mean of $y_t$ | extra spread |
 |---|---|---|---|
-| `fixed` | identity | $x_t$ itself | none, and no second line |
+| `fixed` | identity | $x_t$ itself | none, and no observation density |
 | `normal`, `gaussian` | identity | $x_t$ | estimated sd |
 | `gaussian_fixed_sd` | identity | $x_t$ | one supplied per observation |
 | `lognormal` | log | median $e^{x_t}$ | estimated sd, log scale |
@@ -392,7 +398,7 @@ that $x_t$ sits on a scale where a normal makes sense: counts take a log and $x_
 | `gamma`, `Gamma` | log | $e^{x_t}$ | estimated coefficient of variation |
 | `tweedie` | log | $e^{x_t}$ | estimated sd and power |
 
-Because $y_t$ is an observation of the time-series and not the true time-series itself, $x_t$ (the true underlying state that generated the time-series) can be estimated in every year, whether or not that year has an observation. Thus, $x_t$ becomes the random effect for that time-series, and the years you did not observe are interpolated by the arrow-lag notation specified. In the case where a year with no observation contributes no $y_t \sim f(x_t)$ term, the arrows decide what that value should be (i.e., the deterministic state). For instance, under an AR1 it comes back as $\rho(x_{t-1} + x_{t+1})/(1+\rho^2)$ with standard deviation $\sigma/\sqrt{1+\rho^2}$. Under independent deviations it returns the series mean at the full $\sigma$. Supplying known values is the one case with no observation density at all, and there the series is the data and nothing is estimated for it (i.e., `dsem_family = fixed`).
+Because $y_t$ is an observation of the time-series and not the true time-series itself, $x_t$ (the true underlying state that generated the time-series) can be estimated in every year, whether or not that year has an observation. Thus, $x_t$ becomes the random effect for that time-series, and the years you did not observe are interpolated by the arrow-lag notation specified. In the case where a year with no observation contributes no $y_t \sim f(x_t)$ term, the arrows decide what that value should be (i.e., its conditional mean given the other years). For instance, under an AR1 it comes back as $\rho(x_{t-1} + x_{t+1})/(1+\rho^2)$ with standard deviation $\sigma/\sqrt{1+\rho^2}$, where $\sigma$ is the innovation sd. Under independent deviations it returns the series mean at the full $\sigma$. Supplying known values is the one case with no observation density at all, and there the series is the data and nothing is estimated for it (i.e., `dsem_family = fixed`).
 
 ## Using dsem inside an assessment model
 
@@ -443,8 +449,8 @@ pen_recdev_mod$rep$jnLL # dsem
 dusky_rtmb_model$rep$jnLL # original
 
 # show plot
-plot(pen_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev')
-lines(dusky_rtmb_model$rep$ln_RecDevs)
+plot(pen_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year')
+lines(as.vector(dusky_rtmb_model$rep$ln_RecDevs))
 ```
 
 Having shown the equivalence above, we next estimate recruitment deviations as random effects using the dsem interface. Note that using the dsem interface here to specify iid recruitment is also equivalent to simply estimating `sigmaR` and treating recruitment deviations as random effects (without the dsem interface):
@@ -515,8 +521,8 @@ re_dsem_recdev_mod$rep$jnLL
 re_nodsem_recdev_mod$rep$jnLL
 
 # show plot
-plot(re_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev')
-lines(re_dsem_recdev_mod$rep$ln_RecDevs)
+plot(re_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year')
+lines(as.vector(re_nodsem_recdev_mod$rep$ln_RecDevs))
 ```
 
 Next, we can specify an AR(1) process on recruitment deviations for Dusky Rockfish. This is done using arrow-lag notation, and is shown in the following: 
@@ -558,8 +564,8 @@ re_ar1_dsem_recdev_mod$sd_rep <- sdreport(re_ar1_dsem_recdev_mod)
 re_ar1_dsem_recdev_mod$sd_rep
 
 # compare with iid version
-plot(re_ar1_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', col = 'blue', ylim = c(-2, 3), type = 'l')
-lines(re_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', col = 'red')
+plot(re_ar1_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year', col = 'blue', ylim = c(-2, 3), type = 'l')
+lines(re_dsem_recdev_mod$rep$dsem_x_grid, col = 'red')
 ```
 
 As shown in the plot above, the AR(1) process is a lot smoother relative to an `iid` assumption, as would be expected. 
@@ -582,7 +588,7 @@ $$
 where $x_t$ and $y_t$ are the two covariates in year $t$, $rec_t$ is the recruitment
 deviation, each $b$ is the path coefficient named on its arrow, and each $\varepsilon$ is
 that series' innovation. The direct effect of `x` is $b_{x,rec}$ and its indirect effect is
-$b_{xy} \times b_{y,rec}$. Under full mediation the direct effect is zero by the way we have defined this model (i.e., $b_{x,rec}x_t$).
+$b_{xy} \times b_{y,rec}$. Under full mediation $b_{x,rec} = 0$ by the way we have defined this model, so the $b_{x,rec}\,x_t$ term drops out and recruitment depends on `x` only through `y`.
 
 We use the packaged dusky recruitment deviations and build two contrived simulated covariates. `y` is
 those deviations plus noise, so it relates to recruitment directly. `x` is `y` plus noise,
@@ -652,7 +658,7 @@ lapply(list(x_only = x_only, both = both), function(m) {
 })
 ```
 
-Regresssed on its own, `x` gets a direct effect of 0.664 with a standard error of 0.158.
+Regressed on its own, `x` gets a direct effect of 0.664 with a standard error of 0.158.
 Put `y` in beside it and the same coefficient is -0.030 against a standard error of 0.408, 
 while `y` takes 0.718. The path from `x` to `y` comes back at 0.919 in both fits, since it is just 
 the path for the two covariates alone. Holding both paths in one fit is what separates those effects, 

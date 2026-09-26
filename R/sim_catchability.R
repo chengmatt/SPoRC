@@ -113,16 +113,16 @@ split_reported_q <- function(rep_q, ln_q, q_blocks, q_type = NULL) {
 
 #' Dont allow a catchability series the operating model cannot draw
 #'
-#' A dsem series given an sd of zero is derived: it has no innovation of its
+#' A dsem series given an sd of zero is solved out: it has no innovation of its
 #' own, the objective works it out from its covariates, and the fitted
 #' deviation parameter stays at zero. \code{\link{draw_dsem_sim}} draws the
 #' unknown cells from the field's precision, which a series with no variance
 #' has no finite entry in, so every cell it has to draw comes back \code{NaN}.
 #'
-#' Catchability is the only process a derived series is allowed on, since
+#' Catchability is the only process a solved series is allowed on, since
 #' \code{\link{Setup_Mod_DSEM}} refuses one everywhere else, and the
 #' conditioning years are read from the fit rather than drawn. So the one case
-#' with cells left to draw is a derived catchability series on an operating
+#' with cells left to draw is a solved catchability series on an operating
 #' model that runs past the conditioning period, and that is what this refuses.
 #'
 #' @param sim_list Simulation list, or the environment
@@ -133,18 +133,18 @@ split_reported_q <- function(rep_q, ln_q, q_blocks, q_type = NULL) {
 #' @keywords internal
 check_q_dsem_drawable <- function(sim_list) {
 
-  if(is.null(sim_list$dsem_model) || !any(sim_list$dsem_model$derived)) return(invisible(NULL))
+  if(is.null(sim_list$dsem_model) || !any(sim_list$dsem_model$project_k)) return(invisible(NULL))
   n_cond <- if(is.null(sim_list$n_cond_yrs)) 0L else as.integer(sim_list$n_cond_yrs)
 
   for(s in seq_along(sim_list$dsem_link_par)) {
 
     if(!sim_list$dsem_link_par[s] %in% q_dev_par_names()) next
-    if(!isTRUE(sim_list$dsem_model$derived[sim_list$dsem_link_col[s]])) next
+    if(!isTRUE(sim_list$dsem_model$project_k[sim_list$dsem_link_col[s]])) next
     n_yrs <- sim_list$n_yrs
     if(is.null(n_yrs) || n_yrs <= n_cond) next
 
     n_draw <- n_yrs - n_cond
-    stop(sim_list$dsem_model$variables[sim_list$dsem_link_col[s]], " has its sd fixed at zero, so it is a derived ",
+    stop(sim_list$dsem_model$variables[sim_list$dsem_link_col[s]], " has its sd fixed at zero, so it is a solved ",
          "series with no innovation to draw from, and the operating model runs ", n_draw, " year",
          if(n_draw > 1) "s" else "", " past the ", n_cond, " conditioning years. Those years would come back NaN ",
          "rather than a catchability. Give the series an sd line, a small one if the effect is meant to stay a ",

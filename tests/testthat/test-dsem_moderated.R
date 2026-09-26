@@ -118,7 +118,7 @@ test_that("the reader refuses a moderator the arrow sets itself", {
 
 })
 
-test_that("a series with an sd of zero is worked out from what points into it", {
+test_that("a series with an sd of zero is projected off what points into it", {
 
   variables <- c("ones", "logX", "logX1", "logX2", "X")
   arrows <- c("ones -> ones, 1, NA, 1", "ones -> logX, 0, alpha", "logX -> logX, 1, NA, 1
@@ -127,22 +127,21 @@ test_that("a series with an sd of zero is worked out from what points into it", 
              ones <-> ones, 0, NA, 0.001", "logX <-> logX, 0, sd_logX
              logX1 <-> logX1, 0, NA, 0", "logX2 <-> logX2, 0, NA, 0", "X <-> X, 0, NA, 0")
   dsem_model <- read_dsem_arrows(arrows, variables)
-  expect_equal(variables[dsem_model$derived], c("logX1", "logX2", "X"))
+  expect_equal(variables[dsem_model$project_k], c("logX1", "logX2", "X"))
 
   n_t <- 10
   x_grid <- matrix(0, n_t, length(variables))
   x_grid[,1] <- 1
   x_grid[,2] <- seq(-0.6, 0.6, length.out = n_t)
   mu_grid <- matrix(0, n_t, length(variables))
-  arrow_value <- get_dsem_arrow_values(0.05, log(0.3), dsem_model)
-  filled <- fill_dsem_derived(x_grid, mu_grid, arrow_value, dsem_model)
+  dsem_cells <- get_dsem_cells(dsem_model, n_t)
+  filled <- get_dsem_grid(0.05, log(0.3), x_grid, mu_grid, dsem_model, dsem_cells)$x_grid
 
   # the chain is the quadratic approximation to exp, so it agrees to the term left out
   expect_equal(filled[,5], 1 + x_grid[,2] + 0.5 * x_grid[,2]^2, tolerance = 1e-12)
   expect_lt(max(abs(filled[,5] - exp(x_grid[,2]))), 0.05)
 
-  # the derived cells owe nothing to the density, which is the two stochastic series written out
-  dsem_cells <- get_dsem_cells(dsem_model, n_t)
+  # the projected cells owe nothing to the density, which is the two series that keep an innovation
   ours <- get_dsem_nLL(0.05, log(0.3), x_grid, mu_grid, dsem_model, dsem_cells)
   by_hand <- -dnorm(x_grid[1,1], 0, 0.001, TRUE) - sum(dnorm(diff(x_grid[,1]), 0, 0.001, TRUE)) -
     dnorm(x_grid[1,2] - 0.05 * x_grid[1,1], 0, 0.3, TRUE) -

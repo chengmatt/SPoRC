@@ -525,7 +525,7 @@ plot(re_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year')
 lines(as.vector(re_nodsem_recdev_mod$rep$ln_RecDevs))
 ```
 
-Next, we can specify an AR(1) process on recruitment deviations for Dusky Rockfish. This is done using arrow-lag notation, and is shown in the following: 
+Next, we can specify an AR(1) process on recruitment deviations for Dusky Rockfish. This is done using arrow-lag notation, and is shown in the following:
 
 ```{r dusky_dsem_ar1_comparison, message = FALSE, warning = FALSE}
 # random effect deviations take the full lognormal correction, so no ramp
@@ -568,7 +568,7 @@ plot(re_ar1_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year', col
 lines(re_dsem_recdev_mod$rep$dsem_x_grid, col = 'red')
 ```
 
-As shown in the plot above, the AR(1) process is a lot smoother relative to an `iid` assumption, as would be expected. 
+As shown in the plot above, the AR(1) process is a lot smoother relative to an `iid` assumption, as would be expected.
 
 ### Linking covariates to recruitment
 
@@ -659,10 +659,10 @@ lapply(list(x_only = x_only, both = both), function(m) {
 ```
 
 Regressed on its own, `x` gets a direct effect of 0.664 with a standard error of 0.158.
-Put `y` in beside it and the same coefficient is -0.030 against a standard error of 0.408, 
-while `y` takes 0.718. The path from `x` to `y` comes back at 0.919 in both fits, since it is just 
-the path for the two covariates alone. Holding both paths in one fit is what separates those effects, 
-and regressing one covariate at a time cannot, demonstrating the utility of a dsem approach. 
+Put `y` in beside it and the same coefficient is -0.030 against a standard error of 0.408,
+while `y` takes 0.718. The path from `x` to `y` comes back at 0.919 in both fits, since it is just
+the path for the two covariates alone. Holding both paths in one fit is what separates those effects,
+and regressing one covariate at a time cannot, demonstrating the utility of a dsem approach.
 
 ## References
 

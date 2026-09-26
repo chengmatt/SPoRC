@@ -10,7 +10,8 @@ get_dsem_matrices(
   dsem_model,
   dsem_cells,
   x_grid = NULL,
-  need_Vinv = TRUE
+  need_Vinv = TRUE,
+  need_V = FALSE
 )
 }
 \arguments{
@@ -21,12 +22,16 @@ get_dsem_matrices(
 \item{x_grid}{Matrix \code{[year, series]} of the grid, needed when an arrow
 is moderated.}
 
-\item{need_Vinv}{Whether to form \eqn{V^{-1}}; the derived-series route only
-needs the sds.}
+\item{need_Vinv}{Whether to form \eqn{V^{-1}}. A series with an sd of zero
+makes \eqn{V} singular, so if so should be FALSE.}
+
+\item{need_V}{Whether to return \eqn{V} itself, which the same route inverts
+one block of when a covariance line couples the innovations.}
 }
 \value{
 List with \code{IminusB} (sparse, \eqn{I - B}), \code{Vinv} (sparse
-  \eqn{V^{-1}}, or \code{NULL} when not asked for) and \code{sd_cell} (each
+  \eqn{V^{-1}}, or \code{NULL} when not asked for), \code{V} (sparse, only
+  when asked for and a covariance line is present) and \code{sd_cell} (each
   cell's innovation sd, or \code{NULL} when a covariance line couples them).
 }
 \description{

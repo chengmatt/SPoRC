@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_catchability.R
 \name{check_q_dsem_drawable}
 \alias{check_q_dsem_drawable}
-\title{Refuse a catchability series the operating model cannot draw}
+\title{Dont allow a catchability series the operating model cannot draw}
 \usage{
 check_q_dsem_drawable(sim_list)
 }
@@ -14,17 +14,17 @@ check_q_dsem_drawable(sim_list)
 Nothing. Called for its refusal.
 }
 \description{
-A dsem series given an sd of zero is derived: it has no innovation of its
+A dsem series given an sd of zero is solved out: it has no innovation of its
 own, the objective works it out from its covariates, and the fitted
 deviation parameter stays at zero. \code{\link{draw_dsem_sim}} draws the
 unknown cells from the field's precision, which a series with no variance
 has no finite entry in, so every cell it has to draw comes back \code{NaN}.
 }
 \details{
-Catchability is the only process a derived series is allowed on, since
+Catchability is the only process a solved series is allowed on, since
 \code{\link{Setup_Mod_DSEM}} refuses one everywhere else, and the
 conditioning years are read from the fit rather than drawn. So the one case
-with cells left to draw is a derived catchability series on an operating
+with cells left to draw is a solved catchability series on an operating
 model that runs past the conditioning period, and that is what this refuses.
 }
 \keyword{internal}

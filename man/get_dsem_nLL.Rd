@@ -11,7 +11,8 @@ get_dsem_nLL(
   mu_grid,
   dsem_model,
   dsem_cells,
-  delta0 = NULL
+  delta0 = NULL,
+  grid = NULL
 )
 }
 \arguments{
@@ -24,6 +25,9 @@ a numbers at age series. The density reads \code{x_grid - mu_grid}, so for
 numbers at age that difference is the innovation, which is stored nowhere.}
 
 \item{delta0}{Optional numeric vector, one first-year offset per series.}
+
+\item{grid}{Optional output of \code{\link{get_dsem_grid}} for this call,
+which the objective already holds, so the projection is not repeated.}
 }
 \value{
 Scalar negative log density.
@@ -39,9 +43,9 @@ A first-year offset \eqn{\delta_0} shifts year one of each series and is
 propagated through the paths by \eqn{(I - B)^{-1}}, which is how an AR1
 started off its mean decays back at \eqn{\rho^{t-1}}.
 
-A series whose sd is fixed at zero makes \eqn{V} singular, so \eqn{Q} does
-not exist. Those cells are worked out by \code{\link{fill_dsem_derived}}
-and dropped, and what is left is the sum of normal densities of the
-remaining innovations.
+A series whose sd is fixed at zero makes \eqn{V} singular, so that \eqn{Q}
+does not exist and the model is reduced rank. Its cells are solved out of the
+others instead and the density is on what is left, with the precision
+\code{\link{get_dsem_Q_oo}} builds.
 }
 \keyword{internal}

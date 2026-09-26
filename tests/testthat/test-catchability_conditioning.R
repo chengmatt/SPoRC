@@ -143,12 +143,12 @@ test_that("a closed loop reads the fitted years back and lets a dsem drive the p
   expect_gt(max(abs(env$srv_q[1, proj, 1, 1] - env$srv_q[1, proj, 1, 2])), 0.1)
 })
 
-test_that("a derived catchability series is read over the conditioning years and refused past them", {
+test_that("a projected catchability series is read over the conditioning years and refused past them", {
 
-  fit <- q_dsem_derived_fit()
+  fit <- q_dsem_projected_fit()
   pars <- fit$env$parList()
   n_fit <- length(fit$data$years)
-  expect_true(any(fit$data$dsem_model$derived)) # the sd is fixed at zero, so nothing is integrated
+  expect_true(any(fit$data$dsem_model$project_k)) # the sd is fixed at zero, so nothing is integrated
 
   # a self test runs the fitted years alone, where the series is read from the fit rather than drawn
   sl <- q_selftest_simlist(fit)

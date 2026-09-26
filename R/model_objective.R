@@ -1010,7 +1010,7 @@ SPoRC_rtmb = function(pars, data) {
       if(dsem_link_par[s] == "ln_NAA") dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = log(NAA_pred[dsem_link_cell[[s]]]) # if NAA, the mean is the prediction
     } # end s loop
 
-    # doing bias correction (marginla sigma) for recruitment
+    # doing bias correction (marginal sigma) for recruitment
     dsem_margvar_grid = matrix(0, n_dsem_yrs, ncol(dsem_x_grid))
     rec_links = which(dsem_link_par == "ln_RecDevs")
     if(length(rec_links) > 0 && RecDevs_model == 1 && RecDevs_pen_center != 1 && any(bias_ramp != 0)) { # none when the penalty takes none
@@ -1018,16 +1018,18 @@ SPoRC_rtmb = function(pars, data) {
       for(s in rec_links) dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]] # add lognormal bias correction for recruitment here
     }
 
-    # some q series are deterministic (i.e., fixed effects w/ covariate so need to compute the q's here; not penalized in dsem)
-    if(any(dsem_model$derived)) {
-      dsem_x_grid = fill_dsem_derived(dsem_x_grid, dsem_mu_grid, get_dsem_arrow_values(dsem_beta, ln_dsem_sd, dsem_model), dsem_model)
+    # a solved series (an sd of zero) is deterministic (i.e., catchability series below or covariates w/ zero error)
+    dsem_solved = NULL # stays NULL with nothing solved out, and the density does its own
+    if(any(dsem_model$project_k)) {
+      dsem_solved = get_dsem_grid(dsem_beta, ln_dsem_sd, dsem_x_grid, dsem_mu_grid, dsem_model, dsem_cells, delta0 = if(is.null(dsem_delta0_use) || dsem_delta0_use == 0) NULL else dsem_delta0)
+      dsem_x_grid = dsem_solved$x_grid # the same projection the density takes, so both read one grid
       for(s in seq_along(dsem_link_par)) {
-        if(!dsem_model$derived[dsem_link_col[s]]) next # only a derived series is computed rather than estimated
-        dsem_derived_value = dsem_x_grid[dsem_link_row[[s]], dsem_link_col[s]]
-        if(dsem_link_par[s] == "ln_fish_q_devs") ln_fish_q_devs[dsem_link_cell[[s]]] = dsem_derived_value
-        if(dsem_link_par[s] == "ln_srv_q_devs") ln_srv_q_devs[dsem_link_cell[[s]]] = dsem_derived_value
+        if(!dsem_model$project_k[dsem_link_col[s]]) next # only a solved series is worked out rather than estimated
+        dsem_project_value = dsem_x_grid[dsem_link_row[[s]], dsem_link_col[s]]
+        if(dsem_link_par[s] == "ln_fish_q_devs") ln_fish_q_devs[dsem_link_cell[[s]]] = dsem_project_value
+        if(dsem_link_par[s] == "ln_srv_q_devs") ln_srv_q_devs[dsem_link_cell[[s]]] = dsem_project_value
       } # end s loop
-    } # end if any series has no innovation
+    } # end if any series is solved out
 
     # get nLL for state process here
     dsem_nLL = get_dsem_nLL(dsem_beta = dsem_beta,
@@ -1036,7 +1038,8 @@ SPoRC_rtmb = function(pars, data) {
                             mu_grid = dsem_mu_grid,
                             dsem_model = dsem_model,
                             dsem_cells = dsem_cells,
-                            delta0 = if(is.null(dsem_delta0_use) || dsem_delta0_use == 0) NULL else dsem_delta0
+                            delta0 = if(is.null(dsem_delta0_use) || dsem_delta0_use == 0) NULL else dsem_delta0,
+                            grid = dsem_solved
                             )
 
     # nll for covariates observed through a family and link (a fixed covariate carries none)
@@ -1046,7 +1049,7 @@ SPoRC_rtmb = function(pars, data) {
       cov_link = if(is.null(dsem_cov_link)) dsem_default_link(dsem_cov_family[k]) else dsem_cov_link[k] # a list from before links has each family's default
       cov_tweedie_p = if(dsem_cov_family[k] == 7) 1 + 1 / (1 + exp(-logit_dsem_tweedie_p[k])) else 1.5 # power in (1, 2), read for the tweedie only
       dsem_obs_nLL = dsem_obs_nLL + get_dsem_obs_nLL(y = dsem_cov_obs[obs_yrs,k],
-                                                     x = dsem_x[obs_yrs,dsem_cov_var_idx[k]],
+                                                     x = dsem_x_grid[obs_yrs,dsem_cov_var_idx[k]],
                                                      family = dsem_cov_family[k],
                                                      link = cov_link,
                                                      obs_sd = exp(ln_dsem_obs_sd[k]),

@@ -82,16 +82,12 @@ warn_R0_ref_block_om <- function(data, where) {
 #' @param what Character vector. Names of report elements (keys of
 #'   \code{rep}) to extract and store from each replicate. An error is raised
 #'   if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.
-#' @param sim_recruitment Character. How the operating model generates
-#'   recruitment. \code{"input"} (default, and the historical behavior) feeds
-#'   the estimated recruitment series in as \code{Rec_input}, so every simulated
-#'   replicate holds the same recruitment and \code{rec_model} has no effect on
-#'   the data. That conditions away recruitment and tests everything downstream
-#'   of it, but it cannot test the stock-recruit relationship itself, because
-#'   steepness is then informed only by its penalty. \code{"model"} withholds the
-#'   input so recruitment is generated from the fitted curve under
-#'   \code{rec_model}. Use it when the test is whether steepness and \code{R0}
-#'   are recoverable.
+#' @param sim_recruitment Character. How the operating model generates recruitment.
+#'   \code{"input"} (default) feeds the estimated series in as \code{Rec_input}, so every
+#'   replicate reuses the same deviations and steepness and \code{ln_sigmaR} get no
+#'   sampling variation. \code{"model"} withholds it and draws new deviations under
+#'   \code{RecDevs_model}, testing the stock-recruit curve itself. All other latent
+#'   processes stay conditioned on the fit under either setting.
 #'
 #' @return Named list with one element per entry in \code{what}, each an
 #'   array with the last dimension indexing simulation replicates (via
@@ -486,8 +482,7 @@ simulation_self_test <- function(
     WAA_srv_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_srv)) data$WAA_srv else rep$WAA_srv)[,,seq_along(data$years),,,,,drop = FALSE]), # survey weight at age
     MatAA_input = replicate(n = sim_list$n_sims, data$MatAA[,,seq_along(data$years),,,,drop = FALSE]), # maturity at age
     AgeingError_input = replicate(n = sim_list$n_sims, data$AgeingError[seq_along(data$years),,,drop = FALSE]), # ageing error
-    # fleet-specific ageing error, absent from data lists written before it existed,
-    # in which case the operating model falls back on the shared matrix
+    # fleet-specific ageing error, absent from data lists written before it existed, in which case the operating model falls back on the shared matrix
     AgeingError_fish_input = if(is.null(data$AgeingError_fish)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_fish[seq_along(data$years),,,,drop = FALSE]),
     AgeingError_srv_input = if(is.null(data$AgeingError_srv)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_srv[seq_along(data$years),,,,drop = FALSE]),
     SizeAgeTrans_input = if(data$fit_lengths == 0 || is.null(data$SizeAgeTrans) || all(is.na(data$SizeAgeTrans))) NULL else replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,seq_along(data$years),,,,,drop = FALSE]),
@@ -574,7 +569,7 @@ simulation_self_test <- function(
       NAA_re_ages = data$naa_re_ages,
       NAA_re_years = data$naa_re_yrs,
       NAA_re_seasons = data$naa_re_seas,
-      naa_eta_input = eta 
+      naa_eta_input = eta
     )
   }
 
@@ -746,7 +741,7 @@ simulation_self_test <- function(
           tmp_data$Wt_Srv_caal[] <- 1
         }
 
-        # do dsem covariate stuff here 
+        # do dsem covariate stuff here
         if(!is.null(tmp_data$dsem_model)) {
           tmp_data$dsem_cov_obs <- array(sim_obj$dsem_cov_obs_sim[,,i], dim = dim(tmp_data$dsem_cov_obs))
           for(k in seq_along(tmp_data$dsem_cov_var_idx)) {

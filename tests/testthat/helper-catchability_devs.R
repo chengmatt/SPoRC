@@ -113,7 +113,7 @@ q_cond_sl <- function(n_yrs = 20, n_fleets = 1, devs = NULL, n_cond = NULL) {
 # works it out from the covariate and nothing is integrated
 q_dsem_derived_cache <- new.env(parent = emptyenv())
 
-q_dsem_derived_fit <- function() {
+q_dsem_projected_fit <- function() {
 
   if(!is.null(q_dsem_derived_cache$fit)) return(q_dsem_derived_cache$fit)
 

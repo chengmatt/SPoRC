@@ -89,7 +89,7 @@ test_that("catchability blocks refuse deviations", {
   expect_silent(add_q_devs(il, "none"))
 })
 
-test_that("a derived dsem series drives catchability as a fixed effect regression", {
+test_that("a projected dsem series drives catchability as a fixed effect regression", {
 
   il <- add_q_devs(pcod_q_input(), "dsem")
   set.seed(11)
@@ -103,7 +103,7 @@ test_that("a derived dsem series drives catchability as a fixed effect regressio
                                        dsem_family = c(env = "fixed"), dsem_mu_spec = c(env = 0)))
 
   # nothing is integrated: the deviations come from the arrows and the covariate cells are known
-  expect_true(d$data$dsem_model$derived[match(tgt, d$data$dsem_model$variables)])
+  expect_true(d$data$dsem_model$project_k[match(tgt, d$data$dsem_model$variables)])
   expect_equal(sum(!is.na(as.integer(d$map$ln_srv_q_devs))), 0)
   expect_equal(sum(!is.na(as.integer(d$map$dsem_x))), 0)
 
@@ -114,7 +114,7 @@ test_that("a derived dsem series drives catchability as a fixed effect regressio
   expect_equal(as.numeric(obj$rep$srv_q[1,,1]), as.numeric(expected), tolerance = 1e-8)
 })
 
-test_that("a derived series the objective cannot fill is refused rather than left at zero", {
+test_that("a projected series the objective cannot fill is refused rather than left at zero", {
 
   il <- pcod_q_input()
   il$data$growth_tv_type <- 0
@@ -356,8 +356,8 @@ test_that("a dsem catchability series can hold a covariate effect and process er
   d <- suppressMessages(Setup_Mod_DSEM(il, arrows, data.frame(year = 1:n_yrs, env = env_x), dsem_processes = "srv_q",
                                        dsem_family = c(env = "fixed"), dsem_mu_spec = c(env = 0)))
 
-  # with an sd line the series is no longer derived, so the deviations are integrated
-  expect_false(any(d$data$dsem_model$derived))
+  # with an sd line the series is no longer projected, so the deviations are integrated
+  expect_false(any(d$data$dsem_model$project_k))
   expect_equal(sum(!is.na(as.integer(d$map$ln_srv_q_devs))), n_yrs)
   expect_equal(length(d$par$ln_dsem_sd), 1)
 
@@ -384,7 +384,7 @@ test_that("a vanishing process error matches the fixed effect regression it beco
                                          dsem_family = c(env = "fixed"), dsem_mu_spec = c(env = 0)))
     o <- suppressWarnings(suppressMessages(fit_model(d$data, d$par, d$map, random = random, do_optim = TRUE,
                                                      newton_loops = 1, silent = TRUE)))
-    # as.numeric: a Laplace objective comes back with a logarithm attribute the derived route has no
+    # as.numeric: a Laplace objective comes back with a logarithm attribute the projected route has no
     list(nll = as.numeric(o$optim$objective), beta = as.numeric(o$env$parList()$dsem_beta))
   }
 

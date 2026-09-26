@@ -19,9 +19,12 @@ List with \code{n_cells}, \code{n_grid_yrs} and, for \eqn{I - B} and
   column of each entry (\code{entry_row}, \code{entry_col}) and its year
   (\code{entry_yr}), which a moderated arrow reads its value at.
   \code{det_is_one} says whether the cells can be ordered so that everything
-  an arrow comes from is set before what it points to, and
+  an arrow comes from is set before what it points to,
   \code{needs_dense_logdet} whether dgmrf will hold a random effect in the
-  precision.
+  precision, and, for a reduced rank model, \code{project_k} with the cells
+  of a solved series, \code{obs_idx} and \code{unobs_idx} splitting the
+  cells the way dsem does, and \code{Q_oo} the pattern
+  \code{\link{get_dsem_Q_oo}} fills.
 }
 \description{
 Cells of the year by series grid are numbered series by series, years within

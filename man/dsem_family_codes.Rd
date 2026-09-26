@@ -19,11 +19,10 @@ dsem_default_link(family)
 Named integer vector, or one link code.
 }
 \description{
-The dsem package's codes and names. Families: fixed 0, gaussian 1 (normal
+Family and link codes. Families: fixed 0, gaussian 1 (normal
 is the same), bernoulli 2 (binomial is the same), poisson 3, Gamma 4 (gamma
 is the same), gaussian_fixed_sd 5, lognormal 6, tweedie 7. Links: identity
 0, log 1, logit 2, cloglog 3. \code{dsem_default_link} gives each family
-the link its dsem constructor defaults to, except the Gamma, whose stats
-default (inverse) dsem has no code for, so it gets the log.
+its usual link, except the Gamma, which gets the log rather than the inverse.
 }
 \keyword{internal}

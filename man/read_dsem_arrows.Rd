@@ -20,12 +20,10 @@ per line of a string. \code{#} starts a comment.}
 
 \item{covs}{Character vector of series groups whose innovations are allowed
 to covary, each group written as one string, for example \code{"a, b"}.
-A covariance term is added for every pair in a group, as dsem's \code{covs}
-does. Series with no sd line of their own get one added, also as dsem does.}
+A covariance term is added for every pair in a group. Series with no sd line of their own get one added.}
 
 \item{mod_var_logscale}{Whether a moderated sd or covariance is the
-exponential of its series. \code{FALSE} (default) reads it on the natural
-scale, as dsem does.}
+exponential of its series. \code{FALSE} (default) reads it on the natural scale.}
 
 \item{variance}{What an sd line means. \code{"conditional"} (default) makes
 it the innovation sd, so a series' spread is that plus whatever its paths
@@ -46,7 +44,7 @@ List with \code{arrows} (one row per arrow: type, from, to, lag,
   \code{beta_names} (paths and covariances, natural scale),
   \code{ln_sd_names} (sds, log scale), \code{mod_var_logscale} and
   \code{series_order}, the order the series can be drawn in within a year
-  (\code{NULL} when same-year paths form a loop), and \code{derived}, the
+  (\code{NULL} when same-year paths form a loop), and \code{project_k}, the
   series whose sd is fixed at zero, worked out from what points into them,
   and \code{variance}, what the sd lines mean.
 }
@@ -57,7 +55,6 @@ A lag may be negative, which reads \code{from} in a later year rather than an
 earlier one. On a time axis that says the future affects the present, so it is
 for axes that are not time, such as ages or length bins.
 \code{"a <-> a, 0, name, start"} is the innovation sd of series \code{a}, and
-\code{"a <-> b, 0, name, start"} a covariance term between two innovations,
-read as dsem reads it. A name of \code{NA} fixes the arrow at \code{start},
+\code{"a <-> b, 0, name, start"} a covariance term between two innovations. A name of \code{NA} fixes the arrow at \code{start},
 and a name used on several arrows is one shared parameter.
 }

@@ -666,16 +666,45 @@ draw_dsem_sim <- function(sim_env) {
 
   } else {
 
-    Q <- get_dsem_precision(sim_env$dsem_beta, sim_env$ln_dsem_sd, sim_env$dsem_model, get_dsem_cells(sim_env$dsem_model, n_yrs))
+    cells <- get_dsem_cells(sim_env$dsem_model, n_yrs)
+    any_project <- length(cells$unobs_idx) > 0
+
+    # the precision the density reads. a solved series has no row in it, so those
+    # cells are set from the drawn ones afterwards
+    parts <- get_dsem_matrices(sim_env$dsem_beta,
+                               sim_env$ln_dsem_sd,
+                               sim_env$dsem_model,
+                               cells,
+                               mu_grid,
+                               need_Vinv = !any_project,
+                               need_V = any_project && cells$has_cov)
+
+    solve_mat <- get_dsem_solve_mat(parts$IminusB, cells)
+    Q_oo <- get_dsem_Q_oo(parts$IminusB, parts, solve_mat, cells)
 
     known <- matrix(FALSE, n_yrs, n_vars)
     if(n_cond > 0) known[1:n_cond,] <- TRUE
     known_cell <- which(as.vector(known)) # as.vector stacks series, matching the cell numbering
 
-    dsem_cond <- get_dsem_conditional(Q, as.vector(mu_grid), known_cell, as.vector(x_known)[known_cell])
+    obs <- cells$obs_idx # Q_oo covers these cells, so condition and draw within them
+    known_obs <- match(intersect(known_cell, obs), obs)
+
+    dsem_cond <- get_dsem_conditional(Q_oo,
+                                      as.vector(mu_grid)[obs],
+                                      known_obs,
+                                      as.vector(x_known)[obs[known_obs]])
 
     x_sim <- array(as.vector(x_known), dim = c(n_yrs * n_vars, n_sims))
-    x_sim[dsem_cond$unknown_cell,] <- draw_dsem_conditional(dsem_cond, n_sims)
+    x_sim[obs[dsem_cond$unknown_cell],] <- draw_dsem_conditional(dsem_cond, n_sims)
+
+    # a solved cell follows from each replicate's own drawn cells
+    if(any_project) {
+      for(sim in seq_len(n_sims)) {
+        x_sim[,sim] <- as.vector(set_dsem_solved_cells(matrix(x_sim[,sim], n_yrs, n_vars),
+                                                    mu_grid, solve_mat, cells))
+      } # end sim loop
+    } # end if anything solved out
+
     x_sim <- array(x_sim, dim = c(n_yrs, n_vars, n_sims))
 
   } # end if any moderated arrow

@@ -26,7 +26,7 @@
 #'
 #' @seealso \code{\link{Setup_Mod_DSEM}}
 #'
-#' @export
+#' @export plot_dsem_dag
 plot_dsem_dag <- function(x,
                           sd_rep = NULL,
                           edge_label = c("value_and_stars", "value", "name"),

@@ -91,6 +91,7 @@ articles:
     - k_defining_priors
     - q_movement_param
     - af_growth_options
+    - ag_dsem
     - n_single_region_ebs_pollock_randomeff_case_study
     - p_single_region_dusky_alt_mp_testing
     - r_natal-homing-pop-lrgr-rg

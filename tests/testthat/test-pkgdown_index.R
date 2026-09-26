@@ -13,7 +13,7 @@ test_that("every exported topic and vignette is in the pkgdown index", {
 
   # a vignette still being written is counted here rather than in _pkgdown.yml, so the rest of the
   # check keeps running. take it off this list when it goes into the file
-  unlisted_vignettes <- c("ag_dsem")
+  unlisted_vignettes <- character(0)
   pkg$meta$articles[[1]]$contents <- c(pkg$meta$articles[[1]]$contents, unlisted_vignettes)
 
   # each index is checked on its own, since check_pkgdown() stops at the first one that is short and

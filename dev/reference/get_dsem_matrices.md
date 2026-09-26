@@ -21,7 +21,8 @@ get_dsem_matrices(
   dsem_model,
   dsem_cells,
   x_grid = NULL,
-  need_Vinv = TRUE
+  need_Vinv = TRUE,
+  need_V = FALSE
 )
 ```
 
@@ -44,13 +45,19 @@ get_dsem_matrices(
 
 - need_Vinv:
 
-  Whether to form \\V^{-1}\\; the derived-series route only needs the
-  sds.
+  Whether to form \\V^{-1}\\. A series with an sd of zero makes \\V\\
+  singular, so if so should be FALSE.
+
+- need_V:
+
+  Whether to return \\V\\ itself, which the same route inverts one block
+  of when a covariance line couples the innovations.
 
 ## Value
 
 List with `IminusB` (sparse, \\I - B\\), `Vinv` (sparse \\V^{-1}\\, or
-`NULL` when not asked for) and `sd_cell` (each cell's innovation sd, or
+`NULL` when not asked for), `V` (sparse, only when asked for and a
+covariance line is present) and `sd_cell` (each cell's innovation sd, or
 `NULL` when a covariance line couples them).
 
 ## Details

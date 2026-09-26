@@ -101,14 +101,12 @@ simulation_self_test(
 - sim_recruitment:
 
   Character. How the operating model generates recruitment. `"input"`
-  (default, and the historical behavior) feeds the estimated recruitment
-  series in as `Rec_input`, so every simulated replicate holds the same
-  recruitment and `rec_model` has no effect on the data. That conditions
-  away recruitment and tests everything downstream of it, but it cannot
-  test the stock-recruit relationship itself, because steepness is then
-  informed only by its penalty. `"model"` withholds the input so
-  recruitment is generated from the fitted curve under `rec_model`. Use
-  it when the test is whether steepness and `R0` are recoverable.
+  (default) feeds the estimated series in as `Rec_input`, so every
+  replicate reuses the same deviations and steepness and `ln_sigmaR` get
+  no sampling variation. `"model"` withholds it and draws new deviations
+  under `RecDevs_model`, testing the stock-recruit curve itself. All
+  other latent processes stay conditioned on the fit under either
+  setting.
 
 ## Value
 

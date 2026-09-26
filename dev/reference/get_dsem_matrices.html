@@ -88,7 +88,8 @@ stored slots, which is what lets the matrices be built on the tape.</p>
 <span>  <span class="va">dsem_model</span>,</span>
 <span>  <span class="va">dsem_cells</span>,</span>
 <span>  x_grid <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  need_Vinv <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  need_Vinv <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  need_V <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,14 +111,20 @@ is moderated.</p></dd>
 
 
 <dt id="arg-need-vinv">need_Vinv<a class="anchor" aria-label="anchor" href="#arg-need-vinv"></a></dt>
-<dd><p>Whether to form \(V^{-1}\); the derived-series route only
-needs the sds.</p></dd>
+<dd><p>Whether to form \(V^{-1}\). A series with an sd of zero
+makes \(V\) singular, so if so should be FALSE.</p></dd>
+
+
+<dt id="arg-need-v">need_V<a class="anchor" aria-label="anchor" href="#arg-need-v"></a></dt>
+<dd><p>Whether to return \(V\) itself, which the same route inverts
+one block of when a covariance line couples the innovations.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>List with <code>IminusB</code> (sparse, \(I - B\)), <code>Vinv</code> (sparse
-  \(V^{-1}\), or <code>NULL</code> when not asked for) and <code>sd_cell</code> (each
+  \(V^{-1}\), or <code>NULL</code> when not asked for), <code>V</code> (sparse, only
+  when asked for and a covariance line is present) and <code>sd_cell</code> (each
   cell's innovation sd, or <code>NULL</code> when a covariance line couples them).</p>
     </div>
     <div class="section level2">

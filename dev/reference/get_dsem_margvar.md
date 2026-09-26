@@ -52,7 +52,8 @@ Matrix `[year, series]` of variances, zero on the known cells.
 
 ## Details
 
-A series with an sd of zero (derived) has no innovation, so its rows
-leave the quadratic form; an unknown cell pointing into one is refused,
-since the derived value would then be random while the model treats it
-as fixed.
+A solved series (an sd of zero) has no row of its own in the precision.
+Its cells move with whatever sets them, which
+[`get_dsem_Q_oo`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo.md)
+folds into the rows that do keep an innovation, so the correction reads
+the same precision as the density.

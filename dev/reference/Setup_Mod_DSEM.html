@@ -148,8 +148,7 @@ log-scale sd; <code>"tweedie"</code> takes non-negative values including zeros w
 the cell the log mean, <code>exp(ln_dsem_obs_sd)</code> the dispersion and
 <code>logit_dsem_tweedie_p</code> the power as \(1 + \mathrm{plogis}(\cdot)\), in
 (1, 2) and starting at 1.5; and <code>"gaussian_fixed_sd"</code> is normal about the
-cell with a known sd per observed year from <code>dsem_fixed_sd</code>. dsem's own
-names <code>"gaussian"</code> and <code>"Gamma"</code> are accepted. Under a family whose
+cell with a known sd per observed year from <code>dsem_fixed_sd</code>. The names <code>"gaussian"</code> and <code>"Gamma"</code> are accepted as well. Under a family whose
 link is not the identity the arrows, the mean under <code>dsem_mu_spec</code> and the
 grid are all on the link scale, and every latent cell starts at the series
 mean. The sd and power parameters are mapped off for the families with none.</p></dd>
@@ -159,8 +158,7 @@ mean. The sd and power parameters are mapped off for the families with none.</p>
 <dd><p>Optional named character vector, one entry per covariate, the
 link from the cell to the observation's mean: <code>"identity"</code>, <code>"log"</code>,
 <code>"logit"</code> or <code>"cloglog"</code>. Defaults to each family's own: identity for
-fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A
-link applies whatever the family, as dsem does, so a Poisson under the identity
+fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A link applies whatever the family, so a Poisson under the identity
 can be handed a negative mean.</p></dd>
 
 

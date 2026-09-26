@@ -1,6 +1,6 @@
-# Refuse a catchability series the operating model cannot draw
+# Dont allow a catchability series the operating model cannot draw
 
-A dsem series given an sd of zero is derived: it has no innovation of
+A dsem series given an sd of zero is solved out: it has no innovation of
 its own, the objective works it out from its covariates, and the fitted
 deviation parameter stays at zero.
 [`draw_dsem_sim`](https://chengmatt.github.io/SPoRC/dev/reference/draw_dsem_sim.md)
@@ -28,9 +28,9 @@ Nothing. Called for its refusal.
 
 ## Details
 
-Catchability is the only process a derived series is allowed on, since
+Catchability is the only process a solved series is allowed on, since
 [`Setup_Mod_DSEM`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md)
 refuses one everywhere else, and the conditioning years are read from
 the fit rather than drawn. So the one case with cells left to draw is a
-derived catchability series on an operating model that runs past the
+solved catchability series on an operating model that runs past the
 conditioning period, and that is what this refuses.

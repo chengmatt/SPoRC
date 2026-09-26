@@ -415,9 +415,9 @@ one file.</p>
 <code>dsem_link_codes</code>, <code>dsem_process_table</code>,
 <code>dsem_series</code>, <code>get_dsem_cells</code>,
 <code>get_dsem_link</code>, <code>get_dsem_link_sd_arrow</code>,
-<code>peel_dsem_years</code>, <code>peel_series_order</code>,
-<code>read_dsem_arrows</code>, <code>set_dsem_logdet_atomic</code>,
-<code>Setup_Mod_DSEM</code>
+<code>get_dsem_Q_oo_pattern</code>, <code>peel_dsem_years</code>,
+<code>peel_series_order</code>, <code>read_dsem_arrows</code>,
+<code>set_dsem_logdet_atomic</code>, <code>Setup_Mod_DSEM</code>
 </td>
 <td>
 <code>model_precision.R</code>, <code>setup_catchability.R</code>,
@@ -842,10 +842,12 @@ one file.</p>
 <tr class="even">
 <td><code>model_precision.R</code></td>
 <td>
-<code>fill_dsem_derived</code>, <code>Get_3d_precision</code>,
-<code>get_dsem_arrow_values</code>, <code>get_dsem_margvar</code>,
+<code>Get_3d_precision</code>, <code>get_dsem_arrow_values</code>,
+<code>get_dsem_grid</code>, <code>get_dsem_margvar</code>,
 <code>get_dsem_matrices</code>, <code>get_dsem_nLL</code>,
-<code>get_dsem_obs_nLL</code>, <code>get_dsem_precision</code>
+<code>get_dsem_obs_nLL</code>, <code>get_dsem_precision</code>,
+<code>get_dsem_Q_oo</code>, <code>get_dsem_solve_mat</code>,
+<code>set_dsem_solved_cells</code>
 </td>
 <td>nothing</td>
 <td>
@@ -1847,7 +1849,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 199 test files in total.</p>
+<p>That is 201 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

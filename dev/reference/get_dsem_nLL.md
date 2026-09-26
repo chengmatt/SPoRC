@@ -15,7 +15,8 @@ get_dsem_nLL(
   mu_grid,
   dsem_model,
   dsem_cells,
-  delta0 = NULL
+  delta0 = NULL,
+  grid = NULL
 )
 ```
 
@@ -37,6 +38,13 @@ get_dsem_nLL(
 
   Optional numeric vector, one first-year offset per series.
 
+- grid:
+
+  Optional output of
+  [`get_dsem_grid`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_grid.md)
+  for this call, which the objective already holds, so the projection is
+  not repeated.
+
 ## Value
 
 Scalar negative log density.
@@ -47,8 +55,9 @@ A first-year offset \\\delta_0\\ shifts year one of each series and is
 propagated through the paths by \\(I - B)^{-1}\\, which is how an AR1
 started off its mean decays back at \\\rho^{t-1}\\.
 
-A series whose sd is fixed at zero makes \\V\\ singular, so \\Q\\ does
-not exist. Those cells are worked out by
-[`fill_dsem_derived`](https://chengmatt.github.io/SPoRC/dev/reference/fill_dsem_derived.md)
-and dropped, and what is left is the sum of normal densities of the
-remaining innovations.
+A series whose sd is fixed at zero makes \\V\\ singular, so that \\Q\\
+does not exist and the model is reduced rank. Its cells are solved out
+of the others instead and the density is on what is left, with the
+precision
+[`get_dsem_Q_oo`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo.md)
+builds.

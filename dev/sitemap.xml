@@ -239,7 +239,6 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/expand_fleet_ageing_error.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/expand_natmort_seasons.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/extend_years.html</loc></url>
-<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/fill_dsem_derived.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/fit_model.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/flatten_refpt.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/fleet_ageing_error.html</loc></url>
@@ -272,9 +271,12 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_data_fitted_plot.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dev_pe_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dmr_penalty.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo_pattern.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_arrow_values.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_cells.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_conditional.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_grid.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_link.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_link_sd_arrow.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_margvar.html</loc></url>
@@ -282,6 +284,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_obs_nLL.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_precision.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_solve_mat.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_fishery_observation_model.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_francis_weights.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_francis_weights_caal.html</loc></url>
@@ -420,6 +423,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sel_has_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_dsem_logdet_atomic.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_dsem_solved_cells.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_caal_source.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_dbnrml_raw.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_dbnrml_startbin.html</loc></url>

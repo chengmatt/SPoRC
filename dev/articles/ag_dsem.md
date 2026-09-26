@@ -752,7 +752,7 @@ pen_recdev_mod$sd_rep
 #> srv_fixed_sel_pars   2.221258e+00 0.03451709
 #> srv_fixed_sel_pars   1.544718e+00 0.09499803
 #> ln_srv_q            -2.789523e-01 0.11272184
-#> Maximum gradient component: 1.372117e-12
+#> Maximum gradient component: 1.62101e-10
 
 # check if fit with dsem is the same with previous penalized fit (should be)
 pen_recdev_mod$rep$jnLL # dsem
@@ -894,7 +894,7 @@ re_dsem_recdev_mod$sd_rep
 #> srv_fixed_sel_pars   1.540144173 0.09500949
 #> ln_srv_q            -0.276813841 0.11249676
 #> ln_dsem_sd          -0.101665306 0.10025550
-#> Maximum gradient component: 1.549452e-09
+#> Maximum gradient component: 1.864024e-09
 
 # setup w/o dsem. one sigmaR across the early and late period
 nodsem_base <- Setup_Mod_Rec(
@@ -1007,7 +1007,7 @@ re_nodsem_recdev_mod$sd_rep
 #> srv_fixed_sel_pars   2.219947359 0.03440640
 #> srv_fixed_sel_pars   1.540144173 0.09500949
 #> ln_srv_q            -0.276813841 0.11249676
-#> Maximum gradient component: 4.311929e-10
+#> Maximum gradient component: 2.801087e-09
 
 # should give equivalent results
 re_dsem_recdev_mod$rep$jnLL
@@ -1067,25 +1067,25 @@ re_ar1_dsem_recdev_mod$sd_rep
 #> ln_global_R0         0.015210019 0.150267651
 #> ln_InitDevs          0.017970558 0.247186935
 #> ln_InitDevs          0.028529269 0.248560725
-#> ln_InitDevs          0.030321494 0.249041220
+#> ln_InitDevs          0.030321494 0.249041221
 #> ln_InitDevs          0.016317745 0.248012829
 #> ln_InitDevs         -0.005425592 0.246432031
 #> ln_InitDevs         -0.024975855 0.244573769
 #> ln_InitDevs         -0.048237866 0.243456847
 #> ln_InitDevs         -0.061028675 0.242559159
 #> ln_InitDevs         -0.064452669 0.242494803
-#> ln_InitDevs         -0.063734532 0.242776020
+#> ln_InitDevs         -0.063734533 0.242776021
 #> ln_InitDevs         -0.061676078 0.243007040
 #> ln_InitDevs         -0.059537557 0.243212889
 #> ln_InitDevs         -0.057500604 0.243423488
-#> ln_InitDevs         -0.055798657 0.243600636
+#> ln_InitDevs         -0.055798658 0.243600636
 #> ln_InitDevs         -0.054303350 0.243758303
 #> ln_InitDevs         -0.052908613 0.243906995
 #> ln_InitDevs         -0.051537037 0.244053427
 #> ln_InitDevs         -0.050227836 0.244193659
-#> ln_InitDevs         -0.048995250 0.244326228
+#> ln_InitDevs         -0.048995251 0.244326228
 #> ln_InitDevs         -0.047823814 0.244452623
-#> ln_InitDevs         -0.046710190 0.244573140
+#> ln_InitDevs         -0.046710190 0.244573141
 #> ln_InitDevs         -0.045644295 0.244688750
 #> ln_InitDevs         -0.044638615 0.244798171
 #> ln_InitDevs         -0.043696561 0.244901028
@@ -1148,8 +1148,8 @@ re_ar1_dsem_recdev_mod$sd_rep
 #> srv_fixed_sel_pars   1.556844629 0.095848072
 #> ln_srv_q            -0.353060150 0.125016419
 #> dsem_beta            1.032106186 0.009070677
-#> ln_dsem_sd          -1.401610082 0.163822222
-#> Maximum gradient component: 1.994308e-07
+#> ln_dsem_sd          -1.401610081 0.163822223
+#> Maximum gradient component: 7.063867e-07
 
 # compare with iid version
 plot(re_ar1_dsem_recdev_mod$rep$dsem_x_grid, ylab = 'RecDev', xlab = 'Year', col = 'blue', ylim = c(-2, 3), type = 'l')

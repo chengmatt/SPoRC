@@ -5,16 +5,14 @@ A lag may be negative, which reads from in a later year rather than an
 earlier one. On a time axis that says the future affects the present, so it is
 for axes that are not time, such as ages or length bins.
 "a &amp;lt;-&amp;gt; a, 0, name, start" is the innovation sd of series a, and
-"a &amp;lt;-&amp;gt; b, 0, name, start" a covariance term between two innovations,
-read as dsem reads it. A name of NA fixes the arrow at start,
+"a &amp;lt;-&amp;gt; b, 0, name, start" a covariance term between two innovations. A name of NA fixes the arrow at start,
 and a name used on several arrows is one shared parameter.'><meta property="og:description" content='One arrow per line. "from -&amp;gt; to, lag, name, start" is a path: series
 from in year t - lag affects series to in year t.
 A lag may be negative, which reads from in a later year rather than an
 earlier one. On a time axis that says the future affects the present, so it is
 for axes that are not time, such as ages or length bins.
 "a &amp;lt;-&amp;gt; a, 0, name, start" is the innovation sd of series a, and
-"a &amp;lt;-&amp;gt; b, 0, name, start" a covariance term between two innovations,
-read as dsem reads it. A name of NA fixes the arrow at start,
+"a &amp;lt;-&amp;gt; b, 0, name, start" a covariance term between two innovations. A name of NA fixes the arrow at start,
 and a name used on several arrows is one shared parameter.'><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -75,8 +73,7 @@ A lag may be negative, which reads <code>from</code> in a later year rather than
 earlier one. On a time axis that says the future affects the present, so it is
 for axes that are not time, such as ages or length bins.
 <code>"a &lt;-&gt; a, 0, name, start"</code> is the innovation sd of series <code>a</code>, and
-<code>"a &lt;-&gt; b, 0, name, start"</code> a covariance term between two innovations,
-read as dsem reads it. A name of <code>NA</code> fixes the arrow at <code>start</code>,
+<code>"a &lt;-&gt; b, 0, name, start"</code> a covariance term between two innovations. A name of <code>NA</code> fixes the arrow at <code>start</code>,
 and a name used on several arrows is one shared parameter.</p>
     </div>
 
@@ -107,14 +104,12 @@ per line of a string. <code>#</code> starts a comment.</p></dd>
 <dt id="arg-covs">covs<a class="anchor" aria-label="anchor" href="#arg-covs"></a></dt>
 <dd><p>Character vector of series groups whose innovations are allowed
 to covary, each group written as one string, for example <code>"a, b"</code>.
-A covariance term is added for every pair in a group, as dsem's <code>covs</code>
-does. Series with no sd line of their own get one added, also as dsem does.</p></dd>
+A covariance term is added for every pair in a group. Series with no sd line of their own get one added.</p></dd>
 
 
 <dt id="arg-mod-var-logscale">mod_var_logscale<a class="anchor" aria-label="anchor" href="#arg-mod-var-logscale"></a></dt>
 <dd><p>Whether a moderated sd or covariance is the
-exponential of its series. <code>FALSE</code> (default) reads it on the natural
-scale, as dsem does.</p></dd>
+exponential of its series. <code>FALSE</code> (default) reads it on the natural scale.</p></dd>
 
 
 <dt id="arg-variance">variance<a class="anchor" aria-label="anchor" href="#arg-variance"></a></dt>
@@ -139,7 +134,7 @@ do not allow a series with an sd of zero or a moderated sd.</p></dd>
   <code>beta_names</code> (paths and covariances, natural scale),
   <code>ln_sd_names</code> (sds, log scale), <code>mod_var_logscale</code> and
   <code>series_order</code>, the order the series can be drawn in within a year
-  (<code>NULL</code> when same-year paths form a loop), and <code>derived</code>, the
+  (<code>NULL</code> when same-year paths form a loop), and <code>project_k</code>, the
   series whose sd is fixed at zero, worked out from what points into them,
   and <code>variance</code>, what the sd lines mean.</p>
     </div>

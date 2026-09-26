@@ -6,9 +6,9 @@ negative, which reads `from` in a later year rather than an earlier one.
 On a time axis that says the future affects the present, so it is for
 axes that are not time, such as ages or length bins.
 `"a <-> a, 0, name, start"` is the innovation sd of series `a`, and
-`"a <-> b, 0, name, start"` a covariance term between two innovations,
-read as dsem reads it. A name of `NA` fixes the arrow at `start`, and a
-name used on several arrows is one shared parameter.
+`"a <-> b, 0, name, start"` a covariance term between two innovations. A
+name of `NA` fixes the arrow at `start`, and a name used on several
+arrows is one shared parameter.
 
 ## Usage
 
@@ -37,14 +37,13 @@ read_dsem_arrows(
 
   Character vector of series groups whose innovations are allowed to
   covary, each group written as one string, for example `"a, b"`. A
-  covariance term is added for every pair in a group, as dsem's `covs`
-  does. Series with no sd line of their own get one added, also as dsem
-  does.
+  covariance term is added for every pair in a group. Series with no sd
+  line of their own get one added.
 
 - mod_var_logscale:
 
   Whether a moderated sd or covariance is the exponential of its series.
-  `FALSE` (default) reads it on the natural scale, as dsem does.
+  `FALSE` (default) reads it on the natural scale.
 
 - variance:
 
@@ -69,5 +68,5 @@ par, from_idx, to_idx, mod_idx), `variables`, `beta_names` (paths and
 covariances, natural scale), `ln_sd_names` (sds, log scale),
 `mod_var_logscale` and `series_order`, the order the series can be drawn
 in within a year (`NULL` when same-year paths form a loop), and
-`derived`, the series whose sd is fixed at zero, worked out from what
+`project_k`, the series whose sd is fixed at zero, worked out from what
 points into them, and `variance`, what the sd lines mean.

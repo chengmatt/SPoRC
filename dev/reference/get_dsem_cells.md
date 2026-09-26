@@ -31,6 +31,10 @@ numbered sparse template (`m`), the entry filling each stored slot
 diagonal of \\I - B\\), the row and column of each entry (`entry_row`,
 `entry_col`) and its year (`entry_yr`), which a moderated arrow reads
 its value at. `det_is_one` says whether the cells can be ordered so that
-everything an arrow comes from is set before what it points to, and
+everything an arrow comes from is set before what it points to,
 `needs_dense_logdet` whether dgmrf will hold a random effect in the
-precision.
+precision, and, for a reduced rank model, `project_k` with the cells of
+a solved series, `obs_idx` and `unobs_idx` splitting the cells the way
+dsem does, and `Q_oo` the pattern
+[`get_dsem_Q_oo`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo.md)
+fills.

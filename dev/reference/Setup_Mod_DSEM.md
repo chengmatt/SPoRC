@@ -150,11 +150,13 @@ Setup_Mod_DSEM(
   reads each sd line as the innovation sd; `"diagonal"` and `"marginal"`
   read it as the series' marginal sd, solving the innovation sd so the
   series comes out at that spread, and differ only when covariance lines
-  are present. Under either, a linked recruitment cell's correction is
-  half its sd line squared, as under the iid penalty, whatever paths
-  feed it. A random walk cannot be written under them, since its paths
-  alone carry a cell past any fixed spread after year one, and setup
-  checks the starting values and refuses.
+  are present. A linked recruitment cell's lognormal correction is half
+  its marginal variance under the arrows, which `dsem_margvar_grid`
+  reports and the marginal forms hold at the sd line squared; the
+  initial age deviations read its settled value. A random walk cannot be
+  written under them, since its paths alone carry a cell past any fixed
+  spread after year one, and setup checks the starting values and
+  refuses.
 
 ## Value
 

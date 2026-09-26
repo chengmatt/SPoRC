@@ -80,7 +80,9 @@ first sex's. Called from <code><a href="get_recruitment_penalty.html">get_recrui
 <span>  Use_init_sex_pen <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  ln_sigma_init_sex <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  init_bias_ramp <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  map_ln_InitDevs <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  map_ln_InitDevs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  init_sigmaR_dsem <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  init_sigmaR_dsem_use <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -162,6 +164,12 @@ every age.</p></dd>
 <dd><p>Numeric array matching <code>ln_InitDevs</code> of map levels
 (<code>NA</code> where fixed). Cells sharing a level hold one parameter and split
 one penalty between them. <code>NULL</code> penalizes every cell in full.</p></dd>
+
+
+<dt id="arg-init-sigmar-dsem-init-sigmar-dsem-use">init_sigmaR_dsem, init_sigmaR_dsem_use<a class="anchor" aria-label="anchor" href="#arg-init-sigmar-dsem-init-sigmar-dsem-use"></a></dt>
+<dd><p>Array <code>[pop, region]</code> of the
+settled marginal sd of the recruitment series under the arrows, and <code>1</code> where a
+cell reads it in place of <code>ln_sigmaR</code>. <code>NULL</code> without a dsem.</p></dd>
 
 </dl></div>
     <div class="section level2">

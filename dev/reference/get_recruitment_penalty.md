@@ -37,7 +37,9 @@ get_recruitment_penalty(
   Use_init_sex_pen = 0,
   ln_sigma_init_sex = 0,
   init_bias_ramp = NULL,
-  map_ln_InitDevs = NULL
+  map_ln_InitDevs = NULL,
+  init_sigmaR_dsem = NULL,
+  init_sigmaR_dsem_use = NULL
 )
 ```
 
@@ -160,6 +162,12 @@ get_recruitment_penalty(
   Numeric array matching `ln_InitDevs` of map levels (`NA` where fixed).
   Cells sharing a level hold one parameter and split one penalty between
   them. `NULL` penalizes every cell in full.
+
+- init_sigmaR_dsem, init_sigmaR_dsem_use:
+
+  Array `[pop, region]` of the settled marginal sd of the recruitment
+  series under the arrows, and `1` where a cell reads it in place of
+  `ln_sigmaR`. `NULL` without a dsem.
 
 ## Value
 

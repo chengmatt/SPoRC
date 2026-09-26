@@ -122,7 +122,10 @@
 </ul></div>
 <div class="section level4">
 <h4 id="model-fitting-and-diagnostics-1-2-0-9000">Model fitting and diagnostics<a class="anchor" aria-label="anchor" href="#model-fitting-and-diagnostics-1-2-0-9000"></a></h4>
-<ul><li>Improved Newton refinement in <code>fit_model</code> by obtaining the Hessian directly from the AD tape rather than finite differencing.</li>
+<ul><li>Added dynamic structural equation models via <code>Setup_Mod_DSEM</code>, linking recruitment, growth, movement, catchability and the numbers at age to each other and to covariates through arrow notation.</li>
+<li>
+<code>Setup_Mod_Movement</code> and <code>Setup_Mod_Tagging</code> no longer need to be specified; <code>fit_model</code> fills their off settings, movement for one region only.</li>
+<li>Improved Newton refinement in <code>fit_model</code> by obtaining the Hessian directly from the AD tape rather than finite differencing.</li>
 <li>Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.</li>
 <li>Added OSA residuals for time-series observations, compositions, and tagging data.</li>
 </ul></div>

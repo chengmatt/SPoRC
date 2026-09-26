@@ -172,15 +172,10 @@ unpenalized, and cells sharing a level split one penalty. <code>NULL</code>
 penalizes every cell in full.</p></dd>
 
 
-<dt id="arg-recdevs-model">RecDevs_model<a class="anchor" aria-label="anchor" href="#arg-recdevs-model"></a></dt>
-<dd><p>Integer process error structure: <code>1</code> independent,
-<code>2</code> random walk, <code>3</code> AR1.</p></dd>
-
-
-<dt id="arg-recdevs-rho">RecDevs_rho<a class="anchor" aria-label="anchor" href="#arg-recdevs-rho"></a></dt>
-<dd><p>Array <code>[pop, region]</code> of unconstrained AR1
-correlations, transformed to \((-1, 1)\) here. Read under
-<code>RecDevs_model = 3</code>.</p></dd>
+<dt id="arg-recdevs-model-recdevs-rho">RecDevs_model, RecDevs_rho<a class="anchor" aria-label="anchor" href="#arg-recdevs-model-recdevs-rho"></a></dt>
+<dd><p>Recruitment process error form and its
+unconstrained AR1 correlation. Under <code>3</code> the initial ages read the
+stationary sd \(\sigma_R / \sqrt{1 - \rho^2}\).</p></dd>
 
 
 <dt id="arg-recdevs-rw-init-sigma">RecDevs_rw_init_sigma<a class="anchor" aria-label="anchor" href="#arg-recdevs-rw-init-sigma"></a></dt>

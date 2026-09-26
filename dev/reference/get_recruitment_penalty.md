@@ -107,15 +107,11 @@ get_recruitment_penalty(
   fixed rather than estimated and go unpenalized, and cells sharing a
   level split one penalty. `NULL` penalizes every cell in full.
 
-- RecDevs_model:
+- RecDevs_model, RecDevs_rho:
 
-  Integer process error structure: `1` independent, `2` random walk, `3`
-  AR1.
-
-- RecDevs_rho:
-
-  Array `[pop, region]` of unconstrained AR1 correlations, transformed
-  to \\(-1, 1)\\ here. Read under `RecDevs_model = 3`.
+  Recruitment process error form and its unconstrained AR1 correlation.
+  Under `3` the initial ages read the stationary sd \\\sigma_R /
+  \sqrt{1 - \rho^2}\\.
 
 - RecDevs_rw_init_sigma:
 

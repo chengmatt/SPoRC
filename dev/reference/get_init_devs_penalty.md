@@ -26,7 +26,9 @@ get_init_devs_penalty(
   init_bias_ramp = NULL,
   map_ln_InitDevs = NULL,
   init_sigmaR_dsem = NULL,
-  init_sigmaR_dsem_use = NULL
+  init_sigmaR_dsem_use = NULL,
+  RecDevs_model = 1,
+  RecDevs_rho = NULL
 )
 ```
 
@@ -110,6 +112,12 @@ get_init_devs_penalty(
   Array `[pop, region]` of the settled marginal sd of the recruitment
   series under the arrows, and `1` where a cell reads it in place of
   `ln_sigmaR`. `NULL` without a dsem.
+
+- RecDevs_model, RecDevs_rho:
+
+  Recruitment process error form and its unconstrained AR1 correlation.
+  Under `3` the initial ages read the stationary sd \\\sigma_R /
+  \sqrt{1 - \rho^2}\\.
 
 ## Value
 

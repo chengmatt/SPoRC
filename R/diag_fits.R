@@ -27,16 +27,17 @@
 #' @param rep RTMB report holding \code{PredSrvIdx} and \code{PredFishIdx}, both
 #'   \code{[n_pop × n_regions × n_years × n_seas × n_fleets]}. The pooled indices
 #'   are summed across populations; the population-specific ones read each slice
-#'   directly.
+#'   directly. \code{SrvIdx_SD} and \code{FishIdx_SD}, with their \code{_pop}
+#'   counterparts, give the total index standard deviation the intervals use.
 #' @param year_labs Year labels for the year dim of the index arrays.
 #'
 #' @return A data frame with \code{Region}, \code{Year}, \code{Seas},
 #'   \code{Fleet}, \code{Type} (\code{"Survey"}, \code{"Fishery"},
 #'   \code{"Pop Survey"} or \code{"Pop Fishery"}), the observed value \code{obs}
-#'   and predicted \code{value}, the weight-adjusted \code{se}, the 95\%
-#'   lognormal interval \code{lci} and \code{uci}, the \code{q_block}, the
-#'   log-scale \code{resid}, and \code{Category}, which combines the type,
-#'   population, fleet, season and q block.
+#'   and predicted \code{value}, the weight-adjusted total standard deviation
+#'   \code{se}, the 95\% lognormal interval \code{lci} and \code{uci}, the
+#'   \code{q_block}, the log-scale \code{resid}, and \code{Category}, which
+#'   combines the type, population, fleet, season and q block.
 #'
 #' @examples
 #' \dontrun{
@@ -55,6 +56,12 @@ get_idx_fits <- function(data,
                          rep,
                          year_labs
                          ) {
+
+  # reported sd used (if extra sd estimated)
+  if(!is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE <- rep$SrvIdx_SD
+  if(!is.null(rep$FishIdx_SD)) data$ObsFishIdx_SE <- rep$FishIdx_SD
+  if(!is.null(rep$SrvIdx_pop_SD)) data$ObsSrvIdx_pop_SE <- rep$SrvIdx_pop_SD
+  if(!is.null(rep$FishIdx_pop_SD)) data$ObsFishIdx_pop_SE <- rep$FishIdx_pop_SD
 
   colnames(data$ObsSrvIdx) <- year_labs
   colnames(data$ObsSrvIdx_SE) <- year_labs

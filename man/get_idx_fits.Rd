@@ -16,7 +16,8 @@ get_idx_fits(data, rep, year_labs)
 \item{rep}{RTMB report holding \code{PredSrvIdx} and \code{PredFishIdx}, both
 \code{[n_pop × n_regions × n_years × n_seas × n_fleets]}. The pooled indices
 are summed across populations; the population-specific ones read each slice
-directly.}
+directly. \code{SrvIdx_SD} and \code{FishIdx_SD}, with their \code{_pop}
+counterparts, give the total index standard deviation the intervals use.}
 
 \item{year_labs}{Year labels for the year dim of the index arrays.}
 }
@@ -24,10 +25,10 @@ directly.}
 A data frame with \code{Region}, \code{Year}, \code{Seas},
   \code{Fleet}, \code{Type} (\code{"Survey"}, \code{"Fishery"},
   \code{"Pop Survey"} or \code{"Pop Fishery"}), the observed value \code{obs}
-  and predicted \code{value}, the weight-adjusted \code{se}, the 95\%
-  lognormal interval \code{lci} and \code{uci}, the \code{q_block}, the
-  log-scale \code{resid}, and \code{Category}, which combines the type,
-  population, fleet, season and q block.
+  and predicted \code{value}, the weight-adjusted total standard deviation
+  \code{se}, the 95\% lognormal interval \code{lci} and \code{uci}, the
+  \code{q_block}, the log-scale \code{resid}, and \code{Category}, which
+  combines the type, population, fleet, season and q block.
 }
 \description{
 A tidy data frame of the observed and predicted survey and fishery indices

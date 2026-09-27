@@ -280,7 +280,7 @@ simulation_self_test <- function(
                                 ObsFishIdx_SE = deweight(if(is.null(rep$FishIdx_SD)) data$ObsFishIdx_SE else rep$FishIdx_SD,
                              data$Wt_FishIdx),
                                 ObsFishIdx_pop_SE = if(any(data$UseFishIdx_pop == 1)) {
-                                  deweight(data$ObsFishIdx_pop_SE, data$Wt_FishIdx_pop)
+                                  deweight(if(is.null(rep$FishIdx_pop_SD)) data$ObsFishIdx_pop_SE else rep$FishIdx_pop_SD, data$Wt_FishIdx_pop)
                                 } else {
                                   array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
                                 },
@@ -404,7 +404,7 @@ simulation_self_test <- function(
     SrvIdxAA_LikeType = data$SrvIdxAA_LikeType,
     SrvIdxAA_sigma_form = data$SrvIdxAA_sigma_form,
     ObsSrvIdx_pop_SE = if(any(data$UseSrvIdx_pop == 1)) {
-      deweight(data$ObsSrvIdx_pop_SE, data$Wt_SrvIdx_pop)
+      deweight(if(is.null(rep$SrvIdx_pop_SD)) data$ObsSrvIdx_pop_SE else rep$SrvIdx_pop_SD, data$Wt_SrvIdx_pop)
     } else {
       array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets))
     },

@@ -1569,6 +1569,9 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 
   with(sim_env, {
 
+    # simulation lists that predate the recruitment anomaly correction add nothing, as before
+    rec_anom_add_use <- if(exists("rec_anom_add")) rec_anom_add else array(0, dim = c(n_pop, n_regions, n_yrs))
+
     for(seas in 1:n_seas) {
 
       # numbers at survey timing. a survey index is a snapshot inside the season, so continuous
@@ -1598,7 +1601,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
           # Survey Index - Regional
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim]) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim] * WAA_srv[,r,y,seas,,,sf,sim]) # True Survey Index (biomass)
-          if(srv_idx_type[sf] == 2) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(ln_RecDevs[,r,y,sim]) # True Survey Index (recruitment deviations)
+          if(srv_idx_type[sf] == 2) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(ln_RecDevs[,r,y,sim] + rec_anom_add_use[,r,y]) # add bias correction back in b/c recdevs already subtracts it
 
           # observed index. an mvn fleet takes its scale from the covariance's factor decomposition
           # rather than the SE array, with one factor draw shared across its series per replicate

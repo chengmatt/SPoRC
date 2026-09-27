@@ -653,9 +653,9 @@ draw_dsem_sim <- function(sim_env) {
   mu_grid <- matrix(0, n_yrs, n_vars)
   for(k in seq_len(n_cov)) mu_grid[,sim_env$dsem_cov_var_idx[k]] <- sim_env$dsem_mu[sim_env$dsem_cov_var_idx[k]]
 
-  # a linked recruitment cell is drawn about minus half its variance given the known cells, the full
-  # correction the density gives a random effect, when the fit's penalty takes a correction at all
-  rec_col <- sim_env$dsem_link_col[sim_env$dsem_link_par == "ln_RecDevs"]
+  # extract out indexing stuff
+  rec_links <- which(sim_env$dsem_link_par == "ln_RecDevs")
+  rec_col <- sim_env$dsem_link_col[rec_links]
 
   if(length(rec_col) > 0 && isTRUE(sim_env$rec_bias_correct == 1) && isTRUE(sim_env$dsem_rec_corr_on)) {
 
@@ -666,7 +666,15 @@ draw_dsem_sim <- function(sim_env) {
                                 get_dsem_cells(sim_env$dsem_model, n_yrs),
                                 as.vector(sim_env$dsem_x_known))
 
+    # subtract for bias correction
     mu_grid[,rec_col] <- mu_grid[,rec_col] - 0.5 * as.matrix(margvar[,rec_col,drop = FALSE])
+
+    # figure out what to add back into rec dev anomaly if used
+    for(s in rec_links) {
+      p_rec <- sim_env$dsem_link_idx[[s]][1] # extract out pop indx
+      r_rec <- sim_env$dsem_link_idx[[s]][2] # extract out reg indx
+      sim_env$rec_anom_add[p_rec,r_rec,] <- 0.5 * as.numeric(margvar[1:n_yrs,sim_env$dsem_link_col[s]]) # what a recruitment index adds back in
+    } # end s loop
 
   } # end if the correction is on
 

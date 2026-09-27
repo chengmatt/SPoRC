@@ -35,9 +35,15 @@ test_that("the bias correction switch centers the initial deviations and recruit
   # 200 replicates by 5 ages of N(center, 1): the mean sits at the center within 0.1
   expect_equal(mean(om1$ln_InitDevs), -0.5, tolerance = 0.1)
   expect_equal(mean(om0$ln_InitDevs), 0, tolerance = 0.1)
-  # recruitment is R0 exp(dev) under 0 and R0 exp(dev - 1/2) under 1
+  # recruitment is R0 exp(dev) either way, since the correction sits inside the deviation
   expect_equal(om0$Rec[1,1,2,], 5 * exp(om0$ln_RecDevs[1,1,2,]), tolerance = 1e-10)
-  expect_equal(om1$Rec[1,1,2,], 5 * exp(om1$ln_RecDevs[1,1,2,] - 0.5), tolerance = 1e-10)
+  expect_equal(om1$Rec[1,1,2,], 5 * exp(om1$ln_RecDevs[1,1,2,]), tolerance = 1e-10)
+  # the switch shows up in where the recruitment deviations are centered instead
+  expect_equal(mean(om1$ln_RecDevs), -0.5, tolerance = 0.1)
+  expect_equal(mean(om0$ln_RecDevs), 0, tolerance = 0.1)
+  # and an index reads the anomaly, so what it adds back is the correction the deviation carries
+  expect_equal(mean(om1$rec_anom_add), 0.5, tolerance = 1e-10)
+  expect_equal(mean(om0$rec_anom_add), 0, tolerance = 1e-10)
   expect_error(suppressMessages(init_devs_sim(rec_bias_correct = 2)), "0 or 1")
 
 })

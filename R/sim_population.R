@@ -247,8 +247,9 @@ generate_recruitment <- function(y,
           sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
 
           if(isTRUE(tmp_det_rec[p,r] > 0) && tmp_total_rec > 0) { # back out the true ln Rec Devs from a conditioned fit if needed
-            sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + sigmaR_yr^2 / 2
+            sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) # the deviation the fit held, correction already inside it
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
+          if(isTRUE(rec_bias_correct == 1) && RecDevs_model == 1) sim_env$rec_anom_add[p,r,y] <- sigmaR_yr^2 / 2 # record what to add back to rec dev anomaly if using rec idx
 
         } else {
 
@@ -256,8 +257,8 @@ generate_recruitment <- function(y,
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
           sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
 
-          # doing random walk or AR 1
-          dev_mu <- 0
+          # the correction sits inside the deviation if doing bias correction
+          dev_mu <- if(isTRUE(rec_bias_correct == 1) && RecDevs_model == 1) -sigmaR_yr^2 / 2 else 0
           dev_sd <- sigmaR_yr
           if(RecDevs_model != 1 && y > 1) {
             prev_dev <- sim_env$ln_RecDevs[p,r,y - 1,sim]
@@ -276,10 +277,9 @@ generate_recruitment <- function(y,
             sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
-          # doing bias correction
-          bias_corr <- if(dsem_cell || isTRUE(rec_bias_correct == 0)) 0 else if(RecDevs_model == 1) sigmaR_yr^2 / 2 else 0
-          tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] - bias_corr)
-
+          # apply deviation to determinstic rec
+          tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim])
+          if(!dsem_cell && isTRUE(rec_bias_correct == 1) && RecDevs_model == 1) sim_env$rec_anom_add[p,r,y] <- sigmaR_yr^2 / 2 # record what to add back to rec dev anomaly if using rec idx
         }
 
         # input recruitment into the season it first enters the population
@@ -299,7 +299,7 @@ generate_recruitment <- function(y,
 #'
 #' The operating model's state at year \code{y} and season \code{seas}, always the spawning
 #' season, sliced at replicate \code{sim} and given to \code{\link{biom_at_spawn}}, which the
-#' estimation model and the forward projection also run. 
+#' estimation model and the forward projection also run.
 #'
 #' @param y Year integer
 #' @param seas Season integer
@@ -709,6 +709,7 @@ Simulate_Pop_Static <- function(sim_list,
                   ln_fish_q_devs = sim_env$ln_fish_q_devs,
                   ln_srv_q_devs = sim_env$ln_srv_q_devs,
                   ln_RecDevs = sim_env$ln_RecDevs,
+                  rec_anom_add = sim_env$rec_anom_add,
                   dsem_x_sim = sim_env$dsem_x_sim, # the dsem grid every replicate was drawn on, NULL without one
                   dsem_cov_obs_sim = sim_env$dsem_cov_obs_sim, # dsem covariate observations a refit reads
                   naa_eta = sim_env$naa_eta_all,

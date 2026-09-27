@@ -1,8 +1,8 @@
 # Self-test of the recruitment deviation index end to end. The OM has an ordinary biomass survey and one
 # whose observation IS year class strength, fit through srv_idx_type = "recdev".
 #
-# The two sides line up because the OM draws its deviation about zero with the bias correction inside
-# recruitment while the EM centers its penalty: the anomaly the index reads is the same quantity.
+# Both sides hold the deviation with its lognormal correction inside it, so both add that correction back
+# to read the anomaly the index observes: rec_anom_add in the OM, RecDev_anom in the EM.
 
 library(SPoRC)
 library(testthat)
@@ -81,9 +81,9 @@ test_that("a recruitment deviation index is simulated and recovered", {
   set.seed(1234)
   om <- Simulate_Pop_Static(sim_list = sim_list, output_path = NULL)
 
-  # the operating model's index IS the deviation times catchability
+  # the operating model's index is the anomaly times catchability, the deviation plus what it was centered on
   expect_equal(as.vector(om$TrueSrvIdx[1, , 1, 2, 1]),
-               q_rec_true * as.vector(om$ln_RecDevs[1, 1, , 1]), tolerance = 1e-10)
+               q_rec_true * as.vector(om$ln_RecDevs[1, 1, , 1] + om$rec_anom_add[1, 1, ]), tolerance = 1e-10)
   # and it is not the biomass survey, which reads the population
   expect_gt(stats::sd(as.vector(om$TrueSrvIdx[1, , 1, 1, 1])), 0)
   expect_true(any(om$TrueSrvIdx[1, , 1, 2, 1] < 0)) # deviations are signed

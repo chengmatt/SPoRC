@@ -997,9 +997,14 @@ SPoRC_rtmb = function(pars, data) {
   # Observation Models ------------------------------------------------------
 
   ## Dynamic Structural Equation Model ---------------------------------------
+
   # initial sigR if doing dsem stuff
   init_sigmaR_dsem = NULL
   init_sigmaR_dsem_use = NULL
+
+  # recruitment index stuff for a "survey" to add back a bias correction to maintain consistency
+  rec_anom_add = array(0, dim = dim(ln_RecDevs))
+  rec_anom_use = array(0, dim = dim(ln_RecDevs))
 
   if(!is.null(dsem_model)) {
 
@@ -1024,7 +1029,11 @@ SPoRC_rtmb = function(pars, data) {
 
     # the lognormal correction on the recruitment cells, which the ramp and an own-mean center both switch off
     if(rec_margvar && RecDevs_pen_center != 1 && any(bias_ramp != 0)) {
-      for(s in rec_links) dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]]
+      for(s in rec_links) {
+        dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]]
+        rec_anom_add[dsem_link_cell[[s]]] = 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]] # the recruitment index adds back the bias correction
+        rec_anom_use[dsem_link_cell[[s]]] = 1
+      } # end s loop
     }
 
     # the initial ages were born before the grid starts, so they read a declared series' settled marginal variance
@@ -1163,7 +1172,8 @@ SPoRC_rtmb = function(pars, data) {
         sigma_idx = ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
         for(d in 1:n_est_rec_devs) {
           sigmaR_d = if(d < sigmaR_switch) exp(ln_sigmaR[1,p,sigma_idx]) else exp(ln_sigmaR[2,p,sigma_idx])
-          RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 * bias_ramp[d]
+          if(rec_anom_use[p,r,d] == 1) RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + rec_anom_add[p,r,d] # a linked cell adds back the bias correction for the anomaly for dsem ...
+          else RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 * bias_ramp[d]
         } # end d loop
       } # end r loop
     } # end p loop

@@ -37,7 +37,8 @@ Setup_Sim_Rec(
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
   RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
-  rec_bias_correct = 1
+  rec_bias_correct = 1,
+  sigmaR_switch = 1
 )
 }
 \arguments{
@@ -64,8 +65,8 @@ n_sims]}, the proportion straying from the natal region at spawning. Default
 \code{0}.}
 
 \item{ln_sigmaR}{Log-scale sd of the recruitment deviations, array \code{[2 x n_pop
-x n_regions]}, index 1 for \code{ln_InitDevs} and 2 for \code{ln_RecDevs}.
-Default \code{log(1)}.}
+x n_regions]}, index 1 the early period and 2 the late period. The initial age
+deviations read index 1. Default \code{log(1)}.}
 
 \item{rec_seas_prop_input}{Seasonal allocation of annual recruitment, array
 \code{[n_pop x n_seas x n_sims]} summing to 1 across seasons. Default all in
@@ -144,6 +145,10 @@ Matches \code{\link{Setup_Mod_Rec}}.}
 initial age deviations as mean-one lognormal multipliers centered at
 \eqn{-\sigma^2/2}, matching an estimation model with the bias ramp on; \code{0}
 centers them at zero. A linked cell follows the same switch under the arrows.}
+
+\item{sigmaR_switch}{Integer year index at which the recruitment deviations switch
+from index 1 of \code{ln_sigmaR} to index 2, matching \code{\link{Setup_Mod_Rec}}.
+Default \code{1}, which reads index 2 in every year.}
 }
 \value{
 \code{sim_list} with \code{$recruitment_opt}, \code{$rec_dd},

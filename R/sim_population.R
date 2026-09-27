@@ -185,6 +185,9 @@ generate_recruitment <- function(y,
 
   with(sim_env, {
 
+    # whether to switch sigmaR
+    sigmaR_switch_use <- if(exists("sigmaR_switch")) sigmaR_switch else 1
+
     # Get deterministic recruitment
     tmp_det_rec <- Get_Det_Recruitment(recruitment_model = recruitment_opt,
                                        rec_dd = rec_dd,
@@ -241,19 +244,21 @@ generate_recruitment <- function(y,
 
           tmp_total_rec <- Rec_input[p,r,y,sim]
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
+          sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
 
           if(isTRUE(tmp_det_rec[p,r] > 0) && tmp_total_rec > 0) { # back out the true ln Rec Devs from a conditioned fit if needed
-            sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + exp(ln_sigmaR[2,p,sigma_idx])^2 / 2
+            sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) + sigmaR_yr^2 / 2
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
         } else {
 
           # get rec devs
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
+          sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
 
           # doing random walk or AR 1
           dev_mu <- 0
-          dev_sd <- exp(ln_sigmaR[2, p, sigma_idx])
+          dev_sd <- sigmaR_yr
           if(RecDevs_model != 1 && y > 1) {
             prev_dev <- sim_env$ln_RecDevs[p,r,y - 1,sim]
             dev_mu <- if(RecDevs_model == 2) prev_dev else RecDevs_rho[p,r] * prev_dev
@@ -272,7 +277,7 @@ generate_recruitment <- function(y,
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
           # doing bias correction
-          bias_corr <- if(dsem_cell || isTRUE(rec_bias_correct == 0)) 0 else if(RecDevs_model == 1) exp(ln_sigmaR[2,p,sigma_idx])^2 / 2 else 0
+          bias_corr <- if(dsem_cell || isTRUE(rec_bias_correct == 0)) 0 else if(RecDevs_model == 1) sigmaR_yr^2 / 2 else 0
           tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim] - bias_corr)
 
         }

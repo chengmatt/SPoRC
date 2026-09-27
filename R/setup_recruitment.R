@@ -37,8 +37,11 @@
 #' @param RecDevs_rho Matrix \code{[n_pop x n_regions]} of AR1 correlations in
 #'   \eqn{(-1, 1)}. Only read under \code{RecDevs_model = "ar1"}. Default zero.
 #' @param ln_sigmaR Log-scale sd of the recruitment deviations, array \code{[2 x n_pop
-#'   x n_regions]}, index 1 for \code{ln_InitDevs} and 2 for \code{ln_RecDevs}.
-#'   Default \code{log(1)}.
+#'   x n_regions]}, index 1 the early period and 2 the late period. The initial age
+#'   deviations read index 1. Default \code{log(1)}.
+#' @param sigmaR_switch Integer year index at which the recruitment deviations switch
+#'   from index 1 of \code{ln_sigmaR} to index 2, matching \code{\link{Setup_Mod_Rec}}.
+#'   Default \code{1}, which reads index 2 in every year.
 #' @param rec_seas_prop_input Seasonal allocation of annual recruitment, array
 #'   \code{[n_pop x n_seas x n_sims]} summing to 1 across seasons. Default all in
 #'   season 1. Must be zero before \code{spawn_seas} when \code{rec_lag = 0} and
@@ -128,7 +131,8 @@ Setup_Sim_Rec <- function(
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
   RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
-  rec_bias_correct = 1
+  rec_bias_correct = 1,
+  sigmaR_switch = 1
 ) {
 
   if(rec_dd == 'global' && sim_list$n_pop > 1 && recruitment_opt == 'bh_rec') stop("Invalid recruitment density-dependence option! When n_pop > 1 and recruitment_opt == 'bh_rec', rec_dd must be local (0).")
@@ -243,6 +247,9 @@ Setup_Sim_Rec <- function(
     stop("SR_ref_yr must be a single year index between 1 and ", sim_list$n_yrs, ".")
   sim_list$SR_ref_yr <- as.integer(SR_ref_yr)
   sim_list$ln_sigmaR <- ln_sigmaR
+  if(!is.numeric(sigmaR_switch) || length(sigmaR_switch) != 1 || sigmaR_switch < 1) stop("sigmaR_switch must be a single year index of 1 or more")
+  sim_list$sigmaR_switch <- as.integer(sigmaR_switch)
+  if(sigmaR_switch > 1) collect_message("Recruitment deviations switch from the early to the late ln_sigmaR at year: ", sigmaR_switch)
   if(!RecDevs_model %in% c("iid", "rw", "ar1")) stop("RecDevs_model incorrectly specified. Must be one of 'iid', 'rw', or 'ar1'")
   sim_list$RecDevs_model <- match(RecDevs_model, c("iid", "rw", "ar1")) # 1 = iid, 2 = rw, 3 = ar1
   if(RecDevs_model == "ar1" && any(abs(RecDevs_rho) >= 1)) stop("RecDevs_rho must be inside (-1, 1). An ar1 at 1 or beyond has no stationary variance, so year one of the series has nothing to be drawn from.")

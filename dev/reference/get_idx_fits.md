@@ -26,7 +26,9 @@ get_idx_fits(data, rep, year_labs)
   RTMB report holding `PredSrvIdx` and `PredFishIdx`, both
   `[n_pop × n_regions × n_years × n_seas × n_fleets]`. The pooled
   indices are summed across populations; the population-specific ones
-  read each slice directly.
+  read each slice directly. `SrvIdx_SD` and `FishIdx_SD`, with their
+  `_pop` counterparts, give the total index standard deviation the
+  intervals use.
 
 - year_labs:
 
@@ -36,10 +38,10 @@ get_idx_fits(data, rep, year_labs)
 
 A data frame with `Region`, `Year`, `Seas`, `Fleet`, `Type` (`"Survey"`,
 `"Fishery"`, `"Pop Survey"` or `"Pop Fishery"`), the observed value
-`obs` and predicted `value`, the weight-adjusted `se`, the 95% lognormal
-interval `lci` and `uci`, the `q_block`, the log-scale `resid`, and
-`Category`, which combines the type, population, fleet, season and q
-block.
+`obs` and predicted `value`, the weight-adjusted total standard
+deviation `se`, the 95% lognormal interval `lci` and `uci`, the
+`q_block`, the log-scale `resid`, and `Category`, which combines the
+type, population, fleet, season and q block.
 
 ## Details
 

@@ -86,7 +86,8 @@ when their <code>Use*_pop</code> flags hold any ones.</p>
 <dd><p>RTMB report holding <code>PredSrvIdx</code> and <code>PredFishIdx</code>, both
 <code>[n_pop × n_regions × n_years × n_seas × n_fleets]</code>. The pooled indices
 are summed across populations; the population-specific ones read each slice
-directly.</p></dd>
+directly. <code>SrvIdx_SD</code> and <code>FishIdx_SD</code>, with their <code>_pop</code>
+counterparts, give the total index standard deviation the intervals use.</p></dd>
 
 
 <dt id="arg-year-labs">year_labs<a class="anchor" aria-label="anchor" href="#arg-year-labs"></a></dt>
@@ -98,10 +99,10 @@ directly.</p></dd>
     <p>A data frame with <code>Region</code>, <code>Year</code>, <code>Seas</code>,
   <code>Fleet</code>, <code>Type</code> (<code>"Survey"</code>, <code>"Fishery"</code>,
   <code>"Pop Survey"</code> or <code>"Pop Fishery"</code>), the observed value <code>obs</code>
-  and predicted <code>value</code>, the weight-adjusted <code>se</code>, the 95%
-  lognormal interval <code>lci</code> and <code>uci</code>, the <code>q_block</code>, the
-  log-scale <code>resid</code>, and <code>Category</code>, which combines the type,
-  population, fleet, season and q block.</p>
+  and predicted <code>value</code>, the weight-adjusted total standard deviation
+  <code>se</code>, the 95% lognormal interval <code>lci</code> and <code>uci</code>, the
+  <code>q_block</code>, the log-scale <code>resid</code>, and <code>Category</code>, which
+  combines the type, population, fleet, season and q block.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

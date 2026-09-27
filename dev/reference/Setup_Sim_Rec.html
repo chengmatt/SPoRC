@@ -97,7 +97,8 @@ timing and the equilibrium initialization. Call after <code><a href="Setup_Sim_D
 <span>  InitDevs_sex_spec <span class="op">=</span> <span class="st">"est_shared_s"</span>,</span>
 <span>  RecDevs_model <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  RecDevs_rho <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  rec_bias_correct <span class="op">=</span> <span class="fl">1</span></span>
+<span>  rec_bias_correct <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  sigmaR_switch <span class="op">=</span> <span class="fl">1</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -143,8 +144,8 @@ n_sims]</code>, the proportion straying from the natal region at spawning. Defau
 
 <dt id="arg-ln-sigmar">ln_sigmaR<a class="anchor" aria-label="anchor" href="#arg-ln-sigmar"></a></dt>
 <dd><p>Log-scale sd of the recruitment deviations, array <code>[2 x n_pop
-x n_regions]</code>, index 1 for <code>ln_InitDevs</code> and 2 for <code>ln_RecDevs</code>.
-Default <code>log(1)</code>.</p></dd>
+x n_regions]</code>, index 1 the early period and 2 the late period. The initial age
+deviations read index 1. Default <code>log(1)</code>.</p></dd>
 
 
 <dt id="arg-rec-seas-prop-input">rec_seas_prop_input<a class="anchor" aria-label="anchor" href="#arg-rec-seas-prop-input"></a></dt>
@@ -255,6 +256,12 @@ Matches <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>.</p></dd>
 initial age deviations as mean-one lognormal multipliers centered at
 \(-\sigma^2/2\), matching an estimation model with the bias ramp on; <code>0</code>
 centers them at zero. A linked cell follows the same switch under the arrows.</p></dd>
+
+
+<dt id="arg-sigmar-switch">sigmaR_switch<a class="anchor" aria-label="anchor" href="#arg-sigmar-switch"></a></dt>
+<dd><p>Integer year index at which the recruitment deviations switch
+from index 1 of <code>ln_sigmaR</code> to index 2, matching <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>.
+Default <code>1</code>, which reads index 2 in every year.</p></dd>
 
 </dl></div>
     <div class="section level2">

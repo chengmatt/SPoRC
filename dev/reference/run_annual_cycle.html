@@ -99,7 +99,7 @@ by reference and modified in place by every annual-cycle helper.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Those two standalone <code><a href="generate_recruitment.html">generate_recruitment()</a></code> calls only run when
+    <p>Those two standalone <code>generate_recruitment()</code> calls only run when
 <code>rec_lag != 0</code>. Under <code>rec_lag = 0</code> recruitment depends on year
 <code>y</code>'s own SSB, which is not known until <code><a href="apply_pop_dy.html">apply_pop_dy</a></code> reaches
 <code>spawn_seas</code>, so it is called from inside <code><a href="apply_pop_dy.html">apply_pop_dy()</a></code> instead.</p>

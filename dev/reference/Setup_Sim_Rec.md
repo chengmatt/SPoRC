@@ -41,7 +41,8 @@ rec_seas_prop[, 1, ] <- 1
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
   RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
-  rec_bias_correct = 1
+  rec_bias_correct = 1,
+  sigmaR_switch = 1
 )
 ```
 
@@ -86,8 +87,8 @@ rec_seas_prop[, 1, ] <- 1
 - ln_sigmaR:
 
   Log-scale sd of the recruitment deviations, array
-  `[2 x n_pop x n_regions]`, index 1 for `ln_InitDevs` and 2 for
-  `ln_RecDevs`. Default `log(1)`.
+  `[2 x n_pop x n_regions]`, index 1 the early period and 2 the late
+  period. The initial age deviations read index 1. Default `log(1)`.
 
 - rec_seas_prop_input:
 
@@ -201,6 +202,13 @@ rec_seas_prop[, 1, ] <- 1
   \\-\sigma^2/2\\, matching an estimation model with the bias ramp on;
   `0` centers them at zero. A linked cell follows the same switch under
   the arrows.
+
+- sigmaR_switch:
+
+  Integer year index at which the recruitment deviations switch from
+  index 1 of `ln_sigmaR` to index 2, matching
+  [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md).
+  Default `1`, which reads index 2 in every year.
 
 ## Value
 

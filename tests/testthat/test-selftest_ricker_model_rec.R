@@ -1,16 +1,12 @@
+# Ricker recruitment regenerated from the fitted curve each replicate, so the stock-recruit
+# relationship itself is what has to come back. Run in the deterministic limit, where the data
+# essentially trace the curve and any bias left is structural, so the tolerances are near-exact.
+#
+# Under realistic process error the same design gives steepness medians a few percent high with R0
+# correspondingly low, which is the shape of the stock-recruit ridge rather than a defect.
+
 library(SPoRC)
 library(testthat)
-
-# Ricker recruitment with sim_recruitment = "model": the operating model
-# regenerates recruitment from the fitted curve each replicate, so the
-# stock-recruit relationship itself is what has to be recovered. Run in the
-# deterministic limit (near-zero process and observation error), where the data
-# essentially trace the curve: with errors this small any residual bias is
-# structural, not statistical, so the tolerances are near-exact. Under
-# realistic process error the same design shows steepness medians a few percent
-# high with R0 correspondingly low, which is stock-recruit ridge identification
-# skew rather than a routines defect. Routines shared through
-# helper-selftest_features.R.
 
 test_that("Ricker recruitment recovers SSB, recruitment, R0, and steepness", {
 

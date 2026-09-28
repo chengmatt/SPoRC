@@ -1,11 +1,12 @@
+# The seasonal operator: movement before, after or during mortality, and where the three have to
+# agree. Also the season-integrated abundance, spawning and survey timing, and the plus group.
+
 library(SPoRC)
 library(testthat)
 
 test_that("the fused operator/integral agrees with computing each separately", {
-  # get_population_projection takes both the transition operator and the catch integral
-  # from one Van Loan exponential. That is only sound because the operator really is the
-  # top-left block of the same matrix, so pin it: any change here would silently alter
-  # either the numbers at age or the catch.
+  # the projection takes the transition operator and the catch integral from one exponential,
+  # which only works because the operator is the top-left block of the same matrix
   set.seed(808)
   for (n in c(1, 2, 4)) {
     for (dur in c(1, 0.25, 0.6)) {
@@ -45,10 +46,8 @@ library(Matrix)
 
 # Helpers ---------------------------------------------------------------------
 
-# Build a valid CTMC generator in COLUMN convention (colSums 0), matching how
-# Get_Movement constructs Q_ss, and return both the stored row-convention
-# generator (as Mrate holds it) and the corresponding movement fractions
-# (as Movement holds them).
+# a valid movement generator with columns summing to zero, as Get_Movement builds one, and
+# both the stored generator and the movement fractions that go with it
 make_move <- function(n, dur = 1, seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
   D <- matrix(stats::runif(n * n, 0.05, 0.5), n, n)
@@ -223,9 +222,8 @@ test_that("spawn_state with t_spawn = 1 equals a full continuous season step", {
 # Season-duration scaling of the generator ------------------------------------
 
 test_that("continuous steps compose across seasons to the full-year operator", {
-  # Four quarter-length seasons under a constant generator and constant mortality
-  # must equal one full-year step, which is the property that makes the seasdur
-  # scaling of Q meaningful.
+  # four quarter-length seasons at a constant generator and mortality have to equal one
+  # full-year step, which is what makes scaling the generator by season duration mean anything
   n <- 3
   m <- make_move(n, dur = 1, seed = 13)
   N <- c(100, 250, 30)
@@ -320,11 +318,8 @@ test_that("Get_Movement defaults to legacy unscaled generator behavior", {
 # Plus-group transition composition -------------------------------------------
 
 test_that("composed annual transition equals stepping season by season", {
-  # The plus-group recursions in Get_Init_NAA (init_age_strc = 2), Get_Det_Recruitment
-  # and build_plus_group_T all build an annual operator by composing per-season ones.
-  # That operator must reproduce what sequential seasonal stepping gives, for every
-  # timing. init_age_strc = 2 previously composed t(Movement) %*% S right-to-left,
-  # which both inverted the movement/mortality order and traversed seasons backwards.
+  # the initial age structure, the equilibrium recruitment and the reference points all build an
+  # annual operator out of the seasonal ones, which has to equal stepping season by season
   set.seed(11)
   n <- 3
   n_seas <- 3
@@ -352,7 +347,7 @@ test_that("composed annual transition equals stepping season by season", {
 })
 
 test_that("right-composing seasons is not equivalent to left-composing", {
-  # Guards the season-ordering half of the init_age_strc = 2 fix: if these two agreed,
+  # without this the season ordering would not be checked at all: if these two agreed,
   # the test above could not distinguish the traversal order.
   set.seed(12)
   n <- 3
@@ -387,7 +382,7 @@ test_that("spawn_state rejects an unknown move_timing only via its callers", {
 })
 
 test_that("Setup_Mod_Movement validates move_timing", {
-  # A bad value must be rejected before the not-yet-wired guard fires
+  # a bad value has to be refused before the check for an unwired option fires
   dummy <- list(
     data = list(
       n_pop = 1,

@@ -1,18 +1,14 @@
+# Projecting to a catch target rather than an F. The central check is a round trip: run at a known
+# F, take the realized catch as the target, and re-run against it. The solver has to recover that
+# F and reproduce every other projected quantity, which fixes the whole seasonal and spatial catch.
+
 library(SPoRC)
 library(testthat)
 
-# Tests for fmort_opt = "Catch" in Do_Population_Projection().
+# a small projection that is still not degenerate: several regions, seasons and fleets, two
+# sexes, partial retention and discard mortality on fleet 2, and mildly mixing movement.
 #
-# The central test is a round trip. Run the projection at a known input F, take
-# the realized catch as the target, and re-run under fmort_opt = "Catch". The
-# solver has to recover the original F and reproduce every other projected
-# quantity, which determines the whole seasonal and spatial catch calculation
-# rather than just checking that some F produces some catch.
-
-# Builds a small but non-degenerate projection: multi-region, multi-season,
-# multi-fleet, two sexes, partial retention on fleet 2 and non-zero discard
-# mortality, and mildly mixing movement. Every array is filled by explicit index
-# so nothing recycles down the wrong stride.
+# every array is filled by explicit index, so nothing recycles into the wrong dimension
 make_proj_inputs <- function(
   n_regions,
   n_seas,
@@ -146,6 +142,7 @@ seasonal_catch <- function(out, n_regions, n_proj_yrs, n_seas) {
 
 threshold_hcr <- function(x, frp, brp) frp * min(1, x / brp)
 
+# Recovering the F a Catch Came From -----------------------------------------
 
 test_that("annual catch targets recover the fishing mortality that produced them", {
 
@@ -182,7 +179,6 @@ test_that("annual catch targets recover the fishing mortality that produced them
     expect_lt(max(abs(got$proj_catch_resid[, yy, drop = FALSE])), 1e-5)
   }
 })
-
 
 test_that("catch targets are met under Beverton-Holt recruitment, including rec_lag = 0", {
 
@@ -239,7 +235,6 @@ test_that("catch targets are met under Beverton-Holt recruitment, including rec_
   }
 })
 
-
 test_that("seasonal catch targets hit a profile the terminal year's seasonal shares cannot", {
 
   n_regions <- 3
@@ -273,7 +268,6 @@ test_that("seasonal catch targets hit a profile the terminal year's seasonal sha
   }
 })
 
-
 test_that("seasonal targets matching the terminal shares reproduce the annual solve", {
 
   inp <- make_proj_inputs(3, 4, 2)
@@ -291,6 +285,7 @@ test_that("seasonal targets matching the terminal shares reproduce the annual so
   expect_equal(dim(got$proj_catch_resid), dim(ci)) # resid is shaped like catch_input
 })
 
+# Years Left to the Control Rule ---------------------------------------------
 
 test_that("years left NA fall back to the harvest control rule", {
 
@@ -330,7 +325,6 @@ test_that("years left NA fall back to the harvest control rule", {
   }
 })
 
-
 test_that("the fallback rule responds to the stock the constrained years produced", {
 
   inp <- make_proj_inputs(3, 4, 2)
@@ -357,7 +351,6 @@ test_that("the fallback rule responds to the stock the constrained years produce
                sapply(1:3, function(r) threshold_hcr(sum(got$proj_SSB[, r, 4]), 0.13, 3e6)),
                tolerance = 1e-10)
 })
-
 
 test_that("catch_terminal_yr solves projection year 1 against its own target", {
 
@@ -386,6 +379,7 @@ test_that("catch_terminal_yr solves projection year 1 against its own target", {
   expect_true(is.na(got$proj_catch_resid[1, 1]))
 })
 
+# Zero, Unreachable and Invalid Targets --------------------------------------
 
 test_that("a zero target means no fishing and is distinct from NA", {
 
@@ -417,7 +411,6 @@ test_that("a zero target means no fishing and is distinct from NA", {
   expect_true(all(got2$proj_F[, 3] > 0))
 })
 
-
 test_that("an unreachable catch target warns, caps F, and records the shortfall", {
 
   inp <- make_proj_inputs(3, 4, 2)
@@ -434,7 +427,6 @@ test_that("an unreachable catch target warns, caps F, and records the shortfall"
   expect_equal(max(abs(got$proj_F[, 2:npy] - 5)), 0, tolerance = 1e-9)
   expect_true(all(got$proj_catch_resid[, 2:npy] < -0.9)) # target massively undershot
 })
-
 
 test_that("catch_input is validated before the projection runs", {
 
@@ -479,6 +471,7 @@ test_that("catch_input is validated before the projection runs", {
   expect_lt(max(abs(got$proj_catch_resid[, -1])), 1e-5)
 })
 
+# Everything Else Left Alone -------------------------------------------------
 
 test_that("other fmort_opt settings are unaffected by the catch routines", {
 
@@ -506,7 +499,6 @@ test_that("other fmort_opt settings are unaffected by the catch routines", {
   expect_equal(b$proj_F[, 3] / a$proj_F[, 3], rep(2, 3), tolerance = 1e-12)
 })
 
-
 test_that("projected total biomass continues the estimated series and exceeds SSB", {
 
   inp <- make_proj_inputs(3, 4, 2)
@@ -523,11 +515,8 @@ test_that("projected total biomass continues the estimated series and exceeds SS
   low <- run_proj(inp, "Input", f_ref_pt = array(0.02, dim = c(3, npy)))
   expect_true(all(low$proj_Total_Biom[, , npy] > got$proj_Total_Biom[, , npy]))
 
-  # Check the definition directly rather than by a monotonicity heuristic: total
-  # biomass is numbers times weight over all ages and sexes at the spawning
-  # point, and SSB is the mature-female analog over the same state. A
-  # single-region, single-season model is used so that the spawning-point state
-  # is exactly proj_NAA discounted by t_spawn.
+  # total biomass is numbers times weight over every age and sex at the spawning point, and
+  # spawning biomass the mature female part of it. one region and one season, so it is exact
   inp1 <- make_proj_inputs(1, 1, 1)
   one <- run_proj(inp1, "Input", f_ref_pt = array(0.08, dim = c(1, npy)))
 
@@ -543,6 +532,7 @@ test_that("projected total biomass continues the estimated series and exceeds SS
   }
 })
 
+# What Comes Back ------------------------------------------------------------
 
 test_that("returned arrays hold the documented dimensions", {
 
@@ -601,16 +591,12 @@ test_that("returned arrays hold the documented dimensions", {
   expect_equal(dim(got3$proj_catch_resid), dim(ci3))
 })
 
-
 test_that("the deprecated bh_rec_opt still works, warns, and cannot be doubled up", {
-  # Nothing exercised the shim: every call site used the old name, so the rename
-  # to srr_opt silenced the deprecation everywhere and left the shim itself with
-  # no coverage at all. These are the three things it promises.
+  # every call site moved to the new name, so nothing reached the old one at all. these are
+  # the three things it promises.
   #
-  # The shim is one assignment, srr_opt <- bh_rec_opt, so what needs proving is
-  # that the value is forwarded. Feeding the same incomplete list under either
-  # name and getting the same validation complaint shows that directly, and
-  # costs nothing next to running two projections to compare.
+  # the old name is forwarded by one assignment, so passing the same incomplete list under
+  # either name and getting the same complaint shows it directly
   skip_if_not(exists("project_at_F"), "the projection helper is not loaded")
 
   partial <- list(rec_dd = 0, R0 = 1e6, h = 0.7)
@@ -651,12 +637,10 @@ test_that("the deprecated bh_rec_opt still works, warns, and cannot be doubled u
                "not both")
 })
 
-
 test_that("a projection written without a season dim on mortality still runs", {
 
-  # Do_Population_Projection is the only exported fn taking M directly, so users
-  # build the array by hand. One written before seasons has no season dim and is
-  # the same model, so hold it across seasons rather than reject it.
+  # the projection is the only exported function taking mortality directly, so the array is
+  # built by hand, and one written before seasons is the same model repeated across them
   inp <- make_proj_inputs(n_regions = 2, n_seas = 2, n_fish_fleets = 2)
   common <- list(
     f_ref_pt = 0.1,

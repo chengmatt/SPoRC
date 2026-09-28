@@ -1,23 +1,15 @@
+# The operating model runs on the exact matrix exponential and the estimating model on the
+# implicit solve, which approximates it rather than reaching the same numbers faster.
+#
+# The question is what the assessment gets wrong, and how fast that goes away with substeps.
+#
+# The operating model is the one from test-integration_move_timing_diffusion.R: everything the
+# estimating model needs is known exactly, the generator is passed to the simulator directly, and
+# the diffusion rate is the only free parameter, so the bias is attributable to the exponential.
+
 library(SPoRC)
 library(testthat)
 library(Matrix)
-
-# Operating model on the exact matrix exponential, estimation model on the implicit solve.
-#
-# move_expm_nsub replaces expm(A) with (I - A/n)^-n wherever SPoRC exponentiates a CTMC
-# generator. That is a first-order discretization, not a cheaper route to the same
-# numbers, so the question this file answers is: if the world runs on the exponential and
-# the assessment does not, what does the assessment get wrong, and how fast does that go
-# away as substeps are added?
-#
-# The operating model is the one from test-integration_move_timing_diffusion.R: everything
-# the estimation model needs is known exactly (deterministic recruitment, constant
-# region-specific F, closed-form selectivity, q = 1, M fixed), the generator is handed to
-# the simulator directly as Mrate, and log_move_diffusion_pars is the single free
-# parameter. Isolating movement that way is what makes the bias attributable to the
-# exponential rather than to a 200-parameter fit wandering off.
-#
-# The operating model always uses expm_nsub = 0. Only the estimation model varies.
 
 N_YRS <- 25
 N_REGIONS <- 3
@@ -33,12 +25,11 @@ SRV_K <- 1
 ADJ <- matrix(1L, N_REGIONS, N_REGIONS)
 diag(ADJ) <- 0L
 
-# Lay a vector of age-specific values into a (pop, region, year, seas, age, ...) array.
-# The age dimension is the 5th, so the values have to repeat over the product of every
-# earlier dimension. The single-region idiom `rep(v, each = n_yrs)` happens to be correct
-# only when n_pop = n_regions = n_seas = 1; with more than one region it silently permutes
-# the ages, which shows up as an operating model whose selectivity does not match the
-# logistic curve the estimation model estimates.
+# Spread a vector of values at age into a population by region by year by season by age
+# array. Ages come fifth, so the values have to repeat over everything before them.
+#
+# `rep(v, each = n_yrs)` is right only in one region, one population and one season. With more
+# than one region it scrambles the ages, which shows as selectivity the fit cannot match.
 age_array <- function(v, dims) array(rep(v, each = prod(dims[1:4])), dim = dims)
 
 tag_release_indicator <- function() {
@@ -55,9 +46,7 @@ tag_release_platform <- function() {
   )
 }
 
-# ---------------------------------------------------------------------------
-# Operating model
-# ---------------------------------------------------------------------------
+# Operating model ------------------------------------------------------------
 
 build_om <- function(move_timing, seed = 1234) {
   ages <- seq_len(N_AGES)
@@ -169,9 +158,7 @@ build_om <- function(move_timing, seed = 1234) {
   Simulate_Pop_Static(sim_list = sim_list, output_path = NULL)
 }
 
-# ---------------------------------------------------------------------------
-# Estimation model, matching the operating model's structure
-# ---------------------------------------------------------------------------
+# Estimation model, matching the operating model's structure -----------------
 
 build_em <- function(om, move_timing, em_expm_nsub = 0) {
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = om$n_years, sim = 1)
@@ -262,9 +249,8 @@ build_em <- function(om, move_timing, em_expm_nsub = 0) {
     ln_sigmaF = array(log(1), dim = c(N_REGIONS, 1, 1))
   ))
 
-  # Region-split compositions. Aggregated ("agg") comps take the observed composition from
-  # the first region only while comparing it to an expectation summed over all regions, so
-  # they are not the right data spec for a multi-region operating model.
+  # compositions split by region. an aggregated composition takes the observation from the first
+  # region while comparing it to an expectation summed over all of them
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = sim_data$ObsFishIdx,
@@ -330,9 +316,8 @@ build_em <- function(om, move_timing, em_expm_nsub = 0) {
   )
 }
 
-# Pin every parameter at the value the operating model generated with, and free only the
-# CTMC diffusion parameter. logist1 selectivity is b50 = exp(par1), k = exp(par2); fishing
-# mortality is exp(ln_F_mean + ln_F_devs); the operating model used q = 1.
+# Fix every parameter at the value the operating model generated with and free only the
+# diffusion rate. Selectivity, fishing mortality and catchability are all on their own scales.
 pin_at_truth <- function(input_list, log_theta) {
   par <- input_list$par
   par$ln_global_R0[] <- log(sum(OM_R0))
@@ -359,10 +344,7 @@ pin_at_truth <- function(input_list, log_theta) {
   list(data = input_list$data, par = par, map = map)
 }
 
-
-# ---------------------------------------------------------------------------
-# Test setups. The operating models are built once; only the estimation model varies.
-# ---------------------------------------------------------------------------
+# Test setups. The operating models are built once; only the estimation model varies. ----
 
 oms <- list("2" = build_om(2), "0" = build_om(0))
 
@@ -383,14 +365,11 @@ ssb_rel_err <- function(om, move_timing, nsub) {
   max(abs(as.vector(obj$report(obj$par)$SSB) - truth) / truth)
 }
 
-# ---------------------------------------------------------------------------
-# 1. Forward distortion of the population, at the generating parameters
-# ---------------------------------------------------------------------------
+# 1. Forward distortion of the population, at the generating parameters ------
 
 test_that("the implicit solve leaves SSB alone at nsub = 0 and converges back to it", {
-  # nsub = 0 has to be the exact exponential, so this is the same agreement the
-  # move_timing test asserts. nsub = 1 is plain solve(I - A) and is expected to be badly
-  # off -- checked here so that a future change cannot quietly make it look harmless.
+  # no substeps is the exact exponential, so this is the agreement the move_timing test asserts.
+  # one substep is a plain solve and is badly off, checked here rather than left unstated
   err <- vapply(c(0, 1, 8, 512), function(n) ssb_rel_err(oms[["2"]], 2, n), numeric(1))
 
   expect_lt(err[1], 1e-3)                       # exact
@@ -400,10 +379,8 @@ test_that("the implicit solve leaves SSB alone at nsub = 0 and converges back to
 })
 
 test_that("under move_timing 0 only the movement fractions are approximated", {
-  # Timings 0 and 1 never exponentiate the generator net of mortality: survival stays
-  # elementwise exp(-Z) and only Get_Movement's fractions go through mat_exp. The forward
-  # error should therefore be far smaller than the same nsub under continuous movement,
-  # where 1/(1 + Z) replaces exp(-Z) and compounds over seasons and ages.
+  # the discrete timings never exponentiate the generator net of mortality, so the error is far
+  # smaller than at the same substeps under continuous movement, where it compounds
   err_mt0 <- ssb_rel_err(oms[["0"]], 0, 1)
   err_mt2 <- ssb_rel_err(oms[["2"]], 2, 1)
 
@@ -411,15 +388,11 @@ test_that("under move_timing 0 only the movement fractions are approximated", {
   expect_gt(err_mt2, 5 * err_mt0)
 })
 
-# ---------------------------------------------------------------------------
-# 2. Bias in the estimated movement rate
-# ---------------------------------------------------------------------------
+# 2. Bias in the estimated movement rate -------------------------------------
 
 test_that("an implicit estimation model inflates diffusion, and substeps remove the bias", {
-  # The estimation model cannot represent the operating model's movement, so it trades:
-  # backward Euler smears abundance further per step than the exponential does at the same
-  # rate, and the likelihood answers by pulling the rate up. That direction is the
-  # informative part -- a movement rate biased high is not a conservative error.
+  # the implicit solve spreads fish further per step at the same rate, so the likelihood answers
+  # by raising the rate, and that direction matters: a rate biased high is not a safe error
   fit_theta <- function(nsub) {
     em <- build_em(oms[["2"]], 2, em_expm_nsub = nsub)
     pinned <- pin_at_truth(em, START_LOG_THETA)

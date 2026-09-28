@@ -130,9 +130,8 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
     FishLenComps_Type = "none_Year_1-terminal_Fleet_1"
   )
 
-  # Four survey indices with four different error structures. Fleet 4 is the
-  # acoustic survey's age 1 abundance, which the assessment fits as its own
-  # index with its own catchability.
+  # four survey indices with four different error structures. fleet 4 is the acoustic survey's
+  # age 1 abundance, which the assessment fits as its own index with its own catchability
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx,
@@ -185,14 +184,11 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
     srvsel_pe_pars_spec = rep("fix", n_srv),
     srv_q_spec = rep("est_all", n_srv),
     srv_q_type = c("arith", "est", "est", "geo"),
-    # A weight of zero makes the objective skip the process error likelihood for
-    # ln_srvsel_devs, so the deviations stay estimated but are shaped only by the
-    # explicit shape penalties set further down. pm.tpl constrains its survey
-    # deviations that way rather than with a distribution, so the default of one
-    # would penalize them twice and the bridge would not match. It is also why
-    # srvsel_pe_pars_spec is "fix": with the weight at zero the sigmas never
-    # reach the objective. The bin override deviations keep their own process
-    # error, which this weight does not touch.
+    # a weight of zero skips the process error density on the survey deviations, so they are
+    # shaped only by the explicit penalties below, as the assessment shapes them.
+    #
+    # it is also why the sigmas are fixed: at a weight of zero they never reach the
+    # objective. the bin override deviations keep their own process error
     srvsel_pe_wt = c(0, 0, 0, 0),
     srv_sel_nonpar_est_bins = list(NULL,
                                    list(list(1, 2, 3, 4, 5, 6, 7, 8:15)),
@@ -278,9 +274,8 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   parameters <- input_list$par
   mapping <- input_list$map
 
-  # Mapping. SPoRC parameterizes selectivity deviations as levels while the
-  # assessment uses increments, so the first year's level is redundant with the
-  # coefficients and is kept at zero, and bins within a group move together.
+  # SPoRC writes selectivity deviations as levels and the assessment as increments, so the
+  # first year's level is kept at zero and bins within a group move together
   i_bts_all <- which(yrs >= 1982)
   map_srvdev <- array(as.numeric(mapping$ln_srvsel_devs), dim = dim(parameters$ln_srvsel_devs))
   map_srvdev[1, -i_bts_all, , 1, 1] <- NA
@@ -330,8 +325,8 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   mapping$ln_srvsel_bin_devs <- factor(map_bindev)
   data$map_ln_srvsel_bin_devs <- map_bindev
 
-  # exp(par + dev) rescaled by its own mean is invariant to shifting par and dev
-  # together, so the level is pinned. This is the assessment's avgsel penalty.
+  # exp(par + dev) rescaled by its own mean does not change when par and dev are shifted
+  # together, so the level has to be fixed. this is the assessment's avgsel penalty
   data$Use_fish_selex_penalty <- 1
   fish_pen <- data.frame(region = 1, fleet = 1, block = 1, sex = 1, wt = 10)
   fish_pen$par <- list(1:12)
@@ -372,9 +367,8 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   expect_equal(obj$rep$srv_sel[1, 1, i_bts, 1, , 1, 1], dat$admb$sel_bts[bts_rows, ],
                tolerance = 1e-10, ignore_attr = TRUE)
 
-  # Recruitment deviations are stock recruit residuals, and each year's residual
-  # depends on the previous year's spawning biomass, so they are solved by
-  # forward substitution rather than assigned.
+  # recruitment deviations are stock recruit residuals and each year's depends on the previous
+  # year's spawning biomass, so they are solved forward rather than assigned
   free <- obj$par
   idx_rec <- which(names(free) == "ln_RecDevs")
   for(it in 1:40) {

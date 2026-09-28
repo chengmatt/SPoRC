@@ -1,8 +1,9 @@
-# Operating to estimation model routines for the state-space numbers at age. The OM advances the
-# population with a known process error and the EM recovers it from data alone, states integrated out.
+# Operating and estimation model routines for the state-space numbers at age. The
+# operating model advances the population under a process error set here, and the
+# estimating model recovers it from data alone with the states integrated out.
 #
-# Different from test-selftest_naa_state.R, where the true states were handed over. Here the variance
-# has to be separated from observation error, which is the part of a state-space fit that fails.
+# Unlike test-selftest_naa_state.R, which starts from the true states, this has to
+# separate process from observation error, which is where a state-space fit fails.
 
 naaom_cfg <- list(
   n_yrs = 35, n_ages = 8, idx_se = 0.08, comp_iss = 400, M = 0.25, sigmaR = 0.3,
@@ -218,11 +219,10 @@ naaom_build_em <- function(sim_data, NAA_re = "none") {
 
 #' Fixed effects of a fit, read by name
 #'
-#' Under random effects \code{last.par.best} holds the fixed and random parameters
-#' together, and \code{parList} misassigns it: on this model it returns 3.32 for a
-#' standard deviation whose value is 0.22, with only a warning about replacement
-#' length to say so. Indexing by \code{env$random} to drop the states and then
-#' selecting by name is what reads correctly.
+#' Under random effects \code{last.par.best} holds the fixed and random parameters together
+#' and \code{parList} mis-reads it, returning 3.32 here for a standard deviation of 0.22.
+#'
+#' Dropping the states by \code{env$random} first and selecting by name reads correctly.
 #'
 #' @param fit Object from \code{fit_model}.
 #' @param quant_name Parameter name, or \code{NULL} for the whole fixed vector.

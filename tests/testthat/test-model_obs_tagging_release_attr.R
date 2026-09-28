@@ -1,8 +1,11 @@
+# Spreading a release across regions, ages and sexes: the totals and the marginals along the
+# attended dimensions have to survive, and the weights come from selectivity or numbers at age.
+
 library(SPoRC)
 library(testthat)
 
-# Helper to build minimal NAA, fish_sel, srv_sel arrays for tests.
-# Dimensions: NAA[n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes]
+# minimal numbers at age and selectivity arrays
+#   NAA     [n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes]
 #             fish_sel[n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets]
 #             srv_sel [n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets]
 make_arrays <- function(
@@ -33,6 +36,8 @@ make_arrays <- function(
     n_sexes = n_sexes
   )
 }
+
+# Totals and Marginals Are Kept ----------------------------------------------
 
 test_that("release_conv_tag_attr: p_a_s returns tagged_fish unchanged", {
   arrs <- make_arrays()
@@ -230,6 +235,8 @@ test_that("release_conv_tag_attr: output has correct dimensions", {
   expect_equal(dim(result), c(3, 4, 2))
 })
 
+# Where the Weights Come From ------------------------------------------------
+
 test_that("release_conv_tag_attr: platform = 'fishery' uses fish_sel weights", {
   # Make fish_sel zero for pop 1 and nonzero for pop 2; tags should go entirely
   # to pop 2 regardless of NAA being uniform.
@@ -311,6 +318,8 @@ test_that("release_conv_tag_attr: non-uniform NAA allocates proportionally", {
   expect_equal(result[1, 2, 1], 60 * 2 / 6, tolerance = 1e-10)
   expect_equal(result[1, 3, 1], 60 * 3 / 6, tolerance = 1e-10)
 })
+
+# Degenerate and Empty Cells -------------------------------------------------
 
 test_that("release_conv_tag_attr: n_sexes = 1 does not error", {
   arrs <- make_arrays(n_pop = 2, n_ages = 3, n_sexes = 1)

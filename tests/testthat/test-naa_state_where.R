@@ -1,9 +1,9 @@
+# A natal homing population holds no fish in a region it never reaches, so it has no state there
+# and the penalty would otherwise take the log of zero. Checks the argument, the map, the penalty
+# and what happens inside a correlation that spans the dropped region.
+
 library(SPoRC)
 library(testthat)
-
-# A natal homing population holds no fish in a region it never reaches, so it has no
-# numbers at age state there and the penalty would otherwise take the logarithm of zero.
-# Checks the argument, the map, the penalty and the guard against correlated regions.
 
 # a small state on two populations and two regions, the second population homing to region two
 where_pars <- function(naa_re_where = NULL, n_pop = 2, n_regions = 2, ny = 4, na = 3, seed = 8) {
@@ -29,7 +29,6 @@ where_pars <- function(naa_re_where = NULL, n_pop = 2, n_regions = 2, ny = 4, na
        naa_re_seas = 1)
 }
 
-
 test_that("a structurally empty cell would make the penalty infinite and does not", {
 
   occupancy <- matrix(c(1, 0, 1, 1), nrow = 2, ncol = 2)
@@ -48,7 +47,6 @@ test_that("a structurally empty cell would make the penalty infinite and does no
     NAA_re = 1, naa_re_where = occupancy)
   expect_true(is.finite(guarded))
 })
-
 
 test_that("the penalty is the sum over the cells the state runs on and nothing else", {
 
@@ -82,7 +80,6 @@ test_that("the penalty is the sum over the cells the state runs on and nothing e
     tolerance = 1e-12)
 })
 
-
 test_that("a correlated form skips the dropped cell too", {
 
   occupancy <- matrix(c(1, 0, 1, 1), nrow = 2, ncol = 2)
@@ -97,7 +94,6 @@ test_that("a correlated form skips the dropped cell too", {
     expect_true(is.finite(got))
   } # end form loop
 })
-
 
 test_that("a dropped cell is refused inside a correlation that spans it", {
 
@@ -120,7 +116,6 @@ test_that("a dropped cell is refused inside a correlation that spans it", {
       naa_re_where = occupancy),
     "correlates")
 })
-
 
 test_that("setup drops the cell from the map as well as from the penalty", {
 

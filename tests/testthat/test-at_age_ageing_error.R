@@ -71,6 +71,7 @@ at_age_call <- function(arrays, source, ae, n_obs_ages, pop = FALSE) {
 aa_obs <- function(n_yrs, n_obs_ages, n_fleets = 1, level = 2e3) array(level, dim = c(1, n_yrs, 1, n_obs_ages, 1, n_fleets))
 aa_use <- function(n_yrs, n_obs_ages, n_fleets = 1) array(1, dim = c(1, n_yrs, 1, n_obs_ages, 1, n_fleets))
 
+# Reading the Prediction through Ageing Error --------------------------------
 
 test_that("each at-age data source is predicted through its fleet's ageing error", {
 
@@ -111,6 +112,8 @@ test_that("an identity ageing error leaves the predictions and likelihood exactl
   expect_identical(mixed$pred[, , , , , 1], direct$pred[, , , , , 1])
   expect_false(isTRUE(all.equal(mixed$pred[, , , , , 2], direct$pred[, , , , , 2])))
 })
+
+# Fewer Observed Ages than Model Ages ----------------------------------------
 
 test_that("a collapsed plus group puts the at-age data on the observed ages", {
 
@@ -193,6 +196,8 @@ test_that("an observed age that no model age is read as is refused at setup", {
   expect_error(build_at_age(n_yrs = n_yrs, n_ages = 5, ObsCatchAA = aa_obs(n_yrs, 4), UseCatchAA = aa_use(n_yrs, 4),
                             AgeingError = gap), "no model age is read as")
 })
+
+# Simulation -----------------------------------------------------------------
 
 test_that("the operating model draws catch and survey index at age through the ageing error", {
 

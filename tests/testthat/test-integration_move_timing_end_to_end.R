@@ -1,12 +1,9 @@
+# move_timing through a whole model rather than one operator: the array shapes, the argument
+# wiring, and the branches that only run under continuous movement.
+
 library(SPoRC)
 library(testthat)
 library(Matrix)
-
-# End-to-end coverage for move_timing. The operator-level properties are covered in
-# test-transition-operators.R; what this file guards is the plumbing through a real
-# model -- array shapes, argument wiring, and the continuous-movement branches that
-# only execute at move_timing = 2. A dimension-dropping bug in the timing-2 tagging
-# Baranov previously survived precisely because no test ran a full model at that timing.
 
 # Build a small multi-region CTMC model exercising movement, tagging and two sexes.
 build_ctmc_model <- function(n_regions = 3, n_seas = 1, n_sexes = 2, n_yrs = 8, n_ages = 6) {
@@ -90,7 +87,7 @@ test_that("continuous movement forces the generator onto annual time units", {
 })
 
 test_that("Get_Movement returns a usable generator for every timing", {
-  # Shape guard on the pieces the dynamics index into: Movement and Mrate must be
+  # the shapes the dynamics read: Movement and Mrate must be
   # dimensioned alike so that Mrate[p,,,y,seas,a,s] lines up with Movement[p,,,y,seas,a,s]
   n_regions <- 3
   n_ages <- 4
@@ -149,9 +146,8 @@ test_that("Get_Movement returns a usable generator for every timing", {
 })
 
 test_that("timing-2 catch and tag Baranov survive a length-1 sex dimension", {
-  # Regression guard: the slices multiplied against the season-integrated abundance
-  # drop their sex dimension when n_sexes == 1, which previously made them
-  # non-conformable with the 3-d integral array.
+  # the selectivity arrays read against the season-integrated abundance lose their sex
+  # dimension in a one-sex model, which leaves them the wrong shape for the integral
   n_regions <- 3
   n_ages <- 4
   n_sexes <- 1
@@ -185,7 +181,7 @@ test_that("timing-2 catch and tag Baranov survive a length-1 sex dimension", {
 
 test_that("continuous movement reduces to the discrete timings when regions are decoupled", {
   # With a zero generator there is no movement, so all three timings must agree in a
-  # full seasonal sweep -- an end-to-end check that the operator plumbing is consistent.
+  # the full seasonal sweep, so that the three timings stay consistent end to end
   n <- 3
   n_seas <- 4
   seasdur <- rep(0.25, n_seas)

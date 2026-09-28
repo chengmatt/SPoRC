@@ -13,11 +13,11 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
 
   # Initialize model dimensions and data list
   input_list <- Setup_Mod_Dim(years = seq_along(three_rg_sable_data$years),
-                              # vector of years (1 - 62)
+                              # years 1 to 62
                               ages = seq_along(three_rg_sable_data$ages),
-                              # vector of ages (1 - 30)
+                              # ages 1 to 30
                               lens = three_rg_sable_data$lens,
-                              # number of lengths (41 - 99)
+                              # lengths 41 to 99
                               n_regions = three_rg_sable_data$n_regions,
                               # number of regions (5)
                               n_sexes = three_rg_sable_data$n_sexes,
@@ -118,9 +118,8 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
 
                                   # Data Inputs
                                   conv_tag_release_indicator = three_rg_sable_data$conv_tag_release_indicator,
-                                  # tag release indicator (first col = tag region,
-                                  # second col = tag year),
-                                  # total number of rows = number of tagged cohorts
+                                  # tag releases: region in the first column, year in the second,
+                                  # one row per tagged cohort
                                   conv_tagged_fish = three_rg_sable_data$conv_tagged_fish, # Released fish
                                   # dimensioned by total number of tagged cohorts, (implicitly
                                   # tracks the release year and region), pop, age, and sex
@@ -263,10 +262,10 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
 
   # Merge to get all valid combinations
   fish_selex_structure <- merge(fleet_blocks, sex_par) %>%
-    dplyr::filter(!(fleet == 1 & block == 1 & sex == 2 & par == 2)) %>%              # remove priors for any unestimated pars -- par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
-    dplyr::filter(!(fleet == 2 & block == 1 & sex == 2 & par == 1))                  # remove priors for any unestimated pars -- par1=a50, par2=delta; NEEDS TO MATCH PARAMETER MAPPING
+    dplyr::filter(!(fleet == 1 & block == 1 & sex == 2 & par == 2)) %>%              # drop priors on parameters that are not estimated, par 1 a50 and par 2 delta, which has to agree with the mapping
+    dplyr::filter(!(fleet == 2 & block == 1 & sex == 2 & par == 1))                  # same for the second fleet
 
-  # Add the lognormal prior values - creates a dataframe, each row is a unique parameter combination to apply the prior to
+  # lognormal prior values, one row per parameter combination the prior applies to
   fish_selex_prior <- cbind(
     region = 1,
     fish_selex_structure,
@@ -322,7 +321,7 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
   # Define sex and parameter combinations
   sex_par <- expand.grid(sex = 1:2, par = 1:2)
 
-  # Define valid fleet-block combinations (only estimating domestic and jp LLS)
+  # fleet and block combinations, estimating only the domestic and Japanese longline surveys
   fleet_blocks <- data.frame(
     fleet = c(1, 2),
     block = c(1, 1)
@@ -369,17 +368,15 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
                                            "none_Fleet_2"
                                          ),
 
-                                       # whether to estiamte all fixed effects
-                                       # for survey selectivity and later
-                                       # modify to fix/share parameters
+                                       # estimate every survey selectivity parameter here,
+                                       # then fix or share some below
                                        srv_fixed_sel_pars_spec =
                                          c("est_shared_r",
                                            "est_shared_r"
                                          ),
 
-                                       # whether to estiamte all
-                                       # fixed effects for survey catchability
-                                       # spatially-invariant q
+                                       # estimate every survey catchability,
+                                       # one q for every region
                                        srv_q_spec =
                                          c("est_shared_r",
                                            "est_shared_r"
@@ -439,12 +436,12 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
   data$ISS_FishAgeComps[2,,,,] <- 25  # AI
   data$ISS_FishAgeComps[3,,,,] <- 50  # GOA
 
-  # Fishery Lengths - Fixed Gear
+  # fishery lengths, fixed gear
   data$ISS_FishLenComps[1,,,,1] <- 13  # BS
   data$ISS_FishLenComps[2,,,,1] <- 13  # AI
   data$ISS_FishLenComps[3,,,,1] <- 18  # GOA
 
-  # Fishery Lengths - Trawl Gear
+  # fishery lengths, trawl gear
   data$ISS_FishLenComps[1,,,,1] <- 25  # BS
   data$ISS_FishLenComps[2,,,,1] <- 10  # AI
   data$ISS_FishLenComps[3,,,,1] <- 10  # GOA
@@ -457,7 +454,7 @@ test_that("Three-region Sablefish RTMB model produces expected results", {
   map_fish_fixed[,1,1,2,2]  <- map_fish_fixed[,1,1,1,2] # share deltas
   mapping$fish_fixed_sel_pars <- factor(map_fish_fixed)
 
-  # Map off delta for JP LLS
+  # map off delta for the Japanese longline survey
   map_srv_fixed <- array(mapping$srv_fixed_sel_pars, dim = dim(parameters$srv_fixed_sel_pars))
   map_srv_fixed[,2,1,2,2]  <- map_srv_fixed[,2,1,1,2] # share deltas
   mapping$srv_fixed_sel_pars <- factor(map_srv_fixed)

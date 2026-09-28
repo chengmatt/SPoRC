@@ -1,3 +1,6 @@
+# plot_resids() has to facet by fleet for every composition type, in a model with two fishery
+# fleets, two surveys, two regions and two sexes.
+
 library(SPoRC)
 library(testthat)
 

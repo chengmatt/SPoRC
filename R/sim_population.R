@@ -257,12 +257,18 @@ generate_recruitment <- function(y,
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
           sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
 
-          # the correction sits inside the deviation if doing bias correction
-          dev_mu <- if(isTRUE(rec_bias_correct == 1) && RecDevs_model == 1) -sigmaR_yr^2 / 2 else 0
+          # setup bias correction here
+          bc_pe <- if(exists("bias_correct_pe")) bias_correct_pe else 1 # for backwards compatibility
+          rec_corr <- if(!isTRUE(rec_bias_correct == 1) || bc_pe == 0) 0 # no correction
+                      else if(RecDevs_model == 1) sigmaR_yr^2 / 2 # iid 
+                      else if(RecDevs_model == 3) sigmaR_yr^2 / (2 * (1 - RecDevs_rho[p,r]^2)) # ar1
+                      else 0 # rw has no stationary variance to correct against
+          dev_mu <- -rec_corr
           dev_sd <- sigmaR_yr
+
           if(RecDevs_model != 1 && y > 1) {
             prev_dev <- sim_env$ln_RecDevs[p,r,y - 1,sim]
-            dev_mu <- if(RecDevs_model == 2) prev_dev else RecDevs_rho[p,r] * prev_dev
+            dev_mu <- if(RecDevs_model == 2) prev_dev else -rec_corr + RecDevs_rho[p,r] * (prev_dev + rec_corr) # the ar1 step about that center
           }
 
           # get staionary marginal for ar1
@@ -279,7 +285,7 @@ generate_recruitment <- function(y,
 
           # apply deviation to determinstic rec
           tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim])
-          if(!dsem_cell && isTRUE(rec_bias_correct == 1) && RecDevs_model == 1) sim_env$rec_anom_add[p,r,y] <- sigmaR_yr^2 / 2 # record what to add back to rec dev anomaly if using rec idx
+          if(!dsem_cell) sim_env$rec_anom_add[p,r,y] <- rec_corr # record what to add back to rec dev anomaly if using rec idx
         }
 
         # input recruitment into the season it first enters the population

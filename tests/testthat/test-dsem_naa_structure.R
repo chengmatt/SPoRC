@@ -54,7 +54,7 @@ test_that("the 2dar1 arrows parse with three correlations and evaluate", {
   expect_equal(read_dsem_arrows(naa_arrows("2dar1", ages), naa_series(ages))$beta_names, c("rho_yr", "rho_age", "rho_cohort"))
   d <- suppressMessages(Setup_Mod_DSEM(il, hold_arrows(naa_arrows("2dar1", ages), c(rho_yr = 0.6, rho_age = 0.4, rho_cohort = -0.24)),
                                        dsem_data = NULL, dsem_processes = "NAA"))
-  expect_length(d$data$dsem_model$beta_names, 0) # held through the arrows, so no coefficient parameter is left
+  expect_length(d$data$dsem_model$beta_names, 0) # fixed in the arrows, so no coefficient parameter is left
   expect_equal(d$data$dsem_model$ln_sd_names, "sd_naa")
   expect_equal(nrow(d$data$dsem_model$arrows), 3 * length(ages) - 2 + length(ages))
   obj <- fit_model(d$data, d$par, d$map, random = NULL, do_optim = FALSE, silent = TRUE)

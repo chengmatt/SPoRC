@@ -28,7 +28,7 @@ component_sums <- function(rep) {
   stats::setNames(vapply(nm, function(n) sum(as.numeric(rep[[n]])), 0), nm)
 }
 
-# the total agrees, the linked penalty is off, the dsem holds what it held, and nothing else moved
+# the total agrees, the linked penalty is off, the dsem is unchanged, and nothing else moved
 expect_same_jnll <- function(via, plain, moved, tolerance = 1e-8) {
   expect_equal(via$fn, plain$fn, tolerance = tolerance)
   cp <- component_sums(plain$rep)
@@ -67,6 +67,8 @@ q_devs_at <- function(il) {
   il$par$ln_sigma_srv_q[] <- log(seq(0.08, 0.15, length.out = length(il$par$ln_sigma_srv_q)))
   il
 }
+
+# Recruitment ----------------------------------------------------------------
 
 test_that("dusky: an sd-only link on recruitment is the iid penalty, declared or not", {
 
@@ -137,6 +139,8 @@ test_that("dusky: estimating the sd through the arrows or through ln_sigmaR is t
 
 })
 
+# Numbers at Age -------------------------------------------------------------
+
 test_that("dusky: iid arrows on a numbers at age state are the native iid penalty, declared or not", {
 
   # a state on ages 5 to 9 (indices 2 to 6 of the model ages), sigma fixed at the module's start of 0.3
@@ -201,6 +205,8 @@ test_that("three regions: sd lines on every recruitment series are the iid penal
 
 })
 
+# Movement -------------------------------------------------------------------
+
 test_that("three regions: sd lines on every movement series are the movement penalty, declared or not", {
 
   # movement estimated with iid deviations by year, age and sex, their sd fixed at its start
@@ -230,53 +236,59 @@ test_that("three regions: sd lines on every movement series are the movement pen
 
 })
 
-test_that("dusky: the random walk and AR1 penalties are the arrows under the right variance form", {
+# The Random Walk and AR1 Forms ----------------------------------------------
 
-  # both links go through dsem_processes = "rec" with the rec module left on its own model, so the native penalty
-  # comes off cell by cell and everything else, the initial age deviations included, still reads ln_sigmaR
-  walk_devs <- function(il, seed) {
-    set.seed(seed)
-    il$par$ln_RecDevs[] <- cumsum(rnorm(length(il$par$ln_RecDevs), 0, 0.3))
-    il
+test_that("dusky: the arrows give the random walk and AR1 recruitment densities", {
+
+  # a linked recruitment series takes its density from the arrows outright and cannot be paired
+  # with a native walk or ar1, so each route is built on its own model.
+  #
+  # the rest of the objective differs for a reason: the initial age deviations read sigmaR
+  # on one side and the arrows' sd line on the other
+  devs <- local({ set.seed(7); cumsum(stats::rnorm(length(dusky_built_with()$par$ln_RecDevs), 0, 0.3)) })
+  n_yrs <- length(sgl_rg_dusky_data$years)
+  off <- list(do_rec_bias_ramp = 1, bias_year = rep(n_yrs, 4)) # the way to ask an ar1 or a dsem for no correction
+  sigmaR <- exp(dusky_built_with()$par$ln_sigmaR[2,1,1])
+
+  # a walk takes no correction whatever the ramp says, and refuses the ramp being set, so only the ar1 passes off
+  native <- function(rec, rho = NULL) {
+    il <- suppressWarnings(dusky_built_with(rec = rec))
+    if(!is.null(rho)) il$par$RecDevs_rho[] <- atanh(rho) # the penalty reads tanh of this
+    il$par$ln_RecDevs[] <- devs
+    sum(as.numeric(value_of(il)$rep$Rec_nLL))
   }
 
-  # dusky holds its ramp at zero through the switch, which the walk and the ar1 refuse, so the switch goes off for them:
-  # neither penalty takes a correction, and a link under a rec module that is not iid takes none either
-  # random walk: year one at sigma (RecDevs_rw_init_sigma = NA), every later year about the one before at sigma.
-  # the arrows' walk under the conditional form is that density, since a walk's innovation sd is the sd line
-  plain_rw <- walk_devs(suppressWarnings(dusky_built_with(rec = list(RecDevs_model = "rw", RecDevs_rw_init_sigma = NA, do_rec_bias_ramp = 0))), 7)
-  sigmaR <- exp(plain_rw$par$ln_sigmaR[2,1,1])
-  base_rw <- value_of(plain_rw)
-  expect_gt(sum(base_rw$rep$Rec_nLL), 0)
-  walk <- suppressMessages(Setup_Mod_DSEM(plain_rw, c("rec -> rec, 1, NA, 1", sd_lines("rec", sigmaR)), dsem_data = NULL, dsem_processes = "rec"))
-  expect_same_jnll(value_of(walk), base_rw, moved = "Rec_nLL")
+  arrows <- function(arrow_txt, variance = "conditional") {
+    il <- suppressWarnings(dusky_built_with(rec = utils::modifyList(off, list(RecDevs_model = "dsem"))))
+    il <- suppressMessages(Setup_Mod_DSEM(il, arrow_txt, dsem_data = NULL, dsem_variance = variance))
+    il$par$ln_RecDevs[] <- devs
+    sum(as.numeric(value_of(il)$rep$dsem_nLL))
+  }
 
-  # the native default draws year one wide (sd 5), which the arrows have no line for, so that setting differs by year one alone
-  wide <- walk_devs(suppressWarnings(dusky_built_with(rec = list(RecDevs_model = "rw", do_rec_bias_ramp = 0))), 7)
-  d1 <- wide$par$ln_RecDevs[1,1,1]
-  expect_equal(value_of(wide)$fn - base_rw$fn, dnorm(d1, 0, sigmaR, log = TRUE) - dnorm(d1, 0, 5, log = TRUE), tolerance = 1e-8)
+  # a random walk is a lagged self path of one, and its innovation sd is the sd line
+  expect_equal(arrows(c("rec -> rec, 1, NA, 1", sd_lines("rec", sigmaR))),
+               native(list(RecDevs_model = "rw", RecDevs_rw_init_sigma = NA, do_rec_bias_ramp = 0)), tolerance = 1e-8)
 
-  # AR1: year one at the stationary sd sigma / sqrt(1 - rho^2), every later year about rho times the one before at sigma.
-  # under the diagonal form an sd line at the stationary sd gives exactly that: year one at the line, later years at
-  # line * sqrt(1 - rho^2) = sigma. under the conditional form year one sits at sigma instead
+  # an ar1 is a self path of rho, with year one at the stationary sd. the marginal and diagonal forms hold
+  # every cell at the sd line, so that line is the stationary sd and later years fall back to sigma
   rho <- 0.6
-  plain_ar1 <- walk_devs(suppressWarnings(dusky_built_with(rec = list(RecDevs_model = "ar1", do_rec_bias_ramp = 0))), 8)
-  plain_ar1$par$RecDevs_rho[] <- atanh(rho) # the penalty reads 2 / (1 + exp(-2 x)) - 1, which is tanh
-  base_ar1 <- value_of(plain_ar1)
   stationary_sd <- sigmaR / sqrt(1 - rho^2)
   self_path <- sprintf("rec -> rec, 1, NA, %.17g", rho)
-  ar1_diag <- suppressMessages(Setup_Mod_DSEM(plain_ar1, c(self_path, sd_lines("rec", stationary_sd)), dsem_data = NULL, dsem_processes = "rec", dsem_variance = "diagonal"))
-  expect_same_jnll(value_of(ar1_diag), base_ar1, moved = "Rec_nLL")
+  ar1_native <- native(utils::modifyList(off, list(RecDevs_model = "ar1")), rho = rho)
 
-  ar1_cond <- suppressMessages(Setup_Mod_DSEM(plain_ar1, c(self_path, sd_lines("rec", sigmaR)), dsem_data = NULL, dsem_processes = "rec"))
-  d1 <- plain_ar1$par$ln_RecDevs[1,1,1]
-  expect_equal(value_of(ar1_cond)$fn - base_ar1$fn, dnorm(d1, 0, stationary_sd, log = TRUE) - dnorm(d1, 0, sigmaR, log = TRUE), tolerance = 1e-8)
+  expect_equal(arrows(c(self_path, sd_lines("rec", stationary_sd)), "marginal"), ar1_native, tolerance = 1e-8)
+  expect_equal(arrows(c(self_path, sd_lines("rec", stationary_sd)), "diagonal"), ar1_native, tolerance = 1e-8)
 
-  # and the marginal form is the diagonal form here, there being no covariance line
-  ar1_marg <- suppressMessages(Setup_Mod_DSEM(plain_ar1, c(self_path, sd_lines("rec", stationary_sd)), dsem_data = NULL, dsem_processes = "rec", dsem_variance = "marginal"))
-  expect_equal(value_of(ar1_marg)$fn, base_ar1$fn, tolerance = 1e-8)
+  # the conditional form reads the sd line as the innovation sd, so year one sits at sigma rather than the
+  # stationary sd and the two differ by that year alone
+  d1 <- devs[1]
+  expect_equal(arrows(c(self_path, sd_lines("rec", sigmaR))) - ar1_native,
+               -stats::dnorm(d1, 0, sigmaR, log = TRUE) + stats::dnorm(d1, 0, stationary_sd, log = TRUE),
+               tolerance = 1e-8)
 
 })
+
+# Growth ---------------------------------------------------------------------
 
 test_that("pcod: sd lines on the time-varying growth parameters are the iid growth penalty, declared or not", {
 
@@ -291,7 +303,7 @@ test_that("pcod: sd lines on the time-varying growth parameters are the iid grow
 
   series <- dsem_series(plain, "growth")
   expect_equal(series, paste0("growth_Pop_1_Region_1_Par_", c(1, 3), "_Sex_1")) # L1 and K, by array index
-  sds <- exp(plain$par$growth_pe_pars[1,1,c(1, 3),1,1]) # the first data source of the shared process error array
+  sds <- exp(plain$par$growth_pe_pars[1,1,c(1, 3),1,1]) # the time-varying half of the shared process error array
   base <- value_of(plain)
   expect_gt(abs(sum(base$rep$growth_tv_nLL)), 1) # the penalty has something in it, so the comparison is not empty
 
@@ -321,7 +333,7 @@ test_that("pcod: sd lines on the semi-parametric surface are its iid penalty, on
   # other here so the arrows have to reach the right age
   plain <- pcod_built_with(list(growth_semipar = "iid"))
   n_ages <- length(plain$data$ages)
-  plain$par$growth_pe_pars[1,1,,1,2] <- log(seq(0.03, 0.08, length.out = n_ages)) # second data source, fixed
+  plain$par$growth_pe_pars[1,1,,1,2] <- log(seq(0.03, 0.08, length.out = n_ages)) # the semi-parametric half, fixed
   set.seed(12)
   plain$par$ln_growth_semipar_devs[] <- rnorm(length(plain$par$ln_growth_semipar_devs), 0, 0.03)
 
@@ -341,6 +353,8 @@ test_that("pcod: sd lines on the semi-parametric surface are its iid penalty, on
   expect_false(isTRUE(all.equal(value_of(reversed)$fn, base$fn)))
 
 })
+
+# Catchability ---------------------------------------------------------------
 
 test_that("three regions: sd lines on the fishery catchability series are its deviation penalty, declared or not", {
 

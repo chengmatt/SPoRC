@@ -1,10 +1,12 @@
+# The joint negative log likelihood has to equal the weighted sum of the components the model
+# reports, and each weight has to scale only its own component.
+
 library(SPoRC)
 library(testthat)
 data("dusky_rtmb_model")
 
-# The bundled dusky object has a $rep snapshot taken when it was built, so the
-# objective is re-evaluated here from its stored data and parameters to make sure
-# every check below reflects the current SPoRC_rtmb rather than that snapshot.
+# the packaged dusky object holds a report taken when it was built, so the objective is
+# re-evaluated here from its data and parameters instead
 mle_pars <- dusky_rtmb_model$env$parList()
 
 evaluate_at_mle <- function(data) {
@@ -18,7 +20,6 @@ evaluate_at_mle <- function(data) {
   )
 }
 
-
 test_that("jnLL equals the weighted sum of its reported likelihood components", {
   baseline <- evaluate_at_mle(dusky_rtmb_model$data)
   expect_jnLL_decomposes(baseline, label = "dusky")
@@ -28,7 +29,6 @@ test_that("jnLL equals the weighted sum of its reported likelihood components", 
   contributions <- jnLL_contributions(baseline)
   expect_gt(sum(contributions$contribution != 0), 5)
 })
-
 
 test_that("expect_jnLL_decomposes fails on a decomposition that does not hold", {
   baseline <- evaluate_at_mle(dusky_rtmb_model$data)
@@ -49,20 +49,16 @@ test_that("expect_jnLL_decomposes fails on a decomposition that does not hold", 
   expect_failure(expect_jnLL_decomposes(stale, label = "stale"))
 })
 
-
 test_that("a term that resolves to more than one contribution is an error, not extra rows", {
   baseline <- evaluate_at_mle(dusky_rtmb_model$data)
 
-  # Wt_F is a scalar-mode term, so an array weight makes Wt_F * sum(Fmort_nLL)
-  # return one value per weight element. Without the length check those become one
-  # row each and the component is counted once per element, which reads as a
-  # decomposition that misses by a multiple of itself rather than as a wrong mode.
+  # the F weight multiplies the summed likelihood, so an array weight returns one value per
+  # element and the term would be counted once per element rather than once
   vector_weight <- baseline
   vector_weight$data$Wt_F <- c(1, 1)
   expect_error(jnLL_contributions(vector_weight), "Fmort_nLL")
   expect_error(jnLL_contributions(vector_weight), "scalar")
 })
-
 
 test_that("each likelihood weight scales its own component and leaves the rest untouched", {
   baseline <- evaluate_at_mle(dusky_rtmb_model$data)

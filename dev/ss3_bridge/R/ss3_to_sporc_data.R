@@ -744,8 +744,8 @@ ss3_to_sporc_data <- function(run_dir, waa_fallback = FALSE) {
 
     for(k in seq_len(n_fl)) {
 
-      # a year with no age data holds the most recent definition forward, so a
-      # switch partway through a series holds for every later year
+      # a year with no age data reuses the most recent definition, so a switch part
+      # way through a series applies to every later year
       last_def <- 1
 
       for(y in seq_len(n_yrs)) {

@@ -133,8 +133,8 @@ reference point or fixed input F, depending on `fmort_opt`.}
 \item{b_ref_pt}{Array `[n_pop, n_regions, n_proj_yrs]` of the biomass reference
 point used in the control rule.}
 
-\item{HCR_function}{Harvest control rule taking `x` (SSB), `frp` and `brp`. A
-rule that also declares a `state` argument (or `...`) is handed this year's
+\item{HCR_function}{Harvest control rule taking `x` (SSB), `frp` and `brp`.
+A rule that also declares a `state` argument (or `...`) is given this year's
 population as a named list, holding `y`, `r`, `NAA`, `SSB`, `Total_Biom` and
 `Catch`, so it can be written on more than spawning biomass. Rules without it
 are called as before and no state is assembled.}
@@ -325,7 +325,7 @@ Under \code{srr_opt$rec_lag == 0} the recruitment and spawning steps are
 reordered within \code{spawn_seas}: movement runs first, spawning biomass is
 computed from the survivors alone, that SSB generates this year's recruitment,
 and the recruits are inserted immediately before mortality and ageing. Year 1
-holds the terminal state forward with no recruitment event.
+advances the terminal state with no recruitment event.
 
 Under \code{fmort_opt = "Catch"} the F step moves to the front of the following
 year, since the F that lands a target depends on that year's own numbers at age

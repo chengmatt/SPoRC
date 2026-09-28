@@ -1,10 +1,9 @@
+# An analytically solved catchability is taken out of the likelihood rather than estimated, and
+# solved inside each catchability time block, so a blocked q gets one value per block rather
+# than one pooled value for the whole series.
+
 library(SPoRC)
 library(testthat)
-
-# An analytically solved catchability is concentrated out of the likelihood rather than
-# estimated. It is solved WITHIN each catchability time block, so a blocked q gets one
-# solved value per block instead of one pooled value for the whole series.
-# get_blocked_analytic_q is tested directly against the formulas it claims to implement.
 
 test_that("get_blocked_analytic_q reproduces the pooled solve when there is one block", {
 
@@ -57,9 +56,8 @@ test_that("a block with no observations falls back to the pooled solve", {
 
 test_that("relabelling the regimes leaves an analytic q untouched and an estimated one does not", {
 
-  # This is why the per year posterior over regimes is exactly 1/K under an analytic q:
-  # the solve follows whatever partition the states define, so nothing in the likelihood
-  # distinguishes regime 1 from regime 2. The partition is identified; the labels are not.
+  # the solve follows whatever split the regimes define, so nothing in the likelihood tells
+  # regime 1 from regime 2: the split is identified and the labels are not
   set.seed(15)
   n_yrs <- 8
   obs <- exp(rnorm(n_yrs, log(10), 0.2))

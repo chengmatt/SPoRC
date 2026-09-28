@@ -5,13 +5,13 @@
 
 #' Fishing and total mortality for one year
 #'
-#' Also derives the selection-weighted weight at age where a fleet asks for
-#' it. Both are done a year at a time because under cohort growth the key a
-#' length-based selectivity acts through is only known once the population
-#' loop reaches that year; every other model runs them for all years before
-#' the loop starts. Under cohort growth this runs inside the population loop,
-#' so the year's state is taken as an argument and handed back rather than
-#' assigned into this frame.
+#' Also derives the selection-weighted weight at age where a fleet asks for it.
+#' Both are done a year at a time because under cohort growth the key a
+#' length-based selectivity acts through is only known once the population loop
+#' reaches that year; every other model runs them for all years before the loop
+#' starts. Under cohort growth this runs inside the population loop, so the
+#' year's state is taken as an argument and returned rather than written
+#' outside.
 #'
 #' @param y Year index.
 #' @param state Named list with \code{Fmort}, \code{dmr}, \code{fish_sel},
@@ -65,14 +65,14 @@ compute_mortality_year = function(y, state, growth_model, derive_waa, fish_selex
                           catch_seas_agg = NULL, catch_pop_seas_agg = NULL,
                           catch_aa_seas_agg = NULL, catch_aa_pop_seas_agg = NULL) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   # an objective saved before seasonal reporting existed calls this without those settings
-  if(is.null(catch_seas_agg)) catch_seas_agg = rep(0L, n_fish_fleets)
-  if(is.null(catch_pop_seas_agg)) catch_pop_seas_agg = rep(0L, n_fish_fleets)
-  if(is.null(catch_aa_seas_agg)) catch_aa_seas_agg = rep(0L, n_fish_fleets)
-  if(is.null(catch_aa_pop_seas_agg)) catch_aa_pop_seas_agg = rep(0L, n_fish_fleets)
+  if(is.null(catch_seas_agg)) catch_seas_agg = rep(0, n_fish_fleets)
+  if(is.null(catch_pop_seas_agg)) catch_pop_seas_agg = rep(0, n_fish_fleets)
+  if(is.null(catch_aa_seas_agg)) catch_aa_seas_agg = rep(0, n_fish_fleets)
+  if(is.null(catch_aa_pop_seas_agg)) catch_aa_pop_seas_agg = rep(0, n_fish_fleets)
 
   # get mortality values kept in from the previous year
   Fmort = state$Fmort

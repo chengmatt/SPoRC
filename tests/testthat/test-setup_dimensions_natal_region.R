@@ -1,10 +1,9 @@
+# Setup_Mod_Dim and Setup_Sim_Dim both infer where each population is homed when it is not given.
+# Getting that wrong misassigns recruitment to the wrong region without saying so, so every
+# branch and its error case is covered. Also the season durations and what is only printed.
+
 library(SPoRC)
 library(testthat)
-
-# Setup_Sim_Dim and Setup_Mod_Dim both infer natal_region when it is not
-# supplied. Getting that mapping wrong silently misassigns recruitment to the
-# wrong region in a multi-population model, so each inference branch and its
-# error case is covered here.
 
 sim_dim <- function(n_pop = 1, n_regions = 1, natal_region = NULL, n_sexes = 2, ...) {
   SPoRC::Setup_Sim_Dim(

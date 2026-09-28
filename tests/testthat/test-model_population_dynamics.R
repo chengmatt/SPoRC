@@ -1,16 +1,10 @@
+# One year of population dynamics in one region, two seasons and three ages: recruitment entering
+# at age 1, mortality within the seasons, and ages advancing into the plus group across the year.
+# Mean recruitment is used so the insertion step is exactly R0 times the region share.
+
 library(SPoRC)
 library(testthat)
 
-# A minimal 1-pop, 1-region, 2-season, 3-age test setup. n_regions = 1 means the
-# movement step is a structural no-op (only runs when n_regions > 1), so this
-# isolates the mortality/ageing/recruitment mechanics without also depending
-# on Get_Movement()'s correctness. rec_model = 0 (mean recruitment) is used
-# because it's a fully deterministic, trivial formula
-# (R0 * rec_region_prop), so the recruitment insertion step can be checked
-# exactly too, without depending on the Beverton-Holt/SSB routines.
-# spawn_seas = 1 and rec_seas_prop = c(1, 0) mean season 2 gets none of the
-# year's recruitment, so the season-2 "insert seasonal recruits" step is a
-# guaranteed no-op and doesn't need separate verification.
 make_pop_proj_input <- function() {
 
   n_pop <- 1
@@ -43,7 +37,7 @@ make_pop_proj_input <- function() {
     fish_sel = array(1, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)),
     ret_sel = array(1, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)),
     dmr = array(1, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)),
-    # ZAA differs by season so the two mortality steps are independently checkable
+    # total mortality differs by season, so the two mortality steps can be checked apart
     ZAA = local({
       arr <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
       arr[1,1,1,1,,1] <- c(0.5, 0.3, 0.4)   # season 1

@@ -1,8 +1,8 @@
 # The 2024 BSAI Pacific ocean perch assessment (ADMB) rebuilt in SPoRC. One area, one sex, one season,
 # ages 3-46 with a plus group reported over 3-40, lengths 15-39 cm, years 1960-2024.
 #
-# The most structurally involved of the five rockfish bridges: two survey fleets, a first year
-# equilibrium under fixed historical F, and a bicubic spline fishery selectivity over year and age.
+# The most involved of the five rockfish bridges: two survey fleets, a first year
+# equilibrium under fixed historical F, and a bicubic fishery selectivity over year and age.
 #
 #   Source                        Years        Observations  Likelihood
 #   Catch                         1960-2024    65            Lognormal, weighted
@@ -40,17 +40,14 @@ build_bsai_pop_input <- function(dat) {
   )
 
   ## Recruitment and the initial age structure --------------------------------
-  # a mean with deviations rather than a stock recruit function, and the last
-  # few years take the mean outright.
+  # a mean with deviations rather than a stock recruit function, and the last few
+  # years take the mean outright.
   #
-  # the first year sits in equilibrium under a FIXED historical F of 0.01, which
-  # the assessment holds independent of the estimated mean F. init_F_form "abs"
-  # is what keeps the two separate, so the initial age structure cannot be
-  # depleted by raising the mean F.
+  # the first year sits in equilibrium under a historical F of 0.01, kept separate from
+  # the estimated mean F so that raising the mean cannot deplete the initial ages.
   #
-  # bias_year is indexed in deviation space rather than calendar years, so this
-  # range puts the whole series in the fully bias corrected limb, which centers
-  # the penalty on -sigmaR^2 / 2 to match the shifted deviations the seeds have
+  # bias ramp years count from the first deviation, so this range puts the whole series in
+  # the fully corrected limb and centers the penalty on -sigmaR^2 / 2
   init_F_par <- array(log(1e-10), dim = c(dat$n_regions, dat$n_seas, dat$n_fish_fleets))
   init_F_par[1, 1, 1] <- log(dat$mle$historic_F)
 
@@ -73,13 +70,11 @@ build_bsai_pop_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # natural mortality is estimated under a lognormal prior. the prior median is
-  # shifted by exp(-cv^2 / 2) so that its MEAN is the assessment's 0.05, since
-  # the assessment states the prior on the mean and SPoRC's is on the median.
+  # natural mortality is estimated under a lognormal prior, its median shifted by
+  # exp(-cv^2 / 2) so the mean is the assessment's 0.05, which is where it states the prior.
   #
-  # maturity is estimated inside the assessment template and absent from its
-  # report object, so the fitted logistic is rebuilt when the data object is
-  # made and kept fixed here
+  # maturity is estimated inside the assessment and missing from its report, so the fitted
+  # logistic is rebuilt when the data object is made and kept fixed here
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = dat$WAA,
@@ -114,10 +109,8 @@ build_bsai_pop_input <- function(dat) {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
-  # the assessment writes its catch and F penalties as sums of squares with
-  # weights 500 and 0.1. a weighted sum of squares and a normal likelihood with
-  # a fixed standard deviation are the same statement up to a constant, related
-  # by sigma = 1 / sqrt(2 w), so the weights enter as these standard deviations
+  # the assessment writes its catch and F penalties as weighted sums of squares at
+  # weights 500 and 0.1, which is a normal at a fixed sigma = 1 / sqrt(2 w)
   suppressWarnings(
     input_list <- Setup_Mod_Catch_and_F(
       input_list = input_list,
@@ -154,9 +147,8 @@ build_bsai_pop_input <- function(dat) {
   )
 
   ## Survey index and compositions --------------------------------------------
-  # two survey fleets, the Aleutian Islands bottom trawl survey and the eastern
-  # Bering Sea slope survey, both fit to biomass. every argument is now a vector
-  # over fleets
+  # two survey fleets, the Aleutian Islands bottom trawl and the eastern Bering Sea
+  # slope, both fit to biomass, so every argument here is a vector over fleets
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx,
@@ -176,10 +168,8 @@ build_bsai_pop_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # a bicubic spline over a 5 year by 5 age node grid, exponentiated with no
-  # normalization. SelStyr and NSelBins are not cosmetic: they set the year
-  # range and bin count the smoothness penalties normalize by, and they impose
-  # the assessment's edge holds, flat before 1964 and flat beyond age 40
+  # a bicubic spline over a 5 year by 5 age node grid, exponentiated with no normalization.
+  # SelStyr and NSelBins hold the curve flat before 1964 and beyond age 40
   fish_sel_spec <- paste0("bicubic_Bin_", dat$fsh_age_nodes,
                           "_Yr_", dat$fsh_yr_nodes,
                           "_Fleet_1",
@@ -198,9 +188,8 @@ build_bsai_pop_input <- function(dat) {
   )
 
   ## Survey selectivity and catchability --------------------------------------
-  # logistic for both fleets. only the Aleutian Islands survey has a
-  # catchability prior, and supplying a single row for fleet 1 is what restricts
-  # it to that fleet
+  # logistic for both fleets. only the Aleutian Islands survey has a catchability
+  # prior, which is why one row is supplied rather than one per fleet
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
     cont_tv_srv_sel = paste0("none_Fleet_", 1:dat$n_srv_fleets),
@@ -221,11 +210,8 @@ build_bsai_pop_input <- function(dat) {
   )
 
   ## Weighting ----------------------------------------------------------------
-  # the composition weights are the assessment's McAllister Ianelli multipliers,
-  # and the selectivity penalty weights are its lambdas 3 to 6 plus the mean
-  # centering term the template hardcodes for bicubic fishery selectivity.
-  # survey selectivity is logistic with no deviations, so it has no
-  # smoothness penalty
+  # composition weights are the assessment's McAllister Ianelli multipliers, and the
+  # selectivity penalty weights its lambdas 3 to 6 plus the template's centering term
   Setup_Mod_Weighting(
     input_list = input_list,
     Wt_Catch = 1,
@@ -246,22 +232,19 @@ build_bsai_pop_input <- function(dat) {
 
 #' Set every parameter to the assessment's maximum likelihood estimate
 #'
-#' Evaluating at a known point separates a specification error from an
-#' optimization difference. Two blocks here need a conversion rather than a
-#' direct assignment: the recruitment bias corrections and the bicubic node
-#' grid's storage order.
+#' Two blocks here need converting rather than assigning: the recruitment bias corrections
+#' and the order the bicubic nodes are stored in.
 seed_bsai_pop_mle <- function(input_list, dat) {
 
   mle <- dat$mle
   s2 <- dat$sigmaR^2 / 2
 
   ## Recruitment and the initial equilibrium ----------------------------------
-  # the assessment builds its deviation-free terminal recruits as
-  # exp(mean_log_rec + sigmaR^2 / 2) while the estimated years are raw, and it
-  # starts the first year equilibrium from the MEAN of the lognormal rather than
-  # exp(log_rinit). with both bias corrections in ln_global_R0 and ln_rinit
-  # and shifting every seeded deviation down by the same amount reproduces the
-  # recruitment series, the initial age structure and the penalty value
+  # the assessment's terminal recruits take exp(mean_log_rec + sigmaR^2 / 2) while the
+  # estimated years are raw, and its first year starts from the mean, not exp(log_rinit).
+  #
+  # putting both corrections into ln_global_R0 and ln_rinit, and shifting every seeded
+  # deviation down by the same amount, reproduces the series and the penalty
   input_list$par$ln_global_R0[] <- mle$mean_log_rec + s2
   input_list$par$ln_rinit <- mle$log_rinit + s2
   input_list$par$ln_RecDevs[1, 1, ] <- mle$rec_dev - s2
@@ -280,10 +263,8 @@ seed_bsai_pop_mle <- function(input_list, dat) {
   } # end sf loop
 
   ## Fishery selectivity, the bicubic node grid -------------------------------
-  # the assessment declares its node grid with year nodes as the outer dimension
-  # and writes the parameter file row major, so the file's five rows are AGE
-  # nodes. SPoRC builds the surface as exp(Wyr %*% nodes %*% t(Wbin)) and wants
-  # [year node x age node] flattened column major, hence the transpose
+  # the assessment declares year nodes outermost and writes the parameter file row by row, so
+  # its five rows are age nodes, while SPoRC wants year node by age node, hence the transpose
   node_admb <- matrix(
     mle$fsh_sel_par,
     nrow = dat$fsh_age_nodes,
@@ -298,9 +279,6 @@ seed_bsai_pop_mle <- function(input_list, dat) {
 
 #' Normalize a selectivity surface by its within-year maximum
 #'
-#' The assessment rescales for REPORTING only: selectivity is divided by its
-#' within-year maximum and F multiplied by the same factor, leaving their product
-#' invariant. Its internal selectivity is the raw exponentiated bicubic surface,
-#' so a like-for-like comparison normalizes SPoRC's surface the same way and
-#' divides the reported F by the same factor.
+#' Selectivity is divided by its within-year maximum and F multiplied by the same factor,
+#' leaving the product unchanged, so a comparison does the same to SPoRC's surface.
 norm_bsai_pop_sel_by_year <- function(m) m / apply(m, 1, max)

@@ -178,8 +178,8 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
 
   n_obs_bins = dim(ObsArr)[5]
 
-  # Observed age bins a fleet is fitted over, applied identically at every length
-  # bin. eval_caal_osa must be handed the same array or gets indexed incorrect
+  # the observed age bins a fleet is fitted over, the same at every length bin. the OSA routine must
+  # be given the same array or it reads the wrong bins
   bins_of = function(f) {
     if(is.null(BinsArr)) return(seq_len(n_obs_bins))
     if(nrow(BinsArr) != n_obs_bins) {
@@ -196,15 +196,15 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
     n_bins = length(fit_bins)
     if(ct == 0) {
       region = rep(used[1], n_bins)
-      sex = rep(1L, n_bins)
+      sex = rep(1, n_bins)
       bin = fit_bins
       last_in_group = (bin == fit_bins[n_bins])
     } else {
       region = rep(used, times = n_bins * n_sexes)
       bin = rep(rep(fit_bins, each = n_ru), times = n_sexes)
       sex = rep(1:n_sexes, each = n_ru * n_bins)
-      # split by sex: each (region, sex) is its own multinomial with its own determined bin.
-      # joint by sex: the whole stack per region is one multinomial, so only the last cell is
+      # split by sex, each region and sex is its own multinomial with its own determined bin. joint by
+      # sex, the whole stack per region is one multinomial with a single determined cell
       last_in_group = if(ct == 1) (bin == fit_bins[n_bins]) else (bin == fit_bins[n_bins]) & (sex == n_sexes)
     }
     data.frame(
@@ -320,8 +320,8 @@ pack_caal_osa = function(ObsArr, ISSArr, WtArr, UseArr, TypeMat, LikeTypeVec,
 #' @param addtocomp Small constant added to proportions before normalization.
 #' @param BinsArr Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 #'   observed age bins each fleet is fitted over, or \code{NULL} (default) for
-#'   all bins. Must be the same array handed to \code{\link{pack_caal_osa}},
-#'   since the strides walked here are sized on it.
+#'   all bins. Must be the same array given to \code{\link{pack_caal_osa}}, since
+#'   the positions read here are sized on it.
 #'
 #' @return Updated \code{nLL_arr}.
 #'

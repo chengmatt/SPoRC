@@ -1,11 +1,9 @@
+# The rule the whole feature rests on: fitting some of a data source's observed bins has to give
+# exactly the likelihood of passing in only those bins, renormalized within them. That holds for
+# every composition type and for lengths as well as ages.
+
 library(SPoRC)
 library(testthat)
-
-# Composition bin restriction (the *_bins arguments). The rule the whole
-# feature rests on: fitting a data source over a subset of its observed bins must give
-# exactly the likelihood you would get by handing in only those bins in the first
-# place, renormalized within them. That has to hold for every composition type,
-# not just the aggregated one, and for lengths as well as ages.
 
 # Expected composition, mildly peaked so the bins are not interchangeable
 peaked_exp <- function(n_regions, n_bins, n_sexes) {
@@ -67,6 +65,8 @@ comp_nll <- function(
   )
 }
 
+# The Likelihood over a Restricted Range -------------------------------------
+
 test_that("restricting to a contiguous bin range equals fitting only those bins", {
   n_bins <- 8
   keep <- 3:7
@@ -78,10 +78,8 @@ test_that("restricting to a contiguous bin range equals fitting only those bins"
     n_sexes <- 2
     Exp <- peaked_exp(n_regions, n_bins, n_sexes)
     Obs <- lumpy_obs(n_regions, n_bins, n_sexes)
-    # LikeType 4 is a sex-joint family, so it only applies to Comp_Type 2.
-    # Comp_Type 2 with LikeType 3 runs one AR1 across the whole [bin x sex]
-    # stack, so its lags do not survive being re-read as a shorter stack; it
-    # gets its own test below.
+    # the correlation between sexes exists only where the composition is joint across
+    # them, and joint compositions with a bin correlation are tested on their own below
     lts <- if(ct == 2) c(0, 1, 2, 4) else 0:3
     for(lt in lts) {
       restricted <- comp_nll(Exp, Obs, n_bins, n_bins, ct, lt, n_regions, n_sexes,
@@ -95,11 +93,8 @@ test_that("restricting to a contiguous bin range equals fitting only those bins"
 })
 
 test_that("the sex-joint AR1 keeps true bin lags inside each sex block", {
-  # Comp_Type 2 with LikeType 3 lays one AR1 over the [bin x sex] stack. Cutting
-  # that covariance down to the fitted cells keeps the lag between two fitted
-  # bins of the same sex equal to their true separation, which is what the
-  # correlation is meant to describe. The lag across the sex boundary stretches
-  # as a side effect, and is arbitrary either way.
+  # a joint composition lays one correlation over the bins of both sexes, so cutting it to
+  # the fitted cells keeps two fitted bins of the same sex at their true separation
   n_regions <- 1
   n_sexes <- 2
   n_bins <- 8
@@ -203,9 +198,8 @@ test_that("a length bin map and a bin restriction compose", {
 })
 
 test_that("the sex-joint stack is restricted within each sex, not across the stack", {
-  # Comp_Type 2 evaluates a [bin x sex] stack. Restricting must drop the named
-  # bins from every sex's block, leaving n_fit_bins * n_sexes cells, rather than
-  # slicing the flattened stack.
+  # a joint composition stacks the bins of both sexes, so a restriction drops the named bins
+  # from each sex rather than cutting the flattened stack
   n_regions <- 1
   n_sexes <- 2
   n_bins <- 6
@@ -225,9 +219,8 @@ test_that("the sex-joint stack is restricted within each sex, not across the sta
 })
 
 test_that("AR1 lags are measured over the observed range, not the fitted one", {
-  # With a gap in the kept bins, the covariance between the bins either side of
-  # the gap must reflect the true lag, so a gapped restriction differs from
-  # simply handing in the kept bins as if they were adjacent.
+  # with a gap in the kept bins the correlation across it has to reflect the true lag, so a
+  # gapped restriction differs from passing the kept bins in as if they were adjacent
   n_regions <- 1
   n_sexes <- 1
   n_bins <- 8
@@ -240,6 +233,8 @@ test_that("AR1 lags are measured over the observed range, not the fitted one", {
   expect_true(all(is.finite(gapped)))
   expect_false(isTRUE(all.equal(as.numeric(gapped), as.numeric(as_adjacent))))
 })
+
+# Parsing the Argument -------------------------------------------------------
 
 test_that("parse_bin_subset accepts the list and array forms alike", {
   n_bins <- 10
@@ -271,10 +266,8 @@ test_that("check_bin_map holds AgeingError and LenBinMap to the same rules", {
   for(i in 1:6) collapse[i, ceiling(i / 2)] <- 1
   expect_silent(check_bin_map(collapse, 6, "LenBinMap"))
 
-  # published ageing error matrices are rounded at source, so ordinary rounding
-  # must not trip the row-sum rule for them. A length bin map is written by hand
-  # rather than read off a rounded table, so it keeps the tight default it has
-  # always been kept to.
+  # published ageing error matrices are rounded at source, so the row-sum rule is loose for
+  # them, while a length bin map is written by hand and keeps the tight default
   rounded <- ok
   rounded[1, 1] <- 0.997
   rounded[2, 2] <- 1.002
@@ -302,10 +295,10 @@ test_that("check_bin_map holds AgeingError and LenBinMap to the same rules", {
   expect_error(check_bin_map(neg, 6, "AgeingError"), "negative")
 })
 
-# One-step-ahead residuals have to be packed and walked over the same restricted
-# bins the likelihood fits, or the diagnostic silently disagrees with the fit.
-# The packer and the evaluator keep a shared pointer, so a stride computed on the
-# wrong bin count desynchronizes every group after the first.
+# the residuals have to be packed and read over the same restricted bins the likelihood
+# fits, since the packer and the evaluator step through one shared vector together
+
+# One-step-ahead Residuals ---------------------------------------------------
 
 test_that("the OSA packer and evaluator agree on the restricted bin count", {
   n_regions <- 2
@@ -420,10 +413,11 @@ test_that("OSA labels report true observed bin numbers under a restriction", {
   expect_false(any(res$labels$last_in_group[-length(keep)]))
 })
 
+# Blocks a Restriction Empties -----------------------------------------------
+
 test_that("an empty fitted block contributes nothing rather than NaN", {
-  # restricting onto bins a region never sampled leaves that region's block empty.
-  # Comp_Type 1 has always skipped such a block; Comp_Type 2 must too, since a
-  # restriction can empty a block that the full composition filled.
+  # restricting onto bins a region never sampled leaves its block empty, which has to be
+  # skipped whether the composition is split by sex or joint across sexes
   n_regions <- 2
   n_sexes <- 2
   n_bins <- 6
@@ -443,11 +437,10 @@ test_that("an empty fitted block contributes nothing rather than NaN", {
   } # end ct loop
 })
 
-# Degenerate restrictions. A single fitted bin breaks the OSA routines in three
-# separate places, so it is refused at setup where the message can name the
-# argument. And a bin array indexed on the wrong number of bins would let the
-# packer and the evaluator disagree silently, which is the one failure this
-# routines cannot survive, so it is refused at the packer.
+# A single fitted bin is refused at setup, where the message can name the argument, and a
+# bin array indexed on the wrong bin count is refused at the packer.
+
+# Restrictions That Are Refused ----------------------------------------------
 
 test_that("a restriction leaving fewer than two bins is refused at setup", {
   arr <- array(0, dim = c(10, 2))
@@ -468,7 +461,7 @@ test_that("a restriction leaving fewer than two bins is refused at setup", {
 
 test_that("a zero-length slice request reads nothing rather than counting backwards", {
   # eval_comp_osa asked for tracked[k:(k + slice_length - 1)], which for
-  # slice_length 0 counts DOWN and grabs the previous group's elements
+  # a length of zero counts backwards and reads the previous group's entries
   tracked <- 1:10
   k <- 5
   expect_equal(length(tracked[seq.int(from = k, length.out = 0)]), 0)
@@ -533,7 +526,7 @@ test_that("a restriction that empties a block clears its use flag", {
   # a bins array sized for a different data source is left for the packers to reject
   expect_equal(drop_empty_fitted_blocks(obs, use, array(1, dim = c(n_bins + 2, n_fleets)), 4, "x"), use)
 
-  # a block of NAs counts as empty too, since that is what the likelihood's guard does
+  # a block of NAs counts as empty too, as the likelihood treats it
   obs_na <- obs
   obs_na[1, 3, 1, 5:8, 1, 1] <- NA
   out_na <- drop_empty_fitted_blocks(obs_na, use, bins, 4, "x")

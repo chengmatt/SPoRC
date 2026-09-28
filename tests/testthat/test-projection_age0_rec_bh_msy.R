@@ -1,25 +1,16 @@
+# Recruiting at age 0 rather than age 1 changes which year's spawning biomass feeds the
+# Beverton-Holt curve, not the per-recruit ratios, so both lags reach the same equilibrium.
+
 library(SPoRC)
 library(testthat)
 
 test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 1) recruitment converge to the same fished equilibrium", {
 
-  # This checks concordance directly rather than against Get_Reference_Points:
-  # while investigating this test, comparing against Get_Reference_Points'
-  # BH_MSY reference points exposed a separate, PRE-EXISTING bug (confirmed
-  # reproducible with the classic rec_lag = 1 path, completely untouched by
-  # the age-0 recruitment work) where its per-recruit calculation doesn't
-  # match actual population dynamics when rec_seas_prop concentrates
-  # recruitment in a season other than the first (spawn_task filed
-  # separately - not something to paper over here).
+  # the two recruitment lags are compared against each other rather than against the reference
+  # points, whose per-recruit calculation misses when recruits enter after the first season.
   #
-  # So instead: since Get_Det_Recruitment's SBPR/S0 math is provably
-  # rec_lag-invariant (rec_lag only selects which year's SSB feeds the BH
-  # curve, never the per-recruit ratios themselves), projecting the SAME
-  # fitted population under the SAME constant F with rec_lag = 0 vs
-  # rec_lag = 1 should converge to the IDENTICAL equilibrium SSB. That's a
-  # direct, decisive test of whether Do_Population_Projection's age-0 code
-  # path is concordant with the pre-existing classic path, without depending
-  # on the separately-broken reference point calculation.
+  # the recruitment lag only picks which year's spawning biomass feeds the curve and never the
+  # per-recruit ratios, so either lag has to reach the same equilibrium under the same F.
 
   set.seed(4041)
 
@@ -290,7 +281,7 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
 
   natmort_slice <- rep$natmort[,, n_yrs_hist, 1, , ] # season 1, M is constant within the year here
   natmort <- array(rep(natmort_slice, each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
-  # packaged report predates seasonal M, hold it across seasons
+  # packaged report predates seasonal M, so repeat it over seasons
   natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
 
   sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # single-sex model (n_sexes = 1)
@@ -308,7 +299,7 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
     sex_ratio_f = array(1, dim = c(n_pop, n_regions)), # single-sex model (n_sexes = 1)
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = c(n_pop)),
-    # take the female rate off the report directly, the old slice no longer
+    # take the female rate off the report directly, since the old read no longer
     # lines up
     natmort = array(rep$natmort[,, n_yrs_hist, , , 1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     fish_sel = array(rep$fish_sel[,,n_yrs_hist,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
@@ -362,9 +353,8 @@ test_that("Do_Population_Projection: age-0 (rec_lag = 0) and classic (rec_lag = 
   expect_equal(as.numeric(out_age0$proj_SSB[1,1,n_proj_yrs]), as.numeric(out_age0$proj_SSB[1,1,n_proj_yrs - 1]), tolerance = 1e-6)
   expect_equal(as.numeric(out_lag1$proj_SSB[1,1,n_proj_yrs]), as.numeric(out_lag1$proj_SSB[1,1,n_proj_yrs - 1]), tolerance = 1e-6)
 
-  # ...and, since Get_Det_Recruitment's per-recruit math never depends on
-  # rec_lag, that equilibrium should be THE SAME regardless of whether
-  # recruitment lags a year or is age-0.
+  # and since the per-recruit calculation never reads the recruitment lag, that equilibrium has
+  # to be the same whether recruits enter at age 0 or a year later
   expect_equal(as.numeric(out_age0$proj_SSB[1,1,n_proj_yrs]), as.numeric(out_lag1$proj_SSB[1,1,n_proj_yrs]), tolerance = 1e-6)
 
   # No recruits ever appear pre-spawn (season 1, age index 1) in the age-0 path

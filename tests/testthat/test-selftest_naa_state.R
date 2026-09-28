@@ -1,10 +1,9 @@
+# The simulator draws innovations from a covariance and the penalty is the density of that same
+# covariance, so the two have to agree on which dimension each correlation runs over and on what
+# sigmaNAA means. Either disagreement gives a plausible number rather than an error.
+
 library(SPoRC)
 library(testthat)
-
-# Operating-model and estimation-model agreement for the state-space numbers at age. The simulator
-# draws innovations from a covariance and the penalty is the density of that same covariance, so
-# the two have to agree on two things: which dim each correlation runs over, and what sigmaNAA
-# means. Both are the kind of disagreement that produces a plausible number rather than an error.
 
 naa_sim_env <- function(
   n_pop = 1,
@@ -86,11 +85,11 @@ test_that("a simulated region correlation appears across regions and leaves ages
 })
 
 test_that("the penalty recovers the parameters the simulator drew from", {
-  # Given the true states, maximizing the penalty must return the process parameters. Averaged over
-  # replicates rather than checked on one, because what this is guarding against is bias: if the
-  # simulator and the penalty disagree about whether sigmaNAA is the marginal or the conditional
-  # standard deviation, every estimate is low by exactly sqrt(1 - rho^2) per correlated dim,
-  # which on a single draw is indistinguishable from an unlucky realization.
+  # given the true states, maximizing the penalty has to return the process parameters,
+  # averaged over replicates rather than read off one, since what matters here is bias.
+  #
+  # if the simulator and the penalty disagree over whether sigmaNAA is the marginal or the
+  # conditional standard deviation, every estimate is low by sqrt(1 - rho^2) per dimension
   set.seed(101)
   np <- 1
   nr <- 1

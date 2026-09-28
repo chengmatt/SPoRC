@@ -5,8 +5,9 @@
 
 #' Solve a catchability analytically within each time block
 #'
-#' A catchability that is a pure scaling nuisance can be concentrated out of the
-#' likelihood instead of estimated. The solve is done separately WITHIN each
+#' A catchability that is a pure scaling nuisance can be concentrated out of
+#' the likelihood instead of estimated. The solve is done separately within
+#' each
 #' catchability time block, so a blocked catchability gets one solved value per
 #' block. A single block, which is the default, reduces to one value for the
 #' whole series.
@@ -41,7 +42,7 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
   n_yrs = length(blk_yr)
   n_obs = length(obs_vec)
 
-  # the pooled solve over every observation, which is the value an empty block takes
+  # the pooled solve over every observation, which an empty block falls back on
   if(q_type == 1) {
     pool_num = sum(obs_vec) / n_obs
     pool_den = sum(pred_vec) / n_obs

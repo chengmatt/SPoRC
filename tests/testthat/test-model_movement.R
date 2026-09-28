@@ -1,3 +1,6 @@
+# Get_Movement under both forms: a fixed matrix passed through, unstructured logit movement, and
+# the continuous-time generator with its diffusion bounds, taxis and region deviations.
+
 library(SPoRC)
 library(testthat)
 
@@ -22,7 +25,7 @@ test_that("Get_Movement works", {
     expect_equal(ncol(out$W_zk), out$n_gamma)
   })
 
-  # ── helpers ─────────────────────────────────────────────────────────────────
+  # Helpers ------------------------------------------------------------------
 
   make_fixed_move <- function(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes) {
     val <- 1 / n_regions
@@ -60,7 +63,7 @@ test_that("Get_Movement works", {
     )
   }
 
-  # ── fixed movement ───────────────────────────────────────────────────────────
+  # A Fixed Movement Matrix --------------------------------------------------
 
   test_that("use_fixed_movement = 1 passes Fixed_Movement through unchanged", {
     res <- call_fixed()
@@ -70,7 +73,7 @@ test_that("Get_Movement works", {
     expect_equal(res$move_pen, 0)
   })
 
-  # ── unstructured multinomial logit movement (move_type = 0) ─────────────────
+  # Unstructured Logit Movement ----------------------------------------------
 
   make_unstructured_call <- function(
     move_pars_val = 0,
@@ -161,7 +164,7 @@ test_that("Get_Movement works", {
     expect_false(isTRUE(all.equal(res$Movement[, , , 3, , , ], res$Movement[, , , 1, , , ])))
   })
 
-  # ── CTMC movement (move_type = 1) ────────────────────────────────────────────
+  # Continuous-Time Movement -------------------------------------------------
 
   make_ctmc_dat <- function(
     n_pop = 1,
@@ -316,9 +319,8 @@ test_that("Get_Movement works", {
   })
 
   test_that("CTMC movement: ctmc_diffusion_eps sets the flow on an edge where taxis cancels diffusion", {
-    # theta = exp(0) / area 1 = 1 on every edge; preference c(0, 1, 0) puts a taxis
-    # contrast of -1 on the edges leaving region 2, so D + Z is exactly 0 there and
-    # the softplus floor eps * log(2) is what the generator has
+    # the diffusion rate is one on every edge, and a preference of c(0, 1, 0) puts a taxis
+    # contrast of -1 leaving region 2, so the rate there is exactly zero before the floor
     for (eps in c(0.1, 0.5)) {
       res <- make_ctmc_call(
         ctmc_diffusion_bounds = 1,
@@ -376,9 +378,8 @@ test_that("Get_Movement works", {
   })
 
   test_that("CTMC movement: the bound forms hold the flow their definition implies", {
-    # theta = exp(0) / area 1 = 1 on every edge; preference c(0, 1, 0) puts a taxis
-    # gradient of -1 on the edges leaving region 2 and +1 on the edges into it, so
-    # D + Z is exactly 0 on the first and 2 on the second
+    # the diffusion rate is one on every edge, and a preference of c(0, 1, 0) puts a taxis
+    # gradient of -1 leaving region 2 and +1 into it, so the rate is zero out and two in
     got <- function(bf, eps = 0.1) {
       q <- make_ctmc_call(
         ctmc_diffusion_bounds = bf,

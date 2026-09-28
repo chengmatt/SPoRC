@@ -313,7 +313,7 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
                                        ...
                                        ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_SrvIdx_and_Comps <- mget(names(formals()))[-1]
 
@@ -642,8 +642,8 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
       else NULL
     })
 
-  # whether length selectivity is applied at length or through the size-age key. only known to be
-  # length based once the selectivity setup runs, which checks this against it
+  # whether length selectivity is applied at length or through the size-age transition. the
+  # selectivity setup checks this against what it was given
   if(length(SrvLenComps_sel) != input_list$data$n_srv_fleets || !all(SrvLenComps_sel %in% c("age", "length"))) stop("SrvLenComps_sel must be one of age or length for each survey fleet")
   srv_len_comp_sel_vals <- as.numeric(SrvLenComps_sel == "length")
   for(sf in 1:input_list$data$n_srv_fleets) if(SrvLenComps_sel[sf] == "length") collect_message("Survey length compositions for fleet ", sf, " apply selectivity at length")

@@ -16,9 +16,8 @@
 
 #' Expand the assessment's block selectivity into SPoRC's fixed input array
 #'
-#' The assessment stores selectivity as its distinct block rows plus the year
-#' each block starts. SPoRC takes a year by age by sex by fleet array, so each
-#' year is looked up against the block it falls in.
+#' The assessment stores the distinct block rows plus the year each block starts,
+#' so each year is looked up against the block it falls in.
 expand_wc_sablefish_sel <- function(blocks, n_yrs, n_ages, n_sexes) {
   n_fleets <- length(blocks)
   out <- array(0, dim = c(1, 1, n_yrs, 1, n_ages, n_sexes, n_fleets))
@@ -29,13 +28,10 @@ expand_wc_sablefish_sel <- function(blocks, n_yrs, n_ages, n_sexes) {
   out
 } # end expand_wc_sablefish_sel
 
-# Build the input_list for the 2025 assessment configuration.
 #' Recover the survey standard errors before the assessment's extra component
 #'
-#' The packaged standard errors are the assessment's reported ones, which already
-#' include its estimated extra standard deviation, added. The data object is built
-#' that way in dev/make_sporc_obj_figs/make_wc_sablefish_data_object.R, which
-#' asserts the relationship. Subtracting it recovers what went in.
+#' The packaged standard errors already include the estimated extra standard
+#' deviation, so subtracting it recovers what went in.
 wc_sablefish_input_se <- function(dat) {
   se <- dat$ObsSrvIdx_SE
   for(f in seq_along(dat$mle$extra_sd)) se[,,,f] <- se[,,,f] - dat$mle$extra_sd[f]
@@ -68,11 +64,8 @@ build_wc_sablefish_input <- function(dat) {
   )
 
   ## Recruitment --------------------------------------------------------------
-  # age 0 off the year's OWN spawning biomass, which is rec_lag = 0, on a
-  # Beverton-Holt curve at fixed steepness, started from the unfished
-  # equilibrium. the bias ramp is indexed in deviation space rather than in
-  # calendar years. InitDevs are fixed because the assessment starts in 1890 at
-  # equilibrium and estimates no initial age deviations
+  # age 0 off the same year's spawning biomass, Beverton-Holt at fixed steepness, started from
+  # the unfished equilibrium in 1890, so there are no initial age deviations to estimate
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
     rec_model = "bh_rec",
@@ -96,10 +89,8 @@ build_wc_sablefish_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # one natural mortality for both sexes under the assessment's lognormal prior,
-  # empirical weight and fecundity at age rather than a growth curve, and the
-  # composition constant added on both sides of the multinomial. fit_lengths = 0
-  # because this assessment fits ages only
+  # one natural mortality for both sexes under the assessment's lognormal prior, and
+  # empirical weight and fecundity at age rather than a growth curve. ages only
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = dat$WAA,
@@ -128,9 +119,8 @@ build_wc_sablefish_input <- function(dat) {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
-  # the assessment solves fishing mortality from the catch rather than
-  # estimating it, so there is no penalty on it and no mean to estimate. SPoRC
-  # fits it against the assessment's own CV of 0.01
+  # the assessment solves fishing mortality from the catch rather than estimating
+  # it, so SPoRC fits it unpenalized against the assessment's CV of 0.01
   input_list <- Setup_Mod_Catch_and_F(
     input_list = input_list,
     ObsCatch = dat$ObsCatch,
@@ -142,9 +132,8 @@ build_wc_sablefish_input <- function(dat) {
   )
 
   ## Fishery compositions -----------------------------------------------------
-  # ages only, no index and no lengths. a fleet whose data are sexed takes the
-  # split-region joint-sex form and an unsexed fleet takes the aggregated one,
-  # which is what dat$fish_sex records
+  # ages only, no index and no lengths. a sexed fleet takes the joint-sex form and an
+  # unsexed one the aggregated form, which is what dat$fish_sex records
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = array(NA_real_, dim = c(1, n_yrs, 1, n_fish)),
@@ -172,22 +161,18 @@ build_wc_sablefish_input <- function(dat) {
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx,
-    # The assessment estimates an extra standard deviation on the four biomass
-    # indices and reports the standard errors with it already added, which is what
-    # the data object has. Subtracting it recovers the input standard errors,
-    # so the extra component can be kept as a parameter started at the
-    # assessment's own estimate: seeded evaluation is unchanged, and the free fit
-    # estimates it. Fleets 1 and 4 sit at the assessment's lower bound, 0.001 and
-    # 1e-04, which is it asking for none rather than estimating one, so they are
-    # kept there and only fleets 2 and 3 are estimated.
+    # the extra standard deviation is a parameter started at the assessment's estimate, so a
+    # seeded evaluation matches adding it to the standard errors by hand.
+    #
+    # fleets 1 and 4 sit at the assessment's lower bound, which is it asking for none, so
+    # only fleets 2 and 3 are estimated
     ObsSrvIdx_SE = wc_sablefish_input_se(dat),
     sigmaSrvIdx_spec = "est_additive",
     sigmaSrvIdx_map = c(NA, 1, 2, NA, NA, NA),
     ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8, 1e-8), 1e-8)),
     UseSrvIdx = dat$UseSrvIdx,
-    # fleets 1-4 are the trawl surveys, 5 holds the unsexed compositions of
-    # the last of them and no index, and 6 is the recruitment index, which
-    # observes the deviations themselves under a normal likelihood
+    # fleets 1-4 are the trawl surveys, 5 the unsexed compositions of the last of them
+    # with no index, and 6 the recruitment index, a normal on the deviations
     srv_idx_type = c(rep("biom", 4), "none", "recdev"),
     SrvIdx_LikeType = c(rep("lognormal", n_srv - 1), "normal"),
     ObsSrvAgeComps = dat$ObsSrvAgeComps,
@@ -205,11 +190,8 @@ build_wc_sablefish_input <- function(dat) {
   )
 
   ## Fishery selectivity ------------------------------------------------------
-  # every fleet is on the age based double normal. the trawl fleet and the two
-  # hook and line fleets have time blocks, the pot fleet mirrors hook and line
-  # including its male offsets, and each composition twin mirrors its parent.
-  # blocks are named by the years the assessment's own surfaces change, which is
-  # what its block patterns come to
+  # every fleet is on the age based double normal, with time blocks on trawl and the
+  # two hook and line fleets. blocks start in the years the assessment's curves change
   blk_string <- function(blocks, fleet) {
     st <- blocks[[fleet]]$blk_yr
     en <- c(st[-1] - 1, n_yrs)
@@ -224,9 +206,8 @@ build_wc_sablefish_input <- function(dat) {
     fish_q_blocks = paste0("none_Fleet_", seq_len(n_fish)),
     # the pot fleet mirrors hook and line, and the unsexed trawl twin mirrors trawl
     fish_fixed_sel_pars_spec = replace(rep("est_all", n_fish), c(3, n_fish), c("est_shared_f_2", "est_shared_f_1")),
-    # male parameters are offsets on the female's; the hook and line and pot
-    # fleets additionally have their own apical selectivity, which the male
-    # limbs are built up to
+    # male parameters are offsets on the female's, and the hook and line and pot fleets
+    # have their own apical selectivity that the male limbs are built up to
     fish_sel_sex_offset = replace(rep("par", n_fish), c(2, 3), "par_apical"),
     fish_q_spec = rep("fix", n_fish)
   )
@@ -242,9 +223,8 @@ build_wc_sablefish_input <- function(dat) {
     # recruitment index reads no curve at all
     srv_fixed_sel_pars_spec = c(rep("est_all", 4), "est_shared_f_4", "fix"),
     srv_sel_sex_offset = rep("par", n_srv),
-    # catchability floats in the assessment, which is the same optimum as
-    # estimating it; the unsexed twin has no index, and the recruitment
-    # index has a catchability of its own
+    # catchability is solved analytically in the assessment, which is the same optimum
+    # as estimating it. the recruitment index has a catchability of its own
     srv_q_spec = c(rep("est_all", 4), "fix", "est_all"),
     t_srv = t_srv
   )
@@ -267,12 +247,10 @@ build_wc_sablefish_input <- function(dat) {
   )
 
   ## Age 0 spawners in the equilibrium year -----------------------------------
-  # spawning biomass is formed before the year's recruits settle, so the age 0
-  # cell is empty in every year the model runs. the unfished equilibrium is
-  # different: it already holds R0 / 2 at age 0, and that is what the first
-  # year's spawning biomass and S0 are built from. setup refuses a non-zero
-  # maturity at the recruit age under rec_lag = 0, so this cell is set on the
-  # data list afterwards
+  # the unfished equilibrium already holds R0 / 2 at age 0, which the first year's spawning
+  # biomass and S0 are built from, while every year the model runs spawns before recruiting.
+  #
+  # setup refuses a non-zero maturity at the recruit age, so this one cell is set afterwards
   input_list$data$MatAA[1,1,1,1,1,1] <- dat$mat_age0_yr1
 
   input_list
@@ -281,8 +259,8 @@ build_wc_sablefish_input <- function(dat) {
 
 #' Set every parameter to the assessment's maximum likelihood estimate
 #'
-#' Also maps off the deviations the assessment does not estimate, since which
-#' parameters are free is part of the specification.
+#' Maps off the deviations the assessment does not estimate too, since which
+#' parameters are free is part of the setup.
 seed_wc_sablefish_mle <- function(input_list, dat) {
 
   yrs <- dat$years
@@ -308,9 +286,8 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
   input_list$map$ln_RecDevs <- factor(map_rec)
 
   ## Fishing mortality --------------------------------------------------------
-  # a fixed mean plus deviations per fleet. closures have no deviation, and the
-  # trawl fleet's composition twin sits at a rate low enough to leave the numbers
-  # at age untouched
+  # a fixed mean plus deviations per fleet. closures have no deviation, and the trawl
+  # fleet's composition twin fishes too little to move the numbers at age
   for(f in seq_len(ncol(dat$mle$Fmort))) {
     has <- dat$UseCatch[1, , 1, f] == 1
     lf <- log(dat$mle$Fmort[has, f])
@@ -323,10 +300,8 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
   input_list$map$ln_F_devs <- factor(map_F)
 
   ## Selectivity, the female curves -------------------------------------------
-  # every one of the six double normal parameters is on the same scale in SPoRC
-  # as in the assessment, so its values go straight in. a parameter is estimated
-  # where the assessment estimates it, and blocks drawing on the same underlying
-  # parameter share one level, which is what src_id records
+  # all six double normal parameters are on the same scale as the assessment's, so its
+  # values go straight in. blocks on the same parameter share one level, from src_id
   lev <- 0
   map_fish <- array(NA_real_, dim = dim(input_list$par$fish_fixed_sel_pars))
   map_srv <- array(NA_real_, dim = dim(input_list$par$srv_fixed_sel_pars))
@@ -357,11 +332,8 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
   } # end sf loop
 
   ## Selectivity, the hook and line male curve --------------------------------
-  # written exactly as the assessment writes it: an offset on the peak in bins,
-  # an offset on the selectivity at the last bin, and its own apical selectivity
-  # that the two limbs are built up to. the assessment gives the male ascending
-  # and descending widths no offset, and reads the female's parameter for the
-  # selectivity at the first bin, so those three offsets stay at zero
+  # an offset on the peak in bins, one on selectivity at the last bin, and its own apical
+  # selectivity the limbs build up to. neither width is offset, and the first bin is female's
   A <- dat$sel_male$value[["scale"]]
   tab2 <- dat$sel_fish[[2]]
   n_blk2 <- ncol(tab2$pars)
@@ -384,8 +356,8 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
   if(dat$sel_male$est[["scale"]]) map_scale[1, seq_len(n_blk2), 2, 2:3] <- 1
 
   ## Mirrored fleets ----------------------------------------------------------
-  # a mirrored fleet holds the same values AND the same map levels, so it is
-  # the same parameter rather than a copy that could fall out of step
+  # a mirrored fleet takes the same values and the same map levels, so it is the same
+  # parameter rather than a copy that could fall out of step
   input_list$par$fish_fixed_sel_pars[1, , , , 3] <- input_list$par$fish_fixed_sel_pars[1, , , , 2]
   map_fish[1, , , , 3] <- map_fish[1, , , , 2]
   input_list$par$fish_fixed_sel_pars[1, , , , n_fish] <- input_list$par$fish_fixed_sel_pars[1, , , , 1]

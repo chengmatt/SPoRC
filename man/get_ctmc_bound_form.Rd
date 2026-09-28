@@ -12,7 +12,7 @@ get_ctmc_bound_form(x)
 \code{"upwind"}.}
 }
 \value{
-Character scalar naming the form, or \code{NA_character_} if \code{x} is
+Character scalar naming the form, or \code{NA} if \code{x} is
   not one of the accepted values.
 }
 \description{

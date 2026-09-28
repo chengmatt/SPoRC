@@ -19,15 +19,13 @@ spec_abbrev_dims <- c(
 
 #' Dims of a parameter block the map is constant along
 #'
-#' A map shared over a dimension takes the same value for every cell that differs
-#' only along that dimension. Reshaping the map to the parameter's own dim and
-#' asking which dims it is constant along recovers what the spec actually did,
-#' without this test needing to know the layout of each block.
+#' A map shared over a dimension takes the same value for every cell that differs only along
+#' it, so asking which dims it is constant along recovers what the setting did.
 #'
 #' @param m Map factor for one parameter block.
 #' @param d Dimensions of that block.
 #'
-#' @return Logical vector, one per dim, \code{NA} for dims of extent one
+#' @return Logical vector, one per dim, \code{NA} for dims of length one
 #'   where sharing cannot be distinguished from not sharing.
 #'
 #' @keywords internal
@@ -37,7 +35,7 @@ map_shared_dims <- function(m, d) {
   arr <- array(v, dim = d)
   vapply(seq_along(d), function(k) {
     if(d[k] < 2) return(NA)
-    # constant along dim k when every slice equals the first
+    # constant along dim k when every step along it equals the first
     first <- as.vector(apply(arr, seq_along(d)[-k], function(x) x[1]))
     all(vapply(seq_len(d[k]), function(i) {
       idx <- rep(list(bquote()), length(d))
@@ -83,10 +81,8 @@ spec_declined <- function(res) {
   sweep_is_identifiability_refusal(res) || sweep_is_config_refusal(res)
 }
 
-# Specs the sweep cannot currently put into a live configuration. Listing them
-# rather than skipping them silently keeps the gap visible: a spec added here
-# needs a reason, and a spec that becomes reachable should be removed so the
-# checks above start covering it.
+# Settings the sweep cannot yet turn on. Listing them rather than skipping them keeps the gap
+# visible: one added here needs a reason, and one that becomes reachable should be removed.
 sweep_unconfigured <- c(
   # the population-specific data sources need their own _pop data arrays
   # and a natal-homing configuration the sweep test setup does not yet build
@@ -111,6 +107,7 @@ sweep_spec_catalog <- local({
   out
 })
 
+# The Sweep Reaches Something ------------------------------------------------
 
 test_that("the sweep found spec arguments to sweep", {
   # a catalog that silently empties turns every test below into a no-op, so the
@@ -134,28 +131,27 @@ test_that("every legal spec value builds", {
   expect_equal(problems, character(0))
 })
 
+# Each Value Changes What Is Estimated ---------------------------------------
 
 test_that("each spec value produces a different estimation structure", {
-  # A spec whose values all build the same model is not wired to anything. Each
-  # value is built in the configuration its parameter needs to exist at all, so a
-  # spec reported here is inert where it is supposed to act, not merely inert
-  # beside a feature that happens to be off.
+  # a setting whose values all build the same model is wired to nothing. each is built in the
+  # model its parameter needs to exist at all, so one reported here is inert where it acts.
   #
-  # A spec sharing only over dimensions this test setup has one of is excluded: it
-  # equals est_all by arithmetic rather than by any fault in the wiring.
+  # sharing only over dimensions this model has one of is left out, since that equals est_all
+  # by arithmetic rather than by any fault
   problems <- character()
 
   for(entry in sweep_spec_catalog) {
     if(entry$arg %in% sweep_unconfigured || !"est_all" %in% entry$legal) next
     base <- spec_build(entry, "est_all")
     if(inherits(base, "condition")) next
-    base_sig <- sweep_signature(base)
+    base_sig <- sweep_structure(base)
 
     for(v in setdiff(entry$legal, "est_all")) {
       if(sweep_spec_is_degenerate(entry$stage, v, sweep_live_dims(entry$arg))) next
       alt <- spec_build(entry, v)
       if(inherits(alt, "condition")) next
-      if(sweep_identical(base_sig, sweep_signature(alt)))
+      if(sweep_identical(base_sig, sweep_structure(alt)))
         problems <- c(problems, sprintf("%s: '%s' is indistinguishable from 'est_all'",
                                         entry$arg, v))
     }
@@ -175,7 +171,7 @@ test_that("'fix' estimates nothing that 'est_all' estimated", {
     fx <- spec_build(entry, "fix")
     if(inherits(est, "condition") || inherits(fx, "condition")) next
 
-    changed <- sweep_diff(sweep_signature(est), sweep_signature(fx))$map
+    changed <- sweep_diff(sweep_structure(est), sweep_structure(fx))$map
     for(b in changed) {
       m <- fx$map[[b]]
       if(!is.null(m) && any(!is.na(as.character(m))))
@@ -187,6 +183,7 @@ test_that("'fix' estimates nothing that 'est_all' estimated", {
   expect_equal(problems, character(0))
 })
 
+# Sharing Only Ever Removes Parameters ---------------------------------------
 
 test_that("sharing never increases the number of estimated parameters", {
   # est_all is the finest partition a spec offers, so no sharing spec may leave a
@@ -203,7 +200,7 @@ test_that("sharing never increases the number of estimated parameters", {
     for(v in shared) {
       alt <- spec_build(entry, v)
       if(inherits(alt, "condition")) next
-      blocks <- sweep_diff(sweep_signature(est), sweep_signature(alt))$map
+      blocks <- sweep_diff(sweep_structure(est), sweep_structure(alt))$map
       pe <- spec_block_profile(est, blocks)
       pa <- spec_block_profile(alt, blocks)
       for(b in blocks) {
@@ -219,10 +216,8 @@ test_that("sharing never increases the number of estimated parameters", {
 
 
 test_that("two different sharing specs do not collapse the same dim", {
-  # est_shared_r and est_shared_s name different dimensions, so on a model whose
-  # dimensions all differ they must collapse different dims of the parameter.
-  # Identical collapse means at least one of them is wired to the wrong dim,
-  # which a stored map cannot detect, since it came from the same wiring.
+  # est_shared_r and est_shared_s name different dimensions, so on a model whose dimensions all
+  # differ they have to collapse different ones. collapsing the same means one is wrong
   problems <- character()
 
   for(entry in sweep_spec_catalog) {
@@ -239,7 +234,7 @@ test_that("two different sharing specs do not collapse the same dim", {
     for(v in single) {
       alt <- spec_build(entry, v)
       if(inherits(alt, "condition")) next
-      blocks <- sweep_diff(sweep_signature(est), sweep_signature(alt))$map
+      blocks <- sweep_diff(sweep_structure(est), sweep_structure(alt))$map
       prof <- spec_block_profile(alt, blocks)
       # which dims this spec collapsed, per block
       seen[[v]] <- paste(vapply(blocks, function(b)
@@ -265,9 +260,8 @@ test_that("two different sharing specs do not collapse the same dim", {
 
 
 test_that("a spec sharing over more dimensions estimates no more than one sharing over fewer", {
-  # est_shared_r_s shares everything est_shared_r shares and more, so it cannot
-  # leave more free parameters. A spec that parses its dimension list wrongly
-  # (dropping a component, or splitting on the wrong separator) shows up here.
+  # est_shared_r_s shares everything est_shared_r does and more, so it cannot leave more free
+  # parameters, and a setting whose dimension list is parsed wrongly shows up here
   problems <- character()
 
   for(entry in sweep_spec_catalog) {
@@ -283,12 +277,12 @@ test_that("a spec sharing over more dimensions estimates no more than one sharin
       if(!inherits(b, "condition")) built[[v]] <- b
     }
     if(length(built) < 2) next
-    ref <- sweep_signature(built[[1]])
+    ref <- sweep_structure(built[[1]])
 
     for(coarse in names(built)) for(fine in names(built)) {
       if(coarse == fine || !all(parts[[fine]] %in% parts[[coarse]])) next
-      blocks <- union(sweep_diff(ref, sweep_signature(built[[coarse]]))$map,
-                      sweep_diff(ref, sweep_signature(built[[fine]]))$map)
+      blocks <- union(sweep_diff(ref, sweep_structure(built[[coarse]]))$map,
+                      sweep_diff(ref, sweep_structure(built[[fine]]))$map)
       if(length(blocks) == 0) next
       pc <- spec_block_profile(built[[coarse]], blocks)
       pf <- spec_block_profile(built[[fine]], blocks)
@@ -303,11 +297,11 @@ test_that("a spec sharing over more dimensions estimates no more than one sharin
   expect_equal(problems, character(0))
 })
 
+# Shapes ---------------------------------------------------------------------
 
 test_that("every map is the same length as the parameter block it maps", {
-  # RTMB pairs a map factor with a parameter block by position, so a map built at
-  # the wrong length either errors inside MakeADFun or, when it happens to divide
-  # evenly, recycles and ties together parameters that were meant to be separate.
+  # a map is paired with its parameter block by position, so one built at the wrong length either
+  # errors or, when it divides evenly, ties together parameters meant to be separate
   problems <- character()
 
   for(entry in sweep_spec_catalog) {
@@ -341,13 +335,13 @@ test_that("the list of specs the sweep cannot reach is still accurate", {
     if(!entry$arg %in% sweep_unconfigured || !"est_all" %in% entry$legal) next
     base <- spec_build(entry, "est_all")
     if(inherits(base, "condition")) next
-    base_sig <- sweep_signature(base)
+    base_sig <- sweep_structure(base)
     live <- FALSE
     for(v in setdiff(entry$legal, "est_all")) {
       if(sweep_spec_is_degenerate(entry$stage, v, sweep_live_dims(entry$arg))) next
       alt <- spec_build(entry, v)
       if(inherits(alt, "condition")) next
-      if(!sweep_identical(base_sig, sweep_signature(alt))) {
+      if(!sweep_identical(base_sig, sweep_structure(alt))) {
         live <- TRUE
         break
       }

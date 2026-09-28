@@ -1,10 +1,9 @@
+# Deviations on the selectivity parameters, one form at a time: which parameters each moves, on
+# what scale, and that a deviation of zero leaves every form as it was. The rest of the suite
+# covers the deviations only on the logistic and non-parametric curves.
+
 library(SPoRC)
 library(testthat)
-
-# Get_Selex applies annual deviations to the transformed parameters when
-# TimeVary_Model is 1 (iid) or 2 (random walk). The existing suite covers the
-# deviation path only for the logistic and non-parametric forms, so every
-# remaining Selex_Model is driven here.
 
 bins <- 1:20
 n_regions <- 2
@@ -32,9 +31,8 @@ selex <- function(model, pars, devs, tv = 1, year = 2, region = 1, sex = 1) {
 }
 
 test_that("deviations on log-scale parameters shift the parameters directly", {
-  # For forms whose parameters are all exp()-transformed, multiplying by
-  # exp(dev) is identical to adding the deviation on the log scale. That
-  # equivalence checks the deviation wiring without restating each formula.
+  # where every parameter is exponentiated, multiplying by exp(dev) is the same as adding the
+  # deviation on the log scale, which checks the wiring without restating each formula
   cases <- list(
     list(model = 0, pars = log(c(10, 0.5)), devs = c(0.15, -0.2)),  # logistic b50/slope
     list(model = 1, pars = log(c(12, 3)),   devs = c(0.1, 0.25)),   # gamma dome
@@ -84,10 +82,8 @@ test_that("the double normal applies a deviation to all six parameters", {
   expect_true(all(is.finite(tv_sel)))
   expect_false(isTRUE(all.equal(tv_sel, base)))
 
-  # The ascending limb is rescaled so that it passes through the fifth
-  # parameter at the first bin, which makes this a check on that parameter's
-  # deviation up to the joiner's contribution there. The joiner is around
-  # 1e-8 this far below the peak, so the comparison is to that.
+  # the ascending limb is rescaled to pass through the fifth parameter at the first bin, so
+  # this reads that parameter's deviation up to the joiner, which is about 1e-8 here
   expect_equal(unname(tv_sel[1]), stats::plogis(pars[5]) * exp(devs[5]),
                tolerance = 1e-6)
   expect_equal(unname(base[1]), stats::plogis(pars[5]), tolerance = 1e-6)

@@ -44,8 +44,7 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
     out$normalize <- TRUE
     out$yr_diff_ref <- NULL
 
-    # NULL or an empty list both mean "this fleet has no penalties", which is how
-    # a per-fleet specification names the fleets it does not constrain.
+    # NULL or an empty list both mean this fleet has no penalties
     if(is.null(spec) || length(spec) == 0) return(out)
 
     if(is.null(names(spec)) || !all(names(spec) %in% allowed))
@@ -64,8 +63,7 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
     return(out)
   }
 
-  # A single named specification covers every fleet; an unnamed list gives each
-  # fleet its own, as surveys with different smoothing needs require.
+  # a single named specification covers every fleet, an unnamed list gives each fleet its own
   per_fleet <- is.list(pen_wts) && is.null(names(pen_wts))
 
   if(per_fleet) {
@@ -91,10 +89,10 @@ resolve_sel_pen_wts <- function(pen_wts, n_fleets = 1) {
 #'
 #' @keywords internal
 collect_message <- function(...) {
-  # the setup entry points open a fresh messages_list, but the helpers they call are also reachable
-  # on their own, so start one here rather than failing on a binding that does not exist yet
-  if(!exists("messages_list", inherits = TRUE)) messages_list <<- character(0) # nolint: object_usage_linter.
-  messages_list <<- c(messages_list, paste(..., sep = "")) # nolint: object_usage_linter.
+  # the setup functions open a fresh messages_list, but their helpers can be called directly, so
+  # start one here rather than failing when there is none
+  if(!exists("messages_list", inherits = TRUE)) messages_list <<- character(0)
+  messages_list <<- c(messages_list, paste(..., sep = ""))
 }
 
 #' Safely extract a named element from a list object
@@ -189,8 +187,7 @@ use_starting_value <- function(default, starting_values, par_name) {
   shape <- function(x) if(is.null(dim(x))) paste0("length ", length(x)) else
     paste(dim(x), collapse = " by ")
 
-  # a single value where the model wants many is the common slip and has an obvious repair, so the
-  # message gives the call rather than only the measurement
+  # a single value where many are needed is the common slip, so the message gives the fix
   hint <- if(length(supplied) == 1 && length(default) > 1)
     paste0(" Recycle it with rep(", par_name, ", ", length(default), ") if every element takes the same value.")
   else ""
@@ -666,9 +663,9 @@ setup_sel_norm_bins <- function(input_list, sel_norm_bins, prefix, n_fleets, bin
 #'
 #' Creates the bin-override deviation parameter array, its factor map, and its
 #' process-error hyperparameters, and records which bins each fleet overrides.
-#' Bins named here take a free annual selectivity value instead of whatever the
-#' fleet's functional form produces, which lets an otherwise parametric curve
-#' have a handful of freely estimated bins.
+#' Bins named here take a free annual selectivity value in place of the one the
+#' fleet's functional form gives, so an otherwise parametric curve can have a
+#' few freely estimated bins.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}.
 #' @param bin_dev_bins List with one element per fleet, each a vector of bins to
@@ -714,9 +711,8 @@ setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fle
   if(pe_par_name %in% names(starting_values)) input_list$par[[pe_par_name]] <- starting_values[[pe_par_name]]
   else input_list$par[[pe_par_name]] <- array(0, dim = c(input_list$data$n_regions, bins, input_list$data$n_sexes, n_fleets))
 
-  # Only the named bins are estimated; everything else is fixed at zero and
-  # never reaches the selectivity curve, so it costs nothing.
-  map_dev <- array(NA_real_, dim = dim(input_list$par[[dev_par_name]]))
+  # only the named bins are estimated. the rest stay at zero and never reach the selectivity curve
+  map_dev <- array(NA, dim = dim(input_list$par[[dev_par_name]]))
   counter <- 1
   for(f in seq_len(n_fleets)) {
     for(r in seq_len(input_list$data$n_regions)) {
@@ -732,7 +728,7 @@ setup_sel_bin_devs <- function(input_list, bin_dev_bins, pe_model, prefix, n_fle
 
   # A process-error hyperparameter only exists where the deviations are both
   # estimated and given a structure to be penalized against.
-  map_pe <- array(NA_real_, dim = dim(input_list$par[[pe_par_name]]))
+  map_pe <- array(NA, dim = dim(input_list$par[[pe_par_name]]))
   counter <- 1
   for(f in seq_len(n_fleets)) {
     if(pe_vals[f] == 0) next
@@ -884,15 +880,15 @@ setup_sel_sex_offset <- function(
     if(any(sel_model_arr[,,f] != 4)) stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests an apical offset, which is the height the double normal builds its limbs up to. That fleet is not on the double normal. Use the scale offset, which multiplies whatever curve the form returns.")
   } # end f loop
 
-  # under a par offset the later sexes' stored slots are the offsets, so a specification sharing
-  # those slots across sexes would make them the first sex's parameters and double them
+  # under a par offset the later sexes hold offsets, so sharing those slots across sexes would turn
+  # them into the first sex's parameters
   if(!is.null(fixed_spec)) for(f in seq_len(n_fleets)) {
     if(par_flag[f] == 1 && fixed_spec[f] %in% c("est_shared_s", "est_shared_r_s"))
       stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a par offset, but its fixed-parameter specification shares the sex slots, which would read the first sex's parameters as their own offsets. Use est_all or est_shared_r with a par offset.")
   } # end f loop
 
-  # A constant multiplier on the curve is canceled by the mean standardization
-  # the non-parametric forms and semi-parametric structures apply afterwards.
+  # a constant multiplier on the curve cancels out when the non-parametric and semi-parametric
+  # forms standardize the curve to a mean of one
   for(f in seq_len(n_fleets)) {
     if(scale_flag[f] == 0) next
     if(any(sel_model_arr[,,f] %in% c(5, 9))) stop(prefix, "_sel_sex_offset for ", fleet_label, " ", f, " requests a scale offset, but its non-parametric form is mean-standardized, which cancels a constant multiplier. Use the par offset instead.")
@@ -904,7 +900,7 @@ setup_sel_sex_offset <- function(
 
   # The first sex is the reference and never has a scale or apical offset, and a
   # fleet only has one for the blocks it actually has
-  map_scale <- array(NA_real_, dim = dim(input_list$par[[sex_scale_par_name]]))
+  map_scale <- array(NA, dim = dim(input_list$par[[sex_scale_par_name]]))
   counter <- 1
   for(f in seq_len(n_fleets)) {
     if(scale_flag[f] == 0 && apical_flag[f] == 0) next
@@ -930,15 +926,15 @@ setup_sel_sex_offset <- function(
 
 #' Assign a value to every region x year cell of one fleet belonging to a selectivity block
 #'
-#' Selectivity block arrays are \code{[region, year, fleet]}, so a single fleet's slice is a
-#' \code{region x year} MATRIX. \code{which(slice == block)} on that matrix returns LINEAR
-#' positions running down the columns, in \code{1:(n_regions * n_years)} -- not year indices.
-#' Using them as a year subscript (\code{arr[, which(...), fleet] <- value}) is therefore wrong
-#' whenever \code{n_regions > 1}: it either errors with a subscript out of bounds, or, when the
-#' block is early enough that the linear positions stay within \code{n_years}, SILENTLY writes
-#' the wrong years. With three regions and 35 years, a block covering years 1-5 produces linear
-#' positions 1-15 and quietly overwrites years 1-15. At \code{n_regions == 1} the linear
-#' position equals the column index, which is why this only shows up in spatial models.
+#' Selectivity block arrays are \code{[region, year, fleet]}, so one fleet's
+#' slice is a region by year matrix. \code{which(slice == block)} on it counts
+#' down the columns, giving positions in \code{1:(n_regions * n_years)} rather
+#' than years. Used as a year subscript those are wrong whenever there is more
+#' than one region: either the subscript is out of bounds, or, when the block
+#' is early enough that the positions stay below \code{n_years}, the wrong
+#' years are written with no error at all. With three regions and 35 years, a
+#' block covering years 1-5 writes years 1-15. With one region the position
+#' equals the year, which is why this only shows up in spatial models.
 #'
 #' Indexing with the logical matrix directly is correct in both cases, and stays correct if
 #' blocks are ever allowed to differ between regions.
@@ -1043,9 +1039,10 @@ fleet_ageing_error <- function(data, shared, which) {
 
 #' An unused at-age input moved onto the observed ages
 #'
-#' Fits made before the at-age data sources sat on the observed ages hold their unused ones on the
-#' model ages. With nothing observed there is nothing to lose, so a placeholder on the observed ages
-#' stands in; a data source the fit observes is returned as it is, for the shape checks to judge.
+#' Fits made before the at-age data sources sat on the observed ages hold their
+#' unused ones on the model ages. Nothing is observed there, so a placeholder
+#' on the observed ages replaces it. A data source the fit does observe is
+#' returned unchanged, for the shape checks.
 #'
 #' @param x The array, or \code{NULL}.
 #' @param used Logical. \code{TRUE} when the fitted model observes this data source.
@@ -1184,9 +1181,8 @@ check_comp_like_type <- function(x, what, allowed = comp_like_type_options(),
   bad <- which(!x %in% allowed)
   if(length(bad) == 0) return(invisible(x))
 
-  # a value differing only in case, spacing or punctuation is a near miss worth naming.
-  # otherwise take the closest accepted value, as long as the edit distance is small
-  # next to the length of the two strings, so "DM" suggests nothing
+  # a value differing only in case, spacing or punctuation is a near miss worth naming. otherwise
+  # suggest the closest accepted value, and only when it is close next to the name's length
   simplify <- function(v) gsub("[^a-z0-9]", "", tolower(v))
   nearest <- function(v) {
     if(is.na(v)) return("")
@@ -1296,8 +1292,8 @@ drop_empty_fitted_blocks <- function(obs, use, bins_arr, bin_dim, what) {
     idx[[bin_dim]] <- fit
     idx[[n_dims]] <- f
     sub <- do.call(`[`, c(list(obs), idx, list(drop = FALSE)))
-    # Same predicate the likelihood's own guard uses: a block with no finite values
-    # counts as empty just as an all-zero one does, so the two cannot disagree
+    # the same test the likelihood uses, where a block with no finite values counts as empty just as
+    # an all-zero one does
     tot <- apply(sub, dims, function(v) if(!any(is.finite(v))) 0 else sum(v, na.rm = TRUE))
     dim(tot) <- dim(tot)                                          # keep it an array for the assignment below
     uidx <- lapply(seq_along(dim(use)), function(i) seq_len(dim(use)[i]))
@@ -1377,9 +1373,10 @@ resync_fitted_blocks <- function(data) {
 #'
 #' The \code{*_bins} arguments index into observed bins, so they need the bin
 #' count of the array they will be applied to. That is normally read straight
-#' off the supplied observation array, but a model with no data for a data source
-#' can hand in an array with no dimensions at all, so the model's own observed
-#' bin count stands in: the ageing error's observed-age dimension for ages, and
+#' off the supplied observation array, but a model with no data for a data
+#' source can supply an array with no dims at all, so the model's own observed
+#' bin count is used instead: the ageing error's observed-age dimension for
+#' ages, and
 #' \code{\link{obs_len_bins}} for lengths.
 #'
 #' @param input_list Input list, used for the fallback.
@@ -1449,12 +1446,12 @@ setup_dbnrml_startbin <- function(x, n_fleets, n_bins, what) {
   as.integer(x)
 }
 
-#' Hold a natural mortality array across seasons
+#' Expand a natural mortality array over seasons
 #'
 #' M is an instantaneous rate per year on a
 #' \code{[n_pop x n_regions x n_years x n_seas x n_ages x n_sexes]} grid. An
-#' array without the season dim gets kept at one rate across seasons, which is
-#' the model it came from. An array that already has it passes through.
+#' array without the season dim holds one rate for the year, repeated into every
+#' season here. An array that already has it passes through.
 #'
 #' @param x Natural mortality array, with or without seasons. \code{NULL} passes
 #'   through.
@@ -1568,14 +1565,18 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
                      "FishLenComps_seas_Type", "FishLenComps_pop_seas_Type",
                      "FishAgeComps_discard_seas_Type", "FishAgeComps_discard_pop_seas_Type",
                      "FishLenComps_discard_seas_Type", "FishLenComps_discard_pop_seas_Type")) {
-    if(!has(seas_name)) set(seas_name, rep(0L, get("n_fish_fleets", envir = env)))
+    if(!has(seas_name)) set(seas_name, rep(0, get("n_fish_fleets", envir = env)))
   } # end seas_name loop
 
   for(seas_name in c("SrvIdx_seas_Type", "SrvIdx_pop_seas_Type", "SrvIdxAA_seas_Type", "SrvIdxAA_pop_seas_Type",
                      "SrvAgeComps_seas_Type", "SrvAgeComps_pop_seas_Type",
                      "SrvLenComps_seas_Type", "SrvLenComps_pop_seas_Type")) {
-    if(!has(seas_name)) set(seas_name, rep(0L, get("n_srv_fleets", envir = env)))
+    if(!has(seas_name)) set(seas_name, rep(0, get("n_srv_fleets", envir = env)))
   } # end seas_name loop
+
+  # Lognormal bias corrections. Zero for both is what every model did before the switches existed
+  if(!has("bias_correct_pe")) set("bias_correct_pe", 1) # 'rec', which is what every model did before this existed
+  if(!has("bias_correct_oe")) set("bias_correct_oe", 0)
 
   # Movement timing options.
   if(!has("move_timing")) set("move_timing", 0)
@@ -1585,7 +1586,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   # CAAL
   if(!has("do_caal")) set("do_caal", 0)
 
-  # Dynamic structural equation model. NULL means no dsem, read where the density is evaluated
+  # dynamic structural equation model. NULL means no dsem
   if(!has("dsem_model")) set("dsem_model", NULL)
   if(!has("dsem_declared")) set("dsem_declared", character(0))
   if(!has("dsem_x_known")) set("dsem_x_known", NULL) # a dsem list from before the recruitment correction
@@ -1598,7 +1599,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
 
   # R0 time blocks
   if(!has("R0_blocks")) set("R0_blocks", NULL) # NULL means one block, read where R0 is built
-  if(!has("R0_ref_block")) set("R0_ref_block", 1L)
+  if(!has("R0_ref_block")) set("R0_ref_block", 1)
 
   # Growth stuff
   if(!has("growth_model")) set("growth_model", 0)
@@ -1665,15 +1666,15 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     set("init_F_par", array(stats::qlogis(pmin(pmax(init_F_prop, 1e-10), 1 - 1e-10)), dim = init_F_dim))
   }
 
-  # Deviation maps mirrored into the data lists. Without the initial age map the
-  # penalty falls on every cell, which is what lists built before it kept did.
+  # deviation maps mirrored into the data lists. without the initial age map the penalty falls on
+  # every cell, as older lists did
   if(!has("map_ln_InitDevs")) set("map_ln_InitDevs", NULL)
   if(!has("map_ln_F_devs") || !has("map_logit_dmr_devs")) {
     UseCatch <- get("UseCatch", envir = env)
     has_catch <- UseCatch == 1 |
       apply(get("UseCatch_pop", envir = env) == 1, c(2,3,4,5), any) |
       is.na(get("ObsCatch", envir = env))
-    legacy_map <- array(NA_real_, dim = dim(UseCatch))
+    legacy_map <- array(NA, dim = dim(UseCatch))
     legacy_map[has_catch] <- seq_len(sum(has_catch))
     if(!has("map_ln_F_devs")) set("map_ln_F_devs", legacy_map)
     if(!has("map_logit_dmr_devs")) set("map_logit_dmr_devs", legacy_map)
@@ -1719,8 +1720,8 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("SrvIdx_Cov")) set("SrvIdx_Cov", vector("list", n_srv_bc))
   if(!has("FishIdx_Cov")) set("FishIdx_Cov", vector("list", n_fish_bc))
 
-  # estimated index observation error. zero keeps the reported standard errors as the whole story,
-  # which is what older input lists mean. the population data sources have their own form
+  # estimated index observation error. zero uses the reported standard errors alone, as older input
+  # lists do. the population data sources have their own form
   if(!has("sigmaSrvIdx_form")) set("sigmaSrvIdx_form", 0)
   if(!has("sigmaFishIdx_form")) set("sigmaFishIdx_form", 0)
   if(!has("sigmaSrvIdx_pop_form")) set("sigmaSrvIdx_pop_form", 0)
@@ -1730,8 +1731,8 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("ln_sigmaSrvIdx_pop")) set("ln_sigmaSrvIdx_pop", rep(log(0.01), n_srv_bc))
   if(!has("ln_sigmaFishIdx_pop")) set("ln_sigmaFishIdx_pop", rep(log(0.01), n_fish_bc))
 
-  # a population data source never supplied drops out of the data list rather than arriving empty,
-  # so give it a shape here and let the index code index it unconditionally
+  # a population data source never supplied is missing from the data list rather than empty, so
+  # give it a shape here
   pop_se_dim <- function(n_fleets) c(get("n_pop", envir = env), get("n_regions", envir = env),
                                      length(get("years", envir = env)), get("n_seas", envir = env), n_fleets)
   if(!has("ObsFishIdx_pop_SE")) set("ObsFishIdx_pop_SE", array(0, dim = pop_se_dim(n_fish_bc)))
@@ -1801,8 +1802,8 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
       if(!has(paste0("trans_rho_", ctag, "_year"))) set(paste0("trans_rho_", ctag, "_year"), array(0, dim = rho_d))
       if(!has(paste0("trans_rho_", ctag, "_us"))) set(paste0("trans_rho_", ctag, "_us"), array(0, dim = c(n_pairs_bc, rho_d)))
 
-      # an array or parameter reused at an older shape would be indexed by
-      # position and silently read the wrong age or sex, so it is refused instead
+      # an array kept at an older shape would read the wrong age or sex, so refuse it rather than
+      # guessing what it holds
       want_dims <- c(length(d), length(d), length(d), length(sd), length(rho_d))
       names(want_dims) <- c(paste0("Obs", tag), paste0("Use", tag), paste0("Obs", tag, "_SE"),
                             sig, paste0("trans_rho_", ctag))
@@ -1823,14 +1824,13 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("RecDevs_pen_center")) set("RecDevs_pen_center", 0)
   if(!has("InitDevs_pen_center")) set("InitDevs_pen_center", 0)
 
-  # only read by the initial-age penalty's shared-subset case (equil_init_age_strc == 3), which
-  # setup stores in data, so a list without it cannot be using that case
+  # only the initial age penalty's shared-subset case uses this, and setup always stores it, so an
+  # older list cannot be using that case
   if(!has("init_age_devs_shared")) set("init_age_devs_shared", NULL)
 
-  # The initial age penalty used to share Wt_Rec, which only worked because both
-  # were scalars applied outside the sum.
+  # the initial age penalty used to share Wt_Rec, which worked only while both were scalars
   if(!has("Wt_Init_Rec")) set("Wt_Init_Rec", get("Wt_Rec", envir = env))
-  # An array weight from before the sex dimension is one weight per age; it repeats across sexes so it conforms with the sex-dimensioned penalty array
+  # an array weight from before the sex dim is one weight per age, so repeat it across sexes
   wt_init_bc <- get("Wt_Init_Rec", envir = env)
   if(length(wt_init_bc) > 1 && length(dim(wt_init_bc)) == 3) set("Wt_Init_Rec", array(rep(wt_init_bc, get("n_sexes", envir = env)), dim = c(dim(wt_init_bc), get("n_sexes", envir = env))))
 
@@ -1861,8 +1861,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("retsel_bin_devs_rw_init_sigma")) set("retsel_bin_devs_rw_init_sigma", rep(5, n_fish_bc))
   if(!has("srvsel_bin_devs_rw_init_sigma")) set("srvsel_bin_devs_rw_init_sigma", rep(5, n_srv_bc))
 
-  # Fleet-specific ageing error. Older input lists have only the shared matrix,
-  # so every fleet reads that, which is exactly what they did before.
+  # fleet-specific ageing error. older input lists have only the shared matrix, so every fleet reads it
   if(!has("AgeingError_fish") || !has("AgeingError_srv")) {
     shared_ae_bc <- get("AgeingError", envir = env)
     for(data_name in c("AgeingError_fish", "AgeingError_srv")) {
@@ -1874,8 +1873,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     } # end data_name loop
   }
 
-  # composition bin ranges. older input lists fit every bin, so an all-ones array stands in:
-  # bins_or_null and fleet_bins_or_null return NULL when nothing is restricted, so it is never indexed into
+  # composition bin ranges. older input lists fit every bin, so fill in an all-ones array
   n_lens_bc <- length(get("lens", envir = env))
   for(data_name in c("FishAgeComps_bins", "FishAgeComps_pop_bins", "FishAgeComps_discard_bins",
                      "FishAgeComps_discard_pop_bins", "Fish_caal_bins")) {
@@ -1900,24 +1898,23 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     if(!has(paste0("cont_tv_", pre, "sel_bin_devs"))) set(paste0("cont_tv_", pre, "sel_bin_devs"), rep(0, n_fl_bc))
     if(!has(paste0("ln_", pre, "sel_bin_devs"))) set(paste0("ln_", pre, "sel_bin_devs"), array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)) + get("n_proj_yrs_devs", envir = env), n_ages_bc, get("n_sexes", envir = env), n_fl_bc)))
     if(!has(paste0(pre, "sel_bin_devs_pe_pars"))) set(paste0(pre, "sel_bin_devs_pe_pars"), array(0, dim = c(get("n_regions", envir = env), n_ages_bc, get("n_sexes", envir = env), n_fl_bc)))
-    if(!has(paste0("map_ln_", pre, "sel_bin_devs"))) set(paste0("map_ln_", pre, "sel_bin_devs"), array(NA_real_, dim = dim(get(paste0("ln_", pre, "sel_bin_devs"), envir = env))))
+    if(!has(paste0("map_ln_", pre, "sel_bin_devs"))) set(paste0("map_ln_", pre, "sel_bin_devs"), array(NA, dim = dim(get(paste0("ln_", pre, "sel_bin_devs"), envir = env))))
   } # end pre loop
 
-  # state-space numbers at age. n_est_naa_re alone decides whether the state is live; it is never
-  # inferred from dim(ln_NAA), which is non-zero once the setup function has run at all
+  # state-space numbers at age. n_est_naa_re alone says whether the state is on, never dim(ln_NAA),
+  # which is non-zero as soon as the setup function has run
   if(!has("NAA_re")) set("NAA_re", 0)
   if(!has("n_est_naa_re")) set("n_est_naa_re", 0)
   if(!has("naa_re_ages")) set("naa_re_ages", integer(0))
   if(!has("naa_re_yrs")) set("naa_re_yrs", integer(0))
   if(!has("naa_re_where")) set("naa_re_where", NULL) # every population and region cell
-  # Season one alone is what the state was before the season dim existed, so a list without the
-  # field is that model. The arrays themselves are promoted below rather than replaced.
-  if(!has("naa_re_seas")) set("naa_re_seas", 1L)
+  # before the season dim the state was season one alone, so a list without the field is that model
+  if(!has("naa_re_seas")) set("naa_re_seas", 1)
   if(!has("naa_sigma_blocks")) set("naa_sigma_blocks", array(1, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), length(get("years", envir = env)), n_seas_bc, n_ages_bc, get("n_sexes", envir = env))))
   if(!has("ln_NAA")) set("ln_NAA", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env), length(get("years", envir = env)), n_seas_bc, n_ages_bc, get("n_sexes", envir = env))))
   if(!has("ln_sigmaNAA")) set("ln_sigmaNAA", array(log(0.3), dim = c(1, 1, 1, 1, 1, 1)))
-  # Arrays saved before the season dim existed are promoted rather than replaced, holding the
-  # state at season one. A retro peel leaves ln_sigmaNAA a plain vector, which indexes fine as is.
+  # arrays saved before the season dim gain one, with the state in season one. a retro peel leaves
+  # ln_sigmaNAA a plain vector, which is fine as it is
   for(data_name in c("ln_NAA", "naa_sigma_blocks", "map_ln_NAA", "ln_sigmaNAA")) {
     if(!has(data_name)) next
     if(length(dim(get(data_name, envir = env))) != 5) next
@@ -1939,8 +1936,8 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("Use_ret_selex_penalty")) set("Use_ret_selex_penalty", 0)
   if(!has("Use_srv_selex_penalty")) set("Use_srv_selex_penalty", 0)
 
-  # bicubic residual tracking arrays, which the parametric plateau also reads. all-zero means no
-  # plateau and no bicubic block anywhere, which is what older input lists were
+  # bicubic node arrays, which the parametric plateau also reads. all zeros means neither is used,
+  # as in older input lists
   for(pre_arr in c("fish", "ret")) for(suf in c("binnodes", "yrnodes", "selstyr", "nselbins")) {
     nm_arr <- paste0(pre_arr, "_sel_bicubic_", suf)
     if(!has(nm_arr)) set(nm_arr, array(0, dim = c(get("n_regions", envir = env), length(get("years", envir = env)), n_fish_bc)))
@@ -1971,8 +1968,8 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("retsel_sex_apical_offset")) set("retsel_sex_apical_offset", rep(0, n_fish_bc))
   if(!has("ln_retsel_sex_scale")) set("ln_retsel_sex_scale", array(0, dim = c(get("n_regions", envir = env), dim(get("ret_fixed_sel_pars", envir = env))[3], get("n_sexes", envir = env), n_fish_bc)))
 
-  # initial age deviations gained a sex dim. an older 3-D array is one shared curve, so it
-  # broadcasts across sexes and only the first sex's copy is penalized
+  # initial age deviations gained a sex dim. an older array is one curve shared by the sexes, and
+  # only the first sex's copy is penalized
   if(length(dim(get("ln_InitDevs", envir = env))) == 3) {
     init3 <- get("ln_InitDevs", envir = env)
     set("ln_InitDevs", array(rep(init3, get("n_sexes", envir = env)), dim = c(dim(init3), get("n_sexes", envir = env))))
@@ -2007,7 +2004,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   n_reg_bc <- get("n_regions", envir = env)
   for(prefix in c("fish", "srv")) {
     n_fleet_bc <- get(paste0("n_", prefix, "_fleets"), envir = env)
-    if(!has(paste0(prefix, "_q_model"))) set(paste0(prefix, "_q_model"), rep(1L, n_fleet_bc))
+    if(!has(paste0(prefix, "_q_model"))) set(paste0(prefix, "_q_model"), rep(1, n_fleet_bc))
     if(!has(paste0("ln_", prefix, "_q_devs"))) set(paste0("ln_", prefix, "_q_devs"), NULL)
     if(!has(paste0("map_ln_", prefix, "_q_devs"))) set(paste0("map_ln_", prefix, "_q_devs"), NULL)
     if(!has(paste0("ln_sigma_", prefix, "_q"))) set(paste0("ln_sigma_", prefix, "_q"), array(log(0.1), dim = c(n_reg_bc, n_fleet_bc)))
@@ -2039,7 +2036,7 @@ fill_optional_modules <- function(data,
                                   parameters,
                                   mapping) {
 
-  # a module asked for its deviations to sit under arrows that were never given, so they would have no density
+  # a process asked for the dsem but no arrows were given, so its deviations would have no density
   if(length(data$dsem_declared) > 0 && is.null(data$dsem_model)) {
     stop("The ", paste(data$dsem_declared, collapse = ", "), " module declared 'dsem' but no dsem was set up, so those ",
          "deviations have no density. Call Setup_Mod_DSEM with the arrows, or take the declaration back.")

@@ -1,8 +1,9 @@
+# Male selectivity written as an offset on the female curve, on the parameters or on the whole
+# curve, and initial age deviations estimated per sex with a Gaussian tie between them. Checked at
+# the function level against values worked out by hand.
+
 library(testthat)
 library(RTMB)
-
-# Selectivity sex offsets (par and scale) and sex-specific initial age
-# deviations, tested at the function level against hand-computed values.
 
 logistic_sel <- function(b50, k, ages) 1 / (1 + exp(-k * (ages - b50)))
 
@@ -34,6 +35,8 @@ make_selex_args <- function(n_ages = 6, n_sexes = 2, n_fleets = 1) {
     n_fleets = n_fleets
   )
 }
+
+# Sex Offsets on the Selectivity Curve ---------------------------------------
 
 test_that("a par sex offset evaluates the second sex at the first sex's parameters plus its stored offsets", {
 
@@ -164,6 +167,8 @@ test_that("an NSelBins plateau holds bins beyond it at the last computed value f
   out0 <- do.call(Get_Selex_Array, c(args, list(nselbins = array(0, dim = c(1, 3, 1)))))
   expect_equal(as.numeric(out0$sel[1,1,1,1,,1,1]), logistic_sel(4, 0.4, 1:6), tolerance = 1e-12)
 })
+
+# Initial Age Deviations per Sex ---------------------------------------------
 
 test_that("Get_Init_NAA applies sex-specific initial deviations and broadcasts a 3-D array", {
 
@@ -326,6 +331,8 @@ test_that("do_InitDevs_mapping expands its single-sex logic across sexes per Ini
   ), "n_sexes > 1")
 })
 
+# Retention, End to End ------------------------------------------------------
+
 test_that("retention selectivity holds the sex offsets and the plateau through setup and the objective", {
 
   messages_list <<- character(0)
@@ -479,6 +486,8 @@ test_that("retention selectivity holds the sex offsets and the plateau through s
   expect_equal(as.numeric(obj$rep$ret_sel[1,1,1,1,,2,1]), expected_m, tolerance = 1e-12)
 })
 
+# Tying the Sexes Together ---------------------------------------------------
+
 test_that("the between-sex tie on initial age deviations is a Gaussian on each later sex's difference from the first", {
 
   n_ages <- 5
@@ -578,6 +587,8 @@ test_that("the between-sex tie on initial age deviations is a Gaussian on each l
   expect_error(Setup_Mod_Rec(input_list = dim1, rec_model = "mean_rec", sigmaR_spec = "fix", Use_init_sex_pen = 1), "n_sexes > 1")
 })
 
+# What Is Refused ------------------------------------------------------------
+
 test_that("sex offsets refuse a sex-shared fixed specification under par and map scale offsets only for a fleet's own blocks", {
 
   messages_list <<- character(0)
@@ -635,6 +646,8 @@ test_that("sex offsets refuse a sex-shared fixed specification under par and map
   expect_true(all(is.na(map_scale[1, , 1, ])))      # the first sex is the reference
   expect_equal(sum(!is.na(map_scale)), 3)
 })
+
+# Simulation -----------------------------------------------------------------
 
 test_that("the simulator draws initial age deviations per sex only when asked, and the shared draw is unchanged", {
 

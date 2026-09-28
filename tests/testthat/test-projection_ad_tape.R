@@ -1,16 +1,14 @@
+# A projection can be taped with RTMB and given to an optimizer with an exact gradient, but
+# only while every function in the chain keeps the AD values alive.
+#
+# The projection writes into preallocated numeric arrays, which quietly turn AD values back
+# into doubles. The failure is silent, so these read the gradient rather than the call.
+#
+# Two options are refused rather than allowed to return a wrong gradient: inverse gaussian
+# recruitment draws random numbers, and a catch target is inverted by a numerical solve.
+
 library(SPoRC)
 library(testthat)
-
-# Do_Population_Projection is ordinary R, so a projection can be taped with RTMB
-# and handed to an optimizer with an exact gradient. That only holds while every
-# function in the call chain keeps AD values alive: the projection writes into
-# preallocated numeric arrays, and without RTMB's replacement operator those
-# arrays quietly coerce the AD values back to doubles. The failure is silent, so
-# these tests check the gradient itself rather than that the call runs.
-#
-# Two options cannot be differentiated through and are refused rather than
-# allowed to return a gradient that is wrong: inverse gaussian recruitment draws
-# random numbers, and a catch target is inverted by a numerical solve.
 
 # Beverton-Holt settings for the packaged sablefish model, which put projected
 # spawning biomass back into recruitment and so put the whole feedback on the tape.
@@ -38,7 +36,7 @@ sable_srr_opt <- function() {
     sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = n_pop),
-    # the packaged report predates seasonal M, so it has no season dim to slice
+    # the packaged report predates seasonal M, so it has no season dimension to read
     natmort = array(rp$natmort[,,ny,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     fish_sel = array(rp$fish_sel[,,ny,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     ret_sel = array(rp$ret_sel[,,ny,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
@@ -46,7 +44,6 @@ sable_srr_opt <- function() {
     dmr = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
   )
 }
-
 
 test_that("a mean recruitment projection tapes and its gradient matches finite differences", {
 
@@ -63,7 +60,6 @@ test_that("a mean recruitment projection tapes and its gradient matches finite d
   expect_gt(abs(as.vector(tape$jacfun()(ln_F0))), 1) # not a detached constant
 })
 
-
 test_that("a Beverton-Holt projection carries the stock-recruit feedback onto the tape", {
 
   srr_opt <- sable_srr_opt()
@@ -78,7 +74,6 @@ test_that("a Beverton-Holt projection carries the stock-recruit feedback onto th
   expect_equal(as.vector(tape$jacfun()(ln_F0)),
                numDeriv::grad(yield, ln_F0), tolerance = 1e-5)
 })
-
 
 test_that("bind_proj_SSB keeps the AD class that abind drops", {
 
@@ -101,7 +96,6 @@ test_that("bind_proj_SSB keeps the AD class that abind drops", {
   expect_false(seen$dropped)
 })
 
-
 test_that("the projection refuses the options that cannot be differentiated through", {
 
   expect_error(
@@ -111,7 +105,6 @@ test_that("the projection refuses the options that cannot be differentiated thro
     "inv_gauss"
   )
 })
-
 
 test_that("adding the AD operators leaves an ordinary projection unchanged", {
 

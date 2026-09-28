@@ -60,8 +60,8 @@ Setup_sim_env <- function(sim_list) {
   sim_env$simulate_comps <- simulate_comps
   sim_env$simulate_caal <- simulate_caal
   sim_env$simulate_conv_tag_fish_recaptures <- simulate_conv_tag_fish_recaptures
-  # bound explicitly like the helpers above: the annual-cycle with() blocks resolve functions
-  # through this environment's parent chain, which only reaches the namespace inside a package call
+  # bound here like the helpers above, because the annual cycle's with() blocks cannot find these
+  # functions on their own
   sim_env$draw_index_obs <- draw_index_obs
   sim_env$resolve_idx_factor <- resolve_idx_factor
   sim_env$draw_naa_innovations <- draw_naa_innovations
@@ -76,7 +76,7 @@ Setup_sim_env <- function(sim_list) {
   for(opt_name in c("naa_pop_corr", "naa_region_corr", "naa_sex_corr", "naa_season_corr")) if(is.null(sim_list[[opt_name]])) sim_list[[opt_name]] <- 0
   if(is.null(sim_list$naa_re_ages)) sim_list$naa_re_ages <- if(isTRUE(sim_list$n_ages > 1)) 2:sim_list$n_ages else integer(0)
   if(is.null(sim_list$naa_re_yrs)) sim_list$naa_re_yrs <- if(isTRUE(sim_list$n_yrs > 1)) 2:sim_list$n_yrs else integer(0)
-  if(is.null(sim_list$naa_re_seas)) sim_list$naa_re_seas <- 1L
+  if(is.null(sim_list$naa_re_seas)) sim_list$naa_re_seas <- 1
 
   # recruitment deviation process error; lists built before the option existed drew independently
   if(is.null(sim_list$RecDevs_model)) sim_list$RecDevs_model <- 1
@@ -97,7 +97,7 @@ Setup_sim_env <- function(sim_list) {
   for(prefix in c("fish", "srv")) {
     n_fleets <- sim_env[[paste0("n_", prefix, "_fleets")]]
     if(is.null(n_fleets) || is.null(sim_env[[paste0(prefix, "_q")]])) next
-    if(is.null(sim_env[[paste0(prefix, "_q_model")]])) sim_env[[paste0(prefix, "_q_model")]] <- rep(1L, n_fleets)
+    if(is.null(sim_env[[paste0(prefix, "_q_model")]])) sim_env[[paste0(prefix, "_q_model")]] <- rep(1, n_fleets)
     if(is.null(sim_env[[paste0("sigma_", prefix, "_q")]])) sim_env[[paste0("sigma_", prefix, "_q")]] <- array(0, dim = c(sim_env$n_regions, n_fleets))
     if(is.null(sim_env[[paste0(prefix, "_q_rho")]])) sim_env[[paste0(prefix, "_q_rho")]] <- array(0, dim = c(sim_env$n_regions, n_fleets))
 
@@ -123,7 +123,7 @@ Setup_sim_env <- function(sim_list) {
   # the conditioning years reproduce the fit's reported catchability, so a dsem does not rewrite them
   q_devs_cond <- stats::setNames(lapply(q_dev_par_names(), function(nm) sim_env[[nm]]), q_dev_par_names())
   if(!is.null(sim_env$dsem_model)) draw_dsem_sim(sim_env)
-  n_cond_q <- if(is.null(sim_env$n_cond_yrs)) 0L else as.integer(sim_env$n_cond_yrs)
+  n_cond_q <- as.integer(if(is.null(sim_env$n_cond_yrs)) 0 else sim_env$n_cond_yrs)
   for(nm in names(q_devs_cond)) {
     if(is.null(q_devs_cond[[nm]]) || n_cond_q < 1) next
     cond_yr <- seq_len(min(n_cond_q, dim(q_devs_cond[[nm]])[2]))

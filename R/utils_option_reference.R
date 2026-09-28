@@ -1,7 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# The generated half of the options documentation. t_model_options.Rmd is hand written and says why a
-# setting exists; this reads the package and says what every setting is, so coverage cannot fall behind.
+# The generated half of the options documentation. t_model_options.Rmd says why a setting exists;
+# this reads the package itself and lists every setting there is.
 
 #' The setup stages, in the order a model is built
 #'
@@ -17,10 +17,10 @@ setup_stage_order <- function() {
 #'
 #' Three places this gets called from and each needs a different route. An
 #' installed package answers to its name. A source tree answers to its root,
-#' which is not the working directory when the caller is a vignette or a test, so
-#' the root is walked up to. And \code{pkgload::load_all} shadows the installed
-#' help without building its index, which is why the name route is tried and
-#' allowed to fail rather than relied on.
+#' which is not the working directory when the caller is a vignette or a test,
+#' so the root is walked up to. And \code{pkgload::load_all} shadows the
+#' installed help without building its index, so the name route is tried and
+#' allowed to fail.
 #'
 #' @return A named list of parsed Rd, empty when none can be found.
 #'
@@ -61,7 +61,7 @@ rd_argument_text <- function(topic, db) {
 
   tags <- vapply(rd, function(x) {
     t <- attr(x, "Rd_tag")
-    if(is.null(t)) NA_character_ else t
+    if(is.null(t)) NA else t
   }, character(1))
   i <- which(tags == "\\arguments")
   if(length(i) == 0) return(character(0))
@@ -81,9 +81,9 @@ rd_argument_text <- function(topic, db) {
 
 #' Every argument the setup stages accept
 #'
-#' Assembled from \code{formals()} and the package's own Rd, so it covers the API
-#' as it currently stands rather than as it stood when someone last wrote it
-#' down. Regenerating the vignette regenerates this.
+#' Assembled from \code{formals()} and the package's own Rd, so it covers every
+#' argument as the package currently defines them, not as someone last wrote
+#' them down. Regenerating the vignette regenerates this.
 #'
 #' @param stages Function names to document. Defaults to the eleven setup stages.
 #' @param guide Path to the hand-written options guide, checked so the reference
@@ -105,7 +105,7 @@ option_reference <- function(stages = setup_stage_order(), guide = NULL) {
 
   guide_text <- if(!is.null(guide) && file.exists(guide)) {
     paste(readLines(guide, warn = FALSE), collapse = "\n")
-  } else NA_character_
+  } else NA
 
   rows <- lapply(stages, function(s) {
     f <- tryCatch(formals(get(s, envir = asNamespace("SPoRC"))), error = function(e) NULL)

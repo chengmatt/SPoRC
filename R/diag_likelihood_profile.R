@@ -6,10 +6,11 @@
 
 #' Refuse a catchability profile when the model solves q analytically
 #'
-#' Analytic catchability is solved from the index data inside the model and never reads
-#' \code{ln_fish_q}/\code{ln_srv_q}, so profiling those parameters refits an identical
-#' model at every grid value and returns a flat surface that reads as an uninformative
-#' index rather than as a catchability the optimizer never saw.
+#' Analytic catchability is solved from the index data inside the model and
+#' never reads \code{ln_fish_q}/\code{ln_srv_q}, so profiling those parameters
+#' refits the same model at every grid value. The flat surface that comes back
+#' looks like an index with nothing to say about catchability, when the
+#' parameter was never in the model at all.
 #'
 #' @param data Data list from the fitted model.
 #' @param parameters Parameter list from the fitted model.
@@ -76,7 +77,7 @@ build_profile_map <- function(par, map, idx) {
 
   # `idx` indexes linearly, in the same form the profile uses to set the fixed values
   for(k in seq_along(idx)) {
-    map_parameter <- do.call(`[<-`, c(list(map_parameter), idx[k], list(NA_character_)))
+    map_parameter <- do.call(`[<-`, c(list(map_parameter), idx[k], list(NA)))
   }
 
   factor(map_parameter)
@@ -232,8 +233,8 @@ do_likelihood_profile <- function(data,
 
   check_analytic_q(data, parameters, what, idx)
 
-  # The map the model was fitted with. Every grid value rebuilds `mapping[[what]]` from
-  # this copy, so the rebuild never reads back the map a previous grid value left behind.
+  # the map the model was fitted with. every grid value rebuilds its map from this copy, so no
+  # earlier grid value leaks into a later one
   fitted_map <- mapping[[what]]
   if(length(parameters[[what]]) > 1) check_profile_mirrors(parameters[[what]], fitted_map, what, idx)
 
@@ -453,8 +454,7 @@ do_likelihood_profile <- function(data,
           local_mapping[[what]] <- factor(NA)
         }
 
-        # make adfun. Its assignments live in its own frame, so both
-        # branches hand the result back rather than writing into the enclosing one
+        # make adfun. both branches return the result rather than writing it outside
         result <- tryCatch({
           SPoRC_rtmb_model <- RTMB::MakeADFun(
             cmb(SPoRC_rtmb, local_data),

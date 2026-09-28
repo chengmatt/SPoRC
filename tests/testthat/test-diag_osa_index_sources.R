@@ -1,3 +1,6 @@
+# One-step-ahead residuals for the index-shaped data: catch, discards, and the fishery and
+# survey indices. Checks that get_osa() reaches each and that plot_resids() draws them.
+
 library(SPoRC)
 library(testthat)
 

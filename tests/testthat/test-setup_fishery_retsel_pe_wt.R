@@ -1,10 +1,9 @@
+# Retention is the only selectivity curve whose process error weight and random walk initial
+# standard deviation were read by the objective without being reachable from setup. These check
+# they arrive through Setup_Mod_Fishsel_and_Q, and that a zero weight removes the term.
+
 library(SPoRC)
 library(testthat)
-
-# Retention is the only selectivity data source whose process error weight and random walk
-# initial sigma were read by the objective without being reachable from setup. These
-# pin that they arrive through Setup_Mod_Fishsel_and_Q, which is where a user sets
-# retention, and that a zero weight actually removes the retention process error.
 
 build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
@@ -15,7 +14,6 @@ tv_retsel <- list(
   retsel_pe_pars_spec = "fix",
   ret_sel_devs_spec = "est_shared_r"
 )
-
 
 test_that("retention process error controls default and reach the data list", {
   input <- build()
@@ -30,7 +28,6 @@ test_that("retention process error controls default and reach the data list", {
   expect_equal(user$data$retsel_rw_init_sigma, NA)
 })
 
-
 test_that("a wrong length process error weight errors rather than becoming NA per fleet", {
   # The message names the length rather than the value: a per-fleet setting given
   # at the wrong length used to be reported as an unrecognized value.
@@ -39,13 +36,12 @@ test_that("a wrong length process error weight errors rather than becoming NA pe
   expect_error(build(fishsel = list(retsel_rw_init_sigma = c(5, 5))),
                "retsel_rw_init_sigma has 2 entries for 1 fleet")
 
-  # the same check now guards the fishery and survey data sources it was missing from
+  # the same check now covers the fishery and survey data it was missing from
   expect_error(build(fishsel = list(fishsel_pe_wt = c(1, 1))),
                "fishsel_pe_wt has 2 entries for 1 fleet")
   expect_error(build(srvsel = list(srvsel_pe_wt = c(1, 1))),
                "srvsel_pe_wt has 2 entries for 1 fleet")
 })
-
 
 test_that("a zero weight removes the retention process error from the objective", {
   weighted <- evaluate_input(build(fishsel = tv_retsel))

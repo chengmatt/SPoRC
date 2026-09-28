@@ -189,7 +189,7 @@ Setup_Sim_DSEM <- function(sim_list,
     dsem_cov_use <- matrix(1, n_sim_yrs, n_cov) # observed every year after the fit, and every year from scratch
     fit_rows <- 1:min(n_fit_yrs, n_sim_yrs)
 
-    # the fitted years instead take the pattern the fit was handed
+    # the fitted years keep the values the fit produced
     if(!isTRUE(data$dsem_from_scratch)) {
       dsem_cov_use[fit_rows,] <- as.numeric(!is.na(data$dsem_cov_obs[fit_rows,,drop = FALSE]))
     }
@@ -205,7 +205,8 @@ Setup_Sim_DSEM <- function(sim_list,
   sim_list$ln_dsem_obs_sd <- pars$ln_dsem_obs_sd
   sim_list$logit_dsem_tweedie_p <- pars$logit_dsem_tweedie_p # absent from a fit before the tweedie family existed
 
-  # RecDevs_model = 'dsem' reads sigmaR off the arrows' recruitment sd, so the operating model's initial age deviations uses the same value
+  # under dsem recruitment, sigmaR comes from the arrows' recruitment sd, so the initial age
+  # deviations use that same value
   if("rec" %in% data$dsem_declared && !is.null(sim_list$ln_sigmaR)) {
 
     arrow_value <- as.numeric(get_dsem_arrow_values(pars$dsem_beta, pars$ln_dsem_sd, data$dsem_model))
@@ -224,7 +225,7 @@ Setup_Sim_DSEM <- function(sim_list,
   sim_list$dsem_cov_var_idx <- data$dsem_cov_var_idx
 
   # a known sd per year for the fixed-sd normal, reused past the fit at its last given value
-  sim_list$dsem_cov_fixed_sd <- matrix(NA_real_, n_sim_yrs, n_cov)
+  sim_list$dsem_cov_fixed_sd <- matrix(NA, n_sim_yrs, n_cov)
 
   if(!is.null(data$dsem_cov_fixed_sd)) {
     for(k in seq_len(n_cov)) {
@@ -250,8 +251,8 @@ Setup_Sim_DSEM <- function(sim_list,
 
   # What a Conditioned Draw Is Given ----------------------------------------
 
-  # a linked recruitment cell's correction conditions on the covariate years the estimation model is
-  # handed, and on the rows before a linked series starts
+  # the correction on a linked recruitment cell uses the covariate years the estimation model is
+  # given, and the years before a linked series starts
   x_known <- matrix(FALSE, n_sim_yrs, length(data$dsem_model$variables))
   for(k in seq_len(n_cov)) x_known[dsem_cov_use[,k] == 1, data$dsem_cov_var_idx[k]] <- TRUE
   for(s in seq_along(data$dsem_link_par)) x_known[seq_len(min(data$dsem_link_row[[s]]) - 1), data$dsem_link_col[s]] <- TRUE
@@ -303,8 +304,8 @@ Setup_Sim_DSEM <- function(sim_list,
 
   # Deviation Arrays the Operating Model Lacks ------------------------------
 
-  # growth reads both of its arrays, so both come across when either is linked. fitted years keep
-  # the fit's values, years past what the fit holds sit at zero, and every replicate starts the same
+  # growth uses both of its arrays, so both come across when either is linked. the years past the
+  # fit start at zero, the same way in every replicate
   build_pars <- c(if(growth_linked) c("ln_growth_devs", "ln_growth_semipar_devs"), if(move_linked) "move_devs")
 
   for(par_name in build_pars) {
@@ -450,7 +451,7 @@ scratch_dsem_fit <- function(sim_list,
   cov_names <- if(is.null(dsem_cov_mu)) setdiff(tokens, c(link$offered, "NA", names(dsem_values))) else names(dsem_cov_mu)
 
   if(is.null(dsem_cov_mu)) dsem_cov_mu <- stats::setNames(rep(0, length(cov_names)), cov_names)
-  if(is.null(dsem_cov_obs_sd)) dsem_cov_obs_sd <- stats::setNames(rep(NA_real_, length(cov_names)), cov_names)
+  if(is.null(dsem_cov_obs_sd)) dsem_cov_obs_sd <- stats::setNames(rep(NA, length(cov_names)), cov_names)
 
   if(!all(cov_names %in% names(dsem_cov_obs_sd))) {
     stop("dsem_cov_obs_sd needs one entry per covariate: ", paste(cov_names, collapse = ", "))
@@ -510,7 +511,7 @@ scratch_dsem_fit <- function(sim_list,
   link_col <- match(link$name, variables) # the grid column each linked series sits in
 
   # the fixed-sd normal takes one sd in every year, and no other family has one
-  cov_fixed_sd <- matrix(NA_real_, n_yrs, length(cov_names))
+  cov_fixed_sd <- matrix(NA, n_yrs, length(cov_names))
   for(k in seq_along(cov_names)) if(family_code[k] == 5) cov_fixed_sd[,k] <- dsem_cov_obs_sd[cov_names[k]]
 
   data <- list(years = seq_len(n_yrs),
@@ -520,7 +521,7 @@ scratch_dsem_fit <- function(sim_list,
                dsem_model = dsem_model,
                dsem_n_grid_yrs = n_yrs,
                dsem_var_names = variables,
-               dsem_cov_obs = matrix(NA_real_, n_yrs, length(cov_names), dimnames = list(NULL, cov_names)),
+               dsem_cov_obs = matrix(NA, n_yrs, length(cov_names), dimnames = list(NULL, cov_names)),
                dsem_cov_var_idx = match(cov_names, variables),
                dsem_cov_family = family_code,
                dsem_cov_link = link_code,
@@ -657,7 +658,8 @@ draw_dsem_sim <- function(sim_env) {
   rec_links <- which(sim_env$dsem_link_par == "ln_RecDevs")
   rec_col <- sim_env$dsem_link_col[rec_links]
 
-  if(length(rec_col) > 0 && isTRUE(sim_env$rec_bias_correct == 1) && isTRUE(sim_env$dsem_rec_corr_on)) {
+  bc_pe <- if(is.null(sim_env$bias_correct_pe)) 1 else sim_env$bias_correct_pe # saved lists predate it and corrected recruitment
+  if(length(rec_col) > 0 && isTRUE(sim_env$rec_bias_correct == 1) && isTRUE(sim_env$dsem_rec_corr_on) && bc_pe > 0) {
 
     margvar <- get_dsem_margvar(sim_env$dsem_beta,
                                 sim_env$ln_dsem_sd,
@@ -685,7 +687,7 @@ draw_dsem_sim <- function(sim_env) {
 
   if(any(sim_env$dsem_model$arrows$mod_idx > 0)) {
 
-    # a moderated arrow holds the grid's own values, so the field has no one covariance to draw from
+    # a moderated arrow takes its value from the grid, so there is no single covariance to draw from
     arrow_value <- get_dsem_arrow_values(sim_env$dsem_beta, sim_env$ln_dsem_sd, sim_env$dsem_model)
     x_sim <- draw_dsem_recursive(sim_env$dsem_model, arrow_value, mu_grid, n_sims, n_cond, x_known)
 
@@ -738,8 +740,8 @@ draw_dsem_sim <- function(sim_env) {
 
   # Write Each Series Into Its Array ----------------------------------------
 
-  # straight into the array the operating model reads, the way the objective gathers them. that array
-  # has the replicate dim last, so each cell is rebuilt at its dims, and dsem_drawn marks it
+  # written into the array the operating model uses, the way the objective builds it. the replicate
+  # dim is last, so each cell is placed at its own dims
   for(s in seq_along(sim_env$dsem_link_par)) {
 
     par_name <- sim_env$dsem_link_sim_par[s]
@@ -761,8 +763,8 @@ draw_dsem_sim <- function(sim_env) {
 
     for(y in grid_row) {
       idx[yr_dim] <- y
-      cell <- 1L + sum((idx - 1L) * stride) # this year's cell in the first replicate
-      sim_env[[par_name]][cell + (seq_len(n_sims) - 1L) * prod(fit_dims)] <- x_sim[y,sim_env$dsem_link_col[s],]
+      cell <- 1 + sum((idx - 1) * stride) # this year's cell in the first replicate
+      sim_env[[par_name]][cell + (seq_len(n_sims) - 1) * prod(fit_dims)] <- x_sim[y,sim_env$dsem_link_col[s],]
       sim_env$dsem_drawn[[par_name]][cell] <- TRUE
     } # end y loop
 
@@ -771,7 +773,7 @@ draw_dsem_sim <- function(sim_env) {
   # Covariate Observations --------------------------------------------------
 
   # the state itself when known, otherwise a draw from the family about the link-scale state
-  cov_obs <- array(NA_real_, dim = c(n_yrs, n_cov, n_sims))
+  cov_obs <- array(NA, dim = c(n_yrs, n_cov, n_sims))
 
   for(k in seq_len(n_cov)) {
 
@@ -788,8 +790,8 @@ draw_dsem_sim <- function(sim_env) {
 
   sim_env$dsem_cov_obs_sim <- cov_obs
 
-  # the population loop reads weight at age and movement, not their deviations, so a drawn growth
-  # or movement series is turned into those here by the fit's own functions
+  # the population loop uses weight at age and movement, not their deviations, so a drawn growth or
+  # movement series is turned into those here
   if(!is.null(sim_env$dsem_growth_args)) derive_sim_growth(sim_env)
   if(!is.null(sim_env$dsem_move_args)) derive_sim_movement(sim_env)
 

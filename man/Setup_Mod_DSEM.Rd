@@ -78,12 +78,12 @@ link is not the identity the arrows, the mean under \code{dsem_mu_spec} and the
 grid are all on the link scale, and every latent cell starts at the series
 mean. The sd and power parameters are mapped off for the families with none.}
 
-\item{dsem_link}{Optional named character vector, one entry per covariate, the
-link from the cell to the observation's mean: \code{"identity"}, \code{"log"},
-\code{"logit"} or \code{"cloglog"}. Defaults to each family's own: identity for
-fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A
-link applies whatever the family, so a Poisson under the identity
-can be handed a negative mean.}
+\item{dsem_link}{Optional named character vector, one entry per covariate,
+the link from the cell to the observation's mean: \code{"identity"},
+\code{"log"}, \code{"logit"} or \code{"cloglog"}. Defaults to each family's
+own: identity for fixed, normal and the fixed-sd normal, logit for
+bernoulli, log for the rest. A link applies whatever the family, so a
+Poisson under the identity can end up with a negative mean.}
 
 \item{dsem_fixed_sd}{Data frame with a \code{year} column and one column per
 \code{"gaussian_fixed_sd"} covariate, holding that year's known sd. Needed on
@@ -130,9 +130,10 @@ up. Fit with \code{random = c(<linked arrays>, "dsem_x")}.
 }
 \details{
 A linked recruitment cell is a random effect and takes the full lognormal
-correction whenever its own penalty would take one: its mean drops by half its
-variance under the arrows, that variance given the covariate values the model is
-handed (\code{\link{get_dsem_margvar}}), so \eqn{R_0} scales mean recruitment
+correction whenever its own penalty would take one: its mean drops by half
+its variance under the arrows, that variance conditional on the covariate
+values the model already knows (\code{\link{get_dsem_margvar}}), so
+\eqn{R_0} scales mean recruitment
 with or without the arrows. A ramp at zero means none, and a nonzero ramp on a
 linked year is refused.
 }

@@ -917,8 +917,8 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
     idx <- arrayInd(fit_cells, dim(use_arr))          # region, year, season, age, sex, fleet
     fleet <- idx[, 6]
 
-    # the standard deviation is whatever the fleet's error source says it is,
-    # so the intervals shown are the ones the likelihood actually used
+    # the standard deviation comes from the fleet's own error setting, so the intervals shown are the
+    # ones the likelihood used
     extra <- exp(rep[[i]][[sigma_report_field]])[cbind(idx[, 4], idx[, 5], fleet)]
     form <- data[[i]][[paste0(data_source, "_sigma_form")]]
     se <- data[[i]][[paste0(obs_data_field, "_SE")]]
@@ -930,8 +930,8 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
       } # end f loop
     }
 
-    # a dim the fleet sums over holds its observation in slot one, so naming that slot after a
-    # region or sex would misname it. the setting may differ between years, so read it per row
+    # a data source summed over regions or sexes is stored in the first slot, so labelling that slot
+    # with a region or sex would be wrong. the setting can differ between years, so read it per row
     aa_type <- data[[i]][[paste0(data_source, "_Type")]]
     code <- if(is.null(aa_type)) rep(3, length(fleet))
             else if(is.null(dim(aa_type))) aa_type[fleet]
@@ -1336,8 +1336,8 @@ get_retrospective_plot <- function(retro_output, Rec_Age) {
 
 #' Plotting Function for All Basic Quantities
 #'
-#' Convenience wrapper that calls all core SPoRC plotting functions and writes
-#' their output to a single PDF file. Equivalent to calling
+#' Calls all core SPoRC plotting functions and writes their output to a single
+#' PDF file. Equivalent to calling
 #' \code{get_biological_plot}, \code{get_data_fitted_plot}, \code{get_ts_plot},
 #' \code{get_selex_plot}, and \code{get_nLL_plot} in sequence and printing each
 #' to the same device.
@@ -1422,7 +1422,7 @@ plot_all_basic <- function(data,
 #' @param proj_model_opt Named list passed to
 #'   \code{\link{Do_Population_Projection}}, holding \code{n_proj_yrs},
 #'   \code{n_avg_yrs} (terminal years the demographic inputs are averaged over
-#'   before being held constant across the projection), \code{HCR_function} with
+#'   before being kept constant across the projection), \code{HCR_function} with
 #'   signature \code{function(x, frp, brp, ...)}, \code{recruitment_opt}
 #'   (\code{"mean_rec"}, \code{"bh_rec"}, \code{"zero_rec"} or
 #'   \code{"inv_gauss"}), and \code{fmort_opt} (\code{"input"} to hold terminal F

@@ -52,7 +52,7 @@ plot_dsem_dag <- function(x,
   } else if(!is.null(x$arrows)) {
 
     dsem_model <- x
-    arrow_value <- ifelse(x$arrows$par == 0 & x$arrows$mod_idx == 0, x$arrows$start, NA_real_) # only the fixed ones
+    arrow_value <- ifelse(x$arrows$par == 0 & x$arrows$mod_idx == 0, x$arrows$start, NA) # only the fixed ones
     edge_label <- "name" # nothing is estimated yet, so names are all there is to write
 
   } else stop("x should be the output of read_dsem_arrows, or a model fitted with a dsem.")
@@ -60,11 +60,11 @@ plot_dsem_dag <- function(x,
   arrows <- dsem_model$arrows
   n_arrows <- nrow(arrows)
   estimated <- arrows$par > 0 & arrows$mod_idx == 0 # a free arrow with one value over all years
-  arrow_value[arrows$mod_idx > 0] <- NA_real_ # a moderated coefficient changes by year, so it has no one value
+  arrow_value[arrows$mod_idx > 0] <- NA # a moderated coefficient changes by year, so it has no one value
 
   # Standard Errors and p Values --------------------------------------------
 
-  se <- rep(NA_real_, n_arrows)
+  se <- rep(NA, n_arrows)
 
   if(!is.null(sd_rep)) {
 
@@ -79,7 +79,7 @@ plot_dsem_dag <- function(x,
 
   } # end if an sdreport was given
 
-  p_value <- ifelse(arrows$type != "sd", 2 * stats::pnorm(-abs(arrow_value / se)), NA_real_) # two sided, none for an sd
+  p_value <- ifelse(arrows$type != "sd", 2 * stats::pnorm(-abs(arrow_value / se)), NA) # two sided, none for an sd
   stars <- cut(p_value, breaks = c(0, 0.001, 0.01, 0.05, 1), labels = c("***", "**", "*", ""), include.lowest = TRUE)
   stars <- ifelse(is.na(p_value), "", as.character(stars))
 
@@ -125,10 +125,10 @@ plot_dsem_dag <- function(x,
                                      color = "grey30",
                                      lty = 3,
                                      arrow.mode = ">",
-                                     lag = 0L,
-                                     estimate = NA_real_,
-                                     se = NA_real_,
-                                     p_value = NA_real_,
+                                     lag = 0,
+                                     estimate = NA,
+                                     se = NA,
+                                     p_value = NA,
                                      stringsAsFactors = FALSE))
   } # end if any arrow is moderated
 
@@ -140,8 +140,8 @@ plot_dsem_dag <- function(x,
 
   dots <- list(...)
 
-  # igraph 2.2.2 indexes the node size by node when it places a loop, so one size for all loses every
-  # loop but the first node's, and a loop on an outer node needs the margin to point outward into
+  # igraph 2.2.2 takes the node size per node when it places a loop, so a single size for all of them
+  # draws only the first node's loop
   dots$vertex.size <- rep(if(is.null(dots$vertex.size)) 15 else dots$vertex.size, length.out = igraph::vcount(g))
   if(is.null(dots$margin)) dots$margin <- 0.3
 

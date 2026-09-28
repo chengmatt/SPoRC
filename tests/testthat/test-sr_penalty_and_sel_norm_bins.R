@@ -1,10 +1,9 @@
+# Two settings together: a stock-recruit curve fit as a penalty on the recruitment residual rather
+# than generating recruitment, and the bins the log-scale non-parametric selectivity averages over.
+# Both default to the earlier behavior, so the defaults are checked alongside the new paths.
+
 library(SPoRC)
 library(testthat)
-
-# Two settings added together: a stock-recruit curve fitted as a penalty on the
-# recruitment residual rather than generating recruitment, and a standardization
-# window for non-parametric log-scale selectivity. Both default to the previous
-# behavior, so the defaults are checked alongside the new paths.
 
 test_that("get_sr_penalty is a normal density on the log residual over the named years", {
 
@@ -89,7 +88,7 @@ test_that("Setup_Mod_Rec rejects a penalty that would be counted twice or has no
     verbose = FALSE
   )
 
-  # Under bh_rec the deviation already IS the residual, so penalizing it as well
+  # Under bh_rec the deviation is already the residual, so penalizing it as well
   # would penalize the same quantity twice.
   expect_error(
     suppressWarnings(Setup_Mod_Rec(

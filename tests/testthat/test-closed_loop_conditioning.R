@@ -29,11 +29,10 @@ conditioned_loop <- local({
   }
 })
 
-#' One simulation's slice of a conditioned array over chosen years
+#' One simulation's part of a conditioned array over chosen years
 #'
-#' Conditioned arrays have year on the third dim and simulation on the last,
-#' whatever sits between, so both are addressed by position rather than by
-#' spelling out each array's shape.
+#' Conditioned arrays run with year third and simulation last whatever sits between, so both
+#' are read by position rather than by spelling out each array's shape.
 #'
 #' @keywords internal
 cl_slice <- function(arr, yrs, sim) {
@@ -65,10 +64,8 @@ test_that("conditioning extends the time series by the closed-loop years", {
 
 
 test_that("the historical period of the operating model is the assessment", {
-  # The years the assessment covers are not projected, they are reused. If
-  # conditioning perturbs them, the operating model is a different stock from the
-  # one that was fitted and every result computed from it is about that other
-  # stock.
+  # the years the assessment covers are reused rather than projected, so if conditioning
+  # moves them the operating model is a different stock from the one that was fitted
   cl <- conditioned_loop()
   m <- dusky_rtmb_model
   hist <- seq_len(n_hist())
@@ -84,10 +81,9 @@ test_that("the historical period of the operating model is the assessment", {
 })
 
 
-test_that("projected years hold the terminal year forward", {
-  # The stated rule for extending an input past the assessment is to hold the
-  # last year. A projection that instead repeated the first year, or averaged, or
-  # left zeros, changes what the management procedure is tested against.
+test_that("projected years repeat the terminal year", {
+  # an input is extended past the assessment by holding the last year, and repeating the
+  # first year or averaging instead changes what the management procedure is tested against
   cl <- conditioned_loop()
   NH <- n_hist()
   CL <- closed_loop_cfg$closed_loop_yrs
@@ -101,10 +97,8 @@ test_that("projected years hold the terminal year forward", {
 
 
 test_that("replicates share the conditioning they are not meant to differ in", {
-  # Simulations differ in the data they draw, not in the biology they are handed.
-  # A replicate whose weight at age or mortality differs from another's is being
-  # given a different operating model, and results across simulations are then
-  # not comparable.
+  # replicates differ in the data they draw, not in their biology, so a replicate whose
+  # weight at age or mortality differs is a different operating model
   cl <- conditioned_loop()
   hist <- seq_len(n_hist())
 
@@ -119,9 +113,8 @@ test_that("replicates share the conditioning they are not meant to differ in", {
 
 
 test_that("these checks are reading arrays that actually vary", {
-  # Every comparison above is an equality. If the arrays were constant the tests
-  # would hold against almost any conditioning, so at least one has to have real
-  # structure across ages and years.
+  # every comparison above is an equality, so at least one array has to vary across ages
+  # and years or they would hold against almost any conditioning
   cl <- conditioned_loop()
   waa <- cl_slice(cl$WAA, seq_len(n_hist()), 1)
 
@@ -130,10 +123,8 @@ test_that("these checks are reading arrays that actually vary", {
 })
 
 
-# The checks above run on the packaged dusky model, which has one population,
-# one region, one sex, and no at-age observations. Those are the paths the single
-# existing test covered too, so the spatial, sexed and at-age conditioning was
-# reached by nothing at all.
+# The checks above run on the packaged dusky model, which has one population, one region, one
+# sex and no at-age data, so the spatial, sexed and at-age paths are reached below instead.
 
 cl_dims <- list(
   list(nr = 1, nx = 1, label = "1 region, 1 sex"),
@@ -197,14 +188,10 @@ test_that("the historical period survives conditioning at every dimension", {
 
 
 test_that("the at-age data sources are extended over the closed-loop years", {
-  # Every other year-dimensioned input went through extend_years and these did
-  # not, so conditioning failed outright for any model with at-age data. It
-  # went unnoticed because the only model it was ever run on has none: the
-  # failure is a shape error, not a wrong number, so it could not have been
-  # hiding in a result.
+  # the at-age arrays go through extend_years like every other year-dimensioned input.
   #
-  # These arrays are region by year by season by age by sex by fleet, with no
-  # simulation dim, so the year is the second.
+  # they run region by year by season by age by sex by fleet with no simulation dimension,
+  # so here the year is second rather than third
   out <- condition_at_dims(2, 2)
   want <- out$n_hist + out$closed_loop_yrs
 
@@ -218,10 +205,8 @@ test_that("the at-age data sources are extended over the closed-loop years", {
 })
 
 
-# The checks above run with the at-age observation flags all at zero, which is
-# what every test setup in the package happens to have. At zero the rule for
-# extending them past the assessment cannot be observed at all: holding the last
-# year and filling with zeros produce the same array. These switch them on.
+# With every at-age flag at zero, holding the last year and filling with zeros give the same
+# array, so the extension rule cannot be seen at all. These switch the flags on.
 
 aa_dims <- list(
   list(nr = 1, nx = 1, label = "1 region, 1 sex"),
@@ -254,9 +239,8 @@ run_at_age_loop <- function(nr, nx, closed_loop_yrs = 3, n_sims = 2, seed = 11) 
 
 
 test_that("at-age observation flags are reused, not zeroed", {
-  # This is the rule the extension was written to follow, and it is only visible
-  # on a model that observes at age: the projected years keep observing whatever
-  # the terminal year observed.
+  # the projected years keep observing whatever the terminal year observed, which is only
+  # visible on a model that observes at age
   for(d in aa_dims) {
     out <- run_at_age_loop(d$nr, d$nx)
     NY <- out$m$n_yrs
@@ -273,9 +257,8 @@ test_that("at-age observation flags are reused, not zeroed", {
 
 
 test_that("the operating model draws at-age observations across regions and sexes", {
-  # Conditioning producing the right shapes is one claim; the simulation actually
-  # generating observations into them is another, and it is the one that says the
-  # at-age path runs at these dimensions rather than merely being allocated.
+  # the right shapes are one thing, observations actually drawn into them another, and only
+  # the second says the at-age path runs at these dimensions
   for(d in aa_dims) {
     out <- run_at_age_loop(d$nr, d$nx)
     NY <- out$m$n_yrs
@@ -288,13 +271,11 @@ test_that("the operating model draws at-age observations across regions and sexe
 
 
 test_that("the projection years are unfished until a management procedure sets them", {
-  # run_annual_cycle alone holds the population forward; the fishing mortality
-  # for the years after feedback_start_yr comes from the management procedure the
-  # caller supplies in the loop around it. Recording that here keeps the empty
-  # projected observations above from being read as a missing draw.
+  # run_annual_cycle advances the population, and the fishing mortality after
+  # feedback_start_yr comes from the management procedure the caller supplies around it.
   #
-  # feedback_start_yr is itself still fished at the conditioned rate: it is the
-  # last year reused, and the procedure sets the year after it onwards.
+  # feedback_start_yr is itself still fished at the conditioned rate, being the last year
+  # reused, and the procedure sets the year after it onwards
   out <- run_at_age_loop(1, 1)
   fmort <- out$sim_env$Fmort[1, , 1, 1, 1]
   start <- out$sim_env$feedback_start_yr
@@ -307,10 +288,8 @@ test_that("the projection years are unfished until a management procedure sets t
 
 
 test_that("conditioning works for more than one population", {
-  # Natal homing had no execution anywhere: every packaged dataset is one
-  # population, and the only worked example has eval = FALSE on the chunk that
-  # fits. Conditioning a closed loop on a multi-population model is therefore
-  # reached here for the first time.
+  # every packaged dataset is one population and the worked example does not evaluate its
+  # fit, so this is the only place a closed loop is conditioned on natal homing
   for(cfg in list(list(np = 2, nr = 1), list(np = 2, nr = 2))) {
     out <- expect_no_error(condition_at_dims(cfg$nr, 1, np = cfg$np))
     want <- out$n_hist + out$closed_loop_yrs
@@ -324,9 +303,8 @@ test_that("conditioning works for more than one population", {
 
 
 test_that("a multi-population closed loop runs its annual cycle", {
-  # Conditioning producing the right shapes is one claim; the population dynamics
-  # stepping forward through every year and replicate is the one that says the
-  # loop is usable.
+  # the right shapes are one thing, the population actually stepping forward through every
+  # year and replicate another
   m <- fitted_small_model(nr = 2, nx = 1, np = 2)
   cl <- condition_closed_loop_simulations(
     closed_loop_yrs = 3,
@@ -349,14 +327,13 @@ test_that("a multi-population closed loop runs its annual cycle", {
 })
 
 
-# State-space numbers at age through the closed loop.
+# State-space numbers at age through the closed loop -------------------------
 #
-# The state is generated by the simulator, not by the estimation model, and the closed loop does
-# not use the same driver the open loop does: it calls Setup_sim_env once and then drives
-# run_annual_cycle itself. Anything allocated or drawn inside Simulate_Pop_Static is therefore
-# invisible to it. These check the two halves of that: that the drivers agree, and that a loop
-# conditioned on a fitted state-space model projects with the process error it estimated rather
-# than silently with none.
+# The closed loop calls Setup_sim_env once and then drives run_annual_cycle itself, so nothing
+# drawn inside Simulate_Pop_Static reaches it.
+#
+# These check that the two drivers agree, and that a loop conditioned on a fitted state-space
+# model projects with the process error it estimated.
 
 naa_cl_fit <- local({
   cached <- NULL
@@ -385,9 +362,8 @@ naa_cl_condition <- function(proj_yrs = 6, n_sims = 2) {
 }
 
 test_that("both simulation drivers produce the same operating model", {
-  # Simulate_Pop_Static runs its own loop; the closed loop drives run_annual_cycle directly. The
-  # innovations are drawn once per replicate in the annual cycle so that both paths reach them,
-  # and at the same point in the random number data source so the two remain comparable.
+  # the innovations are drawn once per replicate inside the annual cycle, so both drivers
+  # reach them at the same point in the random draws and stay comparable
   b <- body(naaom_make_om)
   b[[length(b)]] <- quote(sim_list)
   make_list <- naaom_make_om
@@ -405,7 +381,7 @@ test_that("both simulation drivers produce the same operating model", {
   expect_gt(stats::sd(static$naa_eta), 0)
 })
 
-test_that("conditioning holds the fitted state across and extends it over the projection", {
+test_that("conditioning keeps the fitted state and extends it over the projection", {
   d <- naa_cl_fit()
   cl <- naa_cl_condition(proj_yrs = 6)
   n_hist <- length(d$il$data$years)
@@ -454,8 +430,8 @@ test_that("the conditioned operating model generates process error over the proj
 })
 
 test_that("a fit without the state conditions to an operating model without it", {
-  # The failure this guards is silent: before the state was reused across, every closed loop
-  # projected deterministically whatever the assessment had estimated.
+  # without this a closed loop would project deterministically whatever the assessment had
+  # estimated, with no sign that the process error had been dropped
   cl <- conditioned_loop()
   expect_equal(cl$NAA_re, 0)
   expect_equal(cl$sigmaNAA, 0)

@@ -102,10 +102,8 @@ selex_seed_input <- function(selex_type = "length", n_lens = 9) {
 
 
 test_that("a length-based double normal seeds its peak among the length bins", {
-  # Currently FAILS. fish_selex_type is converted from "age"/"length" to 0/1
-  # before the seeding call reads it, so `fish_selex_type == 'length'` there is
-  # comparing a number against a string and is never true. The peak is seeded at
-  # the middle of the age range whatever the selectivity is over.
+  # a length based curve seeds its peak among the length bins, not among the ages, and
+  # fish_selex_type reaches the seeding call already turned into a 0 or a 1
   fx <- selex_seed_input()
 
   z <- Setup_Mod_Fishsel_and_Q(
@@ -124,7 +122,7 @@ test_that("a length-based double normal seeds its peak among the length bins", {
 
 
 test_that("a length-based survey double normal seeds its peak among the length bins", {
-  # Currently FAILS, for the same reason in srv_selex_type.
+  # the same for the survey curve
   fx <- selex_seed_input()
   il <- Setup_Mod_Fishsel_and_Q(
     fx$il,
@@ -165,9 +163,8 @@ test_that("an age-based double normal still seeds its peak among the ages", {
 
 
 test_that("an unrecognized selectivity domain is rejected rather than left undefined", {
-  # Currently FAILS. Neither the 'age' nor the 'length' branch assigns `bins` for
-  # any other value and there is no else, so the setup dies later on
-  # "object 'bins' not found" instead of naming the argument at fault.
+  # the bins have to be set for any other value, or the setup dies later on a missing object
+  # instead of naming the argument at fault
   fx <- selex_seed_input()
 
   expect_error(

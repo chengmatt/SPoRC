@@ -1,11 +1,9 @@
+# Every input to unfished spawning biomass per recruit is taken at SR_ref_yr, in both the
+# operating and the estimating model. R0 is the exception: it scales phi0 into S0 and also sits in
+# the curve's numerator, so it is the year's own value.
+
 library(SPoRC)
 library(testthat)
-
-# Every input to unfished spawning biomass per recruit is taken at SR_ref_yr, in both the
-# estimation model and the operating model. R0 is the deliberate exception: it scales phi0
-# into S0 and also sits in the curve's numerator, so it is the year's own value.
-# Helpers, including a time-varying weight at age that makes the reference year bite, are
-# in helper-sr_ref_yr.R.
 
 test_that("phi0 through Get_Det_Recruitment matches its definition at any reference year", {
 
@@ -150,18 +148,17 @@ test_that("a matched reference year recovers R0 and a mismatched one biases it",
   matched <- fit_at(n)
   mismatched <- fit_at(1)
 
-  # R0 is essentially a mean over n_yrs log-recruitments, so a single replicate has a
-  # standard error of sigmaR / sqrt(n_yrs), about 5.5% here. Any absolute tolerance has to
-  # be set from that rather than picked: at three standard errors a correct model passes
-  # this on all but roughly one draw in 400. Measured over ten seeds the mean error is
-  # within noise of zero and its sign flips, so there is no systematic bias to catch.
+  # R0 is close to a mean over the log recruitments, so one replicate has a standard error of
+  # sigmaR over the square root of the years, about 5.5 percent here.
+  #
+  # the tolerance is three of those, so a correct model passes on all but about one draw in
+  # 400. over ten seeds the mean error is within noise of zero and its sign flips
   tol <- 3 * sr_ref_cfg$sigmaR / sqrt(n)
   expect_lt(matched$grad, 1e-3)
   expect_lt(abs(matched$R0 / true_R0 - 1), tol)
 
-  # the load-bearing assertion is PAIRED: both fits see the same simulated data and differ
-  # only in SR_ref_yr, so the replicate's own noise cancels and what is left is the effect
-  # of the reference year. The wrong year misses by far more than the noise it sits in.
+  # the pairing is what matters: both fits see the same simulated data and differ only in the
+  # reference year, so the replicate's own noise cancels and only that effect is left
   expect_lt(abs(matched$R0 / true_R0 - 1), abs(mismatched$R0 / true_R0 - 1))
   expect_gt(abs(mismatched$R0 / true_R0 - 1) - abs(matched$R0 / true_R0 - 1), tol)
 })

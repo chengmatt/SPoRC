@@ -35,15 +35,15 @@ List with \code{IminusB} (sparse, \eqn{I - B}), \code{Vinv} (sparse
   cell's innovation sd, or \code{NULL} when a covariance line couples them).
 }
 \description{
-Stack the grid into one single vector, years within series. Every path arrow puts
-its coefficient into \eqn{B} at the cell it points to (row) and the cell it
-reads (column, the same series \code{lag} rows earlier), so
+Stack the grid into one single vector, years within series. Every path arrow
+puts its coefficient into \eqn{B} at the cell it points to (row) and the
+cell it reads (column, the same series \code{lag} rows earlier), so
 \eqn{(I - B)(x - \mu)} turns the grid into its innovations. Every sd line
-puts its value on the diagonal of \eqn{\Gamma} and every covariance line
-off it, so \eqn{V = \Gamma^{\top}\Gamma} is the covariance of the innovations
-in one year. The positions are worked out once, outside of the tape, by
-\code{\link{get_dsem_cells}}; this function only writes the numbers into the
-stored slots, which is what lets the matrices be built on the tape.
+puts its value on the diagonal of \eqn{\Gamma} and every covariance line off
+it, so \eqn{V = \Gamma^{\top}\Gamma} is the covariance of the innovations in
+one year. The positions are worked out once, outside of the tape, by
+\code{\link{get_dsem_cells}}; this function only writes the numbers into
+those positions, so the matrices can be built on the tape.
 }
 \details{
 A moderated arrow has no single value: its coefficient in year \eqn{t} is

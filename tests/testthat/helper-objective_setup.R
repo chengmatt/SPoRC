@@ -6,11 +6,12 @@
 #
 # Two versions exist, age-only and with length bins, each simulated once and reused.
 
+# The Size-Age Transition Matrix ---------------------------------------------
+
 #' Size-age transition array for the length-structured test setup
 #'
-#' Spreads each age across the length bins with a normal kernel, normalized so the lengths
-#' for a given age sum to one. Selectivity at age is then a weighted average of selectivity
-#' at length.
+#' Spreads each age across the length bins with a normal kernel, normalized so an age's
+#' lengths sum to one. Selectivity at age is then averaged over length.
 #'
 #' @keywords internal
 objective_setup_sizeage <- function(n_lens, n_ages) {
@@ -107,6 +108,7 @@ objective_setup_sim <- local({
   }
 })
 
+# Building the Model ---------------------------------------------------------
 
 #' Estimation model for the objective branch test setup
 #'
@@ -272,6 +274,7 @@ objective_setup_input <- function(
   )
 }
 
+# Evaluating without Optimizing ----------------------------------------------
 
 #' Evaluate the objective without optimizing
 #'

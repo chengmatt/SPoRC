@@ -4,7 +4,15 @@
 \alias{draw_index_obs}
 \title{Draw an observed index given its likelihood family}
 \usage{
-draw_index_obs(true, se, like_type = 0, d = NULL, lambda = NULL, u = NULL)
+draw_index_obs(
+  true,
+  se,
+  like_type = 0,
+  d = NULL,
+  lambda = NULL,
+  u = NULL,
+  bias_correct_oe = 0
+)
 }
 \arguments{
 \item{true}{True (error-free) index value(s).}

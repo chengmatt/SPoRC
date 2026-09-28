@@ -1,9 +1,9 @@
+# Data set to "aggSeas" are fit once a year against the season total rather than once a season.
+# Checks the parser, the one observation a year rule, that a fleet reporting annually still fishes
+# every season, and that the likelihood reads the year total.
+
 library(SPoRC)
 library(testthat)
-
-# Data sources set to "aggSeas" are fit once a year against the season total rather than once a
-# season. Checks the spec parser, the one-observation-per-year rule, that a fleet reporting
-# annually still fishes every season, and that the likelihood reads the year total.
 
 # Specification parsing ------------------------------------------------------
 
@@ -13,13 +13,12 @@ test_that("parse_seas_agg_spec resolves values, recycles and rejects bad input",
   expect_equal(SPoRC:::parse_seas_agg_spec("aggSeas", "x", 3), rep(1L, 3))
   expect_equal(SPoRC:::parse_seas_agg_spec(c("spltSeas", "aggSeas"), "x", 2), c(0L, 1L))
 
-  # a fitted model hands its resolved codes straight back to an operating model
+  # a fitted model passes its resolved codes straight back to an operating model
   expect_equal(SPoRC:::parse_seas_agg_spec(c(0, 1), "x", 2), c(0L, 1L))
 
   expect_error(SPoRC:::parse_seas_agg_spec("annual", "Catch_seas_Type", 2), "Catch_seas_Type has invalid value")
   expect_error(SPoRC:::parse_seas_agg_spec(c("aggSeas", "aggSeas"), "Catch_seas_Type", 3), "3 fleets")
 })
-
 
 test_that("check_seas_agg_use allows one observed season a year and refuses more", {
 
@@ -41,7 +40,6 @@ test_that("check_seas_agg_use allows one observed season a year and refuses more
   use_pop[1, 1, 1, 4, 1] <- 1
   expect_error(SPoRC:::check_seas_agg_use(use_pop, c(1, 0), "UseCatch_pop"), "more than one season")
 })
-
 
 # Objective ------------------------------------------------------------------
 
@@ -85,7 +83,6 @@ test_that("a fleet reporting once a year is still fished in every season", {
   expect_equal(dim(fit$rep$Fmort)[3], seasonal_M_cfg$n_seas)
 })
 
-
 test_that("the aggregated catch likelihood reads the year total", {
 
   pair <- seas_agg_pair()
@@ -109,7 +106,6 @@ test_that("the aggregated catch likelihood reads the year total", {
   expect_true(all(fit$rep$Catch_nLL[, , -1, ] == 0))
 })
 
-
 test_that("aggregating the catch leaves the population dynamics alone", {
 
   pair <- seas_agg_pair()
@@ -127,7 +123,6 @@ test_that("aggregating the catch leaves the population dynamics alone", {
                apply(seasonal_fit$rep$PredCatch, c(2, 3, 5), sum), tolerance = 1e-12)
 })
 
-
 test_that("the setting is inert when the model has one season", {
 
   seas_agg <- SPoRC:::parse_seas_agg_spec("aggSeas", "Catch_seas_Type", 1)
@@ -143,7 +138,6 @@ test_that("the setting is inert when the model has one season", {
   expect_identical(out$true, true_arr)
   expect_identical(out$obs, obs_arr)
 })
-
 
 # Simulation -----------------------------------------------------------------
 
@@ -167,7 +161,6 @@ test_that("collapse_seas_obs puts the year in season one and draws once from tha
   # a year that was not asked for is untouched
   expect_equal(out$true[1, 2, , 1, 1], c(1, 1, 1))
 })
-
 
 test_that("collapse_seas_at_age sums the numbers behind a composition into season one", {
 

@@ -151,8 +151,8 @@ Get_Comp_Likelihoods = function(Exp,
   # Bin restriction here
   fit_bins = if(is.null(comp_bins)) seq_len(n_obs_bins) else comp_bins
   fit_bins_joint = as.vector(outer(fit_bins, (seq_len(n_sexes) - 1) * n_obs_bins, "+"))
-  # Comparing against the full run of bins rather than just counting them, so a
-  # reordered comp_bins is honored rather than passing as unrestricted
+  # compared against the full list of bins, not just how many, so a reordered comp_bins still counts
+  # as restricted
   restrict = !identical(as.integer(fit_bins), seq_len(n_obs_bins))
   if(restrict) Obs = Obs[,fit_bins,,drop = FALSE]
 
@@ -575,7 +575,7 @@ Get_Comp_Likelihoods_OSA = function(Exp,
   comp_nLL = RTMB::AD(comp_nLL)
   dim(comp_nLL) = c(n_regions, n_sexes)
 
-  # Exp-side quantities: reshape + filter to observed regions (NOT tracked)
+  # predicted quantities: reshaped and cut down to the observed regions, not registered
   Exp          = array(Exp,          dim = c(n_regions, n_model_bins, n_sexes))[used, , , drop = FALSE]
   ISS          = array(ISS,          dim = c(n_regions, n_sexes))[used, , drop = FALSE]
   ln_theta     = array(ln_theta,     dim = c(n_regions, n_sexes))[used, , drop = FALSE]
@@ -677,7 +677,7 @@ Get_Comp_Likelihoods_OSA = function(Exp,
         idx = seq(from = r, by = n_ru, length.out = n_fit_bins * n_sexes)
       }
       if(Likelihood_Type %in% c(2,3,4)) {
-        # joint drops ONE reference for the whole [bin x sex] stack
+        # joint drops a single reference bin for the whole [bin x sex] stack
         Lred = n_fit_bins * n_sexes - 1
         idx  = seq(from = r, by = n_ru, length.out = Lred)
 
@@ -751,8 +751,8 @@ Get_Comp_Likelihoods_OSA = function(Exp,
 #'   layer.
 #' @param BinsArr Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 #'   observed bins each fleet is fitted over, or \code{NULL} (default) for all
-#'   bins. A restricted fleet packs a shorter block, and \code{eval_comp_osa} must
-#'   be handed the same array so its strides stay in step.
+#'   bins. A restricted fleet packs a shorter block, so \code{eval_comp_osa} must
+#'   be given the same array.
 #' @param return_labels Logical; \code{TRUE} also builds a per-element label data
 #'   frame giving the pop, region, year, season, fleet, sex, bin, comp_type,
 #'   likelihood_type, family and last_in_group of every entry, in the same order,
@@ -812,7 +812,7 @@ pack_comp_osa = function(
     if(like_type %in% c(0,1)) { # discrete: every fitted bin retained
       if(ct == 0) {
         region = rep(used[1], n_bins)
-        sex = rep(1L, n_bins)
+        sex = rep(1, n_bins)
         bin = fit_bins
         last_in_group = (bin == fit_bins[n_bins])
       } else {
@@ -832,7 +832,7 @@ pack_comp_osa = function(
     } else { # continuous (LN): reference bin already ALR-dropped during packing
       if(ct == 0) {
         region = rep(used[1], n_bins - 1)
-        sex = rep(1L, n_bins - 1)
+        sex = rep(1, n_bins - 1)
         bin = fit_bins[-n_bins]
       } else if(ct == 1) {
         region = rep(used, times = (n_bins - 1) * n_sexes)
@@ -1005,8 +1005,8 @@ pack_comp_osa = function(
 #' @param addtocomp Small constant added to the proportions before normalization.
 #' @param BinsArr Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 #'   observed bins each fleet is fitted over, or \code{NULL} (default) for all
-#'   bins. Must be the array handed to \code{\link{pack_comp_osa}}, since the
-#'   strides walked here are sized on it.
+#'   bins. Must be the array given to \code{\link{pack_comp_osa}}, since the
+#'   positions read here are sized on it.
 #' @param family \code{"discrete"} or \code{"continuous"}.
 #' @param zero_init Logical; whether the nLL array is zeroed on entry.
 #' @param pop Logical; \code{TRUE} accounts for the population layer.
@@ -1165,12 +1165,12 @@ get_seas_comp_exp = function(ExpArr, y, seas, f, seas_agg, p = NULL) {
 
 #' Evaluate one composition data source through the direct likelihood
 #'
-#' Walks every year, season, fleet and, for a population-specific data source, every
-#' population in one composition data source, and calls
-#' \code{\link{Get_Comp_Likelihoods}} on each cell that is fit. One call stands
-#' for what used to be written out separately for retained fishery, discarded
-#' fishery and survey compositions, for ages and for lengths, and again for the
-#' regional and the population-specific data source of each.
+#' Walks every year, season, fleet and, for a population-specific data source,
+#' every population in one composition data source, and calls
+#' \code{\link{Get_Comp_Likelihoods}} on each cell that is fit. One call serves
+#' the retained fishery, discarded fishery and survey compositions, for ages
+#' and for lengths, and the regional and population-specific data source of
+#' each.
 #'
 #' @param nLL_arr Container for this data source's negative log likelihood, dimensioned
 #'   region by year by season by sex by fleet, with a leading population dimension
@@ -1197,15 +1197,15 @@ get_seas_comp_exp = function(ExpArr, y, seas, f, seas_agg, p = NULL) {
 #' @param n_pop,n_regions,n_yrs,n_seas,n_fleets,n_sexes Model dimensions.
 #' @param pop Logical. \code{TRUE} for the population-specific data source, whose arrays
 #'   have a leading population dimension and are never summed over populations.
-#' @param LenBinMap_fn Function \code{(y, f)} returning the model bin to observed
-#'   bin map, read only for length compositions. The map varies by neither year
-#'   nor fleet and takes both so it is read the same way \code{AgeingErrorArr}
-#'   is. \code{NA} leaves the observed bins as the model bins.
+#' @param LenBinMap_fn Function \code{(y, f)} returning the model bin to
+#'   observed bin map, read only for length compositions. The map varies by
+#'   neither year nor fleet, but takes both arguments so it is read like
+#'   \code{AgeingErrorArr}. \code{NA} leaves the observed bins as the model bins.
 #' @param addtocomp Small constant added to a composition.
 #' @param comp_const_obs Constant the observations are scaled by.
-#' @param do_internal_comp_osa Logical. \code{TRUE} hands the data source to
+#' @param do_internal_comp_osa Logical. \code{TRUE} sends the data source to
 #'   \code{\link{eval_comp_source_osa}}, which reads the vectors
-#'   \code{\link{pack_comp_source_osa}} built and the call site registered.
+#'   \code{\link{pack_comp_source_osa}} built.
 #' @param seas_agg Integer vector, one per fleet. \code{1} builds the predicted
 #'   composition from every season of the year summed together, \code{0} from the
 #'   season the observation sits in.
@@ -1247,11 +1247,10 @@ get_comp_source_nLL = function(
   seas_agg = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  # a data source with nothing fit never reads its observations, which a model without
-  # this data source does not have
+  # with nothing fit there are no observations to read, and a model without this data source has none
   if(!any(UseArr == 1)) return(nLL_arr)
 
   seas_agg = rep_len(seas_agg, n_fleets) # a single setting stands for every fleet
@@ -1498,7 +1497,7 @@ eval_comp_source_osa = function(
 ) {
 
   "c" <- RTMB::ADoverload("c")
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "[<-" <- RTMB::ADoverload("[<-")
 
   seas_agg = rep_len(seas_agg, n_fleets) # a single setting stands for every fleet
 
@@ -1556,7 +1555,7 @@ eval_comp_source_osa = function(
 
   } # end discrete fleets
 
-  # continuous fleets only zero it when there were no discrete ones, so the two add
+  # the discrete fleets above already filled nLL_arr, so the continuous ones add into it
   if(!is.null(tracked_continuous)) {
 
     nLL_arr = eval_comp_osa(

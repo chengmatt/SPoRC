@@ -21,7 +21,7 @@ osa_one_step_predict(model, ..., discreteSupport = NULL, parallel = FALSE)
 The \code{\link[RTMB]{oneStepPredict}} result.
 }
 \description{
-Wrapper used by the internal OSA runners, which works around two quirks of
+Used by the internal OSA routines, and works around two quirks of
 \code{\link[RTMB]{oneStepPredict}}:
 \itemize{
   \item Its \code{parallel} branch calls \code{TMB::openmp()} without a

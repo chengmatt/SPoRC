@@ -44,9 +44,9 @@ have a leading population dimension and are never summed over populations.}
 
 \item{addtocomp}{Small constant added to a composition.}
 
-\item{do_internal_comp_osa}{Logical. \code{TRUE} hands the data source to
+\item{do_internal_comp_osa}{Logical. \code{TRUE} sends the data source to
 \code{\link{eval_comp_source_osa}}, which reads the vectors
-\code{\link{pack_comp_source_osa}} built and the call site registered.}
+\code{\link{pack_comp_source_osa}} built.}
 }
 \value{
 A list with \code{discrete} and \code{continuous}.

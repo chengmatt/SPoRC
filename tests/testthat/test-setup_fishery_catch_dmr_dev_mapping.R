@@ -1,18 +1,12 @@
+# Discard mortality enters the likelihood through total mortality, so it moves predicted retained
+# catch, indices and compositions in any fished cell where retention is less than one. Discard
+# observations are not what makes it identifiable, since it cancels out of predicted discards.
+#
+# A deviation is therefore estimated wherever the objective computes a non-zero rate, meaning every
+# cell that is not a true closure, and the penalty has to read that same set.
+
 library(SPoRC)
 library(testthat)
-
-# ── do_dmr_dev_mapping keys on fished cells, and matches get_dmr_penalty ─────
-#
-# dmr enters the likelihood through total mortality: ZAA has disc_FAA, and
-# CAA = ret_FAA/ZAA * NAA * (1 - exp(-ZAA)), so dmr moves predicted retained
-# catch, indices, and compositions in any fished cell where retention is less
-# than one. Discard observations are not the boundary of identifiability -- dmr
-# even cancels out of PredDiscard, which divides DAA back through by it.
-#
-# So deviations are estimated wherever the objective computes a non-zero dmr,
-# i.e. every cell that is not a true closure, and get_dmr_penalty() must key on
-# that same set so that every estimated deviation is penalized and no deviation
-# fixed at zero contributes to the penalty.
 
 n_pop <- 2
 n_regions <- 2
@@ -65,9 +59,8 @@ run_setup <- function(
 # TRUE where a deviation is estimated (map index not NA)
 estimated_cells <- function(il) array(!is.na(il$map$logit_dmr_devs), dim = agg_dims)
 
-# TRUE where the penalty contributes, evaluated at a non-zero deviation so any
-# penalized cell is non-zero. The penalty reads the map mirror from the data
-# list, which is what keeps it in step with what is actually estimated
+# true where the penalty contributes, read at a non-zero deviation so any penalized cell is
+# non-zero. the penalty reads the map mirror in the data list, which keeps it in step
 penalized_cells <- function(il) {
   pen <- SPoRC:::get_dmr_penalty(
     logit_dmr_devs = array(0.5, dim = agg_dims),
@@ -99,8 +92,8 @@ test_that("a fished cell gets a deviation whether or not discard is observed", {
 
   il <- run_setup(UseCatch, UseDiscard = UseDiscard)
 
-  # dmr is informed through ZAA in years 1-3 too, so those deviations are
-  # estimated -- and penalized, per the matching-set test below
+  # dmr is informed through total mortality in years 1 to 3 too, so those deviations are
+  # estimated, and penalized, as the matching test below shows
   expect_true(all(estimated_cells(il)))
 })
 
@@ -151,9 +144,8 @@ test_that("the estimated set matches the penalized set exactly", {
   ObsCatch <- array(100, dim = agg_dims)
   ObsCatch[1, 2, 1, 1] <- NA # exercise the missing-observation branch on both sides
 
-  # the discard indicator disagrees with the fished set in both
-  # directions, so the match below is a property of the fished set, not a
-  # coincidence of the test setup
+  # the discard indicator disagrees with the fished set in both directions, so the match below
+  # is a property of the fished set rather than a coincidence of this model
   fished <- UseCatch == 1 | apply(UseCatch_pop == 1, c(2,3,4,5), any) | is.na(ObsCatch)
   expect_true(any(fished & UseDiscard == 0))
   expect_true(any(!fished & UseDiscard == 1))

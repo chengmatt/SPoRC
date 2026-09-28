@@ -31,10 +31,8 @@ build_goa_rex_input <- function(dat) {
   n_lens <- length(dat$lens)
 
   ## Model dimensions ---------------------------------------------------------
-  # the assessment's areas are separate growth patterns sharing one recruitment
-  # series with nothing moving between them, so SPoRC has them as two
-  # regions of one population with the identity movement matrix. the regional
-  # subscripts are real here and the movement ones are not
+  # the assessment's areas are separate growth patterns sharing one recruitment series
+  # with no movement, so SPoRC has two regions of one population and no movement
   input_list <- Setup_Mod_Dim(
     years = yrs,
     ages = ages,
@@ -50,11 +48,11 @@ build_goa_rex_input <- function(dat) {
   )
 
   ## Recruitment --------------------------------------------------------------
-  # age 0 at the start of the year, mean recruitment apportioned across the areas
-  # by an estimated logit, the bias ramp on the deviations, and start-year ages
-  # 1-17 set by early deviations shared across areas and sexes.
-  # bias ramp years are given in deviation-index space, 1 being the first model
-  # year, and each early deviation reads the ramp at its own birth year
+  # age 0 at the start of the year, mean recruitment split between areas by an estimated
+  # logit, and start-year ages 1-17 set by early deviations shared across areas and sexes.
+  #
+  # bias ramp years count from the first model year, and each early deviation reads the ramp
+  # at its own birth year
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
     rec_model = "mean_rec",
@@ -81,17 +79,16 @@ build_goa_rex_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # natural mortality is fixed, and maturity is logistic on age for females with
-  # none below the first mature age.
+  # natural mortality is fixed, and maturity is logistic on age for females with none
+  # below the first mature age.
   #
-  # growth is the Schnute-Francis form with a linear start: mean length at age is
-  # L1 at A1 and L2 at A2, von Bertalanffy between them, and linear from the
-  # first length bin's lower edge at age 0 up to L1. the coefficient of variation
-  # is linear in mean length between the two reference ages and flat outside
-  # them. the plus group is not the curve at age 20 but an exponentially weighted
-  # mixture of the ages it holds, the rule the assessment inherits from SS3.24,
-  # which growth_plus_group = "mixture" applies. weight at age is the age-length
-  # key times weight at the bin midpoints, which is waa_model = "wt_len"
+  # growth is Schnute-Francis: mean length is L1 at A1 and L2 at A2, von Bertalanffy between
+  # them, and linear from the first bin's lower edge at age 0 up to L1.
+  #
+  # the coefficient of variation is linear in mean length between the two reference ages.
+  #
+  # the plus group is an exponentially weighted mixture of the ages it holds, the SS3.24 rule
+  # the assessment inherits, and weight at age is read at the bin midpoints
   MatAA <- array(0, dim = c(1, n_reg, n_yrs, 1, n_ages, n_sex))
   mat_f <- 1 / (1 + exp(dat$mat$slope * (ages - dat$mat$a50)))
   mat_f[ages < dat$mat$first_mature_age] <- 0
@@ -142,9 +139,8 @@ build_goa_rex_input <- function(dat) {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
-  # the assessment solves fishing mortality from the catch with its hybrid
-  # method, so it spends no parameters on F. SPoRC estimates a deviation per year
-  # against a tight catch error with no penalty on the deviations
+  # the assessment solves fishing mortality from the catch and spends no parameters on
+  # it, so SPoRC estimates an unpenalized deviation per year against a tight catch CV
   input_list <- Setup_Mod_Catch_and_F(
     input_list = input_list,
     ObsCatch = dat$ObsCatch,
@@ -159,9 +155,8 @@ build_goa_rex_input <- function(dat) {
   none <- function(n) paste0("none_Year_1-terminal_Fleet_", seq_len(n))
 
   ## Fishery compositions -----------------------------------------------------
-  # no fishery index; joint-sex marginal ages and lengths, and no conditional
-  # age-at-length. t_fish = 0.5 reads the fishery's key and weight at mid season,
-  # where the assessment reads them
+  # no fishery index, joint-sex marginal ages and lengths, and no conditional
+  # age-at-length. the fishery's growth and weight are read at mid season
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     t_fish = array(0.5, dim = c(n_reg, 1, n_fish)),
@@ -183,12 +178,13 @@ build_goa_rex_input <- function(dat) {
   )
 
   ## Survey indices and compositions ------------------------------------------
-  # biomass indices and joint-sex lengths, plus the conditional age-at-length
-  # that holds the age information. a CAAL row is an age composition WITHIN a
-  # length bin: each length bin of a survey year holds the ages of the otoliths
-  # read from that bin, fit as its own multinomial with the number aged as its
-  # sample size, one sex per row. the assessment holds the marginal survey ages
-  # as ghosts, so they are read in but not fit
+  # biomass indices and joint-sex lengths, plus the conditional age-at-length that
+  # holds the age information.
+  #
+  # a CAAL row is the ages of the otoliths read from one length bin of one survey year, fit as
+  # its own multinomial with the number aged as the sample size, one sex per row.
+  #
+  # the assessment keeps the marginal survey ages as ghosts, read in but not fit
   t_srv <- array(rep(dat$t_srv, each = n_reg), dim = c(n_reg, 1, n_srv))
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
@@ -233,10 +229,8 @@ build_goa_rex_input <- function(dat) {
   )
 
   ## Survey selectivity and catchability --------------------------------------
-  # the same double normal with male offsets. the Western-Central survey
-  # estimates its catchability under the assessment's normal prior on the log
-  # scale, and the Eastern survey MIRRORS it, which the seeding expresses by
-  # giving both cells of ln_srv_q one map level
+  # the same double normal with male offsets. the Western-Central survey estimates its
+  # catchability under a normal prior and the Eastern survey mirrors it, as one map level
   q_prior <- data.frame(region = 1, fleet = 1, block = 1, mu = exp(dat$q$prior_mean), sd = dat$q$prior_sd)
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
@@ -254,9 +248,8 @@ build_goa_rex_input <- function(dat) {
   )
 
   ## Weighting ----------------------------------------------------------------
-  # Francis weights, one per fleet, for lengths and ages. the conditional
-  # age-at-length takes the age weight and needs the length dimension as an extra
-  # axis, which is what the `extra` argument builds
+  # Francis weights, one per fleet, for lengths and ages. the conditional age-at-length
+  # takes the age weight and needs a length dimension too, which `extra` builds
   wl_f <- dat$var_adj_len[dat$fish_fleets]
   wa_f <- dat$var_adj_age[dat$fish_fleets]
   wl_s <- dat$var_adj_len[dat$srv_fleets]
@@ -288,10 +281,8 @@ build_goa_rex_input <- function(dat) {
 
 #' Set every parameter to the assessment's maximum likelihood estimate
 #'
-#' Seeding at the assessment's own estimate is what makes the bridge checkable:
-#' every reported quantity and every likelihood component can be compared before
-#' the optimizer is allowed to move anything. Each block also fixes the map,
-#' since which parameters are estimated is part of the specification.
+#' Seeded at the assessment's estimate, every reported quantity and likelihood component can
+#' be compared before the optimizer moves. Each block sets the map too.
 #'
 #' @keywords internal
 seed_goa_rex_mle <- function(input_list, dat) {
@@ -312,10 +303,8 @@ seed_goa_rex_mle <- function(input_list, dat) {
   input_list$par$rec_region_prop_pars[1, ] <- dat$mle$rec_dist_area2
 
   ## Recruitment deviations ---------------------------------------------------
-  # SPoRC's deviation is the assessment's less its bias correction. main
-  # deviations run through 2022; the two later years have none and are mapped
-  # off. the series is shared across areas, so every region cell takes the same
-  # map level and is penalized once
+  # SPoRC's deviation is the assessment's less its bias correction, running through 2022 with
+  # the two later years mapped off. shared across areas, so it is penalized once
   main_yrs <- as.integer(names(dat$mle$main_recdev))
   dev_adj <- dat$mle$main_recdev - 0.5 * dat$mle$biasadj[as.character(main_yrs)] * sigmaR^2
   input_list$par$ln_RecDevs[] <- 0
@@ -325,9 +314,8 @@ seed_goa_rex_mle <- function(input_list, dat) {
   input_list$map$ln_RecDevs <- factor(map_rec)
 
   ## Initial age structure ----------------------------------------------------
-  # the deviation for year styr - a lands on age a, again less its own bias
-  # correction, since the ramp is defined on calendar years. older ages have
-  # none
+  # the deviation for year styr less a lands on age a, again less its own bias
+  # correction, since the ramp is defined on calendar years. older ages have none
   early_yrs <- as.integer(names(dat$mle$early_recdev))
   early_adj <- dat$mle$early_recdev - 0.5 * dat$mle$biasadj[as.character(early_yrs)] * sigmaR^2
   input_list$par$ln_InitDevs[] <- 0
@@ -356,10 +344,8 @@ seed_goa_rex_mle <- function(input_list, dat) {
   input_list$par$ln_growth_pars[] <- log(dat$mle$growth)
 
   ## Selectivity --------------------------------------------------------------
-  # female parameters straight in, male offsets in the second sex's slots: peak
-  # in bins, ascending width on the log scale. the assessment gives no offset to
-  # the plateau, the selectivity at the first bin, or the last bin here, so those
-  # three slots stay at zero and unmapped
+  # female parameters straight in, male offsets in the second sex's slots: peak in bins,
+  # ascending width on the log scale. the other three offsets stay at zero and unmapped
   put_sel <- function(par, map, tab, f, lev) {
     for(r in 1:n_reg) {
       par[r, , 1, 1, f] <- tab$female

@@ -62,8 +62,8 @@ get_laa_curve = function(
   L2_asymptote = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   if(is.null(A2_cv)) A2_cv = A2
   # the asymptote, on the power scale for the Richards form. under L2_asymptote the second
@@ -295,7 +295,7 @@ growth_start_state = function(growth_pars, ages, growth_A1, growth_A2, growth_L0
 growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, growth_cv_type, growth_sd_type,
                          cohort, L_beg, L1_birth, cv_ref, a_prop, len_devs = NULL, growth_L2_asymptote = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_ages = length(ages)
@@ -490,8 +490,8 @@ Get_Growth = function(
   growth_semipar = 0
 ) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   n_ages = length(ages)
   n_lens = length(growth_len_lower)
@@ -603,9 +603,9 @@ growth_containers = function(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_
 
 #' Fill one stratum's growth output for a set of years from one start-of-year state
 #'
-#' Evaluates every timing any fleet, composition or the spawning reads at, builds
-#' the keys and the derived weight and maturity, and writes them into the years
-#' named, which all share the state handed in.
+#' Evaluates growth at every timing a fleet, a composition or spawning needs,
+#' builds the size-age transitions and the derived weight and maturity, and
+#' writes them into the years named, which all start from the same state.
 #'
 #' @keywords internal
 growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth, cv_ref_fn, a_prop, cohort,
@@ -903,7 +903,7 @@ Get_Growth_Year = function(
 #' @import RTMB
 growth_take_year = function(dest, g, y, derive_waa) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   dest$SizeAgeTrans_fish[,,y,,,,,] = g$SizeAgeTrans_fish[,,y,,,,,]
@@ -953,7 +953,7 @@ growth_take_year = function(dest, g, y, derive_waa) {
 growth_selected_waa_year = function(WAA_fleet, SizeAgeTrans_fleet, sel_l, wt_len_pars, len_mid,
                                     waa_selected, y, n_pop, n_regions, n_seas, n_sexes) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(f in which(waa_selected == 1)) {

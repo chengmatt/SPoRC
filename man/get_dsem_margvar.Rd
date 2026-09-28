@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_precision.R
 \name{get_dsem_margvar}
 \alias{get_dsem_margvar}
-\title{The variance of each grid cell given the cells the model is handed}
+\title{The variance of each grid cell given the cells the model already knows}
 \usage{
 get_dsem_margvar(
   dsem_beta,
@@ -22,26 +22,28 @@ is moderated.}
 \item{dsem_cells}{Output of \code{\link{get_dsem_cells}}.}
 
 \item{known_cell}{Logical over the \code{n_grid_yrs * n_series} cells (years
-within series), \code{TRUE} where the value is handed to the model.}
+within series), \code{TRUE} where the model already knows the value.}
 }
 \value{
 Matrix \code{[year, series]} of variances, zero on the known cells.
 }
 \description{
-A lognormal deviation with variance \eqn{v} has \eqn{E[\exp(x)] = \exp(\mu + v/2)},
-so recruitment keeps its mean at \eqn{R_0} only if the cell's mean drops by
-\eqn{v/2}. The \eqn{v} that does it is the cell's variance given what the model
-is handed (the observed covariate values, and the rows before a series starts),
-not the sd line's square: under a self path \eqn{\rho} a settled year has
+A lognormal deviation with variance \eqn{v} has
+\eqn{E[\exp(x)] = \exp(\mu + v/2)}, so recruitment keeps its mean at
+\eqn{R_0} only if the cell's mean drops by \eqn{v/2}. The \eqn{v} that does
+it is the cell's variance conditional on what the model already knows (the
+observed covariate values, and the years before a series starts), not the sd
+line's square: under a self path \eqn{\rho} a settled year has
 \eqn{\sigma^2 / (1 - \rho^2)}, and every lagged path adds to it. For unknown
-cells \eqn{U} and known cells \eqn{K}, \eqn{\mathrm{Var}(x_U \mid x_K) = (Q_{UU})^{-1}},
-the inverse of the unknown block of the precision, so each cell's variance is a
-diagonal entry of that inverse.
+cells \eqn{U} and known cells \eqn{K},
+\eqn{\mathrm{Var}(x_U \mid x_K) = (Q_{UU})^{-1}}, the inverse of the unknown
+block of the precision, so each cell's variance is a diagonal entry of that
+inverse.
 }
 \details{
 A solved series (an sd of zero) has no row of its own in the precision. Its
-cells move with whatever sets them, which \code{\link{get_dsem_Q_oo}} folds
-into the rows that do keep an innovation, so the correction reads the same
-precision as the density.
+cells move with whatever sets them, and \code{\link{get_dsem_Q_oo}} folds
+that into the rows that keep an innovation, so the correction and the
+density use the same precision.
 }
 \keyword{internal}

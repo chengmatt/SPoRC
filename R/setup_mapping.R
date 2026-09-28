@@ -31,8 +31,7 @@ check_fleet_spec_length <- function(spec, n_fleets, what, allow_null = FALSE) {
          if(n_fleets == 1) " fleet." else " fleets.")
   }
   if(length(spec) == n_fleets) return(invisible(NULL))
-  # a single value is the common mistake and has an obvious repair, so the message
-  # holds the call rather than only the diagnosis
+  # a single value is the common mistake, so the message gives the fix
   example <- if(length(spec) == 1) {
     shown <- if(is.character(spec)) paste0("\"", spec[1], "\"") else format(spec[1])
     paste0(", for example rep(", shown, ", ", n_fleets, ")")
@@ -77,7 +76,7 @@ build_pe_map <- function(dims, share_over = character(0)) {
   key_dims <- setdiff(names(dims), share_over)
   grid <- expand.grid(lapply(dims, seq_len), KEEP.OUT.ATTRS = FALSE)
 
-  key <- if(length(key_dims) == 0) rep(1L, nrow(grid)) else do.call(paste, c(grid[key_dims], sep = "_"))
+  key <- if(length(key_dims) == 0) rep(1, nrow(grid)) else do.call(paste, c(grid[key_dims], sep = "_"))
   id <- match(key, unique(key))
 
   arr <- array(id, dim = dims)
@@ -87,8 +86,8 @@ build_pe_map <- function(dims, share_over = character(0)) {
 
 #' Build a factor map from an "est_all"/"fix"/"est_shared_..." spec string
 #'
-#' Convenience wrapper around \code{\link{build_pe_map}} for the common case
-#' of a single spec string (as used by e.g. \code{sigmaC_spec},
+#' Calls \code{\link{build_pe_map}} for the common case of a single spec string
+#' (as used by e.g. \code{sigmaC_spec},
 #' \code{sigmaF_spec}) governing a fixed-effect array with no additional
 #' use/fix masking. Validates \code{spec} against every dimension
 #' combination implied by \code{dim_abbrev} before building the map, so
@@ -247,7 +246,7 @@ at_age_dims <- function(input_list, fleet_field, pop = FALSE) {
   d <- c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
          at_age_n_obs_ages(input_list), at_age_n_sexes(input_list), input_list$data[[fleet_field]])
   n_pop <- input_list$data$n_pop
-  return(as.integer(if(pop) c(if(is.null(n_pop)) 1L else n_pop, d) else d))
+  return(as.integer(if(pop) c(if(is.null(n_pop)) 1 else n_pop, d) else d))
 }
 
 #' How many sexes an input list has
@@ -262,7 +261,7 @@ at_age_dims <- function(input_list, fleet_field, pop = FALSE) {
 #' @keywords internal
 at_age_n_sexes <- function(input_list) {
   n_sexes <- input_list$data$n_sexes
-  return(if(is.null(n_sexes)) 1L else n_sexes)
+  return(if(is.null(n_sexes)) 1 else n_sexes)
 }
 
 #' How many observed ages the at-age data sources are recorded on
@@ -472,8 +471,8 @@ do_at_age_type_setup <- function(input_list, type, data_source, fleet_field, use
   codes <- at_age_type_matrix(type, n_fleets, n_yrs, arg)
   input_list$data[[arg]] <- codes
 
-  # a summed dim holds the observation in slot one, so nothing else on that dim may be flagged.
-  # checked per year as well as per fleet, since the setting may change between them
+  # a data source summed over regions or sexes is stored in the first slot, so no other slot may be
+  # flagged. checked per year too, since the setting can change between years
   use_arr <- input_list$data[[use_field]]
   nd <- length(dim(use_arr))
   i_r <- if(pop) 2 else 1
@@ -509,8 +508,8 @@ do_at_age_type_setup <- function(input_list, type, data_source, fleet_field, use
 #'
 #' An at-age observation may be lognormal or normal, and its standard deviation
 #' may come from an estimated parameter, from reported standard errors, or from
-#' both. This is the parity the aggregated index data sources already have, stated per
-#' fleet.
+#' both. These are the same choices the aggregated index data sources already
+#' allow, stated here for each fleet.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param like_type \code{"lognormal"} or \code{"normal"}, one setting for every
@@ -627,8 +626,8 @@ do_age_corr_setup <- function(
   nd <- length(dim(use_arr))
   i_a <- nd - 2
   i_y <- nd - 4
-  # the correlations sit over the dims the observations are split by, so a
-  # slot a fleet never observes drops out on its own
+  # the correlations sit over the dims the data are split by, so a region or sex a fleet never
+  # observes has no parameter
   n_regions <- input_list$data$n_regions
   n_pop <- input_list$data$n_pop
   obs_dims <- if(pop) c(1, 2, nd - 1, nd) else c(1, nd - 1, nd)
@@ -651,11 +650,10 @@ do_age_corr_setup <- function(
   input_list$par[[us_name]] <- if(us_name %in% names(starting_values)) array(starting_values[[us_name]], dim = us_dims)
                                else array(0, dim = us_dims)
 
-  # sharing follows the same spec strings the rest of the package uses, so a
-  # correlation is not a new idea to learn, only a new place to apply one
+  # sharing uses the same spec strings as everywhere else in the package
   base_map <- array(as.integer(build_shared_spec_map(
     dims = spec_dims, spec = rho_spec, dim_abbrev = spec_abbrev)), dim = rho_dims)
-  base_map[obs_by == 0] <- NA_integer_   # a slot this fleet never observes
+  base_map[obs_by == 0] <- NA   # a slot this fleet never observes
 
   renumber <- function(m) {
     if(any(!is.na(m))) m[!is.na(m)] <- as.integer(factor(m[!is.na(m)]))
@@ -664,7 +662,7 @@ do_age_corr_setup <- function(
   hold_unless <- function(m, keep) {
     for(f in seq_len(n_fleets)) {
       if(!codes[f] %in% keep) {
-        if(pop) m[,,,f] <- NA_integer_ else m[,,f] <- NA_integer_
+        if(pop) m[,,,f] <- NA else m[,,f] <- NA
       }
     } # end f loop
     return(renumber(m))
@@ -675,11 +673,11 @@ do_age_corr_setup <- function(
 
   # an unstructured correlation shares whole matrices: cells the spec groups
   # together get one matrix between them, each pair its own parameter within it
-  us_map <- array(NA_integer_, dim = us_dims)
+  us_map <- array(NA, dim = us_dims)
   grp <- hold_unless(base_map, 2)
   if(any(!is.na(grp))) {
     n_grp <- max(grp, na.rm = TRUE)
-    # the pair dim runs fastest, so a group's matrix is n_pairs strided ids
+    # the pair dim runs fastest, so a group's matrix is n_pairs ids spaced one group apart
     us_map[] <- rep((seq_len(n_pairs) - 1) * n_grp, times = length(grp)) +
                 rep(as.vector(grp), each = n_pairs)
   }
@@ -865,7 +863,7 @@ do_key_mapping <- function(
   }
 
   if(spec == "fix") {
-    input_list$map[[par_name]] <- factor(array(NA_integer_, dim = dims))
+    input_list$map[[par_name]] <- factor(array(NA, dim = dims))
     collect_message(par_name, " is specified as: fix")
     return(input_list)
   }
@@ -879,13 +877,13 @@ do_key_mapping <- function(
   }
   key <- array(as.integer(key), dim = dims)
 
-  # an age and sex a fleet never observes has no parameter, whatever the key
-  # says. This is what holds the unused sexes of a sex-aggregated data source out
+  # an age and sex a fleet never observes has no parameter, whatever the key says. this is what
+  # keeps the unused sexes of a sex-aggregated data source out
   use_arr <- input_list$data[[use_field]]
   nd <- length(dim(use_arr))
   dims <- if(pop) c(1, nd - 2, nd - 1, nd) else c(nd - 2, nd - 1, nd)
   obs_by <- apply(use_arr, dims, function(x) sum(x != 0))
-  key[obs_by == 0] <- NA_integer_
+  key[obs_by == 0] <- NA
 
   keep <- !is.na(key)
   if(any(keep)) {
@@ -1404,8 +1402,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
     # Skip fleet sharing specs in first pass
     if(stringr::str_detect(sel_pars_spec[f], "est_shared_f")) next
 
-    # sharing anchors on the fleet's first region with data rather than region
-    # one, which a fleet observing only a later region never reaches
+    # sharing starts from the fleet's first region with data, since a fleet may never be seen in region one
     data_r <- which(sapply(1:input_list$data$n_regions, function(rr) sel_has_data(input_list$data, use_field, rr, f)))
     anchor_r <- if(length(data_r) > 0) data_r[1] else 1
 
@@ -1611,11 +1608,11 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
   shared_bin_pe_specs <- shared_bin_specs
   min_shared_bins <- unlist(lapply(sel_devs_shared_bins, min))
 
-  # deviation specs that leave one series across sexes, which the likelihood reads at the first sex
+  # the specs that leave one deviation series across sexes, which the likelihood reads at the first sex
   shared_sex_specs <- c("est_shared_s", "est_shared_r_s", "est_shared_b_s", "est_shared_r_b_s")
 
-  # a fleet borrowing another fleet's deviations gets that fleet's bin structure too, so its
-  # sigmas answer to the referenced fleet's spec rather than to its own
+  # a fleet using another fleet's deviations takes that fleet's bins too, so its sigmas follow the
+  # other fleet's spec
   devs_spec_resolved <- sel_devs_spec
   if(!is.null(sel_devs_spec)) {
     for(f in 1:n_fleets) {
@@ -1668,14 +1665,14 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
         if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(5,9,10)) max_sel_pars <- bins # non-parametric selectivity
         if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(6,7)) max_sel_pars <- 3 # logistic selectivity w/ asmyptote
 
-        # under iid or a walk the sigmas index bins for a non-parametric fleet, so sharing bins leaves
-        # one deviation series, and one sigma, per group. every other bin's sigma is never read
+        # for a non-parametric fleet the sigmas sit on bins, so sharing bins leaves one deviation series
+        # and one sigma per group, and the rest are never used
         nonpar_fleet <- all(input_list$data[[sel_model_field]][r,,f] %in% c(5,9,10))
         shares_bins <- !is.null(sel_devs_spec) && devs_spec_resolved[f] %in% shared_bin_specs && nonpar_fleet
         pe_slots <- if(shares_bins) min_shared_bins else 1:max_sel_pars # sigma slots this fleet reads
 
-        # sharing deviations across sexes leaves one series, which the likelihood evaluates at the
-        # first sex, so every sex above it holds parameters nothing reads. same for every form
+        # sharing deviations across sexes leaves one series, read at the first sex, so the other sexes'
+        # parameters would never be used
         shares_sexes <- !is.null(sel_devs_spec) && devs_spec_resolved[f] %in% shared_sex_specs
         pe_sexes <- if(shares_sexes) 1 else 1:input_list$data$n_sexes # sexes this fleet reads
 
@@ -1684,9 +1681,8 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
           # If iid time-variation or random walk for this fleet
           if(input_list$data[[cont_tv_field]][r,f] %in% c(1,2)) {
 
-            # one sigma across every bin the fleet reads, which is a key matrix with a single
-            # group. only meaningful for a non-parametric form, where the slots are bins rather
-            # than curve parameters on unrelated scales
+            # one sigma across every bin the fleet reads. only meaningful for a non-parametric form, where the
+            # slots are bins and not curve parameters on unrelated scales
             if(pe_pars_spec[f] %in% shared_bin_pe_specs) {
 
               if(!nonpar_fleet)
@@ -1932,8 +1928,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
   map_sel_devs <- input_list$par[[par_name]]
   map_sel_devs[] <- NA
 
-  # how many deviation slots a form reads under iid or random walk time variation: its parameter
-  # count. slots beyond it are never read and stay unmapped, so no dead deviation parameters
+  # how many deviation slots a form uses under iid or a random walk, which is its parameter count.
+  # the slots beyond it stay unmapped
   sel_dev_slot_count <- function(code) {
     if(code == 2) return(1)                 # exponential
     if(code %in% c(0, 1, 3)) return(2)      # logistic or gamma
@@ -1968,7 +1964,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
           # Which regions actually have data for this fleet
           reg_has_dat <- sapply(1:input_list$data$n_regions, function(rr)
             sel_has_data(input_list$data, use_field, rr, f))
-          r_anchor <- if(any(reg_has_dat)) min(which(reg_has_dat)) else 1L
+          r_anchor <- if(any(reg_has_dat)) min(which(reg_has_dat)) else 1
           shares_r <- !is.null(sel_devs_spec) &&
             sel_devs_spec[f] %in% c('est_shared_r', 'est_shared_r_s', 'est_shared_r_b', 'est_shared_r_b_s')
           dat_ok <- if(shares_r) any(reg_has_dat) else reg_has_dat[r]
@@ -2012,8 +2008,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
 
               } # end i loop
 
-              # bin groups index the deviation slots directly, which under iid or a walk holds for the
-              # non-parametric forms only. one deviation per group per year, as in the gmrf branch
+              # bin groups sit directly on the deviation slots, which only holds for the non-parametric forms.
+              # one deviation per group per year, as in the gmrf branch
               for(k in seq_along(sel_devs_shared_bins)) {
 
                 # Estimating one deviation per bin group, across regions and sexes
@@ -2127,9 +2123,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
     } # end if statement
   } # end f loop
 
-  # a non-parametric form has one free base parameter per bin, so year one's deviation is that
-  # same value written twice and only the walk's first-year term separates them. dropping it
-  # leaves the base parameters holding year one with no prior on its level
+  # a non-parametric form has one base parameter per bin, so year one's deviation repeats it and
+  # only the walk's first-year term separates them. dropping it leaves year one with no prior
   if(!is.null(dont_est_dev_first)) {
     for(f in 1:n_fleets) {
       if(dont_est_dev_first[f] != 1) next

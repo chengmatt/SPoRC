@@ -1,5 +1,10 @@
+# Index likelihoods and what an index can be fit to: lognormal, normal and multivariate normal,
+# an index restricted to some ages, and catchability solved analytically or estimated.
+
 library(SPoRC)
 library(testthat)
+
+# The Three Error Structures -------------------------------------------------
 
 test_that("get_index_nLL dispatches the three index error structures", {
 
@@ -49,6 +54,8 @@ test_that("get_index_nLL dispatches the three index error structures", {
 
 })
 
+# Restricting an Index to Some Ages ------------------------------------------
+
 test_that("parse_bin_subset builds the per-fleet bin selection array", {
 
   test_that("NULL selects every age for every fleet", {
@@ -76,6 +83,8 @@ test_that("parse_bin_subset builds the per-fleet bin selection array", {
 
 })
 
+# Validating the Covariance --------------------------------------------------
+
 test_that("parse_idx_cov validates only the fleets that need a covariance", {
 
   use_arr <- array(0, dim = c(1, 4, 1, 2))
@@ -101,6 +110,8 @@ test_that("parse_idx_cov validates only the fleets that need a covariance", {
   })
 
 })
+
+# The Multivariate Normal against a Hand Calculation -------------------------
 
 test_that("the multivariate normal index likelihood agrees with a hand-computed full density", {
 
@@ -132,6 +143,8 @@ test_that("the multivariate normal index likelihood agrees with a hand-computed 
   })
 
 })
+
+# Through the Observation Model ----------------------------------------------
 
 test_that("the survey observation model honors age subsets and analytic catchability", {
 
@@ -206,6 +219,8 @@ test_that("the survey observation model honors age subsets and analytic catchabi
     out <- run(srv_idx_ages = ages)
     expect_equal(out$PredSrvIdx[1,1,,1,1], rowSums(NAA[1,1,,1,2:3,1]))
   })
+
+  # Catchability Solved Analytically -----------------------------------------
 
   test_that("the arithmetic solve makes the predicted and observed means agree", {
     Use <- array(0, dim = c(n_regions, n_yrs, n_seas, n_srv))

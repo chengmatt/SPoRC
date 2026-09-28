@@ -6,10 +6,8 @@ library(testthat)
 
 test_that("every population-specific data source contributes to the objective", {
 
-  # every index likelihood, because the two index blocks split them differently: a
-  # lognormal fleet is evaluated by eval_index_osa_nLL, a normal one by
-  # get_index_pop_nLL regionally and get_index_regional_nLL by population. testing
-  # one likelihood leaves the other route free to do nothing
+  # every index likelihood, since the two blocks split them up differently and testing one
+  # likelihood leaves the other route free to do nothing
   for(like in c("lognormal", "normal", "mvn")) {
 
     input_list <- suppressWarnings(suppressMessages(pop_sources_input(like = like)))

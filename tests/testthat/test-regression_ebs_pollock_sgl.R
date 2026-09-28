@@ -224,9 +224,8 @@ test_that("Single-region EBS Pollock RTMB model produces expected results", {
     srv_sel_model = paste0("logist1_Fleet_", 1:n_srv),
     # survey catchability blocks
     srv_q_blocks = paste0("none_Fleet_", 1:n_srv),
-    # whether to estiamte all fixed effects for survey selectivity. The vessel
-    # of opportunity index shares the acoustic survey's, and fleet 4 sees age 1
-    # only, where selectivity is absorbed into catchability and so is fixed.
+    # the vessel of opportunity index shares the acoustic survey's selectivity, and fleet 4 sees
+    # age 1 only, where selectivity is absorbed into catchability and so is fixed
     srv_fixed_sel_pars_spec = c("est_all", "est_all", "est_shared_f_2", "fix"),
     # whether to estiamte all fixed effects for survey catchability
     srv_q_spec = rep("est_all", n_srv),

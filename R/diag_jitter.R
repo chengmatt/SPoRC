@@ -134,8 +134,8 @@ do_jitter <- function(data,
 
     for(i in 1:n_jitter) {
 
-      # one tape serves every iteration, so its state goes back to the model start each
-      # time; value.best only ever falls, and a stale one repeats the earlier fit's report
+      # one tape serves every iteration, so reset it to the model start each time. a stale value.best
+      # would make a later fit report the earlier one's numbers
       obj$env$last.par <- par_start
       obj$env$last.par.best <- par_start
       obj$env$value.best <- Inf

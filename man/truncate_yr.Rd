@@ -21,8 +21,8 @@ A list of \code{retro_data}, \code{retro_parameters} and
 }
 \description{
 Removes the last \code{j} years from the model inputs and updates the data,
-parameter arrays, maps, block structures and anything else dimensioned by the
-number of years, so the result can be handed straight to the model as one
+parameter arrays, maps, block structures and anything else dimensioned by
+the number of years, so the result can go straight into the model as one
 retrospective peel. Called by \code{do_retrospective()}.
 }
 \keyword{internal}

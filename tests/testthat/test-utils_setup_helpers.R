@@ -1,12 +1,11 @@
+# extend_years() and convert_to_numeric() need no model to run, so each fill rule, each label
+# lookup and each refusal is driven directly.
+
 library(SPoRC)
 library(testthat)
 
-# extend_years() and convert_to_numeric() are pure setup helpers. Their fill
-# strategies and coercion paths are reachable without building a model, so the
-# edge cases are tested directly here.
-
 test_that("extend_years appends n_years slices to the year dimension", {
-  # n_years is the number of slices appended, not the resulting total.
+  # n_years is how many years are appended, not the resulting total.
   a <- array(1:8, dim = c(2, 4))
   out <- SPoRC:::extend_years(a, n_years = 3, yr_dim = 2, fill = "zeros")
   expect_equal(dim(out), c(2, 7))
@@ -151,9 +150,8 @@ test_that("convert_to_numeric rejects a bad label inside a character array", {
   expect_error(SPoRC:::convert_to_numeric(x, lookup), "typo")
 })
 
-# resolve_sel_pen_wts returns one specification per fleet. The contents of each
-# specification are covered in test-setup_weighting_selex_penalties.R; what is
-# checked here is only the input validation shared with the other helpers.
+# resolve_sel_pen_wts returns one setting per fleet. What each one holds is covered in the
+# weighting test file, and only the validation shared with the other helpers is checked here.
 test_that("resolve_sel_pen_wts rejects unnamed or misspelled terms", {
   expect_error(SPoRC:::resolve_sel_pen_wts(c(1, 2)), "named numeric")
   expect_error(SPoRC:::resolve_sel_pen_wts(c(smooth_dom = 1)), "named numeric")

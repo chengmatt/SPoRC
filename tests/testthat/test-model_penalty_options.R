@@ -1,3 +1,6 @@
+# The selectivity centering penalty and the recruitment penalty weights: what each penalizes,
+# that a weight array selects years, and the shapes Setup_Mod_Weighting refuses.
+
 library(SPoRC)
 library(testthat)
 

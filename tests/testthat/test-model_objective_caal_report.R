@@ -1,15 +1,9 @@
+# The joint arrays at age and length reported under do_caal. Nothing is fit to them, so what
+# matters is that they are the joint distribution they claim to be: summing over length gives the
+# catch or index at age, summing over age gives it at length, and the objective does not move.
+
 library(SPoRC)
 library(testthat)
-
-# Joint arrays at length and age, reported when do_caal == 1. Nothing is fit to them, so
-# the tests here are about the arrays being the joint distribution they claim to be: their
-# length dim has to be the catch or index at age, and their age dim the catch or
-# index at length. The flag also has to leave the objective untouched, since a reporting
-# switch that moved the likelihood would change every model that turns it on.
-#
-# The arrays are dimensioned like CAA and CAL, that is population specific, and no region
-# level version is reported. Summing the population dim away is left to the caller, the
-# same way the composition likelihoods already do it on CAA and CAL.
 
 n_lens_test <- 12
 
@@ -29,7 +23,6 @@ caal_pairs <- list(
   list(joint = "Srv_caal", at_age = "SrvIAA", at_len = "SrvIAL")
 )
 
-
 test_that("the joint arrays are reported only when asked for", {
   off <- run(build(n_lens = n_lens_test))
   expect_equal(off$data$do_caal, 0)
@@ -39,14 +32,13 @@ test_that("the joint arrays are reported only when asked for", {
   for(pair in caal_pairs) expect_false(is.null(on$rep[[pair$joint]]))
 })
 
-
 test_that("the joint arrays are dimensioned like the marginals they extend", {
   model <- run(with_caal())
   for(pair in caal_pairs) {
     joint <- model$rep[[pair$joint]]
     at_age <- model$rep[[pair$at_age]]
     at_len <- model$rep[[pair$at_len]]
-    # population, region, year and season come first, exactly as in CAA and CAL
+    # population, region, year and season come first, as in catch at age and at length
     expect_equal(dim(joint)[1:4], dim(at_age)[1:4], info = pair$joint)
     # then a length and an age dimension at once, then sex and fleet
     expect_equal(dim(joint)[5], dim(at_len)[5], info = pair$joint)
@@ -55,13 +47,11 @@ test_that("the joint arrays are dimensioned like the marginals they extend", {
   } # end pair loop
 })
 
-
 test_that("turning the joint arrays on leaves the objective unchanged", {
   off <- run(build(n_lens = n_lens_test))
   on <- run(with_caal())
   expect_equal(on$fn(on$par), off$fn(off$par), tolerance = 0)
 })
-
 
 test_that("the length dim of each joint array is the marginal at age", {
   model <- run(with_caal())
@@ -72,7 +62,6 @@ test_that("the length dim of each joint array is the marginal at age", {
   } # end pair loop
 })
 
-
 test_that("the age dim of each joint array is the marginal at length", {
   model <- run(with_caal())
   for(pair in caal_pairs) {
@@ -82,7 +71,6 @@ test_that("the age dim of each joint array is the marginal at length", {
   } # end pair loop
 })
 
-
 test_that("each joint cell is the size-age transition scaled by the marginal at age", {
   input <- with_caal()
   model <- run(input)
@@ -90,9 +78,8 @@ test_that("each joint cell is the size-age transition scaled by the marginal at 
   size_age <- input$data$SizeAgeTrans
   n_ages <- length(input$data$ages)
 
-  # SizeAgeTrans holds P(len | age), so scaling age column a by the catch at age a is the
-  # joint array by definition. Checked cell by cell on one stratum rather than through the
-  # same vectorized expression the model uses.
+  # the size-age transition holds length given age, so scaling each age column by the catch at
+  # that age is the joint array by definition. checked cell by cell on one stratum
   p <- 1
   r <- 1
   y <- 7
@@ -104,7 +91,6 @@ test_that("each joint cell is the size-age transition scaled by the marginal at 
 
   expect_equal(model$rep$Fish_caal[p,r,y,seas,,,s,f], expected, tolerance = 1e-12)
 })
-
 
 test_that("conditioning a row on its own row sum gives the age composition at that length", {
   model <- run(with_caal())
@@ -120,7 +106,6 @@ test_that("conditioning a row on its own row sum gives the age composition at th
   expect_equal(sum(row), model$rep$CAL[p,r,y,seas,l,s,f], tolerance = 1e-12) # denominator is CAL
   expect_equal(sum(row / sum(row)), 1, tolerance = 1e-12)
 })
-
 
 test_that("do_caal is rejected without length compositions", {
   input <- build()

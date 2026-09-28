@@ -23,8 +23,9 @@ get_blocked_analytic_q(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_blk)
 Vector \code{[n_yrs]} of the solved catchability by year.
 }
 \description{
-A catchability that is a pure scaling nuisance can be concentrated out of the
-likelihood instead of estimated. The solve is done separately WITHIN each
+A catchability that is a pure scaling nuisance can be concentrated out of
+the likelihood instead of estimated. The solve is done separately within
+each
 catchability time block, so a blocked catchability gets one solved value per
 block. A single block, which is the default, reduces to one value for the
 whole series.

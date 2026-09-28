@@ -1,3 +1,6 @@
+# The mean fishing mortality is estimated only where a cell is fished in some year, by the same
+# rule the deviations use, so the two maps have to agree once years are collapsed.
+
 library(SPoRC)
 library(testthat)
 
@@ -45,7 +48,7 @@ test_that("ln_F_mean is estimated only where a cell is fished in some year", {
     else expect_true(is.na(map[r, s, f]))
   }
 
-  # every estimated cell gets its own index -- no unintended sharing
+  # every estimated cell gets its own index, with nothing shared by accident
   expect_equal(sort(map[!is.na(map)]), 1:n_ff)
 })
 

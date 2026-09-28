@@ -69,8 +69,8 @@ specific because a fishery and a survey need not read ages the same way.}
 
 \item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 observed bins each fleet is fitted over, or \code{NULL} (default) for all
-bins. Must be the array handed to \code{\link{pack_comp_osa}}, since the
-strides walked here are sized on it.}
+bins. Must be the array given to \code{\link{pack_comp_osa}}, since the
+positions read here are sized on it.}
 
 \item{family}{\code{"discrete"} or \code{"continuous"}.}
 

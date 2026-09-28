@@ -1,11 +1,11 @@
+# check_sim_dimensions() is the same for the simulation inputs, which have a trailing replicate
+# axis, so these also check that axis is validated rather than ignored.
+
 library(SPoRC)
 library(testthat)
 
-# check_sim_dimensions() is the operating-model counterpart to
-# check_data_dimensions(). Simulation inputs have a trailing n_sims axis, so
-# these tests also confirm that axis is actually validated rather than ignored.
 #
-# Sizes are all distinct so a transposed array cannot satisfy a check.
+# no two dimensions the same size, so a transposed array cannot pass
 
 dims <- list(
   n_pop = 2,

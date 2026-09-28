@@ -1,3 +1,6 @@
+# The correlation matrices behind the logistic normal: AR1 over bins, a constant correlation, and
+# the covariance each composition likelihood builds from them.
+
 library(testthat)
 library(SPoRC)
 

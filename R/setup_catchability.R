@@ -1,7 +1,7 @@
 # Stage 1 of 3: model setup
 #
-# Catchability deviations: each year's deviation from a fleet's block catchability, under iid, random walk,
-# ar1 or a dsem. Shared by the fishery and survey setups, which each call setup_q_devs once.
+# Catchability deviations: each year's deviation from a fleet's block catchability, under iid,
+# random walk, ar1 or a dsem. Used by both the fishery and the survey setups.
 
 #' Deviation arrays a dsem may set from its arrows alone
 #'
@@ -185,7 +185,7 @@ setup_q_devs <- function(input_list,
 
   for(f in 1:n_fleets) collect_message(paste0("Catchability deviations for ", fleet_label, " ", f, " are: ", q_model[f]))
 
-  # a dsem fleet hands its density to the arrows, so its own sigma is fixed and the penalty isn't applied
+  # a dsem fleet gets its density from the arrows, so its own sigma is fixed and not penalized
   if(any(q_model_val == 5)) {
     input_list$data$dsem_declared <- union(input_list$data$dsem_declared, paste0(prefix, "_q"))
     collect_message(prefix, "_q_model = 'dsem': the catchability deviations' density comes from Setup_Mod_DSEM, and ln_sigma_", prefix, "_q stays at its start.")

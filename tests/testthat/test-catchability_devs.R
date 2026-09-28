@@ -16,6 +16,8 @@ add_q_devs <- function(il, q_model, q_type = "est", sigma = 0.2) {
   out
 }
 
+# The Deviations and Their Penalty -------------------------------------------
+
 test_that("catchability is the block value shifted by its deviation", {
 
   il <- add_q_devs(pcod_q_input(), "iid")
@@ -73,6 +75,8 @@ test_that("every form builds a model that evaluates and differentiates", {
   } # end form loop
 })
 
+# What Is Refused ------------------------------------------------------------
+
 test_that("an analytically solved catchability refuses deviations", {
 
   for(type in c("arith", "geo")) {
@@ -88,6 +92,8 @@ test_that("catchability blocks refuse deviations", {
   expect_error(add_q_devs(il, "rw"), "Both describe time variation in catchability")
   expect_silent(add_q_devs(il, "none"))
 })
+
+# A dsem Series Driving Catchability -----------------------------------------
 
 test_that("a projected dsem series drives catchability as a fixed effect regression", {
 
@@ -126,6 +132,8 @@ test_that("a projected series the objective cannot fill is refused rather than l
                                                dsem_family = c(env = "fixed"))),
                "the deviations would stay at zero")
 })
+
+# Simulation and Retrospective Peels -----------------------------------------
 
 test_that("the operating model draws a series per replicate and scales catchability by it", {
 
@@ -180,6 +188,8 @@ test_that("a retrospective peel shortens the deviation array and its mirror", {
   # the years kept are the early ones, unchanged
   expect_equal(peeled$retro_parameters$ln_srv_q_devs[1,,1], il$par$ln_srv_q_devs[1, 1:(n_dev_yrs - 2), 1])
 })
+
+# Recovered from Simulated Data ----------------------------------------------
 
 test_that("independent catchability deviations are recovered from simulated data", {
 
@@ -251,6 +261,8 @@ test_that("a covariate effect on catchability is recovered as a fixed effect", {
   expect_gt(stats::cor(shape_fit, exp(beta_true * env_x)), 0.99)
 })
 
+# Sharing across Fleets and Regions ------------------------------------------
+
 test_that("the sigma and correlation sharing strings share what they say", {
 
   # a two region, two survey fleet shell holding only what the mapping reads
@@ -295,7 +307,7 @@ test_that("the sigma and correlation sharing strings share what they say", {
   expect_equal(n_levels(rho_map(c(4, 4))), n_r * n_f)
   expect_equal(n_levels(rho_map(c(4, 2))), n_r) # one ar1 fleet only
 
-  # a dsem fleet hands its sd to the arrows, so it reads no sigma of its own
+  # a dsem fleet takes its standard deviation from the arrows, not from its own sigma
   expect_equal(n_levels(map_of("est_all", q_model = c(5, 5))), 0)
 })
 
@@ -361,7 +373,7 @@ test_that("a dsem catchability series can hold a covariate effect and process er
   expect_equal(sum(!is.na(as.integer(d$map$ln_srv_q_devs))), n_yrs)
   expect_equal(length(d$par$ln_dsem_sd), 1)
 
-  # the declaration hands the density to the arrows, so the module's own sigma and penalty go quiet
+  # the declaration moves the density onto the arrows, so the module's own sigma and penalty go quiet
   expect_equal(sum(!is.na(as.integer(d$map$ln_sigma_srv_q))), 0)
 
   out <- q_devs_fit(d, random = "ln_srv_q_devs")
@@ -404,7 +416,7 @@ test_that("catchability deviations leave a conditioning period alone", {
              srv_q = array(0.05, dim = c(1, n_yrs, 1, 2)), fish_q = array(0.01, dim = c(1, n_yrs, 1, 2)))
   sl <- Setup_Sim_q_devs(sl, srv_q_model = "rw", sigma_srv_q = 0.3)
 
-  # the catchability handed in for a conditioning period already holds the fit's deviations, so
+  # the catchability supplied for a conditioning period already holds the fit's deviations, so
   # drawing over those years again would square them
   sl$n_cond_yrs <- n_cond
   env <- Setup_sim_env(sl)

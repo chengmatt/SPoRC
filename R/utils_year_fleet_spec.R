@@ -1,7 +1,6 @@
 # Stage 1 of 3: model setup
 #
-# The year-by-fleet specification grammar, which twelve composition data sources each parsed with their own
-# copy of. One parser means a source cannot gain a setting in a form the others do not accept.
+# The year-by-fleet specification grammar, read the same way for every composition data source.
 
 #' Parse a year-by-fleet specification into a matrix
 #'
@@ -37,7 +36,7 @@ parse_year_fleet_spec <- function(spec, arg_name, n_fleets, n_yrs, codes, check 
                     "the year vector and the last year may be 'terminal', for ",
                     "example ", valid[1], "_Year_1-terminal_Fleet_1.")
 
-  out <- array(NA_real_, dim = c(n_yrs, n_fleets))
+  out <- array(NA, dim = c(n_yrs, n_fleets))
 
   for(i in seq_along(spec)) {
 
@@ -67,7 +66,7 @@ parse_year_fleet_spec <- function(spec, arg_name, n_fleets, n_yrs, codes, check 
     } else {
       bounds <- suppressWarnings(as.numeric(unlist(strsplit(parts[3], "-"))))
       first <- bounds[1]
-      last <- if(length(bounds) > 1) bounds[2] else NA_real_
+      last <- if(length(bounds) > 1) bounds[2] else NA
     }
 
     if(is.na(first) || is.na(last)) {
@@ -120,8 +119,8 @@ at_age_type_matrix <- function(type, n_fleets, n_yrs, arg_name = "at-age Type") 
   codes_map <- c(agg = 0, spltRaggS = 1, aggRspltS = 2, spltRspltS = 3)
   valid <- names(codes_map)
 
-  # a model already set up hands its settings back as codes rather than labels, which is what
-  # conditioning a closed loop does, so those pass through rather than being read as labels
+  # a model already set up gives its settings back as codes rather than labels, as a conditioned
+  # closed loop does, so let those through
   if(is.numeric(type)) {
     if(!all(type %in% unname(codes_map))) {
       stop(arg_name, " has codes outside ", paste(unname(codes_map), collapse = ", "),
@@ -133,8 +132,7 @@ at_age_type_matrix <- function(type, n_fleets, n_yrs, arg_name = "at-age Type") 
     return(base::matrix(rep(rep_len(as.numeric(type), n_fleets), each = n_yrs), nrow = n_yrs))
   }
 
-  # the year grammar announces itself, so a bare value keeps meaning what it
-  # always did: this setting, for the whole series
+  # a bare value with no _Year_ in it means this setting for the whole series
   if(any(grepl("_Year_", type, fixed = TRUE)))
     return(parse_year_fleet_spec(type, arg_name, n_fleets, n_yrs, codes_map))
 
@@ -170,8 +168,8 @@ at_age_type_matrix <- function(type, n_fleets, n_yrs, arg_name = "at-age Type") 
 #'
 #' @param spec Character vector of length \code{n_fleets}, or a single value
 #'   given to every fleet. The resolved codes \code{0} and \code{1} are also
-#'   taken, so a fitted model's settings can be handed straight back to an
-#'   operating model. \code{NULL} leaves every fleet at \code{"spltSeas"}.
+#'   taken, so a fitted model's settings can go straight back into an operating
+#'   model. \code{NULL} leaves every fleet at \code{"spltSeas"}.
 #' @param arg_name Name of the argument being parsed, used in error messages.
 #' @param n_fleets Number of fleets the vector must cover.
 #'
@@ -181,11 +179,11 @@ at_age_type_matrix <- function(type, n_fleets, n_yrs, arg_name = "at-age Type") 
 #' @keywords internal
 parse_seas_agg_spec <- function(spec, arg_name, n_fleets) {
 
-  codes <- c(spltSeas = 0L, aggSeas = 1L)
+  codes <- c(spltSeas = 0, aggSeas = 1)
 
-  if(is.null(spec)) return(rep(0L, n_fleets)) # nothing supplied leaves every fleet seasonal
+  if(is.null(spec)) return(rep(0, n_fleets)) # nothing supplied leaves every fleet seasonal
 
-  # the closed loop hands back the codes a fitted model already resolved, so take those as well
+  # a conditioned closed loop gives back codes rather than labels, so accept those too
   if(is.numeric(spec)) spec <- names(codes)[match(spec, codes)]
 
   if(length(spec) == 1) spec <- rep(spec, n_fleets) # one value covers every fleet

@@ -1,15 +1,13 @@
+# Conditional age-at-length end to end. The operating model draws a fixed number of otoliths per
+# length bin from the joint of length and age, and the estimating model fits marginal lengths plus
+# the age-at-length rows with no marginal ages, so all its age information arrives that way.
+#
+# A correct likelihood leaves median relative error in spawning biomass and recruitment at zero,
+# skips length bins nobody aged, recovers an overdispersion it was generated under, and gives
+# standard normal residuals.
+
 library(SPoRC)
 library(testthat)
-
-# Conditional age-at-length, end to end through the operating model. The OM draws
-# a fixed number of otoliths per length bin from the joint of length and age, the
-# estimation model fits marginal lengths plus CAAL with no marginal ages, so all of
-# its age information arrives through the CAAL likelihood. Routines shared through
-# helper-selftest_caal.R. A correctly specified CAAL likelihood has to leave the
-# median relative error of spawning biomass and recruitment at zero, skip length
-# bins nobody aged, recover a Dirichlet-multinomial overdispersion it generated
-# under, and produce standard normal one step ahead residuals.
-
 
 test_that("simulate_caal draws from P(age | length) and applies ageing error", {
   n_lens <- 4
@@ -76,7 +74,6 @@ test_that("simulate_caal draws from P(age | length) and applies ageing error", {
   expect_equal(drawn[, 3] / rowSums(drawn), cond[, 2] + cond[, 3], tolerance = 0.01)
 })
 
-
 test_that("CAAL in place of marginal ages recovers spawning biomass and recruitment", {
   om <- caal_make_om()
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = caal_cfg$n_yrs, sim = 1)
@@ -88,7 +85,6 @@ test_that("CAAL in place of marginal ages recovers spawning biomass and recruitm
   expect_lt(abs(out$summ$SSB[["median_RE"]]), 0.03)
   expect_lt(abs(out$summ$Rec[["median_RE"]]), 0.05)
 })
-
 
 test_that("length bins nobody aged are skipped and leave the fit unbiased", {
   aged_bins <- seq(2, caal_cfg$n_lens, by = 2)
@@ -109,7 +105,6 @@ test_that("length bins nobody aged are skipped and leave the fit unbiased", {
   out <- caal_run(input, what = c("SSB", "Rec"), n_sims = 30, seed = 202)
   expect_lt(abs(out$summ$SSB[["median_RE"]]), 0.03)
 })
-
 
 test_that("Dirichlet-multinomial CAAL recovers the overdispersion it was generated under", {
   theta_true <- 0.5
@@ -136,7 +131,6 @@ test_that("Dirichlet-multinomial CAAL recovers the overdispersion it was generat
   expect_lt(abs(median(theta_hat[, "srv"]) / theta_true - 1), 0.2)
 })
 
-
 test_that("two sexes drawn jointly within a length bin are recovered", {
   om <- caal_make_om(n_sexes = 2, caal_type = "spltRjntS")
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = caal_cfg$n_yrs, sim = 1)
@@ -155,7 +149,6 @@ test_that("two sexes drawn jointly within a length bin are recovered", {
   expect_lt(abs(out$summ$SSB[["median_RE"]]), 0.03)
 })
 
-
 test_that("CAAL one step ahead residuals are standard normal under the generating model", {
   om <- caal_make_om()
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = caal_cfg$n_yrs, sim = 1)
@@ -173,11 +166,11 @@ test_that("CAAL one step ahead residuals are standard normal under the generatin
   expect_true("len" %in% names(res))
   expect_setequal(unique(res$len), caal_cfg$len_lower + 2.5)
 
-  # The package's discrete residuals have a small offset in their mean under a
-  # correct model (about -0.15 for marginal compositions at N = 300 in this same
-  # OM), and a CAAL row of 25 otoliths is coarser still, so the standard is the
-  # one the other OSA tests use: unit spread, and a mean no further from zero
-  # than the marginal compositions in the same fit show plus that coarseness.
+  # the discrete residuals sit slightly off zero even under a correct model, about -0.15 for
+  # marginal compositions at a sample size of 300 here, and a row of 25 otoliths is coarser.
+  #
+  # so the standard is the one the other residual tests use: unit spread, and a mean no
+  # further from zero than the marginal compositions in the same fit, plus that coarseness
   r <- res$resid[is.finite(res$resid)]
   expect_gt(length(r), 1000)
   expect_lt(abs(stats::sd(r) - 1), 0.15)

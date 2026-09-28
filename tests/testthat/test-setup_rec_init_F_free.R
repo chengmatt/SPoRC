@@ -1,15 +1,15 @@
+# A free initial age structure takes ages two and older from the deviations outright, so no
+# equilibrium is projected and the initial F never reaches the objective. Estimating the two
+# together is refused.
+
 library(SPoRC)
 library(testthat)
-
-# A free initial age structure takes the numbers at age 2 and older from ln_InitDevs outright, so
-# no equilibrium is projected and init_F_par never reaches the objective.
 
 init_F_rec <- function(...) {
   sweep_input(rec = utils::modifyList(list(init_F_form = "abs", init_F_par = array(log(0.05), dim = c(3, 1, 5))),
                                       list(...)),
               stop_after = "rec")
 }
-
 
 test_that("estimating the initial F under a free initialization is refused", {
 
@@ -21,7 +21,6 @@ test_that("estimating the initial F under a free initialization is refused", {
   expect_match(msg, "init_F_spec = 'fix'")
 })
 
-
 test_that("the sensible pairings still build", {
 
   # fixed under a free initialization: the parameter is there and mapped off
@@ -32,7 +31,6 @@ test_that("the sensible pairings still build", {
   equil_est <- init_F_rec(init_age_strc = "scalar_no_move", init_F_spec = "est")
   expect_false(any(is.na(equil_est$map$init_F_par)))
 })
-
 
 test_that("a free initialization ignores the initial F, and an equilibrium one does not", {
 

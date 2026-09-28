@@ -64,8 +64,8 @@ for a given year and fleet.}
 
 \item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 observed age bins each fleet is fitted over, or \code{NULL} (default) for
-all bins. Must be the same array handed to \code{\link{pack_caal_osa}},
-since the strides walked here are sized on it.}
+all bins. Must be the same array given to \code{\link{pack_caal_osa}}, since
+the positions read here are sized on it.}
 }
 \value{
 Updated \code{nLL_arr}.

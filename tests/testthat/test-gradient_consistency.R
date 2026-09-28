@@ -6,9 +6,8 @@
 
 #' Finite-difference gradient of the objective in a few coordinates
 #'
-#' A central difference on the coordinates with the largest analytic gradient,
-#' which are the ones an optimizer will actually move along and the ones where a
-#' dropped tape shows up as a difference rather than as two small numbers.
+#' A central difference on the coordinates with the largest analytic gradient, which are the
+#' ones an optimizer moves along and where a dropped tape shows rather than reading as noise.
 #'
 #' @param obj Object from \code{fit_model(do_optim = FALSE)}.
 #' @param k Number of coordinates to check.
@@ -134,9 +133,8 @@ test_that("the analytic gradient agrees with a finite difference of the objectiv
 
 
 test_that("every configuration has a finite objective and a finite gradient", {
-  # An infinite or missing gradient is how a log of zero, a division by an empty
-  # sum, or an out-of-range index reaches the optimizer, which then either stalls
-  # or steps somewhere arbitrary.
+  # an infinite or missing gradient is how a log of zero, a division by an empty sum or an
+  # out-of-range index reaches the optimizer, which then stalls or steps anywhere
   problems <- character()
 
   for(config_name in names(gradient_configs())) {
@@ -154,9 +152,8 @@ test_that("every configuration has a finite objective and a finite gradient", {
 
 
 test_that("the gradient check would notice a wrong derivative", {
-  # The comparison above only means something if the tolerance is tight enough to
-  # separate a correct gradient from an incorrect one. Perturbing the point the
-  # finite difference is taken at has to break it.
+  # the comparison above only means something if the tolerance separates a correct gradient from
+  # an incorrect one, so moving the point the finite difference is taken at has to break it
   obj <- gradient_obj(gradient_configs()$single_region)
   p <- obj$par
   g <- as.numeric(obj$gr(p))

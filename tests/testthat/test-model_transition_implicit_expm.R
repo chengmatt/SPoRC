@@ -1,13 +1,10 @@
+# The implicit option swaps the matrix exponential for (I - A/n)^-n, which every continuous
+# movement operator routes through. Three things make that safe: no substeps is bit for bit the
+# exponential, the operator keeps non-negative fractions and exact abundance, and it converges.
+
 library(SPoRC)
 library(testthat)
 library(Matrix)
-
-# The implicit option swaps Matrix::expm for (I - A/n)^-n inside mat_exp, which every
-# move_timing = 2 operator and Get_Movement route through. These tests pin the three
-# things that make that swap safe: expm_nsub = 0 is bit-for-bit the old code path, the
-# implicit operator keeps the structural properties the dynamics rely on (non-negative
-# fractions, exact abundance accounting), and it converges to the exponential as the
-# substep count grows.
 
 # Column-convention generator net of mortality, as build_seas_operator forms it
 make_A <- function(n, Z, seed) {
@@ -17,6 +14,8 @@ make_A <- function(n, Z, seed) {
   diag(D) <- -colSums(D)
   list(Q_row = t(D), A = D - diag(Z, n))
 }
+
+# The Operator at the Two Ends -----------------------------------------------
 
 test_that("expm_nsub = 0 is bit-for-bit the exact matrix exponential", {
   # The default must not perturb any existing model, so this is identity, not tolerance.
@@ -53,6 +52,8 @@ test_that("repeated squaring matches repeated multiplication", {
   }
 })
 
+# Properties the Dynamics Rely On --------------------------------------------
+
 test_that("the implicit operator stays non-negative and converges to the exponential", {
   n <- 5
   Z <- stats::runif(n, 0.05, 0.6)
@@ -84,10 +85,8 @@ test_that("implicit movement fractions are exactly column-stochastic without mor
 })
 
 test_that("the fused operator and integral conserve abundance exactly under the implicit scheme", {
-  # get_population_projection takes survivors from T and catch from Integral. Under the
-  # exponential these balance by construction; under backward Euler they still do,
-  # because 1'(I - A/n) = 1' + z'/n. Without that, catch and numbers at age would diverge
-  # apart by the discretization error rather than agreeing to machine precision.
+  # survivors come from the operator and catch from the integral, which balance under the
+  # exponential by construction and under the implicit solve because 1'(I - A/n) = 1' + z'/n
   for (nsub in c(1, 4, 32)) {
     for (dur in c(1, 0.4)) {
       n <- 4
@@ -104,6 +103,8 @@ test_that("the fused operator and integral conserve abundance exactly under the 
     } # end dur loop
   } # end nsub loop
 })
+
+# Through the Transition Helpers ---------------------------------------------
 
 test_that("the transition helpers thread expm_nsub through to the same operator", {
   # advance_seas, spawn_state and catch_at_age must all use the operator the flag asks
@@ -154,6 +155,8 @@ test_that("expm_nsub leaves move_timing 0 and 1 untouched", {
   } # end mt loop
 })
 
+# The Gradient ---------------------------------------------------------------
+
 test_that("mat_exp is differentiable and its gradient converges to the exact one", {
   # The whole point of the option is a cheaper adjoint, so the tape has to build and
   # the derivative has to be the derivative of the thing it approximates.
@@ -179,10 +182,8 @@ test_that("mat_exp is differentiable and its gradient converges to the exact one
 })
 
 test_that("build_plus_group_T threads expm_nsub into the reference point operators", {
-  # The per-recruit and MSY routines compose the plus group transition from
-  # build_seas_operator, so the flag has to survive that composition. Reference points
-  # built on the exact exponential while the fit used the implicit solve would be
-  # internally inconsistent, which is the failure this guards.
+  # the per-recruit and MSY routines build the plus group transition out of the seasonal
+  # operator, so reference points and the fit would otherwise be on different schemes
   n <- 3
   n_seas <- 2
   seasdur <- c(0.4, 0.6)
@@ -226,6 +227,8 @@ test_that("build_plus_group_T threads expm_nsub into the reference point operato
     expect_gt(max(abs(impl1[[quant_name]] - exact[[quant_name]])), max(abs(impl512[[quant_name]] - exact[[quant_name]])))
   } # end quant_name loop
 })
+
+# What Is Refused ------------------------------------------------------------
 
 test_that("Setup_Mod_Movement rejects a substep count that is not a power of two", {
   # Substeps are applied by repeated squaring, so anything else would silently be rounded
@@ -274,7 +277,7 @@ test_that("Setup_Mod_Movement rejects a substep count that is not a power of two
     expect_error(mv(bad), "power of two", info = paste("nsub =", bad))
   } # end bad loop
 
-  # and the earlier guards still hold
+  # and the earlier refusals still hold
   expect_error(mv(-1), "not correctly specified")
   expect_error(mv(2.5), "not correctly specified")
   expect_error(mv("8"), "not correctly specified")

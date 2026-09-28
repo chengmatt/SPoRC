@@ -865,7 +865,7 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         ...
                                         ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_FishIdx_and_Comps <- mget(names(formals()))[-1]
 
@@ -1204,8 +1204,8 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
       else NULL
     })
 
-  # whether length selectivity is applied at length or through the size-age key. only known to be
-  # length based once Setup_Mod_Fishsel_and_Q runs, which checks this against it
+  # whether length selectivity is applied at length or through the size-age transition. the
+  # selectivity setup checks this against what it was given
   if(length(FishLenComps_sel) != input_list$data$n_fish_fleets || !all(FishLenComps_sel %in% c("age", "length"))) stop("FishLenComps_sel must be one of age or length for each fishery fleet")
   fish_len_comp_sel_vals <- as.numeric(FishLenComps_sel == "length")
   for(f in 1:input_list$data$n_fish_fleets) if(FishLenComps_sel[f] == "length") collect_message("Fishery length compositions for fleet ", f, " apply selectivity at length")

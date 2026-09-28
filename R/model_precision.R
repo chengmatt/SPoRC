@@ -143,15 +143,15 @@ get_dsem_arrow_values = function(dsem_beta,
 
 #' Get DSEM matrices
 #'
-#' Stack the grid into one single vector, years within series. Every path arrow puts
-#' its coefficient into \eqn{B} at the cell it points to (row) and the cell it
-#' reads (column, the same series \code{lag} rows earlier), so
+#' Stack the grid into one single vector, years within series. Every path arrow
+#' puts its coefficient into \eqn{B} at the cell it points to (row) and the
+#' cell it reads (column, the same series \code{lag} rows earlier), so
 #' \eqn{(I - B)(x - \mu)} turns the grid into its innovations. Every sd line
-#' puts its value on the diagonal of \eqn{\Gamma} and every covariance line
-#' off it, so \eqn{V = \Gamma^{\top}\Gamma} is the covariance of the innovations
-#' in one year. The positions are worked out once, outside of the tape, by
-#' \code{\link{get_dsem_cells}}; this function only writes the numbers into the
-#' stored slots, which is what lets the matrices be built on the tape.
+#' puts its value on the diagonal of \eqn{\Gamma} and every covariance line off
+#' it, so \eqn{V = \Gamma^{\top}\Gamma} is the covariance of the innovations in
+#' one year. The positions are worked out once, outside of the tape, by
+#' \code{\link{get_dsem_cells}}; this function only writes the numbers into
+#' those positions, so the matrices can be built on the tape.
 #'
 #' A moderated arrow has no single value: its coefficient in year \eqn{t} is
 #' the moderating series' value in that year, read from \code{x_grid}, and a
@@ -198,7 +198,7 @@ get_dsem_matrices <- function(dsem_beta,
   entry_value = c(1, -arrow_value)[dsem_cells$IminusB$entry_arrow + 1] # entry arrow 0 is the diagonal
 
   # a moderated path takes the moderating series' value in the year the arrow points to
-  path_mod = which(c(0L, arrows$mod_idx)[dsem_cells$IminusB$entry_arrow + 1] > 0)
+  path_mod = which(c(0, arrows$mod_idx)[dsem_cells$IminusB$entry_arrow + 1] > 0)
 
   if(length(path_mod) > 0) {
     mod_series = arrows$mod_idx[dsem_cells$IminusB$entry_arrow[path_mod]] # the series each one is moderated by
@@ -319,26 +319,28 @@ get_dsem_precision <- function(dsem_beta,
 
 } # end function
 
-#' The variance of each grid cell given the cells the model is handed
+#' The variance of each grid cell given the cells the model already knows
 #'
-#' A lognormal deviation with variance \eqn{v} has \eqn{E[\exp(x)] = \exp(\mu + v/2)},
-#' so recruitment keeps its mean at \eqn{R_0} only if the cell's mean drops by
-#' \eqn{v/2}. The \eqn{v} that does it is the cell's variance given what the model
-#' is handed (the observed covariate values, and the rows before a series starts),
-#' not the sd line's square: under a self path \eqn{\rho} a settled year has
+#' A lognormal deviation with variance \eqn{v} has
+#' \eqn{E[\exp(x)] = \exp(\mu + v/2)}, so recruitment keeps its mean at
+#' \eqn{R_0} only if the cell's mean drops by \eqn{v/2}. The \eqn{v} that does
+#' it is the cell's variance conditional on what the model already knows (the
+#' observed covariate values, and the years before a series starts), not the sd
+#' line's square: under a self path \eqn{\rho} a settled year has
 #' \eqn{\sigma^2 / (1 - \rho^2)}, and every lagged path adds to it. For unknown
-#' cells \eqn{U} and known cells \eqn{K}, \eqn{\mathrm{Var}(x_U \mid x_K) = (Q_{UU})^{-1}},
-#' the inverse of the unknown block of the precision, so each cell's variance is a
-#' diagonal entry of that inverse.
+#' cells \eqn{U} and known cells \eqn{K},
+#' \eqn{\mathrm{Var}(x_U \mid x_K) = (Q_{UU})^{-1}}, the inverse of the unknown
+#' block of the precision, so each cell's variance is a diagonal entry of that
+#' inverse.
 #'
 #' A solved series (an sd of zero) has no row of its own in the precision. Its
-#' cells move with whatever sets them, which \code{\link{get_dsem_Q_oo}} folds
-#' into the rows that do keep an innovation, so the correction reads the same
-#' precision as the density.
+#' cells move with whatever sets them, and \code{\link{get_dsem_Q_oo}} folds
+#' that into the rows that keep an innovation, so the correction and the
+#' density use the same precision.
 #'
 #' @inheritParams get_dsem_matrices
 #' @param known_cell Logical over the \code{n_grid_yrs * n_series} cells (years
-#'   within series), \code{TRUE} where the value is handed to the model.
+#'   within series), \code{TRUE} where the model already knows the value.
 #'
 #' @return Matrix \code{[year, series]} of variances, zero on the known cells.
 #'
@@ -363,8 +365,8 @@ get_dsem_margvar = function(dsem_beta,
                             need_Vinv = !any_project,
                             need_V = any_project && dsem_cells$has_cov)
 
-  # the precision the density itself reads, so the correction and the density agree on what a cell varies by.
-  # a solved cell has no row of its own in it, and instead moves with whatever sets it
+  # the same precision the density uses, so the correction and the density agree on each cell's
+  # variance. a solved cell has no row of its own and moves with whatever sets it
   Q_oo = get_dsem_Q_oo(parts$IminusB, parts, get_dsem_solve_mat(parts$IminusB, dsem_cells), dsem_cells)
   pos = match(unknown, dsem_cells$obs_idx) # where each unknown cell sits in that precision
   Q_uu = Q_oo[pos,pos,drop = FALSE]

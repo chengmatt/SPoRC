@@ -70,17 +70,18 @@ populations, \code{list(1:4, 5:10)} for a juvenile and an adult block, or
 \item{cont_vary_movement}{Structure of the continuous deviations on the
 fixed-effect movement surface. \code{"none"} (default), or \code{"iid_"}
 followed by the dims they vary over, any of p (population), y (year), seas
-(season), a (age) and s (sex) in any order: \code{"iid_y"} is one deviation per
-year and region pair, or per year and region under CTMC movement, shared
+(season), a (age) and s (sex) in any order: \code{"iid_y"} is one deviation
+per year and region pair, or per year and region under CTMC movement, shared
 across everything else, and \code{"iid_p_y_seas_a_s"} varies by every dim. A
 dim left out shares one deviation across it. They are random effects with
 \code{Movement_cont_pe_pars_spec} estimating the sd and
-\code{random = "move_devs"} in \code{\link{fit_model}}. \code{"dsem"} instead
-hands their density to the arrows given to \code{\link{Setup_Mod_DSEM}}, one
-series per origin and destination (per region under CTMC, whose deviations
-hold no destination) and per level of every other dim with more than one,
-which it names itself since a deviation shared across a dim cannot be linked;
-\code{move_pe_pars} are then read by nothing.}
+\code{random = "move_devs"} in \code{\link{fit_model}}. \code{"dsem"}
+instead takes their density from the arrows given to
+\code{\link{Setup_Mod_DSEM}}, one series per origin and destination (per
+region under CTMC, whose deviations hold no destination) and per level of
+every other dim with more than one, which it names itself since a deviation
+shared across a dim cannot be linked; \code{move_pe_pars} are then read by
+nothing.}
 
 \item{Movement_cont_pe_pars_spec}{Estimation of the process error variance for
 the \code{cont_vary_movement} deviations. \code{"none"} creates no parameters

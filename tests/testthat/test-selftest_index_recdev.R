@@ -1,5 +1,5 @@
 # Self-test of the recruitment deviation index end to end. The OM has an ordinary biomass survey and one
-# whose observation IS year class strength, fit through srv_idx_type = "recdev".
+# whose observation is year class strength itself, fit through srv_idx_type = "recdev".
 #
 # Both sides hold the deviation with its lognormal correction inside it, so both add that correction back
 # to read the anomaly the index observes: rec_anom_add in the OM, RecDev_anom in the EM.
@@ -108,8 +108,7 @@ test_that("a recruitment deviation index is simulated and recovered", {
                         do_rec_bias_ramp = 0, sigmaR_switch = 1, sigmaR_spec = "fix",
                         ln_sigmaR = array(log(sigmaR), dim = c(2, 1, 1)),
                         # the operating model draws initial age deviations, so the
-                        # estimation model estimates them rather than starting from
-                        # a bare equilibrium
+                        # estimating model estimates them rather than starting flat
                         init_age_strc = 1, equil_init_age_strc = 2,
                         RecDevs_pen_center = "fixed",
                         ln_global_R0 = log(30), t_spawn = 0)
@@ -231,10 +230,8 @@ test_that("a recruitment deviation index is simulated and recovered", {
   q_hat <- exp(pl$ln_srv_q[1, 1, 2])
   expect_lt(abs(q_hat - q_rec_true) / q_rec_true, 0.25)
 
-  # and the fit recovers itself through the simulation, which is what puts the
-  # operating model's own recdev path under test: simulation_self_test hands
-  # srv_idx_type back to the simulator, so every replicate redraws this fleet
-  # as a deviation index rather than as an abundance
+  # srv_idx_type is passed back to the simulator, so every replicate redraws this fleet as a
+  # deviation index rather than as an abundance, which is what tests the operating model
   expect_lt(max(abs(fit$gr(fit$env$last.par.best))), 1e-3)
   sd_rep <- RTMB::sdreport(fit)
   set.seed(202)

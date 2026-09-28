@@ -109,12 +109,12 @@ observations only and fix that fleet's \code{ln_srv_q} whatever
 (default) of which correlation components to suppress under the 3D GMRF or 2D
 AR1 forms. See \code{\link{do_sel_pe_pars_mapping}}.}
 
-\item{srv_q_model}{Character vector \code{[n_srv_fleets]} of the process error
-on annual catchability deviations: \code{"none"} (default), \code{"iid"},
-\code{"rw"}, \code{"ar1"} or \code{"dsem"}, which hands the series to
-\code{\link{Setup_Mod_DSEM}}. Catchability is then \eqn{\exp(\ln q_{r,b,f} +
-\epsilon_{r,y,f})}. A fleet with deviations cannot also have
-\code{srv_q_blocks} or an analytically solved \code{srv_q_type}.}
+\item{srv_q_model}{Character vector \code{[n_srv_fleets]} of the process
+error on annual catchability deviations: \code{"none"} (default),
+\code{"iid"}, \code{"rw"}, \code{"ar1"} or \code{"dsem"}, which passes the
+series to \code{\link{Setup_Mod_DSEM}}. Catchability is then
+\eqn{\exp(\ln q_{r,b,f} + \epsilon_{r,y,f})}. A fleet with deviations cannot
+also have \code{srv_q_blocks} or an analytically solved \code{srv_q_type}.}
 
 \item{sigma_srv_q_spec}{Sharing string for the deviation standard deviation over
 region and fleet: \code{"est_all"} (default), \code{"est_shared_r"},

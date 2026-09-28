@@ -1,5 +1,10 @@
+# The selectivity smoothness penalties: what each term penalizes, the per-year weights and bin
+# ranges, and how the weights are resolved per fleet.
+
 library(SPoRC)
 library(testthat)
+
+# Resolving the Weights per Fleet --------------------------------------------
 
 test_that("resolve_sel_pen_wts works", {
 
@@ -92,6 +97,8 @@ test_that("resolve_sel_pen_wts works", {
 
 })
 
+# Per-year Weights and Bin Ranges --------------------------------------------
+
 test_that("Get_Selex_Smoothness_Penalty honors per-year weights and bin ranges", {
 
   n_yrs <- 4
@@ -167,11 +174,12 @@ test_that("Get_Selex_Smoothness_Penalty honors per-year weights and bin ranges",
 
 })
 
+# What Each Term Penalizes ---------------------------------------------------
+
 test_that("Get_Selex_Smoothness_Penalty works", {
 
-  # A perfectly smooth (log-linear-in-age, constant-across-years) surface should have
-  # exactly zero second-difference penalty in both directions, and no dome penalty
-  # (strictly increasing across bins).
+  # a surface log-linear in age and constant across years has exactly zero second difference in
+  # both directions, and no dome penalty, being strictly increasing across bins
   n_yrs <- 4
   n_bins <- 6
   log_sel_smooth <- outer(rep(1, n_yrs), seq(0.1, 1.5, length.out = n_bins))
@@ -305,6 +313,8 @@ test_that("Get_Selex_Smoothness_Penalty works", {
   })
 
 })
+
+# The Penalty Belongs to the Caller ------------------------------------------
 
 test_that("Get_PE_loglik has no penalty-weight arguments (caller's responsibility now)", {
 

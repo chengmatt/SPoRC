@@ -1,14 +1,13 @@
+# The error for an unrecognized composition likelihood names the fleet, its value and the nearest
+# accepted one. It used to list six of the nine accepted values and never said which fleet.
+
 library(SPoRC)
 library(testthat)
-
-# The composition likelihood message used to list six of the nine accepted values and never said
-# which fleet was wrong. It now names the fleet, its value and the nearest accepted one.
 
 msg <- function(...) tryCatch({
   SPoRC:::check_comp_like_type(...)
   NA_character_
 }, error = function(e) conditionMessage(e))
-
 
 test_that("the message names the fleet and every accepted value", {
 
@@ -19,7 +18,6 @@ test_that("the message names the fleet and every accepted value", {
   # the three -miss0 forms are what the old message left out
   for(v in SPoRC:::comp_like_type_options()) expect_match(m, v, fixed = TRUE)
 })
-
 
 test_that("a near miss gets a suggestion and a distant one does not", {
 
@@ -32,7 +30,6 @@ test_that("a near miss gets a suggestion and a distant one does not", {
   expect_false(grepl("did you mean", msg(NA_character_, "FishAgeComps_LikeType")))
 })
 
-
 test_that("conditional age-at-length says why its list is shorter", {
 
   m <- msg("iid-Logistic-Normal", "CAAL_LikeType",
@@ -43,13 +40,11 @@ test_that("conditional age-at-length says why its list is shorter", {
   expect_false(grepl("miss0", m))
 })
 
-
 test_that("a valid setting passes through untouched", {
   x <- c("none", "Multinomial", "2d-Logistic-Normal-miss0")
   expect_identical(SPoRC:::check_comp_like_type(x, "FishAgeComps_LikeType"), x)
   expect_true(is.na(msg(x, "FishAgeComps_LikeType")))
 })
-
 
 test_that("the exported setup functions raise it", {
 

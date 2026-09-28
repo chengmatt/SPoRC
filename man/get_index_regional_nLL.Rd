@@ -14,7 +14,8 @@ get_index_regional_nLL(
   Cov,
   seas_Type,
   const,
-  n_fleets
+  n_fleets,
+  bias_correct_oe = 0
 )
 }
 \arguments{

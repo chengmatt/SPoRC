@@ -66,15 +66,16 @@ test_that("Single-region BSAI northern rockfish RTMB model produces expected res
   ssb_fit <- as.vector(bsai_nork_rtmb_model$rep$SSB)[1:n_yrs]
   expect_lt(max(abs(ssb_fit / dat$admb$SSB - 1)), 2e-2)
 
-  # Recruitment likewise, but only over the years the deviations are estimated. The
-  # assessment's three terminal recruits are dev free and it builds them as the MEAN
-  # recruitment, exp(mean_log_rec + sigmaR^2 / 2), while SPoRC builds them as the
-  # median, exp(R0). With sigmaR fixed at 0.75 that is a factor of exp(sigmaR^2 / 2)
-  # = 1.32 between the two by construction, which the refit's own shift in the mean
-  # level has to 1.36. This is a convention difference, not a wiring bug: the
-  # bridge test reproduces those same years exactly because it seeds R0 with the bias
-  # correction already in it. Asserted here so that the gap stays understood rather
-  # than diverging.
+  # recruitment likewise, but only over the years the deviations are estimated.
+  #
+  # the assessment's three terminal recruits have no deviation and are built as the mean,
+  # exp(mean_log_rec + sigmaR^2 / 2), while SPoRC builds them as the median, exp(R0).
+  #
+  # at a fixed sigmaR of 0.75 that is a factor of 1.32, which the refit's own shift in the
+  # mean level brings to 1.36.
+  #
+  # this is a convention difference: the bridge test reproduces those same years exactly,
+  # since it seeds R0 with the bias correction already in it
   rec_fit <- as.vector(bsai_nork_rtmb_model$rep$Rec)[1:n_yrs]
   n_fixed <- 3
   est_yrs <- seq_len(n_yrs - n_fixed)

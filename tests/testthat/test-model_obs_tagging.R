@@ -1,19 +1,17 @@
+# The tag observation model: reporting rates off the logit scale, recaptures in the release year
+# by the Baranov form, and tags decaying and accumulating into the plus group across years.
+
 library(SPoRC)
 library(testthat)
 
-# do_*_mapping helpers call collect_message(); this function doesn't, but
-# release_conv_tag_attr and friends live in the same package convention, so
-# keep the same guard as the other test files for consistency/safety.
+# release_conv_tag_attr and its neighbors are called directly here, so messages_list is
+# created up front the way the setup functions would
 assign("messages_list", character(0), envir = .GlobalEnv)
 
-# A minimal 1-pop, 1-region, 1-fleet, 1-cohort, 2-age, 2-year-of-liberty
-# test setup. conv_fish_tag_attr = "p_a_s" (all dimensions attended) makes
-# release_conv_tag_attr() a pure pass-through (see release_tag_attr.R: with
-# every dim attended it just reshapes and returns the input unchanged), which
-# isolates this function's own tag decay/movement/recapture mechanics from
-# that separate, pre-existing apportionment logic. do_recruits_move = 0 and
-# n_regions = 1 make movement a structural no-op (only ages >= 2 are moved,
-# and with one region movement is multiplication by a 1x1 identity anyway).
+# One population, region, fleet and release, two ages and two years at liberty. Releases are
+# attended on every dimension and pass through unchanged, leaving the tag dynamics alone.
+#
+# One region and no recruit movement mean movement does nothing here either.
 make_tagging_input <- function() {
 
   n_pop <- 1

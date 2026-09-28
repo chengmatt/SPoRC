@@ -21,9 +21,10 @@ A single positive integer.
 \description{
 The \code{*_bins} arguments index into observed bins, so they need the bin
 count of the array they will be applied to. That is normally read straight
-off the supplied observation array, but a model with no data for a data source
-can hand in an array with no dimensions at all, so the model's own observed
-bin count stands in: the ageing error's observed-age dimension for ages, and
+off the supplied observation array, but a model with no data for a data
+source can supply an array with no dims at all, so the model's own observed
+bin count is used instead: the ageing error's observed-age dimension for
+ages, and
 \code{\link{obs_len_bins}} for lengths.
 }
 \keyword{internal}

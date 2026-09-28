@@ -1,14 +1,8 @@
+# A likelihood profile over a catchability the model solves analytically would come back flat,
+# since the grid value never reaches the likelihood, so it is refused with the fleet named.
+
 library(SPoRC)
 library(testthat)
-
-# do_likelihood_profile() refuses to profile catchability when the model solves it
-# analytically. Under fish_q_type/srv_q_type of "arith" or "geo" the model recomputes q from
-# the index and never reads ln_fish_q/ln_srv_q, so the grid value never reaches the
-# likelihood and the profile would come back flat.
-#
-# ln_fish_q and ln_srv_q are dimensioned [region, block, fleet] and idx has linear
-# indices, so the fleet a profile touches only falls out of the third dim once the
-# region and block strides are accounted for.
 
 q_pars <- list(
   # 2 regions x 3 blocks x 2 fleets, so fleet 1 is linear index 1:6 and fleet 2 is 7:12

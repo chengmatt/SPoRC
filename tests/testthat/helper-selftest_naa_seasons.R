@@ -18,6 +18,8 @@ naaseas_cfg <- list(
   f_ramp = c(seq(0.04, 0.30, length.out = 18), seq(0.30, 0.08, length.out = 12))
 )
 
+# The Innovation Draws Alone -------------------------------------------------
+
 #' Simulation environment for the innovation draws alone
 #'
 #' Built directly rather than through the full operating model, because
@@ -57,6 +59,8 @@ naaseas_env <- function(
   )
   list2env(utils::modifyList(base, list(...)))
 }
+
+# Operating Model ------------------------------------------------------------
 
 #' Operating model with a seasonal state on the numbers at age
 #'
@@ -144,6 +148,8 @@ naaseas_make_om <- function(
   set.seed(seed)
   Simulate_Pop_Static(sim_list = sim_list, output_path = NULL)
 }
+
+# Estimating Model -----------------------------------------------------------
 
 #' Estimation model over the two season data
 #' @keywords internal
@@ -268,6 +274,8 @@ naaseas_build_em <- function(sim_data, NAA_re = "none", ...) {
     Wt_SrvAgeComps = fw
   )
 }
+
+# Reading the Draws Back -----------------------------------------------------
 
 #' The operating model's observations, in the shape the estimation model reads
 #' @keywords internal

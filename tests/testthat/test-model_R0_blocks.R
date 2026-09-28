@@ -1,4 +1,4 @@
-# Time blocks on R0. Under mean recruitment R0 IS mean recruitment, so a block is a productivity
+# Time blocks on R0. Under mean recruitment R0 is mean recruitment, so a block is a productivity
 # regime; under a stock-recruit form it is the curve's scale.
 #
 # The reference block supplies the single value the initial age structure, the prior, the ln_rinit
@@ -168,9 +168,8 @@ test_that("the operating model has R0 blocks rather than flattening them", {
 
 test_that("the operating model warns when it cannot honor R0_ref_block", {
 
-  # year one of R0_input both solves the operating model's equilibrium and generates its
-  # first year's recruitment, so the operating model always starts from the block in force
-  # at year one; the estimation model starts from R0_ref_block
+  # year one of R0_input both solves the operating model's equilibrium and generates its first
+  # recruitment, so it starts from year one's block while the estimating model reads its own
   d <- list(
     R0_blocks = array(c(rep(1, 15), rep(2, 15)), dim = c(1, 30, 1)),
     R0_ref_block = 1L,

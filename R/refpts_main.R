@@ -198,9 +198,9 @@ solve_plus_group <- function(Ts, N_penult_u, N_penult_f, n_regions) {
 #'
 #' MSY is the maximum of equilibrium yield over a stock-recruit curve, so it is
 #' only defined when the fit estimated one. A model fitted with
-#' \code{rec_model = "mean_rec"} has \code{rec_model == 0}, and the
-#' equilibrium recruitment helpers in \code{refpts_msy.R} branch on Ricker
-#' against everything else, so an unguarded mean recruitment fit would be handed
+#' \code{rec_model = "mean_rec"} has \code{rec_model == 0}, and the equilibrium
+#' recruitment helpers in \code{refpts_msy.R} branch on Ricker against
+#' everything else, so a mean recruitment fit would otherwise be given
 #' Beverton-Holt reference points. Steepness is also mapped off under mean
 #' recruitment, so those reference points would sit at the default
 #' \code{h_trans = 0.6} rather than anything the model estimated. Both failures
@@ -241,8 +241,8 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
                 "default steepness of 0.6. Request SPR reference points instead, with what = ", spr_alt,
                 ": they scale spawning biomass per recruit by mean recruitment and are well defined here.")
 
-  # a stock-recruit penalty does fit a curve, but it is penalized against the recruitment deviations
-  # rather than governing the stock, so maximizing yield over it would assert what the fit did not
+  # a stock-recruit penalty fits a curve, but it only penalizes the recruitment deviations and does
+  # not drive the stock, so yield cannot be maximized over it
   if(sr_penalty > 0) {
     msg <- paste0(msg, " This fit does have a stock-recruit penalty (sr_penalty = ", sr_penalty,
                   "), but that curve is penalized against the recruitment deviations rather than driving ",

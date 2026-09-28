@@ -41,7 +41,7 @@ test_that("the bias correction switch centers the initial deviations and recruit
   # the switch shows up in where the recruitment deviations are centered instead
   expect_equal(mean(om1$ln_RecDevs), -0.5, tolerance = 0.1)
   expect_equal(mean(om0$ln_RecDevs), 0, tolerance = 0.1)
-  # and an index reads the anomaly, so what it adds back is the correction the deviation carries
+  # and an index reads the anomaly, so what it adds back is the correction on the deviation
   expect_equal(mean(om1$rec_anom_add), 0.5, tolerance = 1e-10)
   expect_equal(mean(om0$rec_anom_add), 0, tolerance = 1e-10)
   expect_error(suppressMessages(init_devs_sim(rec_bias_correct = 2)), "0 or 1")

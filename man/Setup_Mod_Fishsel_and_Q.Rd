@@ -132,12 +132,12 @@ observations only and fix that fleet's \code{ln_fish_q} whatever
 \code{fish_q_spec} says. The solve runs within each \code{fish_q_blocks}
 block, so a blocked catchability gets one solved value per block.}
 
-\item{fish_q_model}{Character vector \code{[n_fish_fleets]} of the process error
-on annual catchability deviations: \code{"none"} (default), \code{"iid"},
-\code{"rw"}, \code{"ar1"} or \code{"dsem"}, which hands the series to
-\code{\link{Setup_Mod_DSEM}}. Catchability is then \eqn{\exp(\ln q_{r,b,f} +
-\epsilon_{r,y,f})}. A fleet with deviations cannot also have
-\code{fish_q_blocks} or an analytically solved \code{fish_q_type}.}
+\item{fish_q_model}{Character vector \code{[n_fish_fleets]} of the process
+error on annual catchability deviations: \code{"none"} (default),
+\code{"iid"}, \code{"rw"}, \code{"ar1"} or \code{"dsem"}, which passes the
+series to \code{\link{Setup_Mod_DSEM}}. Catchability is then
+\eqn{\exp(\ln q_{r,b,f} + \epsilon_{r,y,f})}. A fleet with deviations cannot
+also have \code{fish_q_blocks} or an analytically solved \code{fish_q_type}.}
 
 \item{sigma_fish_q_spec}{Sharing string for the deviation standard deviation
 over region and fleet: \code{"est_all"} (default), \code{"est_shared_r"},

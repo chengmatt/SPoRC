@@ -1,3 +1,9 @@
+# MSY is the maximum of equilibrium yield over a stock-recruit curve, and a fit under mean
+# recruitment never estimated one, so every route into the MSY solvers has to refuse it.
+#
+# The equilibrium recruitment helpers split Ricker from everything else, so mean recruitment
+# would otherwise be read as Beverton-Holt at a steepness of 0.6. SPR has to be unaffected.
+
 library(SPoRC)
 library(testthat)
 data("sgl_rg_sable_rep")
@@ -5,13 +11,7 @@ data("sgl_rg_sable_data")
 data("mlt_rg_sable_rep")
 data("mlt_rg_sable_data")
 
-# MSY is the maximum of equilibrium yield over a stock-recruit curve. A fit with
-# rec_model = "mean_rec" never estimated one, and the equilibrium recruitment
-# helpers branch on Ricker against everything else, so rec_model 0 used to fall
-# through to Beverton-Holt at the default steepness of 0.6 without complaint.
-# These tests pin the error, and pin that SPR is unaffected.
-
-test_that("MSY reference points error rather than defaulting to Beverton-Holt under mean recruitment", {
+test_that("MSY under mean recruitment errors rather than assuming Beverton-Holt", {
 
   mean_rec_data <- sgl_rg_sable_data
   mean_rec_data$rec_model <- 0 # mean_rec
@@ -38,12 +38,12 @@ test_that("MSY reference points error rather than defaulting to Beverton-Holt un
 
 })
 
-test_that("The deprecated BH_MSY alias reaches the same guard", {
+test_that("the deprecated BH_MSY spelling is refused the same way", {
 
   mean_rec_data <- sgl_rg_sable_data
   mean_rec_data$rec_model <- 0 # mean_rec
 
-  # BH_MSY warns and maps to MSY, so the guard has to fire on the mapped name.
+  # BH_MSY warns and maps to MSY, so the error has to come from the mapped name
   expect_error(
     suppressWarnings(
       Get_Reference_Points(data = mean_rec_data,
@@ -57,7 +57,7 @@ test_that("The deprecated BH_MSY alias reaches the same guard", {
 
 })
 
-test_that("Every multi region MSY variant is guarded", {
+test_that("every multi-region MSY form is refused too", {
 
   mean_rec_data <- mlt_rg_sable_data
   mean_rec_data$rec_model <- 0 # mean_rec
@@ -76,7 +76,7 @@ test_that("Every multi region MSY variant is guarded", {
 
 })
 
-test_that("A stock-recruit penalty under mean recruitment is still rejected, with its own note", {
+test_that("a stock-recruit penalty under mean recruitment is refused, with its own note", {
 
   # sr_penalty fits a curve, but only as a penalty against the recruitment
   # deviations, and its scale sr_R0 is not reported, so the solvers cannot use it.
@@ -95,7 +95,7 @@ test_that("A stock-recruit penalty under mean recruitment is still rejected, wit
 
 })
 
-test_that("SPR reference points are unaffected by rec_model, since they never touch the curve", {
+test_that("SPR reference points do not read rec_model, since they never touch the curve", {
 
   # SPR scales spawning biomass per recruit by mean recruitment from rep$Rec, so
   # it is well defined under every rec_model and must return the same numbers.
@@ -122,10 +122,10 @@ test_that("SPR reference points are unaffected by rec_model, since they never to
 
 })
 
-test_that("The solvers themselves reject rec_model 0, for data lists built by hand", {
+test_that("the solvers refuse rec_model 0 themselves, for data lists built by hand", {
 
-  # Get_Reference_Points is the guarded entry point, but the solvers are reachable
-  # directly, so they have their own check rather than trusting the caller.
+  # Get_Reference_Points checks its arguments, but the solvers can be called directly, so
+  # they check for themselves rather than trusting the caller
   for(solver in c("single_region_Fmsy", "global_Fmsy", "local_Fmsy_sglpop", "local_Fmsy_multipop")) {
     expect_error(
       do.call(get(solver, envir = asNamespace("SPoRC")),
@@ -137,7 +137,7 @@ test_that("The solvers themselves reject rec_model 0, for data lists built by ha
 
 })
 
-test_that("Beverton-Holt and Ricker MSY still run, and an absent rec_model still means Beverton-Holt", {
+test_that("Beverton-Holt and Ricker MSY still run, and a missing rec_model still means Beverton-Holt", {
 
   bh_data <- sgl_rg_sable_data
   bh_data$rec_model <- 1 # beverton-holt

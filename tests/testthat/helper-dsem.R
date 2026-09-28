@@ -1,5 +1,5 @@
-# Reference density for the dsem tests: the covariance of the grid built densely from the arrows,
-# Sigma = (I - B)^-1 t(Gamma) Gamma (I - B)^-T, evaluated as a multivariate normal. No precision, no dgmrf.
+# Reference density for the dsem tests: the covariance built densely from the arrows,
+# Sigma = (I - B)^-1 t(Gamma) Gamma (I - B)^-T, as a multivariate normal. No dgmrf.
 
 dense_dsem_sigma <- function(dsem_beta, ln_dsem_sd, x_grid, dsem_model) {
 

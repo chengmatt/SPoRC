@@ -1,5 +1,5 @@
 # Checks the operating model draw for a reduced rank grid: a projected cell is set from the drawn
-# cells rather than drawn (1e-12), those cells carry Q_oo's covariance (5 SE), conditioned years are
+# cells rather than drawn (1e-12), those cells take Q_oo's covariance (5 SE), conditioned years are
 # kept, and a full rank grid draws as the whole grid precision did (1e-14).
 
 # a minimal operating model environment, the way test-dsem_simulation.R builds its Monte Carlo one

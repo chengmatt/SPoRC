@@ -9,7 +9,7 @@
 #'   \code{2}, or the matching name \code{"none"}, \code{"softplus"} or
 #'   \code{"upwind"}.
 #'
-#' @return Character scalar naming the form, or \code{NA_character_} if \code{x} is
+#' @return Character scalar naming the form, or \code{NA} if \code{x} is
 #'   not one of the accepted values.
 #'
 #' @keywords internal
@@ -17,7 +17,7 @@ get_ctmc_bound_form <- function(x) {
   forms <- c("none", "softplus", "upwind") # codes 0, 1 and 2 in this order
   if(is.numeric(x) && length(x) == 1 && x %in% (seq_along(forms) - 1)) return(forms[x + 1])
   if(is.character(x) && length(x) == 1 && x %in% forms) return(x)
-  NA_character_
+  NA
 }
 
 #' Get Design Matrices for CTMC Movement
@@ -236,8 +236,8 @@ Get_Movement <- function(move_type,
 
   } else if(move_type == 1) { # continuous markov chain movement with projection support
 
-    # deviations sit on a region's preference here, one per region, so a dev array built for the
-    # unstructured model would silently hand every region its first destination's deviation
+    # the deviations sit on a region's preference, one per region, so an array built for the
+    # unstructured model would give every region its first destination's deviation
     if(dim(move_devs)[3] != 1) stop("move_devs has ", dim(move_devs)[3], " destinations, and CTMC movement holds its deviations on each region's preference, so that axis must be 1. Rebuild the inputs with Setup_Mod_Movement.")
 
     # set up dimensions of movement matrix
@@ -248,7 +248,7 @@ Get_Movement <- function(move_type,
     # ctmc_move_dat holds one row per pop, region, year, season, age and sex, so rows are found
     # by position. the year axis is sized to the covariates, which may include projection years
     ctmc_key = sapply(c('pop','regions','years','seas','ages','sexes'), function(v) as.integer(ctmc_move_dat[,v])) # convert ctmc dataframe to matrix
-    ctmc_row = array(NA_integer_, dim = pmax(c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes), apply(ctmc_key, 2, max))) # pmax to get projection year if there are any
+    ctmc_row = array(NA, dim = pmax(c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes), apply(ctmc_key, 2, max))) # pmax to get projection year if there are any
     ctmc_row[ctmc_key] = seq_len(nrow(ctmc_move_dat))
 
     # setup design matrix
@@ -270,8 +270,8 @@ Get_Movement <- function(move_type,
     # ridge on the preference coefficients, applied once; pins both level and spread
     move_pen = move_pen + sum(gamma_k^2)
 
-    # generator edges, as the (destination, origin) pairs the adjacency allows. every flow transform
-    # runs on this value slot, so a non-edge stays exactly zero and work scales with edge count
+    # the movement edges, as the destination and origin pairs the adjacency allows. a pair that is not
+    # an edge stays exactly zero
     bound_form = get_ctmc_bound_form(ctmc_diffusion_bounds)
     edge_ij = which(adjacency_mat == 1 & diag(1, n_regions) == 0, arr.ind = TRUE)
     edge_to = edge_ij[,1] # destination region

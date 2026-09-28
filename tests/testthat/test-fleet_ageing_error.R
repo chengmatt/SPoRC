@@ -1,10 +1,9 @@
+# A fishery reading otoliths and a survey reading scales do not misclassify the same way, so
+# each fleet may have its own matrix. Both default to the shared one, and a model written
+# before these existed has to come out bit for bit unchanged.
+
 library(SPoRC)
 library(testthat)
-
-# Fleet-specific ageing error. A fishery reading otoliths and a survey reading
-# scales do not misclassify the same way, so each fleet may have its own matrix.
-# Both default to the shared AgeingError, and a model written before these
-# existed has to come out bit for bit unchanged.
 
 # a row-stochastic smearing matrix: some of each true age is read one age either side
 smear <- function(n, p = 0.2) {
@@ -66,9 +65,8 @@ test_that("expand_fleet_ageing_error refuses shapes that would misalign the comp
   for(f in 1:2) wrong_obs[,,f] <- diag(1, n_ages)[, 2:n_ages]
   expect_error(expand_fleet_ageing_error(wrong_obs, shared, 2, "AgeingError_fish"), "matching AgeingError")
 
-  # a row that does not sum to one is reported through the setup messages rather
-  # than rejected, because the likelihood renormalizes the expectation after the
-  # multiply and models supplied such a matrix long before it was ever checked
+  # a row that does not sum to one is reported rather than refused, since the likelihood
+  # renormalizes afterwards and such matrices were supplied long before this was checked
   bad_rows <- array(0, dim = c(n_ages, n_ages, 2))
   for(f in 1:2) bad_rows[,,f] <- diag(1, n_ages)
   bad_rows[1, 1, 2] <- 0.5
@@ -123,12 +121,11 @@ test_that("a fleet's own ageing error changes only that fleet's composition like
   expect_equal(sum(out$rep$FishAgeComps_nLL), sum(base$rep$FishAgeComps_nLL), tolerance = 1e-10)
 })
 
-# The operating model simulates compositions through the per-fleet matrices, and
-# the estimation model has to be handed the same ones back. Simulate_Pop_Static
-# returns a curated list rather than the whole environment, so anything it does
-# not name is lost, and simulation_data_to_SPoRC then quietly gives every fleet
-# the shared matrix. That fails silently: the self-test still runs, it just
-# estimates against an ageing error the data were never generated with.
+# The operating model simulates compositions through the per-fleet matrices and the
+# estimating model has to get the same ones back.
+#
+# Simulate_Pop_Static returns a hand-curated list, so anything it does not name is lost and
+# every fleet gets the shared matrix. The self test still runs, against the wrong matrix.
 
 test_that("Simulate_Pop_Static holds the per-fleet matrices through to the estimation model", {
   skip_if_not(exists("caal_make_om"), "helper-selftest_caal.R not loaded")

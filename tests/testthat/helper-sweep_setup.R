@@ -1,14 +1,10 @@
-# A model built for sweeping the option surface rather than for testing one feature.
-#
-# Every dimension has a distinct extent, so an index walking the wrong dim lands somewhere visible, and every
-# data source is on, so an option is never dead for want of data. Both would otherwise read as "no change".
-#
-# The stages take override lists rather than dots, so a sweep can reach one argument of one stage.
+# Test setup for the option sweeps: one model with every data source turned on, so
+# that an option doing nothing cannot be blamed on missing data.
 
-# Distinct extents for every dimension that has more than one cell. Sharing an
-# extent between two dimensions is what lets a transposed or mis-strided index
-# return the right shape, so these stay pairwise distinct even when a smaller
-# model would run faster.
+# Setup ----------------------------------------------------------------------
+
+# no two dimensions the same size, so ages read as years give the wrong length
+# rather than quietly plausible numbers
 sweep_dims <- list(
   n_yrs = 13,
   n_ages = 7,
@@ -202,8 +198,9 @@ sweep_input <- function(
 }
 
 
-# Which override slot of sweep_input feeds each Setup_Mod_* stage, so a sweep can
-# go from an argument name to the call that receives it.
+# Which Argument Goes to Which Stage -----------------------------------------
+
+# from an argument name to the call that receives it
 sweep_stage_slot <- c(
   Setup_Mod_Rec              = "rec",
   Setup_Mod_Biologicals      = "biol",
@@ -239,33 +236,30 @@ sweep_build_with <- function(
 ) {
   slot <- sweep_stage_slot[[stage]]
   d <- utils::modifyList(sweep_dims, dims)
-  # a spec with no live configuration to apply arrives as NULL
+  # nothing extra to turn on for this argument
   if(is.null(extra)) extra <- list()
   if(is.null(other)) other <- list()
 
   attempt <- function(v) {
-    # a sweep that only reads the map stops at the stage under test; one that has
-    # to evaluate the objective needs the remaining stages too
+    # a sweep that only reads the map stops at the stage being tested, one that
+    # evaluates the objective needs the stages after it too
     args <- c(list(dims = dims, stop_after = if(full) NULL else slot), other)
     args[[slot]] <- utils::modifyList(stats::setNames(list(v), arg), extra)
-    # warnings are suppressed rather than caught: several specs warn about weakly
-    # informed parameters and still build, and a caught warning would abort the
-    # build and read as a rejected spec
+    # several settings warn about a weakly informed parameter and still build, so a
+    # caught warning would look like a refused setting
     tryCatch(suppressWarnings(do.call(sweep_input, args)), error = function(e) e)
   }
 
   res <- attempt(value)
 
-  # Some specs take one value per fleet. Only a few say so; the rest reject the
-  # scalar by complaining about its value, or fall over on an NA comparison, so
-  # the retry cannot be driven off the message and is simply always tried.
+  # some arguments want one value per fleet but do not say so, so the per-fleet
+  # length is always retried rather than read off the error
   if(inherits(res, "condition") && length(value) == 1) {
     n <- if(grepl("srv", stage, ignore.case = TRUE)) d$n_srv_fleets else d$n_fish_fleets
     if(n > 1) {
       retry <- attempt(rep(value, n))
-      # a length complaint says nothing about the value, so the fleet-length
-      # attempt is the informative one whether it succeeded or failed for some
-      # further reason
+      # a complaint about length says nothing about the value, so keep the
+      # per-fleet attempt either way
       if(!inherits(retry, "condition") ||
          grepl("not length|length of n_|needs to have a length|entr(y|ies) for [0-9]+ fleet",
                conditionMessage(res))) res <- retry
@@ -276,12 +270,10 @@ sweep_build_with <- function(
 }
 
 
-#' Whether an error is the model declining a spec its configuration cannot have
+#' Whether an error is the model refusing a setting this model cannot have
 #'
-#' Some specs are legal only alongside another option: sharing over selectivity
-#' bins needs a bin-indexed deviation form, for instance. At any one test setup
-#' configuration those specs are legitimately unbuildable, which is the check
-#' working rather than a broken spec.
+#' Sharing over selectivity bins needs a bin-indexed deviation form, for instance,
+#' so some legal settings cannot be built here at all and are skipped.
 #'
 #' @keywords internal
 sweep_is_config_refusal <- function(e) {
@@ -297,12 +289,8 @@ sweep_is_config_refusal <- function(e) {
 
 #' Put a bare option value into the form its argument requires
 #'
-#' Several options are given as \code{"<value>_Year_<a>-<b>_Fleet_<f>"} or
-#' \code{"<value>_Fleet_<f>"}, but name only the \code{<value>} half in the error
-#' listing their legal settings. A sweep reading that listing therefore holds a
-#' value the argument will reject on its shape rather than its content. The
-#' required shape is recovered the same way the values were: by asking, and
-#' reading the answer.
+#' Some arguments want \code{"<value>_Year_<a>-<b>_Fleet_<f>"} but name only the
+#' \code{<value>} half in their error, so the rest is recovered by trying it.
 #'
 #' @param stage,arg Stage function and argument.
 #' @param value Bare value from \code{sweep_legal_specs}.
@@ -328,13 +316,10 @@ sweep_format_value <- function(stage, arg, value, dims = list()) {
 }
 
 
-#' Whether an error is the identifiability guard declining a spec
+#' Whether an error is the identifiability check refusing a setting
 #'
-#' \code{check_spec_map_identifiable} refuses a spec that leaves an observation
-#' error parameter with too few observations to estimate. Which specs it refuses
-#' depends on the model's dimensions, so at any one test setup size some legal specs
-#' are legitimately unbuildable. That is the guard working, not a broken spec, and
-#' the sweeps treat it as a skip.
+#' \code{check_spec_map_identifiable} refuses a setting that leaves an observation
+#' error parameter with too few observations, which depends on the model's size.
 #'
 #' @keywords internal
 sweep_is_identifiability_refusal <- function(e) {
@@ -343,11 +328,10 @@ sweep_is_identifiability_refusal <- function(e) {
 }
 
 
-#' Legal values of a spec argument, read off the package's own error message
+#' Legal values of an argument, read off the package's own error message
 #'
-#' Every spec argument validates its input against a list it names in the error
-#' it raises, so the surface is discovered by asking rather than by keeping a
-#' second copy of it here that would fall out of step.
+#' Each argument names its legal values in the error it raises, so the sweep asks
+#' rather than keeping a second copy here that would fall out of step with it.
 #'
 #' @param stage,arg Stage function name and argument name.
 #' @param dims Dimension overrides.
@@ -360,10 +344,8 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
   d <- utils::modifyList(sweep_dims, dims)
   n <- if(grepl("Srv|srv", arg)) d$n_srv_fleets else d$n_fish_fleets
 
-  # Arguments differ in whether they check a value's length or its content first.
-  # One that checks length first answers a scalar probe with a length complaint
-  # and never reaches the listing, so both shapes are probed and whichever names
-  # values is the one read.
+  # an argument that checks length first never reaches its list of values, so try
+  # one value and one per fleet, and read whichever answer names values
   probes <- list("__not_a_spec__")
   if(n > 1) probes[[2]] <- rep("__not_a_spec__", n)
 
@@ -380,9 +362,8 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
   }
   if(!nzchar(msg)) return(character(0))
 
-  # The message forms the package uses to name what it will accept. They differ
-  # by author rather than by meaning, so all of them are read here instead of
-  # keeping a second copy of the surface that would fall out of step with the first.
+  # the wordings the package uses to say what it accepts, which differ by author
+  # rather than by meaning
   patterns <- c("(?<=Accepted values are: ).*",
                 "(?<=Should be one of these: ).*", "(?<=Valid options: ).*",
                 "(?<=Must be one of: ).*", "(?<=Must be one of these: ).*",
@@ -395,8 +376,8 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
   }
   if(length(m) == 0) return(character(0))
 
-  # the list ends at the first sentence break; prose after it describes the
-  # arguments rather than naming more values
+  # the list ends at the first sentence break, since anything after it describes
+  # the arguments rather than naming more values
   txt <- sub("[.!] .*$", "", m[1])
   txt <- sub("[.!]$", "", txt)
   parts <- trimws(unlist(strsplit(txt, ",| or |/")))
@@ -410,17 +391,17 @@ sweep_legal_specs <- function(stage, arg, dims = list(), extra = list()) {
 }
 
 
-#' A comparable digest of what a build produced
+# Comparing Two Builds -------------------------------------------------------
+
+#' What a build produced, in a form two builds can be compared on
 #'
-#' Records the estimation structure (how many free parameters each block has and
-#' how they are grouped) and the model configuration separately, so a sweep can
-#' tell an option that changes what is estimated from one that changes what is
-#' computed, and both from one that changes nothing.
+#' Keeps the free parameters and their grouping apart from the settings the
+#' objective reads, so an option that changes neither shows up as no change.
 #'
 #' @param il An input list from \code{sweep_input}.
 #'
 #' @keywords internal
-sweep_signature <- function(il) {
+sweep_structure <- function(il) {
   map_sig <- lapply(il$map, function(m) {
     f <- as.integer(as.factor(as.character(m)))
     list(n_free = length(unique(stats::na.omit(f))), grouping = paste(f, collapse = ","))
@@ -437,7 +418,7 @@ sweep_signature <- function(il) {
 }
 
 
-#' Which blocks differ between two signatures
+#' Which blocks differ between two builds
 #'
 #' @keywords internal
 sweep_diff <- function(a, b) {
@@ -448,7 +429,7 @@ sweep_diff <- function(a, b) {
   list(map = cmp(a$map, b$map), par = cmp(a$par, b$par), data = cmp(a$data, b$data))
 }
 
-#' TRUE when two signatures are identical in every respect
+#' TRUE when two builds are identical in every respect
 #'
 #' @keywords internal
 sweep_identical <- function(a, b) {
@@ -457,24 +438,15 @@ sweep_identical <- function(a, b) {
 }
 
 
-# ---------------------------------------------------------------------------
-# Which configuration makes a spec live
+# What Has to Be Turned On First ---------------------------------------------
 #
-# Several specs govern a parameter that only exists once some other option is
-# switched on: the age-correlation specs need an at-age data source with a
-# non-iid correlation, the selectivity process-error specs need a time-varying
-# selectivity form. Outside that configuration the spec has nothing to map, and
-# every one of its values builds the same model.
-#
-# Recording the configuration turns "this option looks dead" into a question with
-# an answer. A spec listed here must be live in the configuration named; a spec
-# still inert there is wired to nothing.
-# ---------------------------------------------------------------------------
+# Age correlations need at-age data, selectivity process error needs a time-varying
+# curve. A setting still doing nothing in the model named here is wired to nothing.
 
-#' Extra arguments that put a spec's parameter into the model
+#' Extra arguments that put a setting's parameter into the model
 #'
-#' @param arg Spec argument name.
-#' @param dims Dimension overrides, so the arrays match the test setup being swept.
+#' @param arg Argument name.
+#' @param dims Dimension overrides, so the arrays match the model being swept.
 #'
 #' @return Named list of extra arguments for the same stage, or \code{NULL} when
 #'   the spec needs no special configuration.
@@ -486,11 +458,9 @@ sweep_live_config <- function(arg, dims = list()) {
   aa_dim <- function(n_fleets) c(d$n_regions, d$n_yrs, d$n_seas, d$n_ages, d$n_sexes, n_fleets)
   agg_dim <- function(n_fleets) c(d$n_regions, d$n_yrs, d$n_seas, n_fleets)
 
-  # An at-age data source replaces its aggregated counterpart rather than joining it,
-  # so the aggregate is switched off wherever the at-age form is switched on. The
-  # type is set sex-split because the default sums over sexes, which a model
-  # with two sexes of observations cannot do.
-  aa_stream <- function(prefix, n_fleets, corr_name, agg_use, se = FALSE, extra = list()) {
+  # at-age numbers replace the aggregated catch rather than joining it, and are set
+  # sex-split because the default sums over sexes
+  aa_source <- function(prefix, n_fleets, corr_name, agg_use, se = FALSE, extra = list()) {
     out <- list()
     out[[paste0("Obs", prefix)]] <- array(100, dim = aa_dim(n_fleets))
     out[[paste0("Use", prefix)]] <- array(1, dim = aa_dim(n_fleets))
@@ -507,16 +477,16 @@ sweep_live_config <- function(arg, dims = list()) {
   n_s <- d$n_srv_fleets
 
   switch(arg,
-    rho_catch_spec      = aa_stream("CatchAA", n_f, "AgeObsCorr_catch", "UseCatch"),
-    rho_discard_spec    = aa_stream("DiscardAA", n_f, "AgeObsCorr_discard", "UseDiscard",
+    rho_catch_spec      = aa_source("CatchAA", n_f, "AgeObsCorr_catch", "UseCatch"),
+    rho_discard_spec    = aa_source("DiscardAA", n_f, "AgeObsCorr_discard", "UseDiscard",
                                     extra = list(discard_units = rep("abd", n_f))),
-    sigmaDAA_spec       = aa_stream("DiscardAA", n_f, NULL, "UseDiscard",
+    sigmaDAA_spec       = aa_source("DiscardAA", n_f, NULL, "UseDiscard",
                                     extra = list(discard_units = rep("abd", n_f))),
-    sigmaCAA_spec       = aa_stream("CatchAA", n_f, NULL, "UseCatch"),
-    rho_srv_idx_spec    = aa_stream("SrvIdxAA", n_s, "AgeObsCorr_srv_idx", "UseSrvIdx", se = TRUE),
-    sigmaSrvIdxAA_spec  = aa_stream("SrvIdxAA", n_s, NULL, "UseSrvIdx", se = TRUE),
-    # Time-varying selectivity needs BOTH the process-error spec and the deviation
-    # spec; supplying one alone passes the NULL guard and fails downstream.
+    sigmaCAA_spec       = aa_source("CatchAA", n_f, NULL, "UseCatch"),
+    rho_srv_idx_spec    = aa_source("SrvIdxAA", n_s, "AgeObsCorr_srv_idx", "UseSrvIdx", se = TRUE),
+    sigmaSrvIdxAA_spec  = aa_source("SrvIdxAA", n_s, NULL, "UseSrvIdx", se = TRUE),
+    # time-varying selectivity needs the process error and the deviations together,
+    # since one alone builds and then fails later
     srvsel_pe_pars_spec  = list(cont_tv_srv_sel = paste0("iid_Fleet_", seq_len(n_s)),
                                 srv_sel_devs_spec = rep("est_all", n_s)),
     srv_sel_devs_spec    = list(cont_tv_srv_sel = paste0("iid_Fleet_", seq_len(n_s)),
@@ -551,11 +521,10 @@ sweep_live_config <- function(arg, dims = list()) {
 }
 
 
-#' Dimension overrides a spec needs to have anything to map
+#' Dimensions a setting needs before it has anything to map
 #'
-#' The population-specific data sources exist only in a model with more than one
-#' population, so their specs are swept at two populations rather than at the
-#' test setup's default of one.
+#' Population-specific data exist only with more than one population, so those
+#' settings are swept at two rather than at this model's default of one.
 #'
 #' @keywords internal
 sweep_live_dims <- function(arg) {
@@ -563,12 +532,10 @@ sweep_live_dims <- function(arg) {
 }
 
 
-#' Settings on stages earlier than the spec's own that its configuration needs
+#' Settings on an earlier stage that a setting needs
 #'
-#' A population-specific data source needs a model that has populations, and a
-#' model with more than one population only recruits under local density
-#' dependence. That setting belongs to the recruitment stage, several stages
-#' before the spec being swept.
+#' More than one population only recruits under local density dependence, which is
+#' set at the recruitment stage, several stages before the one being swept.
 #'
 #' @keywords internal
 sweep_live_other <- function(arg) {
@@ -576,9 +543,8 @@ sweep_live_other <- function(arg) {
 }
 
 
-# Extent of the dimension each abbreviation names, so a spec that shares only over
-# dimensions this model has one of can be recognized as legitimately equal to
-# est_all rather than reported as dead wiring.
+# size of the dimension each abbreviation names, so that sharing over a dimension
+# this model has only one of reads as est_all rather than as dead wiring
 sweep_abbrev_extent <- function(stage, dims = list()) {
   d <- utils::modifyList(sweep_dims, dims)
   n_f <- if(grepl("Srv", stage)) d$n_srv_fleets else d$n_fish_fleets
@@ -594,15 +560,15 @@ sweep_abbrev_extent <- function(stage, dims = list()) {
   )
 }
 
-#' Whether a sharing spec collapses only dimensions this model has one of
+#' Whether a sharing setting collapses only dimensions this model has one of
 #'
 #' @keywords internal
 sweep_spec_is_degenerate <- function(stage, value, dims = list()) {
   if(!grepl("^est_shared_", value)) return(FALSE)
   parts <- strsplit(sub("^est_shared_", "", value), "_")[[1]]
   ext <- sweep_abbrev_extent(stage, dims)
-  # an abbreviation this table does not have (selectivity bins, say) cannot be
-  # ruled degenerate, so the spec is treated as meaningful
+  # an abbreviation missing from the table (selectivity bins, say) cannot be ruled
+  # degenerate, so the setting is treated as meaningful
   if(!all(parts %in% names(ext))) return(FALSE)
   all(ext[parts] < 2)
 }

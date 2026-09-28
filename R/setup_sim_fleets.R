@@ -779,7 +779,7 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$FishIdx_LikeType <- FishIdx_LikeType # fishery index error structure
   if(!is.null(fish_idx_mvn)) {
     sim_list$fish_idx_mvn <- fish_idx_mvn # factor parameters for mvn index fleets
-    sim_list$fish_idx_u <- matrix(NA_real_, sim_list$n_fish_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
+    sim_list$fish_idx_u <- matrix(NA, sim_list$n_fish_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
   }
   sim_list$t_fish <- t_fish # fishery index timing within the season
 
@@ -1327,7 +1327,7 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$SrvIdx_LikeType <- SrvIdx_LikeType # survey index error structure
   if(!is.null(srv_idx_mvn)) {
     sim_list$srv_idx_mvn <- srv_idx_mvn # factor parameters for mvn index fleets
-    sim_list$srv_idx_u <- matrix(NA_real_, sim_list$n_srv_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
+    sim_list$srv_idx_u <- matrix(NA, sim_list$n_srv_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
   }
 
   # Survey age compositions

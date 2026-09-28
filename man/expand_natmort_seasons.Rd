@@ -2,7 +2,7 @@
 % Please edit documentation in R/utils_setup.R
 \name{expand_natmort_seasons}
 \alias{expand_natmort_seasons}
-\title{Hold a natural mortality array across seasons}
+\title{Expand a natural mortality array over seasons}
 \usage{
 expand_natmort_seasons(x, n_seas, seas_dim = 4, n_dim = 6)
 }
@@ -23,7 +23,7 @@ An \code{n_dim} array with seasons in \code{seas_dim}.
 \description{
 M is an instantaneous rate per year on a
 \code{[n_pop x n_regions x n_years x n_seas x n_ages x n_sexes]} grid. An
-array without the season dim gets kept at one rate across seasons, which is
-the model it came from. An array that already has it passes through.
+array without the season dim holds one rate for the year, repeated into every
+season here. An array that already has it passes through.
 }
 \keyword{internal}

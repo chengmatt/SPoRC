@@ -32,8 +32,8 @@ Called for its side effect. Writes \code{plot_results.pdf} to
   \code{out_path} and returns \code{NULL} invisibly.
 }
 \description{
-Convenience wrapper that calls all core SPoRC plotting functions and writes
-their output to a single PDF file. Equivalent to calling
+Calls all core SPoRC plotting functions and writes their output to a single
+PDF file. Equivalent to calling
 \code{get_biological_plot}, \code{get_data_fitted_plot}, \code{get_ts_plot},
 \code{get_selex_plot}, and \code{get_nLL_plot} in sequence and printing each
 to the same device.

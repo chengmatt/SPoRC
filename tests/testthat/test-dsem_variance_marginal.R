@@ -42,7 +42,7 @@ test_that("with a covariance line the marginal form lands every cell on its sd l
   diag_form <- grid_covariance(get_dsem_matrices(pars$dsem_beta, pars$ln_dsem_sd, m_diag, cells))
   marg <- grid_covariance(get_dsem_matrices(pars$dsem_beta, pars$ln_dsem_sd, m_marg, cells))
 
-  # the conditional form drifts off the sd lines, the diagonal form gets close, the marginal form lands on them
+  # the conditional form falls off the sd lines, the diagonal form gets close, the marginal lands on them
   expect_gt(max(abs(diag(cond$Sigma) - target) / target), 0.1)
   miss_diag <- max(abs(diag(diag_form$Sigma) - target) / target)
   expect_gt(miss_diag, 1e-6)

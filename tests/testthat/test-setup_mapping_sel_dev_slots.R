@@ -1,11 +1,9 @@
+# A parametric fleet's deviations are its parameters, so a slot beyond what its curve reads has to
+# stay unmapped: a time-varying logistic fleet has two a year, not one per age. A dead slot is
+# never read, leaving a zero-gradient parameter that pads the count and makes the Hessian singular.
+
 library(SPoRC)
 library(testthat)
-
-# Under iid/rw time variation a parametric fleet's deviation slots are its
-# parameters, so slots beyond what the form reads must stay unmapped: a
-# time-varying logistic fleet has two deviation parameters per year, not
-# n_ages. Dead slots would never be read by the model, leaving zero-gradient
-# parameters that pollute the count and make the Hessian singular.
 
 test_that("deviation slots beyond a fleet's selectivity form stay unmapped", {
 

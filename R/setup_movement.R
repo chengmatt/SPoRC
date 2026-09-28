@@ -191,8 +191,8 @@ get_yr_varying_pref_terms <- function(input_list) {
   if(design$n_gamma == 0) return(character(0)) # pure diffusion, so there is no preference term to write twice
   W_zk <- design$W_zk
 
-  # rows of one stratum differ only in their year, so comparing each row with the first row of its
-  # stratum finds every column whose value the formula lets change from year to year
+  # rows of one stratum differ only in their year, so comparing each with the first finds every
+  # column the formula lets vary from year to year
   key <- do.call(paste, c(lapply(c("pop", "regions", "seas", "ages", "sexes"), function(v) dat[,v]), sep = "_"))
   first <- match(key, key)
   varies <- apply(W_zk != W_zk[first,,drop = FALSE], 2, any)
@@ -379,19 +379,20 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   \code{cont_vary_movement} for residual annual variation. All are ignored when
 #'   \code{move_type = 1}.
 #' @param cont_vary_movement Structure of the continuous deviations on the
-#'   fixed-effect movement surface. \code{"none"} (default), or \code{"iid_"}
-#'   followed by the dims they vary over, any of p (population), y (year), seas
-#'   (season), a (age) and s (sex) in any order: \code{"iid_y"} is one deviation per
-#'   year and region pair, or per year and region under CTMC movement, shared
-#'   across everything else, and \code{"iid_p_y_seas_a_s"} varies by every dim. A
-#'   dim left out shares one deviation across it. They are random effects with
-#'   \code{Movement_cont_pe_pars_spec} estimating the sd and
-#'   \code{random = "move_devs"} in \code{\link{fit_model}}. \code{"dsem"} instead
-#'   hands their density to the arrows given to \code{\link{Setup_Mod_DSEM}}, one
-#'   series per origin and destination (per region under CTMC, whose deviations
-#'   hold no destination) and per level of every other dim with more than one,
-#'   which it names itself since a deviation shared across a dim cannot be linked;
-#'   \code{move_pe_pars} are then read by nothing.
+#' fixed-effect movement surface. \code{"none"} (default), or \code{"iid_"}
+#' followed by the dims they vary over, any of p (population), y (year), seas
+#' (season), a (age) and s (sex) in any order: \code{"iid_y"} is one deviation
+#' per year and region pair, or per year and region under CTMC movement, shared
+#' across everything else, and \code{"iid_p_y_seas_a_s"} varies by every dim. A
+#' dim left out shares one deviation across it. They are random effects with
+#' \code{Movement_cont_pe_pars_spec} estimating the sd and
+#' \code{random = "move_devs"} in \code{\link{fit_model}}. \code{"dsem"}
+#' instead takes their density from the arrows given to
+#' \code{\link{Setup_Mod_DSEM}}, one series per origin and destination (per
+#' region under CTMC, whose deviations hold no destination) and per level of
+#' every other dim with more than one, which it names itself since a deviation
+#' shared across a dim cannot be linked; \code{move_pe_pars} are then read by
+#' nothing.
 #' @param Movement_cont_pe_pars_spec Estimation of the process error variance for
 #'   the \code{cont_vary_movement} deviations. \code{"none"} creates no parameters
 #'   and pairs with \code{cont_vary_movement = "none"}, \code{"fix"} holds the
@@ -498,7 +499,7 @@ Setup_Mod_Movement <- function(input_list,
 ) {
 
   move_pe_spec_given <- !missing(Movement_cont_pe_pars_spec) # read before anything assigns it
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...) # get starting values if there are any
   if(input_list$store_config) input_list$config$Setup_Mod_Movement <- mget(names(formals()))[-1]
 
@@ -534,8 +535,8 @@ Setup_Mod_Movement <- function(input_list,
   if(!do_recruits_move %in% c(0,1)) stop('Movement for recruits is not correctly specified. The options are do_recruits_move == 0 (they dont move), or == 1 (they move)')
   else collect_message("Recruits are: ", ifelse(do_recruits_move == 0, "Not Moving", "Moving"))
 
-  # Check movement continuous varying parameterization. "dsem" reuses the iid form
-  # the dsem sets the linked cells to NA in map_move_devs, so the penalty doesn't use them and the dsem supplies their density
+  # check the continuous time-varying movement form. dsem reuses the iid form, and the dsem gives
+  # the linked cells their density in place of the penalty
   if(identical(cont_vary_movement, "dsem")) cont_vary_movement <- paste(c("dsem", if(input_list$data$n_pop > 1) "p", "y", if(input_list$data$n_seas > 1) "seas", if(length(input_list$data$ages) > 1) "a", if(input_list$data$n_sexes > 1) "s"), collapse = "_") # names every dim with more than one level, since a deviation shared across a dim cannot be linked
   move_dsem <- grepl("^dsem_", cont_vary_movement)
   cont_vary_movement <- sub("^dsem_", "iid_", cont_vary_movement)
@@ -553,7 +554,7 @@ Setup_Mod_Movement <- function(input_list,
     stop('Options for continuous movement process error is not correctly specified.')
   else collect_message("Continuous movement process error specification is: ", Movement_cont_pe_pars_spec)
 
-  # under the handover the process error sd is read by nothing, so it is fixed here
+  # the dsem supplies the deviations, so movement's own process error sd is never used
   if(move_dsem) {
     if(move_pe_spec_given && Movement_cont_pe_pars_spec %in% c("est_all", "est_shared")) stop("cont_vary_movement = 'dsem_...' takes the movement deviations' density from the dsem arrows, so move_pe_pars are read by nothing and cannot be estimated. Leave Movement_cont_pe_pars_spec out or set it to 'fix'.")
     # a dim the form leaves out shares one deviation across it, and a shared deviation cannot sit under the dsem
@@ -603,7 +604,7 @@ Setup_Mod_Movement <- function(input_list,
 
   # Substeps are applied by repeated squaring, which reaches powers of two exactly and
   # nothing else. The scheme is first order regardless, so a finer ladder would buy nothing.
-  if(move_expm_nsub > 0 && bitwAnd(move_expm_nsub, move_expm_nsub - 1L) != 0)
+  if(move_expm_nsub > 0 && bitwAnd(move_expm_nsub, move_expm_nsub - 1) != 0)
     stop('move_expm_nsub must be a power of two (1, 2, 4, 8, ... ), since substeps are applied by repeated squaring. Got ', move_expm_nsub, '.')
 
   if(move_type == 1 && use_fixed_movement == 0) {
@@ -612,7 +613,7 @@ Setup_Mod_Movement <- function(input_list,
                          " substep(s), (I - A/n)^-n. First order in 1/n; the exponential is approximated, not reproduced.")
   } else if(move_expm_nsub != 0) {
     collect_message("move_expm_nsub ignored: matrix exponentials are only taken for an estimated CTMC generator (move_type = 1 with use_fixed_movement = 0).")
-    move_expm_nsub <- 0L
+    move_expm_nsub <- 0
   }
 
   # Mixing an unscaled generator with seasdur-scaled mortality is dimensionally inconsistent,

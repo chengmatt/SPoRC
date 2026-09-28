@@ -15,8 +15,8 @@ dev_map_levels(input_list, par_name)
 Integer vector, one level per cell of the array, \code{NA} where fixed.
 }
 \description{
-The map says which cells are estimated and which are fixed, and an array with no map entry
-has every cell estimated. Reading it this way gives one vector either way, \code{NA} at a
-fixed cell, which is what the dsem checks read.
+The map says which cells are estimated and which are fixed, and an array
+with no map entry has every cell estimated. Reading it this way gives one
+vector either way, \code{NA} at a fixed cell, the form the dsem checks need.
 }
 \keyword{internal}

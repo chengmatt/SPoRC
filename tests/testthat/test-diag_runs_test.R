@@ -1,9 +1,8 @@
+# do_runs_test() returns three-sigma control limits and a runs-test p-value on a residual
+# series. The limits come from the average moving range, so they are checkable by hand.
+
 library(SPoRC)
 library(testthat)
-
-# do_runs_test() returns three-sigma control limits and a runs-test p-value for
-# a residual series. The limits come from the average moving range, so they are
-# checkable against a hand calculation.
 
 amr_limits <- function(x, mu) {
   # Mirrors the Nelson (1982) moving-range calculation the function uses.

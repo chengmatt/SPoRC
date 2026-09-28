@@ -1,3 +1,6 @@
+# One-step-ahead residuals on population-specific compositions and tag recaptures, with
+# movement correctly and then incorrectly specified, so the residuals separate the two.
+
 library(SPoRC)
 library(testthat)
 
@@ -111,7 +114,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
                                        sim_list$n_yrs, sim_list$n_ages,
                                        sim_list$n_sexes, sim_list$n_sims)),
 
-    # Weight at age - Same for all pops
+    # weight at age, the same for every population
     WAA_input = replicate(
       n = sim_list$n_sims,
       array(
@@ -123,7 +126,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
       )
     ),
 
-    # Fishery weight at age - same as WAA_input
+    # fishery weight at age, the same as the population's
     WAA_fish_input = replicate(
       n = sim_list$n_sims,
       array(
@@ -134,7 +137,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
       )
     ),
 
-    # Survey weight at age - same as WAA_input
+    # survey weight at age, the same as the population's
     WAA_srv_input = replicate(
       n = sim_list$n_sims,
       array(
@@ -181,7 +184,7 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
     nr <- sim_list$natal_region[p]
     for (r_from in seq_len(sim_list$n_regions)) {
 
-      # Season 1: diffusive dispersal — mostly stay, some movement out
+      # season 1, diffusive dispersal: most fish stay and some move out
       for (r_to in seq_len(sim_list$n_regions)) {
         prob <- if (r_to == r_from) stay_prob[p] else disperse_prob[p]
         sim_list$Movement[p, r_from, r_to, , 1, , , ] <- prob
@@ -561,13 +564,11 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
   osa_tag_wrong <- oneStepPredict(obj_wrong, 'ObsConvTag_osa_count', method = 'cdf', discrete = TRUE, trace = FALSE)
   chk_wrong <- check_osa_calibration(osa_tag_wrong$residual)
 
-  # The corrected (per-pool) count-family likelihood now packs ~n_pop_pool x
-  # more, sparser residuals than before, which widens the sampling noise on
-  # any single absolute calibration threshold. Compare the misspecified fit
-  # RELATIVE to the correct fit instead (worse on mean, sd, normality, or
-  # autocorrelation) -- the same relative-comparison pattern already used in
-  # test-internal_discard_comp_osas.R -- rather than requiring
-  # chk_wrong$calibrated to be categorically FALSE.
+  # the count likelihoods pack one set of residuals per pool, so they are sparser and noisier
+  # than a single absolute threshold can judge.
+  #
+  # the misspecified fit is compared against the correct one instead, and only has to be
+  # worse on mean, standard deviation, normality or autocorrelation
   expect_true(
     abs(chk_wrong$mean) > abs(chk_correct$mean) ||
     abs(chk_wrong$sd - 1) > abs(chk_correct$sd - 1) ||

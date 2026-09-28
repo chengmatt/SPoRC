@@ -1,3 +1,6 @@
+# The tag recapture likelihoods, each against its density written out by hand, both called
+# directly and packed through the one-step-ahead residuals.
+
 library(testthat)
 library(RTMB)
 
@@ -92,7 +95,7 @@ run_fit <- function(d) {
 }
 
 ## Type 0: Poisson (count)
-test_that("external path: Poisson (like_type = 0) matches manual noint Poisson nLL", {
+test_that("a Poisson on recaptures matches the density worked by hand", {
 
   d   <- make_data(like_type = 0)
   out <- run_fit(d)
@@ -110,7 +113,7 @@ test_that("external path: Poisson (like_type = 0) matches manual noint Poisson n
 })
 
 ## Type 1: Negative binomial (count)
-test_that("external path: negative binomial (like_type = 1) matches manual noint NB2 nLL", {
+test_that("a negative binomial on recaptures matches the density worked by hand", {
 
   d   <- make_data(like_type = 1, ln_theta = log(5))
   out <- run_fit(d)
@@ -130,7 +133,7 @@ test_that("external path: negative binomial (like_type = 1) matches manual noint
 })
 
 ## Type 2: Multinomial, release-conditioned (comp)
-test_that("external path: release-conditioned multinomial (like_type = 2) matches manual nLL", {
+test_that("a multinomial conditioned on the release matches the density worked by hand", {
 
   d   <- make_data(like_type = 2, n_tags_released = 50)
   out <- run_fit(d)
@@ -155,7 +158,7 @@ test_that("external path: release-conditioned multinomial (like_type = 2) matche
 })
 
 ## Type 3: Multinomial, recapture-conditioned (comp)
-test_that("external path: recapture-conditioned multinomial (like_type = 3) matches manual nLL", {
+test_that("a multinomial conditioned on the recapture matches the density worked by hand", {
 
   d   <- make_data(like_type = 3)
   out <- run_fit(d)
@@ -178,7 +181,7 @@ test_that("external path: recapture-conditioned multinomial (like_type = 3) matc
 })
 
 ## Type 4: Dirichlet-multinomial, release-conditioned (comp)
-test_that("external path: release-conditioned Dirichlet-multinomial (like_type = 4) matches direct ddirmult() call", {
+test_that("a Dirichlet-multinomial conditioned on the release matches ddirmult", {
 
   skip_if_not(exists("ddirmult", mode = "function"),
               "ddirmult() wrapper not found in package namespace")
@@ -212,7 +215,7 @@ test_that("external path: release-conditioned Dirichlet-multinomial (like_type =
 })
 
 ## Type 5: Dirichlet-multinomial, recapture-conditioned (comp)
-test_that("external path: recapture-conditioned Dirichlet-multinomial (like_type = 5) matches direct ddirmult() call", {
+test_that("a Dirichlet-multinomial conditioned on the recapture matches ddirmult", {
 
   skip_if_not(exists("ddirmult", mode = "function"),
               "ddirmult() wrapper not found in package namespace")
@@ -244,7 +247,7 @@ test_that("external path: recapture-conditioned Dirichlet-multinomial (like_type
 })
 
 ## Helper: tag_fam_of()
-test_that("tag_fam_of() classifies likelihood codes correctly", {
+test_that("tag_fam_of() sorts each likelihood into counts or proportions", {
   expect_equal(tag_fam_of(0), "count")
   expect_equal(tag_fam_of(1), "count")
   expect_equal(tag_fam_of(2), "comp")
@@ -255,7 +258,7 @@ test_that("tag_fam_of() classifies likelihood codes correctly", {
   expect_true(is.na(tag_fam_of(-1)))
 })
 
-## Helper: tag_grid() -- event enumeration and mixing-period skip logic
+# tag_grid(): Release Events and the Mixing Period ----------------------------
 test_that("tag_grid() enumerates recovery events and correctly applies the mixing-period skip", {
 
   conv_tag_release_indicator <- matrix(c(1, 1, 1), nrow = 1) # region, year, season
@@ -325,7 +328,7 @@ do_pack <- function(d) {
   )
 }
 
-# Runs pack_tag_osa() -> RTMB::OBS() -> eval_tag_osa() inside a minimal AD
+# Runs pack_tag_osa(), RTMB::OBS() and eval_tag_osa() inside a minimal AD
 # graph and returns the fitted RTMB object plus the packed vector.
 run_internal <- function(d) {
   pack   <- do_pack(d)
@@ -368,7 +371,7 @@ run_internal <- function(d) {
 }
 
 ## Type 0: Poisson (count)
-test_that("internal path: pack_tag_osa()/eval_tag_osa() Poisson (like_type = 0) matches discrete dpois nLL", {
+test_that("packed and evaluated through the model, a Poisson matches dpois", {
 
   skip_if_not_installed("RTMB")
 
@@ -391,7 +394,7 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() Poisson (like_type = 0) 
 })
 
 ## Type 1: Negative binomial (count)
-test_that("internal path: pack_tag_osa()/eval_tag_osa() negative binomial (like_type = 1) matches discrete NB2 nLL", {
+test_that("packed and evaluated through the model, a negative binomial matches its own density", {
 
   skip_if_not_installed("RTMB")
 
@@ -411,7 +414,7 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() negative binomial (like_
 })
 
 ## Type 2: Multinomial, release-conditioned (comp)
-test_that("internal path: pack_tag_osa()/eval_tag_osa() release-conditioned multinomial (like_type = 2) matches discrete dmultinom nLL", {
+test_that("packed and evaluated, a multinomial conditioned on the release matches dmultinom", {
 
   skip_if_not_installed("RTMB")
 
@@ -460,7 +463,7 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() release-conditioned mult
 })
 
 ## Type 3: Multinomial, recapture-conditioned (comp)
-test_that("internal path: pack_tag_osa()/eval_tag_osa() recapture-conditioned multinomial (like_type = 3) matches discrete dmultinom nLL", {
+test_that("packed and evaluated, a multinomial conditioned on the recapture matches dmultinom", {
 
   skip_if_not_installed("RTMB")
 
@@ -495,7 +498,7 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() recapture-conditioned mu
 })
 
 ## Type 4 & 5: Dirichlet-multinomial (comp)
-test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (like_type = 4, release-conditioned) matches direct ddirmult() call", {
+test_that("packed and evaluated, a Dirichlet-multinomial on the release matches ddirmult", {
 
   skip_if_not_installed("RTMB")
   d <- make_data(like_type = 4, ln_theta = log(8), n_tags_released = 50)
@@ -523,7 +526,7 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (l
   expect_equal(total_nLL, manual_nLL, tolerance = 1e-5)
 })
 
-test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (like_type = 5, recapture-conditioned) matches direct ddirmult() call", {
+test_that("packed and evaluated, a Dirichlet-multinomial on the recapture matches ddirmult", {
 
   skip_if_not_installed("RTMB")
   d <- make_data(like_type = 5, ln_theta = log(8))
@@ -552,7 +555,7 @@ test_that("internal path: pack_tag_osa()/eval_tag_osa() Dirichlet-multinomial (l
   expect_equal(total_nLL, manual_nLL, tolerance = 1e-6)
 })
 
-## Edge case: release-conditioned tail guard (tail < 0 clamped to 0)
+# A Release With No Recaptures Left in the Tail ------------------------------
 test_that("internal path: pack_tag_osa() clamps a negative release-conditioned tail to zero and renormalizes", {
 
   d <- make_data(like_type = 2, n_tags_released = 5) # deliberately too few releases

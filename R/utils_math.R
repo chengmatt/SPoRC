@@ -342,8 +342,8 @@ get_logistN_Sigma <- function(comp_like,
 #' @import RTMB
 mat_exp <- function(A, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   if(expm_nsub == 0) {
     if(is.matrix(A) && is.numeric(A)) A <- methods::as(A, "sparseMatrix")

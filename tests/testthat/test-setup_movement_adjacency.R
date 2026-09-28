@@ -1,13 +1,16 @@
+# The adjacency matrix that says which regions touch: the shapes refused, and that a valid one
+# gives a generator conserving fish. Also the diffusion floor and the bound forms.
+
 library(SPoRC)
 library(testthat)
 
-# ── adjacency_mat validation for CTMC movement ───────────────────────────────
+# What the Adjacency Matrix Refuses ------------------------------------------
 
-# The generator lays the diffusion rate wherever adjacency is 1, then overwrites its
-# own diagonal with the negative column sums to conserve abundance. Anything other
-# than a 0/1 matrix with a zero diagonal leaves the generator columns summing to
-# something other than zero, and the movement matrix then loses abundance instead of
-# redistributing it. These checks are the setup-side guard against that.
+# The generator puts the diffusion rate wherever two regions touch, then sets its diagonal to
+# the negative column sums so that no fish are lost.
+#
+# Anything but a zero-one matrix with a zero diagonal leaves the columns summing to something
+# else, and the movement matrix then loses fish rather than moving them, so setup refuses it.
 
 make_dim_input_list <- function(n_regions = 2) {
   Setup_Mod_Dim(
@@ -77,7 +80,7 @@ test_that("a valid adjacency matrix passes and is stored unchanged", {
 })
 
 test_that("a valid adjacency matrix yields a conservative generator", {
-  # the payoff of the guard: rows of Movement sum to 1 and columns of the generator sum to 0
+  # what the check is for: rows of Movement sum to one and columns of the generator to zero
   A <- matrix(c(0, 1, 1, 0), 2, 2)
   mv <- SPoRC:::Get_Movement(
     move_type = 1,

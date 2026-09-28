@@ -53,15 +53,16 @@ q_devs_em <- function(sim_obj, form, sigma_start = 0.25) {
   il
 }
 
-# parList() takes no argument on purpose: handed last.par.best it mis-slices a fixed plus random vector
+# parList() takes no argument on purpose: given last.par.best it mis-reads a vector of
+# fixed and random parameters together
 q_devs_fit <- function(il, random = "ln_srv_q_devs") {
   fit <- suppressWarnings(suppressMessages(fit_model(il$data, il$par, il$map, random = random,
                                                      do_optim = TRUE, newton_loops = 1, silent = TRUE)))
   list(fit = fit, pars = fit$env$parList(), grad = max(abs(fit$gr(fit$optim$par))))
 }
 
-# one dsem driven survey catchability, fitted once and reused: 40 years, one region, one survey, the
-# covariate effect and the process error both carried by the catchability series
+# one dsem driven survey catchability, fitted once and reused: 40 years, one region, one
+# survey, with the covariate effect and the process error both on the catchability series
 q_dsem_cache <- new.env(parent = emptyenv())
 
 q_dsem_fit <- function() {
@@ -86,7 +87,7 @@ q_dsem_fit <- function() {
 
 q_dsem_sdrep <- function(fit) list(par.fixed = fit$optim$par, par.random = fit$env$last.par.best[fit$env$random])
 
-# the simulation list the self test hands the operating model, taken without paying for the refits
+# the simulation list the self test passes the operating model, taken without the refits
 q_selftest_simlist <- function(fit) {
   out <- NULL
   testthat::with_mocked_bindings(

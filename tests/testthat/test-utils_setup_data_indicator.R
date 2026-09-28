@@ -1,9 +1,9 @@
+# set_data_indicator_unused() is how a closed loop and a retrospective peel withhold data from the
+# estimating model. Failing to zero an indicator leaks future data into the fit without saying so,
+# so every data type is checked, including the tag cohorts released in a withheld year.
+
 library(SPoRC)
 library(testthat)
-
-# set_data_indicator_unused() is how MSE closed-loop runs and retrospective
-# peels withhold data from the estimation model. Silently failing to zero an
-# indicator leaks future data into the fit, so every data type is checked.
 
 n_pop <- 2
 n_regions <- 3
@@ -40,7 +40,7 @@ make_data <- function(n_cohorts = 4, use_tagging = 1) {
   return(d)
 }
 
-# Pull the year slice of an indicator array regardless of how many leading
+# Read one year of an indicator array regardless of how many leading
 # dimensions it has.
 year_slice <- function(arr, yrs, yr_dim) {
   idx <- rep(list(quote(expr = )), length(dim(arr)))

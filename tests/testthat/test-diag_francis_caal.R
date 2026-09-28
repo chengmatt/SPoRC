@@ -84,13 +84,11 @@ test_that("the CAAL weight is one pooled inverse variance per fleet, region and 
   } # end f loop
   for(f in setdiff(1:input_list$data$n_srv_fleets, has_caal)) expect_true(all(is.na(w[, , , , , f])))
 
-  # The weight against the definition, pooled by hand. Francis (2011) TA1.8 for
-  # conditional data forms ONE statistic per fleet, year and season: the length
-  # bins aged in a year are collapsed into that year's mean age, weighted by the
-  # number aged in each, and standardized once. The bins within a year share the
-  # model's error, so they are not independent draws; standardizing each on its
-  # own would treat one systematic miss as many small independent ones and bias
-  # the weight upward.
+  # Francis (2011) TA1.8 forms one statistic per fleet, year and season for conditional data:
+  # the bins aged in a year pool into that year's mean age, weighted and standardized once.
+  #
+  # the bins within a year share the model's error rather than being independent draws, so
+  # standardizing each on its own reads one systematic miss as many small ones
   f <- has_caal[1]
   cells <- which(!is.na(w[, 1, 1, 1, , f]), arr.ind = TRUE)
   r <- cells[1, 1]
@@ -176,9 +174,8 @@ test_that("get_caal_fits returns one row per aged length bin, with the Francis r
   expect_true(all(fits$obs >= 1 & fits$obs <= n_bins))
   expect_true(all(fits$pred >= 1 & fits$pred <= n_bins))
 
-  # longer fish are older, in the data and in the model. Rank correlation rather
-  # than Pearson, because mean age flattens at the longest bins as they fill with
-  # the plus group
+  # longer fish are older, in the data and in the model. rank correlation rather than Pearson,
+  # since mean age flattens at the longest bins as they fill with the plus group
   by_len <- stats::aggregate(cbind(obs, pred) ~ Length, data = fits, FUN = mean)
   expect_gt(stats::cor(by_len$Length, by_len$obs, method = "spearman"), 0.9)
   expect_gt(stats::cor(by_len$Length, by_len$pred, method = "spearman"), 0.9)

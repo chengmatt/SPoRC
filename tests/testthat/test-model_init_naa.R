@@ -1,7 +1,10 @@
+# The four ways of building the initial age structure, against a closed form in a single region
+# and against each other, unfished and fished, with and without movement.
+
 library(testthat)
 library(RTMB)
 
-## Scenario 1: single pop/region/sex/season, UNFISHED
+# Unfished, One Population, Region, Sex and Season ---------------------------
 make_unfished_single <- function(n_ages = 4, M = 0.2, R0 = 1000) {
   n_pop <- 1
   n_regions <- 1
@@ -39,7 +42,7 @@ expected_unfished_naa <- function(n_ages, M, R0) {
   naa
 }
 
-test_that("init_age_strc = 1 (scalar geometric series) matches the hand-derived unfished closed form", {
+test_that("the scalar geometric series matches the unfished age structure worked by hand", {
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
@@ -69,7 +72,7 @@ test_that("init_age_strc = 1 (scalar geometric series) matches the hand-derived 
   expect_equal(as.numeric(out[1, 1, , 1]), expected, tolerance = 1e-8)
 })
 
-test_that("init_age_strc = 2 (matrix geometric series) reduces to the scalar solution when n_regions = 1", {
+test_that("the matrix geometric series comes back to the scalar one in a single region", {
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
@@ -99,7 +102,7 @@ test_that("init_age_strc = 2 (matrix geometric series) reduces to the scalar sol
   expect_equal(as.numeric(out[1, 1, , 1]), expected, tolerance = 1e-8)
 })
 
-test_that("init_age_strc = 3 (hybrid) reduces to the scalar solution when n_regions = 1", {
+test_that("the hybrid form comes back to the scalar one in a single region", {
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
@@ -129,7 +132,7 @@ test_that("init_age_strc = 3 (hybrid) reduces to the scalar solution when n_regi
   expect_equal(as.numeric(out[1, 1, , 1]), expected, tolerance = 1e-8)
 })
 
-test_that("init_age_strc = 0 (iterative) converges to the scalar closed form given enough iterations", {
+test_that("iterating settles on the scalar solution given enough passes", {
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
@@ -159,7 +162,7 @@ test_that("init_age_strc = 0 (iterative) converges to the scalar closed form giv
   expect_equal(as.numeric(out[1, 1, , 1]), expected, tolerance = 1e-4)
 })
 
-test_that("init_age_strc = 0 with too few iterations has NOT yet converged (sanity check on the convergence test itself)", {
+test_that("too few passes have not converged, which is what makes the test above mean something", {
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
   out <- Get_Init_NAA(
@@ -186,12 +189,12 @@ test_that("init_age_strc = 0 with too few iterations has NOT yet converged (sani
   )
 
   expected <- expected_unfished_naa(4, 0.2, 1000)
-  # with only 1 iteration the plus group in particular should NOT have converged
+  # after one iteration the plus group especially has not converged
   expect_false(isTRUE(all.equal(as.numeric(out[1, 1, , 1]), expected, tolerance = 1e-4)))
 })
 
-## Scenario 2: single pop/region/sex/season, FISHED (retained + discard F)
-test_that("init_age_strc = 1 correctly decomposes fishing mortality into retained + discard-mortality components", {
+# Fished, with Retained and Discard Mortality --------------------------------
+test_that("fishing mortality splits into what is retained and what dies discarded", {
 
   n_pop <- 1
   n_regions <- 1
@@ -250,7 +253,7 @@ test_that("init_age_strc = 1 correctly decomposes fishing mortality into retaine
 })
 
 ## Sex ratio handling
-test_that("Get_Init_NAA() allocates age-1 recruits across sexes according to sexratio", {
+test_that("recruits are split between the sexes by the sex ratio", {
 
   n_pop <- 1
   n_regions <- 1
@@ -295,7 +298,7 @@ test_that("Get_Init_NAA() allocates age-1 recruits across sexes according to sex
 })
 
 ## ln_InitDevs application
-test_that("ln_InitDevs multiplicatively scales ages 2:n_ages but leaves age 1 untouched", {
+test_that("the initial deviations scale every age above the first and leave recruits alone", {
 
   d <- make_unfished_single(n_ages = 4, M = 0.2, R0 = 1000)
 
@@ -352,7 +355,7 @@ test_that("ln_InitDevs multiplicatively scales ages 2:n_ages but leaves age 1 un
 
 ## Multi-region movement (init_age_strc = 2): self-consistency of the
 ## plus-group linear solve, rather than an independently re-derived value.
-test_that("init_age_strc = 2 plus-group solution satisfies its own equilibrium equation under 2-region movement", {
+test_that("the plus group solves its own equilibrium with fish moving between two regions", {
 
   n_pop <- 1
   n_regions <- 2
@@ -403,9 +406,8 @@ test_that("init_age_strc = 2 plus-group solution satisfies its own equilibrium e
   expect_true(all(is.finite(out)))
   expect_true(all(out > 0))
 
-  # Self-consistency: N_plus should satisfy N_plus = T_plus %*% N_plus + T_penult %*% N_penult,
-  # i.e. (I - T_plus) %*% N_plus == T_penult %*% N_penult, using the same annual
-  # transition matrices the source builds (survival + movement, single season here).
+  # the plus group has to satisfy (I - T_plus) %*% N_plus == T_penult %*% N_penult, on the same
+  # annual transitions the model builds, which here are survival and movement in one season
   S <- diag(exp(-M), n_regions)
   T_mat <- t(Movement[1, , , 1, n_ages, 1]) %*% S # same transpose convention as source
   N_plus <- out[1, , n_ages, 1]
@@ -416,7 +418,7 @@ test_that("init_age_strc = 2 plus-group solution satisfies its own equilibrium e
 })
 
 ## Cross-method consistency smoke test (n_regions = 1: all 4 methods agree)
-test_that("all four init_age_strc methods agree with each other when n_regions = 1", {
+test_that("all four ways of building the initial ages agree in a single region", {
 
   d <- make_unfished_single(n_ages = 5, M = 0.15, R0 = 800)
 
@@ -456,7 +458,7 @@ test_that("all four init_age_strc methods agree with each other when n_regions =
 })
 
 ## Basic dimension / sanity smoke test with multiple pops, regions, sexes, seasons
-test_that("Get_Init_NAA() returns correctly-dimensioned, finite, non-negative output for a larger multi-dimensional setup", {
+test_that("a larger model still returns finite, non-negative numbers of the right shape", {
 
   n_pop <- 2
   n_regions <- 2

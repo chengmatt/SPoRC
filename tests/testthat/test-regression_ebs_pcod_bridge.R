@@ -1,8 +1,10 @@
-# Self-validating bridge test: the expectations are the 2024 EBS Pacific cod assessment's own reported
-# quantities (SS3 Model 24.1) in sgl_rg_ebs_pcod_data$ss3, evaluated at its estimate without optimizing.
+# The expectations are the 2024 EBS Pacific cod assessment's own reported quantities (SS3
+# Model 24.1), evaluated at its estimate without optimizing.
 #
-# SS3's report has six significant digits, the floor under every comparison here. Three convention
-# differences are compared by restating SPoRC's quantity in SS3's terms, never by loosening a tolerance:
+# SS3's report has six significant digits, the floor under every comparison here.
+#
+# Three convention differences are handled by restating SPoRC's quantity in SS3's terms
+# rather than by loosening a tolerance:
 #
 #   1. SPoRC's single-sex spawning biomass is the female share at an even sex ratio; a one-sex SS3
 #      model's spawning output counts every mature fish, so the two differ by exactly two.
@@ -85,9 +87,8 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   expect_lt(pct(r$PredSrvIdx[1, 1, match(cp$Yr, yrs), 1, 1], cp$Exp), 1e-2)
 
   # Expected compositions ---------------------------------------------------
-  # The fishery's are formed at mid season on the season-long catch with the
-  # length selectivity applied at length, the survey's at its own timing, and
-  # both are mapped from the model's 121 population bins onto the 24 data bins
+  # the fishery's form at mid season on the season-long catch with selectivity applied at
+  # length, the survey's at its own timing, and both map the 121 bins onto the 24 data bins
   LBM <- dat$LenBinMap
   exp_len <- function(v) {
     w <- as.vector(v %*% LBM)
@@ -157,21 +158,16 @@ test_that("EBS Pacific cod bridges to the 2024 Stock Synthesis assessment at its
   ok <- !is.na(obs)
   expect_lt(sum(r$Catch_nLL) - sum(log(sc[ok]) + c2pi), 1e-4)
 
-  # the gradient at the assessment's estimate is finite everywhere; fishing
-  # mortality is conditioned on the catch in the assessment rather than
-  # estimated, so its deviations hold the residual that the soft catch
-  # likelihood stands in for and the gradient is not expected to be zero
+  # the gradient at the assessment's estimate is finite everywhere but not zero, the assessment
+  # conditioning F on the catch while SPoRC's deviations hold the residual instead
   expect_true(all(is.finite(obj$gr(obj$par))))
 })
 
 
 test_that("a survey can take its weight at age on the fish it selects", {
 
-  # The assessment itself reads the population weight at age for its index, so
-  # this is not a bridge comparison: it checks that srv_waa_selected reaches the
-  # survey's weight at age the same way fish_waa_selected reaches the fishery's,
-  # on a model that has everything the option needs (length-based survey
-  # selectivity and weight at age derived from growth).
+  # not a bridge comparison, the assessment reading the population weight at age for its index.
+  # this checks the survey reaches its selected weight at age the way the fishery does
   dat <- sgl_rg_ebs_pcod_data
   base_input <- seed_ebs_pcod_mle(suppressWarnings(suppressMessages(build_ebs_pcod_input(dat))), dat)
 

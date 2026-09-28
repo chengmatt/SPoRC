@@ -1,10 +1,11 @@
+# The logistic normal with the zeros dropped: it renormalizes over the bins that are left,
+# scales the variance by the input sample size, and takes the change of variables off.
+#
+# Checked against a reference written out here, over every composition type, sex and region
+# layout, ages and lengths, and a restricted bin range.
+
 library(SPoRC)
 library(testthat)
-
-# The logistic normal with the zeros dropped, which renormalizes over the bins that are left,
-# scales the variance by the input sample size and takes the change of variables off so the
-# result is a density on the composition. Checked against an independent reference over every
-# composition type, sex and region layout, ages and lengths, and a restricted bin range.
 
 # Reference ------------------------------------------------------------------
 
@@ -46,7 +47,6 @@ draw_comp <- function(n_bins, sample_size = 60, seed = 1) {
   list(obs = obs / sum(obs), pred = prob)
 }
 
-
 test_that("the density matches the reference with and without zeros, iid and ar1", {
 
   for(seed in 1:5) {
@@ -63,7 +63,6 @@ test_that("the density matches the reference with and without zeros, iid and ar1
   expect_equal(SPoRC:::get_logistnormal_miss0_nLL(c(1, 0, 0), c(0.5, 0.3, 0.2), -0.3, 40), 0)
   expect_equal(SPoRC:::get_logistnormal_miss0_nLL(c(0, 0, 0), c(0.5, 0.3, 0.2), -0.3, 40), 0)
 })
-
 
 test_that("the sample size scales the variance and the jacobian is on the positive bins", {
 
@@ -84,7 +83,6 @@ test_that("the sample size scales the variance and the jacobian is on the positi
   expect_equal(with_jac - no_jac, sum(log(obs_pos)), tolerance = 1e-10)
 })
 
-
 test_that("the ar1 is spaced by bin, so a gap in the observed bins is a longer lag", {
 
   obs <- c(0.4, 0, 0.35, 0.25) # bins 1, 3 and 4 are positive
@@ -100,7 +98,6 @@ test_that("the ar1 is spaced by bin, so a gap in the observed bins is a longer l
                            ar1 = TRUE, trans_rho = 0.9)
   expect_false(isTRUE(all.equal(got, by_position)))
 })
-
 
 # Composition types ----------------------------------------------------------
 
@@ -129,7 +126,6 @@ call_comp <- function(Obs, Exp, ISS, ln_theta, corr, comp_type, like_type,
     comp_bins = comp_bins
   )
 }
-
 
 test_that("split by region and sex gives each cell its own density", {
 
@@ -166,7 +162,6 @@ test_that("split by region and sex gives each cell its own density", {
   } # end like_type loop
 })
 
-
 test_that("joint by sex puts the whole bin by sex stack in one density", {
 
   n_regions <- 2
@@ -202,7 +197,6 @@ test_that("joint by sex puts the whole bin by sex stack in one density", {
   } # end like_type loop
 })
 
-
 test_that("aggregated over regions and sexes is one density on the pooled composition", {
 
   n_regions <- 2
@@ -230,7 +224,6 @@ test_that("aggregated over regions and sexes is one density on the pooled compos
   } # end like_type loop
 })
 
-
 test_that("length compositions take the same route as ages", {
 
   n_regions <- 1
@@ -257,7 +250,6 @@ test_that("length compositions take the same route as ages", {
   expect_equal(got[1, 1], ref_miss0(cell$obs, cell$pred, ln_theta[1, 1], 45), tolerance = 1e-9)
 })
 
-
 test_that("a restricted bin range keeps the ar1 spaced over the original bins", {
 
   n_bins <- 10
@@ -281,7 +273,6 @@ test_that("a restricted bin range keeps the ar1 spaced over the original bins", 
                tolerance = 1e-9)
 })
 
-
 # Through the model ----------------------------------------------------------
 
 # the seasonal test model, with its fishery compositions moved onto the new likelihood
@@ -299,7 +290,6 @@ miss0_model <- function(like_type = "iid-Logistic-Normal-miss0") {
   input_list
 }
 
-
 test_that("the objective evaluates and differentiates on the new likelihood", {
 
   for(lt in c("iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0")) {
@@ -313,7 +303,6 @@ test_that("the objective evaluates and differentiates on the new likelihood", {
     expect_true(sum(fit$rep$FishAgeComps_nLL) != 0)
   } # end lt loop
 })
-
 
 test_that("the reported composition likelihood is the density the helper gives", {
 
@@ -340,7 +329,6 @@ test_that("the reported composition likelihood is the density the helper gives",
                  tolerance = 1e-8)
   } # end y loop
 })
-
 
 test_that("the correlation parameter is estimated for the ar1 form and fixed for the iid one", {
 
@@ -382,7 +370,6 @@ test_that("the correlation parameter is estimated for the ar1 form and fixed for
   expect_true(any(!is.na(iid$map$ln_FishAge_theta_agg)))
 })
 
-
 test_that("the internal composition residuals are refused rather than computed wrongly", {
 
   input_list <- list(data = list(do_internal_comp_osa = TRUE))
@@ -395,7 +382,6 @@ test_that("the internal composition residuals are refused rather than computed w
   expect_null(SPoRC:::check_miss0_osa(input_list, c(0, 1, 2, 3, 4), "FishAgeComps_LikeType"))
   expect_null(SPoRC:::check_miss0_osa(list(data = list(do_internal_comp_osa = FALSE)), c(5, 6), "x"))
 })
-
 
 test_that("the operating model draws on the same terms the estimation model fits on", {
 
@@ -424,7 +410,6 @@ test_that("the operating model draws on the same terms the estimation model fits
   expect_equal(SPoRC:::comp_corr_natural(0.6, 3), SPoRC:::rho_trans(0.6))
 })
 
-
 # The separable bin by sex form -----------------------------------------------
 
 ref_miss0_2d <- function(obs, pred, ln_sigma, ISS, trans_rho_bin, trans_rho_sex, n_bins, n_sexes) {
@@ -452,7 +437,6 @@ ref_miss0_2d <- function(obs, pred, ln_sigma, ISS, trans_rho_bin, trans_rho_sex,
   z <- backsolve(chol_S, y - mu, transpose = TRUE)
   -1 * (-0.5 * sum(z^2) - sum(log(diag(chol_S))) - 0.5 * (n_pos - 1) * log(2 * pi) - sum(log(obs_pos)))
 }
-
 
 test_that("the separable bin by sex form matches the reference", {
 
@@ -491,7 +475,6 @@ test_that("the separable bin by sex form matches the reference", {
   } # end seed loop
 })
 
-
 test_that("a zero sex correlation collapses the separable form onto the bin only form", {
 
   n_bins <- 7
@@ -518,7 +501,6 @@ test_that("a zero sex correlation collapses the separable form onto the bin only
   expect_equal(one_sex, direct, tolerance = 1e-9)
 })
 
-
 test_that("the separable form needs a composition joint across sexes", {
 
   sim <- seasonal_M_sim()
@@ -541,7 +523,6 @@ test_that("the separable form needs a composition joint across sexes", {
       FishLenComps_Type = "none_Year_1-terminal_Fleet_1"),
     "joint across sexes")
 })
-
 
 test_that("the aggregated iid logistic normal reads the same standard deviation as every other route", {
 

@@ -3,14 +3,12 @@
 
 #' Build a model with the population-specific data sources fit
 #'
-#' Layers the \code{_pop} arrays onto \code{\link{sweep_input}}, which already
-#' fits the regional counterparts, so a likelihood that reads the wrong one of
-#' the pair moves a number rather than going quiet.
+#' Adds the \code{_pop} arrays to \code{\link{sweep_input}}, which already fits the
+#' regional ones, so a likelihood reading the wrong one of the pair moves a number.
 #'
 #' @param n_pop,n_regions,n_yrs,n_ages,n_seas,n_sexes,n_fish,n_srv Dimensions.
-#' @param like Index likelihood, one of \code{"lognormal"}, \code{"normal"} or
-#'   \code{"mvn"}. The regional and the population-specific index blocks split
-#'   the likelihoods between them differently, so both routes need covering.
+#' @param like Index likelihood: \code{"lognormal"}, \code{"normal"} or \code{"mvn"}.
+#'   The regional and population-specific blocks split them up differently.
 #'
 #' @return An input list ready for \code{fit_model}.
 #'

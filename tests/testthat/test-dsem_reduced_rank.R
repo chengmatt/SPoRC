@@ -45,6 +45,8 @@ n_t <- 8
 vals <- c(sd_x = 0.9, sd_e = 0.6, b_xy = 0.7, b_yx = 0.4, b_fx = 0.8, b_fy = 0.5, c_xe = 0.2)
 state <- stats::rnorm(n_t, 0, 0.8)
 
+# Against dsem's Own Projection ----------------------------------------------
+
 test_that("a one factor dynamic factor analysis matches dsem's gmrf_project", {
   skip_if_not_installed("dsem")
 
@@ -166,6 +168,8 @@ test_that("a chain of projected series through a moderated arrow keeps its patte
 
 })
 
+# Differentiating, and What Is Refused ---------------------------------------
+
 test_that("the projection differentiates", {
   sem <- c("x <-> x, 0, sd_x", "y <-> y, 0, NA, 0", "x -> y, 0, b_xy", "y -> x, 0, b_yx")
   m <- read_dsem_arrows(sem, c("x", "y")); cells <- get_dsem_cells(m, n_t)
@@ -192,6 +196,8 @@ test_that("a projected series cannot set the coefficient on an arrow", {
   expect_false(any(ok$project_k))
 
 })
+
+# A Fit against dsem's -------------------------------------------------------
 
 test_that("a covariate dynamic factor analysis reproduces dsem's fit", {
   skip_if_not_installed("dsem")

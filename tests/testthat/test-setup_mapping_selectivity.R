@@ -1,17 +1,15 @@
+# The selectivity mapping helpers on the fishery, retention and survey curves: they have to reach
+# the right fields, fix everything with no time variation, and copy a shared fleet's map.
+
 library(SPoRC)
 library(testthat)
 
-# do_*_mapping helpers call collect_message(), which appends to a
-# `messages_list` object via `<<-`. See test-setup_fishery_mapping.R for why
-# this must be pre-created when calling the helpers directly (bypassing the
-# enclosing Setup_Mod_* wrapper that normally initializes it).
+# the mapping helpers append to messages_list, which the Setup_Mod_* call normally creates
+# before them, so it is created here since they are called directly
 assign("messages_list", character(0), envir = .GlobalEnv)
 
-# Minimal single-region, single-fleet, single-sex, single-block input_list
-# with a logistic (model 0, 2 parameters) selectivity form, used across all
-# three do_*_mapping smoke tests below. `prefix` selects fish/ret/srv field
-# naming; `use_field` mirrors what setup_fishery_selectivity.R/setup_survey_selectivity.R pass in
-# (fish/ret -> "Catch", srv -> "SrvIdx").
+# a minimal one region, one fleet, one sex, one block input list on a two parameter logistic.
+# `prefix` picks the fishery, retention or survey fields and `use_field` what informs them
 make_sel_input_list <- function(prefix, use_field, n_bins = 2, n_years = 1) {
 
   n_regions <- 1

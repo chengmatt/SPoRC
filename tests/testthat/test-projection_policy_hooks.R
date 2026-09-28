@@ -1,15 +1,12 @@
+# Three things a caller can supply to drive the projection as a management strategy loop:
+# recruitment deviations from outside, a control rule that reads the population rather than
+# spawning biomass alone, and catch at age coming back so a utility can be written on fish size.
+#
+# The first two matter for differentiating through the loop: deviations drawn outside and kept
+# fixed make an expectation over replicates a deterministic function of a rule's parameters.
+
 library(SPoRC)
 library(testthat)
-
-# Three hooks that let the projection be driven as a management strategy loop:
-# recruitment deviations supplied from outside, a control rule that reads the
-# population rather than spawning biomass alone, and catch at age handed back so
-# a utility can be written on the size of the fish taken.
-#
-# The first two matter for differentiating through the loop. Deviations drawn
-# outside and kept fixed are what makes an expectation over replicates a
-# deterministic function of a rule's parameters; a rule that only sees one
-# number cannot express a policy on more than one observation.
 
 test_that("rec_devs of one leaves the projection unchanged", {
 
@@ -21,7 +18,6 @@ test_that("rec_devs of one leaves the projection unchanged", {
   expect_equal(base$proj_SSB, ones$proj_SSB)
   expect_equal(base$proj_Catch, ones$proj_Catch)
 })
-
 
 test_that("rec_devs scales the recruitment the option produced", {
 
@@ -38,7 +34,6 @@ test_that("rec_devs scales the recruitment the option produced", {
   expect_equal(age1(doubled, 3), age1(base, 3))
 })
 
-
 test_that("rec_devs is checked for shape and sign", {
 
   n_pop <- sgl_rg_sable_data$n_pop
@@ -51,7 +46,6 @@ test_that("rec_devs is checked for shape and sign", {
                             rec_devs = array(-1, dim = c(n_pop, n_regions, 8))),
                "negative or non-finite")
 })
-
 
 test_that("a control rule that asks for the state gets it, and one that does not is unaffected", {
 
@@ -74,10 +68,9 @@ test_that("a control rule that asks for the state gets it, and one that does not
   expect_equal(a$proj_Catch, b$proj_Catch)
   expect_gt(seen$n, 0)
   expect_setequal(seen$names, c("y", "NAA", "SSB", "Total_Biom", "Catch", "r"))
-  # the state's spawning biomass is the same quantity the rule is handed as x
+  # the state's spawning biomass is the same quantity the rule reads as x
   expect_equal(seen$ssb, seen$x)
 })
-
 
 test_that("catch at age is returned and weighs up to the catch biomass", {
 

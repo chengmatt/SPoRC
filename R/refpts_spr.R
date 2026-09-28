@@ -263,8 +263,7 @@ global_SPR <- function(pars,
 
   RTMB::getAll(pars, data) # get parameters and data
 
-  # As with rec_model, expm_nsub is only present on data lists built since the
-  # implicit matrix exponential option, so fall back to the exact exponential.
+  # an older data list has no expm_nsub, so use the exact matrix exponential
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
   F_x = exp(log_F_x) # Exponentiate reference points

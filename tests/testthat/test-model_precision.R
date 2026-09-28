@@ -1,3 +1,6 @@
+# The 3D precision matrix over age, year and cohort: square, symmetric and positive definite
+# under both variance forms, and the correlations putting entries where they belong.
+
 library(SPoRC)
 library(Matrix)
 
@@ -91,9 +94,8 @@ test_that("Get_3d_precision works", {
     n_yrs <- 4
     index  <- expand.grid(seq_len(n_ages), seq_len(n_yrs)) # node n is (age, year)
 
-    # with a single partial correlation switched on every node has one
-    # neighbor, so the only off-diagonal entries of Q are the pairs that
-    # correlation links. Report the step each pair takes along the two axes.
+    # with one partial correlation on, every node has one neighbor, so the only off-diagonal
+    # entries are the pairs it links. this reports the step each pair takes along both axes
     edge_steps <- function(pcorr_age, pcorr_year) {
       Q  <- as.matrix(SPoRC:::Get_3d_precision(n_ages, n_yrs, pcorr_age, pcorr_year, 0, 0, 1))
       nz <- which(abs(Q) > 1e-12 & upper.tri(Q), arr.ind = TRUE)

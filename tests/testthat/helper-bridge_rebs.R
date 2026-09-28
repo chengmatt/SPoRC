@@ -35,14 +35,11 @@ build_rebs_input <- function(dat) {
   )
 
   ## Recruitment and the initial age structure --------------------------------
-  # a mean with deviations rather than a stock recruit function, and the last
-  # three years take the mean outright, which is dont_est_recdev_last = 3.
+  # a mean with deviations rather than a stock recruit function, and the last three
+  # years take the mean outright.
   #
-  # the initial age structure is where this assessment is unusual. its
-  # fyear_ac_option 3 gives the initial ages their own scalar, ln_rinit, rather
-  # than reusing mean recruitment, with deviations that the ages beyond the
-  # observed range share. init_age_devs_shared says which ages share which
-  # deviation: ages 1-42 get their own and the remaining nine reuse the 42nd
+  # the initial ages have their own scalar, ln_rinit, rather than reusing mean
+  # recruitment. ages 1-42 get their own deviation and the remaining nine reuse the 42nd
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
     rec_model = "mean_rec",
@@ -60,11 +57,10 @@ build_rebs_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # natural mortality is estimated under a lognormal prior. the prior median is
-  # shifted by exp(-cv^2 / 2) so that its MEAN is the assessment's 0.045, since
-  # the assessment states the prior on the mean and SPoRC's is on the median.
-  # length compositions are fit through a size at age transition matrix and age
-  # compositions pass through an ageing error matrix
+  # natural mortality is estimated under a lognormal prior, its median shifted by
+  # exp(-cv^2 / 2) so the mean is the assessment's 0.045, which is where it states the prior.
+  #
+  # lengths are fit through a size-age transition matrix and ages through ageing error
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = dat$WAA,
@@ -99,10 +95,8 @@ build_rebs_input <- function(dat) {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
-  # the assessment writes its catch and F penalties as sums of squares with
-  # weights 50 and 0.1. a weighted sum of squares and a normal likelihood with a
-  # fixed standard deviation are the same statement up to a constant, related by
-  # sigma = 1 / sqrt(2 w), so the weights enter as these standard deviations
+  # the assessment writes its catch and F penalties as weighted sums of squares at
+  # weights 50 and 0.1, which is a normal at a fixed sigma = 1 / sqrt(2 w)
   suppressWarnings(
     input_list <- Setup_Mod_Catch_and_F(
       input_list = input_list,
@@ -118,9 +112,8 @@ build_rebs_input <- function(dat) {
   )
 
   ## Fishery compositions -----------------------------------------------------
-  # no fishery index in this assessment, only compositions, so fish_idx_type is
-  # "none" and the index arrays are declared empty. both age and length
-  # compositions are aggregated over the region and fit multinomially
+  # no fishery index, only age and length compositions, aggregated over the region
+  # and fit multinomially
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = array(NA, dim = c(dat$n_regions, n_yrs, dat$n_seas, dat$n_fish_fleets)),
@@ -140,9 +133,8 @@ build_rebs_input <- function(dat) {
   )
 
   ## Survey index and compositions --------------------------------------------
-  # the Aleutian Islands survey supplies a biomass index with year specific
-  # standard errors, age compositions, and a single year of length compositions
-  # in 2024
+  # the Aleutian Islands survey supplies a biomass index with year specific standard
+  # errors, age compositions, and one year of length compositions in 2024
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx,
@@ -162,10 +154,8 @@ build_rebs_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # logist1 is the a50 and slope parameterization, which is the form this
-  # assessment uses rather than the a50 and a95 form the rockfish bridges use.
-  # selectivity is time invariant, and fishery catchability is not used because
-  # there is no fishery index to scale
+  # logist1 is the a50 and slope parameterization, not the a50 and a95 form the other
+  # rockfish bridges take. selectivity is time invariant and there is no fishery index
   input_list <- Setup_Mod_Fishsel_and_Q(
     input_list = input_list,
     cont_tv_fish_sel = "none_Fleet_1",
@@ -177,9 +167,8 @@ build_rebs_input <- function(dat) {
   )
 
   ## Survey selectivity and catchability --------------------------------------
-  # the same logistic form, with catchability estimated under a lognormal prior
-  # whose median holds the same exp(-cv^2 / 2) shift as the M prior. the
-  # survey is read at mid year
+  # the same logistic form, with catchability under a lognormal prior whose median takes
+  # the same exp(-cv^2 / 2) shift as the M prior. the survey is read at mid year
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
     cont_tv_srv_sel = "none_Fleet_1",
@@ -200,9 +189,8 @@ build_rebs_input <- function(dat) {
   )
 
   ## Weighting ----------------------------------------------------------------
-  # the catch and F weights already sit in their standard deviations above, so
-  # only the composition weights are set here, and they are the assessment's
-  # stage-2 multipliers
+  # the catch and F weights already sit in their standard deviations above, so only the
+  # composition weights are set here, the assessment's stage-2 multipliers
   Setup_Mod_Weighting(
     input_list = input_list,
     Wt_Catch = 1,
@@ -221,9 +209,8 @@ build_rebs_input <- function(dat) {
 
 #' Set every parameter to the assessment's maximum likelihood estimate
 #'
-#' Evaluating at a known point separates a specification error from an
-#' optimization difference. Most parameters are assigned directly; the initial
-#' age structure needs a conversion, which is the block at the foot.
+#' Most parameters go in directly. The initial age structure at the foot needs converting
+#' from the assessment's own form.
 seed_rebs_mle <- function(input_list, dat) {
 
   mle <- dat$mle
@@ -242,12 +229,11 @@ seed_rebs_mle <- function(input_list, dat) {
   input_list$par$ln_RecDevs[1, 1, seq_along(mle$rec_dev)] <- mle$rec_dev
 
   ## Initial age structure ----------------------------------------------------
-  # the assessment parameterizes it as N(styr, j) = exp(log_rinit - M (j - 1) +
-  # fydev_j), an absolute statement about numbers at age. SPoRC has
-  # multiplicative deviations from an equilibrium age structure, so the
-  # deviations it wants are the log ratio of the two. build both and divide.
-  # ages beyond the observed range reuse the last deviation, and the plus group
-  # takes the geometric accumulation
+  # the assessment writes numbers at age outright, N(styr, j) = exp(log_rinit - M (j - 1) +
+  # fydev_j), while SPoRC wants multiplicative deviations from an equilibrium age structure.
+  #
+  # build both and take the log ratio. ages past the observed range reuse the last
+  # deviation, and the plus group accumulates
   NAA_equil <- exp(mle$log_rinit) * exp(-(0:(n_ages - 1)) * mle$M)
   NAA_equil[n_ages] <- NAA_equil[n_ages - 1] * exp(-mle$M) / (1 - exp(-mle$M))
   NAA_styr <- NAA_equil

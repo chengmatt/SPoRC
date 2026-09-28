@@ -26,9 +26,8 @@ realized_spr <- function(ref) as.numeric(ref$b_ref_pt[1] / ref$virgin_b_ref_pt[1
 
 
 test_that("the F returned for a target SPR achieves that SPR", {
-  # The definition, stated back to the solver. A reference point that solved the
-  # wrong equation, or reported a quantity other than the one it solved for,
-  # fails here whatever number it happens to return.
+  # the definition read back to the solver, so a reference point that solved the wrong
+  # equation or reported a different quantity fails whatever number it returns
   for(spr_x in c(0.05, 0.2, 0.3, 0.4, 0.5, 0.6, 0.8, 0.95)) {
     ref <- refpt_spr(spr_x)
     expect_equal(realized_spr(ref), spr_x, tolerance = 1e-6,
@@ -38,9 +37,8 @@ test_that("the F returned for a target SPR achieves that SPR", {
 
 
 test_that("fishing harder leaves a smaller share of the unfished stock", {
-  # SPR is decreasing in F, so the F that achieves a lower SPR target must be
-  # higher. This is what says the solver is walking the curve in the right
-  # direction rather than landing on the target from an arbitrary place.
+  # spawning biomass per recruit falls with F, so a lower target needs a higher F. this is
+  # what says the solver walks the curve the right way
   targets <- c(0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9)
   f <- vapply(targets, function(x) as.numeric(refpt_spr(x)$f_ref_pt[1]), numeric(1))
 
@@ -50,9 +48,8 @@ test_that("fishing harder leaves a smaller share of the unfished stock", {
 
 
 test_that("an SPR target of nearly one leaves the stock nearly unfished", {
-  # The endpoint the curve has to pass through. A solver with an offset or a
-  # scaling error can still be monotone and still hit its targets in the middle
-  # of the range while missing here.
+  # the endpoint the curve has to pass through. an offset or a scaling error can still be
+  # monotone and still hit targets in the middle of the range
   expect_lt(as.numeric(refpt_spr(0.99)$f_ref_pt[1]), 0.005)
   expect_gt(as.numeric(refpt_spr(0.05)$f_ref_pt[1]),
             as.numeric(refpt_spr(0.5)$f_ref_pt[1]))
@@ -60,9 +57,8 @@ test_that("an SPR target of nearly one leaves the stock nearly unfished", {
 
 
 test_that("the unfished reference does not depend on the target asked for", {
-  # Virgin spawning biomass is a property of the stock, not of the target. If it
-  # moves with SPR_x then the unfished calculation is picking up the fished
-  # mortality somewhere.
+  # unfished spawning biomass belongs to the stock, not to the target, so if it moves with
+  # SPR_x the unfished calculation is reading fishing mortality somewhere
   virgin <- vapply(c(0.2, 0.4, 0.6, 0.8),
                    function(x) as.numeric(refpt_spr(x)$virgin_b_ref_pt[1]), numeric(1))
 
@@ -71,10 +67,8 @@ test_that("the unfished reference does not depend on the target asked for", {
 
 
 test_that("the biomass reference point scales with the target as the ratio says", {
-  # b_ref_pt is the unfished value times the target, so the two returned
-  # quantities have to agree with the target that produced them. This is the same
-  # statement as the first test read the other way round, and it fails separately
-  # if b_ref_pt is computed from something other than the SPR that was solved.
+  # b_ref_pt is the unfished value times the target, so the two returned numbers have to
+  # agree with the target that produced them
   for(spr_x in c(0.2, 0.4, 0.6)) {
     ref <- refpt_spr(spr_x)
     expect_equal(as.numeric(ref$b_ref_pt[1]),
@@ -85,26 +79,20 @@ test_that("the biomass reference point scales with the target as the ratio says"
 
 
 test_that("these checks would notice a reference point that ignored its target", {
-  # Every test above compares the solver against its own target. If the solver
-  # returned the same F whatever was asked, the monotonicity test would fail, but
-  # the round trip would too only if the reported ratio moved with it. Asserting
-  # the F actually varies keeps the suite from passing on a constant.
+  # every test above compares the solver against its own target, so asserting that F
+  # actually varies is what stops them passing on a solver that returns a constant
   f <- vapply(c(0.2, 0.4, 0.6), function(x) as.numeric(refpt_spr(x)$f_ref_pt[1]), numeric(1))
 
   expect_gt(diff(range(f)) / max(f), 0.5)
 })
 
 
-# The checks above are internal to the reference point solver. The ones below put
-# it against the projection engine, which computes the same equilibrium by
-# stepping the population forward rather than by solving for it. The two share no
-# code, so agreement between them is evidence about both.
+# the checks above stay inside the reference point solver. the ones below put it against
+# the projection, which reaches the same equilibrium by stepping the population forward
 
 test_that("projecting at the reference F reaches the reference biomass", {
-  # b_ref_pt says what spawning biomass a stock fished at f_ref_pt settles at.
-  # Do_Population_Projection reaches that number the long way. A solver that
-  # returns a consistent pair of its own quantities but describes a stock the
-  # dynamics never produce fails here and nowhere else.
+  # b_ref_pt says what spawning biomass a stock fished at f_ref_pt settles at, and the
+  # projection reaches that number the long way
   for(spr_x in c(0.3, 0.4, 0.5)) {
     ref <- refpt_spr(spr_x)
     out <- project_at_F(as.numeric(ref$f_ref_pt[1]), n_proj_yrs = 400)
@@ -127,10 +115,8 @@ test_that("an unfished projection reaches the virgin biomass", {
 
 
 test_that("equilibrium biomass falls as fishing mortality rises", {
-  # Monotonicity of the equilibrium the projection converges to, which is the
-  # property the reference point solver is inverting. Checked on the projection
-  # side so a solver and a dynamics that agreed on a non-monotone curve would
-  # still be caught.
+  # the equilibrium the projection settles at falls with F, which is the property the
+  # solver inverts. read on the projection side, so both would have to be wrong together
   f <- c(0, 0.02, 0.05, 0.1, 0.2, 0.4)
   ssb <- vapply(f, function(x) equilibrium_ssb(project_at_F(x, n_proj_yrs = 250)), numeric(1))
 
@@ -140,9 +126,8 @@ test_that("equilibrium biomass falls as fishing mortality rises", {
 
 
 test_that("the projection has actually equilibrated where these tests read it", {
-  # Every comparison above reads one year of a long projection and calls it the
-  # equilibrium. If the run were still moving there, the agreement would be a
-  # coincidence of the year chosen.
+  # every comparison above reads one year of a long projection as the equilibrium, so if
+  # the run were still moving the agreement would depend on the year chosen
   out <- project_at_F(0.0862541, n_proj_yrs = 400)
   last <- equilibrium_ssb(out)
   earlier <- proj_year_total(out$proj_SSB, offset = 50)

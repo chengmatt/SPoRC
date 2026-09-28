@@ -124,8 +124,8 @@ List with \code{Init_Rec_nLL} and \code{Init_Sex_nLL} (arrays
   where nothing is penalized.
 }
 \description{
-The two deviation penalties the recruitment section owes, gathered so the
-objective reads them in one place: the initial age deviations from
+The two deviation penalties from the recruitment section, in one place for
+the objective: the initial age deviations from
 \code{\link{get_init_devs_penalty}} and the recruitment deviations from
 \code{\link{get_rec_devs_penalty}}. Called once from the "Recruitment
 (Penalty)" section of \code{SPoRC_rtmb.R}.

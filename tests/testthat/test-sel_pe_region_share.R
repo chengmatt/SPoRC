@@ -24,7 +24,7 @@ sel_pe_input <- function(n_regions, n_sexes, tv, devs_spec) {
     ))
 }
 
-# the selectivity penalty with every deviation held at the same value
+# the selectivity penalty with every deviation kept at the same value
 sel_penalty <- function(il) {
   obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
   pars <- obj$par
@@ -83,7 +83,7 @@ test_that("the iid penalty on a shared series matches the density written out by
 
 test_that("summing the per-unit calls gives one penalty however the levels are shared", {
 
-  # Called directly, since the split is the same contract for selectivity, which loops regions, and
+  # Called directly, since the split works the same way for selectivity, which loops regions, and
   # for growth, which loops populations by region. n_units is whatever the first dim holds.
   n_units <- 3
   n_bins <- 2

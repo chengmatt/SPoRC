@@ -1,11 +1,9 @@
+# Seasonal state-space numbers at age. Season one is the year boundary, so the seasonal state
+# contains the annual one and has to reproduce it. After that: that a season is not silently a
+# year or an age, that the season correlation runs over seasons, and what the setup refuses.
+
 library(SPoRC)
 library(testthat)
-
-# Seasonal state-space numbers at age. Season one is the year boundary, so the whole feature is a
-# strict superset of the annual state and the first thing to pin down is that the superset still
-# reproduces the subset. After that: that a season index is not silently a year or an age index,
-# that the season correlation runs over seasons and nothing else, and that the setup refuses the
-# combinations the density cannot represent.
 
 seas_dims <- list(n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_seas = 3, n_yrs = 11, n_ages = 6)
 
@@ -103,7 +101,7 @@ test_that("an annual state on a seasonal array penalizes what it does with no se
   pred3[,,,1,,] <- pred1
   eta3 <- array(0, dim = c(1, 1, ny, nk, na, 1))
   eta3[,,,1,,] <- eta1
-  # the inactive seasons hold nonsense on purpose: the slice must never reach them
+  # the inactive seasons hold nonsense on purpose, since the penalty must never read them
   pred3[,,,2:3,,] <- exp(9)
   eta3[,,,2:3,,] <- 7
   sig3 <- array(0.35, dim = dim(pred3))
@@ -181,7 +179,7 @@ test_that("a season correlation at zero reduces to independent seasons", {
 
 test_that("the season dim is the season dim and not a year or an age", {
   # Penalized against an explicit Kronecker covariance built independently of the density code, with
-  # every extent distinct and every correlation different, so a swapped dim lands visibly wrong.
+  # no two dimensions the same size and every correlation different, so a swap shows.
   skip_if_not_installed("mvtnorm")
   set.seed(24)
   nk <- 3
@@ -361,9 +359,8 @@ test_that("the state writes only into the seasons it is active over", {
 })
 
 test_that("a within-year innovation lands in its own season and cuts the recursion after it", {
-  # this is the whole reason the state is a level rather than a deviation: the season after the
-  # bump is set by its own state, so it does not move, and only its prediction does. That is the
-  # conditional independence the sparsity argument rests on, now holding within a year as well.
+  # this is why the state is a level rather than a deviation: the season after the bump is set by
+  # its own state, so only its prediction moves, and that holds within a year as well
   il <- seas_state_on(NAA_re_seasons = "all")
   base <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$report()
 

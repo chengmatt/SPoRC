@@ -1,3 +1,6 @@
+# The baseline simulation self test: a single-region model simulated and refit many times, with
+# median relative error in spawning biomass close to zero.
+
 library(SPoRC)
 library(testthat)
 library(reshape2)

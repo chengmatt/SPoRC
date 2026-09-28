@@ -103,12 +103,11 @@ single_region_Fmsy <- function(pars, data) {
 
   RTMB::getAll(pars, data)
 
-  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
-  # the Ricker fall back here rather than being assigned before getAll, which would collide
+  # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
-  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
+  # mean recruitment has no stock-recruit curve to maximize yield over, so refuse it here rather
+  # than reporting Beverton-Holt numbers
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)
@@ -357,16 +356,14 @@ global_Fmsy <- function(pars,
 
   RTMB::getAll(pars, data) # get parameters and data
 
-  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
-  # the Ricker fall back here rather than being assigned before getAll, which would collide
+  # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
-  # As with rec_model, expm_nsub is only present on data lists built since the
-  # implicit matrix exponential option, so fall back to the exact exponential.
+  # an older data list has no expm_nsub, so use the exact matrix exponential
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
-  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
+  # mean recruitment has no stock-recruit curve to maximize yield over, so refuse it here rather
+  # than reporting Beverton-Holt numbers
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)
@@ -681,16 +678,14 @@ local_Fmsy_sglpop <- function(pars, data) {
 
   RTMB::getAll(pars, data) # get parameters and data
 
-  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
-  # the Ricker fall back here rather than being assigned before getAll, which would collide
+  # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
-  # As with rec_model, expm_nsub is only present on data lists built since the
-  # implicit matrix exponential option, so fall back to the exact exponential.
+  # an older data list has no expm_nsub, so use the exact matrix exponential
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
-  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
+  # mean recruitment has no stock-recruit curve to maximize yield over, so refuse it here rather
+  # than reporting Beverton-Holt numbers
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)
@@ -1084,16 +1079,14 @@ local_Fmsy_multipop <- function(pars, data) {
 
   RTMB::getAll(pars, data) # get parameters and data
 
-  # getAll defines rec_model whenever the caller supplied it, so hand-built data lists predating
-  # the Ricker fall back here rather than being assigned before getAll, which would collide
+  # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
 
-  # As with rec_model, expm_nsub is only present on data lists built since the
-  # implicit matrix exponential option, so fall back to the exact exponential.
+  # an older data list has no expm_nsub, so use the exact matrix exponential
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
 
-  # rec_model 0 is mean recruitment, which has no curve to maximize yield over. the helpers below
-  # branch on Ricker against everything else, so a mean recruitment fit would report Beverton-Holt
+  # mean recruitment has no stock-recruit curve to maximize yield over, so refuse it here rather
+  # than reporting Beverton-Holt numbers
   if(rec_model == 0) stop("rec_model = 0 (mean recruitment) has no stock-recruit curve, so Fmsy is undefined. ",
                           "MSY reference points need rec_model 1 (Beverton-Holt) or 2 (Ricker); use SPR reference points instead.",
                           call. = FALSE)

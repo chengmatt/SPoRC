@@ -42,7 +42,7 @@ sim_at_age_cell <- function(numbers, weight, use, se, ln_sigma, type_code, like_
   }
 
   split <- at_age_split(type_code)
-  out_true <- array(NA_real_, dim = c(n_obs_ages, n_sexes))
+  out_true <- array(NA, dim = c(n_obs_ages, n_sexes))
   out_obs <- out_true
 
   # summed over regions the observation is one number, drawn once
@@ -159,7 +159,7 @@ build_idx_factor <- function(cov_list, like_type_vals, use_arr, n_fleets, what) 
     if(like_type_vals[f] != 2) next
     fac <- cov_to_factor(cov_parsed[[f]])
     use_f <- array(use_arr[,,,f], dim = dim(use_arr)[1:3])
-    row_arr <- array(NA_real_, dim = dim(use_f))
+    row_arr <- array(NA, dim = dim(use_f))
     row_arr[which(use_f == 1)] <- seq_len(sum(use_f == 1))
     out[[f]] <- list(
       d = fac$d,
@@ -210,7 +210,7 @@ resolve_idx_factor <- function(mvn, r, y, seas) {
 #' @param u Shared factor draw for this fleet and replicate, kept constant across
 #'   years. MVN only.
 #' @keywords internal
-draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u = NULL) {
+draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u = NULL, bias_correct_oe = 0) {
   n <- length(true)
   if(like_type == 2) {
     if(is.null(d) || is.null(lambda) || is.null(u)) stop("A multivariate normal index draw needs d, lambda and u from cov_to_factor().")
@@ -223,7 +223,10 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
   if(any(ok)) eps[ok] <- stats::rnorm(sum(ok), 0, se_n[ok])
 
   if(like_type == 1) return(true + eps)
-  if(like_type == 0) return(true * exp(eps))
+
+  # setup bias correction
+  oe <- if(isTRUE(bias_correct_oe == 1)) 0.5 * se_n^2 else 0
+  if(like_type == 0) return(true * exp(eps - oe))
 }
 
 # Operating model
@@ -953,6 +956,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
   sim_env$sim <- sim
 
   with(sim_env, {
+    # simulation lists that predate the observation error correction draw at the median, as before
+    oe_use <- if(exists("bias_correct_oe")) bias_correct_oe else 0
     for(seas in 1:n_seas) {
 
       # Season-integrated abundance for the spatial Baranov under continuous movement.
@@ -997,7 +1002,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           # Regional Retained Catch
           if(catch_units[f] == 0) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim]) # abundance
           if(catch_units[f] == 1) sim_env$TrueCatch[r,y,seas,f,sim] <- sum(CAA[,r,y,seas,,,f,sim] * WAA_fish[,r,y,seas,,,f,sim]) # biomass
-          sim_env$ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, 0, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
+          catch_oe <- if(isTRUE(bias_correct_oe == 1)) -0.5 * exp(ln_sigmaC[r,y,seas,f])^2 else 0 # centers the draw so the true catch is its mean
+          sim_env$ObsCatch[r,y,seas,f,sim] <- TrueCatch[r,y,seas,f,sim] * exp(stats::rnorm(1, catch_oe, exp(ln_sigmaC[r,y,seas,f]))) # Observed Catch w/ lognormal deviations
           aa_dim <- c(n_pop, n_regions, n_ages, n_sexes)
           aa_obs_dim <- c(n_regions, n_obs_ages, n_sexes) # use flags and errors sit on the observed ages
           aa_wt <- array(WAA_fish[,,y,seas,,,f,sim], dim = aa_dim)
@@ -1031,7 +1037,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           # Population Specific Catch
           if(catch_units[f] == 0) sim_env$TrueCatch_pop[,r,y,seas,f,sim] <- apply(CAA[,r,y,seas,,,f,sim, drop = FALSE], 1, sum)  # abundance
           if(catch_units[f] == 1) sim_env$TrueCatch_pop[,r,y,seas,f,sim] <- apply(CAA[,r,y,seas,,,f,sim, drop = FALSE] * WAA_fish[,r,y,seas,,,f,sim, drop = FALSE], 1, sum)  # biomass
-          sim_env$ObsCatch_pop[,r,y,seas,f,sim] <- sim_env$TrueCatch_pop[,r,y,seas,f,sim] * exp(stats::rnorm(n_pop, 0, exp(ln_sigmaC_pop[,r,y,seas,f])))
+          catch_pop_oe <- if(isTRUE(bias_correct_oe == 1)) -0.5 * exp(ln_sigmaC_pop[,r,y,seas,f])^2 else 0
+          sim_env$ObsCatch_pop[,r,y,seas,f,sim] <- sim_env$TrueCatch_pop[,r,y,seas,f,sim] * exp(stats::rnorm(n_pop, catch_pop_oe, exp(ln_sigmaC_pop[,r,y,seas,f])))
 
           # Regional Discards
           if(discard_units[f] == 0) sim_env$TrueDiscard[r,y,seas,f,sim] <- sum(DAA[,r,y,seas,,,f,sim]  / dmr[r,y,seas,f,sim]) # abd
@@ -1091,14 +1098,14 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
               u = fish_idx_u[f,sim]
             )
           } else {
-            sim_env$ObsFishIdx[r,y,seas,f,sim] <- draw_index_obs(TrueFishIdx[r,y,seas,f,sim], ObsFishIdx_SE[r,y,seas,f], fidx_like)
+            sim_env$ObsFishIdx[r,y,seas,f,sim] <- draw_index_obs(TrueFishIdx[r,y,seas,f,sim], ObsFishIdx_SE[r,y,seas,f], fidx_like, bias_correct_oe = oe_use)
           }
 
           # population-specific index. the covariance describes the regional series only, so an mvn
           # fleet's population data source keeps lognormal error, mirroring the estimation model
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_abd[,1,1,1,,,1, drop = FALSE], 1, sum)  # abundance
           if(fish_idx_type[f] == 1) sim_env$TrueFishIdx_pop[,r,y,seas,f,sim] <- fish_q[r,y,f,sim] * apply(tmp_expl_biom[,1,1,1,,,1, drop = FALSE], 1, sum)  # biomass
-          sim_env$ObsFishIdx_pop[,r,y,seas,f,sim] <- draw_index_obs(sim_env$TrueFishIdx_pop[,r,y,seas,f,sim], ObsFishIdx_pop_SE[,r,y,seas,f], if(fidx_like == 1) 1 else 0)
+          sim_env$ObsFishIdx_pop[,r,y,seas,f,sim] <- draw_index_obs(sim_env$TrueFishIdx_pop[,r,y,seas,f,sim], ObsFishIdx_pop_SE[,r,y,seas,f], bias_correct_oe = oe_use, if(fidx_like == 1) 1 else 0)
 
           # Fishery Compositions
           if(Fmort[r,y,seas,f,sim] > 0) { # only simulate if Fishing Mortality > 0
@@ -1390,25 +1397,25 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
     if(n_seas > 1) {
 
       catch_agg <- collapse_seas_obs(TrueCatch, ObsCatch, exp(ln_sigmaC), Catch_seas_Type,
-                                     rep(0, n_fish_fleets), y, sim, n_seas, n_regions, n_fish_fleets)
+                                     rep(0, n_fish_fleets), y, sim, n_seas, n_regions, n_fish_fleets, bias_correct_oe = oe_use)
       sim_env$TrueCatch <- catch_agg$true
       sim_env$ObsCatch <- catch_agg$obs
 
       catch_pop_agg <- collapse_seas_obs(sim_env$TrueCatch_pop, sim_env$ObsCatch_pop, exp(ln_sigmaC_pop),
                                          Catch_pop_seas_Type, rep(0, n_fish_fleets), y, sim, n_seas,
-                                         n_regions, n_fish_fleets, pop = TRUE)
+                                         n_regions, n_fish_fleets, pop = TRUE, bias_correct_oe = oe_use)
       sim_env$TrueCatch_pop <- catch_pop_agg$true
       sim_env$ObsCatch_pop <- catch_pop_agg$obs
 
       fidx_agg <- collapse_seas_obs(sim_env$TrueFishIdx, sim_env$ObsFishIdx, ObsFishIdx_SE,
                                     FishIdx_seas_Type, FishIdx_LikeType, y, sim, n_seas,
-                                    n_regions, n_fish_fleets)
+                                    n_regions, n_fish_fleets, bias_correct_oe = oe_use)
       sim_env$TrueFishIdx <- fidx_agg$true
       sim_env$ObsFishIdx <- fidx_agg$obs
 
       fidx_pop_agg <- collapse_seas_obs(sim_env$TrueFishIdx_pop, sim_env$ObsFishIdx_pop, ObsFishIdx_pop_SE,
                                         FishIdx_pop_seas_Type, FishIdx_LikeType, y, sim, n_seas,
-                                        n_regions, n_fish_fleets, pop = TRUE)
+                                        n_regions, n_fish_fleets, pop = TRUE, bias_correct_oe = oe_use)
       sim_env$TrueFishIdx_pop <- fidx_pop_agg$true
       sim_env$ObsFishIdx_pop <- fidx_pop_agg$obs
 
@@ -1470,7 +1477,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 #'
 #' @keywords internal
 collapse_seas_obs <- function(true_arr, obs_arr, se_arr, seas_agg, like_type,
-                              y, sim, n_seas, n_regions, n_fleets, pop = FALSE) {
+                              y, sim, n_seas, n_regions, n_fleets, pop = FALSE, bias_correct_oe = 0) {
 
   if(!any(seas_agg == 1) || n_seas == 1) return(list(true = true_arr, obs = obs_arr))
 
@@ -1482,14 +1489,14 @@ collapse_seas_obs <- function(true_arr, obs_arr, se_arr, seas_agg, like_type,
         true_arr[,r,y,,f,sim] <- 0
         true_arr[,r,y,1,f,sim] <- year_total
         obs_arr[,r,y,,f,sim] <- 0
-        obs_arr[,r,y,1,f,sim] <- draw_index_obs(year_total, se_arr[,r,y,1,f], like_type[f])
+        obs_arr[,r,y,1,f,sim] <- draw_index_obs(year_total, se_arr[,r,y,1,f], like_type[f], bias_correct_oe = bias_correct_oe)
 
       } else {
         year_total <- sum(true_arr[r,y,,f,sim])
         true_arr[r,y,,f,sim] <- 0
         true_arr[r,y,1,f,sim] <- year_total
         obs_arr[r,y,,f,sim] <- 0
-        obs_arr[r,y,1,f,sim] <- draw_index_obs(year_total, se_arr[r,y,1,f], like_type[f])
+        obs_arr[r,y,1,f,sim] <- draw_index_obs(year_total, se_arr[r,y,1,f], like_type[f], bias_correct_oe = bias_correct_oe)
       }
 
     } # end r loop
@@ -1568,14 +1575,16 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
   sim_env$sim <- sim
 
   with(sim_env, {
+    # simulation lists that predate the observation error correction draw at the median, as before
+    oe_use <- if(exists("bias_correct_oe")) bias_correct_oe else 0
 
     # simulation lists that predate the recruitment anomaly correction add nothing, as before
     rec_anom_add_use <- if(exists("rec_anom_add")) rec_anom_add else array(0, dim = c(n_pop, n_regions, n_yrs))
 
     for(seas in 1:n_seas) {
 
-      # numbers at survey timing. a survey index is a snapshot inside the season, so continuous
-      # movement needs partial propagation under the combined movement-mortality generator
+      # numbers at survey timing. a survey index is a snapshot inside the season, so under continuous
+      # movement the fish are moved and killed part way through it
       if(move_timing == 2) {
         SrvN_sim <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes, n_srv_fleets))
         for(p in 1:n_pop) for(sf in 1:n_srv_fleets) for(a in 1:n_ages) for(s in 1:n_sexes) {
@@ -1618,7 +1627,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
               u = srv_idx_u[sf,sim]
             )
           } else {
-            sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], ObsSrvIdx_SE[r,y,seas,sf], sidx_like)
+            sim_env$ObsSrvIdx[r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx[r,y,seas,sf,sim], ObsSrvIdx_SE[r,y,seas,sf], sidx_like, bias_correct_oe = oe_use)
           }
 
           # survey index at age
@@ -1641,7 +1650,9 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
           # fleet's population data source keeps lognormal error, mirroring the estimation model
           if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (abundance)
           if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE] * WAA_srv[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (biomass)
-          sim_env$ObsSrvIdx_pop[,r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx_pop[,r,y,seas,sf,sim], ObsSrvIdx_pop_SE[,r,y,seas,sf], if(sidx_like == 1) 1 else 0)
+          # each population's own anomaly, matching PredSrvIdx, which the population-specific fit reads
+          if(srv_idx_type[sf] == 2) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * (ln_RecDevs[,r,y,sim] + rec_anom_add_use[,r,y])
+          sim_env$ObsSrvIdx_pop[,r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx_pop[,r,y,seas,sf,sim], ObsSrvIdx_pop_SE[,r,y,seas,sf], bias_correct_oe = oe_use, if(sidx_like == 1) 1 else 0)
 
           # Survey Compositions
           # Sample survey ages
@@ -1767,13 +1778,13 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 
       sidx_agg <- collapse_seas_obs(sim_env$TrueSrvIdx, sim_env$ObsSrvIdx, ObsSrvIdx_SE,
                                     SrvIdx_seas_Type, SrvIdx_LikeType, y, sim, n_seas,
-                                    n_regions, n_srv_fleets)
+                                    n_regions, n_srv_fleets, bias_correct_oe = oe_use)
       sim_env$TrueSrvIdx <- sidx_agg$true
       sim_env$ObsSrvIdx <- sidx_agg$obs
 
       sidx_pop_agg <- collapse_seas_obs(sim_env$TrueSrvIdx_pop, sim_env$ObsSrvIdx_pop, ObsSrvIdx_pop_SE,
                                         SrvIdx_pop_seas_Type, SrvIdx_LikeType, y, sim, n_seas,
-                                        n_regions, n_srv_fleets, pop = TRUE)
+                                        n_regions, n_srv_fleets, pop = TRUE, bias_correct_oe = oe_use)
       sim_env$TrueSrvIdx_pop <- sidx_pop_agg$true
       sim_env$ObsSrvIdx_pop <- sidx_pop_agg$obs
 

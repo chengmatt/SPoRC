@@ -1,7 +1,7 @@
 # Stage 2 of 3: objective function
 #
-# What happens to a vector of abundance over one season, and the only route by which fish move through time,
-# which is what keeps movement timing consistent between the estimation model, reference points and OM.
+# What happens to a vector of abundance over one season, and the only route by which fish move
+# through time, so movement timing stays the same in the model, reference points and the OM.
 
 #' Build a seasonal transition operator combining movement and survival
 #'
@@ -52,8 +52,8 @@
 #' @import RTMB
 build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   n_regions <- length(Z)
 
@@ -73,8 +73,8 @@ build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0, exp
 
 #' Advance a numbers-at-region vector across one season
 #'
-#' Thin convenience wrapper around \code{build_seas_operator} that applies the
-#' seasonal transition to a single numbers-at-region vector. For
+#' Applies \code{build_seas_operator}'s seasonal transition to a single
+#' numbers-at-region vector. For
 #' \code{move_timing} 0 and 1 the operator is never formed explicitly, which
 #' keeps the AD tape smaller than the equivalent matrix product.
 #'
@@ -87,8 +87,8 @@ build_seas_operator <- function(Move, Z, Q = NULL, dur = 1, move_timing = 0, exp
 #' @import RTMB
 advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   if(move_timing == 0) {
     as.vector(t(N) %*% Move) * exp(-Z)
@@ -127,8 +127,8 @@ advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_ns
 #' @import RTMB
 spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   if(move_timing == 0) {
     as.vector(t(N) %*% Move) * exp(-t_spawn * Z)
@@ -176,8 +176,8 @@ spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing 
 #' @import RTMB
 integrate_seas_abundance <- function(N, Z, Q, dur = 1, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   as.vector(seas_operator_and_integral(Z, Q, dur, expm_nsub)$Integral %*% N)
 }
@@ -204,8 +204,8 @@ integrate_seas_abundance <- function(N, Z, Q, dur = 1, expm_nsub = 0) {
 #' @import RTMB
 catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
-  "[<-" <- RTMB::ADoverload("[<-") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
   if(move_timing == 2) {
     F_landed * integrate_seas_abundance(N, Z, Q, dur, expm_nsub)
@@ -247,7 +247,7 @@ catch_at_age <- function(N, Move, Z, Q = NULL, dur = 1, F_landed, move_timing = 
 #' @import RTMB
 seas_operator_and_integral <- function(Z, Q, dur = 1, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_regions <- length(Z)
@@ -299,7 +299,7 @@ seas_operator_and_integral <- function(Z, Q, dur = 1, expm_nsub = 0) {
 #' @import RTMB
 survey_state <- function(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing = 0, expm_nsub = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n_regions <- length(Z)

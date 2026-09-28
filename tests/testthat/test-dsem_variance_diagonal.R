@@ -63,7 +63,7 @@ test_that("with paths between series every cell still comes back at its own sd l
   expect_equal(as.numeric(mv[,1]), rep(0.9^2, n_yrs), tolerance = 1e-12)
   expect_equal(as.numeric(mv[,2]), rep(0.65^2, n_yrs), tolerance = 1e-12)
 
-  # the recruitment innovation shrinks as the paths carry more of the spread
+  # the recruitment innovation shrinks as the paths take up more of the spread
   parts <- get_dsem_matrices(beta, ln_sd, diag_model, cells)
   sd_rec <- as.numeric(parts$sd_cell)[n_yrs + 1:n_yrs]
   expect_equal(sd_rec[1], sqrt(0.65^2 - 0.4^2 * 0.9^2), tolerance = 1e-12) # year one: only the lag-zero path into it
@@ -110,7 +110,7 @@ test_that("the default is bit-identical to before, and the diagonal form refuses
   expect_error(read_dsem_arrows(c("x -> y, 0, NA, 2", "x -> x, 1, rx", "x <-> x, 0, sx", "y <-> y, 0, NA, 0"), c("x", "y"), variance = "diagonal"), "sd of zero")
   expect_error(read_dsem_arrows(c("r -> r, 1, rho_r", "r <-> r, 0, sd_r", "y <-> y, 0, r"), c("r", "y"), variance = "diagonal"), "moderated sd")
 
-  # a random walk carries every cell past its sd line from year two on, which setup catches at the start
+  # a random walk takes every cell past its sd line from year two on, which setup catches at the start
   plain <- suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem"), dims = list(n_regions = 1)))
   expect_error(suppressMessages(Setup_Mod_DSEM(plain, c("rec -> rec, 1, NA, 1", "rec <-> rec, 0, sd_rec, 0.7"), NULL, dsem_variance = "diagonal")), "no innovation variance")
 

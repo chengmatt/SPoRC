@@ -6,8 +6,8 @@
 #' Truncate Model Inputs for Retrospective Diagnostics
 #'
 #' Removes the last \code{j} years from the model inputs and updates the data,
-#' parameter arrays, maps, block structures and anything else dimensioned by the
-#' number of years, so the result can be handed straight to the model as one
+#' parameter arrays, maps, block structures and anything else dimensioned by
+#' the number of years, so the result can go straight into the model as one
 #' retrospective peel. Called by \code{do_retrospective()}.
 #'
 #' @param j Integer terminal years to remove. \code{0} returns the full dataset.
@@ -125,8 +125,7 @@ truncate_yr <- function(j,
                                length(retro_data$naa_re_yrs) * length(data$naa_re_seas) *
                                length(data$naa_re_ages) * dim(parameters$ln_NAA)[6]
 
-    # a peel that removes every active year leaves nothing to estimate, so the state switches off
-    # rather than with an empty slice into the penalty
+    # a peel that removes every active year leaves nothing to estimate, so switch the state off
     if(length(retro_data$naa_re_yrs) == 0) {
       retro_data$n_est_naa_re <- 0
       retro_mapping$ln_NAA <- factor(rep(NA, length(retro_parameters$ln_NAA)))
@@ -292,8 +291,7 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
 
 # Conditional Age-at-Length ------------------------------------------------
 
-  # Indexed by year rather than re-dimensioned, so an untruncated array is read
-  # correctly; truncated here to keep the peeled data list to the years it covers
+  # trimmed here so the peeled data list covers only the years it keeps
   if(!is.null(data$ObsFish_caal)) {
     retro_data$ObsFish_caal <- data$ObsFish_caal[,1:(length(data$years) - j),,,,,,drop = FALSE]
     retro_data$UseFish_caal <- data$UseFish_caal[,1:(length(data$years) - j),,,,drop = FALSE]

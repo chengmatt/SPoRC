@@ -1,3 +1,6 @@
+# One-step-ahead residuals from compResidual for each composition likelihood, drawn from a
+# known multinomial or Dirichlet-multinomial. Calibrated means an SDNR within 0.1 of one.
+
 library(SPoRC)
 library(testthat)
 

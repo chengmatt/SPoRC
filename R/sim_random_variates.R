@@ -92,8 +92,8 @@ rlogistnormal <- function(exp,
     Sigma <- Sigma[-nrow(Sigma), -ncol(Sigma)] # remove last row and column
   }
 
-  # the zeros dropped forms scale the variance by the sample size and take the correlation
-  # positive, so the operating model draws on the same terms the estimation model fits on
+  # the zeros dropped forms scale the variance by the sample size and force the correlation
+  # positive, so the operating model draws the same way the estimation model fits
   if(comp_like %in% c(5, 6, 7)) {
     var_bin <- pars[1]^2 / ISS
     n_tr <- length(exp) - 1

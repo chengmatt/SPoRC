@@ -1,17 +1,15 @@
+# Which composition parameters are estimated: overdispersion and correlation only where a fleet
+# has data and its likelihood reads them, and catchability only where an index is fit.
+
 library(SPoRC)
 library(testthat)
 
-# do_*_mapping helpers call collect_message(), which appends to a
-# `messages_list` object via `<<-`. In normal use this is initialized by the
-# enclosing Setup_Mod_* wrapper before any mapping helper runs; since these
-# tests call the mapping helpers directly, it must be pre-created here.
+# the mapping helpers append to messages_list, which the Setup_Mod_* call normally creates
+# before them, so it is created here since they are called directly
 assign("messages_list", character(0), envir = .GlobalEnv)
 
-# Helper to build a minimal input_list for do_comp_theta_mapping /
-# do_comp_corr_pars_mapping (comp_prefix = "FishAge", non-discard).
-# n_regions x n_fish_fleets Type matrix, per-fleet LikeType, and a
-# [region, year, season, fleet] Use array (or [pop, region, year, season,
-# fleet] when has_pop = TRUE).
+# a minimal input list for the overdispersion and correlation mapping, on fishery ages: a
+# region by fleet type matrix, one likelihood per fleet, and a use array over the four dims
 make_comp_input_list <- function(
   comp_type_mat,
   like_type_vec,
@@ -48,6 +46,8 @@ make_comp_input_list <- function(
 
   input_list
 }
+
+# Overdispersion -------------------------------------------------------------
 
 test_that("do_comp_theta_mapping respects the region_has_data guard", {
 
@@ -113,6 +113,8 @@ test_that("do_comp_theta_mapping: has_pop = TRUE applies the guard per (pop, reg
   expect_false(is.na(map_theta[2, 2, , ])) # pop 2, region 2: has data
 })
 
+# Correlations across Bins and Sexes -----------------------------------------
+
 test_that("do_comp_corr_pars_mapping activates one element for LikeType 3 and two for LikeType 4", {
 
   comp_type_mat <- matrix(2, nrow = 1, ncol = 1) # joint by sex, split by region
@@ -144,15 +146,12 @@ test_that("do_comp_corr_pars_mapping maps everything to NA when there is no data
   expect_true(all(is.na(out$map$FishAge_corr_pars_agg)))
 })
 
+# Population-specific Observation Error --------------------------------------
+
 test_that("do_sigmaC_pop_mapping / do_sigmaD_pop_mapping correctly share across dimensions (regression test)", {
 
-  # Regression test for a bug where the hand-rolled pop-variant mapping used
-  # `grepl("p", spec) && p > 1` to decide whether to broadcast a shared
-  # dimension -- since this is always FALSE at the exact index (1) where the
-  # broadcast write happens, sharing over ANY dimension silently left every
-  # cell past the first index as NA (fixed) instead of tied to a shared
-  # parameter. Both functions were rewritten to delegate to
-  # build_shared_spec_map(), which does not have this bug.
+  # sharing over any dimension has to tie every cell to the shared parameter rather than leaving
+  # the cells past the first fixed, which is why both go through build_shared_spec_map
 
   n_pop <- 2
   n_regions <- 2
@@ -188,12 +187,11 @@ test_that("do_sigmaC_pop_mapping / do_sigmaD_pop_mapping correctly share across 
 
 test_that("do_comp_theta_mapping / do_comp_corr_pars_mapping also serve survey comps via fleet_field", {
 
-  # Same helpers now back setup_survey_comps.R's SrvAge/SrvLen mapping too, selected
-  # via comp_prefix + fleet_field = "n_srv_fleets" instead of the fishery
-  # default "n_fish_fleets". Region 1 has data, region 2 does not -- this also
-  # regression-tests that the region_has_data guard (previously present only
-  # for the non-pop SrvAge variant) is now applied consistently to SrvLen and
-  # the pop variants too.
+  # the same helpers serve the survey compositions, selected by naming the survey fleet count
+  # rather than the fishery's.
+  #
+  # region 1 has data and region 2 does not, which also checks that the condition on a
+  # region having data reaches the length and population-specific forms too
   n_regions <- 2
   n_srv_fleets <- 1
   n_sexes <- 2
@@ -217,15 +215,15 @@ test_that("do_comp_theta_mapping / do_comp_corr_pars_mapping also serve survey c
   expect_true(all(is.na(map_theta[2, , ])))  # region 2 (no data): fixed at NA
 })
 
+# Catchability ---------------------------------------------------------------
+
 test_that("do_q_mapping estimates q when only population-specific index data is used (regression test)", {
 
-  # Regression test for a bug where `sum(UseSrvIdx_pop[,r,,,f] == 0)` (misplaced
-  # parenthesis, counting zero-cells) was used instead of `sum(UseSrvIdx_pop[,r,,,f]) == 0`
-  # (checking whether the sum itself is zero). With any mix of used/unused
-  # populations, the buggy version was truthy far too often, incorrectly fixing
-  # q at NA even when population-specific data existed. Same class of bug as the
-  # sigmaC_pop/sigmaD_pop one above, found while merging do_fish_q_mapping and
-  # do_srv_q_mapping into do_q_mapping.
+  # whether a region has population-specific index data is the sum of its use flags being zero,
+  # not a count of how many cells are zero.
+  #
+  # with any mix of used and unused populations the second reads true far too often and
+  # fixes catchability where data exist
 
   n_regions <- 1
   n_years <- 1

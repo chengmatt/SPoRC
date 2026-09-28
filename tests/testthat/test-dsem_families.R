@@ -23,6 +23,8 @@ fam_obs_nLL <- function(d, x_state, obs_sd = NULL, logit_p = NULL) {
 
 n_fam_yrs <- length(sweep_input()$data$years)
 
+# The Likelihoods ------------------------------------------------------------
+
 test_that("each family's observation likelihood is its base R density, missing years left out", {
 
   set.seed(31)
@@ -122,6 +124,8 @@ test_that("maps and starting values follow the family", {
 
 })
 
+# Drawing from Each Family ---------------------------------------------------
+
 test_that("the operating model draws each family about the link-scale state", {
 
   set.seed(33)
@@ -194,6 +198,8 @@ test_that("an operating model written from scratch takes a family, a spread and 
 
 })
 
+# Against dsem's Own Code ----------------------------------------------------
+
 test_that("the families match dsem's C++ at the same grid", {
 
   skip_if_not_installed("dsem")
@@ -239,7 +245,7 @@ test_that("the families match dsem's C++ at the same grid", {
   # the other links, and the fixed-sd normal
   obs <- rbinom(n_t, 1, 1 - exp(-exp(state)))
   expect_equal(gmrf + as.numeric(get_dsem_obs_nLL(obs, state, 2, 3, 1, 1.5)), theirs(obs, stats::binomial(link = "cloglog")), tolerance = 1e-8)
-  # the identity link hands the Poisson the cell itself, so the covariate column is shifted positive for this one
+  # the identity link gives the Poisson the cell itself, so the covariate column is shifted positive here
   grid_pos <- cbind(x = state + 4, y = y_dev)
   gmrf_pos <- as.numeric(get_dsem_nLL(c(0.4, 0.5), log(c(0.9, 0.7)), x_grid = grid_pos, mu_grid = matrix(c(0.1, -0.2), n_t, 2, byrow = TRUE), dsem_model = m, dsem_cells = get_dsem_cells(m, n_t)))
   obs <- rpois(n_t, state + 4)

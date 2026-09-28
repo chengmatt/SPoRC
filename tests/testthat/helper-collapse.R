@@ -82,9 +82,8 @@ collapse_rep <- function(...) {
 
 #' Assert two reports describe the same population
 #'
-#' Every reported array is laid out population by region by year, so summing over
-#' everything but the year dim gives the total the two resolutions must agree
-#' on.
+#' Every reported array runs population by region by year, so summing over everything
+#' but the years gives the total the two resolutions have to agree on.
 #'
 #' @param coarse,fine Reports from \code{collapse_rep}.
 #' @param label Name of the relation, used in failure messages.
@@ -107,12 +106,10 @@ expect_collapses <- function(coarse, fine, label,
 }
 
 
-# ---------------------------------------------------------------------------
-# A small fitted model, for the tests that need parameters, a mapping and an
-# sdreport rather than just a report. Only one fitted model ships with the
-# package and it is single-region, single-sex, so anything checking the spatial
-# or sexed paths has to fit its own.
-# ---------------------------------------------------------------------------
+# A Small Fitted Model -------------------------------------------------------
+#
+# For the tests that need parameters, a mapping and an sdreport rather than a report.
+# The one fitted model in the package is single-region and single-sex.
 
 #' Fit a small model at chosen dimensions
 #'
@@ -151,10 +148,8 @@ fitted_small_model <- local({
 
 #' Fit a small model with at-age catch observations
 #'
-#' The at-age data sources replace the aggregated catch for a fleet rather than
-#' joining it, so switching them on means switching \code{UseCatch} off. The type
-#' is sex-split because the default sums over sexes, which a two-sex model of
-#' observations cannot do.
+#' At-age numbers replace a fleet's aggregated catch rather than joining it, so turning
+#' them on means turning \code{UseCatch} off. Sex-split, since the default sums sexes.
 #'
 #' @inheritParams fitted_small_model
 #'

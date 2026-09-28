@@ -125,9 +125,9 @@ Setup_Sim_Tagging <- function(
   sim_list$conv_tag_max_liberty <- conv_tag_max_liberty
   sim_list$conv_tag_release_indicator <- conv_tag_release_indicator # tag release indicator (by tag years and regions = a tag cohort)
   sim_list$conv_tag_release_platform <- conv_tag_release_platform # how tags are released
-  # number of tag release events, tag years by tag region. when tagging is inactive the indicator
-  # may arrive empty, so fall back to a length-1 placeholder to keep scalar recycling valid
-  sim_list$n_tag_rel_events <- if(is.null(nrow(conv_tag_release_indicator))) 1L else nrow(conv_tag_release_indicator)
+  # how many tag release events there are, tag years by tag region. with tagging off there may be
+  # none, so put in a single dummy event
+  sim_list$n_tag_rel_events <- if(is.null(nrow(conv_tag_release_indicator))) 1 else nrow(conv_tag_release_indicator)
 
   # Per-release-event timing / mortality / shedding (scalars are recycled to all events)
   sim_list$conv_tag_t_tagging <- recycle_tag_event_par(conv_tag_t_tagging, sim_list$n_tag_rel_events, "conv_tag_t_tagging") # time of tagging
@@ -593,7 +593,7 @@ Setup_Mod_Tagging <- function(input_list,
                               ...
                               ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Tagging <- mget(names(formals()))[-1]
 
@@ -669,13 +669,13 @@ Setup_Mod_Tagging <- function(input_list,
     if(conv_tag_sex_pool == "all") move_sex_tag_pool_vals = list(1:input_list$data$n_sexes)
   } else move_sex_tag_pool_vals = conv_tag_sex_pool
 
-  # recycle conv_fish_tag_attr to one attended-dim string per release event. events may resolve
-  # different dims, and n_conv_tag_cohorts is set further below, so count events locally here
-  n_events_attr <- if(all(use_conv_fish_tagging == 0)) 1L else nrow(conv_tag_release_indicator)
+  # one setting per release event saying what is known about a fish when it is tagged. the events
+  # are counted here because the number of cohorts is not worked out until further down
+  n_events_attr <- if(all(use_conv_fish_tagging == 0)) 1 else nrow(conv_tag_release_indicator)
   conv_fish_tag_attr <- recycle_tag_event_par(conv_fish_tag_attr, max(n_events_attr, 1), "conv_fish_tag_attr")
 
-  # a dim may only be split into more than one pooling group if every release event attends it;
-  # otherwise the recapture likelihood cannot tell the groups apart, so pool fully and warn
+  # recaptures can only be separated by population, age or sex if every release event knows it, so
+  # pool them together and warn when one does not
   attr_parts_list <- strsplit(conv_fish_tag_attr, "_")
   attended_all <- function(dim) all(vapply(attr_parts_list, function(x) dim %in% x, logical(1)))
 

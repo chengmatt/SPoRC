@@ -17,10 +17,10 @@ The weighted mean, or \code{0} when fewer than two cells are
   penalized.
 }
 \description{
-The center a penalty takes when the level of the series is left to the rest of
-the model rather than fixed at the bias-corrected mean. Penalizing about it
-constrains only the spread, which is what a sum of squares about the series'
-own mean amounts to. Fewer than two penalized cells leaves no spread to
+The center a penalty takes when the level of the series is left to the rest
+of the model rather than fixed at the bias-corrected mean. Penalizing about
+it constrains only the spread, as a sum of squares about the series' own
+mean does. Fewer than two penalized cells leaves no spread to
 measure, so the center falls back to zero.
 }
 \keyword{internal}

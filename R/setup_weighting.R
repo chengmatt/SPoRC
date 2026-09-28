@@ -167,7 +167,7 @@ Setup_Mod_Weighting <- function(input_list,
 
                                 ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   if(input_list$store_config) input_list$config$Setup_Mod_Weighting <- mget(names(formals()))[-1]
 
   # A value still passed to the deprecated Setup_Mod_Biologicals arguments wins

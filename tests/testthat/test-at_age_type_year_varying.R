@@ -41,10 +41,8 @@ aa_nll <- function(type, ...) {
   as.numeric(obj$fn(obj$par))
 }
 
-# The four at-age data sources, each with whatever else it needs to have an
-# observation. A discard fraction is a property of the catch rather than of an
-# age, so a fleet reporting discards at age reports them in numbers and needs a
-# retention curve for there to be any discards at all.
+# The four at-age data sources, each with whatever else it needs to have an observation. A
+# fleet reporting discards at age reports them in numbers and needs a retention curve.
 AA_STREAMS <- list(
   list(
     name = "CatchAA",
@@ -100,6 +98,7 @@ stream_nll <- function(st, type, nx = 2, nr = 1, ny = 10, na = 6) {
   as.numeric(obj$fn(obj$par))
 }
 
+# The Year Grammar -----------------------------------------------------------
 
 test_that("a bare value still sets the whole series", {
   # The form every model written before the grammar uses.
@@ -144,16 +143,11 @@ test_that("the year grammar sets each block", {
 
 
 test_that("a setting that changes by year changes the objective by year", {
-  # The sharp one, run on all four at-age data sources. Summing over sexes and
-  # splitting them are different observations, so a data source doing one for five
-  # years and the other for five must land strictly between the two models that
-  # do one throughout. Without this the grammar could parse correctly and be
-  # ignored downstream, which is exactly what a per-fleet read of a year by fleet
-  # matrix would do.
+  # summing over sexes and splitting them are different observations, so five years of each has
+  # to land between the two models that do one throughout, or the grammar could be ignored
   #
-  # Aggregating over sex rather than region on purpose: the test setup has F = 0
-  # outside region 1, so region aggregation is a no-op there and the comparison
-  # would pass while proving nothing.
+  # over sexes rather than regions on purpose, since F is zero outside region 1 here and
+  # summing regions would change nothing
   for(st in AA_STREAMS) {
     agg <- stream_nll(st, "spltRaggS")
     splt <- stream_nll(st, "spltRspltS")
@@ -167,6 +161,7 @@ test_that("a setting that changes by year changes the objective by year", {
   } # end st loop
 })
 
+# Through the Objective ------------------------------------------------------
 
 test_that("every at-age data source builds a tape and a finite gradient when its setting varies", {
   # Evaluating the objective on doubles is not enough: an operation that drops
@@ -206,11 +201,11 @@ test_that("every at-age data source builds a tape and a finite gradient when its
   } # end st loop
 })
 
+# What Is Refused ------------------------------------------------------------
 
 test_that("a fleet fitting 2dar1 cannot change its aggregation between years", {
-  # A separable correlation is defined over the whole block of years by ages, so
-  # a setting that changes inside the block has no meaning. The message says what
-  # to do instead rather than only what is wrong.
+  # a separable correlation covers the whole block of years by ages, so a setting that changes
+  # inside the block means nothing, and the message says what to do instead
   expect_error(
     aa_nll(c("spltRspltS_Year_1-5_Fleet_1", "spltRaggS_Year_6-terminal_Fleet_1"),
            extra = list(CatchAA_LikeType = "lognormal", rho_catch_spec = "est_2dar1")),
@@ -248,9 +243,8 @@ test_that("a summed dim is checked in the years it applies to", {
 
 
 test_that("every at-age data source holds the setting as year by fleet", {
-  # Eight data sources reach the same helper. A data source wired to the wrong fleet count
-  # or the wrong year count would still build, and would then be read with the
-  # wrong shape in the objective.
+  # eight data sources reach the same helper, and one wired to the wrong fleet or year count
+  # would still build and then be read at the wrong shape in the objective
   il <- aa_setup("spltRspltS")
   n_yrs <- length(il$data$years)
 
@@ -273,6 +267,7 @@ test_that("the at-age vocabulary is refused on the composition data sources and 
                "spltRaggS")
 })
 
+# Peels and Plots ------------------------------------------------------------
 
 test_that("a retrospective peel trims the aggregation alongside its observations", {
   # The setting has a year dim now, so a peel that trimmed only the
@@ -287,10 +282,8 @@ test_that("a retrospective peel trims the aggregation alongside its observations
 
 
 test_that("the fits plot names a summed dim instead of naming a slot", {
-  # A dim the fleet sums over holds its observation in slot one, and that slot
-  # is not the first sex. Labelling the facet "Sex 1" would name a sex the
-  # observation is not about, which is what the plot did before the setting was
-  # readable per row.
+  # a fleet that sums over sexes puts its observation in the first slot, which is not the
+  # first sex, so the panel has to say the sexes were summed rather than naming one
   d <- c(1, 10, 1, 6, 2, 1)
   use <- array(0, dim = d)
   use[, , , , 1, ] <- 1

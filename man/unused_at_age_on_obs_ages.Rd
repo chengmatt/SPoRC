@@ -21,8 +21,9 @@ unused_at_age_on_obs_ages(x, used, age_dim, n_obs_ages, fill = 0)
 \code{x}, or an array of \code{fill} shaped like \code{x} but on \code{n_obs_ages} ages.
 }
 \description{
-Fits made before the at-age data sources sat on the observed ages hold their unused ones on the
-model ages. With nothing observed there is nothing to lose, so a placeholder on the observed ages
-stands in; a data source the fit observes is returned as it is, for the shape checks to judge.
+Fits made before the at-age data sources sat on the observed ages hold their
+unused ones on the model ages. Nothing is observed there, so a placeholder
+on the observed ages replaces it. A data source the fit does observe is
+returned unchanged, for the shape checks.
 }
 \keyword{internal}

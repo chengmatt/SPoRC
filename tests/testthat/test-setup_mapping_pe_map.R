@@ -1,3 +1,6 @@
+# build_pe_map and build_shared_spec_map: a sharing setting collapses ids along the dimensions it
+# names and no others, and an unrecognized setting errors with the list of valid ones.
+
 library(SPoRC)
 library(testthat)
 
@@ -16,7 +19,7 @@ test_that("build_pe_map assigns unique ids by collapsing shared dims", {
     expect_equal(length(unique(as.vector(map))), unname(dims["season"] * dims["fleet"]))
     # cells differing only in region must share the same id
     expect_equal(map[1, 2, 1], map[2, 2, 1])
-    # cells differing in season must NOT share an id
+    # cells in different seasons must not share an id
     expect_false(map[1, 1, 1] == map[1, 2, 1])
   })
 

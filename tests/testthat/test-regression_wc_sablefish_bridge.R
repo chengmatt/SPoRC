@@ -43,9 +43,8 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
     expect_lt(pct(r$PredSrvIdx[1, 1, match(ci$Yr, yrs), 1, sf], ci$Exp), 1e-2)
   } # end sf loop
 
-  # Selectivity. The assessment's parameters go in as starting values on SPoRC's own
-  # double normal, so its whole surface should come back, blocks, mirrored fleets and
-  # male offsets included.
+  # the assessment's parameters go in as starting values on SPoRC's own double normal, so its
+  # whole surface has to come back, blocks, mirrored fleets and male offsets included
   sel_fish <- expand_wc_sablefish_sel(dat$fish_sel_blocks_ss3, n_yrs, n_ages, dat$n_sexes)
   sel_srv <- expand_wc_sablefish_sel(dat$srv_sel_blocks_ss3, n_yrs, n_ages, dat$n_sexes)
   expect_lt(max(abs(r$fish_sel[1, 1, 1:n_yrs, 1, , , ] - sel_fish[1, 1, , 1, , , ])), 1e-5)
@@ -77,9 +76,8 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
   expect_lt(comp_gap(dat$fish_src, dat$fish_sex, function(y, s, f) r$CAA[1, 1, y, 1, , s, f]), 1e-5)
   expect_lt(comp_gap(dat$srv_src, dat$srv_sex, function(y, s, f) r$SrvIAA[1, 1, y, 1, , s, f]), 1e-5)
 
-  # Likelihoods. SPoRC evaluates proper densities where the assessment drops
-  # normalizing constants, so each Gaussian block is compared net of a closed-form
-  # offset. A change to any of those constants shows up here.
+  # SPoRC evaluates proper densities where the assessment drops normalizing constants, so each
+  # Gaussian block is compared net of a closed-form offset
   lc <- function(sigma, n) n * (log(sigma) + 0.5 * log(2 * pi))
   n_est_dev <- sum(yrs %in% dat$yrs_rec_est)
 
@@ -100,9 +98,8 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
                dat$ss3$lik$recruitment + dat$ss3$lik$forecast_recruitment - sum(dat$mle$bias_adj) * log(dat$sigmaR),
                tolerance = 1e-3)
   expect_equal(r$M_nLL - lc(dat$M_prior$sd, 1), dat$ss3$lik$priors, tolerance = 1e-4)
-  # the recruitment index reads the deviations rather than the population, so
-  # its predicted values should be the assessment's own recruitment deviations
-  # times its catchability
+  # the recruitment index reads the deviations rather than the population, so its predictions
+  # have to be the assessment's own deviations times its catchability
   i_ri <- match(dat$rec_idx$yr, yrs)
   expect_equal(as.vector(r$RecDev_anom[1, 1, i_ri]), dat$mle$recdev[i_ri], tolerance = 1e-8)
   expect_equal(as.vector(r$PredSrvIdx[1, 1, i_ri, 1, n_srv]),

@@ -23,8 +23,8 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
   input_list <- Setup_Mod_Rec(input_list = input_list, # input data list from above
                               # Model options
                               do_rec_bias_ramp = 1, # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
-                              # breakpoints for bias ramp (1 == no bias ramp - 1960 - 1980, 2 == ascending limb of bias ramp - 1980 - 1990,
-                              # 3 == full bias correction - 1990 - 2022, == 4 no bias correction - terminal year of recruitment estimate)
+                              # bias ramp breakpoints: no ramp 1960 to 1980, ascending limb 1980 to 1990, full
+                              # correction 1990 to 2022, and no correction in the terminal recruitment year
                               bias_year = c(length(1960:1979), length(1960:1989), (length(1960:2023) - 5), length(1960:2024) - 2) + 1,
                               sigmaR_switch = as.integer(length(1960:1975)), # when to switch from early to late sigmaR
                               dont_est_recdev_last = 1, # don't estimate last recruitment deviate
@@ -153,9 +153,8 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
                                         fish_q_spec = c("est_all", "fix") # estiamte fishery q for fleet 1, not for fleet 2
   )
 
-  # mapping for fishery selectivity
-  # sharing delta across sexes from early domestic fishery (first time block)
-  # also fixing parameters so that no time block for trawl fishery
+  # fishery selectivity: delta is shared across sexes from the early domestic fishery's first
+  # block, and the trawl fishery's parameters are fixed so it has no time block
   input_list$map$fish_fixed_sel_pars <- factor(c(1:7, 2, 8:11, rep(12:13,3), rep(c(14,13),3)))
 
   # Setup survey selectivity and catchability
@@ -185,13 +184,13 @@ test_that("Single-region Sablefish RTMB model produces expected results", {
 
   )
 
-  # ll survey, share delta female (index 2) across time blocks and to the coop jp ll survey delta
-  # ll survey, share delta male (index 5) across time blocks and to the coop jp ll survey delta
-  # coop jp survey does not estimate parameters and shares deltas with longline survey
-  # single time block with trawl survey and only one parameter hence, only one parameter estimated across blocks (indices 7 and 8)
+  # the longline survey shares its female delta (index 2) and its male delta (index 5) across
+  # time blocks and with the cooperative Japanese survey, which estimates nothing of its own.
+  #
+  # the trawl survey has one time block and one parameter, so indices 7 and 8 share it
   input_list$map$srv_fixed_sel_pars <- factor(c(1:3, 2, 4:6, 5,rep(7,4), rep(8, 4), rep(c(NA,2), 2), rep(c(NA, 5), 2)))
 
-  # Coop JP Survey (Logistic) Single time block (these estimates are fixed!)
+  # cooperative Japanese survey, logistic, one time block, estimates kept fixed
   input_list$par$srv_fixed_sel_pars[1,,,1,3] <- c(0.980660760456, 0.9287775)
   input_list$par$srv_fixed_sel_pars[1,,,2,3] <- c(1.22224502478, 0.8831787)
 

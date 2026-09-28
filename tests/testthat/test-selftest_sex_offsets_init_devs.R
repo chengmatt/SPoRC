@@ -1,6 +1,7 @@
 # Self-test of the sex-linked selectivity options and sex-specific initial age deviations, end to end.
 #
-# A two-sex OM whose truth IS the offset structure (male fishery curve scaled by exp(-0.163), survey male
+# A two-sex operating model built on the offset structure itself: the male fishery curve
+# scaled by exp(-0.163), the survey male
 # parameters as log offsets, a plateau from bin 4, per-sex initial age curves) generates joint-sex data.
 #
 # The estimation model holds that structure through fish_sel_sex_offset / srv_sel_sex_offset / NSelBins /
@@ -106,7 +107,7 @@ test_that("sex offsets, the selectivity plateau, and per-sex initial deviations 
   # the operating model's initial numbers really are sex-specific
   expect_gt(max(abs(sim_out$ln_InitDevs[1,1,,1,1] - sim_out$ln_InitDevs[1,1,,2,1])), 0.2)
 
-  # slice the simulated environment into estimation-shaped data
+  # read the simulated environment into the shapes the estimating model wants
   sim_data <- simulation_data_to_SPoRC(sim_env = sim_out, y = n_yrs, sim = 1)
 
   # Estimation model with the same structure expressed through the options

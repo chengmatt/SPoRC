@@ -164,7 +164,7 @@ test_that("a projected catchability series is read over the conditioning years a
   add_dsem <- function(sl) suppressWarnings(suppressMessages(Setup_Sim_DSEM(sl, fit$data, pars, rep = fit$rep, condition_on_fit = TRUE)))
   expect_error(add_dsem(sl_cl), "sd fixed at zero") # said at the setup call, before any cell is drawn
 
-  # and the refusal is about the years left to draw, not the catchability the operating model was handed
+  # and the refusal is about the years left to draw, not the catchability it was given
   sl_cl$n_cond_yrs <- sl_cl$n_yrs
   sl_env <- add_dsem(sl_cl)
   expect_silent(check_q_dsem_drawable(sl_env))

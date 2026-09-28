@@ -1,10 +1,9 @@
+# get_model_rep_from_mcmc() replays the report at every posterior draw. A real ADFun is not
+# needed: the function only calls the report, so a stand-in echoing its input fixes the warmup
+# handling, the chain collapse and the draw ordering exactly.
+
 library(SPoRC)
 library(testthat)
-
-# get_model_rep_from_mcmc() replays the model report at every posterior draw.
-# A real ADFun is not needed to exercise it: the function only calls
-# rtmb_obj$report(par = ), so a stand-in that echoes its input fixes the warmup
-# handling, the chain collapse, and the draw ordering exactly.
 
 # The function sets a global future plan and never restores it, so tests wrap
 # their calls to avoid leaking a multisession plan into the rest of the suite.
@@ -55,8 +54,8 @@ test_that("chains are collapsed with iterations varying fastest", {
 })
 
 test_that("parameter names from the samples dimnames reach the report function", {
-  # The report is indexed by name inside echo_obj, so this would error if the
-  # column names were not kept onto the collapsed matrix.
+  # the report is indexed by name, so this errors if the column names do not reach the
+  # collapsed matrix
   out <- with_restored_plan(
     SPoRC::get_model_rep_from_mcmc(echo_obj, make_mcmc(), what = c("p1", "p2"), n_cores = 1))
   expect_setequal(out$p1$value, c(3, 4, 5, 8, 9, 10))
@@ -97,9 +96,8 @@ test_that("the result is a data.table per component", {
 })
 
 test_that("a single-chain posterior currently fails", {
-  # Dropping warmup uses the default drop = TRUE, so a one-chain posterior
-  # loses its chain dimension, n_param reads as NA, and the matrix() call
-  # errors. Checked as current behavior: single-chain runs are not supported.
+  # dropping warmup loses the chain dimension on a one-chain posterior, so the parameter count
+  # reads as missing and the reshape errors. single-chain runs are not supported
   expect_error(with_restored_plan(
     SPoRC::get_model_rep_from_mcmc(echo_obj, make_mcmc(n_iter = 5, n_chain = 1, warmup = 2),
                                    what = "p1", n_cores = 1)),

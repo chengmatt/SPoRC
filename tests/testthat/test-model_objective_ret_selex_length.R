@@ -1,10 +1,9 @@
+# Retention selectivity estimated over length bins rather than ages. No other test sets retention
+# to length, so the branch picking the length bins and the one mapping the curve onto ages through
+# the size-age transition run nowhere else.
+
 library(SPoRC)
 library(testthat)
-
-# Retention selectivity estimated over length bins rather than age bins. No other test
-# switches ret_selex_type to length, so the branch that picks the length bins and the one
-# that maps the length-based curve onto ages through the size-age transition are otherwise
-# never run.
 
 n_lens_test <- 8
 
@@ -12,7 +11,6 @@ build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(.
 
 length_based <- function() build(n_lens = n_lens_test, fishsel = list(ret_selex_type = "length"))
 age_based <- function() build(n_lens = n_lens_test)
-
 
 test_that("length based retention selectivity is estimated over length bins", {
   input <- length_based()
@@ -29,7 +27,6 @@ test_that("length based retention selectivity is estimated over length bins", {
   expect_equal(age_model$data$ret_selex_type, 0)
   expect_null(age_model$rep$ret_sel_l)
 })
-
 
 test_that("length based retention is mapped onto ages through the size-age transition", {
   input <- length_based()
@@ -53,7 +50,6 @@ test_that("length based retention is mapped onto ages through the size-age trans
   expect_true(all(ret_sel >= 0))
   expect_true(all(ret_sel <= 1))
 })
-
 
 test_that("length based retention gives a different jnLL from age based, and still decomposes", {
   model <- evaluate_input(length_based())

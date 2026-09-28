@@ -12,10 +12,8 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
   n_ages <- length(dat$ages)
   n_obs_ages <- length(dat$obs_ages)
 
-  # The survey curve is supplied as a fixed input with the assessment's age 30 edge
-  # hold applied, which SPoRC's logist1 form cannot express. That isolates the
-  # likelihoods from the selectivity form; the companion regression test refits the
-  # uncapped logistic instead.
+  # the survey curve is supplied as a fixed input held flat past age 30, which logist1 cannot
+  # express, so this compares the likelihoods rather than the selectivity form
   input_list <- seed_bsai_nork_mle(build_bsai_nork_input(dat), dat)
   input_list$data <- cap_bsai_nork_srv_sel(input_list$data, dat)
 
@@ -30,9 +28,8 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
   expect_equal(as.vector(r$srv_sel[1, 1, 1, 1, seq_len(n_obs_ages), 1, 1]),
                dat$admb$sel_srv, tolerance = 1e-5, ignore_attr = TRUE)
 
-  # The population at the assessment's MLE. The assessment's last reported age is a
-  # plus group while SPoRC has ages past it, so those columns are summed before
-  # comparing.
+  # the assessment's last reported age is a plus group while SPoRC has ages past it, so those
+  # columns are summed before comparing
   naa <- r$NAA[1, 1, 1:n_yrs, 1, , 1]
   naa_obs <- cbind(naa[, 1:(n_obs_ages - 1)], rowSums(naa[, n_obs_ages:n_ages]))
   expect_equal(naa_obs, dat$admb$NAA, tolerance = 1e-5, ignore_attr = TRUE)
@@ -45,9 +42,8 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
   expect_equal(as.vector(r$PredSrvIdx), dat$admb$pred_srv,
                tolerance = 1e-3, ignore_attr = TRUE)
 
-  # Likelihood components. SPoRC writes each component as a proper density while the
-  # assessment drops normalizing constants, so each comparison subtracts exactly the
-  # constants the assessment omits. What is left is a like for like comparison.
+  # SPoRC writes each component as a proper density while the assessment drops normalizing
+  # constants, so each comparison subtracts exactly the constants it omits
   c2pi <- 0.5 * log(2 * pi)
 
   expect_equal(sum(r$FishAgeComps_nLL), dat$admb$datalikecomp[["fish.unbiased.ac"]],
@@ -57,9 +53,8 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
   expect_equal(sum(r$SrvAgeComps_nLL), dat$admb$datalikecomp[["aisrv.ac"]],
                tolerance = 1e-5)
 
-  # The assessment's survey statement keeps the log sigma term but drops the
-  # sqrt(2 pi) constant. Its standard errors vary by year, so the constant is summed
-  # over the observations rather than counted.
+  # the assessment's survey term keeps the log sigma but drops the sqrt(2 pi), and its standard
+  # errors vary by year, so the constant is summed over the observations
   srv_like <- sum(r$SrvIdx_nLL) -
     sum(c2pi + log(dat$ObsSrvIdx_SE[dat$UseSrvIdx == 1]))
   expect_equal(srv_like, dat$admb$datalikecomp[["aisurvlike"]], tolerance = 1e-3)
@@ -71,9 +66,8 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
     n_catch_obs * (c2pi + as.vector(input_list$par$ln_sigmaF))
   expect_equal(as.vector(f_pen), dat$admb$pen_likecomp[["Fmortpen"]], tolerance = 1e-5)
 
-  # The assessment's recruitment penalty keeps its log sigmaR terms and drops only the
-  # sqrt(2 pi) constants, over the recruitment deviations and the initial age
-  # deviations together. It is negative because sigmaR is 0.75.
+  # the assessment's recruitment penalty keeps its log sigmaR terms and drops the sqrt(2 pi),
+  # over the recruitment and initial age deviations together. negative, sigmaR being 0.75
   n_recdev <- length(dat$mle$rec_dev)
   n_fydev <- length(dat$mle$fydev)
   rec_like <- sum(r$Rec_nLL) + sum(r$Init_Rec_nLL) - (n_recdev + n_fydev) * c2pi
@@ -89,18 +83,17 @@ test_that("BSAI northern rockfish reproduces the 2023 ADMB assessment at its own
   expect_equal(r$srv_q_nLL - log(sqrt(2 * pi) * dat$cv_q),
                dat$admb$pen_likecomp[["prior_q"]], tolerance = 1e-5)
 
-  # The catch statement is the one component that does not land on the assessment's
-  # value. Both are numerically zero against an objective of 555; the assessment fits
-  # catch to 2e-05 and SPoRC to 4e-03, which is a difference in how near-exact catch
-  # is driven rather than in the statement. Asserted in absolute terms because a
-  # relative tolerance on two numbers this close to zero means nothing.
+  # the catch term is the one component that does not land on the assessment's value, both
+  # being numerically zero against an objective of 555: 2e-05 there against 4e-03 here.
+  #
+  # that is a difference in how near-exact the catch is driven, so it is asserted in
+  # absolute terms, a relative tolerance on two numbers this small meaning little
   catch_ssq <- sum(as.vector(r$Catch_nLL) -
                      (c2pi + as.vector(input_list$par$ln_sigmaC)))
   expect_lt(abs(catch_ssq - dat$admb$datalikecomp[["catch.like"]]), 1e-2)
 
-  # The whole objective, like for like. The assessment estimates maturity internally
-  # and SPoRC fixes it, so mat_like is removed from the assessment's side. Its
-  # obj_fun is reported to six significant figures, which is the tolerance floor here.
+  # the whole objective, like for like, with the assessment's maturity likelihood removed since
+  # SPoRC fixes maturity. its objective is reported to six figures, the tolerance floor
   like_for_like <- sum(r$FishAgeComps_nLL) + sum(r$FishLenComps_nLL) +
     sum(r$SrvAgeComps_nLL) + srv_like + catch_ssq + as.vector(f_pen) + rec_like +
     sel_pri + (r$M_nLL - log(sqrt(2 * pi) * dat$cv_M)) +

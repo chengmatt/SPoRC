@@ -1,3 +1,6 @@
+# Natural cubic spline weights against stats::splinefun, with the degenerate node counts and the
+# clamping outside the node range.
+
 library(SPoRC)
 library(testthat)
 

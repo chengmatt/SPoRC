@@ -141,10 +141,11 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 #'   recaptures.
 #' @param NAA_scalar Array \code{[pop, region, year, season, age, sex]} of the
 #'   factor the state-space numbers at age applied to the deterministic
-#'   prediction, one wherever it did not apply. Tagged fish are a subset of the
-#'   population and the innovation reads as unmodelled mortality, so the cohorts
-#'   take the same factor at every boundary the state acts on, within a year as
-#'   well as across one. \code{NULL} (the default) leaves them on the
+#'   prediction, one wherever it did not apply. Tagged fish are part of the same
+#'   population, and the innovation acts as mortality the model does not
+#'   otherwise account for, so every cohort takes the same factor at each
+#'   boundary, within a year as well as between years. \code{NULL} (the default)
+#'   leaves them on the
 #'   deterministic trajectory, which is correct only when the state is off.
 #'
 #' @return List with elements \code{conv_tag_fish_reporting},

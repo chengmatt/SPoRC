@@ -1,11 +1,12 @@
 # Shared routines for the feature self-tests: normal/mvn index likelihoods, concentrated catchability,
 # Ricker recruitment, and the Ricker reference point check.
 #
-# Each fits a small single-region model with one feature on, hands it to simulation_self_test, and
-# asserts median relative error.
+# Each fits a small single-region model with one feature on, passes it to
+# simulation_self_test, and asserts median relative error.
 #
-# The index blocks keep sigmaR and the observation errors realistic since observation error is what is
-# under test; the Ricker block passes near-zero values, so residual bias there is structural.
+# The index blocks keep sigmaR and the observation errors realistic, since observation
+# error is what is being tested. The Ricker block passes near-zero values instead, so
+# any bias left there is structural.
 
 selftest_cfg <- list(
   n_yrs = 40, n_ages = 6, n_sims = 50,
@@ -18,6 +19,9 @@ selftest_cfg <- list(
 )
 
 # Operating model for the baseline dataset each estimation model is fitted to.
+
+# Operating Model ------------------------------------------------------------
+
 selftest_make_om <- function(
   SrvIdx_LikeType = NULL,
   SrvIdx_Cov = NULL,
@@ -97,6 +101,9 @@ selftest_make_om <- function(
 }
 
 # Estimation model over the baseline data, with the feature under test switched on.
+
+# Estimating Model -----------------------------------------------------------
+
 selftest_build_input <- function(
   sim_data,
   SrvIdx_LikeType = "lognormal",
@@ -163,10 +170,8 @@ selftest_build_input <- function(
     Use_F_pen = 1, sigmaC_spec = "fix", ln_sigmaC = sim_data$ln_sigmaC,
     ln_sigmaF = array(log(1), dim = c(1, 1, 1)),
     ObsDiscard = sim_data$ObsDiscard, UseDiscard = sim_data$UseDiscard,
-    # the operating model has no discard data, so an estimated dmr mean is
-    # unidentified and puts an exactly zero row in the Hessian. That makes the
-    # Newton refinement's solve() fail, leaving the fit wherever nlminb stopped
-    # and the gradient check platform dependent, so dmr stays fixed here
+    # with no discard data an estimated dmr mean is unidentified and puts a zero row
+    # in the Hessian, which stops the Newton refinement, so dmr stays fixed here
     sigma_dmr_spec = "fix", dmr_mean_spec = "fix", ln_sigmaD = sim_data$ln_sigmaD))
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
@@ -231,9 +236,11 @@ selftest_build_input <- function(
   input_list
 }
 
-# Fit the base model, run the self-test with the block's own seed, and summarize
-# median relative error per reported quantity. Assertions are the caller's job,
-# so the testthat files use expect_lt while the dev driver stops on violation.
+# fit the base model, run the self test on the block's own seed, and report median
+# relative error per quantity. the caller does the asserting
+
+# Running the Self Test ------------------------------------------------------
+
 selftest_run <- function(input_list, what, sim_recruitment = "input", seed = 1) {
   fit <- fit_model(input_list$data, input_list$par, input_list$map, random = NULL, silent = TRUE)
   sd_rep <- RTMB::sdreport(fit)
@@ -270,6 +277,9 @@ selftest_run <- function(input_list, what, sim_recruitment = "input", seed = 1) 
 
 # The mvn blocks share this covariance: a survey-wide scaling error with a
 # strong common factor and marginal sd at fraction `scale` of the index level.
+
+# The Multivariate Normal Covariance -----------------------------------------
+
 selftest_mvn_cov <- function(idx_scale, scale = 0.15, lambda = 0.7) {
   n_yrs <- selftest_cfg$n_yrs
   lam <- rep(lambda, n_yrs)

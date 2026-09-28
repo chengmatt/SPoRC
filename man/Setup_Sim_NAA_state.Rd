@@ -58,12 +58,15 @@ a state at season one only, leaving the numbers deterministic between
 seasons; \code{"all"} puts one at the start of every season, and an integer
 vector selects specific seasons.}
 
-\item{naa_eta_input}{Array \code{[n_pop, n_regions, n_cond_yrs, n_seas, n_ages, n_sexes, n_sims]}
-of log-scale state innovations, or \code{NULL} (default) to draw every year. Supplying a fit's own
-innovations, \eqn{\ln N - \ln \hat{N}}, makes the operating model reproduce that fit's numbers at
-age rather than a fresh realization of the same process. The year extent says how many leading
-years are held: give the fitted years and any year beyond them is still drawn, which is what a
-closed loop running past the data needs.}
+\item{naa_eta_input}{Array
+  \code{[n_pop, n_regions, n_cond_yrs, n_seas, n_ages, n_sexes, n_sims]} of
+  log-scale state innovations, or \code{NULL} (default) to draw every year.
+  Supplying a fit's own innovations, \eqn{\ln N - \ln \hat{N}}, makes the
+  operating model reproduce that fit's numbers at age rather than a fresh
+  realization of the same process. The year extent says how many leading years
+  are held: give the fitted years and any year beyond them is still drawn, as
+  a closed loop running past the data
+needs.}
 }
 \value{
 \code{sim_list} with the state-space settings attached.
@@ -77,8 +80,9 @@ arguments here describe.
 }
 \details{
 Arguments mirror \code{Setup_Mod_Biologicals}'s state-space options so a
-simulated population and the model fitted to it are written the same way, which
-is what makes a self test a like-for-like comparison rather than a translation.
+simulated population and the model fitted to it are written the same way, so
+a self test compares like with like rather than one translation against
+another.
 }
 \seealso{
 Other Simulation Setup:

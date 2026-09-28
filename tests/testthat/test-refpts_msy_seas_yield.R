@@ -1,28 +1,20 @@
-library(SPoRC)
-library(testthat)
+# Equilibrium yield at MSY against the catch a long projection settles at. The other reference
+# point tests read spawning biomass, which never touches catch at age, and the catch side can fail
+# in two ways:
+#
+#   Seasons. The penultimate age and the plus group take their catch in a loop over seasons, so
+#   abundance has to be advanced through that loop or every season after the first is charged
+#   against fish already dead. This cannot be seen at one season, which is what the rest runs at.
+#
+#   Continuous movement. Fish redistribute among regions while they are being caught, so the
+#   region-by-region Baranov form is wrong and the season-integrated abundance is needed instead.
+#
+# Everything is deterministic, with no operating model and no fitting. Region-specific mortality is
+# what makes the three timings tell apart, since they agree exactly when mortality is even.
 
-# Equilibrium yield from the multi-region Beverton-Holt MSY reference points, checked against
-# the equilibrium catch of a long projection kept at the same F.
-#
-# The other refpts test files check spawning biomass, which never touches CAA. Yield does, and
-# the catch side has two failure modes this file guards:
-#
-#   Seasons. The penultimate age and the plus group take their catch in a loop over seasons.
-#   Abundance has to be advanced through that loop, or every season after the first is
-#   charged against fish that should already be dead. This is invisible at n_seas == 1, which
-#   is what the rest of the suite runs at, and grows with the number of seasons.
-#
-#   Continuous movement. Under move_timing = 2 fish redistribute among regions while they are
-#   being caught, so the region-local Baranov form is invalid and the season-integrated
-#   (spatial Baranov) abundance is required instead.
-#
-# Everything is synthetic and deterministic: no operating model, no fitting. The reference
-# points and Do_Population_Projection are independent implementations of the same dynamics, so
-# agreement to machine precision is a real check rather than a restatement of one of them.
-#
-# Region-specific M is what makes the timings distinguishable. The three move_timings agree
-# exactly when Z is constant across regions, so a symmetric setup would pass at every timing
-# regardless of whether continuous movement were implemented at all.
+library(SPoRC)
+
+library(testthat)
 
 n_regions <- 2
 n_ages <- 12
@@ -89,7 +81,7 @@ msy_vs_projection <- function(n_seas, move_timing) {
   Fmsy <- fit$rep$Fmsy
   Req <- fit$rep$Req
 
-  # Lay a season/age slice out over projection years, which sit in dimension 3
+  # spread one season and age over the projection years, which run third
   lay <- function(v, dims) aperm(array(rep(as.vector(v), n_proj_yrs), dim = c(dims, n_proj_yrs)),
                                  c(1, 2, length(dims) + 1, 3:length(dims)))
   # Movement arrays put years in dimension 4 instead, after the two region dimensions
@@ -180,8 +172,8 @@ test_that("multi-region BH MSY yield matches the equilibrium catch of a projecti
 })
 
 test_that("continuous movement changes the MSY reference points it is supposed to change", {
-  # Guards against the check above passing vacuously: if the timings produced identical
-  # answers, every assertion would hold whether or not continuous movement did anything.
+  # without this the check above would hold whether or not continuous movement did
+  # anything, since identical answers satisfy every assertion in it
   discrete   <- msy_vs_projection(2, 0)
   continuous <- msy_vs_projection(2, 2)
 

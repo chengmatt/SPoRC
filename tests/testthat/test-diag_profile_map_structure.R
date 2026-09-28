@@ -1,15 +1,9 @@
+# A profile rebuilds the map at every grid value, starting from the map the model was fitted
+# with. Renumbering every position instead frees parameters the fit never estimated, which
+# lowers the likelihood everywhere and makes the difference from the MLE meaningless.
+
 library(SPoRC)
 library(testthat)
-
-# do_likelihood_profile() rebuilds the map for the profiled parameter at every grid value.
-# That rebuild has to start from the map the model was fitted with, because the map is the
-# only record of which positions were kept fixed and which were estimated as a single
-# shared parameter. Renumbering every position uniquely instead frees parameters the fitted
-# model never estimated, which lowers the likelihood at every grid value and leaves the
-# difference from the MLE uncomparable.
-#
-# The map factor has that structure in its level labels: a shared parameter shows up as
-# one label on several positions, and a fixed position shows up as NA.
 
 par_array <- array(0, dim = c(2, 3))
 
@@ -48,7 +42,7 @@ test_that("the target positions come back NA", {
 })
 
 test_that("several targets supplied one index at a time all come back NA", {
-  # The profile hands `idx` to `[<-` one element at a time, so a list of index vectors
+  # The profile passes `idx` to `[<-` one element at a time, so a list of index vectors
   # reaches the map the same way it reaches the parameter values.
   fitted_map <- factor(as.character(1:6))
   prof_map <- SPoRC:::build_profile_map(par_array, fitted_map, list(c(1, 2), 5))
@@ -58,9 +52,8 @@ test_that("several targets supplied one index at a time all come back NA", {
 })
 
 test_that("the rebuild is stable when fed back its own output", {
-  # The sequential branch rebuilds the map once per grid value, so a rebuild that read its
-  # own previous result would have to leave the structure unchanged. It holds the fitted
-  # map aside instead, but the helper is idempotent either way.
+  # the sequential route rebuilds the map once per grid value, and keeps the fitted map aside
+  # rather than reading its own previous result, though the helper is stable either way
   fitted_map <- factor(c("1", NA, "2", "1", NA, "3"))
   once <- SPoRC:::build_profile_map(par_array, fitted_map, 6)
   twice <- SPoRC:::build_profile_map(par_array, once, 6)
@@ -90,9 +83,8 @@ test_that("a fully fixed parameter stays fully fixed", {
   expect_true(all(is.na(prof_map)))
 })
 
-# The mirror check warns when a profile target is tied by the fitted map to a position the
-# profile does not fix. The shared parameter stays estimated in that case, so the grid value
-# never holds and the profile comes back flat.
+# A warning is raised when a profile target is tied by the fitted map to a position the profile
+# does not fix, since the shared parameter stays estimated and the profile comes back flat.
 
 test_that("a target mirrored onto an untargeted position is flagged", {
   fitted_map <- factor(c("1", "2", "3", "1", "4", "5"))
@@ -110,11 +102,11 @@ test_that("an unshared target is not flagged", {
   expect_silent(SPoRC:::check_profile_mirrors(par_array, fitted_map, "ln_M", 3))
 })
 
-# The helper above is only worth anything if both execution branches actually route through
-# it, so the tests below drive do_likelihood_profile() end to end and read back the map and
-# the parameter values RTMB was handed. RTMB::MakeADFun is stubbed out, so nothing is
-# optimized and no model is built; the stub records its arguments and then fails, which the
-# profile's own error handling absorbs.
+# the tests below drive do_likelihood_profile() end to end and read back the map and the
+# parameter values it passed on, since the helper above is worth nothing unless both reach it.
+#
+# RTMB::MakeADFun is replaced by a stand-in that records its arguments and then fails, which
+# the profile's own error handling absorbs, so nothing is built or optimized
 
 profile_call_args <- function(do_par, idx = 3) {
 

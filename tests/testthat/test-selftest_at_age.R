@@ -1,14 +1,12 @@
+# Parameter recovery for the at-age data. The operating model draws catch at age through the same
+# lognormal error the estimating model fits, so a refit returns the truth without median bias.
+#
+# This runs the whole simulation path, not just the likelihood: the draw, the arguments and stores
+# in setup, the containers, and the self test's reset blocks. A draw with no parameter behind it
+# passes every structural test and fails here.
+
 library(SPoRC)
 library(testthat)
-
-# Parameter recovery for the age-disaggregated data sources. The operating model
-# draws catch at age through the same lognormal error the estimation model fits,
-# so refitting the simulated data should return the truth without median bias.
-#
-# This exercises the whole simulation path, not just the likelihood: the draw in
-# sim_observations.R, the arguments and stores in setup_sim_fleets.R, the
-# containers, and the self test's reset blocks. A draw with no parameter behind
-# it passes every structural test and fails here.
 
 at_age_cfg <- list(n_yrs = 40, n_ages = 8, n_sims = 20, sigmaCAA = 0.25, waa = 1, mat = 1)
 
@@ -85,6 +83,7 @@ at_age_om <- function(seed = 321) {
   Simulate_Pop_Static(sim_list = sim_list, output_path = NULL)
 }
 
+# The Draw -------------------------------------------------------------------
 
 test_that("the operating model draws catch at age with the error it was given", {
 
@@ -100,10 +99,10 @@ test_that("the operating model draws catch at age with the error it was given", 
   expect_lt(abs(stats::median(log(obs_caa[fit] / true_caa[fit]))), 0.05)
 })
 
-# Estimation model over one at-age data source. Catchability and R0 are pinned at the
-# operating model's values so the comparison is about the dynamics rather than
-# the abundance/catchability ridge, and init devs are kept because the operating
-# model starts from deterministic equilibrium.
+# Estimating model over one at-age data source. Catchability and R0 are fixed at the operating
+# model's values, so this is about the dynamics rather than the abundance ridge.
+#
+# The initial deviations stay fixed, the operating model starting from equilibrium.
 at_age_em <- function(om, data_source = "catch", extra_disc = NULL) {
 
   n_yrs <- at_age_cfg$n_yrs
@@ -245,9 +244,8 @@ at_age_em <- function(om, data_source = "catch", extra_disc = NULL) {
     fish_fixed_sel_pars_spec = "est_all",
     fish_q_spec = "fix"
   )
-  # an index fit age by age has its age shape in selectivity, which is what
-  # the "nonparfree" form is for: one free value per age, no standardization, so
-  # the values hold the height of the curve as well as its shape
+  # an index fit age by age carries its shape in selectivity, which is what the free
+  # non-parametric form is for: one value per age, unstandardized, so it holds the height too
   aa_srv <- data_source == "srv_index"
   il <- Setup_Mod_Srvsel_and_Q(
     il,
@@ -284,17 +282,16 @@ at_age_fit <- function(il) {
   fit
 }
 
+# Recovery -------------------------------------------------------------------
 
 test_that("selectivity is estimated for a fleet fitting catch at age", {
 
-  # the mapping keys on whether a fleet has data, and a catch-at-age fleet has
-  # none in the aggregated array; holding selectivity fixed here took the
-  # recovery below from 1.3% error to 25%
+  # the mapping reads whether a fleet has data, and a catch-at-age fleet has none in the
+  # aggregated array. fixing selectivity here took the recovery below from 1.3% to 25% error
   il <- at_age_em(at_age_om())
   free <- length(unique(stats::na.omit(as.integer(il$map$fish_fixed_sel_pars))))
   expect_gt(free, 0)
 })
-
 
 test_that("catch at age recovers the operating model's spawning biomass", {
 
@@ -308,7 +305,6 @@ test_that("catch at age recovers the operating model's spawning biomass", {
   expect_lt(stats::median(abs((est - truth) / truth)), 0.05)
 })
 
-
 test_that("a survey index at age recovers the operating model's spawning biomass", {
 
   om <- at_age_om()
@@ -320,7 +316,6 @@ test_that("a survey index at age recovers the operating model's spawning biomass
   expect_gt(stats::cor(log(truth), log(est)), 0.95)
 })
 
-
 test_that("a discard-at-age data source declared but unused leaves the fit unchanged", {
 
   om <- at_age_om()
@@ -330,6 +325,8 @@ test_that("a discard-at-age data source declared but unused leaves the fit uncha
   expect_equal(with_disc$optim$objective, base$optim$objective, tolerance = 1e-8)
   expect_equal(sum(with_disc$report(with_disc$env$last.par.best)$DiscardAA_nLL), 0)
 })
+
+# Residuals ------------------------------------------------------------------
 
 test_that("one-step-ahead residuals work on every at-age data source", {
 

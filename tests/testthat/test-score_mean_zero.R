@@ -80,9 +80,8 @@ score_z <- function(il, n_rep = 120, seed = 2024, obs_scale = 1) {
 
 
 test_that("the score has mean zero on data the model generated", {
-  # The likelihood is a proper density for the data sources it simulates. With this
-  # many parameters a handful of standardized means near two is ordinary; a
-  # likelihood that disagreed with its own simulation would sit far outside.
+  # the likelihood is a proper density for the data it simulates. with this many parameters a
+  # few standardized means near two is ordinary, and a real disagreement sits far outside
   out <- score_z(score_setup())
 
   worst <- which.max(abs(out$z))
@@ -93,9 +92,8 @@ test_that("the score has mean zero on data the model generated", {
 
 
 test_that("the score check has the power to notice a mismatch", {
-  # Shifting every simulated observation describes data the model did not
-  # generate. If the check could not tell that apart from a correct draw it would
-  # pass against any likelihood at all, and the test above would mean nothing.
+  # shifting every simulated observation describes data the model did not generate, and a check
+  # that could not tell that from a correct draw would pass against any likelihood
   out <- score_z(score_setup(), n_rep = 60, obs_scale = 1.25)
 
   expect_gt(max(abs(out$z)), 10)

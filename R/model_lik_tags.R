@@ -280,13 +280,13 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
 #'     \item 2, 3, 4, 5: composition-based (multinomial / Dirichlet-multinomial)
 #'   }
 #'
-#' @return A character scalar: `"count"`, `"comp"`, or `NA_character_` if
+#' @return A character scalar: `"count"`, `"comp"`, or `NA` if
 #'   the code is not recognized.
 #' @keywords internal
 tag_fam_of = function(like_type) {
   if(like_type %in% c(0,1)) "count"
   else if(like_type %in% c(2,3,4,5)) "comp"
-  else NA_character_
+  else NA
 }
 
 #' Enumerate valid conventional-tag recovery events
@@ -400,7 +400,7 @@ pack_tag_osa = function(family, like_type,
   clean = list()
   grp_end = integer(0)
   lengths = integer(0)
-  pos = 0L
+  pos = 0
   label_rows = list()
 
   # one label row per element, mirroring the exact loop order used to build 'clean'
@@ -444,7 +444,7 @@ pack_tag_osa = function(family, like_type,
               for(s in 1:n_sex_pool) {
                 v = sum(obs_recap[ry, rseas, tc, pop_pool[[p]], r, age_pool[[a]], sex_pool[[s]], f] + addtotag)
                 clean[[length(clean) + 1]] = round(v)   # integer count for cdf
-                pos = pos + 1L
+                pos = pos + 1
                 if(return_labels) {
                   label_rows[[length(label_rows) + 1]] = tag_label_row(
                     fleet = f,
@@ -467,7 +467,7 @@ pack_tag_osa = function(family, like_type,
           }
         }
       }
-      lengths = c(lengths, 0L)  # count has no per-group determined bin
+      lengths = c(lengths, 0)  # count has no per-group determined bin
 
     } else {
 
@@ -516,11 +516,11 @@ pack_tag_osa = function(family, like_type,
         g_counts = round(prop * n_rel)
         if(return_labels) {
           cell_labels[[length(cell_labels) + 1]] = tag_label_row(
-            fleet = NA_integer_,
-            region = NA_integer_,
-            pop_pool_i = NA_integer_,
-            age_pool_i = NA_integer_,
-            sex_pool_i = NA_integer_,
+            fleet = NA,
+            region = NA,
+            pop_pool_i = NA,
+            age_pool_i = NA,
+            sex_pool_i = NA,
             tc = tc,
             ry = ry,
             rseas = rseas,

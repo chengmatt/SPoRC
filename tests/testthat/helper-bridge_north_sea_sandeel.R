@@ -20,10 +20,8 @@ sandeel_script_path <- function() {
 
 #' Build the sandeel bridge seeded at smsR's maximum likelihood estimate
 #'
-#' Evaluates the case study script down to the point where it has an input list
-#' seeded at smsR's estimate and a report from it, and no further. Everything
-#' after that point in the script fits the model and draws figures, which this
-#' test does not need.
+#' Evaluates the case study script only as far as an input list seeded at smsR's
+#' estimate and a report from it. The rest of the script fits and draws figures.
 #'
 #' @return A list with the seeded report, the smsR reference series, and the
 #'   relative difference in fishing mortality at age over every cell.

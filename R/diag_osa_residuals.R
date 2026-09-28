@@ -263,7 +263,7 @@ validate_osa_method <- function(method) {
 
 #' Call \code{RTMB::oneStepPredict()} with the model's TMB DLL resolved
 #'
-#' Wrapper used by the internal OSA runners, which works around two quirks of
+#' Used by the internal OSA routines, and works around two quirks of
 #' \code{\link[RTMB]{oneStepPredict}}:
 #' \itemize{
 #'   \item Its \code{parallel} branch calls \code{TMB::openmp()} without a
@@ -297,10 +297,10 @@ osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = 
     }
   }
 
-  # only the parallel branch consults TMB's DLL guess, so serial calls need no patching
+  # only the parallel branch uses TMB's DLL guess, so a serial call needs nothing done to it
   if(!isTRUE(parallel)) return(run_osa(parallel))
 
-  # without a resolvable DLL there is nothing to bind, so take oneStepPredict's usual path
+  # with no DLL to work from, use oneStepPredict's usual path
   dll <- model$env$DLL
   if(!is.character(dll) || length(dll) != 1 || !nzchar(dll)) return(run_osa(parallel))
 
@@ -705,8 +705,8 @@ run_internal_index_osa <- function(
   map <- as.data.frame(arrayInd(valid_idx, dim(use_arr)))
   colnames(map) <- dim_names
 
-  # a dim the fleet sums over holds its observation in slot one, which is not the first region
-  # or the first sex. labelling it as such would mix aggregated residuals with split ones
+  # a data source summed over regions or sexes is stored in the first slot, which is not region one
+  # or sex one, so labelling it that way would mix aggregated residuals with split ones
   aa_split <- list(region = TRUE, sex = TRUE)
   if(at_age) {
     aa_type <- data[[paste0(index_source, if(pop) "_pop", "_Type")]]
@@ -741,9 +741,9 @@ run_internal_index_osa <- function(
     region = if(at_age) ifelse(aa_split$region, as.character(map$region), "summed") else map$region,
     year = data$years[map$year],
     season = map$season,
-    pop = if(pop) map$pop else 1L,
-    age = if(at_age) age_labels[map$age] else NA_integer_,
-    sex = if(at_age) ifelse(aa_split$sex, as.character(map$sex), "summed") else NA_integer_,
+    pop = if(pop) map$pop else 1,
+    age = if(at_age) age_labels[map$age] else NA,
+    sex = if(at_age) ifelse(aa_split$sex, as.character(map$sex), "summed") else NA,
     resid = osa$residual,
     idx_type = index_source
   )

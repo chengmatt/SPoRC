@@ -1,3 +1,6 @@
+# Standard errors on a reference point by the delta method: the sensitivities, the parameters
+# that cannot reach one, and agreement with re-solving at drawn parameters.
+
 library(SPoRC)
 library(testthat)
 data("dusky_rtmb_model")
@@ -22,10 +25,8 @@ test_that("Get_Reference_Point_Uncertainty returns intervals with the expected s
   expect_true(all(rp$refpts$lwr <= rp$refpts$est))
   expect_true(all(rp$refpts$upr >= rp$refpts$est))
 
-  # Only selectivity was perturbed here, and an SPR target pins SBPR(F_x) to a fixed
-  # fraction of SBPR(0). Since SBPR(0) is evaluated at F = 0, neither biomass
-  # reference point can respond to selectivity at all; only F_x itself moves. The
-  # residual is rounding, and comes out as an exact zero on some platforms.
+  # only selectivity moved here, and an SPR target fixes per-recruit biomass to a share of its
+  # unfished value, read at F = 0, so only F_x moves and what is left is rounding
   se <- stats::setNames(rp$refpts$log_se, rp$refpts$quantity)
   expect_equal(se[["virgin_b_ref_pt"]], 0, tolerance = 1e-10)
   expect_equal(se[["b_ref_pt"]], 0, tolerance = 1e-10)
@@ -68,7 +69,8 @@ test_that("parameters that cannot enter a per-recruit reference point give exact
   # selectivity is all that is left
   expect_true(any(abs(f_row[p_names == "fish_fixed_sel_pars"]) > 1e-6))
 
-  # B40 scales SBPR by mean recruitment, so it does respond to the rec devs
+  # B40 scales spawning biomass per recruit by mean recruitment, so it does move with the
+  # recruitment deviations
   expect_true(any(abs(rp$d["b_ref_pt", p_names == "ln_RecDevs"]) > 1e-6))
 
 })

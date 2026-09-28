@@ -48,6 +48,8 @@ pcod_growth_by_hand <- function(dd, pars, ln_growth_devs, ln_growth_semipar_devs
              ln_growth_semipar_devs = ln_growth_semipar_devs, growth_semipar = dd$growth_semipar)
 }
 
+# Growth ---------------------------------------------------------------------
+
 test_that("a drawn growth series rebuilds weight at age and the keys through Get_Growth", {
 
   om <- derived_growth_om()
@@ -166,6 +168,8 @@ test_that("a growth link under selectivity at length needs the report", {
 
 })
 
+# Movement -------------------------------------------------------------------
+
 test_that("a drawn movement series rebuilds the movement matrix through Get_Movement", {
 
   sweep <- sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA)) # three regions, movement estimated
@@ -217,6 +221,8 @@ test_that("a drawn movement series rebuilds the movement matrix through Get_Move
   expect_gt(max(abs(se$Movement[1,1,,,1,3,1,1] - se$Movement[1,1,,,1,3,1,2])), 1e-3) # the linked row moves with the draw
 
 })
+
+# Numbers at Age -------------------------------------------------------------
 
 test_that("a drawn numbers at age series replaces its cells of the replicate's innovations", {
 

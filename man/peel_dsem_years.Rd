@@ -19,9 +19,9 @@ peel_dsem_years(data, parameters, mapping, n_grid_yrs)
 List with the peeled \code{data}, \code{parameters} and \code{mapping}.
 }
 \description{
-A retrospective peel drops years from every array, and the dsem has to follow:
-the arrows do not change, but the cells they land on do. A linked series' cells
-move whenever its array has a dim after the year one, so they are rebuilt from
-the index that series sits at rather than truncated.
+A retrospective peel drops years from every array, and the dsem has to
+follow: the arrows do not change, but the cells they land on do. A linked
+series' cells move whenever its array has a dim after the year dim, so they
+are rebuilt from where that series sits rather than trimmed.
 }
 \keyword{internal}

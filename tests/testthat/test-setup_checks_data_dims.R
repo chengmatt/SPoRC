@@ -1,13 +1,12 @@
+# check_data_dimensions() validates every input to the estimating model. The shapes that pass are
+# exercised throughout the suite, so these drive the refusals instead, and check that the error
+# names the input at fault.
+
 library(SPoRC)
 library(testthat)
 
-# check_data_dimensions() validates every estimation input in the setup chain.
-# The happy path is exercised throughout the suite, so these tests drive the
-# error branches instead.
-#
-# Dimension sizes are all distinct. check_data_dimensions() compares dim(x)
-# elementwise against an expected vector, so equal sizes would let a
-# transposed array satisfy a check it should fail.
+# no two dimensions the same size, since the check compares them one by one and equal sizes
+# would let a transposed array pass
 
 dims <- list(
   n_pop = 2,

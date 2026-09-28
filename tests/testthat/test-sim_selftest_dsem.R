@@ -1,7 +1,9 @@
-# A self test of the dsem end to end: the operating model states its own arrows and values, recruitment follows an
-# AR1 covariate, and the estimation model declares RecDevs_model = "dsem". With near-exact data and almost no
-# process error the effect, R0 and every deviation come back to the third decimal; with real process error the
-# effect is recovered within its standard error over replicates.
+# A self test of the dsem end to end: the operating model sets its own arrows and values,
+# recruitment follows an AR1 covariate, and the estimating model declares a dsem.
+#
+# With near-exact data and almost no process error the effect, R0 and every deviation come
+# back to three decimals. With real process error the effect comes back within its standard
+# error over replicates.
 
 dsem_selftest_om <- function(arrows, values, cov_obs_sd = c(env = NA), n_sims = 6, n_yrs = 40, seed = 321, mod_var_logscale = FALSE, exact = FALSE) {
 
@@ -41,7 +43,7 @@ dsem_selftest_om <- function(arrows, values, cov_obs_sd = c(env = NA), n_sims = 
 
 }
 
-# the simple self test's estimation model, with the recruitment deviations handed to the dsem. the covariate mean is
+# the simple self test's estimating model, with the recruitment deviations moved onto the dsem. the covariate mean is
 # fixed at the truth (zero), the convention the operating model drew under, so R0 means the same thing on both sides
 dsem_selftest_em <- function(sim_obj, sim, arrows, cov_family = c(env = "fixed"), hold = NULL, mod_var_logscale = FALSE, init_devs = TRUE, dsem = TRUE) {
 

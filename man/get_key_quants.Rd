@@ -25,7 +25,7 @@ model year averaged over for recruitment), \code{rec_age}, \code{type} (e.g.
 \item{proj_model_opt}{Named list passed to
 \code{\link{Do_Population_Projection}}, holding \code{n_proj_yrs},
 \code{n_avg_yrs} (terminal years the demographic inputs are averaged over
-before being held constant across the projection), \code{HCR_function} with
+before being kept constant across the projection), \code{HCR_function} with
 signature \code{function(x, frp, brp, ...)}, \code{recruitment_opt}
 (\code{"mean_rec"}, \code{"bh_rec"}, \code{"zero_rec"} or
 \code{"inv_gauss"}), and \code{fmort_opt} (\code{"input"} to hold terminal F

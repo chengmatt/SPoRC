@@ -1,3 +1,6 @@
+# The densities the package adds to R's own: each against its closed form or a special case of
+# a standard distribution, and where each is maximized.
+
 library(SPoRC)
 library(testthat)
 

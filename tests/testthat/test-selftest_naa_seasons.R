@@ -1,10 +1,9 @@
+# The simulator draws innovations at every active season boundary and the penalty is the density
+# of that same covariance, so the two have to agree on which dimension is the season and on what
+# sigmaNAA means. A disagreement gives a plausible number rather than an error.
+
 library(SPoRC)
 library(testthat)
-
-# Operating-model and estimation-model agreement for the seasonal state-space numbers at age.
-# The simulator draws innovations at every active season boundary and the penalty is the density of
-# that same covariance, so the two have to agree on which dim is the season and on what
-# sigmaNAA means. A disagreement here produces a plausible number rather than an error.
 
 test_that("a simulated season correlation appears across seasons and leaves ages and years alone", {
   set.seed(31)
@@ -46,9 +45,8 @@ test_that("the simulator draws only in the seasons the state is active over", {
 })
 
 test_that("the penalty recovers the seasonal process the simulator drew from", {
-  # Given the true states, maximizing the penalty must return the process parameters. This is what
-  # catches a simulator and a penalty that disagree about which dim the season is, since a
-  # swapped dim still returns a finite optimum, just the wrong one.
+  # given the true states, maximizing the penalty has to return the process parameters, which is
+  # what catches a swapped season dimension: it still gives a finite optimum, just the wrong one
   set.seed(33)
   nk <- 3
   ny <- 40
@@ -102,9 +100,8 @@ test_that("the operating model applies the state at every active season boundary
 })
 
 test_that("the estimation model recovers a seasonal process error from data alone", {
-  # Nothing about the states is known here: the variance has to be separated from observation error
-  # with the states integrated out, which is the part of a state-space fit that fails in practice.
-  # Both seasons are fished and surveyed, so both have information about their own state.
+  # nothing about the states is known here, so the process variance has to be separated from
+  # observation error. both seasons are fished and surveyed, so both inform their own state
   sd_true <- 0.35
   out <- t(vapply(1:4, function(i) {
     om <- naaseas_make_om(NAA_re = "iid", sigmaNAA = sd_true, NAA_re_seasons = "all", seed = 700 + i)

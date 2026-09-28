@@ -1,21 +1,19 @@
+# Get_Init_NAA already seeds the recruit age class in year one, so recruiting at age 0 must not
+# add recruits on top of it. The contamination only shows years later as that cohort matures.
+
 library(SPoRC)
 library(testthat)
 
 test_that("Age-0 (rec_lag = 0) recruitment does not double-count Get_Init_NAA's equilibrium seed in year 1", {
 
-  # Get_Init_NAA() seeds the initial age structure's recruit age class (age
-  # index 1) with an R0-based equilibrium value, regardless of rec_lag - it
-  # has no awareness of rec_lag = 0. The classic (rec_lag != 0) path
-  # overwrites that seed with a fresh, up-front recruitment calculation
-  # before the season loop starts. The age-0 path instead inserts recruitment
-  # from *inside* the season loop at spawn_seas, and originally did so by
-  # accumulating onto whatever was already in that age-1 slot - which for
-  # year 1 was Get_Init_NAA's stale seed, silently doubling year 1's
-  # recruitment. The bug doesn't show up in year 1's own reported Rec/SSB
-  # (Rec[,,1] always just stores the freshly computed value, and the extra
-  # age-0 fish don't affect SSB until they mature), so it only surfaces
-  # several years later once the contaminated cohort matures - this test
-  # checks the NAA state directly instead of relying on downstream SSB movement.
+  # Get_Init_NAA seeds the recruit age class with an equilibrium value built from R0 whatever
+  # the recruitment lag. Recruiting at age 1 overwrites that seed before the season loop.
+  #
+  # Recruiting at age 0 instead inserts recruitment inside the season loop, so it has to
+  # replace that seed rather than add to it, which would double year one's recruitment.
+  #
+  # Year one's own reported recruitment and spawning biomass would not show it, since the
+  # extra age 0 fish do not mature for years, so this reads the numbers at age directly.
 
   n_pop <- 1
   n_regions <- 1
@@ -154,16 +152,11 @@ test_that("Age-0 (rec_lag = 0) recruitment does not double-count Get_Init_NAA's 
   ))
   rep <- model$rep
 
-  # Direct check: with rec devs fixed at 0, the recruit-age NAA in year 1
-  # should equal exactly Rec[,,1] * rec_seas_prop[,spawn_seas] * sexratio -
-  # nothing more. The old bug added Get_Init_NAA's R0-based seed on top.
+  # with the recruitment deviations at zero, year one's recruit-age numbers have to be exactly
+  # recruitment times the season share times the sex ratio, and nothing more.
   #
-  # Note: this deliberately does NOT assert that Rec/SSB are constant across
-  # years. Get_Init_NAA's equilibrium age structure is only an approximation
-  # (confirmed by comparing against the classic rec_lag = 1 path on the exact
-  # same setup: both show an identical multi-year settling pattern, just offset
-  # by one year) - that's a pre-existing property of the initialization
-  # method itself, not something introduced by rec_lag = 0 or fixed here.
+  # this deliberately does not assert that recruitment and spawning biomass are constant across
+  # years: the equilibrium age structure is an approximation, and both lags settle the same way
   spawn_seas <- input_list$data$spawn_seas
   expected_age0_naa <- rep$Rec[1,1,1] * rep$rec_seas_prop[1,spawn_seas] * 1 # sexratio = 1 (n_sexes = 1)
   expect_equal(rep$NAA[1,1,1,spawn_seas,1,1], expected_age0_naa, tolerance = 1e-8)

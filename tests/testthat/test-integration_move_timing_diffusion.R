@@ -1,22 +1,13 @@
+# Does the likelihood point back at the diffusion rate that generated the data, at every
+# move_timing?
+#
+# Everything else the estimating model needs is known exactly: deterministic recruitment,
+# constant region-specific F, closed-form selectivity, q of one, M fixed. The diffusion rate
+# is the only free parameter, so a failure here is the movement likelihood itself.
+
 library(SPoRC)
 library(testthat)
 library(Matrix)
-
-# Simulate-refit recovery of the CTMC diffusion parameter under every move_timing.
-#
-# test-transition-operators.R and test-move-timing-selftest.R verify the movement
-# operators internally, and test-move-timing-om-em-parity.R verifies that the simulator
-# and the estimation model implement the same dynamics. None of them asks the estimation
-# question: does the likelihood point back at the diffusion parameter that generated the
-# data? That is what this file guards.
-#
-# The operating model is built so that every quantity the estimation model needs is known
-# exactly -- deterministic recruitment, constant region-specific F, logistic selectivity in
-# closed form, q = 1, M fixed. The estimation model is then pinned at those generating
-# values and log_move_diffusion_pars is the single free parameter, started away from the
-# truth. That isolates movement: a failure here is a movement-likelihood defect and not a
-# 200-parameter optimization that wandered off.
-#
 
 N_YRS <- 25
 N_REGIONS <- 3
@@ -32,12 +23,11 @@ SRV_K <- 1
 ADJ <- matrix(1L, N_REGIONS, N_REGIONS)
 diag(ADJ) <- 0L
 
-# Lay a vector of age-specific values into a (pop, region, year, seas, age, ...) array.
-# The age dimension is the 5th, so the values have to repeat over the product of every
-# earlier dimension. The single-region idiom `rep(v, each = n_yrs)` happens to be correct
-# only when n_pop = n_regions = n_seas = 1; with more than one region it silently permutes
-# the ages, which shows up as an operating model whose selectivity does not match the
-# logistic curve the estimation model estimates.
+# Spread a vector of values at age into a population by region by year by season by age
+# array. Ages come fifth, so the values have to repeat over everything before them.
+#
+# `rep(v, each = n_yrs)` is right only in one region, one population and one season. With more
+# than one region it scrambles the ages, which shows as selectivity the fit cannot match.
 age_array <- function(v, dims) array(rep(v, each = prod(dims[1:4])), dim = dims)
 
 tag_release_indicator <- function() {
@@ -54,9 +44,7 @@ tag_release_platform <- function() {
   )
 }
 
-# ---------------------------------------------------------------------------
-# Operating model
-# ---------------------------------------------------------------------------
+# Operating model ------------------------------------------------------------
 
 build_om <- function(move_timing, seed = 1234) {
   ages <- seq_len(N_AGES)
@@ -179,9 +167,7 @@ build_om <- function(move_timing, seed = 1234) {
   Simulate_Pop_Static(sim_list = sim_list, output_path = NULL)
 }
 
-# ---------------------------------------------------------------------------
-# Estimation model, matching the operating model's structure
-# ---------------------------------------------------------------------------
+# Estimation model, matching the operating model's structure -----------------
 
 build_em <- function(om, move_timing) {
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = om$n_years, sim = 1)
@@ -271,9 +257,8 @@ build_em <- function(om, move_timing) {
     ln_sigmaF = array(log(1), dim = c(N_REGIONS, 1, 1))
   ))
 
-  # Region-split compositions. Aggregated ("agg") comps take the observed composition from
-  # the first region only while comparing it to an expectation summed over all regions, so
-  # they are not the right data spec for a multi-region operating model.
+  # compositions split by region. an aggregated composition takes the observation from the first
+  # region while comparing it to an expectation summed over all of them
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = sim_data$ObsFishIdx,
@@ -339,9 +324,8 @@ build_em <- function(om, move_timing) {
   )
 }
 
-# Pin every parameter at the value the operating model generated with, and free only the
-# CTMC diffusion parameter. logist1 selectivity is b50 = exp(par1), k = exp(par2); fishing
-# mortality is exp(ln_F_mean + ln_F_devs); the operating model used q = 1.
+# Fix every parameter at the value the operating model generated with and free only the
+# diffusion rate. Selectivity, fishing mortality and catchability are all on their own scales.
 pin_at_truth <- function(input_list, log_theta) {
   par <- input_list$par
   par$ln_global_R0[] <- log(sum(OM_R0))
@@ -375,15 +359,11 @@ om_by_timing <- lapply(c(0, 1, 2), function(mt) {
 })
 names(om_by_timing) <- paste0("move_timing_", c(0, 1, 2))
 
-# ---------------------------------------------------------------------------
-# 1. Precondition: the estimation model reproduces the operating model at the truth
-# ---------------------------------------------------------------------------
+# 1. Precondition: the estimation model reproduces the operating model at the truth ----
 
 test_that("estimation model reproduces the operating model at the generating parameters", {
-  # Without this, recovering the diffusion parameter would be meaningless: the likelihood
-  # would be reconciling two different population models rather than estimating movement.
-  # This is also the check that catches a mis-laid-out age array in the operating model --
-  # scrambling selectivity across ages shows up here as a ~15% SSB discrepancy.
+  # without this the likelihood would be reconciling two different population models rather than
+  # estimating movement, and an age array laid out wrongly shows here as 15 percent off
   for (fx in om_by_timing) {
     pinned <- pin_at_truth(fx$em, TRUE_LOG_THETA)
     obj <- fit_model(
@@ -402,9 +382,7 @@ test_that("estimation model reproduces the operating model at the generating par
   }
 })
 
-# ---------------------------------------------------------------------------
-# 2. Recovery of the diffusion parameter
-# ---------------------------------------------------------------------------
+# 2. Recovery of the diffusion parameter -------------------------------------
 
 test_that("CTMC diffusion parameter is recovered at every movement timing", {
   for (fx in om_by_timing) {
@@ -420,12 +398,10 @@ test_that("CTMC diffusion parameter is recovered at every movement timing", {
   }
 })
 
-# ---------------------------------------------------------------------------
-# 3. The likelihood surface itself is minimized at the truth
-# ---------------------------------------------------------------------------
+# 3. The likelihood surface itself is minimized at the truth -----------------
 
 test_that("likelihood over the diffusion parameter is minimized at the generating value", {
-  # Guards against the optimizer happening to land on the right answer while the surface
+  # without this the optimizer could land on the right answer while the surface
   # is flat or its minimum sits somewhere else.
   grid <- log(c(0.15, 0.20, 0.25, 0.30, 0.35, 0.45, 0.60))
   for (fx in om_by_timing) {

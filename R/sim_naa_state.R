@@ -9,8 +9,9 @@
 #' arguments here describe.
 #'
 #' Arguments mirror \code{Setup_Mod_Biologicals}'s state-space options so a
-#' simulated population and the model fitted to it are written the same way, which
-#' is what makes a self test a like-for-like comparison rather than a translation.
+#' simulated population and the model fitted to it are written the same way, so
+#' a self test compares like with like rather than one translation against
+#' another.
 #'
 #' @param sim_list Simulation list from \code{\link{Setup_Sim_Dim}}.
 #' @param NAA_re Character. \code{"none"} (default) leaves the numbers at age
@@ -32,12 +33,15 @@
 #'   strict lower triangle is filled by column. A single value is recycled.
 #' @param NAA_re_ages,NAA_re_years Ages and year indices the state covers.
 #'   \code{NULL} (default) uses everything from the second onward.
-#' @param naa_eta_input Array \code{[n_pop, n_regions, n_cond_yrs, n_seas, n_ages, n_sexes, n_sims]}
-#'   of log-scale state innovations, or \code{NULL} (default) to draw every year. Supplying a fit's own
-#'   innovations, \eqn{\ln N - \ln \hat{N}}, makes the operating model reproduce that fit's numbers at
-#'   age rather than a fresh realization of the same process. The year extent says how many leading
-#'   years are held: give the fitted years and any year beyond them is still drawn, which is what a
-#'   closed loop running past the data needs.
+#' @param naa_eta_input Array
+#'   \code{[n_pop, n_regions, n_cond_yrs, n_seas, n_ages, n_sexes, n_sims]} of
+#'   log-scale state innovations, or \code{NULL} (default) to draw every year.
+#'   Supplying a fit's own innovations, \eqn{\ln N - \ln \hat{N}}, makes the
+#'   operating model reproduce that fit's numbers at age rather than a fresh
+#'   realization of the same process. The year extent says how many leading years
+#'   are held: give the fitted years and any year beyond them is still drawn, as
+#'   a closed loop running past the data
+#' needs.
 #' @param NAA_re_seasons Seasons the state covers. \code{"annual"} (default) puts
 #'   a state at season one only, leaving the numbers deterministic between
 #'   seasons; \code{"all"} puts one at the start of every season, and an integer
@@ -79,7 +83,7 @@ Setup_Sim_NAA_state <- function(sim_list,
 
   n_ages <- sim_list$n_ages
   n_yrs <- sim_list$n_yrs
-  n_seas <- if(is.null(sim_list$n_seas)) 1L else sim_list$n_seas
+  n_seas <- if(is.null(sim_list$n_seas)) 1 else sim_list$n_seas
 
   sim_list$NAA_re <- codes[[NAA_re]]
   sim_list$sigmaNAA <- sigmaNAA
@@ -99,15 +103,15 @@ Setup_Sim_NAA_state <- function(sim_list,
   sim_list$naa_re_yrs <- if(is.null(NAA_re_years)) 2:n_yrs else NAA_re_years
 
   # season one is the year boundary, so it alone reproduces the annual state
-  sim_list$naa_re_seas <- if(identical(NAA_re_seasons, "annual")) 1L else
+  sim_list$naa_re_seas <- if(identical(NAA_re_seasons, "annual")) 1 else
                           if(identical(NAA_re_seasons, "all")) seq_len(n_seas) else
                           sort(unique(as.integer(NAA_re_seasons)))
   if(!all(sim_list$naa_re_seas %in% seq_len(n_seas)))
     stop("NAA_re_seasons is read as season indices into 1:", n_seas, ", or the strings ",
          "\"annual\" and \"all\". It was: ", paste(NAA_re_seasons, collapse = ", "))
 
-  # innovations supplied rather than drawn. the year extent says how many leading years are held: give the
-  # fitted years and the rest of the run still draws, which is what a closed loop past the data needs
+  # innovations supplied rather than drawn. however many years are given are kept and the rest of the
+  # run still draws, which is what a closed loop past the data needs
   if(!is.null(naa_eta_input)) {
     d <- as.integer(dim(naa_eta_input))
     want <- c(sim_list$n_pop, sim_list$n_regions, NA, n_seas, n_ages, sim_list$n_sexes, sim_list$n_sims)
@@ -222,6 +226,9 @@ draw_naa_innovations <- function(sim_env) {
   if(code %in% c(2, 4)) scale <- scale / sqrt(1 - rho[["age"]]^2)
   if(code %in% c(3, 4)) scale <- scale / sqrt(1 - rho[["year"]]^2)
   eta <- eta * scale
+
+  # do bias correction
+  if(isTRUE(sim_env$bias_correct_pe == 2)) eta <- eta - 0.5 * scale^2 # only if bias correcting "all" processess
 
   # cells outside the active rectangle stay deterministic
   out <- array(0, dim = dim(eta))

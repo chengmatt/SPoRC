@@ -50,11 +50,8 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # natural mortality is estimated under a lognormal prior centered on the
-  # assessment's mean with its coefficient of variation. length compositions are
-  # fit through a size at age transition matrix and age compositions pass
-  # through an ageing error matrix, so both are declared here rather than at the
-  # composition call
+  # natural mortality is estimated under a lognormal prior on the assessment's mean and
+  # coefficient of variation. lengths go through a size-age transition, ages through ageing error
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = dat$WAA,
@@ -89,13 +86,11 @@ build_goa_nork_input <- function(dat) {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
-  # the assessment writes its catch and F statements as weighted sums of
-  # squares. a weighted sum of squares and a normal likelihood with a fixed
-  # standard deviation are the same statement up to a constant, related by
-  # sigma = 1 / sqrt(2 w), so the weights enter through ln_sigmaC rather than a
-  # separate multiplier. the reconstructed early catches have a weight of 5 and
-  # the observer era series 50. the F deviations take sigma = 1 / sqrt(2), with
-  # their overall weight applied in the weighting section
+  # the assessment writes its catch and F penalties as weighted sums of squares, which
+  # is a normal at a fixed sigma = 1 / sqrt(2 w), so the weights enter through ln_sigmaC.
+  #
+  # the reconstructed early catches take a weight of 5 and the observer era 50. the F
+  # deviations take sigma = 1 / sqrt(2), weighted in the weighting section instead
   ln_sigmaC <- array(NA_real_, dim = c(dat$n_regions, n_yrs, dat$n_seas, dat$n_fish_fleets))
   ln_sigmaC[1, , 1, 1] <- log(sqrt(1 / (2 * dat$catch_wt)))
   suppressWarnings(
@@ -112,9 +107,8 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Fishery compositions -----------------------------------------------------
-  # no fishery index in this assessment, only compositions, so fish_idx_type is
-  # "none" and the index arrays are declared empty. both age and length
-  # compositions are aggregated over the region and fit multinomially
+  # no fishery index, only age and length compositions, aggregated over the region
+  # and fit multinomially
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = array(NA, dim = c(dat$n_regions, n_yrs, dat$n_seas, dat$n_fish_fleets)),
@@ -134,9 +128,8 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Survey index and compositions --------------------------------------------
-  # the bottom trawl survey supplies a biomass index and age compositions. the
-  # index is lognormal with year specific standard errors, and the survey is fit
-  # at the start of the year, which t_srv = 0 sets in the selectivity section
+  # the bottom trawl survey supplies a lognormal biomass index with year specific
+  # standard errors and age compositions, fit at the start of the year
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx,
@@ -156,10 +149,8 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # the a50 and a95 parameterization of the logistic, which is logist2.
-  # selectivity is time invariant, so there are no deviations and no process
-  # error, and fishery catchability is not used because there is no fishery
-  # index to scale
+  # logist2 is the a50 and a95 parameterization. selectivity is time invariant, so
+  # there are no deviations, and there is no fishery index for a catchability to scale
   input_list <- Setup_Mod_Fishsel_and_Q(
     input_list = input_list,
     cont_tv_fish_sel = "none_Fleet_1",
@@ -171,9 +162,8 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Survey selectivity and catchability --------------------------------------
-  # the same logistic form, with catchability estimated under a lognormal prior
-  # centered on the assessment's mean, loose enough to let the data move it.
-  # t_srv = 0 puts the survey at the start of the year
+  # the same logistic form, with catchability under a lognormal prior on the
+  # assessment's mean, loose enough to let the data move it. the survey is at year start
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
     cont_tv_srv_sel = "none_Fleet_1",
@@ -194,9 +184,8 @@ build_goa_nork_input <- function(dat) {
   )
 
   ## Weighting ----------------------------------------------------------------
-  # the survey index and the F penalty hold the assessment's own fixed weights,
-  # and every composition source holds the assessment's multipliers, which
-  # ship in the data object
+  # the survey index and the F penalty take the assessment's own fixed weights, and
+  # every composition source its multipliers, which ship in the data object
   Setup_Mod_Weighting(
     input_list = input_list,
     Wt_Catch = 1,
@@ -215,15 +204,11 @@ build_goa_nork_input <- function(dat) {
 
 #' Set every parameter to the assessment's maximum likelihood estimate
 #'
-#' Evaluating at a known point separates a specification error from an
-#' optimization difference: if the population and the likelihood agree at the
-#' ADMB solution, the two models are the same model. Every parameter can be
-#' assigned directly, because recruitment is a mean with deviations rather than
-#' a stock recruit function and nothing has to be solved by substitution.
+#' If the population and the likelihood agree at the ADMB solution, the two models are the
+#' same model. Every parameter goes in directly, nothing needing to be solved for.
 #'
-#' The initial age structure deviations were back derived from the ADMB numbers
-#' at age when the data object was built, so seeding them reproduces the ADMB
-#' starting conditions exactly.
+#' The initial age deviations were back derived from the ADMB numbers at age, so seeding
+#' them reproduces its starting conditions exactly.
 seed_goa_nork_mle <- function(input_list, dat) {
 
   mle <- dat$mle

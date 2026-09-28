@@ -74,10 +74,10 @@ data source is fit over. All ones means the whole range.}
 \item{AgeingErrorArr}{Ageing error over year by model bin by observed bin by
 fleet, read only for age compositions.}
 
-\item{LenBinMap_fn}{Function \code{(y, f)} returning the model bin to observed
-bin map, read only for length compositions. The map varies by neither year
-nor fleet and takes both so it is read the same way \code{AgeingErrorArr}
-is. \code{NA} leaves the observed bins as the model bins.}
+\item{LenBinMap_fn}{Function \code{(y, f)} returning the model bin to
+observed bin map, read only for length compositions. The map varies by
+neither year nor fleet, but takes both arguments so it is read like
+\code{AgeingErrorArr}. \code{NA} leaves the observed bins as the model bins.}
 
 \item{n_pop, n_regions, n_yrs, n_seas, n_fleets, n_sexes}{Model dimensions.}
 
@@ -88,9 +88,9 @@ have a leading population dimension and are never summed over populations.}
 
 \item{comp_const_obs}{Constant the observations are scaled by.}
 
-\item{do_internal_comp_osa}{Logical. \code{TRUE} hands the data source to
+\item{do_internal_comp_osa}{Logical. \code{TRUE} sends the data source to
 \code{\link{eval_comp_source_osa}}, which reads the vectors
-\code{\link{pack_comp_source_osa}} built and the call site registered.}
+\code{\link{pack_comp_source_osa}} built.}
 
 \item{tracked_discrete, tracked_continuous}{Registered observation vectors, read
 only on the OSA route and \code{NULL} where no fleet uses that family.}
@@ -103,11 +103,11 @@ season the observation sits in.}
 \code{nLL_arr}, filled in.
 }
 \description{
-Walks every year, season, fleet and, for a population-specific data source, every
-population in one composition data source, and calls
-\code{\link{Get_Comp_Likelihoods}} on each cell that is fit. One call stands
-for what used to be written out separately for retained fishery, discarded
-fishery and survey compositions, for ages and for lengths, and again for the
-regional and the population-specific data source of each.
+Walks every year, season, fleet and, for a population-specific data source,
+every population in one composition data source, and calls
+\code{\link{Get_Comp_Likelihoods}} on each cell that is fit. One call serves
+the retained fishery, discarded fishery and survey compositions, for ages
+and for lengths, and the regional and population-specific data source of
+each.
 }
 \keyword{internal}

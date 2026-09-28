@@ -420,7 +420,7 @@ do_growth_mapping <- function(input_list,
 
   # Semi-parametric growth surface --------------------------------------------
   # a deviation in every age and year the surface is estimated over, and process
-  # error parameters in the second data source's slots the form reads
+  # error parameters in the semi-parametric half's slots the form reads
   map_semi <- array(NA, dim = dim(input_list$par$ln_growth_semipar_devs))
 
   if(semipar_val > 0) {
@@ -557,9 +557,9 @@ do_growth_mapping <- function(input_list,
 #'   (default) holds every parameter constant. Otherwise a character vector of
 #'   length \code{n_gpars} in parameter order, or named by parameter, each
 #'   \code{"none"}, \code{"iid"}, \code{"rw"}, or \code{"dsem"}. A varying parameter
-#'   gets a deviation series \code{ln_growth_devs} and a log sigma in the first data
-#'   source of \code{growth_pe_pars}; under \code{"dsem"} the density comes from
-#'   \code{\link{Setup_Mod_DSEM}} and that sigma stays at its start.
+#'   gets a deviation series \code{ln_growth_devs} and a log sigma in the
+#'   time-varying half of \code{growth_pe_pars}; under \code{"dsem"} the density
+#'   comes from \code{\link{Setup_Mod_DSEM}} and that sigma stays at its start.
 #' @param growth_tv_years Calendar years the deviations are active in. \code{NULL}
 #'   (default) for every model year, a vector for every varying parameter, or a list
 #'   named by parameter. Deviations outside the range are kept at zero.
@@ -569,9 +569,10 @@ do_growth_mapping <- function(input_list,
 #'   crossing it.
 #' @param growth_par_bounds Matrix \code{[n_gpars x 2]} of lower and upper bounds on
 #'   the natural scale, required under the logit link.
-#' @param growth_tv_sigma_spec \code{"fix"} (default) holds the process error sds of
-#'   the deviations at their starting values, \code{"est"} estimates them. Both read
-#'   the first data source of \code{growth_pe_pars}, one slot per growth parameter.
+#' @param growth_tv_sigma_spec \code{"fix"} (default) holds the process error
+#'   sds of the deviations at their starting values, \code{"est"} estimates them.
+#'   Both read the time-varying half of \code{growth_pe_pars}, one slot per
+#'   growth parameter.
 #' @param growth_tv_spec How the deviations are shared across strata, in the
 #'   \code{growth_spec} vocabulary: \code{"est_all"} (default),
 #'   \code{"est_shared_r"}, \code{"est_shared_s"} or \code{"est_shared_r_s"}.
@@ -595,7 +596,7 @@ do_growth_mapping <- function(input_list,
 #'   \code{"dsem"} (density from \code{\link{Setup_Mod_DSEM}}, one series per age,
 #'   which refuses \code{growth_semipar_spec = "est"}). The spread at age follows
 #'   the deviated mean, leaving the CV at age to the parametric part.
-#' @param growth_semipar_spec Whether the second data source of
+#' @param growth_semipar_spec Whether the semi-parametric half of
 #'   \code{growth_pe_pars} is estimated (\code{"est"}) or kept at its starting
 #'   values (\code{"fix"}, default). The deviations themselves are always estimated.
 #' @param growth_semipar_ages Ages the deviations are estimated over, as ages rather
@@ -738,19 +739,19 @@ do_growth_mapping <- function(input_list,
 #' @param M_sexblk_spec Blocking across sexes, \code{"constant"} (default) or a list
 #'   of integer index vectors, e.g. \code{list(1, 2)}.
 #' @param ... Optional starting values by name. \code{ln_M} is dimensioned
-#'   \code{[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks ×
-#'   n_sexblks]} and defaults to \code{log(0.5)}; a 5d array from an older script
-#'   works when there is one season block. \code{ln_growth_pars} is \code{[n_pop ×
-#'   n_regions × n_sexes × n_gpars]} in the order \code{L1, L2, K, CV1, CV2} and
-#'   \code{rho}, defaulting to the ends of the length bins with a rate of
-#'   \code{0.15} and CVs of \code{0.1}, so supply your own for any real model.
-#'   \code{growth_pe_pars} is \code{[n_pop × n_regions × max(4, n_ages, n_gpars) ×
-#'   n_sexes × 2]}: the first data source holds one log sigma per growth parameter
-#'   for the time-varying deviations, the second the semi-parametric surface's
-#'   correlations by age, year and cohort in slots one to three with a log scale in
-#'   slot four, or one log sigma per age under \code{"iid"} and \code{"rw"}. Slots a
-#'   form does not read are mapped off. All \code{...} arguments are ignored when
-#'   \code{M_spec = "fix"}.
+#' \code{[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks × n_sexblks]}
+#' and defaults to \code{log(0.5)}; a 5d array from an older script works when
+#' there is one season block. \code{ln_growth_pars} is
+#' \code{[n_pop × n_regions × n_sexes × n_gpars]} in the order
+#' \code{L1, L2, K, CV1, CV2} and \code{rho}, defaulting to the ends of the
+#' length bins with a rate of \code{0.15} and CVs of \code{0.1}, so supply your
+#' own for any real model. \code{growth_pe_pars} is
+#' \code{[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]}: the
+#' time-varying half holds one log sigma per growth parameter, and the
+#' semi-parametric half holds the surface's correlations by age, year and
+#' cohort in slots one to three with a log scale in slot four, or one log sigma
+#' per age under \code{"iid"} and \code{"rw"}. Slots a form does not read are
+#' mapped off. All \code{...} arguments are ignored when \code{M_spec = "fix"}.
 #'
 #' @return \code{input_list} with \code{$data}, \code{$par} and \code{$map} updated,
 #'   including \code{$data$WAA}, \code{$data$WAA_fish}, \code{$data$WAA_srv},
@@ -836,7 +837,7 @@ Setup_Mod_Biologicals <- function(input_list,
                                   ) {
 
   semipar_spec_given <- !missing(growth_semipar_spec) # read before anything assigns it
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Biologicals <- mget(names(formals()))[-1]
 
@@ -875,7 +876,7 @@ Setup_Mod_Biologicals <- function(input_list,
     if(length(growth_fix) != n_gpars) stop("growth_fix must be a logical vector of length ", n_gpars, " (", paste(gpar_names[1:n_gpars], collapse = ", "), ")")
 
     # some default starting values here based on model dimensions
-    growth_par_arr <- array(NA_real_, dim = c(n_pop, n_regions, n_sexes, n_gpars))
+    growth_par_arr <- array(NA, dim = c(n_pop, n_regions, n_sexes, n_gpars))
     growth_par_default <- c(
       L1 = min(input_list$data$lens),
       L2 = max(input_list$data$lens),
@@ -894,7 +895,7 @@ Setup_Mod_Biologicals <- function(input_list,
       for(k in 1:n_gpars) growth_par_arr[, , , k] <- growth_par_default[[gpar_names[k]]]
       collect_message("No starting_values$ln_growth_pars supplied; starting from the length bins with K = 0.15")
     }
-    # the size-age transition is built inside the model, so a placeholder stands in for the data checks
+    # the size-age transition is built inside the model, so this is only a placeholder for the checks
     SizeAgeTrans <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, length(input_list$data$lens), n_ages, n_sexes))
     collect_message("Growth is estimated (", if(growth_model_val == 1) "von Bertalanffy, Schnute form" else "Richards", "); SizeAgeTrans is built inside the model")
 
@@ -902,8 +903,8 @@ Setup_Mod_Biologicals <- function(input_list,
     tv_vals <- rep(0, n_gpars)
     names(tv_vals) <- gpar_names[1:n_gpars]
     if(!is.null(growth_tv_model)) {
-      # dsem needs a nonzero code, or the deviation never reaches the growth parameters
-      # the dsem sets those cells to NA in map_ln_growth_devs, so the penalty doesn't use them and the dsem supplies their density
+      # dsem takes a nonzero code so the deviations still reach the growth parameters, and the dsem
+      # gives them their density in place of the penalty
       tv_codes <- c(none = 0, iid = 1, rw = 2, dsem = 1)
       if(!all(growth_tv_model %in% names(tv_codes))) stop("growth_tv_model entries must be one of: none, iid, rw, dsem")
       if(!is.null(names(growth_tv_model)) && all(names(growth_tv_model) != "")) {
@@ -928,7 +929,7 @@ Setup_Mod_Biologicals <- function(input_list,
     growth_tv_type_val <- c(curve = 0, cohort = 1)[[growth_tv_type]]
     if(!growth_tv_spec %in% c("est_all", "est_shared_r", "est_shared_s", "est_shared_r_s")) stop("growth_tv_spec must be one of: est_all, est_shared_r, est_shared_s, est_shared_r_s")
 
-    # a parameter whose deviations are handed to Setup_Mod_DSEM: its process error sd is read by nothing
+    # a parameter whose deviations go to the dsem, so its own process error sd is never used
     tv_dsem <- rep(0, n_gpars)
     names(tv_dsem) <- gpar_names[1:n_gpars]
     if(!is.null(growth_tv_model)) {
@@ -962,7 +963,7 @@ Setup_Mod_Biologicals <- function(input_list,
     if(!waa_model %in% c("data", "wt_len")) stop("waa_model must be data or wt_len")
     if(waa_model == "wt_len") {
       if(is.null(wt_len_pars)) stop("wt_len_pars (a, b in W = a L^b) are required when waa_model = 'wt_len'")
-      wl_arr <- array(NA_real_, dim = c(n_pop, n_regions, n_sexes, 2))
+      wl_arr <- array(NA, dim = c(n_pop, n_regions, n_sexes, 2))
       if(is.null(dim(wt_len_pars))) {
         if(length(wt_len_pars) != 2) stop("wt_len_pars must be two values (a, b) or an array [n_pop, n_regions, n_sexes, 2]")
         for(k in 1:2) wl_arr[,,,k] <- wt_len_pars[k]
@@ -977,8 +978,8 @@ Setup_Mod_Biologicals <- function(input_list,
     }
 
     # Semi-parametric growth: a deviation surface over years and ages ---------
-    # dsem needs a nonzero code, or the deviation never reaches mean length at age
-    # the dsem sets those cells to NA in map_ln_growth_semipar_devs, so the penalty doesn't use them and the dsem supplies their density
+    # dsem takes a nonzero code so the deviations still reach mean length at age, and the dsem gives
+    # them their density in place of the penalty
     semipar_codes <- c(none = 0, iid = 1, rw = 2, `3dmarg` = 3, `3dcond` = 4, `2dar1` = 5, dsem = 1)
     if(length(growth_semipar) != 1 || !growth_semipar %in% names(semipar_codes)) stop("growth_semipar must be one of: ", paste(names(semipar_codes), collapse = ", "))
     semipar_val <- semipar_codes[[growth_semipar]]
@@ -1088,8 +1089,7 @@ Setup_Mod_Biologicals <- function(input_list,
   )
   if(fit_lengths == 1 && is.na(sum(SizeAgeTrans))) stop("Length composition are fit to, but the size-age transition matrix is NA")
 
-  # Per-fleet fixed keys: only meaningful without a growth module, which already
-  # derives one key per fleet and would leave two sources for the same quantity
+  # fixed size-age transitions per fleet, only used without a growth model, which derives its own
   if(!is.null(SizeAgeTrans_fish) || !is.null(SizeAgeTrans_srv)) {
     if(growth_model_val != 0) stop("SizeAgeTrans_fish/SizeAgeTrans_srv are for growth_model = 'none'; a growth model already derives one key per fleet")
     if(!is.null(SizeAgeTrans_fish)) check_data_dimensions(
@@ -1139,7 +1139,7 @@ Setup_Mod_Biologicals <- function(input_list,
         n_sexes = input_list$data$n_sexes,
         what = 'Fixed_natmort'
       )
-      # hold a 5d array across seasons
+      # expand a 5d array over seasons
       Fixed_natmort <- expand_natmort_seasons(Fixed_natmort, input_list$data$n_seas)
     }
   }
@@ -1171,8 +1171,8 @@ Setup_Mod_Biologicals <- function(input_list,
     }
   }
 
-  # AgeingError and LenBinMap are the same model-bin to observed-bin map on different axes, so
-  # both go through check_bin_map and a mistake in either reads the same way
+  # AgeingError and LenBinMap both map model bins onto observed bins, one on ages and one on
+  # lengths, so they are checked the same way
   if(!is.null(AgeingError)) {
     if(length(dim(AgeingError)) == 2) { # user supplied ageing error is not time-varying
       check_data_dimensions(AgeingError, n_ages = length(input_list$data$ages), what = 'AgeingError')
@@ -1506,9 +1506,16 @@ do_NAAstate_mapping <- function(input_list,
   n_ages <- length(ages)
   n_yrs <- length(years)
 
-  # dsem needs a nonzero code, or the state never replaces the deterministic numbers at age
-  # the dsem sets those cells to NA in map_ln_NAA, so the penalty doesn't use them and the dsem supplies their density
+  # dsem takes a nonzero code so the state still replaces the deterministic numbers at age, and the
+  # dsem gives it its density in place of the penalty
   naa_codes <- c(none = 0, iid = 1, `1dar1_a` = 2, `1dar1_y` = 3, `2dar1` = 4, `3dcond` = 5, `3dmarg` = 6, dsem = 1)
+
+  # every other form has a closed form marginal variance except for 3dcond's cohort so error out here
+  if(NAA_re == "3dcond" && isTRUE(input_list$data$bias_correct_pe == 2)) {
+    stop("bias_correct_pe = 'all' with NAA_re = '3dcond' has no closed form marginal variance to center on, ",
+         "since the cohort term is not separable. Use NAA_re = '3dmarg', whose sd is already the marginal, ",
+         "or bias_correct_pe = 'rec', which leaves the state uncorrected.")
+  }
   if(length(NAA_re) != 1 || !NAA_re %in% names(naa_codes))
     stop("NAA_re is '", NAA_re, "'. Valid options: ", paste(names(naa_codes), collapse = ", "))
   naa_val <- naa_codes[[NAA_re]]
@@ -1536,7 +1543,7 @@ do_NAAstate_mapping <- function(input_list,
   # map all of this stuff off if no process error
   if(NAA_re == "none") {
     input_list$map$ln_NAA <- factor(rep(NA, length(input_list$par$ln_NAA)))
-    input_list$data$map_ln_NAA <- array(NA_real_, dim = dim(input_list$par$ln_NAA)) # no state, so nothing is penalized
+    input_list$data$map_ln_NAA <- array(NA, dim = dim(input_list$par$ln_NAA)) # no state, so nothing is penalized
     input_list$par$ln_sigmaNAA <- array(log(0.3), dim = c(1, 1, 1, 1, 1, 1))
     input_list$map$ln_sigmaNAA <- factor(NA)
     input_list$data$NAA_re <- 0
@@ -1544,7 +1551,7 @@ do_NAAstate_mapping <- function(input_list,
     input_list$data$naa_re_ages <- integer(0)
     input_list$data$naa_re_yrs <- integer(0)
     input_list$data$naa_re_seas <- integer(0)
-    input_list$data$naa_re_where <- base::matrix(1L, n_pop, n_regions)
+    input_list$data$naa_re_where <- base::matrix(1, n_pop, n_regions)
     input_list$data$naa_sigma_blocks <- array(1, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
     input_list$par$NAA_pe_pars <- array(0, dim = c(n_pop, n_regions, 3, n_sexes))
     input_list$map$NAA_pe_pars <- factor(rep(NA, length(input_list$par$NAA_pe_pars)))
@@ -1591,20 +1598,19 @@ do_NAAstate_mapping <- function(input_list,
     stop("NAA_re_years must be a contiguous run of years. The state is penalized as one rectangular ",
          "slice, so a gap would leave penalized cells the dynamics never wrote.")
 
-  # Seasons the state runs over. Season one is the year boundary, so it alone is the annual state.
-  # Contiguity is not required here: the season dim is only ever iid or unstructured.
-  seas_idx <- if(identical(NAA_re_seasons, "annual")) 1L else
+  # the seasons the state runs over. season one is the year boundary, so it alone is the annual state
+  seas_idx <- if(identical(NAA_re_seasons, "annual")) 1 else
               if(identical(NAA_re_seasons, "all")) seq_len(n_seas) else
               sort(unique(as.integer(NAA_re_seasons)))
   if(length(seas_idx) == 0 || anyNA(seas_idx) || !all(seas_idx %in% seq_len(n_seas)))
     stop("NAA_re_seasons is read as season indices into 1:", n_seas, ", or the strings ",
          "\"annual\" and \"all\". It was: ", paste(NAA_re_seasons, collapse = ", "))
 
-  # population by region cells the state runs over. a natal homing population holds no fish in a
-  # region it never reaches, so it has no state there and the penalty would take log(0)
-  if(is.null(NAA_re_where)) NAA_re_where <- base::matrix(1L, n_pop, n_regions)
+  # the population and region cells the state runs over. a natal homing population never reaches
+  # some regions, so it has no numbers there to penalize
+  if(is.null(NAA_re_where)) NAA_re_where <- base::matrix(1, n_pop, n_regions)
   NAA_re_where <- base::matrix(as.integer(NAA_re_where), n_pop, n_regions)
-  if(!all(NAA_re_where %in% c(0L, 1L)))
+  if(!all(NAA_re_where %in% c(0, 1)))
     stop("NAA_re_where holds values other than 0 and 1. Give a population by region matrix, 1 where ",
          "the numbers at age state runs and 0 where a population never occupies that region.")
   input_list$data$naa_re_where <- NAA_re_where
@@ -1680,13 +1686,14 @@ do_NAAstate_mapping <- function(input_list,
                      "est_shared_p_s", "est_shared_r_s", "est_shared_p_r_s", "fix")
   if(length(NAA_pe_spec) != 1 || !NAA_pe_spec %in% valid_pe_spec)
     stop("NAA_pe_spec is '", NAA_pe_spec, "'. Valid options: ", paste(valid_pe_spec, collapse = ", "))
+
   share_p <- NAA_pe_spec %in% c("est_shared_p", "est_shared_p_r", "est_shared_p_s", "est_shared_p_r_s")
   share_r <- NAA_pe_spec %in% c("est_shared_r", "est_shared_p_r", "est_shared_r_s", "est_shared_p_r_s")
   share_s <- NAA_pe_spec %in% c("est_shared_s", "est_shared_p_s", "est_shared_r_s", "est_shared_p_r_s")
 
   map_pe <- array(NA, dim = dim(input_list$par$NAA_pe_pars))
   if(length(pe_slots) && NAA_pe_spec != "fix") {
-    key <- array(NA_character_, dim = dim(map_pe))
+    key <- array(NA, dim = dim(map_pe))
     for(p in 1:n_pop) {
       for(r in 1:n_regions) {
         for(k in pe_slots) {
@@ -1725,18 +1732,22 @@ do_NAAstate_mapping <- function(input_list,
 
   map_rc <- array(NA, dim = c(n_pop, n_pairs, n_sexes))
   if(region_val > 0 && NAA_re_region_spec != "fix") {
-    share_p <- NAA_re_region_spec %in% c("est_shared_p", "est_shared_p_s")
-    share_s <- NAA_re_region_spec %in% c("est_shared_s", "est_shared_p_s")
+
+    # fig out which cell shsould have same label
+    pop_level <- if(NAA_re_region_spec %in% c("est_shared_p", "est_shared_p_s")) rep(1, n_pop) else seq_len(n_pop)
+    sex_level <- if(NAA_re_region_spec %in% c("est_shared_s", "est_shared_p_s")) rep(1, n_sexes) else seq_len(n_sexes)
+
+    label <- array(NA, dim = dim(map_rc))
     for(p1 in 1:n_pop) {
       for(k in 1:n_pairs) {
         for(s1 in 1:n_sexes) {
-          pi_ <- if(share_p) 1 else p1
-          si_ <- if(share_s) 1 else s1
-          map_rc[p1,k,s1] <- (pi_ - 1) * n_pairs * n_sexes + (k - 1) * n_sexes + si_
+          label[p1,k,s1] <- paste(pop_level[p1], k, sex_level[s1], sep = "-")
         } # end s1 loop
       } # end k loop
     } # end p1 loop
-    map_rc[] <- as.integer(factor(map_rc)) # renumber to a dense sequence
+
+    map_rc[] <- as.integer(factor(label)) # cells sharing a label share a parameter
+
   }
   input_list$map$NAA_region_corr_pars <- factor(map_rc)
   input_list$data$NAA_re_region <- region_val
@@ -1751,8 +1762,8 @@ do_NAAstate_mapping <- function(input_list,
     stop("NAA_re_season = \"", NAA_re_season, "\" needs more than one active season, but the state ",
          "runs over ", n_seas_re, ". Widen NAA_re_seasons, or leave NAA_re_season at \"iid\".")
 
-  # The season dim is whitened outside the age and year density, so a season-varying standard
-  # deviation is fine on its own. A correlation across that dim is what needs one scale for it.
+  # the season dim is handled outside the age and year density, so its standard deviation may vary
+  # by season. only a correlation across seasons needs a single scale
   if(season_val > 0 && length(NAA_sigma_seasblk_spec_vals) > 1)
     stop("NAA_re_season = \"", NAA_re_season, "\" correlates the season dim, but the process ",
          "error standard deviation is blocked over ", length(NAA_sigma_seasblk_spec_vals),
@@ -1770,39 +1781,53 @@ do_NAAstate_mapping <- function(input_list,
 
   map_kc <- array(NA, dim = c(n_pop, n_seas_pairs, n_sexes))
   if(season_val > 0 && NAA_re_season_spec != "fix") {
-    share_p <- NAA_re_season_spec %in% c("est_shared_p", "est_shared_p_s")
-    share_s <- NAA_re_season_spec %in% c("est_shared_s", "est_shared_p_s")
+
+    # fig out which cells should have same label
+    pop_level <- if(NAA_re_season_spec %in% c("est_shared_p", "est_shared_p_s")) rep(1, n_pop) else seq_len(n_pop)
+    sex_level <- if(NAA_re_season_spec %in% c("est_shared_s", "est_shared_p_s")) rep(1, n_sexes) else seq_len(n_sexes)
+
+    label <- array(NA, dim = dim(map_kc))
     for(p1 in 1:n_pop) {
       for(k in 1:n_seas_pairs) {
         for(s1 in 1:n_sexes) {
-          pi_ <- if(share_p) 1 else p1
-          si_ <- if(share_s) 1 else s1
-          map_kc[p1,k,s1] <- (pi_ - 1) * n_seas_pairs * n_sexes + (k - 1) * n_sexes + si_
+          label[p1,k,s1] <- paste(pop_level[p1], k, sex_level[s1], sep = "-")
         } # end s1 loop
       } # end k loop
     } # end p1 loop
-    map_kc[] <- as.integer(factor(map_kc)) # renumber to a dense sequence
+
+    map_kc[] <- as.integer(factor(label)) # cells sharing a label share a parameter
+
   }
   input_list$map$NAA_season_corr_pars <- factor(map_kc)
   input_list$data$NAA_re_season <- season_val
 
-  # Population and sex correlations
-  for(mg in c("pop", "sex")) {
-    val_chr <- if(mg == "pop") NAA_re_pop else NAA_re_sex
-    n_lvl <- if(mg == "pop") n_pop else n_sexes
-    if(length(val_chr) != 1 || !val_chr %in% names(region_codes))
-      stop("NAA_re_", mg, " is '", val_chr, "'. Valid options: ", paste(names(region_codes), collapse = ", "))
-    val <- region_codes[[val_chr]]
-    if(val > 0 && n_lvl == 1)
-      stop("NAA_re_", mg, " = \"", val_chr, "\" needs more than one ", mg, ", but the model has one. ",
-           "There is nothing for the correlation to describe; leave it at \"iid\".")
-    name <- paste0("NAA_", mg, "_corr_pars")
-    input_list$par[[name]] <- rep(0, max(1, n_lvl * (n_lvl - 1) / 2))
-    input_list$par[[name]] <- use_starting_value(input_list$par[[name]], starting_values, name)
-    input_list$map[[name]] <- factor(if(val > 0) seq_along(input_list$par[[name]])
-                                   else rep(NA, length(input_list$par[[name]])))
-    input_list$data[[paste0("NAA_re_", mg)]] <- val
-  } # end mg loop
+  # Population correlation
+  if(length(NAA_re_pop) != 1 || !NAA_re_pop %in% names(region_codes))
+    stop("NAA_re_pop is '", NAA_re_pop, "'. Valid options: ", paste(names(region_codes), collapse = ", "))
+  pop_val <- region_codes[[NAA_re_pop]]
+  if(pop_val > 0 && n_pop == 1)
+    stop("NAA_re_pop = \"", NAA_re_pop, "\" needs more than one population, but the model has one. ",
+         "There is nothing for the correlation to describe; leave it at \"iid\".")
+
+  input_list$par$NAA_pop_corr_pars <- rep(0, max(1, n_pop * (n_pop - 1) / 2))
+  input_list$par$NAA_pop_corr_pars <- use_starting_value(input_list$par$NAA_pop_corr_pars, starting_values, "NAA_pop_corr_pars")
+  input_list$map$NAA_pop_corr_pars <- factor(if(pop_val > 0) seq_along(input_list$par$NAA_pop_corr_pars)
+                                             else rep(NA, length(input_list$par$NAA_pop_corr_pars)))
+  input_list$data$NAA_re_pop <- pop_val
+
+  # Sex correlation
+  if(length(NAA_re_sex) != 1 || !NAA_re_sex %in% names(region_codes))
+    stop("NAA_re_sex is '", NAA_re_sex, "'. Valid options: ", paste(names(region_codes), collapse = ", "))
+  sex_val <- region_codes[[NAA_re_sex]]
+  if(sex_val > 0 && n_sexes == 1)
+    stop("NAA_re_sex = \"", NAA_re_sex, "\" needs more than one sex, but the model has one. ",
+         "There is nothing for the correlation to describe; leave it at \"iid\".")
+
+  input_list$par$NAA_sex_corr_pars <- rep(0, max(1, n_sexes * (n_sexes - 1) / 2))
+  input_list$par$NAA_sex_corr_pars <- use_starting_value(input_list$par$NAA_sex_corr_pars, starting_values, "NAA_sex_corr_pars")
+  input_list$map$NAA_sex_corr_pars <- factor(if(sex_val > 0) seq_along(input_list$par$NAA_sex_corr_pars)
+                                             else rep(NA, length(input_list$par$NAA_sex_corr_pars)))
+  input_list$data$NAA_re_sex <- sex_val
 
   input_list$data$NAA_re <- naa_val
   input_list$data$n_est_naa_re <- n_active

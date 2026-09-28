@@ -183,9 +183,9 @@ L1, L2, K, CV1, CV2 and rho stay at their starting values whatever
 (default) holds every parameter constant. Otherwise a character vector of
 length \code{n_gpars} in parameter order, or named by parameter, each
 \code{"none"}, \code{"iid"}, \code{"rw"}, or \code{"dsem"}. A varying parameter
-gets a deviation series \code{ln_growth_devs} and a log sigma in the first data
-source of \code{growth_pe_pars}; under \code{"dsem"} the density comes from
-\code{\link{Setup_Mod_DSEM}} and that sigma stays at its start.}
+gets a deviation series \code{ln_growth_devs} and a log sigma in the
+time-varying half of \code{growth_pe_pars}; under \code{"dsem"} the density
+comes from \code{\link{Setup_Mod_DSEM}} and that sigma stays at its start.}
 
 \item{growth_tv_years}{Calendar years the deviations are active in. \code{NULL}
 (default) for every model year, a vector for every varying parameter, or a list
@@ -199,9 +199,10 @@ crossing it.}
 \item{growth_par_bounds}{Matrix \code{[n_gpars x 2]} of lower and upper bounds on
 the natural scale, required under the logit link.}
 
-\item{growth_tv_sigma_spec}{\code{"fix"} (default) holds the process error sds of
-the deviations at their starting values, \code{"est"} estimates them. Both read
-the first data source of \code{growth_pe_pars}, one slot per growth parameter.}
+\item{growth_tv_sigma_spec}{\code{"fix"} (default) holds the process error
+sds of the deviations at their starting values, \code{"est"} estimates them.
+Both read the time-varying half of \code{growth_pe_pars}, one slot per
+growth parameter.}
 
 \item{growth_tv_spec}{How the deviations are shared across strata, in the
 \code{growth_spec} vocabulary: \code{"est_all"} (default),
@@ -230,7 +231,7 @@ conditional variance), \code{"2dar1"} (separable over ages and years), or
 which refuses \code{growth_semipar_spec = "est"}). The spread at age follows
 the deviated mean, leaving the CV at age to the parametric part.}
 
-\item{growth_semipar_spec}{Whether the second data source of
+\item{growth_semipar_spec}{Whether the semi-parametric half of
 \code{growth_pe_pars} is estimated (\code{"est"}) or kept at its starting
 values (\code{"fix"}, default). The deviations themselves are always estimated.}
 
@@ -406,19 +407,19 @@ exception, being whitened outside the age and year density, and is ruled out
 only by \code{NAA_re_season = "us"}.}
 
 \item{...}{Optional starting values by name. \code{ln_M} is dimensioned
-\code{[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks ×
-n_sexblks]} and defaults to \code{log(0.5)}; a 5d array from an older script
-works when there is one season block. \code{ln_growth_pars} is \code{[n_pop ×
-n_regions × n_sexes × n_gpars]} in the order \code{L1, L2, K, CV1, CV2} and
-\code{rho}, defaulting to the ends of the length bins with a rate of
-\code{0.15} and CVs of \code{0.1}, so supply your own for any real model.
-\code{growth_pe_pars} is \code{[n_pop × n_regions × max(4, n_ages, n_gpars) ×
-n_sexes × 2]}: the first data source holds one log sigma per growth parameter
-for the time-varying deviations, the second the semi-parametric surface's
-correlations by age, year and cohort in slots one to three with a log scale in
-slot four, or one log sigma per age under \code{"iid"} and \code{"rw"}. Slots a
-form does not read are mapped off. All \code{...} arguments are ignored when
-\code{M_spec = "fix"}.}
+\code{[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks × n_sexblks]}
+and defaults to \code{log(0.5)}; a 5d array from an older script works when
+there is one season block. \code{ln_growth_pars} is
+\code{[n_pop × n_regions × n_sexes × n_gpars]} in the order
+\code{L1, L2, K, CV1, CV2} and \code{rho}, defaulting to the ends of the
+length bins with a rate of \code{0.15} and CVs of \code{0.1}, so supply your
+own for any real model. \code{growth_pe_pars} is
+\code{[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]}: the
+time-varying half holds one log sigma per growth parameter, and the
+semi-parametric half holds the surface's correlations by age, year and
+cohort in slots one to three with a log scale in slot four, or one log sigma
+per age under \code{"iid"} and \code{"rw"}. Slots a form does not read are
+mapped off. All \code{...} arguments are ignored when \code{M_spec = "fix"}.}
 }
 \value{
 \code{input_list} with \code{$data}, \code{$par} and \code{$map} updated,

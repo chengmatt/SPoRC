@@ -1,3 +1,6 @@
+# Retrospective peels: truncate_yr() on every year-indexed field, do_retrospective() run
+# sequentially and in parallel, and the relative differences against the terminal year.
+
 library(testthat)
 library(SPoRC)
 
@@ -105,7 +108,7 @@ make_retro_data <- function(n_yrs = 6,
   data$Wt_Catch <- mk(c(1, n_yrs, n_fish_fleets, 1))     # length(dim) == 4 branch
   data$Wt_Discard <- mk(c(1, n_yrs, n_fish_fleets, 1))   # length(dim) == 4 branch
 
-  ## Population-specific fishery (guarded existence, unguarded Use flags) --
+  # Population-specific fishery, checked existence and unchecked use flags ------
   data$UseFishIdx_pop <- mk(c(n_pop, n_regions, n_yrs, 1, n_fish_fleets), fill = if (pop_specific) 1 else 0)
   data$UseFishAgeComps_pop <- mk(c(n_pop, n_regions, n_yrs, 1, n_fish_fleets), fill = if (pop_specific) 1 else 0)
   data$UseFishLenComps_pop <- mk(c(n_pop, n_regions, n_yrs, 1, n_fish_fleets), fill = if (pop_specific) 1 else 0)
@@ -470,7 +473,7 @@ test_that("truncate_yr() truncates conventional tagging cohorts by release year 
   expect_equal(nrow(out_j0$retro_data$conv_tag_release_indicator), 3) # years 1,3,6 all <= 6
   expect_equal(out_j0$retro_data$n_conv_tag_cohorts, 3)
 
-  # j = 1: TWO cohorts survive (years 1, 3) -- confirmed working correctly
+  # at one peel two cohorts survive, in years 1 and 3
   out_j1 <- truncate_yr(j = 1, data = d_on$data, parameters = d_on$parameters, mapping = d_on$mapping)
   expect_equal(nrow(out_j1$retro_data$conv_tag_release_indicator), 2) # year-6 cohort dropped (years 1:5)
   expect_equal(out_j1$retro_data$n_conv_tag_cohorts, 2)
@@ -525,9 +528,8 @@ test_that("truncate_yr() skips the length-5 Wt_Catch_pop/Wt_Discard_pop branch w
 
 testthat_supports_mocking <- exists("local_mocked_bindings", where = asNamespace("testthat"))
 
-## Minimal synthetic data/parameters/mapping (mirrors test-truncate_yr.R's
-## make_retro_data(), trimmed to just what's needed here since fit_model()
-## is mocked and never actually reads most fields).
+# a minimal data list, parameters and mapping, trimmed to what is needed here since fit_model
+# is replaced by a stand-in and never reads most of it
 mk <- function(dims, fill = 1) array(fill, dim = dims)
 
 make_minimal_retro_inputs <- function(

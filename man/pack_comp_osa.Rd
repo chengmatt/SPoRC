@@ -55,8 +55,8 @@ tracking cost.}
 
 \item{BinsArr}{Optional \code{[n_obs_bins x n_fleets]} 0/1 array naming the
 observed bins each fleet is fitted over, or \code{NULL} (default) for all
-bins. A restricted fleet packs a shorter block, and \code{eval_comp_osa} must
-be handed the same array so its strides stay in step.}
+bins. A restricted fleet packs a shorter block, so \code{eval_comp_osa} must
+be given the same array.}
 }
 \value{
 The flat OBS vector, or, under \code{return_labels = TRUE}, a list of

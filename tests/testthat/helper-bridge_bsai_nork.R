@@ -36,17 +36,14 @@ build_bsai_nork_input <- function(dat) {
   )
 
   ## Recruitment and the initial age structure --------------------------------
-  # a mean with deviations rather than a stock recruit function, and the last
-  # three years take the mean outright, which is dont_est_recdev_last = 3.
+  # a mean with deviations rather than a stock recruit function, and the last three
+  # years take the mean outright.
   #
-  # this is where the assessment differs most from a SPoRC default. its
-  # fyear_ac_option 3 gives the initial age structure its own scalar, ln_rinit,
-  # rather than reusing mean recruitment, with deviations that the ages beyond
-  # the observed range share. init_age_devs_shared spells that sharing out.
+  # the initial age structure has its own scalar, ln_rinit, rather than reusing mean
+  # recruitment, with the ages beyond the observed range sharing one deviation.
   #
-  # the bias ramp stays flat here: the assessment's sigmaR^2 / 2 correction is
-  # kept in the seeds instead (see seed_bsai_nork_mle), which reproduces both
-  # the recruitment series and its penalty at the seed point
+  # the bias ramp stays flat, with the assessment's sigmaR^2 / 2 correction kept in
+  # the seeds instead, which reproduces the series and its penalty at the seed point
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
     rec_model = "mean_rec",
@@ -64,13 +61,11 @@ build_bsai_nork_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # natural mortality is estimated under a lognormal prior. the prior median is
-  # shifted by exp(-cv^2 / 2) so that its MEAN is the assessment's 0.06, since
-  # the assessment states the prior on the mean and SPoRC's is on the median.
+  # natural mortality is estimated under a lognormal prior, its median shifted by
+  # exp(-cv^2 / 2) so the mean is the assessment's 0.06, which is where it states the prior.
   #
-  # weight at age is year varying, and the fishery has its own block through
-  # WAA_fish: that block prices the catch while the population block prices
-  # spawning biomass and the survey
+  # weight at age is year varying, and the fishery has its own, which weighs the catch while
+  # the population's goes to spawning biomass and the survey
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = dat$WAA,
@@ -106,10 +101,8 @@ build_bsai_nork_input <- function(dat) {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
-  # the assessment writes its catch and F penalties as sums of squares with
-  # weights 200 and 0.1. a weighted sum of squares and a normal likelihood with
-  # a fixed standard deviation are the same statement up to a constant, related
-  # by sigma = 1 / sqrt(2 w), so the weights enter as these standard deviations
+  # the assessment writes its catch and F penalties as weighted sums of squares at
+  # weights 200 and 0.1, which is a normal at a fixed sigma = 1 / sqrt(2 w)
   suppressWarnings(
     input_list <- Setup_Mod_Catch_and_F(
       input_list = input_list,
@@ -125,9 +118,8 @@ build_bsai_nork_input <- function(dat) {
   )
 
   ## Fishery compositions -----------------------------------------------------
-  # no fishery index in this assessment, only compositions, so fish_idx_type is
-  # "none" and the index arrays are declared empty. both age and length
-  # compositions are aggregated over the region and fit multinomially
+  # no fishery index, only age and length compositions, aggregated over the region
+  # and fit multinomially
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = array(NA, dim = c(dat$n_regions, n_yrs, dat$n_seas, dat$n_fish_fleets)),
@@ -168,9 +160,8 @@ build_bsai_nork_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # logist1 is the a50 and slope parameterization. selectivity is time
-  # invariant, and fishery catchability is not used because there is no fishery
-  # index to scale
+  # logist1 is the a50 and slope parameterization. selectivity is time invariant, and
+  # there is no fishery index for a fishery catchability to scale
   input_list <- Setup_Mod_Fishsel_and_Q(
     input_list = input_list,
     cont_tv_fish_sel = "none_Fleet_1",
@@ -182,11 +173,8 @@ build_bsai_nork_input <- function(dat) {
   )
 
   ## Survey selectivity and catchability --------------------------------------
-  # the assessment's survey selectivity constraint is NOT a prior on the
-  # parameters. it penalizes the REALIZED selectivity at age 30 towards 1 with a
-  # standard deviation of 0.003, which is what type = "value" states. it is load
-  # bearing: without it the survey age compositions do not identify the
-  # selectivity asymptote. the catchability prior is tight enough to pin q at 1
+  # the penalty is on selectivity at age 30 itself, toward 1 at a standard deviation of
+  # 0.003, not on the parameters, and the catchability prior is tight enough to hold q at 1
   input_list <- Setup_Mod_Srvsel_and_Q(
     input_list = input_list,
     cont_tv_srv_sel = "none_Fleet_1",
@@ -218,9 +206,8 @@ build_bsai_nork_input <- function(dat) {
   )
 
   ## Weighting ----------------------------------------------------------------
-  # the catch and F weights already sit in their standard deviations above, so
-  # only the composition weights are set here, and they are the assessment's
-  # McAllister Ianelli multipliers
+  # the catch and F weights already sit in their standard deviations above, so only the
+  # composition weights are set here, the assessment's McAllister Ianelli multipliers
   Setup_Mod_Weighting(
     input_list = input_list,
     Wt_Catch = 1,
@@ -239,10 +226,8 @@ build_bsai_nork_input <- function(dat) {
 
 #' Set every parameter to the assessment's maximum likelihood estimate
 #'
-#' Evaluating at a known point separates a specification error from an
-#' optimization difference. Two blocks here need a conversion rather than a
-#' direct assignment: the recruitment bias correction and the initial age
-#' structure.
+#' Two blocks here need converting rather than assigning: the recruitment bias correction
+#' and the initial age structure.
 seed_bsai_nork_mle <- function(input_list, dat) {
 
   mle <- dat$mle
@@ -251,11 +236,11 @@ seed_bsai_nork_mle <- function(input_list, dat) {
   n_obs_ages <- length(dat$obs_ages)
 
   ## Recruitment --------------------------------------------------------------
-  # the assessment builds its three deviation-free terminal recruits as
-  # exp(mean_log_rec + sigmaR^2 / 2) while the estimated years are raw, and its
-  # rec_dev is a dev_vector summing to zero. with the bias correction in
-  # ln_global_R0 and shifting every seeded deviation down by the same amount
-  # reproduces both the recruitment series and the penalty value exactly
+  # the assessment's three terminal recruits take exp(mean_log_rec + sigmaR^2 / 2) while the
+  # estimated years are raw, and its deviations sum to zero.
+  #
+  # putting the bias correction into ln_global_R0 and shifting every seeded deviation down by
+  # the same amount reproduces the series and the penalty
   input_list$par$ln_global_R0[] <- mle$mean_log_rec + s2
   input_list$par$ln_RecDevs[1, 1, ] <- mle$rec_dev - s2
   input_list$par$ln_rinit <- mle$log_rinit
@@ -269,11 +254,11 @@ seed_bsai_nork_mle <- function(input_list, dat) {
   input_list$par$srv_fixed_sel_pars[] <- log(c(mle$sel_a50_srv, mle$sel_aslope_srv))
 
   ## Initial age structure ----------------------------------------------------
-  # the assessment parameterizes it as N(styr, j) = exp(log_rinit - M (j - 1) +
-  # fydev_j), with ages beyond the observed range sharing the last deviation and
-  # the plus group solved as a geometric series. SPoRC has multiplicative
-  # deviations from an equilibrium age structure, so the deviations it wants are
-  # the log ratio of the two. build both and divide
+  # the assessment writes it as N(styr, j) = exp(log_rinit - M (j - 1) + fydev_j), with ages
+  # past the observed range sharing the last deviation and the plus group a geometric series.
+  #
+  # SPoRC wants multiplicative deviations from an equilibrium age structure, so build both
+  # and take the log ratio
   NAA_equil <- exp(mle$log_rinit) * exp(-(0:(n_ages - 1)) * mle$M)
   NAA_equil[n_ages] <- NAA_equil[n_ages - 1] * exp(-mle$M) / (1 - exp(-mle$M))
   NAA_styr <- NAA_equil
@@ -293,13 +278,11 @@ seed_bsai_nork_mle <- function(input_list, dat) {
 
 #' Hold the survey selectivity flat past age 30 for the seed evaluation
 #'
-#' The assessment evaluates its logistic selectivity over ages 3 to 30 only
-#' (`nselages`) and holds both curves at the age 30 value beyond that, which
-#' SPoRC's `logist1` form cannot express. For the seed evaluation the survey
-#' curve is supplied as a fixed input with that edge hold applied, so the
-#' comparison isolates the likelihoods from the selectivity form. A refit
-#' estimates the uncapped logistic instead, which is a documented and negligible
-#' difference.
+#' The assessment evaluates its logistic over ages 3 to 30 only and holds both curves flat
+#' beyond that, which `logist1` cannot express.
+#'
+#' The seed evaluation supplies the survey curve as a fixed input with that hold applied. A
+#' refit estimates the uncapped logistic instead, a small and documented difference.
 cap_bsai_nork_srv_sel <- function(data, dat) {
   n_yrs <- length(dat$years)
   srv_sel <- 1 / (1 + exp(-dat$mle$sel_aslope_srv * (dat$ages - dat$mle$sel_a50_srv)))

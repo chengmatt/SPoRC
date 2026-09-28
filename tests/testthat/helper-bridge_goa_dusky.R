@@ -32,12 +32,11 @@ build_goa_dusky_input <- function(dat) {
   )
 
   ## Recruitment --------------------------------------------------------------
-  # a mean with annual deviations rather than a stock recruit function, sigmaR
-  # fixed at exp(-0.1068576), roughly 0.899, and spawning at the start of the
-  # year. the bias ramp is switched on but every ramp year is set to the
-  # terminal year, which holds the ramp at zero over the whole series and so
-  # leaves recruitment uncorrected. that combination is the assessment's own
-  # convention written out, not a SPoRC default
+  # a mean with annual deviations rather than a stock recruit function, sigmaR fixed at
+  # roughly 0.899, and spawning at the start of the year.
+  #
+  # the bias ramp is on but every ramp year is the terminal year, which holds the ramp
+  # at zero throughout and leaves recruitment uncorrected, as the assessment does
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
     do_rec_bias_ramp = 1,
@@ -52,9 +51,8 @@ build_goa_dusky_input <- function(dat) {
   )
 
   ## Biological dynamics ------------------------------------------------------
-  # natural mortality is fixed at 0.07 for every age and year, so no prior is
-  # needed. length compositions are fit through a size at age transition matrix
-  # supplied as data, and age compositions pass through an ageing error matrix
+  # natural mortality is fixed at 0.07 for every age and year. lengths are fit through
+  # a size-age transition matrix supplied as data, and ages through ageing error
   input_list <- Setup_Mod_Biologicals(
     input_list = input_list,
     WAA = dat$waa_arr,
@@ -80,12 +78,11 @@ build_goa_dusky_input <- function(dat) {
   input_list <- Setup_Mod_Tagging(input_list = input_list, use_conv_fish_tagging = 0)
 
   ## Catch and fishing mortality ----------------------------------------------
-  # the assessment writes its catch and F statements as weighted sums of
-  # squares. a weighted sum of squares and a normal likelihood with a fixed
-  # standard deviation are the same statement up to a constant, related by
-  # sigma = 1 / sqrt(2 w), so both sigmas are fixed at 1 / sqrt(2) to make the
-  # quadratic term an unweighted sum of squares. the year specific catch weights
-  # are then applied through Wt_Catch in the weighting section
+  # the assessment writes its catch and F penalties as weighted sums of squares, which is a
+  # normal at a fixed sigma = 1 / sqrt(2 w).
+  #
+  # both sigmas are set to 1 / sqrt(2) so the quadratic term is unweighted, and the year
+  # specific catch weights then go in through Wt_Catch in the weighting section
   suppressWarnings(
     input_list <- Setup_Mod_Catch_and_F(
       input_list = input_list,
@@ -104,9 +101,8 @@ build_goa_dusky_input <- function(dat) {
   )
 
   ## Fishery compositions -----------------------------------------------------
-  # no fishery index in this assessment, only compositions, so fish_idx_type is
-  # "none". both age and length compositions are aggregated over the region and
-  # fit multinomially
+  # no fishery index, only age and length compositions, aggregated over the region
+  # and fit multinomially
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
     ObsFishIdx = dat$ObsFishIdx,
@@ -126,11 +122,8 @@ build_goa_dusky_input <- function(dat) {
   )
 
   ## Survey index and compositions --------------------------------------------
-  # the index is lognormal, so its standard error has to be on the log scale.
-  # the assessment reports an arithmetic standard error, and the conversion is
-  # the coefficient of variation, which for a lognormal is the log scale
-  # standard deviation to first order. that is the only transformation applied
-  # to the survey data
+  # the index is lognormal, so its standard error has to be on the log scale, and the
+  # assessment's arithmetic coefficient of variation is that to first order.
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,
     ObsSrvIdx = dat$ObsSrvIdx,
@@ -150,10 +143,8 @@ build_goa_dusky_input <- function(dat) {
   )
 
   ## Fishery selectivity and catchability -------------------------------------
-  # the a50 and a95 parameterization of the logistic, which is logist2.
-  # selectivity is time invariant, so there are no deviations and no process
-  # error, and fishery catchability is not used because there is no fishery
-  # index to scale
+  # logist2 is the a50 and a95 parameterization. selectivity is time invariant, so
+  # there are no deviations, and there is no fishery index for a catchability to scale
   input_list <- Setup_Mod_Fishsel_and_Q(
     input_list = input_list,
     cont_tv_fish_sel = c("none_Fleet_1"),
@@ -191,10 +182,8 @@ build_goa_dusky_input <- function(dat) {
   )
 
   ## Weighting ----------------------------------------------------------------
-  # the early catch series was reconstructed, so the assessment down-weights it
-  # relative to the observer era: 2 through 1991 and 50 after. survey length
-  # compositions are present in the data object but have a weight of zero,
-  # which is how the assessment treats them
+  # the reconstructed early catches are weighted 2 through 1991 and the observer era 50.
+  # survey lengths are in the data object at a weight of zero, as the assessment has them
   Wt_Catch <- array(0, dim = c(dat$n_regions, length(dat$years), dat$n_seas, dat$n_fish_fleets))
   Wt_Catch[, which(dat$years %in% 1977:1991), 1, ] <- 2
   Wt_Catch[, -which(dat$years %in% 1977:1991), 1, ] <- 50

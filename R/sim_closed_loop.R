@@ -867,7 +867,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # the active seasons are reused unchanged; season one alone is the annual state
   sim_list$naa_re_seas <- if("naa_re_seas" %in% names(args)) args$naa_re_seas else {
-    if(!state_on) 1L else if(is.null(data$naa_re_seas)) 1L else data$naa_re_seas
+    if(!state_on) 1 else if(is.null(data$naa_re_seas)) 1 else data$naa_re_seas
   }
   sim_list$naa_season_corr <- if("naa_season_corr" %in% names(args)) args$naa_season_corr else {
     if(!state_on || !isTRUE(sim_list$NAA_re_season == 1)) 0

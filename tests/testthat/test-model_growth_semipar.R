@@ -1,5 +1,6 @@
-# Time-varying and semi-parametric growth. One varies the growth PARAMETERS year by year, off each year's
-# curve or cohort by cohort; the other adds a year-by-age surface of DEVIATIONS on mean length at age.
+# Time-varying and semi-parametric growth. The first moves the growth parameters year by
+# year, off each year's curve or cohort by cohort. The second adds a year-by-age surface
+# of deviations to mean length at age.
 #
 # Checks the mechanics of both against hand calculations, then that a deviation surface is recovered.
 
@@ -41,6 +42,7 @@ growth_call <- function(..., n_yrs = gcfg$n_yrs, n_ages = gcfg$n_ages) {
   do.call(Get_Growth, utils::modifyList(args, list(...)))
 }
 
+# Deviations on the Growth Parameters ----------------------------------------
 
 test_that("a growth parameter's deviations move that parameter and no other", {
 
@@ -108,6 +110,7 @@ test_that("the Richards coefficient generalizes the von Bertalanffy curve", {
   expect_false(isTRUE(all.equal(L, vb$mean_LAA_spawn[1, 1, 1, 1, , 1])))
 })
 
+# Deviations on Mean Length at Age -------------------------------------------
 
 test_that("semi-parametric deviations scale mean length at age and leave the CV alone", {
 
@@ -124,15 +127,14 @@ test_that("semi-parametric deviations scale mean length at age and leave the CV 
   for(y in c(1, 7, n_yrs)) {
     expect_equal(g$mean_LAA_spawn[1, 1, y, 1, , 1],
                  base$mean_LAA_spawn[1, 1, 1, 1, , 1] * exp(sp[1, 1, y, , 1]), tolerance = 1e-12)
-    # the spread is that mean times the coefficient of variation the deviated
-    # length implies, since the CV is interpolated ON LENGTH here: a deviation
-    # that makes a fish longer moves it along the CV ramp as well
+    # the spread is that mean times the coefficient of variation the deviated length implies,
+    # since the CV is interpolated on length, so a longer fish also moves along the CV ramp
     L_y <- g$mean_LAA_spawn[1, 1, y, 1, , 1]
     cv_y <- gpars[["CV1"]] + (L_y - gpars[["L1"]]) * (gpars[["CV2"]] - gpars[["CV1"]]) / (gpars[["L2"]] - gpars[["L1"]])
     cv_y[n_ages] <- gpars[["CV2"]] # the oldest age is at the reference age, which takes CV2 outright
     expect_equal(g$sd_LAA_spawn[1, 1, y, 1, , 1] / L_y, cv_y, tolerance = 1e-6)
   }
-  # under a CV that is a function of AGE instead, the deviations move only the
+  # under a CV that is a function of age instead, the deviations move only the
   # mean and leave the spread at age exactly where the parametric curve put it
   ga <- growth_call(ln_growth_semipar_devs = sp, growth_semipar = 5, growth_cv_type = 1)
   ba <- growth_call(growth_cv_type = 1)
@@ -148,7 +150,7 @@ test_that("semi-parametric deviations scale mean length at age and leave the CV 
 })
 
 
-test_that("cohort growth has size at age forward and blends the plus group by numbers", {
+test_that("cohort growth advances size at age and blends the plus group by numbers", {
 
   n_yrs <- 6
   n_ages <- gcfg$n_ages
@@ -167,9 +169,8 @@ test_that("cohort growth has size at age forward and blends the plus group by nu
   # the first year's curve
   expect_equal(g$L_beg[1, 1, 1, , 1], g$L_beg[1, 1, 3, , 1], tolerance = 1e-12)
 
-  # one year of propagation, done by hand: every propagated age grows from the
-  # size it reached by the increment this year's parameters imply, and the plus
-  # group blends the cohort entering it with the fish already there
+  # one year of growth by hand: each age grows from the size it reached by the increment this
+  # year's parameters imply, and the plus group blends the entering cohort with the rest
   NAA_y <- array(exp(-0.3 * ages), dim = c(1, 1, n_ages, 1))
   g2 <- Get_Growth_Year(
     growth = g,
@@ -220,6 +221,7 @@ test_that("cohort growth has size at age forward and blends the plus group by nu
   expect_lte(nxt[n_ages], max(grown[n_ages - 1], grown[n_ages]) + 1e-10)
 })
 
+# The Process Error Forms ----------------------------------------------------
 
 test_that("every semi-parametric process error form builds and is penalized", {
 

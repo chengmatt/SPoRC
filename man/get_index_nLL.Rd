@@ -4,7 +4,15 @@
 \alias{get_index_nLL}
 \title{Evaluate an index negative log-likelihood under a chosen error structure}
 \usage{
-get_index_nLL(obs, pred, sigma, like_type, Sigma = NULL, const = 0)
+get_index_nLL(
+  obs,
+  pred,
+  sigma,
+  like_type,
+  Sigma = NULL,
+  const = 0,
+  bias_correct_oe = 0
+)
 }
 \arguments{
 \item{obs}{Numeric vector of observed index values.}

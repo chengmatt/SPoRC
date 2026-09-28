@@ -52,7 +52,7 @@ test_that("the length message covers the selectivity settings too", {
 
 
 test_that("a genuinely unrecognized setting is still reported as one", {
-  # The length guard must not swallow the case it was added beside.
+  # the length check must not swallow the case it was added beside
   il <- fleet_spec_input()
   n <- il$data$n_fish_fleets
 
@@ -69,7 +69,7 @@ test_that("a genuinely unrecognized setting is still reported as one", {
 
 
 test_that("a correctly specified per-fleet setting is accepted", {
-  # A guard that rejected everything would pass every test above.
+  # a check that refused everything would pass every test above
   il <- fleet_spec_input()
   n <- il$data$n_fish_fleets
 
@@ -83,11 +83,8 @@ test_that("a correctly specified per-fleet setting is accepted", {
 
 
 test_that("a composition type names the whole form it has to be given in", {
-  # The old message listed 'agg' among the valid settings, so a caller who passed
-  # exactly that was then told their fleet was invalid. Either message now has
-  # the full form. The form is named generically because one parser serves both
-  # the composition data sources and the at-age ones, which have different vocabularies
-  # and are each listed by the message that raises them.
+  # both messages name the full form, since one listed 'agg' among the valid settings and
+  # then told a caller who passed it that their fleet was invalid
   n <- sweep_dims$n_fish_fleets
 
   bad_value <- err_msg(sweep_input(fishidx = list(
@@ -101,9 +98,8 @@ test_that("a composition type names the whole form it has to be given in", {
 
 
 test_that("a composition type given as a bare setting names the form too", {
-  # This is the case the old pair of messages handled worst: 'agg' passes the
-  # value check, because it is a valid setting, and is then rejected for a fleet
-  # the caller never wrote.
+  # 'agg' passes the value check, being a valid setting, so without this it was then
+  # refused for a fleet the caller never wrote
   n <- sweep_dims$n_fish_fleets
 
   bare <- err_msg(sweep_input(fishidx = list(FishAgeComps_Type = rep("agg", n))))
@@ -118,9 +114,8 @@ test_that("no setup message still holds the old misspelling", {
   r_dir <- testthat::test_path("..", "..", "R")
   skip_if_not(dir.exists(r_dir), "package source is not laid out beside the tests")
 
-  # an installed package keeps a lazy-load database in R/ rather than sources, so
-  # the directory exists and holds nothing this can read. That is a reason to skip
-  # rather than to pass: a scan of no files finds no misspellings either way
+  # an installed package keeps a lazy-load database in R/ rather than sources, so this
+  # skips rather than passing, since a scan of no files finds no misspellings either
   r_files <- list.files(r_dir, pattern = "\\.R$", full.names = TRUE)
   skip_if(length(r_files) == 0, "package sources are not available to scan")
 
@@ -135,10 +130,8 @@ test_that("no setup message still holds the old misspelling", {
 
 
 test_that("a plot destination that resolves to nothing is refused", {
-  # here::here() drops a NULL, which left grDevices::pdf() with a zero-length file
-  # name and sent a 16-page PDF called 'NA' into whatever the working directory
-  # happened to be. Running the test suite therefore wrote into the repository,
-  # and the file was committed three separate times before anyone noticed.
+  # here::here() drops a NULL, which leaves grDevices::pdf() with no file name and writes
+  # a PDF called 'NA' into whatever the working directory happens to be
   for(bad in list(NULL, NA, character(0), c("a", "b"))) {
     expect_error(
       plot_all_basic(
@@ -155,15 +148,11 @@ test_that("a plot destination that resolves to nothing is refused", {
 
 
 test_that("a starting value of the wrong shape is refused where it is given", {
-  # Starting values arrive through ... and were substituted for the model's own
-  # default without being measured against it. A value of the wrong shape is not
-  # rejected by that: it is passed into the objective, read position by
-  # position, and indexes past its own end somewhere else entirely. What comes
-  # back is RTMB's "'*this' is not a valid 'advector'", which names nothing the
-  # caller wrote.
+  # a starting value of the wrong shape otherwise reaches the objective, runs off its own end
+  # and comes back as an RTMB advector complaint, which names nothing the caller wrote.
   #
-  # The default holds the shape the model expects, so it is what the supplied
-  # value is now checked against.
+  # the default holds the shape the model expects, so it is what the value is checked
+  # against
   expect_error(sweep_input(biol = list(M_spec = "est_ln_M", ln_M = rep(log(0.2), 7))),
                "starting value for ln_M is length 7")
   expect_error(sweep_input(fishsel = list(ln_fish_q = rep(0, 99))),
@@ -176,8 +165,7 @@ test_that("a starting value of the wrong shape is refused where it is given", {
 
 
 test_that("a correctly shaped starting value is still substituted", {
-  # A guard that rejected every starting value would satisfy the test above and
-  # break the feature.
+  # a check that refused every starting value would satisfy the test above
   shape <- dim(sweep_input()$par$ln_fish_q)
   il <- expect_no_error(sweep_input(fishsel = list(ln_fish_q = array(-0.5, dim = shape))))
 
@@ -186,10 +174,8 @@ test_that("a correctly shaped starting value is still substituted", {
 
 
 test_that("a parameter and its map must agree on length at model build", {
-  # The same failure reached from the other side: a map is paired with its
-  # parameter by position, so a length disagreement is either a mis-shaped
-  # starting value or a map built from the wrong dimensions. Caught at the model
-  # build with the block named, rather than inside the AD pass.
+  # a map is paired with its parameter by position, so a length disagreement is either a
+  # mis-shaped starting value or a map built from the wrong dimensions
   il <- sweep_input()
   broken <- il
   broken$par$ln_fish_q <- broken$par$ln_fish_q[1]
@@ -204,10 +190,8 @@ test_that("a parameter and its map must agree on length at model build", {
 
 
 test_that("a single starting value where many are wanted is told how to recycle", {
-  # The common slip has an obvious repair, and it is the same repair for every
-  # argument, so the hint belongs in the shared guard rather than in a check
-  # written for one parameter. It appears only where recycling is actually the
-  # fix: a wrong length that is not one has no such repair to suggest.
+  # the hint is the same for every argument, so it sits in the shared check, and appears
+  # only where repeating the value is actually the fix
   msg <- err_msg(sweep_input(fishsel = list(ln_fish_q = 0)))
   expect_match(msg, "Recycle it with rep(ln_fish_q, 15)", fixed = TRUE)
 
@@ -218,10 +202,8 @@ test_that("a single starting value where many are wanted is told how to recycle"
 
 
 test_that("the per-fleet and starting-value guards stay distinct", {
-  # Two guards, two different kinds of argument: check_fleet_spec_length covers a
-  # configuration string given once per fleet, use_starting_value covers the shape
-  # of a parameter array. Collapsing them would be wrong in both directions, so
-  # each keeps its own wording and this records which is which.
+  # check_fleet_spec_length covers a setting given once per fleet and use_starting_value
+  # the shape of a parameter array, so each keeps its own wording
   il <- sweep_input(stop_after = "srvidx")
   n <- il$data$n_fish_fleets
 

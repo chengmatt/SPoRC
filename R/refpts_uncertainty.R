@@ -365,10 +365,10 @@ Get_Reference_Point_Uncertainty <- function(obj,
     if(!is.null(seed)) set.seed(seed)
     devs <- refpt_draw_devs(cov_obj, n_draw)
 
-    draws <- matrix(NA_real_, nrow = n_draw, ncol = length(keep), dimnames = list(NULL, keep))
+    draws <- matrix(NA, nrow = n_draw, ncol = length(keep), dimnames = list(NULL, keep))
     for(b in seq_len(n_draw)) {
       draws[b, ] <- tryCatch(eval_refpt_log_quantities(obj, p + devs[b, ], refpt_args, extra_quantities, keep),
-                             error = function(e) rep(NA_real_, length(keep)))
+                             error = function(e) rep(NA, length(keep)))
     } # end b loop
 
     # a draw far enough into the tail can fail to solve, so keep only the usable ones

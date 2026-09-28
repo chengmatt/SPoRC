@@ -684,9 +684,8 @@ test_that("data sources with different dims, densities and correlations coexist"
     )
   )
 
-  # each data source stated its own dims, and the flags landed where they belong.
-  # A Type is kept as year by fleet, since the setting may change part way
-  # through a series; a bare value fills every year of every fleet
+  # each data source stated its own dimensions and the flags landed where they belong. a type
+  # is kept as year by fleet, since it may change part way through a series
   expect_equal(ncol(il$data$CatchAA_Type), 2L)
   expect_equal(nrow(il$data$CatchAA_Type), length(il$data$years))
   expect_true(all(il$data$CatchAA_Type == 3))

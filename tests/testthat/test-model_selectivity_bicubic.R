@@ -1,13 +1,13 @@
+# A bicubic selectivity surface over year and age nodes, for fishery, survey and retention
+# curves: the node grid through setup, the year blocks, and the smoothness penalties.
+
 library(SPoRC)
 library(testthat)
 
-test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly through Setup_Mod_Fishsel_and_Q and SPoRC_rtmb", {
+test_that("a bicubic fishery curve reaches the objective with its node grid intact", {
 
-  # Build a minimal single-region/single-sex operating model + simulated data, purely as scaffolding
-  # to get a valid input_list$data through the full setup pipeline. The *true* simulated selectivity
-  # is an ordinary logistic curve -- what's under test is the *estimation* model's bicubic wiring
-  # (Setup_Mod_Fishsel_and_Q's array construction and SPoRC_rtmb's Get_Selex call), not parameter
-  # recovery, so no optimization is performed here.
+  # a one region, one sex operating model, only to get a valid data list through setup. the
+  # simulated curve is an ordinary logistic, since nothing here is fitted or recovered
   sim_list <- Setup_Sim_Dim(
     n_sims = 1,
     n_yrs = 12,
@@ -220,7 +220,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     return(input_list)
   }
 
-  test_that("model builds, evaluates, and differentiates without error with a single bicubic block", {
+  test_that("one bicubic block builds, evaluates and differentiates", {
     n_bin_nodes <- 4
     n_yr_nodes <- 3
     node_par <- matrix(
@@ -264,7 +264,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     }
   })
 
-  test_that("n_yr_nodes == 1 gives a time-invariant fishery selectivity surface end-to-end", {
+  test_that("one year node gives a fishery curve that does not change over time", {
     n_bin_nodes <- 5
     node_par <- c(-1, 0.2, 1.1, 0.4, -0.6)
     fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
@@ -294,7 +294,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(sel_y1, exp(as.vector(Wbin %*% node_par)), tolerance = 1e-8)
   })
 
-  test_that("multiple bicubic year-blocks give a piecewise-constant-in-year, smooth-in-age surface end-to-end", {
+  test_that("several year blocks hold the curve fixed within a block and smooth across ages", {
     n_bin_nodes <- 4
     half <- floor(sim_obj$n_years / 2)
     block1_yrs <- paste0(1, "-", half)
@@ -337,7 +337,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(as.vector(rep$fish_sel[1, 1, sim_obj$n_years, 1, , 1, 1]), expected_2, tolerance = 1e-8)
   })
 
-  # ── SelStyr: sub-range bicubic fit start, matching ADMB's fsh_sel_styr ───────
+  # SelStyr, the First Year the Spline Is Fit --------------------------------
 
   test_that("SelStyr holds pre-fit years constant at the SelStyr year's curve and fits the spline only from SelStyr onward", {
     n_bin_nodes <- 4
@@ -385,9 +385,9 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     }
   })
 
-  # ── Survey selectivity: same bicubic wiring, mirrored for srv_sel_model ──────
+  # The Same for a Survey Fleet ----------------------------------------------
 
-  test_that("survey bicubic model builds, evaluates, and differentiates without error with a single block", {
+  test_that("one bicubic survey block builds, evaluates and differentiates", {
     n_bin_nodes <- 4
     n_yr_nodes <- 3
     node_par <- matrix(
@@ -431,7 +431,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     }
   })
 
-  test_that("survey bicubic n_yr_nodes == 1 gives a time-invariant selectivity surface end-to-end", {
+  test_that("one year node gives a survey curve that does not change over time", {
     n_bin_nodes <- 5
     node_par <- c(0.3, -0.4, 1.0, 0.1, -0.9)
     fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
@@ -462,7 +462,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(sel_y1, exp(as.vector(Wbin %*% node_par)), tolerance = 1e-8)
   })
 
-  test_that("survey and fishery fleets can each independently use bicubic selectivity at once", {
+  test_that("a fishery and a survey fleet can each take a bicubic curve at the same time", {
     n_bin_nodes <- 4
     fish_node_par <- c(-0.5, 0.5, 0.9, -0.3)
     srv_node_par  <- c(0.6, -0.8, 0.2, 1.0)
@@ -497,9 +497,9 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(as.vector(rep$srv_sel[1, 1, 1, 1, , 1, 1]), exp(as.vector(Wbin_srv %*% srv_node_par)), tolerance = 1e-8)
   })
 
-  # ── ADMB-aligned smoothness penalty package (smooth_dome, smooth_bin_curve, smooth_yr_diff, smooth_yr_curve, smooth_mean_center), applied here to bicubic fleets ──
+  # The Smoothness Penalties on a Bicubic Fleet ------------------------------
 
-  test_that("bicubic penalty terms are zero by default (no behavior change unless opted into)", {
+  test_that("the smoothness penalties are zero until a weight is set", {
     n_bin_nodes <- 4
     n_yr_nodes <- 3
     set.seed(99)
@@ -544,7 +544,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(rep_before$jnLL, rep_after$jnLL, tolerance = 1e-10)
   })
 
-  test_that("setting bicubic penalty weights matches manual Get_Selex_Smoothness_Penalty computation", {
+  test_that("a smoothness weight gives the penalty Get_Selex_Smoothness_Penalty computes", {
     n_bin_nodes <- 4
     n_yr_nodes <- 3
     set.seed(100)
@@ -611,7 +611,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(jnLL_pen - jnLL_zero, -expected_penalty, tolerance = 1e-6)
   })
 
-  test_that("bicubic penalty is applied unconditionally regardless of cont_tv_fish_sel (no time-varying-deviation gate)", {
+  test_that("the smoothness penalty applies whether or not the fleet has time-varying deviations", {
     n_bin_nodes <- 4
     n_yr_nodes <- 3
     set.seed(101)
@@ -684,14 +684,12 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     }
   })
 
-  # ── Modular smoothness penalty applied to a non-bicubic (nonpar/blocked) fleet ──
-  # Bridges an ADMB assessment's "selectivity kept constant between change years" coefficient
-  # selectivity (e.g. EBS pollock's compute_fsh_selectivity / sel_devs_fsh) using SPoRC's existing
-  # block system + nonpar (Selex_Model == 5) selectivity, with the same modular smoothness-penalty
-  # terms used by the bicubic spline now generalized to apply here too (see model_objective.R's
-  # "Modular Selectivity Smoothness Penalty" section).
+  # The Same Penalties on a Non-parametric Fleet -----------------------------
+  #
+  # an ADMB assessment that keeps selectivity constant between change years, written as
+  # non-parametric selectivity over SPoRC's time blocks, taking the same smoothness penalties
 
-  test_that("nonpar fishery selectivity with discrete blocks can opt into the modular smoothness penalty (pollock-style bridge)", {
+  test_that("a non-parametric fleet with discrete blocks can take the same smoothness penalty", {
     n_ages <- sim_obj$n_ages
     half <- floor(sim_obj$n_years / 2)
     block1_yrs <- paste0(1, "-", half)
@@ -752,13 +750,13 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(jnLL_pen - jnLL_zero, -expected_penalty, tolerance = 1e-6)
 
     # yr_diff is zero within each block (selectivity kept constant) and only bites at the one
-    # actual block transition -- exactly mirroring an ADMB "change year" stability penalty
+    # actual block change, as an ADMB change-year stability penalty does
     expect_equal(as.vector(rep_pen$fish_sel[1, 1, 1, 1, , 1, 1]), as.vector(rep_pen$fish_sel[1, 1, half, 1, , 1, 1]))
     expect_equal(as.vector(rep_pen$fish_sel[1, 1, half + 1, 1, , 1, 1]), as.vector(rep_pen$fish_sel[1, 1, sim_obj$n_years, 1, , 1, 1]))
     expect_false(isTRUE(all.equal(as.vector(rep_pen$fish_sel[1, 1, half, 1, , 1, 1]), as.vector(rep_pen$fish_sel[1, 1, half + 1, 1, , 1, 1]))))
   })
 
-  test_that("a nonpar/blocked fleet with no fish_sel_pen_wts set is unaffected by the penalty-section generalization", {
+  test_that("a blocked fleet with no weight set is left alone", {
     n_ages <- sim_obj$n_ages
     half <- floor(sim_obj$n_years / 2)
     block1_yrs <- paste0(1, "-", half)
@@ -809,9 +807,9 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(obj_default$report(obj_default$par)$jnLL, obj_explicit_zero$report(obj_explicit_zero$par)$jnLL, tolerance = 1e-10)
   })
 
-  # ── Retention selectivity: same bicubic wiring, mirrored for ret_sel_model ───
+  # The Same for Retention ---------------------------------------------------
 
-  test_that("retention bicubic model builds, evaluates, and differentiates without error with a single block", {
+  test_that("one bicubic retention block builds, evaluates and differentiates", {
     n_bin_nodes <- 4
     n_yr_nodes <- 3
     node_par <- matrix(
@@ -857,7 +855,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     }
   })
 
-  test_that("retention bicubic n_yr_nodes == 1 gives a time-invariant selectivity surface end-to-end", {
+  test_that("one year node gives a retention curve that does not change over time", {
     n_bin_nodes <- 5
     node_par <- c(-0.7, 0.1, 0.9, -0.3, 0.5)
     fixed_pars_init <- array(0, dim = c(1, n_bin_nodes, 1, 1, 1))
@@ -978,7 +976,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(sel_y1[1:n_fit_bins], expected_fit, tolerance = 1e-8)
   })
 
-  test_that("retention, survey, and fishery fleets can each independently use bicubic selectivity at once", {
+  test_that("retention, survey and fishery fleets can each take a bicubic curve at the same time", {
     n_bin_nodes <- 4
     fish_node_par <- c(-0.5, 0.5, 0.9, -0.3)
     srv_node_par  <- c(0.6, -0.8, 0.2, 1.0)
@@ -1022,7 +1020,7 @@ test_that("bicubic fishery selectivity (Selex_Model == 8) wires correctly throug
     expect_equal(as.vector(rep$ret_sel[1, 1, 1, 1, , 1, 1]), exp(as.vector(Wbin_ret %*% ret_node_par)), tolerance = 1e-8)
   })
 
-  test_that("setting retention bicubic penalty weights matches manual Get_Selex_Smoothness_Penalty computation", {
+  test_that("a retention smoothness weight gives the penalty Get_Selex_Smoothness_Penalty computes", {
     n_bin_nodes <- 4
     n_yr_nodes <- 3
     set.seed(505)

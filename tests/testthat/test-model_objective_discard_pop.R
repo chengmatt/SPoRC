@@ -1,9 +1,8 @@
+# Population-specific discards. Every other test setup supplies discards in aggregate only, so
+# their likelihood and the weight that takes it into the objective are reached nowhere else.
+
 library(SPoRC)
 library(testthat)
-
-# Population-specific discard observations. Every other test setup supplies discards only in
-# aggregate, so the Discard_pop_nLL block of SPoRC_rtmb, and the Wt_Discard_pop term it
-# feeds into jnLL, are otherwise never reached.
 
 build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
@@ -17,7 +16,6 @@ with_pop_discards <- function() {
   build(catch_f = list(ObsDiscard_pop = sim_data$ObsDiscard_pop,
                        UseDiscard_pop = sim_data$UseDiscard_pop))
 }
-
 
 test_that("population-specific discards produce a lognormal likelihood per observation", {
   aggregated_only <- evaluate_input(build())
@@ -48,7 +46,6 @@ test_that("population-specific discards produce a lognormal likelihood per obser
 
   expect_equal(as.numeric(with_pop$rep$Discard_pop_nLL), as.numeric(expected), tolerance = 1e-8)
 })
-
 
 test_that("population-specific discards enter jnLL through their own weight", {
   input <- with_pop_discards()

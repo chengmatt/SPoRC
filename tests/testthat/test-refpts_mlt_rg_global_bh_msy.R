@@ -1,9 +1,12 @@
+# Global Beverton-Holt MSY across regions. Projecting the packaged multi-region sablefish
+# stock 500 years under the control rule has to settle exactly at Fmsy and Bmsy.
+
 library(SPoRC)
 library(testthat)
 data("mlt_rg_sable_rep")
 data("mlt_rg_sable_data")
 
-test_that("Multi Region Global BH MSY (mock) Reference Points Sablefish Model Converges to Equilibrium", {
+test_that("a long projection under the control rule settles at the global MSY reference points", {
 
   # Define HCR to use
   HCR_function <- function(x, frp, brp, alpha = 0.05) {
@@ -72,7 +75,7 @@ test_that("Multi Region Global BH MSY (mock) Reference Points Sablefish Model Co
   # Natural Mortality
   natmort_slice <- mlt_rg_sable_rep$natmort[,, length(mlt_rg_sable_data$years), , ]  # [n_pop, n_regions, n_ages, n_sexes]
   natmort <- array(rep(natmort_slice, each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
-  # packaged report predates seasonal M, hold it across seasons
+  # packaged report predates seasonal M, so repeat it over seasons
   natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
 
   # Recruitment

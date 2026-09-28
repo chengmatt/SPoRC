@@ -107,7 +107,7 @@ b_{env} & 0 & 0 & 0 & 0 & 0 \\
 \end{matrix}
 $$
 
-Rows 2-3 hold `env -> env, 1, rho` (one step off the diagonal within the `env` block), rows 4–6 hold `env -> rec, 0, b_env` (the diagonal of the lower-left block, since the lag is 0), and row 1 is empty because year 1 has no previous values. Given that, it follows that:
+Rows 2-3 hold `env -> env, 1, rho` (one step off the diagonal within the `env` block), rows 4-6 hold `env -> rec, 0, b_env` (the diagonal of the lower-left block, since the lag is 0), and row 1 is empty because year 1 has no previous values. Given that, it follows that:
 
 $$
 I - B =
@@ -383,9 +383,7 @@ In the above, we assumed that the grid holds a series $x_t$ observed without err
 
 $$y_t \sim f(x_t)$$
 
-where $y_t$ is what you measured in year $t$ and $f$ is whatever density suits the
-measurement. That is what the `dsem_family` argument does (more on this later). The mean of $f$ is $x_t$ through a link function, so
-that $x_t$ sits on a scale where a normal makes sense: counts take a log and $x_t$ is the log mean count, while proportions take a logit link instead. 
+where $y_t$ is what you measured in year $t$ and $f$ is whatever density suits the measurement, which is set by the `dsem_family` argument (discussed further below). The mean of $f$ is $x_t$ through a link function, so that $x_t$ sits on a scale where a normal makes sense: counts take a log and $x_t$ is the log mean count, while proportions take a logit link instead.
 
 | `dsem_family` | link | mean of $y_t$ | extra spread |
 |---|---|---|---|

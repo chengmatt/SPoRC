@@ -1,14 +1,13 @@
+# Natural mortality has a season dimension and holds a rate per year, so mortality in a season is
+# that rate times the season's duration. One season block has to be numerically what the package
+# did before, and more than one has to put the rate in the season it was asked for.
+
 library(SPoRC)
 library(testthat)
 
-# M has a season dim and holds a rate per year, so mortality in a season is that
-# rate times seasdur. Two things to check: one season block is numerically what
-# the package did before, and more than one block puts the rate in the season it
-# was asked for.
-
 # Helpers -------------------------------------------------------------------
 
-test_that("expand_natmort_seasons holds a rate across seasons and leaves a seasonal array alone", {
+test_that("expand_natmort_seasons repeats a rate over seasons and leaves a seasonal array alone", {
 
   x <- array(stats::runif(2 * 3 * 4 * 5 * 2, 0.1, 0.4), dim = c(2, 3, 4, 5, 2))
   e <- SPoRC:::expand_natmort_seasons(x, 3)
@@ -27,7 +26,6 @@ test_that("expand_natmort_seasons holds a rate across seasons and leaves a seaso
   expect_equal(dim(g), c(2, 3, 4, 5))
   for(seas in 1:4) expect_equal(array(g[,,seas,,drop = FALSE], dim = dim(z)), z)
 })
-
 
 test_that("collapse_natmort_annual is the duration weighted sum over seasons", {
 
@@ -48,7 +46,6 @@ test_that("collapse_natmort_annual is the duration weighted sum over seasons", {
 
   expect_error(SPoRC:::collapse_natmort_annual(y, c(0.5, 0.5)), "season dimension of natmort")
 })
-
 
 # Block structure -----------------------------------------------------------
 
@@ -80,7 +77,6 @@ test_that("M_seasblk_spec builds the block index and the parameter array over se
   expect_equal(sum(!is.na(split$map$ln_M)), 2L)
 })
 
-
 test_that("season blocks may group seasons, and are validated where they are set", {
 
   sim_obj <- seasonal_M_sim()
@@ -96,7 +92,6 @@ test_that("season blocks may group seasons, and are validated where they are set
                                                                M_seasblk_spec = "seasonal"))),
                "M_seasblk_spec must be")
 })
-
 
 # Backwards compatibility ---------------------------------------------------
 
@@ -118,7 +113,6 @@ test_that("a five dimensional fixed mortality array is the same model as the six
   expect_identical(o5$fn(o5$par), o6$fn(o6$par))
 })
 
-
 test_that("an input list with five dimensional mortality is promoted inside the objective", {
 
   sim_obj <- seasonal_M_sim()
@@ -135,7 +129,6 @@ test_that("an input list with five dimensional mortality is promoted inside the 
   expect_identical(old$fn(old$par), ref$fn(ref$par))
   expect_equal(dim(old$report(old$par)$natmort), c(1, 1, seasonal_M_cfg$n_yrs, 2, seasonal_M_cfg$n_ages, 1))
 })
-
 
 # What the rate means -------------------------------------------------------
 
@@ -162,12 +155,10 @@ test_that("the mortality applied in a season is the rate times that season's dur
   }
 })
 
-
 test_that("splitting an annual rate between seasons leaves the start of year numbers unchanged", {
 
-  # this is what lets a stock be bridged on its annual total. Two rates summing
-  # to the same annual accumulate the same over the year, so start of year
-  # numbers match while within-year numbers don't.
+  # this is what lets a stock be bridged on its annual total: two rates summing to the same
+  # annual accumulate the same over the year, so only the within-year numbers differ
   sim_obj <- seasonal_M_sim()
   seasdur <- seasonal_M_cfg$seasdur
   M_const <- 0.3
@@ -191,7 +182,6 @@ test_that("splitting an annual rate between seasons leaves the start of year num
   # so the split isn't a relabelling, it changes the fit
   expect_false(isTRUE(all.equal(r_const$jnLL, r_split$jnLL)))
 })
-
 
 # Rejected inputs ------------------------------------------------------------
 
@@ -224,7 +214,6 @@ test_that("season blocks warn on a single season model, where they cannot do any
   )
 })
 
-
 test_that("a fixed mortality array of the wrong shape is rejected by name", {
 
   input_list <- Setup_Mod_Dim(
@@ -252,7 +241,6 @@ test_that("a fixed mortality array of the wrong shape is rejected by name", {
   )
 })
 
-
 # Estimation ----------------------------------------------------------------
 
 fit_seasonal_M <- function(M_true, sigmaR, idx_se, iss, seed = 411) {
@@ -264,7 +252,6 @@ fit_seasonal_M <- function(M_true, sigmaR, idx_se, iss, seed = 411) {
   list(fit = fit,
        M_hat = c(unique(as.vector(fit$rep$natmort[,,,1,,])), unique(as.vector(fit$rep$natmort[,,,2,,]))))
 }
-
 
 test_that("two season blocks recover the rate in each season when the data are near noiseless", {
 
@@ -282,14 +269,13 @@ test_that("two season blocks recover the rate in each season when the data are n
   expect_gt(out$M_hat[1] - out$M_hat[2], 0.15)
 })
 
-
 test_that("at realistic noise the annual total is identified but the seasonal split is not", {
 
-  # The only thing separating the seasons is the change in numbers within the
-  # year, which just the seasonal comps and index see. The annual total is
-  # informed by everything, so it comes back much more sharply than the split.
-  # This is the confounding Setup_Mod_Biologicals warns about. If a change ever
-  # seems to sharpen the split at realistic noise, go look at it.
+  # only the change in numbers within the year separates the seasons, which the seasonal
+  # compositions and index alone see, while the annual total is informed by everything.
+  #
+  # this is the confounding Setup_Mod_Biologicals warns about, so a change that seems to
+  # sharpen the split at realistic noise is worth looking at
   M_true <- c(0.45, 0.2)
   seasdur <- seasonal_M_cfg$seasdur
   out <- fit_seasonal_M(M_true, sigmaR = 0.3, idx_se = 0.1, iss = 300)
@@ -302,7 +288,6 @@ test_that("at realistic noise the annual total is identified but the seasonal sp
   # while at least one of the seasonal rates is well outside that
   expect_gt(max(abs(out$M_hat - M_true) / M_true), 0.1)
 })
-
 
 # Priors --------------------------------------------------------------------
 
@@ -342,7 +327,6 @@ test_that("the M prior reads a season block, and defaults to the first season wi
   # a season that doesn't exist gets rejected where the prior is set
   expect_error(build(cbind(legacy_prior, seasblk = 3)), "seasblk")
 })
-
 
 test_that("the prior lands on the season block it names when the seasons are split", {
 

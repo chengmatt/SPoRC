@@ -1,11 +1,9 @@
+# Each prior and penalty is one line of the objective that no other test switches on. Each is
+# checked by evaluating with the term off, then on, and reading the difference against the value
+# worked out by hand from the prior's own mean and standard deviation. Nothing is optimized.
+
 library(SPoRC)
 library(testthat)
-
-# Each prior and penalty below is a single line of SPoRC_rtmb that no other test switches
-# on. The pattern throughout is the same: evaluate the model with the term off, evaluate it
-# again with the term on, and check that jnLL moved by exactly the value worked out by hand
-# from the prior's own mean and standard deviation. Nothing is optimized, so both
-# evaluations sit at the same parameter values and the difference is the term itself.
 
 build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
@@ -18,7 +16,6 @@ expect_other_likelihoods_unchanged <- function(with_term, without_term, except) 
                  info = paste0("switching on ", except, " changed ", quant_name))
   }
 }
-
 
 test_that("the R0 prior adds a normal penalty on ln_global_R0 and nothing else", {
   r0_prior <- data.frame(pop = 1, mu = 4, sd = 0.2)
@@ -34,7 +31,6 @@ test_that("the R0 prior adds a normal penalty on ln_global_R0 and nothing else",
   expect_other_likelihoods_unchanged(on, off, except = "R0_nLL")
 })
 
-
 test_that("the fishery catchability prior adds a normal penalty on ln_fish_q and nothing else", {
   fish_q_prior <- data.frame(region = 1, block = 1, fleet = 1, mu = 0.5, sd = 0.3)
 
@@ -49,7 +45,6 @@ test_that("the fishery catchability prior adds a normal penalty on ln_fish_q and
   expect_equal(on$rep$jnLL - off$rep$jnLL, expected, tolerance = 1e-8)
   expect_other_likelihoods_unchanged(on, off, except = "fish_q_nLL")
 })
-
 
 test_that("the retained selectivity prior adds a normal penalty on ret_fixed_sel_pars and nothing else", {
   ret_selex_prior <- data.frame(region = 1, par = 1, block = 1, sex = 1, fleet = 1, mu = 2, sd = 0.4)
@@ -68,12 +63,9 @@ test_that("the retained selectivity prior adds a normal penalty on ret_fixed_sel
   expect_other_likelihoods_unchanged(on, off, except = "sel_nLL")
 })
 
-
 test_that("the discard mortality rate penalty applies to every fished year, with or without discard data", {
-  # dmr is identified through total mortality, so a deviation is estimated and
-  # penalized in every fished cell. Discard observations are dropped from the back
-  # half of the series while catch continues, so a penalty keyed on discard data
-  # would cover only the first 15 years and this test would catch it
+  # discard mortality is identified through total mortality, so every fished cell gets a
+  # penalized deviation, and discards are observed over only the first 15 years here
   use_discard <- build()$data$UseDiscard
   use_discard[, 16:30, , ] <- 0
 
@@ -112,7 +104,6 @@ test_that("the discard mortality rate penalty applies to every fished year, with
   expect_equal(on$rep$jnLL - off$rep$jnLL, input$data$Wt_D * expected, tolerance = 1e-8)
   expect_other_likelihoods_unchanged(on, off, except = "dmr_nLL")
 })
-
 
 test_that("jnLL still decomposes with these priors and penalties switched on", {
   input <- build(

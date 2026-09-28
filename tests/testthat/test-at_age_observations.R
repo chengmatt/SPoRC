@@ -144,6 +144,8 @@ build_aa <- function(
 
 rep_of <- function(il) fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep
 
+# The Likelihood Itself ------------------------------------------------------
+
 test_that("get_at_age_nLL matches dnorm when ages are independent", {
   obs <- log(c(100, 200, 300))
   pred <- log(c(110, 190, 310))
@@ -177,6 +179,8 @@ test_that("catch at age reaches the likelihood and is finite", {
   # the aggregated data source is off for this fleet, so it contributes nothing
   expect_equal(sum(r$Catch_nLL), 0)
 })
+
+# What Setup Refuses ---------------------------------------------------------
 
 test_that("a fleet cannot fit both aggregated catch and catch at age", {
   n_yrs <- 20
@@ -263,9 +267,8 @@ test_that("discards at age have their own parameter, keyed independently", {
 })
 
 test_that("an observed discard the model says is impossible is not silently absorbed", {
-  # this toy model has no discarding, so predicted discards at age are exactly
-  # zero. Observing discards against that is infinitely unlikely and should read
-  # as such rather than being quietly finite.
+  # this model has no discarding, so predicted discards at age are exactly zero and observing
+  # any against that has to read as impossible rather than as quietly finite
   n_yrs <- 20
   n_ages <- 5
   il <- build_aa(ObsDiscardAA = array(50, dim = c(1, n_yrs, 1, n_ages, 1, 1)),
@@ -315,12 +318,11 @@ test_that("an input list built before at-age observations existed still runs", {
   expect_true(is.finite(obj$rep$jnLL))
 })
 
+# Against the Aggregated Form ------------------------------------------------
+
 test_that("the at-age and aggregated forms agree where the two say the same thing", {
-  # A lognormal on the total and a lognormal on each age are different
-  # statements in general. They coincide in one case worth pinning: a single
-  # observed age. There the total IS that age, so the two likelihoods must agree
-  # exactly, which is what says the at-age path reads the same prediction and
-  # applies the same density as the path it is standing beside.
+  # a lognormal on the total and a lognormal on each age are different statements, except
+  # with a single observed age, where the total is that age and the two have to agree
   n_yrs <- 20
   n_ages <- 5
   one_age <- 3
@@ -335,7 +337,7 @@ test_that("the at-age and aggregated forms agree where the two say the same thin
   obs_a <- pred_a * exp(stats::rnorm(n_yrs, 0, 0.1))
   sig <- 0.25
 
-  # as an aggregated catch, with selectivity pinned so only that age is caught
+  # as an aggregated catch, with selectivity fixed so only that age is caught
   agg <- build_aa(aa = FALSE, ln_sigmaC = array(log(sig), dim = c(1, n_yrs, 1, 1)))
   agg$data$ObsCatch[1, , 1, 1] <- obs_a
   agg$data$UseCatch[] <- 1
@@ -367,4 +369,45 @@ test_that("the at-age and aggregated forms agree where the two say the same thin
 
   # every other age contributes nothing, since the key holds them out
   expect_equal(sum(raa$CatchAA_nLL[1, , 1, -one_age, 1, 1]), 0)
+})
+
+# Bias Correcting the Prediction ---------------------------------------------
+
+test_that("bias_correct_oe predicts a lognormal at age source at its mean", {
+
+  run <- function(oe) {
+    il <- suppressWarnings(suppressMessages(build_aa()))
+    il$data$bias_correct_oe <- oe
+    list(il = il, rep = suppressWarnings(suppressMessages(fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep)))
+  }
+  off <- run(0)
+  on <- run(1)
+
+  obs <- as.numeric(off$il$data$ObsCatchAA)
+  keep <- as.numeric(off$il$data$UseCatchAA) == 1
+  pred <- as.numeric(off$rep$PredCatchAA)
+  sd <- rep_len(as.numeric(exp(off$rep$ln_sigmaCAA)), length(obs))
+
+  # the prediction is untouched; only the value the likelihood compares it against moves
+  expect_equal(as.numeric(on$rep$PredCatchAA), pred, tolerance = 1e-12)
+
+  # off, the prediction is the median of the observation; on, it is the mean
+  expect_equal(as.numeric(off$rep$CatchAA_nLL)[keep],
+               -stats::dnorm(log(obs), log(pred), sd, log = TRUE)[keep], tolerance = 1e-10)
+  expect_equal(as.numeric(on$rep$CatchAA_nLL)[keep],
+               -stats::dnorm(log(obs), log(pred) - 0.5 * sd^2, sd, log = TRUE)[keep], tolerance = 1e-10)
+  expect_gt(max(abs(as.numeric(on$rep$CatchAA_nLL)[keep] - as.numeric(off$rep$CatchAA_nLL)[keep])), 1e-6)
+
+})
+
+test_that("bias_correct_oe leaves a normal at age source alone", {
+
+  run <- function(oe) {
+    il <- suppressWarnings(suppressMessages(build_aa(CatchAA_LikeType = "normal")))
+    il$data$bias_correct_oe <- oe
+    suppressWarnings(suppressMessages(fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep))
+  }
+
+  expect_equal(as.numeric(run(0)$CatchAA_nLL), as.numeric(run(1)$CatchAA_nLL), tolerance = 1e-12)
+
 })

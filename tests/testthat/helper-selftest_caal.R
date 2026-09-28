@@ -16,6 +16,8 @@ caal_cfg <- list(
   f_ramp = c(seq(0.05, 0.5, length.out = 18), seq(0.5, 0.12, length.out = 12))
 )
 
+# The Age-Length Key and Growth ----------------------------------------------
+
 #' Binned normal age-length key, SS3's calc_ALK
 #'
 #' Columns are ages and sum to one. The lower tail lands in the first bin and
@@ -47,11 +49,13 @@ caal_growth <- function(n_ages, n_sexes) {
   })
 }
 
+# Operating Model ------------------------------------------------------------
+
 #' Operating model with length bins and conditional age-at-length sampling
 #'
 #' @param caal_like "Multinomial" or "Dirichlet-Multinomial" for the CAAL draws.
 #' @param caal_type composition type string for the CAAL draws.
-#' @param ln_theta DM log overdispersion used when caal_like is DM.
+#' @param ln_theta log overdispersion, read when caal_like is Dirichlet-Multinomial.
 #' @param caal_bins length bins that receive aged fish; others get none.
 #' @param n_sexes one or two sexes.
 #' @param n_sims replicates to simulate.
@@ -161,6 +165,8 @@ caal_make_om <- function(
   set.seed(seed)
   Simulate_Pop_Static(sim_list = sim_list, output_path = NULL)
 }
+
+# Estimating Model -----------------------------------------------------------
 
 #' Estimation model that sees lengths and CAAL but no marginal ages
 #'
@@ -320,6 +326,9 @@ caal_build_input <- function(
 
 # Fit, self-test, and summarize median relative error per reported quantity,
 # the same shape selftest_run() in helper-selftest_features.R returns.
+
+# Running the Self Test ------------------------------------------------------
+
 caal_run <- function(input_list, what = c("SSB", "Rec"), n_sims = caal_cfg$n_sims, seed = 1) {
   fit <- fit_model(input_list$data, input_list$par, input_list$map, random = NULL, silent = TRUE)
   sd_rep <- RTMB::sdreport(fit)

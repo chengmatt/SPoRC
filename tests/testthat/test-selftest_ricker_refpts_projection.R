@@ -1,12 +1,9 @@
+# Fmsy and Bmsy come from the equilibrium solve, and a long deterministic projection at Fmsy has
+# to settle at exactly Bmsy. The analytic equilibrium and the year loop share no code, so
+# agreement is evidence about both.
+
 library(SPoRC)
 library(testthat)
-
-# Reference point / projection consistency for a Ricker fit: Fmsy and Bmsy come
-# from Get_Reference_Points' equilibrium solve, and a long deterministic
-# projection at Fmsy must equilibrate at exactly Bmsy. The two go through
-# different code paths (the analytic equilibrium against the year-loop
-# projection), so agreement checks both. Routines shared through
-# helper-selftest_features.R.
 
 test_that("a 500-year projection at the Ricker Fmsy equilibrates at Bmsy", {
 
@@ -75,9 +72,8 @@ test_that("a 500-year projection at the Ricker Fmsy equilibrates at Bmsy", {
     SR_ref_yr = if(!is.null(data$SR_ref_yr)) data$SR_ref_yr else 1
   )
 
-  # sexratio apportions recruits to sexes, so a single-sex model takes 1 (the
-  # 0.5 female spawning fraction is applied inside the SSB calculation,
-  # matching the estimation model's convention)
+  # the sex ratio splits recruits between sexes, so a single-sex model takes one, the female
+  # spawning fraction being applied inside the spawning biomass calculation instead
   proj <- Do_Population_Projection(
     n_proj_yrs = n_proj_yrs,
     n_pop = 1,

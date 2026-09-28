@@ -1,8 +1,8 @@
 # Spawning-per-recruit when spawning happens in season 1 of a multi-season year, the configuration the
 # North Sea sandeel case study uses and the other seasonal reference point tests leave uncovered.
 #
-# Ages up to n_ages - 2 capture spawning biomass inside the season loop, while the penultimate age and the
-# plus group advance under `if(spawn_seas > 1)`, which at spawn_seas = 1 is skipped entirely.
+# Ages up to two below the plus group take spawning biomass inside the season loop, while
+# the penultimate age and the plus group advance only when spawning is past season one.
 #
 # Checked against a cohort tracked forward season by season. Two conventions are shared rather than
 # rederived: a season's F applies whole, and the plus group accumulates on annual rates.
@@ -79,8 +79,8 @@ spr_oracle <- function(d, f) {
     } # end s loop
   } # end a loop
 
-  # the plus group accumulates from the penultimate age at its start-of-year
-  # abundance, on annual rates, then is kept to the spawning season
+  # the plus group accumulates from the penultimate age at its start-of-year abundance on
+  # annual rates, and is then advanced to the spawning season
   z_penult <- sum(M[, n_ages - 1] * sd_) + n_seas * f * sel[n_ages - 1]
   z_plus <- sum(M[, n_ages] * sd_) + n_seas * f * sel[n_ages]
   n_plus <- start_of_year[n_ages - 1] * exp(-z_penult) / (1 - exp(-z_plus))
@@ -115,9 +115,8 @@ test_that("spawning in season 1 of a multi-season year gives the per-recruit bio
 
 
 test_that("the agreement holds for every season spawning can fall in", {
-  # spawn_seas = 2 was the only seasonal case with coverage. Running all of them
-  # is what distinguishes a solver that is right from one whose two halves happen
-  # to cancel at a particular spawning season.
+  # spawning in season 2 was the only seasonal case covered, and running all of them is
+  # what separates a correct solver from one whose halves cancel at one season
   for(n_seas in c(1L, 2L, 4L)) {
     for(ss in seq_len(n_seas)) {
       rec <- rep(0, n_seas)
@@ -134,10 +133,8 @@ test_that("the agreement holds for every season spawning can fall in", {
 
 
 test_that("unequal season durations and spawning inside the season agree", {
-  # t_spawn moves spawning to part way through its season, and the penultimate
-  # age and plus group apply that correction through a different expression than
-  # the season loop does. Uneven durations stop a bug that scales by 1 / n_seas
-  # from passing.
+  # spawning part way into its season is applied to the penultimate age and the plus group by a
+  # different expression than the season loop uses, and uneven durations are what catch it
   for(ss in 1:2) {
     for(ts in c(0, 0.5, 1)) {
       d <- spr_data(
@@ -157,9 +154,8 @@ test_that("unequal season durations and spawning inside the season agree", {
 
 
 test_that("spawning season changes the answer", {
-  # Without this the agreement above could be read as both calculations being
-  # insensitive to spawn_seas. Spawning earlier in the year means less mortality
-  # has accrued, so per-recruit biomass is strictly higher.
+  # without this the agreement above could mean both calculations ignore the spawning
+  # season. spawning earlier leaves less mortality behind it, so per-recruit is higher
   d1 <- spr_data(spawn_seas = 1L, rec_seas_prop = c(1, 0))
   d2 <- spr_data(spawn_seas = 2L, rec_seas_prop = c(1, 0))
 
@@ -169,9 +165,8 @@ test_that("spawning season changes the answer", {
 
 
 test_that("the plus group has a real share of per-recruit biomass", {
-  # The one place the two arrangements differed was the plus group, and it only
-  # showed up because the plus group is a large share of the total here. A
-  # test setup where it were negligible would pass while testing nothing.
+  # the two arrangements differed only in the plus group, and only showed it because the
+  # plus group is a large share of the total here
   d <- spr_data(spawn_seas = 1L, rec_seas_prop = c(0, 1))
   obj <- RTMB::MakeADFun(function(p) single_region_SPR(p, d),
                          list(log_F_x = log(1e-12)), silent = TRUE)

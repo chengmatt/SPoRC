@@ -321,7 +321,7 @@ Get_Selex = function(
 #' for a single selectivity type, and mean standardizes the result where the
 #' time-varying or non-parametric form calls for it. Total fishery, retention,
 #' and survey selectivity all share this code path and differ only in which
-#' data arrays are handed in.
+#' data arrays are passed in.
 #'
 #' @param selex_type Integer switch (0 = age-based, 1 = length-based).
 #' @param bins Numeric vector of bins; \code{ages} when \code{selex_type == 0}

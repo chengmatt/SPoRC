@@ -1,7 +1,7 @@
-# Every term of the joint negative log likelihood, written out separately from the sum in
-# model_objective.R, so a term dropped, double counted or weighted on the wrong side of sum() fails.
+# Every term of the joint negative log likelihood, written out separately from the sum
+# in model_objective.R, so a dropped or double counted term fails.
 #
-# Each entry names a REPORTed *_nLL object and the weight applied to it:
+# Each entry names a reported *_nLL object and the weight applied to it:
 #
 #   weight  name of the weight in input_list$data, or NA when the likelihood enters jnLL unweighted.
 #           composition weights are applied inside the likelihood; priors have no weight at all
@@ -20,9 +20,8 @@ jnLL_terms <- list(
   SrvIdx_nLL                   = list(weight = "Wt_SrvIdx",       mode = "elementwise"),
   SrvIdx_pop_nLL               = list(weight = "Wt_SrvIdx_pop",   mode = "elementwise"),
 
-  # Age-disaggregated data sources. Each is reported always but summed
-  # under the same weight as its aggregated counterpart, and every entry is zero
-  # unless that data source is fit, so they are elementwise like the aggregates.
+  # at-age data, always reported but summed under the same weight as the aggregated
+  # catch, and zero unless fit, so elementwise like the aggregates
   CatchAA_nLL                  = list(weight = "Wt_Catch",        mode = "at_age"),
   CatchAA_pop_nLL              = list(weight = "Wt_Catch_pop",    mode = "at_age"),
   DiscardAA_nLL                = list(weight = "Wt_Discard",      mode = "at_age"),
@@ -112,9 +111,8 @@ jnLL_contributions <- function(model) {
     component <- rep[[term_name]]
     if(is.null(component)) return(NULL)
 
-    # A weight the objective backfills for older input lists is absent from a
-    # stored data list, and there the fallback weight is what actually controls
-    # this component, so the effective NAME changes too and not just its value.
+    # a weight the objective fills in for older input lists is missing from a stored
+    # data list, so there the fallback weight is the one in force, name and all
     wt_name <- spec$weight
     if(!is.na(wt_name[1]) && is.null(data[[wt_name]]) && !is.null(spec$fallback)) wt_name <- spec$fallback
     wt <- if(is.na(wt_name[1])) 1 else data[[wt_name]]
@@ -122,17 +120,14 @@ jnLL_contributions <- function(model) {
     spec$weight <- wt_name
 
     contribution <- if(spec$mode == "at_age") {
-      # An at-age component has age and sex dimensions the weight does not,
-      # so both are summed within a cell before the cell's weight is applied,
-      # which is what the objective does.
+      # an at-age term has ages and sexes the weight does not, so both are summed
+      # within a cell before the cell's weight goes on, as the objective does
       nd <- length(dim(component))
       sum(wt * apply(component, seq_len(nd)[-c(nd - 2, nd - 1)], sum))
     } else if(spec$mode == "elementwise") sum(wt * component) else wt * sum(component)
 
-    # Every term contributes one number to jnLL. More than one means the mode
-    # recorded above is wrong for this weight's shape: "scalar" against an array
-    # weight returns one value per weight element, which data.frame() would then
-    # recycle into one row per element and count the component many times over.
+    # every term contributes one number to jnLL. more than one means the mode above is
+    # wrong for this weight's shape, and the term would be counted many times over
     if(length(contribution) != 1)
       stop("'", term_name, "' resolved to ", length(contribution), " contributions rather than one. Its mode in jnLL_terms is '",
            spec$mode, "' but '", wt_name, "' has length ", length(wt),
@@ -150,14 +145,12 @@ jnLL_contributions <- function(model) {
 
 #' Assert that jnLL equals the weighted sum of its reported components
 #'
-#' Two things are checked. First that the term list above still covers every
-#' likelihood the model reports, so a newly added likelihood cannot go
-#' unaccounted for. Second that summing those likelihoods with their weights
-#' reproduces the reported jnLL.
+#' Checks that the list above still covers every likelihood the model reports, and that
+#' summing those likelihoods with their weights reproduces the reported jnLL.
 #'
 #' @param model Fitted object from \code{fit_model}, or \code{list(rep =, data =)}.
 #' @param tolerance Relative tolerance for the reconstruction.
-#' @param label Name for this test setup, used in failure messages.
+#' @param label Name for this model, used in failure messages.
 #'
 #' @keywords internal
 expect_jnLL_decomposes <- function(model, tolerance = 1e-8, label = deparse(substitute(model))) {

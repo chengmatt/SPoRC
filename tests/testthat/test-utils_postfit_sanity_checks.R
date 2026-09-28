@@ -1,9 +1,9 @@
+# post_optim_sanity_checks() decides whether a fit is reported as converged, and its criteria only
+# fire on a bad fit, so they are driven here with hand-built sdreport stand-ins. Also marg_AIC and
+# get_optim_param_list.
+
 library(SPoRC)
 library(testthat)
-
-# post_optim_sanity_checks() is the check that decides whether a fit is reported
-# as converged. Its four criteria only ever fire on a bad fit, so they are
-# driven here with hand-built sdreport stand-ins rather than a real model.
 
 make_sd_rep <- function(
   gradient = c(1e-6, 1e-6),
@@ -129,9 +129,7 @@ test_that("several simultaneous failures are all reported", {
   expect_false(any(grepl("Successfully passed", msgs)))
 })
 
-# ---------------------------------------------------------------------------
-# marg_AIC
-# ---------------------------------------------------------------------------
+# marg_AIC -------------------------------------------------------------------
 
 test_that("marg_AIC reads the objective from nlminb output", {
   opt <- list(par = c(1, 2, 3), objective = 100)
@@ -164,9 +162,7 @@ test_that("marg_AIC scales the penalty with the number of parameters", {
   expect_equal(SPoRC::marg_AIC(large) - SPoRC::marg_AIC(small), 2 * (10 - 2))
 })
 
-# ---------------------------------------------------------------------------
-# get_optim_param_list
-# ---------------------------------------------------------------------------
+# get_optim_param_list -------------------------------------------------------
 
 test_that("get_optim_param_list fills a mapped vector parameter", {
   parameters <- list(ln_M = c(0, 0))

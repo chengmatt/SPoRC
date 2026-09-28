@@ -1,3 +1,6 @@
+# The samplers the operating model draws with: the logistic normal, the Dirichlet-multinomial and
+# the inverse Gaussian recruitment, each against the moments it should have.
+
 library(SPoRC)
 library(testthat)
 

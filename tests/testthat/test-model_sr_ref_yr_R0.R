@@ -1,11 +1,9 @@
+# The R0 scaling spawning biomass per recruit into S0 and the R0 in the curve's numerator are the
+# same year's value. Steepness is recruitment at a fifth of S0 as a fraction of R0, so drawing
+# them from different years leaves the unfished state off the curve.
+
 library(SPoRC)
 library(testthat)
-
-# SR_ref_yr fixes the BIOLOGY that goes into spawning biomass per recruit. The R0 that
-# turns that per-recruit quantity into S0 is the year's own value, and it is the same R0
-# the curve's numerator uses. The two cannot be drawn from different years: steepness is
-# defined as recruitment at 0.2 * S0 as a fraction of R0, so splitting them leaves the
-# unfished state off the curve.
 
 bh_rec <- function(SSB, h, R0, S0) 4 * h * R0 * SSB / ((1 - h) * S0 + (5 * h - 1) * SSB)
 

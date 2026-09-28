@@ -1,3 +1,6 @@
+# One-step-ahead residuals on discard compositions, fit once with the right model and once
+# with the wrong one, so the residuals have to look worse under the wrong one.
+
 library(SPoRC)
 library(testthat)
 

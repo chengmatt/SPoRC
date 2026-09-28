@@ -125,8 +125,7 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
   if(is.null(CAAL_Type)) CAAL_Type <- paste0("none_Year_1-terminal_Fleet_", 1:n_fleets)
 
   # Input Validation --------------------------------------------------------
-  # Checked here rather than through check_data_dimensions, which dispatches on a
-  # fixed list of names and has no CAAL cases
+  # checked here because check_data_dimensions works from a fixed list of names with no CAAL entries
   dim_msg <- function(x, want, what, labels) {
     if(length(dim(x)) != length(want) || !all(dim(x) == want))
       stop(paste0("Dimensions of ", what, " are not correct. Should be ", paste(labels, collapse = ", "),

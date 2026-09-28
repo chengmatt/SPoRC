@@ -1,11 +1,9 @@
+# Fixing the mean at its starting value gives the deviations all of log F. Setup also warns when
+# centering the deviations on their own mean is combined with an estimated mean in a model where
+# nothing else reads it, since the two then trade off along a flat ridge.
+
 library(SPoRC)
 library(testthat)
-
-# ln_F_mean_spec = "fix" is the free log-F parameterization: the mean is mapped
-# off at its starting value (defaulting to 0) so the deviations have all of
-# log F. Setup also warns when own-mean deviation centering is combined with an
-# estimated mean in configurations where nothing else reads it, since the two
-# then trade off along an exactly flat ridge.
 
 mk_base <- function(init_F_form = "prop", init_age_strc = 1) {
   input_list <- Setup_Mod_Dim(
@@ -108,7 +106,7 @@ test_that("own-mean centering with an estimated mean warns only when nothing rea
     any(grepl("mutually unidentified", w))
   }
 
-  # absolute-rate initialization F: nothing pins the level
+  # an absolute initial F, so nothing fixes the level
   expect_true(ridge_warning(mk_base(init_F_form = "abs"), Fdev_pen_center = "own_mean"))
   # free initial age structure: likewise
   expect_true(ridge_warning(mk_base(init_age_strc = 4), Fdev_pen_center = "own_mean"))

@@ -114,9 +114,8 @@ test_that("setup refuses linked deviations it cannot handle", {
 
 test_that("a linked recruitment cell takes the correction its penalty would, and enters an index as it is", {
 
-  # the sweep model runs the full correction. an sd-only link at sigmaR is then the same density as the
-  # iid penalty, center included, so the objective does not move. a recruitment deviation index adds the
-  # penalty's center back to a cell under it, and reads a linked cell as it is
+  # the sweep model runs the full correction, so an sd-only link at sigmaR is the same density as
+  # the iid penalty, center included, and a recruitment index reads a linked cell as it is
   plain <- suppressMessages(sweep_input(dims = list(n_regions = 1)))
   n_yrs <- length(plain$data$years)
   sigmaR <- exp(plain$par$ln_sigmaR[2,1,1])
@@ -149,6 +148,6 @@ test_that("a linked recruitment cell takes the correction its penalty would, and
   sd_none <- suppressMessages(Setup_Mod_DSEM(plain_none, sprintf("rec <-> rec, 0, NA, %.17g", sigmaR), NULL, dsem_processes = "rec"))
   expect_equal(value_of(sd_none)$fn, value_of(plain_none)$fn, tolerance = 1e-8)
   expect_equal(value_of(sd_none, srv_idx_type = 2)$anom, devs)
-  expect_true(all(value_of(sd_none)$margvar == 0)) # not worked out when nothing takes it
+  expect_equal(as.numeric(value_of(sd_none)$margvar), rep(sigmaR^2, n_yrs), tolerance = 1e-10) # solved either way, so the initial ages read it with the ramp off
 
 })

@@ -14,7 +14,7 @@ tag_fam_of(like_type)
 }}
 }
 \value{
-A character scalar: `"count"`, `"comp"`, or `NA_character_` if
+A character scalar: `"count"`, `"comp"`, or `NA` if
   the code is not recognized.
 }
 \description{

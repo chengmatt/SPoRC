@@ -67,6 +67,9 @@
 
 * Added dynamic structural equation models via `Setup_Mod_DSEM`, linking recruitment, growth, movement, catchability and the numbers at age to each other and to covariates through arrow notation.
 * `Setup_Mod_Movement` and `Setup_Mod_Tagging` no longer need to be specified; `fit_model` fills their off settings, movement for one region only.
+* Added `bias_correct_pe` and `bias_correct_oe` to `Setup_Mod_Dim` and `Setup_Sim_Dim`. `bias_correct_pe` takes `"none"`, `"rec"` (the default, and what every model did before it existed) or `"all"`, and decides which process deviations are centered on minus half their marginal variance: recruitment and the initial ages under `"rec"`, those plus the numbers at age state under `"all"`. `do_rec_bias_ramp` and `bias_year` still scale the recruitment part. `bias_correct_oe` predicts a lognormally fit observation at its mean rather than its median, covering indices, catch, discards and the age-disaggregated sources.
+* Recruitment deviations under `RecDevs_model = "ar1"` are now mean unbiased, centered on minus half the stationary variance rather than on zero. A random walk takes no correction, since it has no stationary variance.
+* `Setup_Sim_Rec` gained `sigmaR_switch`, so the operating model reads the early and late recruitment sigma by year as the estimation model does. It previously used the late value in every year.
 * Improved Newton refinement in `fit_model` by obtaining the Hessian directly from the AD tape rather than finite differencing.
 * Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.
 * Added OSA residuals for time-series observations, compositions, and tagging data.

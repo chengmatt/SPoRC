@@ -1,7 +1,10 @@
+# Global F40% in a model with two regions, two populations and four seasons, simulated here
+# rather than taken from the packaged objects, then projected to equilibrium.
+
 library(SPoRC)
 library(testthat)
 
-test_that("Multi-region, population, and seasonal global SPR reference points converges to equilibrium", {
+test_that("global SPR reference points hold with populations, regions and seasons at once", {
 
   set.seed(555)
 
@@ -117,7 +120,7 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
                                          sim_list$n_yrs, sim_list$n_ages,
                                          sim_list$n_sexes, sim_list$n_sims)),
 
-      # Weight at age - Same for all pops
+      # weight at age, the same for every population
       WAA_input = replicate(
         n = sim_list$n_sims,
         array(
@@ -129,7 +132,7 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
         )
       ),
 
-      # Fishery weight at age - same as WAA_input
+      # fishery weight at age, the same as the population's
       WAA_fish_input = replicate(
         n = sim_list$n_sims,
         array(
@@ -140,7 +143,7 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
         )
       ),
 
-      # Survey weight at age - same as WAA_input
+      # survey weight at age, the same as the population's
       WAA_srv_input = replicate(
         n = sim_list$n_sims,
         array(
@@ -187,7 +190,7 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
     nr <- sim_list$natal_region[p]
     for (r_from in seq_len(sim_list$n_regions)) {
 
-      # Season 1: diffusive dispersal — mostly stay, some movement out
+      # season 1, diffusive dispersal: most fish stay and some move out
       for (r_to in seq_len(sim_list$n_regions)) {
         prob <- if (r_to == r_from) stay_prob[p] else disperse_prob[p]
         sim_list$Movement[p, r_from, r_to, , 1, , , ] <- prob
@@ -258,7 +261,7 @@ test_that("Multi-region, population, and seasonal global SPR reference points co
   natmort_slice <- sim_pop_obj$natmort[,,n_yrs,1,,,1] # season 1, M is constant within the year here
   natmort <- array(rep(c(natmort_slice), times = n_proj_yrs), dim = c(n_pop, n_regions, n_ages, n_sexes, n_proj_yrs))
   natmort <- aperm(natmort, c(1, 2, 5, 3, 4))
-  # packaged report predates seasonal M, hold it across seasons
+  # packaged report predates seasonal M, so repeat it over seasons
   natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
   WAA      <- array(rep(sim_pop_obj$WAA[,,n_yrs,,,,1], each = n_proj_yrs),
                     dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))

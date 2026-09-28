@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_lik_at_age.R
 \name{get_at_age_source_nLL}
 \alias{get_at_age_source_nLL}
-\title{Evaluate one age-disaggregated data source}
+\title{Evaluate age-disaggregated data source}
 \usage{
 get_at_age_source_nLL(
   obs_t,
@@ -21,7 +21,8 @@ get_at_age_source_nLL(
   us_pars = NULL,
   aa_type = 1,
   seas_agg = 0,
-  ageing_error = NULL
+  ageing_error = NULL,
+  bias_correct_oe = 0
 )
 }
 \arguments{

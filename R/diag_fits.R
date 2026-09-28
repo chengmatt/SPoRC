@@ -1211,7 +1211,7 @@ get_caal_fits <- function(data, rep) {
                   Type = label,
                   obs = obs_bar,
                   pred = pred_bar,
-                  sd_pred = if(is.finite(v) && v > 0) sqrt(v) else NA_real_,
+                  sd_pred = if(is.finite(v) && v > 0) sqrt(v) else NA,
                   ISS = n_row
                 ))
 

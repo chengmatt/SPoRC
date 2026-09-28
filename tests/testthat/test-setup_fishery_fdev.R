@@ -1,9 +1,10 @@
+# The F deviation penalty reads the map mirrored into the data list rather than recomputing which
+# cells are fished, so a deviation mapped off by hand is neither estimated nor penalized. The iid,
+# random walk and AR1 densities are checked against values worked out by hand.
+
 library(SPoRC)
 library(testthat)
 
-# Get_Fdev_PE_loglik keys on the deviation map mirrored into the data list rather
-# than recomputing the fished set, so that a deviation mapped off by hand is
-# neither estimated nor penalized. This builds the map do_Fmort_mapping would.
 fdev_map <- function(UseCatch, UseCatch_pop, ObsCatch) {
   has_catch <- UseCatch == 1 | apply(UseCatch_pop == 1, c(2,3,4,5), any) | is.na(ObsCatch)
   map <- array(NA_real_, dim = dim(UseCatch))
@@ -11,7 +12,7 @@ fdev_map <- function(UseCatch, UseCatch_pop, ObsCatch) {
   map
 }
 
-# ── do_Fdev_rho_mapping ──────────────────────────────────────────────────────
+# Which Cells Get a Correlation ----------------------------------------------
 
 test_that("do_Fdev_rho_mapping only activates Fdev_rho under Fdev_model = 'ar1'", {
 
@@ -52,7 +53,7 @@ test_that("do_Fdev_rho_mapping only activates Fdev_rho under Fdev_model = 'ar1'"
   })
 })
 
-# ── Get_Fdev_PE_loglik ───────────────────────────────────────────────────────
+# The Deviation Penalty ------------------------------------------------------
 
 test_that("Get_Fdev_PE_loglik matches hand-computed values for iid/rw/ar1", {
 
@@ -61,10 +62,8 @@ test_that("Get_Fdev_PE_loglik matches hand-computed values for iid/rw/ar1", {
   n_seas <- 1
   n_fish_fleets <- 2
 
-  # region 1, fleet 1: catch starts late (years 2:5) -- "first active" is NOT
-  # calendar year 1, exercising the general case.
-  # region 2, fleet 1: catch active all years.
-  # fleet 2: entirely inactive (no catch anywhere) -- should contribute 0.
+  # region 1 fleet 1 starts in year 2, so its first fished year is not year 1, region 2 fleet 1
+  # is fished throughout, and fleet 2 is never fished anywhere and contributes nothing
   UseCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
   UseCatch[1, 2:5, 1, 1] <- 1
   UseCatch[2, 1:5, 1, 1] <- 1
@@ -129,9 +128,8 @@ test_that("Get_Fdev_PE_loglik matches hand-computed values for iid/rw/ar1", {
 
 test_that("Get_Fdev_PE_loglik handles multi-year gaps via the closed-form marginal transition", {
 
-  # region 1: catch active in years 1, 2, 3, then closed for 3 years (4, 5, 6),
-  # resuming in year 7 -- a gap of d = 4 between the last active year (3) and
-  # the next (7). No sharing across regions/seasons/fleets needed here.
+  # region 1 is fished in years 1 to 3, closed for three years, and fished again in year 7,
+  # a gap of four. nothing is shared across regions, seasons or fleets here
   n_regions <- 1
   n_yrs <- 7
   n_seas <- 1
@@ -212,7 +210,7 @@ test_that("Get_Fdev_PE_loglik iid model matches the pre-refactor inline dnorm fo
   expect_equal(got, expected, tolerance = 1e-10)
 })
 
-# ── Missing (NA) vs. true-zero (0) ObsCatch ─────────────────────────────────
+# A Missing Catch against a Recorded Zero ------------------------------------
 
 test_that("do_Fmort_mapping estimates a deviation for missing (NA) ObsCatch but not for a true recorded zero", {
 
@@ -223,9 +221,8 @@ test_that("do_Fmort_mapping estimates a deviation for missing (NA) ObsCatch but 
   UseCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets)) # nothing fit anywhere
   UseCatch_pop <- array(0, dim = c(1, n_regions, n_yrs, n_seas, n_fish_fleets))
 
-  # year 1: true recorded zero (closure) -> no deviation estimated
-  # year 2: missing (NA) -> deviation IS estimated
-  # years 3-4: also true recorded zeros
+  # year 1 is a recorded zero and gets no deviation, year 2 is missing and gets one, and years
+  # 3 and 4 are recorded zeros again
   ObsCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
   ObsCatch[1, 2, 1, 1] <- NA
 
@@ -258,10 +255,11 @@ test_that("Get_Fdev_PE_loglik treats a missing (NA) year as an ordinary active y
   n_seas <- 1
   n_fish_fleets <- 1
 
-  # years 1, 2 fit normally; year 3 is a true closure (recorded zero, UseCatch = 0);
-  # year 4 is missing (NA, UseCatch = 0) -- should behave like an ordinary active
-  # year (d = 1 relative to year 2, NOT a gap of d = 2 skipping over it); year 5
-  # fit normally again, with d = 1 relative to year 4.
+  # years 1 and 2 are fit, year 3 is a true closure with a recorded zero, and year 4 is
+  # missing rather than closed.
+  #
+  # so year 4 behaves like an ordinary fished year one step on from year 2 rather than a two
+  # year gap over it, and year 5 follows year 4 one step on
   UseCatch <- array(0, dim = c(n_regions, n_yrs, n_seas, n_fish_fleets))
   UseCatch[1, c(1,2,5), 1, 1] <- 1
   UseCatch_pop <- array(0, dim = c(1, n_regions, n_yrs, n_seas, n_fish_fleets))
@@ -287,13 +285,12 @@ test_that("Get_Fdev_PE_loglik treats a missing (NA) year as an ordinary active y
   # year 3 (true closure) contributes nothing and is skipped from the active sequence
   expect_equal(got_rw[1,3,1,1], 0)
 
-  # year 4 (missing) is estimated as an ordinary single-step transition from year 2
-  # (its true previous active/missing neighbor), i.e. d = 4 - 2 = 2 since year 3 was
-  # skipped as a closure -- NOT treated as itself starting a new gap
+  # year 4 is missing and is estimated as one step from year 2, its nearest fished or missing
+  # neighbor two back since year 3 was a closure, rather than starting a gap of its own
   expected_y4 <- -dnorm(ln_F_devs[1,4,1,1], ln_F_devs[1,2,1,1], sigma * sqrt(2), log = TRUE)
   expect_equal(got_rw[1,4,1,1], expected_y4, tolerance = 1e-10)
 
-  # year 5 continues from year 4 (the missing year) at d = 1, NOT from year 2 at d = 3,
+  # year 5 follows year 4, the missing one, one step on rather than three from year 2,
   # confirming the missing year itself becomes the new "last active" reference
   expected_y5 <- -dnorm(ln_F_devs[1,5,1,1], ln_F_devs[1,4,1,1], sigma, log = TRUE)
   expect_equal(got_rw[1,5,1,1], expected_y5, tolerance = 1e-10)

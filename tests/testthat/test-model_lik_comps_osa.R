@@ -1,13 +1,16 @@
+# One-step-ahead composition residuals: what pack_comp_osa writes for each likelihood, and
+# that eval_comp_osa reads it back and prefers the proportions the data were drawn from.
+
 library(SPoRC)
 library(testthat)
 
-test_that("OSA composition likelihood pipeline works!", {
+test_that("the one-step-ahead composition residuals, packed and evaluated", {
 
   identity_ae <- function(n) diag(n)
   fam_of <- function(lt) if (lt %in% c(0, 1)) "discrete" else "continuous"
   alr <- function(p) log(p[-length(p)]) - log(p[length(p)])
 
-  # normalize a [region, bin, sex] array so each (r,s) slice sums to 1
+  # normalize a [region, bin, sex] array so each region and sex sums to one
   normalize_rs <- function(arr) {
     d <- dim(arr)
     for (r in seq_len(d[1])) for (s in seq_len(d[3])) {
@@ -16,20 +19,16 @@ test_that("OSA composition likelihood pipeline works!", {
     arr
   }
 
-  # Build a [n_regions, length(vec), n_sexes] array where every (r,s) slice
-  # is exactly `vec`. NOTE: array(rep(vec, n_regions), dim = c(n_regions, ...))
-  # does NOT do this -- R arrays fill column-major (region fastest), so
-  # rep()-ing the vector and reshaping scrambles which bin goes to which
-  # region. Build it explicitly instead.
+  # build a [n_regions, length(vec), n_sexes] array where every region and sex is exactly `vec`.
+  # repeating and reshaping will not do it, R filling arrays with the region moving fastest
   make_prop_array <- function(vec, n_regions, n_sexes) {
     arr <- array(0, dim = c(n_regions, length(vec), n_sexes))
     for (r in seq_len(n_regions)) for (s in seq_len(n_sexes)) arr[r, , s] <- vec
     arr
   }
 
-  # Pack a *single* (year=1, season=1, fleet=1, pop=1) group and return the
-  # tracked OSA vector, using the real pack_comp_osa() routines so that the
-  # unit tests below stay in lock-step with the packer's actual conventions.
+  # pack one year, season, fleet and population and return the tracked vector, through the real
+  # packer so the checks below stay on whatever it actually does
   pack_single_group <- function(prop_or_counts, ISS, Wt, use,
                                 n_obs_bins, n_sexes, comp_type, like_type,
                                 addtocomp = 1e-4) {
@@ -59,9 +58,8 @@ test_that("OSA composition likelihood pipeline works!", {
     )
   }
 
-  # Pack + evaluate Get_Comp_Likelihoods_OSA() for a single group, with
-  # sensible defaults for every argument (mirrors call_comp_nll() in the
-  # non-OSA test file).
+  # pack and evaluate one group, with a default for every argument, the way the plain
+  # composition likelihood is called in its own test file
   call_osa_nll <- function(
     Comp_Type,
     Likelihood_Type,
@@ -120,7 +118,10 @@ test_that("OSA composition likelihood pipeline works!", {
   }
 
   # Get_Comp_Likelihoods_OSA: structure
-  test_that("OSA output is a numeric matrix of dim [n_regions x n_sexes]", {
+
+  # Shape of the Result ------------------------------------------------------
+
+  test_that("the result is one number per region and sex", {
     for (ct in 0:2) {
       lts <- if (ct == 2) 0:4 else 0:3
       for (lt in lts) {
@@ -138,7 +139,7 @@ test_that("OSA composition likelihood pipeline works!", {
     }
   })
 
-  test_that("Comp_Type=0 (OSA): nLL stored only in [1,1]", {
+  test_that("aggregated, the value lands in the first cell alone", {
     for (lt in 0:3) {
       res <- call_osa_nll(Comp_Type = 0, Likelihood_Type = lt, n_regions = 2, n_sexes = 2)
       expect_true(is.finite(res[1, 1]), label = sprintf("finite LT=%d", lt))
@@ -146,14 +147,14 @@ test_that("OSA composition likelihood pipeline works!", {
     }
   })
 
-  test_that("Comp_Type=1 (OSA): all used region/sex strata are finite", {
+  test_that("split by region and sex, every cell that is fit is finite", {
     for (lt in 0:3) {
       res <- call_osa_nll(Comp_Type = 1, Likelihood_Type = lt, n_regions = 2, n_sexes = 2)
       expect_true(all(is.finite(res)), label = sprintf("LT=%d", lt))
     }
   })
 
-  test_that("Comp_Type=2 (OSA): nLL stored only in column 1, one entry per region", {
+  test_that("joint across sexes, one value per region in the first column", {
     for (lt in 0:4) {
       res <- call_osa_nll(Comp_Type = 2, Likelihood_Type = lt, n_regions = 2, n_sexes = 2)
       expect_true(all(is.finite(res[, 1])), label = sprintf("LT=%d", lt))
@@ -162,7 +163,10 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   # Get_Comp_Likelihoods_OSA: fit-quality sanity checks
-  test_that("multinomial (OSA) favors Exp matching the true generating proportions", {
+
+  # Each Likelihood Prefers the Truth ----------------------------------------
+
+  test_that("the multinomial prefers the proportions the data were drawn from", {
     n_bins <- 5
     p_true <- c(0.05, 0.1, 0.6, 0.15, 0.1)
     p_bad  <- c(0.6, 0.1, 0.05, 0.1, 0.15)
@@ -193,7 +197,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_gt(sum(res_bad), sum(res_good))
   })
 
-  test_that("Dirichlet-multinomial (OSA) favors Exp matching the true generating proportions", {
+  test_that("the Dirichlet-multinomial prefers the proportions the data were drawn from", {
     n_bins <- 5
     p_true <- c(0.05, 0.1, 0.6, 0.15, 0.1)
     p_bad  <- c(0.6, 0.1, 0.05, 0.1, 0.15)
@@ -224,7 +228,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_gt(sum(res_bad), sum(res_good))
   })
 
-  test_that("logistic-normal iid (OSA) favors Exp matching the true generating proportions", {
+  test_that("the iid logistic normal prefers the proportions the data were drawn from", {
     n_bins <- 5
     p_true <- c(0.05, 0.1, 0.6, 0.15, 0.1)
     p_bad  <- c(0.6, 0.1, 0.05, 0.1, 0.15)
@@ -255,7 +259,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_gt(sum(res_bad), sum(res_good))
   })
 
-  test_that("logistic-normal AR1 (OSA) favors Exp matching the true generating proportions", {
+  test_that("the logistic normal across bins prefers the proportions the data were drawn from", {
     n_bins <- 5
     p_true <- c(0.05, 0.1, 0.6, 0.15, 0.1)
     p_bad  <- c(0.6, 0.1, 0.05, 0.1, 0.15)
@@ -286,7 +290,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_gt(sum(res_bad), sum(res_good))
   })
 
-  test_that("2D AR1 + constant sex correlation (OSA, Comp_Type=2, LT=4) is finite and fit-sensitive", {
+  test_that("a correlation between sexes as well as across bins is finite and moves with the fit", {
     n_bins <- 4
     p_true <- c(0.1, 0.6, 0.2, 0.1)
     p_bad  <- c(0.6, 0.1, 0.1, 0.2)
@@ -320,7 +324,9 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_gt(sum(res_bad[, 1]), sum(res_good[, 1]))
   })
 
-  test_that("zeros in the composition don't break LN (OSA) as long as addtocomp > 0", {
+  # Empty Bins and Regions Not Fit -------------------------------------------
+
+  test_that("empty bins leave the logistic normal finite, given the added constant", {
     n_bins <- 6
     Obs_raw <- array(1 / n_bins, dim = c(2, n_bins, 1))
     Obs_raw[1, 1, 1] <- 0
@@ -339,7 +345,7 @@ test_that("OSA composition likelihood pipeline works!", {
     }
   })
 
-  test_that("use-region filtering (OSA): fewer used regions -> fewer populated strata", {
+  test_that("fitting fewer regions leaves fewer cells filled", {
     res_one <- call_osa_nll(
       Comp_Type = 1,
       Likelihood_Type = 0,
@@ -350,7 +356,10 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   # pack_comp_osa: shapes, NULL handling, numeric correctness
-  test_that("pack_comp_osa returns NULL when no fleet matches the requested family", {
+
+  # What Is Packed, and What Is Not ------------------------------------------
+
+  test_that("nothing is packed when no fleet takes the likelihood asked for", {
     n_regions <- 2
     n_obs_bins <- 4
     n_sexes <- 1
@@ -380,7 +389,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_null(out)
   })
 
-  test_that("pack_comp_osa returns NULL when no region has use=1", {
+  test_that("nothing is packed when no region is fit", {
     n_regions <- 2
     n_obs_bins <- 4
     n_sexes <- 1
@@ -410,7 +419,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_null(out)
   })
 
-  test_that("pack_comp_osa produces the documented vector lengths (discrete)", {
+  test_that("the packed vector is the length the counts call for", {
     n_obs_bins <- 5
     n_sexes <- 2
     use <- c(1L, 1L, 0L)  # n_ru = 2
@@ -432,7 +441,7 @@ test_that("OSA composition likelihood pipeline works!", {
     }
   })
 
-  test_that("pack_comp_osa produces the documented vector lengths (continuous / LN)", {
+  test_that("the packed vector is the length the logistic normal calls for", {
     n_obs_bins <- 5
     n_sexes <- 2
     use <- c(1L, 1L, 0L)
@@ -456,7 +465,7 @@ test_that("OSA composition likelihood pipeline works!", {
     }
   })
 
-  test_that("pack_comp_osa (multinomial, ct=0) produces round(pr * ISS * Wt) counts", {
+  test_that("the multinomial is packed as proportions times sample size times weight, rounded", {
     n_obs_bins <- 4
     props <- c(0.1, 0.2, 0.3, 0.4)
     prop_arr <- make_prop_array(props, 2, 1)  # only region1/sex1 matters for ct=0
@@ -480,7 +489,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_equal(as.numeric(g), as.numeric(expected))
   })
 
-  test_that("pack_comp_osa (Dirichlet-multinomial, ct=0) produces round(pr * ISS) counts (no Wt)", {
+  test_that("the Dirichlet-multinomial is packed without the weight", {
     n_obs_bins <- 4
     props <- c(0.1, 0.2, 0.3, 0.4)
     prop_arr <- make_prop_array(props, 2, 1)
@@ -504,7 +513,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_equal(as.numeric(g), as.numeric(expected))
   })
 
-  test_that("pack_comp_osa (LN, ct=0) produces the ALR transform of the proportions", {
+  test_that("the logistic normal is packed as the additive log ratio of the proportions", {
     n_obs_bins <- 4
     props <- c(0.1, 0.2, 0.3, 0.4)
     prop_arr <- make_prop_array(props, 2, 1)
@@ -528,7 +537,10 @@ test_that("OSA composition likelihood pipeline works!", {
   })
 
   # eval_comp_osa: multi-fleet round trip, zero_init behavior
-  test_that("eval_comp_osa round-trips pack_comp_osa output for a single discrete fleet", {
+
+  # Reading the Packed Vector Back -------------------------------------------
+
+  test_that("what is packed for one fleet comes back out unchanged", {
     n_regions <- 2
     n_obs_bins <- 4
     n_model_bins <- 4
@@ -626,7 +638,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_true(all(is.finite(res)))
   })
 
-  test_that("eval_comp_osa preserves other fleets' slots when zero_init = FALSE, and wipes them when TRUE", {
+  test_that("other fleets' entries are kept or cleared as zero_init asks", {
     n_regions <- 2
     n_obs_bins <- 4
     n_model_bins <- 4
@@ -788,7 +800,7 @@ test_that("OSA composition likelihood pipeline works!", {
     expect_true(all(res3[, 1, 1, , 2] != 0))       # fleet 2 still populated
   })
 
-  test_that("eval_comp_osa returns nLL_arr unchanged when tracked is NULL", {
+  test_that("nothing tracked leaves the likelihood array alone", {
     n_regions <- 2
     n_sexes <- 1
     nLL_init <- array(runif(n_regions * n_sexes), dim = c(n_regions, 1, 1, n_sexes, 1))

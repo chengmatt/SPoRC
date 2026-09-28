@@ -1,12 +1,8 @@
+# The bin restriction driven through the real setup calls rather than through
+# drop_empty_fitted_blocks alone, since two of the three paths reconciled in the wrong order.
+
 library(SPoRC)
 library(testthat)
-
-# The bin restriction has to reach the use flags through the real setup entry
-# points, not just through drop_empty_fitted_blocks called directly. Two of the
-# three setup paths were wired in the wrong order and the unit tests could not
-# see it: the discard data sources reconciled before their bins were parsed, and the
-# survey data sources reconciled after their use arrays had already been stored. Both
-# were silent no-ops. This drives the restriction end to end instead.
 
 test_that("a restriction reaches the use flags through every setup path", {
   skip_if_not(exists("objective_setup_sim"), "helper-objective_setup.R not loaded")
@@ -144,9 +140,8 @@ test_that("a restriction reaches the use flags through every setup path", {
   expect_equal(input_list$data$UseSrvAgeComps[1, bad_year, 1, 1], 0,
                info = "survey: reconciled after its use array was stored")
 
-  # exactly the years holding no mass in the fitted bins are cleared, no more and
-  # no fewer. The planted year 5 is one of them; the test setup supplies others of
-  # its own, which is the reconciliation doing real work rather than a no-op.
+  # exactly the years holding nothing in the fitted bins are cleared, no more and no fewer.
+  # year 5 is planted, and the model supplies others of its own
   empty_years <- function(obs) which(apply(obs[1, , 1, keep, 1, 1], 1, sum) == 0)
   expect_equal(which(input_list$data$UseFishAgeComps[1, , 1, 1] == 0),
                empty_years(sd$ObsFishAgeComps))

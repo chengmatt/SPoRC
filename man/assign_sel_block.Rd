@@ -21,15 +21,15 @@ assign_sel_block(arr, blocks_arr, fleet, block, value)
 \code{arr} with the matching cells of \code{fleet} set to \code{value}.
 }
 \description{
-Selectivity block arrays are \code{[region, year, fleet]}, so a single fleet's slice is a
-\code{region x year} MATRIX. \code{which(slice == block)} on that matrix returns LINEAR
-positions running down the columns, in \code{1:(n_regions * n_years)} -- not year indices.
-Using them as a year subscript (\code{arr[, which(...), fleet] <- value}) is therefore wrong
-whenever \code{n_regions > 1}: it either errors with a subscript out of bounds, or, when the
-block is early enough that the linear positions stay within \code{n_years}, SILENTLY writes
-the wrong years. With three regions and 35 years, a block covering years 1-5 produces linear
-positions 1-15 and quietly overwrites years 1-15. At \code{n_regions == 1} the linear
-position equals the column index, which is why this only shows up in spatial models.
+Selectivity block arrays are \code{[region, year, fleet]}, so one fleet's
+slice is a region by year matrix. \code{which(slice == block)} on it counts
+down the columns, giving positions in \code{1:(n_regions * n_years)} rather
+than years. Used as a year subscript those are wrong whenever there is more
+than one region: either the subscript is out of bounds, or, when the block
+is early enough that the positions stay below \code{n_years}, the wrong
+years are written with no error at all. With three regions and 35 years, a
+block covering years 1-5 writes years 1-15. With one region the position
+equals the year, which is why this only shows up in spatial models.
 }
 \details{
 Indexing with the logical matrix directly is correct in both cases, and stays correct if

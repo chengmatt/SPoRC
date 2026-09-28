@@ -101,12 +101,12 @@
 #' @param srv_q_prior Data frame with columns \code{region}, \code{fleet},
 #'   \code{block}, \code{mu} on the natural scale and \code{sd} on the log scale,
 #'   one row per \eqn{\log\text{N}(\log(\mu), \text{sd})} prior. Default \code{NA}.
-#' @param srv_q_model Character vector \code{[n_srv_fleets]} of the process error
-#'   on annual catchability deviations: \code{"none"} (default), \code{"iid"},
-#'   \code{"rw"}, \code{"ar1"} or \code{"dsem"}, which hands the series to
-#'   \code{\link{Setup_Mod_DSEM}}. Catchability is then \eqn{\exp(\ln q_{r,b,f} +
-#'   \epsilon_{r,y,f})}. A fleet with deviations cannot also have
-#'   \code{srv_q_blocks} or an analytically solved \code{srv_q_type}.
+#' @param srv_q_model Character vector \code{[n_srv_fleets]} of the process
+#' error on annual catchability deviations: \code{"none"} (default),
+#' \code{"iid"}, \code{"rw"}, \code{"ar1"} or \code{"dsem"}, which passes the
+#' series to \code{\link{Setup_Mod_DSEM}}. Catchability is then
+#' \eqn{\exp(\ln q_{r,b,f} + \epsilon_{r,y,f})}. A fleet with deviations cannot
+#' also have \code{srv_q_blocks} or an analytically solved \code{srv_q_type}.
 #' @param sigma_srv_q_spec Sharing string for the deviation standard deviation over
 #'   region and fleet: \code{"est_all"} (default), \code{"est_shared_r"},
 #'   \code{"est_shared_f"}, \code{"est_shared_r_f"} or \code{"fix"}.
@@ -217,7 +217,7 @@ Setup_Mod_Srvsel_and_Q <- function(
   ...
 ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Srvsel_and_Q <- mget(names(formals()))[-1]
 
@@ -285,9 +285,8 @@ Setup_Mod_Srvsel_and_Q <- function(
   )
 
   # Selectivity Options -----------------------------------------------------
-  # The bin vector is kept as well as its length. Starting values stated on the
-  # bin scale are seeded further down, by which point srv_selex_type holds the
-  # numeric code rather than the name it arrived as.
+  # the bins are kept as well as how many there are, because the starting values further down are
+  # stated on the bin scale
   if(srv_selex_type == 'age') {
     srv_selex_type <- 0
     srv_sel_bin_vec <- input_list$data$ages

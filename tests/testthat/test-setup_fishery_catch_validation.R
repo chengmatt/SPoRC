@@ -1,7 +1,10 @@
+# Estimating discard mortality deviations without a penalty warns, and fixing them with one is an
+# error, since a fixed deviation has nothing for the penalty to act on.
+
 library(SPoRC)
 library(testthat)
 
-# ── dmr_dev_spec / Use_dmr_pen consistency checks ────────────────────────────
+# The Deviation Setting against the Penalty ----------------------------------
 
 # Minimal input_list accepted by Setup_Mod_Catch_and_F: only the dimensions and
 # the catch arrays are needed to reach the validation block and the mapping calls.
@@ -21,9 +24,8 @@ make_catch_input_list <- function(n_pop = 1, n_regions = 1, n_yrs = 3, n_seas = 
   )
 }
 
-# Setup_Mod_Catch_and_F emits several unrelated "specified as fix, but no
-# starting values" warnings, so collect every warning rather than relying on
-# the ordering expect_warning() sees.
+# the setup call raises several unrelated warnings about fixed parameters with no starting
+# values, so every warning is collected rather than relying on the order they arrive in
 collect_warnings <- function(expr) {
   warns <- character(0)
   withCallingHandlers(
@@ -71,7 +73,7 @@ test_that("fixed dmr deviations with a penalty is an error", {
 })
 
 test_that("'est' is not an accepted dmr_dev_spec", {
-  # The estimating spec is named "est_all"; guarding on "est" would be dead code.
+  # the estimating setting is named "est_all", so checking for "est" would be dead code
   expect_error(suppressWarnings(run_setup(dmr_dev_spec = "est", Use_dmr_pen = 0)),
                "dmr_dev_spec 'est' not recognized")
 })

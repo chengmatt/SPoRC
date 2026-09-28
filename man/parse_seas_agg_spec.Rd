@@ -9,8 +9,8 @@ parse_seas_agg_spec(spec, arg_name, n_fleets)
 \arguments{
 \item{spec}{Character vector of length \code{n_fleets}, or a single value
 given to every fleet. The resolved codes \code{0} and \code{1} are also
-taken, so a fitted model's settings can be handed straight back to an
-operating model. \code{NULL} leaves every fleet at \code{"spltSeas"}.}
+taken, so a fitted model's settings can go straight back into an operating
+model. \code{NULL} leaves every fleet at \code{"spltSeas"}.}
 
 \item{arg_name}{Name of the argument being parsed, used in error messages.}
 

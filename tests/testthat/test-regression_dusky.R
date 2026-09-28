@@ -7,9 +7,8 @@ data("sgl_rg_dusky_data")
 
 test_that("Dusky RTMB model produces expected results", {
 
-  # The specification lives in helper-bridge_goa_dusky.R, which the case study
-  # figure script sources as well, so a change to the specification moves this
-  # test and the figures together.
+  # the setup lives in the bridge helper, which the case study figure script reads too, so a
+  # change to it moves this test and the figures together
   input_list <- build_goa_dusky_input(sgl_rg_dusky_data)
 
   data <- input_list$data

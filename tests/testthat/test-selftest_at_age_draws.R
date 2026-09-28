@@ -1,9 +1,9 @@
+# The self test has to pass its at-age settings to the operating model and the draws back to the
+# refit. With either half missing the operating model draws nothing, the reset blocks copy that
+# nothing over the observations, and every replicate refits a block of zeros.
+
 library(SPoRC)
 library(testthat)
-
-# The self test has to hand its at-age settings to the operating model and then hand the draws
-# back to the refit. With either half missing the operating model draws nothing, the reset blocks
-# copy that nothing over the observations, and every replicate refits a block of zeros.
 
 # a model fitting catch at age on one fishery fleet alongside an aggregated survey index,
 # over whichever observed ages use_aa flags
@@ -31,7 +31,6 @@ at_age_selftest_model <- function(n_yrs, n_ages, sigma_caa, use_aa = NULL) {
   return(build(array(at_age_rep(il)$PredCatchAA, dim = aa_dim)))
 }
 
-
 test_that("a self test on a catch-at-age model refits the operating model's draws", {
 
   n_yrs <- 15
@@ -56,7 +55,7 @@ test_that("a self test on a catch-at-age model refits the operating model's draw
     what = c("SSB", "CatchAA_nLL")
   )
 
-  # the operating model drew catch at age wherever the fit observes it, and carries the
+  # the operating model drew catch at age wherever the fit observes it, and passes the
   # discards at age it drew rather than dropping them on the way out
   om <- readRDS(sim_file)
   expect_equal(dim(om$ObsCatchAA), c(1, n_yrs, 1, n_ages, 1, 1, 1))
@@ -64,16 +63,14 @@ test_that("a self test on a catch-at-age model refits the operating model's draw
   expect_equal(dim(om$TrueDiscardAA), dim(om$TrueCatchAA))
   expect_equal(dim(om$ObsDiscardAA), dim(om$ObsCatchAA))
 
-  # and the refit fit those draws. an undrawn observation is zero, which the lognormal
-  # takes the log of, so a finite likelihood over fitted cells is only reachable from
-  # observations that arrived, and a replicate is a fresh draw rather than the input data
+  # and the refit fit those draws. an undrawn observation is zero and the lognormal takes its
+  # log, so a finite likelihood is only reachable from observations that actually arrived
   caa_nLL <- as.numeric(res$CatchAA_nLL)
   expect_true(all(is.finite(caa_nLL)))
   expect_true(any(caa_nLL != 0))
   expect_false(isTRUE(all.equal(caa_nLL, as.numeric(fit$rep$CatchAA_nLL))))
   expect_true(all(is.finite(as.numeric(res$SSB))))
 })
-
 
 test_that("a self test on catch at age recovers spawning biomass without median bias", {
 
@@ -107,11 +104,10 @@ test_that("a self test on catch at age recovers spawning biomass without median 
   expect_lt(stats::median(abs(rel_err)), 0.15)
 })
 
-
 test_that("an age the fit leaves out is left out of the draws as well", {
 
   # the at-age sources have no bin argument because the use flags already run over the
-  # observed ages, so this is what a bin restriction is on those streams
+  # observed ages, so this is what a bin restriction means for those data
   n_yrs <- 15
   n_ages <- 5
   use_aa <- array(1, dim = c(1, n_yrs, 1, n_ages, 1, 1))

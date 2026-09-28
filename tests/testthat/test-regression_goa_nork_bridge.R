@@ -39,11 +39,8 @@ test_that("GOA northern rockfish reproduces the 2024 ADMB assessment at its own 
   expect_equal(as.vector(r$PredSrvIdx)[dat$UseSrvIdx[1, , 1, 1] == 1],
                dat$admb$pred_srv, tolerance = 1e-6, ignore_attr = TRUE)
 
-  # Likelihood components. SPoRC writes each component as a proper density while the
-  # assessment drops normalizing constants, so each comparison subtracts exactly the
-  # constants the assessment omits. What is left is a like for like comparison. The
-  # composition tolerances absorb the two templates' different robustifying
-  # constants.
+  # SPoRC writes each component as a proper density while the assessment drops normalizing
+  # constants, and the composition tolerances absorb their different added constants
   expect_equal(sum(r$FishAgeComps_nLL), dat$admb$like_fish_age, tolerance = 1e-3)
   expect_equal(sum(r$SrvAgeComps_nLL), dat$admb$like_srv_age, tolerance = 1e-3)
   expect_equal(sum(r$FishLenComps_nLL), dat$admb$like_fish_size, tolerance = 1e-3)
@@ -69,12 +66,11 @@ test_that("GOA northern rockfish reproduces the 2024 ADMB assessment at its own 
   expect_equal(r$M_nLL - log(sqrt(2 * pi) * dat$cv_M), dat$admb$nll_M, tolerance = 1e-6)
   expect_equal(r$srv_q_nLL - log(sqrt(2 * pi) * dat$cv_q), dat$admb$nll_q, tolerance = 1e-6)
 
-  # The assessment's recruitment penalty is the lognormal bias corrected sum of
-  # squares over all recruitment deviations plus the initial age deviations
-  # excluding the plus group, with no normalizing constants. SPoRC's Rec_nLL and
-  # Init_Rec_nLL hold the same penalties plus the constants subtracted here; the
-  # plus group deviation sits at zero in this parameterization so it contributes
-  # nothing on either side.
+  # the assessment's recruitment penalty is the bias corrected sum of squares over every
+  # recruitment and initial age deviation, without the plus group or normalizing constants.
+  #
+  # SPoRC's two penalties are the same plus the constants subtracted here, and the plus
+  # group deviation sits at zero, contributing nothing on either side
   s <- dat$sigmaR
   n_recdev <- length(dat$mle$log_Rt)
   n_initdev_pen <- n_ages - 2

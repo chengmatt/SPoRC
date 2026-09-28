@@ -7,9 +7,8 @@
 # And does it stay inside its own data source: these models are evaluated rather than fitted, so a survey
 # option that moves a fishery likelihood is reading or writing something that is not its own.
 
-# Which data source an option or a likelihood component belongs to, read off its name.
-# Anything matching neither is shared routines (recruitment, mortality, movement,
-# selectivity penalties) and is exempt from the containment check.
+# Which data source an option or a likelihood component belongs to, read off its name. Anything
+# matching neither is shared, like recruitment or mortality, and is left out of the check.
 wiring_stream_of <- function(x) {
   if(grepl("^Srv|^srv|Srv", x)) return("survey")
   if(grepl("^Fish|^fish|Fish|Catch|Discard|Fmort|dmr|conv_fish", x)) return("fishery")
@@ -38,19 +37,18 @@ wiring_catalog <- local({
   out
 })
 
-# Options the base test setup cannot make live: they govern a data source it does not
-# have (at-age observations, discards, conditional age-at-length, and the
-# population-specific forms of all of those). Listing them keeps the gap visible
-# rather than letting a silently inert option pass as tested.
+# Options this model cannot turn on, because they govern data it does not have: numbers at
+# age, discards, conditional age-at-length, and the population-specific forms of each.
+#
+# Listing them keeps the gap visible rather than letting an inert option pass as tested.
 wiring_unconfigured <- c(
   grep("AA_", vapply(wiring_catalog, function(x) x$arg, character(1)), value = TRUE),
   grep("_pop_|discard|caal", vapply(wiring_catalog, function(x) x$arg, character(1)),
        value = TRUE, ignore.case = TRUE),
   # the test setup fits ages rather than lengths
   "FishLenComps_LikeType", "FishLenComps_Type", "SrvLenComps_LikeType", "SrvLenComps_Type",
-  # only the 'age' setting builds without length data, so there is no second value
-  # to compare against here. The length path is exercised directly in
-  # test-selex_bin_scale_seeding.R, which is where its bin scale matters.
+  # only the age setting builds without length data, so there is no second value to compare
+  # against here. the length route is driven directly in its own test file instead
   "fish_selex_type", "ret_selex_type", "srv_selex_type"
 )
 
@@ -74,17 +72,15 @@ wiring_build <- function(entry, value) {
 
 #' Whether two option values produce a model that computes anything differently
 #'
-#' Writing a switch into the data list is not by itself evidence that an option is
-#' connected: a likelihood code is stored whether or not the data source it names
-#' has data. What counts is a change to what is estimated or to what the
-#' likelihood evaluates to.
+#' Writing a setting into the data list does not show it is connected, since a likelihood code
+#' is stored whether or not the data exist. What counts is a change to what is estimated.
 #'
 #' @keywords internal
 wiring_differs <- function(entry, a, b) {
   ia <- wiring_build(entry, a)
   ib <- wiring_build(entry, b)
   if(inherits(ia, "condition") || inherits(ib, "condition")) return(NA)
-  d <- sweep_diff(sweep_signature(ia), sweep_signature(ib))
+  d <- sweep_diff(sweep_structure(ia), sweep_structure(ib))
   if(length(d$map) > 0 || length(d$par) > 0) return(TRUE)
 
   ca <- wiring_contributions(entry, a)
@@ -140,9 +136,8 @@ test_that("each option changes the model it is supposed to configure", {
 
 
 test_that("an option only moves the likelihood of its own data source", {
-  # These models are evaluated at fixed parameters, so a survey setting has no
-  # route to a fishery likelihood and vice versa. Anything crossing is reading a
-  # dim, an index, or an array slot belonging to the other data source.
+  # these models are evaluated at fixed parameters, so a survey setting has no route to a fishery
+  # likelihood or the other way round, and anything crossing is reading the wrong array
   problems <- character()
 
   for(entry in wiring_catalog) {
@@ -171,9 +166,8 @@ test_that("an option only moves the likelihood of its own data source", {
 
 
 test_that("the containment check can tell the data sources apart", {
-  # If every component were classified as shared, the check above would compare
-  # nothing and pass regardless. Both data sources have to be represented among the
-  # likelihoods the test setup actually reports.
+  # if every component counted as shared, the check above would compare nothing, so both data
+  # sources have to be represented among the likelihoods this model reports
   entry <- Filter(function(x) x$arg == "srv_idx_type", wiring_catalog)[[1]]
   contrib <- wiring_contributions(entry, "abd")
 

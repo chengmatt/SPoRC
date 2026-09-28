@@ -1,13 +1,9 @@
+# The map is applied by RTMB::MakeADFun and cannot be seen inside the objective, so the F and
+# discard mortality penalties read a mirror of it in the data list. fit_model() rebuilds those
+# mirrors from the map, which is what makes a hand edit reach the penalty as well.
+
 library(SPoRC)
 library(testthat)
-
-# ── mapping a deviation off by hand removes its penalty ─────────────────────
-#
-# The map is applied by RTMB::MakeADFun and is invisible inside the objective,
-# so the F and dmr deviation penalties read a mirror of it kept in the data
-# list. fit_model() refreshes those mirrors from the map it is about to hand to
-# MakeADFun, which is what makes a hand edit to the map take effect on the
-# penalty as well as on what is estimated.
 
 build <- function(...) suppressWarnings(suppressMessages(objective_setup_input(...)))
 
@@ -72,10 +68,8 @@ test_that("a dmr deviation mapped off falls back on the mean at the default star
 })
 
 test_that("a dmr deviation mapped off stays at a non-zero starting value rather than reverting", {
-  # mapping a parameter off pins it at whatever is in $par, so a user who supplies
-  # starting deviations and then maps some off freezes them at those values. This
-  # is deliberate -- supplied starting values are treated as intentional -- but it
-  # is not the same thing as reverting to logit_dmr_mean
+  # mapping a parameter off fixes it at whatever is in $par, so supplied starting deviations
+  # that are then mapped off stay at those values rather than reverting to the mean
   input <- build(catch_f = list(Use_dmr_pen = 1, dmr_dev_spec = "est_all"))
   input$par$logit_dmr_devs[] <- 0.4
 
@@ -87,9 +81,8 @@ test_that("a dmr deviation mapped off stays at a non-zero starting value rather 
 })
 
 test_that("an input list with no map mirrors falls back on the fished set", {
-  # maintain_backwards_compatibility() rebuilds the set the penalties used to
-  # compute for themselves, so input lists saved by older SPoRC versions still
-  # evaluate to the same penalties
+  # the backwards compatibility step rebuilds the set the penalties used to work out for
+  # themselves, so an input list saved by an older version gives the same penalties
   input <- build(catch_f = list(Use_dmr_pen = 1, dmr_dev_spec = "est_all"))
   current <- fit_no_optim(input)
 
@@ -105,7 +98,7 @@ test_that("an input list with no map mirrors falls back on the fished set", {
   expect_equal(fit$rep$jnLL, current$rep$jnLL, tolerance = 1e-10)
 })
 
-# ── sync_dev_map_data ───────────────────────────────────────────────────────
+# sync_dev_map_data ----------------------------------------------------------
 
 test_that("sync_dev_map_data refreshes mirrors from the map and leaves others alone", {
   input <- build(catch_f = list(Use_dmr_pen = 1, dmr_dev_spec = "est_all"))

@@ -38,8 +38,8 @@ a value \eqn{n \ge 1} uses the implicit backward Euler scheme
 Numeric vector of length \code{n_regions}.
 }
 \description{
-Thin convenience wrapper around \code{build_seas_operator} that applies the
-seasonal transition to a single numbers-at-region vector. For
+Applies \code{build_seas_operator}'s seasonal transition to a single
+numbers-at-region vector. For
 \code{move_timing} 0 and 1 the operator is never formed explicitly, which
 keeps the AD tape smaller than the equivalent matrix product.
 }

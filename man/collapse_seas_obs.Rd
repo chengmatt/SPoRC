@@ -15,7 +15,8 @@ collapse_seas_obs(
   n_seas,
   n_regions,
   n_fleets,
-  pop = FALSE
+  pop = FALSE,
+  bias_correct_oe = 0
 )
 }
 \arguments{

@@ -417,14 +417,15 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
     if(length(init_age_devs_shared) != (length(input_list$data$ages) - 1)) stop("init_age_devs_shared must have length n_ages - 1 = ", n_age_dim, " but has length ", length(init_age_devs_shared))
   }
 
-  # sexes either share one age curve (est_shared_s) or have their own (est_all). the logic below is
-  # written on a single-sex slice, so the sex dim is peeled off here and reattached at the end
+  # sexes share one age curve or have their own. the code below works on one sex, so the sex dim is
+  # taken off here and put back at the end
   if(!InitDevs_sex_spec %in% c("est_shared_s", "est_all")) stop("InitDevs_sex_spec must be est_shared_s or est_all")
   if(InitDevs_sex_spec == "est_all" && input_list$data$n_sexes == 1) stop("InitDevs_sex_spec = 'est_all' estimates a curve per sex, so it requires n_sexes > 1 (with one sex, est_shared_s is the same thing)")
   par_full <- input_list$par$ln_InitDevs
   input_list$par$ln_InitDevs <- array(par_full[,,,1], dim = dim(par_full)[1:3])
 
-  # code 4 estimates the same cells code 2 does and penalizes none of them, so the two share a mapping and only get_recruitment_penalty tells them apart
+  # code 4 estimates the same cells as code 2 but penalizes none of them, so only the penalty tells
+  # them apart
   est_all_ages <- input_list$data$equil_init_age_strc %in% c(2, 4)
   if(est_all_ages && isTRUE(input_list$data$use_rinit == 1)) collect_message("use_rinit = 1 with a deviation estimated on every initial age: ln_rinit and the level of ln_InitDevs are separated only by the initial deviation penalty (ln_sigmaR[1]). Where the initial structure is known to be in equilibrium, map ln_InitDevs off at zero.")
   all_ages_msg <- if(input_list$data$equil_init_age_strc == 4)
@@ -609,7 +610,7 @@ do_InitDevs_mapping <- function(input_list, InitDevs_spec, rec_dd, init_age_devs
   n_sexes_id <- input_list$data$n_sexes
   dims4 <- c(dim(par3), n_sexes_id)
 
-  map4 <- array(NA_real_, dim = dims4)
+  map4 <- array(NA, dim = dims4)
   par4 <- array(0, dim = dims4)
   pen_use <- array(0, dim = dims4)
   n_free <- if(all(is.na(map3))) 0 else max(map3, na.rm = TRUE)
@@ -847,7 +848,7 @@ do_h_mapping <- function(input_list, h_spec, rec_dd) {
   }
 
   # mean recruitment with no stock-recruit penalty has no curve, so steepness stays off. with a
-  # penalty there is a curve and steepness has to be reachable, so fall through to h_spec
+  # penalty there is a curve, so steepness has to be estimable
   if(input_list$data$rec_model == 0 && input_list$data$sr_penalty == 0) {
     input_list$map$steepness_h <- factor(rep(NA, length(input_list$par$steepness_h)))
   } else if(!is.null(h_spec)) {
@@ -1180,8 +1181,8 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
     input_list$map$rec_seas_prop_pars <- NULL
   }
 
-  # under age-0 recruitment with spawning after season 1, seasons before spawn_seas are fixed at
-  # zero, so map the structurally unused columns of rec_seas_prop_pars to NA
+  # with age-0 recruitment and spawning after season one, no recruits arrive before the spawning
+  # season, so those seasons' shares are fixed at zero
   if(!is.null(input_list$map$rec_seas_prop_pars) &&
      input_list$data$rec_lag == 0 && input_list$data$spawn_seas > 1) {
     n_allowed <- input_list$data$n_seas - input_list$data$spawn_seas + 1
@@ -1523,7 +1524,7 @@ Setup_Mod_Rec <- function(input_list,
   sigmaR_given <- !missing(sigmaR_spec)
   dont_est_recdev_last_given <- dont_est_recdev_last
 
-  messages_list <<- character(0) # nolint: object_usage_linter.
+  messages_list <<- character(0)
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Rec <- mget(names(formals()))[-1]
 
@@ -1538,8 +1539,8 @@ Setup_Mod_Rec <- function(input_list,
   init_F_form_num <- convert_to_numeric(init_F_form, list(prop = 0, abs = 1))
   init_F_est      <- convert_to_numeric(init_F_spec, list(fix = 0, est = 1))
 
-  # a free initial age structure is exp(ln_InitDevs), so no equilibrium is projected
-  # under an initial F and init_F_par never reaches the objective
+  # a free initial age structure has no equilibrium to project under an initial F, so init_F_par
+  # would never be used
   if(init_F_est == 1 && init_age_strc == 4)
     stop("init_F_spec = 'est' with init_age_strc = 'free' leaves init_F_par unidentified: the free ",
          "initialization takes the numbers at age 2 and older as exp(ln_InitDevs), so no ",
@@ -1563,7 +1564,7 @@ Setup_Mod_Rec <- function(input_list,
     input_list$par$init_F_par <- array(init_F_off, dim = init_F_dim)
     if(init_F_est == 1) stop("init_F_spec = 'est' but no starting value was given; supply init_F_par (estimating from an effectively-zero start is degenerate)")
   }
-  input_list$map$init_F_par <- factor(if(init_F_est == 1) seq_len(prod(init_F_dim)) else rep(NA_integer_, prod(init_F_dim)))
+  input_list$map$init_F_par <- factor(if(init_F_est == 1) seq_len(prod(init_F_dim)) else rep(NA, prod(init_F_dim)))
 
   collect_message("Initialization F is ", ifelse(init_F_est == 1, "estimated", "fixed"), " as ",
                   ifelse(init_F_form_num == 0, "a proportion of the mean F (moves with ln_F_mean)", "an absolute F (independent of ln_F_mean)"), ".")
@@ -1810,7 +1811,7 @@ Setup_Mod_Rec <- function(input_list,
   if(!RecDevs_model %in% c("iid", "rw", "ar1", "dsem")) stop("RecDevs_model incorrectly specified. Must be one of 'iid', 'rw', 'ar1', or 'dsem'")
   else collect_message("RecDevs_model is specified as: ", RecDevs_model)
 
-  # "dsem" hands the deviations' density to Setup_Mod_DSEM, and their sd with it - so uses dsem sigma and devs rather than those here
+  # dsem takes over the deviations and their sd, so the ones set here are not used
   if(RecDevs_model == "dsem") {
     if(sigmaR_given && sigmaR_spec != "fix") stop("RecDevs_model = 'dsem' reads sigmaR off the arrows' recruitment sd line, so ln_sigmaR is not read and cannot be estimated. Leave sigmaR_spec out (it is set to 'fix') or set it to 'fix'.")
     if(dont_est_recdev_last_given > 0) stop("RecDevs_model = 'dsem' describes a recruitment deviation in every year, so dont_est_recdev_last must be 0. The arrows then describe the terminal years too; use RecDevs_model = 'iid' to leave them out.")
@@ -1821,8 +1822,12 @@ Setup_Mod_Rec <- function(input_list,
     collect_message("RecDevs_model = 'dsem': the recruitment deviations' density and sd come from Setup_Mod_DSEM. sigmaR is read off the arrows' recruitment sd line (the initial age deviations read it too) and ln_sigmaR is not read. The linked deviations take ", if(any(ramp_here != 0)) "the full lognormal correction, minus half their variance under the arrows, so R0 scales mean recruitment as before." else "no lognormal correction, as the penalty takes none here.")
   }
 
-  if(RecDevs_model %in% c("rw", "ar1") && do_rec_bias_ramp == 1)
-    stop("RecDevs_model = '", RecDevs_model, "' centers each deviation on the previous one, so the bias ramp's -sigma^2/2 offset about zero does not apply. Set do_rec_bias_ramp = 0, or use RecDevs_model = 'iid'.")
+  # guard against bias correction w/ random walk
+  if(RecDevs_model == "rw" && do_rec_bias_ramp == 1) stop("RecDevs_model = 'rw' has no stationary variance, so there is no lognormal correction for the bias ramp to act on. Set do_rec_bias_ramp = 0, or use RecDevs_model = 'iid'.")
+
+  # get bias ramp if ar1
+  ar1_ramp <- if(RecDevs_model == "ar1" && do_rec_bias_ramp == 1) get_rec_bias_ramp(do_rec_bias_ramp, bias_year, length(input_list$data$years), max_bias_ramp_fct) else 0
+  if(RecDevs_model == "ar1" && do_rec_bias_ramp == 1 && any(ar1_ramp != 0)) stop("RecDevs_model = 'ar1' centers its deviations on minus one half the stationary variance, and takes that in full or not at all, so the bias ramp has nothing to act on. Set do_rec_bias_ramp = 0 for the full correction, or move bias_year past the last year for none.")
 
   if(RecDevs_model %in% c("rw", "ar1") && RecDevs_pen_center == "own_mean")
     stop("RecDevs_model = '", RecDevs_model, "' centers each deviation on the previous one, so there is no single mean for RecDevs_pen_center = 'own_mean' to estimate. Use RecDevs_pen_center = 'fixed'.")
@@ -1839,10 +1844,8 @@ Setup_Mod_Rec <- function(input_list,
   if(!ln_global_R0_spec %in% c("est", "fix")) stop("ln_global_R0_spec must be est or fix")
   collect_message("ln_global_R0 is specified as: ", ln_global_R0_spec)
 
-  # under mean recruitment log R is ln_global_R0 plus a deviation. a walk penalizes only the change
-  # between deviations, so it never reads their level, and dropping the first year's term takes away
-  # the one thing that did. adding a constant to R0 and taking it off every deviation is then exactly
-  # flat: the fit converges, the hessian is singular and every standard error comes back NA
+  # under mean recruitment a walk penalizes only the change between deviations, so adding a constant
+  # to R0 and taking it off every deviation is flat and the hessian comes back singular
   if(rec_model == "mean_rec" && RecDevs_model == "rw" && ln_global_R0_spec == "est" &&
      dont_pen_recdev_first >= 1)
     stop("rec_model = 'mean_rec' with RecDevs_model = 'rw' and dont_pen_recdev_first = ", dont_pen_recdev_first,
@@ -1861,8 +1864,8 @@ Setup_Mod_Rec <- function(input_list,
             "RecDevs_rw_init_sigma (", RecDevs_rw_init_sigma, "). ln_global_R0 is then weakly identified ",
             "and its standard error will come back near that value. Consider ln_global_R0_spec = 'fix'.")
 
-  # dsem needs a nonzero code, or the deviation never reaches recruitment
-  # the dsem sets those cells to NA in map_ln_RecDevs, so the penalty doesn't use them and the dsem supplies their density
+  # dsem takes a nonzero code so the deviations still reach recruitment, and the dsem gives them
+  # their density in place of the penalty
   input_list$data$RecDevs_model <- match(if(RecDevs_model == "dsem") "iid" else RecDevs_model, c("iid", "rw", "ar1")) # 1 = iid, 2 = rw, 3 = ar1
   input_list$data$RecDevs_rw_init_sigma <- RecDevs_rw_init_sigma
   if(!Use_rec_level_pen %in% c(0,1)) stop("Use_rec_level_pen must be 0 or 1")
@@ -1887,8 +1890,8 @@ Setup_Mod_Rec <- function(input_list,
   input_list$data$sr_penalty <- convert_to_numeric(sr_penalty, list(none = 0, bh = 1, ricker = 2))
   input_list$data$sr_R0_spec <- convert_to_numeric(sr_R0_spec, list(shared = 0, est = 1, rinit = 2))
   input_list$data$ln_sigma_sr_pen <- log(sr_pen_sigma)
-  # a penalty year needs a spawning biomass behind it. the first rec_lag years have none and fall
-  # back to the fished equilibrium, so they are dropped by default and rejected if asked for
+  # a penalty year needs a spawning biomass behind it, and the first rec_lag years have none, so
+  # they are dropped by default
   sr_yr_ok <- seq_along(input_list$data$years) > rec_lag
   input_list$data$sr_pen_yrs <- if(is.null(sr_pen_yrs)) as.numeric(sr_yr_ok) else as.numeric(input_list$data$years %in% sr_pen_yrs)
   if(sr_penalty != "none" && any(input_list$data$sr_pen_yrs == 1 & !sr_yr_ok))
@@ -1961,7 +1964,7 @@ Setup_Mod_Rec <- function(input_list,
   # use_starting_value so its own guard names the argument and the expected size
   if(!is.null(starting_values$ln_global_R0) && n_R0_blks == 1 &&
      length(starting_values$ln_global_R0) == n_pop_r0)
-    starting_values$ln_global_R0 <- array(as.vector(starting_values$ln_global_R0), dim = c(n_pop_r0, 1L))
+    starting_values$ln_global_R0 <- array(as.vector(starting_values$ln_global_R0), dim = c(n_pop_r0, 1))
   input_list$par$ln_global_R0 <- use_starting_value(input_list$par$ln_global_R0, starting_values, "ln_global_R0")
   # a starting value supplied as a plain vector loses the block dimension, and every
   # downstream reader indexes ln_global_R0[pop, block]
@@ -2039,7 +2042,7 @@ Setup_Mod_Rec <- function(input_list,
 
   # unfished recruitment, estimated per population and R0 block or fixed at its starting value
   n_R0_par <- length(input_list$par$ln_global_R0)
-  input_list$map$ln_global_R0 <- factor(if(ln_global_R0_spec == "est") seq_len(n_R0_par) else rep(NA_integer_, n_R0_par))
+  input_list$map$ln_global_R0 <- factor(if(ln_global_R0_spec == "est") seq_len(n_R0_par) else rep(NA, n_R0_par))
   input_list <- do_h_mapping(input_list, h_spec, rec_dd) # steepness mapping
   input_list <- do_sexratio_pars_mapping(input_list, sexratio_spec) # sex ratio parameters
   input_list <- do_stray_rate_mapping(input_list, stray_rate_spec) # stray rates

@@ -101,7 +101,7 @@ Setup_Mod_Retsel <- function(
   ...
 ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Fishsel_and_Q <- c(input_list$config$Setup_Mod_Fishsel_and_Q, mget(names(formals()))[-1])
 
@@ -156,9 +156,8 @@ Setup_Mod_Retsel <- function(
   )
 
   # Selectivity Options -----------------------------------------------------
-  # The bin vector is kept as well as its length. Starting values stated on the
-  # bin scale are seeded further down, by which point ret_selex_type holds the
-  # numeric code rather than the name it arrived as.
+  # the bins are kept as well as how many there are, because the starting values further down are
+  # stated on the bin scale
   if(ret_selex_type == 'age') {
     ret_selex_type <- 0
     ret_sel_bin_vec <- input_list$data$ages
@@ -607,12 +606,12 @@ Setup_Mod_Retsel <- function(
 #'   observations only and fix that fleet's \code{ln_fish_q} whatever
 #'   \code{fish_q_spec} says. The solve runs within each \code{fish_q_blocks}
 #'   block, so a blocked catchability gets one solved value per block.
-#' @param fish_q_model Character vector \code{[n_fish_fleets]} of the process error
-#'   on annual catchability deviations: \code{"none"} (default), \code{"iid"},
-#'   \code{"rw"}, \code{"ar1"} or \code{"dsem"}, which hands the series to
-#'   \code{\link{Setup_Mod_DSEM}}. Catchability is then \eqn{\exp(\ln q_{r,b,f} +
-#'   \epsilon_{r,y,f})}. A fleet with deviations cannot also have
-#'   \code{fish_q_blocks} or an analytically solved \code{fish_q_type}.
+#' @param fish_q_model Character vector \code{[n_fish_fleets]} of the process
+#' error on annual catchability deviations: \code{"none"} (default),
+#' \code{"iid"}, \code{"rw"}, \code{"ar1"} or \code{"dsem"}, which passes the
+#' series to \code{\link{Setup_Mod_DSEM}}. Catchability is then
+#' \eqn{\exp(\ln q_{r,b,f} + \epsilon_{r,y,f})}. A fleet with deviations cannot
+#' also have \code{fish_q_blocks} or an analytically solved \code{fish_q_type}.
 #' @param sigma_fish_q_spec Sharing string for the deviation standard deviation
 #'   over region and fleet: \code{"est_all"} (default), \code{"est_shared_r"},
 #'   \code{"est_shared_f"}, \code{"est_shared_r_f"} or \code{"fix"}.
@@ -819,7 +818,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     ...
                                     ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Fishsel_and_Q <- mget(names(formals()))[-1]
 
@@ -895,9 +894,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   )
 
   # Selectivity Options -----------------------------------------------------
-  # The bin vector is kept as well as its length. Starting values stated on the
-  # bin scale are seeded further down, by which point fish_selex_type holds the
-  # numeric code rather than the name it arrived as.
+  # the bins are kept as well as how many there are, because the starting values further down are
+  # stated on the bin scale
   if(fish_selex_type == 'age') {
     fish_selex_type <- 0
     fish_sel_bin_vec <- input_list$data$ages

@@ -1,8 +1,10 @@
+# Tags released part way into a season: F over Z has to stay a death fraction, two partial steps
+# have to compose into a full season, and recaptures have to match integrating the dynamics.
+
 test_that("partial-season tag exposure keeps F/Z a valid death fraction", {
 
-  # A tag cohort released partway through a season is at liberty for a fraction t of it, so it
-  # accrues F*t of fishing mortality and Z*t of total mortality. Baranov's ratio must therefore
-  # stay F/Z. Scaling Z alone -- the pre-fix behavior -- gives F/(Z*t), which is not a fraction.
+  # a release part way into a season is at liberty for a fraction t of it, so it takes F times t
+  # of fishing and Z times t of total mortality, and their ratio stays F over Z
   F_seas <- 0.40
   M_seas <- 0.30
   Z_seas <- F_seas + M_seas
@@ -22,9 +24,8 @@ test_that("partial-season tag exposure keeps F/Z a valid death fraction", {
 
 test_that("catch_at_age reproduces the analytic partial-interval Baranov under both timings", {
 
-  # Single region, so movement drops out and the answer is closed form. Both the discrete branch
-  # and the move_timing = 2 (spatial Baranov) branch must agree with it once F and Z are scaled
-  # together by the time at liberty.
+  # one region, so movement drops out and the answer is closed form, which both the discrete and
+  # the continuous route have to reach once F and Z are scaled by the time at liberty
   N <- 1000
   F_seas <- 0.40
   M_seas <- 0.30
@@ -62,11 +63,9 @@ test_that("catch_at_age reproduces the analytic partial-interval Baranov under b
 })
 
 # Mid-season releases under continuous movement -------------------------------
-# get_tagging_observation_model scales a mid-season cohort's mortality by tag_frac and
-# its generator by tag_dur = seasdur * tag_frac. Under move_timing = 2 the cohort must
-# therefore still move, for exactly the fraction of the season it was at liberty for --
-# unlike timings 0 and 1, which skip the movement step because a full-season transition
-# matrix cannot represent a partial interval.
+#
+# A mid-season release has its mortality and its generator both scaled by the fraction of the
+# season it was at liberty, so it still moves, for that fraction. The discrete timings do not.
 
 tag_gen <- function(n, seed = NULL) {
   if (!is.null(seed)) set.seed(seed)
@@ -99,9 +98,8 @@ test_that("a mid-season release still redistributes under move_timing = 2", {
 
 test_that("the partial interval is exactly a fraction of the full-season generator", {
 
-  # tag_dur and the tag_frac-scaled Z together must reproduce exp(Lambda * tag_frac),
-  # where Lambda is the ordinary full-season generator. If either were scaled without
-  # the other, this identity would fail.
+  # the scaled duration and the scaled total mortality together have to reproduce the
+  # full-season generator raised to the fraction at liberty, so both have to be scaled
   n <- 3
   Q <- tag_gen(n, seed = 99)
   seasdur <- 0.75
@@ -120,9 +118,8 @@ test_that("the partial interval is exactly a fraction of the full-season generat
 
 test_that("two partial tag steps compose into one full-season step", {
 
-  # Semigroup check: being at liberty for two halves of a season must land in the same
-  # place as being at liberty for the whole of it. This only holds if the generator is
-  # scaled by the at-liberty fraction rather than frozen.
+  # being at liberty for two halves of a season has to land where being at liberty for the whole
+  # of it lands, which only holds if the generator is scaled rather than frozen
   n <- 4
   Q <- tag_gen(n, seed = 777)
   seasdur <- 0.6
@@ -138,10 +135,8 @@ test_that("two partial tag steps compose into one full-season step", {
 
 test_that("partial-interval tag recaptures match direct integration of the true dynamics", {
 
-  # The recapture block computes F_full * tag_frac times the unit-interval integral over
-  # the tag_frac-scaled generator. That should equal the exact partial-interval catch,
-  # integral over [0, tag_frac] of F_full * exp(Lambda * u) * N du. Verified against
-  # quadrature on the untouched full-season generator.
+  # the recapture block takes the full F times the fraction at liberty against the unit interval
+  # of the scaled generator, checked here by quadrature on the unscaled one
   n <- 3
   Q <- tag_gen(n, seed = 31415)
   seasdur <- 0.8
@@ -170,9 +165,8 @@ test_that("partial-interval tag recaptures match direct integration of the true 
 
 test_that("scaling every mortality component is equivalent to scaling the total", {
 
-  # The patch scales tmp_ZAA, tmp_FAA, tmp_ret_FAA and tmp_disc_DAA by tag_frac. Scaling the
-  # components and summing must equal scaling the summed total, or the tag Z would silently
-  # change meaning relative to the population Z.
+  # every mortality component is scaled by the fraction at liberty, so scaling them and summing
+  # has to equal scaling the total, or the tags' total mortality would mean something else
   t <- 0.3333
   natmort <- 0.30
   seasdur <- 0.75

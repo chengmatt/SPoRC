@@ -1,8 +1,8 @@
+# get_idx_fits() intervals have to use the standard deviation the index likelihood used, which
+# takes the estimated component on top of the reported errors. Exact, no tolerance.
+
 library(SPoRC)
 library(testthat)
-
-# get_idx_fits() intervals must use the standard deviation the index likelihood used, which
-# holds the estimated component on top of the reported errors. Exact, no tolerance.
 
 idx_inputs <- function(n_pop = 1, n_regions = 1, n_yrs = 3, n_seas = 1, n_fleets = 1) {
   arr4 <- function(x) array(x, dim = c(n_regions, n_yrs, n_seas, n_fleets))

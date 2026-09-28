@@ -1,7 +1,7 @@
 # Operating model
 #
-# Growth and movement rebuilt from deviation arrays the operating model holds, by the fit's own functions, so a
-# drawn series (a dsem's today) reaches weight at age, the keys, selectivity at age and the movement matrix.
+# Growth and movement rebuilt from the operating model's deviation arrays by the fit's own
+# functions, so a drawn series reaches weight at age, selectivity at age and the movement matrix.
 
 #' Arguments of a model function read from the data and parameter lists
 #'

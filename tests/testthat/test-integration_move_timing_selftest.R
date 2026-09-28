@@ -1,32 +1,19 @@
+# Reference points have to be a fixed point of the projection under every move_timing, the
+# diffusion rate has to be recoverable, and spawning biomass the same stepped one season or
+# several. Region-specific mortality is what makes the three timings tell apart.
+
 library(SPoRC)
 library(testthat)
 library(Matrix)
 
-# Self-consistency checks for continuous movement (move_timing = 2).
-#
-# The end-to-end shape guards live in test-move-timing-end-to-end.R. What this file
-# checks is that the continuous-movement routines is internally coherent:
-#
-#   1. reference points computed under move_timing = 2 are an actual fixed point of the
-#      timing-2 projection (fishing at F_ref holds SSB at B_ref indefinitely);
-#   2. the CTMC diffusion parameter is recoverable from data generated under continuous
-#      movement, i.e. the movement fractions the model produces invert back to the
-#      generator that produced them;
-#   3. SSB is reproduced when the same population is stepped forward two ways.
-#
-# These are the properties that would break first if any module were still applying
-# movement and mortality in the wrong order.
+# The array shapes and the argument wiring are checked elsewhere. These are the properties
+# that break first if any part of the model applies movement and mortality in the wrong order.
 
-# ---------------------------------------------------------------------------
-# 1. Reference points are a fixed point of the projection under every timing
-# ---------------------------------------------------------------------------
+# 1. Reference points are a fixed point of the projection under every timing ----
 
 test_that("equilibrium SSB is a fixed point of the seasonal operator under every timing", {
-  # A per-recruit style equilibrium: constant recruitment into region 1, movement and
-  # mortality applied via the shared operator, iterated to convergence. The converged
-  # state must satisfy N = T(N) + R exactly, for all three timings. Any ordering
-  # mismatch between the operator used to iterate and the one used to check would
-  # show up immediately here.
+  # constant recruitment into region 1 under the shared operator, iterated to convergence.
+  # the settled state has to satisfy N = T(N) + R exactly at all three timings
   set.seed(2024)
   n <- 3
   n_ages <- 12
@@ -94,9 +81,8 @@ test_that("equilibrium SSB is a fixed point of the seasonal operator under every
 })
 
 test_that("the analytic plus group agrees with brute-force iteration under every timing", {
-  # solve_plus_group's geometric series is what reference points rely on. It must equal
-  # simply iterating the plus-group recursion many times, for each timing -- this is the
-  # link between the reference point routines and the projection dynamics.
+  # the geometric series the reference points rely on has to equal iterating the plus
+  # group recursion many times, which is what links them to the projection
   set.seed(99)
   n <- 3
   n_seas <- 2
@@ -146,16 +132,11 @@ test_that("the analytic plus group agrees with brute-force iteration under every
 })
 
 test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
-  # The end-to-end version of the fixed-point property, through the real pipeline:
-  # global_SPR (reference points) -> Do_Population_Projection (forward dynamics).
-  # Fishing at F40% forever must drive SSB to exactly the B40% the reference point
-  # routines reports, for every timing. This is the strongest available check that
-  # the per-recruit equilibrium, the plus-group solve, spawn_state and the projection
-  # dynamics all implement the same seasonal operator -- a mismatch in any one of them
-  # shows up here as a projection that settles somewhere other than B40%.
+  # fishing at F40% forever has to drive spawning biomass to exactly the B40% the reference
+  # points report, so every part of the model has to be on the same seasonal operator.
   #
-  # Natural mortality varies by region so the three timings differ; with a
-  # region-invariant Z they would coincide and the test would be vacuous.
+  # natural mortality varies by region, since with the same total mortality everywhere the
+  # three timings coincide and the test says nothing
   n_pop <- 1
   n_regions <- 3
   n_seas <- 1
@@ -325,20 +306,14 @@ test_that("projecting at each timing's own F40% equilibrates at its own B40%", {
     expect_equal(sum(pj40$proj_SSB[, , NY]), sum(pj40$proj_SSB[, , NY - 1]), tolerance = 1e-8)
   }
 
-  # Guard against vacuity: the timings must actually disagree on the biomass reference
-  # points here, otherwise the fixed-point check above could pass on a single shared answer.
+  # the timings have to disagree on the biomass reference points here, or the check above
+  # would pass on one shared answer
   expect_gt(diff(range(B40)) / mean(B40), 1e-3)
 })
 
 test_that("MSY and SPR reference points agree on per-recruit biology at every timing", {
-  # global_SPR and the Beverton-Holt Fmsy routines build the same unfished per-recruit
-  # age structure by different code paths, so their unfished spawning biomass per recruit
-  # must agree exactly -- at every move_timing, not just the default.
-  #
-  # This is the check that exposed the MSY routines honoring move_timing only inside
-  # build_plus_group_T while their age loops, spawning propagation and catch equation
-  # stayed hard-coded to movement-then-mortality. Before the fix these disagreed by 3.1%
-  # at timing 1 and 1.3% at timing 2, while agreeing exactly at timing 0.
+  # the SPR and Fmsy routines build the same unfished per-recruit age structure two different
+  # ways, so their spawning biomass per recruit has to agree at every timing
   n_regions <- 3
   n_ages <- 20
   n_seas <- 1
@@ -471,27 +446,17 @@ test_that("MSY and SPR reference points agree on per-recruit biology at every ti
                  label = sprintf("SPR agrees, move_timing = %d", tm))
   }
 
-  # Vacuity guard: the per-recruit biology must depend on move_timing here,
-  # otherwise a routine that ignored the flag entirely would still pass the checks above.
+  # the per-recruit biology has to depend on the timing here, or a routine ignoring it
+  # would pass the checks above
   expect_gt(diff(range(spr_sb0)) / mean(spr_sb0), 1e-3)
 })
 
 test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy and Req", {
-  # The MSY analog of the F40% fixed-point test above, and the sharper version of it:
-  # here recruitment is not pinned, it is regenerated each year from the Beverton-Holt
-  # curve, so the per-recruit biology, the catch equation, the plus group and the
-  # stock-recruit routines all have to agree for the loop to settle on Bmsy.
+  # the MSY version of the F40% check above, and the sharper one: recruitment is regenerated
+  # off the Beverton-Holt curve each year rather than kept fixed, so everything has to agree.
   #
-  # Two things this checks that were previously broken:
-  #   1. Get_Det_Recruitment's global density-dependence branch skipped the spawning-season
-  #      movement on the plus group ("mortality, no movement" = move_timing 1 semantics
-  #      hard-coded), so timings 0 and 2 settled slightly off Bmsy while 1 was exact.
-  #   2. Do_Population_Projection's rec_lag != 0 Beverton-Holt call did not forward
-  #      Mrate/move_timing, so the SSB0 behind the curve was built at timing 0.
-  #
-  # NOTE: global_Fmsy assumes GLOBAL density dependence, so srr_opt$rec_dd must be 1.
-  # Pairing it with rec_dd = 0 (local) compares two different equilibria and looks like a
-  # bug when it is not.
+  # global_Fmsy assumes density dependence over the whole stock, so srr_opt$rec_dd must be
+  # 1. pairing it with region-by-region dependence compares two different equilibria
   n_pop <- 1
   n_regions <- 3
   n_seas <- 1
@@ -502,9 +467,8 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
   ages <- seq_len(n_ages)
   t_spawn <- 0.25
   spawn_seas <- 1
-  # The Beverton-Holt feedback loop damps geometrically and converges more slowly than
-  # the age structure alone: relative error in equilibrium SSB is 1.3e-9 at 150 years,
-  # 1.5e-12 at 200 and ~2e-15 by 250. 280 leaves headroom under the 1e-10 tolerance.
+  # the Beverton-Holt feedback settles more slowly than the age structure alone: relative
+  # error in equilibrium spawning biomass is 1.3e-9 at 150 years and 2e-15 by 250
   NY <- 280
   M_r <- c(0.12, 0.20, 0.35)
   rec_prop <- c(0.5, 0.3, 0.2)
@@ -675,7 +639,7 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
     pjA <- project(tm, Fmsy, "mean_rec", Rconst = Req)   # recruitment pinned at Req
     pjB <- project(tm, Fmsy, "bh_rec")                   # full Beverton-Holt feedback
 
-    # (a) with recruitment pinned, SSB must land exactly on Bmsy
+    # (a) with recruitment kept fixed, spawning biomass has to land exactly on Bmsy
     expect_equal(sum(pjA$proj_SSB[, , NY]), Bmsy, tolerance = 1e-10,
                  label = sprintf("pinned-recruitment SSB == Bmsy, move_timing = %d", tm))
     # (b) with the full stock-recruit loop closed, both SSB and recruitment must land there
@@ -683,33 +647,26 @@ test_that("projecting at Fmsy under Beverton-Holt feedback equilibrates at Bmsy 
                  label = sprintf("Beverton-Holt SSB == Bmsy, move_timing = %d", tm))
     expect_equal(sum(pjB$proj_NAA[, , NY, 1, 1, ]), Req, tolerance = 1e-10,
                  label = sprintf("Beverton-Holt recruitment == Req, move_timing = %d", tm))
-    # (c) projected yield equals MSY up to the single-sex convention: global_Fmsy
-    #     starts its cohort at rec_region_prop * sex_ratio_f (0.5), so its Yield is per
-    #     female recruit while the projection puts the whole Req into the population.
+    # (c) projected yield equals MSY per female recruit: global_Fmsy starts its cohort at
+    #     half a recruit per region, while the projection puts the whole Req in
     expect_equal(sum(pjA$proj_Catch[, , NY, , ]), 2 * rp$rep$Yield, tolerance = 1e-10,
                  label = sprintf("projected yield == 2 x MSY, move_timing = %d", tm))
     # at equilibrium rather than still settling
     expect_equal(sum(pjB$proj_SSB[, , NY]), sum(pjB$proj_SSB[, , NY - 1]), tolerance = 1e-8)
   }
 
-  # Vacuity guard: Bmsy must actually depend on move_timing here
+  # Bmsy has to depend on the timing here, or the check above says nothing
   expect_gt(diff(range(Bmsy_all)) / mean(Bmsy_all), 1e-3)
 })
 
 test_that("local_BH_MSY is a fixed point of a two-season projection under every timing", {
-  # Widens the Fmsy fixed-point check along the two axes the single-season global test
-  # does not reach: LOCAL density dependence (region-specific Fmsy, per-origin equilibrium
-  # recruitment solved by Newton-Raphson) and SEASONALITY (two unequal seasons, spawning
-  # in the second, so the seasonal operators compose and the "advance into spawning
-  # season" branches actually execute).
+  # the same Fmsy check widened along the two axes the single-season one does not reach:
+  # density dependence region by region, and two unequal seasons with spawning in the second.
   #
-  # Two details of this test that are easy to get wrong:
-  #   - srr_opt$rec_dd must be 0 (local) to match local_Fmsy_sglpop.
-  #   - terminal_NAA must be seeded across ALL seasons. Projection year 1 IS the terminal
-  #     data year (proj_NAA[,,1,,,] <- terminal_NAA, and the real caller passes
-  #     rep$NAA[,,n_yrs,,,]), so its later seasons are inputs, not something the
-  #     projection recomputes. Seeding only season 1 leaves SSB[,,1] = 0, which with
-  #     Beverton-Holt recruitment collapses the whole projection to zero.
+  # Two things here that are easy to get wrong:
+  #   - srr_opt$rec_dd must be 0 to match local_Fmsy_sglpop.
+  #   - terminal_NAA must be seeded in every season, since projection year 1 is the terminal
+  #     data year and its later seasons are inputs rather than recomputed.
   n_pop <- 1
   n_regions <- 3
   n_sexes <- 1
@@ -895,7 +852,7 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
     pj <- project(tm, rp$rep$Fmsy)
     ssb <- as.vector(pj$proj_SSB[1, , NY])
 
-    # region-by-region, not just the total: local DD makes the spatial split the point
+    # region by region, not just the total: density dependence within a region is the point
     expect_equal(ssb, Btgt, tolerance = 1e-8,
                  label = sprintf("two-season local Bmsy by region, move_timing = %d", tm))
     expect_equal(sum(ssb), sum(Btgt), tolerance = 1e-8)
@@ -904,19 +861,16 @@ test_that("local_BH_MSY is a fixed point of a two-season projection under every 
     expect_true(all(ssb > 0))   # guards the all-zero collapse mode described above
   }
 
-  # Vacuity guard: the timings must disagree on Bmsy in this configuration
+  # the timings have to disagree on Bmsy here, or the check above says nothing
   expect_gt(diff(range(Btot)) / mean(Btot), 1e-3)
 })
 
 test_that("seasonal recruitment is apportioned across regions consistently in MSY and SPR", {
-  # global_Fmsy seeds age 1 with rec_region_prop * sex_ratio_f * rec_seas_prop[1] but
-  # previously topped up seasons 2..n with rec_seas_prop[seas] * sex_ratio_f only, dropping
-  # the regional apportionment. With n_seas > 1 and non-uniform rec_region_prop that put
-  # equilibrium SSB ~50% out. global_SPR builds the same quantity correctly, so comparing
-  # their unfished per-recruit spawning biomass isolates it.
+  # every season's recruits have to be apportioned across regions, not just the first, so
+  # the SPR and Fmsy routines are compared on unfished spawning biomass per recruit.
   #
-  # This needs n_seas > 1 AND non-uniform rec_region_prop to bite -- the single-season
-  # MSY/SPR agreement test above never enters the seasonal top-up branch.
+  # this needs more than one season and an uneven rec_region_prop together, since the
+  # single-season test above never reaches the seasonal apportionment
   n_regions <- 3
   n_ages <- 20
   NS <- 2
@@ -1005,10 +959,8 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
     ln_global_R0 = log(100)
   ))
 
-  # the population-shaped arrays below supersede the region-shaped ones shared()
-  # supplies for global_Fmsy. Dropping them first keeps the concatenated list free
-  # of duplicate names: getAll assigns in order, so the override already won, but
-  # it warned once per duplicate on every retape
+  # the population-shaped arrays below replace the region-shaped ones shared() supplies, so
+  # dropping those first keeps duplicate names out of the concatenated list
   spr_data <- function(tm) {
     base <- shared(tm)
     c(base[setdiff(names(base), c("WAA", "MatAA", "Movement", "Mrate"))],
@@ -1047,15 +999,11 @@ test_that("seasonal recruitment is apportioned across regions consistently in MS
   }
 })
 
-# ---------------------------------------------------------------------------
-# 2. Diffusion parameter recovery
-# ---------------------------------------------------------------------------
+# 2. Diffusion parameter recovery --------------------------------------------
 
 test_that("CTMC diffusion parameter is recoverable from continuous movement fractions", {
-  # Generate movement under a known diffusion parameter, then estimate it back by
-  # minimizing the discrepancy between observed and predicted movement fractions.
-  # This checks that Get_Movement's generator and the seasdur scaling are mutually
-  # consistent -- if the two disagreed, the recovered value would be biased.
+  # movement is generated at a diffusion rate set here and then estimated back off the
+  # movement fractions, so the generator and the season duration scaling have to agree
   n_regions <- 3
   n_ages <- 3
   n_sexes <- 1
@@ -1166,14 +1114,11 @@ test_that("season-duration scaling is identifiable, not absorbed by the diffusio
                tolerance = 1e-9, ignore_attr = TRUE)
 })
 
-# ---------------------------------------------------------------------------
-# 3. SSB reproduction
-# ---------------------------------------------------------------------------
+# 3. SSB reproduction --------------------------------------------------------
 
 test_that("continuous movement reproduces SSB when stepped as one season or several", {
-  # A population advanced through k sub-seasons under a constant generator and constant
-  # annual mortality must land where a single full-year step lands. Spawning biomass is a
-  # weighted sum of that state, so this is the SSB-recovery property in its sharpest form.
+  # a population advanced through k sub-seasons at a constant generator and mortality has
+  # to land where one full-year step lands, and spawning biomass is a sum of that state
   set.seed(31)
   n <- 4
   D <- matrix(stats::runif(n * n, 0.05, 0.4), n, n)
@@ -1215,7 +1160,7 @@ test_that("spawning state is consistent between partial and full propagation", {
   t_spawn <- 0.4
 
   at_spawn <- spawn_state(N0, Mv, Z, Q, 1, t_spawn, move_timing = 2)
-  # advancing the remaining (1 - t_spawn) of the season from the spawning state
+  # advancing the rest of the season from the spawning state
   rest <- as.vector(as.matrix(Matrix::expm((t(Q) - diag(Z, n)) * (1 - t_spawn))) %*% at_spawn)
   full <- advance_seas(N0, Mv, Z, Q, 1, 2)
 

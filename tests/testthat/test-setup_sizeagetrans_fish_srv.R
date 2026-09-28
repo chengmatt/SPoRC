@@ -123,9 +123,8 @@ build_input <- function(sat_fish = NULL) {
   )
   input_list <- Setup_Mod_Weighting(input_list = input_list, Wt_Catch = 1, Wt_F = 1)
 
-  # a flat logistic (b50 far below every bin) makes selectivity ~1 everywhere,
-  # so the predicted catch at length is essentially the key itself. Dims are
-  # [region, param, block, sex, fleet]; param 1 is b50, param 2 the slope
+  # a logistic with b50 far below every bin selects everything, so the predicted catch at length
+  # is essentially the transition matrix itself. the parameters are b50 then slope
   input_list$par$fish_fixed_sel_pars[, 1, , , ] <- -5
   input_list$par$fish_fixed_sel_pars[, 2, , , ] <- 5
   input_list$par$srv_fixed_sel_pars[, 1, , , ] <- -5

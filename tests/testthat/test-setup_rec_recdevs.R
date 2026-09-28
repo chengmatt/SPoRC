@@ -1,12 +1,12 @@
 # Process error on the recruitment deviations: independent, random walk, or AR1.
 #
-# Checks the density against a hand-written walk, the guard rails on the setup arguments, and that a
+# Checks the density against a walk written out here, what the setup arguments refuse, and that a
 # data list written before the option existed still gets the independent penalty. Tolerance 1e-10.
 
 library(SPoRC)
 library(testthat)
 
-# ── do_RecDevs_rho_mapping ───────────────────────────────────────────────────
+# Which Cells Get a Correlation ----------------------------------------------
 
 test_that("do_RecDevs_rho_mapping only activates RecDevs_rho under RecDevs_model = 'ar1'", {
 
@@ -42,7 +42,7 @@ test_that("do_RecDevs_rho_mapping only activates RecDevs_rho under RecDevs_model
   expect_true(all(is.na(il$map$RecDevs_rho)))
 })
 
-# ── get_dev_pe_nLL ───────────────────────────────────────────────────────────
+# The Deviation Penalty ------------------------------------------------------
 
 # the walk written out by hand, for one series of deviations
 hand_recdev_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init_sd = 5) {
@@ -54,9 +54,10 @@ hand_recdev_nLL <- function(devs, is_est, sigma, dev_mu, PE_model, rho = 0, init
       if(y == 1) out[y] <- -dnorm(devs[y], 0, init_sd, log = TRUE)
       else out[y] <- -dnorm(devs[y], devs[y - 1], sigma[y], log = TRUE)
     }
+    # dev_mu is the stationary mean the ar1 settles on, zero without a bias correction
     if(PE_model == 3) {
-      if(y == 1) out[y] <- -dnorm(devs[y], 0, sigma[y] / sqrt(1 - rho^2), log = TRUE)
-      else out[y] <- -dnorm(devs[y], rho * devs[y - 1], sigma[y], log = TRUE)
+      if(y == 1) out[y] <- -dnorm(devs[y], dev_mu[y], sigma[y] / sqrt(1 - rho^2), log = TRUE)
+      else out[y] <- -dnorm(devs[y], dev_mu[y] + rho * (devs[y - 1] - dev_mu[y - 1]), sigma[y], log = TRUE)
     }
   }
   out
@@ -142,7 +143,7 @@ test_that("the diffuse start sits on year one and fixing it leaves the level fre
   expect_equal(as.numeric(base), as.numeric(shifted), tolerance = 1e-10)
 })
 
-# ── get_recruitment_penalty ──────────────────────────────────────────────────
+# The Recruitment Penalty ----------------------------------------------------
 
 # the arguments the recruitment penalty needs that this test is not varying
 rec_pen_args <- function(ln_RecDevs, map_ln_RecDevs, ln_sigmaR, sigmaR_switch, ...) {
@@ -287,7 +288,7 @@ test_that("Setup_Mod_Rec leaves a dont_pen_recdev_first year estimated but unpen
   expect_false(any(is.na(il$data$map_ln_RecDevs[1, 1, -1])))
 })
 
-# ── Setup_Mod_Rec guard rails ────────────────────────────────────────────────
+# What Setup_Mod_Rec Refuses -------------------------------------------------
 
 test_that("Setup_Mod_Rec validates RecDevs_model and its combinations", {
 
@@ -329,7 +330,7 @@ test_that("Setup_Mod_Rec validates RecDevs_model and its combinations", {
   expect_false(any(is.na(il$map$RecDevs_rho)))
 })
 
-# ── equil_init_age_strc = "stoch_all_no_pen" ─────────────────────────────────
+# Estimated Initial Deviations with No Penalty -------------------------------
 
 test_that("stoch_all_no_pen estimates every initial deviation and penalizes none", {
 
@@ -374,7 +375,7 @@ test_that("the initial age penalty is zero under stoch_all_no_pen and not under 
   expect_true(sum(mk_rep("stoch_all")$Init_Rec_nLL) != 0)
 })
 
-# ── ln_global_R0_spec ────────────────────────────────────────────────────────
+# Fixing or Estimating R0 ----------------------------------------------------
 
 test_that("ln_global_R0_spec maps the recruitment level and refuses the flat combination", {
 
@@ -434,7 +435,7 @@ test_that("ln_global_R0 still reaches the dots as a starting value", {
   expect_gt(which(fm == "ln_global_R0_spec"), which(fm == "..."))
 })
 
-# ── End to end ───────────────────────────────────────────────────────────────
+# End to End -----------------------------------------------------------------
 
 test_that("a fitted model reports the random walk recruitment penalty", {
 

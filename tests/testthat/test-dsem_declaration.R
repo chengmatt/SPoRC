@@ -13,6 +13,8 @@ dusky_with <- function(rec = list(), biol = list()) {
   suppressMessages(build(sgl_rg_dusky_data))
 }
 
+# Recruitment ----------------------------------------------------------------
+
 test_that("RecDevs_model = 'dsem' reads sigmaR off the arrows, refuses an explicit estimate, and needs a dsem to fit", {
 
   # the sweep model estimates nothing about sigmaR by default and has the ramp off, so the declaration takes
@@ -98,6 +100,8 @@ test_that("linking every cell without the declaration is refused while the sigma
 
 })
 
+# Numbers at Age -------------------------------------------------------------
+
 test_that("NAA_re = 'dsem' keeps the state, holds sigmaNAA and defaults the process list", {
 
   il <- dusky_with(biol = list(NAA_re = "dsem", NAA_re_ages = 5:9))
@@ -115,6 +119,8 @@ test_that("NAA_re = 'dsem' keeps the state, holds sigmaNAA and defaults the proc
   expect_equal(unique(d$data$dsem_link_par), "ln_NAA")
 
 })
+
+# Growth ---------------------------------------------------------------------
 
 test_that("growth declares parameter by parameter, holds that parameter's sd, and owes only its series", {
 
@@ -142,6 +148,8 @@ test_that("growth declares parameter by parameter, holds that parameter's sd, an
   expect_error(Setup_Mod_DSEM(il, c(paste0("env -> ", K, ", 0, b"), "env <-> env, 0, s", paste0(K, " <-> ", K, ", 0, sg")), env, dsem_mu_spec = "fix"), L1)
 
 })
+
+# Movement -------------------------------------------------------------------
 
 test_that("movement declares through the option's prefix and holds its process error", {
 
@@ -217,6 +225,8 @@ test_that("a year varying preference term is refused once a movement series is l
   expect_gt(length(SPoRC:::get_yr_varying_pref_terms(covar)), 0)
 
 })
+
+# The Semi-parametric Surface ------------------------------------------------
 
 test_that("the semi-parametric surface declares like the rest", {
 

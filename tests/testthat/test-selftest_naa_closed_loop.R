@@ -1,7 +1,7 @@
 # A closed loop run end to end with the state-space numbers at age turned on: an assessment is fitted,
 # a closed loop conditioned from it, and a fresh estimation model fitted at each assessment year.
 #
-# This guards routing rather than statistics: the closed loop never calls Simulate_Pop_Static, and a
+# This checks routing rather than statistics: the closed loop never calls Simulate_Pop_Static, and a
 # conditioning step that drops the state projects a deterministic future rather than failing.
 
 naacl <- local({

@@ -11,16 +11,12 @@
 #' @param rec_window How many years back from the terminal year mean recruitment
 #'   is taken over. Clipped to the series length.
 #' @param rec_yrs Explicit years to average recruitment over, overriding
-#'   \code{rec_window}. Comparing against a reference point means matching the
-#'   years that reference point was scaled by, which is
-#'   \code{calc_rec_st_yr:(n_yrs - rec_age)}; a different window is a different
-#'   mean recruitment and so a different biomass scale.
+#'   \code{rec_window}. A comparison has to use the years the reference point was
+#'   scaled by, since a different window is a different biomass scale.
 #' @param data,rep The model to project. Defaults to the packaged sablefish
-#'   assessment; any fitted model can be passed, which is what lets the
-#'   cross-check run at configurations the packaged one does not cover.
-#' @param recruitment_opt \code{"mean_rec"} or \code{"bh_rec"}. Yield has an
-#'   interior maximum in F only under a stock-recruit curve; with mean
-#'   recruitment it rises without bound, so MSY needs \code{"bh_rec"}.
+#'   assessment, so that any fitted model can be checked against it.
+#' @param recruitment_opt \code{"mean_rec"} or \code{"bh_rec"}. Yield peaks at an
+#'   interior F only under a stock-recruit curve, so MSY needs \code{"bh_rec"}.
 #' @param bh_rec_opt The deprecated spelling of \code{srr_opt}, kept only so
 #'   the deprecation shim itself can be tested. Leave it \code{NULL}.
 #' @param srr_opt Beverton-Holt settings, required when
@@ -56,10 +52,8 @@ project_at_F <- function(
 
   biol_d <- c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)
 
-  # A slice taken with drop = TRUE collapses whichever dims happen to be
-  # length one, and which those are depends on the model. Keeping every dim
-  # and flattening makes the copy positional, so the same code holds a one-season
-  # single-sex model and a seasonal sexed one.
+  # reading with drop = TRUE collapses whichever dimensions happen to be length one,
+  # which differs by model, so keep every dimension and copy by position instead
   hold_last_year <- function(arr, dims) {
     idx <- rep(list(bquote()), length(dim(arr)))
     idx[[3]] <- n_yrs
@@ -76,8 +70,8 @@ project_at_F <- function(
     for(y in seq_len(n_proj_yrs)) {
       i <- rep(list(bquote()), length(dims))
       i[[3]] <- y
-      # pinned to base: while a tape is being built RTMB's replacement operator is
-      # in scope, and it does not take the empty-symbol form do.call needs here
+      # base's assignment, since RTMB's is in scope while a tape is being built and
+      # does not take the empty-symbol form do.call needs here
       out <- do.call(base::`[<-`, c(list(out), i, list(slice)))
     }
     out
@@ -98,16 +92,15 @@ project_at_F <- function(
   Do_Population_Projection(
     n_proj_yrs = n_proj_yrs, n_regions = n_regions, n_ages = n_ages,
     n_sexes = n_sexes, n_pop = n_pop, n_fish_fleets = n_fish_fleets,
-    # the seasonal structure has to be handed over explicitly: left out, the
-    # projection assumes a single season and rejects the arrays built for more
+    # the seasonal structure has to be passed in, or the projection assumes one
+    # season and refuses the arrays built for more
     n_seas = n_seas, seasdur = d$seasdur, spawn_seas = d$spawn_seas,
     natal_region = d$natal_region,
     sexratio = array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)),
     do_recruits_move = 0,
     recruitment = local({
-      # the years mean recruitment is taken over. Written as a window back from
-      # the terminal year rather than a fixed start, so a short series does not
-      # produce a decreasing sequence and silently index backwards
+      # the years mean recruitment is taken over, written as a window back from the
+      # terminal year so that a short series cannot index backwards
       yrs <- if(!is.null(rec_yrs)) rec_yrs else
         seq.int(max(1L, n_yrs - rec_window), max(1L, n_yrs - 2L))
       array(rp$Rec[, , yrs], dim = c(n_pop, n_regions, length(yrs)))
@@ -124,9 +117,8 @@ project_at_F <- function(
     # under fmort_opt = "Input" the projection fishes at f_ref_pt directly, so
     # this is how a constant rate is applied
     f_ref_pt = array(f, dim = c(n_regions, n_proj_yrs)),
-    # a rule reads this, so it has to be a real reference point under fmort_opt
-    # "HCR" and is left at zero for the constant-F path the reference point
-    # tests use
+    # a control rule reads this, so it needs a real reference point under fmort_opt
+    # "HCR", and stays at zero on the constant-F path these tests take
     b_ref_pt = array(if(fmort_opt == "Input") 0 else sum(rp$SSB[,,n_yrs]) * 0.4 / n_pop,
                      dim = c(n_pop, n_regions, n_proj_yrs)),
     HCR_function = HCR_function,
@@ -150,9 +142,8 @@ project_with_HCR <- function(rule, f = 0.06, n_proj_yrs = 8) {
                fmort_opt = "HCR", HCR_function = rule)
 }
 
-# Projected quantities are laid out with year on the third dim. The final
-# projection year is read one year short of the end: the F rules set the next
-# year's rate at the end of the current one, so the last slot is never fished.
+# projected quantities run with year third. the last projection year is read one short
+# of the end, since a control rule sets next year's F and the last slot is never fished
 proj_year_total <- function(arr, offset = 1) {
   y <- dim(arr)[3] - offset
   idx <- rep(list(bquote()), length(dim(arr)))

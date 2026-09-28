@@ -1,8 +1,8 @@
-# Shared routines for the semi-parametric growth self-test. Mean length at age moves by a KNOWN
-# year-by-age surface, and the estimating model has to recover it from the parametric curve alone.
+# Shared routines for the semi-parametric growth self test. Mean length at age moves by
+# a surface set here, and the estimating model recovers it from the parametric curve.
 #
-# The surface is smooth in both directions rather than white noise, which is what the correlated process
-# errors are for: a 2D AR(1) or 3D GMRF borrows strength across neighboring ages and years.
+# The surface is smooth in year and age rather than white noise, which is what the
+# correlated process errors are for: they borrow strength across neighboring cells.
 
 spcfg <- list(
   n_yrs = 30,
@@ -18,6 +18,8 @@ spcfg$n_lens <- length(spcfg$len_lower)
 
 # the parametric curve underneath, in the Schnute form the growth module reads
 sp_pars <- c(L1 = 14, L2 = 68, K = 0.25, CV1 = 0.12, CV2 = 0.07)
+
+# The Deviation Surface and the Curve ----------------------------------------
 
 #' The true deviation surface: a wave over years scaled by a gradient over ages
 #'
@@ -50,10 +52,8 @@ sp_alk <- function(len_lower, mu, sd) {
 
 #' Mean and spread of length at age under the parametric curve, by year
 #'
-#' The curve read at integer ages with the Schnute reference ages at the first
-#' and last age, times the deviation surface. Uses the package's own
-#' get_laa_curve so the operating model and the estimating model agree on the
-#' curve and differ only in the deviations.
+#' The curve read at integer ages with the Schnute reference ages first and last, times
+#' the deviation surface. Uses get_laa_curve, so only the deviations differ.
 #'
 #' @keywords internal
 sp_growth <- function(devs = NULL) {
@@ -76,6 +76,8 @@ sp_growth <- function(devs = NULL) {
   sd <- sweep(mu, 2, crv$cv, "*")                # the CV at age is untouched
   list(mean = mu, sd = sd, cv = crv$cv)
 }
+
+# Operating Model ------------------------------------------------------------
 
 #' Operating model whose size at age moves by a known surface
 #'
@@ -170,12 +172,12 @@ semipar_simulate <- function(seed = 11) {
   list(obs = obs, devs = devs, mean_LAA = g$mean, sd_LAA = g$sd, om = om)
 }
 
+# Estimating Model -----------------------------------------------------------
+
 #' Estimating model with a semi-parametric growth surface
 #'
-#' Growth is estimated from the parametric curve up, plus a deviation surface
-#' under the named process error. Survey lengths and conditional age-at-length
-#' are the data that inform it; no marginal age compositions are fit, so the
-#' size at age has to come from the length data and the age-at-length rows.
+#' Growth is the parametric curve plus a deviation surface under the named process error. No
+#' marginal ages are fit, so size at age comes from the lengths and age-at-length rows.
 #'
 #' @param form one of none, iid, rw, 2dar1, 3dmarg, 3dcond
 #' @param obs the observation list from semipar_simulate(); a fresh one is

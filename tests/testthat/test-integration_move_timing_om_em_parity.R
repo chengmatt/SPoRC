@@ -1,19 +1,10 @@
+# A self test can only recover the truth if the simulator applies move_timing everywhere the
+# estimating model does. Three places once defaulted to movement before mortality inside the
+# simulator: spawning-time biomass, the initial age structure, and the SSB0 behind the curve.
+
 library(SPoRC)
 library(testthat)
 library(Matrix)
-
-# Operating-model / estimation-model parity under move_timing.
-#
-# A simulation self-test can only recover the truth if the simulator and the estimation
-# model implement the same dynamics. The operator-level properties are covered in
-# test-transition-operators.R and test-move-timing-selftest.R; what this file guards is
-# that the *simulator* honors move_timing everywhere the estimation model does.
-#
-# Three modules previously defaulted to move_timing = 0 inside the simulator while the
-# estimation model ran at the configured timing, which biased the round trip:
-#   1. compute_biom_y_sim  (spawning-time biomass)
-#   2. Get_Init_NAA        (initial age structure)
-#   3. Get_Det_Recruitment (SSB0 / SPR behind Beverton-Holt)
 
 # Shared test setup: a three-region CTMC generator with region-varying mortality, which is
 # the only regime where the three timings actually differ.
@@ -63,15 +54,11 @@ make_setup <- function(n_regions = 3, n_ages = 8, n_seas = 1, n_sexes = 1, n_yrs
        Fr = c(0.02, 0.12, 0.30)[seq_len(n_regions)], M = 0.25)
 }
 
-# ---------------------------------------------------------------------------
-# 1. Spawning-time biomass
-# ---------------------------------------------------------------------------
+# 1. Spawning-time biomass ---------------------------------------------------
 
 test_that("simulator and estimation model agree on spawning biomass under every timing", {
-  # compute_biom_y_sim() is the simulator's copy of compute_biom_y(). Given identical
-  # state they must return identical SSB, Total_Biom and Dynamic_SSB0 -- otherwise the
-  # operating model's recruitment is driven off a different SSB than the estimation
-  # model reconstructs, and no amount of refitting recovers the truth.
+  # the simulator's biomass function has to return the same three quantities as the objective's,
+  # or the operating model recruits off a spawning biomass the estimating model never rebuilds
   set.seed(11)
   fx <- make_setup()
   n_regions <- fx$n_regions
@@ -151,7 +138,7 @@ test_that("simulator and estimation model agree on spawning biomass under every 
 })
 
 test_that("spawning biomass actually depends on move_timing when mortality varies by region", {
-  # Guards the parity test above against being vacuously true: if all three timings gave
+  # without this the test above would hold for nothing: if all three timings gave
   # the same answer, a simulator that ignored move_timing would still pass.
   set.seed(12)
   fx <- make_setup()
@@ -174,14 +161,11 @@ test_that("spawning biomass actually depends on move_timing when mortality varie
   expect_false(isTRUE(all.equal(ssb[, 2], ssb[, 3], tolerance = 1e-4)))
 })
 
-# ---------------------------------------------------------------------------
-# 2. Initial age structure
-# ---------------------------------------------------------------------------
+# 2. Initial age structure ---------------------------------------------------
 
 test_that("Get_Init_NAA respects move_timing", {
-  # The simulator builds its initial age structure through the same Get_Init_NAA the
-  # estimation model uses, so it has to pass Mrate and move_timing through. If either
-  # were dropped the equilibrium would silently be built at timing 0.
+  # the simulator builds its initial age structure through the same function the estimating model
+  # uses, so it has to pass both movement arguments or the equilibrium is built at timing 0
   fx <- make_setup()
   n_regions <- fx$n_regions
   n_ages <- fx$n_ages
@@ -225,14 +209,11 @@ test_that("Get_Init_NAA respects move_timing", {
   expect_false(isTRUE(all.equal(naa[[2]], naa[[3]], tolerance = 1e-4)))
 })
 
-# ---------------------------------------------------------------------------
-# 3. Simulation environment plumbing
-# ---------------------------------------------------------------------------
+# 3. Simulation environment plumbing -----------------------------------------
 
 test_that("Setup_sim_env always binds Mrate and rejects timing 2 without it", {
-  # A NULL list element is dropped by list2env, so Mrate would escape to the enclosing
-  # frame and error at move_timing = 1. It must resolve to NULL instead, and continuous
-  # movement must fail loudly rather than silently reverting.
+  # a NULL element is dropped when the list is bound, so Mrate has to resolve to NULL rather
+  # than escaping to the enclosing frame, and continuous movement has to fail loudly
   base <- list(n_sims = 1, n_yrs = 2, n_regions = 2)
 
   env0 <- Setup_sim_env(base)

@@ -65,8 +65,8 @@
 #'   reference point or fixed input F, depending on `fmort_opt`.
 #' @param b_ref_pt Array `[n_pop, n_regions, n_proj_yrs]` of the biomass reference
 #'   point used in the control rule.
-#' @param HCR_function Harvest control rule taking `x` (SSB), `frp` and `brp`. A
-#'   rule that also declares a `state` argument (or `...`) is handed this year's
+#' @param HCR_function Harvest control rule taking `x` (SSB), `frp` and `brp`.
+#'   A rule that also declares a `state` argument (or `...`) is given this year's
 #'   population as a named list, holding `y`, `r`, `NAA`, `SSB`, `Total_Biom` and
 #'   `Catch`, so it can be written on more than spawning biomass. Rules without it
 #'   are called as before and no state is assembled.
@@ -225,7 +225,7 @@
 #' reordered within \code{spawn_seas}: movement runs first, spawning biomass is
 #' computed from the survivors alone, that SSB generates this year's recruitment,
 #' and the recruits are inserted immediately before mortality and ageing. Year 1
-#' holds the terminal state forward with no recruitment event.
+#' advances the terminal state with no recruitment event.
 #'
 #' Under \code{fmort_opt = "Catch"} the F step moves to the front of the following
 #' year, since the F that lands a target depends on that year's own numbers at age
@@ -315,8 +315,7 @@ Do_Population_Projection <- function(
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  # srr_opt was bh_rec_opt when Beverton-Holt was the only stock-recruit curve.
-  # It now has either curve, so the bh_ prefix is wrong rather than redundant.
+  # older callers pass this as bh_rec_opt, from when Beverton-Holt was the only curve
   if(!is.null(bh_rec_opt)) {
     if(!is.null(srr_opt)) stop("Supply either srr_opt or the deprecated bh_rec_opt, not both.")
     warning("'bh_rec_opt' is deprecated and will be removed; use 'srr_opt'. It now holds the Ricker as well, so the bh_ prefix no longer describes it.", call. = FALSE)
@@ -335,9 +334,8 @@ Do_Population_Projection <- function(
     if(any(!is.finite(rec_devs)) || any(rec_devs < 0)) stop("rec_devs holds negative or non-finite values. They multiply recruitment, so they should be positive.")
   }
 
-  # Taping the projection turns its inputs into AD types. Two options cannot be
-  # differentiated through, and both would give a silently wrong gradient rather
-  # than an error, so they are refused here instead.
+  # two options cannot be differentiated through and would give a wrong gradient rather than an
+  # error, so refuse them when the projection is taped
   if(any(vapply(list(f_ref_pt, catch_input, terminal_NAA, terminal_F, fish_sel, natmort, WAA),
                 inherits, logical(1), "advector"))) {
     if(recruitment_opt == "inv_gauss") stop("recruitment_opt = 'inv_gauss' draws recruitment at random, which has no derivative. Tape the projection under 'mean_rec', 'bh_rec' or 'ricker_rec'.")
@@ -391,7 +389,7 @@ Do_Population_Projection <- function(
       if(catch_fallback_opt %in% c("HCR", "HCR_global") && (is.null(HCR_function) || is.null(b_ref_pt))) stop(paste0("catch_fallback_opt = '", catch_fallback_opt, "' needs HCR_function and b_ref_pt for the projection years catch_input leaves NA."))
     }
 
-    # A season the terminal year did not fish has no fleet selectivity split to use, so no F can be apportioned into it and no catch can be taken there.
+    # a season the terminal year did not fish has no fleet split to use, so no catch can be taken there
     if(catch_seasonal) {
       asked <- apply(array(catch_input[,catch_yr_targeted,, drop = FALSE], dim = c(n_regions, sum(catch_yr_targeted), n_seas)), c(1,3), max)
       dead <- which(apply(terminal_F, c(1,2), sum) == 0 & asked > 0, arr.ind = TRUE)
@@ -417,8 +415,8 @@ Do_Population_Projection <- function(
     for(seas in 1:n_seas) {
       seas_tot <- sum(terminal_F[r,seas,])
       seas_share[r,seas] <- seas_tot / sum(terminal_F[r,,])
-      # A season the terminal year did not fish has no fleet split to inherit,
-      # and gets a zero share anyway, so leave the split at zero rather than 0/0.
+      # a season the terminal year did not fish gets a zero share, so leave the split at zero rather
+      # than dividing by zero
       if(seas_tot > 0) for(f in 1:n_fish_fleets) fratio_fleet[r,seas,f] <- terminal_F[r,seas,f] / seas_tot
     } # end seas loop
   } # end r loop
@@ -438,7 +436,7 @@ Do_Population_Projection <- function(
   proj_Dynamic_SSB0 <- array(0, dim = c(n_pop, n_regions, n_proj_yrs))
   proj_F <- array(0, dim = c(n_regions, n_proj_yrs + 1))
   proj_F_seas <- array(0, dim = c(n_regions, n_proj_yrs + 1, n_seas))
-  proj_catch_resid <- array(NA_real_, dim = if(catch_seasonal) c(n_regions, n_proj_yrs, n_seas) else c(n_regions, n_proj_yrs)) # relative catch miss, only filled under fmort_opt = 'Catch'
+  proj_catch_resid <- array(NA, dim = if(catch_seasonal) c(n_regions, n_proj_yrs, n_seas) else c(n_regions, n_proj_yrs)) # relative catch miss, only filled under fmort_opt = 'Catch'
   tmp_rec <- NULL # this year's recruitment, generated below and handed to the season loop
 
   # Start Projection --------------------------------------------------------
@@ -545,8 +543,7 @@ Do_Population_Projection <- function(
                                               natmort = srr_opt$natmort,
                                               SSB_vals = bind_proj_SSB(srr_opt$SSB, proj_SSB),
                                               Movement = srr_opt$Movement,
-                                              # SSB0 behind the stock recruit curve has to use the same movement
-                                              # sequencing as the projection itself, so forward both of these.
+                                              # unfished spawning biomass must use the same movement timing as the projection, so pass both on
                                               Mrate = srr_opt$Mrate,
                                               stray_rate = srr_opt$stray_rate,
                                               do_recruits_move = do_recruits_move,
@@ -642,10 +639,8 @@ Do_Population_Projection <- function(
     # catch_fallback_opt and only runs when next year needs it
     if(fmort_opt != 'Catch' || (y + 1 <= n_proj_yrs && !catch_yr_targeted[y + 1])) {
 
-      # A rule that declares a state argument is handed this year's numbers and
-      # biomass, so a policy can read more than spawning biomass alone: mean
-      # weight, age structure, last year's catch. Rules without one are called
-      # exactly as before, so the state is only assembled when it is wanted.
+      # a rule that takes a state argument gets this year's numbers and biomass, so it can use more than
+      # spawning biomass. rules without one are called as before
       hcr_state <- if(fmort_rule %in% c("HCR", "HCR_global") &&
                       any(c("state", "...") %in% names(formals(HCR_function)))) {
         list(y = y,
@@ -690,8 +685,8 @@ Do_Population_Projection <- function(
 
   } # end y loop
 
-  # The year loop never reaches n_proj_yrs + 1, but the HCR and Input rules leave
-  # an F there, so give it the same seasonal split as the rest of proj_F_seas.
+  # the year loop stops before the last year, but the HCR and Input rules leave an F there, so give
+  # it the same seasonal split as the rest
   proj_F_seas[,n_proj_yrs + 1,] <- array(proj_F[,n_proj_yrs + 1] * seas_share, dim = c(n_regions, n_seas))
 
   return(list(proj_F = proj_F,
@@ -724,7 +719,7 @@ Do_Population_Projection <- function(
 #
 #   Do_Population_Projection()
 #    +- solve_proj_year_F()        splits the year into blocks to solve
-#        +- solve_proj_F_catch()   solves ONE block: one F per region
+#        +- solve_proj_F_catch()   solves one block: one F per region
 #            +- proj_catch_at_F()      what catch does a trial F give?
 #            |   +- build_proj_F()         assembles the trial F matrix
 #            |   +- run_proj_year()        replays the season loop
@@ -739,11 +734,9 @@ Do_Population_Projection <- function(
 #   seas_profile how that number is split across seasons
 #   F_base       F already settled and kept fixed
 #
-# Annual targets are one block for the whole year: seas_profile is the terminal year's seasonal
-# shares, and the target is read against catch summed over seasons. Seasonal targets are one block
-# per season, swept forward, which is exact because a season's catch depends only on the F in that
-# season and earlier ones. Within a block, regions solve together, since movement makes each
-# region's catch depend on every other region's F: one free region bisects, several use nleqslv.
+# An annual target solves one F per region for the whole year. A seasonal target solves one season
+# at a time with the earlier seasons' F held fixed, since later fishing cannot change what was
+# already caught.
 
 #' Join Historical And Projected Spawning Biomass
 #'
@@ -875,8 +868,8 @@ run_proj_year <- function(y,
     } # only compute if spatial
 
     # Derive Biomass + Recruitment (age0_rec only) ------------------------------
-    # SSB is fully determined by the survivors here, so generate this year's recruitment from
-    # it and insert the spawn_seas share before mortality and ageing run below
+    # the survivors fix this year's spawning biomass, so recruit from it and add the spawning season's
+    # share before mortality and ageing run
     if(age0_rec && seas == spawn_seas) {
 
       biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
@@ -911,8 +904,7 @@ run_proj_year <- function(y,
                                        natmort = srr_opt$natmort,
                                        SSB_vals = bind_proj_SSB(srr_opt$SSB, proj_SSB),
                                        Movement = srr_opt$Movement,
-                                       # SSB0 behind the stock recruit curve has to use the same movement
-                                       # sequencing as the projection itself, so forward both of these.
+                                       # unfished spawning biomass must use the same movement timing as the projection, so pass both on
                                        Mrate = srr_opt$Mrate,
                                        stray_rate = srr_opt$stray_rate,
                                        do_recruits_move = do_recruits_move,
@@ -936,8 +928,8 @@ run_proj_year <- function(y,
           } # end r loop
         } # end p loop
 
-        # recruits just inserted missed this season's movement step, which had to run before
-        # SSB was knowable. catch age 1 up when recruits are supposed to move from birth
+        # the recruits just added missed this season's movement, which ran before spawning biomass was
+        # known, so move age 1 now when recruits move from birth
 
         # Only needed under move_timing == 0; under timings 1 and 2 these recruits are
         # picked up by the end-of-season transition below.
@@ -1244,7 +1236,7 @@ solve_proj_F_catch <- function(y, target, seas_profile, F_base, target_seas,
     F_reg[free] <- pmin(exp(solve_out$x), catch_f_max)
   }
 
-  # Relative miss on the F actually being returned, handed back to the caller
+  # relative miss on the F being returned
   realized_catch <- proj_target_catch(proj_catch_at_F(build_proj_F(F_reg, F_base, seas_profile),
                                             y, state, tmp_rec, proj_args), target_seas)
   resid <- rep(0, n_regions)
@@ -1265,7 +1257,8 @@ solve_proj_F_catch <- function(y, target, seas_profile, F_base, target_seas,
 
 #' Solve A Projection Year's Fishing Mortality Against Its Catch Target
 #'
-#' Breaks the year into blocks and hands each to \code{solve_proj_F_catch}: one
+#' Breaks the year into blocks and solves each with \code{solve_proj_F_catch}:
+#' one
 #' block for an annual target, one per season for seasonal ones, swept forward
 #' with each solved F kept in \code{F_base}. See the section header above for why
 #' the sweep is exact.
@@ -1293,7 +1286,7 @@ solve_proj_year_F <- function(y, target, seasonal, seas_share, f_start,
   n_seas <- proj_args$n_seas
   F_base <- array(0, dim = c(n_regions, n_seas))
 
-  # Annual targets: one annual F per region, split at the terminal year splits at the end
+  # one annual F per region, split across seasons at the end by the terminal year's shares
   if(!seasonal) {
     sol <- solve_proj_F_catch(
       y = y,

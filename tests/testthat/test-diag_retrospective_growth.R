@@ -45,9 +45,8 @@ test_that("the peeled model penalizes only the deviations it kept", {
   cut <- truncate_yr(peel, input_list$data, input_list$par, input_list$map)
   cut_fit <- fit_model(cut$retro_data, cut$retro_parameters, cut$retro_mapping, do_optim = FALSE, silent = TRUE)$rep
 
-  # both growth parameters have independent deviations with a fixed sigma, so
-  # the penalty is a sum of normal densities and the peel drops the last three
-  # years of each series
+  # both growth parameters have independent deviations at a fixed sigma, so the penalty is a sum
+  # of normal densities and the peel drops the last three years of each series
   devs <- input_list$par$ln_growth_devs
   sigma <- exp(input_list$par$growth_pe_pars[1, 1, , 1, 1])
   dropped <- 0

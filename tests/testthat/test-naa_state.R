@@ -1,11 +1,10 @@
+# State-space numbers at age: inert when off, a reparameterization when seeded at the
+# deterministic solution, every correlation form collapsing to independence at zero, and the age
+# and year dimensions not transposed, which no objective value or gradient would show.
+
 library(SPoRC)
 library(testthat)
 
-# State-space numbers at age. What these guard, in order: that the feature is inert when off,
-# that it is a reparameterization rather than a different model when seeded at the deterministic
-# solution, that every correlation form reduces to independence when its correlations are zero,
-# and that the age and year dims are not transposed. That last one is the only defect here that
-# no objective value, gradient or convergence diagnostic can see.
 
 naa_dims <- list(n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_seas = 1, n_yrs = 22, n_ages = 8)
 
@@ -78,9 +77,8 @@ test_that("every correlation form collapses to independence at zero correlation"
 })
 
 test_that("the age and year dims are not transposed", {
-  # Deliberately asymmetric: a test with the same structure on both dims passes whether or not
-  # they are swapped, so it would catch nothing. Penalized against an explicit Kronecker covariance
-  # built independently of the density code.
+  # deliberately asymmetric, since the same structure on both dimensions passes whether or
+  # not they are swapped. penalized against a Kronecker covariance built here instead
   skip_if_not_installed("mvtnorm")
   set.seed(11)
   ny <- 9
@@ -114,10 +112,8 @@ test_that("the age and year dims are not transposed", {
 
 test_that("the setup refuses what is not identified", {
   d <- naa_seed()
-  # unseeded falls back on an equilibrium decay rather than a constant, so the starting numbers
-  # decline with age instead of being flat. The plus group is the exception and has to be: it
-  # accumulates every older age, so at equilibrium it sits above the age below it whenever
-  # exp(-M) / (1 - exp(-M)) exceeds one.
+  # unseeded, the starting numbers fall with age under an equilibrium decay rather than being
+  # flat, except in the plus group, which accumulates and can sit above the age below it
   unseeded <- suppressMessages(sweep_input(dims = naa_dims, biol = list(NAA_re = "iid", M_spec = "fix")))
   by_age <- unseeded$par$ln_NAA[1, 1, 1, 1, , 1]
   na <- length(by_age)
@@ -125,7 +121,7 @@ test_that("the setup refuses what is not identified", {
   M_bar <- mean(exp(as.vector(unseeded$par$ln_M)))
   expect_equal(by_age[na] - by_age[na - 1], -M_bar - log(1 - exp(-M_bar)), tolerance = 1e-10)
   expect_gt(by_age[1], log(1))
-  # the penalty covers one rectangular slice, so the active cells have to be contiguous
+  # the penalty covers one rectangular block, so the active cells have to be contiguous
   expect_error(naa_on("iid", NAA_re_years = c(2:5, 10:15)), "contiguous run of years")
   expect_error(naa_on("iid", NAA_re_ages = 1:8), "first age")
   # only the independent form is defined for a standard deviation that varies by year or age
@@ -134,9 +130,7 @@ test_that("the setup refuses what is not identified", {
 })
 
 
-# ---------------------------------------------------------------------------
-# Correlation across regions
-# ---------------------------------------------------------------------------
+# Correlation across regions -------------------------------------------------
 
 naa_rg_dims <- list(n_regions = 3, n_sexes = 2, n_fish_fleets = 1, n_seas = 1, n_yrs = 16, n_ages = 7)
 
@@ -311,14 +305,11 @@ test_that("a multi-region state builds on the tape with both dims live", {
   expect_equal(il$data$n_est_naa_re, 3 * (length(il$data$years) - 1) * (length(il$data$ages) - 1) * 2)
 })
 
-# ---------------------------------------------------------------------------
-# Population and sex dims, the selectivity confound, and tag cohorts
-# ---------------------------------------------------------------------------
+# Population and sex dims, the selectivity confound, and tag cohorts ---------
 
 test_that("all four correlation dims compose as one Kronecker product", {
-  # The decisive check on the whitening route: four correlated dims plus a separable structure
-  # over the age-year grid, against a five-factor covariance built independently of the density
-  # code. Every dim has a different structure, so any permutation of them is visible.
+  # four correlated dimensions plus a separable structure over the age and year grid, against a
+  # five-factor covariance built here. each differs, so any permutation of them shows
   skip_if_not_installed("mvtnorm")
   set.seed(9)
   np <- 2
@@ -435,9 +426,8 @@ test_that("tag cohorts are rescaled by the state and are untouched without it", 
 })
 
 test_that("the one-dimensional autoregressions run over the dim they name", {
-  # 1dar1 correlates ages with years independent, 1dar1_y the reverse. Checked against explicit
-  # Kronecker covariances, and against each other: a form that ran over the wrong dim would
-  # still give a finite objective and converge, so only the cross-check catches it.
+  # 1dar1 correlates ages and leaves years independent, 1dar1_y the reverse. a form running over
+  # the wrong dimension still converges finitely, so only comparing the two catches it
   skip_if_not_installed("mvtnorm")
   set.seed(21)
   ny <- 9
@@ -484,9 +474,8 @@ test_that("1dar1_y estimates the year correlation slot and leaves the others kep
 })
 
 test_that("a retrospective peel truncates the state, its map and its active years", {
-  # The penalty slices ln_NAA with naa_re_yrs, so an untruncated index vector reads past the end of
-  # the shortened array, and n_est_naa_re switches on both the dynamics hook and the penalty. Neither can
-  # be reused from the full model.
+  # the penalty reads ln_NAA with naa_re_yrs, so an untruncated index vector runs past the end of
+  # the shortened array, and n_est_naa_re switches on both the dynamics and the penalty
   il <- naa_on("iid")
   n_yrs <- length(il$data$years)
   peel <- 3
@@ -575,4 +564,37 @@ test_that("a shared correlation penalizes the same as repeating one value across
   o_s <- fit_model(il_s$data, il_s$par, il_s$map, do_optim = FALSE, silent = TRUE)
   expect_equal(o_f$fn(o_f$par), o_s$fn(o_s$par), tolerance = 1e-12)
   expect_equal(length(o_s$par), length(o_f$par) - 8) # 12 correlations collapse to 4
+})
+
+test_that("3dcond is refused under bias_correct_pe = 'all' and allowed otherwise", {
+
+  # sweep_input builds its dimension arguments from a fixed list, so the switch needs its own chain
+  naa_bc <- function(form, state) {
+    n_yrs <- 15
+    n_ages <- 8
+    il <- suppressMessages(Setup_Mod_Dim(years = seq_len(n_yrs), ages = seq_len(n_ages), lens = NA,
+                                         n_regions = 1, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1,
+                                         bias_correct_pe = state, verbose = FALSE))
+    suppressMessages(suppressWarnings(Setup_Mod_Biologicals(
+      il,
+      NAA_re = form,
+      WAA = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1)),
+      MatAA = array(1, dim = c(1, 1, n_yrs, 1, n_ages, 1)),
+      fit_lengths = 0,
+      M_spec = "fix",
+      Fixed_natmort = array(0.1, dim = c(1, 1, n_yrs, n_ages, 1))
+    )))
+  }
+
+  # the cohort term is not separable, so there is no closed form marginal variance to center on
+  expect_error(naa_bc("3dcond", "all"), "3dcond")
+  expect_error(naa_bc("3dcond", "all"), "3dmarg") # and the message names the alternative
+
+  # neither other state reaches the numbers at age state, so neither is refused
+  expect_no_error(naa_bc("3dcond", "rec"))
+  expect_no_error(naa_bc("3dcond", "none"))
+
+  # and the alternative the message points at does work under 'all'
+  expect_no_error(naa_bc("3dmarg", "all"))
+
 })

@@ -3,14 +3,13 @@
 # A model split across identical regions, sexes, seasons or fleets describes exactly the population a
 # model with one of each describes. Where they disagree, an index is walking a dim it should not.
 #
-# A stored value cannot make this check: a stride reading the wrong dim still returns a stable number a
-# regression test would accept forever. Test setup dims are unequal, since equal extents hide transposes.
+# A stored value cannot make this check, since a read off the wrong dimension still returns a
+# stable number forever. No two dimensions are the same size, since equal ones hide a transpose.
 
 
 test_that("regions that mix completely describe one region", {
-  # Under full mixing with identical biology in every region, a fish's fate does
-  # not depend on which region it is in, so the summed population is the
-  # single-region population.
+  # under full mixing with the same biology everywhere, a fish's fate does not depend on which
+  # region it is in, so the summed population is the single-region one
   one <- collapse_rep(nr = 1)
 
   for(nr in c(2, 3)) {
@@ -20,18 +19,15 @@ test_that("regions that mix completely describe one region", {
 
 
 test_that("sexes with identical biology describe one sex", {
-  # Weight, maturity, mortality and selectivity are the same for both sexes here,
-  # so splitting the population by sex changes how it is stored and nothing about
-  # how it develops.
+  # weight, maturity, mortality and selectivity are the same for both sexes here, so splitting
+  # by sex changes how the population is stored and nothing about how it develops
   expect_collapses(collapse_rep(nx = 1), collapse_rep(nx = 2), "2 sexes vs 1")
 })
 
 
 test_that("fleets sharing a selectivity describe one fleet", {
-  # Two fleets each taking half the catch at half the fishing mortality remove
-  # exactly what one fleet taking all of it removes. The halving is explicit
-  # because these models are evaluated rather than fitted, so each fleet's F
-  # comes from its starting value rather than from the catch it is given.
+  # two fleets each taking half the catch at half the fishing mortality remove exactly what one
+  # fleet taking all of it removes. the halving is explicit, each fleet's F being its start
   one <- collapse_rep(nf = 1)
 
   for(nf in c(2, 5)) {
@@ -42,9 +38,8 @@ test_that("fleets sharing a selectivity describe one fleet", {
 
 
 test_that("the collapse test setup is actually sensitive to the dynamics", {
-  # A relation that holds because both sides are trivially equal proves nothing.
-  # Changing the fishing mortality has to move the very quantities the collapse
-  # tests compare, or those tests would pass against a broken model.
+  # changing the fishing mortality has to move the very quantities the collapse tests compare,
+  # or those tests would hold because both sides are trivially equal
   base <- collapse_rep(nr = 1)
   harder <- collapse_rep(nr = 1, f_scale = 4)
 
@@ -57,9 +52,8 @@ test_that("the collapse test setup is actually sensitive to the dynamics", {
 
 
 test_that("splitting a region does not change what is predicted for the fishery", {
-  # The population collapsing is one claim; the observation layer reading that
-  # population on the right dims is another. Predicted catch at age is where
-  # the two meet, so it is compared across the same splits.
+  # the population collapsing is one thing, the observations reading it on the right dimensions
+  # another, and predicted catch at age is where the two meet
   one <- collapse_rep(nr = 1)
 
   for(nr in c(2, 3)) {
@@ -71,14 +65,11 @@ test_that("splitting a region does not change what is predicted for the fishery"
 
 
 test_that("seasons that share the year's fishing describe one season", {
-  # A year cut into k seasons, each taking 1/k of the fishing mortality, removes
-  # over the year exactly what a single season taking all of it removes.
+  # a year cut into k seasons, each taking a kth of the fishing mortality, removes over the year
+  # exactly what one season taking all of it removes.
   #
-  # Numbers at age have a season dim and are recorded within each season, so
-  # the same fish appear once per season and summing over that dim counts them
-  # k times. The comparison is made in the first season, where both models are at
-  # the same point in the year. The annual quantities have no season dim and
-  # are compared whole.
+  # numbers at age are recorded within each season, so the same fish appear k times over the
+  # season dimension and the comparison is made in the first, where both models agree
   one <- collapse_rep(ns = 1)
 
   for(ns in c(2, 3)) {

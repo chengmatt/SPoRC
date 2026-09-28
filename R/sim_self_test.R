@@ -30,7 +30,7 @@
 #' @keywords internal
 warn_R0_ref_block_om <- function(data, where) {
   if(is.null(data$R0_blocks) || isTRUE(data$use_rinit == 1)) return(invisible(NULL))
-  ref <- if(is.null(data$R0_ref_block)) 1L else data$R0_ref_block
+  ref <- if(is.null(data$R0_ref_block)) 1 else data$R0_ref_block
   yr1 <- unique(as.vector(data$R0_blocks[, 1, , drop = FALSE]))
   if(all(yr1 == ref)) return(invisible(NULL))
   warning(where, ": R0_ref_block is ", ref, " but year one sits in block ",
@@ -166,7 +166,7 @@ simulation_self_test <- function(
                             n_yrs = length(data$years), # number of years
                             n_regions = data$n_regions,  # number of regions
                             n_ages = length(data$ages), # number of ages
-                            # Use fishery or survey observed ages depending on what is availiable
+                            # Use fishery or survey observed ages depending on what is available
                             n_obs_ages = if(any(data$UseFishAgeComps == 1)) {
                               dim(data$ObsFishAgeComps)[4]
                             } else if(any(data$UseFishAgeComps_pop == 1)) {
@@ -395,7 +395,7 @@ simulation_self_test <- function(
     srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,seq_along(data$years),,,,,drop = FALSE]),
     srv_q_input = replicate(n = sim_list$n_sims, srv_q_fit$q_mean),
     ObsSrvIdx_SE = deweight(if(is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE else rep$SrvIdx_SD, data$Wt_SrvIdx),
-    # the index at age carries its own error by age and fleet, so no weight is folded into it
+    # the index at age has its own error by age and fleet, so no weight is applied to it
     ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
     UseSrvIdxAA = unused_at_age_on_obs_ages(data$UseSrvIdxAA, srv_idx_aa_used, 4, n_obs_om),
     use_srv_idx_aa = data$use_srv_idx_aa,
@@ -528,8 +528,8 @@ simulation_self_test <- function(
     # rescaling by the recruitment weight is only an identity for a single scalar. recruitment and
     # the initial age deviations are supplied directly below, so ln_sigmaR passes through unscaled
     ln_sigmaR = if(length(data$Wt_Rec) == 1) optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec) else optim_parameters_list$ln_sigmaR, # ln_sigmaR
-    # Rec_input for every year makes sim_population() ignore rec_model, so the curve itself goes
-    # untested; sim_recruitment = "model" withholds it and makes the self-test recover it
+    # giving recruitment for every year makes the operating model ignore the stock-recruit curve, so
+    # sim_recruitment = "model" leaves it out and makes the self test recover it
     Rec_input = if(sim_recruitment == "model") NULL else replicate(n = sim_list$n_sims, expr = rep$Rec[,,seq_along(data$years),drop = FALSE]), # recruitment time series
     ln_InitDevs_input = replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs),  # init devs
     stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,seq_along(data$years), drop = FALSE]),

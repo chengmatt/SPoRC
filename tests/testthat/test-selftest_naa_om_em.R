@@ -1,13 +1,13 @@
+# The population is advanced under a process error set here, index and composition data generated
+# from it, and the estimating model has to recover the process from those data alone with the
+# states integrated out.
+#
+# Harder than test-selftest_naa_state.R, which starts from the true states and estimates only the
+# process parameters. Here the process variance has to be separated from observation error, which
+# is the part of a state-space fit that fails in practice.
+
 library(SPoRC)
 library(testthat)
-
-# Operating model to estimation model self test for the state-space numbers at age. The population
-# is advanced with a known process error, index and composition data are generated from it, and the
-# estimating model has to recover the process from those data alone with the states integrated out.
-#
-# This asks a harder question than test-selftest_naa_state.R, which handed over the true states and
-# estimated only the process parameters. Here the process variance has to be separated from
-# observation error, which is the part of a state-space fit that fails in practice.
 
 test_that("the estimation model recovers a simulated numbers-at-age process error", {
   om <- naaom_make_om(NAA_re = "iid", sigmaNAA = 0.25, rho_age = 0, rho_year = 0, seed = 808)

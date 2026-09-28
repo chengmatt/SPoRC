@@ -37,8 +37,8 @@ growth_fill_year(
 )
 }
 \description{
-Evaluates every timing any fleet, composition or the spawning reads at, builds
-the keys and the derived weight and maturity, and writes them into the years
-named, which all share the state handed in.
+Evaluates growth at every timing a fleet, a composition or spawning needs,
+builds the size-age transitions and the derived weight and maturity, and
+writes them into the years named, which all start from the same state.
 }
 \keyword{internal}

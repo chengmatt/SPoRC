@@ -34,10 +34,8 @@ test_that("the apical is the height the plateau sits at, and the ends do not mov
   expect_equal(max(off), A, tolerance = 1e-8)
   expect_equal(max(base), 1, tolerance = 1e-8)
 
-  # The two ends stay where their own parameters put them. The joiners are what
-  # hold the curve between the limbs and the plateau, and they are around 1e-8
-  # rather than exactly zero this far from the peak, so that is the level these
-  # hold to.
+  # the two ends stay where their own parameters put them. the joiners between the limbs and
+  # the plateau are about 1e-8 rather than zero this far from the peak, so that is the level
   expect_equal(off[1], base[1], tolerance = 1e-6)
   expect_equal(off[length(bins)], base[length(bins)], tolerance = 1e-6)
   expect_equal(off[1], stats::plogis(pars[5]), tolerance = 1e-6)

@@ -1,14 +1,16 @@
+# Recruiting at age 0 when spawning falls after the first season: recruits can only enter in the
+# spawning season, so rec_seas_prop has to be zero before it.
+
 library(SPoRC)
 library(testthat)
 
 test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with spawning after season 1", {
 
-  # Minimal single-population, single-region, 2-season model with
-  # spawn_seas = 2 -- recruits can only enter in the spawning season itself,
-  # since there's no season after it. Projects forward under F = 0 and checks
-  # (a) no recruits ever appear pre-spawn (season 1), and (b) SSB settles to
-  # a stable unfished equilibrium, confirming the projection's age-0 timing
-  # logic runs correctly and converges.
+  # one population, one region and two seasons, spawning in the second, so recruits can only
+  # enter in the spawning season itself.
+  #
+  # projected unfished, no recruits may appear in season 1 and spawning biomass has to
+  # settle at a stable unfished equilibrium
 
   n_pop <- 1
   n_regions <- 1
@@ -38,16 +40,15 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
   Movement <- array(1, dim = c(n_pop, n_regions, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes))
   sexratio <- array(1, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes))
 
-  # rec_seas_prop must be 0 before spawn_seas -- all recruits enter spawn_seas
+  # rec_seas_prop is zero before the spawning season, since all recruits enter in it
   rec_seas_prop <- array(0, dim = c(n_pop, n_seas))
   rec_seas_prop[, spawn_seas] <- 1
 
   R0 <- 1000
   h <- 0.7
 
-  # Arbitrary starting age structure with age index 1 (age-0) empty, matching
-  # the rule the rec_lag = 0 population loop maintains. terminal_NAA
-  # is season-specific, so both seasons of the terminal year need values.
+  # a starting age structure with the recruit age empty, which is the rule the population loop
+  # keeps. the terminal numbers are by season, so both seasons need values
   terminal_NAA <- array(0, dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes))
   terminal_NAA[1,1,1,2:n_ages,1] <- c(800, 600, 400, 250, 600)
   terminal_NAA[1,1,2,2:n_ages,1] <- c(700, 550, 380, 240, 590)
@@ -112,8 +113,8 @@ test_that("Do_Population_Projection handles age-0 (rec_lag = 0) recruitment with
   expect_true(all(out$proj_NAA[1,1,,1,1,1] == 0))
   expect_true(all(out$proj_NAA0[1,1,,1,1,1] == 0))
 
-  # Recruits do appear in spawn_seas from year 2 onward (year 1 holds the
-  # terminal state forward with no new recruitment event)
+  # recruits appear in the spawning season from year 2 on, year 1 advancing the terminal
+  # state with no recruitment event of its own
   expect_true(all(out$proj_NAA[1,1,2:n_proj_yrs,spawn_seas,1,1] > 0))
 
   # Under F = 0, SSB should settle to a stable unfished equilibrium

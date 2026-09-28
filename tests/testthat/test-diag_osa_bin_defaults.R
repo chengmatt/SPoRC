@@ -70,14 +70,11 @@ test_that("the external OSA path takes a plain year vector and skips regions wit
   yrs <- which(input_list$data$UseSrvLenComps[1, , 1, 1] == 1)
 
   # survey fleet one samples region one only, so the split types have a region
-  # with no years at all, which used to collapse the slice
+  # with no years at all, which used to drop the year dimension
   expect_equal(sum(input_list$data$UseSrvLenComps[2, , 1, 1]), 0)
 
-  # every composition type off the same plain year vector, and N at the model's
-  # full year dimension in every case: comp_type 0 used to want N pre-sliced to
-  # `years` while 1 and 2 wanted the full array, so a caller had to know which
-  # branch it was calling into. All three now index N by years/years_by_region
-  # themselves, the same way they already index obs_mat and exp_mat.
+  # every composition type takes the same plain year vector and a sample size over the
+  # model's full year range, indexed by year the same way the observations already are
   extra <- list(
     list(N = ISS[1, , 1, 1, 1]),
     list(
@@ -111,9 +108,8 @@ test_that("the external OSA path takes a plain year vector and skips regions wit
     if(ct > 0) expect_false(2 %in% unique(out$res$region))
   } # end ct loop
 
-  # N is read at the years actually used, not the position in a pre-sliced
-  # vector: feeding a vector already sliced to length(yrs) would misalign against
-  # the aggregated years index and give the wrong sample size to every year
+  # the sample size is read at the years actually used, so a vector already cut to that length
+  # would line up against the wrong years and give every one the wrong sample size
   out_agg <- suppressWarnings(get_osa(
     obs_mat = cp$Obs_SrvLen_mat,
     exp_mat = cp$Pred_SrvLen_mat,
@@ -126,9 +122,8 @@ test_that("the external OSA path takes a plain year vector and skips regions wit
     comp_like = 0,
     bin_label = "Length"
   ))
-  # the residual frame's year column holds the year INDICES passed in, not
-  # calendar years, since run_external_comp_osa names its dimnames from `years`
-  # verbatim
+  # the residual frame's year column holds the positions passed in rather than calendar years,
+  # the names being taken from `years` as given
   expect_equal(sort(unique(out_agg$res$year)), sort(yrs))
 
   # and a per-region list still works, which is what the split types took before

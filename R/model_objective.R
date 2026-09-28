@@ -65,8 +65,8 @@ SPoRC_rtmb = function(pars, data) {
   maintain_backwards_compatibility() # defaults for input lists built by older SPoRC versions
 
   # Model Set Up (Containers) -----------------------------------------------
-  # a length composition recorded on coarser bins than the model tracks is mapped through LenBinMap.
-  # that is the operation ageing error does on ages, so it is read by year and fleet to match
+  # a length composition on coarser bins than the model tracks is mapped through LenBinMap, by year
+  # and fleet, the same way ageing error maps ages
   LenBinMap_fn = if(is.null(LenBinMap)) function(y, f) NA else function(y, f) LenBinMap # NA leaves the bins alone
 
   n_ages = length(ages) # number of ages
@@ -572,7 +572,8 @@ SPoRC_rtmb = function(pars, data) {
   if(use_fixed_stray_rate == 1) stray_rate = fixed_stray_rate # Using fixed stray rates
 
   ### Bias ramp --------------------------------------------------------------
-  bias_ramp = get_rec_bias_ramp(do_rec_bias_ramp, bias_year, n_est_rec_devs, max_bias_ramp_fct) # the correction each year's penalty is centered on, 1 everywhere under 0
+  bias_ramp = get_rec_bias_ramp(do_rec_bias_ramp, bias_year, n_est_rec_devs, max_bias_ramp_fct)
+  if(bias_correct_pe == 0) bias_ramp = bias_ramp * 0 # 'none' overrides the ramp, so every recruitment correction reads zero
 
   # The initial age deviations are techincally based on years before the first model year;
   # option to construct bias ramp on initial deviations as well, based on the recruitment bias ramp values
@@ -649,7 +650,7 @@ SPoRC_rtmb = function(pars, data) {
     SizeAgeTrans_srv = SizeAgeTrans_srv
   )
 
-  # a growth model derives its own quantities year by year, so they travel in the same state
+  # a growth model builds its length at age year by year, so it is passed along with mortality
   if(growth_model != 0) {
     mortality_state = c(mortality_state, list(
       tmp_growth = tmp_growth,
@@ -720,7 +721,7 @@ SPoRC_rtmb = function(pars, data) {
   catch_flag_pop = apply(UseCatch_pop[,,1,,,drop = FALSE], c(2,4,5), max)
   catch_flag = pmax(catch_flag_base, catch_flag_pop)
 
-  # a fleet reporting once a year is still fish in every season of that year, so the flag allows fishing instead of where the obs is
+  # a fleet reporting once a year still fishes in every season of it, so allow fishing in all of them
   for(f in seq_len(n_fish_fleets)) {
     if(Catch_seas_Type[f] == 1 || Catch_pop_seas_Type[f] == 1) {
       for(r in 1:n_regions) if(any(catch_flag[r,,f] > 0)) catch_flag[r,,f] = 1
@@ -897,7 +898,7 @@ SPoRC_rtmb = function(pars, data) {
   )
 
   ### Cohort Growth and Mortality Outputs ------------------------------------
-  # under cohort growth the projection builds growth and mortality one year at a time, so read them back out
+  # under cohort growth the projection built these one year at a time, so take them from what it returned
   if(use_cohort_growth) {
 
     mortality_state = tmp_pop_proj$growth_mortality_state
@@ -965,7 +966,7 @@ SPoRC_rtmb = function(pars, data) {
   SR_pred = tmp_pop_proj$SR_pred # stock-recruit prediction, only used under mean recruitment
 
   ## State-Space Numbers at Age Penalty --------------------------------------
-  # penalized here rather than in the dynamics, so the deterministic prediction and the state are both available
+  # penalized here rather than in the dynamics, because both the prediction and the state are needed
   NAA_state_nLL = 0
   if(n_est_naa_re > 0) {
 
@@ -989,12 +990,18 @@ SPoRC_rtmb = function(pars, data) {
       NAA_sex_corr_pars = NAA_sex_corr_pars,
       NAA_re_season = NAA_re_season, # correlation across seasons
       NAA_season_corr_pars = NAA_season_corr_pars,
-      naa_re_where = naa_re_where # population by region cells the state runs over
+      naa_re_where = naa_re_where, # population by region cells the state runs over
+      bias_correct = as.integer(bias_correct_pe == 2) # naa only corrects if bias_correct_pe = 'all'
     )
 
   } # end if estimating a state on numbers at age
 
   # Observation Models ------------------------------------------------------
+  # setup bias correction for catch obs
+  oe_catch = if(bias_correct_oe == 1) 0.5 * exp(ln_sigmaC)^2 else array(0, dim = dim(ln_sigmaC))
+  oe_catch_pop = if(bias_correct_oe == 1) 0.5 * exp(ln_sigmaC_pop)^2 else array(0, dim = dim(ln_sigmaC_pop))
+  oe_disc = if(bias_correct_oe == 1) 0.5 * exp(ln_sigmaD)^2 else array(0, dim = dim(ln_sigmaD))
+  oe_disc_pop = if(bias_correct_oe == 1) 0.5 * exp(ln_sigmaD_pop)^2 else array(0, dim = dim(ln_sigmaD_pop))
 
   ## Dynamic Structural Equation Model ---------------------------------------
 
@@ -1019,15 +1026,16 @@ SPoRC_rtmb = function(pars, data) {
       if(dsem_link_par[s] == "ln_NAA") dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = log(NAA_pred[dsem_link_cell[[s]]]) # if NAA, the mean is the prediction
     } # end s loop
 
-    # the marginal variance of every recruitment cell, solved once for whatever reads it below. it does not
-    # depend on the bias ramp, so bias_year switches the correction off without moving the initial ages
+    # the marginal variance of each recruitment cell, worked out once. it does not depend on the bias
+    # ramp, so bias_year switches the correction off without moving the initial ages
     dsem_margvar_grid = matrix(0, n_dsem_yrs, ncol(dsem_x_grid))
     rec_links = which(dsem_link_par == "ln_RecDevs")
     rec_margvar = length(rec_links) > 0 && RecDevs_model == 1 # a linked recruitment series under an iid penalty
 
     if(rec_margvar) dsem_margvar_grid = get_dsem_margvar(dsem_beta, ln_dsem_sd, dsem_x_grid, dsem_model, dsem_cells, as.vector(dsem_x_known))
 
-    # the lognormal correction on the recruitment cells, which the ramp and an own-mean center both switch off
+    # the lognormal correction on the recruitment cells, which the bias ramp and centering on its own
+    # mean both switch off
     if(rec_margvar && RecDevs_pen_center != 1 && any(bias_ramp != 0)) {
       for(s in rec_links) {
         dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]]
@@ -1036,7 +1044,7 @@ SPoRC_rtmb = function(pars, data) {
       } # end s loop
     }
 
-    # the initial ages were born before the grid starts, so they read a declared series' settled marginal variance
+    # the initial ages were born before the grid starts, so they use the series' settled marginal variance
     if(rec_margvar && "rec" %in% dsem_declared && !is.null(dsem_link_sd_arrow)) {
 
       init_sigmaR_dsem = array(0, dim = c(n_pop, n_regions))
@@ -1076,7 +1084,7 @@ SPoRC_rtmb = function(pars, data) {
                             grid = dsem_solved
                             )
 
-    # nll for covariates observed through a family and link (a fixed covariate carries none)
+    # nll for covariates observed through a family and link (a fixed covariate has none)
     for(k in seq_along(dsem_cov_var_idx)) {
       if(dsem_cov_family[k] == 0) next
       obs_yrs = which(!is.na(dsem_cov_obs[,k]))
@@ -1163,9 +1171,9 @@ SPoRC_rtmb = function(pars, data) {
   PredFishIdx = tmp_fish_obs$PredFishIdx
 
   ## Survey Observation Model ------------------------------------------------
-
   # Get recruitment index - computed as an anomaly w/ a bias adjustment as an addition, rather than sutraction
   RecDev_anom = array(0, dim = dim(ln_RecDevs))
+  RecDevs_rho_nat = array(if(is.null(RecDevs_rho)) 0 else 2 / (1 + exp(-2 * RecDevs_rho)) - 1, dim = c(n_pop, n_regions)) # get sigma rho for ar1 devs
   if(any(srv_idx_type == 2)) {
     for(p in 1:n_pop) {
       for(r in 1:n_regions) {
@@ -1173,7 +1181,9 @@ SPoRC_rtmb = function(pars, data) {
         for(d in 1:n_est_rec_devs) {
           sigmaR_d = if(d < sigmaR_switch) exp(ln_sigmaR[1,p,sigma_idx]) else exp(ln_sigmaR[2,p,sigma_idx])
           if(rec_anom_use[p,r,d] == 1) RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + rec_anom_add[p,r,d] # a linked cell adds back the bias correction for the anomaly for dsem ...
-          else RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 * bias_ramp[d]
+          else if(RecDevs_model == 1) RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 * bias_ramp[d]
+          else if(RecDevs_model == 3) RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 / (1 - RecDevs_rho_nat[p,r]^2) * bias_ramp[d] # an ar1 is set at its marginal variance
+          else RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] # a walk has no stationary variance, so it carries no correction
         } # end d loop
       } # end r loop
     } # end p loop
@@ -1312,7 +1322,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsCatch_map[i, 4]
 
       Catch_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsCatch[i],
-                                               log(get_seas_pred(PredCatch, r, y, seas, f, Catch_seas_Type[f])),
+                                               log(get_seas_pred(PredCatch, r, y, seas, f, Catch_seas_Type[f])) - oe_catch[r,y,seas,f],
                                                exp(ln_sigmaC[r,y,seas,f]), TRUE)
     }
   }
@@ -1340,7 +1350,8 @@ SPoRC_rtmb = function(pars, data) {
     us_pars = trans_rho_catch_us, # unstructured correlation parameters
     aa_type = CatchAA_Type, # dims the observations are split by
     seas_agg = CatchAA_seas_Type, # whether this source is fit as a season total
-    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
+    ageing_error = AgeingError_fish, # model ages read as observed ages, per fishery fleet
+    bias_correct_oe = bias_correct_oe # bias correct obs error
   )
 
   CatchAA_nLL = caa$nLL # nLL
@@ -1363,7 +1374,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsCatch_pop_map[i, 5]
 
       Catch_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsCatch_pop[i],
-                                                     log(get_seas_pred_pop(PredCatch, p, r, y, seas, f, Catch_pop_seas_Type[f])),
+                                                     log(get_seas_pred_pop(PredCatch, p, r, y, seas, f, Catch_pop_seas_Type[f])) - oe_catch_pop[p,r,y,seas,f],
                                                      exp(ln_sigmaC_pop[p,r,y,seas,f]), TRUE)
     }
   }
@@ -1390,7 +1401,8 @@ SPoRC_rtmb = function(pars, data) {
     us_pars = trans_rho_catch_pop_us, # unstructured correlation parameters
     aa_type = CatchAA_pop_Type, # dims the observations are split by
     seas_agg = CatchAA_pop_seas_Type, # whether this source is fit as a season total
-    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
+    ageing_error = AgeingError_fish, # model ages read as observed ages, per fishery fleet
+    bias_correct_oe = bias_correct_oe # bias correct obs error
   )
 
   CatchAA_pop_nLL = caa_pop$nLL # nLL
@@ -1413,7 +1425,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsDiscard_map[i, 4]
 
       Discard_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard[i],
-                                                 log(get_seas_pred(PredDiscard, r, y, seas, f, Discard_seas_Type[f])),
+                                                 log(get_seas_pred(PredDiscard, r, y, seas, f, Discard_seas_Type[f])) - oe_disc[r,y,seas,f],
                                                  exp(ln_sigmaD[r,y,seas,f]), TRUE)
     }
   }
@@ -1440,7 +1452,8 @@ SPoRC_rtmb = function(pars, data) {
     us_pars = trans_rho_discard_us, # unstructured correlation parameters
     aa_type = DiscardAA_Type, # dims the observations are split by
     seas_agg = DiscardAA_seas_Type, # whether this source is fit as a season total
-    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
+    ageing_error = AgeingError_fish, # model ages read as observed ages, per fishery fleet
+    bias_correct_oe = bias_correct_oe # bias correct oe
   )
 
   DiscardAA_nLL = daa$nLL # nLL
@@ -1464,7 +1477,7 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsDiscard_pop_map[i, 5]
 
       Discard_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard_pop[i],
-                                                       log(get_seas_pred_pop(PredDiscard, p, r, y, seas, f, Discard_pop_seas_Type[f])),
+                                                       log(get_seas_pred_pop(PredDiscard, p, r, y, seas, f, Discard_pop_seas_Type[f])) - oe_disc_pop[p,r,y,seas,f],
                                                        exp(ln_sigmaD_pop[p,r,y,seas,f]), TRUE)
     }
   }
@@ -1491,7 +1504,8 @@ SPoRC_rtmb = function(pars, data) {
     us_pars = trans_rho_discard_pop_us, # unstructured correlation parameters
     aa_type = DiscardAA_pop_Type, # dims the observations are split by
     seas_agg = DiscardAA_pop_seas_Type, # whether this source is fit as a season total
-    ageing_error = AgeingError_fish # model ages read as observed ages, per fishery fleet
+    ageing_error = AgeingError_fish, # model ages read as observed ages, per fishery fleet
+    bias_correct_oe = bias_correct_oe # biass correct oe
   )
 
   DiscardAA_pop_nLL = daa_pop$nLL # nLL
@@ -1511,7 +1525,8 @@ SPoRC_rtmb = function(pars, data) {
     Cov = FishIdx_Cov, # covariance, read only by a multivariate normal
     seas_Type = FishIdx_seas_Type, # whether each fleet is fit as a season total
     const = addtofishidx, # constant added inside the log
-    n_fleets = n_fish_fleets
+    n_fleets = n_fish_fleets,
+    bias_correct_oe = bias_correct_oe # bias correct oe
   )
 
   # only lognormal fleets register OSA observations, so drop the fleets already done above
@@ -1533,13 +1548,14 @@ SPoRC_rtmb = function(pars, data) {
       SD = FishIdx_SD, # index standard deviation
       seas_Type = FishIdx_seas_Type, # whether each fleet is fit as a season total
       const = addtofishidx, # constant added inside the log
-      pop = FALSE
+      pop = FALSE,
+      bias_correct_oe = bias_correct_oe
     )
   }
 
   ### Retained Fishery Indices (Population-Specific) -------------------------
-  # reads ObsFishIdx_pop as an array, which the lognormal block below rebinds to a flat vector.
-  # a multivariate normal covariance describes the regional series, so mvn fleets go there too
+  # takes the observations as an array, which the lognormal block below flattens. the multivariate
+  # normal covariance is over the regional series, so those fleets are fit here too
   FishIdx_pop_nLL = get_index_pop_nLL(
     nLL_arr = FishIdx_pop_nLL, # container
     Use = UseFishIdx_pop, # cells that are fit
@@ -1570,13 +1586,13 @@ SPoRC_rtmb = function(pars, data) {
       SD = FishIdx_pop_SD, # index standard deviation
       seas_Type = FishIdx_pop_seas_Type, # whether each fleet is fit as a season total
       const = addtofishidx, # constant added inside the log
-      pop = TRUE
+      pop = TRUE,
+      bias_correct_oe = bias_correct_oe
     )
   }
 
   ### Retained Fishery Compositions (Region-Specific) ------------------------
-  # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-  # looks the residuals up under that name, so each data source is registered here by name
+  # RTMB::OBS names an observation after the variable it is called on, so register each one by name
   ObsFishAgeComps_osa = pack_comp_source_osa(
     ObsArr = ObsFishAgeComps, # observed age compositions
     ISSArr = ISS_FishAgeComps, # input sample size
@@ -1634,8 +1650,7 @@ SPoRC_rtmb = function(pars, data) {
 
   if(fit_lengths == 1) {
 
-    # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-    # looks the residuals up under that name, so each data source is registered here by name
+    # RTMB::OBS names an observation after the variable it is called on, so register each one by name
     ObsFishLenComps_osa = pack_comp_source_osa(
       ObsArr = ObsFishLenComps, # observed length compositions
       ISSArr = ISS_FishLenComps, # input sample size
@@ -1694,8 +1709,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end if fitting lengths
 
   ### Retained Fishery Compositions (Population-Specific) --------------------
-  # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-  # looks the residuals up under that name, so each data source is registered here by name
+  # RTMB::OBS names an observation after the variable it is called on, so register each one by name
   ObsFishAgeComps_pop_osa = pack_comp_source_osa(
     ObsArr = ObsFishAgeComps_pop, # observed age compositions
     ISSArr = ISS_FishAgeComps_pop, # input sample size
@@ -1753,8 +1767,7 @@ SPoRC_rtmb = function(pars, data) {
 
   if(fit_lengths == 1) {
 
-    # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-    # looks the residuals up under that name, so each data source is registered here by name
+    # RTMB::OBS names an observation after the variable it is called on, so register each one by name
     ObsFishLenComps_pop_osa = pack_comp_source_osa(
       ObsArr = ObsFishLenComps_pop, # observed length compositions
       ISSArr = ISS_FishLenComps_pop, # input sample size
@@ -1813,8 +1826,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end if fitting lengths
 
   ### Discarded Fishery Compositions (Region-Specific) -----------------------
-  # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-  # looks the residuals up under that name, so each data source is registered here by name
+  # RTMB::OBS names an observation after the variable it is called on, so register each one by name
   ObsFishAgeComps_discard_osa = pack_comp_source_osa(
     ObsArr = ObsFishAgeComps_discard, # observed age compositions
     ISSArr = ISS_FishAgeComps_discard, # input sample size
@@ -1872,8 +1884,7 @@ SPoRC_rtmb = function(pars, data) {
 
   if(fit_lengths == 1) {
 
-    # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-    # looks the residuals up under that name, so each data source is registered here by name
+    # RTMB::OBS names an observation after the variable it is called on, so register each one by name
     ObsFishLenComps_discard_osa = pack_comp_source_osa(
       ObsArr = ObsFishLenComps_discard, # observed length compositions
       ISSArr = ISS_FishLenComps_discard, # input sample size
@@ -1932,8 +1943,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end if fitting lengths
 
   ### Discarded Fishery Compositions (Population-Specific) -------------------
-  # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-  # looks the residuals up under that name, so each data source is registered here by name
+  # RTMB::OBS names an observation after the variable it is called on, so register each one by name
   ObsFishAgeComps_discard_pop_osa = pack_comp_source_osa(
     ObsArr = ObsFishAgeComps_discard_pop, # observed age compositions
     ISSArr = ISS_FishAgeComps_discard_pop, # input sample size
@@ -1991,8 +2001,7 @@ SPoRC_rtmb = function(pars, data) {
 
   if(fit_lengths == 1) {
 
-    # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-    # looks the residuals up under that name, so each data source is registered here by name
+    # RTMB::OBS names an observation after the variable it is called on, so register each one by name
     ObsFishLenComps_discard_pop_osa = pack_comp_source_osa(
       ObsArr = ObsFishLenComps_discard_pop, # observed length compositions
       ISSArr = ISS_FishLenComps_discard_pop, # input sample size
@@ -2063,7 +2072,8 @@ SPoRC_rtmb = function(pars, data) {
     Cov = SrvIdx_Cov, # covariance, read only by a multivariate normal
     seas_Type = SrvIdx_seas_Type, # whether each fleet is fit as a season total
     const = addtosrvidx, # constant added inside the log
-    n_fleets = n_srv_fleets
+    n_fleets = n_srv_fleets,
+    bias_correct_oe = bias_correct_oe # bias correct oe
   )
 
   # only lognormal fleets register OSA observations, so drop the fleets already done above
@@ -2085,7 +2095,8 @@ SPoRC_rtmb = function(pars, data) {
       SD = SrvIdx_SD, # index standard deviation
       seas_Type = SrvIdx_seas_Type, # whether each fleet is fit as a season total
       const = addtosrvidx, # constant added inside the log
-      pop = FALSE
+      pop = FALSE,
+      bias_correct_oe = bias_correct_oe
     )
   }
 
@@ -2110,7 +2121,8 @@ SPoRC_rtmb = function(pars, data) {
     us_pars = trans_rho_srv_idx_us, # unstructured correlation parameters
     aa_type = SrvIdxAA_Type, # dims the observations are split by
     seas_agg = SrvIdxAA_seas_Type, # whether this source is fit as a season total
-    ageing_error = AgeingError_srv # model ages read as observed ages, per survey fleet
+    ageing_error = AgeingError_srv, # model ages read as observed ages, per survey fleet
+    bias_correct_oe = bias_correct_oe # bias correct oe
   )
 
   SrvIdxAA_nLL = siaa$nLL # nLL
@@ -2118,8 +2130,8 @@ SPoRC_rtmb = function(pars, data) {
 
 
   ### Survey Indices (Population-Specific) -----------------------------------
-  # reads ObsSrvIdx_pop as an array, which the lognormal block below rebinds to a flat vector.
-  # a multivariate normal covariance describes the regional series, so mvn fleets go there too
+  # takes the observations as an array, which the lognormal block below flattens. the multivariate
+  # normal covariance is over the regional series, so those fleets are fit here too
   SrvIdx_pop_nLL = get_index_pop_nLL(
     nLL_arr = SrvIdx_pop_nLL, # container
     Use = UseSrvIdx_pop, # cells that are fit
@@ -2150,7 +2162,8 @@ SPoRC_rtmb = function(pars, data) {
       SD = SrvIdx_pop_SD, # index standard deviation
       seas_Type = SrvIdx_pop_seas_Type, # whether each fleet is fit as a season total
       const = addtosrvidx, # constant added inside the log
-      pop = TRUE
+      pop = TRUE,
+      bias_correct_oe = bias_correct_oe
     )
   }
 
@@ -2175,7 +2188,8 @@ SPoRC_rtmb = function(pars, data) {
     us_pars = trans_rho_srv_idx_pop_us, # unstructured correlation parameters
     aa_type = SrvIdxAA_pop_Type, # dims the observations are split by
     seas_agg = SrvIdxAA_pop_seas_Type, # whether this source is fit as a season total
-    ageing_error = AgeingError_srv # model ages read as observed ages, per survey fleet
+    ageing_error = AgeingError_srv, # model ages read as observed ages, per survey fleet
+    bias_correct_oe = bias_correct_oe # bias correct oe
   )
 
   SrvIdxAA_pop_nLL = siaa_pop$nLL # nLL
@@ -2183,8 +2197,7 @@ SPoRC_rtmb = function(pars, data) {
 
 
   ### Survey Compositions (Region-Specific) ----------------------------------
-  # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-  # looks the residuals up under that name, so each data source is registered here by name
+  # RTMB::OBS names an observation after the variable it is called on, so register each one by name
   ObsSrvAgeComps_osa = pack_comp_source_osa(
     ObsArr = ObsSrvAgeComps, # observed age compositions
     ISSArr = ISS_SrvAgeComps, # input sample size
@@ -2242,8 +2255,7 @@ SPoRC_rtmb = function(pars, data) {
 
   if(fit_lengths == 1) {
 
-    # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-    # looks the residuals up under that name, so each data source is registered here by name
+    # RTMB::OBS names an observation after the variable it is called on, so register each one by name
     ObsSrvLenComps_osa = pack_comp_source_osa(
       ObsArr = ObsSrvLenComps, # observed length compositions
       ISSArr = ISS_SrvLenComps, # input sample size
@@ -2302,8 +2314,7 @@ SPoRC_rtmb = function(pars, data) {
   } # end if fitting lengths
 
   ### Survey Compositions (Population-Specific) ------------------------------
-  # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-  # looks the residuals up under that name, so each data source is registered here by name
+  # RTMB::OBS names an observation after the variable it is called on, so register each one by name
   ObsSrvAgeComps_pop_osa = pack_comp_source_osa(
     ObsArr = ObsSrvAgeComps_pop, # observed age compositions
     ISSArr = ISS_SrvAgeComps_pop, # input sample size
@@ -2361,8 +2372,7 @@ SPoRC_rtmb = function(pars, data) {
 
   if(fit_lengths == 1) {
 
-    # RTMB::OBS takes an observation's name from the variable it is called on, and get_osa
-    # looks the residuals up under that name, so each data source is registered here by name
+    # RTMB::OBS names an observation after the variable it is called on, so register each one by name
     ObsSrvLenComps_pop_osa = pack_comp_source_osa(
       ObsArr = ObsSrvLenComps_pop, # observed length compositions
       ISSArr = ISS_SrvLenComps_pop, # input sample size
@@ -2993,8 +3003,8 @@ SPoRC_rtmb = function(pars, data) {
   }
 
   ### Stock-Recruit Residual (Penalty) ---------------------------------------
-  # only reachable under mean recruitment; the curve penalizes the recruitment
-  # series without generating it, so the deviations stay free
+  # only under mean recruitment, where the curve penalizes the recruitment series without generating
+  # it, so the deviations stay free
   SR_pen_nLL = array(0, dim = dim(Rec))
   if(sr_penalty > 0) {
     SR_pen_nLL = get_sr_penalty(Rec, SR_pred, exp(ln_sigma_sr_pen),

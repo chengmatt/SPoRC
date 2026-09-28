@@ -84,10 +84,17 @@ Setup_Sim_Dim <- function(n_sims,
                           n_srv_fleets,
                           seasdur = if(n_seas == 1) 1 else rep(1 / n_seas, n_seas),
                           run_feedback = FALSE,
-                          feedback_start_yr = NULL
+                          feedback_start_yr = NULL,
+                          bias_correct_pe = "rec",
+                          bias_correct_oe = 0
                           ) {
 
   sim_list <- list() # setup empty list1
+
+  # setup bias correction stuff
+  sim_list$bias_correct_pe <- convert_to_numeric(bias_correct_pe, list(none = 0, rec = 1, all = 2))
+  if(!bias_correct_oe %in% c(0, 1)) stop("bias_correct_oe must be 0 or 1")
+  sim_list$bias_correct_oe <- bias_correct_oe
 
   if(n_sexes > 2) stop("The number of sexes modeled cannot be larger than 2!")
 
@@ -188,6 +195,14 @@ Setup_Sim_Dim <- function(n_sims,
 #' Default \code{FALSE}.
 #' @param do_internal_conv_tag_osa Logical. If \code{TRUE}, allows OSA residuals for tagging datasets.
 #' Default \code{FALSE}.
+#' @param bias_correct_pe Which log scale process deviations are centered on minus half their
+#' marginal variance, so the process they act on keeps its mean. \code{"rec"} (default) the
+#' recruitment and initial age deviations, which is every model's behaviour before this existed;
+#' \code{"all"} those plus the numbers at age state; \code{"none"} nothing. The bias ramp
+#' (\code{do_rec_bias_ramp}, \code{bias_year}) still scales the recruitment part.
+#' @param bias_correct_oe Whether a lognormally fit observation is predicted at its mean
+#' rather than its median, by subtracting sigma^2/2 from the log prediction. \code{0} (default)
+#' predicts the median, every model's behaviour before this existed.
 #'
 #' @return A named list (\code{input_list}) with three sublists:
 #'   \describe{
@@ -221,14 +236,29 @@ Setup_Mod_Dim <- function(years,
                           n_proj_yrs_devs = 0,
                           do_internal_comp_osa = FALSE,
                           do_internal_conv_tag_osa = FALSE,
+                          bias_correct_pe = "rec",
+                          bias_correct_oe = 0,
                           verbose = FALSE,
                           store_config = FALSE
                           ) {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
 
   # Create empty list
   input_list <- list(data = list(), par = list(), map = list())
+
+  # setup bias correction stuff
+  bias_correct_pe <- convert_to_numeric(bias_correct_pe, list(none = 0, rec = 1, all = 2))
+  input_list$data$bias_correct_pe <- bias_correct_pe
+  if(!bias_correct_oe %in% c(0, 1)) stop("bias_correct_oe must be 0 or 1")
+  input_list$data$bias_correct_oe <- bias_correct_oe
+  if(bias_correct_oe == 1) collect_message("bias_correct_oe = 1: sigma^2/2 is subtracted from every lognormal log prediction, so the prediction is the observation's mean rather than its median.")
+  collect_message("bias_correct_pe = '", c("none", "rec", "all")[bias_correct_pe + 1], "': ",
+                  c("no process deviation is centered on minus half its marginal variance.",
+                    "the recruitment and initial age deviations are centered on minus half their marginal variance; the numbers at age state is not.",
+                    "the recruitment, initial age and numbers at age deviations are all centered on minus half their marginal variance.")[bias_correct_pe + 1],
+                  " The bias ramp still scales the recruitment part.")
+
   if(store_config) {
     input_list$config <- list()
     input_list$config$Setup_Mod_Dim <- mget(names(formals()))

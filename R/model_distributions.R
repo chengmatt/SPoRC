@@ -184,7 +184,7 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE) {
 get_logistnormal_miss0_nLL = function(obs, pred, ln_sigma, ISS, corr_type = 0, trans_rho = 0,
                                       lag_bins = NULL, corr_mat = NULL) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   # bins with nothing in them are dropped, and both vectors renormalized over the rest
@@ -268,7 +268,7 @@ get_at_age_nLL = function(
   corr_mat = NULL
 ) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   n = length(obs_t)
@@ -295,8 +295,8 @@ get_at_age_nLL = function(
     } # end j loop, end i loop
   }
 
-  # standardizing keeps the correlation matrix free of the standard deviations,
-  # which is what lets an unstructured matrix be built once per fleet and reused
+  # standardizing keeps the standard deviations out of the correlation matrix, so one matrix can be
+  # built per fleet and reused
   z = resid / sigma
   nLL[1] = -1 * (RTMB::dmvnorm(z, 0, corr_mat, log = TRUE) - sum(log(sigma)))
 
@@ -423,14 +423,16 @@ build_idx_sd = function(se, ln_sigma, form) {
 #' @import RTMB
 #'
 #' @keywords internal
-get_index_nLL = function(obs, pred, sigma, like_type, Sigma = NULL, const = 0) {
+get_index_nLL = function(obs, pred, sigma, like_type, Sigma = NULL, const = 0, bias_correct_oe = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   nLL = rep(0, length(obs))
 
-  if(like_type == 0) nLL = -1 * RTMB::dnorm(log(obs + const), log(pred + const), sigma, TRUE) # lognormal
+  # do bias correciton
+  oe <- if(bias_correct_oe == 1) 0.5 * sigma^2 else 0
+  if(like_type == 0) nLL = -1 * RTMB::dnorm(log(obs + const), log(pred + const) - oe, sigma, TRUE) # lognormal
   if(like_type == 1) nLL = -1 * RTMB::dnorm(obs, pred, sigma, TRUE) # normal
 
   if(like_type == 2) {
@@ -593,9 +595,9 @@ get_seas_pred_pop = function(pred, p, r, y, seas, f, seas_agg) {
 #' @return \code{nLL_arr} with the fitted cells filled.
 #'
 #' @keywords internal
-get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, seas_Type, const, n_fleets) {
+get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, seas_Type, const, n_fleets, bias_correct_oe = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(f in 1:n_fleets) {
@@ -619,7 +621,7 @@ get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, se
       pred_vec_f[i] = get_seas_pred(Pred, r, y, seas, f, seas_Type[f]) # predicted index, summed across populations
     } # end i loop
 
-    tmp_nLL = get_index_nLL(obs_vec_f, pred_vec_f, se_vec_f, LikeType[f], Cov[[f]], const)
+    tmp_nLL = get_index_nLL(obs_vec_f, pred_vec_f, se_vec_f, LikeType[f], Cov[[f]], const, bias_correct_oe)
 
     # input into likelihoods
     for(i in seq_along(obs_pos_f)) nLL_arr[obs_map_f[i,1], obs_map_f[i,2], obs_map_f[i,3], f] = tmp_nLL[i]
@@ -650,7 +652,7 @@ get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, se
 #' @keywords internal
 get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(f in 1:n_fleets) {
@@ -696,9 +698,9 @@ get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n
 #' @return \code{nLL_arr} with the fitted cells filled.
 #'
 #' @keywords internal
-eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, const, pop) {
+eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, const, pop, bias_correct_oe = 0) {
 
-  "c" <- RTMB::ADoverload("c") # nolint: object_usage_linter.
+  "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   for(i in seq_along(obs_vec)) {
@@ -710,8 +712,9 @@ eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, co
       seas = obs_map[i, 4] # season
       f    = obs_map[i, 5] # fleet
 
+      oe = if(bias_correct_oe == 1) 0.5 * SD[p,r,y,seas,f]^2 else 0
       nLL_arr[p,r,y,seas,f] = -1 * RTMB::dnorm(obs_vec[i],
-                                               log(get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f]) + const),
+                                               log(get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f]) + const) - oe,
                                                SD[p,r,y,seas,f], TRUE)
     } else {
       r    = obs_map[i, 1] # region
@@ -719,8 +722,9 @@ eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, co
       seas = obs_map[i, 3] # season
       f    = obs_map[i, 4] # fleet
 
+      oe = if(bias_correct_oe == 1) 0.5 * SD[r,y,seas,f]^2 else 0
       nLL_arr[r,y,seas,f] = -1 * RTMB::dnorm(obs_vec[i],
-                                             log(get_seas_pred(Pred, r, y, seas, f, seas_Type[f]) + const),
+                                             log(get_seas_pred(Pred, r, y, seas, f, seas_Type[f]) + const) - oe,
                                              SD[r,y,seas,f], TRUE)
     }
   } # end i loop

@@ -1,12 +1,13 @@
+# Movement deviations: which cells share one, that a region's deviation reaches every edge
+# touching it, and the process error density against a normal sum worked by hand.
+
 library(SPoRC)
 library(testthat)
 
-# ── shared helpers ───────────────────────────────────────────────────────────
+# Helpers --------------------------------------------------------------------
 
-# Minimal input_list stub with just enough of $data/$par for
-# do_cont_vary_move_mapping() and Get_move_PE_loglik() to run, without going
-# through the full Setup_Mod_* pipeline (no fishery/survey/tagging data
-# required).
+# a minimal input list holding just enough for the mapping and the movement penalty to run,
+# without going through the setup functions or needing any fishery or survey data
 make_move_input_list <- function(
   n_pop = 2,
   n_regions = 3,
@@ -49,7 +50,7 @@ make_move_input_list <- function(
   )
 }
 
-# ── do_cont_vary_move_mapping: sharing structure ────────────────────────────
+# Which Movement Deviations Are Shared ---------------------------------------
 
 test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
 
@@ -62,7 +63,7 @@ test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
   n_movable_ages <- n_ages - 1 # do_recruits_move = 0 -> age 1 excluded
   n_pairs <- n_regions * (n_regions - 1) # (from, to) combinations in the collapsed array
 
-  # expected number of distinct estimated groups PER (from, to) region pair
+  # how many distinct estimated groups each from-and-to region pair should have
   expected_groups_per_pair <- c(
     iid_y            = n_yrs,
     iid_a            = n_movable_ages,
@@ -95,10 +96,8 @@ test_that("do_cont_vary_move_mapping builds the expected sharing structure", {
     expect_equal(length(non_na_ids), n_pairs * unname(expected_groups_per_pair[spec_name]),
                 info = paste("spec:", spec_name))
 
-    # Age is only excluded for recruits (age 1) when age is itself a key
-    # dimension of the spec (i.e. "a" appears in the name); when age is a
-    # broadcast dim (e.g. "iid_y"), age 1 shares the same tied parameter as
-    # every other age rather than being masked to NA.
+    # recruits are left out only when the setting names age itself. when age is shared over,
+    # age 1 takes the same tied parameter as every other age
     has_age_dim <- grepl("(^|_)a(_|$)", spec_name)
     if (has_age_dim) {
       expect_true(all(is.na(map_arr[, , , , , 1, ])), info = paste("recruit age NA, spec:", spec_name))
@@ -168,7 +167,7 @@ test_that("a CTMC deviation reaches every edge of its own region", {
   expect_equal(move_ctmc(rep(0.4, 3))$M, flat$M, tolerance = 1e-12)
 })
 
-# ── Get_move_PE_loglik: likelihood values against a hand-computed baseline ──
+# The Movement Penalty against a Hand Calculation ----------------------------
 
 test_that("Get_move_PE_loglik matches a hand-computed dnorm sum for every form", {
 

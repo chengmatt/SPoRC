@@ -38,9 +38,8 @@ test_that("numbers at age follow the documented projection and plus group", {
 
 
 test_that("the plus group conserves the fish entering it", {
-  # Stated separately from the projection because it is the line most often
-  # written as a plain assignment rather than an accumulation, and a model that
-  # drops the second term still projects every other age correctly.
+  # written out on its own because the plus group is most often assigned rather than accumulated,
+  # and a model dropping the second term still projects every other age correctly
   fx <- oracle_setup()
   Z <- oracle_ya(fx$rep$ZAA, fx$n_yrs, fx$n_ages)
   N <- drop(fx$rep$NAA)
@@ -67,9 +66,8 @@ test_that("catch at age follows Baranov's equation", {
 
 
 test_that("spawning biomass weighs the population propagated to spawning", {
-  # t_spawn = 0 leaves the population where it is; a non-zero value has it
-  # into the season first. Both are checked, because a model that ignores the
-  # timing agrees with the reference at zero and only differs away from it.
+  # a spawning time of zero leaves the population where it is and a non-zero one advances it
+  # into the season, so both are checked: a model ignoring the timing agrees at zero
   for(t_spawn in c(0, 0.35)) {
     fx <- oracle_setup(t_spawn = t_spawn)
     Z <- oracle_ya(fx$rep$ZAA, fx$n_yrs, fx$n_ages)
@@ -98,10 +96,8 @@ test_that("the spawning timing check is sensitive to the timing", {
 
 
 test_that("logistic selectivity matches the documented form", {
-  # Sel_b = 1 / (1 + exp(-k (b - b50))), evaluated through the model's own
-  # selectivity routine so the comparison is against what the model computes
-  # rather than against a second copy of the same call. Parameters are (b50,
-  # slope), which the vignette does not say.
+  # Sel_b = 1 / (1 + exp(-k (b - b50))), read through the model's own selectivity function. the
+  # parameters are b50 then slope, which the vignette does not say
   bins <- 1:12
   for(pars in list(c(4, 1.2), c(7, 0.4), c(2, 3))) {
     got <- Get_Selex(
@@ -121,9 +117,8 @@ test_that("logistic selectivity matches the documented form", {
 
 
 test_that("gamma selectivity squares the peak inside the root", {
-  # The vignette prints sqrt(bmax + 4 delta^2); the code and this reference both
-  # use sqrt(bmax^2 + 4 delta^2). Pinning it here says which one the model means,
-  # so the vignette can be corrected against a test rather than against a reading.
+  # the vignette prints sqrt(bmax + 4 delta^2) while the code and this reference both use
+  # sqrt(bmax^2 + 4 delta^2), so what the model means is written down here
   bins <- 1:12
   for(pars in list(c(5, 2), c(8, 1.5))) {
     got <- Get_Selex(
@@ -176,9 +171,8 @@ test_that("the multinomial composition likelihood matches the documented form", 
   il$data$ObsFishAgeComps <- obs
   rep <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)$rep
 
-  # the documented likelihood is stated on the expected proportions, with ageing
-  # error a separate step before it. Holding that step at the identity keeps this
-  # a test of the likelihood rather than of the two composed.
+  # the documented likelihood is on the expected proportions, with ageing error a step before it,
+  # so holding that step at the identity leaves this a test of the likelihood alone
   n_yrs_ae <- dim(il$data$AgeingError)[1]
   for(y in seq_len(n_yrs_ae)) {
     expect_equal(il$data$AgeingError[y, , ], diag(n_ages), tolerance = 1e-12,

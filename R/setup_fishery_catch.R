@@ -193,9 +193,8 @@ do_Fmort_mapping <- function(input_list) {
     has_catch <- has_catch | apply(input_list$data$UseCatchAA_pop == 1, c(2,3,4,7), any)
   }
 
-  # a fleet reporting one annual total still fishes every season of a year it reports in, so
-  # spread that year's observation across the seasons rather than leaving the rest unfished
-  # an input list built by hand, or by an older version, has no seasonal reporting fields
+  # a fleet reporting one annual total still fishes every season, so spread that year's observation
+  # across them. an older input list has no seasonal reporting fields
   or_seasonal <- function(x) if(is.null(x)) rep(0, dims[["fleet"]]) else x
   seas_agg <- rbind(or_seasonal(input_list$data$Catch_seas_Type),
                     or_seasonal(input_list$data$Catch_pop_seas_Type),
@@ -473,7 +472,7 @@ do_dmr_dev_mapping <- function(input_list, dmr_dev_spec) {
 
   if(dmr_dev_spec == "fix") {
     input_list$map$logit_dmr_devs <- factor(rep(NA, length(input_list$par$logit_dmr_devs)))
-    input_list$data$map_logit_dmr_devs <- array(NA_real_, dim = dims)
+    input_list$data$map_logit_dmr_devs <- array(NA, dim = dims)
     collect_message("dmr_devs is specified as: fix")
     return(input_list)
   }
@@ -919,7 +918,7 @@ Setup_Mod_Catch_and_F <- function(input_list,
                                   ...,
                                   ln_F_mean_spec = "est") {
 
-  messages_list <<- character(0) # string to attach to for printing messages # nolint: object_usage_linter.
+  messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...)
   if(input_list$store_config) input_list$config$Setup_Mod_Catch_and_F <- mget(names(formals()))[-1]
 

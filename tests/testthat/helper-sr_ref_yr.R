@@ -1,5 +1,5 @@
-# Operating and estimation model pair with TIME-VARYING weight at age, so the year the per-recruit
-# calculation is taken at actually changes S0. Flat biology gives the same phi0 at every reference year.
+# Operating and estimation model pair with time-varying weight at age, so that the year
+# the per-recruit calculation is taken at changes S0. Flat biology gives the same phi0.
 
 sr_ref_cfg <- list(n_yrs = 30, n_ages = 12, M = 0.2, sigmaR = 0.3, h = 0.7)
 

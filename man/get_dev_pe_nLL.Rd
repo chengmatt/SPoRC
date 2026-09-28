@@ -43,9 +43,9 @@ series. A year whose own deviation is fixed contributes no density.
 }
 \details{
 A walk has no stationary distribution to start from, so year one is given a
-diffuse normal. An AR1 starts from its stationary marginal standard deviation
-\eqn{\sigma / \sqrt{1 - \rho^2}}. Fixing year one instead leaves the series
-with no penalty on its level at all, which is what SAM's flat prior on the
-first year amounts to.
+diffuse normal. An AR1 starts from its stationary marginal standard
+deviation \eqn{\sigma / \sqrt{1 - \rho^2}}. Fixing year one instead leaves
+the series with no penalty on its level at all, as SAM's flat prior on the
+first year does.
 }
 \keyword{internal}

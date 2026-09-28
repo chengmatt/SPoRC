@@ -18,15 +18,21 @@ knitr::opts_chunk$set(
 )
 ```
 
-The size-age transition matrix is used in four places: length compositions are
-compared against it, length-based selectivity is applied through it,
-conditional age-at-length rows are read from it, and when weight at age is
-derived rather than supplied it converts numbers to biomass, and so enters
-spawning biomass and the reference points.
+Fish of the same age are rarely the same length, and an assessment that fits
+length data has to state how much they vary and how that spread changes with
+age. `SPoRC` holds this in the size-age transition matrix, which gives the
+probability that a fish of age $a$ falls in length bin $l$. It is used in four
+places: length compositions are compared against it, length-based selectivity
+is applied through it, conditional age-at-length rows are read from it, and
+when weight at age is derived rather than supplied it converts numbers to
+biomass, and so enters spawning biomass and the reference points.
 
-All of the options that build it are arguments to `Setup_Mod_Biologicals()`.
-This vignette covers what each one does and when to use it. The algebra is in
-`vignette("c_model_equations")` and the full argument list is in
+All of the options that build it are arguments to `Setup_Mod_Biologicals()`. In
+the following, we describe what each option does and the circumstances under
+which we would use it, working from the choice between fixed and estimated
+growth, through the curve itself, the spread around it, the plus group and the
+treatment of seasons, and then on to growth that changes over time. The algebra
+is in `vignette("c_model_equations")` and the full argument list is in
 `vignette("t_model_options")`. Two case studies run the module end to end:
 `vignette("ad_goa_rex_sole_case_study")` for constant parametric growth with
 conditional age-at-length, and `vignette("ae_ebs_pacific_cod_case_study")` for
@@ -120,14 +126,16 @@ five or six estimable parameters. `SizeAgeTrans` is then ignored and may be
 `NA`. One is built per fleet at that fleet's timing (`t_fish`, `t_srv`),
 plus one at spawning time.
 
-Use `"none"` if growth is determined externally and is not under study, if you
-are bridging an assessment that fixes it, or if there are no length data.
+We would generally keep `"none"` when growth has been determined externally and
+is not itself under study, when bridging an assessment that fixes it, or when
+there are no length data to inform a curve.
 
-Use an estimated curve if you fit length compositions or conditional
-age-at-length, if size at age may have changed over the series, if growth
-uncertainty should propagate into the biomass, or if selectivity is
-length-based and would otherwise absorb a misspecified transition. The costs are
-parameters and tape-build time.
+An estimated curve is preferable when length compositions or conditional
+age-at-length are fit, when size at age may have changed over the series, when
+the uncertainty in growth should propagate into the biomass, or when
+selectivity is length-based and would otherwise absorb a misspecified
+transition, although this comes at the cost of additional parameters and a
+longer tape build.
 
 # Prerequisites
 
@@ -212,29 +220,31 @@ with $L_{\infty}^{\rho} = L_{1}^{\rho} + \left( L_{2}^{\rho} - L_{1}^{\rho} \rig
 At $\rho = 1$ this is the von Bertalanffy curve exactly, so the Richards form
 nests it. The linear phase below $A_{1}$ is unchanged.
 
-`growth_A1` and `growth_A2` are data, not parameters. Set `growth_A1` at or
-just above the youngest age in the length data, since below it the curve is a
-straight line from `growth_L0` and is an assumption rather than a fit. Set
-`growth_A2` old enough that fish are near the asymptote but young enough that
-the sample is not small.
+`growth_A1` and `growth_A2` are data rather than parameters. We would set
+`growth_A1` at or just above the youngest age present in the length data, since
+below it the curve is a straight line from `growth_L0` and is therefore an
+assumption rather than a fit, and set `growth_A2` old enough that fish are near
+the asymptote while young enough that the sample at that age is not small.
 
 `growth_A2 = "Linf"` reads $L_{2}$ as the asymptote itself, with no second
-reference age to solve it from. Use it when matching a source parameterized
-that way. The bottom-left
-panel shows that the same $L_{2}$ gives a different curve under each reading.
+reference age from which to solve it, and we would use it when matching a
+source parameterized in that way. The bottom-left panel shows that the same
+$L_{2}$ gives a different curve under each reading.
 
-`growth_L0` anchors the linear phase and defaults to the first length bin's
-lower edge. It is rarely estimable, and only matters if recruits appear in the
-length compositions.
+`growth_L0` anchors the linear phase and defaults to the lower edge of the
+first length bin. It is rarely estimable, and matters only when recruits appear
+in the length compositions.
 
-$\rho$ gives a more flexible approach to the asymptote at the cost of one
-parameter that is often unidentified. Start at $\rho = 1$; if the estimate
-barely moves and its standard error is large, use `"vb_schnute"`.
+$\rho$ gives a more flexible approach to the asymptote, at the cost of one
+parameter that is often poorly identified. We would start at $\rho = 1$, and if
+the estimate barely moves from it while its standard error remains large,
+revert to `"vb_schnute"`.
 
 # The spread around the mean
 
-The curve gives mean length at age. The size-age transition also needs a spread, set by three
-switches.
+The curve described above gives only the mean length at age, whereas the
+size-age transition also requires the spread of lengths around that mean, which
+is set by the three switches described in this section.
 
 ![](figures/af_growth_spread.png)
 
@@ -272,24 +282,27 @@ c(x)\,\bar{L}(x) & \texttt{"cv"} \\[1ex]
 c(x) & \texttt{"sd"}
 \end{cases}$$
 
-Under `"cv"` the spread scales with size, so a 20 cm and a 60 cm fish have
-standard deviations in the ratio 1:3. Under `"sd"` the absolute spread is the
-same at every age. `"cv"` gives an implausibly tight distribution at the
-youngest ages when the linear phase runs down to a very small `growth_L0`; use
-`"sd"` in that case. A CV that declines with size ($CV_{2} < CV_{1}$) is the
-usual estimate, since the lengths of young fish vary with birth date and early
-growth while old fish have converged on the asymptote.
+Under `"cv"` the spread scales with size, so that a 20 cm and a 60 cm fish have
+standard deviations in the ratio 1:3, whereas under `"sd"` the absolute spread
+is the same at every age. The `"cv"` form gives an implausibly tight
+distribution at the youngest ages when the linear phase runs down to a very
+small `growth_L0`, and we would use `"sd"` in that case. A CV that declines
+with size ($CV_{2} < CV_{1}$) is the usual estimate, since the lengths of young
+fish vary with birth date and early growth while old fish have converged on the
+asymptote.
 
-`growth_dist` sets the distribution that is binned. The two are close at
-the spreads most assessments estimate; the panel above uses 0.35 to make the
-difference visible. Use `"lognormal"` when the spread is large enough that a
-normal puts appreciable mass below zero length.
+`growth_dist` sets the distribution that is binned. The two are close at the
+spreads most assessments estimate, and the panel above uses 0.35 in order to
+make the difference visible. We would use `"lognormal"` when the spread is
+large enough that a normal distribution places appreciable mass below zero
+length.
 
-Note the pairing. The transition is always built from the $\sigma_{L}(x)$ that
-`growth_sd_type` produced, and the lognormal transform reads it as a log-scale
-standard deviation. So `"lognormal"` belongs with `growth_sd_type = "sd"`;
-combining it with `"cv"` passes a length-scale spread into a log-scale
-transform.
+Note that these two switches have to be paired carefully, because the
+transition is always built from the $\sigma_{L}(x)$ that `growth_sd_type`
+produced and the lognormal transform then reads that value as a log-scale
+standard deviation. For this reason `"lognormal"` belongs with `growth_sd_type
+= "sd"`, since combining it with `"cv"` would pass a length-scale spread into a
+log-scale transform.
 
 # The plus group
 
@@ -339,8 +352,9 @@ $E[L] = \bar{L}(a)$:
 
 $$z_{l,a} = \frac{\log \ell_{l} - \left( \log \bar{L}(a) - \sigma_{L}^{2}(a)/2 \right)}{\sigma_{L}(a)}$$
 
-$\sigma_{L}(a)$ sets how many bins an age's mass spreads over: large values
-flatten the column, small ones concentrate it near $\bar{L}(a)$.
+The value of $\sigma_{L}(a)$ therefore sets how many bins an age's mass spreads
+over, in that large values flatten the column while small values concentrate it
+near $\bar{L}(a)$.
 
 # Timing within the year
 
@@ -370,7 +384,8 @@ The curve is then evaluated at the **real age**
 $$x_{a} = a + e(\tau, t)$$
 
 for every age class $a$, giving $\bar{L}(x_{a})$ and $\sigma_{L}(x_{a})$ from
-the same two equations as before. Nothing is interpolated between integer ages.
+the same two equations as before, and nothing is interpolated between integer
+ages.
 
 A worked example, four equal quarters so $d_{\tau} = 0.25$ for all $\tau$, with
 a survey read at the midpoint of the third quarter, $\tau = 3$ and $t = 0.5$:
@@ -401,8 +416,8 @@ evaluates $\bar{L}(x_{a})$ directly rather than stepping season by season, the
 season structure cannot introduce error: with growth constant over years, the
 same mean length at age comes out whatever $n_{\tau}$ and $d_{\tau}$ are.
 
-Only distinct values of $e$ within a season are evaluated, so fleets sharing a
-timing cost nothing extra.
+Only distinct values of $e$ within a season are evaluated, so that fleets which
+share a timing cost nothing extra.
 
 ## The two exceptions
 
@@ -438,18 +453,19 @@ input_list <- Setup_Mod_Biologicals(
 individual parameters, holding named ones at their starting values regardless
 of the sharing.
 
-Sex: if the sexes differ in size at age and the compositions are sex-split,
-estimate them separately. Sharing growth across sexes that differ leaves the
-difference to be absorbed by selectivity.
+Sex: if the sexes differ in size at age and the compositions are sex-split, we
+would estimate growth separately for each, because sharing it across sexes that
+differ leaves the difference to be absorbed by selectivity instead.
 
-Region: share across regions unless there are regional length data to identify
-a difference.
+Region: we would generally share growth across regions unless regional length
+data are available to identify a difference between them.
 
-`CV2` is usually the first parameter to fix, since it is informed only by the
-oldest ages, where samples are small and the plus group confounds it. Fix
-`rho` at one unless it moves.
+`CV2` is usually the first parameter we would fix, since it is informed only by
+the oldest ages, where samples tend to be small and the plus group confounds
+it, and `rho` is generally best held at one unless the estimate moves away from
+it.
 
-Starting values matter here more than in most parts of the model.
+Starting values matter more here than in most parts of the model.
 `ln_growth_pars` defaults to the ends of the length bins with a rate of 0.15
 and CVs of 0.1, which is a placeholder rather than a prior. Supply your own on
 the log scale, dimensioned `[n_pop x n_regions x n_sexes x n_gpars]` in the
@@ -458,7 +474,8 @@ rough one, is a reasonable starting point.
 
 # Growth that changes over time
 
-There are two mechanisms, and they can be used together.
+Growth can be allowed to change over time through two mechanisms, described in
+turn below, and the two may be used together.
 
 ## Varying the parameters
 
@@ -475,18 +492,18 @@ input_list <- Setup_Mod_Biologicals(
 )
 ```
 
-`growth_tv_model` names a structure per parameter, `"none"`, `"iid"` or
-`"rw"`, either as a vector in parameter order or named with the rest left
+`growth_tv_model` names a structure per parameter, `"none"`, `"iid"` or `"rw"`,
+supplied either as a vector in parameter order or named with the rest left
 constant. Each varying parameter gains a deviation series in `ln_growth_devs`
 and a process error standard deviation. Growth parameters trade off against
-each other, so letting all five vary at once tends to give a well-fitting
-series that is hard to interpret. Name only the parameters you have a reason to
-move.
+each other, so that letting all five vary at once tends to give a well-fitting
+series which is difficult to interpret, and we would name only those parameters
+there is a specific reason to move.
 
 `growth_tv_years` restricts each parameter's deviations to given calendar
-years, as a vector applied to all of them or a list named per parameter.
-Deviations outside the range are kept at zero. Use the years in which the
-length data are informative.
+years, supplied either as a vector applied to all of them or as a list named
+per parameter, with deviations outside that range kept at zero. We would
+generally use the years over which the length data are informative.
 
 `growth_tv_link` sets the scale the deviation enters on. For a base parameter
 $P$ with deviation $\delta_{y}$, the value in year $y$ is
@@ -504,10 +521,10 @@ the better default. The realized $P_{y}$ are reported as `growth_pars_y`.
 
 `growth_tv_sigma_spec` holds the process error standard deviations at their
 starting values (`"fix"`) or estimates them (`"est"`). The starting values are
-the first data source of `growth_pe_pars`, one slot per growth parameter. Fixing
-them makes the deviations a penalized-likelihood problem in which you set how
-much variation is allowed. Estimating them requires the deviations to be
-integrated out; see below.
+taken from the first slot of `growth_pe_pars`, one entry per growth parameter.
+Fixing them makes the deviations a penalized-likelihood problem in which you
+set how much variation is allowed, whereas estimating them requires the
+deviations to be integrated out, as described below.
 
 `growth_tv_spec` shares the deviation series across regions and sexes with the
 same vocabulary as `growth_spec`. A deviation series per stratum adds
@@ -528,14 +545,14 @@ exaggerates them into one sustained drop in $K$ from 2000 to make the mechanism
 visible. It is an illustration, not the assessment's estimate.*
 
 `growth_tv_type = "curve"`, the default, reads every year's sizes off that
-year's curve. Nothing is kept between years: if $K$ drops, every age is
-immediately shorter, including fish that grew through twenty prior years. Use
-it when the deviations represent something acting on all ages at once, or when
-the curve describes the population sampled in a year rather than a growth
-process.
+year's curve, so that nothing is kept between years: if $K$ drops, every age is
+immediately shorter, including fish that grew through twenty prior years. We
+would use this option when the deviations are thought to represent something
+acting on all ages at once, or when the curve is better understood as
+describing the population sampled in a given year rather than a growth process.
 
-`"cohort"` has size at age forward instead. Writing $g_{y}$ for the growth
-increment over one year under year $y$'s parameters,
+`"cohort"` propagates size at age forward instead. Writing $g_{y}$ for the
+growth increment over one year under year $y$'s parameters,
 
 $$g_{y}(L) = \left[ L_{\infty,y}^{\rho_{y}} + \left( L^{\rho_{y}} - L_{\infty,y}^{\rho_{y}} \right)e^{-K_{y}} \right]^{1/\rho_{y}}$$
 
@@ -548,19 +565,21 @@ g_{y}\left( \bar{L}_{y,a-1} \right) & a^{\ast} < a < a_{+} \\[2ex]
 \dfrac{\left( N_{y,a_{+}-1} + 0.01 \right)g_{y}\left( \bar{L}_{y,a_{+}-1} \right) + \left( N_{y,a_{+}} + 0.01 \right)g_{y}\left( \bar{L}_{y,a_{+}} \right)}{N_{y,a_{+}-1} + N_{y,a_{+}} + 0.02} & a = a_{+}
 \end{cases}$$
 
-with $a^{\ast}$ the first age past $A_{1}$. Three things follow. Ages still in
-the linear phase take the length at $A_{1}$ their *birth year's* parameters
-gave them, so a cohort born in a poor year has that start forward. The plus
-group blends the cohort entering it with the fish already there by their
-numbers at age, which is the only place growth depends on abundance. And a poor
-growth year tracks the affected cohorts up through the ages for the rest of the
-series. Use it when the deviations represent conditions a fish lived through.
+with $a^{\ast}$ the first age past $A_{1}$. Three consequences follow from
+this. Ages still in the linear phase take the length at $A_{1}$ that their
+*birth year's* parameters gave them, so that a cohort born in a poor year keeps
+that smaller start for the rest of its life. The plus group blends the cohort
+entering it with the fish already there by their numbers at age, which is the
+only place in the model where growth depends on abundance. And a poor growth
+year tracks the affected cohorts up through the ages for the remainder of the
+series, which is why we would use this option when the deviations are thought
+to represent conditions a fish lived through.
 
-Two consequences of `"cohort"`: because the plus group reads abundance, growth
-is evaluated inside the population dynamics year loop and the model costs more
-to tape; and $c(x)$ is evaluated once from the first year's curve and then kept
-while the mean moves, so the deviations change mean size without also changing
-the spread.
+Two further consequences follow. Because the plus group reads abundance, growth
+has to be evaluated inside the population dynamics year loop, and the model
+therefore costs more to tape. In addition, $c(x)$ is evaluated once from the
+first year's curve and then kept while the mean moves, so that the deviations
+change mean size without also changing the spread.
 
 # Semi-parametric growth
 
@@ -601,26 +620,30 @@ separable first-order autoregression over ages and years), and `"3dmarg"` /
 `"3dcond"` (a three-dimensional Gaussian Markov random field over age, year and
 cohort, on the marginal or conditional variance).
 
-The correlated forms are what make the surface estimable. A year-by-age
-deviation is not identified from length data one cell at a time, so the process
-error has to borrow strength across neighboring cells. `"iid"` provides none of
-that and is mainly useful as a null. `"2dar1"` is a reasonable default. The 3D
-forms add a hyperparameter and correlate along the cohort diagonal as well as
-over ages and years, which is worth it when a cohort signal is expected.
+The correlated forms are what make the surface estimable, because a year-by-age
+deviation is not identified from length data one cell at a time and the process
+error therefore has to borrow strength across neighboring cells. `"iid"`
+provides none of that correlation and is mainly useful as a null model against
+which the others can be compared, whereas `"2dar1"` is generally a sensible
+default. The three-dimensional forms add a hyperparameter and correlate along
+the cohort diagonal as well as over ages and years, which is likely to be
+worthwhile when a cohort signal is expected.
 
-`growth_semipar_ages` and `growth_semipar_years` hold deviations outside them at
-zero. Restrict the surface to the ages and years the length data cover;
-elsewhere it adds unconstrained parameters.
+`growth_semipar_ages` and `growth_semipar_years` hold deviations outside them
+at zero, and we would restrict the surface to the ages and years that the
+length data actually cover, since elsewhere it adds parameters that nothing
+constrains.
 
-The spread follows the deviated mean, so under `growth_cv_type = "len"` a
-deviation that lengthens a fish also moves it along the CV ramp. Under `"age"`
-the spread at age is unaffected.
+The spread follows the deviated mean, so that under `growth_cv_type = "len"` a
+deviation which lengthens a fish also moves it along the CV ramp, whereas under
+`"age"` the spread at age is unaffected.
 
-The surface and the parametric time variation compose. Use the parameters for
-changes that can be attributed to a named mechanism and the surface for the
-residual, and avoid asking both to explain the same variation.
+The surface and the parametric time variation compose, and we would generally
+use the parameters for changes that can be attributed to a named mechanism and
+the surface for what remains, while avoiding asking both to explain the same
+variation.
 
-## Why the two deviation data sources are separate
+## Why the two sets of deviations are separate
 
 They are indexed over different dimensions and applied at different points:
 
@@ -633,23 +656,25 @@ ln_growth_semipar_devs # [n_pop, n_regions, n_yrs, n_ages,  n_sexes]  4th dim: a
 `L2`, `K`, `CV1`, `CV2` and `rho`. `ln_growth_semipar_devs` multiplies mean
 length at age after the curve and after any cohort propagation.
 
-Three things follow from that. The correlated process errors correlate over age,
-year and cohort, which is only meaningful when the index is age, so `"2dar1"`
-and the 3D forms are available to the surface and not to the parametric data source,
-where `"iid"` and `"rw"` are the only sensible structures. Cohort propagation
-works off the growth increment the year's parameters imply, so it acts on the
-parametric data source; the surface multiplies in afterwards and is not kept
-forward. And parametric deviations keep size at age inside the curve's shape,
-whereas the surface lets it leave.
+Three consequences follow from this. The correlated process errors correlate
+over age, year and cohort, which is only meaningful when one of the indices is
+age, so that `"2dar1"` and the three-dimensional forms are available to the
+surface but not to the parametric deviations, for which `"iid"` and `"rw"` are
+the only sensible structures. Cohort propagation works off the growth increment
+that the year's parameters imply and therefore acts on the parametric
+deviations, whereas the surface multiplies in afterwards and is not propagated
+forward. Finally, parametric deviations keep size at age within the shape the
+curve can express, whereas the surface allows it to leave that shape entirely.
 
-The two data sources do share one array, `growth_pe_pars`: slot `[,,,,1]` holds the
-time-varying standard deviations and `[,,,,2]` the surface's hyperparameters,
-with slots a given form does not read mapped off.
+The two sets of deviations do share one array, `growth_pe_pars`, in which slot
+`[,,,,1]` holds the time-varying standard deviations and slot `[,,,,2]` the
+surface's hyperparameters, with the slots that a given form does not read
+mapped off.
 
 # Deviations as random effects
 
-Both data sources can be integrated out with the Laplace approximation instead of
-penalized, as selectivity deviations are in
+Both sets of deviations can be integrated out with the Laplace approximation
+rather than penalized, as the selectivity deviations are in
 `vignette("n_single_region_ebs_pollock_randomeff_case_study")`. Pass the
 parameter name to `fit_model()`:
 
@@ -665,11 +690,12 @@ fit <- fit_model(input_list$data, input_list$par, input_list$map,
 ```
 
 This is what `growth_tv_sigma_spec = "est"` and `growth_semipar_spec = "est"`
-require. Maximizing over a process error standard deviation and the deviations
-it penalizes at the same time, with both as fixed effects, drives the standard
-deviation toward zero. Integrating the deviations out makes it a variance
-parameter the data can inform. With the process error fixed, the fixed-effect
-treatment is fine and cheaper.
+require, because maximizing over a process error standard deviation and the
+deviations it penalizes at the same time, with both treated as fixed effects,
+drives that standard deviation toward zero. Integrating the deviations out
+instead makes it a variance parameter that the data can inform. When the
+process error is held fixed, the fixed-effect treatment is adequate and is
+cheaper to fit.
 
 `fit_model()` uses the tape Hessian for its Newton refinement only when there
 are no random effects, so a random-effects fit takes the slower path.
@@ -700,10 +726,10 @@ weight uses the transition at spawning time and each fleet's weight the transiti
 fleet's timing, so weight at age becomes fleet-specific, and time-varying
 whenever growth is. `WAA` may be `NULL`.
 
-Use `"wt_len"` when growth is estimated and the biomass should inherit its
-uncertainty and time variation. Use `"data"` when empirical weight at age is
-available, which is generally better than a weight-length relationship, or when
-matching an assessment that supplies it.
+We would use `"wt_len"` when growth is estimated and the biomass should inherit
+its uncertainty and time variation, and `"data"` when empirical weight at age
+is available, which is generally preferable to a weight-length relationship, or
+when matching an assessment that supplies it.
 
 Under `"wt_len"` the weight arrays are model output, but reference point and
 projection code read `data$WAA`. Copy the reported arrays into the data list
@@ -747,9 +773,9 @@ Length compositions are recorded on 24 bins, mapped from the model's 121 bins
   inside the likelihood
 ```
 
-That covers which parameters vary and how, the link, the year cohort
-propagation starts from, how many ages the surface covers, and where weight at
-age comes from.
+This reports which parameters vary and under what structure, the link they
+enter on, the year from which cohort propagation starts, how many ages the
+surface covers, and where weight at age comes from.
 
 After fitting, the report contains:
 

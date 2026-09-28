@@ -1,3 +1,6 @@
+# Recruiting at age 0 with spawning in the second of two seasons, simulated and refit, so the
+# operating and estimating models have to place the recruits the same way.
+
 library(SPoRC)
 library(testthat)
 library(reshape2)
@@ -5,14 +8,11 @@ library(dplyr)
 
 test_that("Age-0 (rec_lag = 0) recruitment with spawning after season 1 is concordant between OM and EM", {
 
-  # This exercises exactly the scenario rec_lag = 0 was built for: a seasonal
-  # model where spawning does NOT occur in season 1 (spawn_seas = 2 of 2), so
-  # recruits can only enter the population in spawn_seas itself. It simulates
-  # under known Beverton-Holt parameters with the operating model
-  # (Simulate_Pop_Static), then fits the estimation model with the same
-  # rec_lag = 0 / spawn_seas = 2 timing and checks that SSB, R0, and steepness
-  # are recovered - this only works if the OM (sim_population.R) and EM
-  # (model_objective.R) apply the same-year SSB -> recruitment timing consistently.
+  # the case recruiting at age 0 was built for: spawning in the second of two seasons, so
+  # recruits can only enter in the spawning season itself.
+  #
+  # simulated under Beverton-Holt parameters set here and refit at the same timing, so nothing
+  # comes back unless both models read the same year's spawning biomass into recruitment
 
   set.seed(2024)
 
@@ -85,7 +85,7 @@ test_that("Age-0 (rec_lag = 0) recruitment with spawning after season 1 is conco
                                         sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
 
   ### Setup Recruitment: age-0, spawning in season 2 of 2 ----------------------
-  # rec_seas_prop must be 0 before spawn_seas -- all recruits enter in
+  # rec_seas_prop is zero before the spawning season, since all recruits enter in
   # spawn_seas itself here, since there's no season after it.
   rec_seas_prop_input <- array(0, dim = c(sim_list$n_pop, sim_list$n_seas, sim_list$n_sims))
   rec_seas_prop_input[, 2, ] <- 1

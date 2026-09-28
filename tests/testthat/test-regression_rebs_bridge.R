@@ -26,17 +26,11 @@ test_that("BSAI rougheye reproduces the 2024 ADMB assessment at its own MLE", {
   expect_equal(as.vector(r$srv_sel[1, 1, 1, 1, 1:n_obs_ages, 1, 1]),
                as.vector(dat$admb$sel_srv), tolerance = 1e-5, ignore_attr = TRUE)
 
-  # The population at the assessment's MLE. The assessment reports numbers at age
-  # over the 43 observed ages with the model's ages 45 to 54 pooled into the last
-  # column, so SPoRC's 52 ages are pooled the same way before comparing. The
-  # tolerance is set by the assessment's own report, which has six significant
-  # figures.
+  # the assessment reports numbers at age over its 43 observed ages with ages 45 to 54 pooled
+  # into the last column, so SPoRC's 52 are pooled the same way, to six significant figures.
   #
-  # Age 1 is recruitment and is checked separately below. The three terminal
-  # recruits differ by a documented convention, and they age into the age 2 and 3
-  # cells of the last two years, so the comparison covers every year at ages 4 and
-  # older and every age over the years the assessment estimates a deviation for.
-  # Those are the only cells the convention can reach.
+  # age 1 is recruitment and is checked below. the three terminal recruits age into the age 2
+  # and 3 cells of the last two years, so this covers ages 4 and older in every year
   n_est <- length(dat$mle$rec_dev)
   naa <- r$NAA[1, 1, 1:n_yrs, 1, , 1]
   naa_pooled <- cbind(naa[, 1:(n_obs_ages - 1)], rowSums(naa[, n_obs_ages:n_ages]))
@@ -54,23 +48,22 @@ test_that("BSAI rougheye reproduces the 2024 ADMB assessment at its own MLE", {
   expect_equal(as.vector(r$PredSrvIdx)[i_srv], dat$admb$pred_srv[i_srv],
                tolerance = 1e-3, ignore_attr = TRUE)
 
-  # Recruitment splits into the years the assessment estimates a deviation for and
-  # the three terminal years it does not. Over the estimated years the two agree
-  # outright. Over the terminal three the assessment multiplies mean recruitment by
-  # exp(sigmaR^2 / 2) while leaving the estimated recruitments uncorrected, a legacy
-  # ADMB convention SPoRC does not reproduce, so SPoRC sits exactly that factor low.
-  # This is a documented convention difference, not an error: do not "fix" it by
-  # adding a bias correction switch. It moves terminal spawning biomass by 8e-5,
-  # because maturity at age 3 is 0.003.
+  # recruitment splits into the years the assessment estimates a deviation for, where the two
+  # agree outright, and the three terminal years it does not.
+  #
+  # over those three the assessment multiplies mean recruitment by exp(sigmaR^2 / 2) while
+  # leaving the estimated years uncorrected, which SPoRC does not reproduce.
+  #
+  # so SPoRC sits exactly that factor low, which moves terminal spawning biomass by 8e-5,
+  # maturity at age 3 being 0.003
   expect_equal(as.vector(r$Rec)[1:n_est], as.vector(dat$admb$Rec)[1:n_est],
                tolerance = 1e-4, ignore_attr = TRUE)
   expect_equal(as.vector(r$Rec)[(n_est + 1):n_yrs],
                as.vector(dat$admb$Rec)[(n_est + 1):n_yrs] * exp(-dat$sigmaR^2 / 2),
                tolerance = 1e-4, ignore_attr = TRUE)
 
-  # Likelihood components. SPoRC writes each component as a proper density while the
-  # assessment drops normalizing constants, so each comparison subtracts exactly the
-  # constants the assessment omits. What is left is a like for like comparison.
+  # SPoRC writes each component as a proper density while the assessment drops normalizing
+  # constants, so each comparison subtracts exactly the constants it omits
   d <- input_list$data
   n_recdev <- length(dat$mle$rec_dev)
   n_fydev <- length(dat$mle$fydev)

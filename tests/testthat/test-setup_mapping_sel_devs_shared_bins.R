@@ -1,8 +1,9 @@
+# The est_shared_b family estimates one deviation series per bin group per year, with one process
+# error standard deviation per group. Legal under iid or a random walk for non-parametric fleets,
+# whose deviations are indexed by bin rather than by parameter.
+
 library(SPoRC)
 library(testthat)
-
-# The est_shared_b family estimates one deviation series per bin group per year. Under iid or a
-# random walk it is legal for non-parametric fleets, whose deviation slots are bins rather than parameters.
 
 n_yrs <- 12
 n_ages <- 6

@@ -1,10 +1,11 @@
+# The observation models: the Baranov catch equation, catch and discards in numbers or biomass,
+# the index at mid-season survival, catchability, and selectivity at length.
+
 library(SPoRC)
 library(testthat)
 
-# Minimal 1-pop, 1-region, 1-year, 1-season, 2-age, 1-sex, 1-fleet test setup.
-# Dimensions match the real model's convention even when degenerate (extent-1
-# dims), so this exercises the same array-indexing/dropping behavior as a
-# real (if tiny) model run.
+# one population, region, year, season, sex and fleet, and two ages. every dimension is still
+# present, so the arrays are read the same way a full model reads them
 make_fishery_obs_input <- function(catch_units = 0, discard_units = 0, fish_idx_type = 0, fit_lengths = 0) {
 
   n_pop <- 1
@@ -120,7 +121,7 @@ test_that("get_fishery_observation_model: length compositions via SizeAgeTrans (
   il <- make_fishery_obs_input(fit_lengths = 1)
   out <- do.call(SPoRC:::get_fishery_observation_model, il)
 
-  # SizeAgeTrans is the identity matrix in this test setup, so CAL should equal CAA elementwise
+  # the size-age transition matrix is the identity here, so catch at length equals catch at age
   expect_equal(as.numeric(out$CAL[1,1,1,1,,1,1]), as.numeric(out$CAA[1,1,1,1,,1,1]), tolerance = 1e-8)
   expect_equal(as.numeric(out$DAL[1,1,1,1,,1,1]), as.numeric(out$DAA[1,1,1,1,,1,1]), tolerance = 1e-8)
 })

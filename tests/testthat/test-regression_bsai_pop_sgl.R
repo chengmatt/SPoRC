@@ -65,12 +65,11 @@ test_that("Single-region BSAI Pacific ocean perch RTMB model produces expected r
   expect_true(bsai_pop_rtmb_model$sdrep$pdHess)
   expect_jnLL_decomposes(bsai_pop_rtmb_model)
 
-  # The refit stays on the assessment. These are not stored numbers: they are the
-  # assessment's own estimates, so they hold the refit to the bridge. The initial
-  # equilibrium recruitment, the mean F and both catchabilities are recovered to
-  # better than 0.05 percent, and spawning biomass to better than 0.2 percent over
-  # all 65 years, which is what makes the recruitment level shift below the only
-  # place the two models part company.
+  # these are the assessment's own estimates rather than stored numbers, so they hold the
+  # refit to the bridge.
+  #
+  # the initial equilibrium recruitment, the mean F and both catchabilities come back to better
+  # than 0.05 percent and spawning biomass to better than 0.2 percent over all 65 years
   fit_par <- bsai_pop_rtmb_model$env$parList(bsai_pop_rtmb_model$env$last.par.best)
   s2 <- dat$sigmaR^2 / 2
   expect_equal(exp(as.vector(fit_par$ln_M)[1]), dat$mle$M, tolerance = 1e-3)
@@ -81,21 +80,19 @@ test_that("Single-region BSAI Pacific ocean perch RTMB model produces expected r
   ssb_fit <- as.vector(bsai_pop_rtmb_model$rep$SSB)[1:n_yrs]
   expect_lt(max(abs(ssb_fit / dat$admb$SSB[yr_ind] - 1)), 3e-3)
 
-  # Recruitment likewise, but only over the years the deviations are estimated. The
-  # assessment's three terminal recruits are dev free and it builds them as the mean
-  # recruitment, exp(mean_log_rec + sigmaR^2 / 2). SPoRC builds them as exp(R0), and
-  # R0 is seeded with that same bias correction, so unlike the BSAI northern rockfish
-  # case the two do not differ by exp(sigmaR^2 / 2) here: this configuration runs the
-  # bias ramp at one, which centers the recruitment penalty on the shift the seeds
-  # have and leaves R0 where it was put.
+  # recruitment likewise, but only over the years the deviations are estimated.
   #
-  # What is left is a level shift. The assessment declares its recruitment deviations
-  # as a dev_vector, which is constrained to sum to zero, so it cannot slide the
-  # overall level between mean_log_rec and the deviations. SPoRC's deviations are
-  # free and it does slide, by about 1.6 percent in log space, which lands as a 6.8
-  # percent gap in the three terminal recruits and 0.17 percent in terminal spawning
-  # biomass. The gap is asserted rather than tolerated so that it stays understood: it
-  # is exactly the shift in R0, and it is the same number in all three terminal years.
+  # the assessment's three terminal recruits have no deviation and are built as the mean,
+  # exp(mean_log_rec + sigmaR^2 / 2), while SPoRC builds them as exp(R0).
+  #
+  # R0 is seeded with that same bias correction, so unlike northern rockfish the two do not
+  # differ by it here: the bias ramp runs at one and leaves R0 where it was put.
+  #
+  # what is left is a level shift: the assessment's deviations sum to zero and cannot slide the
+  # level, while SPoRC's are free and do, by about 1.6 percent in log space.
+  #
+  # that lands as 6.8 percent in the three terminal recruits and 0.17 percent in terminal
+  # spawning biomass, which is exactly the shift in R0 and the same in all three years
   rec_fit <- as.vector(bsai_pop_rtmb_model$rep$Rec)[1:n_yrs]
   n_fixed <- dat$fixedrec
   est_yrs <- seq_len(n_yrs - n_fixed)

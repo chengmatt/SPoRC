@@ -1,7 +1,10 @@
+# The composition likelihoods: every likelihood against every composition type, with the
+# sample size, the weight, empty bins, ageing error and a perfect fit.
+
 library(SPoRC)
 library(testthat)
 
-test_that("Get_Comp_Likelihoods works!", {
+test_that("Get_Comp_Likelihoods evaluates every composition type and likelihood", {
 
   # Build a simple identity ageing error matrix (square, no error)
   identity_ae <- function(n) diag(n)
@@ -72,9 +75,9 @@ test_that("Get_Comp_Likelihoods works!", {
     )
   }
 
-  # ── output structure ─────────────────────────────────────────────────────────
+  # One Value per Region and Sex ---------------------------------------------
 
-  test_that("output is a numeric matrix of dim [n_regions x n_sexes]", {
+  test_that("the result is one number per region and sex", {
     for (ct in 0:2) {
       res <- call_comp_nll(
         Comp_Type = ct,
@@ -87,95 +90,94 @@ test_that("Get_Comp_Likelihoods works!", {
     }
   })
 
-  # ── Comp_Type = 0 (aggregated) ───────────────────────────────────────────────
+  # Aggregated over Regions and Sexes ----------------------------------------
 
-  test_that("Comp_Type=0, LT=0 (multinomial): nLL stored in [1,1], rest zero", {
+  test_that("aggregated over regions and sexes, the multinomial gives one value in the first cell", {
     res <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 0)
     expect_true(is.finite(res[1, 1]))
     # only [1,1] is populated
     expect_equal(sum(res != 0), 1)
   })
 
-  test_that("Comp_Type=0, LT=1 (dirichlet-multinomial): finite nLL in [1,1]", {
+  test_that("aggregated, the Dirichlet-multinomial is finite", {
     res <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 1)
     expect_true(is.finite(res[1, 1]))
   })
 
-  test_that("Comp_Type=0, LT=2 (LN iid): finite nLL in [1,1]", {
+  test_that("aggregated, the iid logistic normal is finite", {
     res <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 2)
     expect_true(is.finite(res[1, 1]))
   })
 
-  test_that("Comp_Type=0, LT=3 (LN AR1): finite nLL in [1,1]", {
+  test_that("aggregated, the logistic normal correlated across bins is finite", {
     res <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 3)
     expect_true(is.finite(res[1, 1]))
   })
 
-  # ── Comp_Type = 1 (split sex & region) ───────────────────────────────────────
+  # Split by Region and Sex --------------------------------------------------
 
-  test_that("Comp_Type=1, LT=0: all used regions/sexes have finite nLL", {
+  test_that("split by region and sex, the multinomial is finite in every cell that is fit", {
     res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
                          n_regions = 2, n_sexes = 2)
     expect_true(all(is.finite(res)))
   })
 
-  test_that("Comp_Type=1, LT=1 (DM): finite nLL for all regions and sexes", {
+  test_that("split by region and sex, the Dirichlet-multinomial is finite everywhere", {
     res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 1,
                          n_regions = 2, n_sexes = 2)
     expect_true(all(is.finite(res)))
   })
 
-  test_that("Comp_Type=1, LT=2 (LN iid): finite nLL for all strata", {
+  test_that("split by region and sex, the iid logistic normal is finite everywhere", {
     res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 2,
                          n_regions = 2, n_sexes = 1)
     expect_true(all(is.finite(res)))
   })
 
-  test_that("Comp_Type=1, LT=3 (LN AR1): finite nLL for all strata", {
+  test_that("split by region and sex, the logistic normal across bins is finite everywhere", {
     res <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 3,
                          n_regions = 2, n_sexes = 1)
     expect_true(all(is.finite(res)))
   })
 
-  # ── Comp_Type = 2 (joint sex, split region) ───────────────────────────────────
+  # Split by Region, Joint across Sexes --------------------------------------
 
-  test_that("Comp_Type=2, LT=0 (multinomial): nLL in [r,1] for each region", {
+  test_that("joint across sexes, the multinomial gives one value per region", {
     res <- call_comp_nll(Comp_Type = 2, Likelihood_Type = 0,
                          n_regions = 2, n_sexes = 2)
     expect_true(is.finite(res[1, 1]))
     expect_true(is.finite(res[2, 1]))
   })
 
-  test_that("Comp_Type=2, LT=1 (DM): finite nLL by region", {
+  test_that("joint across sexes, the Dirichlet-multinomial is finite by region", {
     res <- call_comp_nll(Comp_Type = 2, Likelihood_Type = 1,
                          n_regions = 2, n_sexes = 2)
     expect_true(all(is.finite(res[, 1])))
   })
 
-  test_that("Comp_Type=2, LT=2 (LN iid): finite nLL by region", {
+  test_that("joint across sexes, the iid logistic normal is finite by region", {
     res <- call_comp_nll(Comp_Type = 2, Likelihood_Type = 2,
                          n_regions = 2, n_sexes = 2)
     expect_true(all(is.finite(res[, 1])))
   })
 
-  test_that("Comp_Type=2, LT=3 (LN AR1): finite nLL by region", {
+  test_that("joint across sexes, the logistic normal across bins is finite by region", {
     res <- call_comp_nll(Comp_Type = 2, Likelihood_Type = 3,
                          n_regions = 2, n_sexes = 2)
     expect_true(all(is.finite(res[, 1])))
   })
 
-  test_that("Comp_Type=2, LT=4 (LN AR1 + constant sex corr): finite nLL by region", {
+  test_that("joint across sexes, a correlation between sexes as well as across bins is finite", {
     res <- call_comp_nll(Comp_Type = 2, Likelihood_Type = 4,
                          n_regions = 2, n_sexes = 2)
     expect_true(all(is.finite(res[, 1])))
   })
 
-  # ── use-region filtering ─────────────────────────────────────────────────────
+  # Regions That Are Not Fit -------------------------------------------------
 
-  test_that("regions with use=0 reduce total nLL vs all regions used (Comp_Type=1)", {
-    # The function filters Exp/Obs to used regions and writes results into
-    # comp_nLL[1..n_used, s] sequentially — it does NOT preserve the original
-    # region index in the output. Using fewer regions should give lower total nLL.
+  test_that("a region that is not fit drops out of the total", {
+    # the function keeps only the regions that are fit and writes them in order rather than at
+    # their original region index, so fewer regions has to give a lower total
     res_all  <- call_comp_nll(
       Comp_Type = 1,
       Likelihood_Type = 0,
@@ -194,7 +196,7 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_gt(sum(res_all), sum(res_one))
   })
 
-  test_that("nLL increases when more regions are used (Comp_Type=1)", {
+  test_that("fitting more regions adds to the total", {
     res1 <- call_comp_nll(
       Comp_Type = 1,
       Likelihood_Type = 0,
@@ -210,7 +212,7 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_gt(sum(res3), sum(res1))
   })
 
-  # ── ageing error (age_or_len = 0) ────────────────────────────────────────────
+  # Ageing Error -------------------------------------------------------------
 
   test_that("age compositions with identity ageing error match length compositions", {
     # With a square identity AE matrix the result should be identical to lengths
@@ -232,7 +234,7 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_equal(res_age, res_len, tolerance = 1e-10)
   })
 
-  test_that("non-square ageing error collapses model bins to obs bins (Comp_Type=1)", {
+  test_that("ageing error onto fewer observed ages than the model has collapses the prediction", {
     # 6 model age bins mapped to 4 observed bins
     n_mod <- 6
     n_obs <- 4
@@ -258,9 +260,9 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_true(all(is.finite(res)))
   })
 
-  # ── zero-count handling ───────────────────────────────────────────────────────
+  # Empty Bins ---------------------------------------------------------------
 
-  test_that("zero counts in Obs do not produce NaN (Comp_Type=1, LT=0, addtocomp)", {
+  test_that("an empty bin stays finite under the multinomial, given the added constant", {
     Obs_z <- uniform_obs(2, 5, 1)
     Obs_z[1, 1, 1] <- 0   # introduce a zero
     res <- call_comp_nll(
@@ -273,7 +275,7 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_false(any(is.nan(res)))
   })
 
-  test_that("zero counts in Obs handled gracefully for LN likelihoods (Comp_Type=1)", {
+  test_that("an empty bin stays finite under the logistic normal too", {
     Obs_z <- uniform_obs(2, 6, 1)
     Obs_z[1, 1, 1] <- 0
     Obs_z[1, 3, 1] <- 0
@@ -291,9 +293,9 @@ test_that("Get_Comp_Likelihoods works!", {
     }
   })
 
-  # ── ESS / weighting sensitivity ───────────────────────────────────────────────
+  # Sample Size and Weight ---------------------------------------------------
 
-  test_that("doubling ISS roughly doubles multinomial nLL (Comp_Type=1)", {
+  test_that("doubling the input sample size roughly doubles the multinomial value", {
     res1 <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
                           ISS = array(50, c(2, 1)))
     res2 <- call_comp_nll(Comp_Type = 1, Likelihood_Type = 0,
@@ -302,7 +304,7 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_equal(sum(res2) / sum(res1), 2, tolerance = 0.01)
   })
 
-  test_that("Wt_Mltnml = 0 gives zero multinomial nLL (Comp_Type=1)", {
+  test_that("a multinomial weight of zero drops the composition out of the fit", {
     res <- call_comp_nll(
       Comp_Type = 1,
       Likelihood_Type = 0,
@@ -311,9 +313,9 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_equal(sum(res), 0)
   })
 
-  # ── perfect fit gives nLL = 0 for multinomial ────────────────────────────────
+  # A Perfect Fit Contributes Nothing ----------------------------------------
 
-  test_that("multinomial nLL = 0 when Exp == Obs (Comp_Type=1)", {
+  test_that("a perfect fit contributes nothing, split by region and sex", {
     n_bins <- 5
     # Uniform obs and exactly matching expected
     flat <- array(1 / n_bins, dim = c(2, n_bins, 1))
@@ -329,7 +331,7 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_equal(sum(res), 0, tolerance = 1e-10)
   })
 
-  test_that("multinomial nLL = 0 when Exp == Obs (Comp_Type=2)", {
+  test_that("a perfect fit contributes nothing, joint across sexes", {
     n_bins <- 5
     n_sexes <- 2
     flat <- array(1 / (n_bins * n_sexes), dim = c(2, n_bins, n_sexes))
@@ -346,9 +348,9 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_equal(sum(res), 0, tolerance = 1e-10)
   })
 
-  # ── worse fit increases nLL ───────────────────────────────────────────────────
+  # A Worse Fit Costs More ---------------------------------------------------
 
-  test_that("more-peaked (worse-fit) expected increases multinomial nLL (Comp_Type=1)", {
+  test_that("an expectation more peaked than the data fits worse", {
     n_bins <- 5
     flat  <- array(1 / n_bins, dim = c(2, n_bins, 1))
     # Expected concentrated on bin 1, observed uniform => poor fit
@@ -374,9 +376,9 @@ test_that("Get_Comp_Likelihoods works!", {
     expect_gt(sum(res_bad), sum(res_good))
   })
 
-  # ── Comp_Type=0 aggregation ───────────────────────────────────────────────────
+  # The Aggregated Form Again ------------------------------------------------
 
-  test_that("Comp_Type=0 aggregates: result stored only in [1,1], nLL is finite", {
+  test_that("the aggregated form puts its one value in the first cell", {
     # Aggregated path always writes into comp_nLL[1,1] only.
     # Use a single-region case so the aggregation is unambiguous.
     res <- call_comp_nll(Comp_Type = 0, Likelihood_Type = 0, n_regions = 1)
@@ -389,7 +391,7 @@ test_that("Get_Comp_Likelihoods works!", {
                  tolerance = 1e-10)
   })
 
-  test_that("Comp_Type=0 nLL increases with worse fit (single region)", {
+  test_that("the aggregated form fits worse as the expectation moves away", {
     n_bins <- 5
     flat <- array(1 / n_bins, dim = c(1, n_bins, 1))
     bad  <- flat

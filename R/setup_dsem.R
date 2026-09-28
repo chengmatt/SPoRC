@@ -20,7 +20,7 @@ set_dsem_logdet_atomic <- function(value) {
 
   if(is.null(config_symbol)) {
     warning("This version of RTMB does not expose TMB's settings, so a moderated dsem that needs the determinant will return NaN.")
-    return(invisible(NA_integer_))
+    return(invisible(NA))
   }
 
   settings_env <- new.env()
@@ -37,9 +37,9 @@ set_dsem_logdet_atomic <- function(value) {
 
 #' Map level of every cell of a deviation array
 #'
-#' The map says which cells are estimated and which are fixed, and an array with no map entry
-#' has every cell estimated. Reading it this way gives one vector either way, \code{NA} at a
-#' fixed cell, which is what the dsem checks read.
+#' The map says which cells are estimated and which are fixed, and an array
+#' with no map entry has every cell estimated. Reading it this way gives one
+#' vector either way, \code{NA} at a fixed cell, the form the dsem checks need.
 #'
 #' @param input_list List with \code{par} and \code{map}.
 #' @param par_name Name of the deviation array.
@@ -206,9 +206,9 @@ read_dsem_arrows <- function(dsem_arrows,
         arrows <- rbind(arrows, data.frame(type = "cov",
                                            from = pair_vars[i1],
                                            to = pair_vars[i2],
-                                           lag = 0L,
+                                           lag = 0,
                                            name = paste0("C[", pair_vars[i1], ",", pair_vars[i2], "]"),
-                                           start = NA_real_))
+                                           start = NA))
       } # end i2 loop
     } # end i1 loop
   } # end group loop
@@ -218,9 +218,9 @@ read_dsem_arrows <- function(dsem_arrows,
     arrows <- rbind(arrows, data.frame(type = "sd",
                                        from = series,
                                        to = series,
-                                       lag = 0L,
+                                       lag = 0,
                                        name = paste0("V[", series, "]"),
-                                       start = NA_real_))
+                                       start = NA))
   } # end series loop
 
   # more checks on valid notation
@@ -252,7 +252,7 @@ read_dsem_arrows <- function(dsem_arrows,
   # figure out arrow indexing stuff inside path matrix
   arrows$from_idx <- match(arrows$from, variables) # column of the from series
   arrows$to_idx <- match(arrows$to, variables) # column of the to series
-  arrows$mod_idx <- match(arrows$name, variables, nomatch = 0L) # match arrow name to a variable for a moderating / latent var
+  arrows$mod_idx <- match(arrows$name, variables, nomatch = 0) # match arrow name to a variable for a moderating / latent var
 
   # setup moderating var stuff using Kahn's algorithim
   same_yr <- arrows$type == "path" & arrows$lag == 0 # find arrows that impact same year
@@ -265,7 +265,7 @@ read_dsem_arrows <- function(dsem_arrows,
                                  c(arrows$to_idx[same_yr], arrows$to_idx[moderated])) # and the moderating edges
   series_order <- full_peel$order # NULL under a same-year loop, which dgmrf handles but the draw cannot
 
-  # a loop the same-year paths alone do not make is one a moderator closes, so a series would set the coefficient on the arrow that sets it
+  # refuse a moderating series that reads a value the arrow it moderates sets in the same year
   if(is.null(series_order) && !is.null(path_peel$order)) {
     stop("A moderating series reads a value that the arrow it moderates sets in the same year, through: ",
          paste(variables[full_peel$stuck], collapse = ", "), ".")
@@ -283,19 +283,18 @@ read_dsem_arrows <- function(dsem_arrows,
   # figure out parameter indexing stuff (par is 0 if fixed or moderated)
   beta_names <- unique(arrows$name[est_beta])
   ln_sd_names <- unique(arrows$name[est_sd])
-  arrows$par <- 0L
+  arrows$par <- 0
   arrows$par[est_beta] <- match(arrows$name[est_beta], beta_names)
   arrows$par[est_sd] <- match(arrows$name[est_sd], ln_sd_names)
 
-  # a series with an sd of zero has no innovation: its value is whatever the arrows give it, and the model is reduced rank and we project the series instead
+  # a series with an sd of zero has no process error, so the arrows alone set its value
   project_k <- logical(length(variables))
   zero_sd <- arrows$type == "sd" & arrows$par == 0 & arrows$mod_idx == 0 & arrows$start == 0
   project_k[arrows$to_idx[zero_sd]] <- TRUE
 
   if(any(project_k)) {
 
-    # a covariance line onto a solved series asks for a covariance between an innovation of zero and a real
-    # one, which no covariance matrix can hold. dsem takes the line and reads it as variance instead
+    # a series with no process error has nothing to covary, so a covariance arrow onto one is refused
     cov_on_project <- arrows$type == "cov" & (project_k[arrows$from_idx] | project_k[arrows$to_idx])
 
     if(any(cov_on_project)) {
@@ -310,7 +309,7 @@ read_dsem_arrows <- function(dsem_arrows,
            paste(variables[no_path_in], collapse = ", "), ".")
     }
 
-    # the solve takes the cells with no innovation out of I - B, so it has to be constructed first
+    # a series with no process error cannot also set the coefficient on an arrow
     mod_project <- unique(arrows$mod_idx[arrows$mod_idx > 0])
     mod_project <- mod_project[project_k[mod_project]]
 
@@ -322,7 +321,7 @@ read_dsem_arrows <- function(dsem_arrows,
 
   } # end if any series is solved out
 
-  # the diagonal form solves each cell's innovation variance from its sd line, so it needs every series to have one number for that line
+  # the marginal and diagonal forms make each sd line a whole series' sd, which needs one number
   if(variance != "conditional") {
 
     if(any(project_k)) {
@@ -380,10 +379,10 @@ get_dsem_Q_oo_pattern <- function(IminusB_m,
 
   n_obs <- length(obs_idx)
 
-  # every stored value set to one, so the products below say where an entry can sit and not what it holds
+  # blank the values and keep only which entries are nonzero, since only that pattern matters here
   flat <- function(m) { m <- methods::as(m, "generalMatrix"); m@x[] <- 1; m }
 
-  # which cells each solved cell picks up, following chains of paths through other solved cells until there is no new pair
+  # follow paths through the series with no process error until no new pair turns up
   P <- flat(IminusB_m)
   within <- P[unobs_idx,unobs_idx,drop = FALSE]
   reach <- P[unobs_idx,obs_idx,drop = FALSE]
@@ -394,19 +393,19 @@ get_dsem_Q_oo_pattern <- function(IminusB_m,
     reach <- grown
   }
 
-  # what is left on the cells that keep a deviation once the rest are solved out
+  # what reaches the series that keep their process error
   S_pat <- flat(P[obs_idx,obs_idx,drop = FALSE] + P[obs_idx,unobs_idx,drop = FALSE] %*% reach)
 
-  # a covariance arrow maps the deviations together, so they become mapped together in the matrix
+  # a covariance arrow ties two series together, so any pair of them can be nonzero
   V_pat <- if(has_cov) flat(Matrix::Matrix(1, n_obs, n_obs, sparse = TRUE)) else Matrix::Diagonal(n_obs)
 
   # figure out where to slot values into
   Q_pat <- flat(Matrix::t(S_pat) %*% V_pat %*% S_pat)
   Q_pat@x[] <- seq_along(Q_pat@x)
-  slot_row <- Q_pat@i + 1L
+  slot_row <- Q_pat@i + 1
   slot_col <- rep(seq_len(n_obs), diff(Q_pat@p))
 
-  return(list(m = Q_pat, slot_lin = slot_row + (slot_col - 1L) * n_obs))
+  return(list(m = Q_pat, slot_lin = slot_row + (slot_col - 1) * n_obs))
 
 } # end function
 
@@ -496,11 +495,11 @@ get_dsem_cells <- function(dsem_model,
   det_is_one <- length(left) == 0 # det(I-B) = 1 implies there is an ordering that allows 1 cell at a time
   has_lead <- any(arrows$lag < 0)
   has_cov <- any(arrows$type == "cov")
-  IminusB_entry_yr <- (IminusB_entry_row - 1) %% n_grid_yrs + 1 # year of a cell, which a moderated arrow reads at
+  IminusB_entry_yr <- (IminusB_entry_row - 1) %% n_grid_yrs + 1 # year of each cell, which a moderated arrow needs
   gamma_entry_yr <- (gamma_row - 1) %% n_grid_yrs + 1
 
-  # the cells of a solved series are taken out of the others and the density is on what is left, which is
-  # every cell when nothing is solved out
+  # the density covers the series that keep their process error, which is all of them when none
+  # is solved out
   project_cell <- rep(dsem_model$project_k, each = n_grid_yrs)
   unobs_idx <- which(project_cell)
   obs_idx <- which(!project_cell)
@@ -510,10 +509,10 @@ get_dsem_cells <- function(dsem_model,
   # has no second derivative
   needs_dense_logdet <- any(arrows$mod_idx > 0)
 
-  # where each matrix's entries sit, which is what the objective fills on the tape
+  # where each matrix's entries sit, for the objective to fill in
   IminusB <- list(m = IminusB_m,
                   slot_entry = as.integer(IminusB_m@x),
-                  entry_arrow = c(rep(0L, n_cells), path_arrow), # 0 marks the diagonal of I - B
+                  entry_arrow = c(rep(0, n_cells), path_arrow), # 0 marks the diagonal of I - B
                   entry_row = IminusB_entry_row,
                   entry_col = c(1:n_cells, path_col),
                   entry_yr = IminusB_entry_yr)
@@ -547,8 +546,9 @@ get_dsem_cells <- function(dsem_model,
 #'   with, the parameter array, the operating model array a drawn series is
 #'   written into (\code{sim_par}, the log state becomes the innovation
 #'   \code{naa_eta_all}), every dim of the parameter array in order (\code{"Yr"}
-#'   marks the year dim), the sigma its own penalty reads, and whether that
-#'   penalty reads the array's map mirror, which is what the dsem switches on.
+#'   marks the year dim), the sigma its own penalty uses, and whether that
+#'   penalty reads the array's map mirror, which is the switch the dsem turns
+#'   off.
 #'
 #' @keywords internal
 dsem_process_table <- function() {
@@ -568,7 +568,7 @@ dsem_process_table <- function() {
       par = "ln_growth_devs",
       sim_par = "ln_growth_devs",
       dim_names = c("Pop", "Region", "Yr", "Par", "Sex"),
-      sigma_par = NA_character_,
+      sigma_par = NA,
       penalty_reads_map = TRUE,
       why_not = ""
     ),
@@ -577,7 +577,7 @@ dsem_process_table <- function() {
       par = "ln_growth_semipar_devs",
       sim_par = "ln_growth_semipar_devs",
       dim_names = c("Pop", "Region", "Yr", "Age", "Sex"),
-      sigma_par = NA_character_,
+      sigma_par = NA,
       penalty_reads_map = TRUE,
       why_not = ""
     ),
@@ -595,7 +595,7 @@ dsem_process_table <- function() {
       par = "move_devs",
       sim_par = "move_devs",
       dim_names = c("Pop", "From", "To", "Yr", "Seas", "Age", "Sex"),
-      sigma_par = NA_character_,
+      sigma_par = NA,
       penalty_reads_map = TRUE,
       why_not = ""
     ),
@@ -680,8 +680,8 @@ get_dsem_link <- function(input_list,
     idx_dims <- setdiff(seq_along(dims), yr_dim) # every dim the series name is kept at
     stride <- cumprod(c(1, dims[-length(dims)])) # step in the flattened array per dim
 
-    # the numbers at age state runs over chosen years, seasons and ages only, and NAA_pred is not
-    # defined outside them, so those are the only cells a series can be linked at
+    # the numbers at age state covers only the chosen years, seasons and ages, so a series can be
+    # linked nowhere else
     level <- lapply(dims, seq_len)
     live_yrs <- seq_len(dims[yr_dim])
 
@@ -693,14 +693,14 @@ get_dsem_link <- function(input_list,
     }
 
     # one series per combination of the dims that are not years, and one series when there are none
-    combos <- if(length(idx_dims) == 0) matrix(integer(0), nrow = 1L) else as.matrix(expand.grid(level[idx_dims]))
+    combos <- if(length(idx_dims) == 0) matrix(integer(0), nrow = 1) else as.matrix(expand.grid(level[idx_dims]))
 
     for(k in seq_len(nrow(combos))) {
 
       idx <- integer(length(dims))
       idx[idx_dims] <- combos[k,]
 
-      # label when every index dim has one level, which is how rec is named
+      # a process with a single series is named by its label alone, as recruitment is
       name <- if(all(dims[idx_dims] == 1)) entry$label else paste0(entry$label, "_", paste(entry$dim_names[idx_dims], combos[k,], sep = "_", collapse = "_"))
 
       # rows past the array's own years stay latent, and the dsem forecasts them
@@ -709,7 +709,7 @@ get_dsem_link <- function(input_list,
 
       for(y in seq_along(grid_row)) {
         idx[yr_dim] <- grid_row[y]
-        cell[y] <- 1L + sum((idx - 1L) * stride)
+        cell[y] <- 1 + sum((idx - 1) * stride)
       } # end y loop
 
       offered <- c(offered, name)
@@ -726,11 +726,11 @@ get_dsem_link <- function(input_list,
       link_sigma <- c(link_sigma, entry$sigma_par)
       link_reads_map <- c(link_reads_map, entry$penalty_reads_map)
       link_yr_dim <- c(link_yr_dim, yr_dim)
-      idx[yr_dim] <- 0L # a placeholder, written per year wherever the cells are built
-      link_idx[[length(link_idx) + 1L]] <- idx
+      idx[yr_dim] <- 0 # a placeholder, written per year wherever the cells are built
+      link_idx[[length(link_idx) + 1]] <- idx
       link_why <- c(link_why, entry$why_not)
-      link_row[[length(link_row) + 1L]] <- grid_row
-      link_cell[[length(link_cell) + 1L]] <- cell
+      link_row[[length(link_row) + 1]] <- grid_row
+      link_cell[[length(link_cell) + 1]] <- cell
 
     } # end k loop
 
@@ -756,10 +756,10 @@ get_dsem_link <- function(input_list,
 
 #' Shorten a dsem to fewer grid years
 #'
-#' A retrospective peel drops years from every array, and the dsem has to follow:
-#' the arrows do not change, but the cells they land on do. A linked series' cells
-#' move whenever its array has a dim after the year one, so they are rebuilt from
-#' the index that series sits at rather than truncated.
+#' A retrospective peel drops years from every array, and the dsem has to
+#' follow: the arrows do not change, but the cells they land on do. A linked
+#' series' cells move whenever its array has a dim after the year dim, so they
+#' are rebuilt from where that series sits rather than trimmed.
 #'
 #' @param data Data list holding the dsem fields.
 #' @param parameters Parameter list, with its deviation arrays already peeled.
@@ -780,7 +780,7 @@ peel_dsem_years <- function(data,
   old_rows <- data$dsem_n_grid_yrs
   n_var <- length(data$dsem_var_names)
 
-  # the grid is [year, series] in all of these, so the peel is the same slice
+  # a retro peel drops the same years from each of these
   data$dsem_n_grid_yrs <- n_grid_yrs
   data$dsem_cells <- get_dsem_cells(data$dsem_model, n_grid_yrs) # where each arrow lands on the shorter grid
   data$dsem_cov_obs <- data$dsem_cov_obs[keep_rows,,drop = FALSE]
@@ -788,13 +788,13 @@ peel_dsem_years <- function(data,
   if(!is.null(data$dsem_x_known)) data$dsem_x_known <- data$dsem_x_known[keep_rows,,drop = FALSE]
   parameters$dsem_x <- parameters$dsem_x[keep_rows,,drop = FALSE]
 
-  # the map is a flat factor, so it goes back to [year, series] before the slice
+  # the map arrives flattened, so reshape it before dropping the peeled years
   if(!is.null(mapping$dsem_x)) {
     mapping$dsem_x <- factor(matrix(as.integer(mapping$dsem_x), old_rows, n_var)[keep_rows,,drop = FALSE])
   }
 
-  # a linked cell is a position in an array that was peeled too, and it only stays put when the year
-  # dim is last. ln_RecDevs is; ln_growth_devs is not, so rebuild rather than truncate
+  # a peel moves where a linked cell sits unless years are the last dim. recruitment's are, growth's
+  # are not, so rebuild the positions rather than trimming them
   for(s in seq_along(data$dsem_link_par)) {
 
     dims <- dim(parameters[[data$dsem_link_par[s]]])
@@ -807,7 +807,7 @@ peel_dsem_years <- function(data,
 
     for(y in seq_along(grid_row)) {
       idx[yr_dim] <- grid_row[y]
-      cell[y] <- 1L + sum((idx - 1L) * stride)
+      cell[y] <- 1 + sum((idx - 1) * stride)
     } # end y loop
 
     data$dsem_link_row[[s]] <- grid_row
@@ -963,7 +963,7 @@ dsem_cov_link_mean <- function(y,
   mean_obs <- mean(y)
   inside <- min(max(mean_obs, 0.02), 0.98) # a logit or cloglog link needs a mean strictly inside 0 and 1
 
-  # a lognormal's cell is the log median, so its mean log is the start
+  # a lognormal covariate is modeled on the log scale, so start at the mean of the logs
   if(family == 6 && link == 1) start <- mean(log(y))
   else start <- switch(as.character(link),
                        "1" = if(mean_obs > 0) log(mean_obs) else 0, # log
@@ -1017,9 +1017,10 @@ dsem_cov_sd_start <- function(y,
 #' up. Fit with \code{random = c(<linked arrays>, "dsem_x")}.
 #'
 #' A linked recruitment cell is a random effect and takes the full lognormal
-#' correction whenever its own penalty would take one: its mean drops by half its
-#' variance under the arrows, that variance given the covariate values the model is
-#' handed (\code{\link{get_dsem_margvar}}), so \eqn{R_0} scales mean recruitment
+#' correction whenever its own penalty would take one: its mean drops by half
+#' its variance under the arrows, that variance conditional on the covariate
+#' values the model already knows (\code{\link{get_dsem_margvar}}), so
+#' \eqn{R_0} scales mean recruitment
 #' with or without the arrows. A ramp at zero means none, and a nonzero ramp on a
 #' linked year is refused.
 #'
@@ -1076,12 +1077,12 @@ dsem_cov_sd_start <- function(y,
 #'   link is not the identity the arrows, the mean under \code{dsem_mu_spec} and the
 #'   grid are all on the link scale, and every latent cell starts at the series
 #'   mean. The sd and power parameters are mapped off for the families with none.
-#' @param dsem_link Optional named character vector, one entry per covariate, the
-#'   link from the cell to the observation's mean: \code{"identity"}, \code{"log"},
-#'   \code{"logit"} or \code{"cloglog"}. Defaults to each family's own: identity for
-#'   fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A
-#'   link applies whatever the family, so a Poisson under the identity
-#'   can be handed a negative mean.
+#' @param dsem_link Optional named character vector, one entry per covariate,
+#'   the link from the cell to the observation's mean: \code{"identity"},
+#'   \code{"log"}, \code{"logit"} or \code{"cloglog"}. Defaults to each family's
+#'   own: identity for fixed, normal and the fixed-sd normal, logit for
+#'   bernoulli, log for the rest. A link applies whatever the family, so a
+#'   Poisson under the identity can end up with a negative mean.
 #' @param dsem_fixed_sd Data frame with a \code{year} column and one column per
 #'   \code{"gaussian_fixed_sd"} covariate, holding that year's known sd. Needed on
 #'   every observed year of such a covariate.
@@ -1209,8 +1210,8 @@ Setup_Mod_DSEM <- function(input_list,
          paste(intersect(cov_names, link$offered), collapse = ", "), ". Rename the covariate.")
   }
 
-  # the switch blanks map_<parameter>, so a linked deviation is penalized twice unless that mirror
-  # both exists and is read by the penalty. the table says which penalties read theirs
+  # a linked deviation would be penalized twice, by the dsem and by its own penalty, so that penalty
+  # has to be switched off for it
   no_mirror <- unique(link$par[!paste0("map_", link$par) %in% names(input_list$data)])
 
   if(length(no_mirror) > 0) {
@@ -1232,8 +1233,8 @@ Setup_Mod_DSEM <- function(input_list,
          "never reads move_devs and the dsem would describe deviations that change nothing.")
   }
 
-  # under CTMC movement the deviations are the year to year part of preference, so a preference
-  # covariate that varies over years writes that part again, unpenalized and confounded with it
+  # under CTMC movement the deviations already move preference from year to year, so a covariate on
+  # preference would move it again and the two could not be told apart
   if("move_devs" %in% link$par) {
 
     yr_pref <- get_yr_varying_pref_terms(input_list)
@@ -1249,14 +1250,14 @@ Setup_Mod_DSEM <- function(input_list,
 
   } # end if a movement series is linked
 
-  # a module that said "dsem" handed over every estimated cell of its process, so each of its series with an
-  # estimated cell has to be in the arrows, or those cells would have no density at all
+  # a process set to dsem gives up its own penalty, so every estimated series of it must appear in
+  # the arrows or those deviations would have no density
   for(lab in intersect(declared, dsem_processes)) {
 
     required <- character(0)
 
     for(i in which(link$offered_label == lab)) {
-      # growth declares parameter by parameter, so only the series of a parameter that said "dsem" need one
+      # growth is set to dsem one parameter at a time, so only those parameters need an arrow
       if(lab == "growth" && !isTRUE(input_list$data$growth_tv_dsem[link$offered_idx[[i]][4]] == 1)) next
       map_levels <- dev_map_levels(input_list, link$offered_par[i])
       if(any(!is.na(map_levels[link$offered_cell[[i]]]))) required <- c(required, link$offered[i])
@@ -1273,8 +1274,8 @@ Setup_Mod_DSEM <- function(input_list,
 
   } # end lab loop
 
-  # dont_pen_recdev_first leaves the first years out of the penalty entirely, which a linked series
-  # cannot do: the dsem is their density, so those years would still be penalized by it
+  # dont_pen_recdev_first drops the first years from the penalty, which a linked series cannot do,
+  # because the dsem is what gives those years their density
   if("ln_RecDevs" %in% link$par && isTRUE(input_list$data$dont_pen_recdev_first > 0)) {
     stop("dont_pen_recdev_first is ", input_list$data$dont_pen_recdev_first, " and recruitment is linked ",
          "to the dsem. The setting takes the first years out of SPoRC's recruitment penalty, but the ",
@@ -1282,8 +1283,8 @@ Setup_Mod_DSEM <- function(input_list,
          "nothing. Set dont_pen_recdev_first = 0, or leave recruitment out of the arrows.")
   }
 
-  # a linked cell is a random effect under the arrows and takes the full lognormal correction or none, so a
-  # ramp on a linked year has nothing to act on
+  # the bias ramp scales the lognormal correction year by year, and a linked year takes the whole
+  # correction or none of it, so there is nothing to scale
   if("ln_RecDevs" %in% link$par && isTRUE(input_list$data$do_rec_bias_ramp == 1)) {
 
     ramp <- get_rec_bias_ramp(1, input_list$data$bias_year, dim(input_list$par$ln_RecDevs)[3], input_list$data$max_bias_ramp_fct)
@@ -1298,8 +1299,8 @@ Setup_Mod_DSEM <- function(input_list,
 
   } # end if the bias ramp is on
 
-  # dont_est_recdev_last drops the terminal deviations from the array, but the grid runs to the last year,
-  # so those rows would be dsem values the population never reads
+  # dont_est_recdev_last drops the last recruitment deviations, but the dsem grid still runs to the
+  # final year, so it would predict years the population never uses
   if("ln_RecDevs" %in% link$par) {
 
     n_dropped <- length(input_list$data$years) - (dim(input_list$par$ln_RecDevs)[3] - input_list$data$n_proj_yrs_devs)
@@ -1313,11 +1314,8 @@ Setup_Mod_DSEM <- function(input_list,
 
   } # end if recruitment is linked
 
-  # a linked series covers every year of its array, so a cell mapped off is not left out the way the iid
-  # penalty leaves one out: it enters the series at its fixed starting value and its innovation is still
-  # evaluated, anchoring the process to that value. a recruitment year is never structurally zero, so a mix
-  # there is refused; the other processes map cells off by design (growth years before the data, say), so
-  # the mix is only reported
+  # a linked series covers every year, so a cell mapped off still enters at its fixed value and still
+  # gets an innovation. recruitment refuses that mix, the other processes only report it
   for(s in seq_along(link$name)) {
 
     map_levels <- dev_map_levels(input_list, link$par[s])
@@ -1340,8 +1338,8 @@ Setup_Mod_DSEM <- function(input_list,
   link_col <- match(link$name, variables)
   dsem_model <- read_dsem_arrows(dsem_arrows, variables, covs = covs, mod_var_logscale = mod_var_logscale, variance = dsem_variance)
 
-  # a named numeric vector fixes those covariates' means at the values given (a known reference level, or a
-  # self test's truth), the rest at the observed mean; character forms say which means are estimated
+  # a named numeric vector fixes those covariates' means at the values given and the rest at the
+  # observed mean. the character forms say which means are estimated
   mu_given <- NULL
 
   if(is.numeric(dsem_mu_spec)) {
@@ -1382,9 +1380,8 @@ Setup_Mod_DSEM <- function(input_list,
          paste(variables, collapse = ", "), ".")
   }
 
-  # a linked cell sharing a map level with another cell would put one parameter under two densities,
-  # and a series with no estimated cell at all has nothing for the dsem to describe. cells fixed by
-  # the map inside an otherwise estimated series enter as known values, the way a fixed family does
+  # a linked series needs at least one estimated deviation for the dsem to describe, and the cells
+  # fixed by the map inside it enter as known values
   for(s in seq_along(link$name)) {
 
     map_levels <- dev_map_levels(input_list, link$par[s])
@@ -1412,7 +1409,7 @@ Setup_Mod_DSEM <- function(input_list,
 
   # Populate Data List ------------------------------------------------------
 
-  cov_obs <- matrix(NA_real_, n_grid_yrs, n_cov, dimnames = list(grid_years, cov_names)) # [year, covariate], NA where unobserved
+  cov_obs <- matrix(NA, n_grid_yrs, n_cov, dimnames = list(grid_years, cov_names)) # [year, covariate], NA where unobserved
   for(k in seq_len(n_cov)) cov_obs[match(dsem_data$year, grid_years), k] <- dsem_data[[cov_names[k]]]
 
   input_list$data$dsem_model <- dsem_model # arrows read from the lines
@@ -1432,7 +1429,7 @@ Setup_Mod_DSEM <- function(input_list,
   for(k in seq_len(n_cov)) check_dsem_cov_support(cov_obs[,k], family_code[k], cov_names[k]) # each family's support, on the observed years
 
   # a known sd per observed year for the fixed-sd normal, on the grid like the observations
-  cov_fixed_sd <- matrix(NA_real_, n_grid_yrs, n_cov, dimnames = list(grid_years, cov_names))
+  cov_fixed_sd <- matrix(NA, n_grid_yrs, n_cov, dimnames = list(grid_years, cov_names))
 
   for(k in which(family_code == 5)) {
 
@@ -1490,6 +1487,16 @@ Setup_Mod_DSEM <- function(input_list,
     collect_message(link$name[s], " has an sd of zero, so its deviations are worked out from the arrows and the parameter is fixed.")
 
   } # end s loop
+
+  # the arrows take over the recruitment deviations' density, which leaves a walk or an ar1 penalty
+  # switched off with its correlation and its own centering unread, so refuse the pairing outright
+  rec_linked <- any(link$par == "ln_RecDevs")
+  if(rec_linked && isTRUE(input_list$data$RecDevs_model %in% c(2, 3))) {
+    stop("A recruitment series under the arrows takes its density from them, so RecDevs_model = '",
+         c("rw", "ar1")[input_list$data$RecDevs_model - 1], "' would be switched off and its correlation left unread. ",
+         "Use RecDevs_model = 'dsem' and write the process as arrows: a lagged self path of 1 is a random walk, ",
+         "and a self path of rho is an ar1.")
+  }
 
   # a declared recruitment series hands its sd to sigmaR, which the initial age deviations read, so it needs one of its own
   if("rec" %in% input_list$data$dsem_declared) {
@@ -1610,7 +1617,7 @@ Setup_Mod_DSEM <- function(input_list,
   input_list$map$dsem_beta <- factor(seq_along(input_list$par$dsem_beta)) # a fixed arrow (NA name) has no parameter here
   input_list$map$ln_dsem_sd <- factor(seq_along(input_list$par$ln_dsem_sd))
 
-  map_mu <- rep(NA_integer_, n_var) # a linked series' mean stays at zero
+  map_mu <- rep(NA, n_var) # a linked series' mean stays at zero
   map_mu[match(mu_est, variables)] <- seq_along(mu_est)
   input_list$map$dsem_mu <- factor(map_mu)
 
@@ -1619,21 +1626,21 @@ Setup_Mod_DSEM <- function(input_list,
   map_x <- array(1:(n_grid_yrs * n_var), dim = c(n_grid_yrs, n_var))
   for(k in seq_len(n_cov)) if(family_code[k] == 0) map_x[!is.na(cov_obs[,k]), match(cov_names[k], variables)] <- NA
   for(s in seq_along(link$name)) map_x[c(seq_len(min(link$grid_row[[s]]) - 1), link$grid_row[[s]]), link_col[s]] <- NA
-  map_x[, dsem_model$project_k] <- NA # a solved cell comes from the arrows, so a parameter behind it is a second copy
+  map_x[, dsem_model$project_k] <- NA # a solved cell comes from the arrows, so it needs no parameter of its own
   input_list$map$dsem_x <- factor(map_x)
 
-  # the cells the model is handed, which a linked recruitment cell's correction conditions on: a covariate's
-  # observed years whatever its family, and the rows before a linked series starts, which sit at its mean
+  # the values the dsem is given rather than estimating: a covariate's observed years, and the years
+  # before a linked series starts, which sit at its mean
   x_known <- matrix(FALSE, n_grid_yrs, n_var)
   for(k in seq_len(n_cov)) x_known[!is.na(cov_obs[,k]), match(cov_names[k], variables)] <- TRUE
   for(s in seq_along(link$name)) x_known[seq_len(min(link$grid_row[[s]]) - 1), link_col[s]] <- TRUE
-  x_known[, dsem_model$project_k] <- FALSE # a solved cell is worked out, not handed over, whatever is observed of it
+  x_known[, dsem_model$project_k] <- FALSE # a solved cell is always worked out from the arrows, whatever is observed of it
   input_list$data$dsem_x_known <- x_known
 
   input_list$map$ln_dsem_obs_sd <- factor(ifelse(family_code %in% c(1, 4, 6, 7), seq_len(n_cov), NA)) # normal, gamma, lognormal, tweedie
   input_list$map$logit_dsem_tweedie_p <- factor(ifelse(family_code == 7, seq_len(n_cov), NA))
 
-  map_delta0 <- rep(NA_integer_, n_var)
+  map_delta0 <- rep(NA, n_var)
   map_delta0[match(delta0_est, variables)] <- seq_along(delta0_est)
   input_list$map$dsem_delta0 <- factor(map_delta0)
 

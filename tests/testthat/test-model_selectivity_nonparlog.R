@@ -1,3 +1,6 @@
+# Non-parametric selectivity on the log scale, standardized so each year averages to one, and
+# the per-bin overrides that give named bins their own free deviations.
+
 library(SPoRC)
 library(testthat)
 

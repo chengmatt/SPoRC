@@ -23,9 +23,8 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
   pct <- function(a, b) max(abs(100 * (a - b) / b), na.rm = TRUE)
 
   # Growth ----
-  # Mean length, its spread and weight at age, at the start of the year and at mid
-  # season, per area and sex. Linear growth below A1, the plus-group adjustment and
-  # the CV interpolation all have to be right for these to match.
+  # mean length, its spread and weight at age, at the start of the year and at mid season, per
+  # area and sex. linear growth below A1, the plus group and the CV all have to be right
   for(a in 1:n_reg) for(s in 1:n_sex) {
     g <- dat$ss3$growth[[a]][[s]]
     expect_lt(pct(r$mean_LAA_spawn[1, a, 1, 1, , s], g$Len_Beg), 1e-2)
@@ -54,9 +53,8 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
     expect_lt(pct(totb, dat$ss3$Bio_all[, a]), 1e-2)
   } # end a loop
 
-  # The bias ramp, built from the four breakpoints in deviation index space, for the
-  # model years and for the years before the first one that the initial ages were
-  # born in. A wrong ramp is silent in every other quantity, so it is checked outright.
+  # the bias ramp from its four breakpoints, over the model years and the earlier years the
+  # initial ages were born in. a wrong ramp is silent everywhere else, so it is read directly
   main_yrs <- as.integer(names(dat$mle$main_recdev))
   expect_equal(as.vector(r$bias_ramp)[match(main_yrs, yrs)], as.vector(dat$mle$biasadj[as.character(main_yrs)]), tolerance = 1e-6)
   early_yrs <- as.integer(names(dat$mle$early_recdev))
@@ -74,9 +72,8 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
   for(s in 1:n_sex) expect_lt(max(abs(r$fish_sel[1, 1, 1, 1, , s, 1] - dat$ss3$sel[[1]][[s]])), 1e-5)
   for(sf in 1:2) for(s in 1:n_sex) expect_lt(max(abs(r$srv_sel[1, sf, 1, 1, , s, sf] - dat$ss3$sel[[sf + 1]][[s]])), 1e-5)
 
-  # Conditional age-at-length: one length bin of one survey year, formed the way the
-  # likelihood forms it (the joint row conditioned on its length, ageing error, then
-  # the composition constant) against the assessment's own table
+  # one length bin of one survey year, formed the way the likelihood forms it, conditioned on
+  # its length then read through ageing error and the constant, against the assessment's table
   cb <- dat$ss3$condbase
   cr <- cb[cb$Fleet == 2 & cb$Yr == 1993 & cb$Lbin_lo == 13 & cb$Sex == 1, ]
   cr <- cr[order(cr$Bin), ]
@@ -88,9 +85,8 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
   expect_lt(max(abs(e - cr$Exp)), 1e-4)
 
   # Likelihoods ----
-  # The composition likelihoods agree up to SS3 renormalizing after adding its
-  # constant, which scales each by (1 + n_bins * addtocomp); the index likelihood
-  # up to the 0.5 log(2 pi) SPoRC's normal density has per observation.
+  # the composition likelihoods agree up to SS3 renormalizing after adding its constant, and the
+  # index likelihood up to the 0.5 log(2 pi) SPoRC's normal has per observation
   c_age <- dat$comp$addtocomp_age
   expect_equal(sum(r$FishLenComps_nLL) + sum(r$SrvLenComps_nLL),
                dat$ss3$likelihoods["Length_comp", "values"] * (1 + 2 * length(dat$lens) * c_age), tolerance = 2e-4)
@@ -103,11 +99,11 @@ test_that("GOA rex sole bridges to the 2025 Stock Synthesis assessment at its ow
   expect_equal(as.numeric(sum(r$srv_q_nLL)) - 0.5 * log(2 * pi * dat$q$prior_sd^2),
                dat$ss3$likelihoods["Parm_priors", "values"], tolerance = 1e-3)
 
-  # The recruitment penalty: SS3 writes sum(dev^2) / (2 sigma^2) + sum(b) log(sigma)
-  # over the early and main deviations together. SPoRC's two arrays hold the normal
-  # constants, the main deviations' (1 - b/2) log(sigma) adjustment, and one log(sigma)
-  # per initial age, so the crosswalk subtracts exactly those. A shared deviation has
-  # to be counted once for this to close; counting it per region or per sex fails it.
+  # SS3 writes the recruitment penalty as sum(dev^2) / (2 sigma^2) + sum(b) log(sigma) over
+  # the early and main deviations together.
+  #
+  # SPoRC's two arrays hold the normal constants, the main deviations' log(sigma) adjustment and
+  # one log(sigma) per initial age. a shared deviation counts once, not once per region or sex
   sig <- dat$rec$sigmaR
   n_main <- length(main_yrs)
   n_early <- length(early_yrs)

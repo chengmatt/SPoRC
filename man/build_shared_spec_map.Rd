@@ -46,8 +46,8 @@ Factor vector of length \code{prod(dims)}, suitable for direct
   assignment to \code{input_list$map$<par>}.
 }
 \description{
-Convenience wrapper around \code{\link{build_pe_map}} for the common case
-of a single spec string (as used by e.g. \code{sigmaC_spec},
+Calls \code{\link{build_pe_map}} for the common case of a single spec string
+(as used by e.g. \code{sigmaC_spec},
 \code{sigmaF_spec}) governing a fixed-effect array with no additional
 use/fix masking. Validates \code{spec} against every dimension
 combination implied by \code{dim_abbrev} before building the map, so

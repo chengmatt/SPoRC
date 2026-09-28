@@ -13,6 +13,7 @@ Get_NAA_state_penalty(
   naa_re_seas,
   NAA_re = 1,
   NAA_pe_pars = NULL,
+  bias_correct = 0,
   map_ln_NAA = NULL,
   NAA_re_region = 0,
   NAA_region_corr_pars = NULL,
@@ -67,8 +68,8 @@ and across sexes. \code{0} independent, \code{1} unstructured.}
 
 \item{NAA_pop_corr_pars, NAA_sex_corr_pars}{Numeric vectors of unconstrained
 parameters for those correlations, one per pair. Both are global to the
-model rather than varying over the other dims, which is what keeps a
-two-level dim at exactly one parameter.}
+model rather than varying over the other dims, so a two-level dim has
+exactly one parameter.}
 
 \item{NAA_re_season}{Integer code for the structure across the active seasons.
 \code{0} independent, \code{1} unstructured.}

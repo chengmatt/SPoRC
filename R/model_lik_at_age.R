@@ -66,7 +66,7 @@ prep_at_age_obs = function(obs, use, like_type, const = 0) {
 
   d = dim(use)
   cells_per_fleet = prod(d[-length(d)])
-  fleet = 1L + (fit_cells - 1L) %/% cells_per_fleet   # fleet is the last dimension
+  fleet = 1 + (fit_cells - 1) %/% cells_per_fleet   # fleet is the last dimension
 
   x = as.numeric(obs)[fit_cells]
   lognormal = like_type[fleet] == 0
@@ -196,7 +196,7 @@ get_at_age_obs_prediction = function(source, arrays, p_idx, r_idx, s_idx, y, sea
   return(pred)
 }
 
-#' Evaluate one age-disaggregated data source
+#' Evaluate age-disaggregated data source
 #'
 #' Computes the at-age negative log likelihood for every fleet in one data source.
 #' Observations arrive already transformed by \code{\link{prep_at_age_obs}} and
@@ -268,70 +268,87 @@ get_at_age_source_nLL = function(
   us_pars = NULL,
   aa_type = 1,
   seas_agg = 0,
-  ageing_error = NULL
+  ageing_error = NULL,
+  bias_correct_oe = 0
 ) {
 
   "[<-" <- RTMB::ADoverload("[<-")
 
-  d = dim(use)
-  source_nLL = array(0, dim = d)  # zero wherever nothing is fit
-  source_pred = array(0, dim = d)
+  obs_dim = dim(use)                    # the shape the caller gets back
+
+  # refuse data that are not region by year by season by age by sex by fleet
+  if(length(obs_dim) != (if(pop) 7 else 6)) {
+    stop("An at-age data source is dimensioned region by year by season by observed age by sex ",
+         "by fleet, with a leading population dim for a population-specific source. This one ",
+         "arrived with ", length(obs_dim), " dims.")
+  }
+
+  source_nLL = array(0, dim = obs_dim)  # zero wherever nothing is fit
+  source_pred = array(0, dim = obs_dim)
   if(!any(use == 1)) return(list(nLL = source_nLL, pred = source_pred))
 
-  nd = length(d)
-  n_fleets = d[nd]
-  # every per-fleet setting is read by fleet, so a single setting stands for all
+  # obs_t is a flat list of the observations, so record which of them each array position holds
+  fit_cells = which(use == 1)
+  obs_slot = array(NA, dim = obs_dim)
+  obs_slot[fit_cells] = seq_along(fit_cells)
+
+  # data not split by population are one dim short. add a population of one, so the code
+  # below indexes both kinds of data the same way
+  if(!pop) {
+    dim(use) = c(1, dim(use))
+    dim(obs_slot) = c(1, dim(obs_slot))
+    dim(source_nLL) = c(1, dim(source_nLL))
+    dim(source_pred) = c(1, dim(source_pred))
+    dim(ln_sigma) = c(1, dim(ln_sigma))
+    dim(trans_rho) = c(1, dim(trans_rho))
+    dim(trans_rho_year) = c(1, dim(trans_rho_year))
+    if(!is.null(obs_se)) dim(obs_se) = c(1, dim(obs_se))
+    if(!is.null(us_pars)) dim(us_pars) = c(dim(us_pars)[1], 1, dim(us_pars)[-1])
+  }
+
+  n_pop = dim(use)[1]
+  n_regions = dim(use)[2]
+  n_years = dim(use)[3]
+  n_seas = dim(use)[4]
+  n_obs_ages = dim(use)[5]
+  n_sexes = dim(use)[6]
+  n_fleets = dim(use)[7]
+
+  # one setting given for the whole data source is repeated out to one per fleet
   sd_form = rep_len(sd_form, n_fleets)
   like_type = rep_len(like_type, n_fleets)
   corr_type = rep_len(corr_type, n_fleets)
   seas_agg = rep_len(seas_agg, n_fleets)
 
-  i_r = if(pop) 2 else 1        # dimension positions within one fleet's slice
-  i_y = i_r + 1
-  i_seas = i_y + 1
-  i_a = i_seas + 1
-  i_s = i_a + 1
-
-  # the observations sit on the observed ages, the columns of the ageing error
-  if(!is.null(ageing_error) && dim(ageing_error)[3] != d[i_a]) {
-    stop("The at-age observations are on ", d[i_a], " ages, but the ageing error reads model ages onto ",
+  # the data must be on the same ages the ageing error reads model ages onto
+  if(!is.null(ageing_error) && dim(ageing_error)[3] != n_obs_ages) {
+    stop("The at-age observations are on ", n_obs_ages, " ages, but the ageing error reads model ages onto ",
          dim(ageing_error)[3], " observed ages. At-age data are recorded on the observed ages of ",
          "AgeingError, so rebuild the input list through its Setup_Mod_ functions.")
   }
 
-  # the aggregation may change between years, so it is kept as year by fleet
-  # whatever shape it arrived in
+  # a fleet can report its ages one way in some years and another way in others, so this
+  # setting is held as year by fleet whatever shape it arrived in
   if(is.null(dim(aa_type)))
     aa_type = base::matrix(
       rep_len(aa_type, n_fleets),
-      nrow = d[i_y],
+      nrow = n_years,
       ncol = n_fleets,
       byrow = TRUE
     )
 
-  # the prediction array supplies the full extent of every dim a fleet sums
-  # over, so an aggregated dim reads as the whole dimension
+  # the full list of populations, regions and sexes, used when a fleet reports them together
   pred_arr = switch(source, catch = arrays$CAA, discard = arrays$DAA, arrays$SrvIAA)
   all_pop = seq_len(dim(pred_arr)[1])
   all_reg = seq_len(dim(pred_arr)[2])
   all_sex = seq_len(dim(pred_arr)[6])
 
-  fit_cells = which(use == 1)               # linear positions of fitted observations
-  obs_slot = array(NA_integer_, dim = d)
-  obs_slot[fit_cells] = seq_along(fit_cells) # array position -> slot in obs_t
-
-  df = d[-nd]                               # one fleet's slice, fleet being last
-  n_cell = prod(df)
-  strides = c(1, cumprod(df)[-length(df)])  # linear offsets within that slice
-
   for(f in seq_len(n_fleets)) {
 
-    fleet_off = (f - 1) * n_cell
-    use_f = array(use[fleet_off + seq_len(n_cell)], dim = df)
-    if(!any(use_f == 1)) next
+    if(!any(use[,,,,,,f] == 1)) next
 
-    # a separable correlation is defined over the whole block of years by ages, so
-    # the aggregation cannot change inside it
+    # 2dar1 fits all of a fleet's years at once, so the fleet cannot have reported its
+    # regions or sexes one way in some of those years and another way in others
     if(corr_type[f] == 3 && length(unique(aa_type[,f])) > 1) {
       stop("Fleet ", f, " fits at-age observations as '2dar1', whose correlation runs ",
            "over the whole block of years by ages, but its aggregation changes between ",
@@ -339,122 +356,145 @@ get_at_age_source_nLL = function(
            "own fleet so that each block is its own observation.")
     }
 
-    # this fleet's ageing error, left NULL when it reads every age as itself
+    # this fleet's ageing error, NULL when every age is read as itself
     ae_f = NULL
     if(!is.null(ageing_error)) {
       ae_f = array(ageing_error[,,,f], dim = dim(ageing_error)[1:3])
       if(is_identity_ageing_error(ae_f)) ae_f = NULL
     }
 
-    # an unstructured correlation is one matrix per cell the spec keeps apart, built on first use
-    # and reused by the cells sharing it. only a fleet asking for one allocates the store
-    # a fleet reporting once a year is compared against every season of the prediction
-    seas_use = if(seas_agg[f] == 1) seq_len(df[i_seas]) else NULL
+    for(p in seq_len(n_pop)) {
+      for(r in seq_len(n_regions)) {
+        for(seas in seq_len(n_seas)) {
+          for(s in seq_len(n_sexes)) {
 
-    n_us_pop = if(pop) df[1] else 1
-    us_corr = if(corr_type[f] == 2) vector("list", n_us_pop * df[i_r] * df[i_s]) else NULL
+            if(!any(use[p,r,,seas,,s,f] == 1)) next
 
-    # a separable correlation runs over years as well as ages, so year leaves the
-    # cell definition and the block of years by ages is evaluated at once
-    free_dims = if(corr_type[f] == 3) c(i_y, i_a) else i_a
-    dims = setdiff(seq_along(df), free_dims)
-    active_cells = which(apply(use_f == 1, dims, any))
-    cell_index = arrayInd(active_cells, df[dims])
+            # a fleet reporting once a year is compared against all seasons added together
+            pred_seas = if(seas_agg[f] == 1) seq_len(n_seas) else seas
 
-    for(cell in seq_len(nrow(cell_index))) {
+            # one correlation matrix across ages, shared by every year of this region and sex
+            us_corr = if(corr_type[f] == 2) build_us_corr(us_pars[,p,r,s,f], n_obs_ages) else NULL
 
-      idx = integer(length(df))
-      idx[dims] = cell_index[cell,]
-      p = if(pop) idx[1] else 1
-      s = idx[i_s]
-      p_idx = if(pop) p else all_pop
-      # year is a free dimension under a separable correlation, so the cell has no
-      # year of its own; the guard above makes any year stand for the fleet there
-      split = at_age_split(aa_type[if(corr_type[f] == 3) 1L else idx[i_y], f])
-      r_idx = if(split$region) idx[i_r] else all_reg
-      s_idx = if(split$sex) s else all_sex
+            if(corr_type[f] == 3) {
 
-      # linear position of this cell with every free dimension at its first slot
-      base = 1 + sum((pmax(idx, 1) - 1) * strides)
-      age_step = (seq_len(df[i_a]) - 1) * strides[i_a]
+              # 2dar1 treats every year and age together as a single observation, so the
+              # fleet must have aged its catch in every year of the block
+              block = base::matrix(use[p,r,,seas,,s,f], nrow = n_years, ncol = n_obs_ages)
+              obs_years = which(base::rowSums(block) > 0)
+              obs_ages = which(base::colSums(block) > 0)
+              if(!all(block[obs_years,obs_ages] == 1)) {
+                stop("A fleet fitting at-age observations as '2dar1' must observe a complete ",
+                     "block of ages by years, since a separable correlation is defined over the ",
+                     "whole grid. Fleet ", f, " has gaps in that block. Use '1dar1' or 'us', ",
+                     "which are defined over whatever ages a cell observes.")
+              }
 
-      if(corr_type[f] == 3) {
+              n_block_years = length(obs_years)
+              n_block_ages = length(obs_ages)
+              slot = as.vector(obs_slot[p,r,obs_years,seas,obs_ages,s,f]) # year runs fastest
 
-        yr_step = (seq_len(df[i_y]) - 1) * strides[i_y]
-        block = base::matrix(use_f[as.vector(base + outer(yr_step, age_step, "+"))], nrow = df[i_y])
-        obs_yrs = which(rowSums(block) > 0)
-        obs_ages = which(colSums(block) > 0)
-        if(!all(block[obs_yrs, obs_ages] == 1)) {
-          stop("A fleet fitting at-age observations as '2dar1' must observe a complete ",
-               "block of ages by years, since a separable correlation is defined over the ",
-               "whole grid. Fleet ", f, " has gaps in that block. Use '1dar1' or 'us', ",
-               "which are defined over whatever ages a cell observes.")
-        }
+              # add the prediction up over whatever regions and sexes the data were reported over
+              split = at_age_split(aa_type[1,f])
 
-        lin = as.vector(fleet_off + base + outer(yr_step[obs_yrs], age_step[obs_ages], "+"))
-        slot = obs_slot[lin]
-        extra = if(pop) exp(ln_sigma[p,obs_ages,s,f]) else exp(ln_sigma[obs_ages,s,f])
+              pred = rep(0, n_block_years * n_block_ages)
+              k = 1
+              for(a in seq_len(n_block_ages)) {   # age by age, so year still runs fastest
+                for(y in seq_len(n_block_years)) {
+                  pred[k] = get_at_age_obs_prediction(
+                    source = source,
+                    arrays = arrays,
+                    p_idx = if(pop) p else all_pop,
+                    r_idx = if(split$region) r else all_reg,
+                    s_idx = if(split$sex) s else all_sex,
+                    y = obs_years[y],
+                    seas = pred_seas,
+                    obs_ages = obs_ages[a],
+                    f = f,
+                    ageing_error = ae_f
+                  )
+                  k = k + 1
+                } # end y loop
+              } # end a loop
 
-        pred = rep(0, length(obs_yrs) * length(obs_ages))
-        k = 1
-        for(ay in seq_along(obs_ages)) {   # column major, matching the slot matrix
-          for(yy in seq_along(obs_yrs)) {
-            pred[k] = get_at_age_obs_prediction(source, arrays, p_idx, r_idx, s_idx,
-                                                obs_yrs[yy], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages[ay], f, ae_f)
-            k = k + 1
-          } # end yy loop
-        } # end ay loop
+              sigma = exp(ln_sigma[p,obs_ages,s,f])[rep(seq_len(n_block_ages), each = n_block_years)]
+              if(sd_form[f] != 0) {
+                sigma = at_age_obs_sd(as.numeric(obs_se[p,r,obs_years,seas,obs_ages,s,f]), sigma, sd_form[f])
+              }
 
-        pred_t = if(like_type[f] == 0) log(pred + const) else pred
-        sd_vec = extra[rep(seq_along(obs_ages), each = length(obs_yrs))]
-        if(sd_form[f] != 0) sd_vec = at_age_obs_sd(as.numeric(obs_se)[lin], sd_vec, sd_form[f])
+              # do lognormal bias correction here
+              oe = if(bias_correct_oe == 1) 0.5 * sigma^2 else 0
+              pred_t = if(like_type[f] == 0) log(pred + const) - oe else pred
 
-        resid = matrix(obs_t[slot] - pred_t, nrow = length(obs_yrs))
-        scale = matrix(sd_vec, nrow = length(obs_yrs))
-        cell_nLL = rep(0, length(pred))
-        rho_a = if(pop) trans_rho[p,idx[i_r],s,f] else trans_rho[idx[i_r],s,f]
-        rho_y = if(pop) trans_rho_year[p,idx[i_r],s,f] else trans_rho_year[idx[i_r],s,f]
-        cell_nLL[1] = get_at_age_2dar1_nLL(resid, scale, rho_a, rho_y)
+              # one density covers the whole block, stored on its first year and age
+              block_nLL = rep(0, length(pred))
+              block_nLL[1] = get_at_age_2dar1_nLL(
+                matrix(obs_t[slot] - pred_t, nrow = n_block_years),
+                matrix(sigma, nrow = n_block_years),
+                trans_rho[p,r,s,f],
+                trans_rho_year[p,r,s,f]
+              )
 
-        source_nLL[lin] = cell_nLL
-        source_pred[lin] = pred
-        next
-      } # end 2dar1
+              source_nLL[p,r,obs_years,seas,obs_ages,s,f] = block_nLL
+              source_pred[p,r,obs_years,seas,obs_ages,s,f] = pred
 
-      obs_ages = which(use_f[base + age_step] == 1)
-      if(length(obs_ages) == 0) next
+            } else {
 
-      lin = fleet_off + base + age_step[obs_ages]
-      # subset the registered vector directly; copying element by element loses the OBS tagging
-      slot = obs_slot[lin]
-      extra = if(pop) exp(ln_sigma[p,obs_ages,s,f]) else exp(ln_sigma[obs_ages,s,f])
-      sd_vec = if(sd_form[f] == 0) extra else at_age_obs_sd(as.numeric(obs_se)[lin], extra, sd_form[f])
+              for(y in seq_len(n_years)) {
 
-      # prediction for each observed age, read through this fleet's ageing error
-      pred = get_at_age_obs_prediction(source, arrays, p_idx, r_idx, s_idx,
-                                       idx[i_y], if(is.null(seas_use)) idx[i_seas] else seas_use, obs_ages, f, ae_f)
+                obs_ages = which(use[p,r,y,seas,,s,f] == 1)
+                if(length(obs_ages) == 0) next
 
-      pred_t = if(like_type[f] == 0) log(pred + const) else pred
+                # subset the vector directly b/c copying element by element loses the OBS tagging
+                slot = obs_slot[p,r,y,seas,obs_ages,s,f]
+                sigma = exp(ln_sigma[p,obs_ages,s,f])
+                if(sd_form[f] != 0) {
+                  sigma = at_age_obs_sd(as.numeric(obs_se[p,r,y,seas,obs_ages,s,f]), sigma, sd_form[f])
+                }
 
-      # iid returns one value per age; a correlated cell puts its density on the first
-      corr_mat = NULL
-      if(corr_type[f] == 2) {
-        us_key = p + (idx[i_r] - 1) * n_us_pop + (s - 1) * n_us_pop * df[i_r]
-        if(is.null(us_corr[[us_key]])) {
-          us_cell = if(pop) us_pars[,p,idx[i_r],s,f] else us_pars[,idx[i_r],s,f]
-          us_corr[[us_key]] = build_us_corr(us_cell, df[i_a])
-        }
-        corr_mat = us_corr[[us_key]][obs_ages,obs_ages]
-      }
+                # add the prediction up over whatever regions and sexes the data were reported over
+                split = at_age_split(aa_type[y,f])
+                pred = get_at_age_obs_prediction(
+                  source = source,
+                  arrays = arrays,
+                  p_idx = if(pop) p else all_pop,
+                  r_idx = if(split$region) r else all_reg,
+                  s_idx = if(split$sex) s else all_sex,
+                  y = y,
+                  seas = pred_seas,
+                  obs_ages = obs_ages,
+                  f = f,
+                  ageing_error = ae_f
+                )
 
-      trans_rho_cell = if(pop) trans_rho[p,idx[i_r],s,f] else trans_rho[idx[i_r],s,f]
-      cell_nLL = get_at_age_nLL(obs_t[slot], pred_t, sd_vec, corr_type[f], rho_trans(trans_rho_cell),
-                                ages = obs_ages, corr_mat = corr_mat)
+                oe = if(bias_correct_oe == 1) 0.5 * sigma^2 else 0
+                pred_t = if(like_type[f] == 0) log(pred + const) - oe else pred
 
-      source_nLL[lin] = cell_nLL
-      source_pred[lin] = pred
-    } # end cell loop
+                # iid returns one value per age; a correlated cell puts its density on the first
+                cell_nLL = get_at_age_nLL(
+                  obs_t[slot],
+                  pred_t,
+                  sigma,
+                  corr_type[f],
+                  rho_trans(trans_rho[p,r,s,f]),
+                  ages = obs_ages,
+                  corr_mat = if(is.null(us_corr)) NULL else us_corr[obs_ages,obs_ages]
+                )
+
+                source_nLL[p,r,y,seas,obs_ages,s,f] = cell_nLL
+                source_pred[p,r,y,seas,obs_ages,s,f] = pred
+
+              } # end y loop
+            } # end correlation form
+          } # end s loop
+        } # end seas loop
+      } # end r loop
+    } # end p loop
   } # end f loop
+
+  # coerce shapes back
+  dim(source_nLL) = obs_dim
+  dim(source_pred) = obs_dim
 
   return(list(nLL = source_nLL, pred = source_pred))
 }

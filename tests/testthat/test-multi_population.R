@@ -39,11 +39,8 @@ multi_pop_input <- function(n_pop, n_regions, natal_region, n_yrs = 10, n_ages =
 
 
 test_that("stacked identical populations multiply the likelihood", {
-  # Populations that do not stray and share every rate are independent copies of
-  # one stock, so the joint negative log likelihood of k of them across k regions
-  # is k^2 times a single-region single-population stock. It holds only if the
-  # population dim is walked correctly everywhere the objective indexes on it,
-  # which makes it a collapse relation like the region and sex ones.
+  # populations that do not stray and share every rate are copies of one stock, so the joint
+  # negative log likelihood of k of them across k regions is k squared times one stock's
   one <- as.numeric(SPoRC_rtmb(multi_pop_input(1, 1, NA)$par, multi_pop_input(1, 1, NA)$data))
   expect_true(is.finite(one))
 
@@ -56,9 +53,8 @@ test_that("stacked identical populations multiply the likelihood", {
 
 
 test_that("a multi-population model builds an AD tape", {
-  # The estimation path, which nothing exercised before. Evaluating the objective
-  # on ordinary doubles is not enough: an operation that drops the tape leaves
-  # the value right and the model unfittable.
+  # evaluating the objective on ordinary doubles is not enough, since an operation that drops
+  # the tape leaves the value right and the model unfittable
   for(cfg in list(list(k = 2, nr = 1, nat = c(1, 1)),
                   list(k = 2, nr = 2, nat = c(1, 2)),
                   list(k = 3, nr = 3, nat = 1:3))) {
@@ -81,11 +77,10 @@ test_that("a multi-population model has a finite gradient", {
 
 
 test_that("unfished recruitment must be given one value per population", {
-  # A single starting value on a model with several populations is read
-  # position by position further in and indexes past its own end, which reaches
-  # RTMB as "not a valid advector" rather than as a problem with the argument.
+  # a single starting value on a model with several populations is read position by position
+  # and runs off its own end, reaching RTMB as an advector complaint rather than as itself.
   #
-  # Caught by the same guard every other starting value goes through, rather than
+  # caught by the same check every other starting value goes through, rather than
   # by a check special to this one argument.
   expect_error(
     sweep_input(dims = list(

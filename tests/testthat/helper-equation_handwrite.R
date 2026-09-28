@@ -7,8 +7,8 @@
 #' Reduce a reported array to a year-by-age matrix
 #'
 #' @param arr Array with year and age as its only non-singleton dims.
-#' @param n_yrs,n_ages Expected extents, checked so a silently reshaped array
-#'   fails here rather than comparing the wrong cells.
+#' @param n_yrs,n_ages Expected lengths, checked so a reshaped array fails here rather
+#'   than comparing the wrong cells.
 #'
 #' @keywords internal
 oracle_ya <- function(arr, n_yrs, n_ages) {
@@ -29,9 +29,7 @@ oracle_y <- function(arr, n_yrs) {
 }
 
 
-# ---------------------------------------------------------------------------
-# Process equations
-# ---------------------------------------------------------------------------
+# Process equations ----------------------------------------------------------
 
 #' Numbers at age advanced forward
 #'
@@ -97,10 +95,8 @@ oracle_baranov <- function(retF, Z, N) {
 #'   N_spawn[y, a] = N[y, a] exp(-t_spawn Z[y, a])
 #'   SSB[y]        = sum_a N_spawn[y, a] WAA[y, a] MatAA[y, a]
 #'
-#' A single-sex model has both sexes in one set of numbers, so the sum is
-#' halved to leave females. The vignette states this in the sentence after the
-#' equation rather than in the equation, which is why it is a separate argument
-#' here: the clause is easy to read past.
+#' A single-sex model has both sexes in one set of numbers, so the sum is halved to
+#' leave females. The vignette says so after the equation rather than inside it.
 #'
 #' @param sex_ratio Fraction of the population that spawns. One half for a
 #'   single-sex model, one when sexes are tracked separately.
@@ -135,9 +131,7 @@ oracle_total_biomass <- function(N, Z, WAA, t_spawn) {
 }
 
 
-# ---------------------------------------------------------------------------
-# Selectivity
-# ---------------------------------------------------------------------------
+# Selectivity ----------------------------------------------------------------
 
 #' Selectivity forms
 #'
@@ -149,13 +143,11 @@ oracle_total_biomass <- function(N, Z, WAA, t_spawn) {
 #'             sel = (b / bmax)^(bmax / p) exp((bmax - b) / p)
 #'   power:    1 / b^phi
 #'
-#' Two things the vignette leaves out. It gives each formula without the order its
-#' parameters arrive in, which the model fixes: logist1 takes (b50, slope), not
-#' (slope, b50), and the order is as much part of the interface as the curve. And
-#' it prints the gamma root as sqrt(bmax + 4 delta^2), without the square on bmax
-#' that the code has; unsquared the expression is not dimensionally consistent
-#' and is not the standard reparameterized gamma, so the vignette is what is wrong
-#' there.
+#' Two things the vignette leaves out. It gives no parameter order, which the model
+#' fixes: logist1 takes (b50, slope), not (slope, b50).
+#'
+#' And it prints the gamma root as sqrt(bmax + 4 delta^2), without the square on bmax
+#' that the code has. Unsquared it is not the standard reparameterized gamma.
 #'
 #' @param form One of "logist1", "logist2", "gamma", "power".
 #' @param bins Numeric bin vector.
@@ -177,9 +169,7 @@ oracle_selex <- function(form, bins, pars) {
 }
 
 
-# ---------------------------------------------------------------------------
-# Likelihoods
-# ---------------------------------------------------------------------------
+# Likelihoods ----------------------------------------------------------------
 
 #' Multinomial composition negative log likelihood
 #'
@@ -188,13 +178,12 @@ oracle_selex <- function(form, bins, pars) {
 #'
 #'   -l = ESS sum_b (O_b + c 1_const) [ log(O_b + c) - log(E_b + c) ]
 #'
-#' with c the guard constant against log(0) and 1_const controlling whether it is
-#' also added to the weights. A perfect fit contributes zero, which is what makes
-#' this the offset form rather than the bare multinomial kernel.
+#' with c the constant that keeps log(0) out and 1_const saying whether it is added to
+#' the weights too. A perfect fit contributes zero, so this is the offset form.
 #'
 #' @param obs,pred Observed and expected proportions.
 #' @param ess Effective sample size.
-#' @param const Guard constant.
+#' @param const Constant added to keep log(0) out.
 #' @param const_obs Whether the constant is added to the weighting proportions.
 #'
 #' @keywords internal

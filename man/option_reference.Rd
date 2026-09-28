@@ -17,9 +17,9 @@ A data frame with one row per argument: \code{stage}, \code{argument},
   \code{default}, \code{description}, and \code{in_guide}.
 }
 \description{
-Assembled from \code{formals()} and the package's own Rd, so it covers the API
-as it currently stands rather than as it stood when someone last wrote it
-down. Regenerating the vignette regenerates this.
+Assembled from \code{formals()} and the package's own Rd, so it covers every
+argument as the package currently defines them, not as someone last wrote
+them down. Regenerating the vignette regenerates this.
 }
 \examples{
 \dontrun{

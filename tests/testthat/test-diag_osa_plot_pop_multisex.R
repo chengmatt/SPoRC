@@ -1,3 +1,6 @@
+# get_osa() and plot_resids() on population-specific compositions in a joint-sex, two-sex
+# model, where the sexes are stacked into one likelihood.
+
 library(SPoRC)
 library(testthat)
 
@@ -184,9 +187,8 @@ test_that("get_osa(model = ..., pop = TRUE) + plot_resids() work for a multi-sex
   sim_obj <- suppressWarnings(Simulate_Pop_Static(sim_list = sim_list, output_path = NULL))
   sim_data <- simulation_data_to_SPoRC(sim_env = sim_obj, y = sim_obj$n_years, sim = 1)
 
-  # Sanity: pop-specific joint-sex comps should sum to ~ISS (one joint draw
-  # across both sexes), confirming the simulation side actually exercises
-  # the ct==2 code path the two bugs above touched.
+  # a population-specific joint-sex composition sums to about the input sample size, one draw
+  # across both sexes, which is what says the simulation reaches the joint route at all
   expect_equal(
     sum(sim_data$ObsFishAgeComps_pop[1,1,5,1,,,1]),
     sim_data$ISS_FishAgeComps_pop[1,1,5,1,1,1]
@@ -405,9 +407,8 @@ test_that("get_osa(model = ..., pop = TRUE) + plot_resids() work for a multi-sex
   expect_s3_class(p2[[1]], "ggplot")
   expect_s3_class(p2[[2]], "ggplot")
 
-  # index-type sources (pop = TRUE): regression check for a dplyr data-mask
-  # shadowing bug where `map`'s own "pop" column shadowed the `pop`
-  # function argument inside `if(pop)`, breaking every pop = TRUE call
+  # the index-shaped data with populations on, where a column named pop inside the frame once
+  # shadowed the argument of the same name and broke every population-specific call
   for(idx_src in c("Catch", "SrvIdx")) {
     osa_idx_pop <- get_osa(model = model, data = input_list$data, index_source = idx_src, pop = TRUE)
     expect_false(is.null(osa_idx_pop))

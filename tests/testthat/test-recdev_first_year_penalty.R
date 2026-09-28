@@ -1,10 +1,9 @@
+# The first year's recruitment is that year's age one abundance, which under an equilibrium start
+# belongs to the initial condition. dont_pen_recdev_first leaves those years estimated while
+# taking their penalty away, which mapping them off would not do, since that fixes them instead.
+
 library(SPoRC)
 library(testthat)
-
-# The first year's recruitment is the first year's age one abundance, which under an
-# equilibrium initialization belongs to the initial condition. dont_pen_recdev_first
-# leaves those years estimated while taking their penalty away, which mapping them off
-# would not do: that fixes them instead.
 
 rec_input <- function(dont_pen_recdev_first = 0) {
   sim <- seasonal_M_sim()
@@ -12,7 +11,6 @@ rec_input <- function(dont_pen_recdev_first = 0) {
   SPoRC:::do_RecDevs_mapping(input_list, RecDevs_spec = NULL, rec_dd = 0,
                              dont_pen_recdev_first = dont_pen_recdev_first)
 }
-
 
 test_that("the dropped years leave the map alone and only the penalty mirror", {
 
@@ -27,7 +25,6 @@ test_that("the dropped years leave the map alone and only the penalty mirror", {
   expect_equal(dropped$data$map_ln_RecDevs[, , -(1:2)], base$data$map_ln_RecDevs[, , -(1:2)])
   expect_false(any(is.na(base$data$map_ln_RecDevs)))
 })
-
 
 test_that("the penalty drops those years and nothing else", {
 
@@ -61,7 +58,6 @@ test_that("the penalty drops those years and nothing else", {
   expect_equal(sum(pen_full) - sum(pen_cut), as.numeric(pen_full[1, 1, 1]), tolerance = 1e-12)
 })
 
-
 test_that("the count has to leave at least one year in the penalty", {
 
   expect_error(rec_input(seasonal_M_cfg$n_yrs), "at least one year")
@@ -69,7 +65,6 @@ test_that("the count has to leave at least one year in the penalty", {
   expect_error(rec_input(1.5), "whole number")
   expect_error(rec_input(c(1, 2)), "whole number")
 })
-
 
 test_that("the setting survives fit_model, which refreshes the mirror from the map", {
 
@@ -92,7 +87,6 @@ test_that("the setting survives fit_model, which refreshes the mirror from the m
   # the numbers at age are untouched, since only a penalty was removed
   expect_equal(fit_cut$rep$NAA, fit_base$rep$NAA, tolerance = 1e-12)
 })
-
 
 test_that("the setting travels in the data list so the mirror refresh cannot undo it", {
 

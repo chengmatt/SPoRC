@@ -62,8 +62,8 @@ Setup_Sim_q_devs <- function(sim_list,
 
   } # end prefix loop
 
-  # conditioning years read catchability from the actual q alues, so a process error there would never be drawn
-  n_cond <- if(is.null(sim_list$n_cond_yrs)) 0L else as.integer(sim_list$n_cond_yrs)
+  # the conditioning years take catchability from the fit's own values, so no process error is drawn there
+  n_cond <- as.integer(if(is.null(sim_list$n_cond_yrs)) 0 else sim_list$n_cond_yrs)
   if(isTRUE(n_cond >= sim_list$n_yrs) && any(c(sim_list$fish_q_model, sim_list$srv_q_model) > 1))
     stop("Every one of the ", sim_list$n_yrs, " operating model years is a conditioning year, where catchability ",
          "is read from the fit, so a catchability process error would never be drawn. Run the operating model ",
@@ -134,7 +134,7 @@ split_reported_q <- function(rep_q, ln_q, q_blocks, q_type = NULL) {
 check_q_dsem_drawable <- function(sim_list) {
 
   if(is.null(sim_list$dsem_model) || !any(sim_list$dsem_model$project_k)) return(invisible(NULL))
-  n_cond <- if(is.null(sim_list$n_cond_yrs)) 0L else as.integer(sim_list$n_cond_yrs)
+  n_cond <- as.integer(if(is.null(sim_list$n_cond_yrs)) 0 else sim_list$n_cond_yrs)
 
   for(s in seq_along(sim_list$dsem_link_par)) {
 
@@ -195,7 +195,7 @@ draw_sim_q_devs <- function(sim, sim_env) {
     n_fleets <- dim(sim_env[[q_name]])[3]
     sigma <- sim_env[[paste0("sigma_", prefix, "_q")]]
     rho <- sim_env[[paste0(prefix, "_q_rho")]]
-    n_cond <- if(is.null(sim_env$n_cond_yrs)) 0L else min(as.integer(sim_env$n_cond_yrs), n_yrs)
+    n_cond <- as.integer(if(is.null(sim_env$n_cond_yrs)) 0 else min(sim_env$n_cond_yrs, n_yrs))
 
     for(f in 1:n_fleets) {
 

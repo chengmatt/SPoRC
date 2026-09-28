@@ -1,3 +1,6 @@
+# Every diagnostic in the package run once against the packaged dusky rockfish fit. This is a
+# smoke test: it checks each one runs and returns, not that the numbers are right.
+
 library(SPoRC)
 library(testthat)
 data("sgl_rg_dusky_data")

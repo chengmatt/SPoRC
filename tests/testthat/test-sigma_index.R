@@ -139,6 +139,8 @@ sd_of <- function(il) {
   obj$rep$SrvIdx_SD
 }
 
+# The Three Forms ------------------------------------------------------------
+
 test_that("combine_idx_sd implements the three forms it documents", {
   se <- c(0.2, 0.3)
   extra <- 0.4
@@ -177,6 +179,8 @@ test_that("each estimated form reaches the likelihood with the right total", {
   }
 })
 
+# Sharing across Fleets ------------------------------------------------------
+
 test_that("the fleet map shares and holds fleets as asked", {
   il <- build_toy(
     n_srv = 3,
@@ -201,6 +205,8 @@ test_that("the aggregated and population data sources have separate parameters",
   expect_true(all(is.na(as.integer(il2$map$ln_sigmaSrvIdx_pop))))
 })
 
+# What Is Refused, and What Only Warns ---------------------------------------
+
 test_that("an estimated sigma is refused on a multivariate normal index", {
   n_yrs <- 20
   cov1 <- list(diag(n_yrs))
@@ -219,9 +225,8 @@ test_that("an unrecognized spec is rejected by name", {
 })
 
 test_that("a catch sigma with one observation per parameter is refused", {
-  # ln_sigmaC has exactly the dimensions of ObsCatch, so any spec leaving the
-  # year dimension free puts one variance on one observation. That likelihood is
-  # unbounded rather than merely poorly determined, so it must not be reachable.
+  # the catch sigma has exactly the dimensions of the observed catch, so leaving the year
+  # dimension free puts one variance on one observation, which is unbounded rather than vague
   dims <- c(region = 1, year = 20, season = 1, fleet = 1)
   ab <- c(r = "region", y = "year", seas = "season", f = "fleet")
   use <- array(1, dim = unname(dims))

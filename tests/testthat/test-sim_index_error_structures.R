@@ -1,11 +1,11 @@
+# The simulator draws each index under the fleet's own error structure. Three layers are checked
+# apart: the factor decomposition that turns a fixed covariance into per-cell draw parameters, the
+# validation and storage in setup, and the population-specific blocks that read the fleet's form.
+
 library(SPoRC)
 library(testthat)
 
-# The simulator draws each index data source under the fleet's estimation-model error
-# structure. These tests pin the three layers separately: the factor routines
-# that turns a fixed covariance into per-cell draw parameters, the Setup_Sim_*
-# validation and storage, and the model-side population-specific blocks that
-# share the fleet's LikeType.
+# Factoring the Covariance ---------------------------------------------------
 
 test_that("cov_to_factor preserves marginal scale and approximates a one-factor correlation", {
 
@@ -32,6 +32,8 @@ test_that("cov_to_factor preserves marginal scale and approximates a one-factor 
   })
 
 })
+
+# Where the Covariance Rows Sit ----------------------------------------------
 
 test_that("build_idx_factor positions covariance rows the way the model collects observations", {
 
@@ -99,6 +101,8 @@ test_that("resolve_idx_factor falls back to the mean parameters outside the cova
 
 })
 
+# Drawing an Observation -----------------------------------------------------
+
 test_that("draw_index_obs draws each error structure from the same seed formulae", {
 
   true <- c(100, 120)
@@ -134,6 +138,8 @@ test_that("draw_index_obs draws each error structure from the same seed formulae
   })
 
 })
+
+# Setup ----------------------------------------------------------------------
 
 test_that("Setup_Sim_Fishing and Setup_Sim_Survey validate and store the mvn routines", {
 
@@ -226,9 +232,8 @@ test_that("Setup_Sim_Fishing and Setup_Sim_Survey validate and store the mvn rou
 
 `%||%` <- function(a, b) if(is.null(a)) b else a
 
-# One small operating model shared by the integration tests below: 1 population,
-# 1 region, 15 years, 6 ages, 2 replicates. Simulated once per survey error
-# structure and cached.
+# one small operating model shared below: one population, one region, 15 years, 6 ages and two
+# replicates, simulated once per survey error structure and kept
 index_error_om <- local({
   cached <- list()
 
@@ -314,12 +319,14 @@ index_error_om <- local({
   }
 })
 
+# Through the Simulator ------------------------------------------------------
+
 test_that("a simulation list without the new fields reproduces the lognormal draws exactly", {
 
   om_base <- index_error_om()
   om_old <- index_error_om(drop_new_fields = TRUE)
 
-  # byte-identical draws mean the RNG data source is untouched for existing workflows
+  # byte-identical draws mean the random draws are untouched for existing work
   expect_identical(om_base$ObsSrvIdx, om_old$ObsSrvIdx)
   expect_identical(om_base$ObsFishIdx, om_old$ObsFishIdx)
   expect_identical(om_base$ObsSrvIdx_pop, om_old$ObsSrvIdx_pop)
@@ -504,6 +511,8 @@ test_that("the population-specific index blocks honor the fleet's LikeType", {
   se_pop <- sim_data$ObsSrvIdx_pop_SE[1, 1, , 1, 1]
   obs_reg <- sim_data$ObsSrvIdx[1, , 1, 1]
   se_reg <- sim_data$ObsSrvIdx_SE[1, , 1, 1]
+
+  # Population-specific Indices ----------------------------------------------
 
   test_that("lognormal fleets keep the previous population-specific likelihood", {
     m <- report_of(build_input("lognormal"))

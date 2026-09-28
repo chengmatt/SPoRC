@@ -1,10 +1,9 @@
+# The growth module against the SS3 conventions it reproduces, then against the model that read
+# growth as data: with parameters chosen to regenerate the size-age transition a test setup was
+# built from, the objective and its gradient have to match that model.
+
 library(SPoRC)
 library(testthat)
-
-# The growth module against the SS3 conventions it reproduces, then against the
-# data-driven model it replaces: with parameters chosen to regenerate the size-age
-# transition a test setup was built from, the objective and gradient have to match
-# the model that read that transition as data.
 
 L0 <- 9
 L1 <- 20
@@ -15,9 +14,8 @@ CV2 <- 0.08
 A1 <- 2
 A2 <- 20
 
-# The CAAL test setup's full input list, with the growth module's fields and parameter
-# taken from a biologicals setup that switched growth on. Everything the test setup
-# set up downstream of the biologicals (comps, CAAL, selectivity, weights) is kept.
+# The conditional age-at-length model's input list, with the growth fields taken from a
+# biologicals call that turned growth on. Everything after that stage is kept as it was.
 merge_growth <- function(rest, growth_input) {
   keep <- grep("^growth_|^derive_waa$|^wt_len_pars$|^SizeAgeTrans$", names(growth_input$data), value = TRUE)
   for(quant_name in keep) rest$data[[quant_name]] <- growth_input$data[[quant_name]]
@@ -26,6 +24,7 @@ merge_growth <- function(rest, growth_input) {
   rest
 }
 
+# The Curve and Its Spread ---------------------------------------------------
 
 test_that("the curve is linear below A1, continuous at A1, and hits L2 at A2", {
   x <- seq(0, 25, by = 0.5)
@@ -43,7 +42,6 @@ test_that("the curve is linear below A1, continuous at A1, and hits L2 at A2", {
   expect_true(all(diff(crv$L) > 0))
 })
 
-
 test_that("L2_asymptote reads L2 as the asymptote and A1 = 0 puts age zero at L1", {
   x <- 0:30
   crv <- get_laa_curve(x, L0, L1, L2, K, CV1, CV2, A1, A2 = max(x), L2_asymptote = 1)
@@ -53,7 +51,6 @@ test_that("L2_asymptote reads L2 as the asymptote and A1 = 0 puts age zero at L1
   expect_equal(crv0$L[1], L1)
   expect_true(all(is.finite(crv0$L)))
 })
-
 
 test_that("the CV is CV1 below A1, CV2 from A2, and interpolates on length between", {
   x <- seq(0, 25, by = 0.5)
@@ -71,7 +68,6 @@ test_that("the CV is CV1 below A1, CV2 from A2, and interpolates on length betwe
   expect_equal(crv_s$sd, crv_s$cv)
 })
 
-
 test_that("the plus group adjustment is the decay-weighted mean SS3 uses", {
   L_acc <- 50
   linf <- 60
@@ -84,6 +80,7 @@ test_that("the plus group adjustment is the decay-weighted mean SS3 uses", {
   expect_lt(plus_group_size(L_acc, linf, n_acc), linf)
 })
 
+# The Size-Age Transition Matrix ---------------------------------------------
 
 test_that("the age-length key is column stochastic with the tails in the end bins", {
   lower <- seq(9, 65, by = 2)
@@ -95,7 +92,7 @@ test_that("the age-length key is column stochastic with the tails in the end bin
   expect_true(all(alk >= 0))
   # a tiny fish at age zero: almost all of its mass is below the first edge and lands in bin 1
   expect_gt(alk[1, 1], 0.5)
-  # direct check on one column against the CDF construction
+  # one column against the cumulative normal it is built from
   a <- 10
   cdf <- pnorm((lower - crv$L[a]) / crv$sd[a])
   expect_equal(alk[, a], c(cdf[2:length(lower)], 1) - cdf + c(cdf[1], rep(0, length(lower) - 1)))
@@ -104,6 +101,7 @@ test_that("the age-length key is column stochastic with the tails in the end bin
   expect_equal(colSums(alk_ln), rep(1, length(x)))
 })
 
+# Against the Model That Read Growth as Data ---------------------------------
 
 test_that("with parameters that regenerate the test setup's key, the objective matches the data-driven model", {
   source(test_path("helper-selftest_caal.R"), local = TRUE)
@@ -111,8 +109,8 @@ test_that("with parameters that regenerate the test setup's key, the objective m
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = caal_cfg$n_yrs, sim = 1)
   n_ages <- caal_cfg$n_ages
 
-  # data-driven model: the test setup's key built from VB(linf 60, k 0.3, t0 -0.5), CV 0.10,
-  # evaluated at integer ages at the start of the year
+  # supplied as data: the size-age transition matrix built from von Bertalanffy at linf 60, k
+  # 0.3 and t0 -0.5, with a CV of 0.10, read at integer ages at the start of the year
   inp_data <- caal_build_input(sim_data)
   fit_data <- fit_model(
     inp_data$data,
@@ -198,6 +196,7 @@ test_that("with parameters that regenerate the test setup's key, the objective m
   expect_true("ln_growth_pars" %in% names(fit_e$par))
 })
 
+# Growth Recovered from Length Data ------------------------------------------
 
 test_that("growth parameters are recovered from lengths plus conditional age-at-length", {
   source(test_path("helper-selftest_caal.R"), local = TRUE)
@@ -263,6 +262,7 @@ test_that("growth parameters are recovered from lengths plus conditional age-at-
   expect_lt(max(abs(est[c("CV1", "CV2")] / truth[c("CV1", "CV2")] - 1)), 0.10)
 })
 
+# Fleet Timing and Selected Weight -------------------------------------------
 
 test_that("each fleet's key and weight are read at that fleet's own timing", {
   ages <- 0:6
@@ -314,12 +314,9 @@ test_that("each fleet's key and weight are read at that fleet's own timing", {
   expect_equal(g$mean_LAA_spawn[1,1,1,1,,1], get_laa_curve(ages, L0 = 10, L1 = 15, L2 = 55, K = 0.3, CV1 = 0.15, CV2 = 0.08, A1 = 1, A2 = 6)$L, tolerance = 1e-12)
 })
 
-
 test_that("a model estimating growth runs through the simulation self-test", {
-  # The operating model the self-test builds takes its size-age transition from
-  # the fitted model's report when growth is estimated, since the data list holds
-  # none. Three replicates are enough to show the loop runs and that the refits
-  # land near the truth they were simulated from.
+  # with growth estimated the data list holds no size-age transition, so the operating model
+  # takes it from the fit's report. three replicates show the loop runs and lands near truth
   source(test_path("helper-selftest_caal.R"), local = TRUE)
   om <- caal_make_om()
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = caal_cfg$n_yrs, sim = 1)
@@ -402,7 +399,6 @@ test_that("a model estimating growth runs through the simulation self-test", {
   expect_lt(median(laa_err), 0.03)
 })
 
-
 test_that("the selection-weighted weight at age is the key averaged by selectivity", {
 
   # three length bins and two ages, the first age mostly short fish and the
@@ -435,7 +431,6 @@ test_that("the selection-weighted weight at age is the key averaged by selectivi
   # an age nothing is selected from returns zero rather than dividing by zero
   expect_equal(get_selected_waa(key, rep(0, 3), w_len), c(0, 0))
 })
-
 
 test_that("only the flagged fleets take the selection-weighted weight, in the year asked for", {
 

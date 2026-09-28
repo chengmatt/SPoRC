@@ -175,9 +175,9 @@ sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_re
 #'   fishing mortality, both selectivities, catchability and its deviations,
 #'   natural mortality, weight and size at age, movement, steepness, sex ratio,
 #'   recruitment, the initial deviations and the numbers-at-age process error.
-#'   Three sets stay at the fitted values: the observation error terms, the
-#'   composition parameters, and the dsem, whose setup reads one parameter list
-#'   and one report, so the arrow coefficients are the same in every replicate.
+#'   A linked dsem is drawn too, and its parameters reach the operating model
+#'   through the processes they are linked to. The observation error terms and the
+#'   composition parameters stay at the fit, having no replicate dimension.
 #'
 #' @return Named list with one element per entry in \code{what} and then one per
 #'   entry in \code{what_par}, each an array with the last dimension indexing

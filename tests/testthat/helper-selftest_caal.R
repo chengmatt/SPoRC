@@ -343,8 +343,7 @@ caal_run <- function(input_list, what = c("SSB", "Rec"), n_sims = caal_cfg$n_sim
     rep = fit$rep,
     sd_rep = sd_rep,
     n_sims = n_sims,
-    what = what,
-    sim_recruitment = "input"
+    what = what
   )
 
   summ <- lapply(what, function(w) {

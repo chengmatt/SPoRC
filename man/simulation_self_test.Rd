@@ -15,10 +15,12 @@ simulation_self_test(
   newton_loops = 3,
   do_sdrep = FALSE,
   do_par = FALSE,
+  obj = NULL,
   n_cores = NULL,
   output_path = NULL,
   what = c("SSB", "Rec"),
-  sim_recruitment = c("input", "model")
+  what_par = NULL,
+  sim_type = c("conditional", "joint")
 )
 }
 \arguments{
@@ -51,6 +53,10 @@ failed \code{sdreport} calls stored as \code{NA}. Default \code{FALSE}.}
 \item{do_par}{Logical. Whether to run replicates in parallel via
 \code{future::multisession}. Default \code{FALSE}.}
 
+\item{obj}{Fitted object the self test is run from. Needed under
+\code{sim_type = "joint"}, which draws at its parameter vector and reports
+through it. Default \code{NULL}.}
+
 \item{n_cores}{Integer. Number of parallel workers. If \code{NULL}
 (default), \code{parallel::detectCores() - 1} is used.}
 
@@ -62,19 +68,38 @@ RDS file. Passed to \code{\link{Simulate_Pop_Static}}. Default
 \code{rep}) to extract and store from each replicate. An error is raised
 if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.}
 
-\item{sim_recruitment}{Character. How the operating model generates recruitment.
-\code{"input"} (default) feeds the estimated series in as \code{Rec_input}, so every
-replicate reuses the same deviations and steepness and \code{ln_sigmaR} get no
-sampling variation. \code{"model"} withholds it and draws new deviations under
-\code{RecDevs_model}, testing the stock-recruit curve itself. All other latent
-processes stay conditioned on the fit under either setting.}
+\item{what_par}{Character vector. Names of parameters (keys of
+\code{parameters}) to extract and store from each replicate, read off the
+refit's own parameter list so that mapped elements come back at the values
+the map gave them. An error is raised if any name is not found in
+\code{parameters}. Default \code{NULL}, which stores none.}
+
+\item{sim_type}{Character. Where each replicate's operating model parameters
+  come from. \code{"conditional"} (default) runs every replicate at the fitted
+  values, so the truth is the same throughout and the spread across replicates
+  is observation error alone. \code{"joint"} gives each replicate its own draw
+  from \code{sd_rep$jointPrecision}, so parameter uncertainty is carried into
+  the operating model and each replicate has its own truth. A fit with no
+  random effects carries no joint precision, and the fixed-effect covariance is
+  inverted in its place.
+
+  Under \code{"joint"} the drawn parameters reach the operating model through
+  the quantities that carry a replicate dimension: fishing mortality, both
+  selectivities, catchability and its deviations, natural mortality, weight and
+  size at age, movement, steepness, sex ratio, recruitment, the initial
+  deviations and the numbers-at-age process error. The observation error terms
+  and the composition parameters have no replicate dimension to vary along, so
+  they are held at the fit.}
 }
 \value{
-Named list with one element per entry in \code{what}, each an
-  array with the last dimension indexing simulation replicates (via
-  \code{simplify2array}). If \code{do_sdrep = TRUE}, an additional element
-  \code{"sd_rep"} contains a list of \code{sdreport} objects (or \code{NA}
-  for failed replicates).
+Named list with one element per entry in \code{what} and then one per
+  entry in \code{what_par}, each an array with the last dimension indexing
+  simulation replicates (via \code{simplify2array}). If \code{do_sdrep = TRUE},
+  an additional element \code{"sd_rep"} contains a list of \code{sdreport}
+  objects (or \code{NA} for failed replicates). A final element \code{"truth"}
+  holds the operating model's own values for the same names, which under
+  \code{sim_type = "joint"} differ from replicate to replicate and are what the
+  estimates should be scored against.
 }
 \description{
 Validates model performance by: (1) generating \code{n_sims} new datasets
@@ -96,6 +121,15 @@ res <- simulation_self_test(
   n_sims = 100, what = c("SSB", "Rec", "Fmort")
 )
 str(res$SSB)
+
+# parameter uncertainty carried in, scored against each replicate's own truth
+sd_rep <- RTMB::sdreport(fit, getJointPrecision = TRUE)
+res <- simulation_self_test(
+  data = fit$data, parameters = par, mapping = map, random = NULL,
+  rep = fit$rep, sd_rep = sd_rep, obj = fit, n_sims = 100,
+  what = "SSB", what_par = "ln_global_R0", sim_type = "joint"
+)
+rel_err <- (res$SSB - res$truth$SSB) / res$truth$SSB
 }
 }
 \seealso{

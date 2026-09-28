@@ -241,7 +241,7 @@ selftest_build_input <- function(
 
 # Running the Self Test ------------------------------------------------------
 
-selftest_run <- function(input_list, what, sim_recruitment = "input", seed = 1) {
+selftest_run <- function(input_list, what, sim_type = "conditional", seed = 1) {
   fit <- fit_model(input_list$data, input_list$par, input_list$map, random = NULL, silent = TRUE)
   sd_rep <- RTMB::sdreport(fit)
   stopifnot(max(abs(fit$gr(fit$env$last.par.best))) < 1e-3)
@@ -258,7 +258,7 @@ selftest_run <- function(input_list, what, sim_recruitment = "input", seed = 1) 
     sd_rep = sd_rep,
     n_sims = selftest_cfg$n_sims,
     what = what,
-    sim_recruitment = sim_recruitment
+    sim_type = sim_type
   )
 
   summ <- lapply(what, function(w) {

@@ -244,8 +244,7 @@ test_that("a recruitment deviation index is simulated and recovered", {
     rep = fit$rep,
     sd_rep = sd_rep,
     n_sims = n_sims,
-    what = c("SSB", "srv_q"),
-    sim_recruitment = "input"
+    what = c("SSB", "srv_q")
   )
   med_re <- function(w) {
     truth <- as.numeric(fit$rep[[w]])

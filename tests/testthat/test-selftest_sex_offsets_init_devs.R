@@ -252,8 +252,7 @@ test_that("sex offsets, the selectivity plateau, and per-sex initial deviations 
     rep = fit$rep,
     sd_rep = sd_rep,
     n_sims = n_sims,
-    what = c("SSB", "fish_sel", "srv_sel"),
-    sim_recruitment = "input"
+    what = c("SSB", "fish_sel", "srv_sel")
   )
   for(w in c("SSB", "fish_sel", "srv_sel")) { # res also has an sd_rep slot, so iterate the names
     truth <- as.numeric(fit$rep[[w]])

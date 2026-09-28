@@ -42,6 +42,78 @@ warn_R0_ref_block_om <- function(data, where) {
   invisible(NULL)
 }
 
+#' Bind one array per replicate along a trailing simulation dimension
+#'
+#' The operating model wants every input carrying a last dimension that indexes
+#' replicates. When each replicate runs on the same values this is what
+#' \code{replicate} produces, and when they differ it is the general form.
+#'
+#' @param parts List of arrays, one per replicate, all the same shape.
+#'
+#' @return An array of \code{dim(parts[[1]])} with \code{length(parts)} appended.
+#'
+#' @keywords internal
+bind_sims <- function(parts) {
+  d <- dim(parts[[1]])
+  if(is.null(d)) d <- length(parts[[1]])
+  array(unlist(parts), dim = c(d, length(parts)))
+}
+
+#' Parameter vectors the operating model runs on, one per replicate
+#'
+#' Under \code{sim_type = "conditional"} every replicate runs on the fitted
+#' parameters, so the truth is the same throughout and only the observation
+#' error differs between replicates. Under \code{"joint"} each replicate gets its
+#' own draw from the joint precision, so parameter uncertainty is carried into
+#' the operating model and each replicate has its own truth to be scored against.
+#'
+#' The draw is taken at \code{obj$env$last.par.best}, which is the order the
+#' joint precision's rows and columns are in, and turned back into a parameter
+#' list by the object's own \code{parList}, which reapplies the map. A fit with
+#' no random effects has no \code{jointPrecision}, since \code{sdreport} only
+#' builds one when random effects are present, so the fixed-effect covariance is
+#' inverted instead and the draw is the usual multivariate normal about the mode.
+#'
+#' @param sim_type Either \code{"conditional"} or \code{"joint"}.
+#' @param n_sims Number of replicates.
+#' @param fit_rep Report list from the fitted model.
+#' @param parameters Parameter list the model was built with.
+#' @param mapping Factor maps the model was built with.
+#' @param sd_rep \code{sdreport} object from the fitted model.
+#' @param random Character vector of random effect names.
+#' @param obj_UNUSED_PLACEHOLDER Fitted object, needed only under \code{"joint"}.
+#'
+#' @return List of \code{reps} and \code{pars}, each of length \code{n_sims},
+#'   plus \code{fit_pars}, the parameter list at the fit.
+#'
+#' @keywords internal
+sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_rep, random, obj) {
+
+  # get fitted pars
+  fit_pars <- get_optim_param_list(parameters, mapping, sd_rep, random)
+
+  # conditional sims
+  if(sim_type == "conditional")  return(list(reps = rep(list(fit_rep), n_sims), pars = rep(list(fit_pars), n_sims), fit_pars = fit_pars))
+  if(is.null(obj)) stop("simulation_self_test: sim_type = 'joint' draws at the fitted parameter vector, so pass obj = the fitted object.")
+
+  # joint sims
+  prec <- sd_rep$jointPrecision
+  if(is.null(prec)) {
+    # sdreport only assembles a joint precision when the fit has random effects. without them the
+    # joint distribution is the fixed effects on their own, whose precision is the inverse covariance
+    if(length(obj$env$random) > 0) stop("simulation_self_test: sim_type = 'joint' needs sd_rep$jointPrecision, so call RTMB::sdreport(obj, getJointPrecision = TRUE).")
+    prec <- methods::as(Matrix::forceSymmetric(solve(sd_rep$cov.fixed)), "CsparseMatrix")
+  }
+
+  # make draws
+  draws <- rmvnorm_prec(obj$env$last.par.best, prec, n_sims = n_sims)
+
+  # output
+  list(reps = lapply(seq_len(n_sims), function(i) obj$report(draws[, i])),
+       pars = lapply(seq_len(n_sims), function(i) obj$env$parList(par = draws[, i])),
+       fit_pars = fit_pars)
+}
+
 #' Run a simulation self-test of a fitted RTMB estimation model
 #'
 #' Validates model performance by: (1) generating \code{n_sims} new datasets
@@ -79,21 +151,42 @@ warn_R0_ref_block_om <- function(data, where) {
 #' @param output_path Character string. Path to save the simulated dataset
 #'   RDS file. Passed to \code{\link{Simulate_Pop_Static}}. Default
 #'   \code{NULL}.
+#' @param obj Fitted object the self test is run from. Needed under
+#'   \code{sim_type = "joint"}, which draws at its parameter vector and reports
+#'   through it. Default \code{NULL}.
 #' @param what Character vector. Names of report elements (keys of
 #'   \code{rep}) to extract and store from each replicate. An error is raised
 #'   if any name is not found in \code{rep}. Default \code{c("SSB", "Rec")}.
-#' @param sim_recruitment Character. How the operating model generates recruitment.
-#'   \code{"input"} (default) feeds the estimated series in as \code{Rec_input}, so every
-#'   replicate reuses the same deviations and steepness and \code{ln_sigmaR} get no
-#'   sampling variation. \code{"model"} withholds it and draws new deviations under
-#'   \code{RecDevs_model}, testing the stock-recruit curve itself. All other latent
-#'   processes stay conditioned on the fit under either setting.
+#' @param what_par Character vector. Names of parameters (keys of
+#'   \code{parameters}) to extract and store from each replicate, read off the
+#'   refit's own parameter list so that mapped elements come back at the values
+#'   the map gave them. An error is raised if any name is not found in
+#'   \code{parameters}. Default \code{NULL}, which stores none.
+#' @param sim_type Character. Where each replicate's operating model parameters
+#'   come from. \code{"conditional"} (default) runs every replicate at the fitted
+#'   values, so the truth is the same throughout and the spread across replicates
+#'   is observation error alone. \code{"joint"} gives each replicate its own draw
+#'   from \code{sd_rep$jointPrecision}, so parameter uncertainty is carried into
+#'   the operating model and each replicate has its own truth. A fit with no
+#'   random effects carries no joint precision, and the fixed-effect covariance is
+#'   inverted in its place.
 #'
-#' @return Named list with one element per entry in \code{what}, each an
-#'   array with the last dimension indexing simulation replicates (via
-#'   \code{simplify2array}). If \code{do_sdrep = TRUE}, an additional element
-#'   \code{"sd_rep"} contains a list of \code{sdreport} objects (or \code{NA}
-#'   for failed replicates).
+#'   Under \code{"joint"} the drawn parameters reach the operating model through
+#'   fishing mortality, both selectivities, catchability and its deviations,
+#'   natural mortality, weight and size at age, movement, steepness, sex ratio,
+#'   recruitment, the initial deviations and the numbers-at-age process error.
+#'   Three sets stay at the fitted values: the observation error terms, the
+#'   composition parameters, and the dsem, whose setup reads one parameter list
+#'   and one report, so the arrow coefficients are the same in every replicate.
+#'
+#' @return Named list with one element per entry in \code{what} and then one per
+#'   entry in \code{what_par}, each an array with the last dimension indexing
+#'   simulation replicates (via \code{simplify2array}). If \code{do_sdrep = TRUE},
+#'   an additional element \code{"sd_rep"} contains a list of \code{sdreport}
+#'   objects (or \code{NA} for failed replicates). A final element \code{"truth"}
+#'   holds the operating model's own values for the same names, which under
+#'   \code{sim_type = "joint"} differ from replicate to replicate and are what the
+#'   estimates should be scored against.
 #'
 #'
 #' @export
@@ -107,6 +200,15 @@ warn_R0_ref_block_om <- function(data, where) {
 #'   n_sims = 100, what = c("SSB", "Rec", "Fmort")
 #' )
 #' str(res$SSB)
+#'
+#' # parameter uncertainty carried in, scored against each replicate's own truth
+#' sd_rep <- RTMB::sdreport(fit, getJointPrecision = TRUE)
+#' res <- simulation_self_test(
+#'   data = fit$data, parameters = par, mapping = map, random = NULL,
+#'   rep = fit$rep, sd_rep = sd_rep, obj = fit, n_sims = 100,
+#'   what = "SSB", what_par = "ln_global_R0", sim_type = "joint"
+#' )
+#' rel_err <- (res$SSB - res$truth$SSB) / res$truth$SSB
 #' }
 simulation_self_test <- function(
   data,
@@ -119,18 +221,25 @@ simulation_self_test <- function(
   newton_loops = 3,
   do_sdrep = FALSE,
   do_par = FALSE,
+  obj = NULL,
   n_cores = NULL,
   output_path = NULL,
   what = c('SSB', 'Rec'),
-  sim_recruitment = c("input", "model")
+  what_par = NULL,
+  sim_type = c("conditional", "joint")
 ) {
 
-  sim_recruitment <- match.arg(sim_recruitment)
+  sim_type <- match.arg(sim_type)
   warn_R0_ref_block_om(data, "simulation_self_test")
 
   missing_names <- setdiff(what, names(rep))
   if(length(missing_names) > 0)  stop(paste("The following elements in 'what' are not found in rep:",  paste(missing_names, collapse = ", ")))
-  optim_parameters_list <- get_optim_param_list(parameters, mapping, sd_rep, random) # get optimized parameters in original list format
+  missing_pars <- setdiff(what_par, names(parameters))
+  if(length(missing_pars) > 0) stop(paste("The following elements in 'what_par' are not found in parameters:", paste(missing_pars, collapse = ", ")))
+
+  # make draws if joint sim, if conditional, just return the report values
+  views <- sim_draw_views(sim_type, n_sims, rep, parameters, mapping, sd_rep, random, obj)
+  optim_parameters_list <- views$fit_pars
 
   # weights become simulation sds as sd / sqrt(wt). a weight of zero means excluded, not infinite
   # error, so excluded cells keep their nominal sd rather than giving Inf and then NaN
@@ -197,13 +306,14 @@ simulation_self_test <- function(
   # Setup Simulation Containers ---------------------------------------------
   sim_list <- Setup_Sim_Containers(sim_list)
 
-  # Catchability: the reported value is the block mean times the fit's deviation, and the operating
-  # model wants those apart, the mean as the level and the deviations as what conditioning reproduces
+  # Catchability: the reported value is the mean times the fit's deviation, and the OM wants those split
   fit_yrs <- seq_along(data$years)
-  fish_q_fit <- split_reported_q(rep$fish_q[,fit_yrs,,drop = FALSE], optim_parameters_list$ln_fish_q,
-                                 data$fish_q_blocks[,fit_yrs,,drop = FALSE], data$fish_q_type)
-  srv_q_fit <- split_reported_q(rep$srv_q[,fit_yrs,,drop = FALSE], optim_parameters_list$ln_srv_q,
-                                data$srv_q_blocks[,fit_yrs,,drop = FALSE], data$srv_q_type)
+  fish_q_fit <- lapply(seq_len(n_sims), function(i)
+    split_reported_q(views$reps[[i]]$fish_q[,fit_yrs,,drop = FALSE], views$pars[[i]]$ln_fish_q,
+                     data$fish_q_blocks[,fit_yrs,,drop = FALSE], data$fish_q_type))
+  srv_q_fit <- lapply(seq_len(n_sims), function(i)
+    split_reported_q(views$reps[[i]]$srv_q[,fit_yrs,,drop = FALSE], views$pars[[i]]$ln_srv_q,
+                     data$srv_q_blocks[,fit_yrs,,drop = FALSE], data$srv_q_type))
 
   # Setup Fishing Processes -------------------------------------------------
 
@@ -272,11 +382,11 @@ simulation_self_test <- function(
                                 FishIdx_seas_Type = data$FishIdx_seas_Type,
                                 FishIdx_pop_seas_Type = data$FishIdx_pop_seas_Type,
                                 FishAgeComps_seas_Type = data$FishAgeComps_seas_Type,
-                                Fmort_input = replicate(n = sim_list$n_sims, rep$Fmort[,seq_along(data$years),,,drop = FALSE]),
-                                dmr_input = replicate(n = sim_list$n_sims, rep$dmr[,seq_along(data$years),,,drop = FALSE]),
-                                fish_sel_input = replicate(n = sim_list$n_sims, rep$fish_sel[,,seq_along(data$years),,,,,drop = FALSE]),
-                                ret_sel_input = replicate(n = sim_list$n_sims, rep$ret_sel[,,seq_along(data$years),,,,,drop = FALSE]),
-                                fish_q_input = replicate(n = sim_list$n_sims, fish_q_fit$q_mean),
+                                Fmort_input = bind_sims(lapply(views$reps, function(rp) rp$Fmort[,seq_along(data$years),,,drop = FALSE])),
+                                dmr_input = bind_sims(lapply(views$reps, function(rp) rp$dmr[,seq_along(data$years),,,drop = FALSE])),
+                                fish_sel_input = bind_sims(lapply(views$reps, function(rp) rp$fish_sel[,,seq_along(data$years),,,,,drop = FALSE])),
+                                ret_sel_input = bind_sims(lapply(views$reps, function(rp) rp$ret_sel[,,seq_along(data$years),,,,,drop = FALSE])),
+                                fish_q_input = bind_sims(lapply(fish_q_fit, function(q) q$q_mean)),
                                 ObsFishIdx_SE = deweight(if(is.null(rep$FishIdx_SD)) data$ObsFishIdx_SE else rep$FishIdx_SD,
                              data$Wt_FishIdx),
                                 ObsFishIdx_pop_SE = if(any(data$UseFishIdx_pop == 1)) {
@@ -392,8 +502,8 @@ simulation_self_test <- function(
   # Setup Survey Processes --------------------------------------------------
   sim_list <- Setup_Sim_Survey(
     sim_list = sim_list,
-    srv_sel_input = replicate(n = sim_list$n_sims, rep$srv_sel[,,seq_along(data$years),,,,,drop = FALSE]),
-    srv_q_input = replicate(n = sim_list$n_sims, srv_q_fit$q_mean),
+    srv_sel_input = bind_sims(lapply(views$reps, function(rp) rp$srv_sel[,,seq_along(data$years),,,,,drop = FALSE])),
+    srv_q_input = bind_sims(lapply(srv_q_fit, function(q) q$q_mean)),
     ObsSrvIdx_SE = deweight(if(is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE else rep$SrvIdx_SD, data$Wt_SrvIdx),
     # the index at age has its own error by age and fleet, so no weight is applied to it
     ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
@@ -475,11 +585,11 @@ simulation_self_test <- function(
   # Setup Biological Dynamics -----------------------------------------------
   sim_list <- Setup_Sim_Biologicals(
     sim_list = sim_list, # simualtion list
-    natmort_input = replicate(n = sim_list$n_sims, truncate_years(expand_natmort_seasons(rep$natmort, data$n_seas), length(data$years))), # natural mortality
+    natmort_input = bind_sims(lapply(views$reps, function(rp) truncate_years(expand_natmort_seasons(rp$natmort, data$n_seas), length(data$years)))), # natural mortality
     # derived by the growth module when present, otherwise the data the model was given
-    WAA_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA)) data$WAA else rep$WAA)[,,seq_along(data$years),,,,drop = FALSE]), # weight at age
-    WAA_fish_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_fish)) data$WAA_fish else rep$WAA_fish)[,,seq_along(data$years),,,,,drop = FALSE]), # fishery weight at age
-    WAA_srv_input = replicate(n = sim_list$n_sims, (if(is.null(rep$WAA_srv)) data$WAA_srv else rep$WAA_srv)[,,seq_along(data$years),,,,,drop = FALSE]), # survey weight at age
+    WAA_input = bind_sims(lapply(views$reps, function(rp) (if(is.null(rp$WAA)) data$WAA else rp$WAA)[,,seq_along(data$years),,,,drop = FALSE])), # weight at age
+    WAA_fish_input = bind_sims(lapply(views$reps, function(rp) (if(is.null(rp$WAA_fish)) data$WAA_fish else rp$WAA_fish)[,,seq_along(data$years),,,,,drop = FALSE])), # fishery weight at age
+    WAA_srv_input = bind_sims(lapply(views$reps, function(rp) (if(is.null(rp$WAA_srv)) data$WAA_srv else rp$WAA_srv)[,,seq_along(data$years),,,,,drop = FALSE])), # survey weight at age
     MatAA_input = replicate(n = sim_list$n_sims, data$MatAA[,,seq_along(data$years),,,,drop = FALSE]), # maturity at age
     AgeingError_input = replicate(n = sim_list$n_sims, data$AgeingError[seq_along(data$years),,,drop = FALSE]), # ageing error
     # fleet-specific ageing error, absent from data lists written before it existed, in which case the operating model falls back on the shared matrix
@@ -487,19 +597,19 @@ simulation_self_test <- function(
     AgeingError_srv_input = if(is.null(data$AgeingError_srv)) NULL else replicate(n = sim_list$n_sims, data$AgeingError_srv[seq_along(data$years),,,,drop = FALSE]),
     SizeAgeTrans_input = if(data$fit_lengths == 0 || is.null(data$SizeAgeTrans) || all(is.na(data$SizeAgeTrans))) NULL else replicate(n = sim_list$n_sims, data$SizeAgeTrans[,,seq_along(data$years),,,,,drop = FALSE]),
     # keys per fleet from the growth module, each at its fleet's own timing
-    SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else replicate(n = sim_list$n_sims, rep$SizeAgeTrans_fish[,,seq_along(data$years),,,,,,drop = FALSE]),
-    SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else replicate(n = sim_list$n_sims, rep$SizeAgeTrans_srv[,,seq_along(data$years),,,,,,drop = FALSE]) # size age transition matrix, derived by the growth module when present
+    SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else bind_sims(lapply(views$reps, function(rp) rp$SizeAgeTrans_fish[,,seq_along(data$years),,,,,,drop = FALSE])),
+    SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else bind_sims(lapply(views$reps, function(rp) rp$SizeAgeTrans_srv[,,seq_along(data$years),,,,,,drop = FALSE])) # size age transition matrix, derived by the growth module when present
   )
 
   # Movement
-  sim_list$Movement <- replicate(n = sim_list$n_sims, rep$Movement[,,,seq_along(data$years),,,,drop = FALSE])
-  sim_list$sgl_seas_spawning_movement <- replicate(n = sim_list$n_sims, rep$sgl_seas_spawning_movement[,,,seq_along(data$years),,,drop = FALSE])
+  sim_list$Movement <- bind_sims(lapply(views$reps, function(rp) rp$Movement[,,,seq_along(data$years),,,,drop = FALSE]))
+  sim_list$sgl_seas_spawning_movement <- bind_sims(lapply(views$reps, function(rp) rp$sgl_seas_spawning_movement[,,,seq_along(data$years),,,drop = FALSE]))
   # Movement / mortality sequencing; absent for models built before this option existed
   sim_list$move_timing <- if(is.null(data$move_timing)) 0 else data$move_timing
   # How the matrix exponential is evaluated
   sim_list$expm_nsub <- if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub
   # The instantaneous rate matrix only exists for an estimated CTMC, and is only needed for continuous movement
-  sim_list$Mrate <- if(sim_list$move_timing == 2) replicate(n = sim_list$n_sims, rep$Mrate[,,,seq_along(data$years),,,,drop = FALSE]) else NULL
+  sim_list$Mrate <- if(sim_list$move_timing == 2) bind_sims(lapply(views$reps, function(rp) rp$Mrate[,,,seq_along(data$years),,,,drop = FALSE])) else NULL
 
   # Setup Recruitment Processes ---------------------------------------------
   sim_list <- Setup_Sim_Rec(
@@ -508,7 +618,7 @@ simulation_self_test <- function(
     do_recruits_move = data$do_recruits_move, # whether recruits move
     t_spawn = data$t_spawn, # spawn timing
     init_age_strc = data$init_age_strc, # initilaizing age structure
-    h_input = replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs))), # steepness
+    h_input = bind_sims(lapply(views$reps, function(rp) array(rp$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))), # steepness
     R0_input = {
       # R0 can have time blocks, so the operating model takes the year-by-year value rather than
       # rep$R0's single reference-block value. identical in an unblocked model
@@ -524,14 +634,14 @@ simulation_self_test <- function(
       tmp
     },
     use_rinit = data$use_rinit,
-    sexratio_input = replicate(n = sim_list$n_sims, expr = rep$sexratio[,,seq_along(data$years),,drop = FALSE]), # sex ratio
+    sexratio_input = bind_sims(lapply(views$reps, function(rp) rp$sexratio[,,seq_along(data$years),,drop = FALSE])), # sex ratio
     # rescaling by the recruitment weight is only an identity for a single scalar. recruitment and
     # the initial age deviations are supplied directly below, so ln_sigmaR passes through unscaled
     ln_sigmaR = if(length(data$Wt_Rec) == 1) optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec) else optim_parameters_list$ln_sigmaR, # ln_sigmaR
-    # giving recruitment for every year makes the operating model ignore the stock-recruit curve, so
-    # sim_recruitment = "model" leaves it out and makes the self test recover it
-    Rec_input = if(sim_recruitment == "model") NULL else replicate(n = sim_list$n_sims, expr = rep$Rec[,,seq_along(data$years),drop = FALSE]), # recruitment time series
-    ln_InitDevs_input = replicate(sim_list$n_sims, optim_parameters_list$ln_InitDevs),  # init devs
+    # recruitment is handed to the operating model year by year, so it reproduces the series each
+    # replicate's parameters imply rather than redrawing it off the stock-recruit curve
+    Rec_input = bind_sims(lapply(views$reps, function(rp) rp$Rec[,,seq_along(data$years),drop = FALSE])), # recruitment time series
+    ln_InitDevs_input = bind_sims(lapply(views$pars, function(pr) pr$ln_InitDevs)),  # init devs
     stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,seq_along(data$years), drop = FALSE]),
     rec_seas_prop_input = array(
       rep(rep$rec_seas_prop, times = sim_list$n_sims),
@@ -556,12 +666,14 @@ simulation_self_test <- function(
 
     # figure out eta from NAA PE
     naa_codes <- c("none", "iid", "1dar1_a", "1dar1_y", "2dar1", "3dcond", "3dmarg")
-    eta <- array(0, dim = c(dim(optim_parameters_list$ln_NAA), sim_list$n_sims))
     ny_state <- dim(optim_parameters_list$ln_NAA)[3]
-    pred <- rep$NAA_pred[,,seq_len(ny_state),,,,drop = FALSE]
-    fit_eta <- array(0, dim = dim(optim_parameters_list$ln_NAA))
-    fit_eta[pred > 0] <- optim_parameters_list$ln_NAA[pred > 0] - log(pred[pred > 0])
-    for(i in seq_len(sim_list$n_sims)) eta[,,,,,,i] <- fit_eta
+    draw_eta <- function(rp, pr) {
+      pred <- rp$NAA_pred[,,seq_len(ny_state),,,,drop = FALSE]
+      out <- array(0, dim = dim(pr$ln_NAA))
+      out[pred > 0] <- pr$ln_NAA[pred > 0] - log(pred[pred > 0])
+      out
+    }
+    eta <- bind_sims(lapply(seq_len(n_sims), function(i) draw_eta(views$reps[[i]], views$pars[[i]])))
 
     sim_list <- Setup_Sim_NAA_state(
       sim_list = sim_list,
@@ -575,8 +687,8 @@ simulation_self_test <- function(
 
   # Catchability Stuff -------------------------------------------------
   sim_list$n_cond_yrs <- length(data$years)
-  sim_list$ln_fish_q_devs <- replicate(n = sim_list$n_sims, fish_q_fit$devs)
-  sim_list$ln_srv_q_devs <- replicate(n = sim_list$n_sims, srv_q_fit$devs)
+  sim_list$ln_fish_q_devs <- bind_sims(lapply(fish_q_fit, function(q) q$devs))
+  sim_list$ln_srv_q_devs <- bind_sims(lapply(srv_q_fit, function(q) q$devs))
 
   # Setup DSEM --------------------------------------------------------------
   if(!is.null(data$dsem_model)) sim_list <- Setup_Sim_DSEM(sim_list, data, optim_parameters_list, rep = rep, condition_on_fit = TRUE)
@@ -584,7 +696,7 @@ simulation_self_test <- function(
   # Setup Tagging -----------------------------------------------------------
   if(!is.na(sum(data$conv_tagged_fish))) n_tags_rel_input <- apply(data$conv_tagged_fish, 1, sum) else n_tags_rel_input <- NA
   if(exists("conv_tag_release_indicator", data)) conv_tag_release_indicator <- data$conv_tag_release_indicator  else conv_tag_release_indicator <- NA
-  conv_tag_fish_reporting_input <- if(!is.null(rep$conv_tag_fish_reporting)) replicate(n = sim_list$n_sims, rep$conv_tag_fish_reporting) else NULL
+  conv_tag_fish_reporting_input <- if(!is.null(rep$conv_tag_fish_reporting)) bind_sims(lapply(views$reps, function(rp) rp$conv_tag_fish_reporting)) else NULL
 
   sim_list <- Setup_Sim_Tagging(
     sim_list = sim_list, # simulation list
@@ -605,11 +717,11 @@ simulation_self_test <- function(
 
   # Run Simulation ----------------------------------------------------------
 
-  # storage
-  store_res_list <- vector("list", length(what) + 1) # get list
-  names(store_res_list) <- c(what, "sd_rep") # name list
-  for(j in seq_along(what)) store_res_list[[j]] <- vector("list", n_sims) # stick in n_sims lists into storage
-
+  # storage. report quantities first, then the estimated parameters, then the sdreport slot
+  n_store <- length(what) + length(what_par) + 1
+  store_res_list <- vector("list", n_store) # get list
+  names(store_res_list) <- c(what, what_par, "sd_rep") # name list
+  for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- vector("list", n_sims) # stick in n_sims lists into storage
   sim_obj <- Simulate_Pop_Static(sim_list = sim_list, output_path = output_path) # get simulated datasets
 
   if(do_par == FALSE) {
@@ -754,8 +866,8 @@ simulation_self_test <- function(
         # update setup stuff if needed
         tmp_data <- resync_fitted_blocks(tmp_data)
 
-        # Fit model
-        obj <- fit_model(
+        # Fit model. named fit_i, since obj is the fitted object the joint draws were taken at
+        fit_i <- fit_model(
           data = tmp_data,
           parameters = tmp_pars,
           mapping = mapping,
@@ -765,28 +877,32 @@ simulation_self_test <- function(
         )
 
         # Populate results into store list
-        for(j in seq_along(what)) store_res_list[[j]][[i]] <- obj$rep[[what[j]]]
+        for(j in seq_along(what)) store_res_list[[j]][[i]] <- fit_i$rep[[what[j]]]
+        if(length(what_par) > 0) {
+          est_pars <- fit_i$env$parList(par = fit_i$env$last.par.best) # named, since the bare first argument is the fixed effects alone
+          for(j in seq_along(what_par)) store_res_list[[length(what) + j]][[i]] <- est_pars[[what_par[j]]]
+        }
 
         if(do_sdrep == TRUE) {
           tryCatch({
-            obj$sd_rep <- RTMB::sdreport(obj)
-            store_res_list[[length(what) + 1]][[i]] <- obj$sd_rep # input sd report
+            fit_i$sd_rep <- RTMB::sdreport(fit_i)
+            store_res_list[[n_store]][[i]] <- fit_i$sd_rep # input sd report
           }, error = function(e) {
-            store_res_list[[length(what) + 1]][[i]] <- NA
+            store_res_list[[n_store]][[i]] <- NA
           })
         }
 
       }, error = function(e) {
         # Skip failed simulations, saying why
         warning(sprintf("simulation %d failed: %s", i, conditionMessage(e)), call. = FALSE)
-        for(j in seq_along(what)) store_res_list[[j]][[i]] <- NA
-        if(do_sdrep == TRUE) store_res_list[[length(what) + 1]][[i]] <- NA
+        for(j in seq_along(c(what, what_par))) store_res_list[[j]][[i]] <- NA
+        if(do_sdrep == TRUE) store_res_list[[n_store]][[i]] <- NA
       })
 
     } # end i loop
 
     # Convert result lists to array
-    for(j in seq_along(what)) store_res_list[[j]] <- simplify2array(store_res_list[[j]])
+    for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- simplify2array(store_res_list[[j]])
 
   } # not doing parallelization
 
@@ -930,8 +1046,8 @@ simulation_self_test <- function(
           # see the note at the single-model path above
           tmp_data <- resync_fitted_blocks(tmp_data)
 
-          # Fit model
-          obj <- fit_model(
+          # Fit model. named fit_i, since obj is the fitted object the joint draws were taken at
+          fit_i <- fit_model(
             data = tmp_data,
             parameters = tmp_pars,
             mapping = mapping,
@@ -942,14 +1058,18 @@ simulation_self_test <- function(
 
           # Extract what we need and return
           result <- list()
-          for(j in seq_along(what)) result[[what[j]]] <- obj$rep[[what[j]]]
+          for(j in seq_along(what)) result[[what[j]]] <- fit_i$rep[[what[j]]]
+          if(length(what_par) > 0) {
+            est_pars <- fit_i$env$parList(par = fit_i$env$last.par.best) # named, since the bare first argument is the fixed effects alone
+            for(j in seq_along(what_par)) result[[what_par[j]]] <- est_pars[[what_par[j]]]
+          }
 
           if(do_sdrep == TRUE) {
             tryCatch({
-              obj$sd_rep <- RTMB::sdreport(obj) # get sdreport
-              result[[length(what) + 1]] <- obj$sd_rep # input sd report
+              fit_i$sd_rep <- RTMB::sdreport(fit_i) # get sdreport
+              result[[n_store]] <- fit_i$sd_rep # input sd report
             }, error = function(e) {
-              result[[length(what) + 1]] <- NA
+              result[[n_store]] <- NA
             })
           }
 
@@ -961,7 +1081,8 @@ simulation_self_test <- function(
           warning(sprintf("simulation %d failed: %s", i, conditionMessage(e)), call. = FALSE)
           result <- list()
           for(j in seq_along(what)) result[[what[j]]] <- NA
-          if(do_sdrep == TRUE) result[[length(what) + 1]] <- NA
+          for(j in seq_along(what_par)) result[[what_par[j]]] <- NA
+          if(do_sdrep == TRUE) result[[n_store]] <- NA
 
           p() # update progress
           return(result)
@@ -973,10 +1094,16 @@ simulation_self_test <- function(
     })
 
     # Populate results from parallel run
-    for(i in 1:n_sims) for(j in seq_along(what)) store_res_list[[j]][[i]] <- sim_results[[i]][[what[j]]]
-    if(do_sdrep == TRUE) for(i in 1:n_sims) store_res_list[[length(what) + 1]][[i]] <- sim_results[[i]][[length(what) + 1]]
-    for(j in seq_along(what)) store_res_list[[j]] <- simplify2array(store_res_list[[j]])  # Convert lists to array
+    for(i in 1:n_sims) for(j in seq_along(c(what, what_par))) store_res_list[[j]][[i]] <- sim_results[[i]][[c(what, what_par)[j]]]
+    if(do_sdrep == TRUE) for(i in 1:n_sims) store_res_list[[n_store]][[i]] <- sim_results[[i]][[n_store]]
+    for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- simplify2array(store_res_list[[j]])  # Convert lists to array
   }
+
+  # what the OM itself ran on, so a joint run is compared against the draw that generated each replicate rather than against the fit
+  store_res_list$truth <- c(
+    stats::setNames(lapply(what, function(w) simplify2array(lapply(views$reps, function(rp) rp[[w]]))), what),
+    stats::setNames(lapply(what_par, function(w) simplify2array(lapply(views$pars, function(pr) pr[[w]]))), what_par)
+  )
 
   return(store_res_list)
 

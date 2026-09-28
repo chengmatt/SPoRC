@@ -362,3 +362,19 @@ mat_exp <- function(A, expm_nsub = 0) {
 
   out
 }
+
+#' Simulate from a precision matrix
+#'
+#' @param mu Vector of mean parameters
+#' @param prec Precision matrix
+#' @param n_sims Number of simulations
+#'
+#' @returns A matrix dimensioned by n_pars x n_sims
+#' @export rmvnorm_prec
+rmvnorm_prec <- function(mu, prec, n_sims) {
+  z <- matrix(rnorm(length(mu) * n_sims), ncol = n_sims)
+  L <- Matrix::Cholesky(prec, super = TRUE)
+  z <- Matrix::solve(L, z, system = "Lt")
+  z <- Matrix::solve(L, z, system = "Pt")
+  as.matrix(mu + z)
+}

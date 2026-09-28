@@ -61,5 +61,5 @@ deviation is fixed.
 A walk has no stationary distribution to start from, so year one is
 given a diffuse normal. An AR1 starts from its stationary marginal
 standard deviation \\\sigma / \sqrt{1 - \rho^2}\\. Fixing year one
-instead leaves the series with no penalty on its level at all, which is
-what SAM's flat prior on the first year amounts to.
+instead leaves the series with no penalty on its level at all, as SAM's
+flat prior on the first year does.

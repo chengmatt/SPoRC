@@ -4,8 +4,8 @@
 
 This case study reproduces the 2024 Bering Sea and Aleutian Islands
 Pacific ocean perch assessment in `SPoRC`. Every structural choice below
-follows the assessment rather than `SPoRC`’s defaults. It is the most
-structurally involved of the five rockfish case studies: two survey
+follows the assessment rather than `SPoRC`’s defaults. Of the five
+rockfish case studies this one has the most structure: two survey
 fleets, a first year equilibrium under a fixed historical fishing
 mortality, and a bicubic spline fishery selectivity surface over year
 and age.
@@ -380,7 +380,7 @@ multiplies $`F`$ by the same factor, which leaves their product
 invariant, but its *internal* selectivity is the raw exponentiated
 surface. Putting both sides on the reported convention makes this the
 sharpest single check in the bridge: it covers the node orientation, the
-1964 edge hold and the age 40 edge hold across all $`65\times38`$ cells
+1964 edge hold and the age 40 edge hold, across all $`65\times38`$ cells
 at once.
 
 ``` r
@@ -395,12 +395,13 @@ sel_bridge <- normalize(r$fish_sel[1, 1, 1:n_yrs, 1, 1:nsel, 1, 1])
     recruitment                 max pct diff: 3.1e-04
     total biomass               max pct diff: 2.5e-04
 
-Total biomass needs a note. `SPoRC`’s reported `Total_Biom` is spawning
-time biomass and holds the $`\exp(-Z t^{\text{spawn}})`$ discount, while
-the assessment reports January 1 biomass. The like for like quantity is
-rebuilt from numbers at age, which is what the figure above compares.
-Comparing the two reported quantities directly instead is a 6 percent
-difference that says nothing about the model.
+Total biomass requires one caveat when the two models are compared.
+`SPoRC`’s reported `Total_Biom` is spawning time biomass and holds the
+$`\exp(-Z t^{\text{spawn}})`$ discount, whereas the assessment reports
+January 1 biomass. The like for like quantity is therefore rebuilt from
+numbers at age, which is what the figure above compares, since comparing
+the two reported quantities directly gives a 6 percent difference that
+says nothing about the model.
 
 The likelihood is checked the same way. `SPoRC` writes each component as
 a proper density while the assessment drops normalizing constants, so a

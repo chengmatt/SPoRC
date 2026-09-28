@@ -5,8 +5,8 @@ it. Both are done a year at a time because under cohort growth the key a
 length-based selectivity acts through is only known once the population
 loop reaches that year; every other model runs them for all years before
 the loop starts. Under cohort growth this runs inside the population
-loop, so the year's state is taken as an argument and handed back rather
-than assigned into this frame.
+loop, so the year's state is taken as an argument and returned rather
+than written outside.
 
 ## Usage
 

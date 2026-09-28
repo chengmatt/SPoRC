@@ -193,7 +193,7 @@ rec_seas_prop[] <- 1/n_seas
 - HCR_function:
 
   Harvest control rule taking \`x\` (SSB), \`frp\` and \`brp\`. A rule
-  that also declares a \`state\` argument (or \`...\`) is handed this
+  that also declares a \`state\` argument (or \`...\`) is given this
   year's population as a named list, holding \`y\`, \`r\`, \`NAA\`,
   \`SSB\`, \`Total_Biom\` and \`Catch\`, so it can be written on more
   than spawning biomass. Rules without it are called as before and no
@@ -456,7 +456,7 @@ Under `srr_opt$rec_lag == 0` the recruitment and spawning steps are
 reordered within `spawn_seas`: movement runs first, spawning biomass is
 computed from the survivors alone, that SSB generates this year's
 recruitment, and the recruits are inserted immediately before mortality
-and ageing. Year 1 holds the terminal state forward with no recruitment
+and ageing. Year 1 advances the terminal state with no recruitment
 event.
 
 Under `fmort_opt = "Catch"` the F step moves to the front of the

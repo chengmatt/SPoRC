@@ -2,9 +2,9 @@
 
 Creates the bin-override deviation parameter array, its factor map, and
 its process-error hyperparameters, and records which bins each fleet
-overrides. Bins named here take a free annual selectivity value instead
-of whatever the fleet's functional form produces, which lets an
-otherwise parametric curve have a handful of freely estimated bins.
+overrides. Bins named here take a free annual selectivity value in place
+of the one the fleet's functional form gives, so an otherwise parametric
+curve can have a few freely estimated bins.
 
 ## Usage
 

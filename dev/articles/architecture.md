@@ -1,11 +1,13 @@
 # Architecture
 
-This document is for people editing the `SPoRC` codebase: contributors,
-successors, future you. The goal is to keep the package navigable as it
-grows, especially as spatial model development adds more moving parts.
-Update it whenever the pipeline below changes shape (a new `Setup_Mod_*`
-stage, a new section of the objective function, a new post fit
-diagnostic). A stale architecture document should be treated as a bug.
+This document is for people editing the `SPoRC` codebase, whether they
+are current contributors or picking it up later. Its purpose is to keep
+the package navigable as it grows, particularly as spatial model
+development adds further moving parts. It should be updated whenever the
+pipeline below changes shape, for example with a new `Setup_Mod_*`
+stage, a new section of the objective function, or a new post fit
+diagnostic. A document that no longer matches the code will mislead the
+next person to read it.
 
 ## Mental model
 
@@ -59,9 +61,10 @@ with more keys filled in. This is the central structure of the package:
 setup functions are pipeline stages that thread one growing list through
 each other, not independent builders.
 
-Order matters. Later stages read dimensions (`input_list$data$n_regions`
-and friends) set by earlier ones, and default arguments frequently
-reference `input_list$data$...` in their own definitions. See
+The order of these stages matters, because later stages read dimensions
+(`input_list$data$n_regions` and friends) set by earlier ones, and
+default arguments frequently reference `input_list$data$...` in their
+own definitions. See
 [`Setup_Mod_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)’s
 defaults for an example.
 
@@ -483,7 +486,7 @@ use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 203 test files in total.
+That is 204 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

@@ -17,6 +17,7 @@ Get_NAA_state_penalty(
   naa_re_seas,
   NAA_re = 1,
   NAA_pe_pars = NULL,
+  bias_correct = 0,
   map_ln_NAA = NULL,
   NAA_re_region = 0,
   NAA_region_corr_pars = NULL,
@@ -98,8 +99,7 @@ Get_NAA_state_penalty(
 
   Numeric vectors of unconstrained parameters for those correlations,
   one per pair. Both are global to the model rather than varying over
-  the other dims, which is what keeps a two-level dim at exactly one
-  parameter.
+  the other dims, so a two-level dim has exactly one parameter.
 
 - NAA_re_season:
 

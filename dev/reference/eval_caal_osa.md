@@ -105,9 +105,9 @@ eval_caal_osa(
 
   Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed age
   bins each fleet is fitted over, or `NULL` (default) for all bins. Must
-  be the same array handed to
+  be the same array given to
   [`pack_caal_osa`](https://chengmatt.github.io/SPoRC/dev/reference/pack_caal_osa.md),
-  since the strides walked here are sized on it.
+  since the positions read here are sized on it.
 
 ## Value
 

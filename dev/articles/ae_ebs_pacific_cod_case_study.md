@@ -118,12 +118,13 @@ Three arguments hold the assessment’s growth conventions.
 `growth_tv_model = c(L1 = "iid", K = "iid")` names which parameters vary
 and how, with `growth_tv_years` giving each its own active years.
 `growth_tv_link = "logit"` makes each deviation an offset inside the
-parameter’s bounds. `growth_tv_type = "cohort"` has size at age forward
-cohort by cohort. The deviations’ standard deviations live in the first
-data source of `growth_pe_pars`, one slot per growth parameter in the
-order `L1`, `L2`, `K`, `CV1`, `CV2`, `rho`, with a placeholder in the
-four slots that do not vary. The second data source belongs to the
-semi-parametric surface and is unread here.
+parameter’s bounds. `growth_tv_type = "cohort"` advances size at age
+cohort by cohort, so that each cohort grows from the size it has already
+reached. The deviations’ standard deviations live in the time-varying
+half of `growth_pe_pars`, one slot per growth parameter in the order
+`L1`, `L2`, `K`, `CV1`, `CV2`, `rho`, with a placeholder in the four
+slots that do not vary. The semi-parametric half of the array is unread
+here.
 
 Maturity at age is taken from the assessment rather than modeled,
 because maturity is length based and fixed there. `LenBinMap` maps the

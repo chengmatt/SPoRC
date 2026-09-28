@@ -1,7 +1,7 @@
 # Recruitment and initial age deviation penalties
 
-The two deviation penalties the recruitment section owes, gathered so
-the objective reads them in one place: the initial age deviations from
+The two deviation penalties from the recruitment section, in one place
+for the objective: the initial age deviations from
 [`get_init_devs_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/get_init_devs_penalty.md)
 and the recruitment deviations from
 [`get_rec_devs_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/get_rec_devs_penalty.md).

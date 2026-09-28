@@ -21,5 +21,5 @@ tag_fam_of(like_type)
 
 ## Value
 
-A character scalar: \`"count"\`, \`"comp"\`, or \`NA_character\_\` if
-the code is not recognized.
+A character scalar: \`"count"\`, \`"comp"\`, or \`NA\` if the code is
+not recognized.

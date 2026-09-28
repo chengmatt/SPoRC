@@ -76,6 +76,7 @@ before the state overwrote <code>NAA</code>.</p>
 <span>  <span class="va">naa_re_seas</span>,</span>
 <span>  NAA_re <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  NAA_pe_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bias_correct <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  map_ln_NAA <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  NAA_re_region <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  NAA_region_corr_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -159,8 +160,8 @@ and across sexes. <code>0</code> independent, <code>1</code> unstructured.</p></
 <dt id="arg-naa-pop-corr-pars-naa-sex-corr-pars">NAA_pop_corr_pars, NAA_sex_corr_pars<a class="anchor" aria-label="anchor" href="#arg-naa-pop-corr-pars-naa-sex-corr-pars"></a></dt>
 <dd><p>Numeric vectors of unconstrained
 parameters for those correlations, one per pair. Both are global to the
-model rather than varying over the other dims, which is what keeps a
-two-level dim at exactly one parameter.</p></dd>
+model rather than varying over the other dims, so a two-level dim has
+exactly one parameter.</p></dd>
 
 
 <dt id="arg-naa-re-season">NAA_re_season<a class="anchor" aria-label="anchor" href="#arg-naa-re-season"></a></dt>

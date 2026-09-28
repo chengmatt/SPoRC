@@ -9,7 +9,17 @@ flattened and on the log scale.
 ## Usage
 
 ``` r
-eval_index_osa_nLL(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, const, pop)
+eval_index_osa_nLL(
+  nLL_arr,
+  obs_vec,
+  obs_map,
+  Pred,
+  SD,
+  seas_Type,
+  const,
+  pop,
+  bias_correct_oe = 0
+)
 ```
 
 ## Arguments

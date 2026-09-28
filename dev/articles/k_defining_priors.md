@@ -50,6 +50,7 @@ input_list <- Setup_Mod_Dim(years = seq_along(sgl_rg_sable_data$years),
                             n_seas = 1,
                             n_pop = sgl_rg_sable_data$n_pop,
                             verbose = TRUE)
+#> bias_correct_pe = 'rec': the recruitment and initial age deviations are centered on minus half their marginal variance; the numbers at age state is not. The bias ramp still scales the recruitment part.
 #> Number of Years: 65
 #> Number of Seasons: 1
 #> Duration of season 1: 1
@@ -443,6 +444,7 @@ input_list <- Setup_Mod_Dim(years = seq_along(mlt_rg_sable_data$years),
                             n_seas = 1,
                             n_pop = mlt_rg_sable_data$n_pop,
                             verbose = TRUE)
+#> bias_correct_pe = 'rec': the recruitment and initial age deviations are centered on minus half their marginal variance; the numbers at age state is not. The bias ramp still scales the recruitment part.
 #> Number of Years: 62
 #> Number of Seasons: 1
 #> Duration of season 1: 1

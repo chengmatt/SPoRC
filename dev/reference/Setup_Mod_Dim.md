@@ -26,6 +26,8 @@ Setup_Mod_Dim(
   n_proj_yrs_devs = 0,
   do_internal_comp_osa = FALSE,
   do_internal_conv_tag_osa = FALSE,
+  bias_correct_pe = "rec",
+  bias_correct_oe = 0,
   verbose = FALSE,
   store_config = FALSE
 )
@@ -115,6 +117,22 @@ Setup_Mod_Dim(
 
   Logical. If `TRUE`, allows OSA residuals for tagging datasets. Default
   `FALSE`.
+
+- bias_correct_pe:
+
+  Which log scale process deviations are centered on minus half their
+  marginal variance, so the process they act on keeps its mean. `"rec"`
+  (default) the recruitment and initial age deviations, which is every
+  model's behaviour before this existed; `"all"` those plus the numbers
+  at age state; `"none"` nothing. The bias ramp (`do_rec_bias_ramp`,
+  `bias_year`) still scales the recruitment part.
+
+- bias_correct_oe:
+
+  Whether a lognormally fit observation is predicted at its mean rather
+  than its median, by subtracting sigma^2/2 from the log prediction. `0`
+  (default) predicts the median, every model's behaviour before this
+  existed.
 
 - verbose:
 

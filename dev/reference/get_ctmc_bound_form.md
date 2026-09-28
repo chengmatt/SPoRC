@@ -17,5 +17,5 @@ get_ctmc_bound_form(x)
 
 ## Value
 
-Character scalar naming the form, or `NA_character_` if `x` is not one
-of the accepted values.
+Character scalar naming the form, or `NA` if `x` is not one of the
+accepted values.

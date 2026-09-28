@@ -154,17 +154,18 @@ populations, <code>list(1:4, 5:10)</code> for a juvenile and an adult block, or
 <dd><p>Structure of the continuous deviations on the
 fixed-effect movement surface. <code>"none"</code> (default), or <code>"iid_"</code>
 followed by the dims they vary over, any of p (population), y (year), seas
-(season), a (age) and s (sex) in any order: <code>"iid_y"</code> is one deviation per
-year and region pair, or per year and region under CTMC movement, shared
+(season), a (age) and s (sex) in any order: <code>"iid_y"</code> is one deviation
+per year and region pair, or per year and region under CTMC movement, shared
 across everything else, and <code>"iid_p_y_seas_a_s"</code> varies by every dim. A
 dim left out shares one deviation across it. They are random effects with
 <code>Movement_cont_pe_pars_spec</code> estimating the sd and
-<code>random = "move_devs"</code> in <code><a href="fit_model.html">fit_model</a></code>. <code>"dsem"</code> instead
-hands their density to the arrows given to <code><a href="Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></code>, one
-series per origin and destination (per region under CTMC, whose deviations
-hold no destination) and per level of every other dim with more than one,
-which it names itself since a deviation shared across a dim cannot be linked;
-<code>move_pe_pars</code> are then read by nothing.</p></dd>
+<code>random = "move_devs"</code> in <code><a href="fit_model.html">fit_model</a></code>. <code>"dsem"</code>
+instead takes their density from the arrows given to
+<code><a href="Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></code>, one series per origin and destination (per
+region under CTMC, whose deviations hold no destination) and per level of
+every other dim with more than one, which it names itself since a deviation
+shared across a dim cannot be linked; <code>move_pe_pars</code> are then read by
+nothing.</p></dd>
 
 
 <dt id="arg-movement-cont-pe-pars-spec">Movement_cont_pe_pars_spec<a class="anchor" aria-label="anchor" href="#arg-movement-cont-pe-pars-spec"></a></dt>

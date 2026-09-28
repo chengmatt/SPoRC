@@ -3,10 +3,9 @@
 Walks every year, season, fleet and, for a population-specific data
 source, every population in one composition data source, and calls
 [`Get_Comp_Likelihoods`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Comp_Likelihoods.md)
-on each cell that is fit. One call stands for what used to be written
-out separately for retained fishery, discarded fishery and survey
-compositions, for ages and for lengths, and again for the regional and
-the population-specific data source of each.
+on each cell that is fit. One call serves the retained fishery,
+discarded fishery and survey compositions, for ages and for lengths, and
+the regional and population-specific data source of each.
 
 ## Usage
 
@@ -114,9 +113,9 @@ get_comp_source_nLL(
 - LenBinMap_fn:
 
   Function `(y, f)` returning the model bin to observed bin map, read
-  only for length compositions. The map varies by neither year nor fleet
-  and takes both so it is read the same way `AgeingErrorArr` is. `NA`
-  leaves the observed bins as the model bins.
+  only for length compositions. The map varies by neither year nor
+  fleet, but takes both arguments so it is read like `AgeingErrorArr`.
+  `NA` leaves the observed bins as the model bins.
 
 - n_pop, n_regions, n_yrs, n_seas, n_fleets, n_sexes:
 
@@ -138,11 +137,11 @@ get_comp_source_nLL(
 
 - do_internal_comp_osa:
 
-  Logical. `TRUE` hands the data source to
+  Logical. `TRUE` sends the data source to
   [`eval_comp_source_osa`](https://chengmatt.github.io/SPoRC/dev/reference/eval_comp_source_osa.md),
   which reads the vectors
   [`pack_comp_source_osa`](https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_source_osa.md)
-  built and the call site registered.
+  built.
 
 - tracked_discrete, tracked_continuous:
 

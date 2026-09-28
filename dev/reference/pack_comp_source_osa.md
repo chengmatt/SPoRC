@@ -72,10 +72,9 @@ pack_comp_source_osa(
 
 - do_internal_comp_osa:
 
-  Logical. `TRUE` hands the data source to
+  Logical. `TRUE` sends the data source to
   [`eval_comp_source_osa`](https://chengmatt.github.io/SPoRC/dev/reference/eval_comp_source_osa.md),
-  which reads the vectors `pack_comp_source_osa` built and the call site
-  registered.
+  which reads the vectors `pack_comp_source_osa` built.
 
 ## Value
 

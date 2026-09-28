@@ -9,8 +9,8 @@ off it, so \\V = \Gamma^{\top}\Gamma\\ is the covariance of the
 innovations in one year. The positions are worked out once, outside of
 the tape, by
 [`get_dsem_cells`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_cells.md);
-this function only writes the numbers into the stored slots, which is
-what lets the matrices be built on the tape.
+this function only writes the numbers into those positions, so the
+matrices can be built on the tape.
 
 ## Usage
 

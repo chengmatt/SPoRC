@@ -1,9 +1,9 @@
-# Hold a natural mortality array across seasons
+# Expand a natural mortality array over seasons
 
 M is an instantaneous rate per year on a
 `[n_pop x n_regions x n_years x n_seas x n_ages x n_sexes]` grid. An
-array without the season dim gets kept at one rate across seasons, which
-is the model it came from. An array that already has it passes through.
+array without the season dim holds one rate for the year, repeated into
+every season here. An array that already has it passes through.
 
 ## Usage
 

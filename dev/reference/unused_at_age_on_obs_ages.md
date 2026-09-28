@@ -1,10 +1,9 @@
 # An unused at-age input moved onto the observed ages
 
 Fits made before the at-age data sources sat on the observed ages hold
-their unused ones on the model ages. With nothing observed there is
-nothing to lose, so a placeholder on the observed ages stands in; a data
-source the fit observes is returned as it is, for the shape checks to
-judge.
+their unused ones on the model ages. Nothing is observed there, so a
+placeholder on the observed ages replaces it. A data source the fit does
+observe is returned unchanged, for the shape checks.
 
 ## Usage
 

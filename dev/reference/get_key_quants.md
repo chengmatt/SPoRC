@@ -39,7 +39,7 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
   Named list passed to
   [`Do_Population_Projection`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md),
   holding `n_proj_yrs`, `n_avg_yrs` (terminal years the demographic
-  inputs are averaged over before being held constant across the
+  inputs are averaged over before being kept constant across the
   projection), `HCR_function` with signature
   `function(x, frp, brp, ...)`, `recruitment_opt` (`"mean_rec"`,
   `"bh_rec"`, `"zero_rec"` or `"inv_gauss"`), and `fmort_opt` (`"input"`

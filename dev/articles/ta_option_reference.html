@@ -82,14 +82,14 @@
     
     
 <p>Every argument the twelve <code>Setup_Mod_*</code> stages accept,
-with its default and its own documentation. Read this one to find out
-what a setting is. Read <a href="t_model_options.html">Overview of Model
-Options</a> to find out why it exists and which to specify.</p>
+with its default and its own documentation. This page is the place to
+look for what a given setting is, whereas <a href="t_model_options.html">Overview of Model Options</a> explains why
+it exists and which ones to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 550 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 552 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
-(15)</option>
+(17)</option>
 <option value="Rec">Rec (65)</option>
 <option value="Biologicals">Biologicals (72)</option>
 <option value="Movement">Movement (23)</option>
@@ -106,7 +106,7 @@ Options</a> to find out why it exists and which to specify.</p>
 Setup_Mod_Dim
 </h3>
 <p class="optref-n">
-15 arguments
+17 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -294,6 +294,25 @@ FALSE.
 <td>
 Logical. If TRUE, allows OSA residuals for tagging datasets. Default
 FALSE.
+</td>
+</tr>
+<tr data-k="bias_correct_pe " rec which log scale process deviations are centered on minus half their marginal variance so the they act keeps its mean. recruitment and initial age is every model behaviour before this existed those plus numbers at state nothing. bias ramp bias_year still scales part.>
+<td><code class="optref-arg">bias_correct_pe</code></td>
+<td><code>"rec"</code></td>
+<td>Which log scale process deviations are centered on minus half their marginal variance, so the process they act on keeps its mean. "rec" (default) the recruitment and initial age deviations, which is every model's behaviour before this existed; "all" those plus the numbers at age state; "none" nothing. The bias ramp (do_rec_bias_ramp, bias_year) still scales the recruitment part.</td>
+</tr>
+<tr data-k="bias_correct_oe 0 whether a lognormally fit observation is predicted at its mean rather than its median, by subtracting sigma^2/2 from the log prediction. 0 (default) predicts the median, every model's behaviour before this existed.">
+<td>
+<code class="optref-arg">bias_correct_oe</code>
+</td>
+<td>
+<code>0</code>
+</td>
+<td>
+Whether a lognormally fit observation is predicted at its mean rather
+than its median, by subtracting sigma^2/2 from the log prediction. 0
+(default) predicts the median, every model’s behaviour before this
+existed.
 </td>
 </tr>
 <tr data-k="store_config false logical. if true, stores configuration of the model. default is false">
@@ -1181,10 +1200,10 @@ K, CV1, CV2 and rho stay at their starting values whatever growth_spec
 says.
 </td>
 </tr>
-<tr data-k="growth_tv_model null time variation of the growth parameters. null (default) holds every parameter constant. otherwise a character vector of length n_gpars in parameter order, or named by parameter, each " none or a varying parameter gets deviation series ln_growth_devs and log sigma in the first data source of growth_pe_pars under density comes from setup_mod_dsem that stays at its start.>
+<tr data-k="growth_tv_model null time variation of the growth parameters. null (default) holds every parameter constant. otherwise a character vector of length n_gpars in parameter order, or named by parameter, each " none or a varying parameter gets deviation series ln_growth_devs and log sigma in the time-varying half of growth_pe_pars under density comes from setup_mod_dsem that stays at its start.>
 <td><code class="optref-arg">growth_tv_model</code></td>
 <td><code>NULL</code></td>
-<td>Time variation of the growth parameters. NULL (default) holds every parameter constant. Otherwise a character vector of length n_gpars in parameter order, or named by parameter, each "none", "iid", "rw", or "dsem". A varying parameter gets a deviation series ln_growth_devs and a log sigma in the first data source of growth_pe_pars; under "dsem" the density comes from Setup_Mod_DSEM and that sigma stays at its start.</td>
+<td>Time variation of the growth parameters. NULL (default) holds every parameter constant. Otherwise a character vector of length n_gpars in parameter order, or named by parameter, each "none", "iid", "rw", or "dsem". A varying parameter gets a deviation series ln_growth_devs and a log sigma in the time-varying half of growth_pe_pars; under "dsem" the density comes from Setup_Mod_DSEM and that sigma stays at its start.</td>
 </tr>
 <tr data-k="growth_tv_years null calendar years the deviations are active in. null (default) for every model year, a vector for every varying parameter, or a list named by parameter. deviations outside the range are kept at zero.">
 <td>
@@ -1216,10 +1235,10 @@ Matrix [n_gpars x 2] of lower and upper bounds on the natural scale,
 required under the logit link.
 </td>
 </tr>
-<tr data-k="growth_tv_sigma_spec " fix holds the process error sds of deviations at their starting values estimates them. both read first data source growth_pe_pars one slot per growth parameter.>
+<tr data-k="growth_tv_sigma_spec " fix holds the process error sds of deviations at their starting values estimates them. both read time-varying half growth_pe_pars one slot per growth parameter.>
 <td><code class="optref-arg">growth_tv_sigma_spec</code></td>
 <td><code>"fix"</code></td>
-<td>"fix" (default) holds the process error sds of the deviations at their starting values, "est" estimates them. Both read the first data source of growth_pe_pars, one slot per growth parameter.</td>
+<td>"fix" (default) holds the process error sds of the deviations at their starting values, "est" estimates them. Both read the time-varying half of growth_pe_pars, one slot per growth parameter.</td>
 </tr>
 <tr data-k="growth_tv_spec " est_all how the deviations are shared across strata in growth_spec vocabulary: or>
 <td><code class="optref-arg">growth_tv_spec</code></td>
@@ -1248,10 +1267,10 @@ parameter, as srvsel_rw_init_sigma for selectivity. Default 5.
 <td><code>"none"</code></td>
 <td>Semi-parametric growth: a year by age surface of deviations multiplying the parametric curve, so the deviations move mean length around it. "none" (default) keeps growth parametric; otherwise "iid", "rw" over years within an age, "3dmarg" or "3dcond" (a Gaussian Markov random field over age, year and cohort on the marginal or conditional variance), "2dar1" (separable over ages and years), or "dsem" (density from Setup_Mod_DSEM, one series per age, which refuses growth_semipar_spec = "est"). The spread at age follows the deviated mean, leaving the CV at age to the parametric part.</td>
 </tr>
-<tr data-k="growth_semipar_spec " fix whether the second data source of growth_pe_pars is estimated or kept at its starting values default deviations themselves are always estimated.>
+<tr data-k="growth_semipar_spec " fix whether the semi-parametric half of growth_pe_pars is estimated or kept at its starting values default deviations themselves are always estimated.>
 <td><code class="optref-arg">growth_semipar_spec</code></td>
 <td><code>"fix"</code></td>
-<td>Whether the second data source of growth_pe_pars is estimated ("est") or kept at its starting values ("fix", default). The deviations themselves are always estimated.</td>
+<td>Whether the semi-parametric half of growth_pe_pars is estimated ("est") or kept at its starting values ("fix", default). The deviations themselves are always estimated.</td>
 </tr>
 <tr data-k="growth_semipar_ages null ages the deviations are estimated over, as ages rather than indices. null (default) uses every age; ages outside the set stay at zero.">
 <td>
@@ -1640,10 +1659,10 @@ ones concentrate toward equal movement. Read when Use_Movement_Prior =
 <td><code>"constant"</code></td>
 <td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks and cont_vary_movement for residual annual variation. All are ignored when move_type = 1.</td>
 </tr>
-<tr data-k="cont_vary_movement " none structure of the continuous deviations on fixed-effect movement surface. or followed by dims they vary over any p y seas a and s in order: is one deviation per year region pair under ctmc shared across everything else varies every dim. dim left out shares it. are random effects with movement_cont_pe_pars_spec estimating sd fit_model. instead hands their density to arrows given setup_mod_dsem series origin destination whose hold no level other more than which it names itself since cannot be linked move_pe_pars then read nothing.>
+<tr data-k="cont_vary_movement " none structure of the continuous deviations on fixed-effect movement surface. or followed by dims they vary over any p y seas a and s in order: is one deviation per year region pair under ctmc shared across everything else varies every dim. dim left out shares it. are random effects with movement_cont_pe_pars_spec estimating sd fit_model. instead takes their density from arrows given to setup_mod_dsem series origin destination whose hold no level other more than which it names itself since cannot be linked move_pe_pars then read nothing.>
 <td><code class="optref-arg">cont_vary_movement</code></td>
 <td><code>"none"</code></td>
-<td>Structure of the continuous deviations on the fixed-effect movement surface. "none" (default), or "iid_" followed by the dims they vary over, any of p (population), y (year), seas (season), a (age) and s (sex) in any order: "iid_y" is one deviation per year and region pair, or per year and region under CTMC movement, shared across everything else, and "iid_p_y_seas_a_s" varies by every dim. A dim left out shares one deviation across it. They are random effects with Movement_cont_pe_pars_spec estimating the sd and random = "move_devs" in fit_model. "dsem" instead hands their density to the arrows given to Setup_Mod_DSEM, one series per origin and destination (per region under CTMC, whose deviations hold no destination) and per level of every other dim with more than one, which it names itself since a deviation shared across a dim cannot be linked; move_pe_pars are then read by nothing.</td>
+<td>Structure of the continuous deviations on the fixed-effect movement surface. "none" (default), or "iid_" followed by the dims they vary over, any of p (population), y (year), seas (season), a (age) and s (sex) in any order: "iid_y" is one deviation per year and region pair, or per year and region under CTMC movement, shared across everything else, and "iid_p_y_seas_a_s" varies by every dim. A dim left out shares one deviation across it. They are random effects with Movement_cont_pe_pars_spec estimating the sd and random = "move_devs" in fit_model. "dsem" instead takes their density from the arrows given to Setup_Mod_DSEM, one series per origin and destination (per region under CTMC, whose deviations hold no destination) and per level of every other dim with more than one, which it names itself since a deviation shared across a dim cannot be linked; move_pe_pars are then read by nothing.</td>
 </tr>
 <tr data-k="movement_cont_pe_pars_spec " none estimation of the process error variance for cont_vary_movement deviations. creates no parameters and pairs with holds at its starting value estimates one shared n_regions n_seas n_ages n_sexes independently.>
 <td><code class="optref-arg">Movement_cont_pe_pars_spec</code></td>
@@ -4159,10 +4178,10 @@ Use_fish_q_prior = 1.
 <td><code>rep("est", input_list$data$n_fish_fleets)</code></td>
 <td>Character vector [n_fish_fleets] of how catchability is obtained. "est" (default) estimates ln_fish_q, "arith" concentrates it out as the ratio of mean observed to mean predicted index, and "geo" does the same on the log scale as exp(mean(log(obs) - log(pred))). Both analytic forms use the years with observations only and fix that fleet's ln_fish_q whatever fish_q_spec says. The solve runs within each fish_q_blocks block, so a blocked catchability gets one solved value per block.</td>
 </tr>
-<tr data-k="fish_q_model null character vector [n_fish_fleets] of the process error on annual catchability deviations: " none or which hands the series to setup_mod_dsem. catchability is then q_ a fleet with deviations cannot also have fish_q_blocks an analytically solved fish_q_type.>
+<tr data-k="fish_q_model null character vector [n_fish_fleets] of the process error on annual catchability deviations: " none or which passes the series to setup_mod_dsem. catchability is then q_ a fleet with deviations cannot also have fish_q_blocks an analytically solved fish_q_type.>
 <td><code class="optref-arg">fish_q_model</code></td>
 <td><code>NULL</code></td>
-<td>Character vector [n_fish_fleets] of the process error on annual catchability deviations: "none" (default), "iid", "rw", "ar1" or "dsem", which hands the series to Setup_Mod_DSEM. Catchability is then \exp(\ln q_{r,b,f} + \epsilon_{r,y,f}). A fleet with deviations cannot also have fish_q_blocks or an analytically solved fish_q_type.</td>
+<td>Character vector [n_fish_fleets] of the process error on annual catchability deviations: "none" (default), "iid", "rw", "ar1" or "dsem", which passes the series to Setup_Mod_DSEM. Catchability is then \exp(\ln q_{r,b,f} + \epsilon_{r,y,f}). A fleet with deviations cannot also have fish_q_blocks or an analytically solved fish_q_type.</td>
 </tr>
 <tr data-k="sigma_fish_q_spec " est_all sharing string for the deviation standard over region and fleet: or>
 <td><code class="optref-arg">sigma_fish_q_spec</code></td>
@@ -4732,10 +4751,10 @@ components to suppress under the 3D GMRF or 2D AR1 forms. See
 do_sel_pe_pars_mapping.
 </td>
 </tr>
-<tr data-k="srv_q_model null character vector [n_srv_fleets] of the process error on annual catchability deviations: " none or which hands the series to setup_mod_dsem. catchability is then q_ a fleet with deviations cannot also have srv_q_blocks an analytically solved srv_q_type.>
+<tr data-k="srv_q_model null character vector [n_srv_fleets] of the process error on annual catchability deviations: " none or which passes the series to setup_mod_dsem. catchability is then q_ a fleet with deviations cannot also have srv_q_blocks an analytically solved srv_q_type.>
 <td><code class="optref-arg">srv_q_model</code></td>
 <td><code>NULL</code></td>
-<td>Character vector [n_srv_fleets] of the process error on annual catchability deviations: "none" (default), "iid", "rw", "ar1" or "dsem", which hands the series to Setup_Mod_DSEM. Catchability is then \exp(\ln q_{r,b,f} + \epsilon_{r,y,f}). A fleet with deviations cannot also have srv_q_blocks or an analytically solved srv_q_type.</td>
+<td>Character vector [n_srv_fleets] of the process error on annual catchability deviations: "none" (default), "iid", "rw", "ar1" or "dsem", which passes the series to Setup_Mod_DSEM. Catchability is then \exp(\ln q_{r,b,f} + \epsilon_{r,y,f}). A fleet with deviations cannot also have srv_q_blocks or an analytically solved srv_q_type.</td>
 </tr>
 <tr data-k="sigma_srv_q_spec " est_all sharing string for the deviation standard over region and fleet: or>
 <td><code class="optref-arg">sigma_srv_q_spec</code></td>
@@ -5032,10 +5051,10 @@ covariate is not observed. NULL for a dsem among deviation series alone.
 <td><code>NULL</code></td>
 <td>Named character vector, one entry per covariate, the distribution of its observations given the grid cells. "fixed" (default) takes an observed year as the cell itself, known, and leaves a missing year latent. "normal" leaves every year latent, each observation normal about the cell with sd exp(ln_dsem_obs_sd). "bernoulli" (or "binomial") takes 0/1 observations with the cell the logit of the probability; "poisson" takes counts with the cell the log mean; "gamma" takes positive values with the cell the log mean and exp(ln_dsem_obs_sd) the CV, shape 1/CV^2; "lognormal" takes positive values with the cell the log median and exp(ln_dsem_obs_sd) the log-scale sd; "tweedie" takes non-negative values including zeros with the cell the log mean, exp(ln_dsem_obs_sd) the dispersion and logit_dsem_tweedie_p the power as 1 + \mathrm{plogis}(\cdot), in (1, 2) and starting at 1.5; and "gaussian_fixed_sd" is normal about the cell with a known sd per observed year from dsem_fixed_sd. The names "gaussian" and "Gamma" are accepted as well. Under a family whose link is not the identity the arrows, the mean under dsem_mu_spec and the grid are all on the link scale, and every latent cell starts at the series mean. The sd and power parameters are mapped off for the families with none.</td>
 </tr>
-<tr data-k="dsem_link null optional named character vector, one entry per covariate, the link from the cell to the observation's mean: " identity or defaults to each family own: for fixed normal and the fixed-sd logit bernoulli log rest. a link applies whatever so poisson under can be handed negative mean.>
+<tr data-k="dsem_link null optional named character vector, one entry per covariate, the link from the cell to the observation's mean: " identity or defaults to each family own: for fixed normal and the fixed-sd logit bernoulli log rest. a link applies whatever so poisson under can end up with negative mean.>
 <td><code class="optref-arg">dsem_link</code></td>
 <td><code>NULL</code></td>
-<td>Optional named character vector, one entry per covariate, the link from the cell to the observation's mean: "identity", "log", "logit" or "cloglog". Defaults to each family's own: identity for fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A link applies whatever the family, so a Poisson under the identity can be handed a negative mean.</td>
+<td>Optional named character vector, one entry per covariate, the link from the cell to the observation's mean: "identity", "log", "logit" or "cloglog". Defaults to each family's own: identity for fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A link applies whatever the family, so a Poisson under the identity can end up with a negative mean.</td>
 </tr>
 <tr data-k="dsem_fixed_sd null data frame with a year column and one column per " gaussian_fixed_sd covariate holding that year known sd. needed on every observed of such a covariate.>
 <td><code class="optref-arg">dsem_fixed_sd</code></td>

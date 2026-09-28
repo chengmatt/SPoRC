@@ -81,13 +81,14 @@
 
     
     
-<p>This document is for people editing the <code>SPoRC</code> codebase:
-contributors, successors, future you. The goal is to keep the package
-navigable as it grows, especially as spatial model development adds more
-moving parts. Update it whenever the pipeline below changes shape (a new
-<code>Setup_Mod_*</code> stage, a new section of the objective function,
-a new post fit diagnostic). A stale architecture document should be
-treated as a bug.</p>
+<p>This document is for people editing the <code>SPoRC</code> codebase,
+whether they are current contributors or picking it up later. Its
+purpose is to keep the package navigable as it grows, particularly as
+spatial model development adds further moving parts. It should be
+updated whenever the pipeline below changes shape, for example with a
+new <code>Setup_Mod_*</code> stage, a new section of the objective
+function, or a new post fit diagnostic. A document that no longer
+matches the code will mislead the next person to read it.</p>
 <div class="section level2">
 <h2 id="mental-model">Mental model<a class="anchor" aria-label="anchor" href="#mental-model"></a>
 </h2>
@@ -142,9 +143,9 @@ diagnostics, reference points, plotting and resampling routines.</li>
 returns it with more keys filled in. This is the central structure of
 the package: setup functions are pipeline stages that thread one growing
 list through each other, not independent builders.</p>
-<p>Order matters. Later stages read dimensions
-(<code>input_list$data$n_regions</code> and friends) set by earlier
-ones, and default arguments frequently reference
+<p>The order of these stages matters, because later stages read
+dimensions (<code>input_list$data$n_regions</code> and friends) set by
+earlier ones, and default arguments frequently reference
 <code>input_list$data$...</code> in their own definitions. See
 <code><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec()</a></code>’s defaults for an example.</p>
 <p>At the end of the chain <code>input_list$data</code>,
@@ -1856,7 +1857,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 203 test files in total.</p>
+<p>That is 204 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

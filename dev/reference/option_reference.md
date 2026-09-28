@@ -1,9 +1,9 @@
 # Every argument the setup stages accept
 
 Assembled from [`formals()`](https://rdrr.io/r/base/formals.html) and
-the package's own Rd, so it covers the API as it currently stands rather
-than as it stood when someone last wrote it down. Regenerating the
-vignette regenerates this.
+the package's own Rd, so it covers every argument as the package
+currently defines them, not as someone last wrote them down.
+Regenerating the vignette regenerates this.
 
 ## Usage
 

@@ -156,12 +156,12 @@ mean. The sd and power parameters are mapped off for the families with none.</p>
 
 
 <dt id="arg-dsem-link">dsem_link<a class="anchor" aria-label="anchor" href="#arg-dsem-link"></a></dt>
-<dd><p>Optional named character vector, one entry per covariate, the
-link from the cell to the observation's mean: <code>"identity"</code>, <code>"log"</code>,
-<code>"logit"</code> or <code>"cloglog"</code>. Defaults to each family's own: identity for
-fixed, normal and the fixed-sd normal, logit for bernoulli, log for the rest. A
-link applies whatever the family, so a Poisson under the identity
-can be handed a negative mean.</p></dd>
+<dd><p>Optional named character vector, one entry per covariate,
+the link from the cell to the observation's mean: <code>"identity"</code>,
+<code>"log"</code>, <code>"logit"</code> or <code>"cloglog"</code>. Defaults to each family's
+own: identity for fixed, normal and the fixed-sd normal, logit for
+bernoulli, log for the rest. A link applies whatever the family, so a
+Poisson under the identity can end up with a negative mean.</p></dd>
 
 
 <dt id="arg-dsem-fixed-sd">dsem_fixed_sd<a class="anchor" aria-label="anchor" href="#arg-dsem-fixed-sd"></a></dt>
@@ -216,9 +216,10 @@ checks the starting values and refuses.</p></dd>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>A linked recruitment cell is a random effect and takes the full lognormal
-correction whenever its own penalty would take one: its mean drops by half its
-variance under the arrows, that variance given the covariate values the model is
-handed (<code><a href="get_dsem_margvar.html">get_dsem_margvar</a></code>), so \(R_0\) scales mean recruitment
+correction whenever its own penalty would take one: its mean drops by half
+its variance under the arrows, that variance conditional on the covariate
+values the model already knows (<code><a href="get_dsem_margvar.html">get_dsem_margvar</a></code>), so
+\(R_0\) scales mean recruitment
 with or without the arrows. A ramp at zero means none, and a nonzero ramp on a
 linked year is refused.</p>
     </div>

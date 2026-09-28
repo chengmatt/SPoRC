@@ -1,6 +1,6 @@
 # Build a factor map from an "est_all"/"fix"/"est_shared\_..." spec string
 
-Convenience wrapper around
+Calls
 [`build_pe_map`](https://chengmatt.github.io/SPoRC/dev/reference/build_pe_map.md)
 for the common case of a single spec string (as used by e.g.
 `sigmaC_spec`, `sigmaF_spec`) governing a fixed-effect array with no

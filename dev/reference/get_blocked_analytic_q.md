@@ -2,7 +2,7 @@
 
 A catchability that is a pure scaling nuisance can be concentrated out
 of the likelihood instead of estimated. The solve is done separately
-WITHIN each catchability time block, so a blocked catchability gets one
+within each catchability time block, so a blocked catchability gets one
 solved value per block. A single block, which is the default, reduces to
 one value for the whole series.
 

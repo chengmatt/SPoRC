@@ -26,7 +26,9 @@ Setup_Sim_Dim(
   n_srv_fleets,
   seasdur = if (n_seas == 1) 1 else rep(1/n_seas, n_seas),
   run_feedback = FALSE,
-  feedback_start_yr = NULL
+  feedback_start_yr = NULL,
+  bias_correct_pe = "rec",
+  bias_correct_oe = 0
 )
 ```
 

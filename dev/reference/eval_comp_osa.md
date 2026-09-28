@@ -104,9 +104,9 @@ eval_comp_osa(
 
   Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed bins
   each fleet is fitted over, or `NULL` (default) for all bins. Must be
-  the array handed to
+  the array given to
   [`pack_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.md),
-  since the strides walked here are sized on it.
+  since the positions read here are sized on it.
 
 - family:
 

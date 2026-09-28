@@ -1,4 +1,4 @@
-# Evaluate one age-disaggregated data source
+# Evaluate age-disaggregated data source
 
 Computes the at-age negative log likelihood for every fleet in one data
 source. Observations arrive already transformed by
@@ -26,7 +26,8 @@ get_at_age_source_nLL(
   us_pars = NULL,
   aa_type = 1,
   seas_agg = 0,
-  ageing_error = NULL
+  ageing_error = NULL,
+  bias_correct_oe = 0
 )
 ```
 

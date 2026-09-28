@@ -84,8 +84,8 @@ pack_comp_osa(
 
   Optional `[n_obs_bins x n_fleets]` 0/1 array naming the observed bins
   each fleet is fitted over, or `NULL` (default) for all bins. A
-  restricted fleet packs a shorter block, and `eval_comp_osa` must be
-  handed the same array so its strides stay in step.
+  restricted fleet packs a shorter block, so `eval_comp_osa` must be
+  given the same array.
 
 ## Value
 

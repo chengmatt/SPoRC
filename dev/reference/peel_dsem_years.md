@@ -3,8 +3,8 @@
 A retrospective peel drops years from every array, and the dsem has to
 follow: the arrows do not change, but the cells they land on do. A
 linked series' cells move whenever its array has a dim after the year
-one, so they are rebuilt from the index that series sits at rather than
-truncated.
+dim, so they are rebuilt from where that series sits rather than
+trimmed.
 
 ## Usage
 

@@ -112,9 +112,9 @@ eval_comp_source_osa(
 - LenBinMap_fn:
 
   Function `(y, f)` returning the model bin to observed bin map, read
-  only for length compositions. The map varies by neither year nor fleet
-  and takes both so it is read the same way `AgeingErrorArr` is. `NA`
-  leaves the observed bins as the model bins.
+  only for length compositions. The map varies by neither year nor
+  fleet, but takes both arguments so it is read like `AgeingErrorArr`.
+  `NA` leaves the observed bins as the model bins.
 
 - n_pop, n_regions, n_yrs, n_seas, n_fleets, n_sexes:
 

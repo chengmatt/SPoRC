@@ -2,8 +2,8 @@
 
 An at-age observation may be lognormal or normal, and its standard
 deviation may come from an estimated parameter, from reported standard
-errors, or from both. This is the parity the aggregated index data
-sources already have, stated per fleet.
+errors, or from both. These are the same choices the aggregated index
+data sources already allow, stated here for each fleet.
 
 ## Usage
 

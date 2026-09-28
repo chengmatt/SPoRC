@@ -100,7 +100,7 @@ Setup_Mod_Movement(
   `Movement_cont_pe_pars_spec` estimating the sd and
   `random = "move_devs"` in
   [`fit_model`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md).
-  `"dsem"` instead hands their density to the arrows given to
+  `"dsem"` instead takes their density from the arrows given to
   [`Setup_Mod_DSEM`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md),
   one series per origin and destination (per region under CTMC, whose
   deviations hold no destination) and per level of every other dim with

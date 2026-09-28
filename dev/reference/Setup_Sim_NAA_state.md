@@ -89,8 +89,7 @@ Setup_Sim_NAA_state(
   operating model reproduce that fit's numbers at age rather than a
   fresh realization of the same process. The year extent says how many
   leading years are held: give the fitted years and any year beyond them
-  is still drawn, which is what a closed loop running past the data
-  needs.
+  is still drawn, as a closed loop running past the data needs.
 
 ## Value
 
@@ -100,8 +99,8 @@ Setup_Sim_NAA_state(
 
 Arguments mirror `Setup_Mod_Biologicals`'s state-space options so a
 simulated population and the model fitted to it are written the same
-way, which is what makes a self test a like-for-like comparison rather
-than a translation.
+way, so a self test compares like with like rather than one translation
+against another.
 
 ## See also
 

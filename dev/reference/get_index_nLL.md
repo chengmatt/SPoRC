@@ -13,7 +13,15 @@ likelihood would treat correlated residuals as independent information.
 ## Usage
 
 ``` r
-get_index_nLL(obs, pred, sigma, like_type, Sigma = NULL, const = 0)
+get_index_nLL(
+  obs,
+  pred,
+  sigma,
+  like_type,
+  Sigma = NULL,
+  const = 0,
+  bias_correct_oe = 0
+)
 ```
 
 ## Arguments

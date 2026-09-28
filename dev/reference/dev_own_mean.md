@@ -2,9 +2,9 @@
 
 The center a penalty takes when the level of the series is left to the
 rest of the model rather than fixed at the bias-corrected mean.
-Penalizing about it constrains only the spread, which is what a sum of
-squares about the series' own mean amounts to. Fewer than two penalized
-cells leaves no spread to measure, so the center falls back to zero.
+Penalizing about it constrains only the spread, as a sum of squares
+about the series' own mean does. Fewer than two penalized cells leaves
+no spread to measure, so the center falls back to zero.
 
 ## Usage
 

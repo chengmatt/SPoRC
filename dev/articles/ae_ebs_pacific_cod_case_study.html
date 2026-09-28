@@ -238,13 +238,14 @@ weight-length relationship rather than supplied as data.</p>
 parameters vary and how, with <code>growth_tv_years</code> giving each
 its own active years. <code>growth_tv_link = "logit"</code> makes each
 deviation an offset inside the parameter’s bounds.
-<code>growth_tv_type = "cohort"</code> has size at age forward cohort by
-cohort. The deviations’ standard deviations live in the first data
-source of <code>growth_pe_pars</code>, one slot per growth parameter in
-the order <code>L1</code>, <code>L2</code>, <code>K</code>,
-<code>CV1</code>, <code>CV2</code>, <code>rho</code>, with a placeholder
-in the four slots that do not vary. The second data source belongs to
-the semi-parametric surface and is unread here.</p>
+<code>growth_tv_type = "cohort"</code> advances size at age cohort by
+cohort, so that each cohort grows from the size it has already reached.
+The deviations’ standard deviations live in the time-varying half of
+<code>growth_pe_pars</code>, one slot per growth parameter in the order
+<code>L1</code>, <code>L2</code>, <code>K</code>, <code>CV1</code>,
+<code>CV2</code>, <code>rho</code>, with a placeholder in the four slots
+that do not vary. The semi-parametric half of the array is unread
+here.</p>
 <p>Maturity at age is taken from the assessment rather than modeled,
 because maturity is length based and fixed there. <code>LenBinMap</code>
 maps the 121 population bins onto the 24 the compositions are recorded

@@ -6,7 +6,7 @@ across regions, years, fleets, and sexes for a single selectivity type,
 and mean standardizes the result where the time-varying or
 non-parametric form calls for it. Total fishery, retention, and survey
 selectivity all share this code path and differ only in which data
-arrays are handed in.
+arrays are passed in.
 
 ## Usage
 

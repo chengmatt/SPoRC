@@ -471,7 +471,8 @@ from the assessment’s coefficients of variation by
 <span>  fishsel_pe_pars_spec <span class="op">=</span> <span class="st">"fix"</span>,</span>
 <span>  fish_q_spec <span class="op">=</span> <span class="st">"fix"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>Three things are named here.</p>
+<p>Three settings in this call deserve comment, namely the selectivity
+plateau, the sex offset and the deviation penalties.</p>
 <p><code>_NSelBins_17</code> is the plateau. Bins beyond 17 are kept at
 bin 17’s value rather than evaluated through the logistic, which is the
 assessment’s <code>nselages</code>.</p>

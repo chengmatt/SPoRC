@@ -288,9 +288,9 @@ L1, L2, K, CV1, CV2 and rho stay at their starting values whatever
 (default) holds every parameter constant. Otherwise a character vector of
 length <code>n_gpars</code> in parameter order, or named by parameter, each
 <code>"none"</code>, <code>"iid"</code>, <code>"rw"</code>, or <code>"dsem"</code>. A varying parameter
-gets a deviation series <code>ln_growth_devs</code> and a log sigma in the first data
-source of <code>growth_pe_pars</code>; under <code>"dsem"</code> the density comes from
-<code><a href="Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></code> and that sigma stays at its start.</p></dd>
+gets a deviation series <code>ln_growth_devs</code> and a log sigma in the
+time-varying half of <code>growth_pe_pars</code>; under <code>"dsem"</code> the density
+comes from <code><a href="Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></code> and that sigma stays at its start.</p></dd>
 
 
 <dt id="arg-growth-tv-years">growth_tv_years<a class="anchor" aria-label="anchor" href="#arg-growth-tv-years"></a></dt>
@@ -312,9 +312,10 @@ the natural scale, required under the logit link.</p></dd>
 
 
 <dt id="arg-growth-tv-sigma-spec">growth_tv_sigma_spec<a class="anchor" aria-label="anchor" href="#arg-growth-tv-sigma-spec"></a></dt>
-<dd><p><code>"fix"</code> (default) holds the process error sds of
-the deviations at their starting values, <code>"est"</code> estimates them. Both read
-the first data source of <code>growth_pe_pars</code>, one slot per growth parameter.</p></dd>
+<dd><p><code>"fix"</code> (default) holds the process error
+sds of the deviations at their starting values, <code>"est"</code> estimates them.
+Both read the time-varying half of <code>growth_pe_pars</code>, one slot per
+growth parameter.</p></dd>
 
 
 <dt id="arg-growth-tv-spec">growth_tv_spec<a class="anchor" aria-label="anchor" href="#arg-growth-tv-spec"></a></dt>
@@ -353,7 +354,7 @@ the deviated mean, leaving the CV at age to the parametric part.</p></dd>
 
 
 <dt id="arg-growth-semipar-spec">growth_semipar_spec<a class="anchor" aria-label="anchor" href="#arg-growth-semipar-spec"></a></dt>
-<dd><p>Whether the second data source of
+<dd><p>Whether the semi-parametric half of
 <code>growth_pe_pars</code> is estimated (<code>"est"</code>) or kept at its starting
 values (<code>"fix"</code>, default). The deviations themselves are always estimated.</p></dd>
 
@@ -597,19 +598,19 @@ only by <code>NAA_re_season = "us"</code>.</p></dd>
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Optional starting values by name. <code>ln_M</code> is dimensioned
-<code>[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks ×
-n_sexblks]</code> and defaults to <code>log(0.5)</code>; a 5d array from an older script
-works when there is one season block. <code>ln_growth_pars</code> is <code>[n_pop ×
-n_regions × n_sexes × n_gpars]</code> in the order <code>L1, L2, K, CV1, CV2</code> and
-<code>rho</code>, defaulting to the ends of the length bins with a rate of
-<code>0.15</code> and CVs of <code>0.1</code>, so supply your own for any real model.
-<code>growth_pe_pars</code> is <code>[n_pop × n_regions × max(4, n_ages, n_gpars) ×
-n_sexes × 2]</code>: the first data source holds one log sigma per growth parameter
-for the time-varying deviations, the second the semi-parametric surface's
-correlations by age, year and cohort in slots one to three with a log scale in
-slot four, or one log sigma per age under <code>"iid"</code> and <code>"rw"</code>. Slots a
-form does not read are mapped off. All <code>...</code> arguments are ignored when
-<code>M_spec = "fix"</code>.</p></dd>
+<code>[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks × n_sexblks]</code>
+and defaults to <code>log(0.5)</code>; a 5d array from an older script works when
+there is one season block. <code>ln_growth_pars</code> is
+<code>[n_pop × n_regions × n_sexes × n_gpars]</code> in the order
+<code>L1, L2, K, CV1, CV2</code> and <code>rho</code>, defaulting to the ends of the
+length bins with a rate of <code>0.15</code> and CVs of <code>0.1</code>, so supply your
+own for any real model. <code>growth_pe_pars</code> is
+<code>[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]</code>: the
+time-varying half holds one log sigma per growth parameter, and the
+semi-parametric half holds the surface's correlations by age, year and
+cohort in slots one to three with a log scale in slot four, or one log sigma
+per age under <code>"iid"</code> and <code>"rw"</code>. Slots a form does not read are
+mapped off. All <code>...</code> arguments are ignored when <code>M_spec = "fix"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

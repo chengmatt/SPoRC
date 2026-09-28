@@ -147,7 +147,7 @@ Setup_Mod_Srvsel_and_Q(
 
   Character vector `[n_srv_fleets]` of the process error on annual
   catchability deviations: `"none"` (default), `"iid"`, `"rw"`, `"ar1"`
-  or `"dsem"`, which hands the series to
+  or `"dsem"`, which passes the series to
   [`Setup_Mod_DSEM`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md).
   Catchability is then \\\exp(\ln q\_{r,b,f} + \epsilon\_{r,y,f})\\. A
   fleet with deviations cannot also have `srv_q_blocks` or an

@@ -9,7 +9,15 @@ estimation bias.
 ## Usage
 
 ``` r
-draw_index_obs(true, se, like_type = 0, d = NULL, lambda = NULL, u = NULL)
+draw_index_obs(
+  true,
+  se,
+  like_type = 0,
+  d = NULL,
+  lambda = NULL,
+  u = NULL,
+  bias_correct_oe = 0
+)
 ```
 
 ## Arguments

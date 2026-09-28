@@ -1,15 +1,15 @@
-# The variance of each grid cell given the cells the model is handed
+# The variance of each grid cell given the cells the model already knows
 
 A lognormal deviation with variance \\v\\ has \\E\[\exp(x)\] =
 \exp(\mu + v/2)\\, so recruitment keeps its mean at \\R_0\\ only if the
 cell's mean drops by \\v/2\\. The \\v\\ that does it is the cell's
-variance given what the model is handed (the observed covariate values,
-and the rows before a series starts), not the sd line's square: under a
-self path \\\rho\\ a settled year has \\\sigma^2 / (1 - \rho^2)\\, and
-every lagged path adds to it. For unknown cells \\U\\ and known cells
-\\K\\, \\\mathrm{Var}(x_U \mid x_K) = (Q\_{UU})^{-1}\\, the inverse of
-the unknown block of the precision, so each cell's variance is a
-diagonal entry of that inverse.
+variance conditional on what the model already knows (the observed
+covariate values, and the years before a series starts), not the sd
+line's square: under a self path \\\rho\\ a settled year has \\\sigma^2
+/ (1 - \rho^2)\\, and every lagged path adds to it. For unknown cells
+\\U\\ and known cells \\K\\, \\\mathrm{Var}(x_U \mid x_K) =
+(Q\_{UU})^{-1}\\, the inverse of the unknown block of the precision, so
+each cell's variance is a diagonal entry of that inverse.
 
 ## Usage
 
@@ -44,7 +44,7 @@ get_dsem_margvar(
 - known_cell:
 
   Logical over the `n_grid_yrs * n_series` cells (years within series),
-  `TRUE` where the value is handed to the model.
+  `TRUE` where the model already knows the value.
 
 ## Value
 
@@ -53,7 +53,7 @@ Matrix `[year, series]` of variances, zero on the known cells.
 ## Details
 
 A solved series (an sd of zero) has no row of its own in the precision.
-Its cells move with whatever sets them, which
+Its cells move with whatever sets them, and
 [`get_dsem_Q_oo`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo.md)
-folds into the rows that do keep an innovation, so the correction reads
-the same precision as the density.
+folds that into the rows that keep an innovation, so the correction and
+the density use the same precision.

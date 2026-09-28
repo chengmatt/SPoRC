@@ -1,7 +1,7 @@
 # Call `RTMB::oneStepPredict()` with the model's TMB DLL resolved
 
-Wrapper used by the internal OSA runners, which works around two quirks
-of [`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html):
+Used by the internal OSA routines, and works around two quirks of
+[`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html):
 
 - Its `parallel` branch calls
   [`TMB::openmp()`](https://rdrr.io/pkg/TMB/man/openmp.html) without a

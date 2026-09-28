@@ -18,8 +18,8 @@ parse_seas_agg_spec(spec, arg_name, n_fleets)
 
   Character vector of length `n_fleets`, or a single value given to
   every fleet. The resolved codes `0` and `1` are also taken, so a
-  fitted model's settings can be handed straight back to an operating
-  model. `NULL` leaves every fleet at `"spltSeas"`.
+  fitted model's settings can go straight back into an operating model.
+  `NULL` leaves every fleet at `"spltSeas"`.
 
 - arg_name:
 

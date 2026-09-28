@@ -91,6 +91,8 @@ model configuration options.</p>
 <span>  n_proj_yrs_devs <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  do_internal_comp_osa <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  do_internal_conv_tag_osa <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  bias_correct_pe <span class="op">=</span> <span class="st">"rec"</span>,</span>
+<span>  bias_correct_oe <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  store_config <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -178,6 +180,20 @@ Default <code>FALSE</code>.</p></dd>
 <dt id="arg-do-internal-conv-tag-osa">do_internal_conv_tag_osa<a class="anchor" aria-label="anchor" href="#arg-do-internal-conv-tag-osa"></a></dt>
 <dd><p>Logical. If <code>TRUE</code>, allows OSA residuals for tagging datasets.
 Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-bias-correct-pe">bias_correct_pe<a class="anchor" aria-label="anchor" href="#arg-bias-correct-pe"></a></dt>
+<dd><p>Which log scale process deviations are centered on minus half their
+marginal variance, so the process they act on keeps its mean. <code>"rec"</code> (default) the
+recruitment and initial age deviations, which is every model's behaviour before this existed;
+<code>"all"</code> those plus the numbers at age state; <code>"none"</code> nothing. The bias ramp
+(<code>do_rec_bias_ramp</code>, <code>bias_year</code>) still scales the recruitment part.</p></dd>
+
+
+<dt id="arg-bias-correct-oe">bias_correct_oe<a class="anchor" aria-label="anchor" href="#arg-bias-correct-oe"></a></dt>
+<dd><p>Whether a lognormally fit observation is predicted at its mean
+rather than its median, by subtracting sigma^2/2 from the log prediction. <code>0</code> (default)
+predicts the median, every model's behaviour before this existed.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>

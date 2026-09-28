@@ -112,7 +112,7 @@ Setup_Mod_DSEM(
   `"logit"` or `"cloglog"`. Defaults to each family's own: identity for
   fixed, normal and the fixed-sd normal, logit for bernoulli, log for
   the rest. A link applies whatever the family, so a Poisson under the
-  identity can be handed a negative mean.
+  identity can end up with a negative mean.
 
 - dsem_fixed_sd:
 
@@ -168,8 +168,8 @@ Setup_Mod_DSEM(
 
 A linked recruitment cell is a random effect and takes the full
 lognormal correction whenever its own penalty would take one: its mean
-drops by half its variance under the arrows, that variance given the
-covariate values the model is handed
+drops by half its variance under the arrows, that variance conditional
+on the covariate values the model already knows
 ([`get_dsem_margvar`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_margvar.md)),
 so \\R_0\\ scales mean recruitment with or without the arrows. A ramp at
 zero means none, and a nonzero ramp on a linked year is refused.

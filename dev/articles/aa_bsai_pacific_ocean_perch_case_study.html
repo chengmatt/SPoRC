@@ -87,8 +87,8 @@
 <p>This case study reproduces the 2024 Bering Sea and Aleutian Islands
 Pacific ocean perch assessment in <code>SPoRC</code>. Every structural
 choice below follows the assessment rather than <code>SPoRC</code>’s
-defaults. It is the most structurally involved of the five rockfish case
-studies: two survey fleets, a first year equilibrium under a fixed
+defaults. Of the five rockfish case studies this one has the most
+structure: two survey fleets, a first year equilibrium under a fixed
 historical fishing mortality, and a bicubic spline fishery selectivity
 surface over year and age.</p>
 <table class="table">
@@ -498,7 +498,7 @@ by the same factor, which leaves their product invariant, but its
 <em>internal</em> selectivity is the raw exponentiated surface. Putting
 both sides on the reported convention makes this the sharpest single
 check in the bridge: it covers the node orientation, the 1964 edge hold
-and the age 40 edge hold across all
+and the age 40 edge hold, across all
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>65</mn><mo>×</mo><mn>38</mn></mrow><annotation encoding="application/x-tex">65\times38</annotation></semantics></math>
 cells at once.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
@@ -509,13 +509,15 @@ numbers at age              max pct diff: 3.4e-04
 spawning biomass            max pct diff: 4.1e-04
 recruitment                 max pct diff: 3.1e-04
 total biomass               max pct diff: 2.5e-04</code></pre>
-<p>Total biomass needs a note. <code>SPoRC</code>’s reported
-<code>Total_Biom</code> is spawning time biomass and holds the
+<p>Total biomass requires one caveat when the two models are compared.
+<code>SPoRC</code>’s reported <code>Total_Biom</code> is spawning time
+biomass and holds the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>−</mi><mi>Z</mi><msup><mi>t</mi><mtext mathvariant="normal">spawn</mtext></msup><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\exp(-Z t^{\text{spawn}})</annotation></semantics></math>
-discount, while the assessment reports January 1 biomass. The like for
-like quantity is rebuilt from numbers at age, which is what the figure
-above compares. Comparing the two reported quantities directly instead
-is a 6 percent difference that says nothing about the model.</p>
+discount, whereas the assessment reports January 1 biomass. The like for
+like quantity is therefore rebuilt from numbers at age, which is what
+the figure above compares, since comparing the two reported quantities
+directly gives a 6 percent difference that says nothing about the
+model.</p>
 <p>The likelihood is checked the same way. <code>SPoRC</code> writes
 each component as a proper density while the assessment drops
 normalizing constants, so a like for like comparison subtracts exactly

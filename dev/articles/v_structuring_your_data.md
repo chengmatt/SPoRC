@@ -2,12 +2,12 @@
 
 [`vignette("a_model_dimensions")`](https://chengmatt.github.io/SPoRC/dev/articles/a_model_dimensions.md)
 already lists, field by field, every element of `input_list$data`,
-including its name, its dimensions, and what it means. What it doesn’t
-show is the step most people actually get stuck on: turning raw
-observations into an array with those exact dimensions, in that exact
-order. This vignette walks through that step with a worked example.
-Consider `a_model_dimensions` as the reference and this vignette as the
-“how to build” companion.
+including its name, its dimensions, and what it means. What it does not
+cover is the step of turning raw observations into an array with those
+exact dimensions, in that exact order, which is where most of the
+practical difficulty lies. This vignette works through that step with an
+example, so that `a_model_dimensions` serves as the reference and this
+vignette as its companion on how to build the arrays.
 
 ## The core convention
 

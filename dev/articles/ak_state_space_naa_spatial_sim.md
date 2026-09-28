@@ -1,12 +1,12 @@
 # State-Space Numbers at Age
 
-A stock lives in three regions with different fishing histories, and its
-survival has process error correlated across those regions. However, in
-some cases, spatial models may not be feasible. The purpose of this
-vignette is to demonstrate how state-space treatment of numbers-at-age
-can in some cases, approximate spatial process error (e.g., through
-migration). Let us first set up a simulation in the following with three
-regions, 40 years, and 8 ages.
+Consider a stock distributed across three regions with different fishing
+histories, whose survival has process error correlated across those
+regions. However, in some cases, spatial models may not be feasible. The
+purpose of this vignette is to demonstrate how state-space treatment of
+numbers-at-age can in some cases, approximate spatial process error
+(e.g., through migration). Let us first set up a simulation in the
+following with three regions, 40 years, and 8 ages.
 
 ``` r
 
@@ -337,16 +337,16 @@ to the operating model’s truth over forty years.
 | 0.15 | +6.3% | +1.3% | +15.8% | +15.8% |
 | 0.30 | +22.2% | +3.7% | +45.7% | +28.0% |
 
-Several findings emerge. Differences are minimal for the single-region
-model when process error in the operating model is switched off, most
-likely because there is no demographic leakage in this case: the three
-areas are summed, so no fish leave the domain the model describes. Had
-the single-region model covered only one of the three areas instead,
-movement across its boundary would have been real, and the state would
-likely have reduced the bias there. As the process error grows it
-becomes apparent that turning the state on soaks up some of the
-single-region model’s misspecification, cutting the bias from 45.7 to
-28.0 percent at the largest level.
+Differences are minimal for the single-region model when process error
+in the operating model is switched off, most likely because there is no
+demographic leakage in this case: the three areas are summed, so no fish
+leave the domain the model describes. Had the single-region model
+covered only one of the three areas instead, movement across its
+boundary would have been real, and the state would likely have reduced
+the bias there. As the process error grows, however, it becomes apparent
+that turning the state on soaks up some of the single-region model’s
+misspecification, cutting the bias from 45.7 to 28.0 percent at the
+largest level.
 
 The parameters of the process itself are also recoverable. Fitting a
 single-region model to data simulated from a single-region operating

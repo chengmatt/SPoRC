@@ -235,7 +235,7 @@ Setup_Mod_Biologicals(
   parameter constant. Otherwise a character vector of length `n_gpars`
   in parameter order, or named by parameter, each `"none"`, `"iid"`,
   `"rw"`, or `"dsem"`. A varying parameter gets a deviation series
-  `ln_growth_devs` and a log sigma in the first data source of
+  `ln_growth_devs` and a log sigma in the time-varying half of
   `growth_pe_pars`; under `"dsem"` the density comes from
   [`Setup_Mod_DSEM`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md)
   and that sigma stays at its start.
@@ -261,8 +261,8 @@ Setup_Mod_Biologicals(
 - growth_tv_sigma_spec:
 
   `"fix"` (default) holds the process error sds of the deviations at
-  their starting values, `"est"` estimates them. Both read the first
-  data source of `growth_pe_pars`, one slot per growth parameter.
+  their starting values, `"est"` estimates them. Both read the
+  time-varying half of `growth_pe_pars`, one slot per growth parameter.
 
 - growth_tv_spec:
 
@@ -304,7 +304,7 @@ Setup_Mod_Biologicals(
 
 - growth_semipar_spec:
 
-  Whether the second data source of `growth_pe_pars` is estimated
+  Whether the semi-parametric half of `growth_pe_pars` is estimated
   (`"est"`) or kept at its starting values (`"fix"`, default). The
   deviations themselves are always estimated.
 
@@ -558,12 +558,11 @@ Setup_Mod_Biologicals(
   bins with a rate of `0.15` and CVs of `0.1`, so supply your own for
   any real model. `growth_pe_pars` is
   `[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]`: the
-  first data source holds one log sigma per growth parameter for the
-  time-varying deviations, the second the semi-parametric surface's
-  correlations by age, year and cohort in slots one to three with a log
-  scale in slot four, or one log sigma per age under `"iid"` and `"rw"`.
-  Slots a form does not read are mapped off. All `...` arguments are
-  ignored when `M_spec = "fix"`.
+  time-varying half holds one log sigma per growth parameter, and the
+  semi-parametric half holds the surface's correlations by age, year and
+  cohort in slots one to three with a log scale in slot four, or one log
+  sigma per age under `"iid"` and `"rw"`. Slots a form does not read are
+  mapped off. All `...` arguments are ignored when `M_spec = "fix"`.
 
 ## Value
 

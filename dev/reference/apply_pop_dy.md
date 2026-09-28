@@ -43,5 +43,6 @@ apply_pop_dy(y, sim, sim_env)
 
 Under `rec_lag == 0` this year's recruitment is not knowable until
 `spawn_seas`, since it depends on this year's own SSB, so
-`generate_recruitment` is called from inside this function at
-`seas == spawn_seas`, mirroring the estimation model.
+[`generate_recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/generate_recruitment.md)
+is called from inside this function at `seas == spawn_seas`, mirroring
+the estimation model.

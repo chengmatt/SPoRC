@@ -445,13 +445,13 @@ what the model expected, that such an index measures. Taking it from the
 penalty’s own center is what makes the two agree without any special
 casing.
 
-Two things follow from the deviations being signed. The fleet takes
-`SrvIdx_LikeType = "normal"`, since a lognormal cannot have a negative
-observation, and setup refuses any other choice for it. It also reads no
-numbers at age, so its selectivity, survey timing and weight at age are
-never used and its compositions are left off. Its catchability is an
-ordinary element of `ln_srv_q`, kept on the log scale where the
-assessment has it on the natural scale.
+Because the deviations are signed, two things follow for this fleet. It
+takes `SrvIdx_LikeType = "normal"`, since a lognormal cannot have a
+negative observation, and setup refuses any other choice for it. It also
+reads no numbers at age, so that its selectivity, survey timing and
+weight at age are never used and its compositions are left off. Its
+catchability is an ordinary element of `ln_srv_q`, kept on the log scale
+where the assessment has it on the natural scale.
 
 ## Starting at the assessment’s estimate
 

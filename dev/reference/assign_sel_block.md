@@ -1,17 +1,15 @@
 # Assign a value to every region x year cell of one fleet belonging to a selectivity block
 
-Selectivity block arrays are `[region, year, fleet]`, so a single
-fleet's slice is a `region x year` MATRIX. `which(slice == block)` on
-that matrix returns LINEAR positions running down the columns, in
-`1:(n_regions * n_years)` – not year indices. Using them as a year
-subscript (`arr[, which(...), fleet] <- value`) is therefore wrong
-whenever `n_regions > 1`: it either errors with a subscript out of
-bounds, or, when the block is early enough that the linear positions
-stay within `n_years`, SILENTLY writes the wrong years. With three
-regions and 35 years, a block covering years 1-5 produces linear
-positions 1-15 and quietly overwrites years 1-15. At `n_regions == 1`
-the linear position equals the column index, which is why this only
-shows up in spatial models.
+Selectivity block arrays are `[region, year, fleet]`, so one fleet's
+slice is a region by year matrix. `which(slice == block)` on it counts
+down the columns, giving positions in `1:(n_regions * n_years)` rather
+than years. Used as a year subscript those are wrong whenever there is
+more than one region: either the subscript is out of bounds, or, when
+the block is early enough that the positions stay below `n_years`, the
+wrong years are written with no error at all. With three regions and 35
+years, a block covering years 1-5 writes years 1-15. With one region the
+position equals the year, which is why this only shows up in spatial
+models.
 
 ## Usage
 

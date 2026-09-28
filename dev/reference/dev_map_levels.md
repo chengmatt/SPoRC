@@ -2,8 +2,8 @@
 
 The map says which cells are estimated and which are fixed, and an array
 with no map entry has every cell estimated. Reading it this way gives
-one vector either way, `NA` at a fixed cell, which is what the dsem
-checks read.
+one vector either way, `NA` at a fixed cell, the form the dsem checks
+need.
 
 ## Usage
 

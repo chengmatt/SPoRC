@@ -2,8 +2,8 @@
 
 Removes the last `j` years from the model inputs and updates the data,
 parameter arrays, maps, block structures and anything else dimensioned
-by the number of years, so the result can be handed straight to the
-model as one retrospective peel. Called by
+by the number of years, so the result can go straight into the model as
+one retrospective peel. Called by
 [`do_retrospective()`](https://chengmatt.github.io/SPoRC/dev/reference/do_retrospective.md).
 
 ## Usage

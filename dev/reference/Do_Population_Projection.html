@@ -254,8 +254,8 @@ point used in the control rule.</p></dd>
 
 
 <dt id="arg-hcr-function">HCR_function<a class="anchor" aria-label="anchor" href="#arg-hcr-function"></a></dt>
-<dd><p>Harvest control rule taking `x` (SSB), `frp` and `brp`. A
-rule that also declares a `state` argument (or `...`) is handed this year's
+<dd><p>Harvest control rule taking `x` (SSB), `frp` and `brp`.
+A rule that also declares a `state` argument (or `...`) is given this year's
 population as a named list, holding `y`, `r`, `NAA`, `SSB`, `Total_Biom` and
 `Catch`, so it can be written on more than spawning biomass. Rules without it
 are called as before and no state is assembled.</p></dd>
@@ -500,7 +500,7 @@ input.</p>
 reordered within <code>spawn_seas</code>: movement runs first, spawning biomass is
 computed from the survivors alone, that SSB generates this year's recruitment,
 and the recruits are inserted immediately before mortality and ageing. Year 1
-holds the terminal state forward with no recruitment event.</p>
+advances the terminal state with no recruitment event.</p>
 <p>Under <code>fmort_opt = "Catch"</code> the F step moves to the front of the following
 year, since the F that lands a target depends on that year's own numbers at age
 rather than the previous year's spawning biomass. The year is run at trial F

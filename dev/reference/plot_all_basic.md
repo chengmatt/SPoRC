@@ -1,10 +1,9 @@
 # Plotting Function for All Basic Quantities
 
-Convenience wrapper that calls all core SPoRC plotting functions and
-writes their output to a single PDF file. Equivalent to calling
-`get_biological_plot`, `get_data_fitted_plot`, `get_ts_plot`,
-`get_selex_plot`, and `get_nLL_plot` in sequence and printing each to
-the same device.
+Calls all core SPoRC plotting functions and writes their output to a
+single PDF file. Equivalent to calling `get_biological_plot`,
+`get_data_fitted_plot`, `get_ts_plot`, `get_selex_plot`, and
+`get_nLL_plot` in sequence and printing each to the same device.
 
 ## Usage
 

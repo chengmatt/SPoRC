@@ -1,9 +1,9 @@
 # Advance a numbers-at-region vector across one season
 
-Thin convenience wrapper around `build_seas_operator` that applies the
-seasonal transition to a single numbers-at-region vector. For
-`move_timing` 0 and 1 the operator is never formed explicitly, which
-keeps the AD tape smaller than the equivalent matrix product.
+Applies `build_seas_operator`'s seasonal transition to a single
+numbers-at-region vector. For `move_timing` 0 and 1 the operator is
+never formed explicitly, which keeps the AD tape smaller than the
+equivalent matrix product.
 
 ## Usage
 

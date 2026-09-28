@@ -82,7 +82,15 @@ likelihood would treat correlated residuals as independent information.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_index_nLL</span><span class="op">(</span><span class="va">obs</span>, <span class="va">pred</span>, <span class="va">sigma</span>, <span class="va">like_type</span>, Sigma <span class="op">=</span> <span class="cn">NULL</span>, const <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_index_nLL</span><span class="op">(</span></span>
+<span>  <span class="va">obs</span>,</span>
+<span>  <span class="va">pred</span>,</span>
+<span>  <span class="va">sigma</span>,</span>
+<span>  <span class="va">like_type</span>,</span>
+<span>  Sigma <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  const <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  bias_correct_oe <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">

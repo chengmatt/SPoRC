@@ -217,12 +217,12 @@ block, so a blocked catchability gets one solved value per block.</p></dd>
 
 
 <dt id="arg-fish-q-model">fish_q_model<a class="anchor" aria-label="anchor" href="#arg-fish-q-model"></a></dt>
-<dd><p>Character vector <code>[n_fish_fleets]</code> of the process error
-on annual catchability deviations: <code>"none"</code> (default), <code>"iid"</code>,
-<code>"rw"</code>, <code>"ar1"</code> or <code>"dsem"</code>, which hands the series to
-<code><a href="Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></code>. Catchability is then \(\exp(\ln q_{r,b,f} +
-\epsilon_{r,y,f})\). A fleet with deviations cannot also have
-<code>fish_q_blocks</code> or an analytically solved <code>fish_q_type</code>.</p></dd>
+<dd><p>Character vector <code>[n_fish_fleets]</code> of the process
+error on annual catchability deviations: <code>"none"</code> (default),
+<code>"iid"</code>, <code>"rw"</code>, <code>"ar1"</code> or <code>"dsem"</code>, which passes the
+series to <code><a href="Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></code>. Catchability is then
+\(\exp(\ln q_{r,b,f} + \epsilon_{r,y,f})\). A fleet with deviations cannot
+also have <code>fish_q_blocks</code> or an analytically solved <code>fish_q_type</code>.</p></dd>
 
 
 <dt id="arg-sigma-fish-q-spec">sigma_fish_q_spec<a class="anchor" aria-label="anchor" href="#arg-sigma-fish-q-spec"></a></dt>

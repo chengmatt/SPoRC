@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_self_test.R
 \name{bind_sims}
 \alias{bind_sims}
-\title{Bind one array per replicate along a trailing simulation dimension}
+\title{Stack one array per replicate}
 \usage{
 bind_sims(parts)
 }
@@ -10,11 +10,9 @@ bind_sims(parts)
 \item{parts}{List of arrays, one per replicate, all the same shape.}
 }
 \value{
-An array of \code{dim(parts[[1]])} with \code{length(parts)} appended.
+One array, replicates on the last dim.
 }
 \description{
-The operating model wants every input carrying a last dimension that indexes
-replicates. When each replicate runs on the same values this is what
-\code{replicate} produces, and when they differ it is the general form.
+The operating model reads every input with the replicates on the last dim.
 }
 \keyword{internal}

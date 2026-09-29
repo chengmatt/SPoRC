@@ -42,15 +42,13 @@ warn_R0_ref_block_om <- function(data, where) {
   invisible(NULL)
 }
 
-#' Bind one array per replicate along a trailing simulation dimension
+#' Stack one array per replicate
 #'
-#' The operating model wants every input carrying a last dimension that indexes
-#' replicates. When each replicate runs on the same values this is what
-#' \code{replicate} produces, and when they differ it is the general form.
+#' The operating model reads every input with the replicates on the last dim.
 #'
 #' @param parts List of arrays, one per replicate, all the same shape.
 #'
-#' @return An array of \code{dim(parts[[1]])} with \code{length(parts)} appended.
+#' @return One array, replicates on the last dim.
 #'
 #' @keywords internal
 bind_sims <- function(parts) {
@@ -59,20 +57,61 @@ bind_sims <- function(parts) {
   array(unlist(parts), dim = c(d, length(parts)))
 }
 
-#' Parameter vectors the operating model runs on, one per replicate
+#' Make the data effectively exact
 #'
-#' Under \code{sim_type = "conditional"} every replicate runs on the fitted
-#' parameters, so the truth is the same throughout and only the observation
-#' error differs between replicates. Under \code{"joint"} each replicate gets its
-#' own draw from the joint precision, so parameter uncertainty is carried into
-#' the operating model and each replicate has its own truth to be scored against.
+#' Every observation gets a standard deviation of \code{obs_sd} and every composition
+#' a sample size of \code{iss}. Process error is left alone, being part of the truth.
 #'
-#' The draw is taken at \code{obj$env$last.par.best}, which is the order the
-#' joint precision's rows and columns are in, and turned back into a parameter
-#' list by the object's own \code{parList}, which reapplies the map. A fit with
-#' no random effects has no \code{jointPrecision}, since \code{sdreport} only
-#' builds one when random effects are present, so the fixed-effect covariance is
-#' inverted instead and the draw is the usual multivariate normal about the mode.
+#' @param sim_list The simulation list, once the setup routines have filled it.
+#' @param obs_sd Observation standard deviation to impose. Default \code{1e-3}.
+#' @param iss Input sample size to impose on every composition. Default \code{1e6}.
+#'
+#' @return \code{sim_list} with its observation error replaced.
+#'
+#' @keywords internal
+make_data_perfect <- function(sim_list, obs_sd = 1e-3, iss = 1e6) {
+
+  ln_sigma_names <- c("ln_sigmaC", "ln_sigmaC_pop", "ln_sigmaD", "ln_sigmaD_pop",
+                      "ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaSrvIdxAA")
+  se_names <- c("ObsFishIdx_SE", "ObsFishIdx_pop_SE", "ObsSrvIdx_SE", "ObsSrvIdx_pop_SE",
+                "ObsCatchAA_SE", "ObsDiscardAA_SE", "ObsSrvIdxAA_SE", "dsem_cov_obs_sd")
+  iss_names <- grep("^ISS_", names(sim_list), value = TRUE)
+
+  # catch, discards and the at-age sources take their sd on the log scale
+  for(ln_sigma_name in ln_sigma_names) {
+    if(is.null(sim_list[[ln_sigma_name]])) next
+    sim_list[[ln_sigma_name]][] <- log(obs_sd)
+  } # end ln_sigma_name loop
+
+  # the indices take theirs on the natural scale, and a year with no survey stays NA
+  for(se_name in se_names) {
+    if(is.null(sim_list[[se_name]])) next
+    survey_se <- sim_list[[se_name]]
+    survey_se[!is.na(survey_se)] <- obs_sd
+    sim_list[[se_name]] <- survey_se
+  } # end se_name loop
+
+  # a composition with no fish aged stays at zero, so only the ones with a sample change
+  for(iss_name in iss_names) {
+    if(is.null(sim_list[[iss_name]])) next
+    sample_size <- sim_list[[iss_name]]
+    sample_size[sample_size > 0] <- iss
+    sim_list[[iss_name]] <- sample_size
+  } # end iss_name loop
+
+  sim_list
+
+}
+
+#' Parameters each replicate's operating model runs on
+#'
+#' Conditional gives every replicate the fitted parameters, so one truth covers
+#' them all and only the data change. Joint gives each replicate its own draw, so
+#' each has its own truth.
+#'
+#' The draw is taken at the fitted parameter vector, the order the joint precision
+#' is in, and \code{parList} puts the map back. A fit with no random effects has no
+#' joint precision, so the fixed effect covariance is inverted in its place.
 #'
 #' @param sim_type Either \code{"conditional"} or \code{"joint"}.
 #' @param n_sims Number of replicates.
@@ -81,10 +120,10 @@ bind_sims <- function(parts) {
 #' @param mapping Factor maps the model was built with.
 #' @param sd_rep \code{sdreport} object from the fitted model.
 #' @param random Character vector of random effect names.
-#' @param obj_UNUSED_PLACEHOLDER Fitted object, needed only under \code{"joint"}.
+#' @param obj Fitted object, needed only under \code{"joint"}.
 #'
-#' @return List of \code{reps} and \code{pars}, each of length \code{n_sims},
-#'   plus \code{fit_pars}, the parameter list at the fit.
+#' @return \code{reps} and \code{pars}, one per replicate, plus \code{fit_pars}
+#'   at the fit.
 #'
 #' @keywords internal
 sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_rep, random, obj) {
@@ -162,22 +201,23 @@ sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_re
 #'   refit's own parameter list so that mapped elements come back at the values
 #'   the map gave them. An error is raised if any name is not found in
 #'   \code{parameters}. Default \code{NULL}, which stores none.
-#' @param sim_type Character. Where each replicate's operating model parameters
-#'   come from. \code{"conditional"} (default) runs every replicate at the fitted
-#'   values, so the truth is the same throughout and the spread across replicates
-#'   is observation error alone. \code{"joint"} gives each replicate its own draw
-#'   from \code{sd_rep$jointPrecision}, so parameter uncertainty is carried into
-#'   the operating model and each replicate has its own truth. A fit with no
-#'   random effects carries no joint precision, and the fixed-effect covariance is
-#'   inverted in its place.
+#' @param perfect_data Logical. Whether to shrink the observation error before
+#'   simulating, sds to 0.001 and sample sizes to 1e6, leaving process error alone.
+#'   A correct model then returns the operating model to several decimals. A
+#'   process error sd is the exception and comes back low by about 1/(2n) for n
+#'   deviations, since the fitted value holds the posterior variance of its own
+#'   deviations and data this clean remove it. Default \code{FALSE}.
+#' @param sim_type Character. Where each replicate's parameters come from.
+#'   \code{"conditional"} (default) runs every replicate at the fitted values, so
+#'   one truth covers them all and the spread is observation error. \code{"joint"}
+#'   draws each replicate from \code{sd_rep$jointPrecision}, so each has its own
+#'   truth. A fit with no random effects has no joint precision, and the fixed
+#'   effect covariance is inverted in its place.
 #'
-#'   Under \code{"joint"} the drawn parameters reach the operating model through
-#'   fishing mortality, both selectivities, catchability and its deviations,
-#'   natural mortality, weight and size at age, movement, steepness, sex ratio,
-#'   recruitment, the initial deviations and the numbers-at-age process error.
-#'   A linked dsem is drawn too, and its parameters reach the operating model
-#'   through the processes they are linked to. The observation error terms and the
-#'   composition parameters stay at the fit, having no replicate dimension.
+#'   Joint moves F, both selectivities, catchability, natural mortality, weight and
+#'   size at age, movement, steepness, sex ratio, recruitment, the initial
+#'   deviations, the numbers at age and a linked dsem. Observation error and the
+#'   composition parameters stay at the fit, having no replicate dim.
 #'
 #' @return Named list with one element per entry in \code{what} and then one per
 #'   entry in \code{what_par}, each an array with the last dimension indexing
@@ -226,6 +266,7 @@ simulation_self_test <- function(
   output_path = NULL,
   what = c('SSB', 'Rec'),
   what_par = NULL,
+  perfect_data = FALSE,
   sim_type = c("conditional", "joint")
 ) {
 
@@ -621,16 +662,21 @@ simulation_self_test <- function(
     h_input = bind_sims(lapply(views$reps, function(rp) array(rp$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))), # steepness
     R0_input = {
       # R0 can have time blocks, so the operating model takes the year-by-year value rather than
-      # rep$R0's single reference-block value. identical in an unblocked model
+      # R0's single reference-block value. identical in an unblocked model
       tmp = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_sims))
-      R0_by_yr = if(is.null(rep$R0_yr)) matrix(rep$R0, sim_list$n_pop, sim_list$n_yrs)
-                 else matrix(rep$R0_yr, sim_list$n_pop, ncol(rep$R0_yr))[, pmin(1:sim_list$n_yrs, ncol(rep$R0_yr)), drop = FALSE]
-      for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,,] = R0_by_yr[p,] * rep$rec_region_prop[p,r]
+      for(i in seq_len(n_sims)) {
+        rp = views$reps[[i]]
+        R0_by_yr = if(is.null(rp$R0_yr)) matrix(rp$R0, sim_list$n_pop, sim_list$n_yrs)
+                   else matrix(rp$R0_yr, sim_list$n_pop, ncol(rp$R0_yr))[, pmin(1:sim_list$n_yrs, ncol(rp$R0_yr)), drop = FALSE]
+        for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,,i] = R0_by_yr[p,] * rp$rec_region_prop[p,r]
+      }
       tmp
     },
     rinit_input = {
       tmp = array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims))
-      for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) tmp[p,r,] = rep$rinit[p] * rep$rec_region_prop[p,r]
+      for(i in seq_len(n_sims)) for(p in 1:sim_list$n_pop) for(r in 1:sim_list$n_regions) {
+        tmp[p,r,i] = views$reps[[i]]$rinit[p] * views$reps[[i]]$rec_region_prop[p,r]
+      }
       tmp
     },
     use_rinit = data$use_rinit,
@@ -638,13 +684,12 @@ simulation_self_test <- function(
     # rescaling by the recruitment weight is only an identity for a single scalar. recruitment and
     # the initial age deviations are supplied directly below, so ln_sigmaR passes through unscaled
     ln_sigmaR = if(length(data$Wt_Rec) == 1) optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec) else optim_parameters_list$ln_sigmaR, # ln_sigmaR
-    # recruitment is handed to the operating model year by year, so it reproduces the series each
-    # replicate's parameters imply rather than redrawing it off the stock-recruit curve
+    # recruitment goes in year by year, so the stock-recruit curve is not drawn from
     Rec_input = bind_sims(lapply(views$reps, function(rp) rp$Rec[,,seq_along(data$years),drop = FALSE])), # recruitment time series
     ln_InitDevs_input = bind_sims(lapply(views$pars, function(pr) pr$ln_InitDevs)),  # init devs
     stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,seq_along(data$years), drop = FALSE]),
     rec_seas_prop_input = array(
-      rep(rep$rec_seas_prop, times = sim_list$n_sims),
+      unlist(lapply(views$reps, function(rp) rp$rec_seas_prop)),
       dim = c(data$n_pop, data$n_seas, sim_list$n_sims)), # seasonal recruitment apportionment
 
     # Not needed; already specified in Rec_input and ln_InitDevs_input
@@ -691,7 +736,13 @@ simulation_self_test <- function(
   sim_list$ln_srv_q_devs <- bind_sims(lapply(srv_q_fit, function(q) q$devs))
 
   # Setup DSEM --------------------------------------------------------------
-  if(!is.null(data$dsem_model)) sim_list <- Setup_Sim_DSEM(sim_list, data, optim_parameters_list, rep = rep, condition_on_fit = TRUE)
+  # joint draws a dsem per replicate, so each conditions on its own states. conditional runs them
+  # all at the fit, so one set of states covers every replicate
+  if(!is.null(data$dsem_model)) {
+    sim_list <- Setup_Sim_DSEM(sim_list, data, optim_parameters_list, rep = rep, condition_on_fit = TRUE,
+                               pars_by_sim = if(sim_type == "joint") views$pars else NULL,
+                               rep_by_sim = if(sim_type == "joint") views$reps else NULL)
+  }
 
   # Setup Tagging -----------------------------------------------------------
   if(!is.na(sum(data$conv_tagged_fish))) n_tags_rel_input <- apply(data$conv_tagged_fish, 1, sum) else n_tags_rel_input <- NA
@@ -714,10 +765,13 @@ simulation_self_test <- function(
     conv_fish_tag_attr = data$conv_fish_tag_attr # tag attributes
   )
 
+  # the refits read these back out of sim_list, so both sides use the same error
+  if(isTRUE(perfect_data)) sim_list <- make_data_perfect(sim_list)
+
 
   # Run Simulation ----------------------------------------------------------
 
-  # storage. report quantities first, then the estimated parameters, then the sdreport slot
+  # storage for the report values, then the parameters, then the sdreport
   n_store <- length(what) + length(what_par) + 1
   store_res_list <- vector("list", n_store) # get list
   names(store_res_list) <- c(what, what_par, "sd_rep") # name list
@@ -866,7 +920,7 @@ simulation_self_test <- function(
         # update setup stuff if needed
         tmp_data <- resync_fitted_blocks(tmp_data)
 
-        # Fit model. named fit_i, since obj is the fitted object the joint draws were taken at
+        # Fit model
         fit_i <- fit_model(
           data = tmp_data,
           parameters = tmp_pars,
@@ -879,7 +933,7 @@ simulation_self_test <- function(
         # Populate results into store list
         for(j in seq_along(what)) store_res_list[[j]][[i]] <- fit_i$rep[[what[j]]]
         if(length(what_par) > 0) {
-          est_pars <- fit_i$env$parList(par = fit_i$env$last.par.best) # named, since the bare first argument is the fixed effects alone
+          est_pars <- fit_i$env$parList(par = fit_i$env$last.par.best) # name the argument, the bare first one is fixed effects only
           for(j in seq_along(what_par)) store_res_list[[length(what) + j]][[i]] <- est_pars[[what_par[j]]]
         }
 
@@ -1046,7 +1100,7 @@ simulation_self_test <- function(
           # see the note at the single-model path above
           tmp_data <- resync_fitted_blocks(tmp_data)
 
-          # Fit model. named fit_i, since obj is the fitted object the joint draws were taken at
+          # Fit model
           fit_i <- fit_model(
             data = tmp_data,
             parameters = tmp_pars,
@@ -1060,7 +1114,7 @@ simulation_self_test <- function(
           result <- list()
           for(j in seq_along(what)) result[[what[j]]] <- fit_i$rep[[what[j]]]
           if(length(what_par) > 0) {
-            est_pars <- fit_i$env$parList(par = fit_i$env$last.par.best) # named, since the bare first argument is the fixed effects alone
+            est_pars <- fit_i$env$parList(par = fit_i$env$last.par.best) # name the argument, the bare first one is fixed effects only
             for(j in seq_along(what_par)) result[[what_par[j]]] <- est_pars[[what_par[j]]]
           }
 
@@ -1099,7 +1153,7 @@ simulation_self_test <- function(
     for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- simplify2array(store_res_list[[j]])  # Convert lists to array
   }
 
-  # what the OM itself ran on, so a joint run is compared against the draw that generated each replicate rather than against the fit
+  # the values the OM ran on. under joint each replicate has its own
   store_res_list$truth <- c(
     stats::setNames(lapply(what, function(w) simplify2array(lapply(views$reps, function(rp) rp[[w]]))), what),
     stats::setNames(lapply(what_par, function(w) simplify2array(lapply(views$pars, function(pr) pr[[w]]))), what_par)

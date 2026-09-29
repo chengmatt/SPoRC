@@ -5,8 +5,9 @@ fam_input <- function(cov, family, link = NULL, fixed_sd = NULL) {
   input_list <- sweep_input()
   cov_data <- data.frame(year = input_list$data$years, env = cov)
   arrows <- c("env -> rec_Pop_1_Region_2, 0, b", "env <-> env, 0, sd_env", "rec_Pop_1_Region_2 <-> rec_Pop_1_Region_2, 0, sd_r")
+  # these covariates are in their own units, so each sits at its observed mean rather than the zero default
   Setup_Mod_DSEM(input_list, dsem_arrows = arrows, dsem_data = cov_data, dsem_family = c(env = family),
-                 dsem_link = if(is.null(link)) NULL else c(env = link),
+                 dsem_link = if(is.null(link)) NULL else c(env = link), dsem_mu_spec = "fix",
                  dsem_fixed_sd = if(is.null(fixed_sd)) NULL else data.frame(year = input_list$data$years, env = fixed_sd))
 }
 

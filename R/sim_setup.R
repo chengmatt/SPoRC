@@ -80,7 +80,6 @@ Setup_sim_env <- function(sim_list) {
 
   # recruitment deviation process error; lists built before the option existed drew independently
   if(is.null(sim_list$RecDevs_model)) sim_list$RecDevs_model <- 1
-  if(is.null(sim_list$rec_bias_correct)) sim_list$rec_bias_correct <- 1
   if(is.null(sim_list$RecDevs_rho)) sim_list$RecDevs_rho <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions))
 
   # output into simulation environment
@@ -131,6 +130,20 @@ Setup_sim_env <- function(sim_list) {
   } # end nm loop
 
   check_q_dsem_drawable(sim_env) # check to see if dsem can do draws
+
+  # message treatment of dsem linked rec devs and how impacts init age devs
+  if(is.null(sim_env$ln_InitDevs_input) && !is.null(sim_env$ln_sigmaR)) {
+    init_sd <- exp(as.vector(sim_env$ln_sigmaR[1,,]))
+    sd_text <- if(length(unique(signif(init_sd, 6))) == 1) signif(init_sd[1], 4)
+               else paste0(signif(min(init_sd), 4), " to ", signif(max(init_sd), 4))
+    bc_pe <- if(is.null(sim_env$bias_correct_pe)) 1 else sim_env$bias_correct_pe
+    rec_linked <- !is.null(sim_env$dsem_link_par) && any(sim_env$dsem_link_par == "ln_RecDevs")
+    message("Setup_sim_env: ln_InitDevs_input is NULL, so every replicate draws its own initial age ",
+            "deviations from N(", if(bc_pe == 0) "0" else "-sigma^2/2", ", sigma) at sigma = ", sd_text,
+            if(rec_linked) ", the recruitment series' settled value under the arrows, which is what the fit's penalty reads"
+            else ", the early ln_sigmaR",
+            ". Pass zeros to Setup_Sim_Rec for a population that starts in equilibrium, or a fit's deviations to condition on it.")
+  } # end if the initial deviations are drawn
 
   # movement stuff
   if(is.null(sim_env$Mrate)) sim_env$Mrate <- NULL

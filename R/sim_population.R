@@ -57,14 +57,19 @@ generate_initial_age_structure <- function(y,
 
           # get init devs
           sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-          # Draw the deviations. Under est_shared_s one curve is drawn and every
-          # sex reads it; under est_all each sex draws its own
+          # Draw the deviations. Under est_shared_s one curve is drawn and every sex reads it; under est_all each sex draws its own
           init_sex_spec <- if(exists("InitDevs_sex_spec")) InitDevs_sex_spec else "est_shared_s"
+
           if(is.null(tmp_ln_init_devs)) {
             n_dev_draws <- if(init_sex_spec == "est_all") n_sexes else 1
             init_sigma <- exp(ln_sigmaR[1,p,sigma_idx])
-            if(RecDevs_model == 3) init_sigma <- init_sigma / sqrt(1 - RecDevs_rho[p,r]^2) # an ar1 settles at its stationary sd, as year one does
-            init_center <- if(isTRUE(rec_bias_correct == 0)) 0 else -init_sigma^2 / 2 # whether to do bias correction
+
+            # an ar1 settles at its stationary sd, as does year one for recdevs
+            if(RecDevs_model == 3) init_sigma <- init_sigma / sqrt(1 - RecDevs_rho[p,r]^2)
+
+            # do some bias correction here
+            init_bc_pe <- if(exists("bias_correct_pe")) bias_correct_pe else 1
+            init_center <- if(init_bc_pe == 0) 0 else -init_sigma^2 / 2
             init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), init_center, init_sigma)
             tmp_ln_init_devs <- array(init_draws, dim = c(n_ages - 1, n_sexes)) # recycled across sexes when one curve was drawn
           }
@@ -243,13 +248,10 @@ generate_recruitment <- function(y,
         if(use_rec_input) { # if jut using recruitment input
 
           tmp_total_rec <- Rec_input[p,r,y,sim]
-          sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-          sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
 
           if(isTRUE(tmp_det_rec[p,r] > 0) && tmp_total_rec > 0) { # back out the true ln Rec Devs from a conditioned fit if needed
             sim_env$ln_RecDevs[p,r,y,sim] <- log(tmp_total_rec / tmp_det_rec[p,r]) # the deviation the fit held, correction already inside it
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
-          if(isTRUE(rec_bias_correct == 1) && RecDevs_model == 1) sim_env$rec_anom_add[p,r,y] <- sigmaR_yr^2 / 2 # record what to add back to rec dev anomaly if using rec idx
 
         } else {
 
@@ -259,8 +261,8 @@ generate_recruitment <- function(y,
 
           # setup bias correction here
           bc_pe <- if(exists("bias_correct_pe")) bias_correct_pe else 1 # for backwards compatibility
-          rec_corr <- if(!isTRUE(rec_bias_correct == 1) || bc_pe == 0) 0 # no correction
-                      else if(RecDevs_model == 1) sigmaR_yr^2 / 2 # iid 
+          rec_corr <- if(bc_pe == 0) 0 # no correction
+                      else if(RecDevs_model == 1) sigmaR_yr^2 / 2 # iid
                       else if(RecDevs_model == 3) sigmaR_yr^2 / (2 * (1 - RecDevs_rho[p,r]^2)) # ar1
                       else 0 # rw has no stationary variance to correct against
           dev_mu <- -rec_corr
@@ -285,7 +287,6 @@ generate_recruitment <- function(y,
 
           # apply deviation to determinstic rec
           tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim])
-          if(!dsem_cell) sim_env$rec_anom_add[p,r,y] <- rec_corr # record what to add back to rec dev anomaly if using rec idx
         }
 
         # input recruitment into the season it first enters the population
@@ -715,7 +716,6 @@ Simulate_Pop_Static <- function(sim_list,
                   ln_fish_q_devs = sim_env$ln_fish_q_devs,
                   ln_srv_q_devs = sim_env$ln_srv_q_devs,
                   ln_RecDevs = sim_env$ln_RecDevs,
-                  rec_anom_add = sim_env$rec_anom_add,
                   dsem_x_sim = sim_env$dsem_x_sim, # the dsem grid every replicate was drawn on, NULL without one
                   dsem_cov_obs_sim = sim_env$dsem_cov_obs_sim, # dsem covariate observations a refit reads
                   naa_eta = sim_env$naa_eta_all,

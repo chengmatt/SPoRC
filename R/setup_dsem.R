@@ -844,6 +844,41 @@ apply_dsem_link_switch <- function(data) {
 
 } # end function
 
+#' Whether each linked series settles on one variance
+#'
+#' The initial age deviations need a single spread, so a series is only read
+#' through its marginal variance when that variance settles. A moderated sd
+#' moves with its moderator and a lagged self path of one or more never settles;
+#' both fall back to \code{ln_sigmaR}, the prior set for exactly this.
+#'
+#' @param dsem_model Output of \code{\link{read_dsem_arrows}}.
+#' @param link_col The grid column each linked series sits in.
+#' @param sd_arrow Each series' own sd line, 0 when moderated.
+#'
+#' @return Integer vector, 1 where the series settles.
+#'
+#' @keywords internal
+get_dsem_link_settles <- function(dsem_model,
+                                  link_col,
+                                  sd_arrow) {
+
+  arrows <- dsem_model$arrows
+  settles <- rep(1L, length(link_col))
+
+  for(s in seq_along(link_col)) {
+
+    self_walk <- arrows$type == "path" & arrows$lag == 1 &
+                 arrows$from_idx == link_col[s] & arrows$to_idx == link_col[s] &
+                 is.na(arrows$name) & abs(arrows$start) >= 1
+
+    if(sd_arrow[s] == 0 || any(self_walk, na.rm = TRUE)) settles[s] <- 0L
+
+  } # end s loop
+
+  return(settles)
+
+} # end function
+
 #' The sd line of each linked series
 #'
 #' A series' own sd is the two-headed arrow from it to itself at lag zero. Under
@@ -889,6 +924,26 @@ dsem_family_codes <- function() {
 
   c(fixed = 0, normal = 1, gaussian = 1, bernoulli = 2, binomial = 2, poisson = 3,
     gamma = 4, Gamma = 4, gaussian_fixed_sd = 5, lognormal = 6, tweedie = 7)
+
+} # end function
+
+#' The setup call that puts each process on a dsem
+#'
+#' A process only has deviations for the arrows to describe once its own setup call
+#' declares them. This says which call and which argument, for the errors that need to.
+#'
+#' @return Named character vector, the declaration for each linkable parameter.
+#'
+#' @keywords internal
+dsem_declared_by <- function() {
+
+  c(ln_RecDevs = "RecDevs_model = 'dsem' in Setup_Mod_Rec",
+    ln_NAA = "NAA_re = 'dsem' in Setup_Mod_Biologicals",
+    ln_growth_devs = "growth_tv_model = 'dsem' in Setup_Mod_Biologicals",
+    ln_growth_semipar_devs = "growth_semipar = 'dsem' in Setup_Mod_Biologicals",
+    move_devs = "cont_vary_movement = 'dsem_...' in Setup_Mod_Movement",
+    ln_fish_q_devs = "fish_q_model = 'dsem' in Setup_Mod_Fishsel_and_Q",
+    ln_srv_q_devs = "srv_q_model = 'dsem' in Setup_Mod_Srvsel_and_Q")
 
 } # end function
 
@@ -1086,11 +1141,20 @@ dsem_cov_sd_start <- function(y,
 #' @param dsem_fixed_sd Data frame with a \code{year} column and one column per
 #'   \code{"gaussian_fixed_sd"} covariate, holding that year's known sd. Needed on
 #'   every observed year of such a covariate.
-#' @param dsem_mu_spec \code{"est"} (default) estimates every covariate's mean,
-#'   \code{"fix"} holds them all at the observed mean, a character vector estimates
-#'   only those named, and a named numeric vector fixes those covariates at the
-#'   values given with the rest at the observed mean. A linked series' mean is
-#'   always fixed at zero, since its process already sits under a level parameter.
+#' @param dsem_mu_spec \code{"zero"} (default) holds an identity-link covariate at
+#'   zero and every other one at its observed mean, \code{"fix"} holds them all at
+#'   their observed means, \code{"est"} estimates them all, a character vector
+#'   estimates only those named, and a named numeric vector fixes those covariates at
+#'   the values given with the rest at the observed mean. A linked series' mean is
+#'   always fixed at zero, since its process already sits under a level parameter. The
+#'   default holds the mean because a covariate seen in few years identifies it mostly
+#'   through the path coefficient, and the two then trade off, and it holds an
+#'   identity-link covariate at zero so that a path coefficient reads against a
+#'   centered covariate, the convention the operating model draws under. Zero is a
+#'   center only on that link, so a log or logit family keeps its observed mean. An
+#'   identity-link covariate in its own units should be centered first, or given
+#'   \code{"fix"}; a warning names one whose observed mean sits further from zero than
+#'   its own spread.
 #' @param covs Passed to \code{read_dsem_arrows}: series groups whose innovations
 #'   may covary.
 #' @param dsem_delta0_spec \code{"none"} (default), \code{"est"}, or the names of
@@ -1121,7 +1185,7 @@ Setup_Mod_DSEM <- function(input_list,
                            dsem_family = NULL,
                            dsem_link = NULL,
                            dsem_fixed_sd = NULL,
-                           dsem_mu_spec = "est",
+                           dsem_mu_spec = "zero",
                            covs = NULL,
                            dsem_delta0_spec = "none",
                            mod_var_logscale = FALSE,
@@ -1189,6 +1253,14 @@ Setup_Mod_DSEM <- function(input_list,
          "and one column of known sds per such covariate.")
   }
 
+  # only gaussian_fixed_sd reads these, so a covariate on any other family would take none of it
+  if(!is.null(dsem_fixed_sd) && !any(family_code == 5)) {
+    stop("dsem_fixed_sd is only read under dsem_family = 'gaussian_fixed_sd', and no covariate is on ",
+         "it. The families given are ", paste(paste0(cov_names, " = '", names(dsem_family_codes())[
+           match(family_code, dsem_family_codes())], "'"), collapse = ", "),
+         ". Set the family to 'gaussian_fixed_sd' to use a known sd, or to 'normal' to estimate one.")
+  }
+
   if(!is.null(dsem_fixed_sd) && !all(cov_names[family_code == 5] %in% names(dsem_fixed_sd))) {
     stop("dsem_fixed_sd is missing a column for: ",
          paste(setdiff(cov_names[family_code == 5], names(dsem_fixed_sd)), collapse = ", "), ".")
@@ -1199,6 +1271,16 @@ Setup_Mod_DSEM <- function(input_list,
   link <- get_dsem_link(input_list, dsem_processes, arrow_text, n_grid_yrs)
 
   if(length(link$name) == 0) {
+
+    # nothing on offer means the processes named have no deviations yet, so say which call makes them
+    if(length(link$offered) == 0) {
+      par_of <- vapply(dsem_process_table(), function(entry) entry$par, "")
+      declared_by <- dsem_declared_by()[par_of[match(dsem_processes, vapply(dsem_process_table(), function(entry) entry$label, ""))]]
+      stop("None of dsem_processes = c('", paste(dsem_processes, collapse = "', '"), "') has any ",
+           "deviation to describe. Set ", paste(unique(declared_by[!is.na(declared_by)]), collapse = ", or "),
+           ", then name the series in dsem_arrows.")
+    }
+
     stop("No deviation series appears in dsem_arrows. With dsem_processes = c('",
          paste(dsem_processes, collapse = "', '"), "') the series available are: ",
          paste(utils::head(link$offered, 20), collapse = ", "),
@@ -1342,6 +1424,16 @@ Setup_Mod_DSEM <- function(input_list,
   # observed mean. the character forms say which means are estimated
   mu_given <- NULL
 
+  # zero is a centering convention, and only an identity link has a center there: under a log or logit
+  # link it is a particular value in the covariate's own units, so those families keep their observed mean
+  mu_zero <- identical(dsem_mu_spec, "zero")
+  identity_link_covs <- if(mu_zero) cov_names[link_code == 0] else character(0)
+
+  if(mu_zero) {
+    mu_given <- stats::setNames(rep(0, length(identity_link_covs)), identity_link_covs)
+    dsem_mu_spec <- "fix"
+  }
+
   if(is.numeric(dsem_mu_spec)) {
 
     if(is.null(names(dsem_mu_spec)) || !all(names(dsem_mu_spec) %in% cov_names)) {
@@ -1355,8 +1447,8 @@ Setup_Mod_DSEM <- function(input_list,
   } # end if the means are given as numbers
 
   if(!is.character(dsem_mu_spec)) {
-    stop("dsem_mu_spec should be 'est', 'fix', the names of the covariates whose means are estimated, ",
-         "or a named numeric vector of means to fix at.")
+    stop("dsem_mu_spec should be 'zero', 'est', 'fix', the names of the covariates whose means are ",
+         "estimated, or a named numeric vector of means to fix at.")
   }
 
   mu_est <- if(identical(dsem_mu_spec, "est")) cov_names else if(identical(dsem_mu_spec, "fix")) character(0) else dsem_mu_spec
@@ -1389,8 +1481,10 @@ Setup_Mod_DSEM <- function(input_list,
     levels_here <- map_levels[link$cell[[s]]]
 
     if(all(is.na(levels_here))) {
+      declared_by <- dsem_declared_by()[link$par[s]]
+      set_it <- if(is.na(declared_by)) "Estimate them" else paste0("Set ", declared_by)
       stop("Every deviation of ", link$name[s], " is fixed by the map, so there is nothing for the dsem ",
-           "to describe. Estimate them, or leave the series out of the arrows.")
+           "to describe. ", set_it, ", or leave the series out of the arrows.")
     }
 
     if(any(is.na(levels_here))) {
@@ -1508,10 +1602,23 @@ Setup_Mod_DSEM <- function(input_list,
            "sigmaR, which the initial age deviations read. Give it an sd line.")
     }
 
+    # a moderated sd changes year to year, so there is no one variance to center the deviations on: the
+    # initial ages, born before the grid, have no defensible one at all. the spread is still taken from the
+    # arrows, at the moderator's mean, but the correction has to be off
     for(s in rec_series) {
-      if(input_list$data$dsem_link_sd_arrow[s] == 0) {
-        collect_message(link$name[s], "'s sd is moderated, so it cannot stand in for sigmaR and ln_sigmaR's own value is read for it.")
+
+      if(input_list$data$dsem_link_sd_arrow[s] != 0) next
+
+      if(!isTRUE(input_list$data$bias_correct_pe == 0)) {
+        stop(link$name[s], "'s sd is moderated, so its variance moves year to year and there is no one ",
+             "value to bias correct on, least of all for the initial ages born before the grid starts. ",
+             "Set bias_correct_pe = 'none' in Setup_Mod_Dim, or give the series a plain sd line.")
       }
+
+      collect_message(link$name[s], "'s sd is moderated, so no sd line stands in for sigmaR. The initial age ",
+                      "deviations read the series' settled marginal variance, taken with every moderator at ",
+                      "its mean, and take no bias correction.")
+
     } # end s loop
 
   } # end if recruitment is declared
@@ -1532,6 +1639,22 @@ Setup_Mod_DSEM <- function(input_list,
   } # end k loop
 
   if(!is.null(mu_given)) series_mean[match(names(mu_given), variables)] <- mu_given
+
+  # zero is a convention, not a measurement, so an uncentered covariate held there reads as one long excursion
+  if(mu_zero) {
+    for(k in seq_len(n_cov)) {
+      if(link_code[k] != 0) next # a covariate on another link kept its observed mean, so it is not at risk
+      obs_mean <- dsem_cov_link_mean(cov_obs[,k], family_code[k], link_code[k])
+      obs_sd <- stats::sd(cov_obs[,k], na.rm = TRUE)
+      # a slow series wanders, so its sample mean sits a way off zero by chance; three spreads is well
+      # past that drift and well short of a covariate that was never centered at all
+      if(!is.finite(obs_sd) || obs_sd <= 0 || abs(obs_mean) <= 3 * obs_sd) next
+      warning(cov_names[k], " has an observed mean of ", signif(obs_mean, 3), " against a spread of ",
+              signif(obs_sd, 3), ", so it looks like it was never centered, and dsem_mu_spec holds every ",
+              "identity-link covariate at zero by default. Center it, or pass dsem_mu_spec = 'fix' to hold ",
+              "it at its observed mean instead.", call. = FALSE)
+    } # end k loop
+  } # end if the means are held at zero
 
   input_list$par$dsem_beta <- ifelse(is.na(beta_start), 0, beta_start) # paths start at no effect
   input_list$par$ln_dsem_sd <- log(ifelse(is.na(sd_start), 1, sd_start)) # sds start at one
@@ -1599,6 +1722,11 @@ Setup_Mod_DSEM <- function(input_list,
 
   } # end if an sd line is a marginal sd
 
+  # whether each linked series settles on one variance, which is what the initial age deviations can be held
+  # at. a moderated sd moves with its moderator and a lagged self path of one or more never settles, so those
+  # fall back to ln_sigmaR, the prior the user set for exactly this
+  input_list$data$dsem_link_settles <- get_dsem_link_settles(dsem_model, link_col, input_list$data$dsem_link_sd_arrow)
+
   # under the conditional form the correction reads each cell's marginal variance, not the sd line
   if(dsem_variance == "conditional" && any(link$par == "ln_RecDevs")) {
 
@@ -1661,13 +1789,7 @@ Setup_Mod_DSEM <- function(input_list,
 
   # every estimated cell of an array linked leaves its sigma read by nothing through that penalty; the module's
   # own declaration fixes the sigma, so an estimated one here is a setup that was never told
-  declaration_of <- c(ln_RecDevs = "RecDevs_model = 'dsem' in Setup_Mod_Rec",
-                      ln_NAA = "NAA_re = 'dsem' in Setup_Mod_Biologicals",
-                      ln_growth_devs = "growth_tv_model = 'dsem' in Setup_Mod_Biologicals",
-                      ln_growth_semipar_devs = "growth_semipar = 'dsem' in Setup_Mod_Biologicals",
-                      move_devs = "cont_vary_movement = 'dsem_...' in Setup_Mod_Movement",
-                      ln_fish_q_devs = "fish_q_model = 'dsem' in Setup_Mod_Fishsel_and_Q",
-                      ln_srv_q_devs = "srv_q_model = 'dsem' in Setup_Mod_Srvsel_and_Q")
+  declaration_of <- dsem_declared_by()
 
   for(par_name in unique(link$par)) {
 
@@ -1784,5 +1906,54 @@ dsem_series <- function(input_list,
   } # end s loop
 
   return(series_names[keep])
+
+} # end function
+
+#' Gates on a linked recruitment series
+#'
+#' One definition of each, read by the objective and by the operating model, so
+#' the two cannot decide either differently. The arrows take over an iid
+#' recruitment penalty: \code{dsem_rec_margvar_on} says that penalty's marginal
+#' variance is the one in force, which is what the initial age deviations are
+#' held at, and \code{dsem_rec_correction_on} says the lognormal correction is
+#' applied on top. They part company where a model asks for no correction but
+#' still takes its initial age spread from the arrows.
+#'
+#' The bias ramp has no part in either. A linked deviation is a random effect,
+#' which takes the whole correction or none, so \code{Setup_Mod_Rec} refuses a
+#' ramp alongside a declared dsem and \code{bias_correct_pe} decides alone.
+#'
+#' @param rec_linked Whether any series is linked to \code{ln_RecDevs}.
+#' @param RecDevs_model The deviations' own form, 1 for iid. A declared dsem
+#'   stores 1, since the arrows stand in for that penalty.
+#' @param RecDevs_pen_center 1 when the penalty centers on the deviations' own
+#'   mean, which leaves nothing to correct.
+#' @param bias_correct_pe 0 for \code{"none"}, which does the same.
+#'
+#' @return \code{TRUE} when that gate is open.
+#'
+#' @name dsem_rec_gates
+#' @keywords internal
+NULL
+
+#' @rdname dsem_rec_gates
+#' @keywords internal
+dsem_rec_margvar_on <- function(rec_linked,
+                                RecDevs_model) {
+
+  isTRUE(rec_linked) && isTRUE(RecDevs_model == 1)
+
+} # end function
+
+#' @rdname dsem_rec_gates
+#' @keywords internal
+dsem_rec_correction_on <- function(rec_linked,
+                                   RecDevs_model,
+                                   RecDevs_pen_center,
+                                   bias_correct_pe) {
+
+  dsem_rec_margvar_on(rec_linked, RecDevs_model) &&
+    !isTRUE(RecDevs_pen_center == 1) &&
+    !isTRUE(bias_correct_pe == 0)
 
 } # end function

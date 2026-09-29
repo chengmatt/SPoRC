@@ -123,6 +123,7 @@ input_list <- Setup_Mod_Dim(
   n_seas = dat$n_seas,
   n_pop = dat$n_pop,
   natal_region = dat$natal_region,
+  bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
   verbose = FALSE
 )
 ```
@@ -153,8 +154,6 @@ input_list <- Setup_Mod_Rec(
   sr_R0_spec = "rinit",
   steepness_h = array(inv_steepness(dat$steepness), dim = c(1, 1)),
   h_spec = "fix",
-  do_rec_bias_ramp = 1,
-  bias_year = rep(n_yrs + 1, 4),
   sigmaR_switch = 1,
   sigmaR_spec = "fix",
   ln_sigmaR = array(rep(log(dat$sigmaR), 2), dim = c(2, 1, 1)),
@@ -198,9 +197,12 @@ rather than as steepness, and leaves the default of 0.6.
 with `Wt_Rec`, set under Weighting below, and the two together are what
 reproduce AMAK's recruitment statements.
 
-`do_rec_bias_ramp = 1` with every break past the last year is how the penalty is
-centered on zero. Setting `do_rec_bias_ramp = 0` does not do that: it sets the
-ramp to one throughout, which centers on $-\sigma_{R}^{2}/2$.
+`bias_correct_pe = "none"`, set in `Setup_Mod_Dim`, is how the penalty is
+centered on zero rather than on $-\sigma_{R}^{2}/2$, and it covers the initial
+age deviations at the same time. The bias ramp can say the same thing, by
+switching it on with every break past the last year so that it sits at zero
+throughout, and the two give the same objective; the switch is used here because
+it names the convention instead of encoding it in a ramp that never ramps.
 
 `dont_est_recdev_last` stays at zero. AMAK estimates every deviation and
 restricts only the years its stock-recruit likelihood covers.

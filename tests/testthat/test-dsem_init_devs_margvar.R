@@ -8,6 +8,7 @@ init_margvar_input <- function(variance = "conditional", rec_dsem = TRUE, rho = 
 
   base <- list(data = dusky_rtmb_model$data, par = dusky_rtmb_model$parameters,
                map = dusky_rtmb_model$mapping, verbose = FALSE, store_config = FALSE)
+  base$data$bias_correct_pe <- 1 # dusky itself takes no correction, and these cases are about the corrected center
 
   rec_in <- suppressMessages(suppressWarnings(Setup_Mod_Rec(
     base,
@@ -97,31 +98,29 @@ test_that("bias_year moves the init devs' center and not their spread", {
   sd_line <- 0.4
   stat <- sd_line / sqrt(1 - rho^2)
 
-  # the ramp is 1 everywhere under 0, and 0 everywhere once bias_year sits past the last year
-  probe <- function(ramp_on) {
+  # a dsem refuses the bias ramp, so bias_correct_pe alone says whether the correction is taken
+  probe <- function(correct_on) {
     b <- list(data = dusky_rtmb_model$data, par = dusky_rtmb_model$parameters,
               map = dusky_rtmb_model$mapping, verbose = FALSE, store_config = FALSE)
-    n_yrs <- length(b$data$years)
+    b$data$bias_correct_pe <- if(correct_on) 1 else 0
     args <- list(input_list = b, sigmaR_switch = 1,
                  ln_sigmaR = array(log(sd_line), dim = c(2, b$data$n_pop, b$data$n_regions)),
                  rec_model = "mean_rec", init_age_strc = 1, ln_global_R0 = log(2.7),
                  t_spawn = b$data$t_spawn, RecDevs_model = "dsem", sigmaR_spec = "fix")
-    if(ramp_on) args$do_rec_bias_ramp <- 0
-    else { args$do_rec_bias_ramp <- 1; args$bias_year <- rep(n_yrs, 4) }
     il <- suppressMessages(suppressWarnings(do.call(Setup_Mod_Rec, args)))
     il <- suppressMessages(Setup_Mod_DSEM(il, dsem_data = NULL,
           dsem_arrows = c(sprintf("rec -> rec, 1, rho, %.17g", rho), sprintf("rec <-> rec, 0, sd_rec, %.17g", sd_line))))
-    c(init_margvar_rep(il), list(ramp = il$data$do_rec_bias_ramp))
+    c(init_margvar_rep(il), list(correct = il$data$bias_correct_pe))
   }
 
   on <- probe(TRUE)
   off <- probe(FALSE)
 
-  # the solve runs either way, so the spread does not depend on the ramp
+  # the solve runs either way, so the spread does not depend on the correction
   expect_equal(on$settled, stat^2, tolerance = 1e-6)
   expect_equal(off$settled, stat^2, tolerance = 1e-6)
 
-  # only the center moves: the bias-corrected mean with the ramp on, zero with it off
+  # only the center moves: the bias-corrected mean with the correction on, zero with it off
   expect_equal(on$nLL, init_nLL_at(on$dev, stat), tolerance = 1e-10)
   expect_equal(off$nLL, -stats::dnorm(off$dev, 0, stat, log = TRUE), tolerance = 1e-10)
   expect_gt(max(abs(off$nLL - -stats::dnorm(off$dev, 0, sd_line, log = TRUE))), 1e-3)
@@ -134,6 +133,7 @@ test_that("a native ar1 gives the init devs its stationary sd", {
   sd_line <- 0.4
   b <- list(data = dusky_rtmb_model$data, par = dusky_rtmb_model$parameters,
             map = dusky_rtmb_model$mapping, verbose = FALSE, store_config = FALSE)
+  b$data$bias_correct_pe <- 1 # dusky itself takes no correction, and this case is about the corrected center
 
   il <- suppressMessages(suppressWarnings(Setup_Mod_Rec(
     b, do_rec_bias_ramp = 0, sigmaR_switch = 1,

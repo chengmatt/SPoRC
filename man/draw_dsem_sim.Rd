@@ -18,7 +18,7 @@ Draws the year by series grid for all replicates up front, which is the same in
 distribution as drawing year by year because the series do not depend on the harvest, and
 keeps the same draws across management procedures. A linked recruitment cell is drawn about
 minus half its variance given the known cells (\code{\link{get_dsem_margvar}}, with a
-moderating series at its mean) when \code{rec_bias_correct} is on.
+moderating series at its mean) when \code{bias_correct_pe} is on.
 }
 \section{What it fills}{
 

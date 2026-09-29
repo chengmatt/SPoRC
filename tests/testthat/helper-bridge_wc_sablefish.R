@@ -2,14 +2,18 @@
 # 0-70 with comps binned to 0-50, years 1890-2024, six catch fleets and four trawl surveys.
 #
 # Recruitment is age 0 off the same year's spawning biomass, Beverton-Holt with steepness fixed at 0.75
-# and sigmaR 1.4, with an index built on the recruitment deviations themselves.
+# and sigmaR 1.4.
 #
 #   Source                                Years        Observations  Likelihood
 #   Catch, three gears and their discards 1890-2024    620           Lognormal, CV 0.01
 #   Four trawl survey indices             1980-2024     35           Lognormal
-#   Recruitment index                     2020-2024      5           Normal on the deviation
 #   Fishery age comps, six fleets         1983-2024    198           Multinomial
 #   Survey age comps, four surveys        1983-2024     52           Multinomial
+#
+# The assessment also fits an index of the recruitment deviations themselves, five observations over
+# 2020-2024 on SS3 fleet 11. That is an observation of a parameter rather than of the population, and
+# SPoRC has no index type for it, so it is not a survey fleet here and the bridge is to everything
+# else. What the assessment made of it is still in dat$ss3, to be named and subtracted.
 #
 # test-regression_wc_sablefish_bridge.R evaluates this at the SS3 estimate without optimizing and the
 # case study figures refit from it, so a specification change moves both or neither.
@@ -155,7 +159,7 @@ build_wc_sablefish_input <- function(dat) {
   )
 
   ## Survey index and compositions --------------------------------------------
-  # six survey fleets doing three different jobs
+  # four trawl surveys and the composition companion of the last of them
   t_srv <- array(dat$t_srv, dim = c(1, 1, n_srv))
 
   input_list <- Setup_Mod_SrvIdx_and_Comps(
@@ -168,13 +172,13 @@ build_wc_sablefish_input <- function(dat) {
     # only fleets 2 and 3 are estimated
     ObsSrvIdx_SE = wc_sablefish_input_se(dat),
     sigmaSrvIdx_spec = "est_additive",
-    sigmaSrvIdx_map = c(NA, 1, 2, NA, NA, NA),
-    ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8, 1e-8), 1e-8)),
+    sigmaSrvIdx_map = c(NA, 1, 2, NA, NA),
+    ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8), 1e-8)),
     UseSrvIdx = dat$UseSrvIdx,
-    # fleets 1-4 are the trawl surveys, 5 the unsexed compositions of the last of them
-    # with no index, and 6 the recruitment index, a normal on the deviations
-    srv_idx_type = c(rep("biom", 4), "none", "recdev"),
-    SrvIdx_LikeType = c(rep("lognormal", n_srv - 1), "normal"),
+    # fleets 1-4 are the trawl surveys and 5 the unsexed compositions of the last
+    # of them, which carries no index
+    srv_idx_type = c(rep("biom", 4), "none"),
+    SrvIdx_LikeType = rep("lognormal", n_srv),
     ObsSrvAgeComps = dat$ObsSrvAgeComps,
     UseSrvAgeComps = dat$UseSrvAgeComps,
     ISS_SrvAgeComps = dat$ISS_SrvAgeComps,
@@ -219,13 +223,12 @@ build_wc_sablefish_input <- function(dat) {
     cont_tv_srv_sel = paste0("none_Fleet_", seq_len(n_srv)),
     srv_sel_blocks = unlist(lapply(seq_len(n_srv), function(sf) blk_string(dat$srv_sel_blocks_ss3, sf))),
     srv_q_blocks = paste0("none_Fleet_", seq_len(n_srv)),
-    # the unsexed twin shares the curve of the survey it belongs to, and the
-    # recruitment index reads no curve at all
-    srv_fixed_sel_pars_spec = c(rep("est_all", 4), "est_shared_f_4", "fix"),
+    # the unsexed twin shares the curve of the survey it belongs to
+    srv_fixed_sel_pars_spec = c(rep("est_all", 4), "est_shared_f_4"),
     srv_sel_sex_offset = rep("par", n_srv),
     # catchability is solved analytically in the assessment, which is the same optimum
-    # as estimating it. the recruitment index has a catchability of its own
-    srv_q_spec = c(rep("est_all", 4), "fix", "est_all"),
+    # as estimating it
+    srv_q_spec = c(rep("est_all", 4), "fix"),
     t_srv = t_srv
   )
 
@@ -266,15 +269,11 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
   yrs <- dat$years
   n_yrs <- length(yrs)
   n_fish <- dat$n_fish_fleets
-  n_srv <- dat$n_srv_fleets
 
   ## Recruitment level, mortality and catchability -----------------------------
   input_list$par$ln_global_R0[] <- dat$mle$ln_R0
   input_list$par$ln_M[] <- log(dat$mle$M)
   input_list$par$ln_srv_q[1, 1, seq_along(dat$mle$ln_srv_q)] <- dat$mle$ln_srv_q
-  # the recruitment index's catchability is on the natural scale in the
-  # assessment and on the log scale here
-  input_list$par$ln_srv_q[1, 1, dat$n_srv_fleets] <- log(dat$mle$q_rec_idx)
 
   ## Recruitment deviations ---------------------------------------------------
   # SPoRC's deviation is the assessment's less the bias correction. the early
@@ -325,7 +324,7 @@ seed_wc_sablefish_mle <- function(input_list, dat) {
     input_list$par$fish_fixed_sel_pars[1, , seq_len(ncol(tab$pars)), 1, f] <- tab$pars
     map_fish <- put(map_fish, tab, f)
   } # end f loop
-  for(sf in seq_len(4)) { # 5 mirrors 4 and 6 reads no curve
+  for(sf in seq_len(4)) { # 5 mirrors 4, set below
     tab <- dat$sel_srv[[sf]]
     input_list$par$srv_fixed_sel_pars[1, , seq_len(ncol(tab$pars)), 1, sf] <- tab$pars
     map_srv <- put(map_srv, tab, sf)

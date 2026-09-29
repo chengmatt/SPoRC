@@ -442,10 +442,6 @@ get_fishery_observation_model <- function(
 #' @param fit_lengths Integer (0/1) switch for computing length compositions.
 #' @param SrvIAL Array \code{[pop, region, year, season, len, sex, srv_fleet]},
 #'   output container for survey index at length.
-#' @param RecDev_anom Array \code{[pop, region, deviation]} of recruitment
-#'   deviations measured from the center their penalty asserts, or \code{NULL}
-#'   when no fleet observes them. Read only by fleets with
-#'   \code{srv_idx_type == 2}.
 #' @param srv_idx_type Integer vector \code{[srv_fleet]} selecting
 #'   abundance/biomass survey index type.
 #' @param WAA_srv Array \code{[pop, region, year, season, age, sex,
@@ -508,7 +504,6 @@ get_survey_observation_model <- function(
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
   UseSrvIdx = NULL,
-  RecDev_anom = NULL,
   do_caal = 0,
   Srv_caal = NULL,
   SizeAgeTrans_srv = NULL,
@@ -600,11 +595,6 @@ get_survey_observation_model <- function(
             idx_ages <- array(srv_idx_ages[,sf], dim = c(n_ages, n_sexes))
             if(srv_idx_type[sf] == 0) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * idx_ages) # abundance
             if(srv_idx_type[sf] == 1) PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * sum(SrvIAA[p,r,y,seas,,,sf] * WAA_srv[p,r,y,seas,,,sf] * idx_ages) # biomass
-
-            # Recruitment index as a survey fleet
-            if(srv_idx_type[sf] == 2 && !is.null(RecDev_anom) && y <= dim(RecDev_anom)[3]) {
-              PredSrvIdx[p,r,y,seas,sf] <- srv_q[r,y,sf] * RecDev_anom[p,r,y]
-            }
 
           } # end seas loop
 

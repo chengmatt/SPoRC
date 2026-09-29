@@ -15,7 +15,17 @@
 #' Each linked series is written into the array the operating model reads, at the cells the
 #' fit linked, so those cells are never copied from the report:
 #' \itemize{
-#'   \item recruitment into \code{ln_RecDevs}, which \code{generate_recruitment} reads.
+#'   \item recruitment into \code{ln_RecDevs}, which \code{generate_recruitment} reads. Linking
+#'     recruitment also replaces both rows of the operating model's \code{ln_sigmaR} with the
+#'     series' settled marginal sd under the arrows, since that is what the fit's initial age
+#'     deviation penalty reads: whatever \code{\link{Setup_Sim_Rec}} was given is overwritten,
+#'     and the initial age deviations are then drawn at the same spread the fit assumes. A moderated
+#'     variance arrow on recruitment leaves \code{ln_sigmaR} as given, since the initial ages need one
+#'     number and a series whose variance is driven by another never settles on one. Only the hand off
+#'     is skipped: every deviation is still bias corrected, the initial ages at whatever
+#'     \code{ln_sigmaR} holds and the recruitment cells year by year off the marginal variance. Both
+#'     sides read the same gate, so a moderated series still has the operating model and the fit
+#'     agreeing, on the supplied \code{ln_sigmaR} rather than on an arrow derived value.
 #'   \item catchability into \code{ln_fish_q_devs} or \code{ln_srv_q_devs}, and
 #'     \code{\link{draw_sim_q_devs}} scales that fleet's catchability by them whatever the
 #'     operating model's own \code{fish_q_model} or \code{srv_q_model} says. The catchability
@@ -33,8 +43,9 @@
 #' Growth propagated cohort by cohort (\code{growth_tv_type = 1}) runs the way the fit runs
 #' it: the years before \code{growth_cohort_styr} are built up front, and from there
 #' \code{run_annual_cycle} advances each replicate one year at a time from its own start of
-#' year numbers. From scratch only recruitment and the numbers at age can be linked, since
-#' those are the arrays the operating model has itself.
+#' year numbers. From scratch recruitment, the numbers at age and catchability can be linked,
+#' since those are the arrays the operating model has itself, and a catchability series there
+#' needs its fleet set to \code{"dsem"} in \code{\link{Setup_Sim_q_devs}} to be read.
 #'
 #' @param sim_list Simulation list, for example from
 #'   \code{condition_closed_loop_simulations} or the \code{Setup_Sim_*} calls.
@@ -55,8 +66,8 @@
 #' @param dsem_values From scratch: named vector giving every arrow parameter its value, sds
 #'   on the natural scale, for example
 #'   \code{c(b_env = 0.5, rho_env = 0.6, sd_env = 1, sd_rec = 0.8)}.
-#' @param dsem_processes From scratch: processes the arrows may name, \code{"rec"} (default)
-#'   or \code{"NAA"}, or both.
+#' @param dsem_processes From scratch: processes the arrows may name, \code{"rec"} (default),
+#'   \code{"NAA"}, \code{"fish_q"} or \code{"srv_q"}, in any combination.
 #' @param dsem_cov_mu From scratch: named vector of covariate means, one per covariate the
 #'   arrows name. Default zero for each.
 #' @param dsem_cov_obs_sd From scratch: named vector, one per covariate, of the spread of its
@@ -92,6 +103,8 @@ Setup_Sim_DSEM <- function(sim_list,
                            condition_on_fit = FALSE,
                            dsem_arrows = NULL,
                            dsem_values = NULL,
+                           pars_by_sim = NULL,
+                           rep_by_sim = NULL,
                            dsem_processes = "rec",
                            dsem_cov_mu = NULL,
                            dsem_cov_obs_sd = NULL,
@@ -258,15 +271,17 @@ Setup_Sim_DSEM <- function(sim_list,
   for(s in seq_along(data$dsem_link_par)) x_known[seq_len(min(data$dsem_link_row[[s]]) - 1), data$dsem_link_col[s]] <- TRUE
   sim_list$dsem_x_known <- x_known
 
-  # the fit says whether its own penalty takes a correction at all
-  fit_ramp <- 1
-  if(!isTRUE(data$dsem_from_scratch) && !is.null(data$do_rec_bias_ramp)) {
-    fit_ramp <- get_rec_bias_ramp(data$do_rec_bias_ramp, data$bias_year, n_fit_yrs, data$max_bias_ramp_fct)
-  }
-  sim_list$dsem_rec_corr_on <- any(fit_ramp != 0) && !isTRUE(data$RecDevs_model != 1) && !isTRUE(data$RecDevs_pen_center == 1)
+  # a ramp cannot sit alongside a declared dsem, so the switch alone decides, on both sides
+  bc_pe_fit <- if(is.null(sim_list$bias_correct_pe)) 1 else sim_list$bias_correct_pe
+  rec_linked <- any(data$dsem_link_par == "ln_RecDevs")
+  rec_devs_model <- if(is.null(data$RecDevs_model)) 1 else data$RecDevs_model # a scratch list has none, and the arrows stand in for iid
 
-  # the initial age deviations read the recruitment series' settled marginal variance, the value the fit's penalty takes
-  if("rec" %in% data$dsem_declared && !is.null(sim_list$ln_sigmaR) && isTRUE(sim_list$dsem_rec_corr_on)) {
+  sim_list$rec_corr_on <- dsem_rec_correction_on(rec_linked, rec_devs_model, data$RecDevs_pen_center, bc_pe_fit)
+  sim_list$rec_margvar_on <- dsem_rec_margvar_on(rec_linked, rec_devs_model) # what the initial ages read
+
+  # the initial age deviations read the recruitment series' settled marginal variance, the value the
+  # fit's penalty takes. gated on the same dsem_rec_margvar_on the objective reads, so both switch together
+  if(isTRUE(sim_list$rec_margvar_on) && "rec" %in% data$dsem_declared && !is.null(sim_list$ln_sigmaR)) {
 
     init_mu_grid <- matrix(0, n_sim_yrs, length(data$dsem_model$variables)) # a moderating series sits at its mean
     for(k in seq_len(n_cov)) init_mu_grid[,data$dsem_cov_var_idx[k]] <- pars$dsem_mu[data$dsem_cov_var_idx[k]]
@@ -275,32 +290,43 @@ Setup_Sim_DSEM <- function(sim_list,
                                      get_dsem_cells(data$dsem_model, n_sim_yrs), as.vector(x_known))
 
     for(s in which(data$dsem_link_par == "ln_RecDevs")) {
-      if(!isTRUE(data$dsem_link_sd_arrow[s] > 0)) next # a moderated sd leaves the list's own sigmaR in place
+      if(!is.null(data$dsem_link_settles) && data$dsem_link_settles[s] == 0) next # no settled variance, so ln_sigmaR stands
       pop <- data$dsem_link_idx[[s]][1]
       region <- data$dsem_link_idx[[s]][2]
       sim_list$ln_sigmaR[,pop,region] <- log(sqrt(as.numeric(init_margvar[max(data$dsem_link_row[[s]]),data$dsem_link_col[s]])))
     } # end s loop
 
-  } # end if the correction is on
+  } # end if recruitment is linked
 
   # fitted values of every series, the cells a conditioned draw is given
-  x_fit <- matrix(0, n_fit_yrs, length(data$dsem_model$variables))
-  for(k in seq_len(n_cov)) x_fit[,data$dsem_cov_var_idx[k]] <- pars$dsem_x[1:n_fit_yrs,data$dsem_cov_var_idx[k]]
+  one_x_fit <- function(pr, rp) {
 
-  for(s in seq_along(data$dsem_link_par)) {
+    x_fit <- matrix(0, n_fit_yrs, length(data$dsem_model$variables))
+    for(k in seq_len(n_cov)) x_fit[,data$dsem_cov_var_idx[k]] <- pr$dsem_x[1:n_fit_yrs,data$dsem_cov_var_idx[k]]
 
-    fit_rows <- data$dsem_link_row[[s]][data$dsem_link_row[[s]] <= n_fit_yrs]
-    cells <- data$dsem_link_cell[[s]][seq_along(fit_rows)]
-    value <- pars[[data$dsem_link_par[s]]][cells]
+    for(s in seq_along(data$dsem_link_par)) {
 
-    # the arrows describe the state less its prediction, not the state
-    if(data$dsem_link_par[s] == "ln_NAA" && !is.null(rep$NAA_pred)) value <- value - log(rep$NAA_pred[cells])
+      fit_rows <- data$dsem_link_row[[s]][data$dsem_link_row[[s]] <= n_fit_yrs]
+      cells <- data$dsem_link_cell[[s]][seq_along(fit_rows)]
+      value <- pr[[data$dsem_link_par[s]]][cells]
 
-    x_fit[fit_rows,data$dsem_link_col[s]] <- value
+      # the arrows describe the state less its prediction, not the state
+      if(data$dsem_link_par[s] == "ln_NAA" && !is.null(rp$NAA_pred)) value <- value - log(rp$NAA_pred[cells])
 
-  } # end s loop
+      x_fit[fit_rows,data$dsem_link_col[s]] <- value
 
-  sim_list$dsem_x_fit <- x_fit
+    } # end s loop
+
+    x_fit
+
+  } # end one_x_fit
+
+  # one grid per replicate, or the single fitted grid when nothing is given per replicate
+  sim_list$dsem_x_fit <- if(is.null(pars_by_sim)) one_x_fit(pars, rep) else {
+    array(unlist(lapply(seq_along(pars_by_sim), function(i)
+            one_x_fit(pars_by_sim[[i]], if(is.null(rep_by_sim)) rep else rep_by_sim[[i]]))),
+          dim = c(n_fit_yrs, length(data$dsem_model$variables), length(pars_by_sim)))
+  }
 
   # Deviation Arrays the Operating Model Lacks ------------------------------
 
@@ -403,8 +429,10 @@ scratch_dsem_fit <- function(sim_list,
 
   # The Operating Model's Arrays, Read as a Fit's ---------------------------
 
-  if(!all(dsem_processes %in% c("rec", "NAA"))) {
-    stop("From scratch the arrows can name recruitment and the numbers at age only; ",
+  # catchability is an array the operating model builds itself, so a series on it needs no fit.
+  # growth and movement have none of their own and do
+  if(!all(dsem_processes %in% c("rec", "NAA", "fish_q", "srv_q"))) {
+    stop("From scratch the arrows can name recruitment, the numbers at age and catchability only; ",
          "growth and movement need a fit's data and pars.")
   }
 
@@ -419,6 +447,22 @@ scratch_dsem_fit <- function(sim_list,
                     map = list()) # no map, so every cell is estimated
 
   fit_input$par$ln_RecDevs <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, n_yrs))
+
+  for(prefix in c("fish", "srv")) {
+
+    if(!paste0(prefix, "_q") %in% dsem_processes) next
+
+    # the drawn cells reach catchability through draw_sim_q_devs, which passes over a fleet with no model
+    if(is.null(sim_list[[paste0(prefix, "_q_model")]])) {
+      stop("The arrows name ", prefix, " catchability, but the operating model holds no ", prefix,
+           "_q_model, so the drawn series would sit in an array nothing reads. Call Setup_Sim_q_devs ",
+           "with ", prefix, "_q_model = 'dsem' first.")
+    }
+
+    fit_input$par[[paste0("ln_", prefix, "_q_devs")]] <- array(0, dim = c(sim_list$n_regions, n_yrs,
+                                                                         sim_list[[paste0("n_", prefix, "_fleets")]]))
+
+  } # end prefix loop
 
   if("NAA" %in% dsem_processes) {
 
@@ -533,6 +577,7 @@ scratch_dsem_fit <- function(sim_list,
                dsem_link_idx = link$idx,
                dsem_link_yr_dim = link$yr_dim,
                dsem_link_sd_arrow = get_dsem_link_sd_arrow(dsem_model, link_col),
+               dsem_link_settles = get_dsem_link_settles(dsem_model, link_col, get_dsem_link_sd_arrow(dsem_model, link_col)),
                dsem_declared = unique(link$label))
 
   # Populate the Parameter List ---------------------------------------------
@@ -549,6 +594,7 @@ scratch_dsem_fit <- function(sim_list,
 
   pars$ln_RecDevs <- fit_input$par$ln_RecDevs
   if(!is.null(fit_input$par$ln_NAA)) pars$ln_NAA <- fit_input$par$ln_NAA
+  for(nm in q_dev_par_names()) if(!is.null(fit_input$par[[nm]])) pars[[nm]] <- fit_input$par[[nm]]
 
   return(list(data = data, pars = pars))
 
@@ -626,7 +672,7 @@ draw_dsem_recursive <- function(dsem_model,
 #' distribution as drawing year by year because the series do not depend on the harvest, and
 #' keeps the same draws across management procedures. A linked recruitment cell is drawn about
 #' minus half its variance given the known cells (\code{\link{get_dsem_margvar}}, with a
-#' moderating series at its mean) when \code{rec_bias_correct} is on.
+#' moderating series at its mean) when \code{bias_correct_pe} is on.
 #'
 #' @section What it fills:
 #' \code{dsem_x_sim} \code{[year, series, sim]}, every linked cell of every linked array from
@@ -658,8 +704,36 @@ draw_dsem_sim <- function(sim_env) {
   rec_links <- which(sim_env$dsem_link_par == "ln_RecDevs")
   rec_col <- sim_env$dsem_link_col[rec_links]
 
-  bc_pe <- if(is.null(sim_env$bias_correct_pe)) 1 else sim_env$bias_correct_pe # saved lists predate it and corrected recruitment
-  if(length(rec_col) > 0 && isTRUE(sim_env$rec_bias_correct == 1) && isTRUE(sim_env$dsem_rec_corr_on) && bc_pe > 0) {
+  do_rec_corr <- length(rec_col) > 0 && isTRUE(sim_env$rec_corr_on) # bias_correct_pe is already inside it
+  mod_arrows <- sim_env$dsem_model$arrows$mod_idx > 0
+  has_mod <- any(mod_arrows)
+
+  # a moderated variance is a replicate's own, so the correction is applied after the draw, which holds
+  # only while no moderating series carries recruitment forward into itself
+  if(do_rec_corr && has_mod) {
+
+    arrows <- sim_env$dsem_model$arrows
+    series_rec_reaches <- rec_col
+
+    repeat {
+      leaving_reached <- arrows$type == "path" & arrows$from_idx %in% series_rec_reaches
+      grown <- unique(c(series_rec_reaches, arrows$to_idx[leaving_reached]))
+      if(length(grown) == length(series_rec_reaches)) break
+      series_rec_reaches <- grown
+    } # end repeat
+
+    circular_moderators <- intersect(unique(arrows$mod_idx[mod_arrows]), series_rec_reaches)
+
+    if(length(circular_moderators) > 0) {
+      stop("The moderating series ", paste(sim_env$dsem_model$variables[circular_moderators], collapse = ", "),
+           " reads recruitment forward, so the variance the bias correction needs depends on the ",
+           "deviations the correction shifts. Moderate on a series recruitment does not reach, or ",
+           "turn the correction off with bias_correct_pe = 'none'.")
+    }
+
+  } # end if a moderated correction has to be checked
+
+  if(do_rec_corr && !has_mod) {
 
     margvar <- get_dsem_margvar(sim_env$dsem_beta,
                                 sim_env$ln_dsem_sd,
@@ -671,33 +745,41 @@ draw_dsem_sim <- function(sim_env) {
     # subtract for bias correction
     mu_grid[,rec_col] <- mu_grid[,rec_col] - 0.5 * as.matrix(margvar[,rec_col,drop = FALSE])
 
-    # figure out what to add back into rec dev anomaly if used
-    for(s in rec_links) {
-      p_rec <- sim_env$dsem_link_idx[[s]][1] # extract out pop indx
-      r_rec <- sim_env$dsem_link_idx[[s]][2] # extract out reg indx
-      sim_env$rec_anom_add[p_rec,r_rec,] <- 0.5 * as.numeric(margvar[1:n_yrs,sim_env$dsem_link_col[s]]) # what a recruitment index adds back in
-    } # end s loop
-
   } # end if the correction is on
 
   # Draw Every Replicate ----------------------------------------------------
 
-  x_known <- matrix(0, n_yrs, n_vars) # the fitted years, when conditioning on them
-  if(n_cond > 0) x_known[1:n_cond,] <- sim_env$dsem_x_fit[1:n_cond,]
+  # the fitted years each replicate is conditioned on, zero everywhere the draw fills in. a joint
+  # self test gives each replicate its own states, anything else gives them all the same ones
+  dsem_x_fit <- sim_env$dsem_x_fit
+  one_grid_per_sim <- length(dim(dsem_x_fit)) == 3
+
+  x_known <- array(0, dim = c(n_yrs, n_vars, n_sims))
+  if(n_cond > 0) {
+    for(sim in seq_len(n_sims)) {
+      x_known[1:n_cond,,sim] <- if(one_grid_per_sim) dsem_x_fit[1:n_cond,,sim] else dsem_x_fit[1:n_cond,]
+    } # end sim loop
+  } # end if conditioning on the fit
 
   if(any(sim_env$dsem_model$arrows$mod_idx > 0)) {
 
     # a moderated arrow takes its value from the grid, so there is no single covariance to draw from
     arrow_value <- get_dsem_arrow_values(sim_env$dsem_beta, sim_env$ln_dsem_sd, sim_env$dsem_model)
-    x_sim <- draw_dsem_recursive(sim_env$dsem_model, arrow_value, mu_grid, n_sims, n_cond, x_known)
+
+    if(one_grid_per_sim) {
+      per_sim <- lapply(seq_len(n_sims), function(sim)
+        draw_dsem_recursive(sim_env$dsem_model, arrow_value, mu_grid, 1, n_cond, x_known[,,sim]))
+      x_sim <- array(unlist(per_sim), dim = c(n_yrs, n_vars, n_sims))
+    } else {
+      x_sim <- draw_dsem_recursive(sim_env$dsem_model, arrow_value, mu_grid, n_sims, n_cond, x_known[,,1])
+    } # end if one grid per replicate
 
   } else {
 
     cells <- get_dsem_cells(sim_env$dsem_model, n_yrs)
     any_project <- length(cells$unobs_idx) > 0
 
-    # the precision the density reads. a solved series has no row in it, so those
-    # cells are set from the drawn ones afterwards
+    # the precision the density reads. a solved series has no row in it, so those cells are dranw later
     parts <- get_dsem_matrices(sim_env$dsem_beta,
                                sim_env$ln_dsem_sd,
                                sim_env$dsem_model,
@@ -715,16 +797,28 @@ draw_dsem_sim <- function(sim_env) {
 
     obs <- cells$obs_idx # Q_oo covers these cells, so condition and draw within them
     known_obs <- match(intersect(known_cell, obs), obs)
+    x_sim <- matrix(x_known, n_yrs * n_vars, n_sims)
 
-    dsem_cond <- get_dsem_conditional(Q_oo,
-                                      as.vector(mu_grid)[obs],
-                                      known_obs,
-                                      as.vector(x_known)[obs[known_obs]])
+    # the fitted years are already in x_sim. only years past the fit are drawn, conditioned on them
+    # through the arrows. a self test runs the fitted years only, so nothing is drawn here
+    grid_mean <- as.vector(mu_grid)[obs]
 
-    x_sim <- array(as.vector(x_known), dim = c(n_yrs * n_vars, n_sims))
-    x_sim[obs[dsem_cond$unknown_cell],] <- draw_dsem_conditional(dsem_cond, n_sims)
+    if(one_grid_per_sim) {
+      # each replicate has its own fitted years, so each projects on from its own history
+      for(sim in seq_len(n_sims)) {
+        fitted_years <- as.vector(x_known[,,sim])[obs[known_obs]]
+        dsem_cond <- get_dsem_conditional(Q_oo, grid_mean, known_obs, fitted_years)
+        x_sim[obs[dsem_cond$unknown_cell],sim] <- draw_dsem_conditional(dsem_cond, 1)
+      } # end sim loop
 
-    # a solved cell follows from each replicate's own drawn cells
+    } else {
+      # one history for all of them, so one conditional distribution covers every replicate
+      fitted_years <- as.vector(x_known[,,1])[obs[known_obs]]
+      dsem_cond <- get_dsem_conditional(Q_oo, grid_mean, known_obs, fitted_years)
+      x_sim[obs[dsem_cond$unknown_cell],] <- draw_dsem_conditional(dsem_cond, n_sims)
+    } # end if one grid per replicate
+
+    # a solved / derived / projected cell follows from each replicate's own drawn cells
     if(any_project) {
       for(sim in seq_len(n_sims)) {
         x_sim[,sim] <- as.vector(set_dsem_solved_cells(matrix(x_sim[,sim], n_yrs, n_vars),
@@ -733,13 +827,36 @@ draw_dsem_sim <- function(sim_env) {
     } # end if anything solved out
 
     x_sim <- array(x_sim, dim = c(n_yrs, n_vars, n_sims))
-
   } # end if any moderated arrow
+
+  # shifting a deviation and its mean together leaves every downstream series reading the same anomaly,
+  # so the correction goes on after the draw rather than sending anything round a second time
+  if(do_rec_corr && has_mod) {
+
+    grid_cells <- get_dsem_cells(sim_env$dsem_model, n_yrs)
+    drawn_yrs <- seq_len(n_yrs)[-seq_len(n_cond)] # the conditioning years keep the fit's own values
+
+    for(sim in seq_len(n_sims)) {
+
+      margvar_sim <- get_dsem_margvar(sim_env$dsem_beta, sim_env$ln_dsem_sd, x_sim[,,sim],
+                                      sim_env$dsem_model, grid_cells, as.vector(sim_env$dsem_x_known))
+
+      for(s in rec_links) {
+
+        link_col <- sim_env$dsem_link_col[s]
+        correction <- 0.5 * as.numeric(margvar_sim[,link_col])
+
+        if(length(drawn_yrs) > 0) x_sim[drawn_yrs,link_col,sim] <- x_sim[drawn_yrs,link_col,sim] - correction[drawn_yrs]
+
+      } # end s loop
+
+    } # end sim loop
+
+  } # end if the correction is a replicate's own
 
   sim_env$dsem_x_sim <- x_sim
 
   # Write Each Series Into Its Array ----------------------------------------
-
   # written into the array the operating model uses, the way the objective builds it. the replicate
   # dim is last, so each cell is placed at its own dims
   for(s in seq_along(sim_env$dsem_link_par)) {
@@ -776,12 +893,10 @@ draw_dsem_sim <- function(sim_env) {
   cov_obs <- array(NA, dim = c(n_yrs, n_cov, n_sims))
 
   for(k in seq_len(n_cov)) {
-
     state <- x_sim[,sim_env$dsem_cov_var_idx[k],,drop = FALSE] # [year, 1, sim]
     tweedie_p <- if(is.null(sim_env$logit_dsem_tweedie_p)) 1.5 else 1 + stats::plogis(sim_env$logit_dsem_tweedie_p[k])
     link <- if(is.null(sim_env$dsem_cov_link)) dsem_default_link(sim_env$dsem_cov_family[k]) else sim_env$dsem_cov_link[k]
     fixed_sd <- if(is.null(sim_env$dsem_cov_fixed_sd)) NULL else sim_env$dsem_cov_fixed_sd[,k]
-
     observed <- draw_dsem_cov_obs(state, sim_env$dsem_cov_family[k], link, exp(sim_env$ln_dsem_obs_sd[k]), tweedie_p, fixed_sd)
     observed[sim_env$dsem_cov_use[,k] == 0,,] <- NA # years this covariate is not observed
     cov_obs[,k,] <- observed[,1,]
@@ -822,7 +937,6 @@ get_dsem_conditional <- function(Q,
   unknown_cell <- setdiff(seq_len(nrow(Q)), known_cell)
   Q_uu <- Matrix::forceSymmetric(Q[unknown_cell, unknown_cell, drop = FALSE]) # precision of the unknown cells given the known
   chol_uu <- Matrix::Cholesky(Q_uu, LDL = FALSE, perm = TRUE) # P Q_uu t(P) = L t(L)
-
   cond_mean <- mu_cell[unknown_cell] # with nothing known the draw is the unconditional field about its mean
 
   if(length(known_cell) > 0) {

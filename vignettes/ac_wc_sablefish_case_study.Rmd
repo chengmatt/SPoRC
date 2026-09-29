@@ -23,16 +23,19 @@ knitr::opts_chunk$set(
 This case study reproduces the 2025 West Coast sablefish assessment, run in
 Stock Synthesis 3, in `SPoRC`. 
 
-The model is single region, two sex, single season, with six catch fleets, four
-trawl surveys and an index built on the recruitment deviations themselves:
+The model is single region, two sex, single season, with six catch fleets and
+four trawl surveys:
 
 | Source | Years | Observations | Likelihood |
 |---|---|---|---|
 | Catch, three gears and their discard fleets | 1890--2024 | 620 | Lognormal, CV 0.01 |
 | Triennial early and late, NWFSC slope, WCGBTS | 1980--2024 | 35 | Lognormal |
-| Recruitment index | 2020--2024 | 5 | Normal on the deviation |
 | Fishery age compositions, six fleets | 1983--2024 | 198 | Multinomial |
 | Survey age compositions, four surveys | 1983--2024 | 52 | Multinomial |
+
+The assessment fits one further data source that this bridge does not, an index
+of the recruitment deviations themselves over 2020--2024, and the section on it
+below says what leaving it out costs.
 
 Ages run $a = 0$ to $a_{+} = 70$ with compositions binned to $0$ to $50$, and
 model years run $y_{1} = 1890$ to $y_{\text{end}} = 2024$. Recruitment is age 0
@@ -83,11 +86,6 @@ digits, which is as close as that likelihood's CV of 0.01 holds them.
 Extra survey standard deviation is added, not combined in quadrature. For
 each survey, $\sigma_{y} = \sigma_{y}^{\text{input}} + \sigma^{\text{extra}}$.
 `SPoRC` currently has no parameter for it, so it is kept at the assessment's estimate.
-
-The recruitment index is a likelihood on the deviations. Fleet 11 is units
-36, a normal likelihood on $\varepsilon_{y}$ itself rather than on abundance.
-`SPoRC` holds this as `srv_idx_type = "recdev"`, a survey fleet that observes
-year class strength directly and reads no part of the population.
 
 Two fleets have two composition data sources. The trawl fishery and the West
 Coast groundfish bottom trawl survey each have sexed and unsexed compositions
@@ -297,9 +295,11 @@ input_list <- Setup_Mod_SrvIdx_and_Comps(
   # at the assessment's lower bound, which is it asking for none, so they are kept.
   ObsSrvIdx_SE = input_se(dat),
   sigmaSrvIdx_spec = "est_additive",
-  sigmaSrvIdx_map = c(NA, 1, 2, NA, NA, NA),
-  ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8, 1e-8), 1e-8)),
+  sigmaSrvIdx_map = c(NA, 1, 2, NA, NA),
+  ln_sigmaSrvIdx = log(pmax(c(dat$mle$extra_sd, 1e-8), 1e-8)),
   UseSrvIdx = dat$UseSrvIdx,
+  # fleets 1-4 are the trawl surveys and 5 the unsexed compositions of the last
+  # of them, which carries no index
   srv_idx_type = c(rep("biom", n_srv - 1), "none"),
   SrvIdx_LikeType = rep("lognormal", n_srv),
   ObsSrvAgeComps = dat$ObsSrvAgeComps,
@@ -413,29 +413,25 @@ mapping <- input_list$map
 The assessment's composition weights are already in the sample sizes, so every
 weight here is one.
 
-## The recruitment index
+## The recruitment index this bridge leaves out
 
-The last survey fleet observes the recruitment deviations themselves rather
-than any part of the population. That is `srv_idx_type = "recdev"`, set with
-the other survey fleets above. Its predicted value is
+The assessment carries one more survey fleet, Stock Synthesis fleet 11, which
+is not an index of the population at all. Its five observations over 2020--2024
+are units 36, a normal likelihood on the recruitment deviation $\varepsilon_{y}$
+itself, so its prediction would be $q\left(\varepsilon_{y} - \mu_{y}\right)$
+with $\mu_{y}$ the center the recruitment penalty asserts for that year. That
+is an observation of a parameter rather than of anything the population
+dynamics produce: the fleet would read no numbers at age, so its selectivity,
+survey timing and weight at age would never be used, and its likelihood would
+have to be normal rather than lognormal because a deviation is signed.
 
-$$\widehat{I}_{y} = q\left( \varepsilon_{y} - \mu_{y} \right)$$
-
-with $\mu_{y}$ the center the recruitment penalty asserts for that year. The
-difference matters here: under a bias ramp `SPoRC`'s stored deviation and the
-deviation the assessment reports differ by the bias correction, and it is the
-anomaly, how strong the year class was against what the model expected, that
-such an index measures. Taking it from the penalty's own center is what makes
-the two agree without any special casing.
-
-Because the deviations are signed, two things follow for this fleet. It takes
-`SrvIdx_LikeType = "normal"`, since a lognormal cannot have a negative
-observation, and setup refuses any other choice for it. It also reads no
-numbers at age, so that its selectivity, survey timing and weight at age are
-never used and its compositions are left off. Its catchability is an ordinary
-element of `ln_srv_q`, kept on the log scale where the assessment has it on
-the natural scale.
-
+`SPoRC` has no index type for it, so it is not one of the five survey fleets
+above. What the assessment made of it is still in `dat$ss3`, whose likelihood
+and predicted index tables are its report as it stands, and that is what the
+comparisons below name and subtract. The same information can be brought in
+through machinery the package already has, as a covariate on recruitment in a
+`DSEM` (see `vignettes("ag_dsem")`), which is a statement about the process
+rather than a survey of it.
 
 ## Starting at the assessment's estimate
 
@@ -461,12 +457,12 @@ significant digits:
 numbers at age                     5.8e-04 %
 spawning biomass                   4.5e-04 %
 recruitment                        3.9e-04 %
-total biomass, January 1           5.1e-04 %
-predicted catch                    4.9e-04 %
-survey indices                     5.4e-04 %
+total biomass, January 1           4.9e-04 %
+predicted catch                    4.8e-04 %
+survey indices                     5.1e-04 %
 bias ramp                          0        (absolute)
-selectivity, all twelve fleets     5.0e-07  (absolute)
-expected age compositions          6.5e-07  (absolute)
+selectivity, all eleven fleets     5.0e-07  (absolute)
+expected age compositions          6.1e-07  (absolute)
 ```
 
 `SPoRC` writes each likelihood component as a proper density where the
@@ -490,12 +486,13 @@ constants it omits:
 | Triennial late ages | 73.2284320 | 73.2284000 | $3.2\times10^{-5}$ |
 | NWFSC slope ages | 35.3020090 | 35.3020000 | $8.7\times10^{-6}$ |
 | WCGBTS ages | 199.0197000 | 199.0200000 | $-3.0\times10^{-4}$ |
-| Recruitment deviations | 22.4041000 | 22.4041400 | $-3.9\times10^{-5}$ |
+| Recruitment deviations | 22.4041010 | 22.4041400 | $-3.9\times10^{-5}$ |
 | Natural mortality prior | 0.2040659 | 0.2040690 | $-3.1\times10^{-6}$ |
-| Recruitment index | 1.2484147 | 1.2484100 | $4.7\times10^{-6}$ |
 
-The total comes to 1335.7715 against the assessment's 1335.7716, a difference
-of $3.9\times10^{-5}$, which is the report file's own print precision.
+The assessment's recruitment index, which is not fit here, is a further
+1.2484100 of its total. The comparison is therefore against that total less
+that row: 1334.5231 against 1334.5232, a difference of $4.4\times10^{-5}$,
+which is the report file's own print precision.
 
 ## Fitting and comparison
 
@@ -505,25 +502,23 @@ est <- fit_model(input_list$data, input_list$par, input_list$map,
 est$sdrep <- RTMB::sdreport(est, hessian.fixed = est$he(est$optim$par))
 ```
 
-709 parameters, 32 of them selectivity, which is the assessment's own count.
-The objective falls from -879.4254 at the assessment's estimate to -879.4297, a
-drop of 0.0043, and the fitted selectivity stays within
-$1.5\times10^{-5}$ of the assessment's on every one of the twelve fleets.
+710 parameters, 32 of them selectivity. The objective falls by 0.0095 from the
+assessment's estimate to -880.6833, and the fitted selectivity stays within
+$1.8\times10^{-4}$ of the assessment's on every one of the twelve fleets.
 
 | | Median | Maximum |
 |---|---|---|
-| Spawning biomass | -0.0020 % | 0.0039 % |
-| Recruitment | -0.0054 % | 0.0098 % |
+| Spawning biomass | -0.069 % | 0.100 % |
+| Recruitment | -0.133 % | 8.13 % |
 
 | | `SPoRC` | Assessment |
 |---|---|---|
-| $\ln R_{0}$ | 10.165054 | 10.165108 |
-| Natural mortality | 0.0877750 | 0.0877770 |
-| Triennial early catchability | 1.022891 | 1.022873 |
-| Triennial late catchability | 2.770002 | 2.770076 |
-| NWFSC slope catchability | 0.509775 | 0.509779 |
-| WCGBTS catchability | 1.049713 | 1.049699 |
-| Recruitment index catchability | 0.237148 | 0.237144 |
+| $\ln R_{0}$ | 10.163776 | 10.165108 |
+| Natural mortality | 0.0877404 | 0.0877770 |
+| Triennial early catchability | 1.023289 | 1.022873 |
+| Triennial late catchability | 2.770884 | 2.770076 |
+| NWFSC slope catchability | 0.509935 | 0.509779 |
+| WCGBTS catchability | 1.049972 | 1.049699 |
 
 ![](figures/ac_wc_sablefish_ts_comparison.png)
 ![](figures/ac_wc_sablefish_sel_comparison.png)
@@ -532,13 +527,51 @@ $1.5\times10^{-5}$ of the assessment's on every one of the twelve fleets.
 
 Everything in the population dynamics, the observation model and the
 selectivity agrees at the assessment report's own print precision, and so does
-every likelihood component. Refitting moves spawning biomass by four
-thousandths of a percent.
+every likelihood component the two share. What moves is the fit, and three
+things account for it.
 
-Two things account for that much. The assessment solves fishing mortality from
-the catch where `SPoRC` estimates it against a lognormal catch likelihood at
+The first is the recruitment index, the one data source this bridge does not
+carry. It spoke to five year classes and to nothing else, so that is where its
+absence shows. No deviation before 2020 moves by more than 0.005 on the log
+scale, and of the five it observed only 2024 moves at all far.
+
+| Year | Observation | SE | `SPoRC` deviation | Assessment deviation | Recruitment |
+|---|---|---|---|---|---|
+| 2020 | 0.300 | 1.192 | 1.4420 | 1.4410 | -0.01 % |
+| 2021 | 0.682 | 1.185 | 1.0900 | 1.0892 | -0.04 % |
+| 2022 | -0.912 | 1.216 | -1.4772 | -1.4968 | 1.86 % |
+| 2023 | 0.382 | 1.181 | 1.4953 | 1.4934 | 0.07 % |
+| 2024 | 0.680 | 1.187 | 0.4234 | 0.5070 | -8.13 % |
+
+2024 is the terminal year, whose deviation the age compositions have not yet
+seen a single fish of, so the index was the only observation of it and dropping
+it leaves the deviation to the recruitment penalty alone. That is the whole of
+the 8 percent maximum in the recruitment row above, and it propagates into
+spawning biomass only as far as a single unfished year class does, which is a
+tenth of a percent.
+
+The same holds for uncertainty. Against the assessment's own standard errors,
+the coefficient of variation on recruitment is unchanged to four significant
+figures in every year but two: 2024 widens from 0.926 to 0.968, and 2022 is
+marginally tighter at 0.397 against 0.403, the deviation there having been the
+one the index disagreed with. Spawning biomass is unchanged to four figures in
+every year, 2024 included. Five observations on a parameter, weighted at a
+standard error of about 1.2 on a series whose $\sigma_{R}$ is 1.4, are worth
+roughly four percent on the terminal year class and nothing else.
+
+The rest of the recruitment series moves too, but as a level rather than a
+shape: releasing 2024 lets $\ln R_{0}$ settle 0.0013 lower, which carries every
+year class from 1890 to 2021 down by about 0.04 percent together. That uniform
+shift, not any single year, is what the median rows in the two tables above are
+reporting.
+
+The other two causes are conventions rather than data, and they are the same
+two the other bridges carry. The assessment solves fishing mortality from the
+catch where `SPoRC` estimates it against a lognormal catch likelihood at
 CV 0.01, so the two agree only to the precision that likelihood enforces; and
 the extra survey standard deviation is kept at the assessment's estimate,
-because `SPoRC` has no parameter for it. Neither moves the fit, but the second
-does mean the standard errors here do not have that source of uncertainty.
+because `SPoRC` has no parameter for it. Neither moves the fit at the
+assessment's own estimate, where every likelihood component the two share
+agrees to the report file's print precision, but the second does mean the
+standard errors here do not have that source of uncertainty.
 

@@ -179,15 +179,7 @@ dims.}
 all zeros.}
 
 \item{srv_idx_type}{Character vector \code{[n_srv_fleets]}: \code{"biom"},
-\code{"abd"}, \code{"recdev"} or \code{"none"}, stored as \code{1}, \code{0},
-\code{2} and \code{999}. A \code{"recdev"} fleet observes year class strength
-directly rather than any part of the population: its predicted value is
-\code{q * (ln_RecDevs - mu)}, with \code{mu} the center the recruitment
-penalty asserts for that year, so it measures the anomaly rather than the
-deviation as stored. It reads no numbers at age, so its selectivity, timing
-and weight at age are unused and its compositions should be left off. It
-requires \code{SrvIdx_LikeType = "normal"} and
-\code{RecDevs_pen_center = "fixed"} in \code{\link{Setup_Mod_Rec}}.}
+\code{"abd"} or \code{"none"}, stored as \code{1}, \code{0} and \code{999}.}
 
 \item{ObsSrvAgeComps}{Observed survey age compositions \code{[n_regions × n_years
 × n_seas × n_ages × n_sexes × n_srv_fleets]}, counts or proportions on a

@@ -1039,7 +1039,7 @@ get_init_devs_penalty <- function(
         sigma_init <- sigma_init / sqrt(1 - rho_init^2)
       }
 
-      # the marginal variance of a series under the arrows is wider than its sd line, and these ages were born before it starts
+      # use marginal variance of the series for penalty
       if(!is.null(init_sigmaR_dsem) && init_sigmaR_dsem_use[p,r] == 1) sigma_init <- init_sigmaR_dsem[p,r]
 
       # the center is the deviations' own mean, pooled over ages and sexes, or the bias-corrected mean

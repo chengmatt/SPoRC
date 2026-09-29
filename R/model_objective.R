@@ -589,6 +589,7 @@ SPoRC_rtmb = function(pars, data) {
     if(length(r3) > 0) init_bias_ramp[r3] = 1 - ((d_init[r3] - bias_year[3]) / (bias_year[4] - bias_year[3]))
     init_bias_ramp = init_bias_ramp * max_bias_ramp_fct
   }
+  if(bias_correct_pe == 0) init_bias_ramp = init_bias_ramp * 0 # 'none' covers the initial ages too, as it says
 
   ## Mortality at Age --------------------------------------------------------
   missing_catch = is.na(ObsCatch) # TRUE = aggregate catch is missing, not a true recorded zero
@@ -1004,14 +1005,9 @@ SPoRC_rtmb = function(pars, data) {
   oe_disc_pop = if(bias_correct_oe == 1) 0.5 * exp(ln_sigmaD_pop)^2 else array(0, dim = dim(ln_sigmaD_pop))
 
   ## Dynamic Structural Equation Model ---------------------------------------
-
   # initial sigR if doing dsem stuff
   init_sigmaR_dsem = NULL
   init_sigmaR_dsem_use = NULL
-
-  # recruitment index stuff for a "survey" to add back a bias correction to maintain consistency
-  rec_anom_add = array(0, dim = dim(ln_RecDevs))
-  rec_anom_use = array(0, dim = dim(ln_RecDevs))
 
   if(!is.null(dsem_model)) {
 
@@ -1026,42 +1022,35 @@ SPoRC_rtmb = function(pars, data) {
       if(dsem_link_par[s] == "ln_NAA") dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = log(NAA_pred[dsem_link_cell[[s]]]) # if NAA, the mean is the prediction
     } # end s loop
 
-    # the marginal variance of each recruitment cell, worked out once. it does not depend on the bias
-    # ramp, so bias_year switches the correction off without moving the initial ages
+    # the marginal variance of each recruitment cell (dsem does not allow bias ramp)
     dsem_margvar_grid = matrix(0, n_dsem_yrs, ncol(dsem_x_grid))
     rec_links = which(dsem_link_par == "ln_RecDevs")
-    rec_margvar = length(rec_links) > 0 && RecDevs_model == 1 # a linked recruitment series under an iid penalty
+    rec_margvar_on = dsem_rec_margvar_on(length(rec_links) > 0, RecDevs_model) # one definition and one name, shared with the operating model
+    rec_corr_on = dsem_rec_correction_on(length(rec_links) > 0, RecDevs_model, RecDevs_pen_center, bias_correct_pe)
+    if(rec_margvar_on) dsem_margvar_grid = get_dsem_margvar(dsem_beta, ln_dsem_sd, dsem_x_grid, dsem_model, dsem_cells, as.vector(dsem_x_known)) # figure out marginal varaince of series
+    if(rec_corr_on) for(s in rec_links) dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]] # lognormal correction
 
-    if(rec_margvar) dsem_margvar_grid = get_dsem_margvar(dsem_beta, ln_dsem_sd, dsem_x_grid, dsem_model, dsem_cells, as.vector(dsem_x_known))
+    # also figure out if need to do bias correction for initial age devs
+    if(rec_margvar_on && "rec" %in% dsem_declared && !is.null(dsem_link_sd_arrow)) {
 
-    # the lognormal correction on the recruitment cells, which the bias ramp and centering on its own
-    # mean both switch off
-    if(rec_margvar && RecDevs_pen_center != 1 && any(bias_ramp != 0)) {
-      for(s in rec_links) {
-        dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] = dsem_mu_grid[dsem_link_row[[s]],dsem_link_col[s]] - 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]]
-        rec_anom_add[dsem_link_cell[[s]]] = 0.5 * dsem_margvar_grid[dsem_link_row[[s]],dsem_link_col[s]] # the recruitment index adds back the bias correction
-        rec_anom_use[dsem_link_cell[[s]]] = 1
-      } # end s loop
-    }
-
-    # the initial ages were born before the grid starts, so they use the series' settled marginal variance
-    if(rec_margvar && "rec" %in% dsem_declared && !is.null(dsem_link_sd_arrow)) {
-
+      # build arrays / matrices for storage
+      init_mu_grid = matrix(rep(dsem_mu, each = n_dsem_yrs), n_dsem_yrs, ncol(dsem_x_grid))
+      init_margvar_grid = get_dsem_margvar(dsem_beta, ln_dsem_sd, init_mu_grid, dsem_model, dsem_cells, as.vector(dsem_x_known)) # get marginal variance
       init_sigmaR_dsem = array(0, dim = c(n_pop, n_regions))
       init_sigmaR_dsem_use = array(0, dim = c(n_pop, n_regions)) # data, so the penalty branches on the link and not on a value
 
       for(s in rec_links) {
-        if(!isTRUE(dsem_link_sd_arrow[s] > 0)) next # a moderated series sd leaves ln_sigmaR's own value and doesn't mess w/ it
-        p_rec = dsem_link_idx[[s]][1]
-        r_rec = dsem_link_idx[[s]][2]
-        init_sigmaR_dsem[p_rec,r_rec] = sqrt(dsem_margvar_grid[max(dsem_link_row[[s]]),dsem_link_col[s]]) # the last year the link covers, where the marginal variance has settled
-        init_sigmaR_dsem_use[p_rec,r_rec] = 1
+        if(!is.null(dsem_link_settles) && dsem_link_settles[s] == 0) next # no settled variance, so ln_sigmaR stands
+        p_rec = dsem_link_idx[[s]][1] # get idnexing
+        r_rec = dsem_link_idx[[s]][2] # get idnexing
+        init_sigmaR_dsem[p_rec,r_rec] = sqrt(init_margvar_grid[max(dsem_link_row[[s]]),dsem_link_col[s]]) # the last year the link covers, which is as close to the series' settled variance as this grid gets
+        init_sigmaR_dsem_use[p_rec,r_rec] = 1 # whether or not to use dsem's init sigmaR
       } # end s loop
 
     } # end if recruitment is declared
 
     # a solved series (an sd of zero) is deterministic (i.e., catchability series below or covariates w/ zero error)
-    dsem_solved = NULL # stays NULL with nothing solved out, and the density does its own
+    dsem_solved = NULL # stays NULL if nothing is solved out
     if(any(dsem_model$project_k)) {
       dsem_solved = get_dsem_grid(dsem_beta, ln_dsem_sd, dsem_x_grid, dsem_mu_grid, dsem_model, dsem_cells, delta0 = if(is.null(dsem_delta0_use) || dsem_delta0_use == 0) NULL else dsem_delta0)
       dsem_x_grid = dsem_solved$x_grid # the same projection the density takes, so both read one grid
@@ -1171,24 +1160,6 @@ SPoRC_rtmb = function(pars, data) {
   PredFishIdx = tmp_fish_obs$PredFishIdx
 
   ## Survey Observation Model ------------------------------------------------
-  # Get recruitment index - computed as an anomaly w/ a bias adjustment as an addition, rather than sutraction
-  RecDev_anom = array(0, dim = dim(ln_RecDevs))
-  RecDevs_rho_nat = array(if(is.null(RecDevs_rho)) 0 else 2 / (1 + exp(-2 * RecDevs_rho)) - 1, dim = c(n_pop, n_regions)) # get sigma rho for ar1 devs
-  if(any(srv_idx_type == 2)) {
-    for(p in 1:n_pop) {
-      for(r in 1:n_regions) {
-        sigma_idx = ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-        for(d in 1:n_est_rec_devs) {
-          sigmaR_d = if(d < sigmaR_switch) exp(ln_sigmaR[1,p,sigma_idx]) else exp(ln_sigmaR[2,p,sigma_idx])
-          if(rec_anom_use[p,r,d] == 1) RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + rec_anom_add[p,r,d] # a linked cell adds back the bias correction for the anomaly for dsem ...
-          else if(RecDevs_model == 1) RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 * bias_ramp[d]
-          else if(RecDevs_model == 3) RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] + 0.5 * sigmaR_d^2 / (1 - RecDevs_rho_nat[p,r]^2) * bias_ramp[d] # an ar1 is set at its marginal variance
-          else RecDev_anom[p,r,d] = ln_RecDevs[p,r,d] # a walk has no stationary variance, so it carries no correction
-        } # end d loop
-      } # end r loop
-    } # end p loop
-  } # end if any fleet observes the recruitment deviations
-
   tmp_srv_obs = get_survey_observation_model(
     n_pop = n_pop,
     n_regions = n_regions,
@@ -1223,7 +1194,6 @@ SPoRC_rtmb = function(pars, data) {
     srv_q_type = srv_q_type,
     ObsSrvIdx = ObsSrvIdx,
     UseSrvIdx = UseSrvIdx,
-    RecDev_anom = RecDev_anom,
     do_caal = do_caal,
     Srv_caal = Srv_caal
   )
@@ -3250,7 +3220,6 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(SrvIAA)
   RTMB::REPORT(SrvIAL)
   if(do_caal == 1) RTMB::REPORT(Srv_caal)
-  RTMB::REPORT(RecDev_anom)
 
 
   # per-fleet keys, growth-derived or fixed data, reported whenever either source supplied one,

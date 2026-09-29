@@ -33,6 +33,7 @@ input_list <- Setup_Mod_Dim(
   # Population stuff
   n_pop = sgl_rg_dusky_data$n_pop,
   natal_region = sgl_rg_dusky_data$natal_region,
+  bias_correct_pe = "none",
   verbose = TRUE # whether to output messages
 )
 
@@ -42,8 +43,6 @@ input_list <- Setup_Mod_Rec(
 
   # Model options
   # Doing bias ramp, but basically setting it so that no lognormal bias correction happens (as in the dusky model)
-  do_rec_bias_ramp = 1,
-  bias_year = rep(length(sgl_rg_dusky_data$years), 4),
   # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
   sigmaR_switch = 1,
   # when to switch from early to late sigmaR (switch in first year)

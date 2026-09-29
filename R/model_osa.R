@@ -88,10 +88,36 @@ osa_extract_x <- function(xobs) {
   if (methods::is(xobs, "osa")) xobs@x else xobs
 }
 
+#' Put an OSA observation slice into the order it is peeled in
+#'
+#' \code{\link[RTMB]{oneStepPredict}} predicts observations in the order its
+#' \code{ord} attribute gives rather than in storage order, and the conditional
+#' factorizations below are the right ones only when they follow that order.
+#' RTMB's own \code{dmultinom} OSA method and WHAM's \code{age_comp_osa.hpp}
+#' apply the same permutation. Under the ascending subset
+#' \code{\link{osa_keep_subset}} builds the two orders already agree, so this is
+#' the identity on every call the package makes; it is what keeps a
+#' caller-supplied \code{subset} correct.
+#'
+#' @param xobs An \code{"osa"} object or plain numeric vector.
+#' @param n Length of the slice.
+#' @return Integer permutation, the identity when there is nothing to reorder.
+#' @keywords internal
+osa_order <- function(xobs, n) {
+  if (!methods::is(xobs, "osa")) return(seq_len(n))
+  ord <- attr(xobs@keep, "ord")
+  if (is.null(ord)) return(seq_len(n))
+  order(ord)
+}
+
 #' Binomial CDF, P(X <= x), via the regularized incomplete beta
 #'
 #' \eqn{P(X \le x) = 1 - I_p(x + 1, n - x)}, matching Trijoulet et al. (2023)
 #' \code{dists::pbinom}. AD-safe through \code{RTMB::pbeta}.
+#'
+#' \code{oneStepPredict} sweeps \code{x} past \code{n}, where the CDF is one.
+#' \code{pbeta} needs a positive second shape to say so, so the trials left are
+#' held at zero and nudged off it.
 #'
 #' @param x Count.
 #' @param n Number of trials.
@@ -99,7 +125,9 @@ osa_extract_x <- function(xobs) {
 #' @return Lower-tail CDF value.
 #' @keywords internal
 osa_pbinom <- function(x, n, prob) {
-  1 - RTMB::pbeta(prob, x + 1, n - x)
+  rest <- n - x
+  rest <- 0.5 * (rest + abs(rest))
+  1 - RTMB::pbeta(prob, x + 1, rest + .Machine$double.eps)
 }
 
 #' Keep-aware multinomial log-density for OSA residuals (cdf-capable)
@@ -113,8 +141,14 @@ osa_pbinom <- function(x, n, prob) {
 #' \code{cdf_upper} indicators, so this density supports \strong{both}
 #' \code{method = "cdf"} and \code{method = "oneStepGeneric"}.
 #'
-#' The running remainder is frozen to the observed total so peeling a late bin
-#' cannot drive the remaining count negative.
+#' The conditional trial count is the total left after the earlier bins, frozen
+#' at the observed counts. Given what has already been peeled it is a constant,
+#' so it must not move with the candidate value \code{oneStepPredict} sweeps
+#' over: tying it to the candidate turns the binomial into a size-weighted
+#' negative binomial and mis-calibrates the residuals, most visibly at a small
+#' sample size across many bins. RTMB's own \code{dmultinom} OSA method and
+#' WHAM's \code{age_comp_osa.hpp} hold it fixed the same way. Nothing after the
+#' peeled bin moves either, so no remaining count can be driven negative.
 #'
 #' @param xobs An \code{"osa"} object from \code{oneStepPredict}, or a plain
 #'   numeric count vector (length \eqn{A}) during fitting.
@@ -125,6 +159,10 @@ osa_pbinom <- function(x, n, prob) {
 dmultinom_osa <- function(xobs, p, log = TRUE) {
   "[<-" <- RTMB::ADoverload("[<-")
   "c"   <- RTMB::ADoverload("c")
+
+  perm <- osa_order(xobs, length(p))
+  xobs <- xobs[perm]
+  p    <- p[perm]
 
   x    <- osa_extract_x(xobs)
   kk   <- osa_extract_keep(xobs, length(p))
@@ -141,11 +179,10 @@ dmultinom_osa <- function(xobs, p, log = TRUE) {
   pUsed  <- 0
   for (i in 1:A) {
     if (i != A) {
-      rem_fixed <- Ntot - sum(xval[seq_len(i)])
       q  <- osa_squeeze(p_x[i]) / osa_squeeze(1 - pUsed)
       q  <- osa_squeeze(q)
-      # density: binomial( x_i ; nUnused , q ), nUnused frozen to remaining count
-      n_i <- x[i] + rem_fixed                 # = frozen remaining total at bin i
+      # trials left after the earlier bins: data, so the candidate value cannot move it
+      n_i <- Ntot - sum(xval[seq_len(i - 1)])
       logres <- logres + kk[i] * RTMB::dbinom(x[i], size = n_i, prob = q, log = TRUE)
       # analytic conditional CDF hook (Trijoulet dists::pbinom)
       cdf <- osa_squeeze(osa_pbinom(x[i], n_i, q))
@@ -161,17 +198,26 @@ dmultinom_osa <- function(xobs, p, log = TRUE) {
 }
 
 #' Two-category Dirichlet-multinomial (beta-binomial) log-density
-#' @param obs2 Length-2 count vector \code{c(count_a, count_remaining)}.
-#' @param alpha2 Length-2 concentration \code{c(alpha_a, alpha_remaining)}.
+#'
+#' Taken on the number of trials rather than on a pair of counts, so that the
+#' trials stay fixed while \code{\link[RTMB]{oneStepPredict}} sweeps \code{x}
+#' over its support. A candidate above \code{size} carries no mass, and
+#' \code{-lgamma(rest + 1)} is what says so: it is the one term with a pole
+#' there, so the shape term is held at zero rather than allowed to answer with a
+#' second pole that would cancel it and leave \code{NaN} behind.
+#'
+#' @param x Count in the first category.
+#' @param size Number of trials.
+#' @param shape1,shape2 Concentration of the first category and of the rest.
 #' @return Scalar log-density.
 #' @keywords internal
-ddirmult2 <- function(obs2, alpha2) {
-  "c" <- RTMB::ADoverload("c")
-  N  <- sum(obs2)
-  A0 <- sum(alpha2)
-  lgamma(N + 1) - sum(lgamma(obs2 + 1)) +
-    lgamma(A0) - lgamma(N + A0) +
-    sum(lgamma(obs2 + alpha2) - lgamma(alpha2))
+osa_dbetabinom <- function(x, size, shape1, shape2) {
+  rest     <- size - x
+  rest_pos <- 0.5 * (rest + abs(rest))
+  lgamma(size + 1) - lgamma(x + 1) - lgamma(rest + 1) +
+    lgamma(shape1 + shape2) - lgamma(size + shape1 + shape2) +
+    lgamma(x + shape1) - lgamma(shape1) +
+    lgamma(rest_pos + shape2) - lgamma(shape2)
 }
 
 #' Beta-binomial CDF, P(X <= x), by summation
@@ -187,11 +233,10 @@ ddirmult2 <- function(obs2, alpha2) {
 #' @return Lower-tail CDF value.
 #' @keywords internal
 osa_pbetabinom <- function(x, N, alpha, beta) {
-  "c" <- RTMB::ADoverload("c")
   x_int <- as.integer(round(osa_extract_values(x)))   # summation limit is data
   Fx <- 0
   for (i in 0:x_int) {
-    Fx <- Fx + exp(ddirmult2(c(i, N - i), c(alpha, beta)))
+    Fx <- Fx + exp(osa_dbetabinom(i, N, alpha, beta))
   }
   # clamp to 1 without an AD comparison
   Fx <- Fx - osa_squeeze(0) * 0   # no-op to keep AD class
@@ -209,6 +254,9 @@ osa_pbetabinom <- function(x, N, alpha, beta) {
 #' \code{cdf_lower} / \code{cdf_upper}, so this density supports \strong{both}
 #' \code{method = "cdf"} and \code{method = "oneStepGeneric"}.
 #'
+#' The conditional trial count is held fixed exactly as it is under
+#' \code{\link{dmultinom_osa}}, and for the same reason.
+#'
 #' @param xobs An \code{"osa"} object from \code{oneStepPredict}, or a plain
 #'   numeric count vector (length \eqn{A}) during fitting.
 #' @param alpha Concentration parameters (length \eqn{A}). Typically
@@ -220,6 +268,10 @@ osa_pbetabinom <- function(x, N, alpha, beta) {
 ddirmult_osa <- function(xobs, alpha, log = TRUE) {
   "[<-" <- RTMB::ADoverload("[<-")
   "c"   <- RTMB::ADoverload("c")
+
+  perm  <- osa_order(xobs, length(alpha))
+  xobs  <- xobs[perm]
+  alpha <- alpha[perm]
 
   obs  <- osa_extract_x(xobs)
   kk   <- osa_extract_keep(xobs, length(alpha))
@@ -235,13 +287,12 @@ ddirmult_osa <- function(xobs, alpha, log = TRUE) {
   loglik <- 0
   for (a in 1:A) {
     if (a != A) {
-      obs_rem_fixed <- Ntot - sum(oval[seq_len(a)])
-      alp_rem       <- alp_rem - alpha[a]
-      obs2   <- c(obs[a],   obs_rem_fixed)
-      alpha2 <- c(alpha[a], alp_rem)
-      loglik <- loglik + kk[a] * ddirmult2(obs2, alpha2)
+      # trials left after the earlier bins: data, so the candidate value cannot move it
+      n_a     <- Ntot - sum(oval[seq_len(a - 1)])
+      alp_rem <- alp_rem - alpha[a]
+      loglik  <- loglik + kk[a] * osa_dbetabinom(obs[a], n_a, alpha[a], alp_rem)
       # analytic conditional beta-binomial CDF hook
-      cdf <- osa_squeeze(osa_pbetabinom(obs[a], obs[a] + obs_rem_fixed, alpha[a], alp_rem))
+      cdf <- osa_squeeze(osa_pbetabinom(obs[a], n_a, alpha[a], alp_rem))
       loglik <- loglik + l[a] * log(cdf) + h[a] * log(1 - cdf)
     } else {
       loglik <- loglik + kk[a] * 0

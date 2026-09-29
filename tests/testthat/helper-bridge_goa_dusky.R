@@ -27,6 +27,7 @@ build_goa_dusky_input <- function(dat) {
     n_fish_fleets = dat$n_fish_fleets,
     n_srv_fleets = dat$n_srv_fleets,
     n_seas = dat$n_seas,
+    bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
     verbose = FALSE,
     store_config = TRUE
   )
@@ -39,8 +40,6 @@ build_goa_dusky_input <- function(dat) {
   # at zero throughout and leaves recruitment uncorrected, as the assessment does
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
-    do_rec_bias_ramp = 1,
-    bias_year = rep(length(dat$years), 4),
     sigmaR_switch = 1,
     ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
     rec_model = "mean_rec",

@@ -12,7 +12,13 @@
 #   Report.sso              read through r4ss, the comparison target
 #
 # West Coast sablefish differs from the Alaska case studies: age-0 spawners in year one, an additive
-# extra survey sd, a recruitment-deviation index, duplicate fleets, and SS3 double normal selectivity
+# extra survey sd, duplicate fleets, and SS3 double normal selectivity
+#
+# The assessment's eleventh fleet is a normal likelihood on the recruitment deviations themselves.
+# That is an observation of a parameter rather than of the population, and SPoRC has no index type
+# for it, so it is not a survey fleet here. What the assessment made of it stays in $ss3, whose
+# likelihood and predicted index tables are its report as it stands, so the bridge can say what it
+# is leaving out
 
 library(here)
 library(dplyr)
@@ -45,13 +51,13 @@ fleet_names <- replist$FleetNames
 # SS3 fleets 1-6 are catch (three gears plus discards), 7-10 trawl surveys, 11 the recruitment index.
 # trawl fishery and bottom trawl survey each have two comp sources, so each gets a duplicate fleet
 n_fish <- 7
-n_srv <- 6
+n_srv <- 5
 fish_src <- c(1:6, 1) # the Stock Synthesis fleet each SPoRC fishery fleet draws from
 fish_sex <- c(3, 3, 3, 0, 0, 0, 0) # 3 = sexed compositions, 0 = unsexed
-# surveys 1-4 are the trawl surveys, 5 the unsexed composition twin of the last
-# of them, and 6 the recruitment index, which observes the deviations directly
-srv_src <- c(7:10, 10, 11)
-srv_sex <- c(3, 3, 3, 3, 0, 0)
+# surveys 1-4 are the trawl surveys and 5 the unsexed composition twin of the
+# last of them, which carries no index of its own
+srv_src <- c(7:10, 10)
+srv_sex <- c(3, 3, 3, 3, 0)
 
 # Biologicals -----------------------------------------------------------------
 # wtatage.ss fleet -1 is the population weight at age and fleet -2 the female
@@ -98,7 +104,7 @@ stopifnot(max(abs(cpue$SE[cpue$Fleet %in% 7:10] - cpue$SE_input[cpue$Fleet %in% 
 
 ObsSrvIdx <- ObsSrvIdx_SE <- array(NA_real_, dim = c(1, n_yrs, 1, n_srv))
 UseSrvIdx <- array(0, dim = c(1, n_yrs, 1, n_srv))
-for(sf in c(1:4, 6)) {
+for(sf in 1:4) {
   ci <- cpue %>% dplyr::filter(Fleet == srv_src[sf])
   ObsSrvIdx[1, match(ci$Yr, yrs), 1, sf] <- ci$Obs
   ObsSrvIdx_SE[1, match(ci$Yr, yrs), 1, sf] <- ci$SE
@@ -156,10 +162,7 @@ compress_sel <- function(src) {
   out
 }
 fish_sel_blocks_ss3 <- compress_sel(fish_src)
-srv_sel_blocks_ss3 <- compress_sel(srv_src[1:5])
-# the recruitment index observes the deviations, so no curve of its own is ever
-# read; a flat one keeps the array dimensions right
-srv_sel_blocks_ss3[[6]] <- list(blk_yr = 1, sel = array(1, dim = c(1, n_ages, n_sexes)))
+srv_sel_blocks_ss3 <- compress_sel(srv_src)
 
 # the selectivity parameters behind those surfaces, so the case study can estimate the curves.
 # recording which row supplies each block lets the estimation share one parameter across blocks
@@ -206,13 +209,7 @@ sel_fish <- lapply(seq_along(fish_src), function(f) {
   sel_par_table(fish_src[f], fish_sel_blocks_ss3[[f]]$blk_yr)
 })
 sel_fish[[3]] <- sel_fish[[2]]
-sel_srv <- lapply(seq_len(5), function(sf) sel_par_table(srv_src[sf], srv_sel_blocks_ss3[[sf]]$blk_yr))
-# nothing to estimate for the recruitment index's curve, which is never read
-sel_srv[[6]] <- list(
-  pars = matrix(0, 6, 1),
-  est = matrix(FALSE, 6, 1),
-  src_id = matrix("recruitment index, unused", 6, 1)
-)
+sel_srv <- lapply(seq_len(n_srv), function(sf) sel_par_table(srv_src[sf], srv_sel_blocks_ss3[[sf]]$blk_yr))
 
 # The hook and line fleet's male parameters are offsets on the female's, the
 # last of them a scale on the whole curve. The pot fleet mirrors all of it.
@@ -230,9 +227,6 @@ bias_adj <- rec_tab$biasadjuster
 recdev <- numeric(n_yrs)
 recdev[match(pars_ss3$recdev2[, "year"], yrs)] <- pars_ss3$recdev2[, "recdev"]
 recdev[match(max(yrs), yrs)] <- pars_ss3$recdev_forecast[pars_ss3$recdev_forecast[, "year"] == max(yrs), "recdev"]
-
-# The recruitment index is a likelihood on the deviations themselves
-ri <- cpue %>% dplyr::filter(Fleet == 11)
 
 # Numbers at age, expected compositions and the likelihood table ----------------
 nat <- replist$natage %>% dplyr::filter(`Beg/Mid` == "B", Yr %in% yrs)
@@ -288,7 +282,6 @@ sgl_rg_wc_sablefish_data <- list(
   ),
   fish_sel_blocks_ss3 = fish_sel_blocks_ss3, srv_sel_blocks_ss3 = srv_sel_blocks_ss3,
   sel_fish = sel_fish, sel_srv = sel_srv, sel_male = sel_male,
-  rec_idx = data.frame(yr = ri$Yr, obs = ri$Obs, se = ri$SE),
 
   # The assessment's maximum likelihood estimate, at twelve significant digits
   mle = list(
@@ -296,7 +289,6 @@ sgl_rg_wc_sablefish_data <- list(
     M = pars_ss3$MG_parms["NatM_p_1_Fem_GP_1", "ESTIM"],
     ln_srv_q = unname(pars_ss3$Q_parms[grep("^LnQ_base", rownames(pars_ss3$Q_parms)), "ESTIM"]),
     extra_sd = unname(extra_sd),
-    q_rec_idx = pars_ss3$Q_parms["Q_base_Recruitment_Index(11)", "ESTIM"],
     recdev = recdev,
     bias_adj = bias_adj,
     Fmort = F_ss3,
@@ -315,6 +307,7 @@ sgl_rg_wc_sablefish_data <- list(
     pred_catch = sapply(1:6, function(f) {
       cc <- replist$catch %>% dplyr::filter(Fleet == f, Yr %in% yrs) %>% dplyr::arrange(Yr)
       cc$Exp[match(yrs, cc$Yr)] }),
+    # fleets 7 to 11, so the assessment's recruitment index row is here to be named and subtracted
     pred_idx = cpue %>% dplyr::filter(Fleet %in% 7:11) %>% dplyr::select(Fleet, Yr, Obs, Exp, SE),
     agedbase = agedb,
     lik = list(catch = sum(sapply(1:6, function(f) lik_ss3("Catch_like", f))),

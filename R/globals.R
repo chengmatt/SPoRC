@@ -9,7 +9,7 @@ utils::globalVariables(c(
   "cont_tv_ret_sel", "cont_tv_retsel_bin_devs", "cont_tv_srv_sel", "cont_tv_srvsel_bin_devs",
   "dsem_beta", "dsem_cells", "dsem_cov_family", "dsem_cov_obs", "dsem_cov_var_idx", "dsem_declared", "dsem_delta0",
   "dsem_delta0_use", "dsem_link_cell", "dsem_link_col", "dsem_link_idx", "dsem_link_par", "dsem_link_row",
-  "dsem_link_sd_arrow", "dsem_model", "dsem_mu", "dsem_n_grid_yrs", "dsem_x", "dsem_x_known", "ln_dsem_obs_sd",
+  "dsem_link_sd_arrow", "dsem_link_settles", "dsem_model", "dsem_mu", "dsem_n_grid_yrs", "dsem_x", "dsem_x_known", "ln_dsem_obs_sd",
   "ln_dsem_sd", "logit_dsem_tweedie_p", "dsem_cov_link", "dsem_cov_fixed_sd", "map_ln_NAA",
   "cont_vary_movement", "conv_fish_tag_attr", "conv_fish_tag_like", "conv_tag_age_pool",
   "conv_tag_fish_reporting_blocks", "conv_tag_fish_reporting_pars", "conv_tag_fishrep_prior",

@@ -13,6 +13,8 @@ Setup_Sim_DSEM(
   condition_on_fit = FALSE,
   dsem_arrows = NULL,
   dsem_values = NULL,
+  pars_by_sim = NULL,
+  rep_by_sim = NULL,
   dsem_processes = "rec",
   dsem_cov_mu = NULL,
   dsem_cov_obs_sd = NULL,
@@ -51,8 +53,8 @@ string, naming covariates and deviation series.}
 on the natural scale, for example
 \code{c(b_env = 0.5, rho_env = 0.6, sd_env = 1, sd_rec = 0.8)}.}
 
-\item{dsem_processes}{From scratch: processes the arrows may name, \code{"rec"} (default)
-or \code{"NAA"}, or both.}
+\item{dsem_processes}{From scratch: processes the arrows may name, \code{"rec"} (default),
+\code{"NAA"}, \code{"fish_q"} or \code{"srv_q"}, in any combination.}
 
 \item{dsem_cov_mu}{From scratch: named vector of covariate means, one per covariate the
 arrows name. Default zero for each.}
@@ -97,7 +99,17 @@ truth.
 Each linked series is written into the array the operating model reads, at the cells the
 fit linked, so those cells are never copied from the report:
 \itemize{
-  \item recruitment into \code{ln_RecDevs}, which \code{generate_recruitment} reads.
+  \item recruitment into \code{ln_RecDevs}, which \code{generate_recruitment} reads. Linking
+    recruitment also replaces both rows of the operating model's \code{ln_sigmaR} with the
+    series' settled marginal sd under the arrows, since that is what the fit's initial age
+    deviation penalty reads: whatever \code{\link{Setup_Sim_Rec}} was given is overwritten,
+    and the initial age deviations are then drawn at the same spread the fit assumes. A moderated
+    variance arrow on recruitment leaves \code{ln_sigmaR} as given, since the initial ages need one
+    number and a series whose variance is driven by another never settles on one. Only the hand off
+    is skipped: every deviation is still bias corrected, the initial ages at whatever
+    \code{ln_sigmaR} holds and the recruitment cells year by year off the marginal variance. Both
+    sides read the same gate, so a moderated series still has the operating model and the fit
+    agreeing, on the supplied \code{ln_sigmaR} rather than on an arrow derived value.
   \item catchability into \code{ln_fish_q_devs} or \code{ln_srv_q_devs}, and
     \code{\link{draw_sim_q_devs}} scales that fleet's catchability by them whatever the
     operating model's own \code{fish_q_model} or \code{srv_q_model} says. The catchability
@@ -115,8 +127,9 @@ fit linked, so those cells are never copied from the report:
 Growth propagated cohort by cohort (\code{growth_tv_type = 1}) runs the way the fit runs
 it: the years before \code{growth_cohort_styr} are built up front, and from there
 \code{run_annual_cycle} advances each replicate one year at a time from its own start of
-year numbers. From scratch only recruitment and the numbers at age can be linked, since
-those are the arrays the operating model has itself.
+year numbers. From scratch recruitment, the numbers at age and catchability can be linked,
+since those are the arrays the operating model has itself, and a catchability series there
+needs its fleet set to \code{"dsem"} in \code{\link{Setup_Sim_q_devs}} to be read.
 }
 
 \seealso{

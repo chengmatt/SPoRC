@@ -35,7 +35,6 @@ get_survey_observation_model(
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
   UseSrvIdx = NULL,
-  RecDev_anom = NULL,
   do_caal = 0,
   Srv_caal = NULL,
   SizeAgeTrans_srv = NULL,
@@ -111,11 +110,6 @@ predicted, \code{2} solved analytically on the log scale as
 \item{ObsSrvIdx, UseSrvIdx}{Arrays \code{[region, year, season, srv_fleet]}
 of observed index values and their use flags. Required only when a fleet
 solves catchability analytically.}
-
-\item{RecDev_anom}{Array \code{[pop, region, deviation]} of recruitment
-deviations measured from the center their penalty asserts, or \code{NULL}
-when no fleet observes them. Read only by fleets with
-\code{srv_idx_type == 2}.}
 
 \item{do_caal}{Integer (0/1) switch for building the joint survey index at
 length and age array. Off by default.}

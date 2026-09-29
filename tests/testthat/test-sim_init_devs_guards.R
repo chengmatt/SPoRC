@@ -1,8 +1,10 @@
-# Checks the operating model says when it draws initial age deviations, centers them and recruitment on the bias
-# correction switch, and that the estimation setup notes rinit against a deviation on every initial age.
+# Checks the operating model says when it draws initial age deviations, centers them and recruitment on
+# bias_correct_pe (the switch the estimation model reads too), and that the estimation setup notes rinit
+# against a deviation on every initial age.
 
-init_devs_sim <- function(rec_bias_correct = 1, ln_InitDevs_input = NULL, n_sims = 200, seed = 5) {
-  sim_list <- Setup_Sim_Dim(n_sims = n_sims, n_yrs = 3, n_regions = 1, n_ages = 6, n_lens = NULL, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1, n_pop = 1)
+init_devs_sim <- function(bias_correct_pe = "rec", ln_InitDevs_input = NULL, n_sims = 200, seed = 5) {
+  sim_list <- Setup_Sim_Dim(n_sims = n_sims, n_yrs = 3, n_regions = 1, n_ages = 6, n_lens = NULL, n_sexes = 1, n_fish_fleets = 1, n_srv_fleets = 1, n_pop = 1,
+                            bias_correct_pe = bias_correct_pe)
   sim_list <- Setup_Sim_Containers(sim_list)
   yearly <- function(v, dims) replicate(n_sims, array(rep(v, each = 3), dim = dims))
   sim_list <- Setup_Sim_Fishing(sim_list, fish_sel_input = yearly(rep(1, 6), c(1, 1, 3, 1, 6, 1, 1)))
@@ -14,7 +16,7 @@ init_devs_sim <- function(rec_bias_correct = 1, ln_InitDevs_input = NULL, n_sims
   sim_list$Movement <- array(1, dim = c(1, 1, 1, 3, 1, 6, 1, n_sims))
   sim_list <- Setup_Sim_Rec(sim_list, R0_input = replicate(n_sims, array(5, dim = c(1, 1, 3))), rinit_input = array(5, dim = c(1, 1, n_sims)), use_rinit = 1,
                             ln_sigmaR = array(log(1), dim = c(2, 1, 1)), recruitment_opt = "mean_rec", init_age_strc = 1,
-                            ln_InitDevs_input = ln_InitDevs_input, rec_bias_correct = rec_bias_correct)
+                            ln_InitDevs_input = ln_InitDevs_input)
   set.seed(seed)
   Simulate_Pop_Static(sim_list = sim_list, output_path = NULL)
 }
@@ -30,8 +32,8 @@ test_that("the setup says when the initial deviations are drawn, and zeros keep 
 
 test_that("the bias correction switch centers the initial deviations and recruitment", {
 
-  om1 <- suppressMessages(init_devs_sim(rec_bias_correct = 1))
-  om0 <- suppressMessages(init_devs_sim(rec_bias_correct = 0))
+  om1 <- suppressMessages(init_devs_sim(bias_correct_pe = "rec"))
+  om0 <- suppressMessages(init_devs_sim(bias_correct_pe = "none"))
   # 200 replicates by 5 ages of N(center, 1): the mean sits at the center within 0.1
   expect_equal(mean(om1$ln_InitDevs), -0.5, tolerance = 0.1)
   expect_equal(mean(om0$ln_InitDevs), 0, tolerance = 0.1)
@@ -41,10 +43,10 @@ test_that("the bias correction switch centers the initial deviations and recruit
   # the switch shows up in where the recruitment deviations are centered instead
   expect_equal(mean(om1$ln_RecDevs), -0.5, tolerance = 0.1)
   expect_equal(mean(om0$ln_RecDevs), 0, tolerance = 0.1)
-  # and an index reads the anomaly, so what it adds back is the correction on the deviation
-  expect_equal(mean(om1$rec_anom_add), 0.5, tolerance = 1e-10)
-  expect_equal(mean(om0$rec_anom_add), 0, tolerance = 1e-10)
-  expect_error(suppressMessages(init_devs_sim(rec_bias_correct = 2)), "0 or 1")
+  # the two runs share a seed, and rnorm shifts its mean while keeping its deviate, so the gap
+  # between them is the correction itself rather than a sample average of it
+  expect_equal(unique(round(as.numeric(om0$ln_RecDevs - om1$ln_RecDevs), 12)), 0.5, tolerance = 1e-12)
+  expect_error(suppressMessages(init_devs_sim(bias_correct_pe = "sometimes")), "Invalid character input")
 
 })
 

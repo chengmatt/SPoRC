@@ -30,6 +30,7 @@ input_list <- Setup_Mod_Dim(
   n_seas = dat$n_seas,
   n_pop = dat$n_pop,
   natal_region = dat$natal_region,
+  bias_correct_pe = "none",
   verbose = FALSE
 )
 
@@ -55,7 +56,6 @@ input_list <- Setup_Mod_Rec(
   ln_sr_R0 = array(log(sr_R0), dim = 1),
   # the ramp is turned on with every break past the last year, which centers the
   # penalty on zero; do_rec_bias_ramp = 0 would center it on -sigma^2/2
-  do_rec_bias_ramp = 1, bias_year = rep(n_yrs + 1, 4),
   sigmaR_switch = 1, sigmaR_spec = "fix",
   ln_sigmaR = array(log(dat$sigmaR), dim = c(2, 1, 1)),
   RecDevs_pen_center = "fixed", dont_est_recdev_last = 0,

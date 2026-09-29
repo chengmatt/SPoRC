@@ -29,6 +29,7 @@ test_that("BSAI northern rock sole bridges to the 2024 ADMB assessment at its ow
     n_seas = dat$n_seas,
     n_pop = dat$n_pop,
     natal_region = dat$natal_region,
+    bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
     verbose = FALSE
   )
 
@@ -53,8 +54,6 @@ test_that("BSAI northern rock sole bridges to the 2024 ADMB assessment at its ow
     steepness_h = array(inv_steepness(h_sr), dim = c(1, 1)),
     h_spec = "est_shared_pop_r",
     ln_sr_R0 = array(log(a_sr / (exp(mle$R_logbeta) * phi0)), dim = 1),
-    do_rec_bias_ramp = 1,
-    bias_year = rep(n_yrs + 1, 4),
     sigmaR_switch = 1,
     sigmaR_spec = "fix",
     ln_sigmaR = array(log(dat$sigmaR), dim = c(2, 1, 1)),

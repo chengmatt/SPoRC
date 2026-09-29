@@ -28,4 +28,8 @@ analytic conditional beta-binomial CDF is accumulated through
 \code{cdf_lower} / \code{cdf_upper}, so this density supports \strong{both}
 \code{method = "cdf"} and \code{method = "oneStepGeneric"}.
 }
+\details{
+The conditional trial count is held fixed exactly as it is under
+\code{\link{dmultinom_osa}}, and for the same reason.
+}
 \keyword{internal}

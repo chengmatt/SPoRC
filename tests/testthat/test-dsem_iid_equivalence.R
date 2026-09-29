@@ -247,7 +247,7 @@ test_that("dusky: the arrows give the random walk and AR1 recruitment densities"
   # on one side and the arrows' sd line on the other
   devs <- local({ set.seed(7); cumsum(stats::rnorm(length(dusky_built_with()$par$ln_RecDevs), 0, 0.3)) })
   n_yrs <- length(sgl_rg_dusky_data$years)
-  off <- list(do_rec_bias_ramp = 1, bias_year = rep(n_yrs, 4)) # the way to ask an ar1 or a dsem for no correction
+  off <- list(do_rec_bias_ramp = 1, bias_year = rep(n_yrs, 4)) # an ar1 still asks for no correction through a ramp at zero
   sigmaR <- exp(dusky_built_with()$par$ln_sigmaR[2,1,1])
 
   # a walk takes no correction whatever the ramp says, and refuses the ramp being set, so only the ar1 passes off
@@ -259,7 +259,8 @@ test_that("dusky: the arrows give the random walk and AR1 recruitment densities"
   }
 
   arrows <- function(arrow_txt, variance = "conditional") {
-    il <- suppressWarnings(dusky_built_with(rec = utils::modifyList(off, list(RecDevs_model = "dsem"))))
+    il <- suppressWarnings(dusky_built_with(rec = list(RecDevs_model = "dsem")))
+    il$data$bias_correct_pe <- 0 # a dsem refuses the ramp, so it asks for no correction through the switch
     il <- suppressMessages(Setup_Mod_DSEM(il, arrow_txt, dsem_data = NULL, dsem_variance = variance))
     il$par$ln_RecDevs[] <- devs
     sum(as.numeric(value_of(il)$rep$dsem_nLL))

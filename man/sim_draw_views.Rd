@@ -2,7 +2,7 @@
 % Please edit documentation in R/sim_self_test.R
 \name{sim_draw_views}
 \alias{sim_draw_views}
-\title{Parameter vectors the operating model runs on, one per replicate}
+\title{Parameters each replicate's operating model runs on}
 \usage{
 sim_draw_views(
   sim_type,
@@ -30,25 +30,20 @@ sim_draw_views(
 
 \item{random}{Character vector of random effect names.}
 
-\item{obj_UNUSED_PLACEHOLDER}{Fitted object, needed only under \code{"joint"}.}
+\item{obj}{Fitted object, needed only under \code{"joint"}.}
 }
 \value{
-List of \code{reps} and \code{pars}, each of length \code{n_sims},
-  plus \code{fit_pars}, the parameter list at the fit.
+\code{reps} and \code{pars}, one per replicate, plus \code{fit_pars}
+  at the fit.
 }
 \description{
-Under \code{sim_type = "conditional"} every replicate runs on the fitted
-parameters, so the truth is the same throughout and only the observation
-error differs between replicates. Under \code{"joint"} each replicate gets its
-own draw from the joint precision, so parameter uncertainty is carried into
-the operating model and each replicate has its own truth to be scored against.
+Conditional gives every replicate the fitted parameters, so one truth covers
+them all and only the data change. Joint gives each replicate its own draw, so
+each has its own truth.
 }
 \details{
-The draw is taken at \code{obj$env$last.par.best}, which is the order the
-joint precision's rows and columns are in, and turned back into a parameter
-list by the object's own \code{parList}, which reapplies the map. A fit with
-no random effects has no \code{jointPrecision}, since \code{sdreport} only
-builds one when random effects are present, so the fixed-effect covariance is
-inverted instead and the draw is the usual multivariate normal about the mode.
+The draw is taken at the fitted parameter vector, the order the joint precision
+is in, and \code{parList} puts the map back. A fit with no random effects has no
+joint precision, so the fixed effect covariance is inverted in its place.
 }
 \keyword{internal}

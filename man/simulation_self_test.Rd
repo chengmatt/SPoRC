@@ -20,6 +20,7 @@ simulation_self_test(
   output_path = NULL,
   what = c("SSB", "Rec"),
   what_par = NULL,
+  perfect_data = FALSE,
   sim_type = c("conditional", "joint")
 )
 }
@@ -74,22 +75,24 @@ refit's own parameter list so that mapped elements come back at the values
 the map gave them. An error is raised if any name is not found in
 \code{parameters}. Default \code{NULL}, which stores none.}
 
-\item{sim_type}{Character. Where each replicate's operating model parameters
-  come from. \code{"conditional"} (default) runs every replicate at the fitted
-  values, so the truth is the same throughout and the spread across replicates
-  is observation error alone. \code{"joint"} gives each replicate its own draw
-  from \code{sd_rep$jointPrecision}, so parameter uncertainty is carried into
-  the operating model and each replicate has its own truth. A fit with no
-  random effects carries no joint precision, and the fixed-effect covariance is
-  inverted in its place.
+\item{perfect_data}{Logical. Whether to shrink the observation error before
+simulating, sds to 0.001 and sample sizes to 1e6, leaving process error alone.
+A correct model then returns the operating model to several decimals. A
+process error sd is the exception and comes back low by about 1/(2n) for n
+deviations, since the fitted value holds the posterior variance of its own
+deviations and data this clean remove it. Default \code{FALSE}.}
 
-  Under \code{"joint"} the drawn parameters reach the operating model through
-  the quantities that carry a replicate dimension: fishing mortality, both
-  selectivities, catchability and its deviations, natural mortality, weight and
+\item{sim_type}{Character. Where each replicate's parameters come from.
+  \code{"conditional"} (default) runs every replicate at the fitted values, so
+  one truth covers them all and the spread is observation error. \code{"joint"}
+  draws each replicate from \code{sd_rep$jointPrecision}, so each has its own
+  truth. A fit with no random effects has no joint precision, and the fixed
+  effect covariance is inverted in its place.
+
+  Joint moves F, both selectivities, catchability, natural mortality, weight and
   size at age, movement, steepness, sex ratio, recruitment, the initial
-  deviations and the numbers-at-age process error. The observation error terms
-  and the composition parameters have no replicate dimension to vary along, so
-  they are held at the fit.}
+  deviations, the numbers at age and a linked dsem. Observation error and the
+  composition parameters stay at the fit, having no replicate dim.}
 }
 \value{
 Named list with one element per entry in \code{what} and then one per

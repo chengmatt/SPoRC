@@ -15,6 +15,7 @@ setup_em <- function(sim_env, y, sim) {
 
   # Model dimensions
   input_list <- Setup_Mod_Dim(years = 1:y, # vector of years
+    bias_correct_pe = "none",
                               ages = 1:sim_env$n_ages, # vector of ages
                               lens = 1:sim_env$n_lens, # number of lengths
                               n_regions = sim_env$n_regions, # number of regions
@@ -28,8 +29,6 @@ setup_em <- function(sim_env, y, sim) {
   # Recruitment setup
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
-    do_rec_bias_ramp = 1, # Doing bias ramp, but basically setting it so that no lognormal bias correction happens (as in the dusky model)
-    bias_year = rep(length(input_list$data$years), 4),
     sigmaR_switch = 1, # when to switch from early to late sigmaR (switch in first year)
     ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)), # 2 values for early and late sigma
     # Starting values for early and late sigmaR

@@ -20,4 +20,9 @@ Lower-tail CDF value.
 \eqn{P(X \le x) = 1 - I_p(x + 1, n - x)}, matching Trijoulet et al. (2023)
 \code{dists::pbinom}. AD-safe through \code{RTMB::pbeta}.
 }
+\details{
+\code{oneStepPredict} sweeps \code{x} past \code{n}, where the CDF is one.
+\code{pbeta} needs a positive second shape to say so, so the trials left are
+held at zero and nudged off it.
+}
 \keyword{internal}

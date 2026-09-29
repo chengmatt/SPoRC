@@ -38,7 +38,11 @@
 #'   \eqn{(-1, 1)}. Only read under \code{RecDevs_model = "ar1"}. Default zero.
 #' @param ln_sigmaR Log-scale sd of the recruitment deviations, array \code{[2 x n_pop
 #'   x n_regions]}, index 1 the early period and 2 the late period. The initial age
-#'   deviations read index 1. Default \code{log(1)}.
+#'   deviations read index 1. Default \code{log(1)}. A later \code{\link{Setup_Sim_DSEM}}
+#'   that links recruitment overwrites both indices with that series' settled value under
+#'   the arrows, the same number the fit's own penalty reads. A series that never settles
+#'   falls back a step: a walk reads its own sd line, and a moderated variance, having no
+#'   sd line, leaves what is passed here standing.
 #' @param sigmaR_switch Integer year index at which the recruitment deviations switch
 #'   from index 1 of \code{ln_sigmaR} to index 2, matching \code{\link{Setup_Mod_Rec}}.
 #'   Default \code{1}, which reads index 2 in every year.
@@ -85,10 +89,6 @@
 #'   \code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} for one per sex. The
 #'   \code{n_ages - 1} dim excludes the reference age. \code{NULL} (default) draws one
 #'   shared curve per population and region; pass zeros to start in equilibrium.
-#' @param rec_bias_correct Integer. \code{1} (default) draws the recruitment and
-#'   initial age deviations as mean-one lognormal multipliers centered at
-#'   \eqn{-\sigma^2/2}, matching an estimation model with the bias ramp on; \code{0}
-#'   centers them at zero. A linked cell follows the same switch under the arrows.
 #' @param SR_ref_yr Integer year index supplying the biological inputs to unfished
 #'   spawning biomass per recruit, and so the curve's scale. Matches the estimation
 #'   model's \code{SR_ref_yr}. Default \code{1}.
@@ -131,7 +131,6 @@ Setup_Sim_Rec <- function(
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
   RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
-  rec_bias_correct = 1,
   sigmaR_switch = 1
 ) {
 
@@ -266,11 +265,8 @@ Setup_Sim_Rec <- function(
   if(!is.null(ln_InitDevs_input)) sim_list$ln_InitDevs_input <- ln_InitDevs_input
 
 
-  # recruitment bias correction stuff
-  if(!rec_bias_correct %in% c(0, 1)) stop("rec_bias_correct must be 0 or 1")
-  sim_list$rec_bias_correct <- rec_bias_correct
-  if(is.null(ln_InitDevs_input)) message("Setup_Sim_Rec: ln_InitDevs_input is NULL, so every replicate draws its own initial age deviations from N(",
-                                         if(rec_bias_correct == 1) "-sigma^2/2" else "0", ", sigma) at the early ln_sigmaR. Pass zeros for a population that starts in equilibrium, or a fit's deviations to condition on it.")
+  # the recruitment and initial age deviations follow bias_correct_pe, set in Setup_Sim_Dim, as the fit's do.
+  # Setup_sim_env says what they are drawn at, since a dsem linking recruitment replaces ln_sigmaR after this
 
   return(sim_list)
 
@@ -1815,11 +1811,10 @@ Setup_Mod_Rec <- function(input_list,
   if(RecDevs_model == "dsem") {
     if(sigmaR_given && sigmaR_spec != "fix") stop("RecDevs_model = 'dsem' reads sigmaR off the arrows' recruitment sd line, so ln_sigmaR is not read and cannot be estimated. Leave sigmaR_spec out (it is set to 'fix') or set it to 'fix'.")
     if(dont_est_recdev_last_given > 0) stop("RecDevs_model = 'dsem' describes a recruitment deviation in every year, so dont_est_recdev_last must be 0. The arrows then describe the terminal years too; use RecDevs_model = 'iid' to leave them out.")
-    ramp_here <- get_rec_bias_ramp(do_rec_bias_ramp, bias_year, length(input_list$data$years), max_bias_ramp_fct)
-    if(do_rec_bias_ramp == 1 && any(ramp_here != 0)) stop("RecDevs_model = 'dsem' makes the recruitment deviations random effects under the arrows, and a random effect takes the full lognormal correction or none: the bias ramp is a device for penalized deviations and has nothing to act on. Set do_rec_bias_ramp = 0 for the full correction, or move bias_year past the last year for none.")
+    if(do_rec_bias_ramp == 1) stop("RecDevs_model = 'dsem' makes the recruitment deviations random effects under the arrows, and a random effect takes the full lognormal correction or none: the bias ramp is a device for penalized deviations and has nothing to act on. Leave do_rec_bias_ramp at 0, and say no correction with bias_correct_pe = 'none' in Setup_Mod_Dim.")
     sigmaR_spec <- "fix"
     input_list$data$dsem_declared <- union(input_list$data$dsem_declared, "rec")
-    collect_message("RecDevs_model = 'dsem': the recruitment deviations' density and sd come from Setup_Mod_DSEM. sigmaR is read off the arrows' recruitment sd line (the initial age deviations read it too) and ln_sigmaR is not read. The linked deviations take ", if(any(ramp_here != 0)) "the full lognormal correction, minus half their variance under the arrows, so R0 scales mean recruitment as before." else "no lognormal correction, as the penalty takes none here.")
+    collect_message("RecDevs_model = 'dsem': the recruitment deviations' density and sd come from Setup_Mod_DSEM. sigmaR is read off the arrows' recruitment sd line (the initial age deviations read it too) and ln_sigmaR is not read. The linked deviations take the whole lognormal correction or none, on bias_correct_pe alone.")
   }
 
   # guard against bias correction w/ random walk
@@ -1831,6 +1826,7 @@ Setup_Mod_Rec <- function(input_list,
 
   if(RecDevs_model %in% c("rw", "ar1") && RecDevs_pen_center == "own_mean")
     stop("RecDevs_model = '", RecDevs_model, "' centers each deviation on the previous one, so there is no single mean for RecDevs_pen_center = 'own_mean' to estimate. Use RecDevs_pen_center = 'fixed'.")
+
 
   if(RecDevs_model %in% c("rw", "ar1") && sigmaR_spec == "fix")
     warning("RecDevs_model = '", RecDevs_model, "' but sigmaR_spec = 'fix'; the process error standard deviation (ln_sigmaR) driving the ", RecDevs_model, " process is not being estimated. This may be intentional (e.g. fixing sigma at a known value), but if not, consider estimating ln_sigmaR via sigmaR_spec.")

@@ -27,14 +27,13 @@ setup_dusky <- function(do_internal_comp_osa = FALSE) {
     n_seas = sgl_rg_dusky_data$n_seas,
     n_pop = sgl_rg_dusky_data$n_pop,
     natal_region = sgl_rg_dusky_data$natal_region,
+    bias_correct_pe = "none",
     verbose = FALSE,
     do_internal_comp_osa = do_internal_comp_osa
   )
 
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
-    do_rec_bias_ramp = 1,
-    bias_year = rep(length(sgl_rg_dusky_data$years), 4),
     sigmaR_switch = 1,
     ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
     rec_model = "mean_rec",

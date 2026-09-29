@@ -1591,6 +1591,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("dsem_declared")) set("dsem_declared", character(0))
   if(!has("dsem_x_known")) set("dsem_x_known", NULL) # a dsem list from before the recruitment correction
   if(!has("dsem_link_sd_arrow")) set("dsem_link_sd_arrow", NULL) # or from before sigmaR was read off the arrows
+  if(!has("dsem_link_settles")) set("dsem_link_settles", NULL) # saved lists predate it, and every series settled then
   if(!has("dsem_cov_link")) set("dsem_cov_link", NULL) # or from before links and the fixed-sd normal: each family's default link
   if(!has("dsem_cov_fixed_sd")) set("dsem_cov_fixed_sd", NULL)
 

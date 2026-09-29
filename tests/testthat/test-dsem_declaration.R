@@ -28,7 +28,8 @@ test_that("RecDevs_model = 'dsem' reads sigmaR off the arrows, refuses an explic
   expect_error(suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem", sigmaR_spec = "est_all"), dims = list(n_regions = 1))), "cannot be estimated")
   expect_error(suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem", dont_est_recdev_last = 1), dims = list(n_regions = 1))), "dont_est_recdev_last")
   expect_error(suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem", do_rec_bias_ramp = 1, bias_year = c(2, 4, 10, 12)), dims = list(n_regions = 1))), "bias ramp")
-  none <- suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem", do_rec_bias_ramp = 1, bias_year = rep(999, 4)), dims = list(n_regions = 1)))
+  expect_error(suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem", do_rec_bias_ramp = 1, bias_year = rep(999, 4)), dims = list(n_regions = 1))), "bias ramp") # a ramp at zero is refused too
+  none <- suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem"), dims = list(n_regions = 1, bias_correct_pe = "none")))
   expect_equal(none$data$dsem_declared, "rec")
 
   # declared but never set up: the deviations would have no density

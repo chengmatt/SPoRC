@@ -26,8 +26,8 @@ rr_sim_env <- function(dsem_model,
   e$dsem_link_par <- character(0)
   e$dsem_link_sim_par <- character(0)
   e$dsem_link_col <- integer(0)
-  e$rec_bias_correct <- 0
-  e$dsem_rec_corr_on <- FALSE
+  e$bias_correct_pe <- 0
+  e$rec_corr_on <- FALSE
 
   e$dsem_n_cond_yrs <- n_cond
   e$dsem_x_fit <- if(is.null(x_fit)) matrix(0, n_yrs, n_vars) else x_fit

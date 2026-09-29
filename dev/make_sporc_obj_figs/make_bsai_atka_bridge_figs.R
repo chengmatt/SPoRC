@@ -40,6 +40,7 @@ input_list <- Setup_Mod_Dim(
   n_seas = dat$n_seas,
   n_pop = dat$n_pop,
   natal_region = dat$natal_region,
+  bias_correct_pe = "none",
   verbose = FALSE
 )
 
@@ -68,8 +69,6 @@ input_list <- Setup_Mod_Rec(
   h_spec = "fix",
   # do_rec_bias_ramp = 0 does not center the penalty on zero: it sets the ramp to one throughout,
   # which centers on -sigmaR^2/2. breaks past the last year are what leave the offset out
-  do_rec_bias_ramp = 1,
-  bias_year = rep(n_yrs + 1, 4),
   sigmaR_switch = 1,
   sigmaR_spec = "fix",
   ln_sigmaR = array(rep(log(dat$sigmaR), 2), dim = c(2, 1, 1)),

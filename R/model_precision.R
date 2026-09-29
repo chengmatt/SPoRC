@@ -368,8 +368,8 @@ get_dsem_margvar = function(dsem_beta,
   # the same precision the density uses, so the correction and the density agree on each cell's
   # variance. a solved cell has no row of its own and moves with whatever sets it
   Q_oo = get_dsem_Q_oo(parts$IminusB, parts, get_dsem_solve_mat(parts$IminusB, dsem_cells), dsem_cells)
-  pos = match(unknown, dsem_cells$obs_idx) # where each unknown cell sits in that precision
-  Q_uu = Q_oo[pos,pos,drop = FALSE]
+  pos = match(unknown, dsem_cells$obs_idx) # fig out where each unknown cell sits in that precision
+  Q_uu = Q_oo[pos,pos,drop = FALSE] # get unknown cells
 
   # get variance of unknown cells
   var_cell = rep(0, length(known_cell))

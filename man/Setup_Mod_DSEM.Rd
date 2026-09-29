@@ -12,7 +12,7 @@ Setup_Mod_DSEM(
   dsem_family = NULL,
   dsem_link = NULL,
   dsem_fixed_sd = NULL,
-  dsem_mu_spec = "est",
+  dsem_mu_spec = "zero",
   covs = NULL,
   dsem_delta0_spec = "none",
   mod_var_logscale = FALSE,
@@ -89,11 +89,20 @@ Poisson under the identity can end up with a negative mean.}
 \code{"gaussian_fixed_sd"} covariate, holding that year's known sd. Needed on
 every observed year of such a covariate.}
 
-\item{dsem_mu_spec}{\code{"est"} (default) estimates every covariate's mean,
-\code{"fix"} holds them all at the observed mean, a character vector estimates
-only those named, and a named numeric vector fixes those covariates at the
-values given with the rest at the observed mean. A linked series' mean is
-always fixed at zero, since its process already sits under a level parameter.}
+\item{dsem_mu_spec}{\code{"zero"} (default) holds an identity-link covariate at
+zero and every other one at its observed mean, \code{"fix"} holds them all at
+their observed means, \code{"est"} estimates them all, a character vector
+estimates only those named, and a named numeric vector fixes those covariates at
+the values given with the rest at the observed mean. A linked series' mean is
+always fixed at zero, since its process already sits under a level parameter. The
+default holds the mean because a covariate seen in few years identifies it mostly
+through the path coefficient, and the two then trade off, and it holds an
+identity-link covariate at zero so that a path coefficient reads against a
+centered covariate, the convention the operating model draws under. Zero is a
+center only on that link, so a log or logit family keeps its observed mean. An
+identity-link covariate in its own units should be centered first, or given
+\code{"fix"}; a warning names one whose observed mean sits further from zero than
+its own spread.}
 
 \item{covs}{Passed to \code{read_dsem_arrows}: series groups whose innovations
 may covary.}

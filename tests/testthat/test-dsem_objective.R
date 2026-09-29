@@ -112,19 +112,18 @@ test_that("setup refuses linked deviations it cannot handle", {
 
 })
 
-test_that("a linked recruitment cell takes the correction its penalty would, and enters an index as it is", {
+test_that("a linked recruitment cell takes the correction its penalty would", {
 
   # the sweep model runs the full correction, so an sd-only link at sigmaR is the same density as
-  # the iid penalty, center included, and a recruitment index reads a linked cell as it is
+  # the iid penalty, center included
   plain <- suppressMessages(sweep_input(dims = list(n_regions = 1)))
   n_yrs <- length(plain$data$years)
   sigmaR <- exp(plain$par$ln_sigmaR[2,1,1])
   devs <- seq(-0.3, 0.3, length.out = n_yrs)
-  value_of <- function(il, srv_idx_type = NULL) {
-    if(!is.null(srv_idx_type)) il$data$srv_idx_type[1] <- srv_idx_type # the anomaly is only computed for a recruitment index
+  value_of <- function(il) {
     il$par$ln_RecDevs[] <- devs
-    obj <- suppressWarnings(fit_model(il$data, il$par, il$map, random = NULL, do_optim = FALSE, silent = TRUE)) # a negative anomaly makes the index likelihood NaN, not what is read here
-    suppressWarnings(list(fn = obj$fn(obj$par), anom = as.numeric(obj$report()$RecDev_anom), margvar = obj$report()$dsem_margvar_grid))
+    obj <- suppressWarnings(fit_model(il$data, il$par, il$map, random = NULL, do_optim = FALSE, silent = TRUE))
+    suppressWarnings(list(fn = obj$fn(obj$par), margvar = obj$report()$dsem_margvar_grid))
   }
   sd_only <- suppressMessages(Setup_Mod_DSEM(plain, sprintf("rec <-> rec, 0, NA, %.17g", sigmaR), NULL, dsem_processes = "rec"))
   expect_equal(value_of(sd_only)$fn, value_of(plain)$fn, tolerance = 1e-8)
@@ -133,21 +132,12 @@ test_that("a linked recruitment cell takes the correction its penalty would, and
   env <- data.frame(year = plain$data$years, env = rnorm(n_yrs))
   linked <- suppressMessages(Setup_Mod_DSEM(plain, c("env -> rec, 0, b", "env <-> env, 0, s", "rec <-> rec, 0, sr"), env, dsem_processes = "rec", dsem_mu_spec = "fix"))
   sr <- exp(linked$par$ln_dsem_sd[match("sr", linked$data$dsem_model$ln_sd_names)])
-  out <- value_of(linked, srv_idx_type = 2)
-  expect_equal(as.numeric(out$margvar[,2]), rep(sr^2, n_yrs), tolerance = 1e-10)
-  expect_equal(out$anom, devs + sigmaR^2 / 2) # without the declaration sigmaR is the module's own
-  expect_equal(value_of(plain, srv_idx_type = 2)$anom, devs + sigmaR^2 / 2)
+  expect_equal(as.numeric(value_of(linked)$margvar[,2]), rep(sr^2, n_yrs), tolerance = 1e-10)
 
-  # declared, sigmaR is the arrows' sd line, so the anomaly adds that back
-  declared <- suppressMessages(sweep_input(rec = list(RecDevs_model = "dsem"), dims = list(n_regions = 1)))
-  declared <- suppressMessages(Setup_Mod_DSEM(declared, "rec <-> rec, 0, NA, 0.7", NULL))
-  expect_equal(value_of(declared, srv_idx_type = 2)$anom, devs + 0.7^2 / 2)
-
-  # a ramp at zero is SPoRC's way of taking no correction, and the linked cells then take none either
-  plain_none <- suppressMessages(sweep_input(rec = list(do_rec_bias_ramp = 1, bias_year = rep(999, 4)), dims = list(n_regions = 1)))
+  # bias_correct_pe = "none" is how no correction is asked for, and the linked cells then take none either
+  plain_none <- suppressMessages(sweep_input(dims = list(n_regions = 1, bias_correct_pe = "none")))
   sd_none <- suppressMessages(Setup_Mod_DSEM(plain_none, sprintf("rec <-> rec, 0, NA, %.17g", sigmaR), NULL, dsem_processes = "rec"))
   expect_equal(value_of(sd_none)$fn, value_of(plain_none)$fn, tolerance = 1e-8)
-  expect_equal(value_of(sd_none, srv_idx_type = 2)$anom, devs)
   expect_equal(as.numeric(value_of(sd_none)$margvar), rep(sigmaR^2, n_yrs), tolerance = 1e-10) # solved either way, so the initial ages read it with the ramp off
 
 })

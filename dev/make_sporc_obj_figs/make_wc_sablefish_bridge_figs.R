@@ -26,10 +26,8 @@ input_list <- seed_wc_sablefish_mle(build_wc_sablefish_input(dat), dat)
 # the assessment's own selectivity surfaces, for comparison only
 sel_fish_ss3 <- expand_wc_sablefish_sel(dat$fish_sel_blocks_ss3, n_yrs, n_ages, dat$n_sexes)
 sel_srv_ss3 <- expand_wc_sablefish_sel(dat$srv_sel_blocks_ss3, n_yrs, n_ages, dat$n_sexes)
-# the recruitment index fleet reads no curve, so it is left out of this
-i_sel_srv <- which(dat$srv_src != 11)
 sel_gap <- function(rep) c(fishery = max(abs(rep$fish_sel[1, 1, 1:n_yrs, 1, , , ] - sel_fish_ss3[1, 1, , 1, , , ])),
-                           survey = max(abs(rep$srv_sel[1, 1, 1:n_yrs, 1, , , i_sel_srv] - sel_srv_ss3[1, 1, , 1, , , i_sel_srv])))
+                           survey = max(abs(rep$srv_sel[1, 1, 1:n_yrs, 1, , , ] - sel_srv_ss3[1, 1, , 1, , , ])))
 
 # Stage 1: evaluate at the assessment's estimate -------------------------------
 obj <- fit_model(input_list$data, input_list$par, input_list$map,
@@ -93,27 +91,29 @@ cat("expected age compositions against the assessment's, max absolute difference
 lc <- function(sigma, n) n * (log(sigma) + 0.5 * log(2 * pi))
 n_est_dev <- sum(yrs %in% dat$yrs_rec_est)
 lik <- data.frame(
-  component = c("catch", paste0("index: ", dat$fleet_names[c(7:10, 11)]),
+  component = c("catch", paste0("index: ", dat$fleet_names[7:10]),
                 paste0("ages: ", dat$fleet_names[1:6]), paste0("ages: ", dat$fleet_names[7:10]),
                 "recruitment deviations", "natural mortality prior"),
   SPoRC = c(sum(r$Catch_nLL) - lc(dat$sigmaC, sum(dat$UseCatch == 1, na.rm = TRUE)),
-            sapply(c(1:4, n_srv), function(sf) sum(r$SrvIdx_nLL[, , , sf]) - 0.5 * log(2 * pi) * sum(dat$UseSrvIdx[, , , sf])),
+            sapply(1:4, function(sf) sum(r$SrvIdx_nLL[, , , sf]) - 0.5 * log(2 * pi) * sum(dat$UseSrvIdx[, , , sf])),
             sum(r$FishAgeComps_nLL[, , , , c(1, 7)]), sapply(2:6, function(f) sum(r$FishAgeComps_nLL[, , , , f])),
             sapply(1:3, function(sf) sum(r$SrvAgeComps_nLL[, , , , sf])), sum(r$SrvAgeComps_nLL[, , , , 4:5]),
             sum(r$Rec_nLL) - n_est_dev * 0.5 * log(2 * pi) - 0.5 * sum(dat$mle$bias_adj) * log(dat$sigmaR),
             r$M_nLL - lc(dat$M_prior$sd, 1)),
-  assessment = c(dat$ss3$lik$catch, dat$ss3$lik$index[1:5], dat$ss3$lik$age,
+  assessment = c(dat$ss3$lik$catch, dat$ss3$lik$index[1:4], dat$ss3$lik$age,
                  dat$ss3$lik$recruitment + dat$ss3$lik$forecast_recruitment - sum(dat$mle$bias_adj) * log(dat$sigmaR),
                  dat$ss3$lik$priors)
 )
 lik$difference <- lik$SPoRC - lik$assessment
 cat("\n=== Stage 1: likelihoods, SPoRC net of the constants the assessment omits ===\n")
 print(lik, row.names = FALSE, digits = 8)
+cat(sprintf("the assessment's recruitment index, which is not fit here, is a further %.7f\n", dat$ss3$lik$index[5]))
 
-const <- lc(dat$sigmaC, sum(dat$UseCatch == 1, na.rm = TRUE)) + 0.5 * log(2 * pi) * sum(dat$UseSrvIdx) +
+const <- lc(dat$sigmaC, sum(dat$UseCatch == 1, na.rm = TRUE)) + 0.5 * log(2 * pi) * sum(dat$UseSrvIdx[, , , 1:n_srv]) +
   n_est_dev * 0.5 * log(2 * pi) - 0.5 * sum(dat$mle$bias_adj) * log(dat$sigmaR) + lc(dat$M_prior$sd, 1)
-cat(sprintf("\ntotal objective: SPoRC %.8f net of constants against the assessment's %.8f (difference %.2e)\n",
-            obj$fn(obj$par) - const, dat$mle$objective, obj$fn(obj$par) - const - dat$mle$objective))
+cat(sprintf("\ntotal objective: SPoRC %.8f net of constants against the assessment's %.8f less its recruitment index row (difference %.2e)\n",
+            obj$fn(obj$par) - const, dat$mle$objective - dat$ss3$lik$index[5],
+            obj$fn(obj$par) - const - (dat$mle$objective - dat$ss3$lik$index[5])))
 
 # the assessment solves fishing mortality from the catch where SPoRC estimates it, so SPoRC's
 # partials still hold the dependence of F on every other parameter. the comparable quantity profiles them out
@@ -150,11 +150,25 @@ cat("\n=== Stage 3: optimized SPoRC against the assessment ===\n")
 print(rbind(bridge_cmp("Spawning biomass", ssb, dat$ss3$SSB, signed = TRUE),
             bridge_cmp("Recruitment", rec, dat$ss3$Rec, signed = TRUE)), row.names = FALSE, digits = 4)
 print(data.frame(
-  quantity = c("ln R0", "natural mortality", paste0("catchability: ", dat$fleet_names[7:10]),
-               "catchability: recruitment index"),
-  SPoRC = c(pl$ln_global_R0[1], exp(pl$ln_M[1]), exp(pl$ln_srv_q[1, 1, c(1:4, n_srv)])),
-  assessment = c(dat$mle$ln_R0, dat$mle$M, exp(dat$mle$ln_srv_q), dat$mle$q_rec_idx)),
+  quantity = c("ln R0", "natural mortality", paste0("catchability: ", dat$fleet_names[7:10])),
+  SPoRC = c(pl$ln_global_R0[1], exp(pl$ln_M[1]), exp(pl$ln_srv_q[1, 1, 1:4])),
+  assessment = c(dat$mle$ln_R0, dat$mle$M, exp(dat$mle$ln_srv_q))),
   row.names = FALSE, digits = 7)
+
+# the deviations the assessment's recruitment index spoke to, which is where dropping it should show
+# first. SPoRC stores the deviation less its bias correction, so the assessment's is put on that scale
+cat("\n=== Stage 3: the year classes the assessment's recruitment index observed ===\n")
+ri <- dat$ss3$pred_idx %>% dplyr::filter(Fleet == 11) %>% dplyr::arrange(Yr)
+i_ri <- match(ri$Yr, yrs)
+dev_ss3 <- dat$mle$recdev - 0.5 * dat$mle$bias_adj * dat$sigmaR^2
+print(data.frame(
+  year = ri$Yr,
+  index_obs = ri$Obs,
+  index_se = ri$SE,
+  SPoRC_dev = as.vector(pl$ln_RecDevs[1, 1, i_ri]),
+  assessment_dev = dev_ss3[i_ri],
+  rec_pct = pd(rec[i_ri], dat$ss3$Rec[i_ri])),
+  row.names = FALSE, digits = 5)
 
 ggplot2::ggsave(
   here("vignettes", "figures", "ac_wc_sablefish_ts_comparison.png"),

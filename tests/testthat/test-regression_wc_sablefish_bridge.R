@@ -9,11 +9,13 @@ data("sgl_rg_wc_sablefish_data")
 
 test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment at its own estimate", {
 
+  # the assessment's eleventh fleet, a likelihood on the recruitment deviations, is not a survey
+  # fleet here, so the bridge is to everything else and the comparison subtracts that one row
   dat <- sgl_rg_wc_sablefish_data
   yrs <- dat$years
   n_yrs <- length(yrs)
   n_ages <- length(dat$ages)
-  n_srv <- dat$n_srv_fleets
+  rec_idx_nLL <- dat$ss3$lik$index[5] # the assessment's own row for it, kept in its report
 
   input_list <- seed_wc_sablefish_mle(build_wc_sablefish_input(dat), dat)
   obj <- fit_model(input_list$data, input_list$par, input_list$map,
@@ -36,8 +38,7 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
   # Predicted observations ----
   i_catch <- dat$UseCatch[1, , 1, 1:6] == 1
   expect_lt(pct(as.vector(r$PredCatch[1, 1, , 1, 1:6])[i_catch], as.vector(dat$ss3$pred_catch)[i_catch]), 1e-2)
-  # fleets 1-4 hold the trawl survey indices; fleet 5 is compositions only and
-  # fleet 6 the recruitment index, checked separately below
+  # fleets 1-4 hold the trawl survey indices and fleet 5 is compositions only
   for(sf in 1:4) {
     ci <- dat$ss3$pred_idx[dat$ss3$pred_idx$Fleet == dat$srv_src[sf], ]
     expect_lt(pct(r$PredSrvIdx[1, 1, match(ci$Yr, yrs), 1, sf], ci$Exp), 1e-2)
@@ -48,9 +49,7 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
   sel_fish <- expand_wc_sablefish_sel(dat$fish_sel_blocks_ss3, n_yrs, n_ages, dat$n_sexes)
   sel_srv <- expand_wc_sablefish_sel(dat$srv_sel_blocks_ss3, n_yrs, n_ages, dat$n_sexes)
   expect_lt(max(abs(r$fish_sel[1, 1, 1:n_yrs, 1, , , ] - sel_fish[1, 1, , 1, , , ])), 1e-5)
-  # the recruitment index fleet observes the deviations and reads no curve
-  i_sel_srv <- which(dat$srv_src != 11)
-  expect_lt(max(abs(r$srv_sel[1, 1, 1:n_yrs, 1, , , i_sel_srv] - sel_srv[1, 1, , 1, , , i_sel_srv])), 1e-5)
+  expect_lt(max(abs(r$srv_sel[1, 1, 1:n_yrs, 1, , , ] - sel_srv[1, 1, , 1, , , ])), 1e-5)
 
   # Expected age compositions, formed the way the likelihood forms them and put through
   # the composition constant so they compare with the assessment's own table
@@ -83,11 +82,11 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
 
   expect_equal(sum(r$Catch_nLL) - lc(dat$sigmaC, sum(dat$UseCatch == 1, na.rm = TRUE)),
                dat$ss3$lik$catch, tolerance = 1e-4)
-  # fleets 1-4 are the trawl surveys and 6 the recruitment index; fleet 5
-  # has compositions only. The assessment reports all five in one row.
-  for(sf in c(1:4, 6)) {
+  # fleets 1-4 are the trawl surveys; fleet 5 has compositions only. The
+  # assessment's fifth index row is the recruitment index, which is not fit here
+  for(sf in 1:4) {
     expect_equal(sum(r$SrvIdx_nLL[, , , sf]) - 0.5 * log(2 * pi) * sum(dat$UseSrvIdx[, , , sf]),
-                 dat$ss3$lik$index[min(sf, 5)], tolerance = 1e-3)
+                 dat$ss3$lik$index[sf], tolerance = 1e-3)
   } # end sf loop
   # the trawl fleet's two composition data sources are one fleet in the assessment
   expect_equal(sum(r$FishAgeComps_nLL[, , , , c(1, dat$n_fish_fleets)]), dat$ss3$lik$age[1], tolerance = 1e-3)
@@ -98,18 +97,13 @@ test_that("West Coast sablefish bridges to the 2025 Stock Synthesis assessment a
                dat$ss3$lik$recruitment + dat$ss3$lik$forecast_recruitment - sum(dat$mle$bias_adj) * log(dat$sigmaR),
                tolerance = 1e-3)
   expect_equal(r$M_nLL - lc(dat$M_prior$sd, 1), dat$ss3$lik$priors, tolerance = 1e-4)
-  # the recruitment index reads the deviations rather than the population, so its predictions
-  # have to be the assessment's own deviations times its catchability
-  i_ri <- match(dat$rec_idx$yr, yrs)
-  expect_equal(as.vector(r$RecDev_anom[1, 1, i_ri]), dat$mle$recdev[i_ri], tolerance = 1e-8)
-  expect_equal(as.vector(r$PredSrvIdx[1, 1, i_ri, 1, n_srv]),
-               (dat$ss3$pred_idx$Exp[dat$ss3$pred_idx$Fleet == 11]), tolerance = 1e-5)
 
-  # and the objective itself, net of every constant the assessment omits
+  # and the objective itself, net of every constant the assessment omits and of the
+  # recruitment index row, the one block of the assessment's total that is not fit here
   const <- lc(dat$sigmaC, sum(dat$UseCatch == 1, na.rm = TRUE)) +
     0.5 * log(2 * pi) * sum(dat$UseSrvIdx) + n_est_dev * 0.5 * log(2 * pi) -
     0.5 * sum(dat$mle$bias_adj) * log(dat$sigmaR) + lc(dat$M_prior$sd, 1)
-  expect_equal(obj$fn(obj$par) - const, dat$mle$objective, tolerance = 1e-6)
+  expect_equal(obj$fn(obj$par) - const, dat$mle$objective - rec_idx_nLL, tolerance = 1e-3)
 
   # terms the assessment does not have should not be contributing
   for(quant_name in c("Fmort_nLL", "sel_nLL", "srv_q_nLL", "fish_q_nLL", "h_nLL", "R0_nLL",

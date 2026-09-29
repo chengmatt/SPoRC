@@ -111,7 +111,11 @@ test_that("with near-exact data and almost no process error the refit returns th
     expect_true(all(is.na(il$map$ln_sigmaR))) # the declaration fixed sigmaR
     fit <- fit_model(il$data, il$par, il$map, random = c("ln_RecDevs", "dsem_x"), newton_loops = 3, silent = TRUE)
     pl <- fit$env$parList()
-    expect_lt(max(abs(fit$gr(fit$env$last.par.best[-fit$env$random]))), 1e-4)
+    # data measured to a tenth of a percent put the curvature near 1e8, so a parameter move of 1e-10 reads as a
+    # raw gradient of 0.03 while the objective stays flat; judge the fit on what one more Newton step would buy
+    fixed_par <- fit$env$last.par.best[-fit$env$random]
+    grad <- as.numeric(fit$gr(fixed_par))
+    expect_lt(sum(grad * solve(stats::optimHess(fixed_par, fn = fit$fn, gr = fit$gr), grad)) / 2, 1e-6)
     expect_equal(pl$dsem_beta[1], 0.6, tolerance = 0.02) # the effect
     expect_equal(as.numeric(exp(pl$ln_global_R0)), 5, tolerance = 0.01) # R0 means the same thing on both sides
     expect_equal(as.numeric(exp(pl$ln_rinit)), 2, tolerance = 0.01)

@@ -692,6 +692,7 @@ and regressing one covariate at a time cannot, demonstrating the utility of a ds
 Given the models above, one can use simulation self-testing to understand whether or not the coefficients obtained were spurious due to short time-series length, and whether or not results obtained from the dsem integrated approach are robust. In this case, the `simulation_self_test` function conducts a conditional simulation where the random effects / states are held at the estimated values and considered the truth, but new observational datasets are generated and fitted to. 
 
 ```{r cond}
+n_cores <- min(10, future::availableCores())
 self_test_cond <- simulation_self_test(
   both$data,
   both$parameters,
@@ -701,7 +702,7 @@ self_test_cond <- simulation_self_test(
   sd_rep = both$sd_rep,
   n_sims = 10,
   newton_loops = 2,
-  n_cores = 10,
+  n_cores = n_cores,
   what = c("SSB", "Rec", "dsem_x_grid"),
   what_par = c("dsem_beta", "ln_dsem_sd"),
   do_par = TRUE,
@@ -753,7 +754,7 @@ self_test_cond_perfect <- simulation_self_test(
   sd_rep = both$sd_rep,
   n_sims = 10,
   newton_loops = 2,
-  n_cores = 10,
+  n_cores = n_cores,
   what = c("SSB", "Rec", "dsem_x_grid"),
   what_par = c("dsem_beta", "ln_dsem_sd"),
   do_par = TRUE,
@@ -806,7 +807,7 @@ self_test_joint <- simulation_self_test(
   sd_rep = both$sd_rep,
   n_sims = 10,
   newton_loops = 2,
-  n_cores = 10,
+  n_cores = n_cores,
   what = c("SSB", "Rec", "dsem_x_grid"),
   what_par = c("dsem_beta", "ln_dsem_sd"),
   do_par = TRUE,

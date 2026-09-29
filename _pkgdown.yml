@@ -195,6 +195,7 @@ reference:
       - get_par_est_info
       - rho_trans
       - get_logistN_Sigma
+      - rmvnorm_prec
 
   - title: "Plotting"
     desc: "Functions for plotting"

@@ -52,7 +52,7 @@ test_that("the packed vector holds the same years, in the same order, the object
   expect_null(pack_dsem_cov_osa(d2$data$dsem_cov_obs, d2$data$dsem_cov_family, "bernoulli"))
   expect_null(pack_dsem_cov_osa(d$data$dsem_cov_obs, d$data$dsem_cov_family, "poisson"))
   expect_null(pack_dsem_cov_osa(d$data$dsem_cov_obs, d$data$dsem_cov_family, "tweedie"))
-  expect_error(pack_dsem_cov_osa(d$data$dsem_cov_obs, d$data$dsem_cov_family, "discrete"), "one family per vector")
+  expect_error(pack_dsem_cov_osa(d$data$dsem_cov_obs, d$data$dsem_cov_family, "discrete"), "must be")
 
 })
 

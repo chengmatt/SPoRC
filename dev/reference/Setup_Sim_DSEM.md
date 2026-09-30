@@ -78,6 +78,18 @@ Setup_Sim_DSEM(
   on the natural scale, for example
   `c(b_env = 0.5, rho_env = 0.6, sd_env = 1, sd_rec = 0.8)`.
 
+- pars_by_sim:
+
+  List of one parameter list per replicate, as `parList` returns them,
+  used when every replicate has its own draw so the conditioning years
+  read that replicate's values rather than the fit's. `NULL` (default)
+  uses `pars` for all of them.
+
+- rep_by_sim:
+
+  List of one report per replicate, alongside `pars_by_sim`. `NULL`
+  (default) uses `rep` for all of them.
+
 - dsem_processes:
 
   From scratch: processes the arrows may name, `"rec"` (default),

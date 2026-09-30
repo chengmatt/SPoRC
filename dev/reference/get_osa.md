@@ -32,6 +32,7 @@ get_osa(
   pop = FALSE,
   discard = FALSE,
   tag = FALSE,
+  dsem = FALSE,
   osa_method = NULL,
   parallel = FALSE
 )
@@ -132,13 +133,16 @@ get_osa(
 - index_source:
 
   Which continuous index-type data source to pull internal residuals
-  for: `"Catch"`, `"Discard"`, `"FishIdx"` or `"SrvIdx"`. Takes
-  precedence over `comp_source` and `tag`.
+  for: `"Catch"`, `"Discard"`, `"FishIdx"` or `"SrvIdx"`. A call returns
+  one data source, and this one is read ahead of `dsem`, `tag` and
+  `comp_source`.
 
 - family:
 
   `"discrete"` or `"continuous"`, which of the two tracked OSA vectors
-  to read for `comp_source`, since a source can have both. Read when
+  to read for `comp_source`, since a source can have both. Under
+  `dsem = TRUE` it says which covariates to read and takes
+  `"continuous"`, `"bernoulli"`, `"poisson"` or `"tweedie"`. Read when
   `model` is supplied, `tag = FALSE` and `index_source` is `NULL`.
 
 - pop:
@@ -155,6 +159,17 @@ get_osa(
 
   Logical, `TRUE` to compute internal residuals for conventional tag
   recaptures instead of compositions. Default `FALSE`.
+
+- dsem:
+
+  Logical, `TRUE` to compute internal residuals for the covariates a
+  dsem observes with error, reading `family` to pick which one: the
+  continuous covariates (normal, gamma, the fixed sd normal, lognormal)
+  together, or `"bernoulli"`, `"poisson"` or `"tweedie"`. Every family
+  has residuals but `dsem_family = "fixed"`, where the covariate is the
+  grid cell itself and there is no observation to peel. A call returns
+  one data source, and this one is read ahead of `tag` and
+  `comp_source`. Default `FALSE`.
 
 - osa_method:
 
@@ -178,7 +193,8 @@ source gives `fleet`, `index_label`, `year`, `index`, `resid`, `region`,
 `cohort`, the release and recovery year, region and season,
 `years_at_liberty`, `resid` and `comp_type = "Tag"`. An `index_source`
 gives `fleet`, `region`, `year`, `season`, `pop`, `resid` and
-`idx_type`.
+`idx_type`. `dsem = TRUE` gives `covariate`, `year`, `family`, `resid`
+and `idx_type = "DsemCov"`.
 
 ## Details
 
@@ -203,6 +219,7 @@ For internal residuals, fit with `do_internal_comp_osa = TRUE` or
             family = "discrete", bins = input_list$data$ages, bin_label = "Age")
     get_osa(model = fitted_obj, data = input_list$data, tag = TRUE)
     get_osa(model = fitted_obj, data = input_list$data, index_source = "SrvIdx")
+    get_osa(model = fitted_obj, data = input_list$data, dsem = TRUE)
 
 ## See also
 

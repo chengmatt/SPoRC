@@ -11,16 +11,24 @@ Used by the internal OSA routines, and works around two quirks of
   [`run_external_comp_osa`](https://chengmatt.github.io/SPoRC/dev/reference/run_external_comp_osa.md)
   loads).
 
-- `discreteSupport` is detected with
-  [`missing()`](https://rdrr.io/r/base/missing.html), so supplying it as
-  `NULL` is not the same as omitting it: a `NULL` sends continuous
-  families down the mixed discrete/continuous branch, which rejects the
-  Gaussian methods. It is forwarded here only when it is non-`NULL`.
+- `discreteSupport` and `range` are detected with
+  [`missing()`](https://rdrr.io/r/base/missing.html), so giving either a
+  `NULL` is not the same as omitting it: a `NULL` support puts a
+  continuous family on the mixed discrete/continuous path, which then
+  errors under every Gaussian method and demands a `range` under
+  `oneStepGeneric`. Both are forwarded here only when they are
+  non-`NULL`.
 
 ## Usage
 
 ``` r
-osa_one_step_predict(model, ..., discreteSupport = NULL, parallel = FALSE)
+osa_one_step_predict(
+  model,
+  ...,
+  discreteSupport = NULL,
+  range = NULL,
+  parallel = FALSE
+)
 ```
 
 ## Arguments
@@ -37,8 +45,20 @@ osa_one_step_predict(model, ..., discreteSupport = NULL, parallel = FALSE)
 
 - discreteSupport:
 
-  Support of the discrete observations, or `NULL` (the default) to omit
-  the argument entirely.
+  Values a discrete observation can take, which `oneStepGeneric` sums
+  its one-step density over: the integers `0:max` for a composition's or
+  a tag's counts, or `0` alone for a tweedie, whose only discrete value
+  is its point mass at zero. `NULL` (the default) omits the argument
+  entirely, which is what a continuous observation (a catch, an index, a
+  normal covariate) wants.
+
+- range:
+
+  Interval `oneStepGeneric` integrates an observation over, which
+  `oneStepPredict` reads as `c(-Inf, Inf)` unless it is told otherwise,
+  and demands outright when an observation is part discrete and part
+  continuous (a tweedie's is `c(0, Inf)`). `NULL` (the default) omits
+  it.
 
 - parallel:
 

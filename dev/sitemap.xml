@@ -279,6 +279,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_arrow_values.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_cells.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_conditional.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_cov_mean.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_grid.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_link.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_link_sd_arrow.html</loc></url>
@@ -381,6 +382,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/pack_caal_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/pack_comp_source_osa.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/pack_dsem_cov_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/pack_tag_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/parse_bin_subset.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/parse_caal_type.html</loc></url>
@@ -422,6 +424,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_francis.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_caal_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_comp_osa.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_dsem_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_index_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/run_internal_tag_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/safe_extract.html</loc></url>

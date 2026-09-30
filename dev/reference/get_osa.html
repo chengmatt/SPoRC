@@ -92,6 +92,7 @@ expected compositions and calls [run_external_comp_osa()]; supplying
 <span>  pop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  discard <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  tag <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  dsem <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  osa_method <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -193,14 +194,16 @@ likelihoods. Required when <code>model</code> is supplied, <code>index_source</c
 <dt id="arg-index-source">index_source<a class="anchor" aria-label="anchor" href="#arg-index-source"></a></dt>
 <dd><p>Which continuous index-type data source to pull internal
 residuals for: <code>"Catch"</code>, <code>"Discard"</code>, <code>"FishIdx"</code> or
-<code>"SrvIdx"</code>. Takes precedence over <code>comp_source</code> and <code>tag</code>.</p></dd>
+<code>"SrvIdx"</code>. A call returns one data source, and this one is read ahead of
+<code>dsem</code>, <code>tag</code> and <code>comp_source</code>.</p></dd>
 
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
 <dd><p><code>"discrete"</code> or <code>"continuous"</code>, which of the two tracked
-OSA vectors to read for <code>comp_source</code>, since a source can have both.
-Read when <code>model</code> is supplied, <code>tag = FALSE</code> and
-<code>index_source</code> is <code>NULL</code>.</p></dd>
+OSA vectors to read for <code>comp_source</code>, since a source can have both. Under
+<code>dsem = TRUE</code> it says which covariates to read and takes <code>"continuous"</code>,
+<code>"bernoulli"</code>, <code>"poisson"</code> or <code>"tweedie"</code>. Read when <code>model</code> is
+supplied, <code>tag = FALSE</code> and <code>index_source</code> is <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>
@@ -217,6 +220,16 @@ for <code>comp_source %in% c("FishAge","FishLen")</code> only. Default
 <dt id="arg-tag">tag<a class="anchor" aria-label="anchor" href="#arg-tag"></a></dt>
 <dd><p>Logical, <code>TRUE</code> to compute internal residuals for conventional
 tag recaptures instead of compositions. Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-dsem">dsem<a class="anchor" aria-label="anchor" href="#arg-dsem"></a></dt>
+<dd><p>Logical, <code>TRUE</code> to compute internal residuals for the covariates
+a dsem observes with error, reading <code>family</code> to pick which one: the continuous
+covariates (normal, gamma, the fixed sd normal, lognormal) together, or
+<code>"bernoulli"</code>, <code>"poisson"</code> or <code>"tweedie"</code>. Every family has residuals
+but <code>dsem_family = "fixed"</code>, where the covariate is the grid cell itself and there
+is no observation to peel. A call returns one data source, and this one is read ahead
+of <code>tag</code> and <code>comp_source</code>. Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-osa-method">osa_method<a class="anchor" aria-label="anchor" href="#arg-osa-method"></a></dt>
@@ -242,7 +255,9 @@ and tags, and <code>"oneStepGaussianOffMode"</code> for the continuous ones.</p>
   <code>cohort</code>, the release and recovery year, region and season,
   <code>years_at_liberty</code>, <code>resid</code> and <code>comp_type = "Tag"</code>. An
   <code>index_source</code> gives <code>fleet</code>, <code>region</code>, <code>year</code>,
-  <code>season</code>, <code>pop</code>, <code>resid</code> and <code>idx_type</code>.</p>
+  <code>season</code>, <code>pop</code>, <code>resid</code> and <code>idx_type</code>.
+  <code>dsem = TRUE</code> gives <code>covariate</code>, <code>year</code>, <code>family</code>,
+  <code>resid</code> and <code>idx_type = "DsemCov"</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -262,7 +277,8 @@ array this function expects:</p>
 <span><span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">fitted_obj</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, comp_source <span class="op">=</span> <span class="st">"FishAge"</span>,</span>
 <span>        family <span class="op">=</span> <span class="st">"discrete"</span>, bins <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">ages</span>, bin_label <span class="op">=</span> <span class="st">"Age"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">fitted_obj</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, tag <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
-<span><span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">fitted_obj</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"SrvIdx"</span><span class="op">)</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">fitted_obj</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"SrvIdx"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">fitted_obj</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, dsem <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 
     </div>
     <div class="section level2">

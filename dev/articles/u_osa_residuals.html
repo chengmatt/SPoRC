@@ -619,6 +619,46 @@ shown for tagging data.</p>
 <span><span class="va">resid_srvidx_pop</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">srvidx_pop_osa</span><span class="op">)</span></span></code></pre></div>
 <p><img src="figures/u_internal_index_pop.png"></p>
 </div>
+<div class="section level3">
+<h3 id="covariates-a-dsem-observes-with-error">Covariates a dsem observes with error<a class="anchor" aria-label="anchor" href="#covariates-a-dsem-observes-with-error"></a>
+</h3>
+<p>A dsem whose covariates are observed with error fits those
+observations, so they have one-step-ahead residuals of their own, and
+<code>dsem = TRUE</code> returns them. A covariate left on
+<code>dsem_family = "fixed"</code> has no residual (since fixed) and
+hence doesn’t return anything here. We provide a contrived example below
+of how to call osa residuals below.</p>
+<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">env</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span>year <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span>, env <span class="op">=</span> <span class="va">env_index</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">input_dsem</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></span><span class="op">(</span></span>
+<span>  <span class="va">input_list</span>,</span>
+<span>  dsem_arrows <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"env -&gt; rec, 0, b_env"</span>, <span class="st">"env &lt;-&gt; env, 0, sd_env"</span>, <span class="st">"rec &lt;-&gt; rec, 0, sd_rec"</span><span class="op">)</span>,</span>
+<span>  dsem_data <span class="op">=</span> <span class="va">env</span>,</span>
+<span>  dsem_family <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>env <span class="op">=</span> <span class="st">"normal"</span><span class="op">)</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">model_dsem</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_dsem</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_dsem</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_dsem</span><span class="op">$</span><span class="va">map</span>,</span>
+<span>                        random <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ln_RecDevs"</span>, <span class="st">"dsem_x"</span><span class="op">)</span>, newton_loops <span class="op">=</span> <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">dsem_osa</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model_dsem</span>, data <span class="op">=</span> <span class="va">input_dsem</span><span class="op">$</span><span class="va">data</span>, dsem <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="va">resid_dsem</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/plot_resids.html">plot_resids</a></span><span class="op">(</span><span class="va">dsem_osa</span><span class="op">)</span></span></code></pre></div>
+<p>The residual data frame has a <code>covariate</code> column where the
+other sources have a fleet, and the plots facet on it when a dsem
+observes more than one. <code>family</code> picks between the covariates
+whose observations are continuous (<code>"normal"</code>,
+<code>"gaussian_fixed_sd"</code>, <code>"gamma"</code>,
+<code>"lognormal"</code>), or one of <code>"bernoulli"</code>,
+<code>"poisson"</code> and <code>"tweedie"</code>, and defaults to the
+continuous ones. Those last three are asked for one at a time because
+each needs different arguments out of
+<code><a href="https://rdrr.io/pkg/RTMB/man/OSA-residuals.html" class="external-link">RTMB::oneStepPredict()</a></code>, and those arguments hold for every
+observation in the call they are given: a bernoulli’s outcomes are 0 and
+1, a poisson’s counts run past the largest one observed, and a tweedie’s
+zeros are named as a point mass with a range for the positive part. Each
+covariate keeps the density it was fit with, so a lognormal one gives
+the residual for the observation rather than for its log.</p>
+</div>
 </div>
 <div class="section level2">
 <h2 id="other-options">Other options<a class="anchor" aria-label="anchor" href="#other-options"></a>
@@ -637,7 +677,11 @@ discrete (multinomial/count) likelihoods used here and can silently
 return mis-calibrated residuals. Defaults to
 <code>"oneStepGeneric"</code> for discrete composition/tag families and
 <code>"oneStepGaussianOffMode"</code> for continuous (logistic-normal
-composition or index-type) families.</li>
+composition or index-type) families. A dsem’s covariates default to
+<code>"oneStepGeneric"</code> whatever their family, and accept a
+Gaussian method only when every covariate in the call is
+<code>"normal"</code> or <code>"gaussian_fixed_sd"</code> on the
+identity link.</li>
 <li>
 <code>parallel</code>: passed straight through to
 <code>RTMB::oneStepPredict(parallel = )</code>. Useful for large
@@ -645,7 +689,7 @@ composition/tag datasets where OSA computation dominates runtime;
 verified to give numerically identical residuals to
 <code>parallel = FALSE</code>.</li>
 </ul>
-<div class="sourceCode" id="cb10"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb11"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/get_osa.html">get_osa</a></span><span class="op">(</span>model <span class="op">=</span> <span class="va">model</span>, data <span class="op">=</span> <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, index_source <span class="op">=</span> <span class="st">"SrvIdx"</span>,</span>
 <span>       osa_method <span class="op">=</span> <span class="st">"oneStepGaussian"</span>, parallel <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></code></pre></div>
 </div>

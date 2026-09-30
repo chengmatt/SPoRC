@@ -89,11 +89,12 @@ actually spans. Composition plots always facet by <code>region</code>/<code>sex<
 whenever <code>osa_results$res</code> contains more than one of each (<code>seas</code> matters because
 <code>year</code> + bin alone don't uniquely place a bubble-plot point when compositions are
 collected in more than one season). Tagging plots only show QQ plots given the number of dimensions in tagging data.
-Index-type residuals (from <code>get_osa(..., index_source = ...)</code>, with
-an <code>idx_type</code> column <code>%in% c("Catch","Discard","FishIdx","SrvIdx")</code>
-instead of <code>comp_type</code>) facet by <code>region</code>,
+Index-type residuals (from <code>get_osa(..., index_source = ...)</code> or
+<code>get_osa(..., dsem = TRUE)</code>, with an <code>idx_type</code> column instead of
+<code>comp_type</code>) facet by <code>region</code>,
 <code>season</code>, <code>fleet</code>, and <code>pop</code> whenever those span more than
-one level, and pair the QQ-plot with a residual-vs-year point plot instead
+one level, a dsem's covariate residuals by <code>covariate</code>, and pair the
+QQ-plot with a residual-vs-year point plot instead
 of a bubble plot (there is no bin/age/length dimension to plot against).
 Note: these are one-step-ahead residuals; for the simpler raw log-scale
 (Pearson-style) index residual and the observed-vs-predicted index fit, see

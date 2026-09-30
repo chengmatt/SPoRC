@@ -118,6 +118,21 @@ Setup_Sim_Dim(
   Integer. First year in which feedback is applied. Required when
   `run_feedback = TRUE`; ignored otherwise.
 
+- bias_correct_pe:
+
+  Which log scale process deviations the operating model centers on
+  minus half their marginal variance: `"none"`, `"rec"` (default,
+  recruitment and the initial ages) or `"all"` (those plus the numbers
+  at age state).
+
+- bias_correct_oe:
+
+  Whether a lognormally simulated observation is drawn at its mean
+  rather than its median, `0` (default, the median) or `1`. Both
+  switches are the same ones
+  [`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
+  takes, and a self test needs the same value on each side.
+
 ## Value
 
 A named list (`sim_list`) containing:

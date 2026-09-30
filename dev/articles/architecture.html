@@ -430,6 +430,7 @@ one file.</p>
 <code>utils_setup.R</code>
 </td>
 <td>
+<code>diag_osa_residuals.R</code>,
 <code>diag_retrospective.R</code>, <code>model_objective.R</code>,
 <code>setup_mapping.R</code>, <code>sim_dsem.R</code>,
 <code>sim_setup.R</code>
@@ -790,7 +791,7 @@ one file.</p>
 <code>model_lik_caal.R</code>, <code>model_lik_comps.R</code>,
 <code>model_lik_tags.R</code>, <code>model_movement.R</code>,
 <code>model_obs_fishery_survey.R</code>,
-<code>model_obs_tagging.R</code>,
+<code>model_obs_tagging.R</code>, <code>model_osa.R</code>,
 <code>model_population_dynamics.R</code>,
 <code>model_precision.R</code>, <code>model_priors_penalties.R</code>,
 <code>model_selectivity.R</code>, <code>setup_dsem.R</code>,
@@ -832,7 +833,8 @@ one file.</p>
 </td>
 <td>nothing</td>
 <td>
-<code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>
+<code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>,
+<code>model_objective.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -851,15 +853,16 @@ one file.</p>
 <td><code>model_precision.R</code></td>
 <td>
 <code>Get_3d_precision</code>, <code>get_dsem_arrow_values</code>,
-<code>get_dsem_grid</code>, <code>get_dsem_margvar</code>,
-<code>get_dsem_matrices</code>, <code>get_dsem_nLL</code>,
-<code>get_dsem_obs_nLL</code>, <code>get_dsem_precision</code>,
-<code>get_dsem_Q_oo</code>, <code>get_dsem_solve_mat</code>,
+<code>get_dsem_cov_mean</code>, <code>get_dsem_grid</code>,
+<code>get_dsem_margvar</code>, <code>get_dsem_matrices</code>,
+<code>get_dsem_nLL</code>, <code>get_dsem_obs_nLL</code>,
+<code>get_dsem_precision</code>, <code>get_dsem_Q_oo</code>,
+<code>get_dsem_solve_mat</code>, <code>pack_dsem_cov_osa</code>,
 <code>set_dsem_solved_cells</code>
 </td>
 <td>nothing</td>
 <td>
-<code>model_objective.R</code>,
+<code>diag_osa_residuals.R</code>, <code>model_objective.R</code>,
 <code>model_priors_penalties.R</code>, <code>plot_dsem.R</code>,
 <code>setup_dsem.R</code>, <code>sim_dsem.R</code>,
 <code>sim_naa_state.R</code>
@@ -1259,12 +1262,13 @@ one file.</p>
 <code>osa_keep_subset</code>, <code>osa_one_step_predict</code>,
 <code>plot_resids</code>, <code>run_external_comp_osa</code>,
 <code>run_internal_caal_osa</code>, <code>run_internal_comp_osa</code>,
-<code>run_internal_index_osa</code>, <code>run_internal_tag_osa</code>,
-<code>validate_osa_method</code>
+<code>run_internal_dsem_osa</code>, <code>run_internal_index_osa</code>,
+<code>run_internal_tag_osa</code>, <code>validate_osa_method</code>
 </td>
 <td>
 <code>model_lik_at_age.R</code>, <code>model_lik_caal.R</code>,
 <code>model_lik_comps.R</code>, <code>model_lik_tags.R</code>,
+<code>model_precision.R</code>, <code>setup_dsem.R</code>,
 <code>utils_setup.R</code>
 </td>
 <td></td>
@@ -1844,7 +1848,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-diag_*</code></td>
-<td>16</td>
+<td>17</td>
 <td>Post fit diagnostics: retrospectives and OSA residuals</td>
 </tr>
 <tr class="even">
@@ -1861,7 +1865,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 206 test files in total.</p>
+<p>That is 207 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

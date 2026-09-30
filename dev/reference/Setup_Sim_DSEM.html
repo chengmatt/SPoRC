@@ -139,6 +139,17 @@ on the natural scale, for example
 <code>c(b_env = 0.5, rho_env = 0.6, sd_env = 1, sd_rec = 0.8)</code>.</p></dd>
 
 
+<dt id="arg-pars-by-sim">pars_by_sim<a class="anchor" aria-label="anchor" href="#arg-pars-by-sim"></a></dt>
+<dd><p>List of one parameter list per replicate, as <code>parList</code> returns them, used
+when every replicate has its own draw so the conditioning years read that replicate's values
+rather than the fit's. <code>NULL</code> (default) uses <code>pars</code> for all of them.</p></dd>
+
+
+<dt id="arg-rep-by-sim">rep_by_sim<a class="anchor" aria-label="anchor" href="#arg-rep-by-sim"></a></dt>
+<dd><p>List of one report per replicate, alongside <code>pars_by_sim</code>. <code>NULL</code>
+(default) uses <code>rep</code> for all of them.</p></dd>
+
+
 <dt id="arg-dsem-processes">dsem_processes<a class="anchor" aria-label="anchor" href="#arg-dsem-processes"></a></dt>
 <dd><p>From scratch: processes the arrows may name, <code>"rec"</code> (default),
 <code>"NAA"</code>, <code>"fish_q"</code> or <code>"srv_q"</code>, in any combination.</p></dd>

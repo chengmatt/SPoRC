@@ -176,6 +176,18 @@ each year. Default <code>FALSE</code> (open-loop simulation).</p></dd>
 <dd><p>Integer. First year in which feedback is applied.
 Required when <code>run_feedback = TRUE</code>; ignored otherwise.</p></dd>
 
+
+<dt id="arg-bias-correct-pe">bias_correct_pe<a class="anchor" aria-label="anchor" href="#arg-bias-correct-pe"></a></dt>
+<dd><p>Which log scale process deviations the operating model centers on minus
+half their marginal variance: <code>"none"</code>, <code>"rec"</code> (default, recruitment and the initial
+ages) or <code>"all"</code> (those plus the numbers at age state).</p></dd>
+
+
+<dt id="arg-bias-correct-oe">bias_correct_oe<a class="anchor" aria-label="anchor" href="#arg-bias-correct-oe"></a></dt>
+<dd><p>Whether a lognormally simulated observation is drawn at its mean rather
+than its median, <code>0</code> (default, the median) or <code>1</code>. Both switches are the same ones
+<code><a href="Setup_Mod_Dim.html">Setup_Mod_Dim</a></code> takes, and a self test needs the same value on each side.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>

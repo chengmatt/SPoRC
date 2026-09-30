@@ -6,11 +6,12 @@ Its parallel branch calls TMB::openmp() without a
     with "Multiple TMB models loaded" whenever a session has more than one
     TMB DLL loaded (e.g. RTMB alongside compResidual, which
     run_external_comp_osa loads).
-discreteSupport is detected with missing(), so
-    supplying it as NULL is not the same as omitting it: a NULL
-    sends continuous families down the mixed discrete/continuous branch,
-    which rejects the Gaussian methods. It is forwarded here only when it is
-    non-NULL.
+discreteSupport and range are detected with
+    missing(), so giving either a NULL is not the same as
+    omitting it: a NULL support puts a continuous family on the mixed
+    discrete/continuous path, which then errors under every Gaussian method
+    and demands a range under oneStepGeneric. Both are
+    forwarded here only when they are non-NULL.
 
 '><meta property="og:description" content='Used by the internal OSA routines, and works around two quirks of
 oneStepPredict:
@@ -19,11 +20,12 @@ Its parallel branch calls TMB::openmp() without a
     with "Multiple TMB models loaded" whenever a session has more than one
     TMB DLL loaded (e.g. RTMB alongside compResidual, which
     run_external_comp_osa loads).
-discreteSupport is detected with missing(), so
-    supplying it as NULL is not the same as omitting it: a NULL
-    sends continuous families down the mixed discrete/continuous branch,
-    which rejects the Gaussian methods. It is forwarded here only when it is
-    non-NULL.
+discreteSupport and range are detected with
+    missing(), so giving either a NULL is not the same as
+    omitting it: a NULL support puts a continuous family on the mixed
+    discrete/continuous path, which then errors under every Gaussian method
+    and demands a range under oneStepGeneric. Both are
+    forwarded here only when they are non-NULL.
 
 '><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -85,16 +87,23 @@ discreteSupport is detected with missing(), so
     with "Multiple TMB models loaded" whenever a session has more than one
     TMB DLL loaded (e.g. RTMB alongside compResidual, which
     <code><a href="run_external_comp_osa.html">run_external_comp_osa</a></code> loads).</p></li>
-<li><p><code>discreteSupport</code> is detected with <code><a href="https://rdrr.io/r/base/missing.html" class="external-link">missing()</a></code>, so
-    supplying it as <code>NULL</code> is not the same as omitting it: a <code>NULL</code>
-    sends continuous families down the mixed discrete/continuous branch,
-    which rejects the Gaussian methods. It is forwarded here only when it is
-    non-<code>NULL</code>.</p></li>
+<li><p><code>discreteSupport</code> and <code>range</code> are detected with
+    <code><a href="https://rdrr.io/r/base/missing.html" class="external-link">missing()</a></code>, so giving either a <code>NULL</code> is not the same as
+    omitting it: a <code>NULL</code> support puts a continuous family on the mixed
+    discrete/continuous path, which then errors under every Gaussian method
+    and demands a <code>range</code> under <code>oneStepGeneric</code>. Both are
+    forwarded here only when they are non-<code>NULL</code>.</p></li>
 </ul></div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">osa_one_step_predict</span><span class="op">(</span><span class="va">model</span>, <span class="va">...</span>, discreteSupport <span class="op">=</span> <span class="cn">NULL</span>, parallel <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">osa_one_step_predict</span><span class="op">(</span></span>
+<span>  <span class="va">model</span>,</span>
+<span>  <span class="va">...</span>,</span>
+<span>  discreteSupport <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  range <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -110,8 +119,20 @@ discreteSupport is detected with missing(), so
 
 
 <dt id="arg-discretesupport">discreteSupport<a class="anchor" aria-label="anchor" href="#arg-discretesupport"></a></dt>
-<dd><p>Support of the discrete observations, or <code>NULL</code>
-(the default) to omit the argument entirely.</p></dd>
+<dd><p>Values a discrete observation can take, which
+<code>oneStepGeneric</code> sums its one-step density over: the integers
+<code>0:max</code> for a composition's or a tag's counts, or <code>0</code> alone for a
+tweedie, whose only discrete value is its point mass at zero. <code>NULL</code>
+(the default) omits the argument entirely, which is what a continuous
+observation (a catch, an index, a normal covariate) wants.</p></dd>
+
+
+<dt id="arg-range">range<a class="anchor" aria-label="anchor" href="#arg-range"></a></dt>
+<dd><p>Interval <code>oneStepGeneric</code> integrates an observation over,
+which <code>oneStepPredict</code> reads as <code>c(-Inf, Inf)</code> unless it is told
+otherwise, and demands outright when an observation is part discrete and part
+continuous (a tweedie's is <code>c(0, Inf)</code>). <code>NULL</code> (the default)
+omits it.</p></dd>
 
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>

@@ -104,7 +104,7 @@ test_that("a bernoulli and a poisson covariate in one model each take their own 
   expect_equal(unique(bern$res$family), "bernoulli")
 
   # and the continuous vector is empty, since neither covariate is on one of its families
-  expect_warning(out <- get_osa(model = fit, data = fit$data, dsem = TRUE), "nothing to compute")
+  expect_warning(out <- get_osa(model = fit, data = fit$data, dsem = TRUE), "returning NULL")
   expect_null(out)
 
 })
@@ -180,14 +180,14 @@ test_that("a fixed covariate and a model without a dsem have no residuals", {
 
   d <- dsem_cov_setup(family = c(env = "fixed", cpi = "fixed"))
   fit <- fit_model(d$data, d$par, d$map, random = dsem_random, do_optim = FALSE, silent = TRUE)
-  expect_warning(out <- get_osa(model = fit, data = fit$data, dsem = TRUE), "nothing to compute")
+  expect_warning(out <- get_osa(model = fit, data = fit$data, dsem = TRUE), "returning NULL")
   expect_null(out)
-  expect_warning(out <- get_osa(model = fit, data = fit$data, dsem = TRUE, family = "tweedie"), "nothing to compute")
+  expect_warning(out <- get_osa(model = fit, data = fit$data, dsem = TRUE, family = "tweedie"), "returning NULL")
   expect_null(out)
 
   no_dsem <- build_goa_dusky_input(sgl_rg_dusky_data)
   plain <- fit_model(no_dsem$data, no_dsem$par, no_dsem$map, do_optim = FALSE, silent = TRUE)
-  expect_warning(out <- get_osa(model = plain, data = plain$data, dsem = TRUE), "no dsem")
+  expect_warning(out <- get_osa(model = plain, data = plain$data, dsem = TRUE), "No dsem")
   expect_null(out)
 
 })

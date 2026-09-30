@@ -6,7 +6,7 @@ depend on the harvest, and keeps the same draws across management
 procedures. A linked recruitment cell is drawn about minus half its
 variance given the known cells
 ([`get_dsem_margvar`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_margvar.md),
-with a moderating series at its mean) when `rec_bias_correct` is on.
+with a moderating series at its mean) when `bias_correct_pe` is on.
 
 ## Usage
 

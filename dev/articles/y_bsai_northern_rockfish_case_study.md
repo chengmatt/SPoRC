@@ -53,6 +53,7 @@ input_list <- Setup_Mod_Dim(
   n_fish_fleets = dat$n_fish_fleets,
   n_srv_fleets = dat$n_srv_fleets,
   n_seas = dat$n_seas,
+  bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
   verbose = FALSE
 )
 ```
@@ -92,8 +93,6 @@ the shifted deviations the seeds have, described in the seeding section.
 input_list <- Setup_Mod_Rec(
   input_list = input_list,
   rec_model = "mean_rec",
-  do_rec_bias_ramp = 1,
-  bias_year = rep(n_yrs, 4),
   sigmaR_switch = 1,
   ln_sigmaR = array(log(dat$sigmaR), dim = c(2, dat$n_pop, dat$n_regions)),
   equil_init_age_strc = "stoch_shared_ages",

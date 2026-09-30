@@ -224,16 +224,8 @@ Setup_Mod_SrvIdx_and_Comps(
 
 - srv_idx_type:
 
-  Character vector `[n_srv_fleets]`: `"biom"`, `"abd"`, `"recdev"` or
-  `"none"`, stored as `1`, `0`, `2` and `999`. A `"recdev"` fleet
-  observes year class strength directly rather than any part of the
-  population: its predicted value is `q * (ln_RecDevs - mu)`, with `mu`
-  the center the recruitment penalty asserts for that year, so it
-  measures the anomaly rather than the deviation as stored. It reads no
-  numbers at age, so its selectivity, timing and weight at age are
-  unused and its compositions should be left off. It requires
-  `SrvIdx_LikeType = "normal"` and `RecDevs_pen_center = "fixed"` in
-  [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md).
+  Character vector `[n_srv_fleets]`: `"biom"`, `"abd"` or `"none"`,
+  stored as `1`, `0` and `999`.
 
 - ObsSrvAgeComps:
 

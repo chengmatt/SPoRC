@@ -50,6 +50,7 @@ input_list <- Setup_Mod_Dim(
   n_fish_fleets = sgl_rg_dusky_data$n_fish_fleets,
   # number of fishery fleets
   n_srv_fleets = sgl_rg_dusky_data$n_srv_fleets, # number of survey fleets
+  bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
   verbose = TRUE # whether to output messages
 )
 ```
@@ -73,8 +74,6 @@ input_list <- Setup_Mod_Rec(
 
   # Model options
   # Doing bias ramp, but basically setting it so that no lognormal bias correction happens (as in the dusky model)
-  do_rec_bias_ramp = 1,
-  bias_year = rep(length(sgl_rg_dusky_data$years), 4),
   # do bias ramp (0 == don't do bias ramp, 1 == do bias ramp)
   sigmaR_switch = 1,
   # when to switch from early to late sigmaR (switch in first year)

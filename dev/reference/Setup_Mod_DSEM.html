@@ -78,7 +78,7 @@ up. Fit with <code>random = c(&lt;linked arrays&gt;, "dsem_x")</code>.</p>
 <span>  dsem_family <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dsem_link <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dsem_fixed_sd <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  dsem_mu_spec <span class="op">=</span> <span class="st">"est"</span>,</span>
+<span>  dsem_mu_spec <span class="op">=</span> <span class="st">"zero"</span>,</span>
 <span>  covs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dsem_delta0_spec <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  mod_var_logscale <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -171,11 +171,20 @@ every observed year of such a covariate.</p></dd>
 
 
 <dt id="arg-dsem-mu-spec">dsem_mu_spec<a class="anchor" aria-label="anchor" href="#arg-dsem-mu-spec"></a></dt>
-<dd><p><code>"est"</code> (default) estimates every covariate's mean,
-<code>"fix"</code> holds them all at the observed mean, a character vector estimates
-only those named, and a named numeric vector fixes those covariates at the
-values given with the rest at the observed mean. A linked series' mean is
-always fixed at zero, since its process already sits under a level parameter.</p></dd>
+<dd><p><code>"zero"</code> (default) holds an identity-link covariate at
+zero and every other one at its observed mean, <code>"fix"</code> holds them all at
+their observed means, <code>"est"</code> estimates them all, a character vector
+estimates only those named, and a named numeric vector fixes those covariates at
+the values given with the rest at the observed mean. A linked series' mean is
+always fixed at zero, since its process already sits under a level parameter. The
+default holds the mean because a covariate seen in few years identifies it mostly
+through the path coefficient, and the two then trade off, and it holds an
+identity-link covariate at zero so that a path coefficient reads against a
+centered covariate, the convention the operating model draws under. Zero is a
+center only on that link, so a log or logit family keeps its observed mean. An
+identity-link covariate in its own units should be centered first, or given
+<code>"fix"</code>; a warning names one whose observed mean sits further from zero than
+its own spread.</p></dd>
 
 
 <dt id="arg-covs">covs<a class="anchor" aria-label="anchor" href="#arg-covs"></a></dt>

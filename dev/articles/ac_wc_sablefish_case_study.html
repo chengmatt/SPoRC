@@ -87,8 +87,7 @@
 <p>This case study reproduces the 2025 West Coast sablefish assessment,
 run in Stock Synthesis 3, in <code>SPoRC</code>.</p>
 <p>The model is single region, two sex, single season, with six catch
-fleets, four trawl surveys and an index built on the recruitment
-deviations themselves:</p>
+fleets and four trawl surveys:</p>
 <table class="table">
 <colgroup>
 <col width="25%">
@@ -116,18 +115,12 @@ deviations themselves:</p>
 <td>Lognormal</td>
 </tr>
 <tr class="odd">
-<td>Recruitment index</td>
-<td>2020–2024</td>
-<td>5</td>
-<td>Normal on the deviation</td>
-</tr>
-<tr class="even">
 <td>Fishery age compositions, six fleets</td>
 <td>1983–2024</td>
 <td>198</td>
 <td>Multinomial</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Survey age compositions, four surveys</td>
 <td>1983–2024</td>
 <td>52</td>
@@ -135,6 +128,9 @@ deviations themselves:</p>
 </tr>
 </tbody>
 </table>
+<p>The assessment fits one further data source that this bridge does
+not, an index of the recruitment deviations themselves over 2020–2024,
+and the section on it below says what leaving it out costs.</p>
 <p>Ages run
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>a</mi><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">a = 0</annotation></semantics></math>
 to
@@ -204,12 +200,6 @@ For each survey,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>σ</mi><mi>y</mi></msub><mo>=</mo><msubsup><mi>σ</mi><mi>y</mi><mtext mathvariant="normal">input</mtext></msubsup><mo>+</mo><msup><mi>σ</mi><mtext mathvariant="normal">extra</mtext></msup></mrow><annotation encoding="application/x-tex">\sigma_{y} = \sigma_{y}^{\text{input}} + \sigma^{\text{extra}}</annotation></semantics></math>.
 <code>SPoRC</code> currently has no parameter for it, so it is kept at
 the assessment’s estimate.</p>
-<p>The recruitment index is a likelihood on the deviations. Fleet 11 is
-units 36, a normal likelihood on
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\varepsilon_{y}</annotation></semantics></math>
-itself rather than on abundance. <code>SPoRC</code> holds this as
-<code>srv_idx_type = "recdev"</code>, a survey fleet that observes year
-class strength directly and reads no part of the population.</p>
 <p>Two fleets have two composition data sources. The trawl fishery and
 the West Coast groundfish bottom trawl survey each have sexed and
 unsexed compositions in the same years. <code>SPoRC</code> holds one
@@ -425,9 +415,11 @@ the assessment’s variance adjustment for that fleet, which run from
 <span>  <span class="co"># at the assessment's lower bound, which is it asking for none, so they are kept.</span></span>
 <span>  ObsSrvIdx_SE <span class="op">=</span> <span class="fu">input_se</span><span class="op">(</span><span class="va">dat</span><span class="op">)</span>,</span>
 <span>  sigmaSrvIdx_spec <span class="op">=</span> <span class="st">"est_additive"</span>,</span>
-<span>  sigmaSrvIdx_map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="cn">NA</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
-<span>  ln_sigmaSrvIdx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">extra_sd</span>, <span class="fl">1e-8</span>, <span class="fl">1e-8</span><span class="op">)</span>, <span class="fl">1e-8</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  sigmaSrvIdx_map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="cn">NA</span>, <span class="fl">1</span>, <span class="fl">2</span>, <span class="cn">NA</span>, <span class="cn">NA</span><span class="op">)</span>,</span>
+<span>  ln_sigmaSrvIdx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">pmax</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">mle</span><span class="op">$</span><span class="va">extra_sd</span>, <span class="fl">1e-8</span><span class="op">)</span>, <span class="fl">1e-8</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  UseSrvIdx <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">UseSrvIdx</span>,</span>
+<span>  <span class="co"># fleets 1-4 are the trawl surveys and 5 the unsexed compositions of the last</span></span>
+<span>  <span class="co"># of them, which carries no index</span></span>
 <span>  srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"biom"</span>, <span class="va">n_srv</span> <span class="op">-</span> <span class="fl">1</span><span class="op">)</span>, <span class="st">"none"</span><span class="op">)</span>,</span>
 <span>  SrvIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"lognormal"</span>, <span class="va">n_srv</span><span class="op">)</span>,</span>
 <span>  ObsSrvAgeComps <span class="op">=</span> <span class="va">dat</span><span class="op">$</span><span class="va">ObsSrvAgeComps</span>,</span>
@@ -538,30 +530,31 @@ assessment does, so those three offsets are zero.</p>
 so every weight here is one.</p>
 </div>
 <div class="section level2">
-<h2 id="the-recruitment-index">The recruitment index<a class="anchor" aria-label="anchor" href="#the-recruitment-index"></a>
+<h2 id="the-recruitment-index-this-bridge-leaves-out">The recruitment index this bridge leaves out<a class="anchor" aria-label="anchor" href="#the-recruitment-index-this-bridge-leaves-out"></a>
 </h2>
-<p>The last survey fleet observes the recruitment deviations themselves
-rather than any part of the population. That is
-<code>srv_idx_type = "recdev"</code>, set with the other survey fleets
-above. Its predicted value is</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>I</mi><mo accent="true">̂</mo></mover><mi>y</mi></msub><mo>=</mo><mi>q</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>y</mi></msub><mo>−</mo><msub><mi>μ</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\widehat{I}_{y} = q\left( \varepsilon_{y} - \mu_{y} \right)</annotation></semantics></math></p>
-<p>with
+<p>The assessment carries one more survey fleet, Stock Synthesis fleet
+11, which is not an index of the population at all. Its five
+observations over 2020–2024 are units 36, a normal likelihood on the
+recruitment deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>ε</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\varepsilon_{y}</annotation></semantics></math>
+itself, so its prediction would be
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>q</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>ε</mi><mi>y</mi></msub><mo>−</mo><msub><mi>μ</mi><mi>y</mi></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">q\left(\varepsilon_{y} - \mu_{y}\right)</annotation></semantics></math>
+with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\mu_{y}</annotation></semantics></math>
-the center the recruitment penalty asserts for that year. The difference
-matters here: under a bias ramp <code>SPoRC</code>’s stored deviation
-and the deviation the assessment reports differ by the bias correction,
-and it is the anomaly, how strong the year class was against what the
-model expected, that such an index measures. Taking it from the
-penalty’s own center is what makes the two agree without any special
-casing.</p>
-<p>Because the deviations are signed, two things follow for this fleet.
-It takes <code>SrvIdx_LikeType = "normal"</code>, since a lognormal
-cannot have a negative observation, and setup refuses any other choice
-for it. It also reads no numbers at age, so that its selectivity, survey
-timing and weight at age are never used and its compositions are left
-off. Its catchability is an ordinary element of <code>ln_srv_q</code>,
-kept on the log scale where the assessment has it on the natural
-scale.</p>
+the center the recruitment penalty asserts for that year. That is an
+observation of a parameter rather than of anything the population
+dynamics produce: the fleet would read no numbers at age, so its
+selectivity, survey timing and weight at age would never be used, and
+its likelihood would have to be normal rather than lognormal because a
+deviation is signed.</p>
+<p><code>SPoRC</code> has no index type for it, so it is not one of the
+five survey fleets above. What the assessment made of it is still in
+<code>dat$ss3</code>, whose likelihood and predicted index tables are
+its report as it stands, and that is what the comparisons below name and
+subtract. The same information can be brought in through machinery the
+package already has, as a covariate on recruitment in a
+<code>DSEM</code> (see <code>vignettes("ag_dsem")</code>), which is a
+statement about the process rather than a survey of it.</p>
 </div>
 <div class="section level2">
 <h2 id="starting-at-the-assessments-estimate">Starting at the assessment’s estimate<a class="anchor" aria-label="anchor" href="#starting-at-the-assessments-estimate"></a>
@@ -584,12 +577,12 @@ with six significant digits:</p>
 <pre><code>numbers at age                     5.8e-04 %
 spawning biomass                   4.5e-04 %
 recruitment                        3.9e-04 %
-total biomass, January 1           5.1e-04 %
-predicted catch                    4.9e-04 %
-survey indices                     5.4e-04 %
+total biomass, January 1           4.9e-04 %
+predicted catch                    4.8e-04 %
+survey indices                     5.1e-04 %
 bias ramp                          0        (absolute)
-selectivity, all twelve fleets     5.0e-07  (absolute)
-expected age compositions          6.5e-07  (absolute)</code></pre>
+selectivity, all eleven fleets     5.0e-07  (absolute)
+expected age compositions          6.1e-07  (absolute)</code></pre>
 <p><code>SPoRC</code> writes each likelihood component as a proper
 density where the assessment drops normalizing constants, so the
 comparison subtracts exactly the constants it omits:</p>
@@ -700,7 +693,7 @@ comparison subtracts exactly the constants it omits:</p>
 </tr>
 <tr class="even">
 <td>Recruitment deviations</td>
-<td>22.4041000</td>
+<td>22.4041010</td>
 <td>22.4041400</td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>3.9</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup></mrow><annotation encoding="application/x-tex">-3.9\times10^{-5}</annotation></semantics></math></td>
 </tr>
@@ -710,17 +703,12 @@ comparison subtracts exactly the constants it omits:</p>
 <td>0.2040690</td>
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>3.1</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup></mrow><annotation encoding="application/x-tex">-3.1\times10^{-6}</annotation></semantics></math></td>
 </tr>
-<tr class="even">
-<td>Recruitment index</td>
-<td>1.2484147</td>
-<td>1.2484100</td>
-<td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4.7</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup></mrow><annotation encoding="application/x-tex">4.7\times10^{-6}</annotation></semantics></math></td>
-</tr>
 </tbody>
 </table>
-<p>The total comes to 1335.7715 against the assessment’s 1335.7716, a
-difference of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3.9</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup></mrow><annotation encoding="application/x-tex">3.9\times10^{-5}</annotation></semantics></math>,
+<p>The assessment’s recruitment index, which is not fit here, is a
+further 1.2484100 of its total. The comparison is therefore against that
+total less that row: 1334.5231 against 1334.5232, a difference of
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4.4</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup></mrow><annotation encoding="application/x-tex">4.4\times10^{-5}</annotation></semantics></math>,
 which is the report file’s own print precision.</p>
 </div>
 <div class="section level2">
@@ -730,10 +718,10 @@ which is the report file’s own print precision.</p>
 <code class="sourceCode R"><span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>,</span>
 <span>                 do_optim <span class="op">=</span> <span class="cn">TRUE</span>, newton_loops <span class="op">=</span> <span class="fl">3</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">est</span><span class="op">$</span><span class="va">sdrep</span> <span class="op">&lt;-</span> <span class="fu">RTMB</span><span class="fu">::</span><span class="fu">sdreport</span><span class="op">(</span><span class="va">est</span>, hessian.fixed <span class="op">=</span> <span class="va">est</span><span class="op">$</span><span class="fu">he</span><span class="op">(</span><span class="va">est</span><span class="op">$</span><span class="va">optim</span><span class="op">$</span><span class="va">par</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>709 parameters, 32 of them selectivity, which is the assessment’s own
-count. The objective falls from -879.4254 at the assessment’s estimate
-to -879.4297, a drop of 0.0043, and the fitted selectivity stays within
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.5</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>5</mn></mrow></msup></mrow><annotation encoding="application/x-tex">1.5\times10^{-5}</annotation></semantics></math>
+<p>710 parameters, 32 of them selectivity. The objective falls by 0.0095
+from the assessment’s estimate to -880.6833, and the fitted selectivity
+stays within
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.8</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>4</mn></mrow></msup></mrow><annotation encoding="application/x-tex">1.8\times10^{-4}</annotation></semantics></math>
 of the assessment’s on every one of the twelve fleets.</p>
 <table class="table">
 <thead><tr class="header">
@@ -744,13 +732,13 @@ of the assessment’s on every one of the twelve fleets.</p>
 <tbody>
 <tr class="odd">
 <td>Spawning biomass</td>
-<td>-0.0020 %</td>
-<td>0.0039 %</td>
+<td>-0.069 %</td>
+<td>0.100 %</td>
 </tr>
 <tr class="even">
 <td>Recruitment</td>
-<td>-0.0054 %</td>
-<td>0.0098 %</td>
+<td>-0.133 %</td>
+<td>8.13 %</td>
 </tr>
 </tbody>
 </table>
@@ -763,38 +751,33 @@ of the assessment’s on every one of the twelve fleets.</p>
 <tbody>
 <tr class="odd">
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>R</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">\ln R_{0}</annotation></semantics></math></td>
-<td>10.165054</td>
+<td>10.163776</td>
 <td>10.165108</td>
 </tr>
 <tr class="even">
 <td>Natural mortality</td>
-<td>0.0877750</td>
+<td>0.0877404</td>
 <td>0.0877770</td>
 </tr>
 <tr class="odd">
 <td>Triennial early catchability</td>
-<td>1.022891</td>
+<td>1.023289</td>
 <td>1.022873</td>
 </tr>
 <tr class="even">
 <td>Triennial late catchability</td>
-<td>2.770002</td>
+<td>2.770884</td>
 <td>2.770076</td>
 </tr>
 <tr class="odd">
 <td>NWFSC slope catchability</td>
-<td>0.509775</td>
+<td>0.509935</td>
 <td>0.509779</td>
 </tr>
 <tr class="even">
 <td>WCGBTS catchability</td>
-<td>1.049713</td>
+<td>1.049972</td>
 <td>1.049699</td>
-</tr>
-<tr class="odd">
-<td>Recruitment index catchability</td>
-<td>0.237148</td>
-<td>0.237144</td>
 </tr>
 </tbody>
 </table>
@@ -805,15 +788,107 @@ of the assessment’s on every one of the twelve fleets.</p>
 </h2>
 <p>Everything in the population dynamics, the observation model and the
 selectivity agrees at the assessment report’s own print precision, and
-so does every likelihood component. Refitting moves spawning biomass by
-four thousandths of a percent.</p>
-<p>Two things account for that much. The assessment solves fishing
+so does every likelihood component the two share. What moves is the fit,
+and three things account for it.</p>
+<p>The first is the recruitment index, the one data source this bridge
+does not carry. It spoke to five year classes and to nothing else, so
+that is where its absence shows. No deviation before 2020 moves by more
+than 0.005 on the log scale, and of the five it observed only 2024 moves
+at all far.</p>
+<table style="width:100%;" class="table">
+<colgroup>
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+<col width="16%">
+</colgroup>
+<thead><tr class="header">
+<th>Year</th>
+<th>Observation</th>
+<th>SE</th>
+<th>
+<code>SPoRC</code> deviation</th>
+<th>Assessment deviation</th>
+<th>Recruitment</th>
+</tr></thead>
+<tbody>
+<tr class="odd">
+<td>2020</td>
+<td>0.300</td>
+<td>1.192</td>
+<td>1.4420</td>
+<td>1.4410</td>
+<td>-0.01 %</td>
+</tr>
+<tr class="even">
+<td>2021</td>
+<td>0.682</td>
+<td>1.185</td>
+<td>1.0900</td>
+<td>1.0892</td>
+<td>-0.04 %</td>
+</tr>
+<tr class="odd">
+<td>2022</td>
+<td>-0.912</td>
+<td>1.216</td>
+<td>-1.4772</td>
+<td>-1.4968</td>
+<td>1.86 %</td>
+</tr>
+<tr class="even">
+<td>2023</td>
+<td>0.382</td>
+<td>1.181</td>
+<td>1.4953</td>
+<td>1.4934</td>
+<td>0.07 %</td>
+</tr>
+<tr class="odd">
+<td>2024</td>
+<td>0.680</td>
+<td>1.187</td>
+<td>0.4234</td>
+<td>0.5070</td>
+<td>-8.13 %</td>
+</tr>
+</tbody>
+</table>
+<p>2024 is the terminal year, whose deviation the age compositions have
+not yet seen a single fish of, so the index was the only observation of
+it and dropping it leaves the deviation to the recruitment penalty
+alone. That is the whole of the 8 percent maximum in the recruitment row
+above, and it propagates into spawning biomass only as far as a single
+unfished year class does, which is a tenth of a percent.</p>
+<p>The same holds for uncertainty. Against the assessment’s own standard
+errors, the coefficient of variation on recruitment is unchanged to four
+significant figures in every year but two: 2024 widens from 0.926 to
+0.968, and 2022 is marginally tighter at 0.397 against 0.403, the
+deviation there having been the one the index disagreed with. Spawning
+biomass is unchanged to four figures in every year, 2024 included. Five
+observations on a parameter, weighted at a standard error of about 1.2
+on a series whose
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>σ</mi><mi>R</mi></msub><annotation encoding="application/x-tex">\sigma_{R}</annotation></semantics></math>
+is 1.4, are worth roughly four percent on the terminal year class and
+nothing else.</p>
+<p>The rest of the recruitment series moves too, but as a level rather
+than a shape: releasing 2024 lets
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>R</mi><mn>0</mn></msub></mrow><annotation encoding="application/x-tex">\ln R_{0}</annotation></semantics></math>
+settle 0.0013 lower, which carries every year class from 1890 to 2021
+down by about 0.04 percent together. That uniform shift, not any single
+year, is what the median rows in the two tables above are reporting.</p>
+<p>The other two causes are conventions rather than data, and they are
+the same two the other bridges carry. The assessment solves fishing
 mortality from the catch where <code>SPoRC</code> estimates it against a
 lognormal catch likelihood at CV 0.01, so the two agree only to the
 precision that likelihood enforces; and the extra survey standard
 deviation is kept at the assessment’s estimate, because
-<code>SPoRC</code> has no parameter for it. Neither moves the fit, but
-the second does mean the standard errors here do not have that source of
+<code>SPoRC</code> has no parameter for it. Neither moves the fit at the
+assessment’s own estimate, where every likelihood component the two
+share agrees to the report file’s print precision, but the second does
+mean the standard errors here do not have that source of
 uncertainty.</p>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

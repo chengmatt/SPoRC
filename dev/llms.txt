@@ -254,6 +254,8 @@ Functions for convenience
   : Transform a real-valued parameter to the interval (-1, 1)
 - [`get_logistN_Sigma()`](https://chengmatt.github.io/SPoRC/dev/reference/get_logistN_Sigma.md)
   : Construct a logistic-normal covariance matrix
+- [`rmvnorm_prec()`](https://chengmatt.github.io/SPoRC/dev/reference/rmvnorm_prec.md)
+  : Simulate from a precision matrix
 
 ## Plotting
 

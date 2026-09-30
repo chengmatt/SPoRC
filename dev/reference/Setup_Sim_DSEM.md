@@ -18,6 +18,8 @@ Setup_Sim_DSEM(
   condition_on_fit = FALSE,
   dsem_arrows = NULL,
   dsem_values = NULL,
+  pars_by_sim = NULL,
+  rep_by_sim = NULL,
   dsem_processes = "rec",
   dsem_cov_mu = NULL,
   dsem_cov_obs_sd = NULL,
@@ -78,8 +80,8 @@ Setup_Sim_DSEM(
 
 - dsem_processes:
 
-  From scratch: processes the arrows may name, `"rec"` (default) or
-  `"NAA"`, or both.
+  From scratch: processes the arrows may name, `"rec"` (default),
+  `"NAA"`, `"fish_q"` or `"srv_q"`, in any combination.
 
 - dsem_cov_mu:
 
@@ -138,6 +140,21 @@ at the cells the fit linked, so those cells are never copied from the
 report:
 
 - recruitment into `ln_RecDevs`, which `generate_recruitment` reads.
+  Linking recruitment also replaces both rows of the operating model's
+  `ln_sigmaR` with the series' settled marginal sd under the arrows,
+  since that is what the fit's initial age deviation penalty reads:
+  whatever
+  [`Setup_Sim_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)
+  was given is overwritten, and the initial age deviations are then
+  drawn at the same spread the fit assumes. A moderated variance arrow
+  on recruitment leaves `ln_sigmaR` as given, since the initial ages
+  need one number and a series whose variance is driven by another never
+  settles on one. Only the hand off is skipped: every deviation is still
+  bias corrected, the initial ages at whatever `ln_sigmaR` holds and the
+  recruitment cells year by year off the marginal variance. Both sides
+  read the same gate, so a moderated series still has the operating
+  model and the fit agreeing, on the supplied `ln_sigmaR` rather than on
+  an arrow derived value.
 
 - catchability into `ln_fish_q_devs` or `ln_srv_q_devs`, and
   [`draw_sim_q_devs`](https://chengmatt.github.io/SPoRC/dev/reference/draw_sim_q_devs.md)
@@ -161,9 +178,12 @@ report:
 Growth propagated cohort by cohort (`growth_tv_type = 1`) runs the way
 the fit runs it: the years before `growth_cohort_styr` are built up
 front, and from there `run_annual_cycle` advances each replicate one
-year at a time from its own start of year numbers. From scratch only
-recruitment and the numbers at age can be linked, since those are the
-arrays the operating model has itself.
+year at a time from its own start of year numbers. From scratch
+recruitment, the numbers at age and catchability can be linked, since
+those are the arrays the operating model has itself, and a catchability
+series there needs its fleet set to `"dsem"` in
+[`Setup_Sim_q_devs`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_q_devs.md)
+to be read.
 
 ## See also
 

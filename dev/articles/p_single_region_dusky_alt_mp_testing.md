@@ -113,14 +113,13 @@ setup_em <- function(sim_env, y, sim) {
     n_fish_fleets = sim_env$n_fish_fleets,
     n_srv_fleets = sim_env$n_srv_fleets,
     n_pop = sim_env$n_pop,
+    bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
     verbose = FALSE
   )
 
   # Configure recruitment model
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
-    do_rec_bias_ramp = 1,  # Enable bias ramp (no lognormal bias correction)
-    bias_year = rep(length(input_list$data$years), 4),
     sigmaR_switch = 1,  # Switch from early to late sigmaR in first year
     ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),  # Early and late sigma values
     rec_model = "mean_rec",

@@ -377,7 +377,8 @@ one file.</p>
 <td>
 <code>setup_dsem.R</code>, <code>setup_fishery_selectivity.R</code>,
 <code>setup_survey_selectivity.R</code>,
-<code>sim_catchability.R</code>, <code>sim_setup.R</code>
+<code>sim_catchability.R</code>, <code>sim_dsem.R</code>,
+<code>sim_setup.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -413,10 +414,12 @@ one file.</p>
 <code>apply_dsem_link_switch</code>,
 <code>check_dsem_cov_support</code>, <code>dev_map_levels</code>,
 <code>dsem_cov_link_mean</code>, <code>dsem_cov_sd_start</code>,
-<code>dsem_default_link</code>, <code>dsem_family_codes</code>,
-<code>dsem_link_codes</code>, <code>dsem_process_table</code>,
-<code>dsem_series</code>, <code>get_dsem_cells</code>,
-<code>get_dsem_link</code>, <code>get_dsem_link_sd_arrow</code>,
+<code>dsem_declared_by</code>, <code>dsem_default_link</code>,
+<code>dsem_family_codes</code>, <code>dsem_link_codes</code>,
+<code>dsem_process_table</code>, <code>dsem_rec_correction_on</code>,
+<code>dsem_rec_margvar_on</code>, <code>dsem_series</code>,
+<code>get_dsem_cells</code>, <code>get_dsem_link</code>,
+<code>get_dsem_link_sd_arrow</code>, <code>get_dsem_link_settles</code>,
 <code>get_dsem_Q_oo_pattern</code>, <code>peel_dsem_years</code>,
 <code>peel_series_order</code>, <code>read_dsem_arrows</code>,
 <code>set_dsem_logdet_atomic</code>, <code>Setup_Mod_DSEM</code>
@@ -538,8 +541,7 @@ one file.</p>
 </td>
 <td>
 <code>model_objective.R</code>, <code>setup_dsem.R</code>,
-<code>sim_closed_loop.R</code>, <code>sim_dsem.R</code>,
-<code>sim_self_test.R</code>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -821,11 +823,12 @@ one file.</p>
 <tr class="even">
 <td><code>model_osa.R</code></td>
 <td>
-<code>ddirmult_osa</code>, <code>ddirmult2</code>,
-<code>dmultinom_osa</code>, <code>osa_extract_cdf</code>,
+<code>ddirmult_osa</code>, <code>dmultinom_osa</code>,
+<code>osa_dbetabinom</code>, <code>osa_extract_cdf</code>,
 <code>osa_extract_keep</code>, <code>osa_extract_values</code>,
-<code>osa_extract_x</code>, <code>osa_pbetabinom</code>,
-<code>osa_pbinom</code>, <code>osa_squeeze</code>
+<code>osa_extract_x</code>, <code>osa_order</code>,
+<code>osa_pbetabinom</code>, <code>osa_pbinom</code>,
+<code>osa_squeeze</code>
 </td>
 <td>nothing</td>
 <td>
@@ -1084,8 +1087,8 @@ one file.</p>
 <code>scratch_dsem_fit</code>, <code>Setup_Sim_DSEM</code>
 </td>
 <td>
-<code>model_precision.R</code>, <code>setup_dsem.R</code>,
-<code>setup_recruitment.R</code>, <code>sim_biologicals.R</code>,
+<code>model_precision.R</code>, <code>setup_catchability.R</code>,
+<code>setup_dsem.R</code>, <code>sim_biologicals.R</code>,
 <code>sim_catchability.R</code>, <code>utils_setup.R</code>
 </td>
 <td>
@@ -1159,7 +1162,8 @@ one file.</p>
 <tr class="odd">
 <td><code>sim_self_test.R</code></td>
 <td>
-<code>simulation_data_to_SPoRC</code>,
+<code>bind_sims</code>, <code>make_data_perfect</code>,
+<code>sim_draw_views</code>, <code>simulation_data_to_SPoRC</code>,
 <code>simulation_self_test</code>,
 <code>warn_R0_ref_block_om</code>
 </td>
@@ -1354,7 +1358,7 @@ one file.</p>
 <code>get_AR1_CorrMat</code>, <code>get_Constant_CorrMat</code>,
 <code>get_logistN_Sigma</code>,
 <code>Get_Natural_Cubic_Spline_Weights</code>, <code>mat_exp</code>,
-<code>rho_trans</code>
+<code>rho_trans</code>, <code>rmvnorm_prec</code>
 </td>
 <td>nothing</td>
 <td>
@@ -1814,7 +1818,7 @@ test setup happens to use.</p>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>32</td>
+<td>33</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1857,7 +1861,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 204 test files in total.</p>
+<p>That is 206 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

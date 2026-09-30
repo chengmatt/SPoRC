@@ -104,7 +104,6 @@ fully populated (or, for <code>srv_sel</code>, further updated) over
 <span>  srv_q_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsSrvIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseSrvIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  RecDev_anom <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  do_caal <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  Srv_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_srv <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -225,13 +224,6 @@ predicted, <code>2</code> solved analytically on the log scale as
 <dd><p>Arrays <code>[region, year, season, srv_fleet]</code>
 of observed index values and their use flags. Required only when a fleet
 solves catchability analytically.</p></dd>
-
-
-<dt id="arg-recdev-anom">RecDev_anom<a class="anchor" aria-label="anchor" href="#arg-recdev-anom"></a></dt>
-<dd><p>Array <code>[pop, region, deviation]</code> of recruitment
-deviations measured from the center their penalty asserts, or <code>NULL</code>
-when no fleet observes them. Read only by fleets with
-<code>srv_idx_type == 2</code>.</p></dd>
 
 
 <dt id="arg-do-caal">do_caal<a class="anchor" aria-label="anchor" href="#arg-do-caal"></a></dt>

@@ -96,10 +96,13 @@ Failed replicates are silently stored as <code>NA</code>.</p>
 <span>  newton_loops <span class="op">=</span> <span class="fl">3</span>,</span>
 <span>  do_sdrep <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  do_par <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  obj <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_cores <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  output_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  what <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"Rec"</span><span class="op">)</span>,</span>
-<span>  sim_recruitment <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"input"</span>, <span class="st">"model"</span><span class="op">)</span></span>
+<span>  what_par <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  perfect_data <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  sim_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"conditional"</span>, <span class="st">"joint"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -156,6 +159,12 @@ failed <code>sdreport</code> calls stored as <code>NA</code>. Default <code>FALS
 <code><a href="https://future.futureverse.org/reference/multisession.html" class="external-link">future::multisession</a></code>. Default <code>FALSE</code>.</p></dd>
 
 
+<dt id="arg-obj">obj<a class="anchor" aria-label="anchor" href="#arg-obj"></a></dt>
+<dd><p>Fitted object the self test is run from. Needed under
+<code>sim_type = "joint"</code>, which draws at its parameter vector and reports
+through it. Default <code>NULL</code>.</p></dd>
+
+
 <dt id="arg-n-cores">n_cores<a class="anchor" aria-label="anchor" href="#arg-n-cores"></a></dt>
 <dd><p>Integer. Number of parallel workers. If <code>NULL</code>
 (default), <code>parallel::detectCores() - 1</code> is used.</p></dd>
@@ -173,22 +182,46 @@ RDS file. Passed to <code><a href="Simulate_Pop_Static.html">Simulate_Pop_Static
 if any name is not found in <code>rep</code>. Default <code>c("SSB", "Rec")</code>.</p></dd>
 
 
-<dt id="arg-sim-recruitment">sim_recruitment<a class="anchor" aria-label="anchor" href="#arg-sim-recruitment"></a></dt>
-<dd><p>Character. How the operating model generates recruitment.
-<code>"input"</code> (default) feeds the estimated series in as <code>Rec_input</code>, so every
-replicate reuses the same deviations and steepness and <code>ln_sigmaR</code> get no
-sampling variation. <code>"model"</code> withholds it and draws new deviations under
-<code>RecDevs_model</code>, testing the stock-recruit curve itself. All other latent
-processes stay conditioned on the fit under either setting.</p></dd>
+<dt id="arg-what-par">what_par<a class="anchor" aria-label="anchor" href="#arg-what-par"></a></dt>
+<dd><p>Character vector. Names of parameters (keys of
+<code>parameters</code>) to extract and store from each replicate, read off the
+refit's own parameter list so that mapped elements come back at the values
+the map gave them. An error is raised if any name is not found in
+<code>parameters</code>. Default <code>NULL</code>, which stores none.</p></dd>
+
+
+<dt id="arg-perfect-data">perfect_data<a class="anchor" aria-label="anchor" href="#arg-perfect-data"></a></dt>
+<dd><p>Logical. Whether to shrink the observation error before
+simulating, sds to 0.001 and sample sizes to 1e6, leaving process error alone.
+A correct model then returns the operating model to several decimals. A
+process error sd is the exception and comes back low by about 1/(2n) for n
+deviations, since the fitted value holds the posterior variance of its own
+deviations and data this clean remove it. Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-sim-type">sim_type<a class="anchor" aria-label="anchor" href="#arg-sim-type"></a></dt>
+<dd><p>Character. Where each replicate's parameters come from.
+  <code>"conditional"</code> (default) runs every replicate at the fitted values, so
+  one truth covers them all and the spread is observation error. <code>"joint"</code>
+  draws each replicate from <code>sd_rep$jointPrecision</code>, so each has its own
+  truth. A fit with no random effects has no joint precision, and the fixed
+  effect covariance is inverted in its place.</p>
+<p>Joint moves F, both selectivities, catchability, natural mortality, weight and
+  size at age, movement, steepness, sex ratio, recruitment, the initial
+  deviations, the numbers at age and a linked dsem. Observation error and the
+  composition parameters stay at the fit, having no replicate dim.</p></dd>
 
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Named list with one element per entry in <code>what</code>, each an
-  array with the last dimension indexing simulation replicates (via
-  <code>simplify2array</code>). If <code>do_sdrep = TRUE</code>, an additional element
-  <code>"sd_rep"</code> contains a list of <code>sdreport</code> objects (or <code>NA</code>
-  for failed replicates).</p>
+    <p>Named list with one element per entry in <code>what</code> and then one per
+  entry in <code>what_par</code>, each an array with the last dimension indexing
+  simulation replicates (via <code>simplify2array</code>). If <code>do_sdrep = TRUE</code>,
+  an additional element <code>"sd_rep"</code> contains a list of <code>sdreport</code>
+  objects (or <code>NA</code> for failed replicates). A final element <code>"truth"</code>
+  holds the operating model's own values for the same names, which under
+  <code>sim_type = "joint"</code> differ from replicate to replicate and are what the
+  estimates should be scored against.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -215,6 +248,15 @@ processes stay conditioned on the fit under either setting.</p></dd>
 <span class="r-in"><span>  n_sims <span class="op">=</span> <span class="fl">100</span>, what <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"Rec"</span>, <span class="st">"Fmort"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">SSB</span><span class="op">)</span></span></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># parameter uncertainty carried in, scored against each replicate's own truth</span></span></span>
+<span class="r-in"><span><span class="va">sd_rep</span> <span class="op">&lt;-</span> <span class="fu">RTMB</span><span class="fu">::</span><span class="fu">sdreport</span><span class="op">(</span><span class="va">fit</span>, getJointPrecision <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">simulation_self_test</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  data <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">data</span>, parameters <span class="op">=</span> <span class="va">par</span>, mapping <span class="op">=</span> <span class="va">map</span>, random <span class="op">=</span> <span class="cn">NULL</span>,</span></span>
+<span class="r-in"><span>  rep <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">rep</span>, sd_rep <span class="op">=</span> <span class="va">sd_rep</span>, obj <span class="op">=</span> <span class="va">fit</span>, n_sims <span class="op">=</span> <span class="fl">100</span>,</span></span>
+<span class="r-in"><span>  what <span class="op">=</span> <span class="st">"SSB"</span>, what_par <span class="op">=</span> <span class="st">"ln_global_R0"</span>, sim_type <span class="op">=</span> <span class="st">"joint"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">rel_err</span> <span class="op">&lt;-</span> <span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">SSB</span> <span class="op">-</span> <span class="va">res</span><span class="op">$</span><span class="va">truth</span><span class="op">$</span><span class="va">SSB</span><span class="op">)</span> <span class="op">/</span> <span class="va">res</span><span class="op">$</span><span class="va">truth</span><span class="op">$</span><span class="va">SSB</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

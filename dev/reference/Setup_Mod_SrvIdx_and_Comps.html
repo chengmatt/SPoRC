@@ -293,15 +293,7 @@ all zeros.</p></dd>
 
 <dt id="arg-srv-idx-type">srv_idx_type<a class="anchor" aria-label="anchor" href="#arg-srv-idx-type"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code>: <code>"biom"</code>,
-<code>"abd"</code>, <code>"recdev"</code> or <code>"none"</code>, stored as <code>1</code>, <code>0</code>,
-<code>2</code> and <code>999</code>. A <code>"recdev"</code> fleet observes year class strength
-directly rather than any part of the population: its predicted value is
-<code>q * (ln_RecDevs - mu)</code>, with <code>mu</code> the center the recruitment
-penalty asserts for that year, so it measures the anomaly rather than the
-deviation as stored. It reads no numbers at age, so its selectivity, timing
-and weight at age are unused and its compositions should be left off. It
-requires <code>SrvIdx_LikeType = "normal"</code> and
-<code>RecDevs_pen_center = "fixed"</code> in <code><a href="Setup_Mod_Rec.html">Setup_Mod_Rec</a></code>.</p></dd>
+<code>"abd"</code> or <code>"none"</code>, stored as <code>1</code>, <code>0</code> and <code>999</code>.</p></dd>
 
 
 <dt id="arg-obssrvagecomps">ObsSrvAgeComps<a class="anchor" aria-label="anchor" href="#arg-obssrvagecomps"></a></dt>

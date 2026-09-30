@@ -51,6 +51,7 @@ input_list <- Setup_Mod_Dim(
   n_fish_fleets = dat$n_fish_fleets,
   n_srv_fleets = dat$n_srv_fleets,
   n_seas = dat$n_seas,
+  bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
   verbose = FALSE,
   store_config = TRUE
 )
@@ -66,19 +67,14 @@ function:
 ```
 
 with $`\sigma_{R}`$ fixed at $`\exp(-0.1068576)`$, roughly $`0.899`$.
-The bias ramp is switched on but every ramp year is set to the terminal
-year, which leaves the ramp at zero over the whole series and so leaves
-recruitment uncorrected. That combination is deliberate: it reads as the
-assessment’s own convention rather than as `SPoRC`’s default, and it is
-what `do_rec_bias_ramp = 1` with `bias_year` at the terminal year means.
-Spawning occurs at the start of the year.
+The assessment applies no lognormal bias correction, to recruitment or
+to the initial ages, and `bias_correct_pe = "none"` in `Setup_Mod_Dim`
+is how that is specified.
 
 ``` r
 
 input_list <- Setup_Mod_Rec(
   input_list = input_list,
-  do_rec_bias_ramp = 1,
-  bias_year = rep(length(dat$years), 4),
   sigmaR_switch = 1,
   ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)),
   rec_model = "mean_rec",

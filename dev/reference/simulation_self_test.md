@@ -25,10 +25,13 @@ simulation_self_test(
   newton_loops = 3,
   do_sdrep = FALSE,
   do_par = FALSE,
+  obj = NULL,
   n_cores = NULL,
   output_path = NULL,
   what = c("SSB", "Rec"),
-  sim_recruitment = c("input", "model")
+  what_par = NULL,
+  perfect_data = FALSE,
+  sim_type = c("conditional", "joint")
 )
 ```
 
@@ -80,6 +83,12 @@ simulation_self_test(
   [`future::multisession`](https://future.futureverse.org/reference/multisession.html).
   Default `FALSE`.
 
+- obj:
+
+  Fitted object the self test is run from. Needed under
+  `sim_type = "joint"`, which draws at its parameter vector and reports
+  through it. Default `NULL`.
+
 - n_cores:
 
   Integer. Number of parallel workers. If `NULL` (default),
@@ -98,22 +107,48 @@ simulation_self_test(
   and store from each replicate. An error is raised if any name is not
   found in `rep`. Default `c("SSB", "Rec")`.
 
-- sim_recruitment:
+- what_par:
 
-  Character. How the operating model generates recruitment. `"input"`
-  (default) feeds the estimated series in as `Rec_input`, so every
-  replicate reuses the same deviations and steepness and `ln_sigmaR` get
-  no sampling variation. `"model"` withholds it and draws new deviations
-  under `RecDevs_model`, testing the stock-recruit curve itself. All
-  other latent processes stay conditioned on the fit under either
-  setting.
+  Character vector. Names of parameters (keys of `parameters`) to
+  extract and store from each replicate, read off the refit's own
+  parameter list so that mapped elements come back at the values the map
+  gave them. An error is raised if any name is not found in
+  `parameters`. Default `NULL`, which stores none.
+
+- perfect_data:
+
+  Logical. Whether to shrink the observation error before simulating,
+  sds to 0.001 and sample sizes to 1e6, leaving process error alone. A
+  correct model then returns the operating model to several decimals. A
+  process error sd is the exception and comes back low by about 1/(2n)
+  for n deviations, since the fitted value holds the posterior variance
+  of its own deviations and data this clean remove it. Default `FALSE`.
+
+- sim_type:
+
+  Character. Where each replicate's parameters come from.
+  `"conditional"` (default) runs every replicate at the fitted values,
+  so one truth covers them all and the spread is observation error.
+  `"joint"` draws each replicate from `sd_rep$jointPrecision`, so each
+  has its own truth. A fit with no random effects has no joint
+  precision, and the fixed effect covariance is inverted in its place.
+
+  Joint moves F, both selectivities, catchability, natural mortality,
+  weight and size at age, movement, steepness, sex ratio, recruitment,
+  the initial deviations, the numbers at age and a linked dsem.
+  Observation error and the composition parameters stay at the fit,
+  having no replicate dim.
 
 ## Value
 
-Named list with one element per entry in `what`, each an array with the
-last dimension indexing simulation replicates (via `simplify2array`). If
-`do_sdrep = TRUE`, an additional element `"sd_rep"` contains a list of
-`sdreport` objects (or `NA` for failed replicates).
+Named list with one element per entry in `what` and then one per entry
+in `what_par`, each an array with the last dimension indexing simulation
+replicates (via `simplify2array`). If `do_sdrep = TRUE`, an additional
+element `"sd_rep"` contains a list of `sdreport` objects (or `NA` for
+failed replicates). A final element `"truth"` holds the operating
+model's own values for the same names, which under `sim_type = "joint"`
+differ from replicate to replicate and are what the estimates should be
+scored against.
 
 ## See also
 
@@ -140,5 +175,14 @@ res <- simulation_self_test(
   n_sims = 100, what = c("SSB", "Rec", "Fmort")
 )
 str(res$SSB)
+
+# parameter uncertainty carried in, scored against each replicate's own truth
+sd_rep <- RTMB::sdreport(fit, getJointPrecision = TRUE)
+res <- simulation_self_test(
+  data = fit$data, parameters = par, mapping = map, random = NULL,
+  rep = fit$rep, sd_rep = sd_rep, obj = fit, n_sims = 100,
+  what = "SSB", what_par = "ln_global_R0", sim_type = "joint"
+)
+rel_err <- (res$SSB - res$truth$SSB) / res$truth$SSB
 } # }
 ```

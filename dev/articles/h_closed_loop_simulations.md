@@ -171,14 +171,13 @@ setup_em <- function(sim_env, y, sim) {
                               n_fish_fleets = sim_env$n_fish_fleets, # number of fishery fleet
                               n_srv_fleets = sim_env$n_srv_fleets, # number of survey fleets
                               n_pop = sim_env$n_pop, # number of populations
+    bias_correct_pe = "none", # the assessment corrects neither recruitment nor the initial ages
                               verbose = FALSE
                               )
 
   # Recruitment setup
   input_list <- Setup_Mod_Rec(
     input_list = input_list,
-    do_rec_bias_ramp = 1, # Doing bias ramp, but basically setting it so that no lognormal bias correction happens (as in the dusky model)
-    bias_year = rep(length(input_list$data$years), 4),
     sigmaR_switch = 1, # when to switch from early to late sigmaR (switch in first year)
     ln_sigmaR = array(-0.1068576, dim = c(2, input_list$data$n_pop, input_list$data$n_regions)), # 2 values for early and late sigma
     # Starting values for early and late sigmaR

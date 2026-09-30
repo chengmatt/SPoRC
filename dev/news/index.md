@@ -66,8 +66,6 @@
   tagging data.
 - Added support for at-age data sources (e.g., ICES-style stock
   assessments).
-- Survey fleets can observe recruitment deviations directly via
-  `srv_idx_type = "recdev"`, reported as `RecDev_anom`.
 
 #### Recruitment and fishing mortality
 

@@ -37,5 +37,12 @@ Scalar (log-)density contribution.
 
 ## Details
 
-The running remainder is frozen to the observed total so peeling a late
-bin cannot drive the remaining count negative.
+The conditional trial count is the total left after the earlier bins,
+frozen at the observed counts. Given what has already been peeled it is
+a constant, so it must not move with the candidate value
+`oneStepPredict` sweeps over: tying it to the candidate turns the
+binomial into a size-weighted negative binomial and mis-calibrates the
+residuals, most visibly at a small sample size across many bins. RTMB's
+own `dmultinom` OSA method and WHAM's `age_comp_osa.hpp` hold it fixed
+the same way. Nothing after the peeled bin moves either, so no remaining
+count can be driven negative.

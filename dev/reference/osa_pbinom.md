@@ -26,3 +26,9 @@ osa_pbinom(x, n, prob)
 ## Value
 
 Lower-tail CDF value.
+
+## Details
+
+`oneStepPredict` sweeps `x` past `n`, where the CDF is one. `pbeta`
+needs a positive second shape to say so, so the trials left are held at
+zero and nudged off it.

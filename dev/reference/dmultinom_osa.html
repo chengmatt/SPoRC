@@ -105,8 +105,14 @@ numeric count vector (length \(A\)) during fitting.</p></dd>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>The running remainder is frozen to the observed total so peeling a late bin
-cannot drive the remaining count negative.</p>
+    <p>The conditional trial count is the total left after the earlier bins, frozen
+at the observed counts. Given what has already been peeled it is a constant,
+so it must not move with the candidate value <code>oneStepPredict</code> sweeps
+over: tying it to the candidate turns the binomial into a size-weighted
+negative binomial and mis-calibrates the residuals, most visibly at a small
+sample size across many bins. RTMB's own <code>dmultinom</code> OSA method and
+WHAM's <code>age_comp_osa.hpp</code> hold it fixed the same way. Nothing after the
+peeled bin moves either, so no remaining count can be driven negative.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

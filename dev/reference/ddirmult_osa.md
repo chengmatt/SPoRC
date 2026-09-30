@@ -35,3 +35,9 @@ ddirmult_osa(xobs, alpha, log = TRUE)
 ## Value
 
 Scalar (log-)density contribution.
+
+## Details
+
+The conditional trial count is held fixed exactly as it is under
+[`dmultinom_osa`](https://chengmatt.github.io/SPoRC/dev/reference/dmultinom_osa.md),
+and for the same reason.

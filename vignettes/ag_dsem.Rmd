@@ -1311,6 +1311,8 @@ As shown below, mis-specifying the catchability process (i.e., constant q) leads
 
 ```{r, fig.width = 11, fig.height = 9}
 par(mfrow = c(2, 1), mar = c(4.5, 4.8, 1.5, 1), cex.lab = 1.3, cex.axis = 1.2)
+cols <- c(dsem_q = "#000000", const_q = "#CC79A7")
+yrs <- 1:n_yrs_em
 
 # the error of every replicate comapred acgainst its own operating model values, then the median over them
 median_err <- function(ts, truth) {

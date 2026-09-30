@@ -271,30 +271,32 @@ validate_osa_method <- function(method) {
 #'     with "Multiple TMB models loaded" whenever a session has more than one
 #'     TMB DLL loaded (e.g. RTMB alongside compResidual, which
 #'     \code{\link{run_external_comp_osa}} loads).
-#'   \item \code{discreteSupport} is detected with \code{missing()}, so
-#'     supplying it as \code{NULL} is not the same as omitting it: a \code{NULL}
-#'     sends continuous families down the mixed discrete/continuous branch,
-#'     which rejects the Gaussian methods. It is forwarded here only when it is
-#'     non-\code{NULL}.
+#'   \item \code{discreteSupport} and \code{range} are detected with
+#'     \code{missing()}, so giving either a \code{NULL} is not the same as
+#'     omitting it: a \code{NULL} support puts a continuous family on the mixed
+#'     discrete/continuous path, which then errors under every Gaussian method
+#'     and demands a \code{range} under \code{oneStepGeneric}. Both are
+#'     forwarded here only when they are non-\code{NULL}.
 #' }
 #'
 #' @param model A fitted RTMB model object from \code{\link{fit_model}}.
 #' @param ... Further arguments passed to \code{\link[RTMB]{oneStepPredict}}.
-#' @param discreteSupport Support of the discrete observations, or \code{NULL}
-#'   (the default) to omit the argument entirely.
+#' @param discreteSupport Values a discrete observation can take, or \code{NULL}
+#'   (the default) to omit the argument.
+#' @param range Interval a part discrete observation's continuous part is integrated
+#'   over (a tweedie's is \code{c(0, Inf)}), or \code{NULL} (the default) to omit it.
 #' @param parallel Whether or not to parallelize OSA computation. Defaults to
 #'   \code{FALSE}.
 #'
 #' @return The \code{\link[RTMB]{oneStepPredict}} result.
 #' @keywords internal
-osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = FALSE) {
+osa_one_step_predict <- function(model, ..., discreteSupport = NULL, range = NULL, parallel = FALSE) {
 
   run_osa <- function(use_parallel) {
-    if(is.null(discreteSupport)) {
-      RTMB::oneStepPredict(model, ..., parallel = use_parallel)
-    } else {
-      RTMB::oneStepPredict(model, ..., discreteSupport = discreteSupport, parallel = use_parallel)
-    }
+    extra <- list()
+    if(!is.null(discreteSupport)) extra$discreteSupport <- discreteSupport
+    if(!is.null(range)) extra$range <- range
+    do.call(RTMB::oneStepPredict, c(list(model), list(...), extra, list(parallel = use_parallel)))
   }
 
   # only the parallel branch uses TMB's DLL guess, so a serial call needs nothing done to it
@@ -338,7 +340,9 @@ osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = 
 #' @param data The model \code{data} list (e.g. \code{input_list$data}) used
 #'   to build \code{model}.
 #' @param comp_source One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"}, \code{"SrvLen"}.
-#' @param family Character, \code{"discrete"} or \code{"continuous"}.
+#' @param family \code{"discrete"} or \code{"continuous"}, which tracked vector to read for
+#'   \code{comp_source}. Under \code{dsem = TRUE} the covariate kind: \code{"continuous"},
+#'   \code{"bernoulli"}, \code{"poisson"} or \code{"tweedie"}.
 #' @param pop Logical; population-specific composition source. Default \code{FALSE}.
 #' @param discard Logical; discard composition source. Default \code{FALSE}.
 #' @param bins Vector of age or length bin labels for display. Must span every observed bin of the data source, not just
@@ -346,6 +350,9 @@ osa_one_step_predict <- function(model, ..., discreteSupport = NULL, parallel = 
 #'   observed bin number, so a subset here shifts every label.
 #' @param bin_label Character label describing whether bins represent ages or lengths.
 #' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
+#' @param seed Seed for the uniform draw that places a discrete residual in its CDF
+#'   step, \code{RTMB::oneStepPredict}'s 123 by default. Vary it across simulation
+#'   replicates, or they all take the same draws.
 #' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s \code{method}.
 #'   Must be one of \code{"oneStepGeneric"}, \code{"oneStepGaussianOffMode"}, or
 #'   \code{"oneStepGaussian"}; the \code{"cdf"} method is not permitted (it is
@@ -372,7 +379,8 @@ run_internal_comp_osa <- function(
   parallel = FALSE,
   bins,
   bin_label,
-  osa_method = NULL
+  osa_method = NULL,
+  seed = 123
 ) {
 
   field_map <- comp_osa_field_map(comp_source, pop = pop, discard = discard)
@@ -402,6 +410,7 @@ run_internal_comp_osa <- function(
   osa <- osa_one_step_predict(
     model,
     observation.name = tracked_name,
+    seed = seed,
     method = method,
     discrete = discrete,
     parallel = parallel,
@@ -459,7 +468,7 @@ run_internal_comp_osa <- function(
 #'
 #' @keywords internal
 run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
-                                  osa_method = NULL, parallel = FALSE) {
+                                  osa_method = NULL, parallel = FALSE, seed = 123) {
 
   if(!comp_source %in% c("Fish_caal", "Srv_caal")) stop("`comp_source` for CAAL must be one of: Fish_caal, Srv_caal")
 
@@ -490,6 +499,7 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
   osa <- osa_one_step_predict(
     model,
     observation.name = tracked_name,
+    seed = seed,
     method = method,
     discrete = TRUE,
     parallel = parallel,
@@ -540,6 +550,7 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
 #'   \code{"oneStepGaussian"} (the \code{"cdf"} method is not permitted). Defaults
 #'   to \code{"oneStepGeneric"} (tag recapture data are always discrete/count-valued).
 #' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
+#' @param seed Seed for the discrete residuals' uniform draw, as \code{\link{get_osa}} takes it.
 #'
 #' @return A list with one element \code{res}: columns \code{fleet}, \code{region},
 #'   \code{pop_pool}, \code{age_pool}, \code{sex_pool}, \code{cohort},
@@ -548,7 +559,7 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
 #'   \code{is_tail}, \code{resid}, \code{family}, \code{comp_type = "Tag"},
 #'   or \code{NULL} if no tagging data is present.
 #' @keywords internal
-run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALSE) {
+run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALSE, seed = 123) {
 
   family <- tag_fam_of(data$conv_fish_tag_like)
 
@@ -590,6 +601,7 @@ run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALS
   osa <- osa_one_step_predict(
     model,
     observation.name = tracked_name,
+    seed = seed,
     method = method,
     discreteSupport = 0:max(model$env$obs[[tracked_name]]),
     discrete = TRUE,
@@ -672,6 +684,7 @@ index_osa_field_map <- function(index_source, pop = FALSE) {
 #'   \code{"oneStepGaussianOffMode"}, or \code{"oneStepGaussian"} (the
 #'   \code{"cdf"} method is not permitted). Defaults to \code{"oneStepGeneric"}.
 #' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
+#' @param seed Seed for the discrete residuals' uniform draw, as \code{\link{get_osa}} takes it.
 #'
 #' @return A list with one element \code{res}: columns \code{fleet},
 #'   \code{region}, \code{year}, \code{season}, \code{pop}, \code{age},
@@ -687,7 +700,7 @@ run_internal_index_osa <- function(
   index_source,
   pop = FALSE,
   osa_method = NULL,
-  parallel = FALSE
+  parallel = FALSE, seed = 123
 ) {
 
   field_map <- index_osa_field_map(index_source, pop = pop)
@@ -723,6 +736,7 @@ run_internal_index_osa <- function(
   osa <- osa_one_step_predict(
     model,
     observation.name = tracked_name,
+    seed = seed,
     method = method,
     discrete = FALSE,
     parallel = parallel,
@@ -746,6 +760,88 @@ run_internal_index_osa <- function(
     sex = if(at_age) ifelse(aa_split$sex, as.character(map$sex), "summed") else NA,
     resid = osa$residual,
     idx_type = index_source
+  )
+
+  list(res = res)
+}
+
+#' Run internal (model-based) OSA residuals for a dsem's covariate observations
+#'
+#' Internal counterpart to \code{\link{run_internal_index_osa}} for the
+#' covariates a dsem observes with error, packed into a tracked vector by
+#' \code{\link{pack_dsem_cov_osa}}. Every family has residuals but
+#' \code{"fixed"}, where the covariate is the grid cell itself and there is no
+#' observation to peel.
+#'
+#' @param model A fitted RTMB model object from \code{\link{fit_model}}.
+#' @param data The model \code{data} list (e.g. \code{input_list$data}) used to
+#'   build \code{model}.
+#' @param family \code{"continuous"} for the normal, gamma, fixed sd normal and
+#'   lognormal covariates, or \code{"bernoulli"}, \code{"poisson"} or
+#'   \code{"tweedie"}.
+#' @param parallel Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.
+#' @param seed Seed for the discrete residuals' uniform draw, as \code{\link{get_osa}} takes it.
+#'
+#' @return A list with one element \code{res}: columns \code{covariate},
+#'   \code{year}, \code{family}, \code{resid} and \code{idx_type} (set to
+#'   \code{"DsemCov"}), or \code{NULL} when the model has no dsem or no covariate
+#'   on the requested family.
+#' @keywords internal
+run_internal_dsem_osa <- function(model,
+                                  data,
+                                  family = "continuous",
+                                  parallel = FALSE,
+                                  seed = 123) {
+
+  if(is.null(data$dsem_model)) {
+    warning("No dsem in this model; returning NULL.")
+    return(NULL)
+  }
+
+  packed <- pack_dsem_cov_osa(data$dsem_cov_obs, data$dsem_cov_family, family = family)
+
+  if(is.null(packed)) {
+    warning("No covariate on the '", family, "' family; returning NULL.")
+    return(NULL)
+  }
+
+  tracked_name <- paste0("ObsDsemCov_osa_", family)
+
+  # define support for distributions
+  support <- NULL
+  if(family == "bernoulli") support <- 0:1
+  if(family == "poisson") {
+    max_obs <- max(model$env$obs[[tracked_name]])
+    support <- 0:ceiling(max_obs + 10 * sqrt(max_obs + 1))
+  }
+
+  osa <- osa_one_step_predict(
+    model,
+    observation.name = tracked_name,
+    seed = seed,
+    method = "oneStepGeneric", # default to one step generic to be safe ...
+    discrete = family %in% c("bernoulli", "poisson"),
+    parallel = parallel,
+    trace = FALSE,
+    discreteSupport = if(family == "tweedie") 0 else support, # the tweedie's point mass / the counts' outcomes
+    range = if(family == "tweedie") c(0, Inf) else NULL, # the tweedie's positive part; the rest take oneStepPredict's own
+    splineApprox = family != "tweedie" # tweedie doesn't use spline approx b/c of mixed obs support (everything else does)
+  )
+
+  # more warnings
+  warning("Every '", family, "' residual is non-finite: the state fits its observations exactly. Hold the series' own sd.")
+
+  # the grid starts at the first model year and runs a row per year, the way Setup_Mod_DSEM builds it
+  grid_years <- data$years[1] + seq_len(nrow(data$dsem_cov_obs)) - 1
+  cov_names <- data$dsem_var_names[data$dsem_cov_var_idx]
+  family_names <- names(dsem_family_codes())[match(data$dsem_cov_family, dsem_family_codes())]
+
+  res <- data.frame(
+    covariate = cov_names[packed$map[,"cov"]],
+    year = grid_years[packed$map[,"grid_yr"]],
+    family = family_names[packed$map[,"cov"]],
+    resid = osa$residual,
+    idx_type = "DsemCov"
   )
 
   list(res = res)
@@ -805,11 +901,13 @@ run_internal_index_osa <- function(
 #'   \code{NULL} and \code{tag = FALSE}.
 #' @param index_source Which continuous index-type data source to pull internal
 #'   residuals for: \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"} or
-#'   \code{"SrvIdx"}. Takes precedence over \code{comp_source} and \code{tag}.
+#'   \code{"SrvIdx"}. A call returns one data source, and this one is read ahead of
+#'   \code{dsem}, \code{tag} and \code{comp_source}.
 #' @param family \code{"discrete"} or \code{"continuous"}, which of the two tracked
-#'   OSA vectors to read for \code{comp_source}, since a source can have both.
-#'   Read when \code{model} is supplied, \code{tag = FALSE} and
-#'   \code{index_source} is \code{NULL}.
+#'   OSA vectors to read for \code{comp_source}, since a source can have both. Under
+#'   \code{dsem = TRUE} it says which covariates to read and takes \code{"continuous"},
+#'   \code{"bernoulli"}, \code{"poisson"} or \code{"tweedie"}. Read when \code{model} is
+#'   supplied, \code{tag = FALSE} and \code{index_source} is \code{NULL}.
 #' @param pop Logical, whether the source is population-specific. Read when
 #'   \code{model} is supplied and \code{tag = FALSE}. Default \code{FALSE}.
 #' @param discard Logical, whether the source is the discard compositions, valid
@@ -817,6 +915,9 @@ run_internal_index_osa <- function(
 #'   \code{FALSE}.
 #' @param tag Logical, \code{TRUE} to compute internal residuals for conventional
 #'   tag recaptures instead of compositions. Default \code{FALSE}.
+#' @param dsem Logical, \code{TRUE} for the covariates a dsem observes with error,
+#'   \code{family} picking \code{"continuous"}, \code{"bernoulli"}, \code{"poisson"} or
+#'   \code{"tweedie"}. A \code{"fixed"} covariate has no observation. Default \code{FALSE}.
 #' @param osa_method Optional override for \code{RTMB::oneStepPredict}'s
 #'   \code{method} in internal mode: \code{"oneStepGeneric"},
 #'   \code{"oneStepGaussianOffMode"} or \code{"oneStepGaussian"}. The \code{"cdf"}
@@ -825,6 +926,11 @@ run_internal_index_osa <- function(
 #'   and tags, and \code{"oneStepGaussianOffMode"} for the continuous ones.
 #' @param parallel Whether to parallelize the internal computation. Default
 #'   \code{FALSE}.
+#' @param seed Seed for the uniform draw that places a discrete residual inside its
+#'   step of the CDF, passed to \code{RTMB::oneStepPredict}. Its default is that
+#'   function's own, so one call on one data set is reproducible. A simulation
+#'   study must vary it: left at one value, every replicate takes the same draws,
+#'   and whatever they average shows up as a bias that is not there.
 #'
 #' @details
 #' For population-specific compositions, slice the leading population dim off
@@ -847,6 +953,7 @@ run_internal_index_osa <- function(
 #'         family = "discrete", bins = input_list$data$ages, bin_label = "Age")
 #' get_osa(model = fitted_obj, data = input_list$data, tag = TRUE)
 #' get_osa(model = fitted_obj, data = input_list$data, index_source = "SrvIdx")
+#' get_osa(model = fitted_obj, data = input_list$data, dsem = TRUE)
 #' }
 #'
 #' @return A list with one element, \code{res}, a data frame of residuals. A
@@ -857,6 +964,8 @@ run_internal_index_osa <- function(
 #'   \code{years_at_liberty}, \code{resid} and \code{comp_type = "Tag"}. An
 #'   \code{index_source} gives \code{fleet}, \code{region}, \code{year},
 #'   \code{season}, \code{pop}, \code{resid} and \code{idx_type}.
+#'   \code{dsem = TRUE} gives \code{covariate}, \code{year}, \code{family},
+#'   \code{resid} and \code{idx_type = "DsemCov"}.
 #'
 #' @family Model Diagnostics
 #' @import dplyr
@@ -882,8 +991,10 @@ get_osa <- function(obs_mat = NULL,
                     pop = FALSE,
                     discard = FALSE,
                     tag = FALSE,
+                    dsem = FALSE,
                     osa_method = NULL,
-                    parallel = FALSE
+                    parallel = FALSE,
+                    seed = 123
                     ) {
 
   # Internal (model-based) OSA path, via RTMB::oneStepPredict
@@ -904,10 +1015,20 @@ get_osa <- function(obs_mat = NULL,
         index_source = index_source,
         pop = pop,
         osa_method = osa_method,
-        parallel = parallel
+        parallel = parallel,
+        seed = seed
       ))
+    } else if(dsem) {
+      # a covariate residual takes one method, and an override passed here would otherwise go unread
+      if(!is.null(osa_method)) {
+        stop("osa_method is not read for a dsem covariate, which takes oneStepGeneric.")
+      }
+      # the comp sources take the discrete family by default, where a dsem covariate is usually continuous
+      return(run_internal_dsem_osa(model = model, data = data,
+                                   family = if(missing(family)) "continuous" else family,
+                                   parallel = parallel, seed = seed))
     } else if(tag) {
-      return(run_internal_tag_osa(model = model, data = data, osa_method = osa_method, parallel = parallel))
+      return(run_internal_tag_osa(model = model, data = data, osa_method = osa_method, parallel = parallel, seed = seed))
     } else if(!is.null(comp_source) && comp_source %in% c("Fish_caal", "Srv_caal")) {
       return(run_internal_caal_osa(
         model = model,
@@ -916,7 +1037,8 @@ get_osa <- function(obs_mat = NULL,
         bins = bins,
         bin_label = bin_label,
         osa_method = osa_method,
-        parallel = parallel
+        parallel = parallel,
+        seed = seed
       ))
     } else {
       return(run_internal_comp_osa(
@@ -929,7 +1051,8 @@ get_osa <- function(obs_mat = NULL,
         bins = bins,
         bin_label = bin_label,
         osa_method = osa_method,
-        parallel = parallel
+        parallel = parallel,
+        seed = seed
       ))
     }
   }
@@ -1114,11 +1237,12 @@ get_osa <- function(obs_mat = NULL,
 #' whenever \code{osa_results$res} contains more than one of each (\code{seas} matters because
 #' \code{year} + bin alone don't uniquely place a bubble-plot point when compositions are
 #' collected in more than one season). Tagging plots only show QQ plots given the number of dimensions in tagging data.
-#' Index-type residuals (from \code{get_osa(..., index_source = ...)}, with
-#' an \code{idx_type} column \code{\%in\% c("Catch","Discard","FishIdx","SrvIdx")}
-#' instead of \code{comp_type}) facet by \code{region},
+#' Index-type residuals (from \code{get_osa(..., index_source = ...)} or
+#' \code{get_osa(..., dsem = TRUE)}, with an \code{idx_type} column instead of
+#' \code{comp_type}) facet by \code{region},
 #' \code{season}, \code{fleet}, and \code{pop} whenever those span more than
-#' one level, and pair the QQ-plot with a residual-vs-year point plot instead
+#' one level, a dsem's covariate residuals by \code{covariate}, and pair the
+#' QQ-plot with a residual-vs-year point plot instead
 #' of a bubble plot (there is no bin/age/length dimension to plot against).
 #' Note: these are one-step-ahead residuals; for the simpler raw log-scale
 #' (Pearson-style) index residual and the observed-vs-predicted index fit, see
@@ -1159,6 +1283,7 @@ plot_resids <- function(osa_results) {
     seas            = function(x) paste0("Seas ", x),
     age             = function(x) paste0("Age ", x),
     len             = function(x) paste0("Len ", x),
+    covariate       = function(x) as.character(x),
     pop_pool        = function(x) ifelse(x == "tail", "Tail (non-recap)", paste0("Pool ", x))
   )
 
@@ -1221,18 +1346,19 @@ plot_resids <- function(osa_results) {
     return(list(sdnr_plot))
   }
 
-  # Index-type OSA Residuals (Catch/Discard/FishIdx/SrvIdx) -------------------
+  # Index-type OSA Residuals (Catch/Discard/FishIdx/SrvIdx/DsemCov) -----------
   if(res_type %in% c("Catch", "Discard", "FishIdx", "SrvIdx",
-                     "CatchAA", "DiscardAA", "SrvIdxAA")) {
+                     "CatchAA", "DiscardAA", "SrvIdxAA", "DsemCov")) {
 
     multi_region <- has_multi("region")
     multi_seas   <- has_multi("season")
     multi_age    <- has_multi("age")   # at-age sources only
     multi_sex    <- has_multi("sex")   # and only when the data source splits sexes
+    multi_cov    <- has_multi("covariate") # dsem covariates
 
     idx_row_vars <- c(if(multi_region) "region", if(multi_age) "age")
     idx_col_vars <- c(if(multi_seas) "season", if(multi_fleet) "fleet", if(multi_pop) "pop",
-                      if(multi_sex) "sex")
+                      if(multi_sex) "sex", if(multi_cov) "covariate")
 
     sdnr <- sdnr_table(res, c(idx_row_vars, idx_col_vars))
     sdnr_plot <- qq_base(res, sdnr) + build_facet(idx_row_vars, idx_col_vars)

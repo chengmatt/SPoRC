@@ -4,10 +4,21 @@
 \alias{get_dsem_obs_nLL}
 \title{Covariate observation density by family and link}
 \usage{
-get_dsem_obs_nLL(y, x, family, link, obs_sd, tweedie_p, fixed_sd = NULL)
+get_dsem_obs_nLL(
+  y,
+  x,
+  family,
+  link,
+  obs_sd,
+  tweedie_p,
+  fixed_sd = NULL,
+  keep = 1
+)
 }
 \arguments{
-\item{y}{Observed values, no NA.}
+\item{y}{Observed values, no NA. The objective reads these off the vector
+\code{\link{pack_dsem_cov_osa}} builds, so that OSA residuals are available
+for them.}
 
 \item{x}{Grid cells for those years, on the link scale.}
 
@@ -15,13 +26,16 @@ get_dsem_obs_nLL(y, x, family, link, obs_sd, tweedie_p, fixed_sd = NULL)
 
 \item{link}{Link code.}
 
-\item{obs_sd}{Measurement sd (normal), CV (Gamma), sd of the log
+\item{obs_sd}{Measurement sd (normal), CV (gamma), sd of the log
 (lognormal) or dispersion (tweedie). Unused otherwise.}
 
 \item{tweedie_p}{Tweedie power in (1, 2). Unused otherwise.}
 
 \item{fixed_sd}{Known sd per observation for gaussian_fixed_sd. Unused
 otherwise.}
+
+\item{keep}{Indicator per observation, zero for those a peel has not reached. One
+during a fit.}
 }
 \value{
 Scalar negative log likelihood.
@@ -31,7 +45,7 @@ The observations of one covariate given its grid cells. The cell goes through th
 link to the mean (identity, exp, inverse logit or inverse cloglog), and the
 family's density is taken about that mean. Fixed (0) has no density. Normal (1) has
 an estimated sd, gaussian_fixed_sd (5) a known sd per observation, bernoulli (2) a
-coin flip at the mean, poisson (3) that mean, Gamma (4) shape \eqn{1/CV^2} and that
+coin flip at the mean, poisson (3) that mean, gamma (4) shape \eqn{1/CV^2} and that
 mean, lognormal (6) that mean as its median, tweedie (7) that mean with a
 dispersion and a power in (1, 2).
 }

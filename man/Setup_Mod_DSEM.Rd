@@ -72,8 +72,8 @@ log-scale sd; \code{"tweedie"} takes non-negative values including zeros with
 the cell the log mean, \code{exp(ln_dsem_obs_sd)} the dispersion and
 \code{logit_dsem_tweedie_p} the power as \eqn{1 + \mathrm{plogis}(\cdot)}, in
 (1, 2) and starting at 1.5; and \code{"gaussian_fixed_sd"} is normal about the
-cell with a known sd per observed year from \code{dsem_fixed_sd}. The names
-\code{"gaussian"} and \code{"Gamma"} are accepted as well. Under a family whose
+cell with a known sd per observed year from \code{dsem_fixed_sd}. The name
+\code{"gaussian"} is also accepted for the normal. Under a family whose
 link is not the identity the arrows, the mean under \code{dsem_mu_spec} and the
 grid are all on the link scale, and every latent cell starts at the series
 mean. The sd and power parameters are mapped off for the families with none.}

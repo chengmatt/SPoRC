@@ -4,15 +4,24 @@
 \alias{osa_one_step_predict}
 \title{Call \code{RTMB::oneStepPredict()} with the model's TMB DLL resolved}
 \usage{
-osa_one_step_predict(model, ..., discreteSupport = NULL, parallel = FALSE)
+osa_one_step_predict(
+  model,
+  ...,
+  discreteSupport = NULL,
+  range = NULL,
+  parallel = FALSE
+)
 }
 \arguments{
 \item{model}{A fitted RTMB model object from \code{\link{fit_model}}.}
 
 \item{...}{Further arguments passed to \code{\link[RTMB]{oneStepPredict}}.}
 
-\item{discreteSupport}{Support of the discrete observations, or \code{NULL}
-(the default) to omit the argument entirely.}
+\item{discreteSupport}{Values a discrete observation can take, or \code{NULL}
+(the default) to omit the argument.}
+
+\item{range}{Interval a part discrete observation's continuous part is integrated
+over (a tweedie's is \code{c(0, Inf)}), or \code{NULL} (the default) to omit it.}
 
 \item{parallel}{Whether or not to parallelize OSA computation. Defaults to
 \code{FALSE}.}
@@ -29,11 +38,12 @@ Used by the internal OSA routines, and works around two quirks of
     with "Multiple TMB models loaded" whenever a session has more than one
     TMB DLL loaded (e.g. RTMB alongside compResidual, which
     \code{\link{run_external_comp_osa}} loads).
-  \item \code{discreteSupport} is detected with \code{missing()}, so
-    supplying it as \code{NULL} is not the same as omitting it: a \code{NULL}
-    sends continuous families down the mixed discrete/continuous branch,
-    which rejects the Gaussian methods. It is forwarded here only when it is
-    non-\code{NULL}.
+  \item \code{discreteSupport} and \code{range} are detected with
+    \code{missing()}, so giving either a \code{NULL} is not the same as
+    omitting it: a \code{NULL} support puts a continuous family on the mixed
+    discrete/continuous path, which then errors under every Gaussian method
+    and demands a \code{range} under \code{oneStepGeneric}. Both are
+    forwarded here only when they are non-\code{NULL}.
 }
 }
 \keyword{internal}

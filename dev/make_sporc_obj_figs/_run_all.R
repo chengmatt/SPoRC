@@ -66,6 +66,7 @@ tier_objects <- c(
 tier_all <- c(
   "make_full_dusky_asmt_example_plots.R",
   "make_osa_residuals_example.R",
+  "make_osa_dsem_validation.R",
   "make_discarding_example.R",
   "make_reference_pts_proj_plots.R",
   "make_simulation_testing_plots.R",

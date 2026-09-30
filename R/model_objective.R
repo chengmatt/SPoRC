@@ -1072,20 +1072,65 @@ SPoRC_rtmb = function(pars, data) {
                             delta0 = if(is.null(dsem_delta0_use) || dsem_delta0_use == 0) NULL else dsem_delta0,
                             grid = dsem_solved
                             )
+    # do osa stuff ehre
+    dsem_cov_cont = pack_dsem_cov_osa(dsem_cov_obs, dsem_cov_family, "continuous")
+    dsem_cov_bern = pack_dsem_cov_osa(dsem_cov_obs, dsem_cov_family, "bernoulli")
+    dsem_cov_pois = pack_dsem_cov_osa(dsem_cov_obs, dsem_cov_family, "poisson")
+    dsem_cov_tw = pack_dsem_cov_osa(dsem_cov_obs, dsem_cov_family, "tweedie")
 
-    # nll for covariates observed through a family and link (a fixed covariate has none)
+    # continuosu vars
+    if(!is.null(dsem_cov_cont)) {
+      ObsDsemCov_osa_continuous = dsem_cov_cont$vec
+      ObsDsemCov_osa_continuous = RTMB::OBS(ObsDsemCov_osa_continuous) # set OSA residuals
+      dsem_cov_cont$obs = osa_extract_x(ObsDsemCov_osa_continuous) # the observations that we need to peel
+      dsem_cov_cont$keep = osa_extract_keep(ObsDsemCov_osa_continuous, nrow(dsem_cov_cont$map)) # the observations already peeled
+    }
+
+    # bernoullis
+    if(!is.null(dsem_cov_bern)) {
+      ObsDsemCov_osa_bernoulli = dsem_cov_bern$vec
+      ObsDsemCov_osa_bernoulli = RTMB::OBS(ObsDsemCov_osa_bernoulli)
+      dsem_cov_bern$obs = osa_extract_x(ObsDsemCov_osa_bernoulli)
+      dsem_cov_bern$keep = osa_extract_keep(ObsDsemCov_osa_bernoulli, nrow(dsem_cov_bern$map))
+    }
+
+    # poisson
+    if(!is.null(dsem_cov_pois)) {
+      ObsDsemCov_osa_poisson = dsem_cov_pois$vec
+      ObsDsemCov_osa_poisson = RTMB::OBS(ObsDsemCov_osa_poisson)
+      dsem_cov_pois$obs = osa_extract_x(ObsDsemCov_osa_poisson)
+      dsem_cov_pois$keep = osa_extract_keep(ObsDsemCov_osa_poisson, nrow(dsem_cov_pois$map))
+    }
+
+    # tweedie stuff
+    if(!is.null(dsem_cov_tw)) {
+      ObsDsemCov_osa_tweedie = dsem_cov_tw$vec
+      ObsDsemCov_osa_tweedie = RTMB::OBS(ObsDsemCov_osa_tweedie)
+      dsem_cov_tw$obs = osa_extract_x(ObsDsemCov_osa_tweedie)
+      dsem_cov_tw$keep = osa_extract_keep(ObsDsemCov_osa_tweedie, nrow(dsem_cov_tw$map))
+    }
+
     for(k in seq_along(dsem_cov_var_idx)) {
-      if(dsem_cov_family[k] == 0) next
-      obs_yrs = which(!is.na(dsem_cov_obs[,k]))
+
+      if(dsem_cov_family[k] == 0) next # a fixed covariate is the grid cell itself
+      obs_yrs = which(!is.na(dsem_cov_obs[,k])) # the years this covariate is observed in
       cov_link = if(is.null(dsem_cov_link)) dsem_default_link(dsem_cov_family[k]) else dsem_cov_link[k] # a list from before links has each family's default
       cov_tweedie_p = if(dsem_cov_family[k] == 7) 1 + 1 / (1 + exp(-logit_dsem_tweedie_p[k])) else 1.5 # power in (1, 2), read for the tweedie only
-      dsem_obs_nLL = dsem_obs_nLL + get_dsem_obs_nLL(y = dsem_cov_obs[obs_yrs,k],
+
+      # osa book keeping stuff
+      cov_pack = switch(as.character(dsem_cov_family[k]), "2" = dsem_cov_bern, "3" = dsem_cov_pois, "7" = dsem_cov_tw, dsem_cov_cont)
+      take = if(is.null(cov_pack)) NULL else which(cov_pack$map[,"cov"] == k) # where this covariate sits in that vector
+      cov_obs = if(is.null(take)) dsem_cov_obs[obs_yrs,k] else cov_pack$obs[take] # its observations in those years
+      cov_keep = if(is.null(take)) 1 else cov_pack$keep[take] # and which of them the peel has reached
+
+      dsem_obs_nLL = dsem_obs_nLL + get_dsem_obs_nLL(y = cov_obs,
                                                      x = dsem_x_grid[obs_yrs,dsem_cov_var_idx[k]],
                                                      family = dsem_cov_family[k],
                                                      link = cov_link,
                                                      obs_sd = exp(ln_dsem_obs_sd[k]),
                                                      tweedie_p = cov_tweedie_p,
-                                                     fixed_sd = if(dsem_cov_family[k] == 5) dsem_cov_fixed_sd[obs_yrs,k] else NULL)
+                                                     fixed_sd = if(dsem_cov_family[k] == 5) dsem_cov_fixed_sd[obs_yrs,k] else NULL,
+                                                     keep = cov_keep)
     } # end k loop
 
     # dsem specific reporting stuff

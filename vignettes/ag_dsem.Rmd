@@ -393,7 +393,7 @@ where $y_t$ is what you measured in year $t$ and $f$ is whatever density suits t
 | `lognormal` | log | median $e^{x_t}$ | estimated sd, log scale |
 | `poisson` | log | $e^{x_t}$ | none, set by the mean |
 | `bernoulli`, `binomial` | logit | $1/(1+e^{-x_t})$ | none, set by the mean |
-| `gamma`, `Gamma` | log | $e^{x_t}$ | estimated coefficient of variation |
+| `gamma` | log | $e^{x_t}$ | estimated coefficient of variation |
 | `tweedie` | log | $e^{x_t}$ | estimated sd and power |
 
 Because $y_t$ is an observation of the time-series and not the true time-series itself, $x_t$ (the true underlying state that generated the time-series) can be estimated in every year, whether or not that year has an observation. Thus, $x_t$ becomes the random effect for that time-series, and the years you did not observe are interpolated by the arrow-lag notation specified. In the case where a year with no observation contributes no $y_t \sim f(x_t)$ term, the arrows decide what that value should be (i.e., its conditional mean given the other years). For instance, under an AR1 it comes back as $\rho(x_{t-1} + x_{t+1})/(1+\rho^2)$ with standard deviation $\sigma/\sqrt{1+\rho^2}$, where $\sigma$ is the innovation sd. Under independent deviations it returns the series mean at the full $\sigma$. Supplying known values is the one case with no observation density at all, and there the series is the data and nothing is estimated for it (i.e., `dsem_family = fixed`).
@@ -1266,7 +1266,7 @@ specs <- list(
 ```
 
 ```{r, message = FALSE, warning = FALSE}
-n_fit <- 30
+n_fit <- 1
 n_yrs_em <- sim_obj$n_years
 
 # storage stuff
@@ -1333,8 +1333,296 @@ for(name in names(specs)) lines(yrs, q_err[, name], col = cols[name], lwd = 2.5)
 abline(h = 0, lty = 2)
 ```
 
-<!-- ## Non-stationary dynamics (moderated variables) -->
+## Non-stationary dynamics
 
+Lastly, we demonstrate how to implement non-stationary dynamics using dsem. There are several approaches availiable for doing so, ranging from: 1) the moderated variable approach, in which a path coefficient is able to change over time; 2) the same substitution on an sd specification, so that a process error variance changes from year to year; and 3) derived series, which have no process error of their own and are therefore whatever the arrows pointing into them give them, and which can be chained through moderated arrows to write a nonlinear function of a series, such as its square, or an interaction between two covariates. Thorson and Kristensen (2026) introduce all three as one extension of the arrow and lag notation, which they term path-lag-slope notation, and show that the resulting moderated dsem can express non-stationary effects, a nonlinear response, and a statistical interaction while still interpolating the years in which a covariate was not measured. In the following, we first describe what naming an arrow after a series does to the density, and then fit an environmental effect on Dusky Rockfish recruitment that weakens over time, the same effect written as two time blocks, a recruitment variance that changes over time, and a dome shaped recruitment response to a covariate.
+
+### Naming an arrow after a series
+
+Consider an environmental index that increased recruitment appreciably through the 1980s and 1990s but appears to add little thereafter, perhaps because the mechanism it acted through, such as prey availability at first feeding, has itself changed. A single path coefficient estimated over the whole time-series then likely averages the two periods and can report an effect of nearly zero, even though the covariate was informative for the first half of the assessment. As such, we would like the coefficient itself to be a quantity that changes over time.
+
+In particular, when the third field of an arrow names a series rather than a parameter, `SPoRC` reads that arrow's coefficient off that series, in the year the arrow points at, instead of estimating one number for it. Writing that out for a covariate acting on recruitment gives:
+
+$$
+\begin{aligned}
+rec_t &= b_t\, env_t + \varepsilon^{rec}_t \\
+b_t &= \mu_b + \rho_b\,(b_{t-1} - \mu_b) + \varepsilon^{b}_t
+\end{aligned}
+$$
+
+where $env_t$ is the covariate in year $t$ and $rec_t$ the recruitment deviation in year $t$, both on the scale the grid works on (log scale for recruitment); $b_t$ is the effect of the covariate on recruitment in year $t$, which is now a series of its own and therefore a column of the grid; $\mu_b$ is the mean of that series, which is the one effect a stationary model would have estimated; $\rho_b$ is its first order autocorrelation, which sets how fast the effect may move; and $\varepsilon^{b}_t$ and $\varepsilon^{rec}_t$ are the innovations of the two series, whose standard deviations are named on their own `<->` lines. Note that $b_t$ is a series like any other, so the same lines that would make a covariate autoregressive make the effect autoregressive.
+
+```{r mod_arrows}
+mod_arrows <- c("env -> rec, 0, b_env",       # the coefficient is the b_env series, year by year
+                "b_env -> b_env, 1, rho_b",   # so the effect follows itself from last year (rho has an ar1 series)
+                "b_env <-> b_env, 0, sd_b",   # and moves this far each year
+                "env <-> env, 0, sd_env",
+                "rec <-> rec, 0, sd_rec")
+
+mod_m <- read_dsem_arrows(mod_arrows, variables = c("env", "b_env", "rec"))
+mod_m$beta_names # note that benv becomes a series instead of a fixed effect parameter
+```
+
+To see where the effect lands in the density, we read $I - B$ for a three year grid, with the effect taking the values 0.2, 0.45 and 0.35 in those years.
+
+```{r mod_matrix}
+mod_cells <- SPoRC:::get_dsem_cells(mod_m, n_grid_yrs = 3)
+mod_grid <- cbind(env = c(0.27, -0.63, 0.87), b_env = c(0.20, 0.45, 0.35), rec = c(0.02, 0.22, -0.79))
+mod_parts <- SPoRC:::get_dsem_matrices(dsem_beta = c(rho_b = 0.8),
+                                       ln_dsem_sd = log(c(sd_b = 0.15, sd_env = 1, sd_rec = 0.6)),
+                                       dsem_model = mod_m, dsem_cells = mod_cells, x_grid = mod_grid)
+as.matrix(mod_parts$IminusB) # cells run year within series: env, then b_env, then rec
+```
+
+Rows 7 to 9 are the recruitment cells, and they hold minus the effect of that year in columns 1 to 3, which are the covariate's cells, whereas the block where those same rows meet columns 4 to 6, the effect's own cells, is empty. Note that this is what separates a moderated arrow from an ordinary path out of `b_env`: the latter would say that recruitment is higher in years when the effect is larger, whatever the covariate did that year, while the former says that recruitment responds to the covariate and that the strength of the response is `b_env`. Rows 4 to 6 are unchanged by the moderation, and hold the autocorrelation of the effect on itself.
+
+Intuitively, the `b_env` column therefore does two jobs at once. It is a state with an equation of its own, which keeps it near where the neighboring years put it, and it is the coefficient in the recruitment equation, which pulls it toward whatever would explain that year's deviation. The sd line on `b_env` is what sets the balance between the two: as it shrinks, the effect stops moving and the model returns to a single coefficient, and as it grows, the effect is free to chase each year's deviation in turn. A moderating series is generally not measured, and it then enters as a column of `dsem_data` that is `NA` in every year, so that each of its cells is a random effect. Lastly, the series has to sit upstream of the arrow it moderates, and the reader refuses a moderator whose value that same arrow sets in the same year, since the density would no longer be exact.
+
+### An effect that weakens over time
+
+We use a contrived covariate built against the packaged Dusky Rockfish deviations, which tracks recruitment before 2000 and is noise thereafter, and which begins in 1990 as a survey based index might.
+
+```{r fade_cov}
+years <- base$data$years
+n_yrs <- length(years)
+eps_std <- as.vector(scale(dusky_rtmb_model$rep$ln_RecDevs[1,1,])) # the packaged deviations, standardized
+
+set.seed(17)
+env_fade <- 0.7 * eps_std * (years < 2000) + rnorm(n_yrs, 0, 0.7)
+env_fade[years < 1990] <- NA # the index begins in 1990, so the earlier years are states
+env_fade <- as.vector(scale(env_fade))
+fade_df <- data.frame(year = years, env = env_fade)
+c(observed_years = sum(!is.na(env_fade)), cor_before_2000 = cor(env_fade[years %in% 1990:1999], eps_std[years %in% 1990:1999]))
+```
+
+The first fit estimates one coefficient for the whole series, which is the stationary model, and the second names that arrow after a series so the effect changes by year. In the second, the autocorrelation and the innovation sd of the effect are kept fixed at 0.9 and 0.15 by writing `NA` in the name field and the value in the fourth, for reasons we return to below, and the effect's mean is estimated through `dsem_mu_spec`, since it is the average effect and there is no reason to hold it at zero.
+
+```{r fade_fits, message = FALSE, warning = FALSE}
+dsem_pars <- function(fit, input_list) {
+  fixed_names <- names(fit$sd_rep$par.fixed)
+  est <- fit$sd_rep$par.fixed[fixed_names == "dsem_beta"]
+  se <- sqrt(diag(fit$sd_rep$cov.fixed))[fixed_names == "dsem_beta"]
+  names(est) <- names(se) <- input_list$data$dsem_model$beta_names
+  round(rbind(est = est, se = se), 3)
+}
+
+# one coefficient for the whole series
+flat_arrows <- c("env -> env, 1, rho_env",
+                 "env <-> env, 0, sd_env",
+                 "env -> rec, 0, b_env",
+                 "rec <-> rec, 0, sd_rec")
+
+flat_il <- Setup_Mod_DSEM(dsem_base, dsem_arrows = flat_arrows, dsem_data = fade_df)
+flat_fit <- fit_model(flat_il$data, flat_il$par, flat_il$map, random = c("ln_RecDevs", "dsem_x"),
+                      newton_loops = 2, silent = TRUE)
+flat_fit$sd_rep <- sdreport(flat_fit)
+dsem_pars(flat_fit, flat_il)
+
+# the same effect, as a series of its own
+slope_arrows <- c("env -> env, 1, rho_env",
+                  "env <-> env, 0, sd_env",
+                  "env -> rec, 0, b_env",         # the effect of the covariate is the b_env series
+                  "b_env -> b_env, 1, NA, 0.9",   # how fast it may move, kept fixed
+                  "b_env <-> b_env, 0, NA, 0.15", # how far it may move each year, kept fixed
+                  "rec <-> rec, 0, sd_rec")
+
+slope_il <- Setup_Mod_DSEM(dsem_base,
+                           dsem_arrows = slope_arrows,
+                           dsem_data = cbind(fade_df, b_env = NA_real_), # unmeasured, so every year is a state
+                           dsem_mu_spec = "b_env")
+
+# start the effect flat at the single coefficient, as any state space fit is started
+b_flat <- flat_fit$env$parList()$dsem_beta[match("b_env", flat_il$data$dsem_model$beta_names)]
+slope_il$par$dsem_x[, match("b_env", slope_il$data$dsem_model$variables)] <- b_flat
+slope_il$par$dsem_mu[match("b_env", slope_il$data$dsem_model$variables)] <- b_flat
+
+slope_fit <- fit_model(slope_il$data, slope_il$par, slope_il$map, random = c("ln_RecDevs", "dsem_x"),
+                       newton_loops = 2, silent = TRUE)
+slope_fit$sd_rep <- sdreport(slope_fit)
+dsem_pars(slope_fit, slope_il)
+
+# the effect by year, and its standard error from the random effect part of the report
+b_yr <- slope_fit$rep$dsem_x_grid[, match("b_env", slope_il$data$dsem_model$variables)]
+in_b_col <- rep(slope_il$data$dsem_model$variables == "b_env", each = n_yrs) # the grid runs year within series
+estimated <- !is.na(as.integer(slope_il$map$dsem_x))
+is_x <- names(slope_fit$sd_rep$par.random) == "dsem_x"
+b_se <- sqrt(slope_fit$sd_rep$diag.cov.random[is_x])[in_b_col[estimated]]
+
+c(one_coefficient = flat_fit$optim$objective, effect_by_year = slope_fit$optim$objective)
+c(mean_before_2000 = mean(b_yr[years < 2000]), mean_after_2000 = mean(b_yr[years >= 2000]))
+```
+
+Estimated as one number, the effect is 0.037 with a standard error of 0.154, which is to say that the covariate does nothing. Estimated as a series, it averages 0.464 before 2000 and -0.320 after it, and the marginal likelihood improves by 7.3 units on the same number of fixed parameters, since the single coefficient has been replaced by the mean of the series. The moderated form therefore recovers the structure the covariate was built with, while the stationary form reports the average of a positive effect and no effect and finds nothing.
+
+```{r, fig.width = 11, fig.height = 4.5}
+par(mfrow = c(1, 2), mar = c(5, 5.5, 1, 1), mgp = c(3.2, 0.9, 0), cex.lab = 1.4, cex.axis = 1.2, las = 1)
+
+plot(years, env_fade, type = 'l', xlab = 'Year', ylab = 'Environmental covariate')
+points(years, env_fade, pch = 16, cex = 0.8)
+
+plot(years, b_yr, type = 'n', ylim = range(c(b_yr - 1.96 * b_se, b_yr + 1.96 * b_se)),
+     xlab = 'Year', ylab = 'Effect on log recruitment')
+polygon(c(years, rev(years)), c(b_yr - 1.96 * b_se, rev(b_yr + 1.96 * b_se)),
+        col = '#00000022', border = NA)
+lines(years, b_yr, lwd = 2.5)
+abline(h = b_flat, lty = 2, lwd = 2)
+legend('topright', c('Effect by year', 'One coefficient'), lwd = c(2.5, 2), lty = c(1, 2), bty = 'n', cex = 1.1)
+```
+
+Two points are worth making about this fit. Firstly, the effect's autocorrelation and innovation sd are kept fixed rather than estimated. The innovation sd says how far the effect may move each year and is identified only through the recruitment deviations, of which there are 48 here, and our attempts to estimate it returned a non finite likelihood before the fit converged. Fixing it is therefore a choice about how much movement we are prepared to entertain, and a sensitivity analysis over that value is more informative than an estimate of it. Secondly, Thorson and Kristensen (2026) show by simulation that a moderated coefficient is shrunk toward a constant as the data become less informative, so a series that comes back nearly flat is evidence about the data as much as about the process, and the standard errors on the effect here, which average 0.33 against a difference of about 0.8 between the two periods, are consistent with that.
+
+### The same effect as two time blocks
+
+If the year in which the relationship changed is known beforehand, for instance because a survey was redesigned or a regime shift was identified elsewhere, then the effect can be written as two values rather than as a series. This needs the product of the covariate and an indicator that is one after the break, which is where a derived series comes in: an arrow moderated by the indicator writes that product, and giving the product an sd of zero leaves it as exactly the product rather than a series with process error of its own. The effect is then `b_pre` before the break and `b_pre + b_shift` after it, which is the statistical interaction Thorson and Kristensen (2026) write as an interaction variable.
+
+```{r block_fit, message = FALSE, warning = FALSE}
+block_df <- data.frame(year = years,
+                       env = env_fade,
+                       post = as.numeric(years >= 2000), # one after the break, zero before it
+                       env_post = NA_real_)              # the product, which the arrows work out
+
+block_arrows <- c("env -> env, 1, rho_env",
+                  "env <-> env, 0, sd_env",
+                  "post <-> post, 0, NA, 1",         # observed every year, so this line only adds a constant
+                  "env -> env_post, 0, post",        # moderated by the indicator, so this is the product
+                  "env_post <-> env_post, 0, NA, 0", # no process error, so the product is all there is
+                  "env -> rec, 0, b_pre",
+                  "env_post -> rec, 0, b_shift",
+                  "rec <-> rec, 0, sd_rec")
+
+block_il <- Setup_Mod_DSEM(dsem_base, dsem_arrows = block_arrows, dsem_data = block_df)
+block_fit <- fit_model(block_il$data, block_il$par, block_il$map, random = c("ln_RecDevs", "dsem_x"),
+                       newton_loops = 2, silent = TRUE)
+block_fit$sd_rep <- sdreport(block_fit)
+dsem_pars(block_fit, block_il)
+
+# the product is the covariate times the indicator, which we can read back off the grid
+block_grid <- block_fit$rep$dsem_x_grid
+colnames(block_grid) <- block_il$data$dsem_model$variables
+max(abs(block_grid[,'env_post'] - block_grid[,'post'] * block_grid[,'env']))
+
+# and the effect after the break, with the covariance of the two coefficients
+fixed_names <- names(block_fit$sd_rep$par.fixed)
+block_beta <- block_fit$sd_rep$par.fixed[fixed_names == "dsem_beta"]
+block_cov <- block_fit$sd_rep$cov.fixed[fixed_names == "dsem_beta", fixed_names == "dsem_beta"]
+i_pre <- match("b_pre", block_il$data$dsem_model$beta_names)
+i_shift <- match("b_shift", block_il$data$dsem_model$beta_names)
+c(after_2000 = block_beta[i_pre] + block_beta[i_shift],
+  se = sqrt(block_cov[i_pre,i_pre] + block_cov[i_shift,i_shift] + 2 * block_cov[i_pre,i_shift]))
+```
+
+The effect is 1.053 with a standard error of 0.231 before 2000 and -0.738 with a standard error of 0.199 after it. Note that these are appreciably larger in magnitude than the series in the previous fit, which is what we should expect: two blocks are estimated without any statement that the effect should move slowly, whereas the series is shrunk toward its own mean by its innovation sd, and the shrinkage is the reason the series reaches only 0.46 and -0.32. In general, the two forms answer slightly different questions, one asking how much the effect differs between two periods chosen in advance, and the other asking whether the effect moved at all without saying when.
+
+The likelihoods of these two fits, however, cannot be compared. The indicator is a series of the grid and contributes its own density terms, so the two models' likelihoods differ by a constant that has nothing to do with recruitment. In general, a likelihood comparison between two dsem specifications is only meaningful when both hold the same set of observed series, as the two fits in the previous section did.
+
+### A recruitment variance that changes over time
+
+Recruitment variability is itself often thought to have changed, whether because the spawning stock became concentrated on fewer spawning areas or because the physical environment became more variable, and an sd line can be moderated in exactly the same way as a path. Here, the sd line for recruitment names a series rather than a parameter, and `mod_var_logscale = TRUE` reads that series as the log of the standard deviation, which keeps it positive whatever value the series takes.
+
+```{r mod_sd_fit, message = FALSE, warning = FALSE}
+sd_arrows <- c("ln_sd_rec -> ln_sd_rec, 1, NA, 0.9",   # the spread follows itself from last year
+               "ln_sd_rec <-> ln_sd_rec, 0, NA, 0.35", # and moves this far each year, both kept fixed
+               "rec <-> rec, 0, ln_sd_rec")            # the sd line names a series, so the spread moves with it
+
+sd_il <- Setup_Mod_DSEM(pen_base,
+                        dsem_arrows = sd_arrows,
+                        dsem_data = data.frame(year = years, ln_sd_rec = NA_real_),
+                        dsem_mu_spec = "ln_sd_rec", # the average spread, on the log scale
+                        mod_var_logscale = TRUE)
+
+sd_fit <- fit_model(sd_il$data, sd_il$par, sd_il$map, random = c("ln_RecDevs", "dsem_x"),
+                    newton_loops = 2, silent = TRUE)
+sd_fit$sd_rep <- sdreport(sd_fit)
+sd_yr <- exp(sd_fit$rep$dsem_x_grid[, match("ln_sd_rec", sd_il$data$dsem_model$variables)])
+
+# the same model with one spread for every year
+one_sd_il <- Setup_Mod_DSEM(pen_base, dsem_arrows = "rec <-> rec, 0, sd_rec", dsem_data = NULL)
+one_sd_fit <- fit_model(one_sd_il$data, one_sd_il$par, one_sd_il$map, random = "ln_RecDevs",
+                        newton_loops = 2, silent = TRUE)
+
+c(range_by_year = range(sd_yr), one_value = exp(as.vector(one_sd_fit$env$parList()$ln_dsem_sd)))
+c(spread_by_year = sd_fit$optim$objective, one_spread = one_sd_fit$optim$objective)
+```
+
+A moderated sd changes the behavior of the recruitment bias correction, and `SPoRC` refuses the combination: there is no single variance to center the deviations on, least of all for the initial ages, which are born before the grid starts, so `bias_correct_pe = "none"` is required, which is why this fit is built on the penalized base rather than the one used above. The initial age deviations then read the series' settled marginal variance under the arrows, taken with the moderating series at its mean, and `ln_sigmaR` goes unread.
+
+```{r, fig.width = 11, fig.height = 4.5}
+par(mfrow = c(1, 2), mar = c(5, 5.5, 1, 1), mgp = c(3.2, 0.9, 0), cex.lab = 1.4, cex.axis = 1.2, las = 1)
+
+plot(years, sd_yr, type = 'l', lwd = 2.5, ylim = c(0, max(sd_yr)),
+     xlab = 'Year', ylab = 'Recruitment deviation sd')
+abline(h = exp(as.vector(one_sd_fit$env$parList()$ln_dsem_sd)), lty = 2, lwd = 2)
+legend('bottomleft', c('Spread by year', 'One spread'), lwd = c(2.5, 2), lty = c(1, 2), bty = 'n', cex = 1.1)
+
+plot(years, sd_fit$rep$dsem_x_grid[, match("rec", sd_il$data$dsem_model$variables)], type = 'l', lwd = 2.5,
+     xlab = 'Year', ylab = 'Recruitment deviation')
+lines(years, one_sd_fit$rep$dsem_x_grid[, match("rec", one_sd_il$data$dsem_model$variables)], col = '#CC79A7', lwd = 2.5)
+legend('topleft', c('Spread by year', 'One spread'), col = c('black', '#CC79A7'), lwd = 2.5, bty = 'n', cex = 1.1)
+```
+
+The estimated spread runs from 0.18 to 1.72 against a single value of 1.01, and yet the marginal likelihood is 6.6 units worse than the model with one spread, so these data do not support a variance that changes over time even though the series moved a great deal. In general, a moderated sd is weakly identified, because each year's spread is estimated from that year's deviation alone, and the last few years are the clearest case: the terminal deviations are barely informed by data, the density pulls them toward zero, and a small spread there makes that pull stronger still, which is what the two sets of deviations show from 2019 onward, where the moving spread returns values no larger than 0.013 in absolute terms against 0.13 to 0.34 under a single spread. As such, we recommend keeping the movement of a moderated sd tightly constrained, comparing against a single value as we have done here, and treating a collapse in the terminal years as an artifact rather than a finding.
+
+### A dome shaped recruitment response
+
+Recruitment is frequently thought to respond to temperature in a dome shaped way, rising to some intermediate optimum and falling away on either side, which is a quadratic effect of the covariate rather than a changing one. Moderating an arrow by the same series it comes from writes the square: the coefficient on the arrow out of the covariate is the covariate, so the series it points into is the covariate times itself. Giving that series an sd of zero makes it derived, so the square is exactly the square even in years where the covariate was not measured and the model is estimating it, which is the property Thorson and Kristensen (2026) build their Lotka-Volterra and plankton examples on, and the reason a basis expansion supplied as data cannot be used when a covariate has missing years.
+
+One further step is needed before the square is useful in an assessment. The square of a standardized covariate has a mean of about one, so it acts partly as a level on the recruitment deviations, and since the deviations have no intercept of their own, that level is estimated against mean recruitment instead. In our fits the uncentered form returned a quadratic coefficient of 0.45, the wrong sign for the dome the covariate was built with, with mean recruitment moving to absorb the level. We therefore subtract the mean of the square, which takes a series that is one in every year, from which a fixed arrow of minus that mean is an intercept.
+
+```{r dome_fit, message = FALSE, warning = FALSE}
+set.seed(31)
+dome_raw <- sqrt(pmax(0, (stats::quantile(eps_std, 0.95) - eps_std) / 2)) * sample(c(-1, 1), n_yrs, TRUE)
+env_dome <- as.vector(scale(dome_raw + rnorm(n_yrs, 0, 0.25))) # recruitment is highest at intermediate values
+sq_mean <- mean(env_dome^2)
+
+dome_df <- data.frame(year = years,
+                      one = 1,             # a constant series, so an arrow out of it is an intercept
+                      env = env_dome,
+                      env_sq = NA_real_,   # the square, which the arrows work out
+                      env_ctr = NA_real_)  # and the square less its mean
+
+dome_arrows <- c("one <-> one, 0, NA, 1",
+                 "env -> env, 1, rho_env",
+                 "env <-> env, 0, sd_env",
+                 "env -> env_sq, 0, env",     # moderated by itself, so this is the covariate squared
+                 "env_sq <-> env_sq, 0, NA, 0",
+                 "env_sq -> env_ctr, 0, NA, 1",
+                 paste0("one -> env_ctr, 0, NA, ", -round(sq_mean, 4)), # minus the mean of the square
+                 "env_ctr <-> env_ctr, 0, NA, 0",
+                 "env -> rec, 0, b_lin",
+                 "env_ctr -> rec, 0, b_quad",
+                 "rec <-> rec, 0, sd_rec")
+
+cat(dome_arrows, sep = "\n") # the lines the setup reads
+
+dome_il <- Setup_Mod_DSEM(dsem_base, dsem_arrows = dome_arrows, dsem_data = dome_df)
+dome_fit <- fit_model(dome_il$data, dome_il$par, dome_il$map, random = c("ln_RecDevs", "dsem_x"),
+                      newton_loops = 2, silent = TRUE)
+dome_fit$sd_rep <- sdreport(dome_fit)
+dsem_pars(dome_fit, dome_il)
+
+# the derived series are the square and the centered square, which we read back off the grid
+dome_grid <- dome_fit$rep$dsem_x_grid
+colnames(dome_grid) <- dome_il$data$dsem_model$variables
+max(abs(dome_grid[,'env_ctr'] - (dome_grid[,'env']^2 - sq_mean)))
+
+# the covariate value at which recruitment is highest
+dome_beta <- dsem_pars(dome_fit, dome_il)["est",]
+-dome_beta[["b_lin"]] / (2 * dome_beta[["b_quad"]])
+```
+
+The linear coefficient is 0.301 with a standard error of 0.188 and the quadratic coefficient is -1.899 with a standard error of 0.302, so the response is dome shaped, with the highest recruitment at a covariate value of 0.08, near the middle of the covariate's range.
+
+```{r, fig.width = 7, fig.height = 5}
+par(mar = c(5, 5.5, 1, 1), mgp = c(3.2, 0.9, 0), cex.lab = 1.4, cex.axis = 1.2, las = 1)
+
+env_seq <- seq(min(env_dome), max(env_dome), length.out = 100)
+plot(env_dome, dome_grid[,'rec'], pch = 16, xlab = 'Environmental covariate', ylab = 'Recruitment deviation')
+lines(env_seq, dome_beta[["b_lin"]] * env_seq + dome_beta[["b_quad"]] * (env_seq^2 - sq_mean), lwd = 2.5)
+```
+
+Note that the fitted deviation in the year with the most extreme covariate value, 2000, is -6.2 against -0.05 in the packaged fit, and that the deviations as a whole now run from -6.2 to 2.1 against -0.5 to 1.9. A quadratic is unbounded, so a covariate value out in the tail implies a recruitment far outside anything the assessment has seen, and a year class that the data inform weakly will follow that implication rather than resist it. As such, we recommend reading a dome shaped response only over the range in which the covariate is dense, and comparing the fitted deviations against those of a model without the covariate before believing an extreme year.
+
+Chaining further derived series raises further powers, and a third order series in the log of a variable is the Taylor approximation to the exponential that Thorson and Kristensen (2026) use to write Lotka-Volterra predator prey dynamics as arrows, which suggests that mechanistic relationships of this kind could be written against assessment process errors in the same way. Two cautions apply from our own attempts, however. Firstly, a product of a series with itself makes the joint density non-quadratic in the states, so the inner problem behind the Laplace approximation is no longer a simple least squares one, and with the covariate partly unmeasured we found these fits fragile: some converged cleanly and others stalled with a large final gradient or returned a non finite likelihood, depending on which years were missing. As such, we recommend fitting the fully measured case first, and treating a nonlinear term on an unmeasured covariate as something to be checked rather than assumed. Secondly, the total effect of a change in one series is no longer read off a single path matrix, since a moderated path matrix depends on the values of the series themselves, and Thorson and Kristensen (2026) give the total effect as a sum over successive path matrices, each updated with the effects of the last, rather than as the usual inverse.
 
 
 ## References
@@ -1347,3 +1635,7 @@ next-generation ecosystem and climate-linked stock assessments. Fish and Fisheri
 Thorson, J. T., Andrews, A. G., Essington, T. E., and Large, S. I. 2024.
 Dynamic structural equation models synthesize ecosystem dynamics constrained by
 ecological mechanisms. Methods in Ecology and Evolution, 15: 744–755.
+
+Thorson, J.T., Kristensen, K., 2026. Ecological examples of nonstationarity, 
+nonlinearity and statistical interactions in dynamic structural equation models. Methods in Ecology and Evolution
+17, 2510–2523. https://doi.org/10.1111/2041-210x.70334

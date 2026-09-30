@@ -910,10 +910,10 @@ get_dsem_link_sd_arrow <- function(dsem_model,
 #' Covariate family and link codes
 #'
 #' Family and link codes. Families: fixed 0, gaussian 1 (normal
-#' is the same), bernoulli 2 (binomial is the same), poisson 3, Gamma 4 (gamma
-#' is the same), gaussian_fixed_sd 5, lognormal 6, tweedie 7. Links: identity
+#' is the same), bernoulli 2 (binomial is the same), poisson 3, gamma 4,
+#' gaussian_fixed_sd 5, lognormal 6, tweedie 7. Links: identity
 #' 0, log 1, logit 2, cloglog 3. \code{dsem_default_link} gives each family
-#' its usual link, except the Gamma, which gets the log rather than the inverse.
+#' its usual link, except the gamma, which gets the log rather than the inverse.
 #'
 #' @param family Family code, for \code{dsem_default_link}.
 #'
@@ -923,7 +923,7 @@ get_dsem_link_sd_arrow <- function(dsem_model,
 dsem_family_codes <- function() {
 
   c(fixed = 0, normal = 1, gaussian = 1, bernoulli = 2, binomial = 2, poisson = 3,
-    gamma = 4, Gamma = 4, gaussian_fixed_sd = 5, lognormal = 6, tweedie = 7)
+    gamma = 4, gaussian_fixed_sd = 5, lognormal = 6, tweedie = 7)
 
 } # end function
 
@@ -1127,8 +1127,8 @@ dsem_cov_sd_start <- function(y,
 #'   the cell the log mean, \code{exp(ln_dsem_obs_sd)} the dispersion and
 #'   \code{logit_dsem_tweedie_p} the power as \eqn{1 + \mathrm{plogis}(\cdot)}, in
 #'   (1, 2) and starting at 1.5; and \code{"gaussian_fixed_sd"} is normal about the
-#'   cell with a known sd per observed year from \code{dsem_fixed_sd}. The names
-#'   \code{"gaussian"} and \code{"Gamma"} are accepted as well. Under a family whose
+#'   cell with a known sd per observed year from \code{dsem_fixed_sd}. The name
+#'   \code{"gaussian"} is also accepted for the normal. Under a family whose
 #'   link is not the identity the arrows, the mean under \code{dsem_mu_spec} and the
 #'   grid are all on the link scale, and every latent cell starts at the series
 #'   mean. The sd and power parameters are mapped off for the families with none.

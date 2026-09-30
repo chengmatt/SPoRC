@@ -11,7 +11,8 @@ run_internal_caal_osa(
   bins,
   bin_label,
   osa_method = NULL,
-  parallel = FALSE
+  parallel = FALSE,
+  seed = 123
 )
 }
 \arguments{

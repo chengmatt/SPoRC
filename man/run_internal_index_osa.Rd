@@ -10,7 +10,8 @@ run_internal_index_osa(
   index_source,
   pop = FALSE,
   osa_method = NULL,
-  parallel = FALSE
+  parallel = FALSE,
+  seed = 123
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ to build \code{model}.}
 \code{"cdf"} method is not permitted). Defaults to \code{"oneStepGeneric"}.}
 
 \item{parallel}{Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.}
+
+\item{seed}{Seed for the discrete residuals' uniform draw, as \code{\link{get_osa}} takes it.}
 }
 \value{
 A list with one element \code{res}: columns \code{fleet},

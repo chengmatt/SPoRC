@@ -56,8 +56,6 @@ test_that("each family's observation likelihood is its base R density, missing y
   expect_equal(fam_obs_nLL(fam_input(y, "bernoulli", link = "cloglog"), x), -sum(dbinom(y, 1, 1 - exp(-exp(x)), log = TRUE)), tolerance = 1e-10)
   y <- rpois(n_fam_yrs, 3)
   expect_equal(fam_obs_nLL(fam_input(y, "poisson", link = "identity"), exp(x) + 2), -sum(dpois(y, exp(x) + 2, log = TRUE)), tolerance = 1e-10)
-  y <- rgamma(n_fam_yrs, shape = 4, scale = 1)
-  expect_equal(fam_obs_nLL(fam_input(y, "Gamma"), x + log(4), obs_sd = 0.5), fam_obs_nLL(fam_input(y, "gamma"), x + log(4), obs_sd = 0.5), tolerance = 1e-12)
   y <- rnorm(n_fam_yrs, 2, 0.5)
   expect_equal(fam_obs_nLL(fam_input(y, "gaussian"), x + 2, obs_sd = 0.5), -sum(dnorm(y, x + 2, 0.5, log = TRUE)), tolerance = 1e-10)
   known_sd <- seq(0.2, 0.8, length.out = n_fam_yrs)
@@ -75,6 +73,7 @@ test_that("values outside a family's support and unknown families are refused", 
   expect_error(fam_input(y, "lognormal"), "positive")
   expect_error(fam_input(y - 1, "tweedie"), "non-negative")
   expect_error(fam_input(y, "beta"), "one of")
+  expect_error(fam_input(y, "Gamma"), "one of") # the gamma is named in lower case
   expect_error(fam_input(y, "poisson", link = "inverse"), "one of")
   expect_error(fam_input(y, "gaussian_fixed_sd"), "needs dsem_fixed_sd")
   expect_error(fam_input(y, "gaussian_fixed_sd", fixed_sd = replace(rep(0.3, n_fam_yrs), 4, NA)), "every observed year")

@@ -26,8 +26,10 @@ get_osa(
   pop = FALSE,
   discard = FALSE,
   tag = FALSE,
+  dsem = FALSE,
   osa_method = NULL,
-  parallel = FALSE
+  parallel = FALSE,
+  seed = 123
 )
 }
 \arguments{
@@ -92,12 +94,14 @@ likelihoods. Required when \code{model} is supplied, \code{index_source} is
 
 \item{index_source}{Which continuous index-type data source to pull internal
 residuals for: \code{"Catch"}, \code{"Discard"}, \code{"FishIdx"} or
-\code{"SrvIdx"}. Takes precedence over \code{comp_source} and \code{tag}.}
+\code{"SrvIdx"}. A call returns one data source, and this one is read ahead of
+\code{dsem}, \code{tag} and \code{comp_source}.}
 
 \item{family}{\code{"discrete"} or \code{"continuous"}, which of the two tracked
-OSA vectors to read for \code{comp_source}, since a source can have both.
-Read when \code{model} is supplied, \code{tag = FALSE} and
-\code{index_source} is \code{NULL}.}
+OSA vectors to read for \code{comp_source}, since a source can have both. Under
+\code{dsem = TRUE} it says which covariates to read and takes \code{"continuous"},
+\code{"bernoulli"}, \code{"poisson"} or \code{"tweedie"}. Read when \code{model} is
+supplied, \code{tag = FALSE} and \code{index_source} is \code{NULL}.}
 
 \item{pop}{Logical, whether the source is population-specific. Read when
 \code{model} is supplied and \code{tag = FALSE}. Default \code{FALSE}.}
@@ -109,6 +113,10 @@ for \code{comp_source \%in\% c("FishAge","FishLen")} only. Default
 \item{tag}{Logical, \code{TRUE} to compute internal residuals for conventional
 tag recaptures instead of compositions. Default \code{FALSE}.}
 
+\item{dsem}{Logical, \code{TRUE} for the covariates a dsem observes with error,
+\code{family} picking \code{"continuous"}, \code{"bernoulli"}, \code{"poisson"} or
+\code{"tweedie"}. A \code{"fixed"} covariate has no observation. Default \code{FALSE}.}
+
 \item{osa_method}{Optional override for \code{RTMB::oneStepPredict}'s
 \code{method} in internal mode: \code{"oneStepGeneric"},
 \code{"oneStepGaussianOffMode"} or \code{"oneStepGaussian"}. The \code{"cdf"}
@@ -118,6 +126,12 @@ and tags, and \code{"oneStepGaussianOffMode"} for the continuous ones.}
 
 \item{parallel}{Whether to parallelize the internal computation. Default
 \code{FALSE}.}
+
+\item{seed}{Seed for the uniform draw that places a discrete residual inside its
+step of the CDF, passed to \code{RTMB::oneStepPredict}. Its default is that
+function's own, so one call on one data set is reproducible. A simulation
+study must vary it: left at one value, every replicate takes the same draws,
+and whatever they average shows up as a bias that is not there.}
 }
 \value{
 A list with one element, \code{res}, a data frame of residuals. A
@@ -128,6 +142,8 @@ A list with one element, \code{res}, a data frame of residuals. A
   \code{years_at_liberty}, \code{resid} and \code{comp_type = "Tag"}. An
   \code{index_source} gives \code{fleet}, \code{region}, \code{year},
   \code{season}, \code{pop}, \code{resid} and \code{idx_type}.
+  \code{dsem = TRUE} gives \code{covariate}, \code{year}, \code{family},
+  \code{resid} and \code{idx_type = "DsemCov"}.
 }
 \description{
 One-step-ahead residuals under the multinomial, Dirichlet-multinomial or
@@ -157,6 +173,7 @@ get_osa(model = fitted_obj, data = input_list$data, comp_source = "FishAge",
         family = "discrete", bins = input_list$data$ages, bin_label = "Age")
 get_osa(model = fitted_obj, data = input_list$data, tag = TRUE)
 get_osa(model = fitted_obj, data = input_list$data, index_source = "SrvIdx")
+get_osa(model = fitted_obj, data = input_list$data, dsem = TRUE)
 }
 }
 \seealso{

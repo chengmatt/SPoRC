@@ -14,7 +14,8 @@ run_internal_comp_osa(
   parallel = FALSE,
   bins,
   bin_label,
-  osa_method = NULL
+  osa_method = NULL,
+  seed = 123
 )
 }
 \arguments{
@@ -26,7 +27,9 @@ to build \code{model}.}
 
 \item{comp_source}{One of \code{"FishAge"}, \code{"FishLen"}, \code{"SrvAge"}, \code{"SrvLen"}.}
 
-\item{family}{Character, \code{"discrete"} or \code{"continuous"}.}
+\item{family}{\code{"discrete"} or \code{"continuous"}, which tracked vector to read for
+\code{comp_source}. Under \code{dsem = TRUE} the covariate kind: \code{"continuous"},
+\code{"bernoulli"}, \code{"poisson"} or \code{"tweedie"}.}
 
 \item{pop}{Logical; population-specific composition source. Default \code{FALSE}.}
 
@@ -48,6 +51,10 @@ numerically fragile for the discrete likelihoods used here). Defaults to
 for continuous (logistic-normal) data. See
 \code{\link[TMB:oneStepPredict]{TMB::oneStepPredict}} for further details.
 Note that if data are discrete, the only valid option is \code{"oneStepGeneric"}.}
+
+\item{seed}{Seed for the uniform draw that places a discrete residual in its CDF
+step, \code{RTMB::oneStepPredict}'s 123 by default. Vary it across simulation
+replicates, or they all take the same draws.}
 }
 \value{
 A list with one element \code{res}, matching \code{\link{get_osa}}'s

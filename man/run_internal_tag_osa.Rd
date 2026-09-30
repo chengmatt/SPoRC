@@ -4,7 +4,13 @@
 \alias{run_internal_tag_osa}
 \title{Run internal (model-based) OSA residuals for conventional tagging data}
 \usage{
-run_internal_tag_osa(model, data, osa_method = NULL, parallel = FALSE)
+run_internal_tag_osa(
+  model,
+  data,
+  osa_method = NULL,
+  parallel = FALSE,
+  seed = 123
+)
 }
 \arguments{
 \item{model}{A fitted RTMB model object from \code{\link{fit_model}}, built
@@ -19,6 +25,8 @@ Must be one of \code{"oneStepGeneric"}, \code{"oneStepGaussianOffMode"}, or
 to \code{"oneStepGeneric"} (tag recapture data are always discrete/count-valued).}
 
 \item{parallel}{Whether or not to parallelize OSA computation. Defaults to \code{FALSE}.}
+
+\item{seed}{Seed for the discrete residuals' uniform draw, as \code{\link{get_osa}} takes it.}
 }
 \value{
 A list with one element \code{res}: columns \code{fleet}, \code{region},

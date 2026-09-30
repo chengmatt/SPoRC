@@ -585,25 +585,93 @@ get_dsem_nLL = function(dsem_beta,
 
 } # end function
 
+#' Mean of a covariate observation, the grid cell through its link
+#'
+#' Identity, exp, inverse logit or inverse cloglog, by link code.
+#'
+#' @param x Grid cells, on the link scale.
+#' @param link Link code: 0 identity, 1 log, 2 logit, 3 cloglog.
+#'
+#' @return The mean of the observation, on the scale it is observed.
+#'
+#' @keywords internal
+get_dsem_cov_mean = function(x,
+                             link) {
+
+  if(link == 1) return(exp(x)) # log
+  if(link == 2) return(1 / (1 + exp(-x))) # logit
+  if(link == 3) return(1 - exp(-exp(x))) # cloglog
+
+  return(x) # identity
+
+} # end function
+
+#' Pack the covariate observations that OSA residuals are available for
+#'
+#' The observed cells of every covariate a dsem observes with error, in one vector per
+#' kind that the objective registers with \code{\link[RTMB]{OBS}}. Each keeps its own
+#' family's density, weighted by the peel's indicator. The kinds are packed apart because
+#' \code{oneStepPredict}'s support and range apply to every observation in a call.
+#'
+#' @param dsem_cov_obs Matrix \code{[grid year, covariate]} of observations, NA
+#'   in a year a covariate is not observed.
+#' @param dsem_cov_family Family code of each covariate.
+#' @param family \code{"continuous"} for normal, gamma, the fixed sd normal and
+#'   lognormal, or \code{"bernoulli"}, \code{"poisson"} or \code{"tweedie"}.
+#'
+#' @return List with \code{vec}, the observations, and \code{map}, the grid year
+#'   and covariate behind each one. \code{NULL} when no covariate is on a family
+#'   of the requested kind.
+#'
+#' @keywords internal
+pack_dsem_cov_osa = function(dsem_cov_obs,
+                             dsem_cov_family,
+                             family = "continuous") {
+
+  # each family whose observations need their own support out of oneStepPredict is packed on its own
+  in_family = switch(family, bernoulli = 2, poisson = 3, tweedie = 7, continuous = c(1, 4, 5, 6), NULL)
+
+  if(is.null(in_family)) {
+    stop("`family` must be 'continuous', 'bernoulli', 'poisson' or 'tweedie'.")
+  }
+
+  use_mat = !is.na(dsem_cov_obs) # the years each covariate is observed in
+  use_mat[,!dsem_cov_family %in% in_family] = FALSE # a covariate of another kind sits in another vector
+
+  if(!any(use_mat)) return(NULL) # no covariate of this kind to compute a residual for
+
+  # column major, so the covariates run in order and each one's observed years ascend
+  cell = which(use_mat)
+  map = arrayInd(cell, dim(use_mat))
+  colnames(map) = c("grid_yr", "cov")
+
+  list(vec = dsem_cov_obs[cell], map = map)
+
+} # end function
+
 #' Covariate observation density by family and link
 #'
 #' The observations of one covariate given its grid cells. The cell goes through the
 #' link to the mean (identity, exp, inverse logit or inverse cloglog), and the
 #' family's density is taken about that mean. Fixed (0) has no density. Normal (1) has
 #' an estimated sd, gaussian_fixed_sd (5) a known sd per observation, bernoulli (2) a
-#' coin flip at the mean, poisson (3) that mean, Gamma (4) shape \eqn{1/CV^2} and that
+#' coin flip at the mean, poisson (3) that mean, gamma (4) shape \eqn{1/CV^2} and that
 #' mean, lognormal (6) that mean as its median, tweedie (7) that mean with a
 #' dispersion and a power in (1, 2).
 #'
-#' @param y Observed values, no NA.
+#' @param y Observed values, no NA. The objective reads these off the vector
+#'   \code{\link{pack_dsem_cov_osa}} builds, so that OSA residuals are available
+#'   for them.
 #' @param x Grid cells for those years, on the link scale.
 #' @param family Family code.
 #' @param link Link code.
-#' @param obs_sd Measurement sd (normal), CV (Gamma), sd of the log
+#' @param obs_sd Measurement sd (normal), CV (gamma), sd of the log
 #'   (lognormal) or dispersion (tweedie). Unused otherwise.
 #' @param tweedie_p Tweedie power in (1, 2). Unused otherwise.
 #' @param fixed_sd Known sd per observation for gaussian_fixed_sd. Unused
 #'   otherwise.
+#' @param keep Indicator per observation, zero for those a peel has not reached. One
+#'   during a fit.
 #'
 #' @return Scalar negative log likelihood.
 #'
@@ -614,21 +682,18 @@ get_dsem_obs_nLL = function(y,
                             link,
                             obs_sd,
                             tweedie_p,
-                            fixed_sd = NULL) {
+                            fixed_sd = NULL,
+                            keep = 1) {
 
-  # the mean of the observation, the cell through the link
-  mu = if(link == 1) exp(x) # log
-       else if(link == 2) 1 / (1 + exp(-x)) # logit
-       else if(link == 3) 1 - exp(-exp(x)) # cloglog
-       else x # identity
+  mu = get_dsem_cov_mean(x, link) # get link fxn
 
-  if(family == 1) return(-sum(RTMB::dnorm(y, mu, obs_sd, TRUE))) # normal
-  if(family == 2) return(-sum(RTMB::dbinom(y, 1, mu, TRUE))) # bernoulli
-  if(family == 3) return(-sum(RTMB::dpois(y, mu, TRUE))) # poisson
-  if(family == 4) return(-sum(RTMB::dgamma(y, shape = 1 / obs_sd^2, scale = mu * obs_sd^2, log = TRUE))) # gamma, obs_sd the CV
-  if(family == 5) return(-sum(RTMB::dnorm(y, mu, fixed_sd, TRUE))) # normal with a known sd per observation
-  if(family == 6) return(-sum(RTMB::dlnorm(y, log(mu), obs_sd, TRUE))) # lognormal
-  if(family == 7) return(-sum(RTMB::dtweedie(y, mu, obs_sd, tweedie_p, TRUE))) # tweedie
+  if(family == 1) return(-sum(keep * RTMB::dnorm(y, mu, obs_sd, TRUE))) # normal
+  if(family == 2) return(-sum(keep * RTMB::dbinom(y, 1, mu, TRUE))) # bernoulli
+  if(family == 3) return(-sum(keep * RTMB::dpois(y, mu, TRUE))) # poisson
+  if(family == 4) return(-sum(keep * RTMB::dgamma(y, shape = 1 / obs_sd^2, scale = mu * obs_sd^2, log = TRUE))) # gamma, obs_sd the CV
+  if(family == 5) return(-sum(keep * RTMB::dnorm(y, mu, fixed_sd, TRUE))) # normal with a known sd per observation
+  if(family == 6) return(-sum(keep * RTMB::dlnorm(y, log(mu), obs_sd, TRUE))) # lognormal
+  if(family == 7) return(-sum(keep * RTMB::dtweedie(y, mu, obs_sd, tweedie_p, TRUE))) # tweedie
 
   return(0) # fixed values have no density
 

@@ -27,7 +27,8 @@ run_internal_comp_osa(
   parallel = FALSE,
   bins,
   bin_label,
-  osa_method = NULL
+  osa_method = NULL,
+  seed = 123
 )
 ```
 
@@ -49,7 +50,9 @@ run_internal_comp_osa(
 
 - family:
 
-  Character, `"discrete"` or `"continuous"`.
+  `"discrete"` or `"continuous"`, which tracked vector to read for
+  `comp_source`. Under `dsem = TRUE` the covariate kind: `"continuous"`,
+  `"bernoulli"`, `"poisson"` or `"tweedie"`.
 
 - pop:
 
@@ -87,6 +90,14 @@ run_internal_comp_osa(
   [`TMB::oneStepPredict`](https://rdrr.io/pkg/TMB/man/oneStepPredict.html)
   for further details. Note that if data are discrete, the only valid
   option is `"oneStepGeneric"`.
+
+- seed:
+
+  Seed for the uniform draw that places a discrete residual in its CDF
+  step,
+  [`RTMB::oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)'s
+  123 by default. Vary it across simulation replicates, or they all take
+  the same draws.
 
 ## Value
 

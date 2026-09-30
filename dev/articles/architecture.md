@@ -482,11 +482,11 @@ use.
 | `test-sim_*` | 8 | Operating model, including simulate then refit self tests |
 | `test-refpts_*` | 12 | SPR and MSY solvers, one file per spatial structure |
 | `test-projection_*` | 5 | Forward projection off a fitted model |
-| `test-diag_*` | 17 | Post fit diagnostics: retrospectives and OSA residuals |
+| `test-diag_*` | 18 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 207 test files in total.
+That is 208 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

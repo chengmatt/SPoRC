@@ -59,10 +59,8 @@ get_dsem_obs_nLL(
 
 - keep:
 
-  Indicator per observation, which
-  [`oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)
-  switches off for every observation it has not reached yet. One during
-  an ordinary fit, which leaves the likelihood as it was.
+  Indicator per observation, zero for those a peel has not reached. One
+  during a fit.
 
 ## Value
 

@@ -73,7 +73,8 @@ are always continuous observations.</p>
 <span>  <span class="va">index_source</span>,</span>
 <span>  pop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  osa_method <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">123</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -110,6 +111,10 @@ to build <code>model</code>.</p></dd>
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>Whether or not to parallelize OSA computation. Defaults to <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Seed for the discrete residuals' uniform draw, as <code><a href="get_osa.html">get_osa</a></code> takes it.</p></dd>
 
 </dl></div>
     <div class="section level2">

@@ -45,20 +45,13 @@ osa_one_step_predict(
 
 - discreteSupport:
 
-  Values a discrete observation can take, which `oneStepGeneric` sums
-  its one-step density over: the integers `0:max` for a composition's or
-  a tag's counts, or `0` alone for a tweedie, whose only discrete value
-  is its point mass at zero. `NULL` (the default) omits the argument
-  entirely, which is what a continuous observation (a catch, an index, a
-  normal covariate) wants.
+  Values a discrete observation can take, or `NULL` (the default) to
+  omit the argument.
 
 - range:
 
-  Interval `oneStepGeneric` integrates an observation over, which
-  `oneStepPredict` reads as `c(-Inf, Inf)` unless it is told otherwise,
-  and demands outright when an observation is part discrete and part
-  continuous (a tweedie's is `c(0, Inf)`). `NULL` (the default) omits
-  it.
+  Interval a part discrete observation's continuous part is integrated
+  over (a tweedie's is `c(0, Inf)`), or `NULL` (the default) to omit it.
 
 - parallel:
 

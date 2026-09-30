@@ -89,7 +89,8 @@ relabels the resulting residuals using <code><a href="pack_comp_osa.html">pack_c
 <span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  <span class="va">bins</span>,</span>
 <span>  <span class="va">bin_label</span>,</span>
-<span>  osa_method <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  osa_method <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">123</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -112,7 +113,9 @@ to build <code>model</code>.</p></dd>
 
 
 <dt id="arg-family">family<a class="anchor" aria-label="anchor" href="#arg-family"></a></dt>
-<dd><p>Character, <code>"discrete"</code> or <code>"continuous"</code>.</p></dd>
+<dd><p><code>"discrete"</code> or <code>"continuous"</code>, which tracked vector to read for
+<code>comp_source</code>. Under <code>dsem = TRUE</code> the covariate kind: <code>"continuous"</code>,
+<code>"bernoulli"</code>, <code>"poisson"</code> or <code>"tweedie"</code>.</p></dd>
 
 
 <dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>
@@ -146,6 +149,12 @@ numerically fragile for the discrete likelihoods used here). Defaults to
 for continuous (logistic-normal) data. See
 <code><a href="https://rdrr.io/pkg/TMB/man/oneStepPredict.html" class="external-link">TMB::oneStepPredict</a></code> for further details.
 Note that if data are discrete, the only valid option is <code>"oneStepGeneric"</code>.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Seed for the uniform draw that places a discrete residual in its CDF
+step, <code><a href="https://rdrr.io/pkg/RTMB/man/OSA-residuals.html" class="external-link">RTMB::oneStepPredict</a></code>'s 123 by default. Vary it across simulation
+replicates, or they all take the same draws.</p></dd>
 
 </dl></div>
     <div class="section level2">

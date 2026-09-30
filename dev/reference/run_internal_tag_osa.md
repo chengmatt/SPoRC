@@ -13,7 +13,13 @@ when `tag = TRUE` and a fitted `model` is supplied.
 ## Usage
 
 ``` r
-run_internal_tag_osa(model, data, osa_method = NULL, parallel = FALSE)
+run_internal_tag_osa(
+  model,
+  data,
+  osa_method = NULL,
+  parallel = FALSE,
+  seed = 123
+)
 ```
 
 ## Arguments
@@ -40,6 +46,12 @@ run_internal_tag_osa(model, data, osa_method = NULL, parallel = FALSE)
 - parallel:
 
   Whether or not to parallelize OSA computation. Defaults to `FALSE`.
+
+- seed:
+
+  Seed for the discrete residuals' uniform draw, as
+  [`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
+  takes it.
 
 ## Value
 

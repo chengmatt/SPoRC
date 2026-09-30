@@ -119,20 +119,13 @@ discreteSupport and range are detected with
 
 
 <dt id="arg-discretesupport">discreteSupport<a class="anchor" aria-label="anchor" href="#arg-discretesupport"></a></dt>
-<dd><p>Values a discrete observation can take, which
-<code>oneStepGeneric</code> sums its one-step density over: the integers
-<code>0:max</code> for a composition's or a tag's counts, or <code>0</code> alone for a
-tweedie, whose only discrete value is its point mass at zero. <code>NULL</code>
-(the default) omits the argument entirely, which is what a continuous
-observation (a catch, an index, a normal covariate) wants.</p></dd>
+<dd><p>Values a discrete observation can take, or <code>NULL</code>
+(the default) to omit the argument.</p></dd>
 
 
 <dt id="arg-range">range<a class="anchor" aria-label="anchor" href="#arg-range"></a></dt>
-<dd><p>Interval <code>oneStepGeneric</code> integrates an observation over,
-which <code>oneStepPredict</code> reads as <code>c(-Inf, Inf)</code> unless it is told
-otherwise, and demands outright when an observation is part discrete and part
-continuous (a tweedie's is <code>c(0, Inf)</code>). <code>NULL</code> (the default)
-omits it.</p></dd>
+<dd><p>Interval a part discrete observation's continuous part is integrated
+over (a tweedie's is <code>c(0, Inf)</code>), or <code>NULL</code> (the default) to omit it.</p></dd>
 
 
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>

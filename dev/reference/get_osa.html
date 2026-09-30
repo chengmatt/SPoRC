@@ -94,7 +94,8 @@ expected compositions and calls [run_external_comp_osa()]; supplying
 <span>  tag <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  dsem <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  osa_method <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">123</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -223,13 +224,9 @@ tag recaptures instead of compositions. Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-dsem">dsem<a class="anchor" aria-label="anchor" href="#arg-dsem"></a></dt>
-<dd><p>Logical, <code>TRUE</code> to compute internal residuals for the covariates
-a dsem observes with error, reading <code>family</code> to pick which one: the continuous
-covariates (normal, gamma, the fixed sd normal, lognormal) together, or
-<code>"bernoulli"</code>, <code>"poisson"</code> or <code>"tweedie"</code>. Every family has residuals
-but <code>dsem_family = "fixed"</code>, where the covariate is the grid cell itself and there
-is no observation to peel. A call returns one data source, and this one is read ahead
-of <code>tag</code> and <code>comp_source</code>. Default <code>FALSE</code>.</p></dd>
+<dd><p>Logical, <code>TRUE</code> for the covariates a dsem observes with error,
+<code>family</code> picking <code>"continuous"</code>, <code>"bernoulli"</code>, <code>"poisson"</code> or
+<code>"tweedie"</code>. A <code>"fixed"</code> covariate has no observation. Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-osa-method">osa_method<a class="anchor" aria-label="anchor" href="#arg-osa-method"></a></dt>
@@ -244,6 +241,14 @@ and tags, and <code>"oneStepGaussianOffMode"</code> for the continuous ones.</p>
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>Whether to parallelize the internal computation. Default
 <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Seed for the uniform draw that places a discrete residual inside its
+step of the CDF, passed to <code><a href="https://rdrr.io/pkg/RTMB/man/OSA-residuals.html" class="external-link">RTMB::oneStepPredict</a></code>. Its default is that
+function's own, so one call on one data set is reproducible. A simulation
+study must vary it: left at one value, every replicate takes the same draws,
+and whatever they average shows up as a bias that is not there.</p></dd>
 
 </dl></div>
     <div class="section level2">

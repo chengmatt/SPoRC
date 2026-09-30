@@ -74,8 +74,8 @@ observation to peel.</p>
 <span>  <span class="va">model</span>,</span>
 <span>  <span class="va">data</span>,</span>
 <span>  family <span class="op">=</span> <span class="st">"continuous"</span>,</span>
-<span>  osa_method <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  parallel <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  seed <span class="op">=</span> <span class="fl">123</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -98,19 +98,12 @@ lognormal covariates, or <code>"bernoulli"</code>, <code>"poisson"</code> or
 <code>"tweedie"</code>.</p></dd>
 
 
-<dt id="arg-osa-method">osa_method<a class="anchor" aria-label="anchor" href="#arg-osa-method"></a></dt>
-<dd><p>Optional override for <code><a href="https://rdrr.io/pkg/RTMB/man/OSA-residuals.html" class="external-link">RTMB::oneStepPredict</a></code>'s
-<code>method</code>. <code>"oneStepGaussian"</code> is the default when every covariate in
-the call is <code>"normal"</code> or <code>"gaussian_fixed_sd"</code> on the identity link,
-where the observation's density is normal in the value tracked, so it is exact and
-about five times quicker. Every other case defaults to <code>"oneStepGeneric"</code>,
-which integrates each observation out, and refuses a Gaussian method: on a skewed
-observation the curvature it reads as a variance is not one, and the residuals come
-back too large in the tail however right the model is.</p></dd>
-
-
 <dt id="arg-parallel">parallel<a class="anchor" aria-label="anchor" href="#arg-parallel"></a></dt>
 <dd><p>Whether or not to parallelize OSA computation. Defaults to <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-seed">seed<a class="anchor" aria-label="anchor" href="#arg-seed"></a></dt>
+<dd><p>Seed for the discrete residuals' uniform draw, as <code><a href="get_osa.html">get_osa</a></code> takes it.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -119,17 +112,6 @@ back too large in the tail however right the model is.</p></dd>
   <code>year</code>, <code>family</code>, <code>resid</code> and <code>idx_type</code> (set to
   <code>"DsemCov"</code>), or <code>NULL</code> when the model has no dsem or no covariate
   on the requested family.</p>
-    </div>
-    <div class="section level2">
-    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
-    <p>Each kind of observation takes its own arguments out of
-<code><a href="https://rdrr.io/pkg/RTMB/man/OSA-residuals.html" class="external-link">oneStepPredict</a></code>, and those arguments hold for every
-observation in the vector they are given, which is why the families are packed
-apart. A continuous covariate takes a range wide enough that no residual is lost
-to the integrator. A bernoulli's outcomes are 0 and 1 and a poisson's counts run
-past the largest one observed, so neither support can cover the other. A
-tweedie's zeros are named as a point mass with a range for the positive part,
-which puts it on the mixed discrete/continuous path.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

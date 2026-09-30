@@ -15,7 +15,8 @@ run_internal_index_osa(
   index_source,
   pop = FALSE,
   osa_method = NULL,
-  parallel = FALSE
+  parallel = FALSE,
+  seed = 123
 )
 ```
 
@@ -51,6 +52,12 @@ run_internal_index_osa(
 - parallel:
 
   Whether or not to parallelize OSA computation. Defaults to `FALSE`.
+
+- seed:
+
+  Seed for the discrete residuals' uniform draw, as
+  [`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
+  takes it.
 
 ## Value
 

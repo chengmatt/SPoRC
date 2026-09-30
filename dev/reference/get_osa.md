@@ -34,7 +34,8 @@ get_osa(
   tag = FALSE,
   dsem = FALSE,
   osa_method = NULL,
-  parallel = FALSE
+  parallel = FALSE,
+  seed = 123
 )
 ```
 
@@ -162,14 +163,10 @@ get_osa(
 
 - dsem:
 
-  Logical, `TRUE` to compute internal residuals for the covariates a
-  dsem observes with error, reading `family` to pick which one: the
-  continuous covariates (normal, gamma, the fixed sd normal, lognormal)
-  together, or `"bernoulli"`, `"poisson"` or `"tweedie"`. Every family
-  has residuals but `dsem_family = "fixed"`, where the covariate is the
-  grid cell itself and there is no observation to peel. A call returns
-  one data source, and this one is read ahead of `tag` and
-  `comp_source`. Default `FALSE`.
+  Logical, `TRUE` for the covariates a dsem observes with error,
+  `family` picking `"continuous"`, `"bernoulli"`, `"poisson"` or
+  `"tweedie"`. A `"fixed"` covariate has no observation. Default
+  `FALSE`.
 
 - osa_method:
 
@@ -184,6 +181,16 @@ get_osa(
 - parallel:
 
   Whether to parallelize the internal computation. Default `FALSE`.
+
+- seed:
+
+  Seed for the uniform draw that places a discrete residual inside its
+  step of the CDF, passed to
+  [`RTMB::oneStepPredict`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html).
+  Its default is that function's own, so one call on one data set is
+  reproducible. A simulation study must vary it: left at one value,
+  every replicate takes the same draws, and whatever they average shows
+  up as a bias that is not there.
 
 ## Value
 

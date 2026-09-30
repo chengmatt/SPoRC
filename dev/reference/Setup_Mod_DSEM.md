@@ -98,12 +98,11 @@ Setup_Mod_DSEM(
   and `logit_dsem_tweedie_p` the power as \\1 +
   \mathrm{plogis}(\cdot)\\, in (1, 2) and starting at 1.5; and
   `"gaussian_fixed_sd"` is normal about the cell with a known sd per
-  observed year from `dsem_fixed_sd`. The names `"gaussian"` and
-  `"Gamma"` are accepted as well. Under a family whose link is not the
-  identity the arrows, the mean under `dsem_mu_spec` and the grid are
-  all on the link scale, and every latent cell starts at the series
-  mean. The sd and power parameters are mapped off for the families with
-  none.
+  observed year from `dsem_fixed_sd`. The name `"gaussian"` is also
+  accepted for the normal. Under a family whose link is not the identity
+  the arrows, the mean under `dsem_mu_spec` and the grid are all on the
+  link scale, and every latent cell starts at the series mean. The sd
+  and power parameters are mapped off for the families with none.
 
 - dsem_link:
 

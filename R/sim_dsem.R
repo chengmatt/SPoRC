@@ -83,6 +83,11 @@
 #' @param dsem_cov_link From scratch: named character vector of links, as in
 #'   \code{\link{Setup_Mod_DSEM}}. Default each family's own. A \code{"gaussian_fixed_sd"}
 #'   covariate from scratch takes its one sd from \code{dsem_cov_obs_sd} for every year.
+#' @param pars_by_sim List of one parameter list per replicate, as \code{parList} returns them, used
+#'   when every replicate has its own draw so the conditioning years read that replicate's values
+#'   rather than the fit's. \code{NULL} (default) uses \code{pars} for all of them.
+#' @param rep_by_sim List of one report per replicate, alongside \code{pars_by_sim}. \code{NULL}
+#'   (default) uses \code{rep} for all of them.
 #' @param mod_var_logscale From scratch: passed to \code{read_dsem_arrows}.
 #' @param dsem_variance From scratch: passed to \code{read_dsem_arrows} as \code{variance},
 #'   \code{"conditional"} (default) or \code{"diagonal"}. From a fit the data list's own

@@ -76,6 +76,14 @@ each year. Default \code{FALSE} (open-loop simulation).}
 
 \item{feedback_start_yr}{Integer. First year in which feedback is applied.
 Required when \code{run_feedback = TRUE}; ignored otherwise.}
+
+\item{bias_correct_pe}{Which log scale process deviations the operating model centers on minus
+half their marginal variance: \code{"none"}, \code{"rec"} (default, recruitment and the initial
+ages) or \code{"all"} (those plus the numbers at age state).}
+
+\item{bias_correct_oe}{Whether a lognormally simulated observation is drawn at its mean rather
+than its median, \code{0} (default, the median) or \code{1}. Both switches are the same ones
+\code{\link{Setup_Mod_Dim}} takes, and a self test needs the same value on each side.}
 }
 \value{
 A named list (\code{sim_list}) containing:

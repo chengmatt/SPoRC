@@ -4,7 +4,7 @@
 utils::globalVariables(c(
   ".", "addtocomp", "addtofishidx", "addtosrvidx", "addtotag", "adjacency_collapsed",
   "fishsel_sex_apical_offset", "retsel_sex_apical_offset", "srvsel_sex_apical_offset",
-  "adjacency_mat", "Age", "age_pool", "AgeingError", "AgeingError_fish", "AgeingError_srv", "ages", "area_r", "bias_year", "bin", "Bin",
+  "adjacency_mat", "Age", "age_pool", "AgeingError", "AgeingError_fish", "AgeingError_srv", "ages", "area_r", "bias_correct_oe", "bias_correct_pe", "bias_year", "bin", "Bin",
   "catch_units", "cohort", "comp_const_obs", "cont_tv_fish_sel", "cont_tv_fishsel_bin_devs",
   "cont_tv_ret_sel", "cont_tv_retsel_bin_devs", "cont_tv_srv_sel", "cont_tv_srvsel_bin_devs",
   "dsem_beta", "dsem_cells", "dsem_cov_family", "dsem_cov_obs", "dsem_cov_var_idx", "dsem_declared", "dsem_delta0",

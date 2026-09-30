@@ -53,6 +53,13 @@ string, naming covariates and deviation series.}
 on the natural scale, for example
 \code{c(b_env = 0.5, rho_env = 0.6, sd_env = 1, sd_rec = 0.8)}.}
 
+\item{pars_by_sim}{List of one parameter list per replicate, as \code{parList} returns them, used
+when every replicate has its own draw so the conditioning years read that replicate's values
+rather than the fit's. \code{NULL} (default) uses \code{pars} for all of them.}
+
+\item{rep_by_sim}{List of one report per replicate, alongside \code{pars_by_sim}. \code{NULL}
+(default) uses \code{rep} for all of them.}
+
 \item{dsem_processes}{From scratch: processes the arrows may name, \code{"rec"} (default),
 \code{"NAA"}, \code{"fish_q"} or \code{"srv_q"}, in any combination.}
 

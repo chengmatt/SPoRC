@@ -1820,9 +1820,8 @@ Setup_Mod_Rec <- function(input_list,
   # guard against bias correction w/ random walk
   if(RecDevs_model == "rw" && do_rec_bias_ramp == 1) stop("RecDevs_model = 'rw' has no stationary variance, so there is no lognormal correction for the bias ramp to act on. Set do_rec_bias_ramp = 0, or use RecDevs_model = 'iid'.")
 
-  # get bias ramp if ar1
-  ar1_ramp <- if(RecDevs_model == "ar1" && do_rec_bias_ramp == 1) get_rec_bias_ramp(do_rec_bias_ramp, bias_year, length(input_list$data$years), max_bias_ramp_fct) else 0
-  if(RecDevs_model == "ar1" && do_rec_bias_ramp == 1 && any(ar1_ramp != 0)) stop("RecDevs_model = 'ar1' centers its deviations on minus one half the stationary variance, and takes that in full or not at all, so the bias ramp has nothing to act on. Set do_rec_bias_ramp = 0 for the full correction, or move bias_year past the last year for none.")
+  # guard against bias ramp w/ ar1
+  if(RecDevs_model == "ar1" && do_rec_bias_ramp == 1) stop("RecDevs_model = 'ar1' centers its deviations on minus one half the stationary variance, and takes that in full or not at all, so the bias ramp has nothing to act on. Set do_rec_bias_ramp = 0 for the full correction, or bias_correct_pe = 'none' in Setup_Mod_Dim for none.")
 
   if(RecDevs_model %in% c("rw", "ar1") && RecDevs_pen_center == "own_mean")
     stop("RecDevs_model = '", RecDevs_model, "' centers each deviation on the previous one, so there is no single mean for RecDevs_pen_center = 'own_mean' to estimate. Use RecDevs_pen_center = 'fixed'.")

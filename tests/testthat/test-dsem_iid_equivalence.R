@@ -246,13 +246,12 @@ test_that("dusky: the arrows give the random walk and AR1 recruitment densities"
   # the rest of the objective differs for a reason: the initial age deviations read sigmaR
   # on one side and the arrows' sd line on the other
   devs <- local({ set.seed(7); cumsum(stats::rnorm(length(dusky_built_with()$par$ln_RecDevs), 0, 0.3)) })
-  n_yrs <- length(sgl_rg_dusky_data$years)
-  off <- list(do_rec_bias_ramp = 1, bias_year = rep(n_yrs, 4)) # an ar1 still asks for no correction through a ramp at zero
   sigmaR <- exp(dusky_built_with()$par$ln_sigmaR[2,1,1])
 
-  # a walk takes no correction whatever the ramp says, and refuses the ramp being set, so only the ar1 passes off
-  native <- function(rec, rho = NULL) {
+  # a walk takes no correction, and an ar1 refuses the ramp, so the ar1 asks for none through the switch
+  native <- function(rec, rho = NULL, none = FALSE) {
     il <- suppressWarnings(dusky_built_with(rec = rec))
+    if(none) il$data$bias_correct_pe <- 0
     if(!is.null(rho)) il$par$RecDevs_rho[] <- atanh(rho) # the penalty reads tanh of this
     il$par$ln_RecDevs[] <- devs
     sum(as.numeric(value_of(il)$rep$Rec_nLL))
@@ -275,7 +274,7 @@ test_that("dusky: the arrows give the random walk and AR1 recruitment densities"
   rho <- 0.6
   stationary_sd <- sigmaR / sqrt(1 - rho^2)
   self_path <- sprintf("rec -> rec, 1, NA, %.17g", rho)
-  ar1_native <- native(utils::modifyList(off, list(RecDevs_model = "ar1")), rho = rho)
+  ar1_native <- native(list(RecDevs_model = "ar1"), rho = rho, none = TRUE)
 
   expect_equal(arrows(c(self_path, sd_lines("rec", stationary_sd)), "marginal"), ar1_native, tolerance = 1e-8)
   expect_equal(arrows(c(self_path, sd_lines("rec", stationary_sd)), "diagonal"), ar1_native, tolerance = 1e-8)

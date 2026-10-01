@@ -1042,8 +1042,10 @@ get_init_devs_penalty <- function(
       # use marginal variance of the series for penalty
       if(!is.null(init_sigmaR_dsem) && init_sigmaR_dsem_use[p,r] == 1) sigma_init <- init_sigmaR_dsem[p,r]
 
-      # the center is the deviations' own mean, pooled over ages and sexes, or the bias-corrected mean
+      # the center is the deviations' own mean, pooled over ages and sexes, or the bias-corrected mean.
+      # also a rw has no stationary variance, so its initial ages take no correction, as its recruitment does not
       if(InitDevs_pen_center == 1) init_mu <- dev_own_mean(ln_InitDevs[p,r,init_idx,], init_devs_pen_use[p,r,init_idx,])
+      else if(RecDevs_model == 2) init_mu <- rep(0, length(init_idx))
       else init_mu <- -sigma_init^2 / 2 * ramp_init
 
       # each sex's curve against that center, at its share of one penalty

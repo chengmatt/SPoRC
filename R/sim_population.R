@@ -69,7 +69,7 @@ generate_initial_age_structure <- function(y,
 
             # do some bias correction here
             init_bc_pe <- if(exists("bias_correct_pe")) bias_correct_pe else 1
-            init_center <- if(init_bc_pe == 0) 0 else -init_sigma^2 / 2
+            init_center <- if(init_bc_pe == 0 || RecDevs_model == 2) 0 else -init_sigma^2 / 2 # a walk's initial ages take none, as its recruitment does
             init_draws <- stats::rnorm(n_dev_draws * (n_ages - 1), init_center, init_sigma)
             tmp_ln_init_devs <- array(init_draws, dim = c(n_ages - 1, n_sexes)) # recycled across sexes when one curve was drawn
           }

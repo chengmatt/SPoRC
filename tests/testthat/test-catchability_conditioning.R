@@ -148,6 +148,7 @@ test_that("a projected catchability series is read over the conditioning years a
   fit <- q_dsem_projected_fit()
   pars <- fit$env$parList()
   n_fit <- length(fit$data$years)
+  n_cl <- 8
   expect_true(any(fit$data$dsem_model$project_k)) # the sd is fixed at zero, so nothing is integrated
 
   # a self test runs the fitted years alone, where the series is read from the fit rather than drawn
@@ -156,17 +157,17 @@ test_that("a projected catchability series is read over the conditioning years a
   draw_sim_q_devs(1, env)
   expect_equal(as.numeric(env$srv_q[1,,1,1]), as.numeric(fit$rep$srv_q[1,,1]), tolerance = 1e-12)
 
-  # past them there is no innovation to draw, so the cells would come back NaN rather than a catchability
-  sl_cl <- suppressWarnings(suppressMessages(
-    condition_closed_loop_simulations(closed_loop_yrs = 8, n_sims = 2, data = fit$data, parameters = pars,
+  # past them there is no innovation to draw, so the cells would come back NaN rather than a catchability;
+  # the closed loop builder now folds the dsem conditioning in, so it is refused there, before any cell is drawn
+  build_cl <- function(...) suppressWarnings(suppressMessages(
+    condition_closed_loop_simulations(closed_loop_yrs = n_cl, n_sims = 2, data = fit$data, parameters = pars,
                                       mapping = fit$mapping, sd_rep = RTMB::sdreport(fit), rep = fit$rep,
-                                      random = NULL)))
-  add_dsem <- function(sl) suppressWarnings(suppressMessages(Setup_Sim_DSEM(sl, fit$data, pars, rep = fit$rep, condition_on_fit = TRUE)))
-  expect_error(add_dsem(sl_cl), "sd fixed at zero") # said at the setup call, before any cell is drawn
+                                      random = NULL, ...)))
+  expect_error(build_cl(), "sd fixed at zero")
 
-  # and the refusal is about the years left to draw, not the catchability it was given
-  sl_cl$n_cond_yrs <- sl_cl$n_yrs
-  sl_env <- add_dsem(sl_cl)
+  # and the refusal is about the years left to draw, not the catchability it was given: treating every
+  # year as a conditioning year leaves nothing to draw past, so the same builder goes through
+  sl_env <- build_cl(n_cond_yrs = n_fit + n_cl)
   expect_silent(check_q_dsem_drawable(sl_env))
   expect_no_error(Setup_sim_env(sl_env))
 })

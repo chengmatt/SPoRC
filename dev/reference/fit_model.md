@@ -112,8 +112,10 @@ fit_model(
 
 The RTMB `ADFun` object with additional fields: `$optim` (the `nlminb`
 output list, with `$lower`/`$upper` recording the bounds used), `$rep`
-(the model report evaluated at `obj$env$last.par.best`), and `$data`,
-`$parameters`, `$mapping`, `$random`.
+(the model report evaluated at `obj$env$last.par.best`), `$data`,
+`$parameters`, `$mapping`, `$random`, and `$provenance` (the package
+version and commit that built the fit, see
+[`fit_provenance`](https://chengmatt.github.io/SPoRC/dev/reference/fit_provenance.md)).
 
 ## See also
 

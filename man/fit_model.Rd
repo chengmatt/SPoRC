@@ -78,8 +78,9 @@ Newton-refinement routines.}
 The RTMB \code{ADFun} object with additional fields: \code{$optim}
   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
   the bounds used), \code{$rep} (the model report evaluated at
-  \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
-  \code{$mapping}, \code{$random}.
+  \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
+  \code{$mapping}, \code{$random}, and \code{$provenance} (the package
+  version and commit that built the fit, see \code{\link{fit_provenance}}).
 }
 \description{
 Constructs an RTMB automatic differentiation function via

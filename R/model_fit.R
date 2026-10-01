@@ -57,8 +57,9 @@
 #' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
 #'   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
 #'   the bounds used), \code{$rep} (the model report evaluated at
-#'   \code{obj$env$last.par.best}), and \code{$data}, \code{$parameters},
-#'   \code{$mapping}, \code{$random}.
+#'   \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
+#'   \code{$mapping}, \code{$random}, and \code{$provenance} (the package
+#'   version and commit that built the fit, see \code{\link{fit_provenance}}).
 #'
 #' @importFrom stats nlminb optimHess
 #' @export fit_model
@@ -169,6 +170,9 @@ fit_model <- function(
   obj$mapping <- mapping
   obj$random <- random
 
+  # input the fit with the package build
+  obj$provenance <- fit_provenance()
+
   return(obj)
 }
 
@@ -189,4 +193,52 @@ fit_model <- function(
 #' @keywords internal
 cmb <- function(f, d) {
   function(p) f(p, d)
+}
+
+#' Record which SPoRC build produced a fit
+#'
+#' Reads the package version and, when the install came from GitHub through
+#' remotes or pak, the commit it was built from. A package loaded with
+#' \code{devtools::load_all} from a git checkout reports that checkout's HEAD
+#' instead, and a plain local install has neither, so the commit is \code{NA}.
+#' A saved fit then says which code made it, so a later package version can
+#' tell which report names to expect.
+#'
+#' @return Named list: \code{package_version}, \code{commit_sha} (40 character
+#'   hash or \code{NA}), \code{commit_source} (\code{"github"},
+#'   \code{"local_git"}, or \code{"unknown"}), \code{r_version},
+#'   \code{rtmb_version}, and \code{fit_time}.
+#'
+#' @keywords internal
+fit_provenance <- function() {
+  sha <- utils::packageDescription("SPoRC")$RemoteSha
+  source <- if(is.null(sha)) "unknown" else "github"
+
+  # load_all carries no remote fields and points system.file at inst/, so look for the
+  # checkout there and one level up, and ask git for its HEAD
+  if(is.null(sha)) {
+    root <- system.file(package = "SPoRC")
+    repo <- c(root, dirname(root))
+    repo <- repo[file.exists(file.path(repo, ".git"))]
+    if(length(repo) > 0 && nzchar(Sys.which("git"))) {
+      head <- tryCatch(
+        suppressWarnings(system2("git", c("-C", shQuote(repo[1]), "rev-parse", "HEAD"),
+                                 stdout = TRUE, stderr = FALSE)),
+        error = function(e) character(0)
+      )
+      if(length(head) == 1 && grepl("^[0-9a-f]{40}$", head)) {
+        sha <- head
+        source <- "local_git"
+      }
+    }
+  }
+
+  list(
+    package_version = as.character(utils::packageVersion("SPoRC")),
+    commit_sha = if(is.null(sha)) NA_character_ else sha,
+    commit_source = source,
+    r_version = R.version.string,
+    rtmb_version = as.character(utils::packageVersion("RTMB")),
+    fit_time = Sys.time()
+  )
 }

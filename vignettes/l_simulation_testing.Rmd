@@ -382,7 +382,81 @@ self_test <- simulation_self_test(
 )
 ```
 
+A fit with movement random effects (`move_year_re`, `move_age_re`, `move_pop_re`, `move_seas_re` or `move_sex_re` in `Setup_Mod_Movement()`) comes into the self test and the closed loop on its own without additional setup. Over the conditioning years (`n_cond_yrs`, every year of the fit by default) each replicate keeps the fit's own deviations, so the historical movement is the conditioned fit's; the years after them are drawn from the process the estimation model penalizes, at the fitted / specified sd and correlations, with an AR1 continuing from the last fitted year, and the movement matrix is rebuilt from them before the population is run. An operating model built by hand from such a fit takes the same step through `Setup_Sim_Movement()`, which stores the fit's switches, process error parameters and movement arguments on the simulation list; `Setup_sim_env()` then draws and rebuilds. A fit whose movement deviations a dsem holds or links is drawn by `Setup_Sim_DSEM()` instead and rebuilt through the same arguments.
+
+```{r, eval = FALSE}
+# a fit with AR1 movement deviations over years, sex-specific and correlated across sexes
+input_list <- Setup_Mod_Movement(input_list, use_fixed_movement = 0, Fixed_Movement = NA,
+                                 move_year_re = "ar1", move_sex_re = "us")
+fit <- fit_model(input_list$data, input_list$par, input_list$map, random = "move_devs")
+
+# an operating model built by hand: the fit's movement, then its deviation process
+sim_list$Movement <- replicate(sim_list$n_sims, fit$rep$Movement)
+sim_list <- Setup_Sim_Movement(sim_list, fit$data, fit$env$parList())
+sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own move_devs and Movement
+```
+
+A fit with growth deviations (`growth_tv_model` or `growth_semipar` in `Setup_Mod_Biologicals()`) can be setup in the same way. Each replicate draws every varying parameter's series and the semi-parametric surface from the form the estimation model penalizes them under, iid, random walk, separable AR1 or the three dimensional field, at the fitted process error parameters and under the fit's maps, so a cell the map fixes stays at zero and a shared level takes one draw; weight at age, the size-age keys and selectivity at age are then rebuilt through the fit's own `Get_Growth()`. Under cohort growth only the years before the propagation starts are built up front, and the annual cycle advances the rest from each replicate's own numbers at age. An operating model built by hand takes the step through `Setup_Sim_Growth_RE()`, which needs the fit's report under selectivity at length. A dsem holding or linking any growth deviation draws both arrays through `Setup_Sim_DSEM()` instead. One convention differs from the penalty: a random walk's first year is drawn at the walk's own sd rather than the diffuse `growth_rw_init_sigma` the estimation model gives it.
+
+```{r, eval = FALSE}
+# a fit with iid deviations on L1 and a random walk on K, their sds estimated
+input_list <- Setup_Mod_Biologicals(input_list, ..., growth_tv_model = c(L1 = "iid", K = "rw"), growth_tv_sigma_spec = "est")
+fit <- fit_model(input_list$data, input_list$par, input_list$map, random = "ln_growth_devs")
+
+# an operating model built by hand: the fit's growth, then its deviation process
+sim_list$WAA <- replicate(sim_list$n_sims, fit$rep$WAA) # and WAA_fish, WAA_srv, SizeAgeTrans_fish, SizeAgeTrans_srv the same way
+sim_list <- Setup_Sim_Growth_RE(sim_list, fit$data, fit$env$parList(), rep = fit$rep)
+sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own ln_growth_devs and weight at age
+```
+
+Neither `Setup_Sim_Movement()` nor `Setup_Sim_Growth_RE()` is required to read anything that an optimizer produced; both only need `data` and a parameter list in a fit's own array shape, so a process error series can be specified manually in place of an estimated one. This can be done with the function `Setup_Sim_Movement()`'s own replicate loop calls, matched to `data` and `pars` by `match_model_args()` the same way; although both functions are internal. Movement is self-contained enough that `Setup_Mod_Dim()` and `Setup_Mod_Movement()` alone give it everything it reads, with no `input_list` needed beforehand either, the same way a pure cross-test never uses one:
+
+```{r, eval = FALSE}
+# a bare input_list built from the OM's own dimensions, no EM or data involved
+input_list <- Setup_Mod_Dim(years = 1:sim_list$n_yrs, ages = 1:sim_list$n_ages, lens = NULL,
+                            n_regions = sim_list$n_regions, n_sexes = sim_list$n_sexes,
+                            n_fish_fleets = sim_list$n_fish_fleets, n_srv_fleets = sim_list$n_srv_fleets,
+                            n_pop = sim_list$n_pop)
+
+# movement specified by hand instead of estimated
+input_list <- Setup_Mod_Movement(input_list, use_fixed_movement = 0, Fixed_Movement = NA,
+                                 move_year_re = "ar1", move_sex_re = "us")
+input_list$par$move_pe_pars[] <- ... # chosen sd / correlation, not an estimate
+
+move_args <- SPoRC:::match_model_args(SPoRC:::Get_Movement, input_list$data, input_list$par,
+                                      n_yrs = sim_list$n_yrs, n_proj_yrs_devs = 0, n_ages = sim_list$n_ages)
+movement <- do.call(SPoRC:::Get_Movement, move_args)
+
+sim_list$Movement <- replicate(sim_list$n_sims, movement$Movement)
+sim_list <- Setup_Sim_Movement(sim_list, input_list$data, input_list$par)
+sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own move_devs and Movement
+```
+
+Growth setup needs a little bit more, since `Get_Growth()` also reads `t_fish`, `t_srv`, `spawn_seas` and `t_spawn`, the within-season timing that `Setup_Mod_FishIdx_and_Comps()`, `Setup_Mod_SrvIdx_and_Comps()` and `Setup_Mod_Rec()` would otherwise supply from real fleet data. Plain placeholders for that timing, written onto `data` directly, serve just as well when nothing is actually being fit:
+
+```{r, eval = FALSE}
+# growth specified by hand instead of estimated, same dimensions plus length bins
+input_list <- Setup_Mod_Biologicals(input_list, ..., growth_tv_model = c(L1 = "iid", K = "rw"), growth_tv_sigma_spec = "est")
+input_list$par$growth_pe_pars[] <- ... # chosen sd, not an estimate
+
+# the timing Setup_Mod_FishIdx_and_Comps / Setup_Mod_SrvIdx_and_Comps / Setup_Mod_Rec would otherwise supply
+input_list$data$t_fish <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+input_list$data$t_srv <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets))
+input_list$data$spawn_seas <- 1
+input_list$data$t_spawn <- 0
+
+growth_args <- SPoRC:::match_model_args(SPoRC:::Get_Growth, input_list$data, input_list$par, n_yrs = sim_list$n_yrs)
+growth <- do.call(SPoRC:::Get_Growth, growth_args)
+
+sim_list$WAA <- replicate(sim_list$n_sims, growth$WAA) # and WAA_fish, WAA_srv, SizeAgeTrans_fish, SizeAgeTrans_srv the same way
+sim_list <- Setup_Sim_Growth_RE(sim_list, input_list$data, input_list$par, rep = NULL)
+sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own ln_growth_devs and weight at age
+```
+
+When no process error is wanted at all, none of this internal stuff is needed either: `sim_list$Movement` and growth's `sim_list$WAA` / `WAA_fish` / `WAA_srv` / `SizeAgeTrans_fish` / `SizeAgeTrans_srv` can be filled in directly, the same way the cross-test example above sets a flat `sim_list$Movement` by hand. `Setup_Sim_Movement()` and `Setup_Sim_Growth_RE()` exist only to draw and rebuild a deviation series around those arrays; skip both, and the internal calls above, once the arrays themselves are what is being specified.
+
 The self-test indicates that the model is generally able to recover the overall trends well. However, some biases manifest in the early and late periods, likely due to uncertainty in catch data in the early period and a lack of age composition data during these periods.
+
 ```{r, eval = FALSE}
 # Process self test results
 self_test_res <- reshape2::melt(self_test$SSB) %>%

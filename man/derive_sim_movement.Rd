@@ -7,8 +7,9 @@
 derive_sim_movement(sim_env)
 }
 \arguments{
-\item{sim_env}{Simulation environment holding \code{dsem_move_args} from
-\code{Setup_Sim_DSEM} and \code{move_devs} with the replicate dim last.}
+\item{sim_env}{Simulation environment holding \code{move_args} from
+\code{Setup_Sim_Movement} or \code{dsem_move_args} from
+\code{Setup_Sim_DSEM}, and \code{move_devs} with the replicate dim last.}
 }
 \value{
 \code{invisible(NULL)}; \code{sim_env} is modified in place.

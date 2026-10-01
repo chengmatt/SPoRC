@@ -21,7 +21,8 @@ simulation_self_test(
   what = c("SSB", "Rec"),
   what_par = NULL,
   perfect_data = FALSE,
-  sim_type = c("conditional", "joint")
+  sim_type = c("conditional", "joint"),
+  n_cond_yrs = length(data$years)
 )
 }
 \arguments{
@@ -93,6 +94,11 @@ deviations and data this clean remove it. Default \code{FALSE}.}
   size at age, movement, steepness, sex ratio, recruitment, the initial
   deviations, the numbers at age and a linked dsem. Observation error and the
   composition parameters stay at the fit, having no replicate dim.}
+
+\item{n_cond_yrs}{Integer. The first years of every replicate reproduce the
+fit's catchability and movement deviations, and later years are drawn.
+Default every year of the fit, so nothing is redrawn; \code{0} draws every
+year from the fitted process.}
 }
 \value{
 Named list with one element per entry in \code{what} and then one per

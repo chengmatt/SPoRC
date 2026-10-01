@@ -299,7 +299,7 @@ do_natmort_mapping <- function(input_list,
 #'   kept at its starting value while the others are estimated.
 #' @param tv_vals Integer vector, one entry per growth parameter, of the time
 #'   variation each has (0 none, 1 iid, 2 random walk).
-#' @param tv_active Matrix \code{[n_years x n_gpars]} of ones in the years each
+#' @param tv_active Matrix \code{[n_years x n_growth_pars]} of ones in the years each
 #'   parameter's deviations are estimated in.
 #' @param growth_tv_spec Character. How the deviation series are shared across
 #'   regions and sexes.
@@ -335,38 +335,26 @@ do_growth_mapping <- function(input_list,
   n_pop <- input_list$data$n_pop
   n_regions <- input_list$data$n_regions
   n_sexes <- input_list$data$n_sexes
-  n_gpars <- dim(input_list$par$ln_growth_pars)[4]
+  n_growth_pars <- dim(input_list$par$ln_growth_pars)[4]
+
+  # growth_spec and growth_tv_spec both share over region, sex or both; translate either into build_pe_map's share_over argument
+  shared_dims <- function(spec) {
+    dims <- character(0)
+    if(spec %in% c("est_shared_r", "est_shared_r_s")) dims <- c(dims, "region")
+    if(spec %in% c("est_shared_s", "est_shared_r_s")) dims <- c(dims, "sex")
+    return(dims)
+  }
 
   # Growth parameters ---------------------------------------------------------
   # one index per estimated cell, shared across regions and sexes as growth_spec
-  # says, NA wherever the parameter is kept
+  # says, NA wherever the parameter is kept fixed
   map_growth <- array(NA, dim = dim(input_list$par$ln_growth_pars))
-  counter <- 1
+  active_k <- which(!vapply(seq_len(n_growth_pars), function(k) isTRUE(growth_fix[k]), logical(1)))
 
-  for(k in 1:n_gpars) {
-
-    if(growth_spec == "fix" || isTRUE(growth_fix[k])) next
-
-    for(p in 1:n_pop) {
-      for(r in 1:n_regions) {
-        for(s in 1:n_sexes) {
-
-          share_r <- growth_spec %in% c("est_shared_r", "est_shared_r_s") && r > 1
-          share_s <- growth_spec %in% c("est_shared_s", "est_shared_r_s") && s > 1
-
-          if(share_r) {
-            map_growth[p, r, s, k] <- map_growth[p, 1, s, k]
-          } else if(share_s) {
-            map_growth[p, r, s, k] <- map_growth[p, r, 1, k]
-          } else {
-            map_growth[p, r, s, k] <- counter
-            counter <- counter + 1
-          }
-
-        } # end s loop
-      } # end r loop
-    } # end p loop
-  } # end k loop
+  if(growth_spec != "fix" && length(active_k) > 0) {
+    dims_growth <- c(pop = n_pop, region = n_regions, sex = n_sexes, growth_par = length(active_k))
+    map_growth[, , , active_k] <- build_pe_map(dims_growth, share_over = shared_dims(growth_spec))
+  }
 
   input_list$map$ln_growth_pars <- factor(map_growth)
 
@@ -375,45 +363,27 @@ do_growth_mapping <- function(input_list,
   # one deviation per year a parameter is used in, and one process error parameter for a given varying par
   map_devs <- array(NA, dim = dim(input_list$par$ln_growth_devs))
   map_pe <- array(NA, dim = dim(input_list$par$growth_pe_pars))
-  counter <- 1
   counter_pe <- 1
+  tv_k <- which(tv_vals > 0)
 
-  for(k in which(tv_vals > 0)) {
-    for(p in 1:n_pop) {
-      for(r in 1:n_regions) {
-        for(s in 1:n_sexes) {
+  if(length(tv_k) > 0) {
 
-          share_r <- growth_tv_spec %in% c("est_shared_r", "est_shared_r_s") && r > 1
-          share_s <- growth_tv_spec %in% c("est_shared_s", "est_shared_r_s") && s > 1
+    dims_devs <- c(pop = n_pop, region = n_regions, year = dim(map_devs)[3], growth_par = length(tv_k), sex = n_sexes)
+    map_tv <- build_pe_map(dims_devs, share_over = shared_dims(growth_tv_spec))
+    for(i in seq_along(tv_k)) map_tv[, , tv_active[, tv_k[i]] == 0, i, ] <- NA # inactive years
+    map_devs[, , , tv_k, ] <- map_tv
 
-          if(share_r) {
+    if(growth_tv_sigma_spec == "est") {
 
-            map_devs[p, r, , k, s] <- map_devs[p, 1, , k, s]
-            map_pe[p, r, k, s, 1] <- map_pe[p, 1, k, s, 1]
+      dims_pe <- c(pop = n_pop, region = n_regions, growth_par = length(tv_k), sex = n_sexes)
+      map_tv_pe <- build_pe_map(dims_pe, share_over = shared_dims(growth_tv_spec))
+      held_by_dsem <- vapply(tv_k, function(k) isTRUE(input_list$data$growth_tv_dsem[k] == 1), logical(1))
+      map_tv_pe[, , held_by_dsem, ] <- NA # a dsem supplies its own variance, no parameter to estimate here
+      map_pe[, , tv_k, , 1] <- map_tv_pe
+      counter_pe <- max(c(0, map_tv_pe), na.rm = TRUE) + 1 # the semipar half below continues numbering from here
 
-          } else if(share_s) {
-
-            map_devs[p, r, , k, s] <- map_devs[p, r, , k, 1]
-            map_pe[p, r, k, s, 1] <- map_pe[p, r, k, 1, 1]
-
-          } else {
-
-            for(y in which(tv_active[, k] == 1)) {
-              map_devs[p, r, y, k, s] <- counter
-              counter <- counter + 1
-            } # end y loop
-
-            if(growth_tv_sigma_spec == "est" && !isTRUE(input_list$data$growth_tv_dsem[k] == 1)) { #if dsem parameter dont include in estimated par ehre
-              map_pe[p, r, k, s, 1] <- counter_pe
-              counter_pe <- counter_pe + 1
-            }
-
-          }
-
-        } # end s loop
-      } # end r loop
-    } # end p loop
-  } # end k loop
+    }
+  }
 
   input_list$map$ln_growth_devs <- factor(map_devs)
   input_list$data$map_ln_growth_devs <- array(as.numeric(input_list$map$ln_growth_devs), dim = dim(map_devs))
@@ -555,7 +525,7 @@ do_growth_mapping <- function(input_list,
 #'   \code{growth_spec} says.
 #' @param growth_tv_model Time variation of the growth parameters. \code{NULL}
 #'   (default) holds every parameter constant. Otherwise a character vector of
-#'   length \code{n_gpars} in parameter order, or named by parameter, each
+#'   length \code{n_growth_pars} in parameter order, or named by parameter, each
 #'   \code{"none"}, \code{"iid"}, \code{"rw"}, or \code{"dsem"}. A varying parameter
 #'   gets a deviation series \code{ln_growth_devs} and a log sigma in the
 #'   time-varying half of \code{growth_pe_pars}; under \code{"dsem"} the density
@@ -567,7 +537,7 @@ do_growth_mapping <- function(input_list,
 #'   multiplies the parameter by \eqn{e^{\delta}}; \code{"logit"} keeps it inside
 #'   \code{growth_par_bounds}, so the parameter approaches a bound instead of
 #'   crossing it.
-#' @param growth_par_bounds Matrix \code{[n_gpars x 2]} of lower and upper bounds on
+#' @param growth_par_bounds Matrix \code{[n_growth_pars x 2]} of lower and upper bounds on
 #'   the natural scale, required under the logit link.
 #' @param growth_tv_sigma_spec \code{"fix"} (default) holds the process error
 #'   sds of the deviations at their starting values, \code{"est"} estimates them.
@@ -742,11 +712,11 @@ do_growth_mapping <- function(input_list,
 #' \code{[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks × n_sexblks]}
 #' and defaults to \code{log(0.5)}; a 5d array from an older script works when
 #' there is one season block. \code{ln_growth_pars} is
-#' \code{[n_pop × n_regions × n_sexes × n_gpars]} in the order
+#' \code{[n_pop × n_regions × n_sexes × n_growth_pars]} in the order
 #' \code{L1, L2, K, CV1, CV2} and \code{rho}, defaulting to the ends of the
 #' length bins with a rate of \code{0.15} and CVs of \code{0.1}, so supply your
 #' own for any real model. \code{growth_pe_pars} is
-#' \code{[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]}: the
+#' \code{[n_pop × n_regions × max(4, n_ages, n_growth_pars) × n_sexes × 2]}: the
 #' time-varying half holds one log sigma per growth parameter, and the
 #' semi-parametric half holds the surface's correlations by age, year and
 #' cohort in slots one to three with a log scale in slot four, or one log sigma
@@ -852,8 +822,8 @@ Setup_Mod_Biologicals <- function(input_list,
 
   if(!growth_model %in% c("none", "vb_schnute", "richards")) stop("growth_model must be one of: none, vb_schnute, richards")
   growth_model_val <- c(none = 0, vb_schnute = 1, richards = 2)[[growth_model]]
-  gpar_names <- c("L1", "L2", "K", "CV1", "CV2", "rho")
-  n_gpars <- if(growth_model_val == 2) 6 else 5 # richards vs vonB
+  growth_par_names <- c("L1", "L2", "K", "CV1", "CV2", "rho")
+  n_growth_pars <- if(growth_model_val == 2) 6 else 5 # richards vs vonB
 
   if(growth_model_val != 0) {
     if(fit_lengths != 1) stop("growth_model = '", growth_model, "' builds the size-age transition inside the model, so fit_lengths must be 1")
@@ -872,11 +842,11 @@ Setup_Mod_Biologicals <- function(input_list,
     if(!growth_dist %in% c("normal", "lognormal")) stop("growth_dist must be normal or lognormal")
     if(!growth_plus_group %in% c("mixture", "curve")) stop("growth_plus_group must be mixture or curve")
     if(!growth_spec %in% c("est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "fix")) stop("growth_spec must be one of: est_all, est_shared_r, est_shared_s, est_shared_r_s, fix")
-    if(is.null(growth_fix)) growth_fix <- rep(FALSE, n_gpars)
-    if(length(growth_fix) != n_gpars) stop("growth_fix must be a logical vector of length ", n_gpars, " (", paste(gpar_names[1:n_gpars], collapse = ", "), ")")
+    if(is.null(growth_fix)) growth_fix <- rep(FALSE, n_growth_pars)
+    if(length(growth_fix) != n_growth_pars) stop("growth_fix must be a logical vector of length ", n_growth_pars, " (", paste(growth_par_names[1:n_growth_pars], collapse = ", "), ")")
 
     # some default starting values here based on model dimensions
-    growth_par_arr <- array(NA, dim = c(n_pop, n_regions, n_sexes, n_gpars))
+    growth_par_arr <- array(NA, dim = c(n_pop, n_regions, n_sexes, n_growth_pars))
     growth_par_default <- c(
       L1 = min(input_list$data$lens),
       L2 = max(input_list$data$lens),
@@ -888,11 +858,11 @@ Setup_Mod_Biologicals <- function(input_list,
 
     if("ln_growth_pars" %in% names(starting_values)) {
       sv_growth <- starting_values$ln_growth_pars
-      if(is.null(dim(sv_growth)) || !all(dim(sv_growth) == dim(growth_par_arr))) stop("starting_values$ln_growth_pars must be an array [n_pop, n_regions, n_sexes, ", n_gpars, "]")
+      if(is.null(dim(sv_growth)) || !all(dim(sv_growth) == dim(growth_par_arr))) stop("starting_values$ln_growth_pars must be an array [n_pop, n_regions, n_sexes, ", n_growth_pars, "]")
       growth_par_arr[] <- exp(sv_growth)
       if(any(!is.finite(growth_par_arr))) stop("starting_values$ln_growth_pars must be finite; the growth parameters are estimated on the log scale")
     } else {
-      for(k in 1:n_gpars) growth_par_arr[, , , k] <- growth_par_default[[gpar_names[k]]]
+      for(k in 1:n_growth_pars) growth_par_arr[, , , k] <- growth_par_default[[growth_par_names[k]]]
       collect_message("No starting_values$ln_growth_pars supplied; starting from the length bins with K = 0.15")
     }
     # the size-age transition is built inside the model, so this is only a placeholder for the checks
@@ -900,38 +870,38 @@ Setup_Mod_Biologicals <- function(input_list,
     collect_message("Growth is estimated (", if(growth_model_val == 1) "von Bertalanffy, Schnute form" else "Richards", "); SizeAgeTrans is built inside the model")
 
     # Time variation of the growth parameters ---------------------------------
-    tv_vals <- rep(0, n_gpars)
-    names(tv_vals) <- gpar_names[1:n_gpars]
+    tv_vals <- rep(0, n_growth_pars)
+    names(tv_vals) <- growth_par_names[1:n_growth_pars]
     if(!is.null(growth_tv_model)) {
       # dsem takes a nonzero code so the deviations still reach the growth parameters, and the dsem
       # gives them their density in place of the penalty
       tv_codes <- c(none = 0, iid = 1, rw = 2, dsem = 1)
       if(!all(growth_tv_model %in% names(tv_codes))) stop("growth_tv_model entries must be one of: none, iid, rw, dsem")
       if(!is.null(names(growth_tv_model)) && all(names(growth_tv_model) != "")) {
-        bad <- setdiff(names(growth_tv_model), gpar_names[1:n_gpars])
-        if(length(bad) > 0) stop("growth_tv_model names not growth parameters: ", paste(bad, collapse = ", "), ". Use ", paste(gpar_names[1:n_gpars], collapse = ", "))
+        bad <- setdiff(names(growth_tv_model), growth_par_names[1:n_growth_pars])
+        if(length(bad) > 0) stop("growth_tv_model names not growth parameters: ", paste(bad, collapse = ", "), ". Use ", paste(growth_par_names[1:n_growth_pars], collapse = ", "))
         for(name in names(growth_tv_model)) tv_vals[name] <- tv_codes[[growth_tv_model[[name]]]]
       } else {
-        if(length(growth_tv_model) != n_gpars) stop("an unnamed growth_tv_model must have one entry per growth parameter (", n_gpars, "), or be named by parameter")
-        for(k in 1:n_gpars) tv_vals[k] <- tv_codes[[growth_tv_model[k]]]
+        if(length(growth_tv_model) != n_growth_pars) stop("an unnamed growth_tv_model must have one entry per growth parameter (", n_growth_pars, "), or be named by parameter")
+        for(k in 1:n_growth_pars) tv_vals[k] <- tv_codes[[growth_tv_model[k]]]
       }
     }
 
     if(!growth_tv_link %in% c("log", "logit")) stop("growth_tv_link must be log or logit")
     growth_tv_link_val <- c(log = 0, logit = 1)[[growth_tv_link]]
     if(growth_tv_link_val == 1) {
-      if(is.null(growth_par_bounds)) stop("growth_par_bounds ([n_gpars x 2], natural scale) is required under the logit link")
+      if(is.null(growth_par_bounds)) stop("growth_par_bounds ([n_growth_pars x 2], natural scale) is required under the logit link")
       growth_par_bounds <- matrix(growth_par_bounds, ncol = 2)
-      if(nrow(growth_par_bounds) != n_gpars) stop("growth_par_bounds must have one row per growth parameter (", n_gpars, ")")
-      for(k in which(tv_vals > 0)) if(any(growth_par_arr[,,,k] <= growth_par_bounds[k, 1] | growth_par_arr[,,,k] >= growth_par_bounds[k, 2])) stop("growth_pars for ", gpar_names[k], " must lie strictly inside growth_par_bounds under the logit link")
-    } else growth_par_bounds <- matrix(0, n_gpars, 2)
+      if(nrow(growth_par_bounds) != n_growth_pars) stop("growth_par_bounds must have one row per growth parameter (", n_growth_pars, ")")
+      for(k in which(tv_vals > 0)) if(any(growth_par_arr[,,,k] <= growth_par_bounds[k, 1] | growth_par_arr[,,,k] >= growth_par_bounds[k, 2])) stop("growth_pars for ", growth_par_names[k], " must lie strictly inside growth_par_bounds under the logit link")
+    } else growth_par_bounds <- matrix(0, n_growth_pars, 2)
     if(!growth_tv_type %in% c("curve", "cohort")) stop("growth_tv_type must be curve or cohort")
     growth_tv_type_val <- c(curve = 0, cohort = 1)[[growth_tv_type]]
     if(!growth_tv_spec %in% c("est_all", "est_shared_r", "est_shared_s", "est_shared_r_s")) stop("growth_tv_spec must be one of: est_all, est_shared_r, est_shared_s, est_shared_r_s")
 
     # a parameter whose deviations go to the dsem, so its own process error sd is never used
-    tv_dsem <- rep(0, n_gpars)
-    names(tv_dsem) <- gpar_names[1:n_gpars]
+    tv_dsem <- rep(0, n_growth_pars)
+    names(tv_dsem) <- growth_par_names[1:n_growth_pars]
     if(!is.null(growth_tv_model)) {
       if(!is.null(names(growth_tv_model)) && all(names(growth_tv_model) != "")) tv_dsem[names(growth_tv_model)] <- as.numeric(growth_tv_model == "dsem")
       else tv_dsem[] <- as.numeric(growth_tv_model == "dsem")
@@ -945,12 +915,12 @@ Setup_Mod_Biologicals <- function(input_list,
     input_list$data$growth_tv_dsem <- as.numeric(tv_dsem)
     if(!growth_tv_sigma_spec %in% c("fix", "est")) stop("growth_tv_sigma_spec must be fix or est")
     # active years per parameter, calendar years into indices
-    tv_active <- matrix(0, n_yrs + n_proj_yrs_devs, n_gpars)
+    tv_active <- matrix(0, n_yrs + n_proj_yrs_devs, n_growth_pars)
 
     for(k in which(tv_vals > 0)) {
-      yrs_k <- if(is.null(growth_tv_years)) input_list$data$years else if(is.list(growth_tv_years)) growth_tv_years[[gpar_names[k]]] else growth_tv_years
+      yrs_k <- if(is.null(growth_tv_years)) input_list$data$years else if(is.list(growth_tv_years)) growth_tv_years[[growth_par_names[k]]] else growth_tv_years
       if(is.null(yrs_k)) yrs_k <- input_list$data$years
-      if(!all(yrs_k %in% input_list$data$years)) stop("growth_tv_years for ", gpar_names[k], " has years outside the model years")
+      if(!all(yrs_k %in% input_list$data$years)) stop("growth_tv_years for ", growth_par_names[k], " has years outside the model years")
       tv_active[match(yrs_k, input_list$data$years), k] <- 1
       if(n_proj_yrs_devs > 0) tv_active[n_yrs + seq_len(n_proj_yrs_devs), k] <- 1 # projected years, penalized toward zero and read by the projection
     }
@@ -958,7 +928,7 @@ Setup_Mod_Biologicals <- function(input_list,
     growth_cohort_styr <- if(any(tv_vals > 0)) min(which(rowSums(tv_active) > 0)) else 1
     tv_labels <- c("none", "iid", "rw")[tv_vals + 1]
     tv_labels[tv_dsem == 1] <- "dsem" # a dsem parameter holds iid's code, so its label comes from tv_dsem
-    if(any(tv_vals > 0)) collect_message("Growth parameters varying over time: ", paste(paste0(gpar_names[tv_vals > 0], " (", tv_labels[tv_vals > 0], ")"), collapse = ", "),
+    if(any(tv_vals > 0)) collect_message("Growth parameters varying over time: ", paste(paste0(growth_par_names[tv_vals > 0], " (", tv_labels[tv_vals > 0], ")"), collapse = ", "),
                                          "; link ", growth_tv_link, "; size at age read from ", if(growth_tv_type_val == 1) paste0("cohort propagation from ", input_list$data$years[growth_cohort_styr]) else "each year's curve")
     if(!waa_model %in% c("data", "wt_len")) stop("waa_model must be data or wt_len")
     if(waa_model == "wt_len") {
@@ -1342,14 +1312,14 @@ Setup_Mod_Biologicals <- function(input_list,
     input_list$par$ln_growth_pars <- log(growth_par_arr)
     input_list$par$ln_growth_pars <- use_starting_value(input_list$par$ln_growth_pars, starting_values, "ln_growth_pars")
 
-    input_list$par$ln_growth_devs <- array(0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_gpars, n_sexes)) # projected years too, as ln_RecDevs has
+    input_list$par$ln_growth_devs <- array(0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_growth_pars, n_sexes)) # projected years too, as ln_RecDevs has
     input_list$par$ln_growth_semipar_devs <- array(0, dim = c(n_pop, n_regions, n_yrs + n_proj_yrs_devs, n_ages, n_sexes))
 
     # growth process erorr parameter starting value stuff ...
     if("growth_pe_pars" %in% names(starting_values)) {
       input_list$par$growth_pe_pars <- starting_values$growth_pe_pars
     } else {
-      pe <- array(0, dim = c(n_pop, n_regions, max(4, n_ages, n_gpars), n_sexes, 2))
+      pe <- array(0, dim = c(n_pop, n_regions, max(4, n_ages, n_growth_pars), n_sexes, 2))
       pe[, , , , 1] <- log(0.1)  # time-varying growth parameters
       pe[, , , , 2] <- log(0.05) # the surface's scale, and its per-age sigmas
       # the correlated forms read correlations in the first three slots

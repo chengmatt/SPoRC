@@ -32,7 +32,7 @@ kept at its starting value while the others are estimated.}
 \item{tv_vals}{Integer vector, one entry per growth parameter, of the time
 variation each has (0 none, 1 iid, 2 random walk).}
 
-\item{tv_active}{Matrix \code{[n_years x n_gpars]} of ones in the years each
+\item{tv_active}{Matrix \code{[n_years x n_growth_pars]} of ones in the years each
 parameter's deviations are estimated in.}
 
 \item{growth_tv_spec}{Character. How the deviation series are shared across

@@ -3090,14 +3090,26 @@ SPoRC_rtmb = function(pars, data) {
 
   ## Movement ----------------------------------------------------------------
   ### Movement Rates (Penalty) -----------------------------------------------
-  if(cont_vary_movement != "none") {
-    Movement_nLL = Movement_nLL + - Get_move_PE_loglik(cont_vary_movement = cont_vary_movement,
-                                                       PE_pars = move_pe_pars,
-                                                       move_devs = move_devs,
-                                                       map_move_devs = map_move_devs,
-                                                       do_recruits_move = do_recruits_move,
-                                                       adjacency_collapsed = adjacency_collapsed,
-                                                       move_type = move_type
+  if(move_year_re > 0 || move_age_re > 0 || move_pop_re > 0 || move_seas_re > 0 || move_sex_re > 0) {
+    Movement_nLL = Movement_nLL - Get_move_PE_loglik(move_year_re = move_year_re,
+                                                     move_age_re = move_age_re,
+                                                     move_pop_re = move_pop_re,
+                                                     move_seas_re = move_seas_re,
+                                                     move_sex_re = move_sex_re,
+                                                     PE_pars = move_pe_pars,
+                                                     move_pop_corr_pars = move_pop_corr_pars,
+                                                     move_seas_corr_pars = move_seas_corr_pars,
+                                                     move_sex_corr_pars = move_sex_corr_pars,
+                                                     move_devs = move_devs,
+                                                     map_move_devs = map_move_devs,
+                                                     move_pairs = move_pairs,
+                                                     move_pe_block = move_pe_block,
+                                                     move_pop_block = move_pop_block,
+                                                     move_year_block = move_year_block,
+                                                     move_seas_block = move_seas_block,
+                                                     move_age_block = move_age_block,
+                                                     move_sex_block = move_sex_block,
+                                                     move_dsem = move_dsem
     )
   }
 

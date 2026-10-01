@@ -9,12 +9,12 @@ library(testthat)
 
 # a small test setup: one population, one region, one sex, a von Bertalanffy curve
 gcfg <- list(n_yrs = 25, n_ages = 12, len_lower = seq(10, 75, by = 5))
-gpars <- c(L1 = 14, L2 = 68, K = 0.25, CV1 = 0.12, CV2 = 0.07)
+growth_pars <- c(L1 = 14, L2 = 68, K = 0.25, CV1 = 0.12, CV2 = 0.07)
 
 growth_call <- function(..., n_yrs = gcfg$n_yrs, n_ages = gcfg$n_ages) {
   ages <- 1:n_ages
   args <- list(
-    ln_growth_pars = array(log(gpars), dim = c(1, 1, 1, 5)),
+    ln_growth_pars = array(log(growth_pars), dim = c(1, 1, 1, 5)),
     growth_A1 = 1,
     growth_A2 = n_ages,
     growth_L0 = gcfg$len_lower[1],
@@ -52,8 +52,8 @@ test_that("a growth parameter's deviations move that parameter and no other", {
 
   # log link: the parameter is multiplied by exp(deviation)
   g <- growth_call(ln_growth_devs = devs, growth_tv_model = c(0, 0, 1, 0, 0), growth_tv_link = 0)
-  expect_equal(g$growth_pars_y[1, 1, , 3, 1], gpars[["K"]] * exp(devs[1, 1, , 3, 1]), tolerance = 1e-12)
-  for(k in c(1, 2, 4, 5)) expect_equal(unique(g$growth_pars_y[1, 1, , k, 1]), unname(gpars[k]), tolerance = 1e-12)
+  expect_equal(g$growth_pars_y[1, 1, , 3, 1], growth_pars[["K"]] * exp(devs[1, 1, , 3, 1]), tolerance = 1e-12)
+  for(k in c(1, 2, 4, 5)) expect_equal(unique(g$growth_pars_y[1, 1, , k, 1]), unname(growth_pars[k]), tolerance = 1e-12)
   # the von Bertalanffy form leaves the Richards coefficient at one
   expect_equal(unique(g$growth_pars_y[1, 1, , 6, 1]), 1)
 
@@ -84,13 +84,13 @@ test_that("a growth parameter's deviations move that parameter and no other", {
   )$growth_pars_y[1, 1, , 3, 1]
   expect_true(all(km > bnds[3, 1] & km < bnds[3, 2]))
   # and a zero deviation returns the parameter itself
-  expect_equal(km[which.min(abs(mid[1, 1, , 3, 1]))], gpars[["K"]], tolerance = 1e-3)
+  expect_equal(km[which.min(abs(mid[1, 1, , 3, 1]))], growth_pars[["K"]], tolerance = 1e-3)
 
   # every parameter can vary at once, each on its own series
   all_devs <- array(0, dim = c(1, 1, n_yrs, 5, 1))
   for(k in 1:5) all_devs[1, 1, , k, 1] <- 0.05 * k
   ga <- growth_call(ln_growth_devs = all_devs, growth_tv_model = rep(1, 5))
-  for(k in 1:5) expect_equal(unique(ga$growth_pars_y[1, 1, , k, 1]), unname(gpars[k]) * exp(0.05 * k), tolerance = 1e-12)
+  for(k in 1:5) expect_equal(unique(ga$growth_pars_y[1, 1, , k, 1]), unname(growth_pars[k]) * exp(0.05 * k), tolerance = 1e-12)
 })
 
 
@@ -98,14 +98,14 @@ test_that("the Richards coefficient generalizes the von Bertalanffy curve", {
 
   # rho of one reproduces the von Bertalanffy curve exactly
   vb <- growth_call()
-  rich <- growth_call(ln_growth_pars = array(log(c(gpars, rho = 1)), dim = c(1, 1, 1, 6)))
+  rich <- growth_call(ln_growth_pars = array(log(c(growth_pars, rho = 1)), dim = c(1, 1, 1, 6)))
   expect_equal(rich$mean_LAA_spawn[1, 1, 1, 1, , 1], vb$mean_LAA_spawn[1, 1, 1, 1, , 1], tolerance = 1e-10)
 
   # and a rho other than one bends it while keeping both reference lengths
-  r2 <- growth_call(ln_growth_pars = array(log(c(gpars, rho = 1.6)), dim = c(1, 1, 1, 6)))
+  r2 <- growth_call(ln_growth_pars = array(log(c(growth_pars, rho = 1.6)), dim = c(1, 1, 1, 6)))
   L <- r2$mean_LAA_spawn[1, 1, 1, 1, , 1]
-  expect_equal(L[1], gpars[["L1"]], tolerance = 1e-8)              # length at A1
-  expect_equal(L[gcfg$n_ages], gpars[["L2"]], tolerance = 1e-8)    # length at A2
+  expect_equal(L[1], growth_pars[["L1"]], tolerance = 1e-8)              # length at A1
+  expect_equal(L[gcfg$n_ages], growth_pars[["L2"]], tolerance = 1e-8)    # length at A2
   expect_true(all(diff(L) > 0))                                    # still monotonic
   expect_false(isTRUE(all.equal(L, vb$mean_LAA_spawn[1, 1, 1, 1, , 1])))
 })
@@ -130,8 +130,8 @@ test_that("semi-parametric deviations scale mean length at age and leave the CV 
     # the spread is that mean times the coefficient of variation the deviated length implies,
     # since the CV is interpolated on length, so a longer fish also moves along the CV ramp
     L_y <- g$mean_LAA_spawn[1, 1, y, 1, , 1]
-    cv_y <- gpars[["CV1"]] + (L_y - gpars[["L1"]]) * (gpars[["CV2"]] - gpars[["CV1"]]) / (gpars[["L2"]] - gpars[["L1"]])
-    cv_y[n_ages] <- gpars[["CV2"]] # the oldest age is at the reference age, which takes CV2 outright
+    cv_y <- growth_pars[["CV1"]] + (L_y - growth_pars[["L1"]]) * (growth_pars[["CV2"]] - growth_pars[["CV1"]]) / (growth_pars[["L2"]] - growth_pars[["L1"]])
+    cv_y[n_ages] <- growth_pars[["CV2"]] # the oldest age is at the reference age, which takes CV2 outright
     expect_equal(g$sd_LAA_spawn[1, 1, y, 1, , 1] / L_y, cv_y, tolerance = 1e-6)
   }
   # under a CV that is a function of age instead, the deviations move only the
@@ -176,7 +176,7 @@ test_that("cohort growth advances size at age and blends the plus group by numbe
     growth = g,
     y = 3,
     NAA_y = NAA_y,
-    ln_growth_pars = array(log(gpars), dim = c(1, 1, 1, 5)),
+    ln_growth_pars = array(log(growth_pars), dim = c(1, 1, 1, 5)),
     ln_growth_devs = devs,
     growth_tv_model = c(0, 0, 1, 0, 0),
     growth_tv_link = 0,
@@ -204,7 +204,7 @@ test_that("cohort growth advances size at age and blends the plus group by numbe
   )
 
   # the asymptote is derived from the Schnute pair, so read the year's own
-  K3 <- gpars[["K"]] * exp(devs[1, 1, 3, 3, 1])
+  K3 <- growth_pars[["K"]] * exp(devs[1, 1, 3, 3, 1])
   Linf <- g2$Linf[1, 1, 3, 1]
   L_beg <- g$L_beg[1, 1, 3, , 1]
   grown <- grow_increment(L_beg, 1, K3, Linf, 1)

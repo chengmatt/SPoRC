@@ -17,8 +17,17 @@ Setup_Mod_Movement(
   Movement_yearblk_spec = "constant",
   Movement_seasblk_spec = "constant",
   Movement_sexblk_spec = "constant",
-  cont_vary_movement = "none",
-  Movement_cont_pe_pars_spec = "none",
+  move_year_re = "none",
+  move_age_re = "none",
+  move_pop_re = "none",
+  move_seas_re = "none",
+  move_sex_re = "none",
+  move_re_pops = NULL,
+  move_re_years = NULL,
+  move_re_seas = NULL,
+  move_re_ages = NULL,
+  move_re_sexes = NULL,
+  move_pe_spec = "est_all",
   ctmc_move_dat = NULL,
   adjacency_mat = NULL,
   area_r = rep(1, input_list$data$n_regions),
@@ -63,32 +72,52 @@ toward equal movement. Read when \code{Use_Movement_Prior = 1}.}
 (default) or a list of integer vectors, e.g. \code{list(c(1, 2), 3)} for
 populations, \code{list(1:4, 5:10)} for a juvenile and an adult block, or
 \code{list(1, 2)} for sex-specific movement. Use
-\code{Movement_yearblk_spec} for structural breaks and
-\code{cont_vary_movement} for residual annual variation. All are ignored when
-\code{move_type = 1}.}
+\code{Movement_yearblk_spec} for structural breaks or \code{move_year_re}
+for annual variation, not both, and likewise \code{Movement_ageblk_spec}
+or \code{move_age_re}. All are ignored when \code{move_type = 1}.}
 
-\item{cont_vary_movement}{Structure of the continuous deviations on the
-fixed-effect movement surface. \code{"none"} (default), or \code{"iid_"}
-followed by the dims they vary over, any of p (population), y (year), seas
-(season), a (age) and s (sex) in any order: \code{"iid_y"} is one deviation
-per year and region pair, or per year and region under CTMC movement, shared
-across everything else, and \code{"iid_p_y_seas_a_s"} varies by every dim. A
-dim left out shares one deviation across it. They are random effects with
-\code{Movement_cont_pe_pars_spec} estimating the sd and
-\code{random = "move_devs"} in \code{\link{fit_model}}. \code{"dsem"}
-instead takes their density from the arrows given to
-\code{\link{Setup_Mod_DSEM}}, one series per origin and destination (per
-region under CTMC, whose deviations hold no destination) and per level of
-every other dim with more than one, which it names itself since a deviation
-shared across a dim cannot be linked; \code{move_pe_pars} are then read by
-nothing.}
+\item{move_year_re}{How the deviations vary across years within a surface:
+\code{"none"} (default), \code{"iid"}, \code{"ar1"}, or \code{"dsem"},
+which takes every cell's density from the arrows given to
+\code{\link{Setup_Mod_DSEM}}, one series per cell of every dim with more
+than one level (per region under CTMC movement, whose deviations hold no
+destination), and leaves \code{move_pe_pars} read by nothing. Refuses a
+\code{Movement_yearblk_spec} other than \code{"constant"} unless
+\code{"none"}, since a year block and year deviations describe one thing
+twice.}
 
-\item{Movement_cont_pe_pars_spec}{Estimation of the process error variance for
-the \code{cont_vary_movement} deviations. \code{"none"} creates no parameters
-and pairs with \code{cont_vary_movement = "none"}, \code{"fix"} holds the
-variance at its starting value, \code{"est_shared"} estimates one shared
-value, and \code{"est_all"} estimates \code{[n_pop × n_regions × n_seas ×
-n_ages × n_sexes]} independently.}
+\item{move_age_re}{How the deviations vary across ages within a surface:
+\code{"none"} (default), \code{"iid"} or \code{"ar1"}; must be
+\code{"none"} under \code{move_year_re = "dsem"}, and refuses a
+\code{Movement_ageblk_spec} other than \code{"constant"} unless
+\code{"none"}. Every switch \code{"none"} is no deviations. Otherwise each
+surface's sd is estimated, with an AR1 correlation parameter wherever a dim
+is \code{"ar1"}, and the deviations are random effects with
+\code{random = "move_devs"} in \code{\link{fit_model}} or penalized fixed
+effects without it.}
+
+\item{move_pop_re, move_seas_re, move_sex_re}{How the deviations vary across
+populations, seasons and sexes: \code{"none"} (default, one deviation
+shared across the dim), \code{"iid"} (independent), \code{"us"} (an
+unstructured correlation of \eqn{n(n-1)/2} parameters, shared by every
+pair, as \code{NAA_re_sex} is), or a list of blocks of levels such as
+\code{list(1:2, 3)}, where the levels in a block share one deviation and
+blocks are independent. Blocks must cover each active level once.
+\code{"us"} needs more than one active level, and neither it nor a block
+list is allowed under \code{move_year_re = "dsem"}. Every origin and
+destination pair (region under the CTMC) always has its own deviations.}
+
+\item{move_re_pops, move_re_years, move_re_seas, move_re_ages, move_re_sexes}{Integer vectors of the populations, years, seasons, ages and sexes the
+deviations are estimated over. Note that an AR1 or unstructured correlation runs
+over the active levels.}
+
+\item{move_pe_spec}{\code{"est_all"} (default) gives every pair its own log
+sd and AR1 correlations in \code{move_pe_pars}, \code{"est_shared"} gives
+one set to every pair, and a list of blocks of rows of the pair table
+(\code{input_list$data$move_pairs}, origins and destinations over the
+edges of the adjacency matrix in origin then destination order, one row
+per region under the CTMC) gives one set per block. The unstructured
+correlations are always shared.}
 
 \item{ctmc_move_dat}{Data frame required when \code{move_type = 1}, one row per
 population, region, year, season, age and sex, with columns \code{pop},
@@ -166,15 +195,15 @@ n_regions × n_seas × n_ages × n_sexes]}, default \code{0}.}
   updated. \code{$data} gains \code{move_type}, \code{use_fixed_movement},
   \code{Fixed_Movement}, \code{adjacency_mat}, \code{adjacency_collapsed},
   \code{area_r}, \code{ctmc_move_dat}, \code{diffusion_formula},
-  \code{preference_formula} and \code{cont_vary_movement} as its form string.
+  \code{preference_formula} and \code{move_year_re} as its form string.
   \code{move_pars}, \code{log_move_diffusion_pars}, \code{move_preference_pars},
   \code{move_devs} and \code{move_pe_pars} go into \code{$par} with their factor
   maps in \code{$map}.
 }
 \description{
 Sets up unstructured Markov transition movement (\code{move_type = 0}) or a
-continuous time Markov chain (\code{move_type = 1}), with optional iid
-deviations on the movement surface, and builds the parameter arrays and factor
+continuous time Markov chain (\code{move_type = 1}), with optional random
+effects on the movement surface, and builds the parameter arrays and factor
 maps. Call after \code{\link{Setup_Mod_Biologicals}}.
 }
 \section{Unstructured Markov movement (\code{move_type = 0})}{
@@ -185,7 +214,7 @@ n_seas × n_ages × n_sexes]}. The \code{Movement_*blk_spec} arguments share
 parameters: indices in one block take the same factor level. A fully connected
 adjacency matrix is built automatically. Blocks and continuous time variation
 combine: use \code{Movement_yearblk_spec} for structural breaks and
-\code{cont_vary_movement} for residual year-to-year variation.
+\code{move_year_re} for residual year-to-year variation.
 }
 
 \section{CTMC movement (\code{move_type = 1})}{
@@ -198,13 +227,28 @@ every \code{Movement_*blk_spec} must stay \code{"constant"}; put structure
 across populations, ages, sexes or seasons into formula covariates instead.
 }
 
-\section{Continuous movement deviations}{
+\section{Movement random effects}{
 
 Deviations are added to the movement logit surface under unstructured movement,
-or to each region's preference under CTMC, before probabilities are computed,
-and are penalized as normal random effects whose variance
-\code{Movement_cont_pe_pars_spec} can estimate. Age-1 deviations are fixed at
-zero when \code{do_recruits_move = 0}.
+or to each region's preference under CTMC, before probabilities are computed.
+The deviations are a field over origin-destination pair (region under the
+CTMC), population, year, season, age and sex, with every pair its own
+deviations, and five switches say how they vary over the other dims:
+\code{move_year_re} and \code{move_age_re} take \code{"none"},
+\code{"iid"} or \code{"ar1"}, and \code{move_pop_re},
+\code{move_seas_re} and \code{move_sex_re} take \code{"none"},
+\code{"iid"}, \code{"us"} or a list of blocks of levels sharing one
+deviation. The density is the sd times the Kronecker product of
+an AR1 over years, an AR1 over ages and an unstructured correlation over each
+of the other dims, the composition the numbers at age state uses, with
+\code{move_pe_pars} holding each process error block's log conditional
+sd (the marginal is larger by \code{1 / sqrt(1 - rho^2)} per \code{"ar1"}
+dim, as for \code{ln_sigmaNAA}) and two AR1 correlations, and
+\code{move_*_corr_pars} the unstructured ones.
+\code{move_re_pops}, \code{move_re_years}, \code{move_re_seas},
+\code{move_re_ages} and \code{move_re_sexes} restrict the deviations to
+those slots; every other cell stays at zero. \code{move_pe_spec} shares the
+sd and correlations across pairs.
 
 The two types size the deviations differently. Unstructured movement holds one
 per origin and destination pair, \code{[n_regions x (n_regions - 1)]}, while the

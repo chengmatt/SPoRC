@@ -223,8 +223,7 @@ Setup_Sim_DSEM <- function(sim_list,
   sim_list$ln_dsem_obs_sd <- pars$ln_dsem_obs_sd
   sim_list$logit_dsem_tweedie_p <- pars$logit_dsem_tweedie_p # absent from a fit before the tweedie family existed
 
-  # under dsem recruitment, sigmaR comes from the arrows' recruitment sd, so the initial age
-  # deviations use that same value
+  # under dsem recruitment, sigmaR comes from the arrows' recruitment sd, so the initial age deviations use that same value
   if("rec" %in% data$dsem_declared && !is.null(sim_list$ln_sigmaR)) {
 
     arrow_value <- as.numeric(get_dsem_arrow_values(pars$dsem_beta, pars$ln_dsem_sd, data$dsem_model))
@@ -362,32 +361,8 @@ Setup_Sim_DSEM <- function(sim_list,
   if(growth_linked) sim_list$dsem_growth_args <- match_model_args(Get_Growth, data, pars, n_yrs = n_sim_yrs)
 
   # what the fit does after growth needs the selectivity at length the report holds, run out to the
-  # operating model's years the way the closed loop extends its other inputs
-  if(growth_linked) {
-
-    sel_len <- list()
-
-    for(sel_name in names(sel_at_length)[sel_at_length]) {
-
-      sel_array <- rep[[paste0(sel_name, "_sel_l")]] # [region, year, len, sex, fleet]
-      n_rep_yrs <- dim(sel_array)[2]
-      if(n_rep_yrs > n_sim_yrs) sel_array <- sel_array[,seq_len(n_sim_yrs),,,,drop = FALSE]
-      if(n_rep_yrs < n_sim_yrs) sel_array <- extend_years(sel_array, n_sim_yrs - n_rep_yrs, 2, "last")
-      sel_len[[sel_name]] <- sel_array
-
-    } # end sel_name loop
-
-    # and which fleets weigh their catch by what they select
-    sim_list$dsem_length_sel <- list(fish_selex_type = as.integer(sel_at_length[["fish"]]),
-                                     ret_selex_type = as.integer(sel_at_length[["ret"]]),
-                                     srv_selex_type = as.integer(sel_at_length[["srv"]]),
-                                     fish_waa_selected = if(is.null(data$fish_waa_selected)) 0 else data$fish_waa_selected,
-                                     srv_waa_selected = if(is.null(data$srv_waa_selected)) 0 else data$srv_waa_selected,
-                                     fish_sel_l = sel_len$fish,
-                                     ret_sel_l = sel_len$ret,
-                                     srv_sel_l = sel_len$srv)
-
-  } # end if a growth series is linked
+  # operating model's years, and which fleets weigh their catch by what they select
+  if(growth_linked) sim_list$growth_length_sel <- sim_growth_length_sel(data, rep, n_sim_yrs)
 
   # movement keeps the fit's year count so covariates stop at the data, as they do in a projection
   if(move_linked) {

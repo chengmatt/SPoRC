@@ -2043,6 +2043,30 @@ fill_optional_modules <- function(data,
          "deviations have no density. Call Setup_Mod_DSEM with the arrows, or take the declaration back.")
   }
 
+  # lists built before the movement random effects existed have none
+  if(!is.null(data$use_fixed_movement) && is.null(data$move_year_re)) {
+    for(switch_name in c("move_year_re", "move_age_re", "move_pop_re", "move_seas_re", "move_sex_re", "move_dsem")) data[[switch_name]] <- 0
+    data$move_pairs <- matrix(0, nrow = 0, ncol = 2)
+    data$move_pe_block <- numeric(0)
+    data$move_pop_block <- rep(NA, data$n_pop)
+    data$move_year_block <- rep(NA, dim(parameters$move_devs)[4])
+    data$move_seas_block <- rep(NA, data$n_seas)
+    data$move_age_block <- rep(NA, length(data$ages))
+    data$move_sex_block <- rep(NA, data$n_sexes)
+    data$move_re_pops <- seq_len(data$n_pop)
+    data$move_re_sexes <- seq_len(data$n_sexes)
+    data$move_re_years <- seq_along(data$years)
+    data$move_re_seas <- seq_len(data$n_seas)
+    data$move_re_ages <- seq_along(data$ages)
+  }
+  # parameter lists built before the correlations existed have none, mapped off
+  for(corr_name in c("move_pop_corr_pars", "move_seas_corr_pars", "move_sex_corr_pars")) {
+    if(!is.null(data$use_fixed_movement) && is.null(parameters[[corr_name]])) {
+      parameters[[corr_name]] <- 0
+      mapping[[corr_name]] <- factor(NA)
+    }
+  } # end corr_name loop
+
   need_move <- is.null(data$use_fixed_movement) # the field Setup_Mod_Movement always writes
   need_tag <- is.null(data$use_conv_fish_tagging) # likewise for Setup_Mod_Tagging
 

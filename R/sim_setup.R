@@ -120,14 +120,14 @@ Setup_sim_env <- function(sim_list) {
   } # end entry loop
 
   # the conditioning years reproduce the fit's reported catchability, so a dsem does not rewrite them
-  q_devs_cond <- stats::setNames(lapply(q_dev_par_names(), function(nm) sim_env[[nm]]), q_dev_par_names())
+  q_devs_cond <- stats::setNames(lapply(q_dev_par_names(), function(name) sim_env[[name]]), q_dev_par_names())
   if(!is.null(sim_env$dsem_model)) draw_dsem_sim(sim_env)
   n_cond_q <- as.integer(if(is.null(sim_env$n_cond_yrs)) 0 else sim_env$n_cond_yrs)
-  for(nm in names(q_devs_cond)) {
-    if(is.null(q_devs_cond[[nm]]) || n_cond_q < 1) next
-    cond_yr <- seq_len(min(n_cond_q, dim(q_devs_cond[[nm]])[2]))
-    sim_env[[nm]][,cond_yr,,] <- q_devs_cond[[nm]][,cond_yr,,,drop = FALSE]
-  } # end nm loop
+  for(name in names(q_devs_cond)) {
+    if(is.null(q_devs_cond[[name]]) || n_cond_q < 1) next
+    cond_yr <- seq_len(min(n_cond_q, dim(q_devs_cond[[name]])[2]))
+    sim_env[[name]][,cond_yr,,] <- q_devs_cond[[name]][,cond_yr,,,drop = FALSE]
+  } # end name loop
 
   check_q_dsem_drawable(sim_env) # check to see if dsem can do draws
 
@@ -144,6 +144,13 @@ Setup_sim_env <- function(sim_list) {
             else ", the early ln_sigmaR",
             ". Pass zeros to Setup_Sim_Rec for a population that starts in equilibrium, or a fit's deviations to condition on it.")
   } # end if the initial deviations are drawn
+
+  # draw move devs if not using dsem
+  if(!is.null(sim_env$move_args) && !isTRUE(sim_env$move_dsem == 1) && !isTRUE(any(sim_env$dsem_link_par == "move_devs"))) draw_sim_move_devs(sim_env)
+
+  # draw growth devs if not using dsem
+  growth_dsem <- !is.null(sim_env$dsem_growth_args) || isTRUE(any(sim_env$dsem_link_par %in% c("ln_growth_devs", "ln_growth_semipar_devs")))
+  if(!is.null(sim_env$growth_args) && !growth_dsem) draw_sim_growth_devs(sim_env)
 
   # movement stuff
   if(is.null(sim_env$Mrate)) sim_env$Mrate <- NULL

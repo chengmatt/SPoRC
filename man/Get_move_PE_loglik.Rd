@@ -5,74 +5,75 @@
 \title{Compute Movement Process Error Log-Likelihood (Positive Scale)}
 \usage{
 Get_move_PE_loglik(
-  cont_vary_movement,
+  move_year_re,
+  move_age_re,
+  move_pop_re,
+  move_seas_re,
+  move_sex_re,
   PE_pars,
+  move_pop_corr_pars,
+  move_seas_corr_pars,
+  move_sex_corr_pars,
   move_devs,
   map_move_devs,
-  do_recruits_move,
-  adjacency_collapsed,
-  move_type
+  move_pairs,
+  move_pe_block,
+  move_pop_block,
+  move_year_block,
+  move_seas_block,
+  move_age_block,
+  move_sex_block,
+  move_dsem
 )
 }
 \arguments{
-\item{cont_vary_movement}{Character string specifying the movement process
-error structure, \code{"iid_"} followed by the dims the deviations vary
-over, any of p (population), y (year), seas (season), a (age), s (sex):
-\code{"iid_y"} is one \eqn{\sigma} per origin region, \code{"iid_p_y_seas_a_s"}
-one per population, origin region, season, age and sex. A dim left out
-shares one deviation, and one \eqn{\sigma}, across it.}
+\item{move_year_re, move_age_re}{Integer codes, \code{0} none, \code{1} iid,
+\code{2} ar1.}
 
-\item{PE_pars}{Array of movement process error parameters (log standard
-deviations) dimensioned \code{[pop, from_region, seas, age, sex]}.
-Exponentiated internally to obtain \eqn{\sigma}. Which dimensions
-are active depends on \code{cont_vary_movement}; unused dimensions should be
-fixed at a constant (e.g., index 1) via the parameter map.}
+\item{move_pop_re, move_seas_re, move_sex_re}{Integer codes, \code{0} none,
+\code{1} iid or blocks, \code{2} unstructured.}
 
-\item{move_devs}{Movement deviation array dimensioned
-\code{[pop, from_region, to_region, year, seas, age, sex]}. Under CTMC
-movement a deviation sits on a region's preference rather than on a pair,
-so \code{from_region} is that region and \code{to_region} has length one.}
+\item{PE_pars}{Array \code{[n_regions x n_regions_to x 3]} of log
+conditional sd, unconstrained age correlation and unconstrained year
+correlation, shared within each process error block.}
 
-\item{map_move_devs}{Integer array dimensioned
-\code{[pop, from_region, to_region, year, seas, age, sex]}
-mapping deviations to unique estimated parameters. Shared deviations
-hold the same integer value; dimensions are extracted from this
-array to determine loop bounds.}
+\item{move_pop_corr_pars, move_seas_corr_pars, move_sex_corr_pars}{Unconstrained
+parameters of the unstructured correlations, read under \code{"us"}.}
 
-\item{do_recruits_move}{Integer (0/1). If \code{0} and \code{n_ages >= 2},
-age-1 recruits are excluded from the likelihood (loop starts at age 2).
-If \code{1}, all ages including recruits are penalized.}
+\item{move_devs}{Array \code{[n_pop x n_regions x n_regions_to x n_years x
+n_seas x n_ages x n_sexes]} of movement deviations.}
 
-\item{adjacency_collapsed}{\code{[n_regions x (n_regions - 1)]} matrix
-of allowable movement connections among regions, with self-retention
-collapsed out. Origin-destination pairs with a value of 0 are skipped and
-contribute nothing to the likelihood. Read only when \code{move_type == 0}.}
+\item{map_move_devs}{Integer mirror of the deviation map, \code{NA} where a
+cell is fixed or a dsem holds it.}
 
-\item{move_type}{Integer specifying the movement formulation:
-\itemize{
-  \item \strong{0} = Unstructured multinomial logit movement
-  \item \strong{1} = CTMC-based movement
-}
-  Decides whether \code{adjacency_collapsed} is read: an unstructured
-  deviation belongs to a region pair, a CTMC deviation to a single region.}
+\item{move_pairs}{Integer matrix, one row per pair, giving its origin and
+destination.}
+
+\item{move_pe_block}{Process error block of every pair.}
+
+\item{move_pop_block, move_year_block, move_seas_block, move_age_block, move_sex_block}{Block of every level of the dim, \code{NA} where inactive.}
+
+\item{move_dsem}{Integer flag; \code{1} when the dsem holds the density.}
 }
 \value{
-Numeric scalar: the positive log-likelihood contribution from
-  movement process error deviations. Negated externally to form the
-  negative log-likelihood.
+Scalar log likelihood (positive scale).
 }
 \description{
-Calculates the positive log-likelihood contribution for movement
-process error deviations under multiple IID structural assumptions.
-Deviations are penalized as \eqn{N(0, \sigma^2)} where \eqn{\sigma}
-is drawn from \code{PE_pars} according to the selected model structure.
-Under unstructured movement, only origin-destination pairs that are adjacent
-(non-zero in \code{adjacency_collapsed}) contribute to the likelihood; under
-CTMC movement the deviations sit on each region's preference, and every
-region the map keeps contributes.
-}
-\details{
-\strong{Note:} The returned value is on the \emph{positive} log-likelihood
-scale. It must be negated externally to form the negative log-likelihood.
+The log likelihood of \code{move_devs}, a field over origin-destination
+pair, population, year, season, age and sex (see
+\code{\link{do_move_re_mapping}}). Each process error block of pairs is one
+separable Gaussian density, \code{dseparable} with a factor per dim built
+from that dim's first level in the block: \code{dautoreg} where the dim is
+\code{"ar1"}, \code{dmvnorm} with the unstructured correlation where the
+dim is \code{"us"}, and a standard normal otherwise. The sd in
+\code{PE_pars} is the conditional one, as \code{ln_sigmaNAA} is for the
+numbers-at-age state, so for each \code{"ar1"} dim the field is scaled by
+that sd divided by \code{sqrt(1 - rho^2)}, which gives the marginal sd.
+With no correlation on any dim, each cell is penalized on its own, and a
+cell left \code{NA} in \code{map_move_devs} is skipped -- this is how a
+dsem takes over a single series. With a correlation, a block is evaluated
+as a whole: skipped when every cell is \code{NA}, refused when only some
+are. Returns zero when the dsem holds the density (\code{move_dsem = 1})
+or no deviation is estimated.
 }
 \keyword{internal}

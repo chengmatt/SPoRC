@@ -31,6 +31,7 @@ generates recruitment: there the residual is the parameter, here it is a
 derived quantity and the deviations remain free.
 }
 \details{
-Several AFSC models are written this way to reflect that a weakly determined SR relationship
+Several AFSC models are written this way to reflect that a weakly determined SR
+relationship should inform the recruitment series rather than completely dictate it.
 }
 \keyword{internal}

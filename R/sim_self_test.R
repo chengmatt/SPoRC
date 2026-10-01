@@ -207,6 +207,10 @@ sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_re
 #'   process error sd is the exception and comes back low by about 1/(2n) for n
 #'   deviations, since the fitted value holds the posterior variance of its own
 #'   deviations and data this clean remove it. Default \code{FALSE}.
+#' @param n_cond_yrs Integer. The first years of every replicate reproduce the
+#'   fit's catchability and movement deviations, and later years are drawn.
+#'   Default every year of the fit, so nothing is redrawn; \code{0} draws every
+#'   year from the fitted process.
 #' @param sim_type Character. Where each replicate's parameters come from.
 #'   \code{"conditional"} (default) runs every replicate at the fitted values, so
 #'   one truth covers them all and the spread is observation error. \code{"joint"}
@@ -267,7 +271,8 @@ simulation_self_test <- function(
   what = c('SSB', 'Rec'),
   what_par = NULL,
   perfect_data = FALSE,
-  sim_type = c("conditional", "joint")
+  sim_type = c("conditional", "joint"),
+  n_cond_yrs = length(data$years)
 ) {
 
   sim_type <- match.arg(sim_type)
@@ -642,6 +647,9 @@ simulation_self_test <- function(
     SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else bind_sims(lapply(views$reps, function(rp) rp$SizeAgeTrans_srv[,,seq_along(data$years),,,,,,drop = FALSE])) # size age transition matrix, derived by the growth module when present
   )
 
+  # growth deviations, drawn fresh by each replicate around the fit's growth curve
+  sim_list <- Setup_Sim_Growth_RE(sim_list, data, optim_parameters_list, rep = rep)
+
   # Movement
   sim_list$Movement <- bind_sims(lapply(views$reps, function(rp) rp$Movement[,,,seq_along(data$years),,,,drop = FALSE]))
   sim_list$sgl_seas_spawning_movement <- bind_sims(lapply(views$reps, function(rp) rp$sgl_seas_spawning_movement[,,,seq_along(data$years),,,drop = FALSE]))
@@ -651,6 +659,8 @@ simulation_self_test <- function(
   sim_list$expm_nsub <- if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub
   # The instantaneous rate matrix only exists for an estimated CTMC, and is only needed for continuous movement
   sim_list$Mrate <- if(sim_list$move_timing == 2) bind_sims(lapply(views$reps, function(rp) rp$Mrate[,,,seq_along(data$years),,,,drop = FALSE])) else NULL
+  # movement random effects, drawn fresh by each replicate around the fit's mean movement
+  sim_list <- Setup_Sim_Movement(sim_list, data, optim_parameters_list)
 
   # Setup Recruitment Processes ---------------------------------------------
   sim_list <- Setup_Sim_Rec(
@@ -731,7 +741,7 @@ simulation_self_test <- function(
   }
 
   # Catchability Stuff -------------------------------------------------
-  sim_list$n_cond_yrs <- length(data$years)
+  sim_list$n_cond_yrs <- n_cond_yrs # the years whose catchability and movement deviations reproduce the fit's
   sim_list$ln_fish_q_devs <- bind_sims(lapply(fish_q_fit, function(q) q$devs))
   sim_list$ln_srv_q_devs <- bind_sims(lapply(srv_q_fit, function(q) q$devs))
 

@@ -7,8 +7,9 @@
 derive_sim_growth(sim_env)
 }
 \arguments{
-\item{sim_env}{Simulation environment holding \code{dsem_growth_args} from
-\code{Setup_Sim_DSEM} and the deviation arrays with the replicate dim last.}
+\item{sim_env}{Simulation environment holding \code{growth_args} from
+\code{Setup_Sim_Growth_RE} or \code{dsem_growth_args} from
+\code{Setup_Sim_DSEM}, and the deviation arrays with the replicate dim last.}
 }
 \value{
 \code{invisible(NULL)}; \code{sim_env} is modified in place.

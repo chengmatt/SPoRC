@@ -378,3 +378,20 @@ rmvnorm_prec <- function(mu, prec, n_sims) {
   z <- Matrix::solve(L, z, system = "Pt")
   as.matrix(mu + z)
 }
+
+#' Precision of a stationary AR1 with unit marginal variance
+#'
+#' @param n Length of the series.
+#' @param rho Correlation between neighbors.
+#'
+#' @return Tridiagonal \code{n} by \code{n} matrix, the inverse of
+#'   \code{rho^abs(i - j)}.
+#'
+#' @keywords internal
+ar1_precision <- function(n, rho) {
+  if(n == 1) return(matrix(1, 1, 1))
+  precision <- diag(c(1, rep(1 + rho^2, n - 2), 1))
+  precision[cbind(1:(n - 1), 2:n)] <- -rho
+  precision[cbind(2:n, 1:(n - 1))] <- -rho
+  precision / (1 - rho^2)
+}

@@ -178,13 +178,13 @@ get_alk = function(len_lower, mu, sd, dist = 0) {
 #' structures read the same way here and differ only in their penalty.
 #'
 #' @param ln_pars Log-scale base parameters of the stratum, length
-#'   \code{n_gpars} (five for the von Bertalanffy form, six with the Richards
+#'   \code{n_growth_pars} (five for the von Bertalanffy form, six with the Richards
 #'   coefficient last).
-#' @param ln_devs Matrix \code{[n_yrs x n_gpars]} of the stratum's deviations.
-#' @param tv_model Integer vector \code{[n_gpars]}, 0 constant, 1 iid
+#' @param ln_devs Matrix \code{[n_yrs x n_growth_pars]} of the stratum's deviations.
+#' @param tv_model Integer vector \code{[n_growth_pars]}, 0 constant, 1 iid
 #'   deviations, 2 random walk.
 #' @param tv_link Integer, 0 log link, 1 logit link within \code{bounds}.
-#' @param bounds Matrix \code{[n_gpars x 2]} of lower and upper bounds, read
+#' @param bounds Matrix \code{[n_growth_pars x 2]} of lower and upper bounds, read
 #'   under the logit link.
 #' @param y Year index.
 #'
@@ -198,9 +198,9 @@ get_growth_pars_year = function(ln_pars, ln_devs, tv_model, tv_link, bounds, y) 
   "[<-" <- RTMB::ADoverload("[<-")
 
   growth_pars = exp(ln_pars)
-  n_gpars = length(ln_pars)
+  n_growth_pars = length(ln_pars)
 
-  for(k in 1:n_gpars) {
+  for(k in 1:n_growth_pars) {
     if(tv_model[k] == 0) next
     dev = ln_devs[y, k]
     if(tv_link == 0) growth_pars[k] = growth_pars[k] * exp(dev)
@@ -213,7 +213,7 @@ get_growth_pars_year = function(ln_pars, ln_devs, tv_model, tv_link, bounds, y) 
     }
   } # end k loop
 
-  if(n_gpars == 5) growth_pars = c(growth_pars, 1) # von Bertalanffy: Richards coefficient of one
+  if(n_growth_pars == 5) growth_pars = c(growth_pars, 1) # von Bertalanffy: Richards coefficient of one
 
   return(growth_pars)
 }
@@ -397,15 +397,15 @@ growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, 
 #' season the observation is taken. Fleets that share a timing share one
 #' evaluation. Seasonal multipliers on \eqn{K} are not kept.
 #'
-#' @param ln_growth_pars Array \code{[pop, region, sex, n_gpars]} of log growth
+#' @param ln_growth_pars Array \code{[pop, region, sex, n_growth_pars]} of log growth
 #'   parameters in the order L1, L2, K, CV1, CV2 and, for the Richards form, rho.
-#' @param ln_growth_devs Array \code{[pop, region, year, n_gpars, sex]} of
+#' @param ln_growth_devs Array \code{[pop, region, year, n_growth_pars, sex]} of
 #'   time-varying deviations, or \code{NULL} for none.
-#' @param growth_tv_model Integer vector \code{[n_gpars]}, 0 constant, 1 iid,
+#' @param growth_tv_model Integer vector \code{[n_growth_pars]}, 0 constant, 1 iid,
 #'   2 random walk, per parameter.
 #' @param growth_tv_link Integer, 0 log link, 1 logit link within
 #'   \code{growth_par_bounds}.
-#' @param growth_par_bounds Matrix \code{[n_gpars x 2]} of bounds for the logit
+#' @param growth_par_bounds Matrix \code{[n_growth_pars x 2]} of bounds for the logit
 #'   link.
 #' @param growth_tv_type Integer, 0 each year on its own curve, 1 cohort
 #'   propagation.
@@ -495,8 +495,8 @@ Get_Growth = function(
 
   n_ages = length(ages)
   n_lens = length(growth_len_lower)
-  n_gpars = dim(ln_growth_pars)[4]
-  if(is.null(growth_tv_model)) growth_tv_model = rep(0, n_gpars)
+  n_growth_pars = dim(ln_growth_pars)[4]
+  if(is.null(growth_tv_model)) growth_tv_model = rep(0, n_growth_pars)
   tv_any = any(growth_tv_model > 0)
   semipar = growth_semipar > 0 && !is.null(ln_growth_semipar_devs)
   # under cohort growth this function only builds the years before the propagation starts
@@ -509,7 +509,7 @@ Get_Growth = function(
     for(r in 1:n_regions) {
       for(s in 1:n_sexes) {
 
-        devs_prs = if(is.null(ln_growth_devs)) matrix(0, n_yrs, n_gpars) else matrix(ln_growth_devs[p,r,,,s], n_yrs, n_gpars)
+        devs_prs = if(is.null(ln_growth_devs)) matrix(0, n_yrs, n_growth_pars) else matrix(ln_growth_devs[p,r,,,s], n_yrs, n_growth_pars)
         # parameters of the first year set the state every year starts from under
         # constant or curve growth, and the first year's CV under cohort growth
         growth_pars_1 = get_growth_pars_year(ln_growth_pars[p,r,s,], devs_prs, growth_tv_model, growth_tv_link, growth_par_bounds, 1)
@@ -763,7 +763,7 @@ Get_Growth_Year = function(
   n_ages = length(ages)
   n_acc = max(ages)
   n_yrs = dim(growth$L_beg)[3]
-  n_gpars = dim(ln_growth_pars)[4]
+  n_growth_pars = dim(ln_growth_pars)[4]
   # the first integer age whose start-of-year size is advanced; the age
   # before it sits on the current year's curve
   a_prop = ceiling(growth_A1) + 1
@@ -772,7 +772,7 @@ Get_Growth_Year = function(
     for(r in 1:n_regions) {
       for(s in 1:n_sexes) {
 
-        devs_prs = if(is.null(ln_growth_devs)) matrix(0, n_yrs, n_gpars) else matrix(ln_growth_devs[p,r,,,s], n_yrs, n_gpars)
+        devs_prs = if(is.null(ln_growth_devs)) matrix(0, n_yrs, n_growth_pars) else matrix(ln_growth_devs[p,r,,,s], n_yrs, n_growth_pars)
         pars_at = function(yy) get_growth_pars_year(ln_growth_pars[p,r,s,], devs_prs, growth_tv_model, growth_tv_link, growth_par_bounds, yy)
         growth_pars_1 = pars_at(1)
         growth_pars_yr = pars_at(y)

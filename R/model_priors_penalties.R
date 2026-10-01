@@ -379,125 +379,129 @@ Get_PE_loglik <- function(PE_model,
 
 #' Compute Movement Process Error Log-Likelihood (Positive Scale)
 #'
-#' Calculates the positive log-likelihood contribution for movement
-#' process error deviations under multiple IID structural assumptions.
-#' Deviations are penalized as \eqn{N(0, \sigma^2)} where \eqn{\sigma}
-#' is drawn from \code{PE_pars} according to the selected model structure.
-#' Under unstructured movement, only origin-destination pairs that are adjacent
-#' (non-zero in \code{adjacency_collapsed}) contribute to the likelihood; under
-#' CTMC movement the deviations sit on each region's preference, and every
-#' region the map keeps contributes.
+#' The log likelihood of \code{move_devs}, a field over origin-destination
+#' pair, population, year, season, age and sex (see
+#' \code{\link{do_move_re_mapping}}). Each process error block of pairs is one
+#' separable Gaussian density, \code{dseparable} with a factor per dim built
+#' from that dim's first level in the block: \code{dautoreg} where the dim is
+#' \code{"ar1"}, \code{dmvnorm} with the unstructured correlation where the
+#' dim is \code{"us"}, and a standard normal otherwise. The sd in
+#' \code{PE_pars} is the conditional one, as \code{ln_sigmaNAA} is for the
+#' numbers-at-age state, so for each \code{"ar1"} dim the field is scaled by
+#' that sd divided by \code{sqrt(1 - rho^2)}, which gives the marginal sd.
+#' With no correlation on any dim, each cell is penalized on its own, and a
+#' cell left \code{NA} in \code{map_move_devs} is skipped -- this is how a
+#' dsem takes over a single series. With a correlation, a block is evaluated
+#' as a whole: skipped when every cell is \code{NA}, refused when only some
+#' are. Returns zero when the dsem holds the density (\code{move_dsem = 1})
+#' or no deviation is estimated.
 #'
-#' \strong{Note:} The returned value is on the \emph{positive} log-likelihood
-#' scale. It must be negated externally to form the negative log-likelihood.
+#' @param move_year_re,move_age_re Integer codes, \code{0} none, \code{1} iid,
+#'   \code{2} ar1.
+#' @param move_pop_re,move_seas_re,move_sex_re Integer codes, \code{0} none,
+#'   \code{1} iid or blocks, \code{2} unstructured.
+#' @param PE_pars Array \code{[n_regions x n_regions_to x 3]} of log
+#'   conditional sd, unconstrained age correlation and unconstrained year
+#'   correlation, shared within each process error block.
+#' @param move_pop_corr_pars,move_seas_corr_pars,move_sex_corr_pars Unconstrained
+#'   parameters of the unstructured correlations, read under \code{"us"}.
+#' @param move_devs Array \code{[n_pop x n_regions x n_regions_to x n_years x
+#'   n_seas x n_ages x n_sexes]} of movement deviations.
+#' @param map_move_devs Integer mirror of the deviation map, \code{NA} where a
+#'   cell is fixed or a dsem holds it.
+#' @param move_pairs Integer matrix, one row per pair, giving its origin and
+#'   destination.
+#' @param move_pe_block Process error block of every pair.
+#' @param move_pop_block,move_year_block,move_seas_block,move_age_block,move_sex_block
+#'   Block of every level of the dim, \code{NA} where inactive.
+#' @param move_dsem Integer flag; \code{1} when the dsem holds the density.
 #'
-#' @param cont_vary_movement Character string specifying the movement process
-#'   error structure, \code{"iid_"} followed by the dims the deviations vary
-#'   over, any of p (population), y (year), seas (season), a (age), s (sex):
-#'   \code{"iid_y"} is one \eqn{\sigma} per origin region, \code{"iid_p_y_seas_a_s"}
-#'   one per population, origin region, season, age and sex. A dim left out
-#'   shares one deviation, and one \eqn{\sigma}, across it.
-#'
-#' @param PE_pars Array of movement process error parameters (log standard
-#'   deviations) dimensioned \code{[pop, from_region, seas, age, sex]}.
-#'   Exponentiated internally to obtain \eqn{\sigma}. Which dimensions
-#'   are active depends on \code{cont_vary_movement}; unused dimensions should be
-#'   fixed at a constant (e.g., index 1) via the parameter map.
-#'
-#' @param move_devs Movement deviation array dimensioned
-#'   \code{[pop, from_region, to_region, year, seas, age, sex]}. Under CTMC
-#'   movement a deviation sits on a region's preference rather than on a pair,
-#'   so \code{from_region} is that region and \code{to_region} has length one.
-#'
-#' @param map_move_devs Integer array dimensioned
-#'   \code{[pop, from_region, to_region, year, seas, age, sex]}
-#'   mapping deviations to unique estimated parameters. Shared deviations
-#'   hold the same integer value; dimensions are extracted from this
-#'   array to determine loop bounds.
-#'
-#' @param do_recruits_move Integer (0/1). If \code{0} and \code{n_ages >= 2},
-#'   age-1 recruits are excluded from the likelihood (loop starts at age 2).
-#'   If \code{1}, all ages including recruits are penalized.
-#'
-#' @param adjacency_collapsed \code{[n_regions x (n_regions - 1)]} matrix
-#'   of allowable movement connections among regions, with self-retention
-#'   collapsed out. Origin-destination pairs with a value of 0 are skipped and
-#'   contribute nothing to the likelihood. Read only when \code{move_type == 0}.
-#'
-#' @param move_type Integer specifying the movement formulation:
-#' \itemize{
-#'   \item \strong{0} = Unstructured multinomial logit movement
-#'   \item \strong{1} = CTMC-based movement
-#' }
-#'   Decides whether \code{adjacency_collapsed} is read: an unstructured
-#'   deviation belongs to a region pair, a CTMC deviation to a single region.
-#'
-#' @return Numeric scalar: the positive log-likelihood contribution from
-#'   movement process error deviations. Negated externally to form the
-#'   negative log-likelihood.
+#' @return Scalar log likelihood (positive scale).
 #'
 #' @keywords internal
 #' @import RTMB
-Get_move_PE_loglik <- function(cont_vary_movement,
+Get_move_PE_loglik <- function(move_year_re,
+                               move_age_re,
+                               move_pop_re,
+                               move_seas_re,
+                               move_sex_re,
                                PE_pars,
+                               move_pop_corr_pars,
+                               move_seas_corr_pars,
+                               move_sex_corr_pars,
                                move_devs,
                                map_move_devs,
-                               do_recruits_move,
-                               adjacency_collapsed,
-                               move_type
+                               move_pairs,
+                               move_pe_block,
+                               move_pop_block,
+                               move_year_block,
+                               move_seas_block,
+                               move_age_block,
+                               move_sex_block,
+                               move_dsem
                                ) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  # Note that the likelihood calculations are positive within the function,
-  # because it gets converted to negative outside the wrapper function
+  loglik = 0 # positive here, negated by the objective
+  if(move_dsem == 1 || all(is.na(map_move_devs))) return(loglik) # nothing penalized here
 
-  loglik = 0 # initialize likelihood
+  # one representative level per block: the first level that falls in it
+  first_of_block = function(block_of) match(seq_len(max(c(0, block_of), na.rm = TRUE)), block_of)
+  pops = first_of_block(move_pop_block)
+  years = first_of_block(move_year_block)
+  seasons = first_of_block(move_seas_block)
+  ages = first_of_block(move_age_block)
+  sexes = first_of_block(move_sex_block)
+  n_pops = length(pops); n_years = length(years); n_seasons = length(seasons); n_ages = length(ages); n_sexes = length(sexes)
+  correlated = any(c(move_pop_re, move_year_re, move_seas_re, move_age_re, move_sex_re) == 2)
 
-  # Get dimensions for penalty
-  n_pop = dim(map_move_devs)[1]
-  n_regions_from = dim(map_move_devs)[2]
-  n_regions_to = dim(map_move_devs)[3]
-  n_yrs = dim(map_move_devs)[4]
-  n_seas = dim(map_move_devs)[5]
-  n_ages = dim(map_move_devs)[6]
-  n_sexes = dim(map_move_devs)[7]
+  # one density factor per dim. each one's correlation matrix is built right here, not deferred,
+  # since R's lazy evaluation would otherwise build it inside dseparable's own tape
+  f_iid = function(v) sum(RTMB::dnorm(v, 0, 1, TRUE)) # independent, or one block
+  f_ar1 = function(rho) { force(rho); function(v) RTMB::dautoreg(v, mu = 0, phi = rho, log = TRUE) }
+  f_us = function(pars, k) { C = build_us_corr(pars, k); function(v) RTMB::dmvnorm(v, Sigma = C, log = TRUE) }
+  f_pop = if(move_pop_re == 2) f_us(move_pop_corr_pars, n_pops) else f_iid
+  f_seas = if(move_seas_re == 2) f_us(move_seas_corr_pars, n_seasons) else f_iid
+  f_sex = if(move_sex_re == 2) f_us(move_sex_corr_pars, n_sexes) else f_iid
 
-  # whether recruits move
-  age_start = ifelse(do_recruits_move == 0 && n_ages >= 2, 2, 1)
+  for(b in seq_len(max(move_pe_block))) {
 
-  # the dims penalized over. a dim the form leaves out is shared, so only its first slot is read
-  abbrev = c(p = "pop", y = "year", seas = "season", a = "age", s = "sex")
-  key_dims = unname(abbrev[strsplit(sub("^iid_", "", cont_vary_movement), "_")[[1]]])
-  pop_idx  = if("pop"    %in% key_dims) 1:n_pop   else 1
-  yr_idx   = if("year"   %in% key_dims) 1:n_yrs   else 1
-  seas_idx = if("season" %in% key_dims) 1:n_seas  else 1
-  age_idx  = if("age"    %in% key_dims) age_start:n_ages else 1
-  sex_idx  = if("sex"    %in% key_dims) 1:n_sexes else 1
+    # the pairs in this block, each with its own deviations
+    pairs_read = which(move_pe_block == b)
+    n_pairs_read = length(pairs_read)
 
-  # Penalize Deviations
-  # a single region model has nowhere to move to, so this loop does not run
-  for(rr in seq_len(n_regions_to)) {
-    for(r in seq_len(n_regions_from)) {
+    # the field of this block, [pair, population, year, season, age, sex], and which of its cells are estimated
+    eps = array(0, dim = c(n_pairs_read, n_pops, n_years, n_seasons, n_ages, n_sexes))
+    estimated = array(FALSE, dim = dim(eps))
+    for(j in 1:n_pairs_read) {
+      region_from = move_pairs[pairs_read[j], 1]
+      region_to = move_pairs[pairs_read[j], 2]
+      eps[j,,,,,] = move_devs[pops,region_from,region_to,years,seasons,ages,sexes,drop = FALSE]
+      estimated[j,,,,,] = !is.na(map_move_devs[pops,region_from,region_to,years,seasons,ages,sexes,drop = FALSE])
+    } # end j loop
+    if(!any(estimated)) next # the block is fixed or a dsem holds it
+    region_from = move_pairs[pairs_read[1], 1]
+    region_to = move_pairs[pairs_read[1], 2]
+    sigma = exp(PE_pars[region_from,region_to,1]) # conditional sd, the marginal under an ar1 being larger by 1 / sqrt(1 - rho^2)
 
-      if(move_type == 0 && adjacency_collapsed[r,rr] == 0) next # skip
+    # independent everywhere: each estimated cell on its own, so a single cell can be taken out
+    if(!correlated) {
+      loglik = loglik + sum(RTMB::dnorm(eps[estimated], 0, sigma, TRUE))
+      next
+    }
+    if(!all(estimated)) stop("map_move_devs leaves some cells of a correlated movement block out of the penalty. A cell left out sits inside that joint density, so it cannot be dropped one at a time. Use iid or block forms on every dim, or leave every cell in.")
 
-      for(p in pop_idx) {
-        for(y in yr_idx) {
-          for(seas in seas_idx) {
-            for(a in age_idx) {
-              for(s in sex_idx) {
-                if(is.na(map_move_devs[p,r,rr,y,seas,a,s])) next # estimated but not penalized here, which is how a dsem takes a cell over
-                loglik = loglik + RTMB::dnorm(move_devs[p,r,rr,y,seas,a,s], 0, exp(PE_pars[p,r,seas,a,s]), TRUE)
-              } # end s loop
-            } # end a loop
-          } # end seas loop
-        } # end y loop
-      } # end p loop
+    # this block's ar1 correlations and marginal sd, then one separable density over the six dims
+    rho_a = if(move_age_re == 2) rho_trans(PE_pars[region_from,region_to,2]) else 0 # age correlation
+    rho_y = if(move_year_re == 2) rho_trans(PE_pars[region_from,region_to,3]) else 0 # year correlation
+    scale = sigma / sqrt(1 - rho_y^2) / sqrt(1 - rho_a^2) # marginal sd, since dautoreg has unit marginal variance
+    f_year = if(move_year_re == 2) f_ar1(rho_y) else f_iid
+    f_age = if(move_age_re == 2) f_ar1(rho_a) else f_iid
+    loglik = loglik + RTMB::dseparable(f_iid, f_pop, f_year, f_seas, f_age, f_sex)(eps, scale = scale) # pairs independent
 
-    } # end r loop
-  } # end rr loop
+  } # end b loop
 
   return(loglik)
 }
@@ -1361,9 +1365,8 @@ get_rec_level_penalty <- function(Rec, sigma, center = 1, yrs = NULL) {
 #' generates recruitment: there the residual is the parameter, here it is a
 #' derived quantity and the deviations remain free.
 #'
-#' Several AFSC models are written this way to reflect that a weakly determined SR relationship
-# should inform the recruitment series rather than completly dictate it
-#'
+#' Several AFSC models are written this way to reflect that a weakly determined SR
+#' relationship should inform the recruitment series rather than completely dictate it.
 #'
 #' @param Rec Array \code{[pop, region, year]} of realized recruitment.
 #' @param SR_pred Array \code{[pop, region, year]} of the curve's prediction,
@@ -2017,8 +2020,8 @@ penalize_naa_age_year <- function(eps_ya, sd_prs, NAA_re, pe, ny, na) {
 #' Penalty on catchability deviations
 #'
 #' Annual deviations from a fleet's block catchability, taken as independent,
-#' a random walk or an ar1. A fleet whose deviations a dsem has
-#' taken over reads no penalty here, since the mirror blanks those cells.
+#' a random walk or an ar1. A fleet whose deviations a dsem has taken over
+#' gets no penalty here, since the mirror blanks those cells.
 #'
 #' @param ln_q_devs Array \code{[n_regions, n_yrs_total, n_fleets]} of log-scale
 #'   catchability deviations.
@@ -2053,7 +2056,7 @@ Get_q_dev_penalty <- function(ln_q_devs,
   n_fleets <- d[3]
 
   nLL <- 0
-  if(all(q_model %in% c(1, 5))) return(nLL) # not a q ,odel that uses
+  if(all(q_model %in% c(1, 5))) return(nLL) # none or dsem: no per-fleet deviation penalty here
 
   wt <- dev_share_weights(map_ln_q_devs, d) # a deviation shared across pars splits the penalty evenly between (to avoid dbl counting)
   is_est <- array(as.numeric(wt > 0), dim = d)
@@ -2061,7 +2064,7 @@ Get_q_dev_penalty <- function(ln_q_devs,
   for(f in 1:n_fleets) {
 
     if(q_model[f] %in% c(1, 5)) next
-    pe_model <- q_model[f] - 1 # 1 iid, 2 random walk, 3 ar1, as get_dev_pe_nLL reads them
+    pe_model <- q_model[f] - 1 # q_model's 2/3/4 (iid/random walk/ar1) shifted to get_dev_pe_nLL's own 1/2/3
 
     for(r in 1:n_regions) {
 

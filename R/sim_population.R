@@ -624,7 +624,7 @@ run_annual_cycle <- function(y,
   }
 
   # growth kept cohort by cohort takes this year's start of year numbers, as the fit's population loop does
-  if(!is.null(sim_env$growth_state) && y >= sim_env$dsem_growth_args$growth_cohort_styr) advance_sim_growth_year(y, sim, sim_env)
+  if(!is.null(sim_env$growth_state) && y >= sim_growth_args(sim_env)$growth_cohort_styr) advance_sim_growth_year(y, sim, sim_env)
 
   apply_pop_dy(y, sim, sim_env) # Apply population dynamics (movement, mortality, and biomass calculations)
   generate_fishery_catch_comp_idx(y, sim, sim_env) # Get Fishery Catches, Compositions, and Indices

@@ -152,26 +152,27 @@ test_that("growth declares parameter by parameter, holds that parameter's sd, an
 
 # Movement -------------------------------------------------------------------
 
-test_that("movement declares through the option's prefix and holds its process error", {
+test_that("movement declares through the year switch and holds its process error", {
 
-  # a dim the form leaves out is shared, and a shared deviation cannot be linked, so the form names every dim
-  expect_error(suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "dsem_y_a"))), "dsem_y_a_s")
-  sweep <- suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "dsem")))
+  # a dsem links one series per cell, so it splits every dim itself and takes no other correlation
+  expect_error(suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, move_year_re = "dsem", move_age_re = "iid"))), "move_age_re must be 'none'")
+  expect_error(suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, move_year_re = "dsem", move_sex_re = "us"))), "no other switch can be 'us'")
+  sweep <- suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, move_year_re = "dsem")))
   expect_equal(sweep$data$dsem_declared, "move")
   expect_equal(sweep$data$move_dsem, 1)
-  expect_equal(sweep$data$cont_vary_movement, "iid_y_a_s") # "dsem" named year, age and sex itself
-  spelled <- suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "dsem_y_a_s")))
-  expect_equal(spelled$data$cont_vary_movement, "iid_y_a_s")
-  any_order <- suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "dsem_s_a_y")))
-  expect_equal(any_order$data$cont_vary_movement, "iid_y_a_s") # the dims are read in the order p, y, seas, a, s however they are written
+  expect_equal(sweep$data$move_year_re, 1) # the map varies over years as an iid form does; the arrows give the density
+  expect_equal(sweep$data$move_age_re, 0)
+  expect_true(all(is.na(sweep$map$move_pe_pars))) # read by nothing under the dsem
+  m <- array(as.integer(sweep$map$move_devs), dim = dim(sweep$par$move_devs))
+  expect_false(any(m[1,1,1,,1,3,1] == m[1,1,1,,1,3,2], na.rm = TRUE)) # the sexes split, since each cell is its own series
 
-  # the form is stored as written and the penalty parses its dims back out, so any combination of dims runs
-  seasonal <- suppressMessages(sweep_input(dims = list(n_seas = 2, n_sexes = 1), move = list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "iid_y_seas_a", Movement_cont_pe_pars_spec = "est_shared")))
-  expect_equal(seasonal$data$cont_vary_movement, "iid_y_seas_a")
+  # the penalty runs for any combination of the switches
+  seasonal <- suppressMessages(sweep_input(dims = list(n_seas = 2, n_sexes = 1), move = list(use_fixed_movement = 0, Fixed_Movement = NA, move_year_re = "ar1", move_age_re = "iid", move_seas_re = "us")))
+  expect_equal(seasonal$data$move_year_re, 2)
+  expect_equal(nrow(seasonal$data$move_pairs), 3 * 2) # one surface per origin and destination
+  expect_equal(length(levels(seasonal$map$move_seas_corr_pars)), 1)
   obj_seasonal <- fit_model(seasonal$data, seasonal$par, seasonal$map, random = NULL, do_optim = FALSE, silent = TRUE)
   expect_true(is.finite(obj_seasonal$fn(obj_seasonal$par)))
-  expect_true(all(is.na(sweep$map$move_pe_pars)))
-  expect_error(suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "dsem_y_a_s", Movement_cont_pe_pars_spec = "est_all"))), "cannot be estimated")
 
   # every series with an estimated cell is owed: here one per origin, destination and age
   n_yrs <- length(sweep$data$years)
@@ -202,7 +203,7 @@ test_that("a year varying preference term is refused once a movement series is l
   ctmc <- function(pref) suppressMessages(sweep_input(move = list(
     use_fixed_movement = 0, Fixed_Movement = NA, move_type = 1, adjacency_mat = A,
     area_r = rep(1, n_regions), ctmc_move_dat = dat, diffusion_formula = ~1,
-    preference_formula = pref, ctmc_diffusion_bounds = "upwind", cont_vary_movement = "dsem")))
+    preference_formula = pref, ctmc_diffusion_bounds = "upwind", move_year_re = "dsem")))
   sd_lines <- function(il) {
     s <- dsem_series(il, "move")
     paste0(s, " <-> ", s, ", 0, sd_move")

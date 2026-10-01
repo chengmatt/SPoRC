@@ -677,6 +677,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else extend_years(replicate(n = sim_list$n_sims, rep$SizeAgeTrans_srv[,,seq_along(data$years),,,,,,drop = FALSE]), closed_loop_yrs, 3, 'last')
   )
 
+  # growth deviations stuff; conditional during conditioning years, new draws after
+  sim_list <- Setup_Sim_Growth_RE(sim_list, data, optim_parameters_list, rep = rep)
+
   # Setup Recruitment Processes ---------------------------------------------
   h_input <- if(!"h_input" %in% names(args)) {
     replicate(n = sim_list$n_sims, array(rep$h_trans, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs)))
@@ -802,6 +805,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     else extend_years(replicate(n = sim_list$n_sims, rep$Mrate[,,,seq_along(data$years),,,,drop = FALSE]), closed_loop_yrs, 4, 'last')
   }
 
+  # movement deviations; conditional during conditioning years, new draws after
+  sim_list <- Setup_Sim_Movement(sim_list, data, optim_parameters_list)
+
   # State-space numbers at age ----------------------------------------------
   sim_list$NAA_re <- if("NAA_re" %in% names(args)) args$NAA_re else {
     if(is.null(data$NAA_re)) 0 else data$NAA_re
@@ -902,6 +908,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     for(i in seq_len(sim_list$n_sims)) eta[,,,,,,i] <- fit_eta
     sim_list$naa_eta_input <- eta
   } else if("naa_eta_input" %in% names(args)) sim_list$naa_eta_input <- args$naa_eta_input
+
+  # setup dsem - conditional on historical fits
+  if(!is.null(data$dsem_model)) sim_list <- Setup_Sim_DSEM(sim_list, data, optim_parameters_list, rep = rep, condition_on_fit = TRUE)
 
   return(sim_list)
 }

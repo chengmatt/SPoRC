@@ -42,7 +42,7 @@ Get_Growth(
 )
 }
 \arguments{
-\item{ln_growth_pars}{Array \code{[pop, region, sex, n_gpars]} of log growth
+\item{ln_growth_pars}{Array \code{[pop, region, sex, n_growth_pars]} of log growth
 parameters in the order L1, L2, K, CV1, CV2 and, for the Richards form, rho.}
 
 \item{growth_A1, growth_A2}{Reference ages; see \code{\link{get_laa_curve}}.}
@@ -77,16 +77,16 @@ weight at age are read.}
 fraction of the season elapsed when each survey is taken, at which that
 survey's key and weight at age are read.}
 
-\item{ln_growth_devs}{Array \code{[pop, region, year, n_gpars, sex]} of
+\item{ln_growth_devs}{Array \code{[pop, region, year, n_growth_pars, sex]} of
 time-varying deviations, or \code{NULL} for none.}
 
-\item{growth_tv_model}{Integer vector \code{[n_gpars]}, 0 constant, 1 iid,
+\item{growth_tv_model}{Integer vector \code{[n_growth_pars]}, 0 constant, 1 iid,
 2 random walk, per parameter.}
 
 \item{growth_tv_link}{Integer, 0 log link, 1 logit link within
 \code{growth_par_bounds}.}
 
-\item{growth_par_bounds}{Matrix \code{[n_gpars x 2]} of bounds for the logit
+\item{growth_par_bounds}{Matrix \code{[n_growth_pars x 2]} of bounds for the logit
 link.}
 
 \item{growth_tv_type}{Integer, 0 each year on its own curve, 1 cohort

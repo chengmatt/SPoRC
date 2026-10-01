@@ -201,115 +201,165 @@ get_yr_varying_pref_terms <- function(input_list) {
 
 }
 
-#' Map continuous movement deviation and process-error parameters
+#' Blocks of a movement deviation dim
 #'
-#' Internal helper called by \code{\link{Setup_Mod_Movement}} to construct the
-#' TMB/RTMB factor maps for \code{move_devs} (iid deviations on the movement
-#' logit or log-rate surface) and \code{move_pe_pars} (process-error variance
-#' parameters). Deviations are only activated when the model is spatial
-#' (\code{n_regions > 1}), continuous variation is requested
-#' (\code{cont_vary_movement} is not \code{"none"}), and movement is estimated
-#' (\code{use_fixed_movement == 0}). For CTMC movement, deviations sit on each
-#' region's preference, so the only ones left unestimated belong to a region no
-#' edge of the adjacency matrix touches. The resulting integer map is also
-#' stored as \code{$data$map_move_devs} for use in the C++ template.
+#' Turns one switch of \code{\link{Setup_Mod_Movement}} into a block id per
+#' level: \code{NA} for an inactive level, one block for \code{"none"}, a block
+#' per active level for \code{"iid"}, \code{"ar1"} and \code{"us"}, and the
+#' blocks as given for a list. A dsem splits every active level, since it links
+#' one series per cell.
 #'
-#' @param input_list Named list with \code{$data}, \code{$par}, and \code{$map}
-#'   sublists.
-#' @param cont_vary_movement Character string specifying the deviation structure:
-#'   \code{"none"}, or \code{"iid_"} followed by the dims the deviations vary
-#'   over, any of p, y, seas, a, s in any order (\code{"iid_y"}, \code{"iid_y_a_s"},
-#'   \code{"iid_p_y_seas_a_s"}, any combination). Dimensions present in the
-#'   string receive unique estimation indices; absent dimensions share a single
-#'   index. \code{"none"} maps all deviations to \code{NA}.
-#' @param Movement_cont_pe_pars_spec Character string controlling estimation of
-#'   the process-error variance for movement deviations. One of:
-#'   \describe{
-#'     \item{\code{"none"} or \code{"fix"}}{All \code{move_pe_pars} kept fixed
-#'       (mapped to \code{NA} or at starting values).}
-#'     \item{\code{"est_shared"}}{Single variance parameter shared across all
-#'       dimensions (all elements mapped to index 1).}
-#'     \item{\code{"est_all"}}{All \code{move_pe_pars} estimated independently
-#'       with dimensions
-#'       \code{[n_pop × n_regions × n_seas × n_ages × n_sexes]}.}
-#'   }
+#' @param switch The switch's value.
+#' @param active Integer vector of the active levels.
+#' @param n_levels Number of levels of the dim.
+#' @param dsem Logical, whether a dsem holds the deviations.
 #'
-#' @return The input \code{input_list} with three entries updated:
-#'   \describe{
-#'     \item{\code{$map$move_devs}}{Factor vector for movement deviations.
-#'       Active cells receive sequential integer indices; CTMC regions no edge
-#'       touches and inactive configurations are \code{NA}.}
-#'     \item{\code{$data$map_move_devs}}{Integer array (same dimensions as
-#'       \code{$par$move_devs}) storing the numeric version of the factor map
-#'       for use in the C++ objective function.}
-#'     \item{\code{$map$move_pe_pars}}{Factor vector for process-error
-#'       variance parameters, following \code{Movement_cont_pe_pars_spec}.}
-#'   }
+#' @return Integer vector of length \code{n_levels}, the block of each level.
 #'
 #' @keywords internal
-do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_cont_pe_pars_spec) {
+move_dim_blocks <- function(switch, active, n_levels, dsem = FALSE) {
 
-  # Setup mapping list
-  n_regions_to <- dim(input_list$par$move_devs)[3] # get movement to
-  map_move_devs <- array(NA, dim = dim(input_list$par$move_devs))
-  map_move_pe_pars <- array(NA, dim = dim(input_list$par$move_pe_pars))
-
-  # Movement Deviations -----------------------------------------------
-  if(input_list$data$n_regions > 1 && # if spatial model
-     input_list$data$cont_vary_movement != "none" && # if continuous varying movement
-     input_list$data$use_fixed_movement == 0 # if not using fixed movement matrix
-  ) {
-
-    # Dimensions (every region pair, or every region under the CTMC, gets its own set of estimated deviations, never shared with another)
-    dims <- c(pop = input_list$data$n_pop,
-              region_from = input_list$data$n_regions,
-              region_to = n_regions_to,
-              year = length(input_list$data$years) + input_list$data$n_proj_yrs_devs,
-              season = input_list$data$n_seas,
-              age = length(input_list$data$ages),
-              sex = input_list$data$n_sexes)
-
-    # dims named in the spec (e.g. "iid_y_a_s" -> year, age, sex) get unique value per combination and those dims not named are shared/broadcast
-    dim_abbrev <- c(p = "pop", y = "year", seas = "season", a = "age", s = "sex")
-    key_extra <- unname(dim_abbrev[strsplit(sub("^iid_", "", cont_vary_movement), "_")[[1]]])
-    share_over <- setdiff(dim_abbrev, key_extra)
-
-    map_move_devs <- build_pe_map(dims, share_over = share_over)
-
-    # whether recruits (age 1) move
-    if("age" %in% key_extra && input_list$data$do_recruits_move == 0 && dims["age"] >= 2) {
-      map_move_devs[,,,,,1,] <- NA
-    }
-
-    # ctmc deviations
-    if(input_list$data$move_type == 1) {
-      for(r in 1:input_list$data$n_regions) {
-        isolated <- all(input_list$data$adjacency_mat[r,] == 0) && all(input_list$data$adjacency_mat[,r] == 0)
-        if(isolated) map_move_devs[,r,,,,,] <- NA
-      } # end r
-    }
+  block_of <- rep(NA, n_levels)
+  if(is.list(switch)) {
+    for(b in seq_along(switch)) block_of[switch[[b]]] <- b
+  } else if(switch == "none" && !dsem) {
+    block_of[active] <- 1
+  } else {
+    block_of[active] <- seq_along(active)
   }
+  return(block_of)
 
-    # Movement Process Error Parameters ---------------------------------------
+}
 
-    # Mapping for movement process error deviations
-    if(Movement_cont_pe_pars_spec %in% c("fix", "none")) map_move_pe_pars <- map_move_pe_pars
-    if(Movement_cont_pe_pars_spec == 'est_all') map_move_pe_pars[] <- seq_along(map_move_pe_pars)
-    if(Movement_cont_pe_pars_spec == 'est_shared') map_move_pe_pars[] <- 1
+#' Map movement deviations and their process error parameters
+#'
+#' Internal helper called by \code{\link{Setup_Mod_Movement}}. The deviations
+#' are a field over origin-destination pair, population, year, season, age and
+#' sex, every pair with its own, and every other dim is cut into blocks by its switch
+#' (\code{\link{move_dim_blocks}}): cells whose blocks agree on every dim share
+#' one deviation, and a cell with an inactive level on any dim, or a pair with
+#' no edge, holds none. The process error parameters are one log sd and two
+#' AR1 correlations per process error block of pairs, from
+#' \code{move_pe_spec}, with a correlation mapped off unless its dim is
+#' \code{"ar1"} and all three mapped off under a dsem; the unstructured
+#' correlations are estimated only under \code{"us"}. Nothing is built when
+#' movement is fixed, the model has one region, or every switch is
+#' \code{"none"}.
+#'
+#' @param input_list Named list with \code{$data}, \code{$par} and \code{$map},
+#'   with the \code{move_re_*} active sets already in \code{$data}.
+#' @param move_year_re,move_age_re,move_pop_re,move_seas_re,move_sex_re,move_pe_spec
+#'   As in \code{\link{Setup_Mod_Movement}}.
+#'
+#' @return The input \code{input_list} with the factor maps of
+#'   \code{move_devs}, \code{move_pe_pars} and the three correlation vectors,
+#'   the integer mirror \code{$data$map_move_devs}, the pair table
+#'   \code{$data$move_pairs}, the block of every population, year, season,
+#'   age and sex in \code{$data$move_*_block} and the process error block of
+#'   every pair in \code{$data$move_pe_block}.
+#'
+#' @keywords internal
+do_move_re_mapping <- function(input_list, move_year_re, move_age_re, move_pop_re, move_seas_re, move_sex_re, move_pe_spec) {
 
-    # return to input list
-    input_list$map$move_devs <- factor(as.vector(map_move_devs))
-    input_list$data$map_move_devs <- array(as.numeric(input_list$map$move_devs), dim = dim(input_list$par$move_devs))
-    input_list$map$move_pe_pars <- factor(map_move_pe_pars)
-    return(input_list)
+  data <- input_list$data
+  n_pop <- data$n_pop
+  n_regions <- data$n_regions
+  n_regions_to <- dim(input_list$par$move_devs)[3] # one under the ctmc, n_regions - 1 otherwise
+  n_years_fit <- length(data$years)
+  n_years_devs <- n_years_fit + data$n_proj_yrs_devs
+  n_seas <- data$n_seas
+  n_ages <- length(data$ages)
+  n_sexes <- data$n_sexes
+  dev_dims <- c(n_pop, n_regions, n_regions_to, n_years_devs, n_seas, n_ages, n_sexes)
+
+  # nothing estimated until deviations are asked for in a spatial model with movement estimated
+  map_move_devs <- array(NA, dim = dev_dims)
+  map_move_pe_pars <- array(NA, dim = c(n_regions, n_regions_to, 3))
+  map_pop_corr <- rep(NA, length(input_list$par$move_pop_corr_pars))
+  map_seas_corr <- rep(NA, length(input_list$par$move_seas_corr_pars))
+  map_sex_corr <- rep(NA, length(input_list$par$move_sex_corr_pars))
+  move_pairs <- matrix(0, nrow = 0, ncol = 2)
+  pe_block <- numeric(0)
+  pop_block <- rep(NA, n_pop); year_block <- rep(NA, n_years_devs); seas_block <- rep(NA, n_seas); age_block <- rep(NA, n_ages); sex_block <- rep(NA, n_sexes)
+  is_none <- function(switch) !is.list(switch) && switch == "none"
+  deviations_on <- n_regions > 1 && data$use_fixed_movement == 0 &&
+    !(is_none(move_year_re) && is_none(move_age_re) && is_none(move_pop_re) && is_none(move_seas_re) && is_none(move_sex_re))
+
+  if(deviations_on) {
+
+    # the pair table: every origin and destination with an edge, in origin then destination order. under the
+    # ctmc a pair is a region, and one no edge touches is left out
+    for(region_from in 1:n_regions) {
+      for(region_to in 1:n_regions_to) {
+        has_edge <- if(data$move_type == 0) data$adjacency_collapsed[region_from, region_to] == 1
+                    else any(data$adjacency_mat[region_from,] == 1) || any(data$adjacency_mat[,region_from] == 1)
+        if(has_edge) move_pairs <- rbind(move_pairs, c(region_from, region_to))
+      } # end region_to loop
+    } # end region_from loop
+    n_pairs <- nrow(move_pairs)
+
+    # the block of every level on every dim, which is what the deviations share within
+    dsem <- !is.list(move_year_re) && move_year_re == "dsem"
+    active_years <- c(data$move_re_years, seq_len(n_years_devs)[-seq_len(n_years_fit)]) # projection years are always active
+    pop_block <- move_dim_blocks(move_pop_re, data$move_re_pops, n_pop, dsem)
+    year_block <- move_dim_blocks(move_year_re, active_years, n_years_devs, dsem)
+    seas_block <- move_dim_blocks(move_seas_re, data$move_re_seas, n_seas, dsem)
+    age_block <- move_dim_blocks(move_age_re, data$move_re_ages, n_ages, dsem)
+    sex_block <- move_dim_blocks(move_sex_re, data$move_re_sexes, n_sexes, dsem)
+    n_blocks <- function(block_of) max(c(0, block_of), na.rm = TRUE)
+
+    # one level per combination of blocks, and every cell reads the level of its own blocks
+    level_by_block <- build_pe_map(c(pair = n_pairs, pop = n_blocks(pop_block), year = n_blocks(year_block),
+                                     season = n_blocks(seas_block), age = n_blocks(age_block), sex = n_blocks(sex_block)))
+    pair_of_cell <- matrix(NA, n_regions, n_regions_to) # the pair table row of each origin and destination
+    pair_of_cell[move_pairs] <- seq_len(n_pairs)
+    cell <- function(k) as.vector(slice.index(map_move_devs, k)) # the index on dim k of every cell
+    map_move_devs[] <- level_by_block[cbind(pair_of_cell[cbind(cell(2), cell(3))], pop_block[cell(1)], year_block[cell(4)],
+                                            seas_block[cell(5)], age_block[cell(6)], sex_block[cell(7)])]
+
+    # process error: one log sd and two correlations per block of pairs, nothing under a dsem
+    pe_block <- if(is.list(move_pe_spec)) move_dim_blocks(move_pe_spec, seq_len(n_pairs), n_pairs)
+                else if(move_pe_spec == "est_shared") rep(1, n_pairs) else seq_len(n_pairs)
+    if(any(is.na(pe_block))) stop("move_pe_spec blocks must cover each of the ", n_pairs, " pairs exactly once.")
+    if(!dsem) {
+      n_pe_blocks <- n_blocks(pe_block)
+      for(i in 1:n_pairs) {
+        region_from <- move_pairs[i, 1]
+        region_to <- move_pairs[i, 2]
+        map_move_pe_pars[region_from, region_to, 1] <- pe_block[i] # log sd
+        if(!is.list(move_age_re) && move_age_re == "ar1") map_move_pe_pars[region_from, region_to, 2] <- n_pe_blocks + pe_block[i] # age correlation
+        if(!is.list(move_year_re) && move_year_re == "ar1") map_move_pe_pars[region_from, region_to, 3] <- 2 * n_pe_blocks + pe_block[i] # year correlation
+      } # end i loop
+      if(identical(move_pop_re, "us")) map_pop_corr <- seq_along(map_pop_corr)
+      if(identical(move_seas_re, "us")) map_seas_corr <- seq_along(map_seas_corr)
+      if(identical(move_sex_re, "us")) map_sex_corr <- seq_along(map_sex_corr)
+    }
+
+  } # end if deviations are on
+
+  colnames(move_pairs) <- c("region_from", "region_to")
+  input_list$map$move_devs <- factor(as.vector(map_move_devs))
+  input_list$data$map_move_devs <- array(as.numeric(input_list$map$move_devs), dim = dev_dims)
+  input_list$map$move_pe_pars <- factor(as.vector(map_move_pe_pars))
+  input_list$map$move_pop_corr_pars <- factor(map_pop_corr)
+  input_list$map$move_seas_corr_pars <- factor(map_seas_corr)
+  input_list$map$move_sex_corr_pars <- factor(map_sex_corr)
+  input_list$data$move_pairs <- move_pairs
+  input_list$data$move_pe_block <- pe_block
+  input_list$data$move_pop_block <- pop_block
+  input_list$data$move_year_block <- year_block
+  input_list$data$move_seas_block <- seas_block
+  input_list$data$move_age_block <- age_block
+  input_list$data$move_sex_block <- sex_block
+  return(input_list)
 
 }
 
 #' Set up movement model inputs and parameter structures
 #'
 #' Sets up unstructured Markov transition movement (\code{move_type = 0}) or a
-#' continuous time Markov chain (\code{move_type = 1}), with optional iid
-#' deviations on the movement surface, and builds the parameter arrays and factor
+#' continuous time Markov chain (\code{move_type = 1}), with optional random
+#' effects on the movement surface, and builds the parameter arrays and factor
 #' maps. Call after \code{\link{Setup_Mod_Biologicals}}.
 #'
 #' @section Unstructured Markov movement (\code{move_type = 0}):
@@ -319,7 +369,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #' parameters: indices in one block take the same factor level. A fully connected
 #' adjacency matrix is built automatically. Blocks and continuous time variation
 #' combine: use \code{Movement_yearblk_spec} for structural breaks and
-#' \code{cont_vary_movement} for residual year-to-year variation.
+#' \code{move_year_re} for residual year-to-year variation.
 #'
 #' @section CTMC movement (\code{move_type = 1}):
 #' The rate matrix \eqn{Q} is decomposed into diffusion (\eqn{\theta}) and
@@ -329,12 +379,28 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #' every \code{Movement_*blk_spec} must stay \code{"constant"}; put structure
 #' across populations, ages, sexes or seasons into formula covariates instead.
 #'
-#' @section Continuous movement deviations:
+#' @section Movement random effects:
 #' Deviations are added to the movement logit surface under unstructured movement,
-#' or to each region's preference under CTMC, before probabilities are computed,
-#' and are penalized as normal random effects whose variance
-#' \code{Movement_cont_pe_pars_spec} can estimate. Age-1 deviations are fixed at
-#' zero when \code{do_recruits_move = 0}.
+#' or to each region's preference under CTMC, before probabilities are computed.
+#' The deviations are a field over origin-destination pair (region under the
+#' CTMC), population, year, season, age and sex, with every pair its own
+#' deviations, and five switches say how they vary over the other dims:
+#' \code{move_year_re} and \code{move_age_re} take \code{"none"},
+#' \code{"iid"} or \code{"ar1"}, and \code{move_pop_re},
+#' \code{move_seas_re} and \code{move_sex_re} take \code{"none"},
+#' \code{"iid"}, \code{"us"} or a list of blocks of levels sharing one
+#' deviation. The density is the sd times the Kronecker product of
+#' an AR1 over years, an AR1 over ages and an unstructured correlation over each
+#' of the other dims, the composition the numbers at age state uses, with
+#' \code{move_pe_pars} holding each process error block's log conditional
+#' sd (the marginal is larger by \code{1 / sqrt(1 - rho^2)} per \code{"ar1"}
+#' dim, as for \code{ln_sigmaNAA}) and two AR1 correlations, and
+#' \code{move_*_corr_pars} the unstructured ones.
+#' \code{move_re_pops}, \code{move_re_years}, \code{move_re_seas},
+#' \code{move_re_ages} and \code{move_re_sexes} restrict the deviations to
+#' those slots; every other cell stays at zero. \code{move_pe_spec} shares the
+#' sd and correlations across pairs.
+
 #'
 #' The two types size the deviations differently. Unstructured movement holds one
 #' per origin and destination pair, \code{[n_regions x (n_regions - 1)]}, while the
@@ -375,30 +441,48 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   (default) or a list of integer vectors, e.g. \code{list(c(1, 2), 3)} for
 #'   populations, \code{list(1:4, 5:10)} for a juvenile and an adult block, or
 #'   \code{list(1, 2)} for sex-specific movement. Use
-#'   \code{Movement_yearblk_spec} for structural breaks and
-#'   \code{cont_vary_movement} for residual annual variation. All are ignored when
-#'   \code{move_type = 1}.
-#' @param cont_vary_movement Structure of the continuous deviations on the
-#' fixed-effect movement surface. \code{"none"} (default), or \code{"iid_"}
-#' followed by the dims they vary over, any of p (population), y (year), seas
-#' (season), a (age) and s (sex) in any order: \code{"iid_y"} is one deviation
-#' per year and region pair, or per year and region under CTMC movement, shared
-#' across everything else, and \code{"iid_p_y_seas_a_s"} varies by every dim. A
-#' dim left out shares one deviation across it. They are random effects with
-#' \code{Movement_cont_pe_pars_spec} estimating the sd and
-#' \code{random = "move_devs"} in \code{\link{fit_model}}. \code{"dsem"}
-#' instead takes their density from the arrows given to
-#' \code{\link{Setup_Mod_DSEM}}, one series per origin and destination (per
-#' region under CTMC, whose deviations hold no destination) and per level of
-#' every other dim with more than one, which it names itself since a deviation
-#' shared across a dim cannot be linked; \code{move_pe_pars} are then read by
-#' nothing.
-#' @param Movement_cont_pe_pars_spec Estimation of the process error variance for
-#'   the \code{cont_vary_movement} deviations. \code{"none"} creates no parameters
-#'   and pairs with \code{cont_vary_movement = "none"}, \code{"fix"} holds the
-#'   variance at its starting value, \code{"est_shared"} estimates one shared
-#'   value, and \code{"est_all"} estimates \code{[n_pop × n_regions × n_seas ×
-#'   n_ages × n_sexes]} independently.
+#'   \code{Movement_yearblk_spec} for structural breaks or \code{move_year_re}
+#'   for annual variation, not both, and likewise \code{Movement_ageblk_spec}
+#'   or \code{move_age_re}. All are ignored when \code{move_type = 1}.
+#' @param move_year_re How the deviations vary across years within a surface:
+#'   \code{"none"} (default), \code{"iid"}, \code{"ar1"}, or \code{"dsem"},
+#'   which takes every cell's density from the arrows given to
+#'   \code{\link{Setup_Mod_DSEM}}, one series per cell of every dim with more
+#'   than one level (per region under CTMC movement, whose deviations hold no
+#'   destination), and leaves \code{move_pe_pars} read by nothing. Refuses a
+#'   \code{Movement_yearblk_spec} other than \code{"constant"} unless
+#'   \code{"none"}, since a year block and year deviations describe one thing
+#'   twice.
+#' @param move_age_re How the deviations vary across ages within a surface:
+#'   \code{"none"} (default), \code{"iid"} or \code{"ar1"}; must be
+#'   \code{"none"} under \code{move_year_re = "dsem"}, and refuses a
+#'   \code{Movement_ageblk_spec} other than \code{"constant"} unless
+#'   \code{"none"}. Every switch \code{"none"} is no deviations. Otherwise each
+#'   surface's sd is estimated, with an AR1 correlation parameter wherever a dim
+#'   is \code{"ar1"}, and the deviations are random effects with
+#'   \code{random = "move_devs"} in \code{\link{fit_model}} or penalized fixed
+#'   effects without it.
+#' @param move_pop_re,move_seas_re,move_sex_re How the deviations vary across
+#'   populations, seasons and sexes: \code{"none"} (default, one deviation
+#'   shared across the dim), \code{"iid"} (independent), \code{"us"} (an
+#'   unstructured correlation of \eqn{n(n-1)/2} parameters, shared by every
+#'   pair, as \code{NAA_re_sex} is), or a list of blocks of levels such as
+#'   \code{list(1:2, 3)}, where the levels in a block share one deviation and
+#'   blocks are independent. Blocks must cover each active level once.
+#'   \code{"us"} needs more than one active level, and neither it nor a block
+#'   list is allowed under \code{move_year_re = "dsem"}. Every origin and
+#'   destination pair (region under the CTMC) always has its own deviations.
+#' @param move_re_pops,move_re_years,move_re_seas,move_re_ages,move_re_sexes
+#'   Integer vectors of the populations, years, seasons, ages and sexes the
+#'   deviations are estimated over. Note that an AR1 or unstructured correlation runs
+#'   over the active levels.
+#' @param move_pe_spec \code{"est_all"} (default) gives every pair its own log
+#'   sd and AR1 correlations in \code{move_pe_pars}, \code{"est_shared"} gives
+#'   one set to every pair, and a list of blocks of rows of the pair table
+#'   (\code{input_list$data$move_pairs}, origins and destinations over the
+#'   edges of the adjacency matrix in origin then destination order, one row
+#'   per region under the CTMC) gives one set per block. The unstructured
+#'   correlations are always shared.
 #' @param ctmc_move_dat Data frame required when \code{move_type = 1}, one row per
 #'   population, region, year, season, age and sex, with columns \code{pop},
 #'   \code{regions}, \code{years}, \code{seas}, \code{ages}, \code{sexes} and any
@@ -464,7 +548,7 @@ do_cont_vary_move_mapping <- function(input_list, cont_vary_movement, Movement_c
 #'   updated. \code{$data} gains \code{move_type}, \code{use_fixed_movement},
 #'   \code{Fixed_Movement}, \code{adjacency_mat}, \code{adjacency_collapsed},
 #'   \code{area_r}, \code{ctmc_move_dat}, \code{diffusion_formula},
-#'   \code{preference_formula} and \code{cont_vary_movement} as its form string.
+#'   \code{preference_formula} and \code{move_year_re} as its form string.
 #'   \code{move_pars}, \code{log_move_diffusion_pars}, \code{move_preference_pars},
 #'   \code{move_devs} and \code{move_pe_pars} go into \code{$par} with their factor
 #'   maps in \code{$map}.
@@ -483,8 +567,17 @@ Setup_Mod_Movement <- function(input_list,
                                Movement_yearblk_spec = 'constant',
                                Movement_seasblk_spec = 'constant',
                                Movement_sexblk_spec = 'constant',
-                               cont_vary_movement = 'none',
-                               Movement_cont_pe_pars_spec = 'none',
+                               move_year_re = 'none',
+                               move_age_re = 'none',
+                               move_pop_re = 'none',
+                               move_seas_re = 'none',
+                               move_sex_re = 'none',
+                               move_re_pops = NULL,
+                               move_re_years = NULL,
+                               move_re_seas = NULL,
+                               move_re_ages = NULL,
+                               move_re_sexes = NULL,
+                               move_pe_spec = 'est_all',
                                ctmc_move_dat = NULL,
                                adjacency_mat = NULL,
                                area_r = rep(1, input_list$data$n_regions),
@@ -498,7 +591,6 @@ Setup_Mod_Movement <- function(input_list,
                                ...
 ) {
 
-  move_pe_spec_given <- !missing(Movement_cont_pe_pars_spec) # read before anything assigns it
   messages_list <<- character(0) # string to attach to for printing messages
   starting_values <- list(...) # get starting values if there are any
   if(input_list$store_config) input_list$config$Setup_Mod_Movement <- mget(names(formals()))[-1]
@@ -535,37 +627,69 @@ Setup_Mod_Movement <- function(input_list,
   if(!do_recruits_move %in% c(0,1)) stop('Movement for recruits is not correctly specified. The options are do_recruits_move == 0 (they dont move), or == 1 (they move)')
   else collect_message("Recruits are: ", ifelse(do_recruits_move == 0, "Not Moving", "Moving"))
 
-  # check the continuous time-varying movement form. dsem reuses the iid form, and the dsem gives
-  # the linked cells their density in place of the penalty
-  if(identical(cont_vary_movement, "dsem")) cont_vary_movement <- paste(c("dsem", if(input_list$data$n_pop > 1) "p", "y", if(input_list$data$n_seas > 1) "seas", if(length(input_list$data$ages) > 1) "a", if(input_list$data$n_sexes > 1) "s"), collapse = "_") # names every dim with more than one level, since a deviation shared across a dim cannot be linked
-  move_dsem <- grepl("^dsem_", cont_vary_movement)
-  cont_vary_movement <- sub("^dsem_", "iid_", cont_vary_movement)
-  dim_order <- c("p", "y", "seas", "a", "s") # the dims may be written in any order and are read in this one
-  named <- strsplit(sub("^iid_", "", cont_vary_movement), "_")[[1]]
-  form_ok <- identical(cont_vary_movement, "none") ||
-    (grepl("^iid_", cont_vary_movement) && length(named) > 0 && !any(duplicated(named)) && all(named %in% dim_order))
-  if(!form_ok)
-    stop("cont_vary_movement should be 'none', 'iid_' followed by the dims the deviations vary over, any of p, y, seas, a, s in any order (iid_y, iid_y_a_s, iid_p_y_seas_a_s, ...), or 'dsem'.")
-  if(grepl("^iid_", cont_vary_movement)) cont_vary_movement <- paste(c("iid", dim_order[dim_order %in% named]), collapse = "_")
-  collect_message("Continuous movement specification is: ", if(move_dsem) sub("^iid_", "dsem_", cont_vary_movement) else cont_vary_movement)
+  # the active levels of each dim; every other level holds no deviation
+  n_yrs <- length(input_list$data$years); n_ages <- length(input_list$data$ages)
+  if(is.null(move_re_pops)) move_re_pops <- seq_len(input_list$data$n_pop)
+  if(is.null(move_re_sexes)) move_re_sexes <- seq_len(input_list$data$n_sexes)
+  if(is.null(move_re_years)) move_re_years <- seq_len(n_yrs)
+  if(is.null(move_re_seas)) move_re_seas <- seq_len(input_list$data$n_seas)
+  if(is.null(move_re_ages)) move_re_ages <- if(do_recruits_move == 0 && n_ages >= 2) 2:n_ages else seq_len(n_ages)
+  if(!all(move_re_pops %in% seq_len(input_list$data$n_pop)) || length(move_re_pops) == 0) stop("move_re_pops must index the populations.")
+  if(!all(move_re_sexes %in% seq_len(input_list$data$n_sexes)) || length(move_re_sexes) == 0) stop("move_re_sexes must index the sexes.")
+  if(!all(move_re_years %in% seq_len(n_yrs)) || length(move_re_years) == 0) stop("move_re_years must index the model years.")
+  if(!all(move_re_seas %in% seq_len(input_list$data$n_seas)) || length(move_re_seas) == 0) stop("move_re_seas must index the seasons.")
+  if(!all(move_re_ages %in% seq_len(n_ages)) || length(move_re_ages) == 0) stop("move_re_ages must index the model ages.")
+  if(do_recruits_move == 0 && n_ages >= 2 && 1 %in% move_re_ages) stop("move_re_ages names age 1, but recruits do not move (do_recruits_move = 0), so age 1 can hold no deviation.")
 
-  # Check movement process error estimation (no change needed here)
-  if(!Movement_cont_pe_pars_spec %in% c('none', 'fix', 'est_all', 'est_shared'))
-    stop('Options for continuous movement process error is not correctly specified.')
-  else collect_message("Continuous movement process error specification is: ", Movement_cont_pe_pars_spec)
-
-  # the dsem supplies the deviations, so movement's own process error sd is never used
-  if(move_dsem) {
-    if(move_pe_spec_given && Movement_cont_pe_pars_spec %in% c("est_all", "est_shared")) stop("cont_vary_movement = 'dsem_...' takes the movement deviations' density from the dsem arrows, so move_pe_pars are read by nothing and cannot be estimated. Leave Movement_cont_pe_pars_spec out or set it to 'fix'.")
-    # a dim the form leaves out shares one deviation across it, and a shared deviation cannot sit under the dsem
-    named <- strsplit(sub("^iid_", "", cont_vary_movement), "_")[[1]]
-    needed <- c(if(input_list$data$n_pop > 1) "p", "y", if(input_list$data$n_seas > 1) "seas", if(length(input_list$data$ages) > 1) "a", if(input_list$data$n_sexes > 1) "s")
-    if(!all(needed %in% named)) stop(paste0("cont_vary_movement = 'dsem_", paste(named, collapse = "_"), "' shares a deviation across ", paste(setdiff(needed, named), collapse = ", "), ", and a shared deviation cannot be linked. Write cont_vary_movement = 'dsem', which names every dim itself, or name every dim the deviations vary over: dsem_", paste(needed, collapse = "_"), "."))
-    Movement_cont_pe_pars_spec <- "fix"
-    input_list$data$dsem_declared <- union(input_list$data$dsem_declared, "move")
-    collect_message("cont_vary_movement = 'dsem_...': the movement deviations' density comes from Setup_Mod_DSEM, and move_pe_pars stay at their start.")
+  # movement random effects: how the deviations vary over each dim. a list of blocks shares one deviation within each block
+  is_switch <- function(value, allowed) !is.list(value) && length(value) == 1 && value %in% allowed
+  if(!is_switch(move_year_re, c("none", "iid", "ar1", "dsem"))) stop("move_year_re should be 'none', 'iid', 'ar1' or 'dsem'. Blocks over years belong on the mean (Movement_yearblk_spec).")
+  if(!is_switch(move_age_re, c("none", "iid", "ar1"))) stop("move_age_re should be 'none', 'iid' or 'ar1'. Blocks over ages belong on the mean (Movement_ageblk_spec).")
+  check_blocks <- function(value, name, active) {
+    if(is.list(value)) {
+      in_blocks <- unlist(value)
+      if(any(duplicated(in_blocks)) || !setequal(in_blocks, active)) stop(name, " blocks must cover each active level exactly once: ", paste(active, collapse = ", "), ".")
+    } else if(!is_switch(value, c("none", "iid", "us"))) stop(name, " should be 'none', 'iid', 'us', or a list of blocks of levels sharing one deviation.")
   }
+  check_blocks(move_pop_re, "move_pop_re", move_re_pops)
+  check_blocks(move_seas_re, "move_seas_re", move_re_seas)
+  check_blocks(move_sex_re, "move_sex_re", move_re_sexes)
+  if(!is.list(move_pe_spec) && !is_switch(move_pe_spec, c("est_all", "est_shared"))) stop("move_pe_spec should be 'est_all', 'est_shared', or a list of blocks of pairs sharing an sd and correlations.")
+  if(identical(move_pop_re, "us") && length(move_re_pops) < 2) stop("move_pop_re = 'us' needs at least two active populations.")
+  if(identical(move_seas_re, "us") && length(move_re_seas) < 2) stop("move_seas_re = 'us' needs at least two active seasons.")
+  if(identical(move_sex_re, "us") && length(move_re_sexes) < 2) stop("move_sex_re = 'us' needs at least two active sexes.")
+  if(identical(move_year_re, "ar1") && length(move_re_years) < 2) stop("move_year_re = 'ar1' needs at least two active years.")
+  if(identical(move_age_re, "ar1") && length(move_re_ages) < 2) stop("move_age_re = 'ar1' needs at least two active ages.")
+  move_dsem <- identical(move_year_re, "dsem")
+  takes_structure <- function(value) is.list(value) || identical(value, "us")
+  if(move_dsem && (!identical(move_age_re, "none") || any(sapply(list(move_pop_re, move_seas_re, move_sex_re), takes_structure))))
+    stop("move_year_re = 'dsem' gives every cell its density through the dsem arrows, so move_age_re must be 'none' and no other switch can be 'us' or a block list.")
+
+  # a year or age block on the mean and deviations over the same dim describe one thing twice
+  if(!identical(move_year_re, "none") && !identical(Movement_yearblk_spec, "constant")) stop("Movement_yearblk_spec blocks the mean over years while move_year_re gives the deviations their own variation over years. Use one or the other.")
+  if(!identical(move_age_re, "none") && !identical(Movement_ageblk_spec, "constant")) stop("Movement_ageblk_spec blocks the mean over ages while move_age_re gives the deviations their own variation over ages. Use one or the other.")
+  describe <- function(value) if(is.list(value)) paste0(length(value), " blocks") else value
+  collect_message("Movement deviations vary over years: ", move_year_re, ", ages: ", move_age_re, ", populations: ", describe(move_pop_re), ", seasons: ", describe(move_seas_re), ", sexes: ", describe(move_sex_re), "; process error: ", describe(move_pe_spec))
+
+  # the dsem supplies the deviations' density, so the movement process error parameters are read by nothing
+  if(move_dsem) {
+    input_list$data$dsem_declared <- union(input_list$data$dsem_declared, "move")
+    collect_message("move_year_re = 'dsem': the movement deviations' density comes from Setup_Mod_DSEM, and move_pe_pars stay at their start.")
+  }
+  code_of <- function(value) if(is.list(value)) 1 else c(none = 0, iid = 1, ar1 = 2, us = 2, dsem = 1)[[value]] # 0 none, 1 iid or blocks, 2 ar1 or unstructured
   input_list$data$move_dsem <- as.numeric(move_dsem)
+  input_list$data$move_year_re <- code_of(move_year_re)
+  input_list$data$move_age_re <- code_of(move_age_re)
+  input_list$data$move_pop_re <- code_of(move_pop_re)
+  input_list$data$move_seas_re <- code_of(move_seas_re)
+  input_list$data$move_sex_re <- code_of(move_sex_re)
+  input_list$data$move_re_pops <- as.integer(sort(move_re_pops))
+  input_list$data$move_re_sexes <- as.integer(sort(move_re_sexes))
+  input_list$data$move_re_years <- as.integer(sort(move_re_years))
+  input_list$data$move_re_seas <- as.integer(sort(move_re_seas))
+  input_list$data$move_re_ages <- as.integer(sort(move_re_ages))
+
+
 
   if(!move_type %in% c(0, 1)) stop('move_type must be 0 (unstructured) or 1 (Continuous Time Markov Chain)')
   collect_message("Movement type is: ", ifelse(move_type == 0, "Unstructured Markov", "Continuous Time Markov Chain"))
@@ -776,7 +900,7 @@ Setup_Mod_Movement <- function(input_list,
     pref_terms <- length(attr(stats::terms(preference_formula), "term.labels")) + attr(stats::terms(preference_formula), "intercept")
     if(pref_terms > 0) warning('preference_formula has terms but ctmc_diffusion_bounds is "none"; the generator can go invalid where taxis outweighs diffusion. A bounded form is recommended.')
     # the deviations are preference too, so they make taxis out of a model whose formula has none
-    if(pref_terms == 0 && cont_vary_movement != "none") collect_message('cont_vary_movement puts deviations on preference, but ctmc_diffusion_bounds is "none"; a deviation larger than the diffusion rate makes the generator invalid. A bounded form is recommended.')
+    if(pref_terms == 0 && (move_year_re != "none" || move_age_re != "none")) collect_message('Movement deviations sit on preference, but ctmc_diffusion_bounds is "none"; a deviation larger than the diffusion rate makes the generator invalid. A bounded form is recommended.')
   }
 
   input_list$data$ctmc_diffusion_bounds <- ctmc_diffusion_bounds
@@ -798,7 +922,6 @@ Setup_Mod_Movement <- function(input_list,
   input_list$data$ctmc_scale_by_seasdur <- ctmc_scale_by_seasdur
   input_list$data$move_expm_nsub <- move_expm_nsub
 
-  input_list$data$cont_vary_movement <- cont_vary_movement
 
   # Populate Parameter List -------------------------------------------------
 
@@ -845,16 +968,20 @@ Setup_Mod_Movement <- function(input_list,
   }
   input_list$par$move_devs <- use_starting_value(input_list$par$move_devs, starting_values, "move_devs")
 
-  # Movement process error parameters
-  input_list$par$move_pe_pars <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions,
-                                                       input_list$data$n_seas, length(input_list$data$ages),
-                                                       input_list$data$n_sexes)) # max 4 parameters or the ages
+  # movement process error: log sd, age correlation and year correlation per surface, and the
+  # unstructured correlations across populations, seasons and sexes, shared by every surface
+  input_list$par$move_pe_pars <- array(0, dim = c(input_list$data$n_regions, n_dev_to, 3))
   input_list$par$move_pe_pars <- use_starting_value(input_list$par$move_pe_pars, starting_values, "move_pe_pars")
+  n_corr <- function(n) max(1, n * (n - 1) / 2) # lower triangle of a correlation matrix
+  input_list$par$move_pop_corr_pars <- use_starting_value(rep(0, n_corr(input_list$data$n_pop)), starting_values, "move_pop_corr_pars")
+  input_list$par$move_seas_corr_pars <- use_starting_value(rep(0, n_corr(input_list$data$n_seas)), starting_values, "move_seas_corr_pars")
+  input_list$par$move_sex_corr_pars <- use_starting_value(rep(0, n_corr(input_list$data$n_sexes)), starting_values, "move_sex_corr_pars")
 
 
   # Mapping Options ---------------------------------------------------------
   input_list <- do_move_pars_mapping(input_list, Movement_popblk_spec, Movement_ageblk_spec, Movement_yearblk_spec, Movement_sexblk_spec, Movement_seasblk_spec, use_fixed_movement)
-  input_list <- do_cont_vary_move_mapping(input_list, cont_vary_movement, Movement_cont_pe_pars_spec)
+  input_list <- do_move_re_mapping(input_list, move_year_re, move_age_re, move_pop_re, move_seas_re, move_sex_re, move_pe_spec)
+
 
   # Pure diffusion (preference formula with no terms)
   if(move_type == 1 && n_gamma == 0) {

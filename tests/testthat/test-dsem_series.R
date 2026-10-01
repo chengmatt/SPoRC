@@ -25,7 +25,7 @@ test_that("recruitment series come out named as the setup names them", {
 
 test_that("movement series follow the map: every free cell, filtered by index", {
 
-  il <- suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "iid_y_a_s", Movement_cont_pe_pars_spec = "fix")))
+  il <- suppressMessages(sweep_input(move = list(use_fixed_movement = 0, Fixed_Movement = NA, move_year_re = "iid", move_age_re = "iid", move_sex_re = "iid")))
   dims <- dim(il$par$move_devs) # [pop, from, to, year, seas, age, sex]
 
   # what the map says, written out by hand

@@ -39,7 +39,7 @@ among deviation series alone.}
   \code{dsem_process_table}. \code{NULL} (default) takes the processes whose module
   declared \code{"dsem"}: \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}};
   \code{NAA_re}, \code{growth_tv_model} and \code{growth_semipar} in
-  \code{\link{Setup_Mod_Biologicals}}; \code{cont_vary_movement} in
+  \code{\link{Setup_Mod_Biologicals}}; \code{move_year_re} in
   \code{\link{Setup_Mod_Movement}}; \code{fish_q_model} in
   \code{\link{Setup_Mod_Fishsel_and_Q}}; and \code{srv_q_model} in
   \code{\link{Setup_Mod_Srvsel_and_Q}}. It is \code{"rec"} when none did.

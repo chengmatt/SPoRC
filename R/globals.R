@@ -11,7 +11,7 @@ utils::globalVariables(c(
   "dsem_delta0_use", "dsem_link_cell", "dsem_link_col", "dsem_link_idx", "dsem_link_par", "dsem_link_row",
   "dsem_link_sd_arrow", "dsem_link_settles", "dsem_model", "dsem_mu", "dsem_n_grid_yrs", "dsem_x", "dsem_x_known", "ln_dsem_obs_sd",
   "ln_dsem_sd", "logit_dsem_tweedie_p", "dsem_cov_link", "dsem_cov_fixed_sd", "map_ln_NAA",
-  "cont_vary_movement", "conv_fish_tag_attr", "conv_fish_tag_like", "conv_tag_age_pool",
+  "move_year_re", "move_age_re", "move_pop_re", "move_seas_re", "move_sex_re", "move_pairs", "move_dsem", "move_pe_block", "move_pop_block", "move_year_block", "move_seas_block", "move_age_block", "move_sex_block", "move_re_pops", "move_re_years", "move_re_seas", "move_re_ages", "move_re_sexes", "move_pop_corr_pars", "move_seas_corr_pars", "move_sex_corr_pars", "conv_fish_tag_attr", "conv_fish_tag_like", "conv_tag_age_pool",
   "conv_tag_fish_reporting_blocks", "conv_tag_fish_reporting_pars", "conv_tag_fishrep_prior",
   "conv_tag_max_liberty", "conv_tag_mixing_period", "conv_tag_pop_pool",
   "conv_tag_release_indicator", "conv_tag_release_platform", "conv_tag_sex_pool",

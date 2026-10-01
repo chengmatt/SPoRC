@@ -210,12 +210,12 @@ test_that("three regions: sd lines on every recruitment series are the iid penal
 test_that("three regions: sd lines on every movement series are the movement penalty, declared or not", {
 
   # movement estimated with iid deviations by year, age and sex, their sd fixed at its start
-  move <- list(use_fixed_movement = 0, Fixed_Movement = NA, cont_vary_movement = "iid_y_a_s", Movement_cont_pe_pars_spec = "fix")
+  move <- list(use_fixed_movement = 0, Fixed_Movement = NA, move_year_re = "iid", move_age_re = "iid", move_sex_re = "iid")
   plain <- suppressMessages(sweep_input(move = move))
   set.seed(6)
   plain$par$move_devs[] <- rnorm(length(plain$par$move_devs), 0, 0.3)
-  sd_move <- exp(plain$par$move_pe_pars[1]) # one value for every from region, age and sex
-  expect_true(all(plain$par$move_pe_pars == plain$par$move_pe_pars[1]))
+  sd_move <- exp(plain$par$move_pe_pars[1,1,1]) # one value for every surface
+  expect_true(all(plain$par$move_pe_pars[,,1] == plain$par$move_pe_pars[1,1,1]))
   series <- dsem_series(plain, "move") # every series with a cell the map estimates
   dims <- dim(plain$par$move_devs) # [pop, from, to, year, seas, age, sex], the last destination being the reference
   expect_equal(length(series), dims[2] * dims[3] * (dims[6] - 1) * dims[7]) # every free cell but age one, since recruits do not move
@@ -226,8 +226,8 @@ test_that("three regions: sd lines on every movement series are the movement pen
   expect_equal(linked$data$dsem_link_par, rep("move_devs", length(series)))
   expect_same_jnll(value_of(linked), base, moved = "Movement_nLL")
 
-  # declared: cont_vary_movement = "dsem" names every dim itself (year, age and sex here)
-  declared <- suppressMessages(sweep_input(move = utils::modifyList(move, list(cont_vary_movement = "dsem", Movement_cont_pe_pars_spec = NULL))))
+  # declared: move_year_re = "dsem" gives every cell of every surface to the arrows
+  declared <- suppressMessages(sweep_input(move = utils::modifyList(move, list(move_year_re = "dsem", move_age_re = "none", move_sex_re = "none"))))
   declared$par$move_devs <- plain$par$move_devs
   expect_equal(declared$data$dsem_declared, "move")
   expect_equal(dsem_series(declared, "move"), series)

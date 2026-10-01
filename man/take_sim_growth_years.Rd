@@ -7,8 +7,8 @@
 take_sim_growth_years(sim_env, sim, growth, yrs)
 }
 \arguments{
-\item{sim_env}{Simulation environment holding \code{dsem_length_sel} from
-\code{Setup_Sim_DSEM}.}
+\item{sim_env}{Simulation environment holding \code{growth_length_sel} from
+\code{Setup_Sim_Growth_RE} or \code{Setup_Sim_DSEM}.}
 
 \item{sim}{Replicate.}
 

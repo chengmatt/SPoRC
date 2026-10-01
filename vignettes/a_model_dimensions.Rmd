@@ -127,7 +127,12 @@ The following tables describe all elements contained within `input_list$data`, w
 | Fixed_Movement | Fixed movement matrix dimensioned by n_pop, n_regions, n_regions, n_years, n_seas, n_ages, n_sexes |
 | Use_Movement_Prior | Value specifying whether or not to use movement priors. 0: Don't use movement prior, 1: Use movement prior |
 | Movement_prior | Data frame with columns representing population (pop), origin region (region_from), year (year), season (seas), representative age (age), sex (sex), and a list column (alpha) containing Dirichlet prior parameters. Each element of alpha is a numeric vector of length n_regions, specifying the prior concentration values for movement among destination regions |
-| cont_vary_movement | Character string giving the structure of continuous movement deviations. "none", or "iid_" followed by the dims they vary over, any of p (population), y (year), seas (season), a (age), s (sex), in any combination. A dim left out shares one deviation across it |
+| move_year_re, move_age_re | Integer codes for how movement deviations vary across years and ages within a surface: 0 none, 1 iid, 2 ar1. A dsem stores 1 on years with move_dsem = 1 |
+| move_pop_re, move_seas_re, move_sex_re | Integer codes for how movement deviations vary across populations, seasons and sexes: 0 none, 1 iid or blocks, 2 unstructured |
+| move_pe_block | Process error block of every row of the pair table |
+| move_pop_block, move_year_block, move_seas_block, move_age_block, move_sex_block | Block of every level of the dim that the movement deviations share within, NA where the level is inactive |
+| move_pairs | Integer matrix, one row per deviation surface, giving its origin and destination |
+| move_re_pops, move_re_years, move_re_seas, move_re_ages, move_re_sexes | Integer vectors of the populations, years, seasons, ages and sexes holding movement deviations |
 | map_move_devs | Array dimensioned by n_regions, n_regions - 1 (1 under CTMC movement, whose deviations sit on a region's preference), n_years, n_ages, and n_sexes specifying which movement parameters are shared and mapped off |
 | move_type | Integer indicating movement model type. 0 = unstructured Markov (multinomial logit), 1 = Continuous Time Markov Chain (CTMC) |
 | ctmc_move_dat | Data frame with CTMC covariates (regions, years, ages, sexes, plus formula variables) used to build design matrices for diffusion and preference when move_type == 1. Can include projection years with projected covariate values |

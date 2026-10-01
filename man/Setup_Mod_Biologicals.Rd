@@ -181,7 +181,7 @@ L1, L2, K, CV1, CV2 and rho stay at their starting values whatever
 
 \item{growth_tv_model}{Time variation of the growth parameters. \code{NULL}
 (default) holds every parameter constant. Otherwise a character vector of
-length \code{n_gpars} in parameter order, or named by parameter, each
+length \code{n_growth_pars} in parameter order, or named by parameter, each
 \code{"none"}, \code{"iid"}, \code{"rw"}, or \code{"dsem"}. A varying parameter
 gets a deviation series \code{ln_growth_devs} and a log sigma in the
 time-varying half of \code{growth_pe_pars}; under \code{"dsem"} the density
@@ -196,7 +196,7 @@ multiplies the parameter by \eqn{e^{\delta}}; \code{"logit"} keeps it inside
 \code{growth_par_bounds}, so the parameter approaches a bound instead of
 crossing it.}
 
-\item{growth_par_bounds}{Matrix \code{[n_gpars x 2]} of lower and upper bounds on
+\item{growth_par_bounds}{Matrix \code{[n_growth_pars x 2]} of lower and upper bounds on
 the natural scale, required under the logit link.}
 
 \item{growth_tv_sigma_spec}{\code{"fix"} (default) holds the process error
@@ -410,11 +410,11 @@ only by \code{NAA_re_season = "us"}.}
 \code{[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks × n_sexblks]}
 and defaults to \code{log(0.5)}; a 5d array from an older script works when
 there is one season block. \code{ln_growth_pars} is
-\code{[n_pop × n_regions × n_sexes × n_gpars]} in the order
+\code{[n_pop × n_regions × n_sexes × n_growth_pars]} in the order
 \code{L1, L2, K, CV1, CV2} and \code{rho}, defaulting to the ends of the
 length bins with a rate of \code{0.15} and CVs of \code{0.1}, so supply your
 own for any real model. \code{growth_pe_pars} is
-\code{[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]}: the
+\code{[n_pop × n_regions × max(4, n_ages, n_growth_pars) × n_sexes × 2]}: the
 time-varying half holds one log sigma per growth parameter, and the
 semi-parametric half holds the surface's correlations by age, year and
 cohort in slots one to three with a log scale in slot four, or one log sigma

@@ -82,7 +82,7 @@ input_list <- Setup_Mod_Movement(input_list = input_list,
                                  use_fixed_movement = 0, # estimating movement
                                  Use_Movement_Prior = 1, # priors used for movement
                                  Movement_prior = Movement_prior, # vague prior to penalize movement away from the extremes
-                                 cont_vary_movement = 'none'
+                                 move_year_re = 'none'
 )
 
 # setting up tagging parameterization

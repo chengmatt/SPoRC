@@ -941,7 +941,7 @@ dsem_declared_by <- function() {
     ln_NAA = "NAA_re = 'dsem' in Setup_Mod_Biologicals",
     ln_growth_devs = "growth_tv_model = 'dsem' in Setup_Mod_Biologicals",
     ln_growth_semipar_devs = "growth_semipar = 'dsem' in Setup_Mod_Biologicals",
-    move_devs = "cont_vary_movement = 'dsem_...' in Setup_Mod_Movement",
+    move_devs = "move_year_re = 'dsem' in Setup_Mod_Movement",
     ln_fish_q_devs = "fish_q_model = 'dsem' in Setup_Mod_Fishsel_and_Q",
     ln_srv_q_devs = "srv_q_model = 'dsem' in Setup_Mod_Srvsel_and_Q")
 
@@ -1095,7 +1095,7 @@ dsem_cov_sd_start <- function(y,
 #'   \code{dsem_process_table}. \code{NULL} (default) takes the processes whose module
 #'   declared \code{"dsem"}: \code{RecDevs_model} in \code{\link{Setup_Mod_Rec}};
 #'   \code{NAA_re}, \code{growth_tv_model} and \code{growth_semipar} in
-#'   \code{\link{Setup_Mod_Biologicals}}; \code{cont_vary_movement} in
+#'   \code{\link{Setup_Mod_Biologicals}}; \code{move_year_re} in
 #'   \code{\link{Setup_Mod_Movement}}; \code{fish_q_model} in
 #'   \code{\link{Setup_Mod_Fishsel_and_Q}}; and \code{srv_q_model} in
 #'   \code{\link{Setup_Mod_Srvsel_and_Q}}. It is \code{"rec"} when none did.
@@ -1313,6 +1313,14 @@ Setup_Mod_DSEM <- function(input_list,
   if("move_devs" %in% link$par && isTRUE(input_list$data$use_fixed_movement == 1)) {
     stop("A movement series is linked, but movement is fixed (use_fixed_movement = 1), so the model ",
          "never reads move_devs and the dsem would describe deviations that change nothing.")
+  }
+
+  # a correlated surface is penalized whole, so one of its series cannot leave for the dsem on its own
+  if("move_devs" %in% link$par && isTRUE(input_list$data$move_dsem == 0) &&
+     any(c(input_list$data$move_year_re, input_list$data$move_age_re, input_list$data$move_pop_re, input_list$data$move_seas_re, input_list$data$move_sex_re) == 2)) {
+    stop("A movement series is linked, but the movement deviations are correlated ('ar1' or 'us') over some dim, and a ",
+         "correlated surface is penalized as a whole. Use move_year_re = 'dsem', which gives every cell to ",
+         "the arrows, or 'iid' and 'none' forms, whose cells leave the penalty one at a time.")
   }
 
   # under CTMC movement the deviations already move preference from year to year, so a covariate on

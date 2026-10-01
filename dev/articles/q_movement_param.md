@@ -377,20 +377,25 @@ Lastly, process error deviations can also be incorporated into movement
 estimates. In the example below, movement is modeled using a CTMC
 framework, although process error can similarly be applied to an
 unstructured Markov model. Movement is specified to vary smoothly across
-ages using a spline function, while allowing independent and identically
-distributed (`iid`) deviations across years for each region
-(`cont_vary_movement = 'iid_y'`). Process error variance parameters are
-specified to be shared across populations, regions, seasons, ages, and
-sexes (`Movement_cont_pe_pars_spec = 'est_shared'`). Additional options
-for `cont_vary_movement` and `Movement_cont_pe_pars_spec` are described
-in the function documentation
-([`?Setup_Mod_Movement`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md)).
+ages using a spline function, while allowing first order autoregressive
+deviations across years for each region (`move_year_re = 'ar1'`) that
+are shared across ages (`move_age_re = 'none'`). Each region’s
+deviations are one series with its own sd and year correlation in
+`move_pe_pars`, shared by both sexes. Three more switches,
+`move_pop_re`, `move_seas_re` and `move_sex_re`, say how the deviations
+vary across populations, seasons and sexes, and `move_re_years`,
+`move_re_ages` and their counterparts restrict them to chosen levels.
+The options are described in the function documentation
+([`?Setup_Mod_Movement`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md));
+the sharing they allow is shown after the example.
 
-Users may alternatively treat these variance parameters as random
-effects (integrated out via the Laplace approximation) or as penalized
-likelihood terms, depending on how `Movement_cont_pe_pars_spec` is
-defined. When `Movement_cont_pe_pars_spec = 'fix'`, users can supply a
-fixed variance value directly through `input_list$par$move_pe_pars`.
+Users may treat the deviations as random effects (integrated out via the
+Laplace approximation) by naming `move_devs` in `random` when calling
+[`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md),
+or leave them out of `random` as penalized likelihood terms. The sd and
+correlations are estimated whenever deviations exist; to fix them, map
+`move_pe_pars` off in `input_list$map` and supply the values through
+`input_list$par$move_pe_pars`.
 
 Where a deviation sits depends on the movement type. Under an
 unstructured Markov model it is an offset on the logit of one
@@ -430,11 +435,81 @@ input_list <- Setup_Mod_Movement(
   area_r = rep(1, 3),
   diffusion_formula = diffusion_formula,
   preference_formula = preference_formula,
-  cont_vary_movement = 'iid_y',
-  Movement_cont_pe_pars_spec = 'est_shared'
+  move_year_re = 'ar1',
+  move_age_re = 'none'
 )
 
 length(input_list$par$log_move_diffusion_pars)
 length(input_list$par$move_preference_pars)
 length(unique(input_list$map$move_devs))
+```
+
+### Sharing deviations and their process error
+
+Every region (origin-destination pair under the unstructured model) has
+its own deviations. Each of `move_pop_re`, `move_seas_re` and
+`move_sex_re` takes `"none"`, `"iid"` (every level its own,
+independent), `"us"` (every level its own, with an unstructured
+correlation across them), or a list of blocks, where the levels in a
+block share one deviation and the blocks are independent. `"none"` and
+`"iid"` are the two ends of that list, one block of everything and a
+block per level. Years and ages take no block list, a block on the mean
+(`Movement_yearblk_spec`, `Movement_ageblk_spec`) being where that goes,
+and the setup refuses such a block when the matching switch is on since
+the two describe the same thing twice.
+
+`move_pe_spec` shares the process error across pairs the same way:
+`"est_all"` gives every region (pair) its own sd and AR1 correlations,
+`"est_shared"` one set for all, and a block list over the pair table one
+set per block. The pair table is `input_list$data$move_pairs`, origins
+and destinations in origin-then-destination order over the edges of the
+adjacency matrix, which under the CTMC is one row per region.
+
+A block list applies to every region alike, so sharing across sexes
+cannot differ by region; what can differ by region is the sd. In the
+three region model below, the first form has the sexes share one series
+per region, with regions 1 and 2 sharing an sd and year correlation and
+region 3 holding its own. The second gives every region its own series
+for each sex, the two sexes correlated within it, with one sd and
+correlation for all.
+
+``` r
+
+# the pair table under the ctmc: one row per region
+input_list$data$move_pairs
+
+# the sexes share one series per region; regions 1 and 2 share an sd and correlation, region 3 has its own
+input_list <- Setup_Mod_Movement(
+  input_list = input_list,
+  do_recruits_move = 0,
+  move_type = 1,
+  ctmc_move_dat = ctmc_data,
+  adjacency_mat = adjacency,
+  area_r = rep(1, 3),
+  diffusion_formula = diffusion_formula,
+  preference_formula = preference_formula,
+  ctmc_diffusion_bounds = "upwind",
+  move_year_re = "ar1",
+  move_sex_re = list(1:2), # one block of both sexes, the same as "none"
+  move_pe_spec = list(1:2, 3) # regions 1 and 2 share an sd and correlation, region 3 has its own
+)
+length(levels(input_list$map$move_devs)) # three series of years, one per region
+length(levels(input_list$map$move_pe_pars)) # two log sds and two year correlations
+
+# every region its own series, the two sexes correlated within it, one sd and correlation for all
+input_list <- Setup_Mod_Movement(
+  input_list = input_list,
+  do_recruits_move = 0,
+  move_type = 1,
+  ctmc_move_dat = ctmc_data,
+  adjacency_mat = adjacency,
+  area_r = rep(1, 3),
+  diffusion_formula = diffusion_formula,
+  preference_formula = preference_formula,
+  ctmc_diffusion_bounds = "upwind",
+  move_year_re = "ar1",
+  move_sex_re = "us",
+  move_pe_spec = "est_shared"
+)
+length(levels(input_list$map$move_sex_corr_pars)) # one correlation between the sexes, shared by every region
 ```

@@ -18,17 +18,17 @@ get_growth_pars_year(ln_pars, ln_devs, tv_model, tv_link, bounds, y)
 
 - ln_pars:
 
-  Log-scale base parameters of the stratum, length `n_gpars` (five for
-  the von Bertalanffy form, six with the Richards coefficient last).
+  Log-scale base parameters of the stratum, length `n_growth_pars` (five
+  for the von Bertalanffy form, six with the Richards coefficient last).
 
 - ln_devs:
 
-  Matrix `[n_yrs x n_gpars]` of the stratum's deviations.
+  Matrix `[n_yrs x n_growth_pars]` of the stratum's deviations.
 
 - tv_model:
 
-  Integer vector `[n_gpars]`, 0 constant, 1 iid deviations, 2 random
-  walk.
+  Integer vector `[n_growth_pars]`, 0 constant, 1 iid deviations, 2
+  random walk.
 
 - tv_link:
 
@@ -36,8 +36,8 @@ get_growth_pars_year(ln_pars, ln_devs, tv_model, tv_link, bounds, y)
 
 - bounds:
 
-  Matrix `[n_gpars x 2]` of lower and upper bounds, read under the logit
-  link.
+  Matrix `[n_growth_pars x 2]` of lower and upper bounds, read under the
+  logit link.
 
 - y:
 

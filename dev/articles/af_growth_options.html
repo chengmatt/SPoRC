@@ -859,7 +859,7 @@ held at one unless the estimate moves away from it.</p>
 <code>ln_growth_pars</code> defaults to the ends of the length bins with
 a rate of 0.15 and CVs of 0.1, which is a placeholder rather than a
 prior. Supply your own on the log scale, dimensioned
-<code>[n_pop x n_regions x n_sexes x n_gpars]</code> in the order
+<code>[n_pop x n_regions x n_sexes x n_growth_pars]</code> in the order
 <code>L1, L2, K, CV1, CV2</code> and then <code>rho</code>. An external
 growth fit, even a rough one, is a reasonable starting point.</p>
 </div>
@@ -1055,7 +1055,7 @@ both to explain the same variation.</p>
 <p>They are indexed over different dimensions and applied at different
 points:</p>
 <div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">ln_growth_devs</span>         <span class="co"># [n_pop, n_regions, n_yrs, n_gpars, n_sexes]  4th dim: parameter</span></span>
+<code class="sourceCode R"><span><span class="va">ln_growth_devs</span>         <span class="co"># [n_pop, n_regions, n_yrs, n_growth_pars, n_sexes]  4th dim: parameter</span></span>
 <span><span class="va">ln_growth_semipar_devs</span> <span class="co"># [n_pop, n_regions, n_yrs, n_ages,  n_sexes]  4th dim: age</span></span></code></pre></div>
 <p><code>ln_growth_devs</code> is applied before the curve is evaluated,
 perturbing <code>L1</code>, <code>L2</code>, <code>K</code>,

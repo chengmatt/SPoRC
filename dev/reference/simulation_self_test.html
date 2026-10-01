@@ -102,7 +102,8 @@ Failed replicates are silently stored as <code>NA</code>.</p>
 <span>  what <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"Rec"</span><span class="op">)</span>,</span>
 <span>  what_par <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  perfect_data <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  sim_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"conditional"</span>, <span class="st">"joint"</span><span class="op">)</span></span>
+<span>  sim_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"conditional"</span>, <span class="st">"joint"</span><span class="op">)</span>,</span>
+<span>  n_cond_yrs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -210,6 +211,13 @@ deviations and data this clean remove it. Default <code>FALSE</code>.</p></dd>
   size at age, movement, steepness, sex ratio, recruitment, the initial
   deviations, the numbers at age and a linked dsem. Observation error and the
   composition parameters stay at the fit, having no replicate dim.</p></dd>
+
+
+<dt id="arg-n-cond-yrs">n_cond_yrs<a class="anchor" aria-label="anchor" href="#arg-n-cond-yrs"></a></dt>
+<dd><p>Integer. The first years of every replicate reproduce the
+fit's catchability and movement deviations, and later years are drawn.
+Default every year of the fit, so nothing is redrawn; <code>0</code> draws every
+year from the fitted process.</p></dd>
 
 </dl></div>
     <div class="section level2">

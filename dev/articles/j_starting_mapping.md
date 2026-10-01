@@ -25,8 +25,9 @@ Starting values can be specified in two ways:
   *ln_M*, *M_offset*
 
 - `Setup_Mod_Movement`  
-  *move_pars*, *move_devs*, *move_pe_pars*, *log_move_diffusion_pars*,
-  *move_preference_pars*
+  *move_pars*, *move_devs*, *move_pe_pars*, *move_pop_corr_pars*,
+  *move_seas_corr_pars*, *move_sex_corr_pars*,
+  *log_move_diffusion_pars*, *move_preference_pars*
 
 - `Setup_Mod_Tagging`  
   *ln_init_conv_tag_mort*, *ln_conv_tag_shed*, *ln_conv_fish_tag_theta*,

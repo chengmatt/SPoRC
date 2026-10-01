@@ -1356,18 +1356,36 @@ off for <code>"fixed"</code>.</td>
 the third dim <code>1</code> under CTMC movement</td>
 <td>Movement deviations w/ projection years (can be specified as random
 effects); offsets on the logit of a region pair (unstructured) or on a
-region’s preference (CTMC); IID process error only, sharing structure
-set via <code>cont_vary_movement</code>
+region’s preference (CTMC); one surface per pair whose density is the sd
+times a Kronecker product over the dims, set by
+<code>move_year_re</code>, <code>move_age_re</code>,
+<code>move_pop_re</code>, <code>move_seas_re</code> and
+<code>move_sex_re</code>
 </td>
 <td>0</td>
 </tr>
 <tr class="odd">
 <td><code>move_pe_pars</code></td>
-<td><code>n_pop × n_regions × n_seas × n_ages × n_sexes</code></td>
-<td>Standard deviations for continuously varying movement (IID). Which
-dimensions are actively estimated vs. kept fixed at index 1 is
-determined by <code>cont_vary_movement</code> (e.g. <code>"iid_y"</code>
-only varies over year)</td>
+<td>
+<code>n_regions × (n_regions - 1) × 3</code>, the second dim
+<code>1</code> under CTMC movement</td>
+<td>Log sd, age correlation and year correlation of each movement
+process error block of pairs; a correlation is estimated only where its
+dim is <code>ar1</code>
+</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td>
+<code>move_pop_corr_pars</code>, <code>move_seas_corr_pars</code>,
+<code>move_sex_corr_pars</code>
+</td>
+<td>
+<code>n(n - 1) / 2</code> each, at least 1</td>
+<td>Unstructured correlation of the movement deviations across
+populations, seasons and sexes, shared by every pair; estimated only
+under <code>us</code>
+</td>
 <td>0</td>
 </tr>
 </tbody>

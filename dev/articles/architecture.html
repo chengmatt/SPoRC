@@ -348,7 +348,8 @@ one file.</p>
 <code>Setup_Sim_Biologicals</code>
 </td>
 <td>
-<code>setup_checks.R</code>, <code>utils_setup.R</code>
+<code>setup_checks.R</code>, <code>setup_mapping.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td>
 <code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
@@ -501,8 +502,9 @@ one file.</p>
 <code>utils_setup.R</code>, <code>utils_year_fleet_spec.R</code>
 </td>
 <td>
-<code>model_fit.R</code>, <code>setup_catchability.R</code>,
-<code>setup_fishery_catch.R</code>, <code>setup_fishery_comps.R</code>,
+<code>model_fit.R</code>, <code>setup_biologicals.R</code>,
+<code>setup_catchability.R</code>, <code>setup_fishery_catch.R</code>,
+<code>setup_fishery_comps.R</code>,
 <code>setup_fishery_selectivity.R</code>, <code>setup_movement.R</code>,
 <code>setup_recruitment.R</code>, <code>setup_sim_fleets.R</code>,
 <code>setup_survey_comps.R</code>,
@@ -512,9 +514,8 @@ one file.</p>
 <tr class="odd">
 <td><code>setup_movement.R</code></td>
 <td>
-<code>do_cont_vary_move_mapping</code>,
-<code>do_move_pars_mapping</code>,
-<code>get_yr_varying_pref_terms</code>,
+<code>do_move_pars_mapping</code>, <code>do_move_re_mapping</code>,
+<code>get_yr_varying_pref_terms</code>, <code>move_dim_blocks</code>,
 <code>Setup_Mod_Movement</code>
 </td>
 <td>
@@ -865,8 +866,8 @@ one file.</p>
 <td>
 <code>diag_osa_residuals.R</code>, <code>model_objective.R</code>,
 <code>model_priors_penalties.R</code>, <code>plot_dsem.R</code>,
-<code>setup_dsem.R</code>, <code>sim_dsem.R</code>,
-<code>sim_naa_state.R</code>
+<code>setup_dsem.R</code>, <code>sim_biologicals.R</code>,
+<code>sim_dsem.R</code>, <code>sim_naa_state.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -1043,12 +1044,22 @@ one file.</p>
 <td>
 <code>advance_sim_growth_year</code>,
 <code>derive_sim_growth</code>, <code>derive_sim_movement</code>,
-<code>match_model_args</code>, <code>sim_growth_devs</code>,
+<code>draw_growth_pe_surface</code>, <code>draw_sim_growth_devs</code>,
+<code>draw_sim_move_devs</code>, <code>match_model_args</code>,
+<code>Setup_Sim_Growth_RE</code>, <code>Setup_Sim_Movement</code>,
+<code>sim_growth_args</code>, <code>sim_growth_devs</code>,
+<code>sim_growth_length_sel</code>, <code>sim_map_over_years</code>,
 <code>take_sim_growth_years</code>
 </td>
-<td><code>model_growth.R</code></td>
 <td>
-<code>sim_dsem.R</code>, <code>sim_population.R</code>
+<code>model_growth.R</code>, <code>model_precision.R</code>,
+<code>sim_naa_state.R</code>, <code>utils_math.R</code>,
+<code>utils_setup.R</code>
+</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_dsem.R</code>,
+<code>sim_population.R</code>, <code>sim_self_test.R</code>,
+<code>sim_setup.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -1076,7 +1087,8 @@ one file.</p>
 <code>refpts_main.R</code>, <code>setup_biologicals.R</code>,
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
-<code>setup_tagging.R</code>, <code>sim_catchability.R</code>,
+<code>setup_tagging.R</code>, <code>sim_biologicals.R</code>,
+<code>sim_catchability.R</code>, <code>sim_dsem.R</code>,
 <code>sim_self_test.R</code>, <code>utils_math.R</code>,
 <code>utils_postfit.R</code>, <code>utils_setup.R</code>
 </td>
@@ -1096,7 +1108,8 @@ one file.</p>
 <code>sim_catchability.R</code>, <code>utils_setup.R</code>
 </td>
 <td>
-<code>sim_self_test.R</code>, <code>sim_setup.R</code>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>,
+<code>sim_setup.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -1107,7 +1120,8 @@ one file.</p>
 </td>
 <td><code>model_precision.R</code></td>
 <td>
-<code>sim_population.R</code>, <code>sim_self_test.R</code>
+<code>sim_biologicals.R</code>, <code>sim_population.R</code>,
+<code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -1175,10 +1189,11 @@ one file.</p>
 <code>model_fit.R</code>, <code>setup_biologicals.R</code>,
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
-<code>setup_tagging.R</code>, <code>sim_catchability.R</code>,
-<code>sim_dsem.R</code>, <code>sim_naa_state.R</code>,
-<code>sim_population.R</code>, <code>utils_math.R</code>,
-<code>utils_postfit.R</code>, <code>utils_setup.R</code>
+<code>setup_tagging.R</code>, <code>sim_biologicals.R</code>,
+<code>sim_catchability.R</code>, <code>sim_dsem.R</code>,
+<code>sim_naa_state.R</code>, <code>sim_population.R</code>,
+<code>utils_math.R</code>, <code>utils_postfit.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td><code>sim_closed_loop.R</code></td>
 </tr>
@@ -1187,7 +1202,8 @@ one file.</p>
 <td><code>Setup_sim_env</code></td>
 <td>
 <code>setup_catchability.R</code>, <code>setup_dsem.R</code>,
-<code>sim_catchability.R</code>, <code>sim_dsem.R</code>
+<code>sim_biologicals.R</code>, <code>sim_catchability.R</code>,
+<code>sim_dsem.R</code>
 </td>
 <td><code>sim_population.R</code></td>
 </tr>
@@ -1359,9 +1375,9 @@ one file.</p>
 <tr class="odd">
 <td><code>utils_math.R</code></td>
 <td>
-<code>build_us_chol</code>, <code>build_us_corr</code>,
-<code>get_AR1_CorrMat</code>, <code>get_Constant_CorrMat</code>,
-<code>get_logistN_Sigma</code>,
+<code>ar1_precision</code>, <code>build_us_chol</code>,
+<code>build_us_corr</code>, <code>get_AR1_CorrMat</code>,
+<code>get_Constant_CorrMat</code>, <code>get_logistN_Sigma</code>,
 <code>Get_Natural_Cubic_Spline_Weights</code>, <code>mat_exp</code>,
 <code>rho_trans</code>, <code>rmvnorm_prec</code>
 </td>
@@ -1371,8 +1387,9 @@ one file.</p>
 <code>model_lik_comps.R</code>, <code>model_movement.R</code>,
 <code>model_priors_penalties.R</code>, <code>model_transition.R</code>,
 <code>setup_fishery_selectivity.R</code>,
-<code>setup_survey_selectivity.R</code>, <code>sim_closed_loop.R</code>,
-<code>sim_random_variates.R</code>, <code>sim_self_test.R</code>
+<code>setup_survey_selectivity.R</code>, <code>sim_biologicals.R</code>,
+<code>sim_closed_loop.R</code>, <code>sim_random_variates.R</code>,
+<code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -1440,9 +1457,9 @@ one file.</p>
 <code>setup_movement.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_fleets.R</code>, <code>setup_survey_comps.R</code>,
 <code>setup_survey_selectivity.R</code>, <code>setup_tagging.R</code>,
-<code>setup_weighting.R</code>, <code>sim_closed_loop.R</code>,
-<code>sim_dsem.R</code>, <code>sim_observations.R</code>,
-<code>sim_self_test.R</code>
+<code>setup_weighting.R</code>, <code>sim_biologicals.R</code>,
+<code>sim_closed_loop.R</code>, <code>sim_dsem.R</code>,
+<code>sim_observations.R</code>, <code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -1866,7 +1883,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 209 test files in total.</p>
+<p>That is 212 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

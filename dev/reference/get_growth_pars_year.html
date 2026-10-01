@@ -82,16 +82,16 @@ structures read the same way here and differ only in their penalty.</p>
 
 <dl><dt id="arg-ln-pars">ln_pars<a class="anchor" aria-label="anchor" href="#arg-ln-pars"></a></dt>
 <dd><p>Log-scale base parameters of the stratum, length
-<code>n_gpars</code> (five for the von Bertalanffy form, six with the Richards
+<code>n_growth_pars</code> (five for the von Bertalanffy form, six with the Richards
 coefficient last).</p></dd>
 
 
 <dt id="arg-ln-devs">ln_devs<a class="anchor" aria-label="anchor" href="#arg-ln-devs"></a></dt>
-<dd><p>Matrix <code>[n_yrs x n_gpars]</code> of the stratum's deviations.</p></dd>
+<dd><p>Matrix <code>[n_yrs x n_growth_pars]</code> of the stratum's deviations.</p></dd>
 
 
 <dt id="arg-tv-model">tv_model<a class="anchor" aria-label="anchor" href="#arg-tv-model"></a></dt>
-<dd><p>Integer vector <code>[n_gpars]</code>, 0 constant, 1 iid
+<dd><p>Integer vector <code>[n_growth_pars]</code>, 0 constant, 1 iid
 deviations, 2 random walk.</p></dd>
 
 
@@ -100,7 +100,7 @@ deviations, 2 random walk.</p></dd>
 
 
 <dt id="arg-bounds">bounds<a class="anchor" aria-label="anchor" href="#arg-bounds"></a></dt>
-<dd><p>Matrix <code>[n_gpars x 2]</code> of lower and upper bounds, read
+<dd><p>Matrix <code>[n_growth_pars x 2]</code> of lower and upper bounds, read
 under the logit link.</p></dd>
 
 

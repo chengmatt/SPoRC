@@ -816,9 +816,9 @@ mortality parameter for a given region, season, and fishery fleet
 a given region, season, and fleet, fishing mortality is set to zero.
 
 Under the default `ln_F_mean_spec = "est"` the mean is estimated and the
-deviations are departures from it. `ln_F_mean_spec = "fix"` instead
-fixes the mean at its starting value (zero on the log scale unless
-supplied), so that
+deviations are taken around it. `ln_F_mean_spec = "fix"` instead fixes
+the mean at its starting value (zero on the log scale unless supplied),
+so that
 
 ``` math
 \text{Fmort}_{r,y,\tau,f} = \exp\left( \epsilon_{r,y,\tau,f}^{\text{Fsh}} \right)
@@ -1155,11 +1155,12 @@ $`\bar{L}(x)`$. Because $`\bar{L}`$ is itself increasing in $`x`$, the
 two give similar shapes; they differ where growth is fast, since
 interpolating on length compresses the change into the young ages.
 
-From $`c(x)`$ to the standard deviation. Under `growth_sd_type = "cv"`
-(the default) $`c(x)`$ is a coefficient of variation and is multiplied
-by mean length, so the spread scales with size; under `"sd"` the two
-parameters are standard deviations already and $`c(x)`$ is the standard
-deviation, interpolated by the same rule:
+The standard deviation follows from $`c(x)`$ in one of two ways. Under
+`growth_sd_type = "cv"` (the default) $`c(x)`$ is a coefficient of
+variation and is multiplied by mean length, so that the spread scales
+with size, whereas under `"sd"` the two parameters are standard
+deviations already and $`c(x)`$ is the standard deviation itself,
+interpolated by the same rule:
 
 ``` math
 \sigma_{L}(x) = \begin{cases}
@@ -1253,15 +1254,16 @@ g_{y}\left( \bar{L}_{y,a-1} \right) & a^{\ast} < a < a_{+} \\[2ex]
 ```
 
 Three consequences follow. Ages still in the linear phase take the
-length at $`A_{1}`$ their birth year’s parameters gave them, so a cohort
-born in a poor year has that start forward. The plus group is the only
-place growth depends on abundance: the cohort just entering it and the
-fish already there are blended by their numbers, which is why growth
-under this option is evaluated inside the population dynamics year loop
-rather than before it. And the coefficient of variation at age is kept
-at the first year’s, $`c(x)`$ being evaluated once from the first year’s
-curve and parameters and then kept while the mean moves, so the
-deviations change mean size without also changing the spread.
+length at $`A_{1}`$ their birth year’s parameters gave them, so that a
+cohort born in a poor year advances from that smaller start for the rest
+of its life. The plus group is the only place growth depends on
+abundance: the cohort just entering it and the fish already there are
+blended by their numbers, which is why growth under this option is
+evaluated inside the population dynamics year loop rather than before
+it. And the coefficient of variation at age is kept at the first year’s,
+$`c(x)`$ being evaluated once from the first year’s curve and parameters
+and then kept while the mean moves, so that the deviations change mean
+size without also changing the spread.
 
 Semi-parametric growth. The second way is a surface of deviations on
 mean length at age itself, indexed by year and age (`growth_semipar`),
@@ -1271,23 +1273,23 @@ mean length at age itself, indexed by year and age (`growth_semipar`),
 ```
 
 applied after the curve and after any cohort propagation. The parametric
-curve stays the parametric part and $`\varepsilon`$ holds departures
+curve stays the parametric part and $`\varepsilon`$ holds the deviations
 from it: a curve with a handful of parameters cannot fit a year in which
 only the four-year-olds were small, and an unconstrained transition per
 year is not identified. The spread follows the deviated mean through
 $`\sigma_{L}`$, so under `growth_cv_type = "len"` a deviation that
 lengthens a fish also moves it along the $`CV`$ ramp, while under
 `"age"` the spread at age is untouched. Available structures are
-`"iid"`, `"rw"`, `"2dar1"` and `"3dmarg"`/`"3dcond"` – the same process
+`"iid"`, `"rw"`, `"2dar1"` and `"3dmarg"`/`"3dcond"`, the same process
 errors the semi-parametric selectivity forms use, described under the
 penalties.
 
-##### The key
+##### Binning length at age
 
-The key is that distribution integrated over each length bin. Length at
-age is normal about $`\bar{L}(a)`$ with standard deviation
-$`\sigma_{L}(a)`$, so with $`\ell_{l}`$ the lower edge of bin $`l`$ each
-edge is first standardized,
+The size-age transition is that distribution integrated over each length
+bin. Length at age is normal about $`\bar{L}(a)`$ with standard
+deviation $`\sigma_{L}(a)`$, so with $`\ell_{l}`$ the lower edge of bin
+$`l`$ each edge is first standardized,
 
 ``` math
 z_{l,a} = \dfrac{\ell_{l} - \bar{L}(a)}{\sigma_{L}(a)}
@@ -1329,9 +1331,9 @@ spread into a log-scale transform.
 
 ##### Weight at age
 
-When `waa_model = "wt_len"`, weight at age is the key applied to weight
-at the bin midpoints $`\tilde{\ell}_{l}`$ through the weight-length
-relationship $`W = \alpha L^{\beta}`$,
+When `waa_model = "wt_len"`, weight at age is the size-age transition
+applied to weight at the bin midpoints $`\tilde{\ell}_{l}`$ through the
+weight-length relationship $`W = \alpha L^{\beta}`$,
 
 ``` math
 W_{p,r,y,\tau,a,s} = \sum_{l}A_{p,r,y,\tau,l,a,s}\,\alpha_{p,r,s}\,\tilde{\ell}_{l}^{\beta_{p,r,s}}
@@ -1342,14 +1344,14 @@ the weight of the mean length.
 
 ##### Timing within the year
 
-Every fleet has its own key and weight, read at the point in the season
-that fleet’s observations are taken: each fishery fleet’s at `t_fish`,
-each survey’s at `t_srv`, and the spawning weight at the spawning time.
-A season starts at the cumulative duration of the seasons before it, and
-a point inside it is that start plus the fraction elapsed times the
-season’s duration. With growth constant over years the curve read at the
-real age gives the same mean length whatever the seasons’ durations, so
-seasons add no approximation to growth.
+Every fleet has its own size-age transition and weight, read at the
+point in the season that fleet’s observations are taken: each fishery
+fleet’s at `t_fish`, each survey’s at `t_srv`, and the spawning weight
+at the spawning time. A season starts at the cumulative duration of the
+seasons before it, and a point inside it is that start plus the fraction
+elapsed times the season’s duration. With growth constant over years the
+curve read at the real age gives the same mean length whatever the
+seasons’ durations, so seasons add no approximation to growth.
 
 #### Fishery Observation Model
 
@@ -1417,16 +1419,16 @@ ages the catch at length.
 
 ###### Selecting at length rather than at age
 
-The catch at length above is the catch at age spread over the key, which
-is what `FishLenComps_sel = "age"` (the default) and
+The catch at length above is the catch at age spread over the size-age
+transition, which is what `FishLenComps_sel = "age"` (the default) and
 `SrvLenComps_sel = "age"` give. Selectivity has already been applied at
 age by then, as its average over the lengths the age covers,
 $`s_{a} = \sum_{l}A_{l,a}\,s_{l}`$. Every fish of an age is therefore
-equally catchable, and the length composition within an age is the key’s
-own column.
+equally catchable, and the length composition within an age is the
+transition’s own column.
 
 Under `"length"` the order is reversed. The numbers at age are spread
-over the key first and selected length by length,
+over the transition first and selected length by length,
 
 ``` math
 C_{p,r,y,\tau,l,s,f}^{l} = s_{r,y,l,s,f}\sum_{a}^{a_{+}}A_{p,r,y,\tau,l,a,s}\,N_{p,r,y,\tau,a,s}\left( 1 - e^{- Z_{p,r,y,\tau,a,s}} \right)\frac{F_{r,y,\tau,f}}{Z_{p,r,y,\tau,a,s}}
@@ -1460,11 +1462,12 @@ or as biomass:
 
 The fishery weight at age $`W^{fish}`$ is normally the population’s mean
 weight at age at the fleet’s timing, which is the weight of an average
-fish of that age. The catch is not made of average fish. A length-based
-gear takes the long ones from an age more often than the short ones, and
-the long ones weigh more. With `fish_waa_selected = 1` the fleet’s catch
-biomass instead uses the mean weight of the fish it takes at each age,
-the weight averaged over the key re-weighted by selectivity,
+fish of that age. The catch, however, is not made of average fish, since
+a length-based gear takes the long ones from an age more often than the
+short ones and the long ones weigh more. With `fish_waa_selected = 1`
+the fleet’s catch biomass instead uses the mean weight of the fish it
+takes at each age, the weight averaged over the transition re-weighted
+by selectivity,
 
 ``` math
 W_{p,r,y,\tau,a,s,f}^{fish} = \dfrac{\sum_{l}A_{p,r,y,\tau,l,a,s}\,s_{r,y,l,s,f}\,w_{l}}{\sum_{l}A_{p,r,y,\tau,l,a,s}\,s_{r,y,l,s,f}}
@@ -1653,25 +1656,6 @@ $`\sum_p \text{SrvIdx}_{p,r,y,\tau,sf}`$. Population-specific survey
 indices are compared directly to $`\text{SrvIdx}_{p,r,y,\tau,sf}`$
 without summation.
 
-A survey fleet can instead observe year class strength directly, with
-`srv_idx_type = "recdev"`. Such a fleet reads no part of the population:
-
-``` math
-\begin{matrix}
-\text{SrvIdx}_{p,r,y,\tau,sf} = q_{r,y,sf}^{\text{Srv}}\left( \varepsilon^{R}_{p,r,y} - \mu^{R}_{y} \right) \\
-\end{matrix}
-```
-
-where $`\varepsilon^{R}_{p,r,y}`$ is the recruitment deviation and
-$`\mu^{R}_{y}`$ the center its penalty asserts (see Recruitment). The
-deviation relative to that center is the anomaly, how strong the year
-class was against what the model expected, which is what a pre-recruit
-survey or an environmental index measures. Under a bias ramp
-$`\mu^{R}_{y} = -b_{y}\sigma_{R}^{2}/2`$, so the anomaly and the
-deviation are not the same quantity. Deviations are signed, so such a
-fleet requires a normal index likelihood, and its selectivity, survey
-timing and weight-at-age are never read.
-
 As with the fishery index, the ages entering the survey index sum can be
 restricted per fleet via `srv_idx_ages`. Restricting a fleet to a single
 age turns it into an index of that age alone (e.g., an age-1 acoustic
@@ -1705,21 +1689,56 @@ for a lognormal index likelihood with a shared standard error, and is
 the usual companion to a lognormal index; the arithmetic form matches
 the convention some existing assessments use. Analytic fleets fix their
 $`\ln q^{\text{Srv}}`$ parameters automatically, ignore any block
-structure, and cannot have catchability covariates or priors.
+structure, and cannot have catchability deviations or priors.
 
-For estimated survey catchability, environmental linkage can be
-specified:
+Estimated catchability can vary annually about its block value
+(`srv_q_model`, `fish_q_model`):
 
 ``` math
-q_{r,y,sf}^{\text{Srv}} = q_{r,sf}^{\text{Srv}}\exp\left( \mathbf{x}^{T}\mathbf{\beta +}\sum_{m}^{}{\iota_{m}p_{m}\left( z_{r,y,sf} \right)} \right)
+q_{r,y,sf}^{\text{Srv}} = \exp\left(\ln q_{r,\hat{b}(y),sf} + \epsilon_{r,y,sf}^{q}\right)
 ```
 
-where $`q_{r,sf}^{\text{Srv}}`$ is the base survey catchability (i.e.,
-intercept), $`\mathbf{x}`$ is a matrix of covariates, $`\mathbf{\beta}`$
-is a vector of regression coefficients, $`\iota_{m}p_{m}`$ are
-orthogonal polynomial coefficients along with its basis functions, and
-$`z_{r,y,sf}`$ are the covariates for which a polynomial term is
-assumed.
+where $`\epsilon_{r,y,sf}^{q}`$ is a log-scale deviation for region
+$`r`$, year $`y`$ and survey fleet $`sf`$. Fishery catchability takes
+the same form, reading $`\epsilon_{r,y,f}^{q}`$ over fishery fleets,
+with its own $`\sigma_{r,f}^{q}`$ and $`\rho_{r,f}`$. The deviations
+take one of three process errors, each with standard deviation
+$`\sigma_{r,sf}^{q}`$ on the log scale:
+
+``` math
+\epsilon_{r,y,sf}^{q} \sim \begin{cases}
+\text{Normal}\left(0, \sigma_{r,sf}^{q}\right) & \text{independent} \\
+\text{Normal}\left(\epsilon_{r,y-1,sf}^{q}, \sigma_{r,sf}^{q}\right) & \text{random walk} \\
+\text{Normal}\left(\rho_{r,sf}\,\epsilon_{r,y-1,sf}^{q}, \sigma_{r,sf}^{q}\right) & \text{first-order autoregressive}
+\end{cases}
+```
+
+where $`\rho_{r,sf} \in (-1, 1)`$ is the autoregressive correlation. The
+first year of a random walk takes
+$`\text{Normal}(0, \sigma^{\text{init}})`$, with
+$`\sigma^{\text{init}}`$ defaulting to $`\sigma_{r,sf}^{q}`$ so the
+block parameter keeps the level of the series; the first year of an
+autoregressive series takes its stationary standard deviation
+$`\sigma_{r,sf}^{q}/\sqrt{1 - \rho_{r,sf}^{2}}`$. The deviations are
+Gaussian and are integrated out by the Laplace approximation.
+
+Environmental effects on catchability are written as arrows into the
+deviation series through the dynamic structural equation model
+(`srv_q_model = "dsem"`). Giving the series a standard deviation of zero
+removes its innovation, so the deviation is a deterministic function of
+its covariates:
+
+``` math
+\epsilon_{r,y,sf}^{q} = \sum_{k} \beta_{k}\left(x_{y - l_{k},k} - \bar{x}_{k}\right)
+```
+
+where $`x_{y,k}`$ is covariate $`k`$ in year $`y`$, $`\bar{x}_{k}`$ its
+mean, $`\beta_{k}`$ the path coefficient and $`l_{k}`$ the arrow’s lag
+in years. An arrow reading a year before the first contributes nothing.
+With one covariate at lag zero this is an ordinary regression of log
+catchability on that covariate, with no random effects. Giving the
+series its own standard deviation instead keeps the covariate effect and
+adds process error around it.
 
 #### Tagging Observation Model
 
@@ -2522,8 +2541,8 @@ R^{\text{year}}(\rho^{y}_{r,\varsigma,f}) \right) \odot \left( s \, s^{\top} \ri
 
 In all three the standard deviations enter as marginal standard
 deviations, so $`s_{a}`$ means the same thing whichever structure a
-fleet chooses and one key matrix serves all of them. This is worth
-naming because the selectivity process error elsewhere in `SPoRC`
+fleet chooses and one key matrix serves all of them. This distinction
+matters because the selectivity process error elsewhere in `SPoRC`
 parameterizes its separable AR(1) by the conditional variance instead,
 passing `dseparable` a scale of
 $`\sigma / \sqrt{(1-\rho_{y}^{2})(1-\rho_{a}^{2})}`$; the two are
@@ -3230,6 +3249,114 @@ where recapture probabilities are normalized by the total number of
 recaptures across populations, regions, ages, and sexes in a given year
 and season.
 
+### Lognormal Bias Corrections
+
+A deviation on the log scale with variance $`v`$ satisfies
+
+``` math
+E\left\lbrack \exp(\varepsilon) \right\rbrack = \exp\left( \mu + \frac{v}{2} \right)
+```
+
+where $`\varepsilon`$ is the deviation (log scale, either a parameter or
+a random effect), $`\mu`$ is its mean (log scale) and $`v`$ is its
+variance (log scale). So the quantity the deviation multiplies keeps its
+own mean only when $`\mu = -v/2`$. Leaving $`\mu`$ at zero makes the
+deviation median unbiased instead, and the quantity it multiplies sits
+above its intended level by $`\exp(v/2)`$.
+
+Two switches decide whether that correction is taken, and they act on
+opposite sides of the model.
+
+#### Which variance $`v`$ is
+
+$`v`$ is the **marginal** variance of the deviation, not the innovation
+variance its parameter holds. Under an autoregressive process the two
+differ, and the marginal is the one that governs the spread the
+deviation actually has:
+
+| Process | marginal variance $`v`$ |
+|----|----|
+| independent | $`\sigma^{2}`$ |
+| autoregressive over one dim, correlation $`\rho`$ | $`\sigma^{2}/(1 - \rho^{2})`$ |
+| separable over two dims, correlations $`\rho_{1},\rho_{2}`$ | $`\sigma^{2}/\left\lbrack (1 - \rho_{1}^{2})(1 - \rho_{2}^{2}) \right\rbrack`$ |
+| parameterized on the marginal variance directly | $`\sigma^{2}`$ |
+| a random walk | none, so no correction is defined |
+| an arbitrary Gaussian field with precision $`\mathbf{Q}`$ | the diagonal of $`\mathbf{Q}^{-1}`$, one value per cell |
+
+A random walk has no stationary variance, so its deviations take no
+correction. The last row is the general case: where a deviation’s
+density is written as a precision, each cell’s marginal variance is read
+off the inverse, which is what a dynamic structural equation model on
+recruitment does.
+
+#### The process error side (`bias_correct_pe`)
+
+The numbers at age state holds $`\ln N_{p,r,y,\tau,a,s}`$ against its
+deterministic prediction, and its deviation is
+
+``` math
+\eta_{p,r,y,\tau,a,s} = \ln N_{p,r,y,\tau,a,s} - \ln\widehat{N}_{p,r,y,\tau,a,s}
+```
+
+where $`\widehat{N}`$ is the mortality and ageing prediction (numbers,
+derived) and $`\eta`$ is the deviation (log scale, a random effect).
+Under `bias_correct_pe = "all"`, $`\eta`$ is centered on $`-v/2`$ with
+$`v`$ read from the table above, so the state keeps the mean of its
+prediction. The shift is applied where the deviations are formed, before
+any correlation across populations, regions, seasons or sexes is
+whitened, since whitening a shifted field is not the same as shifting a
+whitened one.
+
+The same switch governs recruitment, at `"rec"` and `"all"` alike, which
+is the default and what every model did before the switch existed.
+Recruitment takes $`\sigma_{R}^{2}`$ when its deviations are
+independent, the stationary variance $`\sigma_{R}^{2}/(1 - \rho^{2})`$
+under an autoregression, and the per-cell value from the precision under
+a dynamic structural equation model. The initial age deviations read the
+settled value of whichever of those applies, since those cohorts were
+born before the first model year.
+
+The bias ramp scales the recruitment part and nothing else. It exists
+because a penalized deviation in the early years of an assessment holds
+little information, so the correction is faded in rather than applied
+whole. It applies only to independent recruitment deviations; an
+autoregression or a dynamic structural equation model takes the
+correction in full or not at all.
+
+#### The observation side (`bias_correct_oe`)
+
+A lognormally fit observation compares $`\log`$ of the observation with
+$`\log`$ of the prediction. With the switch off, the prediction is the
+**median** of the observation. With it on, the prediction is the
+**mean**, so $`\sigma^{2}/2`$ is subtracted from the log prediction the
+likelihood compares against:
+
+``` math
+-\log L = \frac{1}{2}\log\left( 2\pi\sigma^{2} \right) + \frac{\left\lbrack \log(O) - \log(P) + \frac{\sigma^{2}}{2} \right\rbrack^{2}}{2\sigma^{2}}
+```
+
+where $`O`$ is the observation (in its own units, data), $`P`$ is the
+prediction (same units, derived) and $`\sigma`$ is the observation
+standard deviation (log scale). The correction applies to the indices,
+catch, discards and every age-disaggregated source fit lognormally, cell
+by cell with each cell’s own $`\sigma`$. A normally fit observation
+takes none, since its prediction is already its mean.
+
+#### Which direction the correction goes
+
+The two switches look opposite because they act at different points in
+the same chain. One rule covers both:
+
+- **Subtract** $`v/2`$ when turning a zero-centered deviation into the
+  quantity it multiplies, so that quantity keeps its mean.
+- **Add** $`v/2`$ when turning a stored deviation back into a
+  zero-centered anomaly.
+
+Whether either applies depends on where the correction already sits.
+Every deviation in the model holds its correction inside the stored
+value, so recruitment and the numbers at age are formed as
+$`\widehat{N}\exp(\eta)`$ with nothing further subtracted.
+
 ### Parameter Priors and Process Error Penalties
 
 #### Parameter Priors
@@ -3603,6 +3730,12 @@ the deviation index $`1 - a`$ lying before the first model year, which
 is how a ramp defined on calendar years treats the years before the
 model starts.
 
+As for the recruitment deviations, only cells the map estimates are
+penalized: the plus group under `equil_init_age_strc = "stoch_no_plus"`,
+or any cell mapped off by hand in `map$ln_InitDevs`, is neither
+estimated nor penalized and holds its value in the parameter list, so
+that age sits at the equilibrium it would have had with no deviation.
+
 Sex-specific curves can additionally be compared to one another
 (`Use_init_sex_pen`), a separate statement about how far apart the
 sexes’ initial age structures may sit rather than about how variable
@@ -3632,10 +3765,10 @@ mean (zero, or the bias-corrected
 $`-\sigma_{\text{Rec}}^{2}/2 \cdot b_y`$ when the bias ramp is active),
 whereas `"own_mean"` centers on the mean of the estimated deviations,
 penalizing only their spread. Under `"own_mean"` the level of the
-deviations is unpenalized and must be pinned elsewhere (an $`R_0`$
-prior, or a fixed deviation), or the likelihood is flat along it; it
-also cannot be combined with the bias ramp, whose $`-\sigma^2/2`$ offset
-is meaningless once the mean is estimated rather than asserted.
+deviations is unpenalized and must be fixed elsewhere (an $`R_0`$ prior,
+or a fixed deviation), or the likelihood is flat along it; it also
+cannot be combined with the bias ramp, whose $`-\sigma^2/2`$ offset is
+meaningless once the mean is estimated rather than asserted.
 
 `RecDevs_model` specifies the process error the deviations follow, the
 same three structures the fishing mortality deviations offer. The
@@ -3685,14 +3818,24 @@ into year $`y`$ reads year $`y-1`$ either way, so a year left out of the
 penalty is one the walk passes through rather than a gap in the series.
 
 Three further refinements act on which deviations are penalized and how
-strongly. First, only estimated deviations are penalized: cells mapped
-off by hand (via `map$ln_RecDevs`) are excluded from the penalty as well
-as from estimation. Second, the recruitment weight
-$`\lambda^{\text{Rec}}`$ (`Wt_Rec`) may be a per-deviation array rather
-than a scalar, so individual deviations can be down-weighted or removed
-from the penalty (weight zero) while remaining estimated. This is how a
-stock-recruit relationship is fit over a chosen window of years while
-recruitment stays effectively free elsewhere, and is distinct from
+strongly. First, only estimated deviations are penalized. Writing
+$`I_{p,r,y} = 1`$ for a cell the map estimates and $`0`$ for one mapped
+off (`NA` in `map$ln_RecDevs`), each term enters the objective as
+$`-I_{p,r,y}\,\lambda^{\text{Rec}}\log\ell(\epsilon_{p,r,y}^{\text{Rec}})`$,
+so a mapped-off deviation is excluded from the penalty as well as from
+estimation. It holds its value in the parameter list, zero unless set,
+so recruitment in that year is $`R_0`$ exactly rather than the
+$`R_0 e^{-\sigma_{\text{Rec}}^{2}/2}`$ an estimated but uninformed
+deviation settles at under the bias correction, and it contributes
+nothing to the estimate of $`\sigma_{\text{Rec}}`$. This is a property
+of the module’s own penalty only: a series handed to a DSEM covers every
+year of its array, and its cells cannot be mapped off (see the DSEM
+section below). Second, the recruitment weight $`\lambda^{\text{Rec}}`$
+(`Wt_Rec`) may be a per-deviation array rather than a scalar, so
+individual deviations can be down-weighted or removed from the penalty
+(weight zero) while remaining estimated. This is how a stock-recruit
+relationship is fit over a chosen window of years while recruitment
+stays effectively free elsewhere, and is distinct from
 `dont_est_recdev_last`, which removes the deviations themselves so
 recruitment reverts to the deterministic prediction.
 
@@ -3908,7 +4051,7 @@ This penalty and the recruitment deviation penalty are separate
 statements about the same series. The deviation penalty acts on
 $`\epsilon_{p,r,y}^{\text{Rec}}`$, an estimated parameter, about its own
 center, whereas this one acts on the difference between two derived
-quantities, so the deviations stay free to depart from the curve at a
+quantities, so the deviations stay free to move away from the curve at a
 cost governed by $`\sigma_{\text{SR}}`$. It sits with the process error
 penalties rather than the priors above because it constrains a model
 quantity rather than asserting knowledge about a parameter.
@@ -4253,7 +4396,7 @@ list gives each fleet its own):
 
 Growth has two deviation surfaces, and both are penalized by the same
 process error routines the selectivity deviations use, so the vocabulary
-above has over unchanged.
+above is reused unchanged.
 
 A time-varying growth parameter has one deviation per year, a surface
 one column wide. Under `"iid"` each is drawn independently and under
@@ -4266,8 +4409,8 @@ one column wide. Under `"iid"` each is drawn independently and under
 \end{matrix}
 ```
 
-with one $`\sigma_{k}`$ per varying parameter $`k`$, kept in the first
-data source of `growth_pe_pars` and estimated under
+with one $`\sigma_{k}`$ per varying parameter $`k`$, kept in the
+time-varying half of `growth_pe_pars` and estimated under
 `growth_tv_sigma_spec = "est"`, and the first year of a walk given its
 own standard deviation (`growth_rw_init_sigma`). Only the years named in
 `growth_tv_years` have a deviation; the rest are kept at zero, so a
@@ -4283,7 +4426,7 @@ on the marginal or conditional variance. The correlated forms are the
 ones that make a growth surface estimable in practice: the deviations
 are not identified year by year and age by age from length data alone,
 and it is the correlation that lets neighboring ages and years share
-information. Its hyperparameters live in the second data source of
+information. Its hyperparameters live in the semi-parametric half of
 `growth_pe_pars`, in the same slots the selectivity forms use, and the
 surface can be restricted to the ages and years the length data inform
 through `growth_semipar_ages` and `growth_semipar_years`.
@@ -4300,20 +4443,58 @@ formulation, but their stochastic structure is shared.
 
 ###### General Structure
 
-Movement deviations are assumed to be independent and normally
-distributed:
+Each origin $`r`$ and destination $`r'`$ (each region under CTMC
+movement) has one deviation surface
+$`\boldsymbol{\epsilon}^{\text{Move}}_{r,r'}`$ over population $`p`$,
+year $`y`$, season $`\tau`$, age $`a`$ and sex $`s`$, and five switches
+say how the deviations vary over each dim: `move_year_re` and
+`move_age_re` take `"none"` (one value shared across the dim), `"iid"`
+(independent) or `"ar1"` (first order autoregressive), and
+`move_pop_re`, `move_seas_re` and `move_sex_re` take `"none"`, `"iid"`
+or `"us"` (an unstructured correlation). Every switch `"none"` is no
+deviations. `move_re_years`, `move_re_seas` and `move_re_ages` restrict
+the surface to those slots, and every other cell is zero.
+
+Each surface is a stationary process whose covariance is the Kronecker
+product of the dims’ correlations, the composition the numbers at age
+state uses, at the marginal sd
+$`\sigma^{*}_{r,r'} = \sigma_{r,r'} / \sqrt{(1 - \rho_{y,r,r'}^2)(1 - \rho_{a,r,r'}^2)}`$,
+where $`\sigma_{r,r'}`$ is the conditional sd the parameter holds, as
+$`\sigma_{\text{NAA}}`$ is:
 
 ``` math
-\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}
+\boldsymbol{\epsilon}^{\text{Move}}_{r,r'}
 \sim
-N\left(0, \sigma^2_{p,r,\tau,a,s,\text{Move}}\right)
+\text{MVN}\left(\mathbf{0},\;
+\sigma^{*2}_{r,r'}\,
+\mathbf{C}_{s} \otimes \mathbf{C}_{a}(\rho_{a,r,r'}) \otimes \mathbf{C}_{\tau}
+\otimes \mathbf{C}_{y}(\rho_{y,r,r'}) \otimes \mathbf{C}_{p}\right),
+\qquad
+[\mathbf{C}(\rho)]_{i,j} = \rho^{|i-j|}
 ```
 
-where $`\sigma_{p,r,\tau,a,s,\text{Move}}`$ may be shared across
-dimensions depending on the selected process error model.
+where $`\mathbf{C}_{y}`$ and $`\mathbf{C}_{a}`$ are AR1 correlation
+matrices over years and ages, with $`\rho`$ estimated where the dim is
+`"ar1"` and zero where it is `"iid"`; $`\mathbf{C}_{p}`$,
+$`\mathbf{C}_{\tau}`$ and $`\mathbf{C}_{s}`$ are unstructured
+correlation matrices shared by every surface under `"us"` and identity
+under `"iid"`; and a dim that is `"none"` has one row. The density is
+evaluated as the numbers at age state penalty evaluates the state: the
+population, season and sex dims are whitened by the Cholesky factors of
+their correlations, and the year by age core of each remaining cell is
+the product of two AR1 densities with unit marginal variance
+(`dseparable` with `dautoreg` factors), with the deviations divided by
+$`\sigma^{*}`$. With no correlation on any dim $`\sigma^{*} = \sigma`$,
+this is a sum of independent normals, and each cell is penalized on its
+own.
 
-Only valid origin-destination pairs (i.e., adjacent regions) are
-assigned deviations.
+`move_pe_pars` holds $`\log \sigma_{r,r'}`$ and the two AR1 correlations
+on an unconstrained scale, $`\rho = 2 / (1 + e^{-2x}) - 1`$, one set per
+surface, and `move_pop_corr_pars`, `move_seas_corr_pars` and
+`move_sex_corr_pars` the unstructured ones. Under unstructured movement
+only pairs the adjacency matrix connects have a surface; under CTMC
+movement a deviation belongs to a single region, so $`r'`$ has one level
+and only a region no edge touches is left out.
 
 ###### Unstructured Markov Movement
 
@@ -4334,31 +4515,36 @@ transform.
 
 ###### CTMC Movement
 
-For CTMC movement, deviations act on the transition rates rather than
-logits. Specifically, deviations are applied multiplicatively to the
-off-diagonal diffusion terms:
+For CTMC movement, deviations act on habitat preference rather than on
+rates. A deviation is added to its own region’s preference before the
+taxis gradient is taken:
 
 ``` math
-D_{p,r \to r',y,\tau,a,s}
+h_{p,r,y,\tau,a,s}
 =
-\bar{D}_{p,r \to r',y^,\tau,a,s}
-\cdot
-\exp\left(
-\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}
-\right)
-\quad \text{for } r \ne r'
+\bar{h}_{p,r,y^,\tau,a,s}
++
+\epsilon^{\text{Move}}_{p,r,y,\tau,a,s}
 ```
 
-where: - $`\bar{D}_{p,r \to r',y^,\tau,a,s}`$ is the baseline diffusion
-rate (constructed from covariates and parameters, with year lookups
-capped at $`y^ = \min(y, n_{\text{yrs}})`$), -
-$`\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}`$ is the deviation applied
-on the log scale.
+where: - $`\bar{h}_{p,r,y^,\tau,a,s}`$ is the baseline preference
+(constructed from covariates and parameters, with year lookups capped at
+$`y^ = \min(y, n_{\text{yrs}})`$), -
+$`\epsilon^{\text{Move}}_{p,r,y,\tau,a,s}`$ is the deviation, one per
+region rather than one per origin-destination pair.
 
-This formulation implies that: - deviations are log-multiplicative on
-movement rates, - $`\exp(\epsilon^{\text{Move}})`$ acts as a
-proportional scaling factor, - time variation persists into projection
-years even when baseline covariates are kept fixed.
+The taxis component of the generator is then built from $`h`$ exactly as
+it is without deviations, $`\dot{P} \propto h_{r'} - h_r`$ along the
+edge from $`r`$ to $`r'`$, and the diffusion rates $`\theta`$ are left
+alone. This formulation implies that: - one deviation moves every edge
+that touches its region, raising the rates into it and lowering the
+rates out of it, - the perturbed taxis is still the gradient of a
+preference surface, so the deviations describe where fish want to be
+rather than how fast they swap, - only differences in preference reach
+the generator, so adding a constant to every region’s deviation changes
+nothing and the level of the field is held only by the process error
+penalty, - time variation persists into projection years even when
+baseline covariates are kept fixed.
 
 Deviations are applied only to off-diagonal elements (i.e., actual
 transitions), and the diagonal of the generator matrix is recomputed to
@@ -4366,46 +4552,72 @@ preserve mass balance.
 
 ###### Likelihood for Deviations
 
-The movement process error contribution to the log-likelihood can be
-written explicitly as:
+The movement process error contribution is the sum over surfaces:
 
 ``` math
 \ell_{\text{Move}}
 =
-\sum_{p,r,r',y,\tau,a,s}
+\sum_{r,r'}
+\log \text{MVN}\left(\boldsymbol{\epsilon}^{\text{Move}}_{r,r'};\,
+\mathbf{0},\;
+\sigma^{*2}_{r,r'}\,
+\mathbf{C}_{s} \otimes \mathbf{C}_{a} \otimes \mathbf{C}_{\tau}
+\otimes \mathbf{C}_{y} \otimes \mathbf{C}_{p}\right)
+```
+
+which with every switch `"iid"` or `"none"` reduces to
+
+``` math
+\ell_{\text{Move}}
+=
+\sum_{r,r'}\sum_{p,y,\tau,a,s}
 \left[
--\frac{1}{2}\log\left(2\pi \sigma^2_{p,r,\tau,a,s,\text{Move}}\right)
+-\frac{1}{2}\log\left(2\pi \sigma^2_{r,r'}\right)
 -
-\frac{
-\left(\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}\right)^2
-}{
-2\sigma^2_{p,r,\tau,a,s,\text{Move}}
-}
+\frac{\left(\epsilon^{\text{Move}}_{p,r,r',y,\tau,a,s}\right)^2}{2\sigma^2_{r,r'}}
 \right]
 ```
 
-where the summation is taken over all valid origin-destination pairs
-(i.e., $`r \neq r'`$ and adjacency$`(r,r') = 1`$), and over all indices
-of population ($`p`$), year ($`y`$), season ($`\tau`$), age ($`a`$), and
-sex ($`s`$).
+over the active cells. Under `move_year_re = "dsem"` every cell of every
+surface takes its density from the DSEM arrows instead and
+$`\ell_{\text{Move}}`$ is zero.
 
-###### Variance Structures
+##### Dynamic Structural Equation Model
 
-Different process error models specify how $`\sigma`$ is shared across
-dimensions. These correspond to IID assumptions over subsets of:
+Any deviation process above (recruitment, the numbers at age state,
+growth, the semi-parametric growth surface, movement) can take its
+density from a dynamic structural equation model (DSEM; Thorson et
+al. 2024) instead of its own penalty, and covariate series can be
+brought in beside it. The DSEM is a grid $`x_{t,j}`$ of years
+$`t = 1, \ldots, T`$ by series $`j = 1, \ldots, J`$, where a series is a
+covariate, a latent state observed with error or missingness, or a
+deviation series such as `ln_RecDevs[p, r, t]`. Arrow lines
+(`from -> to, lag, name` for a path, `a <-> a, 0, name` for an
+innovation sd, `a <-> b, 0, name` for a covariance) build a precision
+matrix $`Q`$ over the whole grid, and a series’ cells are evaluated as a
+Gaussian Markov random field against it.
 
-- population ($`p`$),
-- year ($`y`$),
-- season ($`\tau`$),
-- age ($`a`$),
-- sex ($`s`$).
+A deviation series linked to the DSEM leaves its own penalty through the
+parameter’s map mirror (`data$map_<parameter>`, `NA` at the linked
+cells), so no cell is charged twice, and a process module that declares
+`"dsem"` (`RecDevs_model`, `NAA_re`, `growth_tv_model`,
+`growth_semipar`, `move_year_re`) hands over every estimated cell and
+fixes the sd its own penalty would have read; for recruitment,
+$`\sigma_R`$ is then the series’ own sd line in the arrows. The DSEM’s
+log likelihood enters the joint objective as
+$`\ell^{\text{DSEM}} + \ell^{\text{DSEM,obs}}`$, the second term
+covering any covariate observed with error.
 
-For example: - IID across years: $`\sigma_{p,r}`$, - IID across years
-and ages: $`\sigma_{p,r,a}`$, - Fully stratified:
-$`\sigma_{p,r,\tau,a,s}`$.
-
-These structures control the degree of temporal and demographic
-heterogeneity in movement variability.
+With `n_proj_yrs_devs` set, every deviation array and the grid run past
+the last data year; those cells are random effects with no data behind
+them, so their conditional modes are the DSEM’s forecast and their
+Laplace standard errors its uncertainty, with no forecast code of its
+own. The operating model draws the grid jointly for every replicate from
+$`Q`$ (or year by year when an arrow is moderated) and writes each
+linked series into the array the population loop reads. See the “Dynamic
+Structural Equation Model” vignette for the full density, arrow
+notation, moderated and projected series, the observation families, and
+the recruitment bias correction.
 
 #### Joint Likelihood
 

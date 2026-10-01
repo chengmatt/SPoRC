@@ -113,7 +113,7 @@ spawning weight at <code>t_spawn</code>.</p>
 
 
 <dl><dt id="arg-ln-growth-pars">ln_growth_pars<a class="anchor" aria-label="anchor" href="#arg-ln-growth-pars"></a></dt>
-<dd><p>Array <code>[pop, region, sex, n_gpars]</code> of log growth
+<dd><p>Array <code>[pop, region, sex, n_growth_pars]</code> of log growth
 parameters in the order L1, L2, K, CV1, CV2 and, for the Richards form, rho.</p></dd>
 
 
@@ -176,12 +176,12 @@ survey's key and weight at age are read.</p></dd>
 
 
 <dt id="arg-ln-growth-devs">ln_growth_devs<a class="anchor" aria-label="anchor" href="#arg-ln-growth-devs"></a></dt>
-<dd><p>Array <code>[pop, region, year, n_gpars, sex]</code> of
+<dd><p>Array <code>[pop, region, year, n_growth_pars, sex]</code> of
 time-varying deviations, or <code>NULL</code> for none.</p></dd>
 
 
 <dt id="arg-growth-tv-model">growth_tv_model<a class="anchor" aria-label="anchor" href="#arg-growth-tv-model"></a></dt>
-<dd><p>Integer vector <code>[n_gpars]</code>, 0 constant, 1 iid,
+<dd><p>Integer vector <code>[n_growth_pars]</code>, 0 constant, 1 iid,
 2 random walk, per parameter.</p></dd>
 
 
@@ -191,7 +191,7 @@ time-varying deviations, or <code>NULL</code> for none.</p></dd>
 
 
 <dt id="arg-growth-par-bounds">growth_par_bounds<a class="anchor" aria-label="anchor" href="#arg-growth-par-bounds"></a></dt>
-<dd><p>Matrix <code>[n_gpars x 2]</code> of bounds for the logit
+<dd><p>Matrix <code>[n_growth_pars x 2]</code> of bounds for the logit
 link.</p></dd>
 
 

@@ -2,7 +2,7 @@
 
 Annual deviations from a fleet's block catchability, taken as
 independent, a random walk or an ar1. A fleet whose deviations a dsem
-has taken over reads no penalty here, since the mirror blanks those
+has taken over gets no penalty here, since the mirror blanks those
 cells.
 
 ## Usage

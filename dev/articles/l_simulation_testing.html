@@ -478,11 +478,132 @@ SSB and recruitment.</p>
 <span>  output_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  what <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"Rec"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
+<p>A fit with movement random effects (<code>move_year_re</code>,
+<code>move_age_re</code>, <code>move_pop_re</code>,
+<code>move_seas_re</code> or <code>move_sex_re</code> in
+<code><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement()</a></code>) comes into the self test and the
+closed loop on its own without additional setup. Over the conditioning
+years (<code>n_cond_yrs</code>, every year of the fit by default) each
+replicate keeps the fit’s own deviations, so the historical movement is
+the conditioned fit’s; the years after them are drawn from the process
+the estimation model penalizes, at the fitted / specified sd and
+correlations, with an AR1 continuing from the last fitted year, and the
+movement matrix is rebuilt from them before the population is run. An
+operating model built by hand from such a fit takes the same step
+through <code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code>, which stores the fit’s
+switches, process error parameters and movement arguments on the
+simulation list; <code><a href="../reference/Setup_sim_env.html">Setup_sim_env()</a></code> then draws and rebuilds. A
+fit whose movement deviations a dsem holds or links is drawn by
+<code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code> instead and rebuilt through the same
+arguments.</p>
+<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># a fit with AR1 movement deviations over years, sex-specific and correlated across sexes</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span><span class="va">input_list</span>, use_fixed_movement <span class="op">=</span> <span class="fl">0</span>, Fixed_Movement <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>                                 move_year_re <span class="op">=</span> <span class="st">"ar1"</span>, move_sex_re <span class="op">=</span> <span class="st">"us"</span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>, random <span class="op">=</span> <span class="st">"move_devs"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># an operating model built by hand: the fit's movement, then its deviation process</span></span>
+<span><span class="va">sim_list</span><span class="op">$</span><span class="va">Movement</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">replicate</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span>, <span class="va">fit</span><span class="op">$</span><span class="va">rep</span><span class="op">$</span><span class="va">Movement</span><span class="op">)</span></span>
+<span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement</a></span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">fit</span><span class="op">$</span><span class="va">data</span>, <span class="va">fit</span><span class="op">$</span><span class="va">env</span><span class="op">$</span><span class="fu">parList</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own move_devs and Movement</span></span></code></pre></div>
+<p>A fit with growth deviations (<code>growth_tv_model</code> or
+<code>growth_semipar</code> in <code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>) can
+be setup in the same way. Each replicate draws every varying parameter’s
+series and the semi-parametric surface from the form the estimation
+model penalizes them under, iid, random walk, separable AR1 or the three
+dimensional field, at the fitted process error parameters and under the
+fit’s maps, so a cell the map fixes stays at zero and a shared level
+takes one draw; weight at age, the size-age keys and selectivity at age
+are then rebuilt through the fit’s own <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code>. Under
+cohort growth only the years before the propagation starts are built up
+front, and the annual cycle advances the rest from each replicate’s own
+numbers at age. An operating model built by hand takes the step through
+<code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code>, which needs the fit’s report under
+selectivity at length. A dsem holding or linking any growth deviation
+draws both arrays through <code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code> instead. One
+convention differs from the penalty: a random walk’s first year is drawn
+at the walk’s own sd rather than the diffuse
+<code>growth_rw_init_sigma</code> the estimation model gives it.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># a fit with iid deviations on L1 and a random walk on K, their sds estimated</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span><span class="va">input_list</span>, <span class="va">...</span>, growth_tv_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>L1 <span class="op">=</span> <span class="st">"iid"</span>, K <span class="op">=</span> <span class="st">"rw"</span><span class="op">)</span>, growth_tv_sigma_spec <span class="op">=</span> <span class="st">"est"</span><span class="op">)</span></span>
+<span><span class="va">fit</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">map</span>, random <span class="op">=</span> <span class="st">"ln_growth_devs"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># an operating model built by hand: the fit's growth, then its deviation process</span></span>
+<span><span class="va">sim_list</span><span class="op">$</span><span class="va">WAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">replicate</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span>, <span class="va">fit</span><span class="op">$</span><span class="va">rep</span><span class="op">$</span><span class="va">WAA</span><span class="op">)</span> <span class="co"># and WAA_fish, WAA_srv, SizeAgeTrans_fish, SizeAgeTrans_srv the same way</span></span>
+<span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE</a></span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">fit</span><span class="op">$</span><span class="va">data</span>, <span class="va">fit</span><span class="op">$</span><span class="va">env</span><span class="op">$</span><span class="fu">parList</span><span class="op">(</span><span class="op">)</span>, rep <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">rep</span><span class="op">)</span></span>
+<span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own ln_growth_devs and weight at age</span></span></code></pre></div>
+<p>Neither <code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code> nor
+<code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code> is required to read anything that an
+optimizer produced; both only need <code>data</code> and a parameter
+list in a fit’s own array shape, so a process error series can be
+specified manually in place of an estimated one. This can be done with
+the function <code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code>’s own replicate loop
+calls, matched to <code>data</code> and <code>pars</code> by
+<code><a href="../reference/match_model_args.html">match_model_args()</a></code> the same way; although both functions
+are internal. Movement is self-contained enough that
+<code><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim()</a></code> and <code><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement()</a></code> alone
+give it everything it reads, with no <code>input_list</code> needed
+beforehand either, the same way a pure cross-test never uses one:</p>
+<div class="sourceCode" id="cb14"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># a bare input_list built from the OM's own dimensions, no EM or data involved</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Dim.html">Setup_Mod_Dim</a></span><span class="op">(</span>years <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, ages <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, lens <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>                            n_regions <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, n_sexes <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>,</span>
+<span>                            n_fish_fleets <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span>, n_srv_fleets <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span>,</span>
+<span>                            n_pop <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># movement specified by hand instead of estimated</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span><span class="va">input_list</span>, use_fixed_movement <span class="op">=</span> <span class="fl">0</span>, Fixed_Movement <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>                                 move_year_re <span class="op">=</span> <span class="st">"ar1"</span>, move_sex_re <span class="op">=</span> <span class="st">"us"</span><span class="op">)</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">move_pe_pars</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">...</span> <span class="co"># chosen sd / correlation, not an estimate</span></span>
+<span></span>
+<span><span class="va">move_args</span> <span class="op">&lt;-</span> <span class="fu">SPoRC</span><span class="fu">:::</span><span class="fu"><a href="../reference/match_model_args.html">match_model_args</a></span><span class="op">(</span><span class="fu">SPoRC</span><span class="fu">:::</span><span class="va"><a href="../reference/Get_Movement.html">Get_Movement</a></span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>,</span>
+<span>                                      n_yrs <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, n_proj_yrs_devs <span class="op">=</span> <span class="fl">0</span>, n_ages <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span><span class="op">)</span></span>
+<span><span class="va">movement</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="fu">SPoRC</span><span class="fu">:::</span><span class="va"><a href="../reference/Get_Movement.html">Get_Movement</a></span>, <span class="va">move_args</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">sim_list</span><span class="op">$</span><span class="va">Movement</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">replicate</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span>, <span class="va">movement</span><span class="op">$</span><span class="va">Movement</span><span class="op">)</span></span>
+<span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement</a></span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">)</span></span>
+<span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own move_devs and Movement</span></span></code></pre></div>
+<p>Growth setup needs a little bit more, since <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code>
+also reads <code>t_fish</code>, <code>t_srv</code>,
+<code>spawn_seas</code> and <code>t_spawn</code>, the within-season
+timing that <code><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps()</a></code>,
+<code><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps()</a></code> and
+<code><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec()</a></code> would otherwise supply from real fleet
+data. Plain placeholders for that timing, written onto <code>data</code>
+directly, serve just as well when nothing is actually being fit:</p>
+<div class="sourceCode" id="cb15"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># growth specified by hand instead of estimated, same dimensions plus length bins</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span><span class="va">input_list</span>, <span class="va">...</span>, growth_tv_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>L1 <span class="op">=</span> <span class="st">"iid"</span>, K <span class="op">=</span> <span class="st">"rw"</span><span class="op">)</span>, growth_tv_sigma_spec <span class="op">=</span> <span class="st">"est"</span><span class="op">)</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">growth_pe_pars</span><span class="op">[</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">...</span> <span class="co"># chosen sd, not an estimate</span></span>
+<span></span>
+<span><span class="co"># the timing Setup_Mod_FishIdx_and_Comps / Setup_Mod_SrvIdx_and_Comps / Setup_Mod_Rec would otherwise supply</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">t_fish</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">t_srv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">spawn_seas</span> <span class="op">&lt;-</span> <span class="fl">1</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">t_spawn</span> <span class="op">&lt;-</span> <span class="fl">0</span></span>
+<span></span>
+<span><span class="va">growth_args</span> <span class="op">&lt;-</span> <span class="fu">SPoRC</span><span class="fu">:::</span><span class="fu"><a href="../reference/match_model_args.html">match_model_args</a></span><span class="op">(</span><span class="fu">SPoRC</span><span class="fu">:::</span><span class="va"><a href="../reference/Get_Growth.html">Get_Growth</a></span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, n_yrs <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span><span class="op">)</span></span>
+<span><span class="va">growth</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/do.call.html" class="external-link">do.call</a></span><span class="op">(</span><span class="fu">SPoRC</span><span class="fu">:::</span><span class="va"><a href="../reference/Get_Growth.html">Get_Growth</a></span>, <span class="va">growth_args</span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">sim_list</span><span class="op">$</span><span class="va">WAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">replicate</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span>, <span class="va">growth</span><span class="op">$</span><span class="va">WAA</span><span class="op">)</span> <span class="co"># and WAA_fish, WAA_srv, SizeAgeTrans_fish, SizeAgeTrans_srv the same way</span></span>
+<span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE</a></span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, rep <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span>
+<span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own ln_growth_devs and weight at age</span></span></code></pre></div>
+<p>When no process error is wanted at all, none of this internal stuff
+is needed either: <code>sim_list$Movement</code> and growth’s
+<code>sim_list$WAA</code> / <code>WAA_fish</code> / <code>WAA_srv</code>
+/ <code>SizeAgeTrans_fish</code> / <code>SizeAgeTrans_srv</code> can be
+filled in directly, the same way the cross-test example above sets a
+flat <code>sim_list$Movement</code> by hand.
+<code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code> and <code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code>
+exist only to draw and rebuild a deviation series around those arrays;
+skip both, and the internal calls above, once the arrays themselves are
+what is being specified.</p>
 <p>The self-test indicates that the model is generally able to recover
 the overall trends well. However, some biases manifest in the early and
 late periods, likely due to uncertainty in catch data in the early
 period and a lack of age composition data during these periods.</p>
-<div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb16"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># Process self test results</span></span>
 <span><span class="va">self_test_res</span> <span class="op">&lt;-</span> <span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="va">self_test</span><span class="op">$</span><span class="va">SSB</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>
 <span>  <span class="fu">dplyr</span><span class="fu">::</span><span class="fu"><a href="https://dplyr.tidyverse.org/reference/rename.html" class="external-link">rename</a></span><span class="op">(</span>Pop <span class="op">=</span> <span class="va">Var1</span>, Region <span class="op">=</span> <span class="va">Var2</span>, Year <span class="op">=</span> <span class="va">Var3</span>, Sim <span class="op">=</span> <span class="va">Var4</span>, Est <span class="op">=</span> <span class="va">value</span><span class="op">)</span> <span class="op"><a href="https://magrittr.tidyverse.org/reference/pipe.html" class="external-link">%&gt;%</a></span></span>

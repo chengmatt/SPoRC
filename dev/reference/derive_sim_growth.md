@@ -19,8 +19,9 @@ derive_sim_growth(sim_env)
 
 - sim_env:
 
-  Simulation environment holding `dsem_growth_args` from
-  `Setup_Sim_DSEM` and the deviation arrays with the replicate dim last.
+  Simulation environment holding `growth_args` from
+  `Setup_Sim_Growth_RE` or `dsem_growth_args` from `Setup_Sim_DSEM`, and
+  the deviation arrays with the replicate dim last.
 
 ## Value
 

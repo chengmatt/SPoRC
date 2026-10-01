@@ -87,12 +87,12 @@ look for what a given setting is, whereas <a href="t_model_options.html">Overvie
 it exists and which ones to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 552 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 561 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (17)</option>
 <option value="Rec">Rec (65)</option>
 <option value="Biologicals">Biologicals (72)</option>
-<option value="Movement">Movement (23)</option>
+<option value="Movement">Movement (32)</option>
 <option value="Tagging">Tagging (19)</option>
 <option value="Catch_and_F">Catch_and_F (72)</option>
 <option value="FishIdx_and_Comps">FishIdx_and_Comps (77)</option>
@@ -1200,10 +1200,10 @@ K, CV1, CV2 and rho stay at their starting values whatever growth_spec
 says.
 </td>
 </tr>
-<tr data-k="growth_tv_model null time variation of the growth parameters. null (default) holds every parameter constant. otherwise a character vector of length n_gpars in parameter order, or named by parameter, each " none or a varying parameter gets deviation series ln_growth_devs and log sigma in the time-varying half of growth_pe_pars under density comes from setup_mod_dsem that stays at its start.>
+<tr data-k="growth_tv_model null time variation of the growth parameters. null (default) holds every parameter constant. otherwise a character vector of length n_growth_pars in parameter order, or named by parameter, each " none or a varying parameter gets deviation series ln_growth_devs and log sigma in the time-varying half of growth_pe_pars under density comes from setup_mod_dsem that stays at its start.>
 <td><code class="optref-arg">growth_tv_model</code></td>
 <td><code>NULL</code></td>
-<td>Time variation of the growth parameters. NULL (default) holds every parameter constant. Otherwise a character vector of length n_gpars in parameter order, or named by parameter, each "none", "iid", "rw", or "dsem". A varying parameter gets a deviation series ln_growth_devs and a log sigma in the time-varying half of growth_pe_pars; under "dsem" the density comes from Setup_Mod_DSEM and that sigma stays at its start.</td>
+<td>Time variation of the growth parameters. NULL (default) holds every parameter constant. Otherwise a character vector of length n_growth_pars in parameter order, or named by parameter, each "none", "iid", "rw", or "dsem". A varying parameter gets a deviation series ln_growth_devs and a log sigma in the time-varying half of growth_pe_pars; under "dsem" the density comes from Setup_Mod_DSEM and that sigma stays at its start.</td>
 </tr>
 <tr data-k="growth_tv_years null calendar years the deviations are active in. null (default) for every model year, a vector for every varying parameter, or a list named by parameter. deviations outside the range are kept at zero.">
 <td>
@@ -1223,7 +1223,7 @@ parameter. Deviations outside the range are kept at zero.
 <td><code>"log"</code></td>
 <td>The scale a deviation enters on. "log" (default) multiplies the parameter by e^{\delta}; "logit" keeps it inside growth_par_bounds, so the parameter approaches a bound instead of crossing it.</td>
 </tr>
-<tr data-k="growth_par_bounds null matrix [n_gpars x 2] of lower and upper bounds on the natural scale, required under the logit link.">
+<tr data-k="growth_par_bounds null matrix [n_growth_pars x 2] of lower and upper bounds on the natural scale, required under the logit link.">
 <td>
 <code class="optref-arg">growth_par_bounds</code>
 </td>
@@ -1231,8 +1231,8 @@ parameter. Deviations outside the range are kept at zero.
 <code>NULL</code>
 </td>
 <td>
-Matrix [n_gpars x 2] of lower and upper bounds on the natural scale,
-required under the logit link.
+Matrix [n_growth_pars x 2] of lower and upper bounds on the natural
+scale, required under the logit link.
 </td>
 </tr>
 <tr data-k="growth_tv_sigma_spec " fix holds the process error sds of deviations at their starting values estimates them. both read time-varying half growth_pe_pars one slot per growth parameter.>
@@ -1544,7 +1544,7 @@ population correlations off.
 Setup_Mod_Movement
 </h3>
 <p class="optref-n">
-23 arguments
+32 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -1634,40 +1634,125 @@ ones concentrate toward equal movement. Read when Use_Movement_Prior =
 1.
 </td>
 </tr>
-<tr data-k="movement_popblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks cont_vary_movement residual annual variation. all are ignored when move_type='1."'>
+<tr data-k="movement_popblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks move_year_re annual variation not both likewise movement_ageblk_spec move_age_re. all are ignored when move_type='1."'>
 <td><code class="optref-arg">Movement_popblk_spec</code></td>
 <td><code>"constant"</code></td>
-<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks and cont_vary_movement for residual annual variation. All are ignored when move_type = 1.</td>
+<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks or move_year_re for annual variation, not both, and likewise Movement_ageblk_spec or move_age_re. All are ignored when move_type = 1.</td>
 </tr>
-<tr data-k="movement_ageblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks cont_vary_movement residual annual variation. all are ignored when move_type='1."'>
+<tr data-k="movement_ageblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks move_year_re annual variation not both likewise movement_ageblk_spec move_age_re. all are ignored when move_type='1."'>
 <td><code class="optref-arg">Movement_ageblk_spec</code></td>
 <td><code>"constant"</code></td>
-<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks and cont_vary_movement for residual annual variation. All are ignored when move_type = 1.</td>
+<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks or move_year_re for annual variation, not both, and likewise Movement_ageblk_spec or move_age_re. All are ignored when move_type = 1.</td>
 </tr>
-<tr data-k="movement_yearblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks cont_vary_movement residual annual variation. all are ignored when move_type='1."'>
+<tr data-k="movement_yearblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks move_year_re annual variation not both likewise movement_ageblk_spec move_age_re. all are ignored when move_type='1."'>
 <td><code class="optref-arg">Movement_yearblk_spec</code></td>
 <td><code>"constant"</code></td>
-<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks and cont_vary_movement for residual annual variation. All are ignored when move_type = 1.</td>
+<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks or move_year_re for annual variation, not both, and likewise Movement_ageblk_spec or move_age_re. All are ignored when move_type = 1.</td>
 </tr>
-<tr data-k="movement_seasblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks cont_vary_movement residual annual variation. all are ignored when move_type='1."'>
+<tr data-k="movement_seasblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks move_year_re annual variation not both likewise movement_ageblk_spec move_age_re. all are ignored when move_type='1."'>
 <td><code class="optref-arg">Movement_seasblk_spec</code></td>
 <td><code>"constant"</code></td>
-<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks and cont_vary_movement for residual annual variation. All are ignored when move_type = 1.</td>
+<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks or move_year_re for annual variation, not both, and likewise Movement_ageblk_spec or move_age_re. All are ignored when move_type = 1.</td>
 </tr>
-<tr data-k="movement_sexblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks cont_vary_movement residual annual variation. all are ignored when move_type='1."'>
+<tr data-k="movement_sexblk_spec " constant blocking across populations ages years seasons and sexes: or a list of integer vectors e.g. for juvenile an adult block sex-specific movement. use movement_yearblk_spec structural breaks move_year_re annual variation not both likewise movement_ageblk_spec move_age_re. all are ignored when move_type='1."'>
 <td><code class="optref-arg">Movement_sexblk_spec</code></td>
 <td><code>"constant"</code></td>
-<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks and cont_vary_movement for residual annual variation. All are ignored when move_type = 1.</td>
+<td>Blocking across populations, ages, years, seasons and sexes: "constant" (default) or a list of integer vectors, e.g. list(c(1, 2), 3) for populations, list(1:4, 5:10) for a juvenile and an adult block, or list(1, 2) for sex-specific movement. Use Movement_yearblk_spec for structural breaks or move_year_re for annual variation, not both, and likewise Movement_ageblk_spec or move_age_re. All are ignored when move_type = 1.</td>
 </tr>
-<tr data-k="cont_vary_movement " none structure of the continuous deviations on fixed-effect movement surface. or followed by dims they vary over any p y seas a and s in order: is one deviation per year region pair under ctmc shared across everything else varies every dim. dim left out shares it. are random effects with movement_cont_pe_pars_spec estimating sd fit_model. instead takes their density from arrows given to setup_mod_dsem series origin destination whose hold no level other more than which it names itself since cannot be linked move_pe_pars then read nothing.>
-<td><code class="optref-arg">cont_vary_movement</code></td>
+<tr data-k="move_year_re " none how the deviations vary across years within a surface: or which takes every cell density from arrows given to setup_mod_dsem one series per of dim with more than level region under ctmc movement whose hold no destination and leaves move_pe_pars read by nothing. refuses movement_yearblk_spec other unless since year block describe thing twice.>
+<td><code class="optref-arg">move_year_re</code></td>
 <td><code>"none"</code></td>
-<td>Structure of the continuous deviations on the fixed-effect movement surface. "none" (default), or "iid_" followed by the dims they vary over, any of p (population), y (year), seas (season), a (age) and s (sex) in any order: "iid_y" is one deviation per year and region pair, or per year and region under CTMC movement, shared across everything else, and "iid_p_y_seas_a_s" varies by every dim. A dim left out shares one deviation across it. They are random effects with Movement_cont_pe_pars_spec estimating the sd and random = "move_devs" in fit_model. "dsem" instead takes their density from the arrows given to Setup_Mod_DSEM, one series per origin and destination (per region under CTMC, whose deviations hold no destination) and per level of every other dim with more than one, which it names itself since a deviation shared across a dim cannot be linked; move_pe_pars are then read by nothing.</td>
+<td>How the deviations vary across years within a surface: "none" (default), "iid", "ar1", or "dsem", which takes every cell's density from the arrows given to Setup_Mod_DSEM, one series per cell of every dim with more than one level (per region under CTMC movement, whose deviations hold no destination), and leaves move_pe_pars read by nothing. Refuses a Movement_yearblk_spec other than "constant" unless "none", since a year block and year deviations describe one thing twice.</td>
 </tr>
-<tr data-k="movement_cont_pe_pars_spec " none estimation of the process error variance for cont_vary_movement deviations. creates no parameters and pairs with holds at its starting value estimates one shared n_regions n_seas n_ages n_sexes independently.>
-<td><code class="optref-arg">Movement_cont_pe_pars_spec</code></td>
+<tr data-k="move_age_re " none how the deviations vary across ages within a surface: or must be under move_year_re="dsem" and refuses movement_ageblk_spec other than unless every switch is no deviations. otherwise each surface sd estimated with an ar1 correlation parameter wherever dim are random effects in fit_model penalized fixed without it.>
+<td><code class="optref-arg">move_age_re</code></td>
 <td><code>"none"</code></td>
-<td>Estimation of the process error variance for the cont_vary_movement deviations. "none" creates no parameters and pairs with cont_vary_movement = "none", "fix" holds the variance at its starting value, "est_shared" estimates one shared value, and "est_all" estimates [n_pop × n_regions × n_seas × n_ages × n_sexes] independently.</td>
+<td>How the deviations vary across ages within a surface: "none" (default), "iid" or "ar1"; must be "none" under move_year_re = "dsem", and refuses a Movement_ageblk_spec other than "constant" unless "none". Every switch "none" is no deviations. Otherwise each surface's sd is estimated, with an AR1 correlation parameter wherever a dim is "ar1", and the deviations are random effects with random = "move_devs" in fit_model or penalized fixed effects without it.</td>
+</tr>
+<tr data-k="move_pop_re " none how the deviations vary across populations seasons and sexes: one deviation shared dim unstructured correlation of n parameters by every pair as naa_re_sex is or a list blocks levels such where in block share are independent. must cover each active level once. needs more than neither it nor allowed under move_year_re="dsem" . origin destination ctmc always has its own deviations.>
+<td><code class="optref-arg">move_pop_re</code></td>
+<td><code>"none"</code></td>
+<td>How the deviations vary across populations, seasons and sexes: "none" (default, one deviation shared across the dim), "iid" (independent), "us" (an unstructured correlation of n(n-1)/2 parameters, shared by every pair, as NAA_re_sex is), or a list of blocks of levels such as list(1:2, 3), where the levels in a block share one deviation and blocks are independent. Blocks must cover each active level once. "us" needs more than one active level, and neither it nor a block list is allowed under move_year_re = "dsem". Every origin and destination pair (region under the CTMC) always has its own deviations.</td>
+</tr>
+<tr data-k="move_seas_re " none how the deviations vary across populations seasons and sexes: one deviation shared dim unstructured correlation of n parameters by every pair as naa_re_sex is or a list blocks levels such where in block share are independent. must cover each active level once. needs more than neither it nor allowed under move_year_re="dsem" . origin destination ctmc always has its own deviations.>
+<td><code class="optref-arg">move_seas_re</code></td>
+<td><code>"none"</code></td>
+<td>How the deviations vary across populations, seasons and sexes: "none" (default, one deviation shared across the dim), "iid" (independent), "us" (an unstructured correlation of n(n-1)/2 parameters, shared by every pair, as NAA_re_sex is), or a list of blocks of levels such as list(1:2, 3), where the levels in a block share one deviation and blocks are independent. Blocks must cover each active level once. "us" needs more than one active level, and neither it nor a block list is allowed under move_year_re = "dsem". Every origin and destination pair (region under the CTMC) always has its own deviations.</td>
+</tr>
+<tr data-k="move_sex_re " none how the deviations vary across populations seasons and sexes: one deviation shared dim unstructured correlation of n parameters by every pair as naa_re_sex is or a list blocks levels such where in block share are independent. must cover each active level once. needs more than neither it nor allowed under move_year_re="dsem" . origin destination ctmc always has its own deviations.>
+<td><code class="optref-arg">move_sex_re</code></td>
+<td><code>"none"</code></td>
+<td>How the deviations vary across populations, seasons and sexes: "none" (default, one deviation shared across the dim), "iid" (independent), "us" (an unstructured correlation of n(n-1)/2 parameters, shared by every pair, as NAA_re_sex is), or a list of blocks of levels such as list(1:2, 3), where the levels in a block share one deviation and blocks are independent. Blocks must cover each active level once. "us" needs more than one active level, and neither it nor a block list is allowed under move_year_re = "dsem". Every origin and destination pair (region under the CTMC) always has its own deviations.</td>
+</tr>
+<tr data-k="move_re_pops null integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. note that an ar1 or unstructured correlation runs over the active levels.">
+<td>
+<code class="optref-arg">move_re_pops</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer vectors of the populations, years, seasons, ages and sexes the
+deviations are estimated over. Note that an AR1 or unstructured
+correlation runs over the active levels.
+</td>
+</tr>
+<tr data-k="move_re_years null integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. note that an ar1 or unstructured correlation runs over the active levels.">
+<td>
+<code class="optref-arg">move_re_years</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer vectors of the populations, years, seasons, ages and sexes the
+deviations are estimated over. Note that an AR1 or unstructured
+correlation runs over the active levels.
+</td>
+</tr>
+<tr data-k="move_re_seas null integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. note that an ar1 or unstructured correlation runs over the active levels.">
+<td>
+<code class="optref-arg">move_re_seas</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer vectors of the populations, years, seasons, ages and sexes the
+deviations are estimated over. Note that an AR1 or unstructured
+correlation runs over the active levels.
+</td>
+</tr>
+<tr data-k="move_re_ages null integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. note that an ar1 or unstructured correlation runs over the active levels.">
+<td>
+<code class="optref-arg">move_re_ages</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer vectors of the populations, years, seasons, ages and sexes the
+deviations are estimated over. Note that an AR1 or unstructured
+correlation runs over the active levels.
+</td>
+</tr>
+<tr data-k="move_re_sexes null integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. note that an ar1 or unstructured correlation runs over the active levels.">
+<td>
+<code class="optref-arg">move_re_sexes</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer vectors of the populations, years, seasons, ages and sexes the
+deviations are estimated over. Note that an AR1 or unstructured
+correlation runs over the active levels.
+</td>
+</tr>
+<tr data-k="move_pe_spec " est_all gives every pair its own log sd and ar1 correlations in move_pe_pars one set to a list of blocks rows the table origins destinations over edges adjacency matrix origin then destination order row per region under ctmc block. unstructured are always shared.>
+<td><code class="optref-arg">move_pe_spec</code></td>
+<td><code>"est_all"</code></td>
+<td>"est_all" (default) gives every pair its own log sd and AR1 correlations in move_pe_pars, "est_shared" gives one set to every pair, and a list of blocks of rows of the pair table (input_list$data$move_pairs, origins and destinations over the edges of the adjacency matrix in origin then destination order, one row per region under the CTMC) gives one set per block. The unstructured correlations are always shared.</td>
 </tr>
 <tr data-k="ctmc_move_dat null data frame required when move_type = 1, one row per population, region, year, season, age and sex, with columns pop, regions, years, seas, ages, sexes and any covariates the formulas name. projection years beyond n_years are capped at the final estimation year to prevent spline extrapolation.">
 <td>
@@ -5041,10 +5126,10 @@ Data frame with a year column and one column per covariate, NA where a
 covariate is not observed. NULL for a dsem among deviation series alone.
 </td>
 </tr>
-<tr data-k="dsem_processes null processes whose series the arrows may name, from dsem_process_table. null (default) takes the processes whose module declared " dsem recdevs_model in setup_mod_rec naa_re growth_tv_model and growth_semipar setup_mod_biologicals cont_vary_movement setup_mod_movement fish_q_model setup_mod_fishsel_and_q srv_q_model setup_mod_srvsel_and_q. it is when none did. a declared process has to have every series with an estimated cell the arrows since its own penalty off. linked without declaration keeps on cells left out but sigma cannot stay once linked. covers year of array so mapped off map inside one not out: reads at fixed starting value still evaluates innovation. recruitment such mix refused for other processes reported. under ctmc movement deviations are part habitat preference preference_formula term that varies over years>
+<tr data-k="dsem_processes null processes whose series the arrows may name, from dsem_process_table. null (default) takes the processes whose module declared " dsem recdevs_model in setup_mod_rec naa_re growth_tv_model and growth_semipar setup_mod_biologicals move_year_re setup_mod_movement fish_q_model setup_mod_fishsel_and_q srv_q_model setup_mod_srvsel_and_q. it is when none did. a declared process has to have every series with an estimated cell the arrows since its own penalty off. linked without declaration keeps on cells left out but sigma cannot stay once linked. covers year of array so mapped off map inside one not out: reads at fixed starting value still evaluates innovation. recruitment such mix refused for other processes reported. under ctmc movement deviations are part habitat preference preference_formula term that varies over years>
 <td><code class="optref-arg">dsem_processes</code></td>
 <td><code>NULL</code></td>
-<td>Processes whose series the arrows may name, from dsem_process_table. NULL (default) takes the processes whose module declared "dsem": RecDevs_model in Setup_Mod_Rec; NAA_re, growth_tv_model and growth_semipar in Setup_Mod_Biologicals; cont_vary_movement in Setup_Mod_Movement; fish_q_model in Setup_Mod_Fishsel_and_Q; and srv_q_model in Setup_Mod_Srvsel_and_Q. It is "rec" when none did. A declared process has to have every series with an estimated cell in the arrows, since its own penalty is off. A process linked without a declaration keeps its penalty on the cells left out, but its sigma cannot stay estimated once every cell is linked. A linked series covers every year of its array, so a cell mapped off (NA in the map) inside one is not left out: the dsem reads it at its fixed starting value and still evaluates its innovation. A recruitment series with such a mix is refused; for the other processes the mix is reported. Under CTMC movement the deviations are the year to year part of habitat preference, so a preference_formula term that varies over years is refused once a movement series is linked.</td>
+<td>Processes whose series the arrows may name, from dsem_process_table. NULL (default) takes the processes whose module declared "dsem": RecDevs_model in Setup_Mod_Rec; NAA_re, growth_tv_model and growth_semipar in Setup_Mod_Biologicals; move_year_re in Setup_Mod_Movement; fish_q_model in Setup_Mod_Fishsel_and_Q; and srv_q_model in Setup_Mod_Srvsel_and_Q. It is "rec" when none did. A declared process has to have every series with an estimated cell in the arrows, since its own penalty is off. A process linked without a declaration keeps its penalty on the cells left out, but its sigma cannot stay estimated once every cell is linked. A linked series covers every year of its array, so a cell mapped off (NA in the map) inside one is not left out: the dsem reads it at its fixed starting value and still evaluates its innovation. A recruitment series with such a mix is refused; for the other processes the mix is reported. Under CTMC movement the deviations are the year to year part of habitat preference, so a preference_formula term that varies over years is refused once a movement series is linked.</td>
 </tr>
 <tr data-k="dsem_family null named character vector, one entry per covariate, the distribution of its observations given the grid cells. " fixed takes an observed year as the cell itself known and leaves a missing latent. every latent each observation normal about with sd exp observations logit of probability counts log mean positive values cv shape median log-scale non-negative including zeros dispersion logit_dsem_tweedie_p power in starting at is per from dsem_fixed_sd. name also accepted for normal. under family whose link not identity arrows dsem_mu_spec grid are all on scale starts series mean. parameters mapped off families none.>
 <td><code class="optref-arg">dsem_family</code></td>

@@ -51,8 +51,8 @@ Get_Growth(
 
 - ln_growth_pars:
 
-  Array `[pop, region, sex, n_gpars]` of log growth parameters in the
-  order L1, L2, K, CV1, CV2 and, for the Richards form, rho.
+  Array `[pop, region, sex, n_growth_pars]` of log growth parameters in
+  the order L1, L2, K, CV1, CV2 and, for the Richards form, rho.
 
 - growth_A1, growth_A2:
 
@@ -118,13 +118,13 @@ Get_Growth(
 
 - ln_growth_devs:
 
-  Array `[pop, region, year, n_gpars, sex]` of time-varying deviations,
-  or `NULL` for none.
+  Array `[pop, region, year, n_growth_pars, sex]` of time-varying
+  deviations, or `NULL` for none.
 
 - growth_tv_model:
 
-  Integer vector `[n_gpars]`, 0 constant, 1 iid, 2 random walk, per
-  parameter.
+  Integer vector `[n_growth_pars]`, 0 constant, 1 iid, 2 random walk,
+  per parameter.
 
 - growth_tv_link:
 
@@ -132,7 +132,7 @@ Get_Growth(
 
 - growth_par_bounds:
 
-  Matrix `[n_gpars x 2]` of bounds for the logit link.
+  Matrix `[n_growth_pars x 2]` of bounds for the logit link.
 
 - growth_tv_type:
 

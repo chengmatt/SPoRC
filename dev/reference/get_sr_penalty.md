@@ -43,4 +43,5 @@ zero outside `yrs`.
 ## Details
 
 Several AFSC models are written this way to reflect that a weakly
-determined SR relationship
+determined SR relationship should inform the recruitment series rather
+than completely dictate it.

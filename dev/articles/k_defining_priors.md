@@ -490,8 +490,7 @@ input_list <- Setup_Mod_Movement(
 #> Movement is: Estimated
 #> Movement priors are: Used
 #> Recruits are: Not Moving
-#> Continuous movement specification is: none
-#> Continuous movement process error specification is: none
+#> Movement deviations vary over years: none, ages: none, populations: none, seasons: none, sexes: none; process error: est_all
 #> Movement type is: Unstructured Markov
 #> Movement timing is: Movement then mortality
 #> Movement fixed effect blocks are population-invariant

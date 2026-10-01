@@ -218,8 +218,9 @@ the linked deviation series.
 | `move_pars` | `n_pop × n_regions × (n_regions - 1) × n_years × n_seas × n_ages × n_sexes` | Logit-scale movement probabilities (unstructured Markov; move_type = 0) | 0 |
 | `log_move_diffusion_pars` | (Vector; depends on formula) | Log-scale diffusion parameters for CTMC movement (move_type = 1) | log(0.1) |
 | `move_preference_pars` | (Vector; depends on formula) | Preference parameters for CTMC movement (move_type = 1) | 0 |
-| `move_devs` | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes`, the third dim `1` under CTMC movement | Movement deviations w/ projection years (can be specified as random effects); offsets on the logit of a region pair (unstructured) or on a region’s preference (CTMC); IID process error only, sharing structure set via `cont_vary_movement` | 0 |
-| `move_pe_pars` | `n_pop × n_regions × n_seas × n_ages × n_sexes` | Standard deviations for continuously varying movement (IID). Which dimensions are actively estimated vs. kept fixed at index 1 is determined by `cont_vary_movement` (e.g. `"iid_y"` only varies over year) | 0 |
+| `move_devs` | `n_pop × n_regions × (n_regions - 1) × (n_years + n_proj_yrs_devs) × n_seas × n_ages × n_sexes`, the third dim `1` under CTMC movement | Movement deviations w/ projection years (can be specified as random effects); offsets on the logit of a region pair (unstructured) or on a region’s preference (CTMC); one surface per pair whose density is the sd times a Kronecker product over the dims, set by `move_year_re`, `move_age_re`, `move_pop_re`, `move_seas_re` and `move_sex_re` | 0 |
+| `move_pe_pars` | `n_regions × (n_regions - 1) × 3`, the second dim `1` under CTMC movement | Log sd, age correlation and year correlation of each movement process error block of pairs; a correlation is estimated only where its dim is `ar1` | 0 |
+| `move_pop_corr_pars`, `move_seas_corr_pars`, `move_sex_corr_pars` | `n(n - 1) / 2` each, at least 1 | Unstructured correlation of the movement deviations across populations, seasons and sexes, shared by every pair; estimated only under `us` | 0 |
 
 ## Tagging
 

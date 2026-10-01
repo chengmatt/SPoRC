@@ -505,7 +505,7 @@ Starting values matter more here than in most parts of the model.
 `ln_growth_pars` defaults to the ends of the length bins with a rate of
 0.15 and CVs of 0.1, which is a placeholder rather than a prior. Supply
 your own on the log scale, dimensioned
-`[n_pop x n_regions x n_sexes x n_gpars]` in the order
+`[n_pop x n_regions x n_sexes x n_growth_pars]` in the order
 `L1, L2, K, CV1, CV2` and then `rho`. An external growth fit, even a
 rough one, is a reasonable starting point.
 
@@ -710,7 +710,7 @@ points:
 
 ``` r
 
-ln_growth_devs         # [n_pop, n_regions, n_yrs, n_gpars, n_sexes]  4th dim: parameter
+ln_growth_devs         # [n_pop, n_regions, n_yrs, n_growth_pars, n_sexes]  4th dim: parameter
 ln_growth_semipar_devs # [n_pop, n_regions, n_yrs, n_ages,  n_sexes]  4th dim: age
 ```
 

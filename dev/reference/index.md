@@ -61,6 +61,10 @@ Functions for setting up simulations
   : Initialize output containers for the operating model simulation
 - [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md)
   : Setup Simulation Fishing Inputs
+- [`Setup_Sim_Growth_RE()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Growth_RE.md)
+  : Growth deviations in the operating model
+- [`Setup_Sim_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Movement.md)
+  : Movement deviations in the operating model
 - [`Setup_Sim_NAA_state()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_NAA_state.md)
   : Specify the state-space numbers-at-age process for simulation
 - [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md)

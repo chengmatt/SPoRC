@@ -232,11 +232,11 @@ Setup_Mod_Biologicals(
 - growth_tv_model:
 
   Time variation of the growth parameters. `NULL` (default) holds every
-  parameter constant. Otherwise a character vector of length `n_gpars`
-  in parameter order, or named by parameter, each `"none"`, `"iid"`,
-  `"rw"`, or `"dsem"`. A varying parameter gets a deviation series
-  `ln_growth_devs` and a log sigma in the time-varying half of
-  `growth_pe_pars`; under `"dsem"` the density comes from
+  parameter constant. Otherwise a character vector of length
+  `n_growth_pars` in parameter order, or named by parameter, each
+  `"none"`, `"iid"`, `"rw"`, or `"dsem"`. A varying parameter gets a
+  deviation series `ln_growth_devs` and a log sigma in the time-varying
+  half of `growth_pe_pars`; under `"dsem"` the density comes from
   [`Setup_Mod_DSEM`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md)
   and that sigma stays at its start.
 
@@ -255,8 +255,8 @@ Setup_Mod_Biologicals(
 
 - growth_par_bounds:
 
-  Matrix `[n_gpars x 2]` of lower and upper bounds on the natural scale,
-  required under the logit link.
+  Matrix `[n_growth_pars x 2]` of lower and upper bounds on the natural
+  scale, required under the logit link.
 
 - growth_tv_sigma_spec:
 
@@ -553,16 +553,16 @@ Setup_Mod_Biologicals(
   `[n_popblks × n_regionblks × n_yearblks × n_seasblks × n_ageblks × n_sexblks]`
   and defaults to `log(0.5)`; a 5d array from an older script works when
   there is one season block. `ln_growth_pars` is
-  `[n_pop × n_regions × n_sexes × n_gpars]` in the order
+  `[n_pop × n_regions × n_sexes × n_growth_pars]` in the order
   `L1, L2, K, CV1, CV2` and `rho`, defaulting to the ends of the length
   bins with a rate of `0.15` and CVs of `0.1`, so supply your own for
   any real model. `growth_pe_pars` is
-  `[n_pop × n_regions × max(4, n_ages, n_gpars) × n_sexes × 2]`: the
-  time-varying half holds one log sigma per growth parameter, and the
-  semi-parametric half holds the surface's correlations by age, year and
-  cohort in slots one to three with a log scale in slot four, or one log
-  sigma per age under `"iid"` and `"rw"`. Slots a form does not read are
-  mapped off. All `...` arguments are ignored when `M_spec = "fix"`.
+  `[n_pop × n_regions × max(4, n_ages, n_growth_pars) × n_sexes × 2]`:
+  the time-varying half holds one log sigma per growth parameter, and
+  the semi-parametric half holds the surface's correlations by age, year
+  and cohort in slots one to three with a log scale in slot four, or one
+  log sigma per age under `"iid"` and `"rw"`. Slots a form does not read
+  are mapped off. All `...` arguments are ignored when `M_spec = "fix"`.
 
 ## Value
 

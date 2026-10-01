@@ -50,8 +50,8 @@ do_growth_mapping(
 
 - tv_active:
 
-  Matrix `[n_years x n_gpars]` of ones in the years each parameter's
-  deviations are estimated in.
+  Matrix `[n_years x n_growth_pars]` of ones in the years each
+  parameter's deviations are estimated in.
 
 - growth_tv_spec:
 

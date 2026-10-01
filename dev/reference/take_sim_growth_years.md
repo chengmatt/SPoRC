@@ -16,8 +16,8 @@ take_sim_growth_years(sim_env, sim, growth, yrs)
 
 - sim_env:
 
-  Simulation environment holding `dsem_length_sel` from
-  `Setup_Sim_DSEM`.
+  Simulation environment holding `growth_length_sel` from
+  `Setup_Sim_Growth_RE` or `Setup_Sim_DSEM`.
 
 - sim:
 

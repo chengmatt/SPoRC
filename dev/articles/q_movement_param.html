@@ -440,22 +440,26 @@ fashion. This specification results in the estimation of
 movement estimates. In the example below, movement is modeled using a
 CTMC framework, although process error can similarly be applied to an
 unstructured Markov model. Movement is specified to vary smoothly across
-ages using a spline function, while allowing independent and identically
-distributed (<code>iid</code>) deviations across years for each region
-(<code>cont_vary_movement = 'iid_y'</code>). Process error variance
-parameters are specified to be shared across populations, regions,
-seasons, ages, and sexes
-(<code>Movement_cont_pe_pars_spec = 'est_shared'</code>). Additional
-options for <code>cont_vary_movement</code> and
-<code>Movement_cont_pe_pars_spec</code> are described in the function
-documentation (<code><a href="../reference/Setup_Mod_Movement.html">?Setup_Mod_Movement</a></code>).</p>
-<p>Users may alternatively treat these variance parameters as random
-effects (integrated out via the Laplace approximation) or as penalized
-likelihood terms, depending on how
-<code>Movement_cont_pe_pars_spec</code> is defined. When
-<code>Movement_cont_pe_pars_spec = 'fix'</code>, users can supply a
-fixed variance value directly through
-<code>input_list$par$move_pe_pars</code>.</p>
+ages using a spline function, while allowing first order autoregressive
+deviations across years for each region
+(<code>move_year_re = 'ar1'</code>) that are shared across ages
+(<code>move_age_re = 'none'</code>). Each region’s deviations are one
+series with its own sd and year correlation in
+<code>move_pe_pars</code>, shared by both sexes. Three more switches,
+<code>move_pop_re</code>, <code>move_seas_re</code> and
+<code>move_sex_re</code>, say how the deviations vary across
+populations, seasons and sexes, and <code>move_re_years</code>,
+<code>move_re_ages</code> and their counterparts restrict them to chosen
+levels. The options are described in the function documentation
+(<code><a href="../reference/Setup_Mod_Movement.html">?Setup_Mod_Movement</a></code>); the sharing they allow is shown
+after the example.</p>
+<p>Users may treat the deviations as random effects (integrated out via
+the Laplace approximation) by naming <code>move_devs</code> in
+<code>random</code> when calling <code><a href="../reference/fit_model.html">fit_model()</a></code>, or leave them
+out of <code>random</code> as penalized likelihood terms. The sd and
+correlations are estimated whenever deviations exist; to fix them, map
+<code>move_pe_pars</code> off in <code>input_list$map</code> and supply
+the values through <code>input_list$par$move_pe_pars</code>.</p>
 <p>Where a deviation sits depends on the movement type. Under an
 unstructured Markov model it is an offset on the logit of one
 origin-destination pair, so deviations are estimated for destination
@@ -492,13 +496,82 @@ deviations are estimated.</p>
 <span>  area_r <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>,</span>
 <span>  diffusion_formula <span class="op">=</span> <span class="va">diffusion_formula</span>,</span>
 <span>  preference_formula <span class="op">=</span> <span class="va">preference_formula</span>,</span>
-<span>  cont_vary_movement <span class="op">=</span> <span class="st">'iid_y'</span>,</span>
-<span>  Movement_cont_pe_pars_spec <span class="op">=</span> <span class="st">'est_shared'</span></span>
+<span>  move_year_re <span class="op">=</span> <span class="st">'ar1'</span>,</span>
+<span>  move_age_re <span class="op">=</span> <span class="st">'none'</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">log_move_diffusion_pars</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span><span class="op">$</span><span class="va">move_preference_pars</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/unique.html" class="external-link">unique</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">move_devs</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+<div class="section level3">
+<h3 id="sharing-deviations-and-their-process-error">Sharing deviations and their process error<a class="anchor" aria-label="anchor" href="#sharing-deviations-and-their-process-error"></a>
+</h3>
+<p>Every region (origin-destination pair under the unstructured model)
+has its own deviations. Each of <code>move_pop_re</code>,
+<code>move_seas_re</code> and <code>move_sex_re</code> takes
+<code>"none"</code>, <code>"iid"</code> (every level its own,
+independent), <code>"us"</code> (every level its own, with an
+unstructured correlation across them), or a list of blocks, where the
+levels in a block share one deviation and the blocks are independent.
+<code>"none"</code> and <code>"iid"</code> are the two ends of that
+list, one block of everything and a block per level. Years and ages take
+no block list, a block on the mean (<code>Movement_yearblk_spec</code>,
+<code>Movement_ageblk_spec</code>) being where that goes, and the setup
+refuses such a block when the matching switch is on since the two
+describe the same thing twice.</p>
+<p><code>move_pe_spec</code> shares the process error across pairs the
+same way: <code>"est_all"</code> gives every region (pair) its own sd
+and AR1 correlations, <code>"est_shared"</code> one set for all, and a
+block list over the pair table one set per block. The pair table is
+<code>input_list$data$move_pairs</code>, origins and destinations in
+origin-then-destination order over the edges of the adjacency matrix,
+which under the CTMC is one row per region.</p>
+<p>A block list applies to every region alike, so sharing across sexes
+cannot differ by region; what can differ by region is the sd. In the
+three region model below, the first form has the sexes share one series
+per region, with regions 1 and 2 sharing an sd and year correlation and
+region 3 holding its own. The second gives every region its own series
+for each sex, the two sexes correlated within it, with one sd and
+correlation for all.</p>
+<div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># the pair table under the ctmc: one row per region</span></span>
+<span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">move_pairs</span></span>
+<span></span>
+<span><span class="co"># the sexes share one series per region; regions 1 and 2 share an sd and correlation, region 3 has its own</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  do_recruits_move <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  move_type <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ctmc_move_dat <span class="op">=</span> <span class="va">ctmc_data</span>,</span>
+<span>  adjacency_mat <span class="op">=</span> <span class="va">adjacency</span>,</span>
+<span>  area_r <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>  diffusion_formula <span class="op">=</span> <span class="va">diffusion_formula</span>,</span>
+<span>  preference_formula <span class="op">=</span> <span class="va">preference_formula</span>,</span>
+<span>  ctmc_diffusion_bounds <span class="op">=</span> <span class="st">"upwind"</span>,</span>
+<span>  move_year_re <span class="op">=</span> <span class="st">"ar1"</span>,</span>
+<span>  move_sex_re <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span><span class="op">)</span>, <span class="co"># one block of both sexes, the same as "none"</span></span>
+<span>  move_pe_spec <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="fl">1</span><span class="op">:</span><span class="fl">2</span>, <span class="fl">3</span><span class="op">)</span> <span class="co"># regions 1 and 2 share an sd and correlation, region 3 has its own</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">move_devs</span><span class="op">)</span><span class="op">)</span> <span class="co"># three series of years, one per region</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">move_pe_pars</span><span class="op">)</span><span class="op">)</span> <span class="co"># two log sds and two year correlations</span></span>
+<span></span>
+<span><span class="co"># every region its own series, the two sexes correlated within it, one sd and correlation for all</span></span>
+<span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span></span>
+<span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
+<span>  do_recruits_move <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  move_type <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  ctmc_move_dat <span class="op">=</span> <span class="va">ctmc_data</span>,</span>
+<span>  adjacency_mat <span class="op">=</span> <span class="va">adjacency</span>,</span>
+<span>  area_r <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="fl">3</span><span class="op">)</span>,</span>
+<span>  diffusion_formula <span class="op">=</span> <span class="va">diffusion_formula</span>,</span>
+<span>  preference_formula <span class="op">=</span> <span class="va">preference_formula</span>,</span>
+<span>  ctmc_diffusion_bounds <span class="op">=</span> <span class="st">"upwind"</span>,</span>
+<span>  move_year_re <span class="op">=</span> <span class="st">"ar1"</span>,</span>
+<span>  move_sex_re <span class="op">=</span> <span class="st">"us"</span>,</span>
+<span>  move_pe_spec <span class="op">=</span> <span class="st">"est_shared"</span></span>
+<span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">map</span><span class="op">$</span><span class="va">move_sex_corr_pars</span><span class="op">)</span><span class="op">)</span> <span class="co"># one correlation between the sexes, shared by every region</span></span></code></pre></div>
+</div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

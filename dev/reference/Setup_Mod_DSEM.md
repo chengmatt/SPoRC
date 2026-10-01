@@ -58,7 +58,7 @@ Setup_Mod_DSEM(
   [`Setup_Mod_Rec`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md);
   `NAA_re`, `growth_tv_model` and `growth_semipar` in
   [`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md);
-  `cont_vary_movement` in
+  `move_year_re` in
   [`Setup_Mod_Movement`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md);
   `fish_q_model` in
   [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md);

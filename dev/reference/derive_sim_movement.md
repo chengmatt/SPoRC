@@ -14,8 +14,9 @@ derive_sim_movement(sim_env)
 
 - sim_env:
 
-  Simulation environment holding `dsem_move_args` from `Setup_Sim_DSEM`
-  and `move_devs` with the replicate dim last.
+  Simulation environment holding `move_args` from `Setup_Sim_Movement`
+  or `dsem_move_args` from `Setup_Sim_DSEM`, and `move_devs` with the
+  replicate dim last.
 
 ## Value
 

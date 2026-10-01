@@ -531,24 +531,72 @@ resid_srvidx_pop <- plot_resids(srvidx_pop_osa)
 
 ![](figures/u_internal_index_pop.png)
 
+### Covariates a dsem observes with error
+
+A dsem whose covariates are observed with error fits those observations,
+so they have one-step-ahead residuals of their own, and `dsem = TRUE`
+returns them. A covariate left on `dsem_family = "fixed"` has no
+residual (since fixed) and hence doesn’t return anything here. We
+provide a contrived example below of how to call osa residuals below.
+
+``` r
+
+env <- data.frame(year = input_list$data$years, env = env_index)
+
+input_dsem <- Setup_Mod_DSEM(
+  input_list,
+  dsem_arrows = c("env -> rec, 0, b_env", "env <-> env, 0, sd_env", "rec <-> rec, 0, sd_rec"),
+  dsem_data = env,
+  dsem_family = c(env = "normal")
+)
+
+model_dsem <- fit_model(input_dsem$data, input_dsem$par, input_dsem$map,
+                        random = c("ln_RecDevs", "dsem_x"), newton_loops = 3, silent = TRUE)
+
+dsem_osa <- get_osa(model = model_dsem, data = input_dsem$data, dsem = TRUE)
+resid_dsem <- plot_resids(dsem_osa)
+```
+
+The residual data frame has a `covariate` column where the other sources
+have a fleet, and the plots facet on it when a dsem observes more than
+one. `family` picks between the covariates whose observations are
+continuous (`"normal"`, `"gaussian_fixed_sd"`, `"gamma"`,
+`"lognormal"`), or one of `"bernoulli"`, `"poisson"` and `"tweedie"`,
+and defaults to the continuous ones. Those last three are asked for one
+at a time because each needs different arguments out of
+[`RTMB::oneStepPredict()`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html),
+and those arguments hold for every observation in the call they are
+given: a bernoulli’s outcomes are 0 and 1, a poisson’s counts run past
+the largest one observed, and a tweedie’s zeros are named as a point
+mass with a range for the positive part. Each covariate keeps the
+density it was fit with, so a lognormal one gives the residual for the
+observation rather than for its log.
+
 ## Other options
 
 [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)’s
-internal mode exposes two further arguments:
+internal mode uses three further arguments:
 
 - `osa_method`: overrides
   [`RTMB::oneStepPredict()`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)’s
   `method` argument. Must be one of `"oneStepGeneric"`,
   `"oneStepGaussianOffMode"`, or `"oneStepGaussian"`, the `"cdf"` method
-  is deliberately disallowed because it is numerically fragile for the
-  discrete (multinomial/count) likelihoods used here and can silently
-  return mis-calibrated residuals. Defaults to `"oneStepGeneric"` for
-  discrete composition/tag families and `"oneStepGaussianOffMode"` for
-  continuous (logistic-normal composition or index-type) families.
+  is deliberately disallowed because it is numerically unstable
+  sometimes for the discrete (multinomial/count) likelihoods . Defaults
+  to `"oneStepGeneric"` for discrete composition/tag families and
+  `"oneStepGaussianOffMode"` for continuous (logistic-normal composition
+  or index-type) families. A dsem’s covariates take `"oneStepGeneric"`
+  whatever their family, and refuse a Gaussian method: a covariate’s
+  state reaches its observation through the population model, so reading
+  the conditional density’s curvature as its variance is wrong even for
+  a normal covariate.
 - `parallel`: passed straight through to
   `RTMB::oneStepPredict(parallel = )`. Useful for large composition/tag
-  datasets where OSA computation dominates runtime; verified to give
-  numerically identical residuals to `parallel = FALSE`.
+  datasets where OSA computation dominates runtime.
+- `seed`: the seed for the uniform draw that places a discrete residual
+  inside its step of the CDF, which
+  [`RTMB::oneStepPredict()`](https://rdrr.io/pkg/RTMB/man/OSA-residuals.html)
+  fixes at 123 so that one call on one data set is reproducible.
 
 ``` r
 

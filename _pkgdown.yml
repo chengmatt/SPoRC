@@ -137,6 +137,8 @@ reference:
       - Setup_Sim_Biologicals
       - Setup_Sim_Containers
       - Setup_Sim_Fishing
+      - Setup_Sim_Growth_RE
+      - Setup_Sim_Movement
       - Setup_Sim_NAA_state
       - Setup_Sim_Rec
       - Setup_Sim_Survey

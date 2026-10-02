@@ -929,10 +929,7 @@ run_proj_year <- function(y,
         } # end p loop
 
         # the recruits just added missed this season's movement, which ran before spawning biomass was
-        # known, so move age 1 now when recruits move from birth
-
-        # Only needed under move_timing == 0; under timings 1 and 2 these recruits are
-        # picked up by the end-of-season transition below.
+        # known, so move age 1 now when recruits move from birth (only needed under move_timing = 0 since acocunted for later on)
         if(do_recruits_move == 1 && n_regions > 1 && move_timing == 0) {
           for(p in 1:n_pop) {
             for(s in 1:n_sexes) proj_NAA[p,,y,seas,1,s] = t(proj_NAA[p,,y,seas,1,s]) %*% Movement[p,,,y,seas,1,s]
@@ -994,15 +991,14 @@ run_proj_year <- function(y,
     } # calculate biomass
 
 
-    # Season-integrated abundance for the spatial Baranov under continuous movement.
-    # Computed once per season across all regions, since the integral couples them.
+    # Season-integrated abundance for the spatial Baranov under continuous movement
     if(move_timing == 2) {
       proj_NAA_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
       for(p in 1:n_pop) {
         for(a in 1:n_ages) {
           for(s in 1:n_sexes) {
             proj_NAA_int[p,,a,s] <- integrate_seas_abundance(proj_NAA[p,,y,seas,a,s], proj_ZAA[p,,y,seas,a,s],
-                                                            Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
+                                                             Mrate[p,,,y,seas,a,s], seasdur[seas], expm_nsub = expm_nsub)
           } # end s loop
         } # end a loop
       } # end p loop
@@ -1015,8 +1011,7 @@ run_proj_year <- function(y,
           for(a in 1:n_ages) {
             for(s in 1:n_sexes) {
               if(move_timing == 2) {
-                # Spatial Baranov: fish redistribute among regions while dying, so catch
-                # uses the season-integrated abundance rather than N (1 - exp(-Z)) / Z
+                # Spatial Baranov: fish redistribute among regions while dying, so catch uses the season-integrated abundance rather than N (1 - exp(-Z)) / Z
                 proj_CAA[p,r,y,seas,a,s,f] <- proj_ret_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
                 proj_DAA[p,r,y,seas,a,s,f] <- proj_disc_FAA[p,r,y,seas,a,s,f] * proj_NAA_int[p,r,a,s]
               } else {

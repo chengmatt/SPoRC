@@ -311,6 +311,9 @@ survey_state <- function(N, Move, Z, Q = NULL, dur = 1, t_srv = 0, move_timing =
 
   A_ss <- t(Q) * dur - diag(Z, n_regions) # column convention generator, net of mortality
 
+  # only compute once if all t_srv are the same
+  if(all(t_srv == t_srv[1])) return(as.vector(mat_exp(A_ss * t_srv[1], expm_nsub) %*% N))
+
   # Region-specific survey timing: propagate to each region's own survey time and
   # read off that region's entry
   out <- rep(0, n_regions)

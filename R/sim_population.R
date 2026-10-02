@@ -192,6 +192,53 @@ generate_recruitment <- function(y,
 
     # whether to switch sigmaR
     sigmaR_switch_use <- if(exists("sigmaR_switch")) sigmaR_switch else 1
+    # get R0 proportion
+    rec_region_prop_y <- array(t(apply(R0[,,y,sim, drop = FALSE], c(1), function(x) x / sum(x))), dim = c(n_pop, n_regions))
+
+    # whether or not we need sbpr table
+    needs_sbpr_rebuild <- recruitment_opt %in% c(1, 2) && (
+      is.null(sim_env$sbpr_table_cache) ||
+      sim_env$sbpr_table_cache$sim != sim ||
+      !isTRUE(all.equal(sim_env$sbpr_table_cache$rec_region_prop, rec_region_prop_y))
+    )
+
+    # rebuild sbpr table
+    if(needs_sbpr_rebuild) {
+      sim_env$sbpr_table_cache <- list(
+        sim = sim,
+        rec_region_prop = rec_region_prop_y,
+        table = Get_SBPR_Table(
+          rec_dd = rec_dd,
+          rec_region_prop = rec_region_prop_y,
+          rec_seas_prop = array(rec_seas_prop[,,sim], dim = c(n_pop, n_seas)),
+          n_pop = n_pop,
+          n_regions = n_regions,
+          n_ages = n_ages,
+          n_fish_fleets = n_fish_fleets,
+          WAA = array(WAA[,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+          MatAA = array(MatAA[,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+          natmort = array(natmort[,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_seas, n_ages)),
+          Movement = array(Movement[,,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+          sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1,sim], dim = c(n_pop, n_regions, n_regions, n_ages)),
+          do_recruits_move = do_recruits_move,
+          t_spawn = t_spawn,
+          init_F = init_F,
+          dmr = array(dmr[,SR_ref_yr,,,sim], dim = c(n_regions, n_seas, n_fish_fleets)),
+          fish_sel = array(fish_sel[,,SR_ref_yr,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
+          ret_sel = array(ret_sel[,,SR_ref_yr,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
+          n_seas = n_seas,
+          spawn_seas = spawn_seas,
+          seasdur = seasdur,
+          sexratio_f = if(n_sexes == 1) array(0.5, dim = c(n_pop, n_regions)) else array(sexratio[,,SR_ref_yr,1,sim], dim = c(n_pop, n_regions)),
+          Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
+          move_timing = move_timing,
+          expm_nsub = expm_nsub
+        )
+      )
+    }
+
+    # whether we need to use sbpr table
+    sbpr_table_use <- if(recruitment_opt %in% c(1, 2)) sim_env$sbpr_table_cache$table else NULL
 
     # Get deterministic recruitment
     tmp_det_rec <- Get_Det_Recruitment(recruitment_model = recruitment_opt,
@@ -199,7 +246,7 @@ generate_recruitment <- function(y,
                                        y = y,
                                        rec_lag = rec_lag,
                                        R0 = apply(R0[,,y,sim, drop = FALSE], 1, sum), # sum to get global R0
-                                       rec_region_prop = array(t(apply(R0[,,y,sim, drop = FALSE], c(1), function(x) x / sum(x))), dim = c(n_pop, n_regions)), # get R0 proportion
+                                       rec_region_prop = rec_region_prop_y,
                                        rec_seas_prop = array(rec_seas_prop[,,sim], dim = c(n_pop, n_seas)),
                                        h = array(h[,,y,sim], dim = c(n_pop, n_regions)),
                                        n_pop = n_pop,
@@ -228,7 +275,9 @@ generate_recruitment <- function(y,
                                        ret_sel = array(ret_sel[,,SR_ref_yr,,,1,,sim], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity at SR_ref_yr
                                        Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
                                        move_timing = move_timing,
-                                       expm_nsub = expm_nsub)
+                                       expm_nsub = expm_nsub,
+                                       sbpr_table = sbpr_table_use
+                                       )
 
 
     # if Rec_input exists and year index is within bounds

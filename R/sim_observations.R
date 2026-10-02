@@ -960,14 +960,16 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
     oe_use <- if(exists("bias_correct_oe")) bias_correct_oe else 0
     for(seas in 1:n_seas) {
 
-      # Season-integrated abundance for the spatial Baranov under continuous movement.
-      # Computed once per season across all regions, since the integral couples them.
+      # what's availiable for removals
       if(move_timing == 2) {
-        NAA_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+        Avail <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
         for(p in 1:n_pop) for(a in 1:n_ages) for(s in 1:n_sexes) {
-          NAA_int[p,,a,s] <- integrate_seas_abundance(NAA[p,,y,seas,a,s,sim], ZAA[p,,y,seas,a,s,sim],
-                                                      Mrate[p,,,y,seas,a,s,sim], seasdur[seas], expm_nsub = expm_nsub)
+          Avail[p,,a,s] <- integrate_seas_abundance(NAA[p,,y,seas,a,s,sim], ZAA[p,,y,seas,a,s,sim],
+                                                    Mrate[p,,,y,seas,a,s,sim], seasdur[seas], expm_nsub = expm_nsub)
         }
+      } else {
+        Avail <- array(NAA[,,y,seas,,,sim] * (1 - exp(-ZAA[,,y,seas,,,sim])) / ZAA[,,y,seas,,,sim],
+                       dim = c(n_pop, n_regions, n_ages, n_sexes))
       }
 
       for(r in 1:n_regions) {
@@ -975,22 +977,11 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 
           for(p in 1:n_pop) {
 
-            if(move_timing == 2) {
-              # Spatial Baranov: under continuous movement fish redistribute among regions
-              # while dying, so catch uses the season-integrated abundance
-              sim_env$CAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[p,r,y,seas,,,f,sim] * ret_sel[p,r,y,seas,,,f,sim]) *
-                NAA_int[p,r,,]
-              sim_env$DAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[p,r,y,seas,,,f,sim] * (1 - ret_sel[p,r,y,seas,,,f,sim]) * dmr[r,y,seas,f,sim]) *
-                NAA_int[p,r,,]
-            } else {
-              # Baranov's catch equation (retained catch-at-age)
-              sim_env$CAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[p,r,y,seas,,,f,sim] * ret_sel[p,r,y,seas,,,f,sim]) / ZAA[p,r,y,seas,,,sim] *
-                NAA[p,r,y,seas,,,sim] * (1 - exp(-ZAA[p,r,y,seas,,,sim]))
-
-              # Baranov's catch equation (dead discard catch-at-age)
-              sim_env$DAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[p,r,y,seas,,,f,sim] * (1 - ret_sel[p,r,y,seas,,,f,sim]) * dmr[r,y,seas,f,sim]) / ZAA[p,r,y,seas,,,sim] *
-                NAA[p,r,y,seas,,,sim] * (1 - exp(-ZAA[p,r,y,seas,,,sim]))
-            }
+            # Baranov's catch equation: retained and dead discard catch at age
+            sim_env$CAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[p,r,y,seas,,,f,sim] * ret_sel[p,r,y,seas,,,f,sim]) *
+              Avail[p,r,,]
+            sim_env$DAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[p,r,y,seas,,,f,sim] * (1 - ret_sel[p,r,y,seas,,,f,sim]) * dmr[r,y,seas,f,sim]) *
+              Avail[p,r,,]
 
             # Catch-at-length
             if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) for(s in 1:n_sexes) sim_env$CAL[p,r,y,seas,,s,f,sim] <- (if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) SizeAgeTrans_fish[p,r,y,seas,,,s,f,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim]) %*% CAA[p,r,y,seas,,s,f,sim] # Retained Catch at length
@@ -2074,19 +2065,36 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
         } # end if
 
         # Post-season tag numbers, before the ageing shift
+        tag_int <- NULL # only filled in under move_timing == 2; read by the recaptures section below
         if(move_timing == 0 || n_regions == 1) {
           tag_step <- array(avail_tc[ry, rseas, , , , ] * tmp_SAA[,,1,,],
                             dim = c(n_pop, n_regions, n_ages, n_sexes))
+        } else if(move_timing == 2) {
+          # compute continuous movement dynamics for tagged cohorts
+          tag_step <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+          tag_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+          for(p in 1:n_pop) {
+            for(a in 1:n_ages) {
+              moves <- tag_moves && (do_recruits_move == 1 || a > 1)
+              for(s in 1:n_sexes) {
+                Qv <- if(moves) Mrate[p,,,y,rseas,a,s,sim] else matrix(0, n_regions, n_regions)
+                both <- seas_operator_and_integral(tmp_ZAA[p,,1,a,s], Qv, tag_dur, expm_nsub = expm_nsub)
+                tag_step[p,,a,s] <- as.vector(t(avail_tc[ry,rseas,p,,a,s]) %*% both$T)
+                tag_int[p,,a,s] <- as.vector(both$Integral %*% avail_tc[ry,rseas,p,,a,s])
+              } # end s loop
+            } # end a loop
+          } # end p loop
         } else {
+          # move_timing == 1: mortality then movement, which advance_seas applies without
+          # ever forming a matrix exponential
           tag_step <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
           for(p in 1:n_pop) {
             for(a in 1:n_ages) {
               moves <- tag_moves && (do_recruits_move == 1 || a > 1)
               for(s in 1:n_sexes) {
                 Mv <- if(moves) Movement[p,,,y,rseas,a,s,sim] else diag(n_regions)
-                Qv <- if(moves) Mrate[p,,,y,rseas,a,s,sim] else matrix(0, n_regions, n_regions)
                 tag_step[p,,a,s] <- advance_seas(avail_tc[ry,rseas,p,,a,s], Mv,
-                                                 tmp_ZAA[p,,1,a,s], Qv, tag_dur, move_timing, expm_nsub = expm_nsub)
+                                                 tmp_ZAA[p,,1,a,s], NULL, tag_dur, move_timing, expm_nsub = expm_nsub)
               } # end s loop
             } # end a loop
           } # end p loop
@@ -2110,32 +2118,24 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 
         # # Apply Baranov's to get predicted recaptures
         # (add tiny epsilon to avoid 0/0 when tmp_ZAA == 0, e.g. conv_tag_t_tagging == 0 at release)
-        for(f in 1:n_fish_fleets) {
-          for(p in 1:n_pop) {
+        for(p in 1:n_pop) {
+
+          # Spatial Baranov: tags redistribute among regions while being caught using season integrated abundance
+          for(f in 1:n_fish_fleets) {
             if(move_timing == 2) {
-              # Spatial Baranov: tags redistribute among regions while being caught, so
-              # recaptures use the season-integrated tag abundance
-              tag_int <- array(0, dim = c(n_regions, n_ages, n_sexes))
-              for(a in 1:n_ages) {
-                moves <- tag_moves && (do_recruits_move == 1 || a > 1)
-                for(s in 1:n_sexes) {
-                  Qv <- if(moves) Mrate[p,,,y,rseas,a,s,sim] else matrix(0, n_regions, n_regions)
-                  tag_int[,a,s] <- integrate_seas_abundance(avail_tc[ry,rseas,p,,a,s],
-                                                            tmp_ZAA[p,,1,a,s], Qv, tag_dur, expm_nsub = expm_nsub)
-                } # end s loop
-              } # end a loop
               # array() guards against R dropping a length-1 sex dimension from the F slice
               tmp_ret_FAA_slice <- array(tmp_ret_FAA[p,,1,,,f], dim = c(n_regions, n_ages, n_sexes))
+              tag_int_p <- array(tag_int[p,,,], dim = c(n_regions, n_ages, n_sexes))
               recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f,sim] *
-                tmp_ret_FAA_slice * tag_int
+                tmp_ret_FAA_slice * tag_int_p
             } else {
               recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f,sim] *
                 (tmp_ret_FAA[p,,1,,,f] / (tmp_ZAA[p,,1,,] + 1e-10)) *
                 avail_tc[ry,rseas,p,,,] *
                 (1 - tmp_SAA[p,,1,,])
             }
-          } # end p loop
-        } # end f loop
+          } # end f loop
+        } # end p loop
 
         # Store this cohort's tags and predicted recaptures, which the recapture
         # draw below reads

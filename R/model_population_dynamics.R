@@ -368,6 +368,11 @@ get_population_projection <- function(
     move_timing = move_timing
   )
 
+  # only call if doing bh or rick rec
+  if(rec_model %in% c(1, 2) || sr_penalty %in% c(1, 2)) {
+    det_rec_args$sbpr_table <- do.call(Get_SBPR_Table, det_rec_args[intersect(names(det_rec_args), names(formals(Get_SBPR_Table)))])
+  }
+
   for(y in 1:n_yrs) {
 
     # Growth kept cohort by cohort needs this year's start-of-year numbers

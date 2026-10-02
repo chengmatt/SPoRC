@@ -316,21 +316,34 @@ get_tagging_observation_model <- function(
           } # end p loop
         } # end if
 
-        # post-season tag numbers, before the ageing shift. plain survival under move_timing == 0;
-        # under 1 and 2 the transition operator covers movement and mortality over tag_dur
-        if(move_timing == 0 || n_regions == 1) {
-          tag_step <- array(avail_tc[ry, rseas, , , , ] * tmp_SAA[,,1,,],
-                            dim = c(n_pop, n_regions, n_ages, n_sexes))
+        # post-season tag numbers, before the ageing shift
+        tag_int <- NULL # only filled in under move_timing == 2; read by the recaptures section below
+        if(move_timing == 0 || n_regions == 1) { # move then mortality
+          tag_step <- array(avail_tc[ry, rseas, , , , ] * tmp_SAA[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes))
+        } else if(move_timing == 2) { # continuous movement
+          tag_step <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+          tag_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+          for(p in 1:n_pop) {
+            for(a in 1:n_ages) {
+              moves <- tag_moves_seas && (do_recruits_move == 1 || a > 1)
+              for(s in 1:n_sexes) {
+                Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
+                both <- seas_operator_and_integral(tmp_ZAA[p,,1,a,s], Qv, tag_dur, expm_nsub = expm_nsub)
+                tag_step[p,,a,s] <- as.vector(t(avail_tc[ry,rseas,p,,a,s]) %*% both$T)
+                tag_int[p,,a,s] <- as.vector(both$Integral %*% avail_tc[ry,rseas,p,,a,s])
+              } # end s loop
+            } # end a loop
+          } # end p loop
         } else {
+          # move_timing == 1: mortality then movement
           tag_step <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
           for(p in 1:n_pop) {
             for(a in 1:n_ages) {
               moves <- tag_moves_seas && (do_recruits_move == 1 || a > 1)
               for(s in 1:n_sexes) {
                 Mv <- if(moves) Movement[p,,,y,rseas,a,s] else diag(n_regions)
-                Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
                 tag_step[p,,a,s] <- advance_seas(avail_tc[ry,rseas,p,,a,s], Mv,
-                                                 tmp_ZAA[p,,1,a,s], Qv, tag_dur, move_timing, expm_nsub = expm_nsub)
+                                                 tmp_ZAA[p,,1,a,s], NULL, tag_dur, move_timing, expm_nsub = expm_nsub)
               } # end s loop
             } # end a loop
           } # end p loop
@@ -366,33 +379,23 @@ get_tagging_observation_model <- function(
         }
 
         # # Apply Baranov's to get predicted recaptures
-        for(f in 1:n_fish_fleets) {
-          for(p in 1:n_pop) {
+        for(p in 1:n_pop) {
+
+          # spatial Baranov: tags redistribute among regions while being caught, so recaptures use the season-integrated tag abundance
+          for(f in 1:n_fish_fleets) {
             if(move_timing == 2) {
-              # spatial Baranov: tags redistribute among regions while being caught, so recaptures
-              # use the season-integrated tag abundance rather than the region-local form
-              tag_int <- array(0, dim = c(n_regions, n_ages, n_sexes))
-              for(a in 1:n_ages) {
-                # must match the generator used for tag_step above, or the cohort's
-                # dynamics and its recaptures would be built on different movement
-                moves <- tag_moves_seas && (do_recruits_move == 1 || a > 1)
-                for(s in 1:n_sexes) {
-                  Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
-                  tag_int[,a,s] <- integrate_seas_abundance(avail_tc[ry,rseas,p,,a,s],
-                                                            tmp_ZAA[p,,1,a,s], Qv, tag_dur, expm_nsub = expm_nsub)
-                } # end s loop
-              } # end a loop
               tmp_ret_FAA_slice <- array(tmp_ret_FAA[p,,1,,,f], dim = c(n_regions, n_ages, n_sexes))
+              tag_int_p <- array(tag_int[p,,,], dim = c(n_regions, n_ages, n_sexes))
               recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
-                tmp_ret_FAA_slice * tag_int
+                tmp_ret_FAA_slice * tag_int_p
             } else {
               recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
                 (tmp_ret_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
                 avail_tc[ry,rseas,p,,,] *
                 (1 - tmp_SAA[p,,1,,])
             }
-          } # end p loop
-        } # end f loop
+          } # end f loop
+        } # end p loop
 
 
       } # end rseas loop

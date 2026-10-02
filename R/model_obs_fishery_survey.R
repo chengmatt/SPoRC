@@ -244,6 +244,11 @@ get_fishery_observation_model <- function(
     } # end p loop
   }
 
+  # what is availiable for removals; cont movement uses season integrated abundance
+  Avail <- if(move_timing == 2) NAA_int else {
+    array(NAA[,,1:n_yrs,,,, drop = FALSE] * (1 - exp(-ZAA)) / ZAA, dim = dim(ZAA))
+  }
+
   for(p in 1:n_pop) {
     for(r in 1:n_regions) {
       for(y in 1:n_yrs) {
@@ -261,16 +266,9 @@ get_fishery_observation_model <- function(
 
           for(seas in 1:n_seas) {
 
-            if(move_timing == 2) {
-              # Spatial Baranov: F times the season-integrated abundance
-              CAA[p,r,y,seas,,,f] <- ret_FAA[p,r,y,seas,,,f] * NAA_int[p,r,y,seas,,]
-              DAA[p,r,y,seas,,,f] <- disc_FAA[p,r,y,seas,,,f] * NAA_int[p,r,y,seas,,]
-            } else {
-              # Retained Catch at Age
-              CAA[p,r,y,seas,,,f] <- ret_FAA[p,r,y,seas,,,f] / ZAA[p,r,y,seas,,] * NAA[p,r,y,seas,,] * (1 - exp(-ZAA[p,r,y,seas,,]))
-              # Dead Discarded Catch at Age
-              DAA[p,r,y,seas,,,f] <- disc_FAA[p,r,y,seas,,,f] / ZAA[p,r,y,seas,,] * NAA[p,r,y,seas,,] * (1 - exp(-ZAA[p,r,y,seas,,]))
-            }
+            # Retained and dead discarded catch at age: F times the season-available abundance, spatial Baranov (season-integrated) under move_timing == 2
+            CAA[p,r,y,seas,,,f] <- ret_FAA[p,r,y,seas,,,f] * Avail[p,r,y,seas,,]
+            DAA[p,r,y,seas,,,f] <- disc_FAA[p,r,y,seas,,,f] * Avail[p,r,y,seas,,]
 
             if(fit_lengths == 1) {
               for(s in 1:n_sexes) {
@@ -288,8 +286,7 @@ get_fishery_observation_model <- function(
                 } else {
                   # selectivity applied at length: the fish available over the season at each age are
                   # spread over length by the composition key, then taken length by length
-                  avail <- if(move_timing == 2) NAA_int[p,r,y,seas,,s] else NAA[p,r,y,seas,,s] * (1 - exp(-ZAA[p,r,y,seas,,s])) / ZAA[p,r,y,seas,,s]
-                  avail <- avail * Fmort[r,y,seas,f]
+                  avail <- Avail[p,r,y,seas,,s] * Fmort[r,y,seas,f]
                   if(ret_selex_type == 1) {
                     ret_l <- ret_sel_l[r,y,,s,f]
                     ret_a <- rep(1, length(avail))

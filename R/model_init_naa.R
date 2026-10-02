@@ -87,8 +87,7 @@ Get_Init_NAA <- function(
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  # A 3-D deviation array (the layout before the sex dimension existed, still
-  # used by the simulation, which draws one shared curve) broadcasts across sexes
+  # Backwards compatiability for arrays that previously didn't have the sex dim
   if(length(dim(ln_InitDevs)) == 3) ln_InitDevs = array(rep(ln_InitDevs, n_sexes), dim = c(dim(ln_InitDevs), n_sexes))
 
   # create containers
@@ -123,60 +122,86 @@ Get_Init_NAA <- function(
       } # end r loop
     }
 
+    # Compute transition and mortality stuff here
+    Z_ra_cache <- vector("list", n_pop * n_sexes * n_seas)
+    if(move_timing != 0) T_cache <- vector("list", n_pop * n_sexes * n_seas)
+
+    for(p in 1:n_pop) {
+      for(s in 1:n_sexes) {
+        for(seas in 1:n_seas) {
+          Z_ra = matrix(0, n_regions, n_ages) # total mortality by region and age, for the operator branch
+          for(r in 1:n_regions) {
+            tmp_ret_F = rowSums(sweep(
+              array(fish_sel[p,r,seas,1:n_ages,s,, drop = FALSE] * ret_sel[p,r,seas,1:n_ages,s,, drop = FALSE],
+                    dim = c(n_ages, n_fish_fleets)),
+              2, as.vector(init_F[r,seas,]), "*"
+            ))
+            tmp_disc_F = rowSums(sweep(
+              array(fish_sel[p,r,seas,1:n_ages,s,, drop = FALSE] * (1 - ret_sel[p,r,seas,1:n_ages,s,, drop = FALSE]) * dmr[r,seas,],
+                    dim = c(n_ages, n_fish_fleets)),
+              2, as.vector(init_F[r,seas,]), "*"
+            ))
+            Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_ret_F + tmp_disc_F
+          } # end r loop
+
+          combo_idx = ((p - 1) * n_sexes + (s - 1)) * n_seas + seas
+          Z_ra_cache[[combo_idx]] = Z_ra
+
+          if(move_timing != 0) {
+            T_seas = vector("list", n_ages)
+            for(a in 1:n_ages) {
+              moves = (do_recruits_move == 1 || a > 1)
+              Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
+              Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
+              T_seas[[a]] = build_seas_operator(Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+            } # end a loop
+            T_cache[[combo_idx]] = T_seas
+          }
+        } # end seas loop
+      } # end s loop
+    } # end p loop
+
     # Apply annual cycle and iterate to equilibrium
     for(i in 1:init_iter) {
       for(p in 1:n_pop) {
         for(s in 1:n_sexes) {
           for(seas in 1:n_seas) {
+
             # recruitment in the first season
             if(seas == 1) Init_NAA[p,,1,s] = R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,1]
             else Init_NAA[p,,1,s] = Init_NAA[p,,1,s] + (R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,seas]) # recruitment not in the first season
-            # movement (applied here only under move_timing == 0; timings 1 and 2 fold it
-            # into the seasonal transition operator below)
+
+            # movement stuff
             if(move_timing == 0) {
               if(do_recruits_move == 0) for(a in 2:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits don't move
               if(do_recruits_move == 1) for(a in 1:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits move
             }
-            # Apply mortality
-            Z_ra = matrix(0, n_regions, n_ages) # total mortality by region and age, for the operator branch
-            for(r in 1:n_regions) {
-              # get tmp F
-              tmp_ret_F = rowSums(sweep(
-                array(fish_sel[p,r,seas,1:n_ages,s,, drop = FALSE] * ret_sel[p,r,seas,1:n_ages,s,, drop = FALSE],
-                      dim = c(n_ages, n_fish_fleets)),
-                2, as.vector(init_F[r,seas,]), "*"
-              ))
-              tmp_disc_F = rowSums(sweep(
-                array(fish_sel[p,r,seas,1:n_ages,s,, drop = FALSE] * (1 - ret_sel[p,r,seas,1:n_ages,s,, drop = FALSE]) * dmr[r,seas,],
-                      dim = c(n_ages, n_fish_fleets)),
-                2, as.vector(init_F[r,seas,]), "*"
-              ))
-              tmp_F = tmp_ret_F + tmp_disc_F
-              Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F
-              # mortality wtihin season
-              if(move_timing == 0) {
+
+            # extract out right comobination
+            combo_idx = ((p - 1) * n_sexes + (s - 1)) * n_seas + seas
+            Z_ra = Z_ra_cache[[combo_idx]]
+
+            # mortality within season
+            if(move_timing == 0) {
+              for(r in 1:n_regions) {
                 if(seas < n_seas) {
-                  Init_NAA_next_year[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
-                    exp(-((natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F))
+                  Init_NAA_next_year[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] * exp(-Z_ra[r,])
                 } else {
                   # ageing and mortality (advance ages in the next year)
-                  Init_NAA_next_year[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages - 1),s] *
-                    exp(-((natmort[p,r,seas,1:(n_ages - 1),s] * seasdur[seas]) + tmp_F[1:(n_ages - 1)]))
+                  Init_NAA_next_year[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages - 1),s] * exp(-Z_ra[r,1:(n_ages - 1)])
                   # accumulate plus group
                   Init_NAA_next_year[p,r,n_ages,s] = (Init_NAA_next_year[p,r,n_ages,s]) +
-                    (Init_NAA[p,r,n_ages,s] * exp(-((natmort[p,r,seas,n_ages,s] * seasdur[seas]) + tmp_F[n_ages])))
+                    (Init_NAA[p,r,n_ages,s] * exp(-Z_ra[r,n_ages]))
                 } # end else
-              } # end if move_timing == 0
-            } # end r loop
+              } # end r loop
+            } # end if move_timing == 0
 
-            # Movement and mortality together for timings 1 and 2
+            # Movement and mortality together for timings 1 and 2, via the cached operator
             if(move_timing != 0) {
               step_ra = matrix(0, n_regions, n_ages)
+              T_seas = T_cache[[combo_idx]]
               for(a in 1:n_ages) {
-                moves = (do_recruits_move == 1 || a > 1)
-                Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
-                Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
-                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+                step_ra[,a] = as.vector(t(Init_NAA[p,,a,s]) %*% T_seas[[a]])
               } # end a loop
               if(seas < n_seas) {
                 Init_NAA_next_year[p,,1:n_ages,s] = step_ra
@@ -251,49 +276,76 @@ Get_Init_NAA <- function(
   if(init_age_strc == 2) {
     # projection initial abundance forward
     for(p in 1:n_pop) {
+
+      # compute mortaltiy and transition operators first
+      Z_ra_cache = vector("list", n_sexes * n_seas)
+      if(move_timing != 0) T_cache = vector("list", n_sexes * n_seas)
+
+      for(s in 1:n_sexes) {
+        for(seas in 1:n_seas) {
+          Z_ra = matrix(0, n_regions, n_ages) # total mortality by region and age, for the operator branch
+          for(r in 1:n_regions) {
+            tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
+                                      2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
+            tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
+                                       2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+            Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_ret_F + tmp_disc_F
+          } # end r loop
+
+          combo_idx = (s - 1) * n_seas + seas
+          Z_ra_cache[[combo_idx]] = Z_ra
+
+          if(move_timing != 0) {
+            T_seas = vector("list", n_ages)
+            for(a in 1:n_ages) {
+              moves = (do_recruits_move == 1 || a > 1)
+              Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
+              Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
+              T_seas[[a]] = build_seas_operator(Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+            } # end a loop
+            T_cache[[combo_idx]] = T_seas
+          }
+        } # end seas loop
+      } # end s loop
+
       for(i in 1:n_ages) {
         for(s in 1:n_sexes) {
           for(seas in 1:n_seas) {
+
             # recruitment in the first season
             if(seas == 1) Init_NAA[p,,1,s] = R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,1]
             else Init_NAA[p,,1,s] = Init_NAA[p,,1,s] + (R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,seas]) # recruitment not in the first season
-            # movement (applied here only under move_timing == 0; timings 1 and 2 fold it
-            # into the seasonal transition operator below)
+
+            # some movement stuff
             if(move_timing == 0) {
               if(do_recruits_move == 0) for(a in 2:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits don't move
               if(do_recruits_move == 1) for(a in 1:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits move
             }
-            Z_ra = matrix(0, n_regions, n_ages) # total mortality by region and age, for the operator branch
-            for(r in 1:n_regions) {
-              tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
-                                        2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
-              tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
-                                         2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
-              tmp_F = tmp_ret_F + tmp_disc_F # total F
-              Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F
-              # within season mortality
-              if(move_timing == 0) {
+
+            combo_idx = (s - 1) * n_seas + seas
+            Z_ra = Z_ra_cache[[combo_idx]]
+
+            # within season mortality
+            if(move_timing == 0) {
+              for(r in 1:n_regions) {
                 if(seas < n_seas) {
-                  Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
-                    exp(-((natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F))
+                  Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] * exp(-Z_ra[r,])
                 } else {
                   tmp_plus_befage = Init_NAA[p,r,n_ages,s] # save temporary plus group before ageing
                   # ageing and mortality (age advancement)
-                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages - 1),s] * exp(-((natmort[p,r,seas,1:(n_ages - 1),s] * seasdur[seas]) + tmp_F[1:(n_ages - 1)]))
+                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages - 1),s] * exp(-Z_ra[r,1:(n_ages - 1)])
                   # accumulate plus group
-                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,seas,n_ages,s] * seasdur[seas]) + tmp_F[n_ages])))
+                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-Z_ra[r,n_ages]))
                 }
-              } # end if move_timing == 0
-            } # end r loop
+              } # end r loop
+            } # end if move_timing == 0
 
-            # Movement and mortality together for timings 1 and 2
+            # Movement and mortality together for timings 1 and 2, via the cached operator
             if(move_timing != 0) {
               step_ra = matrix(0, n_regions, n_ages)
+              T_seas = T_cache[[combo_idx]]
               for(a in 1:n_ages) {
-                moves = (do_recruits_move == 1 || a > 1)
-                Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
-                Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
-                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+                step_ra[,a] = as.vector(t(Init_NAA[p,,a,s]) %*% T_seas[[a]])
               } # end a loop
               if(seas < n_seas) {
                 Init_NAA[p,,1:n_ages,s] = step_ra
@@ -339,49 +391,77 @@ Get_Init_NAA <- function(
   if(init_age_strc == 3) {
     # projection initial abundance forward
     for(p in 1:n_pop) {
+
+      # Mortality, and the seasonal transition operator under timings 1 and 2, depend only
+      # on (sex, season, age) for this pop, never on the forward-projection step below, so
+      # both are built once here instead of being rebuilt on every one of the n_ages steps.
+      Z_ra_cache = vector("list", n_sexes * n_seas)
+      if(move_timing != 0) T_cache = vector("list", n_sexes * n_seas)
+
+      for(s in 1:n_sexes) {
+        for(seas in 1:n_seas) {
+          Z_ra = matrix(0, n_regions, n_ages) # total mortality by region and age, for the operator branch
+          for(r in 1:n_regions) {
+            tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
+                                      2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
+            tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
+                                       2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+            Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_ret_F + tmp_disc_F
+          } # end r loop
+
+          combo_idx = (s - 1) * n_seas + seas
+          Z_ra_cache[[combo_idx]] = Z_ra
+
+          if(move_timing != 0) {
+            T_seas = vector("list", n_ages)
+            for(a in 1:n_ages) {
+              moves = (do_recruits_move == 1 || a > 1)
+              Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
+              Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
+              T_seas[[a]] = build_seas_operator(Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+            } # end a loop
+            T_cache[[combo_idx]] = T_seas
+          }
+        } # end seas loop
+      } # end s loop
+
       for(i in 1:n_ages) {
         for(s in 1:n_sexes) {
           for(seas in 1:n_seas) {
             # recruitment in the first season
             if(seas == 1) Init_NAA[p,,1,s] = R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,1]
             else Init_NAA[p,,1,s] = Init_NAA[p,,1,s] + (R0_r[p,] * sexratio[p,,s] * rec_seas_prop[p,seas]) # recruitment not in the first season
-            # movement (applied here only under move_timing == 0; timings 1 and 2 fold it
-            # into the seasonal transition operator below)
+
+            # movement stuff
             if(move_timing == 0) {
               if(do_recruits_move == 0) for(a in 2:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits don't move
               if(do_recruits_move == 1) for(a in 1:n_ages) Init_NAA[p,,a,s] = t(Init_NAA[p,,a,s]) %*% Movement[p,,,seas,a,s] # recruits move
             }
-            Z_ra = matrix(0, n_regions, n_ages) # total mortality by region and age, for the operator branch
-            for(r in 1:n_regions) {
-              tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
-                                        2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
-              tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
-                                         2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
-              tmp_F = tmp_ret_F + tmp_disc_F # total F
-              Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F
-              # within season mortality
-              if(move_timing == 0) {
+
+            combo_idx = (s - 1) * n_seas + seas
+            Z_ra = Z_ra_cache[[combo_idx]]
+
+            # within season mortality
+            if(move_timing == 0) {
+              for(r in 1:n_regions) {
                 if(seas < n_seas) {
-                  Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] *
-                    exp(-((natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_F))
+                  Init_NAA[p,r,1:n_ages,s] = Init_NAA[p,r,1:n_ages,s] * exp(-Z_ra[r,])
                 } else {
                   tmp_plus_befage = Init_NAA[p,r,n_ages,s] # save temporary plus group before ageing
                   # ageing and mortality (age advancement)
-                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages - 1),s] * exp(-((natmort[p,r,seas,1:(n_ages - 1),s] * seasdur[seas]) + tmp_F[1:(n_ages - 1)]))
+                  Init_NAA[p,r,2:n_ages,s] = Init_NAA[p,r,1:(n_ages - 1),s] * exp(-Z_ra[r,1:(n_ages - 1)])
                   # accumulate plus group
-                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-((natmort[p,r,seas,n_ages,s] * seasdur[seas]) + tmp_F[n_ages])))
+                  Init_NAA[p,r,n_ages,s] = (Init_NAA[p,r,n_ages,s]) + (tmp_plus_befage * exp(-Z_ra[r,n_ages]))
                 }
-              } # end if move_timing == 0
-            } # end r loop
+              } # end r loop
+            } # end if move_timing == 0
 
-            # Movement and mortality together for timings 1 and 2
+            # Movement and mortality together for timings 1 and 2, via the cached operator
             if(move_timing != 0) {
               step_ra = matrix(0, n_regions, n_ages)
+              T_seas = T_cache[[combo_idx]]
               for(a in 1:n_ages) {
-                moves = (do_recruits_move == 1 || a > 1)
-                Mv = if(moves) Movement[p,,,seas,a,s] else diag(n_regions)
-                Qv = if(moves) Mrate[p,,,seas,a,s] else matrix(0, n_regions, n_regions)
-                step_ra[,a] = advance_seas(Init_NAA[p,,a,s], Mv, Z_ra[,a], Qv, seasdur[seas], move_timing, expm_nsub = expm_nsub)
+                step_ra[,a] = as.vector(t(Init_NAA[p,,a,s]) %*% T_seas[[a]])
               } # end a loop
               if(seas < n_seas) {
                 Init_NAA[p,,1:n_ages,s] = step_ra
@@ -414,8 +494,7 @@ Get_Init_NAA <- function(
     NAA = Init_NAA
   }
 
-  # free initial numbers at age: nothing is projected, so the deviations are the numbers rather
-  # than multipliers on an equilibrium. seeding with the sex ratio reuses the shared step below
+  # free initial numbers at age: nothing is projected, so the deviations are the initial numbers (seed w/ sexratio here)
   if(init_age_strc == 4) {
     for(p in 1:n_pop) for(r in 1:n_regions) for(s in 1:n_sexes) NAA[p,r,2:n_ages,s] = sexratio[p,r,s]
   }

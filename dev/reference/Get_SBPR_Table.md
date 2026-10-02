@@ -1,23 +1,25 @@
-# Deterministic Recruitment
+# Spawning biomass per recruit, by origin and destination region
 
-Recruitment by population and region under mean, Beverton-Holt or Ricker
-recruitment, spread over regions and seasons by the recruitment
-proportions. Unfished spawning biomass per recruit is computed
-internally by projecting one recruit through every age and season.
-Equations are in the model equations vignette.
+The age-and-region projection behind
+[`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md)'s
+Beverton-Holt and Ricker curves: one recruit per origin region is
+projected through every age, season and the plus-group, unfished and
+fished. This depends only on mortality, selectivity and movement, never
+on `R0`, spawning biomass or the current year, so a caller that holds
+those fixed across years (as the annual cycle does; see `det_rec_args`
+in
+[`Simulate_Pop_Static`](https://chengmatt.github.io/SPoRC/dev/reference/Simulate_Pop_Static.md))
+should build this once and pass it back into `Get_Det_Recruitment` as
+`sbpr_table`, rather than paying for this projection again on every year
+it is otherwise identical.
 
 ## Usage
 
 ``` r
-Get_Det_Recruitment(
-  recruitment_model,
+Get_SBPR_Table(
   rec_dd,
-  y,
-  rec_lag,
-  R0,
   rec_region_prop,
   rec_seas_prop,
-  h,
   n_pop,
   n_regions,
   n_ages,
@@ -25,10 +27,8 @@ Get_Det_Recruitment(
   WAA,
   MatAA,
   natmort,
-  SSB_vals,
   Movement,
   sgl_seas_spawning_movement,
-  stray_rate,
   do_recruits_move,
   t_spawn,
   init_F,
@@ -37,40 +37,20 @@ Get_Det_Recruitment(
   ret_sel,
   n_seas,
   spawn_seas,
-  natal_region,
   seasdur,
   sexratio_f,
   Mrate = NULL,
   move_timing = 0,
-  expm_nsub = 0,
-  sbpr_table = NULL
+  expm_nsub = 0
 )
 ```
 
 ## Arguments
 
-- recruitment_model:
-
-  Integer. 0 = mean recruitment, 1 = Beverton-Holt, 2 = Ricker.
-
 - rec_dd:
 
   Integer. 0 = density dependence within each population or region, 1 =
   shared across regions, valid only when `n_pop = 1`.
-
-- y:
-
-  Current model year index.
-
-- rec_lag:
-
-  Lag in seasons between spawning and recruitment. 1 uses `SSB_vals`
-  from that many seasons prior, 0 uses the same year's SSB, which the
-  caller must supply computed from survivors only.
-
-- R0:
-
-  Numeric vector (`n_pop`) of unfished recruitment by population.
 
 - rec_region_prop:
 
@@ -81,10 +61,6 @@ Get_Det_Recruitment(
 
   Matrix (`n_pop × n_seas`) of seasonal recruitment proportions. Must be
   zero before `spawn_seas` when `rec_lag = 0`.
-
-- h:
-
-  Matrix (`n_pop × n_regions`) of steepness values.
 
 - n_pop:
 
@@ -115,10 +91,6 @@ Get_Det_Recruitment(
   Array (`n_pop × n_regions × n_seas × n_ages`) of natural mortality, a
   rate per year in each season.
 
-- SSB_vals:
-
-  Array (`n_pop × n_regions × n_years`) of spawning biomass.
-
 - Movement:
 
   Array (`n_pop × origin × destination × n_seas × n_ages`) of seasonal
@@ -128,11 +100,6 @@ Get_Det_Recruitment(
 
   Array (`n_pop × origin × destination × n_ages`) of spawning movement
   when a single season is used and `n_pop > 1`.
-
-- stray_rate:
-
-  Numeric vector of stray rates by population, scaling each other
-  population's contribution to recruitment in a natal region.
 
 - do_recruits_move:
 
@@ -170,10 +137,6 @@ Get_Det_Recruitment(
 
   Season index in which spawning occurs.
 
-- natal_region:
-
-  Integer vector (`n_pop`) mapping each population to its natal region.
-
 - seasdur:
 
   Numeric vector (`n_seas`) of seasonal durations as fractions of a
@@ -183,12 +146,9 @@ Get_Det_Recruitment(
 
   Matrix (`n_pop × n_regions`) of female recruitment proportions.
 
-- sbpr_table:
+## Value
 
-  Optional, the list returned by
-  [Get_SBPR_Table](https://chengmatt.github.io/SPoRC/dev/reference/Get_SBPR_Table.md).
-  NULL (the default) builds the per-recruit table from the other
-  arguments, exactly as before. A caller invoking this repeatedly with
-  everything but R0, SSB_vals and y held fixed, the usual case across
-  years in a single model run, should build the table once and pass it
-  in here to skip rebuilding it on every call.
+List of `phi0` and `phiF`, the unfished and fished spawning biomass per
+recruit at `R0 = 1`: a `[pop x region]` matrix under `rec_dd = 0`, a
+scalar under `rec_dd = 1`. `Get_Det_Recruitment` recovers `S0`/`SF` by
+scaling these by `R0`.

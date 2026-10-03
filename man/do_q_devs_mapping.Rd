@@ -38,7 +38,8 @@ over, or \code{NULL} for every year. \code{NULL} (default) gives every
 fleet every year. Projection years are always estimated. A year left out
 holds its deviation fixed at its starting value (zero unless set by
 \code{...}), which a random walk or ar1 then steps through like any
-other fixed cell.}
+other fixed cell, except at a fleet's first estimated year: see
+\code{\link{Get_q_dev_penalty}}.}
 }
 \value{
 \code{input_list} with the three maps set.

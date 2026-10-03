@@ -136,8 +136,12 @@ fleet's catchability deviations are estimated over, or \code{NULL} for
 every year. \code{NULL} (default) gives every fleet every year.
 Projection years are always estimated regardless. A year left out of a
 fleet's vector holds that fleet's deviation fixed at zero, which a
-random walk or ar1 then steps through like any other fixed cell. Read
-only for a fleet whose \code{srv_q_model} is not \code{"none"}.}
+random walk or ar1 then steps through like any other fixed cell, except
+at that fleet's first estimated year: there a random walk gets the
+diffuse \code{srv_q_rw_init_sigma} start and an ar1 its stationary
+marginal sd, the same treatment year one gets when nothing is fixed
+ahead of it. Read only for a fleet whose \code{srv_q_model} is not
+\code{"none"}.}
 
 \item{Use_srv_selex_prior}{Integer (0/1) for priors on the survey selectivity
 parameters. Default \code{0}.}

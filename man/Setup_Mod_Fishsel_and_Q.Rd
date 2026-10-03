@@ -17,6 +17,7 @@ Setup_Mod_Fishsel_and_Q(
   sigma_fish_q_spec = "est_all",
   fish_q_rho_spec = "est_all",
   fish_q_rw_init_sigma = NA,
+  fish_q_re_years = NULL,
   fishsel_pe_pars_spec = NULL,
   fish_fixed_sel_pars_spec = NULL,
   fish_q_spec = NULL,
@@ -150,6 +151,19 @@ options as \code{sigma_fish_q_spec}. Default \code{"est_all"}. Only read under
 \item{fish_q_rw_init_sigma}{Standard deviation of the first estimated year of a
 random walk. \code{NA} (default) starts the walk at zero under its own sigma,
 which keeps \code{ln_fish_q} as the level of the series.}
+
+\item{fish_q_re_years}{List \code{[n_fish_fleets]}, each element the model
+years (as indices into \code{data$years}, not calendar years) that
+fleet's catchability deviations are estimated over, or \code{NULL} for
+every year. \code{NULL} (default) gives every fleet every year.
+Projection years are always estimated regardless. A year left out of a
+fleet's vector holds that fleet's deviation fixed at zero, which a
+random walk or ar1 then steps through like any other fixed cell, except
+at that fleet's first estimated year: there a random walk gets the
+diffuse \code{fish_q_rw_init_sigma} start and an ar1 its stationary
+marginal sd, the same treatment year one gets when nothing is fixed
+ahead of it. Read only for a fleet whose \code{fish_q_model} is not
+\code{"none"}.}
 
 \item{fishsel_pe_pars_spec}{Character vector \code{[n_fish_fleets]} of the
 estimation structure for the selectivity process error hyperparameters,

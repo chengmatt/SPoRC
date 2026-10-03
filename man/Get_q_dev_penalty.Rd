@@ -38,6 +38,10 @@ Negative log density, summed over regions, years and fleets.
 \description{
 Annual deviations from a fleet's block catchability, taken as independent,
 a random walk or an ar1. A fleet whose deviations a dsem has taken over
-gets no penalty here, since the mirror blanks those cells.
+gets no penalty here, since the mirror blanks those cells. A region and
+fleet's first estimated year, wherever \code{map_ln_q_devs} puts it (e.g.
+under \code{q_re_years}), gets a random walk's diffuse
+\code{q_rw_init_sigma} start or an ar1's stationary marginal sd; a later
+fixed year is passed through at its fixed value instead.
 }
 \keyword{internal}

@@ -64,6 +64,30 @@ test_that("a random walk penalizes each step and an ar1 at zero correlation matc
   expect_equal(ar1, iid, tolerance = 1e-10)
 })
 
+test_that("a fleet's first estimated year gets the diffuse walk start or the ar1 marginal sd, wherever the map puts it", {
+
+  # years 1 and 2 fixed off (as q_re_years would do), so year 3 is this series' own year one
+  devs <- c(0, 0, 0.2, 0.0, -0.1)
+  il <- add_q_devs(pcod_q_input(), "rw")
+  il$par$ln_srv_q_devs <- array(0, dim = c(1, length(devs), 1))
+  il$par$ln_srv_q_devs[1,,1] <- devs
+  map_gap <- array(c(NA, NA, 1, 2, 3), dim = dim(il$par$ln_srv_q_devs))
+
+  rw <- Get_q_dev_penalty(il$par$ln_srv_q_devs, il$par$ln_sigma_srv_q, il$par$srv_q_rho,
+                          q_model = 3, map_ln_q_devs = map_gap, q_rw_init_sigma = 7)
+  by_hand_rw <- -sum(stats::dnorm(c(devs[3], devs[4], devs[5]), c(0, devs[3], devs[4]), c(7, 0.2, 0.2), log = TRUE))
+  expect_equal(rw, by_hand_rw, tolerance = 1e-10)
+
+  rho <- 0.4
+  il$par$srv_q_rho[] <- atanh(rho) # the penalty's own rho_trans is tanh, so this recovers rho exactly
+  ar1 <- Get_q_dev_penalty(il$par$ln_srv_q_devs, il$par$ln_sigma_srv_q, il$par$srv_q_rho,
+                           q_model = 4, map_ln_q_devs = map_gap, q_rw_init_sigma = NA)
+  marginal_sd <- 0.2 / sqrt(1 - rho^2)
+  by_hand_ar1 <- -sum(stats::dnorm(c(devs[3], devs[4], devs[5]), c(0, rho * devs[3], rho * devs[4]),
+                                   c(marginal_sd, 0.2, 0.2), log = TRUE))
+  expect_equal(ar1, by_hand_ar1, tolerance = 1e-10)
+})
+
 test_that("every form builds a model that evaluates and differentiates", {
 
   for(form in c("iid", "rw", "ar1")) {
@@ -352,6 +376,51 @@ test_that("a region with no index data reads no catchability sigma or correlatio
   rho_r2 <- rho; rho_r2[2,1] <- 0.95
   expect_equal(pen(sig_r2, rho), pen(sig, rho))
   expect_equal(pen(sig, rho_r2), pen(sig, rho))
+})
+
+test_that("q_re_years restricts a fleet's deviations to chosen years, and projection years stay active", {
+
+  # one region, one fleet, 5 fit years plus 2 projection years
+  n_r <- 1; n_y <- 5; n_proj <- 2
+  il <- list(
+    data = list(n_regions = n_r, n_srv_fleets = 1, n_proj_yrs_devs = n_proj, years = 1:n_y,
+                UseSrvIdx = array(1, dim = c(n_r, n_y + n_proj, 1, 1)),
+                UseSrvIdx_pop = array(0, dim = c(1, n_r, n_y + n_proj, 1, 1))),
+    par = list(ln_srv_q_devs = array(0, dim = c(n_r, n_y + n_proj, 1)),
+               ln_sigma_srv_q = array(0, dim = c(n_r, 1)),
+               srv_q_rho = array(0, dim = c(n_r, 1))),
+    map = list()
+  )
+
+  out <- do_q_devs_mapping(il, q_model = 2, sigma_q_spec = "est_all", q_rho_spec = "est_all",
+                           prefix = "srv", fleet_field = "n_srv_fleets", use_field = "UseSrvIdx",
+                           q_re_years = list(c(2, 4)))
+
+  dev_map <- as.integer(out$map$ln_srv_q_devs)
+  expect_equal(which(!is.na(dev_map)), c(2, 4, 6, 7)) # the chosen years, then both projection years
+  expect_equal(sum(!is.na(dev_map)), 4)
+
+  # left NULL for a fleet, every year of that fleet is estimated as before
+  out_all <- do_q_devs_mapping(il, q_model = 2, sigma_q_spec = "est_all", q_rho_spec = "est_all",
+                               prefix = "srv", fleet_field = "n_srv_fleets", use_field = "UseSrvIdx",
+                               q_re_years = list(NULL))
+  expect_equal(sum(!is.na(as.integer(out_all$map$ln_srv_q_devs))), n_y + n_proj)
+})
+
+test_that("srv_q_re_years is validated against the model years and the fleet count", {
+
+  il <- add_q_devs(pcod_q_input(), "none") # one survey fleet; "none" leaves q_re_years unread, but still checked
+  n_yr_fit <- length(il$data$years)
+  setup_with <- function(q_re_years) suppressMessages(setup_q_devs(
+    il, q_model = "iid", sigma_q_spec = "est_all", q_rho_spec = "est_all", q_rw_init_sigma = NA,
+    q_type = "est", prefix = "srv", fleet_field = "n_srv_fleets", use_field = "UseSrvIdx",
+    fleet_label = "survey fleet", starting_values = list(), q_re_years = q_re_years
+  ))
+
+  expect_error(setup_with(1:3), "list of one element per fleet")
+  expect_error(setup_with(list(1, 2)), "one setting per fleet") # two elements, one survey fleet
+  expect_error(setup_with(list(n_yr_fit + 5)), "must index the model years")
+  expect_no_error(setup_with(list(1:3)))
 })
 
 test_that("a dsem catchability series can hold a covariate effect and process error together", {

@@ -15,7 +15,8 @@ setup_q_devs(
   fleet_field,
   use_field,
   fleet_label,
-  starting_values
+  starting_values,
+  q_re_years = NULL
 )
 }
 \arguments{
@@ -48,6 +49,8 @@ sigma, which keeps the block catchability as the level of the series.}
 \item{fleet_label}{Label used in messages.}
 
 \item{starting_values}{Named list of starting values.}
+
+\item{q_re_years}{As in \code{\link{do_q_devs_mapping}}.}
 }
 \value{
 \code{input_list} with the deviation parameters, their maps and

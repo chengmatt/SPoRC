@@ -2021,7 +2021,11 @@ penalize_naa_age_year <- function(eps_ya, sd_prs, NAA_re, pe, ny, na) {
 #'
 #' Annual deviations from a fleet's block catchability, taken as independent,
 #' a random walk or an ar1. A fleet whose deviations a dsem has taken over
-#' gets no penalty here, since the mirror blanks those cells.
+#' gets no penalty here, since the mirror blanks those cells. A region and
+#' fleet's first estimated year, wherever \code{map_ln_q_devs} puts it (e.g.
+#' under \code{q_re_years}), gets a random walk's diffuse
+#' \code{q_rw_init_sigma} start or an ar1's stationary marginal sd; a later
+#' fixed year is passed through at its fixed value instead.
 #'
 #' @param ln_q_devs Array \code{[n_regions, n_yrs_total, n_fleets]} of log-scale
 #'   catchability deviations.
@@ -2071,17 +2075,21 @@ Get_q_dev_penalty <- function(ln_q_devs,
       if(sum(is_est[r,,f]) == 0) next
       rho <- if(q_model[f] == 4) 2 / (1 + exp(-2 * q_rho[r,f])) - 1 else 0 # constrain to (-1, 1)
 
+      # figure out which years are penalized or not
+      yrs_read <- which(is_est[r,,f] == 1)[1]:n_yrs
+      n_yrs_read <- length(yrs_read)
+
       yr_nLL <- get_dev_pe_nLL(
-        devs = ln_q_devs[r,,f],
-        is_est = is_est[r,,f],
-        sigma = rep(exp(ln_sigma_q[r,f]), n_yrs),
-        dev_mu = rep(0, n_yrs), # fixed at 0 since mean = estimated q
+        devs = ln_q_devs[r,yrs_read,f],
+        is_est = is_est[r,yrs_read,f],
+        sigma = rep(exp(ln_sigma_q[r,f]), n_yrs_read),
+        dev_mu = rep(0, n_yrs_read), # fixed at 0 since mean = estimated q
         PE_model = pe_model,
         rho = rho,
         init_sd = q_rw_init_sigma
       )
 
-      nLL <- nLL + sum(yr_nLL * wt[r,,f])
+      nLL <- nLL + sum(yr_nLL * wt[r,yrs_read,f])
 
     } # end r loop
   } # end f loop

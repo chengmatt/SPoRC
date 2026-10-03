@@ -37,8 +37,10 @@ one deviation, and a cell with an inactive level on any dim, or a pair with
 no edge, holds none. The process error parameters are one log sd and two
 AR1 correlations per process error block of pairs, from
 \code{move_pe_spec}, with a correlation mapped off unless its dim is
-\code{"ar1"} and all three mapped off under a dsem; the unstructured
-correlations are estimated only under \code{"us"}. Nothing is built when
+\code{"ar1"}, all three mapped off under a dsem, and all three mapped off
+under \code{"fix"} (held at their starting value; any deviations are then
+estimated against that fixed sd); the unstructured correlations are
+estimated only under \code{"us"}. Nothing is built when
 movement is fixed, the model has one region, or every switch is
 \code{"none"}.
 }

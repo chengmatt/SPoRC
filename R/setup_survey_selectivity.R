@@ -117,6 +117,18 @@
 #'   random walk. \code{NA} (default) starts the walk at zero under its own sigma,
 #'   which keeps \code{ln_srv_q} as the level of the series; a wide value leaves
 #'   the level free and confounds it with \code{ln_srv_q}.
+#' @param srv_q_re_years List \code{[n_srv_fleets]}, each element the model
+#'   years (as indices into \code{data$years}, not calendar years) that
+#'   fleet's catchability deviations are estimated over, or \code{NULL} for
+#'   every year. \code{NULL} (default) gives every fleet every year.
+#'   Projection years are always estimated regardless. A year left out of a
+#'   fleet's vector holds that fleet's deviation fixed at zero, which a
+#'   random walk or ar1 then steps through like any other fixed cell, except
+#'   at that fleet's first estimated year: there a random walk gets the
+#'   diffuse \code{srv_q_rw_init_sigma} start and an ar1 its stationary
+#'   marginal sd, the same treatment year one gets when nothing is fixed
+#'   ahead of it. Read only for a fleet whose \code{srv_q_model} is not
+#'   \code{"none"}.
 #' @param t_srv Survey timing as a fraction of the year (annual models) or the
 #'   season (seasonal models), array \code{[n_regions × n_seas × n_srv_fleets]}.
 #'   Default \code{1}, the end of the period.
@@ -195,6 +207,7 @@ Setup_Mod_Srvsel_and_Q <- function(
   sigma_srv_q_spec = "est_all",
   srv_q_rho_spec = "est_all",
   srv_q_rw_init_sigma = NA,
+  srv_q_re_years = NULL,
   Use_srv_selex_prior = 0,
   srv_selex_prior = NULL,
   Use_srv_selex_penalty = 0,
@@ -712,7 +725,8 @@ Setup_Mod_Srvsel_and_Q <- function(
     fleet_field = "n_srv_fleets",
     use_field = "UseSrvIdx",
     fleet_label = "survey fleet",
-    starting_values = starting_values
+    starting_values = starting_values,
+    q_re_years = srv_q_re_years
   )
   input_list <- do_sel_pe_pars_mapping(
     input_list,

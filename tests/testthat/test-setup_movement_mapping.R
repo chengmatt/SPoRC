@@ -108,6 +108,12 @@ test_that("each switch says what varies, and a block list shares within its bloc
   expect_equal(n_levels(m$data$map_move_devs), n_pairs * n_yrs)
   expect_equal(n_levels(m$map$move_pe_pars), 2)
 
+  # "fix" holds every pair's sd and correlations at their start instead of estimating them,
+  # while the deviations themselves still get their own levels
+  m <- map_re(il, year = "iid", pe_spec = "fix")
+  expect_equal(n_levels(m$data$map_move_devs), n_pairs * n_yrs)
+  expect_true(all(is.na(m$map$move_pe_pars)))
+
   # blocks within a dim: the sexes in a block share, and a block per level is iid
   expect_equal(map_re(il, year = "iid", sex = list(1:2))$data$map_move_devs, map_re(il, year = "iid", sex = "none")$data$map_move_devs)
   expect_equal(map_re(il, year = "iid", pop = list(1, 2))$data$map_move_devs, map_re(il, year = "iid", pop = "iid")$data$map_move_devs)

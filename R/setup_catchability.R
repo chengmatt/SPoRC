@@ -33,11 +33,19 @@ q_dev_par_names <- function() c("ln_fish_q_devs", "ln_srv_q_devs")
 #' @param prefix \code{"fish"} or \code{"srv"}.
 #' @param fleet_field Name of the fleet count in \code{data}.
 #' @param use_field Name of the index use array in \code{data}.
+#' @param q_re_years List \code{[n_fleets]}, each element the model years (as
+#'   indices into \code{data$years}) that fleet's deviations are estimated
+#'   over, or \code{NULL} for every year. \code{NULL} (default) gives every
+#'   fleet every year. Projection years are always estimated. A year left out
+#'   holds its deviation fixed at its starting value (zero unless set by
+#'   \code{...}), which a random walk or ar1 then steps through like any
+#'   other fixed cell, except at a fleet's first estimated year: see
+#'   \code{\link{Get_q_dev_penalty}}.
 #'
 #' @return \code{input_list} with the three maps set.
 #'
 #' @keywords internal
-do_q_devs_mapping <- function(input_list, q_model, sigma_q_spec, q_rho_spec, prefix, fleet_field, use_field) {
+do_q_devs_mapping <- function(input_list, q_model, sigma_q_spec, q_rho_spec, prefix, fleet_field, use_field, q_re_years = NULL) {
 
   n_regions <- input_list$data$n_regions
   n_fleets <- input_list$data[[fleet_field]]
@@ -45,18 +53,21 @@ do_q_devs_mapping <- function(input_list, q_model, sigma_q_spec, q_rho_spec, pre
   use_arr <- input_list$data[[use_field]]
   use_pop_arr <- input_list$data[[paste0(use_field, "_pop")]]
 
-  # only estimate devs for region with data
+  # only estimate devs for region with data, and only over a fleet's own active years
   map_devs <- input_list$par[[devs_name]]
   map_devs[] <- NA
+  n_yr <- dim(map_devs)[2] # fit years plus any projection years, which stay active regardless of q_re_years
+  n_yr_fit <- length(input_list$data$years)
+  proj_years <- seq_len(n_yr)[-seq_len(n_yr_fit)]
   dev_counter <- 0
   for(f in 1:n_fleets) {
     if(q_model[f] == 1) next # "none", so this fleet has no deviations at all
+    active_years <- if(is.null(q_re_years) || is.null(q_re_years[[f]])) seq_len(n_yr) else sort(union(q_re_years[[f]], proj_years))
     for(r in 1:n_regions) {
       has_data <- sum(use_arr[r,,,f]) > 0 || (!is.null(use_pop_arr) && sum(use_pop_arr[,r,,,f]) > 0)
       if(!has_data) next
-      n_yr <- dim(map_devs)[2]
-      map_devs[r,,f] <- dev_counter + seq_len(n_yr)
-      dev_counter <- dev_counter + n_yr
+      map_devs[r,active_years,f] <- dev_counter + seq_len(length(active_years))
+      dev_counter <- dev_counter + length(active_years)
     } # end r loop
   } # end f loop
 
@@ -142,6 +153,7 @@ renumber_map_levels <- function(x) {
 #' @param use_field Name of the index use array in \code{data}.
 #' @param fleet_label Label used in messages.
 #' @param starting_values Named list of starting values.
+#' @param q_re_years As in \code{\link{do_q_devs_mapping}}.
 #'
 #' @return \code{input_list} with the deviation parameters, their maps and
 #'   \code{<prefix>_q_model} in \code{data}.
@@ -157,7 +169,8 @@ setup_q_devs <- function(input_list,
                          fleet_field,
                          use_field,
                          fleet_label,
-                         starting_values) {
+                         starting_values,
+                         q_re_years = NULL) {
 
   n_regions <- input_list$data$n_regions
   n_fleets <- input_list$data[[fleet_field]]
@@ -167,6 +180,20 @@ setup_q_devs <- function(input_list,
   if(!all(q_model %in% forms)) stop(prefix, "_q_model should be one of: ", paste(forms, collapse = ", "), ".")
   q_model_val <- match(q_model, forms)
   blocks_arr <- input_list$data[[paste0(prefix, "_q_blocks")]]
+
+  # q_re_years: a list of one integer vector (or NULL) per fleet, indexing data$years
+  n_yr_fit <- length(input_list$data$years)
+  if(!is.null(q_re_years)) {
+    if(!is.list(q_re_years)) stop(prefix, "_q_re_years must be a list of one element per fleet (or NULL).")
+    check_fleet_spec_length(q_re_years, n_fleets, paste0(prefix, "_q_re_years"))
+    for(f in 1:n_fleets) {
+      yrs_f <- q_re_years[[f]]
+      if(is.null(yrs_f)) next
+      if(!all(yrs_f %in% seq_len(n_yr_fit)) || length(yrs_f) == 0)
+        stop(prefix, "_q_re_years[[", f, "]] must index the model years (1 to ", n_yr_fit, ").")
+      if(q_model_val[f] == 1) collect_message(prefix, "_q_re_years[[", f, "]] is ignored: ", fleet_label, " ", f, " has ", prefix, "_q_model = 'none'.")
+    } # end f loop
+  }
 
   for(f in 1:n_fleets) {
     if(q_model_val[f] == 1) next
@@ -208,7 +235,7 @@ setup_q_devs <- function(input_list,
   input_list$data[[paste0(prefix, "_q_model")]] <- q_model_val
   input_list$data[[paste0(prefix, "_q_rw_init_sigma")]] <- q_rw_init_sigma
 
-  input_list <- do_q_devs_mapping(input_list, q_model_val, sigma_q_spec, q_rho_spec, prefix, fleet_field, use_field)
+  input_list <- do_q_devs_mapping(input_list, q_model_val, sigma_q_spec, q_rho_spec, prefix, fleet_field, use_field, q_re_years)
 
   return(input_list)
 

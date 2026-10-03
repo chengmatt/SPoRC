@@ -241,8 +241,10 @@ move_dim_blocks <- function(switch, active, n_levels, dsem = FALSE) {
 #' no edge, holds none. The process error parameters are one log sd and two
 #' AR1 correlations per process error block of pairs, from
 #' \code{move_pe_spec}, with a correlation mapped off unless its dim is
-#' \code{"ar1"} and all three mapped off under a dsem; the unstructured
-#' correlations are estimated only under \code{"us"}. Nothing is built when
+#' \code{"ar1"}, all three mapped off under a dsem, and all three mapped off
+#' under \code{"fix"} (held at their starting value; any deviations are then
+#' estimated against that fixed sd); the unstructured correlations are
+#' estimated only under \code{"us"}. Nothing is built when
 #' movement is fixed, the model has one region, or every switch is
 #' \code{"none"}.
 #'
@@ -317,13 +319,14 @@ do_move_re_mapping <- function(input_list, move_year_re, move_age_re, move_pop_r
     map_move_devs[] <- level_by_block[cbind(pair_of_cell[cbind(cell(2), cell(3))], pop_block[cell(1)], year_block[cell(4)],
                                             seas_block[cell(5)], age_block[cell(6)], sex_block[cell(7)])]
 
-    # process error: one log sd and two correlations per block of pairs, nothing under a dsem
+    # figure out process error parameter mapping
+    fix_pe <- identical(move_pe_spec, "fix")
     pe_block <- if(is.list(move_pe_spec)) move_dim_blocks(move_pe_spec, seq_len(n_pairs), n_pairs)
                 else if(move_pe_spec == "est_shared") rep(1, n_pairs) else seq_len(n_pairs)
     if(any(is.na(pe_block))) stop("move_pe_spec blocks must cover each of the ", n_pairs, " pairs exactly once.")
     if(!dsem) {
       n_pe_blocks <- n_blocks(pe_block)
-      for(i in 1:n_pairs) {
+      if(!fix_pe) for(i in 1:n_pairs) {
         region_from <- move_pairs[i, 1]
         region_to <- move_pairs[i, 2]
         map_move_pe_pars[region_from, region_to, 1] <- pe_block[i] # log sd
@@ -478,7 +481,10 @@ do_move_re_mapping <- function(input_list, move_year_re, move_age_re, move_pop_r
 #'   over the active levels.
 #' @param move_pe_spec \code{"est_all"} (default) gives every pair its own log
 #'   sd and AR1 correlations in \code{move_pe_pars}, \code{"est_shared"} gives
-#'   one set to every pair, and a list of blocks of rows of the pair table
+#'   one set to every pair, \code{"fix"} holds every pair's sd and
+#'   correlations at their starting value instead of estimating them (the
+#'   deviations, if any, are still estimated against that fixed sd), and a
+#'   list of blocks of rows of the pair table
 #'   (\code{input_list$data$move_pairs}, origins and destinations over the
 #'   edges of the adjacency matrix in origin then destination order, one row
 #'   per region under the CTMC) gives one set per block. The unstructured
@@ -654,7 +660,7 @@ Setup_Mod_Movement <- function(input_list,
   check_blocks(move_pop_re, "move_pop_re", move_re_pops)
   check_blocks(move_seas_re, "move_seas_re", move_re_seas)
   check_blocks(move_sex_re, "move_sex_re", move_re_sexes)
-  if(!is.list(move_pe_spec) && !is_switch(move_pe_spec, c("est_all", "est_shared"))) stop("move_pe_spec should be 'est_all', 'est_shared', or a list of blocks of pairs sharing an sd and correlations.")
+  if(!is.list(move_pe_spec) && !is_switch(move_pe_spec, c("est_all", "est_shared", "fix"))) stop("move_pe_spec should be 'est_all', 'est_shared', 'fix', or a list of blocks of pairs sharing an sd and correlations.")
   if(identical(move_pop_re, "us") && length(move_re_pops) < 2) stop("move_pop_re = 'us' needs at least two active populations.")
   if(identical(move_seas_re, "us") && length(move_re_seas) < 2) stop("move_seas_re = 'us' needs at least two active seasons.")
   if(identical(move_sex_re, "us") && length(move_re_sexes) < 2) stop("move_sex_re = 'us' needs at least two active sexes.")

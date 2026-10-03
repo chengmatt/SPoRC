@@ -11,7 +11,8 @@ do_q_devs_mapping(
   q_rho_spec,
   prefix,
   fleet_field,
-  use_field
+  use_field,
+  q_re_years = NULL
 )
 }
 \arguments{
@@ -30,6 +31,14 @@ do_q_devs_mapping(
 \item{fleet_field}{Name of the fleet count in \code{data}.}
 
 \item{use_field}{Name of the index use array in \code{data}.}
+
+\item{q_re_years}{List \code{[n_fleets]}, each element the model years (as
+indices into \code{data$years}) that fleet's deviations are estimated
+over, or \code{NULL} for every year. \code{NULL} (default) gives every
+fleet every year. Projection years are always estimated. A year left out
+holds its deviation fixed at its starting value (zero unless set by
+\code{...}), which a random walk or ar1 then steps through like any
+other fixed cell.}
 }
 \value{
 \code{input_list} with the three maps set.

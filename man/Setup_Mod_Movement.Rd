@@ -113,7 +113,10 @@ over the active levels.}
 
 \item{move_pe_spec}{\code{"est_all"} (default) gives every pair its own log
 sd and AR1 correlations in \code{move_pe_pars}, \code{"est_shared"} gives
-one set to every pair, and a list of blocks of rows of the pair table
+one set to every pair, \code{"fix"} holds every pair's sd and
+correlations at their starting value instead of estimating them (the
+deviations, if any, are still estimated against that fixed sd), and a
+list of blocks of rows of the pair table
 (\code{input_list$data$move_pairs}, origins and destinations over the
 edges of the adjacency matrix in origin then destination order, one row
 per region under the CTMC) gives one set per block. The unstructured

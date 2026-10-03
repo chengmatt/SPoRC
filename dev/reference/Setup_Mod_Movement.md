@@ -146,11 +146,13 @@ Setup_Mod_Movement(
 
   `"est_all"` (default) gives every pair its own log sd and AR1
   correlations in `move_pe_pars`, `"est_shared"` gives one set to every
-  pair, and a list of blocks of rows of the pair table
-  (`input_list$data$move_pairs`, origins and destinations over the edges
-  of the adjacency matrix in origin then destination order, one row per
-  region under the CTMC) gives one set per block. The unstructured
-  correlations are always shared.
+  pair, `"fix"` holds every pair's sd and correlations at their starting
+  value instead of estimating them (the deviations, if any, are still
+  estimated against that fixed sd), and a list of blocks of rows of the
+  pair table (`input_list$data$move_pairs`, origins and destinations
+  over the edges of the adjacency matrix in origin then destination
+  order, one row per region under the CTMC) gives one set per block. The
+  unstructured correlations are always shared.
 
 - ctmc_move_dat:
 

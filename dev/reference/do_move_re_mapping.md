@@ -10,10 +10,12 @@ cells whose blocks agree on every dim share one deviation, and a cell
 with an inactive level on any dim, or a pair with no edge, holds none.
 The process error parameters are one log sd and two AR1 correlations per
 process error block of pairs, from `move_pe_spec`, with a correlation
-mapped off unless its dim is `"ar1"` and all three mapped off under a
-dsem; the unstructured correlations are estimated only under `"us"`.
-Nothing is built when movement is fixed, the model has one region, or
-every switch is `"none"`.
+mapped off unless its dim is `"ar1"`, all three mapped off under a dsem,
+and all three mapped off under `"fix"` (held at their starting value;
+any deviations are then estimated against that fixed sd); the
+unstructured correlations are estimated only under `"us"`. Nothing is
+built when movement is fixed, the model has one region, or every switch
+is `"none"`.
 
 ## Usage
 

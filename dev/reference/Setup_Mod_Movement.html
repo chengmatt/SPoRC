@@ -205,7 +205,10 @@ over the active levels.</p></dd>
 <dt id="arg-move-pe-spec">move_pe_spec<a class="anchor" aria-label="anchor" href="#arg-move-pe-spec"></a></dt>
 <dd><p><code>"est_all"</code> (default) gives every pair its own log
 sd and AR1 correlations in <code>move_pe_pars</code>, <code>"est_shared"</code> gives
-one set to every pair, and a list of blocks of rows of the pair table
+one set to every pair, <code>"fix"</code> holds every pair's sd and
+correlations at their starting value instead of estimating them (the
+deviations, if any, are still estimated against that fixed sd), and a
+list of blocks of rows of the pair table
 (<code>input_list$data$move_pairs</code>, origins and destinations over the
 edges of the adjacency matrix in origin then destination order, one row
 per region under the CTMC) gives one set per block. The unstructured

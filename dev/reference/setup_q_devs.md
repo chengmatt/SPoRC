@@ -20,7 +20,8 @@ setup_q_devs(
   fleet_field,
   use_field,
   fleet_label,
-  starting_values
+  starting_values,
+  q_re_years = NULL
 )
 ```
 
@@ -75,6 +76,11 @@ setup_q_devs(
 - starting_values:
 
   Named list of starting values.
+
+- q_re_years:
+
+  As in
+  [`do_q_devs_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_q_devs_mapping.md).
 
 ## Value
 

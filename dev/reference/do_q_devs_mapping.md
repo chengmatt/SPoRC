@@ -15,7 +15,8 @@ do_q_devs_mapping(
   q_rho_spec,
   prefix,
   fleet_field,
-  use_field
+  use_field,
+  q_re_years = NULL
 )
 ```
 
@@ -49,6 +50,16 @@ do_q_devs_mapping(
 - use_field:
 
   Name of the index use array in `data`.
+
+- q_re_years:
+
+  List `[n_fleets]`, each element the model years (as indices into
+  `data$years`) that fleet's deviations are estimated over, or `NULL`
+  for every year. `NULL` (default) gives every fleet every year.
+  Projection years are always estimated. A year left out holds its
+  deviation fixed at its starting value (zero unless set by `...`),
+  which a random walk or ar1 then steps through like any other fixed
+  cell.
 
 ## Value
 

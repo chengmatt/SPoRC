@@ -87,7 +87,7 @@ look for what a given setting is, whereas <a href="t_model_options.html">Overvie
 it exists and which ones to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 561 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 563 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (17)</option>
 <option value="Rec">Rec (65)</option>
@@ -97,8 +97,8 @@ it exists and which ones to specify.</p>
 <option value="Catch_and_F">Catch_and_F (72)</option>
 <option value="FishIdx_and_Comps">FishIdx_and_Comps (77)</option>
 <option value="SrvIdx_and_Comps">SrvIdx_and_Comps (74)</option>
-<option value="Fishsel_and_Q">Fishsel_and_Q (52)</option>
-<option value="Srvsel_and_Q">Srvsel_and_Q (35)</option>
+<option value="Fishsel_and_Q">Fishsel_and_Q (53)</option>
+<option value="Srvsel_and_Q">Srvsel_and_Q (36)</option>
 <option value="DSEM">DSEM (11)</option>
 <option value="Weighting">Weighting (35)</option></select><span id="optref-tally"></span></p>
 </div>
@@ -1749,10 +1749,10 @@ deviations are estimated over. Note that an AR1 or unstructured
 correlation runs over the active levels.
 </td>
 </tr>
-<tr data-k="move_pe_spec " est_all gives every pair its own log sd and ar1 correlations in move_pe_pars one set to a list of blocks rows the table origins destinations over edges adjacency matrix origin then destination order row per region under ctmc block. unstructured are always shared.>
+<tr data-k="move_pe_spec " est_all gives every pair its own log sd and ar1 correlations in move_pe_pars one set to holds at their starting value instead of estimating them deviations if any are still estimated against that fixed a list blocks rows the table origins destinations over edges adjacency matrix origin then destination order row per region under ctmc block. unstructured always shared.>
 <td><code class="optref-arg">move_pe_spec</code></td>
 <td><code>"est_all"</code></td>
-<td>"est_all" (default) gives every pair its own log sd and AR1 correlations in move_pe_pars, "est_shared" gives one set to every pair, and a list of blocks of rows of the pair table (input_list$data$move_pairs, origins and destinations over the edges of the adjacency matrix in origin then destination order, one row per region under the CTMC) gives one set per block. The unstructured correlations are always shared.</td>
+<td>"est_all" (default) gives every pair its own log sd and AR1 correlations in move_pe_pars, "est_shared" gives one set to every pair, "fix" holds every pair's sd and correlations at their starting value instead of estimating them (the deviations, if any, are still estimated against that fixed sd), and a list of blocks of rows of the pair table (input_list$data$move_pairs, origins and destinations over the edges of the adjacency matrix in origin then destination order, one row per region under the CTMC) gives one set per block. The unstructured correlations are always shared.</td>
 </tr>
 <tr data-k="ctmc_move_dat null data frame required when move_type = 1, one row per population, region, year, season, age and sex, with columns pop, regions, years, seas, ages, sexes and any covariates the formulas name. projection years beyond n_years are capped at the final estimation year to prevent spline extrapolation.">
 <td>
@@ -4199,7 +4199,7 @@ n_srv_fleets]. Summed from ObsSrv_caal when NULL.
 Setup_Mod_Fishsel_and_Q
 </h3>
 <p class="optref-n">
-52 arguments
+53 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -4289,6 +4289,16 @@ Use_fish_q_prior = 1.
 Standard deviation of the first estimated year of a random walk. NA
 (default) starts the walk at zero under its own sigma, which keeps
 ln_fish_q as the level of the series.
+</td>
+</tr>
+<tr data-k="fish_q_re_years null ">
+<td>
+<code class="optref-arg">fish_q_re_years</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
 </td>
 </tr>
 <tr data-k="fishsel_pe_pars_spec null character vector [n_fish_fleets] of the estimation structure for the selectivity process error hyperparameters, required when any fleet varies continuously. see do_sel_pe_pars_mapping.">
@@ -4710,7 +4720,7 @@ grouped parameters.
 Setup_Mod_Srvsel_and_Q
 </h3>
 <p class="optref-n">
-35 arguments
+36 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -4864,6 +4874,11 @@ Standard deviation of the first estimated year of a random walk. NA
 ln_srv_q as the level of the series; a wide value leaves the level free
 and confounds it with ln_srv_q.
 </td>
+</tr>
+<tr data-k="srv_q_re_years null list [n_srv_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or null for every year. null (default) gives every fleet every year. projection years are always estimated regardless. a year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell. read only for a fleet whose srv_q_model is not " none>
+<td><code class="optref-arg">srv_q_re_years</code></td>
+<td><code>NULL</code></td>
+<td>List [n_srv_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or NULL for every year. NULL (default) gives every fleet every year. Projection years are always estimated regardless. A year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell. Read only for a fleet whose srv_q_model is not "none".</td>
 </tr>
 <tr data-k="use_srv_selex_prior 0 integer (0/1) for priors on the survey selectivity parameters. default 0.">
 <td>

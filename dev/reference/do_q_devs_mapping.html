@@ -71,7 +71,8 @@ sharing strings over region and fleet, blanked wherever the deviations are.</p>
 <span>  <span class="va">q_rho_spec</span>,</span>
 <span>  <span class="va">prefix</span>,</span>
 <span>  <span class="va">fleet_field</span>,</span>
-<span>  <span class="va">use_field</span></span>
+<span>  <span class="va">use_field</span>,</span>
+<span>  q_re_years <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -107,6 +108,16 @@ sharing strings over region and fleet, blanked wherever the deviations are.</p>
 
 <dt id="arg-use-field">use_field<a class="anchor" aria-label="anchor" href="#arg-use-field"></a></dt>
 <dd><p>Name of the index use array in <code>data</code>.</p></dd>
+
+
+<dt id="arg-q-re-years">q_re_years<a class="anchor" aria-label="anchor" href="#arg-q-re-years"></a></dt>
+<dd><p>List <code>[n_fleets]</code>, each element the model years (as
+indices into <code>data$years</code>) that fleet's deviations are estimated
+over, or <code>NULL</code> for every year. <code>NULL</code> (default) gives every
+fleet every year. Projection years are always estimated. A year left out
+holds its deviation fixed at its starting value (zero unless set by
+<code>...</code>), which a random walk or ar1 then steps through like any
+other fixed cell.</p></dd>
 
 </dl></div>
     <div class="section level2">

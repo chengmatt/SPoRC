@@ -8,7 +8,7 @@ explains why it exists and which ones to specify.
 
 All stages Dim (17) Rec (65) Biologicals (72) Movement (32) Tagging (19)
 Catch_and_F (72) FishIdx_and_Comps (77) SrvIdx_and_Comps (74)
-Fishsel_and_Q (52) Srvsel_and_Q (35) DSEM (11) Weighting (35)
+Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35)
 
 ### Setup_Mod_Dim
 
@@ -212,7 +212,7 @@ Fishsel_and_Q (52) Srvsel_and_Q (35) DSEM (11) Weighting (35)
 | `move_re_seas` | `NULL` | Integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. Note that an AR1 or unstructured correlation runs over the active levels. |
 | `move_re_ages` | `NULL` | Integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. Note that an AR1 or unstructured correlation runs over the active levels. |
 | `move_re_sexes` | `NULL` | Integer vectors of the populations, years, seasons, ages and sexes the deviations are estimated over. Note that an AR1 or unstructured correlation runs over the active levels. |
-| `move_pe_spec` | `"est_all"` | "est_all" (default) gives every pair its own log sd and AR1 correlations in move_pe_pars, "est_shared" gives one set to every pair, and a list of blocks of rows of the pair table (input_list\$data\$move_pairs, origins and destinations over the edges of the adjacency matrix in origin then destination order, one row per region under the CTMC) gives one set per block. The unstructured correlations are always shared. |
+| `move_pe_spec` | `"est_all"` | "est_all" (default) gives every pair its own log sd and AR1 correlations in move_pe_pars, "est_shared" gives one set to every pair, "fix" holds every pair's sd and correlations at their starting value instead of estimating them (the deviations, if any, are still estimated against that fixed sd), and a list of blocks of rows of the pair table (input_list\$data\$move_pairs, origins and destinations over the edges of the adjacency matrix in origin then destination order, one row per region under the CTMC) gives one set per block. The unstructured correlations are always shared. |
 | `ctmc_move_dat` | `NULL` | Data frame required when move_type = 1, one row per population, region, year, season, age and sex, with columns pop, regions, years, seas, ages, sexes and any covariates the formulas name. Projection years beyond n_years are capped at the final estimation year to prevent spline extrapolation. |
 | `adjacency_mat` | `NULL` | Square \[n_regions × n_regions\] matrix, 1 for an allowed transition and 0 for none. The diagonal must be 0: residency falls out of the generator, and a non-zero diagonal leaves the generator columns summing to something other than zero, so the movement matrix loses abundance rather than redistributing it. A fully connected matrix is 1 - diag(n_regions) (diag(1, n_regions) is the identity, not an adjacency matrix). Required under move_type = 1, where it is validated for dimension, 0/1 entries, a zero diagonal and at least one connection; built automatically under move_type = 0. |
 | `area_r` | `rep(1, input_list`$`data`$`n_regions)` | Numeric vector \[n_regions\] of region areas, used to scale the CTMC diffusion rates. Required under move_type = 1. Default rep(1, n_regions). |
@@ -496,7 +496,7 @@ Fishsel_and_Q (52) Srvsel_and_Q (35) DSEM (11) Weighting (35)
 
 ### Setup_Mod_Fishsel_and_Q
 
-52 arguments
+53 arguments
 
 | Argument | Default | Description |
 |----|----|----|
@@ -511,6 +511,7 @@ Fishsel_and_Q (52) Srvsel_and_Q (35) DSEM (11) Weighting (35)
 | `sigma_fish_q_spec` | `"est_all"` | Sharing string for the deviation standard deviation over region and fleet: "est_all" (default), "est_shared_r", "est_shared_f", "est_shared_r_f" or "fix". |
 | `fish_q_rho_spec` | `"est_all"` | Sharing string for the AR1 correlation, with the same options as sigma_fish_q_spec. Default "est_all". Only read under fish_q_model = "ar1". |
 | `fish_q_rw_init_sigma` | `NA` | Standard deviation of the first estimated year of a random walk. NA (default) starts the walk at zero under its own sigma, which keeps ln_fish_q as the level of the series. |
+| `fish_q_re_years` | `NULL` |  |
 | `fishsel_pe_pars_spec` | `NULL` | Character vector \[n_fish_fleets\] of the estimation structure for the selectivity process error hyperparameters, required when any fleet varies continuously. See do_sel_pe_pars_mapping. |
 | `fish_fixed_sel_pars_spec` | `NULL` | Character vector \[n_fish_fleets\] of how the fixed-effect selectivity parameters are estimated: "est_all", "est_shared_r", "est_shared_s", "est_shared_r_s", "est_shared_f_x" or "fix". See do_fixed_sel_pars_mapping. |
 | `fish_q_spec` | `NULL` | Character vector \[n_fish_fleets\] of the catchability estimation structure: "est_all", "est_shared_r" or "fix". See do_q_mapping. |
@@ -555,7 +556,7 @@ Fishsel_and_Q (52) Srvsel_and_Q (35) DSEM (11) Weighting (35)
 
 ### Setup_Mod_Srvsel_and_Q
 
-35 arguments
+36 arguments
 
 | Argument | Default | Description |
 |----|----|----|
@@ -575,6 +576,7 @@ Fishsel_and_Q (52) Srvsel_and_Q (35) DSEM (11) Weighting (35)
 | `sigma_srv_q_spec` | `"est_all"` | Sharing string for the deviation standard deviation over region and fleet: "est_all" (default), "est_shared_r", "est_shared_f", "est_shared_r_f" or "fix". |
 | `srv_q_rho_spec` | `"est_all"` | Sharing string for the AR1 correlation, with the same options as sigma_srv_q_spec. Default "est_all". Only read under srv_q_model = "ar1". |
 | `srv_q_rw_init_sigma` | `NA` | Standard deviation of the first estimated year of a random walk. NA (default) starts the walk at zero under its own sigma, which keeps ln_srv_q as the level of the series; a wide value leaves the level free and confounds it with ln_srv_q. |
+| `srv_q_re_years` | `NULL` | List \[n_srv_fleets\], each element the model years (as indices into data\$years, not calendar years) that fleet's catchability deviations are estimated over, or NULL for every year. NULL (default) gives every fleet every year. Projection years are always estimated regardless. A year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell. Read only for a fleet whose srv_q_model is not "none". |
 | `Use_srv_selex_prior` | `0` | Integer (0/1) for priors on the survey selectivity parameters. Default 0. |
 | `srv_selex_prior` | `NULL` | Data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. "par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu on the natural scale and sd on the log scale. "value" is a normal prior on the realized selectivity at one bin, both on the natural scale, where par names the bin and the value is read at the first model year of block; that is the ADMB convention of pinning survey selectivity at a reference age near one, which no set of independent parameter priors can express. Default NULL. |
 | `Use_srv_selex_penalty` | `0` | Integer (0/1). Whether a centering penalty is applied to sets of survey selectivity fixed-effect parameters. Default 0. |

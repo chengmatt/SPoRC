@@ -85,6 +85,7 @@ and the selectivity and catchability priors. Call after
 <span>  sigma_srv_q_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
 <span>  srv_q_rho_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
 <span>  srv_q_rw_init_sigma <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  srv_q_re_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_srv_selex_prior <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  srv_selex_prior <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Use_srv_selex_penalty <span class="op">=</span> <span class="fl">0</span>,</span>
@@ -228,6 +229,17 @@ options as <code>sigma_srv_q_spec</code>. Default <code>"est_all"</code>. Only r
 random walk. <code>NA</code> (default) starts the walk at zero under its own sigma,
 which keeps <code>ln_srv_q</code> as the level of the series; a wide value leaves
 the level free and confounds it with <code>ln_srv_q</code>.</p></dd>
+
+
+<dt id="arg-srv-q-re-years">srv_q_re_years<a class="anchor" aria-label="anchor" href="#arg-srv-q-re-years"></a></dt>
+<dd><p>List <code>[n_srv_fleets]</code>, each element the model
+years (as indices into <code>data$years</code>, not calendar years) that
+fleet's catchability deviations are estimated over, or <code>NULL</code> for
+every year. <code>NULL</code> (default) gives every fleet every year.
+Projection years are always estimated regardless. A year left out of a
+fleet's vector holds that fleet's deviation fixed at zero, which a
+random walk or ar1 then steps through like any other fixed cell. Read
+only for a fleet whose <code>srv_q_model</code> is not <code>"none"</code>.</p></dd>
 
 
 <dt id="arg-use-srv-selex-prior">Use_srv_selex_prior<a class="anchor" aria-label="anchor" href="#arg-use-srv-selex-prior"></a></dt>

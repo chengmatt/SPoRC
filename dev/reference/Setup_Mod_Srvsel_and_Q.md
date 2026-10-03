@@ -27,6 +27,7 @@ Setup_Mod_Srvsel_and_Q(
   sigma_srv_q_spec = "est_all",
   srv_q_rho_spec = "est_all",
   srv_q_rw_init_sigma = NA,
+  srv_q_re_years = NULL,
   Use_srv_selex_prior = 0,
   srv_selex_prior = NULL,
   Use_srv_selex_penalty = 0,
@@ -171,6 +172,17 @@ Setup_Mod_Srvsel_and_Q(
   (default) starts the walk at zero under its own sigma, which keeps
   `ln_srv_q` as the level of the series; a wide value leaves the level
   free and confounds it with `ln_srv_q`.
+
+- srv_q_re_years:
+
+  List `[n_srv_fleets]`, each element the model years (as indices into
+  `data$years`, not calendar years) that fleet's catchability deviations
+  are estimated over, or `NULL` for every year. `NULL` (default) gives
+  every fleet every year. Projection years are always estimated
+  regardless. A year left out of a fleet's vector holds that fleet's
+  deviation fixed at zero, which a random walk or ar1 then steps through
+  like any other fixed cell. Read only for a fleet whose `srv_q_model`
+  is not `"none"`.
 
 - Use_srv_selex_prior:
 

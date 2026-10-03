@@ -1593,11 +1593,11 @@ get_key_quants <- function(data,
                                    length(data[[i]]$ages), data[[i]]$n_sexes, n_proj_yrs)),
                      perm = c(1, 2, 6, 3, 4, 5))
     # fishery selectivity
-    fish_sel_avg <- apply(rep[[i]]$fish_sel[,avg_yrs,,,,drop = FALSE], c(1, 3, 4, 5), mean)
+    fish_sel_avg <- apply(rep[[i]]$fish_sel[,,avg_yrs,,,,,drop = FALSE], c(1, 2, 4, 5, 6, 7), mean)
     fish_sel <- aperm(
       array(rep(fish_sel_avg, times = n_proj_yrs),
-            dim = c(data[[i]]$n_regions, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
-      perm = c(1, 5, 2, 3, 4))
+            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
+      perm = c(1, 2, 7, 3, 4, 5, 6))
 
     # movement
     Movement_avg <- apply(rep[[i]]$Movement[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean) # movement

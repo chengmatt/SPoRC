@@ -27,20 +27,10 @@ knowable. See \code{\link{apply_pop_dy}}.}
   \code{sim_env}.
 }
 \description{
-Takes deterministic recruitment from \code{\link{Get_Det_Recruitment}},
-multiplies it by lognormal deviations, apportions it across sexes and seasons,
-and writes it into the age-one slot of \code{sim_env$NAA}, with \code{NAA0}
-synchronized to match. A \code{Rec_input} covering year \code{y} overrides the
-draw entirely.
-}
-\details{
-Deviation sharing follows \code{\link{generate_initial_age_structure}}: one
-draw per population when \code{n_pop > 1}, or one per region when
-\code{n_pop = 1} under local density dependence. Populations with
-\code{R0 = 0} get zero deviations, and \code{sigma_idx} picks the natal
-region's \code{ln_sigmaR} for the bias correction. \code{RecDevs_model} sets
-what the draw is centered on: zero for independent deviations, the previous
-year's for a random walk, and \code{RecDevs_rho} times it for an AR1. Only the
-independent draws are bias corrected, a walk's deviation not being mean zero.
+Takes deterministic recruitment from \code{sim_det_recruitment}, multiplies it
+by the year's lognormal deviations from \code{draw_sim_rec_devs}, apportions it
+across sexes and seasons, and writes it into the age-one slot of
+\code{sim_env$NAA}, with \code{NAA0} synchronized to match. A \code{Rec_input}
+covering year \code{y} overrides the draw entirely.
 }
 \keyword{internal}

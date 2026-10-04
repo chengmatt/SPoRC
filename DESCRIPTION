@@ -36,7 +36,6 @@ Imports:
     MASS,
     Matrix,
     methods,
-    nleqslv,
     parallel,
     progressr,
     randtests,

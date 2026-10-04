@@ -37,6 +37,9 @@ generate_initial_age_structure <- function(y,
 
   sim_env$y   <- y
   sim_env$sim <- sim
+  # inside with() R finds sim_env in this environment before the script that built it, so name this
+  # environment inside itself. it is the same object under a second name, not a copy
+  sim_env$sim_env <- sim_env
 
   with(sim_env, {
     tmp_ln_init_devs <- NULL
@@ -146,52 +149,131 @@ generate_initial_age_structure <- function(y,
 
 }
 
-#' Generate recruitment for a simulation year
+#' Draw the recruitment deviations for a simulation year
 #'
-#' Takes deterministic recruitment from \code{\link{Get_Det_Recruitment}},
-#' multiplies it by lognormal deviations, apportions it across sexes and seasons,
-#' and writes it into the age-one slot of \code{sim_env$NAA}, with \code{NAA0}
-#' synchronized to match. A \code{Rec_input} covering year \code{y} overrides the
-#' draw entirely.
+#' Writes each population and region's log recruitment deviation into
+#' \code{sim_env$ln_RecDevs[, , y, sim]}. Deviation sharing follows
+#' \code{\link{generate_initial_age_structure}}: one draw per population when
+#' \code{n_pop > 1}, or one per region when \code{n_pop = 1} under local density
+#' dependence. Populations with \code{R0 = 0} get zero deviations, and
+#' \code{sigma_idx} picks the natal region's \code{ln_sigmaR} for the bias
+#' correction. \code{RecDevs_model} sets what the draw is centered on: zero for
+#' independent deviations, the previous year's for a random walk, and
+#' \code{RecDevs_rho} times it for an AR1. Only the independent draws are bias
+#' corrected, a walk's deviation not being mean zero. A year covered by
+#' \code{Rec_input} draws nothing.
 #'
-#' Deviation sharing follows \code{\link{generate_initial_age_structure}}: one
-#' draw per population when \code{n_pop > 1}, or one per region when
-#' \code{n_pop = 1} under local density dependence. Populations with
-#' \code{R0 = 0} get zero deviations, and \code{sigma_idx} picks the natal
-#' region's \code{ln_sigmaR} for the bias correction. \code{RecDevs_model} sets
-#' what the draw is centered on: zero for independent deviations, the previous
-#' year's for a random walk, and \code{RecDevs_rho} times it for an AR1. Only the
-#' independent draws are bias corrected, a walk's deviation not being mean zero.
+#' Under \code{rec_lag = 0}, \code{\link{run_annual_cycle}} draws year \code{y}'s
+#' deviations at the end of year \code{y - 1}, so catch advice for year \code{y}
+#' can be converted to F knowing its recruits.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
 #' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
-#'   modified in place: \code{$ln_RecDevs}, \code{$Rec}, \code{$NAA} and
-#'   \code{$NAA0}.
-#' @param seas Integer. Season this recruitment first enters in, through
-#'   \code{rec_seas_prop[p, seas, sim]}. Default \code{1}, the classic
-#'   \code{rec_lag >= 1} case where the whole year's recruitment is known before
-#'   season one. \code{rec_lag = 0} instead calls this with
-#'   \code{seas = spawn_seas}, the earliest season this year's own SSB is
-#'   knowable. See \code{\link{apply_pop_dy}}.
+#'   modified in place: \code{$ln_RecDevs}.
 #'
 #' @return \code{invisible(NULL)}; everything is modified by reference within
 #'   \code{sim_env}.
 #'
 #' @keywords internal
-generate_recruitment <- function(y,
-                                 sim,
-                                 sim_env,
-                                 seas = 1) {
+draw_sim_rec_devs <- function(y,
+                              sim,
+                              sim_env) {
 
   sim_env$y    <- y
   sim_env$sim  <- sim
-  sim_env$seas <- seas
+  # inside with() R finds sim_env in this environment before the script that built it, so name this
+  # environment inside itself. it is the same object under a second name, not a copy
+  sim_env$sim_env <- sim_env
 
   with(sim_env, {
 
     # whether to switch sigmaR
     sigmaR_switch_use <- if(exists("sigmaR_switch")) sigmaR_switch else 1
+
+    # a year read from Rec_input has its deviation backed out of the input instead
+    use_rec_input <- exists("Rec_input") && (y <= dim(Rec_input)[3])
+    tmp_ln_rec_devs <- NULL
+
+    if(!use_rec_input) {
+      for(p in 1:n_pop) {
+
+        # reset deviations for each population (draws for each popn)
+        if(n_pop > 1) tmp_ln_rec_devs <- NULL
+
+        for(r in 1:n_regions) {
+
+          # if local DD and n_pop = 1, reset deviations for each region (draws for each region)
+          if(n_pop == 1 && rec_dd == 0) tmp_ln_rec_devs <- NULL
+
+          # get rec devs
+          sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
+          sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
+
+          # setup bias correction here
+          bc_pe <- if(exists("bias_correct_pe")) bias_correct_pe else 1 # for backwards compatibility
+          rec_corr <- if(bc_pe == 0) 0 # no correction
+                      else if(RecDevs_model == 1) sigmaR_yr^2 / 2 # iid
+                      else if(RecDevs_model == 3) sigmaR_yr^2 / (2 * (1 - RecDevs_rho[p,r]^2)) # ar1
+                      else 0 # rw has no stationary variance to correct against
+          dev_mu <- -rec_corr
+          dev_sd <- sigmaR_yr
+
+          if(RecDevs_model != 1 && y > 1) {
+            prev_dev <- sim_env$ln_RecDevs[p,r,y - 1,sim]
+            dev_mu <- if(RecDevs_model == 2) prev_dev else -rec_corr + RecDevs_rho[p,r] * (prev_dev + rec_corr) # the ar1 step about that center
+          }
+
+          # get staionary marginal for ar1
+          if(RecDevs_model == 3 && y == 1) dev_sd <- dev_sd / sqrt(1 - RecDevs_rho[p,r]^2)
+
+          # if using a dsem, rec devs already drawn, otherwise, draw here
+          dsem_cell <- dsem_drawn$ln_RecDevs[p,r,y]
+          tmp_ln_rec_devs <- if(dsem_cell) sim_env$ln_RecDevs[p,r,y,sim] else stats::rnorm(1, dev_mu, dev_sd)
+
+          # input devs here
+          if(R0[p,r,y,sim] != 0) {
+            sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
+          } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
+
+        } # end r loop
+      } # end p loop
+    } # end if not Rec_input
+  })
+
+  return(invisible(NULL))
+
+}
+
+#' Deterministic recruitment for a simulation year
+#'
+#' Recruitment from the stock-recruit curve, before deviations, at the spawning
+#' biomass in \code{SSB_vals}, so the recruits left by a trial F's spawning
+#' biomass can be worked out without running the year.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place: \code{$sbpr_table_cache}.
+#' @param SSB_vals Array \code{[n_pop, n_regions, n_yrs]} of spawning biomass.
+#'
+#' @return Array \code{[n_pop, n_regions]} of deterministic recruitment.
+#'
+#' @keywords internal
+sim_det_recruitment <- function(y,
+                                sim,
+                                sim_env,
+                                SSB_vals) {
+
+  sim_env$y    <- y
+  sim_env$sim  <- sim
+  sim_env$det_rec_SSB <- SSB_vals # the with() block below cannot see this function's arguments
+  # inside with() R finds sim_env in this environment before the script that built it, so name this
+  # environment inside itself. it is the same object under a second name, not a copy
+  sim_env$sim_env <- sim_env
+
+  with(sim_env, {
+
     # get R0 proportion
     rec_region_prop_y <- array(t(apply(R0[,,y,sim, drop = FALSE], c(1), function(x) x / sum(x))), dim = c(n_pop, n_regions))
 
@@ -262,7 +344,7 @@ generate_recruitment <- function(y,
                                        stray_rate = array(stray_rate[,SR_ref_yr,sim], dim = c(n_pop)),
                                        Movement = array(Movement[,,,SR_ref_yr,,,1,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
                                        sgl_seas_spawning_movement = array(sgl_seas_spawning_movement[,,,SR_ref_yr,,1,sim], dim = c(n_pop, n_regions, n_regions, n_ages)),
-                                       SSB_vals = array(SSB[,,,sim], dim = c(n_pop, n_regions, n_yrs)),
+                                       SSB_vals = det_rec_SSB,
                                        n_fish_fleets = n_fish_fleets,
                                        t_spawn = t_spawn,
                                        n_seas = n_seas,
@@ -279,20 +361,59 @@ generate_recruitment <- function(y,
                                        sbpr_table = sbpr_table_use
                                        )
 
+    tmp_det_rec
+  })
+
+}
+
+#' Generate recruitment for a simulation year
+#'
+#' Takes deterministic recruitment from \code{sim_det_recruitment}, multiplies it
+#' by the year's lognormal deviations from \code{draw_sim_rec_devs}, apportions it
+#' across sexes and seasons, and writes it into the age-one slot of
+#' \code{sim_env$NAA}, with \code{NAA0} synchronized to match. A \code{Rec_input}
+#' covering year \code{y} overrides the draw entirely.
+#'
+#' @param y Integer. Year index.
+#' @param sim Integer. Simulation replicate index.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}},
+#'   modified in place: \code{$ln_RecDevs}, \code{$Rec}, \code{$NAA} and
+#'   \code{$NAA0}.
+#' @param seas Integer. Season this recruitment first enters in, through
+#'   \code{rec_seas_prop[p, seas, sim]}. Default \code{1}, the classic
+#'   \code{rec_lag >= 1} case where the whole year's recruitment is known before
+#'   season one. \code{rec_lag = 0} instead calls this with
+#'   \code{seas = spawn_seas}, the earliest season this year's own SSB is
+#'   knowable. See \code{\link{apply_pop_dy}}.
+#'
+#' @return \code{invisible(NULL)}; everything is modified by reference within
+#'   \code{sim_env}.
+#'
+#' @keywords internal
+generate_recruitment <- function(y,
+                                 sim,
+                                 sim_env,
+                                 seas = 1) {
+
+  # this year's deviations. under rec_lag 0 run_annual_cycle drew them at the end of last year
+  if(sim_env$rec_lag != 0 || y == 1) draw_sim_rec_devs(y, sim, sim_env)
+  tmp_det_rec <- sim_det_recruitment(y, sim, sim_env, SSB_vals = array(sim_env$SSB[,,,sim], dim = c(sim_env$n_pop, sim_env$n_regions, sim_env$n_yrs)))
+
+  sim_env$y    <- y
+  sim_env$sim  <- sim
+  sim_env$seas <- seas
+  # inside with() R finds sim_env in this environment before the script that built it, so name this
+  # environment inside itself. it is the same object under a second name, not a copy
+  sim_env$sim_env <- sim_env
+  sim_env$tmp_det_rec <- tmp_det_rec
+
+  with(sim_env, {
 
     # if Rec_input exists and year index is within bounds
     use_rec_input <- exists("Rec_input") && (y <= dim(Rec_input)[3])
-    tmp_ln_rec_devs <- NULL
 
     for(p in 1:n_pop) {
-
-      # reset deviations for each population (draws for each popn)
-      if(n_pop > 1) tmp_ln_rec_devs <- NULL
-
       for(r in 1:n_regions) {
-
-        # if local DD and n_pop = 1, reset deviations for each region (draws for each region)
-        if(n_pop == 1 && rec_dd == 0) tmp_ln_rec_devs <- NULL
 
         if(use_rec_input) { # if jut using recruitment input
 
@@ -303,36 +424,6 @@ generate_recruitment <- function(y,
           } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
         } else {
-
-          # get rec devs
-          sigma_idx <- ifelse(n_pop == 1 && rec_dd == 0, r, natal_region[p])
-          sigmaR_yr <- exp(ln_sigmaR[if(y < sigmaR_switch_use) 1 else 2, p, sigma_idx]) # early or late sigma, by year
-
-          # setup bias correction here
-          bc_pe <- if(exists("bias_correct_pe")) bias_correct_pe else 1 # for backwards compatibility
-          rec_corr <- if(bc_pe == 0) 0 # no correction
-                      else if(RecDevs_model == 1) sigmaR_yr^2 / 2 # iid
-                      else if(RecDevs_model == 3) sigmaR_yr^2 / (2 * (1 - RecDevs_rho[p,r]^2)) # ar1
-                      else 0 # rw has no stationary variance to correct against
-          dev_mu <- -rec_corr
-          dev_sd <- sigmaR_yr
-
-          if(RecDevs_model != 1 && y > 1) {
-            prev_dev <- sim_env$ln_RecDevs[p,r,y - 1,sim]
-            dev_mu <- if(RecDevs_model == 2) prev_dev else -rec_corr + RecDevs_rho[p,r] * (prev_dev + rec_corr) # the ar1 step about that center
-          }
-
-          # get staionary marginal for ar1
-          if(RecDevs_model == 3 && y == 1) dev_sd <- dev_sd / sqrt(1 - RecDevs_rho[p,r]^2)
-
-          # if using a dsem, rec devs already drawn, otherwise, draw here
-          dsem_cell <- dsem_drawn$ln_RecDevs[p,r,y]
-          tmp_ln_rec_devs <- if(dsem_cell) sim_env$ln_RecDevs[p,r,y,sim] else stats::rnorm(1, dev_mu, dev_sd)
-
-          # input devs here
-          if(R0[p,r,y,sim] != 0) {
-            sim_env$ln_RecDevs[p,r,y,sim] <- tmp_ln_rec_devs
-          } else sim_env$ln_RecDevs[p,r,y,sim] <- 0
 
           # apply deviation to determinstic rec
           tmp_total_rec <- tmp_det_rec[p,r] * exp(sim_env$ln_RecDevs[p,r,y,sim])
@@ -361,9 +452,11 @@ generate_recruitment <- function(y,
 #' @param seas Season integer
 #' @param sim Simulation integer
 #' @param sim_env Simulation environment
+#' @param NAA_s,ZAA_s Arrays \code{[n_pop, n_regions, 1, 1, n_ages, n_sexes]} of numbers and total
+#'   mortality to use instead of the stored ones, for a trial F. \code{NULL} reads \code{sim_env}.
 #'
 #' @keywords internal
-compute_biom_y_sim <- function(y, seas, sim, sim_env) {
+compute_biom_y_sim <- function(y, seas, sim, sim_env, NAA_s = NULL, ZAA_s = NULL) {
 
   n_pop <- sim_env$n_pop
   n_regions <- sim_env$n_regions
@@ -380,11 +473,11 @@ compute_biom_y_sim <- function(y, seas, sim, sim_env) {
   homes <- n_seas == 1 && n_pop > 1 # whether homing happens
 
   biom_at_spawn(
-    NAA_s = drop_sim(sim_env$NAA[,,y,seas,,,sim, drop = FALSE]),
+    NAA_s = if(is.null(NAA_s)) drop_sim(sim_env$NAA[,,y,seas,,,sim, drop = FALSE]) else NAA_s,
     NAA0_s = drop_sim(sim_env$NAA0[,,y,seas,,,sim, drop = FALSE]),
     WAA_s = drop_sim(sim_env$WAA[,,y,seas,,,sim, drop = FALSE]),
     MatAA_s = drop_sim(sim_env$MatAA[,,y,seas,,,sim, drop = FALSE]),
-    ZAA_s = drop_sim(sim_env$ZAA[,,y,seas,,,sim, drop = FALSE]),
+    ZAA_s = if(is.null(ZAA_s)) drop_sim(sim_env$ZAA[,,y,seas,,,sim, drop = FALSE]) else ZAA_s,
     natmort_s = drop_sim(sim_env$natmort[,,y,seas,,,sim, drop = FALSE]),
     spawn_move_s = if(homes) drop_sim(sim_env$sgl_seas_spawning_movement[,,,y,,,sim, drop = FALSE]) else NULL,
     stray_rate_y = if(n_pop > 1) sim_env$stray_rate[,y,sim] else NULL,
@@ -440,6 +533,9 @@ apply_pop_dy <- function(y, sim, sim_env) {
 
   sim_env$y   <- y
   sim_env$sim <- sim
+  # inside with() R finds sim_env in this environment before the script that built it, so name this
+  # environment inside itself. it is the same object under a second name, not a copy
+  sim_env$sim_env <- sim_env
 
   with(sim_env, {
 
@@ -634,6 +730,9 @@ apply_pop_dy <- function(y, sim, sim_env) {
 #' \code{rec_lag != 0}. Under \code{rec_lag = 0} recruitment depends on year
 #' \code{y}'s own SSB, which is not known until \code{\link{apply_pop_dy}} reaches
 #' \code{spawn_seas}, so it is called from inside \code{apply_pop_dy()} instead.
+#' Its deviations are still drawn here at the end of the year before, through
+#' \code{draw_sim_rec_devs}, so a catch target for that year can be converted to F
+#' knowing its recruits.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
@@ -685,6 +784,7 @@ run_annual_cycle <- function(y,
   }
 
   if(y < sim_env$n_yrs && sim_env$rec_lag != 0) generate_recruitment(y = y + 1, sim, sim_env) # Get recruitment in the following year
+  if(y < sim_env$n_yrs && sim_env$rec_lag == 0) draw_sim_rec_devs(y = y + 1, sim, sim_env) # next year's deviations, so catch advice for it can see its recruits
 
 
   return(invisible(NULL))

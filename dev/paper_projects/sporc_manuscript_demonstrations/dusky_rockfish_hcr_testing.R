@@ -327,7 +327,7 @@ apply_catch_constraints <- function(tmp_TAC, catch_opt_func) {
 
 #' Convert TAC to Fishing Mortality
 #'
-#' Uses bisection method to find fishing mortality rate that achieves target TAC.
+#' Finds the fishing mortality by region, season and fleet that takes the TAC from the operating model.
 #'
 #' @param sim_env Simulation environment
 #' @param tmp_TAC Target total allowable catch
@@ -342,30 +342,14 @@ tac_to_fmort <- function(sim_env, tmp_TAC, y, sim, assessment_years) {
   last_assess_year <- max(assessment_years[assessment_years <= y])
   tac_year_index <- y - last_assess_year + 1
 
-  # Create grid of region-fleet combinations
-  rf_grid <- expand.grid(
-    r = seq_len(sim_env$n_regions),
-    f = seq_len(sim_env$n_fish_fleets)
-  )
+  # Catch advice by region, season and fleet, summed over populations
+  tac <- apply(tmp_TAC[,, tac_year_index,,, drop = FALSE], c(2, 4, 5), sum)
 
-  # Solve for F that achieves target catch for each region-fleet combination
-  tmp_f <- mapply(
-    function(r, f) {
-      SPoRC::catch_to_F_singlefleet(
-        f_guess = 0.05,
-        catch = tmp_TAC[1, r, tac_year_index, 1, f],
-        NAA = sim_env$NAA[1, r, y + 1, 1, , , sim],
-        WAA = sim_env$WAA[1, r, y + 1, 1, , , sim],
-        natmort = sim_env$natmort[1, r, y + 1, , , , sim],
-        fish_sel = sim_env$fish_sel[1,r, y + 1, 1, , , f, sim]
-      )
-    },
-    r = rf_grid$r,
-    f = rf_grid$f
-  )
+  # Solve for the F that takes that catch from the operating model
+  F_solve <- SPoRC::catch_to_F_om(target = tac, y = y + 1, sim = sim, sim_env = sim_env)
 
   # Update fishing mortality in simulation environment
-  sim_env$Fmort[, y + 1, 1, , sim] <- array(tmp_f, dim = c(sim_env$n_regions, sim_env$n_seas, sim_env$n_fish_fleets))
+  sim_env$Fmort[, y + 1, , , sim] <- F_solve$Fmort
 
   return(sim_env)
 }

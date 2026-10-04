@@ -7,11 +7,9 @@
 #'
 #' Creates a new R environment populated with all objects from \code{sim_list}
 #' and binds the SPoRC simulation functions required by
-#' \code{\link{run_annual_cycle}}. Isolating the simulation state in a
-#' dedicated environment prevents name collisions with the calling frame and
-#' allows \code{with()} / \code{<<-} assignment patterns used internally by
-#' the annual-cycle helpers to modify shared state without polluting the
-#' global workspace.
+#' \code{\link{run_annual_cycle}}. Keeping the simulation state in its own
+#' environment lets the annual cycle helpers update shared arrays in place
+#' from inside \code{with()} blocks, without threading them through every call.
 #'
 #' @param sim_list Named list returned by \code{\link{Setup_Sim_Rec}} (or the
 #'   last upstream setup function called). All elements are copied into the

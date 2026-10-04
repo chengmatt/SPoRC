@@ -25,7 +25,7 @@ test_that("the operating model counts only the index ages, at the fit's index ti
                                                                  mapping = obj$mapping, sd_rep = list(par.fixed = obj$par, par.random = NULL),
                                                                  rep = obj$rep, random = NULL))
   expect_equal(sim_list$srv_idx_ages, obj$data$srv_idx_ages)
-  sim_env <- Setup_sim_env(sim_list) # built here, since the annual cycle finds the environment by this name in the frame that built it
+  sim_env <- Setup_sim_env(sim_list)
   for(y in 1:n_yrs) run_annual_cycle(y, 1, sim_env)
 
   expect_equal(sim_env$TrueSrvIdx[1,1:n_yrs,1,1,1], obj$rep$PredSrvIdx[1,1,,1,1], tolerance = 1e-10)

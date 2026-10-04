@@ -1,7 +1,7 @@
 # Operating model
 #
 # Closed loop simulation: condition an operating model on a fitted assessment, then run the assessment
-# and a control rule forward against it. The catch_to_F_* helpers invert a catch target to an F.
+# and a control rule forward against it. catch_to_F_om inverts catch advice to the operating model's F.
 
 #' Construct and Condition Closed-Loop Simulation Inputs
 #'
@@ -1084,168 +1084,364 @@ get_closed_loop_reference_points <- function(use_true_values,
 
 
 
-#' Convert a target catch to fishing mortality for a single fleet via bisection
+# Catch Advice To Fishing Mortality --------------------------------------------
+#
+# Call order, outermost first, once per closed loop year:
+#
+#   catch_to_F_om()            sweeps the seasons in order, earlier seasons settled first
+#    +- solve_om_season_F()    tapes one season's catch with RTMB for solve_log_catch_newton()
+#        +- om_season_catch()      what catch does a trial F give this season?
+#
+# Regions are solved one at a time, except where one region's F changes another's catch: under
+# move_timing 2, and in the spawning season under rec_lag 0, where recruits come from every region.
+
+#' Operating Model Catch Over One Season At A Trial F
 #'
-#' Uses interval bisection to find the scalar fishing mortality \eqn{F} that
-#' produces a predicted catch (Baranov catch equation, summed over ages and
-#' sexes in biomass) equal to \code{catch}. Retained and discarded catch
-#' components are handled separately via retention selectivity and discard
-#' mortality. Intended for closed-loop MSE harvest control rules where a TAC
-#' must be translated into an \eqn{F} for the operating model.
+#' Runs one season of the operating model from the numbers at its start, with
+#' the same mortality, movement and catch equation as \code{apply_pop_dy} and
+#' \code{generate_fishery_catch_comp_idx}. Only the rec_lag 0 recruitment step
+#' writes into \code{sim_env}, values the annual cycle sets again before reading.
 #'
-#' @param f_guess Numeric. Initial \eqn{F} guess (not used directly by the
-#'   bisection algorithm but retained for API consistency).
-#' @param catch Numeric. Target catch in biomass units.
-#' @param NAA Numeric matrix \code{[n_ages x n_sexes]}. Numbers-at-age at
-#'   the start of the time step.
-#' @param WAA Numeric matrix \code{[n_ages x n_sexes]}. Weight-at-age.
-#' @param natmort Numeric matrix \code{[n_ages x n_sexes]}. Instantaneous
-#'   natural mortality rate.
-#' @param fish_sel Numeric matrix \code{[n_ages x n_sexes]}. Fishery
-#'   selectivity (scaled to a maximum of 1).
-#' @param ret_sel Numeric matrix \code{[n_ages x n_sexes]}. Retention
-#'   selectivity, i.e. the proportion of selected catch that is retained
-#'   (vs. discarded). Default is an array of 1s matching \code{dim(fish_sel)}
-#'   (full retention).
-#' @param dmr Numeric scalar. Discard mortality rate, i.e. the fraction of
-#'   discarded fish that die. Default \code{0} (all discards survive).
-#' @param n.iter Integer. Number of bisection iterations. Default \code{20};
-#'   approximately \eqn{\log_2((ub - lb) / \epsilon)} iterations are required
-#'   for tolerance \eqn{\epsilon}.
-#' @param lb Numeric. Lower bound of the \eqn{F} search interval.
-#'   Default \code{0}.
-#' @param ub Numeric. Upper bound of the \eqn{F} search interval.
-#'   Default \code{2}.
+#' @param N Numeric array \code{[n_pop, n_regions, n_ages, n_sexes]}. Numbers at
+#'   age at the start of the season, with recruits already known added.
+#' @param F_seas Numeric matrix \code{[n_regions, n_fish_fleets]}. Trial F.
+#' @param y,seas,sim Year, season and replicate.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}}.
+#' @param target_units Numeric \code{[n_fish_fleets]}. 1 sums catch in biomass
+#'   through \code{WAA_fish}, 0 in numbers.
+#' @param spawn_recruits Logical. Whether this year's recruits arrive in this
+#'   season from its own spawning biomass (\code{rec_lag = 0} at \code{spawn_seas}).
 #'
-#' @return Scalar numeric. The \eqn{F} value at the final bisection midpoint
-#'   that most closely produces \code{catch}.
-#'
-#' @export catch_to_F_singlefleet
-#' @family Closed Loop Simulations
-catch_to_F_singlefleet <- function(f_guess,
-                                   catch,
-                                   NAA,
-                                   WAA,
-                                   natmort,
-                                   fish_sel,
-                                   ret_sel = {
-                                     # fill dimensions of fish_sel with 1s
-                                     tmp = fish_sel[]
-                                     tmp[] <- 1
-                                     tmp
-                                   },
-                                   dmr = 0,
-                                   n.iter = 20,
-                                   lb = 0,
-                                   ub = 2) {
+#' @return Named list with \code{catch} \code{[n_regions, n_fish_fleets]} in
+#'   \code{target_units}, \code{N_end}, the survivors at the end of the season
+#'   before ageing, shaped like \code{N}, and \code{Rec_y} \code{[n_pop, n_regions]},
+#'   this year's recruitment when \code{spawn_recruits}, \code{NULL} otherwise.
+#' @keywords internal
+om_season_catch <- function(N, F_seas, y, seas, sim, sim_env, target_units, spawn_recruits = FALSE) {
 
-  range <- vector(length = 2) # F range
-  range[1] <- lb # Lower bound
-  range[2] <- ub # Upper bound
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
 
-  for(i in 1:n.iter) {
+  # get dimensions
+  n_pop <- sim_env$n_pop
+  n_regions <- sim_env$n_regions
+  n_ages <- sim_env$n_ages
+  n_sexes <- sim_env$n_sexes
+  n_fish_fleets <- sim_env$n_fish_fleets
+  move_timing <- if(is.null(sim_env$move_timing)) 0 else sim_env$move_timing
+  expm_nsub <- if(is.null(sim_env$expm_nsub)) 0 else sim_env$expm_nsub
+  seasdur <- sim_env$seasdur[seas]
 
-    # Get midpoint of range
-    midpoint <- mean(range)
+  # total mortality, with every fleet fishing the region adding to it
+  ZAA <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+  for(p in 1:n_pop) {
+    for(r in 1:n_regions) {
 
-    # Caclulate baranov's
-    ret_FAA <- (midpoint * fish_sel * ret_sel)
-    disc_FAA <- (midpoint * fish_sel * (1 - ret_sel) * dmr)
-    ZAA <- ret_FAA + natmort + disc_FAA
-    pred_catch <- sum((ret_FAA / ZAA * NAA * (1 - exp(-ZAA))) * WAA)
+      ZAA[p,r,,] <- sim_env$natmort[p,r,y,seas,,,sim] * seasdur # natural mortality is a rate per year
+      for(f in 1:n_fish_fleets) {
+        sel <- sim_env$fish_sel[p,r,y,seas,,,f,sim] # total selectivity
+        ret <- sim_env$ret_sel[p,r,y,seas,,,f,sim] # proportion of selected fish retained
+        dmr <- sim_env$dmr[r,y,seas,f,sim] # proportion of discards that die
+        ZAA[p,r,,] <- ZAA[p,r,,] + F_seas[r,f] * sel * (ret + (1 - ret) * dmr) # retained plus dead discards
+      } # end f loop
 
-    if(pred_catch < catch) {
-      range[1] <- midpoint
-      range[2] <- range[2]
-    }else {
-      range[1] <- range[1]
-      range[2] <- midpoint
+    } # end r loop
+  } # end p loop
+
+  # under move_timing 0 fish move at the start of the season and are caught where they land
+  N_fished <- N
+  if(n_regions > 1 && move_timing == 0) {
+    first_age <- if(sim_env$do_recruits_move == 1) 1 else 2 # recruits stay put unless they move from birth
+    for(p in 1:n_pop) {
+      for(a in first_age:n_ages) {
+        for(s in 1:n_sexes) {
+          N_fished[p,,a,s] <- as.vector(t(N[p,,a,s]) %*% sim_env$Movement[p,,,y,seas,a,s,sim])
+        } # end s loop
+      } # end a loop
+    } # end p loop
+  } # end if movement at the start of the season
+
+  # under rec_lag 0 this year's recruits arrive now, from the spawning biomass this season's F leaves
+  Rec_y <- NULL
+  if(spawn_recruits) {
+
+    spawn_biom <- compute_biom_y_sim(y, seas, sim, sim_env,
+                                     NAA_s = array(N_fished, dim = c(n_pop, n_regions, 1, 1, n_ages, n_sexes)), # survivors only, as apply_pop_dy
+                                     ZAA_s = array(ZAA, dim = c(n_pop, n_regions, 1, 1, n_ages, n_sexes)))
+    SSB_vals <- array(sim_env$SSB[,,,sim], dim = c(n_pop, n_regions, sim_env$n_yrs))
+    SSB_vals[,,y] <- spawn_biom$SSB_y # this year's spawning biomass at the trial F
+    det_rec <- array(sim_det_recruitment(y, sim, sim_env, SSB_vals = SSB_vals), dim = c(n_pop, n_regions))
+
+    # deviations drawn at the end of last year, or the conditioned recruitment where Rec_input covers the year
+    use_rec_input <- !is.null(sim_env$Rec_input) && y <= dim(sim_env$Rec_input)[3]
+    if(use_rec_input) Rec_y <- array(sim_env$Rec_input[,,y,sim], dim = c(n_pop, n_regions))
+    else Rec_y <- det_rec * exp(array(sim_env$ln_RecDevs[,,y,sim], dim = c(n_pop, n_regions)))
+
+    for(p in 1:n_pop) {
+      for(r in 1:n_regions) {
+        for(s in 1:n_sexes) {
+          N[p,r,1,s] <- Rec_y[p,r] * sim_env$rec_seas_prop[p,seas,sim] * sim_env$sexratio[p,r,y,s,sim]
+          N_fished[p,r,1,s] <- N[p,r,1,s]
+        } # end s loop
+      } # end r loop
+    } # end p loop
+
+    # recruits that move from birth missed the move at the start of the season
+    if(n_regions > 1 && move_timing == 0 && sim_env$do_recruits_move == 1) {
+      for(p in 1:n_pop) {
+        for(s in 1:n_sexes) N_fished[p,,1,s] <- as.vector(t(N_fished[p,,1,s]) %*% sim_env$Movement[p,,,y,seas,1,s,sim])
+      } # end p loop
     }
 
-  } # end i loop
+  } # end if recruits from this year's spawning
 
-  return(midpoint)
-}
-
-#' Convert target catches to fishing mortality rates for multiple fleets
-#'
-#' Solves for the vector of fleet-specific fishing mortality rates
-#' \eqn{\mathbf{F} = (F_1, \ldots, F_k)} that simultaneously satisfy the
-#' Baranov catch equations for all fleets, given a vector of target catches.
-#' Total mortality at age accounts for retained and discard mortality
-#' contributions from all fleets:
-#' \eqn{Z_a = M_a + \sum_f (F_f \, s_{a,f} \, r_{a,f} + F_f \, s_{a,f} \, (1 - r_{a,f}) \, d_f)},
-#' where \eqn{r_{a,f}} is retention selectivity and \eqn{d_f} is fleet-specific
-#' discard mortality. The system of equations is solved via
-#' \code{\link[nleqslv]{nleqslv}}. Intended for closed-loop MSE harvest
-#' control rules with multiple interacting fishery fleets.
-#'
-#' @param target_catch Numeric vector \code{[n_fleets]}. Target catch in
-#'   biomass units for each fleet.
-#' @param NAA Numeric matrix \code{[n_ages x n_sexes]}. Numbers-at-age.
-#' @param WAA Numeric matrix \code{[n_ages x n_sexes]}. Weight-at-age.
-#' @param natmort Numeric matrix \code{[n_ages x n_sexes]}. Instantaneous
-#'   natural mortality rate.
-#' @param fish_sel Numeric array \code{[n_ages x n_sexes x n_fleets]}.
-#'   Fishery selectivity for each fleet.
-#' @param ret_sel Numeric array \code{[n_ages x n_sexes x n_fleets]}.
-#'   Retention selectivity for each fleet, i.e. the proportion of selected
-#'   catch that is retained. Default is an array of 1s matching
-#'   \code{dim(fish_sel)} (full retention for all fleets).
-#' @param dmr Numeric vector \code{[n_fleets]}. Fleet-specific discard
-#'   mortality rates, i.e. the fraction of discarded fish that die.
-#'   Default \code{rep(0, length(target_catch))} (all discards survive).
-#' @param f_init Numeric scalar or vector \code{[n_fleets]}. Starting values
-#'   for the \eqn{F} solver. If a scalar is supplied it is recycled across
-#'   all fleets. Default \code{0.05}.
-#' @param control Named list of control parameters passed to
-#'   \code{\link[nleqslv]{nleqslv}}. Default \code{list(btol = 1e-6)}.
-#'
-#' @return Numeric vector \code{[n_fleets]} of solved fishing mortality rates,
-#'   one per fleet.
-#'
-#' @export catch_to_F_multifleet
-#' @family Closed Loop Simulations
-catch_to_F_multifleet <- function(target_catch,
-                                  NAA,
-                                  WAA,
-                                  natmort,
-                                  fish_sel,
-                                  ret_sel = array(1, dim = dim(fish_sel)),
-                                  dmr = rep(0, length(target_catch)),
-                                  f_init = 0.05,
-                                  control = list(btol = 1e-6)) {
-
-  n_fleets <- length(target_catch)
-
-  # Expand f_init if scalar
-  if(length(f_init) == 1) f_init <- rep(f_init, n_fleets)
-
-  # Function to minimize: difference between predicted and target catch for all fleets
-  catch_diff <- function(f_vec) {
-    pred_catches <- numeric(n_fleets)
-
-    for(f in 1:n_fleets) {
-
-      # retained F-at-age for this fleet
-      ret_FAA <- f_vec[f] * fish_sel[, , f] * ret_sel[,, f]
-
-      # Total Z includes F from ALL fleets
-      ZAA_total <- natmort
-      for(ff in 1:n_fleets) {
-        ZAA_total <- ZAA_total + (f_vec[ff] * fish_sel[, , ff] * ret_sel[,, ff]) +  # retained F
-          (f_vec[ff] * fish_sel[, , ff] * (1 - ret_sel[,, ff]) * dmr[ff]) # discarded F
-      }
-
-      # Predicted catch for this fleet (Baranov catch equation)
-      pred_catches[f] <- sum((ret_FAA / ZAA_total * NAA * (1 - exp(-ZAA_total))) * WAA)
-    }
-
-    return(pred_catches - target_catch)  # Difference from target
+  # numbers removable over the season. under move_timing 2 fish move while dying, so integrate over the season
+  if(move_timing == 2) {
+    Avail <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+    for(p in 1:n_pop) {
+      for(a in 1:n_ages) {
+        for(s in 1:n_sexes) {
+          Avail[p,,a,s] <- integrate_seas_abundance(N[p,,a,s],
+                                                    ZAA[p,,a,s],
+                                                    sim_env$Mrate[p,,,y,seas,a,s,sim],
+                                                    seasdur,
+                                                    expm_nsub = expm_nsub)
+        } # end s loop
+      } # end a loop
+    } # end p loop
+  } else {
+    Avail <- N_fished * (1 - exp(-ZAA)) / ZAA # Baranov
   }
 
-  # Solve for F vector
-  result <- nleqslv::nleqslv(f_init, catch_diff, control = control)
+  # retained catch by region and fleet, summed over populations, ages and sexes
+  catch <- array(0, dim = c(n_regions, n_fish_fleets))
+  for(r in 1:n_regions) {
+    for(f in 1:n_fish_fleets) {
+      for(p in 1:n_pop) {
 
-  return(result$x)
-}
+        CAA <- F_seas[r,f] * sim_env$fish_sel[p,r,y,seas,,,f,sim] * sim_env$ret_sel[p,r,y,seas,,,f,sim] * Avail[p,r,,] # retained catch at age
+        wt <- if(target_units[f] == 1) sim_env$WAA_fish[p,r,y,seas,,,f,sim] else 1 # biomass, or numbers
+        catch[r,f] <- catch[r,f] + sum(CAA * wt)
+
+      } # end p loop
+    } # end f loop
+  } # end r loop
+
+  # survivors at the end of the season
+  if(move_timing == 0 || n_regions == 1) {
+    N_end <- N_fished * exp(-ZAA)
+  } else {
+    N_end <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+    for(p in 1:n_pop) {
+      for(a in 1:n_ages) {
+
+        moves <- (sim_env$do_recruits_move == 1 || a > 1) # recruits stay put unless they move from birth
+        for(s in 1:n_sexes) {
+          Mv <- if(moves) sim_env$Movement[p,,,y,seas,a,s,sim] else diag(n_regions)
+          Qv <- if(moves) sim_env$Mrate[p,,,y,seas,a,s,sim] else matrix(0, n_regions, n_regions)
+          N_end[p,,a,s] <- advance_seas(N[p,,a,s],
+                                        Mv,
+                                        ZAA[p,,a,s],
+                                        Qv,
+                                        seasdur,
+                                        move_timing,
+                                        expm_nsub = expm_nsub)
+        } # end s loop
+
+      } # end a loop
+    } # end p loop
+  } # end if movement at the end of the season or continuous
+
+  return(list(catch = catch, N_end = N_end, Rec_y = Rec_y))
+
+} # end function
+
+
+#' Solve One Season's F For A Block Of Regions
+#'
+#' Tapes log catch in the cells being solved as a function of their log F with
+#' \code{RTMB::MakeTape} and solves them jointly with \code{solve_log_catch_newton},
+#' since catch in a cell falls as other fleets in the same region fish harder.
+#'
+#' @param F_seas Numeric matrix \code{[n_regions, n_fish_fleets]}. This season's
+#'   F so far; cells outside \code{free} are kept fixed.
+#' @param free Integer vector. Cells to solve, counted down regions first.
+#' @param target_seas Numeric matrix \code{[n_regions, n_fish_fleets]}.
+#' @param N,y,seas,sim,sim_env,target_units,spawn_recruits Passed to \code{om_season_catch}.
+#' @param catch_f_max,catch_tol,catch_max_iter Solver settings.
+#'
+#' @return Named list with \code{F_seas}, solved in the \code{free} cells, and
+#'   \code{capped}, the cells left at \code{catch_f_max} because the target is
+#'   not reachable there.
+#' @keywords internal
+solve_om_season_F <- function(F_seas, free, target_seas, N, y, seas, sim, sim_env, target_units, spawn_recruits,
+                              catch_f_max, catch_tol, catch_max_iter) {
+
+  n_regions <- sim_env$n_regions
+
+  # log catch in the free cells as a function of their log F, with F everywhere else kept fixed
+  log_catch_tape <- RTMB::MakeTape(function(theta) {
+    "[<-" <- RTMB::ADoverload("[<-")
+    F_trial <- F_seas
+    F_trial[free] <- exp(theta)
+    log(om_season_catch(N, F_trial, y, seas, sim, sim_env, target_units, spawn_recruits)$catch[free])
+  }, rep(log(0.1), length(free)))
+
+  # start every cell at F = 0.1
+  newton <- solve_log_catch_newton(log_catch_tape = log_catch_tape,
+                                   theta_start = rep(log(0.1), length(free)),
+                                   log_target = log(target_seas[free]),
+                                   theta_max = log(catch_f_max),
+                                   catch_tol = catch_tol,
+                                   catch_max_iter = catch_max_iter)
+  F_seas[free] <- exp(newton$theta)
+  capped <- free[newton$capped_pos]
+
+  if(length(capped) > 0) {
+    cell_names <- paste0("region ", (capped - 1) %% n_regions + 1, " fleet ", (capped - 1) %/% n_regions + 1)
+    warning(paste0("Catch target in year ", y, ", season ", seas, " is not reachable for ",
+                   paste(cell_names, collapse = ", "), " at the F bound catch_f_max = ",
+                   catch_f_max, ". F is capped there and the target is undershot."))
+  }
+
+  return(list(F_seas = F_seas, capped = capped))
+
+} # end function
+
+
+#' Convert Catch Advice To Fishing Mortality In The Operating Model
+#'
+#' Finds the F by region, season and fleet that makes the operating model's
+#' retained catch in year \code{y} equal \code{target}, replaying the year one
+#' season at a time with the operating model's own dynamics. Fleets fishing the
+#' same region share total mortality, what earlier seasons caught is gone before
+#' later ones are fished, fish move between regions as the operating model moves
+#' them, and under \code{rec_lag = 0} this year's recruits come from the
+#' spawning biomass the trial F leaves.
+#'
+#' @param target Numeric array \code{[n_regions, n_seas, n_fish_fleets]}. Retained
+#'   catch for year \code{y}, in \code{target_units}. Zero means no fishing.
+#' @param y Integer. Year being fished. Its start of year numbers at age must
+#'   exist, so call after \code{run_annual_cycle(y - 1, ...)}.
+#' @param sim Integer. Simulation replicate.
+#' @param sim_env Simulation environment from \code{\link{Setup_sim_env}}. Under
+#'   cohort growth, year \code{y}'s growth is formed here, from the same numbers
+#'   the annual cycle forms it from at the start of the year.
+#' @param target_units Units of \code{target} by fleet, \code{"biom"} (default,
+#'   through \code{WAA_fish}) or \code{"abd"} for numbers, or 1 and 0. One value
+#'   is used for every fleet. Independent of the fleet's \code{catch_units}.
+#' @param catch_f_max,catch_tol,catch_max_iter Upper bound on F, relative catch
+#'   tolerance and iterations per solve, as in \code{\link{Do_Population_Projection}}.
+#'
+#' @return Named list with \code{Fmort} \code{[n_regions, n_seas, n_fish_fleets]},
+#'   to write into \code{sim_env$Fmort[, y, , , sim]}, and \code{resid}, the
+#'   relative catch miss in each cell.
+#'
+#' @export catch_to_F_om
+#' @family Closed Loop Simulations
+catch_to_F_om <- function(target,
+                          y,
+                          sim,
+                          sim_env,
+                          target_units = "biom",
+                          catch_f_max = 5,
+                          catch_tol = 1e-6,
+                          catch_max_iter = 100) {
+
+  # get dimensions
+  n_pop <- sim_env$n_pop
+  n_regions <- sim_env$n_regions
+  n_seas <- sim_env$n_seas
+  n_ages <- sim_env$n_ages
+  n_sexes <- sim_env$n_sexes
+  n_fish_fleets <- sim_env$n_fish_fleets
+  move_timing <- if(is.null(sim_env$move_timing)) 0 else sim_env$move_timing
+  rec_lag <- sim_env$rec_lag
+  spawn_seas <- sim_env$spawn_seas
+
+  target <- array(target, dim = c(n_regions, n_seas, n_fish_fleets))
+  target_units <- convert_to_numeric(target_units, list(abd = 0, biom = 1)) # same codes as catch_units
+  if(length(target_units) == 1) target_units <- rep(target_units, n_fish_fleets) # one setting for every fleet
+  Fmort = resid = array(0, dim = c(n_regions, n_seas, n_fish_fleets))
+
+  # cohort growth for year y comes from its start of year numbers, which exist already. the annual
+  # cycle forms it again from the same numbers, so forming it early changes nothing
+  if(!is.null(sim_env$growth_state) && y >= sim_growth_args(sim_env)$growth_cohort_styr) advance_sim_growth_year(y, sim, sim_env)
+
+  # start of year numbers at age, with this year's recruits already in under rec_lag > 0
+  N <- array(sim_env$NAA[,,y,1,,,sim], dim = c(n_pop, n_regions, n_ages, n_sexes))
+  Rec_y <- array(sim_env$Rec[,,y,sim], dim = c(n_pop, n_regions)) # replaced at spawn_seas under rec_lag 0
+
+  for(seas in 1:n_seas) {
+
+    # recruits entering this season after their first, as apply_pop_dy adds them
+    if(if(rec_lag != 0) seas > 1 else seas > spawn_seas) {
+      for(p in 1:n_pop) {
+        for(r in 1:n_regions) {
+          for(s in 1:n_sexes) {
+            N[p,r,1,s] <- N[p,r,1,s] + Rec_y[p,r] * sim_env$rec_seas_prop[p,seas,sim] * sim_env$sexratio[p,r,y,s,sim]
+          } # end s loop
+        } # end r loop
+      } # end p loop
+    } # end if seasonal recruitment
+    spawn_recruits <- rec_lag == 0 && seas == spawn_seas # recruits from this season's own spawning
+
+    # regions solved one at a time, or together when fish move between them while being caught, or when
+    # this season's recruits come from every region's spawning biomass
+    if(n_regions > 1 && (move_timing == 2 || spawn_recruits)) region_blocks <- list(1:n_regions) else region_blocks <- as.list(1:n_regions)
+
+    # earlier seasons are settled, so only this season's F is solved
+    target_seas <- array(target[,seas,], dim = c(n_regions, n_fish_fleets))
+    F_seas <- array(0, dim = c(n_regions, n_fish_fleets))
+    capped <- c()
+    for(block in region_blocks) {
+
+      in_block <- array(FALSE, dim = c(n_regions, n_fish_fleets))
+      in_block[block,] <- TRUE
+      free <- which(in_block & target_seas > 0) # a zero target is F = 0, not something to solve
+      if(length(free) == 0) next
+
+      block_solve <- solve_om_season_F(F_seas = F_seas,
+                                       free = free,
+                                       target_seas = target_seas,
+                                       N = N,
+                                       y = y,
+                                       seas = seas,
+                                       sim = sim,
+                                       sim_env = sim_env,
+                                       target_units = target_units,
+                                       spawn_recruits = spawn_recruits,
+                                       catch_f_max = catch_f_max,
+                                       catch_tol = catch_tol,
+                                       catch_max_iter = catch_max_iter)
+      F_seas <- block_solve$F_seas
+      capped <- c(capped, block_solve$capped)
+
+    } # end block loop
+    Fmort[,seas,] <- F_seas
+
+    # realized catch at the solved F, and the survivors going into next season
+    seas_out <- om_season_catch(N, F_seas, y, seas, sim, sim_env, target_units, spawn_recruits)
+    if(spawn_recruits) Rec_y <- seas_out$Rec_y # this year's recruitment at the solved F
+    resid_seas <- array(0, dim = c(n_regions, n_fish_fleets))
+    pos <- target_seas > 0
+    resid_seas[pos] <- (seas_out$catch[pos] - target_seas[pos]) / target_seas[pos]
+    resid[,seas,] <- resid_seas
+
+    missed <- setdiff(which(pos & abs(resid_seas) > max(catch_tol, 1e-4)), capped)
+    if(length(missed) > 0) {
+      warning(paste0("Catch target in year ", y, ", season ", seas, " did not converge. Largest relative catch error is ",
+                     signif(max(abs(resid_seas[missed])), 3), "."))
+    }
+
+    N <- seas_out$N_end
+    # state-space numbers at age at the within-year boundary, drawn ahead of time in year 1
+    if(seas < n_seas && isTRUE(sim_env$NAA_re > 0)) {
+      N <- N * exp(array(sim_env$naa_eta[,,y,seas + 1,,], dim = c(n_pop, n_regions, n_ages, n_sexes)))
+    }
+
+  } # end seas loop
+
+  return(list(Fmort = Fmort, resid = resid))
+
+} # end function

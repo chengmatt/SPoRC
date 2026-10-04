@@ -166,7 +166,7 @@ test_that("cohort growth advances from drawn deviations through the closed loop"
   expect_equal(sim_list$growth_length_sel$fish_selex_type, 1)
   sim_list$n_cond_yrs <- 0 # draw every year, so the propagated years are not the report's
   set.seed(8)
-  sim_env <- Setup_sim_env(sim_list) # built here, since the annual cycle finds the environment by this name in the frame that built it
+  sim_env <- Setup_sim_env(sim_list)
   devs <- sim_env$ln_growth_devs
   devs_map <- input_list$data$map_ln_growth_devs
   expect_equal(dim(devs), c(1, 1, n_yrs + 3, 6, 1, 2))

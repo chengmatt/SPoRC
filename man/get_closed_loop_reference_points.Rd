@@ -68,8 +68,7 @@ single-region and multi-region reference points.
 }
 \seealso{
 Other Closed Loop Simulations:
-\code{\link[=catch_to_F_multifleet]{catch_to_F_multifleet()}},
-\code{\link[=catch_to_F_singlefleet]{catch_to_F_singlefleet()}},
+\code{\link[=catch_to_F_om]{catch_to_F_om()}},
 \code{\link[=condition_closed_loop_simulations]{condition_closed_loop_simulations()}}
 }
 \concept{Closed Loop Simulations}

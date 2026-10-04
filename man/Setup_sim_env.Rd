@@ -26,11 +26,15 @@ A new environment (parent = calling frame) containing every element
 \description{
 Creates a new R environment populated with all objects from \code{sim_list}
 and binds the SPoRC simulation functions required by
-\code{\link{run_annual_cycle}}. Isolating the simulation state in a
-dedicated environment prevents name collisions with the calling frame and
-allows \code{with()} / \code{<<-} assignment patterns used internally by
-the annual-cycle helpers to modify shared state without polluting the
-global workspace.
+\code{\link{run_annual_cycle}}. Keeping the simulation state in its own
+environment lets the annual cycle helpers update shared arrays in place
+from inside \code{with()} blocks, without threading them through every call.
+}
+\details{
+Each helper first stores the environment inside itself as \code{sim_env}, the
+same object under a second name, so its \code{with()} block writes to the
+environment it was given whatever the script calls it; see
+\code{vignette("architecture")} for why.
 }
 \examples{
 \dontrun{

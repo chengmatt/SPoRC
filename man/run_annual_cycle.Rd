@@ -30,6 +30,9 @@ Those two standalone \code{generate_recruitment()} calls only run when
 \code{rec_lag != 0}. Under \code{rec_lag = 0} recruitment depends on year
 \code{y}'s own SSB, which is not known until \code{\link{apply_pop_dy}} reaches
 \code{spawn_seas}, so it is called from inside \code{apply_pop_dy()} instead.
+Its deviations are still drawn here at the end of the year before, through
+\code{draw_sim_rec_devs}, so a catch target for that year can be converted to F
+knowing its recruits.
 }
 \seealso{
 Other Simulation Setup:

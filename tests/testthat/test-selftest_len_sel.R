@@ -51,7 +51,7 @@ test_that("selectivity at length forms catch, index and age-at-length as the fit
   sim_list$dmr[,,,,2] <- 0.5
 
   set.seed(2)
-  sim_env <- Setup_sim_env(sim_list) # built here, since the annual cycle finds the environment by this name in the frame that built it
+  sim_env <- Setup_sim_env(sim_list)
   for(sim in 1:2) for(y in 1:caal_yr) run_annual_cycle(y, sim, sim_env)
 
   # conditioned on the fit, catch and index at length are the fit's in every year

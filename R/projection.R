@@ -724,7 +724,7 @@ Do_Population_Projection <- function(
 #            |   +- build_proj_F()         assembles the trial F matrix
 #            |   +- run_proj_year()        replays the season loop
 #            +- proj_target_catch()    reduces that catch to what the target is on
-#            +- proj_log_catch_resid() the residual nleqslv is handed
+#            +- solve_log_catch_newton() Newton steps on log F, shared with catch_to_F_om()
 #
 # Every trial F matrix is built the same way, in build_proj_F():
 #
@@ -1078,6 +1078,8 @@ build_proj_F <- function(F_reg, F_base, seas_profile) {
 #' @noRd
 proj_catch_at_F <- function(F_y, y, state, tmp_rec, proj_args) {
 
+  "[<-" <- RTMB::ADoverload("[<-") # keeps catch on the tape when solve_proj_F_catch tapes it
+
   yr <- do.call(run_proj_year, c(list(y = y, F_y = F_y, tmp_rec = tmp_rec), state, proj_args))
 
   catch_mat <- array(0, dim = c(proj_args$n_regions, proj_args$n_seas))
@@ -1103,43 +1105,74 @@ proj_target_catch <- function(catch_mat, target_seas) {
 }
 
 
-#' Log Scale Catch Residual For The Joint Regional Solve
+#' Newton Solve Of Log F Against Log Catch Targets
 #'
-#' Residuals and unknowns both sit on the log scale: F stays positive with no
-#' constraints to enforce, and a residual in log catch is a relative catch error,
-#' which is the tolerance the caller specifies.
+#' Shared by \code{solve_proj_F_catch} and \code{catch_to_F_om}. Cells whose target
+#' is not reached at the F bound are capped there. The rest start one step from
+#' \code{theta_start}, exact if catch rose in proportion to F, then take Newton
+#' steps with the tape's Jacobian, each halved until the largest miss shrinks.
 #'
-#' @param theta Numeric vector. log F for the free regions.
-#' @param F_reg_fixed Numeric vector \code{[n_regions]}. F for the regions not
-#'   being solved (zero targets, or regions already capped at the F bound).
-#' @param free Integer vector. Indices of the regions being solved.
-#' @param target Numeric vector \code{[n_regions]}. Catch targets.
-#' @param seas_profile,F_base Passed to \code{build_proj_F}.
-#' @param target_seas Passed to \code{proj_target_catch}.
-#' @param y,state,tmp_rec,proj_args Passed to \code{proj_catch_at_F}.
-#' @param catch_f_max Numeric. Upper bound on F.
-#' @return Numeric vector, one residual per free region.
+#' @param log_catch_tape Tape from \code{RTMB::MakeTape} returning log catch in each
+#'   cell being solved from its log F.
+#' @param theta_start Numeric vector. Starting log F.
+#' @param log_target Numeric vector. Log catch targets.
+#' @param theta_max Numeric. Log of the F bound.
+#' @param catch_tol,catch_max_iter Largest log catch miss accepted, a relative
+#'   catch error, and the most Newton steps taken.
+#'
+#' @return Named list with \code{theta}, the solved log F, and \code{capped_pos},
+#'   the cells kept at \code{theta_max} because their targets are out of reach.
 #' @keywords internal
 #' @noRd
-proj_log_catch_resid <- function(theta, F_reg_fixed, free, target, seas_profile, F_base,
-                                 target_seas, y, state, tmp_rec, proj_args, catch_f_max) {
+solve_log_catch_newton <- function(log_catch_tape, theta_start, log_target, theta_max, catch_tol, catch_max_iter) {
 
-  F_reg <- F_reg_fixed
-  F_reg[free] <- pmin(exp(theta), catch_f_max)
-  catch_mat <- proj_catch_at_F(build_proj_F(F_reg, F_base, seas_profile), y, state, tmp_rec, proj_args)
-  realized_catch <- proj_target_catch(catch_mat, target_seas)[free]
+  n_cells <- length(log_target)
 
-  return(log(pmax(realized_catch, 1e-12)) - log(target[free]))
-}
+  # targets beyond what the F bound takes are capped there and the rest solve around them
+  capped_pos <- which(log_catch_tape(rep(theta_max, n_cells)) < log_target)
+  solve_pos <- setdiff(seq_len(n_cells), capped_pos)
+
+  # one step from the start that would land on the target if catch rose in proportion to F
+  theta <- pmin(theta_start - (log_catch_tape(theta_start) - log_target), theta_max)
+  theta[!is.finite(theta)] <- theta_max # no catch at the start, so begin from the bound
+  theta[capped_pos] <- theta_max
+
+  # Newton steps on log F with the tape's exact Jacobian
+  if(length(solve_pos) > 0) {
+
+    miss <- (log_catch_tape(theta) - log_target)[solve_pos] # log scale miss, a relative catch error
+    for(i in seq_len(catch_max_iter)) {
+
+      if(max(abs(miss)) <= catch_tol) break
+      jac <- log_catch_tape$jacobian(theta)[solve_pos, solve_pos, drop = FALSE]
+      step <- solve(jac, miss)
+
+      # halve the step until the largest miss shrinks
+      for(h in 1:30) {
+        theta_new <- theta
+        theta_new[solve_pos] <- pmin(theta[solve_pos] - step, theta_max)
+        miss_new <- (log_catch_tape(theta_new) - log_target)[solve_pos]
+        if(isTRUE(max(abs(miss_new)) < max(abs(miss)))) break
+        step <- step / 2
+      } # end h loop
+      theta <- theta_new
+      miss <- miss_new
+
+    } # end i loop
+
+  } # end if cells to solve
+
+  return(list(theta = theta, capped_pos = capped_pos))
+
+} # end solve_log_catch_newton
 
 
 #' Solve One Block Of Fishing Mortalities Against A Catch Target
 #'
 #' Finds the one F per region that makes realized catch match \code{target}.
-#' Catch rises monotonically with each region's F, so a block with one free region
-#' bisects, which needs no start value and lets the bracket double as a
-#' feasibility check. Regions in a block are coupled by movement, so a block with
-#' several free regions solves jointly instead.
+#' Catch in the free regions is taped against their log F with
+#' \code{RTMB::MakeTape} and solved jointly by \code{solve_log_catch_newton},
+#' since regions in a block are coupled by movement.
 #'
 #' @param y Integer. Projection year.
 #' @param target Numeric vector \code{[n_regions]}. Catch targets; 0 means no
@@ -1148,8 +1181,8 @@ proj_log_catch_resid <- function(theta, F_reg_fixed, free, target, seas_profile,
 #'   \code{F_reg} into the year, see \code{build_proj_F}.
 #' @param target_seas Integer or \code{NULL}, see \code{proj_target_catch}.
 #' @param state,tmp_rec,proj_args Projection state and inputs.
-#' @param f_start Numeric vector \code{[n_regions]}. Starting values for the joint
-#'   solve, normally the previous year's F.
+#' @param f_start Numeric vector \code{[n_regions]}. Starting values, normally the
+#'   previous year's F.
 #' @param catch_f_max,catch_tol,catch_max_iter Solver settings, documented in
 #'   \code{\link{Do_Population_Projection}}.
 #' @param label Character. Names what failed in warning messages.
@@ -1164,71 +1197,35 @@ solve_proj_F_catch <- function(y, target, seas_profile, F_base, target_seas,
 
   n_regions <- proj_args$n_regions
   F_reg <- rep(0, n_regions)
-  capped <- rep(FALSE, n_regions)
+  capped <- c()
   free <- which(target > 0) # a zero target is F = 0, not something to solve for
 
   if(length(free) > 0) {
 
-    # Bounding the catch
-    F_reg_cap <- F_reg
-    F_reg_cap[free] <- catch_f_max
-    cap_catch <- proj_target_catch(proj_catch_at_F(build_proj_F(F_reg_cap, F_base, seas_profile),
-                                                    y, state, tmp_rec, proj_args), target_seas)
-    infeas <- free[cap_catch[free] < target[free]]
+    # log catch in the free regions as a function of their log F, other regions unfished
+    log_catch_tape <- RTMB::MakeTape(function(theta) {
+      "[<-" <- RTMB::ADoverload("[<-")
+      F_trial <- F_reg
+      F_trial[free] <- exp(theta)
+      catch_mat <- proj_catch_at_F(build_proj_F(F_trial, F_base, seas_profile), y, state, tmp_rec, proj_args)
+      log(proj_target_catch(catch_mat, target_seas)[free])
+    }, rep(log(0.1), length(free)))
 
-    if(length(infeas) > 0) {
+    # start from last year's F
+    newton <- solve_log_catch_newton(log_catch_tape = log_catch_tape,
+                                     theta_start = log(pmin(pmax(f_start[free], 1e-4), catch_f_max)),
+                                     log_target = log(target[free]),
+                                     theta_max = log(catch_f_max),
+                                     catch_tol = catch_tol,
+                                     catch_max_iter = catch_max_iter)
+    F_reg[free] <- exp(newton$theta)
+    capped <- free[newton$capped_pos]
+
+    if(length(capped) > 0) {
       warning(paste0("Catch target for ", label, " is not reachable in region(s) ",
-                     paste(infeas, collapse = ", "), " at the F bound catch_f_max = ",
+                     paste(capped, collapse = ", "), " at the F bound catch_f_max = ",
                      catch_f_max, ". F is capped there and the target is undershot."))
-      F_reg[infeas] <- catch_f_max
-      capped[infeas] <- TRUE
-      free <- setdiff(free, infeas) # anything left solves against the capped regions
     }
-  }
-
-  # One region only: bisect the bracket already shown to contain the root
-  if(length(free) == 1) {
-    lb <- 0
-    ub <- catch_f_max
-    for(i in seq_len(catch_max_iter)) {
-      F_reg[free] <- (lb + ub) / 2
-      realized_catch <- proj_target_catch(proj_catch_at_F(build_proj_F(F_reg, F_base, seas_profile),
-                                                y, state, tmp_rec, proj_args), target_seas)[free]
-      if(abs(realized_catch - target[free]) <= catch_tol * target[free]) break
-      if(realized_catch < target[free]) lb <- F_reg[free] else ub <- F_reg[free]
-    } # end i loop
-  }
-
-  # Several regions: joint solve on the log F scale
-  if(length(free) > 1) {
-
-    F_reg_start <- F_reg
-    F_reg_start[free] <- pmin(pmax(f_start[free], 1e-4), catch_f_max)
-
-    # get starting point
-    c0 <- proj_target_catch(proj_catch_at_F(build_proj_F(F_reg_start, F_base, seas_profile),
-                                             y, state, tmp_rec, proj_args), target_seas)
-    scaling <- ifelse(c0[free] > 0, target[free] / c0[free], 1)
-    F_reg_start[free] <- pmin(pmax(F_reg_start[free] * scaling, 1e-8), catch_f_max)
-
-    # solve for F
-    solve_out <- nleqslv::nleqslv(
-      log(F_reg_start[free]),
-      proj_log_catch_resid, # function to be optimized across (computes the projection cycle)
-      F_reg_fixed = F_reg,
-      free = free,
-      target = target,
-      seas_profile = seas_profile,
-      F_base = F_base,
-      target_seas = target_seas,
-      y = y,
-      state = state,
-      tmp_rec = tmp_rec,
-      proj_args = proj_args,
-      catch_f_max = catch_f_max,
-      control = list(ftol = catch_tol, xtol = 1e-10,  maxit = catch_max_iter)
-    )
-    F_reg[free] <- pmin(exp(solve_out$x), catch_f_max)
   }
 
   # relative miss on the F being returned
@@ -1238,7 +1235,7 @@ solve_proj_F_catch <- function(y, target, seas_profile, F_base, target_seas,
   pos <- target > 0
   resid[pos] <- (realized_catch[pos] - target[pos]) / target[pos]
 
-  missed <- which(pos & !capped & abs(resid) > max(catch_tol, 1e-4))
+  missed <- setdiff(which(pos & abs(resid) > max(catch_tol, 1e-4)), capped)
   if(length(missed) > 0) {
     warning(paste0("Catch target for ", label, " did not converge in region(s) ",
                    paste(missed, collapse = ", "), ". Largest relative catch error is ",

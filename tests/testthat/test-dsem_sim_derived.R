@@ -114,7 +114,7 @@ test_that("conditioned on the fit, fitted years reproduce the report's growth an
 test_that("cohort growth advances year by year from the operating model's own numbers at age", {
 
   om <- derived_growth_om(cohort = TRUE, n_sims = 2)
-  sim_env <- Setup_sim_env(om$sim_list) # built here, since the annual cycle finds the environment by this name in the frame that built it
+  sim_env <- Setup_sim_env(om$sim_list)
   dd <- om$obj$data
   styr <- dd$growth_cohort_styr
   n_sim_yrs <- om$n_yrs + 3

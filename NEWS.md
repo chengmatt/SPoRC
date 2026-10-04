@@ -82,6 +82,7 @@
 - Index ranges built from `length()`, `nrow()`, `ncol()` and `dim()` now use `seq_along()` and `seq_len()`, so an empty object gives no iterations instead of the indices 1 and 0. Semicolon chains are split one statement per line, `T`/`F` are written as `TRUE`/`FALSE`, two `if()` conditions use `&&`, operators have spaces around them, blocks that sat 2 or 4 spaces off their braces are re-indented, and multi-line pipelines put each step on its own line (for developers).
 - `compResidual` is declared in Suggests and DESCRIPTION has a BugReports link; the help pages for `Setup_Mod_Tagging()` and `osa_one_step_predict()` are regenerated, and `Get_Comp_Likelihoods()` no longer documents a `seas_agg` argument it does not take (for developers).
 - Removed 25 values that were computed and never read, and a duplicated `Mrate` entry in the closed loop report list; among them the `tag_selex` and `tag_natmort` lookups in `condition_closed_loop_simulations()`, which never reached the tagging simulation. Seven optimizer, `tryCatch()` and block-final lines keep their call and drop only the unused name (for developers).
+- `catch_to_F_singlefleet()` and `catch_to_F_multifleet()` are replaced by `catch_to_F_om()`, which converts catch advice by region, season and fleet into the operating model's F by running the year through the operating model's own dynamics, solved with Newton steps on an `RTMB::MakeTape()` tape of each season's catch. 
 
 ## Bug Fixes
 - Fixed the time-varying selectivity smoothing penalty not being applied in the first year.

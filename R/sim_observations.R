@@ -953,9 +953,9 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 
   sim_env$y   <- y
   sim_env$sim <- sim
+  sim_env$sim_env <- sim_env # rename to make sure with() finds it
 
   with(sim_env, {
-    # simulation lists that predate the observation error correction draw at the median, as before
     oe_use <- if(exists("bias_correct_oe")) bias_correct_oe else 0
     for(seas in 1:n_seas) {
 
@@ -1594,6 +1594,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 
   sim_env$y   <- y
   sim_env$sim <- sim
+  sim_env$sim_env <- sim_env # rename to make sure with() finds it
 
   with(sim_env, {
     # simulation lists that predate the observation error correction draw at the median, as before
@@ -1886,6 +1887,7 @@ release_conv_tags <- function(y, sim, sim_env) {
 
   sim_env$y   <- y
   sim_env$sim <- sim
+  sim_env$sim_env <- sim_env # rename to make sure with() finds it
 
   with(sim_env, {
     for(seas in 1:n_seas) {
@@ -2025,7 +2027,8 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
 
   sim_env$y   <- y
   sim_env$sim <- sim
-
+  sim_env$sim_env <- sim_env # rename to make sure with() finds it
+  
   with(sim_env,{
 
     for(rseas in 1:n_seas) {

@@ -4,7 +4,7 @@
 \alias{compute_biom_y_sim}
 \title{Compute spawning-time biomass quantities for one simulation year/season}
 \usage{
-compute_biom_y_sim(y, seas, sim, sim_env)
+compute_biom_y_sim(y, seas, sim, sim_env, NAA_s = NULL, ZAA_s = NULL)
 }
 \arguments{
 \item{y}{Year integer}
@@ -14,6 +14,9 @@ compute_biom_y_sim(y, seas, sim, sim_env)
 \item{sim}{Simulation integer}
 
 \item{sim_env}{Simulation environment}
+
+\item{NAA_s, ZAA_s}{Arrays \code{[n_pop, n_regions, 1, 1, n_ages, n_sexes]} of numbers and total
+mortality to use instead of the stored ones, for a trial F. \code{NULL} reads \code{sim_env}.}
 }
 \description{
 The operating model's state at year \code{y} and season \code{seas}, always the spawning

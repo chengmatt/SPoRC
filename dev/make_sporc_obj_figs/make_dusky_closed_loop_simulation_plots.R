@@ -348,18 +348,9 @@ for (sim in 1:sim_env$n_sims) {
       if(y < sim_env$n_yrs) {
         last_assess_year <- max(assessment_years[assessment_years <= y]) # get last assessment year
         tac_year_index <- y - last_assess_year + 1 # get years to index TACs
-        rf_grid <- expand.grid(r = seq_len(sim_env$n_regions), f = seq_len(sim_env$n_fish_fleets)) # set up region, fleet grid to bisection across
-        tmp_f <- mapply(function(r, f) { # do bisection to go from region and fleet specific catch to region and fleet specific F rates
-          catch_to_F_singlefleet(
-            f_guess = 0.05, # guess for fishing mortality rate
-            catch = tmp_TAC[,r, tac_year_index,, f], # catch values to use
-            NAA = sim_env$NAA[1, r, y+1,,, , sim], # numbers at age in simulation (truth)
-            WAA = sim_env$WAA[1, r, y+1,, , , sim], # weight-at-age in simulation (truth)
-            natmort  = sim_env$natmort[1, r, y+1, , , , sim], # natural mortality in simulation (truth)
-            fish_sel = sim_env$fish_sel[1,r, y+1,1, , , f, sim] # fishery selectivity in simulation (truth)
-          )
-        }, r = rf_grid$r, f = rf_grid$f)
-        sim_env$Fmort[,y+1,,,sim] <- array(tmp_f, dim = c(sim_env$n_regions, sim_env$n_seas, sim_env$n_fish_fleets)) # assign bisection values back into simulation
+        tac <- apply(tmp_TAC[,, tac_year_index,,, drop = FALSE], c(2, 4, 5), sum) # catch advice by region, season and fleet, summed over populations
+        F_solve <- catch_to_F_om(target = tac, y = y + 1, sim = sim, sim_env = sim_env) # F that takes this catch from the simulated population (truth)
+        sim_env$Fmort[,y+1,,,sim] <- F_solve$Fmort # assign solved F back into simulation
       } # end if
 
     } # feedback year

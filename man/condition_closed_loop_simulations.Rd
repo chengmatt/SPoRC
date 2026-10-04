@@ -100,8 +100,7 @@ year.
 }
 \seealso{
 Other Closed Loop Simulations:
-\code{\link[=catch_to_F_multifleet]{catch_to_F_multifleet()}},
-\code{\link[=catch_to_F_singlefleet]{catch_to_F_singlefleet()}},
+\code{\link[=catch_to_F_om]{catch_to_F_om()}},
 \code{\link[=get_closed_loop_reference_points]{get_closed_loop_reference_points()}}
 }
 \concept{Closed Loop Simulations}

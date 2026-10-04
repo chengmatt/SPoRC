@@ -157,8 +157,7 @@ reference:
     contents:
       - condition_closed_loop_simulations
       - get_closed_loop_reference_points
-      - catch_to_F_singlefleet
-      - catch_to_F_multifleet
+      - catch_to_F_om
 
   - title: "Francis Reweighting"
     desc: "Functions for setting up Francis Reweighting"

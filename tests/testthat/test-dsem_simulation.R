@@ -111,7 +111,7 @@ test_that("a closed loop operating model keeps fitted recruitment and continues 
   sim_list <- condition_closed_loop_simulations(closed_loop_yrs = 5, n_sims = 2, data = sim_obj$data, parameters = sim_obj$parameters,
                                                 mapping = sim_obj$mapping, sd_rep = sim_sdrep, rep = sim_obj$rep, random = sim_obj$random)
   sim_list <- Setup_Sim_DSEM(sim_list, sim_obj$data, sim_obj$env$parList(x = sim_best[-sim_obj$env$random], par = sim_best), condition_on_fit = TRUE)
-  sim_env <- Setup_sim_env(sim_list) # the annual cycle finds the environment by this name in the calling frame
+  sim_env <- Setup_sim_env(sim_list)
   set.seed(44)
   draw_dsem_sim(sim_env)
   run_sim(sim_env, sim = 1)
@@ -132,7 +132,7 @@ test_that("an operating model with no dsem draws its own deviations and the fiel
                                                 sd_rep = list(par.fixed = sim_base_fit$env$last.par.best, par.random = NULL),
                                                 rep = sim_base_fit$report(sim_base_fit$env$last.par.best), random = NULL,
                                                 Rec_input = NULL, recruitment_opt = 0)
-  sim_env <- Setup_sim_env(sim_list) # the annual cycle's helpers find the environment by this name
+  sim_env <- Setup_sim_env(sim_list)
   expect_true(all(!sim_env$dsem_drawn$ln_RecDevs))
   expect_equal(dim(sim_env$dsem_drawn$ln_RecDevs), c(sim_env$n_pop, sim_env$n_regions, sim_env$n_yrs))
   expect_false("ln_NAA" %in% names(sim_env$dsem_drawn)) # the operating model holds innovations, not the log state, so the mask sits on naa_eta_all

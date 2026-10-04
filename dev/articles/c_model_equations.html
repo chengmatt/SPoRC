@@ -3563,11 +3563,32 @@ ageing error matrix:</p>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>a</mi><mo>∣</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(a \mid l)</annotation></semantics></math>
 under the model, since the joint array is
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo>∣</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">P(l \mid a)</annotation></semantics></math>
-times the numbers at age. Each length bin is then fit as its own
-composition with the multinomial or Dirichlet-multinomial above, with
-the input sample size the number of fish aged from that bin
-(<code>ISS_Fish_caal</code>, <code>ISS_Srv_caal</code>) and the weight
-<code>Wt_Fish_caal</code>, <code>Wt_Srv_caal</code> multiplying it:</p>
+times the numbers at age. When the ages were recorded on length ranges
+coarser than the model’s bins (<code>CAAL_LenBinMap</code>), row
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+covers a set
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mi>k</mi></msub><annotation encoding="application/x-tex">L_k</annotation></semantics></math>
+of model length bins, the bins marked 1 in column
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>,
+and its expectation sums the joint array over them before
+normalizing:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>E</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mspace width="0.167em"></mspace><mtext mathvariant="normal">caal</mtext><mo stretchy="false" form="prefix">(</mo><mi>k</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><munder><mo>∑</mo><mrow><mi>l</mi><mo>∈</mo><msub><mi>L</mi><mi>k</mi></msub></mrow></munder><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>l</mi><mi>a</mi></mrow></msubsup></mrow><mrow><munder><mo>∑</mo><msup><mi>a</mi><mo>′</mo></msup></munder><munder><mo>∑</mo><mrow><mi>l</mi><mo>∈</mo><msub><mi>L</mi><mi>k</mi></msub></mrow></munder><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>l</mi><mo>,</mo><msup><mi>a</mi><mo>′</mo></msup><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>l</mi><mi>a</mi></mrow></msubsup></mrow></mfrac></mstyle></mrow><annotation encoding="application/x-tex">E_{p,r,y,\tau,a,s,f}^{\,\text{caal}(k)} = \dfrac{\sum_{l \in L_k} C_{p,r,y,\tau,l,a,s,f}^{la}}{\sum_{a'}\sum_{l \in L_k} C_{p,r,y,\tau,l,a',s,f}^{la}}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mi>k</mi></msub><annotation encoding="application/x-tex">L_k</annotation></semantics></math>
+need not hold every model bin, and need not be whole bins of a coarser
+grid. Without the map
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>L</mi><mi>k</mi></msub><annotation encoding="application/x-tex">L_k</annotation></semantics></math>
+is the single bin
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>l</mi><mo>=</mo><mi>k</mi></mrow><annotation encoding="application/x-tex">l = k</annotation></semantics></math>,
+and the likelihood below runs over rows
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+in place of bins
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>l</mi><annotation encoding="application/x-tex">l</annotation></semantics></math>.
+Each length bin is then fit as its own composition with the multinomial
+or Dirichlet-multinomial above, with the input sample size the number of
+fish aged from that bin (<code>ISS_Fish_caal</code>,
+<code>ISS_Srv_caal</code>) and the weight <code>Wt_Fish_caal</code>,
+<code>Wt_Srv_caal</code> multiplying it:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><msup><mi>ℓ</mi><mtext mathvariant="normal">caal</mtext></msup><mo>=</mo><munder><mo>∑</mo><mi>l</mi></munder><msub><mi>λ</mi><mi>l</mi></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">ISS</mtext><mi>l</mi></msub><munder><mo>∑</mo><mi>a</mi></munder><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>O</mi><mi>a</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><mi>c</mi><mspace width="0.167em"></mspace><msup><mn>𝟙</mn><mtext mathvariant="normal">const</mtext></msup><mo stretchy="true" form="postfix">)</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>O</mi><mi>a</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>−</mo><mi mathvariant="normal">log</mi><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>E</mi><mi>a</mi><mrow><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo></mrow></msubsup><mo>+</mo><mi>c</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">-\ell^{\text{caal}} = \sum_{l}\lambda_{l}\,\text{ISS}_{l}\sum_{a}\left( O_{a}^{(l)} + c\,\mathbb{1}^{\text{const}} \right)\left\lbrack \log\left( O_{a}^{(l)} + c \right) - \log\left( E_{a}^{(l)} + c \right) \right\rbrack</annotation></semantics></math></p>
 <p>with
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>θ</mi><annotation encoding="application/x-tex">\theta</annotation></semantics></math>

@@ -4,7 +4,8 @@ the fit's time variation codes, the semi-parametric form and its ages, the
 deviation maps, the process error parameters, the Get_Growth
 arguments and, under selectivity at length, the report's selectivity at
 length the rebuilt keys are read through. With the fit's own penalty on the
-deviations, draw_sim_growth_devs draws them in
+deviations, draw_sim_growth_devs keeps the fit's values over
+the simulation list's n_cond_yrs and draws the years after them in
 Setup_sim_env. With a dsem holding or linking any growth deviation,
 Setup_Sim_DSEM builds both arrays itself and nothing is stored
 here, so the deviations of a parameter outside the arrows keep the fit's
@@ -13,7 +14,8 @@ the fit's time variation codes, the semi-parametric form and its ages, the
 deviation maps, the process error parameters, the Get_Growth
 arguments and, under selectivity at length, the report's selectivity at
 length the rebuilt keys are read through. With the fit's own penalty on the
-deviations, draw_sim_growth_devs draws them in
+deviations, draw_sim_growth_devs keeps the fit's values over
+the simulation list's n_cond_yrs and draws the years after them in
 Setup_sim_env. With a dsem holding or linking any growth deviation,
 Setup_Sim_DSEM builds both arrays itself and nothing is stored
 here, so the deviations of a parameter outside the arrows keep the fit's
@@ -76,7 +78,8 @@ the fit's time variation codes, the semi-parametric form and its ages, the
 deviation maps, the process error parameters, the <code>Get_Growth</code>
 arguments and, under selectivity at length, the report's selectivity at
 length the rebuilt keys are read through. With the fit's own penalty on the
-deviations, <code><a href="draw_sim_growth_devs.html">draw_sim_growth_devs</a></code> draws them in
+deviations, <code><a href="draw_sim_growth_devs.html">draw_sim_growth_devs</a></code> keeps the fit's values over
+the simulation list's <code>n_cond_yrs</code> and draws the years after them in
 <code>Setup_sim_env</code>. With a dsem holding or linking any growth deviation,
 <code><a href="Setup_Sim_DSEM.html">Setup_Sim_DSEM</a></code> builds both arrays itself and nothing is stored
 here, so the deviations of a parameter outside the arrows keep the fit's
@@ -85,7 +88,14 @@ values. Nothing is stored either when growth is data or has no deviations.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Setup_Sim_Growth_RE</span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">data</span>, <span class="va">pars</span>, rep <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Setup_Sim_Growth_RE</span><span class="op">(</span></span>
+<span>  <span class="va">sim_list</span>,</span>
+<span>  <span class="va">data</span>,</span>
+<span>  <span class="va">pars</span>,</span>
+<span>  rep <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  pars_by_sim <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  rep_by_sim <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -106,6 +116,15 @@ values. Nothing is stored either when growth is data or has no deviations.</p>
 
 <dt id="arg-rep">rep<a class="anchor" aria-label="anchor" href="#arg-rep"></a></dt>
 <dd><p>Report of the fit, needed under selectivity at length.</p></dd>
+
+
+<dt id="arg-pars-by-sim-rep-by-sim">pars_by_sim, rep_by_sim<a class="anchor" aria-label="anchor" href="#arg-pars-by-sim-rep-by-sim"></a></dt>
+<dd><p>Optional lists of one parameter list and one
+report per replicate, for replicates that each run on their own parameter
+draw (<code>sim_type = "joint"</code> in <code><a href="simulation_self_test.html">simulation_self_test</a></code>).
+Each replicate's growth is then rebuilt from its own parameters and
+deviations. <code>NULL</code> (default) gives every replicate <code>pars</code> and
+<code>rep</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

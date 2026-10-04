@@ -89,6 +89,7 @@ the order they are defined.
 | fit_lengths | Value describing whether or not to fit length composition data. 0: Don’t fit lengths, 1: Fit lengths |
 | SizeAgeTrans | Size-age transition matrix dimensioned by n_pop, n_regions, n_years, n_seas, n_lens, n_ages, n_sexes. Can be specified as NA if length compositions are not fit |
 | LenBinMap | Matrix dimensioned by n_lens, n_observed_lens mapping the model’s length bins onto the bins the compositions are recorded on, each row summing to 1. NULL when the two coincide; when supplied, the observed length composition arrays are dimensioned by n_observed_lens rather than n_lens, and expected compositions are mapped through it inside the likelihood the way AgeingError maps ages |
+| CAAL_LenBinMap | 0/1 matrix dimensioned by n_lens, n_caal_lens saying which model length bins each conditional age-at-length row covers. NULL for one row per model bin; when supplied, the conditional age-at-length arrays are dimensioned by n_caal_lens rather than n_lens |
 | ln_growth_pars | Parameter array dimensioned by n_pop, n_regions, n_sexes, n_growth_pars of log growth parameters in the order L1, L2, K, CV1, CV2, and rho under the Richards form |
 | ln_growth_devs | Parameter array dimensioned by n_pop, n_regions, n_years, n_growth_pars, n_sexes of deviations on the growth parameters, zero and mapped off for parameters that do not vary and for years outside growth_tv_years |
 | map_ln_growth_devs | Array dimensioned like ln_growth_devs indicating which growth parameter deviations are fixed (mapped off), read by the process error penalty |
@@ -223,10 +224,10 @@ n_regions.
 | Wt_FishLenComps | Array dimensioned by n_regions, n_years, n_seas, n_sexes, n_fish_fleets specifying a multinomial weight to apply to fishery length compositions, ideally derived using Francis re-weighting |
 | ObsFishLenComps_pop | Population-specific observed fishery length compositions dimensioned by n_pop, n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets. Can be input as proportions or numbers |
 | UseFishLenComps_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets specifying whether to fit to population-specific fishery length compositions. 0: Don’t fit, 1: Fit |
-| ObsFish_caal | Observed fishery conditional age-at-length dimensioned by n_regions, n_years, n_seas, n_lens, n_ages, n_sexes, n_fish_fleets: the ages of the fish aged from each length bin. Can be input as proportions or numbers |
-| UseFish_caal | Array dimensioned by n_regions, n_years, n_seas, n_lens, n_fish_fleets specifying whether to fit each length bin’s age composition. 0: Don’t fit, 1: Fit |
-| ISS_Fish_caal | Array dimensioned by n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets specifying the input sample size of each length bin, the number of fish aged from it |
-| Wt_Fish_caal | Array dimensioned by n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets specifying a multinomial weight to apply to fishery conditional age-at-length, set in [`Setup_Mod_Weighting()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md) |
+| ObsFish_caal | Observed fishery conditional age-at-length dimensioned by n_regions, n_years, n_seas, n_caal_lens, n_ages, n_sexes, n_fish_fleets: the ages of the fish aged from each length bin. Can be input as proportions or numbers |
+| UseFish_caal | Array dimensioned by n_regions, n_years, n_seas, n_caal_lens, n_fish_fleets specifying whether to fit each length bin’s age composition. 0: Don’t fit, 1: Fit |
+| ISS_Fish_caal | Array dimensioned by n_regions, n_years, n_seas, n_caal_lens, n_sexes, n_fish_fleets specifying the input sample size of each length bin, the number of fish aged from it |
+| Wt_Fish_caal | Array dimensioned by n_regions, n_years, n_seas, n_caal_lens, n_sexes, n_fish_fleets specifying a multinomial weight to apply to fishery conditional age-at-length, set in [`Setup_Mod_Weighting()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Weighting.md) |
 | ObsSrv_caal, UseSrv_caal, ISS_Srv_caal, Wt_Srv_caal | The survey counterparts, with n_srv_fleets as the last dimension |
 | ISS_FishLenComps_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_fish_fleets specifying the input sample size for population-specific fishery length composition likelihoods |
 | Wt_FishLenComps_pop | Array dimensioned by n_pop, n_regions, n_years, n_seas, n_sexes, n_fish_fleets specifying a multinomial weight to apply to population-specific fishery length compositions |

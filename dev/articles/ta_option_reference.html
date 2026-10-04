@@ -87,11 +87,11 @@ look for what a given setting is, whereas <a href="t_model_options.html">Overvie
 it exists and which ones to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 563 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 564 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (17)</option>
 <option value="Rec">Rec (65)</option>
-<option value="Biologicals">Biologicals (72)</option>
+<option value="Biologicals">Biologicals (73)</option>
 <option value="Movement">Movement (32)</option>
 <option value="Tagging">Tagging (19)</option>
 <option value="Catch_and_F">Catch_and_F (72)</option>
@@ -923,7 +923,7 @@ Standard deviation of that penalty, log scale. Default 1.
 Setup_Mod_Biologicals
 </h3>
 <p class="optref-n">
-72 arguments
+73 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -1311,6 +1311,24 @@ across the observed bins, summing to one, or to zero to drop that bin.
 The length-axis twin of AgeingError, applied and validated identically.
 Use the *LenComps_bins arguments to leave bins out of the likelihood
 instead. NULL (default) fits on the model bins.
+</td>
+</tr>
+<tr data-k="caal_lenbinmap null optional 0/1 matrix [n_lens x n_caal_lens] saying which model length bins each length row of the conditional age-at-length data covers, one column per row. a row's expected ages are the numbers at length and age summed over the bins it covers, so rows can sit on coarser bins than the model, and need not cover every bin. unlike lenbinmap, its rows need not sum to one, since a model bin can sit in no row or in several. the age-at-length arrays are then dimensioned by n_caal_lens. null (default) gives one row per model bin.">
+<td>
+<code class="optref-arg">CAAL_LenBinMap</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Optional 0/1 matrix [n_lens x n_caal_lens] saying which model length
+bins each length row of the conditional age-at-length data covers, one
+column per row. A row’s expected ages are the numbers at length and age
+summed over the bins it covers, so rows can sit on coarser bins than the
+model, and need not cover every bin. Unlike LenBinMap, its rows need not
+sum to one, since a model bin can sit in no row or in several. The
+age-at-length arrays are then dimensioned by n_caal_lens. NULL (default)
+gives one row per model bin.
 </td>
 </tr>
 <tr data-k="growth_a1 null reference ages for l1 and l2. growth_a2 = " linf makes l2 the asymptotic length itself.>
@@ -5661,7 +5679,7 @@ scalar or an array [n_pop × n_regions × n_years × n_seas × n_sexes ×
 n_fish_fleets]. Default one everywhere.
 </td>
 </tr>
-<tr data-k="wt_fish_caal array(1, dim = c(input_list$data$n_regions, length(input_list$data$years),      input_list$data$n_seas, length(input_list$data$lens), input_list$data$n_sexes,      input_list$data$n_fish_fleets)) weight on the fishery conditional age-at-length likelihood, multiplying each length bin's input sample size. array [n_regions x n_years x n_seas x n_lens x n_sexes x n_fish_fleets], the shape of iss_fish_caal. default one everywhere.">
+<tr data-k="wt_fish_caal array(1, dim = c(input_list$data$n_regions, length(input_list$data$years),      input_list$data$n_seas, length(caal_row_lens(input_list$data)),      input_list$data$n_sexes, input_list$data$n_fish_fleets)) weight on the fishery conditional age-at-length likelihood, multiplying each length row's input sample size. array [n_regions x n_years x n_seas x n_caal_lens x n_sexes x n_fish_fleets], the shape of iss_fish_caal. default one everywhere.">
 <td>
 <code class="optref-arg">Wt_Fish_caal</code>
 </td>
@@ -5670,18 +5688,17 @@ n_fish_fleets]. Default one everywhere.
 c(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_regions,
 length(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>years),
 input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_seas,
-length(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>lens),
+length(caal_row_lens(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mi>i</mi><mi>n</mi><mi>p</mi><mi>u</mi><msub><mi>t</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">data)),      input_list</annotation></semantics></math>data<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>s</mi></msub><mi>e</mi><mi>x</mi><mi>e</mi><mi>s</mi><mo>,</mo><mi>i</mi><mi>n</mi><mi>p</mi><mi>u</mi><msub><mi>t</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">n_sexes, input_list</annotation></semantics></math>data<span class="math inline">$n_fish_fleets))&lt;/code&gt;&lt;/td&gt;&lt;td&gt;Weight
+on the fishery conditional age-at-length likelihood, multiplying each
+length row's input sample size. Array [n_regions x n_years x n_seas x
+n_caal_lens x n_sexes x n_fish_fleets], the shape of ISS_Fish_caal.
+Default one everywhere.&lt;/td&gt;&lt;/tr&gt;
+&lt;tr data-k="wt_srv_caal array(1, dim =
+c(input_list$</span>data<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>r</mi></msub><mi>e</mi><mi>g</mi><mi>i</mi><mi>o</mi><mi>n</mi><mi>s</mi><mo>,</mo><mi>l</mi><mi>e</mi><mi>n</mi><mi>g</mi><mi>t</mi><mi>h</mi><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mi>n</mi><mi>p</mi><mi>u</mi><msub><mi>t</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">n_regions, length(input_list</annotation></semantics></math>data<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>y</mi><mi>e</mi><mi>a</mi><mi>r</mi><mi>s</mi><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mi>i</mi><mi>n</mi><mi>p</mi><mi>u</mi><msub><mi>t</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">years),      input_list</annotation></semantics></math>data<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>s</mi></msub><mi>e</mi><mi>a</mi><mi>s</mi><mo>,</mo><mi>l</mi><mi>e</mi><mi>n</mi><mi>g</mi><mi>t</mi><mi>h</mi><mo stretchy="false" form="prefix">(</mo><mi>c</mi><mi>a</mi><mi>a</mi><msub><mi>l</mi><mi>r</mi></msub><mi>o</mi><msub><mi>w</mi><mi>l</mi></msub><mi>e</mi><mi>n</mi><mi>s</mi><mo stretchy="false" form="prefix">(</mo><mi>i</mi><mi>n</mi><mi>p</mi><mi>u</mi><msub><mi>t</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">n_seas, length(caal_row_lens(input_list</annotation></semantics></math>data)),
 input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_sexes,
-input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_fish_fleets))</code>
-</td>
-<td>
-Weight on the fishery conditional age-at-length likelihood, multiplying
-each length bin’s input sample size. Array [n_regions x n_years x n_seas
-x n_lens x n_sexes x n_fish_fleets], the shape of ISS_Fish_caal. Default
-one everywhere.
-</td>
-</tr>
-<tr data-k="wt_srv_caal array(1, dim = c(input_list$data$n_regions, length(input_list$data$years),      input_list$data$n_seas, length(input_list$data$lens), input_list$data$n_sexes,      input_list$data$n_srv_fleets)) the survey counterpart, with n_srv_fleets last. default one everywhere.">
+input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_srv_fleets))
+the survey counterpart, with n_srv_fleets last. default one
+everywhere.”&gt;
 <td>
 <code class="optref-arg">Wt_Srv_caal</code>
 </td>
@@ -5690,12 +5707,12 @@ one everywhere.
 c(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_regions,
 length(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>years),
 input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_seas,
-length(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>lens),
-input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_sexes,
-input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi></mrow><annotation encoding="application/x-tex">data</annotation></semantics></math>n_srv_fleets))</code>
+length(caal_row_lens(input_list<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>d</mi><mi>a</mi><mi>t</mi><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo>,</mo><mi>i</mi><mi>n</mi><mi>p</mi><mi>u</mi><msub><mi>t</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">data)),      input_list</annotation></semantics></math>data<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>s</mi></msub><mi>e</mi><mi>x</mi><mi>e</mi><mi>s</mi><mo>,</mo><mi>i</mi><mi>n</mi><mi>p</mi><mi>u</mi><msub><mi>t</mi><mi>l</mi></msub><mi>i</mi><mi>s</mi><mi>t</mi></mrow><annotation encoding="application/x-tex">n_sexes, input_list</annotation></semantics></math>data$n_srv_fleets))</code>
 </td>
 <td>
 The survey counterpart, with n_srv_fleets last. Default one everywhere.
+</td>
+</code>
 </td>
 </tr>
 <tr data-k="fish_sel_pen_wts null null (default), or a named numeric vector or list weighting any subset of six selectivity smoothness penalties, which are evaluated on the fleet's realized selectivity by bin and year surface and so apply to any functional form: " smooth_bin_curve and are the second first difference across bins same years penalizes non-monotonicity regularizes each year mean. see resolve_sel_pen_wts get_selex_smoothness_penalty. a name left out is weight may instead be vector with one value per model so penalty can act in some only or at different strength each. specification also hold last bin penalties over. pass an unnamed list of per-fleet specifications to give fleet its own. call after setup_mod_fishsel_and_q.>
@@ -5773,7 +5790,9 @@ Setup_Mod_Srvsel_and_Q.
   sel.addEventListener("change", apply);
   apply();
 })();
-</script></main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
+</script></main>
+</div>
+  <aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
 
@@ -5788,11 +5807,5 @@ Setup_Mod_Srvsel_and_Q.
 </div>
 
     </footer>
-</div>
-
-
-
-
-
-  </body>
+</body>
 </html>

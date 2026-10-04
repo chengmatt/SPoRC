@@ -82,7 +82,14 @@ the map fixes at zero, which is the density the penalty evaluates at them.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">draw_growth_pe_surface</span><span class="op">(</span><span class="va">PE_model</span>, <span class="va">map</span>, <span class="va">pe_pars</span>, <span class="va">bins</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">draw_growth_pe_surface</span><span class="op">(</span></span>
+<span>  <span class="va">PE_model</span>,</span>
+<span>  <span class="va">map</span>,</span>
+<span>  <span class="va">pe_pars</span>,</span>
+<span>  <span class="va">bins</span>,</span>
+<span>  fit_devs <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  n_cond <span class="op">=</span> <span class="fl">0</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -106,10 +113,28 @@ the map fixes at zero, which is the density the penalty evaluates at them.</p>
 <dt id="arg-bins">bins<a class="anchor" aria-label="anchor" href="#arg-bins"></a></dt>
 <dd><p>Bins the correlated forms run over.</p></dd>
 
+
+<dt id="arg-fit-devs">fit_devs<a class="anchor" aria-label="anchor" href="#arg-fit-devs"></a></dt>
+<dd><p>The fit's deviations, shaped as <code>map</code>, read in the first
+<code>n_cond</code> years only.</p></dd>
+
+
+<dt id="arg-n-cond">n_cond<a class="anchor" aria-label="anchor" href="#arg-n-cond"></a></dt>
+<dd><p>Integer. Years that keep the fit's deviations. Default <code>0</code>
+draws every year.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Array shaped as <code>map</code>, zero where the map is <code>NA</code>.</p>
+    <p>Array shaped as <code>map</code>, zero where the map is <code>NA</code> outside
+  the conditioned years.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The first <code>n_cond</code> years keep the fit's deviations, and the years after
+them are drawn given those: a random walk steps on from the fit's last value,
+and the correlated forms draw from the precision conditional on the fit's
+cells as well as the fixed ones.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

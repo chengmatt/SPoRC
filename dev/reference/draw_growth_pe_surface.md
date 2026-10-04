@@ -15,7 +15,14 @@ zero, which is the density the penalty evaluates at them.
 ## Usage
 
 ``` r
-draw_growth_pe_surface(PE_model, map, pe_pars, bins)
+draw_growth_pe_surface(
+  PE_model,
+  map,
+  pe_pars,
+  bins,
+  fit_devs = NULL,
+  n_cond = 0
+)
 ```
 
 ## Arguments
@@ -38,6 +45,24 @@ draw_growth_pe_surface(PE_model, map, pe_pars, bins)
 
   Bins the correlated forms run over.
 
+- fit_devs:
+
+  The fit's deviations, shaped as `map`, read in the first `n_cond`
+  years only.
+
+- n_cond:
+
+  Integer. Years that keep the fit's deviations. Default `0` draws every
+  year.
+
 ## Value
 
-Array shaped as `map`, zero where the map is `NA`.
+Array shaped as `map`, zero where the map is `NA` outside the
+conditioned years.
+
+## Details
+
+The first `n_cond` years keep the fit's deviations, and the years after
+them are drawn given those: a random walk steps on from the fit's last
+value, and the correlated forms draw from the precision conditional on
+the fit's cells as well as the fixed ones.

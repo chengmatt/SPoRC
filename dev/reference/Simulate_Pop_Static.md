@@ -43,9 +43,10 @@ others): `NAA`, `NAA0`, `SSB`, `Dynamic_SSB0`, `eff_SSB`, `Rec`,
 `ObsSrvLenComps`, `ObsSrvLenComps_pop`, `ObsSrvIdx`, `TrueSrvIdx`,
 `ObsSrvIdx_pop`, `TrueSrvIdx_pop`, `conv_tagged_fish`,
 `conv_tagged_fish_attr`, `conv_tag_fish_avail`,
-`pred_conv_tag_fish_recap`, `obs_conv_tag_fish_recap`, and key dimension
-scalars (`n_regions`, `n_pop`, `n_yrs`, `n_ages`, etc.). Note that
-`n_years` and `n_yrs` are both present for backwards compatibility.
+`pred_conv_tag_fish_recap`, `obs_conv_tag_fish_recap`, `LenBinMap`, and
+key dimension scalars (`n_regions`, `n_pop`, `n_yrs`, `n_ages`, etc.).
+Note that `n_years` and `n_yrs` are both present for backwards
+compatibility.
 
 ## See also
 

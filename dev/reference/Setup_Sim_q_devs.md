@@ -37,12 +37,14 @@ Setup_Sim_q_devs(
 
   Numeric arrays `[n_regions, n_fleets]` of deviation standard
   deviations on the log scale, or a single value used for every region
-  and fleet. Default zero.
+  and fleet. Default zero. An array `[n_regions, n_fleets, n_sims]`
+  gives each replicate its own.
 
 - fish_q_rho, srv_q_rho:
 
   Numeric arrays `[n_regions, n_fleets]` of ar1 correlations on the
-  natural scale, read only under `"ar1"`. Default zero.
+  natural scale, read only under `"ar1"`. Default zero. An array
+  `[n_regions, n_fleets, n_sims]` gives each replicate its own.
 
 ## Value
 

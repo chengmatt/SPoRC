@@ -1051,7 +1051,7 @@ one file.</p>
 <code>Setup_Sim_Growth_RE</code>, <code>Setup_Sim_Movement</code>,
 <code>sim_growth_args</code>, <code>sim_growth_devs</code>,
 <code>sim_growth_length_sel</code>, <code>sim_map_over_years</code>,
-<code>take_sim_growth_years</code>
+<code>sim_move_setting</code>, <code>take_sim_growth_years</code>
 </td>
 <td>
 <code>model_growth.R</code>, <code>model_precision.R</code>,
@@ -1419,7 +1419,8 @@ one file.</p>
 <td><code>utils_setup.R</code></td>
 <td>
 <code>assign_sel_block</code>, <code>bins_or_null</code>,
-<code>check_bin_map</code>, <code>check_comp_bins_min</code>,
+<code>caal_row_lens</code>, <code>check_bin_map</code>,
+<code>check_caal_len_bin_map</code>, <code>check_comp_bins_min</code>,
 <code>check_comp_like_type</code>, <code>check_par_map_lengths</code>,
 <code>collapse_natmort_annual</code>, <code>collect_message</code>,
 <code>comp_like_type_options</code>, <code>convert_to_numeric</code>,
@@ -1430,15 +1431,15 @@ one file.</p>
 <code>fleet_bins_or_null</code>,
 <code>maintain_backwards_compatibility</code>,
 <code>obs_bin_count</code>, <code>obs_len_bins</code>,
-<code>parse_bin_subset</code>, <code>parse_comp_bins</code>,
-<code>parse_idx_cov</code>, <code>resolve_sel_pen_wts</code>,
-<code>resync_fitted_blocks</code>, <code>safe_extract</code>,
-<code>seed_dbnrml_peak</code>, <code>set_data_indicator_unused</code>,
-<code>setup_dbnrml_raw</code>, <code>setup_dbnrml_startbin</code>,
-<code>setup_sel_bin_devs</code>, <code>setup_sel_norm_bins</code>,
-<code>setup_sel_sex_offset</code>, <code>truncate_years</code>,
-<code>unused_at_age_on_obs_ages</code>, <code>use_starting_value</code>,
-<code>validate_selex_penalty</code>,
+<code>obs_len_labels</code>, <code>parse_bin_subset</code>,
+<code>parse_comp_bins</code>, <code>parse_idx_cov</code>,
+<code>resolve_sel_pen_wts</code>, <code>resync_fitted_blocks</code>,
+<code>safe_extract</code>, <code>seed_dbnrml_peak</code>,
+<code>set_data_indicator_unused</code>, <code>setup_dbnrml_raw</code>,
+<code>setup_dbnrml_startbin</code>, <code>setup_sel_bin_devs</code>,
+<code>setup_sel_norm_bins</code>, <code>setup_sel_sex_offset</code>,
+<code>truncate_years</code>, <code>unused_at_age_on_obs_ages</code>,
+<code>use_starting_value</code>, <code>validate_selex_penalty</code>,
 <code>validate_selex_prior_types</code>
 </td>
 <td>
@@ -1868,7 +1869,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-diag_*</code></td>
-<td>18</td>
+<td>19</td>
 <td>Post fit diagnostics: retrospectives and OSA residuals</td>
 </tr>
 <tr class="even">
@@ -1885,7 +1886,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 212 test files in total.</p>
+<p>That is 218 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

@@ -4350,9 +4350,26 @@ the ages the length data actually inform</td>
 recorded on, each row summing to one, for compositions on coarser bins
 than the population has. Expected compositions are mapped through it
 inside the likelihood exactly as the ageing error matrix maps ages, and
-the observed arrays are then dimensioned by the observed bins</td>
+the observed arrays are then dimensioned by the observed bins. The
+operating model draws simulated length compositions on the same bins
+through the same map</td>
 </tr>
 <tr class="odd">
+<td><code>CAAL_LenBinMap</code></td>
+<td>
+<code>NULL</code> or 0/1 <code>[l × l_\text{caal}]</code>
+</td>
+<td>Which model length bins each length row of the conditional
+age-at-length data covers, one column per row. A row’s expected ages are
+the joint numbers at length and age summed over the bins it covers, so
+the ages can be recorded on coarser length ranges than the population
+has, and a row need not cover every model bin. Unlike
+<code>LenBinMap</code> its rows need not sum to one, since a model bin
+can sit in no row or in several. The age-at-length arrays are then
+dimensioned by the rows, and the operating model draws on the same
+rows</td>
+</tr>
+<tr class="even">
 <td><code>AgeingError</code></td>
 <td>
 <code>NULL</code>, <code>[a × a_\text{obs}]</code> or
@@ -4367,7 +4384,7 @@ position inside the likelihood and validated by the same
 <code><a href="../reference/check_bin_map.html">check_bin_map()</a></code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>
 <code>AgeingError_fish</code>, <code>AgeingError_srv</code>
 </td>
@@ -4386,7 +4403,7 @@ operating model too, as <code>AgeingError_fish_input</code> /
 <code>Setup_Sim_Biologicals</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>
 <code>waa_model</code>, <code>wt_len_pars</code>
 </td>
@@ -4423,8 +4440,10 @@ fleet’s timing (<code>t_fish</code>, <code>t_srv</code>,
 curve, so within-year growth differences across fleets are entirely a
 function of <em>when</em> in the year they sample, not of the growth
 rate itself varying by season.</p>
-<p>In the operating model a fit’s growth deviations are drawn new for
-every replicate from the form the penalty gives them, at the fitted
+<p>In the operating model a fit’s growth deviations keep the fit’s
+values over the conditioning years (<code>n_cond_yrs</code>, every year
+of the fit by default) and are drawn after them for every replicate from
+the form the penalty gives them, given the fitted years, at the fitted
 process error parameters and under the fit’s maps, and weight at age,
 the size-age keys and selectivity at age are rebuilt from them. The self
 test and the closed loop do this on their own;
@@ -5274,7 +5293,12 @@ own, at <code>t_fish</code> or <code>t_srv</code>. Use
 <code>"length"</code> when selectivity is length based and the length
 compositions are what inform it. The two are different expected
 compositions, not two roundings of the same one, and the length
-likelihood can differ substantially between them</td>
+likelihood can differ substantially between them. The operating model
+forms its length compositions the same way, from
+<code>FishLenComps_sel</code> and <code>SrvLenComps_sel</code> in
+<code><a href="../reference/Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code> and
+<code><a href="../reference/Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>
+</td>
 </tr>
 <tr class="even">
 <td>
@@ -5710,8 +5734,9 @@ parameters (log-scale overdispersion), and correlation parameters.</p>
 <code><a href="../reference/Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps()</a></code> (the <code>Srv_</code> twins),
 with the weights <code>Wt_Fish_caal</code> and <code>Wt_Srv_caal</code>
 on <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>. A CAAL observation is the age
-composition of the fish aged from one length bin, so the arrays have a
-length dimension ahead of the age one
+composition of the fish aged from one length bin, or from one length row
+of <code>CAAL_LenBinMap</code>, which can cover several model bins, so
+the arrays have a length dimension ahead of the age one
 (<code>[r × y × τ × l × a × s × f]</code>), the use flag and input
 sample size are per length bin (<code>[r × y × τ × l × f]</code>,
 <code>[r × y × τ × l × s × f]</code>), and the sample size is the number

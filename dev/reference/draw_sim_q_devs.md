@@ -31,3 +31,8 @@ deviations and the deviations themselves are stored.
 A fleet a dsem wrote for is drawn whatever its own `<prefix>_q_model`
 says, so the series reaches catchability rather than an array nothing
 reads.
+
+A self test also stores `<prefix>_q_devs_est`, `[region, year, fleet]`,
+TRUE where the fit estimates a deviation. A cell the fit keeps fixed
+keeps the fit's value, and a walk or ar1 starts at the fleet's first
+estimated year, as the penalty does.

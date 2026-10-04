@@ -16,7 +16,7 @@ stored when the fit has no movement deviations or movement is fixed.
 ## Usage
 
 ``` r
-Setup_Sim_Movement(sim_list, data, pars)
+Setup_Sim_Movement(sim_list, data, pars, pars_by_sim = NULL)
 ```
 
 ## Arguments
@@ -32,6 +32,15 @@ Setup_Sim_Movement(sim_list, data, pars)
 - pars:
 
   Parameter list at the fitted values.
+
+- pars_by_sim:
+
+  Optional list of one parameter list per replicate, for replicates that
+  each run on their own parameter draw (`sim_type = "joint"` in
+  [`simulation_self_test`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_self_test.md)).
+  Each replicate's movement is then rebuilt from its own parameters,
+  deviations and process error. `NULL` (default) gives every replicate
+  `pars`.
 
 ## Value
 

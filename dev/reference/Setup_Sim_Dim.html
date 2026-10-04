@@ -83,6 +83,8 @@ validated on input and stored alongside derived quantities such as
 <span>  <span class="va">n_ages</span>,</span>
 <span>  n_lens <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  n_obs_ages <span class="op">=</span> <span class="va">n_ages</span>,</span>
+<span>  n_obs_lens <span class="op">=</span> <span class="va">n_lens</span>,</span>
+<span>  n_caal_lens <span class="op">=</span> <span class="va">n_lens</span>,</span>
 <span>  <span class="va">n_sexes</span>,</span>
 <span>  <span class="va">n_fish_fleets</span>,</span>
 <span>  <span class="va">n_srv_fleets</span>,</span>
@@ -146,6 +148,18 @@ and at-age data, the columns of <code>AgeingError_input</code>. Can differ from
 observations. Defaults to <code>n_ages</code>.</p></dd>
 
 
+<dt id="arg-n-obs-lens">n_obs_lens<a class="anchor" aria-label="anchor" href="#arg-n-obs-lens"></a></dt>
+<dd><p>Positive integer. Number of length bins the length
+compositions are recorded on, the columns of <code>LenBinMap_input</code> in
+<code><a href="Setup_Sim_Biologicals.html">Setup_Sim_Biologicals</a></code>. Defaults to <code>n_lens</code>.</p></dd>
+
+
+<dt id="arg-n-caal-lens">n_caal_lens<a class="anchor" aria-label="anchor" href="#arg-n-caal-lens"></a></dt>
+<dd><p>Positive integer. Number of length rows of the conditional
+age-at-length data, the columns of <code>CAAL_LenBinMap_input</code> in
+<code><a href="Setup_Sim_Biologicals.html">Setup_Sim_Biologicals</a></code>. Defaults to <code>n_lens</code>.</p></dd>
+
+
 <dt id="arg-n-sexes">n_sexes<a class="anchor" aria-label="anchor" href="#arg-n-sexes"></a></dt>
 <dd><p>Integer. Number of sexes; must be either <code>1</code>
 (sex-aggregated) or <code>2</code> (sex-structured).</p></dd>
@@ -193,7 +207,8 @@ than its median, <code>0</code> (default, the median) or <code>1</code>. Both sw
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A named list (<code>sim_list</code>) containing:</p><dl><dt><code>n_sims</code>, <code>n_yrs</code>, <code>n_pop</code>, <code>n_regions</code>,
       <code>n_seas</code>, <code>n_ages</code>, <code>n_obs_ages</code>, <code>n_lens</code>,
-      <code>n_sexes</code>, <code>n_fish_fleets</code>, <code>n_srv_fleets</code></dt>
+      <code>n_obs_lens</code>, <code>n_caal_lens</code>, <code>n_sexes</code>, <code>n_fish_fleets</code>,
+      <code>n_srv_fleets</code></dt>
 <dd><p>Dimension scalars supplied as inputs.</p></dd>
 
     <dt><code>natal_region</code></dt>

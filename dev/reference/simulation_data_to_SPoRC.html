@@ -102,7 +102,11 @@ operating model arrays.</p></dd>
   dim, <code>MatAA</code>, <code>SizeAgeTrans</code>, <code>AgeingError</code> <code>[y x n_ages x
   n_obs_ages]</code>, whose columns are the observed ages the model ages are read
   onto, and <code>AgeingError_fish</code> and <code>AgeingError_srv</code>, <code>NULL</code> when
-  the fleets share one matrix. The tagging elements are
+  the fleets share one matrix. <code>LenBinMap</code> is the map onto the length bins
+  the length compositions are recorded on, <code>NULL</code> when those are the
+  model's bins, and goes to <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></code> with the rest,
+  as does <code>CAAL_LenBinMap</code>, the model bins each age-at-length row covers.
+  The tagging elements are
   <code>use_conv_fish_tagging</code>, <code>conv_tag_release_indicator</code>,
   <code>obs_conv_tag_fish_recap</code>, <code>conv_tagged_fish</code>,
   <code>conv_tagged_fish_attr</code> and <code>n_tag_cohorts</code>.</p>

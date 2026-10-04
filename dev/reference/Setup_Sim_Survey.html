@@ -84,6 +84,7 @@ parameters. Call after <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></cod
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  t_srv <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  srv_idx_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
 <span>  SrvIdx_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -136,7 +137,9 @@ parameters. Call after <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></cod
 <span>  SrvLen_pop_corr_pars <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.01</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span>, <span class="fl">2</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  SrvLen_pop_corr_pars_agg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.01</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
-<span>  SrvLenComps_pop_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">2</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span>  SrvLenComps_pop_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">2</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  SrvLenComps_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
+<span>  srv_sel_l_input <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -210,6 +213,12 @@ n_srv_fleets × n_sims]</code>. Default 1.</p></dd>
 (default).</p></dd>
 
 
+<dt id="arg-srv-idx-ages">srv_idx_ages<a class="anchor" aria-label="anchor" href="#arg-srv-idx-ages"></a></dt>
+<dd><p>Ages counted in each fleet's index total, a 0/1 array
+<code>[n_ages × n_srv_fleets]</code>, the estimation model's <code>srv_idx_ages</code>.
+<code>NULL</code> (default) counts every age.</p></dd>
+
+
 <dt id="arg-srvidx-liketype">SrvIdx_LikeType<a class="anchor" aria-label="anchor" href="#arg-srvidx-liketype"></a></dt>
 <dd><p>Error structure each fleet's index is drawn under:
 <code>"lognormal"</code> (0, default), <code>"normal"</code> (1) or <code>"mvn"</code> (2),
@@ -252,8 +261,8 @@ for CAAL.</p></dd>
 
 
 <dt id="arg-iss-srv-caal">ISS_Srv_caal<a class="anchor" aria-label="anchor" href="#arg-iss-srv-caal"></a></dt>
-<dd><p>Number of fish aged within each length bin, `n_regions x
-n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x n_sims`. A bin whose sample
+<dd><p>Number of fish aged within each length row, `n_regions x
+n_yrs x n_seas x n_caal_lens x n_sexes x n_srv_fleets x n_sims`. A bin whose sample
 size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
 alongside a likelihood other than `"none"` switches `do_srv_caal` on. Requires
 `n_lens`.</p></dd>
@@ -341,6 +350,19 @@ n_srv_fleets × 2]</code>. Default 0.01.</p></dd>
 <dt id="arg-srvage-pop-corr-pars-agg-srvlen-pop-corr-pars-agg">SrvAge_pop_corr_pars_agg, SrvLen_pop_corr_pars_agg<a class="anchor" aria-label="anchor" href="#arg-srvage-pop-corr-pars-agg-srvlen-pop-corr-pars-agg"></a></dt>
 <dd><p>Their aggregated
 counterparts <code>[n_pop × n_srv_fleets]</code>. Default 0.01.</p></dd>
+
+
+<dt id="arg-srvlencomps-sel">SrvLenComps_sel<a class="anchor" aria-label="anchor" href="#arg-srvlencomps-sel"></a></dt>
+<dd><p>Character vector <code>[n_srv_fleets]</code>, <code>"age"</code>
+(default) or <code>"length"</code>, as in <code><a href="Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></code>.
+<code>"length"</code> spreads the numbers present at each age over length and selects
+them length by length, so the length compositions read <code>srv_sel_l_input</code>.</p></dd>
+
+
+<dt id="arg-srv-sel-l-input">srv_sel_l_input<a class="anchor" aria-label="anchor" href="#arg-srv-sel-l-input"></a></dt>
+<dd><p>Survey selectivity at length <code>[n_regions × n_yrs ×
+n_lens × n_sexes × n_srv_fleets × n_sims]</code>, read under
+<code>SrvLenComps_sel = "length"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

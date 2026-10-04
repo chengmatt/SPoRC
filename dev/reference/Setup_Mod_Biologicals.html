@@ -101,6 +101,7 @@ mapping. Call after <code><a href="Setup_Mod_Dim.html">Setup_Mod_Dim</a></code>.
 <span>  growth_semipar_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  growth_semipar_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  LenBinMap <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CAAL_LenBinMap <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  growth_A1 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  growth_A2 <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  growth_len_lower <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -378,6 +379,17 @@ observed bins, summing to one, or to zero to drop that bin. The length-axis
 twin of <code>AgeingError</code>, applied and validated identically. Use the
 <code>*LenComps_bins</code> arguments to leave bins out of the likelihood instead.
 <code>NULL</code> (default) fits on the model bins.</p></dd>
+
+
+<dt id="arg-caal-lenbinmap">CAAL_LenBinMap<a class="anchor" aria-label="anchor" href="#arg-caal-lenbinmap"></a></dt>
+<dd><p>Optional 0/1 matrix <code>[n_lens x n_caal_lens]</code> saying
+which model length bins each length row of the conditional age-at-length data
+covers, one column per row. A row's expected ages are the numbers at length and
+age summed over the bins it covers, so rows can sit on coarser bins than the
+model, and need not cover every bin. Unlike <code>LenBinMap</code>, its rows need not
+sum to one, since a model bin can sit in no row or in several. The
+age-at-length arrays are then dimensioned by <code>n_caal_lens</code>. <code>NULL</code>
+(default) gives one row per model bin.</p></dd>
 
 
 <dt id="arg-growth-a-growth-a-">growth_A1, growth_A2<a class="anchor" aria-label="anchor" href="#arg-growth-a-growth-a-"></a></dt>

@@ -28,6 +28,7 @@ Setup_Sim_Survey(
     sim_list$n_srv_fleets, sim_list$n_sims)),
   t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
+  srv_idx_ages = NULL,
   SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
   SrvIdx_seas_Type = NULL,
   SrvIdx_pop_seas_Type = NULL,
@@ -80,7 +81,9 @@ Setup_Sim_Survey(
   SrvLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
   SrvLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
-  SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
+  SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
+  SrvLenComps_sel = rep("age", sim_list$n_srv_fleets),
+  srv_sel_l_input = NULL
 )
 ```
 
@@ -154,6 +157,12 @@ Setup_Sim_Survey(
 
   Index type per fleet: 0/`"abd"` or 1/`"biom"` (default).
 
+- srv_idx_ages:
+
+  Ages counted in each fleet's index total, a 0/1 array
+  `[n_ages × n_srv_fleets]`, the estimation model's `srv_idx_ages`.
+  `NULL` (default) counts every age.
+
 - SrvIdx_LikeType:
 
   Error structure each fleet's index is drawn under: `"lognormal"` (0,
@@ -198,8 +207,8 @@ Setup_Sim_Survey(
 
 - ISS_Srv_caal:
 
-  Number of fish aged within each length bin, \`n_regions x n_yrs x
-  n_seas x n_lens x n_sexes x n_srv_fleets x n_sims\`. A bin whose
+  Number of fish aged within each length row, \`n_regions x n_yrs x
+  n_seas x n_caal_lens x n_sexes x n_srv_fleets x n_sims\`. A bin whose
   sample size rounds to zero is skipped. \`NULL\` (default) draws no
   CAAL; supplying it alongside a likelihood other than \`"none"\`
   switches \`do_srv_caal\` on. Requires \`n_lens\`.
@@ -286,6 +295,21 @@ Setup_Sim_Survey(
 - SrvAge_pop_corr_pars_agg, SrvLen_pop_corr_pars_agg:
 
   Their aggregated counterparts `[n_pop × n_srv_fleets]`. Default 0.01.
+
+- SrvLenComps_sel:
+
+  Character vector `[n_srv_fleets]`, `"age"` (default) or `"length"`, as
+  in
+  [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
+  `"length"` spreads the numbers present at each age over length and
+  selects them length by length, so the length compositions read
+  `srv_sel_l_input`.
+
+- srv_sel_l_input:
+
+  Survey selectivity at length
+  `[n_regions × n_yrs × n_lens × n_sexes × n_srv_fleets × n_sims]`, read
+  under `SrvLenComps_sel = "length"`.
 
 ## Value
 

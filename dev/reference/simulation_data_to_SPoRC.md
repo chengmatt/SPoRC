@@ -43,8 +43,13 @@ elements are `WAA`
 `WAA_srv` with a trailing fleet dim, `MatAA`, `SizeAgeTrans`,
 `AgeingError` `[y x n_ages x n_obs_ages]`, whose columns are the
 observed ages the model ages are read onto, and `AgeingError_fish` and
-`AgeingError_srv`, `NULL` when the fleets share one matrix. The tagging
-elements are `use_conv_fish_tagging`, `conv_tag_release_indicator`,
+`AgeingError_srv`, `NULL` when the fleets share one matrix. `LenBinMap`
+is the map onto the length bins the length compositions are recorded on,
+`NULL` when those are the model's bins, and goes to
+[`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md)
+with the rest, as does `CAAL_LenBinMap`, the model bins each
+age-at-length row covers. The tagging elements are
+`use_conv_fish_tagging`, `conv_tag_release_indicator`,
 `obs_conv_tag_fish_recap`, `conv_tagged_fish`, `conv_tagged_fish_attr`
 and `n_tag_cohorts`.
 

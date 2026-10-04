@@ -74,6 +74,8 @@ against the dimensions in <code>sim_list</code>. Call after <code><a href="Setup
 <span>  AgeingError_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  AgeingError_fish_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  AgeingError_srv_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  LenBinMap_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CAAL_LenBinMap_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_fish_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_srv_input <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -135,6 +137,20 @@ fleets, <code>[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]</code>,
 <code>n_srv_fleets</code> in place of <code>n_fish_fleets</code>.</p></dd>
 
 
+<dt id="arg-lenbinmap-input">LenBinMap_input<a class="anchor" aria-label="anchor" href="#arg-lenbinmap-input"></a></dt>
+<dd><p>Matrix <code>[n_lens × n_obs_lens]</code> mapping the model's
+length bins onto the bins the length compositions are recorded on, the
+<code>LenBinMap</code> of <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></code>. <code>NULL</code> (default)
+when the two coincide.</p></dd>
+
+
+<dt id="arg-caal-lenbinmap-input">CAAL_LenBinMap_input<a class="anchor" aria-label="anchor" href="#arg-caal-lenbinmap-input"></a></dt>
+<dd><p>0/1 matrix <code>[n_lens × n_caal_lens]</code> of the model
+length bins each conditional age-at-length row covers, the <code>CAAL_LenBinMap</code>
+of <code><a href="Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></code>. <code>NULL</code> (default) gives one row per
+model bin.</p></dd>
+
+
 <dt id="arg-sizeagetrans-input">SizeAgeTrans_input<a class="anchor" aria-label="anchor" href="#arg-sizeagetrans-input"></a></dt>
 <dd><p>Size-age transition array <code>[n_pop × n_regions ×
 n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]</code>, column-stochastic over
@@ -153,7 +169,8 @@ here when growth was estimated.</p></dd>
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p><code>sim_list</code> with <code>$natmort</code>, <code>$WAA</code>, <code>$WAA_fish</code>,
   <code>$WAA_srv</code>, <code>$MatAA</code>, <code>$AgeingError</code> (an identity matrix when
-  none was supplied) and, when supplied, <code>$SizeAgeTrans</code>.</p>
+  none was supplied) and, when supplied, <code>$LenBinMap</code> and
+  <code>$SizeAgeTrans</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

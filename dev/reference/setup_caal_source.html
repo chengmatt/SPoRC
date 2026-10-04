@@ -97,17 +97,18 @@ overdispersion parameters together with their maps. The likelihood weights
 
 <dt id="arg-obscaal">ObsCAAL<a class="anchor" aria-label="anchor" href="#arg-obscaal"></a></dt>
 <dd><p>Observed CAAL array <code>[n_regions x n_years x n_seas x
-n_lens x n_ages x n_sexes x n_fleets]</code>, or <code>NULL</code> for none.</p></dd>
+n_caal_lens x n_ages x n_sexes x n_fleets]</code>, or <code>NULL</code> for none. The
+length rows are the model's length bins, or the columns of <code>CAAL_LenBinMap</code>.</p></dd>
 
 
 <dt id="arg-usecaal">UseCAAL<a class="anchor" aria-label="anchor" href="#arg-usecaal"></a></dt>
-<dd><p>Use flags <code>[n_regions x n_years x n_seas x n_lens x
+<dd><p>Use flags <code>[n_regions x n_years x n_seas x n_caal_lens x
 n_fleets]</code>. A length bin with no aged fish has a zero and is skipped.</p></dd>
 
 
 <dt id="arg-iss-caal">ISS_CAAL<a class="anchor" aria-label="anchor" href="#arg-iss-caal"></a></dt>
 <dd><p>Input sample sizes <code>[n_regions x n_years x n_seas x
-n_lens x n_sexes x n_fleets]</code>, the number aged within each length bin. When
+n_caal_lens x n_sexes x n_fleets]</code>, the number aged within each length bin. When
 <code>NULL</code> it is summed from <code>ObsCAAL</code>.</p></dd>
 
 

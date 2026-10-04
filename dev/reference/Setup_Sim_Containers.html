@@ -75,7 +75,7 @@ any operating model dynamics.</p>
 <dd><p>A simulation list returned by <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></code>, whose
 <code>n_pop</code>, <code>n_regions</code>, <code>n_yrs</code>, <code>n_seas</code>, <code>n_ages</code>,
 <code>n_sexes</code>, <code>n_sims</code>, <code>n_fish_fleets</code>, <code>n_srv_fleets</code>,
-<code>n_obs_ages</code> and <code>n_lens</code> size every container.</p></dd>
+<code>n_obs_ages</code>, <code>n_lens</code> and <code>n_obs_lens</code> size every container.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -97,15 +97,15 @@ any operating model dynamics.</p>
   dims; <code>$ObsFishAgeComps</code> and <code>$ObsFishAgeComps_discard</code> with
   <code>n_obs_ages × n_sexes</code> before the fleet dim, and
   <code>$ObsFishLenComps</code> and <code>$ObsFishLenComps_discard</code> with
-  <code>n_lens × n_sexes</code>. Each has a <code>_pop</code> counterpart with a leading
+  <code>n_obs_lens × n_sexes</code>. Each has a <code>_pop</code> counterpart with a leading
   <code>n_pop</code>. The true catch and discards at age and length are <code>$CAA</code>,
   <code>$DAA</code> <code>[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes ×
   n_fish_fleets × n_sims]</code> and <code>$CAL</code>, <code>$DAL</code> with <code>n_lens</code> in
   place of <code>n_ages</code>.</p>
 <p>Survey: <code>$ObsSrvIdx</code> and <code>$TrueSrvIdx</code> <code>[n_regions × n_yrs ×
   n_seas × n_srv_fleets × n_sims]</code>, <code>$ObsSrvAgeComps</code> and
-  <code>$ObsSrvLenComps</code> with the bin and sex dims before the fleet dim, each
-  with a <code>_pop</code> counterpart, and the true <code>$SrvIAA</code> <code>[n_pop ×
+  <code>$ObsSrvLenComps</code> with the observed bin and sex dims before the fleet
+  dim, each with a <code>_pop</code> counterpart, and the true <code>$SrvIAA</code> <code>[n_pop ×
   n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]</code> and
   <code>$SrvIAL</code> with <code>n_lens</code> in place of <code>n_ages</code>.</p>
     </div>

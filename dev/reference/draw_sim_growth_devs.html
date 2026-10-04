@@ -5,7 +5,10 @@ model penalizes them under, at the fitted process error parameters: a
 parameter's sd in the time-varying half of growth_pe_pars and the
 surface's in the semi-parametric half, as Get_PE_loglik reads them.
 The fit's maps decide what is drawn: a cell the map fixes stays at zero, a
-shared level takes one draw, and years past the fit are active. Growth is
+shared level takes one draw, and years past the fit are active. The first
+n_cond_yrs years of every replicate keep the fit's own deviations, or
+the replicate's own draw of them under a joint self test, and the years after
+them are drawn given those at that replicate's process error. Growth is
 then rebuilt through derive_sim_growth; under cohort growth that
 builds only the years before the propagation starts, and the annual cycle
 advances the rest from each replicate's own numbers at age."><meta property="og:description" content="Each varying growth parameter's series and the semi-parametric surface are
@@ -14,7 +17,10 @@ model penalizes them under, at the fitted process error parameters: a
 parameter's sd in the time-varying half of growth_pe_pars and the
 surface's in the semi-parametric half, as Get_PE_loglik reads them.
 The fit's maps decide what is drawn: a cell the map fixes stays at zero, a
-shared level takes one draw, and years past the fit are active. Growth is
+shared level takes one draw, and years past the fit are active. The first
+n_cond_yrs years of every replicate keep the fit's own deviations, or
+the replicate's own draw of them under a joint self test, and the years after
+them are drawn given those at that replicate's process error. Growth is
 then rebuilt through derive_sim_growth; under cohort growth that
 builds only the years before the propagation starts, and the annual cycle
 advances the rest from each replicate's own numbers at age."><meta name="robots" content="noindex"></head><body>
@@ -77,7 +83,10 @@ model penalizes them under, at the fitted process error parameters: a
 parameter's sd in the time-varying half of <code>growth_pe_pars</code> and the
 surface's in the semi-parametric half, as <code>Get_PE_loglik</code> reads them.
 The fit's maps decide what is drawn: a cell the map fixes stays at zero, a
-shared level takes one draw, and years past the fit are active. Growth is
+shared level takes one draw, and years past the fit are active. The first
+<code>n_cond_yrs</code> years of every replicate keep the fit's own deviations, or
+the replicate's own draw of them under a joint self test, and the years after
+them are drawn given those at that replicate's process error. Growth is
 then rebuilt through <code>derive_sim_growth</code>; under cohort growth that
 builds only the years before the propagation starts, and the annual cycle
 advances the rest from each replicate's own numbers at age.</p>
@@ -94,7 +103,8 @@ advances the rest from each replicate's own numbers at age.</p>
 
 <dl><dt id="arg-sim-env">sim_env<a class="anchor" aria-label="anchor" href="#arg-sim-env"></a></dt>
 <dd><p>Simulation environment holding what <code>Setup_Sim_Growth_RE</code>
-stored, <code>n_yrs</code> and <code>n_sims</code>.</p></dd>
+stored, <code>n_yrs</code>, <code>n_sims</code> and <code>n_cond_yrs</code> (<code>NULL</code> or
+<code>0</code> draws every year).</p></dd>
 
 </dl></div>
     <div class="section level2">

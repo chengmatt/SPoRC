@@ -143,9 +143,9 @@ simulation_self_test(
 - n_cond_yrs:
 
   Integer. The first years of every replicate reproduce the fit's
-  catchability and movement deviations, and later years are drawn.
-  Default every year of the fit, so nothing is redrawn; `0` draws every
-  year from the fitted process.
+  catchability, movement and growth deviations, and later years are
+  drawn. Default every year of the fit, so nothing is redrawn; `0` draws
+  every year from the fitted process.
 
 ## Value
 

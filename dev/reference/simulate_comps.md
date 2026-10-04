@@ -2,9 +2,11 @@
 
 Draws composition samples for one region, year, fleet, season and
 replicate under the multinomial, Dirichlet-multinomial or
-logistic-normal likelihoods, applying ageing error after the draw for
-age compositions. A `comp_type` or `comp_like` of `999` returns `Obs`
-unchanged.
+logistic-normal likelihoods. The expected composition is mapped onto the
+bins the data are recorded on before the draw, through the ageing error
+for ages and the length bin map for lengths, so the draw comes from the
+distribution the fit evaluates. A `comp_type` or `comp_like` of `999`
+returns `Obs` unchanged.
 
 ## Usage
 
@@ -60,8 +62,9 @@ simulate_comps(
 
 - AgeingError:
 
-  Ageing error matrices `[n_yrs × n_obs_ages × n_ages × n_sims]`,
-  ignored when `age_or_len = 1`.
+  Ageing error matrices `[n_yrs × n_ages × n_obs_ages × n_sims]`. For
+  length compositions, the length bin map `[n_lens × n_obs_lens]`, or
+  `NULL` when the lengths are recorded on the model's bins.
 
 - comp_like:
 
@@ -95,8 +98,8 @@ simulate_comps(
 
 - Obs:
 
-  Observed composition container, dimensioned like `Exp` and written in
-  place.
+  Observed composition container, dimensioned like `Exp` with the
+  observed bins in place of `n_cat`, written in place.
 
 - pop_specific:
 
@@ -131,7 +134,7 @@ simulate_comps(
 - age_or_len:
 
   Integer. `0` for age compositions, which take ageing error, `1` for
-  length compositions, which do not.
+  length compositions, which take the length bin map.
 
 ## Value
 
@@ -141,10 +144,10 @@ slice is unchanged.
 
 ## Details
 
-Joint compositions (`comp_type = 2`) apply ageing error across the
-combined age by sex vector through the Kronecker product `diag(n_sexes)`
-and `AgeingError`. Aggregated compositions (`comp_type = 0`) are drawn
-only on the final region pass, from expected proportions marginalized
-over regions and sexes. Under `pop_specific = TRUE` each population is
-drawn separately from its own sample sizes, dispersion and correlations,
-and that aggregation happens within a population.
+Joint compositions (`comp_type = 2`) map each sex's ages or lengths on
+their own before one draw across the stack. Aggregated compositions
+(`comp_type = 0`) are drawn only on the final region pass, from expected
+proportions marginalized over regions and sexes. Under
+`pop_specific = TRUE` each population is drawn separately from its own
+sample sizes, dispersion and correlations, and that aggregation happens
+within a population.

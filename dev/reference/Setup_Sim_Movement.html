@@ -85,7 +85,7 @@ or movement is fixed.</p>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Setup_Sim_Movement</span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">data</span>, <span class="va">pars</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Setup_Sim_Movement</span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">data</span>, <span class="va">pars</span>, pars_by_sim <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -103,6 +103,14 @@ or movement is fixed.</p>
 
 <dt id="arg-pars">pars<a class="anchor" aria-label="anchor" href="#arg-pars"></a></dt>
 <dd><p>Parameter list at the fitted values.</p></dd>
+
+
+<dt id="arg-pars-by-sim">pars_by_sim<a class="anchor" aria-label="anchor" href="#arg-pars-by-sim"></a></dt>
+<dd><p>Optional list of one parameter list per replicate, for
+replicates that each run on their own parameter draw (<code>sim_type =
+"joint"</code> in <code><a href="simulation_self_test.html">simulation_self_test</a></code>). Each replicate's movement
+is then rebuilt from its own parameters, deviations and process error.
+<code>NULL</code> (default) gives every replicate <code>pars</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

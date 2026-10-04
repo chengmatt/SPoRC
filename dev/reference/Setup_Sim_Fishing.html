@@ -101,6 +101,7 @@ composition settings for the aggregate and population-specific data sources.</p>
 <span>  ObsFishIdx_pop_SE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.2</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  fish_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  fish_idx_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  Catch_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Catch_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -161,6 +162,9 @@ composition settings for the aggregate and population-specific data sources.</p>
 <span>  FishLen_pop_corr_pars_agg <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.01</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  FishLenComps_pop_Type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">2</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  FishLenComps_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
+<span>  fish_sel_l_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ret_sel_l_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ret_sel_input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sexes</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -311,6 +315,12 @@ second. Default 0.2.</p></dd>
 `n_regions x n_fish_fleets`.</p></dd>
 
 
+<dt id="arg-fish-idx-ages">fish_idx_ages<a class="anchor" aria-label="anchor" href="#arg-fish-idx-ages"></a></dt>
+<dd><p>Ages counted in each fleet's index total, a 0/1 array
+`n_ages x n_fish_fleets`, the estimation model's `fish_idx_ages`. `NULL`
+(default) counts every age.</p></dd>
+
+
 <dt id="arg-fishidx-liketype">FishIdx_LikeType<a class="anchor" aria-label="anchor" href="#arg-fishidx-liketype"></a></dt>
 <dd><p>Error structure each fleet's index is drawn under:
 `"lognormal"` (0, default), `"normal"` (1) or `"mvn"` (2), matching the
@@ -360,8 +370,8 @@ zero sample.</p></dd>
 
 
 <dt id="arg-iss-fish-caal">ISS_Fish_caal<a class="anchor" aria-label="anchor" href="#arg-iss-fish-caal"></a></dt>
-<dd><p>Number of fish aged within each length bin, `n_regions x
-n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`. A bin whose sample
+<dd><p>Number of fish aged within each length row, `n_regions x
+n_yrs x n_seas x n_caal_lens x n_sexes x n_fish_fleets x n_sims`. A bin whose sample
 size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
 alongside a likelihood other than `"none"` is what switches `do_fish_caal` on.
 Requires `n_lens`.</p></dd>
@@ -444,6 +454,20 @@ n_regions x n_sexes x n_fish_fleets x 2`. Default 0.01.</p></dd>
 
 <dt id="arg-fishage-pop-corr-pars-agg-fishlen-pop-corr-pars-agg-fishage-discard-pop-corr-pars-agg-fishlen-discard-pop-corr-pars-agg">FishAge_pop_corr_pars_agg, FishLen_pop_corr_pars_agg, FishAge_discard_pop_corr_pars_agg, FishLen_discard_pop_corr_pars_agg<a class="anchor" aria-label="anchor" href="#arg-fishage-pop-corr-pars-agg-fishlen-pop-corr-pars-agg-fishage-discard-pop-corr-pars-agg-fishlen-discard-pop-corr-pars-agg"></a></dt>
 <dd><p>Their aggregated counterparts, `n_pop x n_fish_fleets`. Default 0.01.</p></dd>
+
+
+<dt id="arg-fishlencomps-sel">FishLenComps_sel<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-sel"></a></dt>
+<dd><p>Character vector `[n_fish_fleets]`, `"age"` (default) or
+`"length"`, as in [Setup_Mod_FishIdx_and_Comps()]. `"length"` spreads the fish
+available at each age over length and selects them length by length, so the
+length compositions read `fish_sel_l_input`.</p></dd>
+
+
+<dt id="arg-fish-sel-l-input-ret-sel-l-input">fish_sel_l_input, ret_sel_l_input<a class="anchor" aria-label="anchor" href="#arg-fish-sel-l-input-ret-sel-l-input"></a></dt>
+<dd><p>Fishery and retention selectivity at
+length, `n_regions x n_yrs x n_lens x n_sexes x n_fish_fleets x n_sims`, read
+under `FishLenComps_sel = "length"`. `ret_sel_l_input = NULL` (default) keeps
+retention at age.</p></dd>
 
 
 <dt id="arg-ret-sel-input">ret_sel_input<a class="anchor" aria-label="anchor" href="#arg-ret-sel-input"></a></dt>

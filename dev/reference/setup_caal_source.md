@@ -35,19 +35,20 @@ setup_caal_source(
 - ObsCAAL:
 
   Observed CAAL array
-  `[n_regions x n_years x n_seas x n_lens x n_ages x n_sexes x n_fleets]`,
-  or `NULL` for none.
+  `[n_regions x n_years x n_seas x n_caal_lens x n_ages x n_sexes x n_fleets]`,
+  or `NULL` for none. The length rows are the model's length bins, or
+  the columns of `CAAL_LenBinMap`.
 
 - UseCAAL:
 
-  Use flags `[n_regions x n_years x n_seas x n_lens x n_fleets]`. A
+  Use flags `[n_regions x n_years x n_seas x n_caal_lens x n_fleets]`. A
   length bin with no aged fish has a zero and is skipped.
 
 - ISS_CAAL:
 
   Input sample sizes
-  `[n_regions x n_years x n_seas x n_lens x n_sexes x n_fleets]`, the
-  number aged within each length bin. When `NULL` it is summed from
+  `[n_regions x n_years x n_seas x n_caal_lens x n_sexes x n_fleets]`,
+  the number aged within each length bin. When `NULL` it is summed from
   `ObsCAAL`.
 
 - CAAL_LikeType:

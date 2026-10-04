@@ -422,13 +422,14 @@ A fit with movement random effects (`move_year_re`, `move_age_re`,
 [`Setup_Mod_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md))
 comes into the self test and the closed loop on its own without
 additional setup. Over the conditioning years (`n_cond_yrs`, every year
-of the fit by default) each replicate keeps the fit’s own deviations, so
-the historical movement is the conditioned fit’s; the years after them
-are drawn from the process the estimation model penalizes, at the fitted
-/ specified sd and correlations, with an AR1 continuing from the last
-fitted year, and the movement matrix is rebuilt from them before the
-population is run. An operating model built by hand from such a fit
-takes the same step through
+of the fit by default) each replicate keeps the fit’s own deviations, or
+under `sim_type = "joint"` its own draw of them, so the historical
+movement is the conditioned fit’s; the years after them are drawn from
+the process the estimation model penalizes, at the fitted / specified sd
+and correlations, with an AR1 continuing from the last fitted year, and
+the movement matrix is rebuilt from them before the population is run.
+An operating model built by hand from such a fit takes the same step
+through
 [`Setup_Sim_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Movement.md),
 which stores the fit’s switches, process error parameters and movement
 arguments on the simulation list;
@@ -453,18 +454,23 @@ sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own move_devs
 
 A fit with growth deviations (`growth_tv_model` or `growth_semipar` in
 [`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md))
-can be setup in the same way. Each replicate draws every varying
-parameter’s series and the semi-parametric surface from the form the
-estimation model penalizes them under, iid, random walk, separable AR1
-or the three dimensional field, at the fitted process error parameters
-and under the fit’s maps, so a cell the map fixes stays at zero and a
-shared level takes one draw; weight at age, the size-age keys and
-selectivity at age are then rebuilt through the fit’s own
+can be setup in the same way. Over the conditioning years each replicate
+keeps the fit’s own deviations, or under `sim_type = "joint"` its own
+draw of them and of the growth parameters, as it does for movement, and
+the years after them are drawn given those from the form the estimation
+model penalizes them under, iid, random walk, separable AR1 or the three
+dimensional field, at the fitted process error parameters and under the
+fit’s maps, so a random walk steps on from the last fitted year, the
+correlated forms are drawn conditional on the fitted years, a cell the
+map fixes stays at zero and a shared level takes one draw; weight at
+age, the size-age keys and selectivity at age are then rebuilt through
+the fit’s own
 [`Get_Growth()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md).
-Under cohort growth only the years before the propagation starts are
-built up front, and the annual cycle advances the rest from each
-replicate’s own numbers at age. An operating model built by hand takes
-the step through
+An operating model built by hand without `n_cond_yrs` on its simulation
+list draws every year. Under cohort growth only the years before the
+propagation starts are built up front, and the annual cycle advances the
+rest from each replicate’s own numbers at age. An operating model built
+by hand takes the step through
 [`Setup_Sim_Growth_RE()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Growth_RE.md),
 which needs the fit’s report under selectivity at length. A dsem holding
 or linking any growth deviation draws both arrays through
@@ -484,6 +490,43 @@ sim_list$WAA <- replicate(sim_list$n_sims, fit$rep$WAA) # and WAA_fish, WAA_srv,
 sim_list <- Setup_Sim_Growth_RE(sim_list, fit$data, fit$env$parList(), rep = fit$rep)
 sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own ln_growth_devs and weight at age
 ```
+
+A fit with catchability deviations (`fish_q_model` or `srv_q_model` set
+to `"iid"`, `"rw"` or `"ar1"`) is treated the same way in the self test.
+Over the conditioning years each replicate keeps the fit’s own
+deviations, or under `sim_type = "joint"` its own draw of them, and the
+years after them are drawn from the form the estimation model penalizes,
+at the fitted sigma and correlation (each replicate’s own draw of them
+under joint), so a random walk steps on from the last conditioned year.
+A year that `q_re_years` leaves out, or a region with no index, keeps
+the fit’s value, since the fit estimates no deviation there. An
+operating model built by hand sets the same process through
+[`Setup_Sim_q_devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_q_devs.md).
+
+A fit whose length compositions are recorded on coarser bins than the
+population (`LenBinMap` in
+[`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md)),
+or are selected at length (`FishLenComps_sel` or `SrvLenComps_sel` set
+to `"length"`), also comes into the self test and the closed loop
+without additional setup. The operating model maps each expected length
+composition onto the recorded bins before drawing it, as the estimation
+model maps it before evaluating the likelihood, and reads each expected
+age composition and each age-at-length row through the fleet’s ageing
+error the same way, so a simulated composition comes from the
+distribution the fit evaluates. Under selectivity at length it spreads
+the fish at each age over length and selects them length by length from
+the fit’s selectivity at length, as the estimation model does, and the
+conditional age-at-length is drawn from that same catch or index at
+length and age. An operating model built by hand takes the map through
+`n_obs_lens` in
+[`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md)
+and `LenBinMap_input` in
+[`Setup_Sim_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Biologicals.md),
+and the selectivity at length through `fish_sel_l_input` and
+`ret_sel_l_input` in
+[`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md)
+and `srv_sel_l_input` in
+[`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md).
 
 Neither
 [`Setup_Sim_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Movement.md)

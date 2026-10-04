@@ -18,6 +18,8 @@ Setup_Sim_Biologicals(
   AgeingError_input = NULL,
   AgeingError_fish_input = NULL,
   AgeingError_srv_input = NULL,
+  LenBinMap_input = NULL,
+  CAAL_LenBinMap_input = NULL,
   SizeAgeTrans_input = NULL,
   SizeAgeTrans_fish_input = NULL,
   SizeAgeTrans_srv_input = NULL
@@ -79,6 +81,20 @@ Setup_Sim_Biologicals(
   As `AgeingError_fish_input` with `n_srv_fleets` in place of
   `n_fish_fleets`.
 
+- LenBinMap_input:
+
+  Matrix `[n_lens × n_obs_lens]` mapping the model's length bins onto
+  the bins the length compositions are recorded on, the `LenBinMap` of
+  [`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
+  `NULL` (default) when the two coincide.
+
+- CAAL_LenBinMap_input:
+
+  0/1 matrix `[n_lens × n_caal_lens]` of the model length bins each
+  conditional age-at-length row covers, the `CAAL_LenBinMap` of
+  [`Setup_Mod_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md).
+  `NULL` (default) gives one row per model bin.
+
 - SizeAgeTrans_input:
 
   Size-age transition array
@@ -98,7 +114,7 @@ Setup_Sim_Biologicals(
 
 `sim_list` with `$natmort`, `$WAA`, `$WAA_fish`, `$WAA_srv`, `$MatAA`,
 `$AgeingError` (an identity matrix when none was supplied) and, when
-supplied, `$SizeAgeTrans`.
+supplied, `$LenBinMap` and `$SizeAgeTrans`.
 
 ## See also
 

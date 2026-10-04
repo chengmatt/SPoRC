@@ -540,31 +540,38 @@ n_lens, and expected compositions are mapped through it inside the
 likelihood the way AgeingError maps ages</td>
 </tr>
 <tr class="odd">
+<td>CAAL_LenBinMap</td>
+<td>0/1 matrix dimensioned by n_lens, n_caal_lens saying which model
+length bins each conditional age-at-length row covers. NULL for one row
+per model bin; when supplied, the conditional age-at-length arrays are
+dimensioned by n_caal_lens rather than n_lens</td>
+</tr>
+<tr class="even">
 <td>ln_growth_pars</td>
 <td>Parameter array dimensioned by n_pop, n_regions, n_sexes,
 n_growth_pars of log growth parameters in the order L1, L2, K, CV1, CV2,
 and rho under the Richards form</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ln_growth_devs</td>
 <td>Parameter array dimensioned by n_pop, n_regions, n_years,
 n_growth_pars, n_sexes of deviations on the growth parameters, zero and
 mapped off for parameters that do not vary and for years outside
 growth_tv_years</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>map_ln_growth_devs</td>
 <td>Array dimensioned like ln_growth_devs indicating which growth
 parameter deviations are fixed (mapped off), read by the process error
 penalty</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>ln_growth_semipar_devs</td>
 <td>Parameter array dimensioned by n_pop, n_regions, n_years, n_ages,
 n_sexes of semi-parametric deviations on mean length at age, multiplying
 the parametric curve</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>growth_pe_pars</td>
 <td>Parameter array dimensioned by n_pop, n_regions, max(4, n_ages,
 n_growth_pars), n_sexes, 2 of process error hyperparameters for both
@@ -575,46 +582,46 @@ cohort in slots one to three and the log scale in slot four for the
 correlated forms; the iid and random walk forms instead read one log
 sigma per age. Slots a form does not read are mapped off</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>map_ln_growth_semipar_devs</td>
 <td>Array dimensioned like ln_growth_semipar_devs indicating which
 semi-parametric growth deviations are fixed (mapped off)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>growth_semipar_bins</td>
 <td>Integer vector of the age indices the semi-parametric surface is
 evaluated over, used to subset the age dimension when evaluating GMRF or
 2D AR(1) likelihoods. Defaults to every age</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>addtocomp</td>
 <td>Constant to add to all composition data</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>comp_const_obs</td>
 <td>Value specifying whether addtocomp is also added to the observed
 proportions used as multinomial weights. 1 (default): added to both
 observed and expected, the long-standing behavior; 0: added only inside
 the logarithms, a convention several existing assessments use</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>addtofishidx</td>
 <td>Constant to add to all fishery index data</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>addtosrvidx</td>
 <td>Constant to add to all survey index data</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>addtotag</td>
 <td>Constant to add to all tagging data</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Use_M_prior</td>
 <td>Value specifying whether natural mortality priors are used. 0: Don’t
 use prior, 1: Use prior</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>M_prior</td>
 <td>A data frame specifying how natural mortality priors should be
 applied. Must include columns: popblk (population block index),
@@ -622,7 +629,7 @@ regionblk (region block index), yearblk (year block index), ageblk (age
 block index), sexblk (sex block index), mu (prior mean on natural
 scale), and sd (prior standard deviation on log scale)</td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td>Fixed_natmort</td>
 <td>Natural mortality array dimensioned by n_pop, n_regions, n_years,
 n_ages, n_sexes, or by n_pop, n_regions, n_years, n_seas, n_ages,
@@ -630,7 +637,7 @@ n_sexes when the rate differs between seasons. Values are instantaneous
 rates per year in both forms, and the array without a season dimension
 is expanded across seasons</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td>M_blocks</td>
 <td>Array that specifies the natural mortality blocking structure,
 dimensioned by n_pop, n_regions, n_years, n_seas, n_ages, n_sexes.
@@ -1264,27 +1271,27 @@ length compositions. 0: Don’t fit, 1: Fit</td>
 <tr class="odd">
 <td>ObsFish_caal</td>
 <td>Observed fishery conditional age-at-length dimensioned by n_regions,
-n_years, n_seas, n_lens, n_ages, n_sexes, n_fish_fleets: the ages of the
-fish aged from each length bin. Can be input as proportions or
+n_years, n_seas, n_caal_lens, n_ages, n_sexes, n_fish_fleets: the ages
+of the fish aged from each length bin. Can be input as proportions or
 numbers</td>
 </tr>
 <tr class="even">
 <td>UseFish_caal</td>
-<td>Array dimensioned by n_regions, n_years, n_seas, n_lens,
+<td>Array dimensioned by n_regions, n_years, n_seas, n_caal_lens,
 n_fish_fleets specifying whether to fit each length bin’s age
 composition. 0: Don’t fit, 1: Fit</td>
 </tr>
 <tr class="odd">
 <td>ISS_Fish_caal</td>
-<td>Array dimensioned by n_regions, n_years, n_seas, n_lens, n_sexes,
-n_fish_fleets specifying the input sample size of each length bin, the
-number of fish aged from it</td>
+<td>Array dimensioned by n_regions, n_years, n_seas, n_caal_lens,
+n_sexes, n_fish_fleets specifying the input sample size of each length
+bin, the number of fish aged from it</td>
 </tr>
 <tr class="even">
 <td>Wt_Fish_caal</td>
-<td>Array dimensioned by n_regions, n_years, n_seas, n_lens, n_sexes,
-n_fish_fleets specifying a multinomial weight to apply to fishery
-conditional age-at-length, set in
+<td>Array dimensioned by n_regions, n_years, n_seas, n_caal_lens,
+n_sexes, n_fish_fleets specifying a multinomial weight to apply to
+fishery conditional age-at-length, set in
 <code><a href="../reference/Setup_Mod_Weighting.html">Setup_Mod_Weighting()</a></code>
 </td>
 </tr>

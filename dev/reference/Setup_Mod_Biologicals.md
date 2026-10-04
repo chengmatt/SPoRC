@@ -45,6 +45,7 @@ Setup_Mod_Biologicals(
   growth_semipar_ages = NULL,
   growth_semipar_years = NULL,
   LenBinMap = NULL,
+  CAAL_LenBinMap = NULL,
   growth_A1 = NULL,
   growth_A2 = NULL,
   growth_len_lower = NULL,
@@ -327,6 +328,17 @@ Setup_Mod_Biologicals(
   The length-axis twin of `AgeingError`, applied and validated
   identically. Use the `*LenComps_bins` arguments to leave bins out of
   the likelihood instead. `NULL` (default) fits on the model bins.
+
+- CAAL_LenBinMap:
+
+  Optional 0/1 matrix `[n_lens x n_caal_lens]` saying which model length
+  bins each length row of the conditional age-at-length data covers, one
+  column per row. A row's expected ages are the numbers at length and
+  age summed over the bins it covers, so rows can sit on coarser bins
+  than the model, and need not cover every bin. Unlike `LenBinMap`, its
+  rows need not sum to one, since a model bin can sit in no row or in
+  several. The age-at-length arrays are then dimensioned by
+  `n_caal_lens`. `NULL` (default) gives one row per model bin.
 
 - growth_A1, growth_A2:
 

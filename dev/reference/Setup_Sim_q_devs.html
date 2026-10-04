@@ -100,13 +100,15 @@ series from <code><a href="Setup_Sim_DSEM.html">Setup_Sim_DSEM</a></code>.</p></
 <dt id="arg-sigma-fish-q-sigma-srv-q">sigma_fish_q, sigma_srv_q<a class="anchor" aria-label="anchor" href="#arg-sigma-fish-q-sigma-srv-q"></a></dt>
 <dd><p>Numeric arrays
 <code>[n_regions, n_fleets]</code> of deviation standard deviations on the log
-scale, or a single value used for every region and fleet. Default zero.</p></dd>
+scale, or a single value used for every region and fleet. Default zero.
+An array <code>[n_regions, n_fleets, n_sims]</code> gives each replicate its own.</p></dd>
 
 
 <dt id="arg-fish-q-rho-srv-q-rho">fish_q_rho, srv_q_rho<a class="anchor" aria-label="anchor" href="#arg-fish-q-rho-srv-q-rho"></a></dt>
 <dd><p>Numeric arrays <code>[n_regions, n_fleets]</code> of
 ar1 correlations on the natural scale, read only under <code>"ar1"</code>.
-Default zero.</p></dd>
+Default zero. An array <code>[n_regions, n_fleets, n_sims]</code> gives each
+replicate its own.</p></dd>
 
 </dl></div>
     <div class="section level2">

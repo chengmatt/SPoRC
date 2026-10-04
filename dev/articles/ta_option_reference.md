@@ -6,7 +6,7 @@ given setting is, whereas [Overview of Model
 Options](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md)
 explains why it exists and which ones to specify.
 
-All stages Dim (17) Rec (65) Biologicals (72) Movement (32) Tagging (19)
+All stages Dim (17) Rec (65) Biologicals (73) Movement (32) Tagging (19)
 Catch_and_F (72) FishIdx_and_Comps (77) SrvIdx_and_Comps (74)
 Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35)
 
@@ -108,7 +108,7 @@ Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35)
 
 ### Setup_Mod_Biologicals
 
-72 arguments
+73 arguments
 
 | Argument | Default | Description |
 |----|----|----|
@@ -147,6 +147,7 @@ Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35)
 | `growth_semipar_ages` | `NULL` | Ages the deviations are estimated over, as ages rather than indices. NULL (default) uses every age; ages outside the set stay at zero. |
 | `growth_semipar_years` | `NULL` | Calendar years the deviations are estimated over. NULL (default) uses every year. |
 | `LenBinMap` | `NULL` | Optional matrix \[n_lens x n_obs_lens\] mapping the model’s length bins onto the bins the compositions are recorded on, for compositions on coarser bins than the model has. Each row is one model bin’s share across the observed bins, summing to one, or to zero to drop that bin. The length-axis twin of AgeingError, applied and validated identically. Use the \*LenComps_bins arguments to leave bins out of the likelihood instead. NULL (default) fits on the model bins. |
+| `CAAL_LenBinMap` | `NULL` | Optional 0/1 matrix \[n_lens x n_caal_lens\] saying which model length bins each length row of the conditional age-at-length data covers, one column per row. A row’s expected ages are the numbers at length and age summed over the bins it covers, so rows can sit on coarser bins than the model, and need not cover every bin. Unlike LenBinMap, its rows need not sum to one, since a model bin can sit in no row or in several. The age-at-length arrays are then dimensioned by n_caal_lens. NULL (default) gives one row per model bin. |
 | `growth_A1` | `NULL` | Reference ages for L1 and L2. growth_A2 = "Linf" makes L2 the asymptotic length itself. |
 | `growth_A2` | `NULL` | Reference ages for L1 and L2. growth_A2 = "Linf" makes L2 the asymptotic length itself. |
 | `growth_len_lower` | `NULL` | Lower edges of the length bins. lens in Setup_Mod_Dim are midpoints; the key is built on the edges. |
@@ -619,40 +620,4 @@ Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35)
 
 35 arguments
 
-| Argument | Default | Description |
-|----|----|----|
-| `addtocomp` | `0.001` | Small constant added to the composition proportions to avoid log(0). Default 1e-3. Ignored by the logistic normal, which handles zeros itself. |
-| `comp_const_obs` | `1` | Integer switch for where addtocomp enters the multinomial, not a constant to tune. 1 (default) adds it to the observed proportions that weight the likelihood as well as inside the logarithms, so the likelihood is stationary at pred = obs; 0 weights by the raw observed proportions. With a Dirichlet-multinomial conditional age-at-length fleet, 1 warns, since the constant biases theta upward when most age bins in a length bin are structurally empty. |
-| `addtofishidx` | `1e-04` | Small constants added to the fishery and survey indices. Default 1e-4. |
-| `addtosrvidx` | `1e-04` | Small constants added to the fishery and survey indices. Default 1e-4. |
-| `addtotag` | `1e-10` | Small constant added to the tag recovery observations. Default 1e-10. |
-| `Wt_Catch` | `1` | Weights on the catch and fishery index likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_fish_fleets\]. Default 1. |
-| `Wt_FishIdx` | `1` | Weights on the catch and fishery index likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_fish_fleets\]. Default 1. |
-| `Wt_SrvIdx` | `1` | Weight on the survey index likelihood, a scalar or an array \[n_regions × n_years × n_seas × n_srv_fleets\]. Default 1. |
-| `Wt_Catch_pop` | `1` | The population-specific catch and fishery index weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_fish_fleets\]. Default 1. |
-| `Wt_FishIdx_pop` | `1` | The population-specific catch and fishery index weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_fish_fleets\]. Default 1. |
-| `Wt_SrvIdx_pop` | `1` | The population-specific survey index weight, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_srv_fleets\]. Default 1. |
-| `Wt_Rec` | `1` | Weight on the recruitment deviation penalty, a scalar or an array \[n_pop × n_regions × n_est_rec_devs\], where the third dim is ln_RecDevs’s own rather than the number of years, since dont_est_recdev_last and n_proj_yrs_devs both move it. Default 1. A zero leaves a deviation estimated but takes it out of the penalty, which is how a stock-recruit relationship is fit over a window of years while recruitment stays free in every year; dont_est_recdev_last instead removes the deviations, so recruitment reverts to the deterministic prediction. |
-| `Wt_Init_Rec` | `NULL` | Weight on the initial age deviation penalty, a scalar or an array \[n_pop × n_regions × (n_ages - 1) × n_sexes\]. NULL (default) takes Wt_Rec when that is a scalar; supply it explicitly when Wt_Rec is an array, since the two penalties are dimensioned differently. |
-| `Wt_F` | `1` | Scalar weight on the fishing mortality deviation penalty. Default 1. |
-| `Wt_Tagging` | `1` | Scalar weight on the tag recovery likelihood. Default 1. |
-| `Wt_FishAgeComps` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | Weights on the fishery and discard composition likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_SrvAgeComps` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_srv_fleets))` | Weights on the survey composition likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_sexes × n_srv_fleets\]. Default one everywhere. |
-| `Wt_FishLenComps` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | Weights on the fishery and discard composition likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_SrvLenComps` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_srv_fleets))` | Weights on the survey composition likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_sexes × n_srv_fleets\]. Default one everywhere. |
-| `Wt_FishAgeComps_pop` | `array(1, dim = c(input_list`$`data`$`n_pop, input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | The population-specific fishery and discard composition weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_SrvAgeComps_pop` | `array(1, dim = c(input_list`$`data`$`n_pop, input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_srv_fleets))` | The population-specific survey composition weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets\]. Default one everywhere. |
-| `Wt_FishLenComps_pop` | `array(1, dim = c(input_list`$`data`$`n_pop, input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | The population-specific fishery and discard composition weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_SrvLenComps_pop` | `array(1, dim = c(input_list`$`data`$`n_pop, input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_srv_fleets))` | The population-specific survey composition weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_sexes × n_srv_fleets\]. Default one everywhere. |
-| `Wt_Discard` | `1` | Weight on the aggregated discard amount or fraction likelihood, a scalar or an array \[n_regions × n_years × n_seas × n_fish_fleets\]. Default 1. |
-| `Wt_Discard_pop` | `1` | The population-specific discard weight, a scalar or an array with a leading n_pop dim. Default 1. |
-| `Wt_D` | `1` | Scalar weight on the discard mortality rate deviation penalty. Default 1. |
-| `Wt_FishAgeComps_discard` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | Weights on the fishery and discard composition likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_FishLenComps_discard` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | Weights on the fishery and discard composition likelihoods, a scalar or an array \[n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_FishAgeComps_discard_pop` | `array(1, dim = c(input_list`$`data`$`n_pop, input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | The population-specific fishery and discard composition weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_FishLenComps_discard_pop` | `array(1, dim = c(input_list`$`data`$`n_pop, input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | The population-specific fishery and discard composition weights, a scalar or an array \[n_pop × n_regions × n_years × n_seas × n_sexes × n_fish_fleets\]. Default one everywhere. |
-| `Wt_Fish_caal` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, length(input_list`$`data`$`lens), input_list`$`data`$`n_sexes, input_list`$`data`$`n_fish_fleets))` | Weight on the fishery conditional age-at-length likelihood, multiplying each length bin’s input sample size. Array \[n_regions x n_years x n_seas x n_lens x n_sexes x n_fish_fleets\], the shape of ISS_Fish_caal. Default one everywhere. |
-| `Wt_Srv_caal` | `array(1, dim = c(input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, length(input_list`$`data`$`lens), input_list`$`data`$`n_sexes, input_list`$`data`$`n_srv_fleets))` | The survey counterpart, with n_srv_fleets last. Default one everywhere. |
-| `fish_sel_pen_wts` | `NULL` | NULL (default), or a named numeric vector or list weighting any subset of six selectivity smoothness penalties, which are evaluated on the fleet's realized selectivity by bin and year surface and so apply to any functional form: "smooth_bin_curve" and "smooth_bin_diff" are the second and first difference across bins, "smooth_yr_diff" and "smooth_yr_curve" the same across years, "smooth_dome" penalizes non-monotonicity across bins, and "smooth_mean_center" regularizes each year's mean. See resolve_sel_pen_wts and Get_Selex_Smoothness_Penalty. A name left out is 0. Each weight may instead be a vector with one value per model year, so a penalty can act in some years only or at a different strength in each. The specification may also hold "bin_range", the first and last bin the penalties act over. Pass an unnamed list of per-fleet specifications to give each fleet its own. Call after Setup_Mod_Fishsel_and_Q. |
-| `ret_sel_pen_wts` | `NULL` | As fish_sel_pen_wts, for retained fishery selectivity. |
-| `srv_sel_pen_wts` | `NULL` | As fish_sel_pen_wts, for survey selectivity. Call after Setup_Mod_Srvsel_and_Q. |
+Argument

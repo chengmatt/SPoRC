@@ -1,15 +1,15 @@
 # Simulate conditional age-at-length observations
 
-Draws one age composition per length bin from the joint distribution of
-length and age implied by the size-age transition matrix and the true
-numbers at age (catch at age for the fishery, index at age for the
-survey). The joint for a region, length bin and sex is \\P(l \mid a)
-N_a\\ summed over populations, and the draw for bin \\l\\ is a
-multinomial (or Dirichlet-multinomial) of `ISS[l]` fish across ages with
-that row as the probability, which is the conditional \\P(a \mid l)\\ by
-construction. Ageing error is applied to the drawn counts the same way
-[`simulate_comps`](https://chengmatt.github.io/SPoRC/dev/reference/simulate_comps.md)
-applies it to marginal age compositions.
+Draws one age composition per length bin from the joint numbers at
+length and age the fit builds for the same fleet: the catch or index at
+each age spread over length by the size-age key, or under selectivity at
+length the fish available at each age spread over length and selected
+length by length. The row for a region, length bin and sex is summed
+over populations and read through the fleet's ageing error onto the
+observed ages, and the draw for bin \\l\\ is a multinomial (or
+Dirichlet-multinomial) of `ISS[l]` fish across observed ages with that
+row as the probability, which is the conditional \\P(a \mid l)\\ the fit
+evaluates.
 
 ## Usage
 
@@ -20,8 +20,7 @@ simulate_caal(
   f,
   seas,
   sim,
-  SizeAgeTrans,
-  AtAge,
+  Joint,
   ISS,
   AgeingError,
   comp_like,
@@ -31,7 +30,8 @@ simulate_caal(
   n_sexes,
   n_regions,
   n_lens,
-  Obs
+  Obs,
+  CAAL_LenBinMap = NULL
 )
 ```
 
@@ -41,20 +41,15 @@ simulate_caal(
 
   Region, year, fleet, season and replicate indices.
 
-- SizeAgeTrans:
+- Joint:
 
-  Array `[pop, region, year, season, len, age, sex, sim]` of \\P(l \mid
-  a)\\.
-
-- AtAge:
-
-  Array `[pop, region, year, season, age, sex, fleet, sim]` of true
-  numbers at age for this fleet type.
+  Array `[pop, region, len, age, sex]` of the fleet's numbers at length
+  and age in this year, season and replicate.
 
 - ISS:
 
-  Array `[region, year, season, len, sex, fleet, sim]` of fish aged per
-  length bin. A zero skips the bin.
+  Array `[region, year, season, length row, sex, fleet, sim]` of fish
+  aged per length row. A zero skips the row.
 
 - AgeingError:
 
@@ -82,8 +77,13 @@ simulate_caal(
 
 - Obs:
 
-  Array `[region, year, season, len, obs_age, sex, fleet, sim]` the
-  draws are written into.
+  Array `[region, year, season, length row, obs_age, sex, fleet, sim]`
+  the draws are written into.
+
+- CAAL_LenBinMap:
+
+  Optional 0/1 matrix `[n_lens x n_caal_lens]` of the model length bins
+  each length row covers. `NULL` (default) gives one row per model bin.
 
 ## Value
 

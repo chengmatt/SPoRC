@@ -66,11 +66,13 @@ Setup_Mod_Weighting(
     input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
     input_list$data$n_sexes, input_list$data$n_fish_fleets)),
   Wt_Fish_caal = array(1, dim = c(input_list$data$n_regions,
-    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens),
-    input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+    length(input_list$data$years), input_list$data$n_seas,
+    length(caal_row_lens(input_list$data)), input_list$data$n_sexes,
+    input_list$data$n_fish_fleets)),
   Wt_Srv_caal = array(1, dim = c(input_list$data$n_regions,
-    length(input_list$data$years), input_list$data$n_seas, length(input_list$data$lens),
-    input_list$data$n_sexes, input_list$data$n_srv_fleets)),
+    length(input_list$data$years), input_list$data$n_seas,
+    length(caal_row_lens(input_list$data)), input_list$data$n_sexes,
+    input_list$data$n_srv_fleets)),
   fish_sel_pen_wts = NULL,
   ret_sel_pen_wts = NULL,
   srv_sel_pen_wts = NULL
@@ -205,8 +207,8 @@ Setup_Mod_Weighting(
 - Wt_Fish_caal:
 
   Weight on the fishery conditional age-at-length likelihood,
-  multiplying each length bin's input sample size. Array
-  `[n_regions x n_years x n_seas x n_lens x n_sexes x n_fish_fleets]`,
+  multiplying each length row's input sample size. Array
+  `[n_regions x n_years x n_seas x n_caal_lens x n_sexes x n_fish_fleets]`,
   the shape of `ISS_Fish_caal`. Default one everywhere.
 
 - Wt_Srv_caal:

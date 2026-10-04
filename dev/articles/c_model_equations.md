@@ -3115,11 +3115,23 @@ E_{p,r,y,\tau,a,s,f}^{\,\text{caal}(l)} = \dfrac{C_{p,r,y,\tau,l,a,s,f}^{la}}{\s
 ```
 
 which is $`P(a \mid l)`$ under the model, since the joint array is
-$`P(l \mid a)`$ times the numbers at age. Each length bin is then fit as
-its own composition with the multinomial or Dirichlet-multinomial above,
-with the input sample size the number of fish aged from that bin
-(`ISS_Fish_caal`, `ISS_Srv_caal`) and the weight `Wt_Fish_caal`,
-`Wt_Srv_caal` multiplying it:
+$`P(l \mid a)`$ times the numbers at age. When the ages were recorded on
+length ranges coarser than the model’s bins (`CAAL_LenBinMap`), row
+$`k`$ covers a set $`L_k`$ of model length bins, the bins marked 1 in
+column $`k`$, and its expectation sums the joint array over them before
+normalizing:
+
+``` math
+E_{p,r,y,\tau,a,s,f}^{\,\text{caal}(k)} = \dfrac{\sum_{l \in L_k} C_{p,r,y,\tau,l,a,s,f}^{la}}{\sum_{a'}\sum_{l \in L_k} C_{p,r,y,\tau,l,a',s,f}^{la}}
+```
+
+where $`L_k`$ need not hold every model bin, and need not be whole bins
+of a coarser grid. Without the map $`L_k`$ is the single bin $`l = k`$,
+and the likelihood below runs over rows $`k`$ in place of bins $`l`$.
+Each length bin is then fit as its own composition with the multinomial
+or Dirichlet-multinomial above, with the input sample size the number of
+fish aged from that bin (`ISS_Fish_caal`, `ISS_Srv_caal`) and the weight
+`Wt_Fish_caal`, `Wt_Srv_caal` multiplying it:
 
 ``` math
 -\ell^{\text{caal}} = \sum_{l}\lambda_{l}\,\text{ISS}_{l}\sum_{a}\left( O_{a}^{(l)} + c\,\mathbb{1}^{\text{const}} \right)\left\lbrack \log\left( O_{a}^{(l)} + c \right) - \log\left( E_{a}^{(l)} + c \right) \right\rbrack

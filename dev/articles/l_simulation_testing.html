@@ -484,12 +484,13 @@ SSB and recruitment.</p>
 <code><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement()</a></code>) comes into the self test and the
 closed loop on its own without additional setup. Over the conditioning
 years (<code>n_cond_yrs</code>, every year of the fit by default) each
-replicate keeps the fit’s own deviations, so the historical movement is
-the conditioned fit’s; the years after them are drawn from the process
-the estimation model penalizes, at the fitted / specified sd and
-correlations, with an AR1 continuing from the last fitted year, and the
-movement matrix is rebuilt from them before the population is run. An
-operating model built by hand from such a fit takes the same step
+replicate keeps the fit’s own deviations, or under
+<code>sim_type = "joint"</code> its own draw of them, so the historical
+movement is the conditioned fit’s; the years after them are drawn from
+the process the estimation model penalizes, at the fitted / specified sd
+and correlations, with an AR1 continuing from the last fitted year, and
+the movement matrix is rebuilt from them before the population is run.
+An operating model built by hand from such a fit takes the same step
 through <code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code>, which stores the fit’s
 switches, process error parameters and movement arguments on the
 simulation list; <code><a href="../reference/Setup_sim_env.html">Setup_sim_env()</a></code> then draws and rebuilds. A
@@ -508,16 +509,22 @@ arguments.</p>
 <span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own move_devs and Movement</span></span></code></pre></div>
 <p>A fit with growth deviations (<code>growth_tv_model</code> or
 <code>growth_semipar</code> in <code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>) can
-be setup in the same way. Each replicate draws every varying parameter’s
-series and the semi-parametric surface from the form the estimation
-model penalizes them under, iid, random walk, separable AR1 or the three
-dimensional field, at the fitted process error parameters and under the
-fit’s maps, so a cell the map fixes stays at zero and a shared level
+be setup in the same way. Over the conditioning years each replicate
+keeps the fit’s own deviations, or under <code>sim_type = "joint"</code>
+its own draw of them and of the growth parameters, as it does for
+movement, and the years after them are drawn given those from the form
+the estimation model penalizes them under, iid, random walk, separable
+AR1 or the three dimensional field, at the fitted process error
+parameters and under the fit’s maps, so a random walk steps on from the
+last fitted year, the correlated forms are drawn conditional on the
+fitted years, a cell the map fixes stays at zero and a shared level
 takes one draw; weight at age, the size-age keys and selectivity at age
-are then rebuilt through the fit’s own <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code>. Under
-cohort growth only the years before the propagation starts are built up
-front, and the annual cycle advances the rest from each replicate’s own
-numbers at age. An operating model built by hand takes the step through
+are then rebuilt through the fit’s own <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code>. An
+operating model built by hand without <code>n_cond_yrs</code> on its
+simulation list draws every year. Under cohort growth only the years
+before the propagation starts are built up front, and the annual cycle
+advances the rest from each replicate’s own numbers at age. An operating
+model built by hand takes the step through
 <code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code>, which needs the fit’s report under
 selectivity at length. A dsem holding or linking any growth deviation
 draws both arrays through <code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code> instead. One
@@ -533,6 +540,38 @@ at the walk’s own sd rather than the diffuse
 <span><span class="va">sim_list</span><span class="op">$</span><span class="va">WAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">replicate</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span>, <span class="va">fit</span><span class="op">$</span><span class="va">rep</span><span class="op">$</span><span class="va">WAA</span><span class="op">)</span> <span class="co"># and WAA_fish, WAA_srv, SizeAgeTrans_fish, SizeAgeTrans_srv the same way</span></span>
 <span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE</a></span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">fit</span><span class="op">$</span><span class="va">data</span>, <span class="va">fit</span><span class="op">$</span><span class="va">env</span><span class="op">$</span><span class="fu">parList</span><span class="op">(</span><span class="op">)</span>, rep <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">rep</span><span class="op">)</span></span>
 <span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own ln_growth_devs and weight at age</span></span></code></pre></div>
+<p>A fit with catchability deviations (<code>fish_q_model</code> or
+<code>srv_q_model</code> set to <code>"iid"</code>, <code>"rw"</code> or
+<code>"ar1"</code>) is treated the same way in the self test. Over the
+conditioning years each replicate keeps the fit’s own deviations, or
+under <code>sim_type = "joint"</code> its own draw of them, and the
+years after them are drawn from the form the estimation model penalizes,
+at the fitted sigma and correlation (each replicate’s own draw of them
+under joint), so a random walk steps on from the last conditioned year.
+A year that <code>q_re_years</code> leaves out, or a region with no
+index, keeps the fit’s value, since the fit estimates no deviation
+there. An operating model built by hand sets the same process through
+<code><a href="../reference/Setup_Sim_q_devs.html">Setup_Sim_q_devs()</a></code>.</p>
+<p>A fit whose length compositions are recorded on coarser bins than the
+population (<code>LenBinMap</code> in
+<code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>), or are selected at length
+(<code>FishLenComps_sel</code> or <code>SrvLenComps_sel</code> set to
+<code>"length"</code>), also comes into the self test and the closed
+loop without additional setup. The operating model maps each expected
+length composition onto the recorded bins before drawing it, as the
+estimation model maps it before evaluating the likelihood, and reads
+each expected age composition and each age-at-length row through the
+fleet’s ageing error the same way, so a simulated composition comes from
+the distribution the fit evaluates. Under selectivity at length it
+spreads the fish at each age over length and selects them length by
+length from the fit’s selectivity at length, as the estimation model
+does, and the conditional age-at-length is drawn from that same catch or
+index at length and age. An operating model built by hand takes the map
+through <code>n_obs_lens</code> in <code><a href="../reference/Setup_Sim_Dim.html">Setup_Sim_Dim()</a></code> and
+<code>LenBinMap_input</code> in <code><a href="../reference/Setup_Sim_Biologicals.html">Setup_Sim_Biologicals()</a></code>,
+and the selectivity at length through <code>fish_sel_l_input</code> and
+<code>ret_sel_l_input</code> in <code><a href="../reference/Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code> and
+<code>srv_sel_l_input</code> in <code><a href="../reference/Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>.</p>
 <p>Neither <code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code> nor
 <code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code> is required to read anything that an
 optimizer produced; both only need <code>data</code> and a parameter

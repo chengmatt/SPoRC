@@ -18,8 +18,8 @@ Setup_Sim_Containers(sim_list)
   A simulation list returned by
   [`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
   whose `n_pop`, `n_regions`, `n_yrs`, `n_seas`, `n_ages`, `n_sexes`,
-  `n_sims`, `n_fish_fleets`, `n_srv_fleets`, `n_obs_ages` and `n_lens`
-  size every container.
+  `n_sims`, `n_fish_fleets`, `n_srv_fleets`, `n_obs_ages`, `n_lens` and
+  `n_obs_lens` size every container.
 
 ## Value
 
@@ -41,16 +41,17 @@ Fishery: `$ObsCatch` and `$TrueCatch`
 `$ObsFishIdx`, `$TrueFishIdx`, `$ObsDiscard` and `$TrueDiscard` on the
 same dims; `$ObsFishAgeComps` and `$ObsFishAgeComps_discard` with
 `n_obs_ages × n_sexes` before the fleet dim, and `$ObsFishLenComps` and
-`$ObsFishLenComps_discard` with `n_lens × n_sexes`. Each has a `_pop`
-counterpart with a leading `n_pop`. The true catch and discards at age
-and length are `$CAA`, `$DAA`
+`$ObsFishLenComps_discard` with `n_obs_lens × n_sexes`. Each has a
+`_pop` counterpart with a leading `n_pop`. The true catch and discards
+at age and length are `$CAA`, `$DAA`
 `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_fish_fleets × n_sims]`
 and `$CAL`, `$DAL` with `n_lens` in place of `n_ages`.
 
 Survey: `$ObsSrvIdx` and `$TrueSrvIdx`
 `[n_regions × n_yrs × n_seas × n_srv_fleets × n_sims]`,
-`$ObsSrvAgeComps` and `$ObsSrvLenComps` with the bin and sex dims before
-the fleet dim, each with a `_pop` counterpart, and the true `$SrvIAA`
+`$ObsSrvAgeComps` and `$ObsSrvLenComps` with the observed bin and sex
+dims before the fleet dim, each with a `_pop` counterpart, and the true
+`$SrvIAA`
 `[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]`
 and `$SrvIAL` with `n_lens` in place of `n_ages`.
 

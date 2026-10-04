@@ -21,6 +21,8 @@ Setup_Sim_Dim(
   n_ages,
   n_lens = NULL,
   n_obs_ages = n_ages,
+  n_obs_lens = n_lens,
+  n_caal_lens = n_lens,
   n_sexes,
   n_fish_fleets,
   n_srv_fleets,
@@ -87,6 +89,20 @@ Setup_Sim_Dim(
   `n_ages` when the plus group or youngest ages are pooled differently
   in observations. Defaults to `n_ages`.
 
+- n_obs_lens:
+
+  Positive integer. Number of length bins the length compositions are
+  recorded on, the columns of `LenBinMap_input` in
+  [`Setup_Sim_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Biologicals.md).
+  Defaults to `n_lens`.
+
+- n_caal_lens:
+
+  Positive integer. Number of length rows of the conditional
+  age-at-length data, the columns of `CAAL_LenBinMap_input` in
+  [`Setup_Sim_Biologicals`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Biologicals.md).
+  Defaults to `n_lens`.
+
 - n_sexes:
 
   Integer. Number of sexes; must be either `1` (sex-aggregated) or `2`
@@ -138,7 +154,8 @@ Setup_Sim_Dim(
 A named list (`sim_list`) containing:
 
 - `n_sims`, `n_yrs`, `n_pop`, `n_regions`, `n_seas`, `n_ages`,
-  `n_obs_ages`, `n_lens`, `n_sexes`, `n_fish_fleets`, `n_srv_fleets`:
+  `n_obs_ages`, `n_lens`, `n_obs_lens`, `n_caal_lens`, `n_sexes`,
+  `n_fish_fleets`, `n_srv_fleets`:
 
   Dimension scalars supplied as inputs.
 

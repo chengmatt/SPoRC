@@ -4291,15 +4291,10 @@ Standard deviation of the first estimated year of a random walk. NA
 ln_fish_q as the level of the series.
 </td>
 </tr>
-<tr data-k="fish_q_re_years null ">
-<td>
-<code class="optref-arg">fish_q_re_years</code>
-</td>
-<td>
-<code>NULL</code>
-</td>
-<td>
-</td>
+<tr data-k="fish_q_re_years null list [n_fish_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or null for every year. null (default) gives every fleet every year. projection years are always estimated regardless. a year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell, except at that fleet's first estimated year: there a random walk gets the diffuse fish_q_rw_init_sigma start and an ar1 its stationary marginal sd, the same treatment year one gets when nothing is fixed ahead of it. read only for a fleet whose fish_q_model is not " none>
+<td><code class="optref-arg">fish_q_re_years</code></td>
+<td><code>NULL</code></td>
+<td>List [n_fish_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or NULL for every year. NULL (default) gives every fleet every year. Projection years are always estimated regardless. A year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell, except at that fleet's first estimated year: there a random walk gets the diffuse fish_q_rw_init_sigma start and an ar1 its stationary marginal sd, the same treatment year one gets when nothing is fixed ahead of it. Read only for a fleet whose fish_q_model is not "none".</td>
 </tr>
 <tr data-k="fishsel_pe_pars_spec null character vector [n_fish_fleets] of the estimation structure for the selectivity process error hyperparameters, required when any fleet varies continuously. see do_sel_pe_pars_mapping.">
 <td>
@@ -4875,10 +4870,10 @@ ln_srv_q as the level of the series; a wide value leaves the level free
 and confounds it with ln_srv_q.
 </td>
 </tr>
-<tr data-k="srv_q_re_years null list [n_srv_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or null for every year. null (default) gives every fleet every year. projection years are always estimated regardless. a year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell. read only for a fleet whose srv_q_model is not " none>
+<tr data-k="srv_q_re_years null list [n_srv_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or null for every year. null (default) gives every fleet every year. projection years are always estimated regardless. a year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell, except at that fleet's first estimated year: there a random walk gets the diffuse srv_q_rw_init_sigma start and an ar1 its stationary marginal sd, the same treatment year one gets when nothing is fixed ahead of it. read only for a fleet whose srv_q_model is not " none>
 <td><code class="optref-arg">srv_q_re_years</code></td>
 <td><code>NULL</code></td>
-<td>List [n_srv_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or NULL for every year. NULL (default) gives every fleet every year. Projection years are always estimated regardless. A year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell. Read only for a fleet whose srv_q_model is not "none".</td>
+<td>List [n_srv_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or NULL for every year. NULL (default) gives every fleet every year. Projection years are always estimated regardless. A year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell, except at that fleet's first estimated year: there a random walk gets the diffuse srv_q_rw_init_sigma start and an ar1 its stationary marginal sd, the same treatment year one gets when nothing is fixed ahead of it. Read only for a fleet whose srv_q_model is not "none".</td>
 </tr>
 <tr data-k="use_srv_selex_prior 0 integer (0/1) for priors on the survey selectivity parameters. default 0.">
 <td>

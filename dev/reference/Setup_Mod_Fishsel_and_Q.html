@@ -83,6 +83,7 @@ after <code><a href="Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Com
 <span>  sigma_fish_q_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
 <span>  fish_q_rho_spec <span class="op">=</span> <span class="st">"est_all"</span>,</span>
 <span>  fish_q_rw_init_sigma <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  fish_q_re_years <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fishsel_pe_pars_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_fixed_sel_pars_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_q_spec <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -241,6 +242,21 @@ options as <code>sigma_fish_q_spec</code>. Default <code>"est_all"</code>. Only 
 <dd><p>Standard deviation of the first estimated year of a
 random walk. <code>NA</code> (default) starts the walk at zero under its own sigma,
 which keeps <code>ln_fish_q</code> as the level of the series.</p></dd>
+
+
+<dt id="arg-fish-q-re-years">fish_q_re_years<a class="anchor" aria-label="anchor" href="#arg-fish-q-re-years"></a></dt>
+<dd><p>List <code>[n_fish_fleets]</code>, each element the model
+years (as indices into <code>data$years</code>, not calendar years) that
+fleet's catchability deviations are estimated over, or <code>NULL</code> for
+every year. <code>NULL</code> (default) gives every fleet every year.
+Projection years are always estimated regardless. A year left out of a
+fleet's vector holds that fleet's deviation fixed at zero, which a
+random walk or ar1 then steps through like any other fixed cell, except
+at that fleet's first estimated year: there a random walk gets the
+diffuse <code>fish_q_rw_init_sigma</code> start and an ar1 its stationary
+marginal sd, the same treatment year one gets when nothing is fixed
+ahead of it. Read only for a fleet whose <code>fish_q_model</code> is not
+<code>"none"</code>.</p></dd>
 
 
 <dt id="arg-fishsel-pe-pars-spec">fishsel_pe_pars_spec<a class="anchor" aria-label="anchor" href="#arg-fishsel-pe-pars-spec"></a></dt>

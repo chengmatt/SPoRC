@@ -59,7 +59,8 @@ do_q_devs_mapping(
   Projection years are always estimated. A year left out holds its
   deviation fixed at its starting value (zero unless set by `...`),
   which a random walk or ar1 then steps through like any other fixed
-  cell.
+  cell, except at a fleet's first estimated year: see
+  [`Get_q_dev_penalty`](https://chengmatt.github.io/SPoRC/dev/reference/Get_q_dev_penalty.md).
 
 ## Value
 

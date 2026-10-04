@@ -3,7 +3,10 @@
 Annual deviations from a fleet's block catchability, taken as
 independent, a random walk or an ar1. A fleet whose deviations a dsem
 has taken over gets no penalty here, since the mirror blanks those
-cells.
+cells. A region and fleet's first estimated year, wherever
+`map_ln_q_devs` puts it (e.g. under `q_re_years`), gets a random walk's
+diffuse `q_rw_init_sigma` start or an ar1's stationary marginal sd; a
+later fixed year is passed through at its fixed value instead.
 
 ## Usage
 

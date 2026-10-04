@@ -4,7 +4,7 @@
 \alias{Setup_Sim_Movement}
 \title{Movement deviations in the operating model}
 \usage{
-Setup_Sim_Movement(sim_list, data, pars)
+Setup_Sim_Movement(sim_list, data, pars, pars_by_sim = NULL)
 }
 \arguments{
 \item{sim_list}{Simulation list with \code{n_yrs}, \code{n_sims} and
@@ -13,6 +13,12 @@ Setup_Sim_Movement(sim_list, data, pars)
 \item{data}{Data list of the fit.}
 
 \item{pars}{Parameter list at the fitted values.}
+
+\item{pars_by_sim}{Optional list of one parameter list per replicate, for
+replicates that each run on their own parameter draw (\code{sim_type =
+"joint"} in \code{\link{simulation_self_test}}). Each replicate's movement
+is then rebuilt from its own parameters, deviations and process error.
+\code{NULL} (default) gives every replicate \code{pars}.}
 }
 \value{
 \code{sim_list} with \code{move_args} and the fields above added.

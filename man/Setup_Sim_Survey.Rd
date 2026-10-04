@@ -24,6 +24,7 @@ Setup_Sim_Survey(
     sim_list$n_srv_fleets, sim_list$n_sims)),
   t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
+  srv_idx_ages = NULL,
   SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
   SrvIdx_seas_Type = NULL,
   SrvIdx_pop_seas_Type = NULL,
@@ -76,7 +77,9 @@ Setup_Sim_Survey(
   SrvLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
   SrvLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
-  SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
+  SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
+  SrvLenComps_sel = rep("age", sim_list$n_srv_fleets),
+  srv_sel_l_input = NULL
 )
 }
 \arguments{
@@ -120,6 +123,10 @@ n_srv_fleets × n_sims]}. Default 1.}
 \item{srv_idx_type}{Index type per fleet: 0/\code{"abd"} or 1/\code{"biom"}
 (default).}
 
+\item{srv_idx_ages}{Ages counted in each fleet's index total, a 0/1 array
+\code{[n_ages × n_srv_fleets]}, the estimation model's \code{srv_idx_ages}.
+\code{NULL} (default) counts every age.}
+
 \item{SrvIdx_LikeType}{Error structure each fleet's index is drawn under:
 \code{"lognormal"} (0, default), \code{"normal"} (1) or \code{"mvn"} (2),
 matching the estimation model. An mvn fleet draws from \code{SrvIdx_Cov}
@@ -151,8 +158,8 @@ fleets. Default \code{NULL}.}
 The survey twin of `comp_fish_caal_like`, and only these two families exist
 for CAAL.}
 
-\item{ISS_Srv_caal}{Number of fish aged within each length bin, `n_regions x
-n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x n_sims`. A bin whose sample
+\item{ISS_Srv_caal}{Number of fish aged within each length row, `n_regions x
+n_yrs x n_seas x n_caal_lens x n_sexes x n_srv_fleets x n_sims`. A bin whose sample
 size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
 alongside a likelihood other than `"none"` switches `do_srv_caal` on. Requires
 `n_lens`.}
@@ -210,6 +217,15 @@ n_srv_fleets × 2]}. Default 0.01.}
 
 \item{SrvAge_pop_corr_pars_agg, SrvLen_pop_corr_pars_agg}{Their aggregated
 counterparts \code{[n_pop × n_srv_fleets]}. Default 0.01.}
+
+\item{SrvLenComps_sel}{Character vector \code{[n_srv_fleets]}, \code{"age"}
+(default) or \code{"length"}, as in \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
+\code{"length"} spreads the numbers present at each age over length and selects
+them length by length, so the length compositions read \code{srv_sel_l_input}.}
+
+\item{srv_sel_l_input}{Survey selectivity at length \code{[n_regions × n_yrs ×
+n_lens × n_sexes × n_srv_fleets × n_sims]}, read under
+\code{SrvLenComps_sel = "length"}.}
 }
 \value{
 \code{sim_list} with the survey fields appended: \code{$srv_sel},

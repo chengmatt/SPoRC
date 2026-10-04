@@ -33,6 +33,14 @@
 #'   an identity matrix per year and simulation. For observed bins that are a subset
 #'   of the model ages, supply a shifted identity such as
 #'   \code{diag(1, n_model_ages)[, obs_age_index]} instead.
+#' @param LenBinMap_input Matrix \code{[n_lens × n_obs_lens]} mapping the model's
+#'   length bins onto the bins the length compositions are recorded on, the
+#'   \code{LenBinMap} of \code{\link{Setup_Mod_Biologicals}}. \code{NULL} (default)
+#'   when the two coincide.
+#' @param CAAL_LenBinMap_input 0/1 matrix \code{[n_lens × n_caal_lens]} of the model
+#'   length bins each conditional age-at-length row covers, the \code{CAAL_LenBinMap}
+#'   of \code{\link{Setup_Mod_Biologicals}}. \code{NULL} (default) gives one row per
+#'   model bin.
 #' @param SizeAgeTrans_fish_input,SizeAgeTrans_srv_input Optional per-fleet size-age
 #'   arrays \code{[n_pop x n_regions x n_yrs x n_seas x n_lens x n_ages x n_sexes x
 #'   n_fleets x n_sims]}, each read at that fleet's own timing and used in place of
@@ -44,7 +52,8 @@
 #'
 #' @return \code{sim_list} with \code{$natmort}, \code{$WAA}, \code{$WAA_fish},
 #'   \code{$WAA_srv}, \code{$MatAA}, \code{$AgeingError} (an identity matrix when
-#'   none was supplied) and, when supplied, \code{$SizeAgeTrans}.
+#'   none was supplied) and, when supplied, \code{$LenBinMap} and
+#'   \code{$SizeAgeTrans}.
 #'
 #' @export Setup_Sim_Biologicals
 #' @family Simulation Setup
@@ -58,6 +67,8 @@ Setup_Sim_Biologicals <- function(
                                   AgeingError_input = NULL,
                                   AgeingError_fish_input = NULL,
                                   AgeingError_srv_input = NULL,
+                                  LenBinMap_input = NULL,
+                                  CAAL_LenBinMap_input = NULL,
                                   SizeAgeTrans_input = NULL,
                                   SizeAgeTrans_fish_input = NULL,
                                   SizeAgeTrans_srv_input = NULL
@@ -139,6 +150,22 @@ Setup_Sim_Biologicals <- function(
     what = 'SizeAgeTrans_input'
   )
 
+  # length comps recorded on coarser bins than the model need the map onto them
+  if(!is.null(LenBinMap_input)) {
+    LenBinMap_input <- check_bin_map(LenBinMap_input, sim_list$n_lens, "LenBinMap_input")
+    if(ncol(LenBinMap_input) != sim_list$n_obs_lens) stop("LenBinMap_input maps onto ", ncol(LenBinMap_input), " length bins, but Setup_Sim_Dim was given n_obs_lens = ", sim_list$n_obs_lens, ". Give Setup_Sim_Dim the number of columns of the map.")
+  } else if(isTRUE(sim_list$n_obs_lens != sim_list$n_lens)) {
+    stop("Setup_Sim_Dim was given ", sim_list$n_obs_lens, " observed length bins for ", sim_list$n_lens, " model length bins, so supply LenBinMap_input mapping one onto the other.")
+  }
+
+  # age-at-length rows on coarser bins than the model need the bins each row covers
+  if(!is.null(CAAL_LenBinMap_input)) {
+    CAAL_LenBinMap_input <- check_caal_len_bin_map(CAAL_LenBinMap_input, sim_list$n_lens, "CAAL_LenBinMap_input")
+    if(ncol(CAAL_LenBinMap_input) != sim_list$n_caal_lens) stop("CAAL_LenBinMap_input has ", ncol(CAAL_LenBinMap_input), " age-at-length rows, but Setup_Sim_Dim was given n_caal_lens = ", sim_list$n_caal_lens, ". Give Setup_Sim_Dim the number of columns of the map.")
+  } else if(isTRUE(sim_list$n_caal_lens != sim_list$n_lens)) {
+    stop("Setup_Sim_Dim was given ", sim_list$n_caal_lens, " age-at-length rows for ", sim_list$n_lens, " model length bins, so supply CAAL_LenBinMap_input saying which bins each row covers.")
+  }
+
   # expand seasonal array for backwards compatibility
   if(length(dim(natmort_input)) == 6) {
     d <- dim(natmort_input)
@@ -150,6 +177,8 @@ Setup_Sim_Biologicals <- function(
   sim_list$WAA_fish <- WAA_fish_input
   sim_list$WAA_srv <- WAA_srv_input
   sim_list$MatAA <- MatAA_input
+  sim_list$LenBinMap <- LenBinMap_input # NULL when lengths are recorded on the model's bins
+  sim_list$CAAL_LenBinMap <- CAAL_LenBinMap_input # NULL for one age-at-length row per model bin
   if(!is.null(SizeAgeTrans_input)) sim_list$SizeAgeTrans <- SizeAgeTrans_input
   # keys per fleet, read at each fleet's own timing, take precedence over the shared one
   if(!is.null(SizeAgeTrans_fish_input)) {
@@ -581,6 +610,14 @@ do_growth_mapping <- function(input_list,
 #'   twin of \code{AgeingError}, applied and validated identically. Use the
 #'   \code{*LenComps_bins} arguments to leave bins out of the likelihood instead.
 #'   \code{NULL} (default) fits on the model bins.
+#' @param CAAL_LenBinMap Optional 0/1 matrix \code{[n_lens x n_caal_lens]} saying
+#'   which model length bins each length row of the conditional age-at-length data
+#'   covers, one column per row. A row's expected ages are the numbers at length and
+#'   age summed over the bins it covers, so rows can sit on coarser bins than the
+#'   model, and need not cover every bin. Unlike \code{LenBinMap}, its rows need not
+#'   sum to one, since a model bin can sit in no row or in several. The
+#'   age-at-length arrays are then dimensioned by \code{n_caal_lens}. \code{NULL}
+#'   (default) gives one row per model bin.
 #' @param growth_A1,growth_A2 Reference ages for \code{L1} and \code{L2}.
 #'   \code{growth_A2 = "Linf"} makes \code{L2} the asymptotic length itself.
 #' @param growth_len_lower Lower edges of the length bins. \code{lens} in
@@ -766,6 +803,7 @@ Setup_Mod_Biologicals <- function(input_list,
                                   growth_semipar_ages = NULL,
                                   growth_semipar_years = NULL,
                                   LenBinMap = NULL,
+                                  CAAL_LenBinMap = NULL,
                                   growth_A1 = NULL,
                                   growth_A2 = NULL,
                                   growth_len_lower = NULL,
@@ -984,6 +1022,10 @@ Setup_Mod_Biologicals <- function(input_list,
     LenBinMap <- as.matrix(LenBinMap)
     check_bin_map(LenBinMap, length(input_list$data$lens), "LenBinMap")
     collect_message("Length compositions are recorded on ", ncol(LenBinMap), " bins, mapped from the model's ", nrow(LenBinMap), " bins inside the likelihood")
+  }
+  if(!is.null(CAAL_LenBinMap)) {
+    CAAL_LenBinMap <- check_caal_len_bin_map(CAAL_LenBinMap, length(input_list$data$lens), "CAAL_LenBinMap")
+    collect_message("Conditional age-at-length data are on ", ncol(CAAL_LenBinMap), " length rows, each summing the model length bins it covers")
   }
 
   # Input Validation --------------------------------------------------------
@@ -1243,6 +1285,7 @@ Setup_Mod_Biologicals <- function(input_list,
     input_list$data$growth_semipar_bins <- semipar_age_idx
   }
   input_list$data$LenBinMap <- LenBinMap
+  input_list$data$CAAL_LenBinMap <- CAAL_LenBinMap
   input_list$data$Use_M_prior <- Use_M_prior
   input_list$data$M_prior <- M_prior
   input_list$data$Fixed_natmort <- Fixed_natmort

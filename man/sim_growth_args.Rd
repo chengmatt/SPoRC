@@ -4,10 +4,12 @@
 \alias{sim_growth_args}
 \title{The growth arguments the operating model rebuilds growth with}
 \usage{
-sim_growth_args(sim_env)
+sim_growth_args(sim_env, sim = NULL)
 }
 \arguments{
 \item{sim_env}{Simulation environment.}
+
+\item{sim}{Replicate, or \code{NULL} for the arguments every replicate shares.}
 }
 \value{
 Named list of \code{Get_Growth} arguments, or \code{NULL}.
@@ -15,6 +17,6 @@ Named list of \code{Get_Growth} arguments, or \code{NULL}.
 \description{
 \code{growth_args} from \code{Setup_Sim_Growth_RE} when the fit penalizes
 its own growth deviations, else \code{dsem_growth_args} from
-\code{Setup_Sim_DSEM}.
+\code{Setup_Sim_DSEM}. A replicate on its own parameter draw takes its own.
 }
 \keyword{internal}

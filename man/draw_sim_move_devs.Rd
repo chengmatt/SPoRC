@@ -16,8 +16,9 @@ stored, \code{n_yrs}, \code{n_sims} and \code{n_cond_yrs} (\code{NULL} or
 }
 \description{
 The first \code{n_cond_yrs} years of every replicate take the fit's own
-deviations, and the years after them are drawn from the process the
-estimation model penalizes: a stationary AR1 over ages where that dim is
+deviations, or the replicate's own draw of them under a joint self test, and
+the years after them are drawn from the process the estimation model
+penalizes, at that replicate's parameters: a stationary AR1 over ages where that dim is
 \code{"ar1"}, an unstructured correlation across populations, seasons or
 sexes where a dim is \code{"us"}, independent otherwise, with the
 conditional sd \code{exp(move_pe_pars[..., 1])} raised to the marginal by

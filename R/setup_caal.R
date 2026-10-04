@@ -78,11 +78,12 @@ parse_caal_type <- function(CAAL_Type, n_yrs, n_fleets, what) {
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param ObsCAAL Observed CAAL array \code{[n_regions x n_years x n_seas x
-#'   n_lens x n_ages x n_sexes x n_fleets]}, or \code{NULL} for none.
-#' @param UseCAAL Use flags \code{[n_regions x n_years x n_seas x n_lens x
+#'   n_caal_lens x n_ages x n_sexes x n_fleets]}, or \code{NULL} for none. The
+#'   length rows are the model's length bins, or the columns of \code{CAAL_LenBinMap}.
+#' @param UseCAAL Use flags \code{[n_regions x n_years x n_seas x n_caal_lens x
 #'   n_fleets]}. A length bin with no aged fish has a zero and is skipped.
 #' @param ISS_CAAL Input sample sizes \code{[n_regions x n_years x n_seas x
-#'   n_lens x n_sexes x n_fleets]}, the number aged within each length bin. When
+#'   n_caal_lens x n_sexes x n_fleets]}, the number aged within each length bin. When
 #'   \code{NULL} it is summed from \code{ObsCAAL}.
 #' @param CAAL_LikeType Character vector of length \code{n_fleets}. One of
 #'   \code{"none"}, \code{"Multinomial"} or \code{"Dirichlet-Multinomial"}.
@@ -100,7 +101,7 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
   n_regions <- input_list$data$n_regions
   n_yrs <- length(input_list$data$years)
   n_seas <- input_list$data$n_seas
-  n_lens <- length(input_list$data$lens)
+  n_lens <- length(caal_row_lens(input_list$data)) # age-at-length rows, one per model length bin without CAAL_LenBinMap
   n_ages <- length(input_list$data$ages)
   n_sexes <- input_list$data$n_sexes
   n_fleets <- if(fleet_type == "Fish") input_list$data$n_fish_fleets else input_list$data$n_srv_fleets
@@ -139,9 +140,9 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
     # one onto the other, as it does for the marginal age compositions
     n_obs_ages <- dim(ObsCAAL)[5]
     if(is.null(n_obs_ages) || n_obs_ages < 1) stop(paste0(obs_data_field, " must have at least one observed age bin"))
-    dim_msg(ObsCAAL, replace(obs_dim, 5, n_obs_ages), obs_data_field, c("n_regions", "n_years", "n_seas", "n_lens", "n_obs_ages", "n_sexes", "n_fleets"))
+    dim_msg(ObsCAAL, replace(obs_dim, 5, n_obs_ages), obs_data_field, c("n_regions", "n_years", "n_seas", "n_caal_lens", "n_obs_ages", "n_sexes", "n_fleets"))
   }
-  dim_msg(UseCAAL, use_dim, use_data_field, c("n_regions", "n_years", "n_seas", "n_lens", "n_fleets"))
+  dim_msg(UseCAAL, use_dim, use_data_field, c("n_regions", "n_years", "n_seas", "n_caal_lens", "n_fleets"))
 
   if(length(CAAL_LikeType) != n_fleets) stop(paste("Dimensions of", like_type_field, "are not correct. Should be a vector of length n_fleets"))
   check_comp_like_type(CAAL_LikeType, like_type_field,
@@ -181,7 +182,7 @@ setup_caal_source <- function(input_list, ObsCAAL, UseCAAL, ISS_CAAL,
         } # end seas loop
       } # end f loop
     } # end y loop
-  } else dim_msg(ISS_CAAL, iss_dim, iss_data_field, c("n_regions", "n_years", "n_seas", "n_lens", "n_sexes", "n_fleets"))
+  } else dim_msg(ISS_CAAL, iss_dim, iss_data_field, c("n_regions", "n_years", "n_seas", "n_caal_lens", "n_sexes", "n_fleets"))
 
   # reconcile the use flags with any bin restriction so the fitting likelihood and the residual
   # routines agree on which length bins have aged fish. the bins array is set before this runs

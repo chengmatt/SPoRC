@@ -2,21 +2,36 @@
 % Please edit documentation in R/model_lik_caal.R
 \name{caal_sum_pop_len}
 \alias{caal_sum_pop_len}
-\title{Sum a conditional age-at-length array across populations, for one length bin}
+\title{Sum a conditional age-at-length array across populations, for one length row}
 \usage{
-caal_sum_pop_len(arr, y, seas, l, f, n_pop, n_regions, n_ages, n_sexes)
+caal_sum_pop_len(
+  arr,
+  y,
+  seas,
+  l,
+  f,
+  n_pop,
+  n_regions,
+  n_ages,
+  n_sexes,
+  caal_len_bin_map = NULL
+)
 }
 \arguments{
 \item{arr}{Array indexed population, region, year, season, length, age, sex, fleet.}
 
-\item{y, seas, l, f}{Year, season, length bin and fleet to extract.}
+\item{y, seas, l, f}{Year, season, length row and fleet to extract.}
 
 \item{n_pop, n_regions, n_ages, n_sexes}{Model dimensions.}
+
+\item{caal_len_bin_map}{Optional 0/1 matrix \code{[n_lens x n_caal_lens]}, the
+model length bins each age-at-length row covers. \code{NULL} (default)
+makes \code{l} a model length bin.}
 }
 \value{
 An array indexed region, age, sex.
 }
 \description{
-As \code{\link{caal_sum_pop}}, for a single length bin.
+As \code{\link{caal_sum_pop}}, for a single length row.
 }
 \keyword{internal}

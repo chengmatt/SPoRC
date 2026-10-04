@@ -214,7 +214,8 @@ osa_default_bins <- function(data, comp_source, pop = FALSE, discard = FALSE) {
   }
 
   if(is_len) {
-    bins <- if(length(data$lens) == n_bins) data$lens else seq_len(n_bins)
+    recorded <- obs_len_labels(data) # the first model length in each recorded bin
+    bins <- if(length(recorded) == n_bins) recorded else seq_len(n_bins)
     return(list(bins = bins, bin_label = "Length"))
   }
 
@@ -479,7 +480,7 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
     ObsArr = data[[obs_data_field]], ISSArr = data[[paste0("ISS_", comp_source)]],
     WtArr = data[[paste0("Wt_", comp_source)]], UseArr = data[[paste0("Use", comp_source)]],
     TypeMat = data[[paste0(comp_source, "_Type")]], LikeTypeVec = data[[paste0(comp_source, "_LikeType")]],
-    n_yrs = length(data$years), n_seas = data$n_seas, n_lens = length(data$lens),
+    n_yrs = length(data$years), n_seas = data$n_seas, n_lens = length(caal_row_lens(data)),
     n_fleets = data[[n_fleets_field]], n_sexes = data$n_sexes, addtocomp = data$addtocomp,
     return_labels = TRUE,
     # must match what the objective packed, or the tracked vector is a different length
@@ -517,7 +518,7 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
       index_label = bin_label,
       year = year,
       index = bins[bin],
-      len = data$lens[len],
+      len = caal_row_lens(data)[len], # the row's first model length bin
       resid = resid,
       region = region,
       sex = sex,

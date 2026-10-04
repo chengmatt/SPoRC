@@ -4,7 +4,14 @@
 \alias{draw_growth_pe_surface}
 \title{One draw of a deviation surface from the process the estimation model penalizes}
 \usage{
-draw_growth_pe_surface(PE_model, map, pe_pars, bins)
+draw_growth_pe_surface(
+  PE_model,
+  map,
+  pe_pars,
+  bins,
+  fit_devs = NULL,
+  n_cond = 0
+)
 }
 \arguments{
 \item{PE_model}{Integer process error code, as \code{Get_PE_loglik} reads it.}
@@ -16,9 +23,16 @@ draw_growth_pe_surface(PE_model, map, pe_pars, bins)
 \code{growth_pe_pars} the form reads.}
 
 \item{bins}{Bins the correlated forms run over.}
+
+\item{fit_devs}{The fit's deviations, shaped as \code{map}, read in the first
+\code{n_cond} years only.}
+
+\item{n_cond}{Integer. Years that keep the fit's deviations. Default \code{0}
+draws every year.}
 }
 \value{
-Array shaped as \code{map}, zero where the map is \code{NA}.
+Array shaped as \code{map}, zero where the map is \code{NA} outside
+  the conditioned years.
 }
 \description{
 The reverse of \code{\link{Get_PE_loglik}}. A shared level is drawn once and
@@ -30,5 +44,11 @@ the estimation model gives it only leaves the level free. The 3D GMRF and
 the separable AR1 draw each population, region and sex's whole surface over
 years and \code{bins} from the form's precision, conditional on the cells
 the map fixes at zero, which is the density the penalty evaluates at them.
+}
+\details{
+The first \code{n_cond} years keep the fit's deviations, and the years after
+them are drawn given those: a random walk steps on from the fit's last value,
+and the correlated forms draw from the precision conditional on the fit's
+cells as well as the fixed ones.
 }
 \keyword{internal}

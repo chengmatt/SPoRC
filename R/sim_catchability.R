@@ -23,9 +23,11 @@
 #' @param sigma_fish_q,sigma_srv_q Numeric arrays
 #'   \code{[n_regions, n_fleets]} of deviation standard deviations on the log
 #'   scale, or a single value used for every region and fleet. Default zero.
+#'   An array \code{[n_regions, n_fleets, n_sims]} gives each replicate its own.
 #' @param fish_q_rho,srv_q_rho Numeric arrays \code{[n_regions, n_fleets]} of
 #'   ar1 correlations on the natural scale, read only under \code{"ar1"}.
-#'   Default zero.
+#'   Default zero. An array \code{[n_regions, n_fleets, n_sims]} gives each
+#'   replicate its own.
 #'
 #' @return \code{sim_list} with the deviation settings stored.
 #'
@@ -54,11 +56,15 @@ Setup_Sim_q_devs <- function(sim_list,
     if(!all(model %in% forms)) stop(prefix, "_q_model should be one of: ", paste(forms, collapse = ", "), ".")
     if(any(rho < -1) || any(rho >= 1)) stop(prefix, "_q_rho must sit inside (-1, 1). An ar1 at one or beyond has no stationary variance.")
 
-    # put stuff into sim list
+    # put stuff into sim list, one value per region and fleet or one per replicate as well
     dims <- c(sim_list$n_regions, n_fleets)
+    for(x in list(sigma, rho)) {
+      if(length(dim(x)) == 3 && !identical(as.numeric(dim(x)), as.numeric(c(dims, sim_list$n_sims))))
+        stop("A per-replicate ", prefix, " catchability sigma or rho must be [n_regions, n_fleets, n_sims] = [", paste(c(dims, sim_list$n_sims), collapse = ", "), "].")
+    }
     sim_list[[paste0(prefix, "_q_model")]] <- match(model, forms)
-    sim_list[[paste0("sigma_", prefix, "_q")]] <- array(sigma, dim = dims)
-    sim_list[[paste0(prefix, "_q_rho")]] <- array(rho, dim = dims)
+    sim_list[[paste0("sigma_", prefix, "_q")]] <- if(length(dim(sigma)) == 3) sigma else array(sigma, dim = dims)
+    sim_list[[paste0(prefix, "_q_rho")]] <- if(length(dim(rho)) == 3) rho else array(rho, dim = dims)
 
   } # end prefix loop
 
@@ -167,6 +173,11 @@ check_q_dsem_drawable <- function(sim_list) {
 #' A fleet a dsem wrote for is drawn whatever its own \code{<prefix>_q_model}
 #' says, so the series reaches catchability rather than an array nothing reads.
 #'
+#' A self test also stores \code{<prefix>_q_devs_est}, \code{[region, year,
+#' fleet]}, TRUE where the fit estimates a deviation. A cell the fit keeps fixed
+#' keeps the fit's value, and a walk or ar1 starts at the fleet's first
+#' estimated year, as the penalty does.
+#'
 #' @param sim Replicate index.
 #' @param sim_env Simulation environment.
 #'
@@ -195,6 +206,9 @@ draw_sim_q_devs <- function(sim, sim_env) {
     n_fleets <- dim(sim_env[[q_name]])[3]
     sigma <- sim_env[[paste0("sigma_", prefix, "_q")]]
     rho <- sim_env[[paste0(prefix, "_q_rho")]]
+    if(length(dim(sigma)) == 3) sigma <- array(sigma[,,sim], dim = dim(sigma)[1:2]) # this replicate's own
+    if(length(dim(rho)) == 3) rho <- array(rho[,,sim], dim = dim(rho)[1:2])
+    est <- sim_env[[paste0(prefix, "_q_devs_est")]] # cells the fit estimates, or NULL for every cell
     n_cond <- as.integer(if(is.null(sim_env$n_cond_yrs)) 0 else min(sim_env$n_cond_yrs, n_yrs))
 
     for(f in 1:n_fleets) {
@@ -205,13 +219,16 @@ draw_sim_q_devs <- function(sim, sim_env) {
       for(r in 1:n_regions) {
 
         devs <- devs_in[r,,f,sim] # the conditioning years already hold the fit's own deviations
+        is_est <- if(is.null(est)) rep(TRUE, n_yrs) else c(est[r,,f], rep(TRUE, max(0, n_yrs - dim(est)[2])))
+        first_est <- which(is_est)[1] # where a walk or ar1 starts
 
         for(y in seq_len(n_yrs)) {
           if(y <= n_cond) next # read from the fit rather than drawn
           if(fleet_drawn && isTRUE(drawn[r,y,f])) next # a dsem wrote this cell
           if(q_model[f] %in% c(1, 5)) { devs[y] <- 0; next } # no innovation of its own to draw
-          dev_mu <- if(q_model[f] == 2 || y == 1) 0 else if(q_model[f] == 3) devs[y - 1] else rho[r,f] * devs[y - 1]
-          dev_sd <- if(q_model[f] == 4 && y == 1) sigma[r,f] / sqrt(1 - rho[r,f]^2) else sigma[r,f] # an ar1 starts at its stationary spread
+          if(!is_est[y]) next # fixed in the fit, so it keeps the fit's value
+          dev_mu <- if(q_model[f] == 2 || y == first_est) 0 else if(q_model[f] == 3) devs[y - 1] else rho[r,f] * devs[y - 1]
+          dev_sd <- if(q_model[f] == 4 && y == first_est) sigma[r,f] / sqrt(1 - rho[r,f]^2) else sigma[r,f] # an ar1 starts at its stationary spread
           devs[y] <- stats::rnorm(1, dev_mu, dev_sd)
         } # end y loop
 

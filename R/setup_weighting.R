@@ -76,8 +76,8 @@
 #' @param Wt_D Scalar weight on the discard mortality rate deviation penalty.
 #'   Default \code{1}.
 #' @param Wt_Fish_caal Weight on the fishery conditional age-at-length likelihood,
-#'   multiplying each length bin's input sample size. Array \code{[n_regions x
-#'   n_years x n_seas x n_lens x n_sexes x n_fish_fleets]}, the shape of
+#'   multiplying each length row's input sample size. Array \code{[n_regions x
+#'   n_years x n_seas x n_caal_lens x n_sexes x n_fish_fleets]}, the shape of
 #'   \code{ISS_Fish_caal}. Default one everywhere.
 #' @param Wt_Srv_caal The survey counterpart, with \code{n_srv_fleets} last.
 #'   Default one everywhere.
@@ -156,9 +156,9 @@ Setup_Mod_Weighting <- function(input_list,
 
                                 # Conditional age-at-length
                                 Wt_Fish_caal = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
-                                                                length(input_list$data$lens), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
+                                                                length(caal_row_lens(input_list$data)), input_list$data$n_sexes, input_list$data$n_fish_fleets)),
                                 Wt_Srv_caal = array(1, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
-                                                               length(input_list$data$lens), input_list$data$n_sexes, input_list$data$n_srv_fleets)),
+                                                               length(caal_row_lens(input_list$data)), input_list$data$n_sexes, input_list$data$n_srv_fleets)),
 
                                 # Selectivity penalty weights
                                 fish_sel_pen_wts = NULL,
@@ -282,11 +282,11 @@ Setup_Mod_Weighting <- function(input_list,
 
   # Checking for conditional age-at-length stuff
   caal_dim <- function(n_fleets) c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas,
-                                   length(input_list$data$lens), input_list$data$n_sexes, n_fleets)
+                                   length(caal_row_lens(input_list$data)), input_list$data$n_sexes, n_fleets) # one length row per model bin without CAAL_LenBinMap
   if(!identical(as.integer(dim(Wt_Fish_caal)), as.integer(caal_dim(input_list$data$n_fish_fleets))))
-    stop("Wt_Fish_caal must be an array of dimension n_regions x n_years x n_seas x n_lens x n_sexes x n_fish_fleets (", paste(caal_dim(input_list$data$n_fish_fleets), collapse = " x "), ").")
+    stop("Wt_Fish_caal must be an array of dimension n_regions x n_years x n_seas x n_caal_lens x n_sexes x n_fish_fleets (", paste(caal_dim(input_list$data$n_fish_fleets), collapse = " x "), ").")
   if(!identical(as.integer(dim(Wt_Srv_caal)), as.integer(caal_dim(input_list$data$n_srv_fleets))))
-    stop("Wt_Srv_caal must be an array of dimension n_regions x n_years x n_seas x n_lens x n_sexes x n_srv_fleets (", paste(caal_dim(input_list$data$n_srv_fleets), collapse = " x "), ").")
+    stop("Wt_Srv_caal must be an array of dimension n_regions x n_years x n_seas x n_caal_lens x n_sexes x n_srv_fleets (", paste(caal_dim(input_list$data$n_srv_fleets), collapse = " x "), ").")
   input_list$data$Wt_Fish_caal <- Wt_Fish_caal
   input_list$data$Wt_Srv_caal <- Wt_Srv_caal
 

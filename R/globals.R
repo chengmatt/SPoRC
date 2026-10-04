@@ -145,7 +145,7 @@ utils::globalVariables(c(
   "growth_cv_type", "growth_sd_type", "growth_dist", "growth_plus_group", "growth_par_bounds",
   "growth_pe_pars", "growth_rw_init_sigma", "growth_semipar", "growth_semipar_bins",
   "ln_growth_pars", "ln_growth_devs", "ln_growth_semipar_devs", "map_ln_growth_devs",
-  "map_ln_growth_semipar_devs", "derive_waa", "wt_len_pars", "LenBinMap",
+  "map_ln_growth_semipar_devs", "derive_waa", "wt_len_pars", "LenBinMap", "CAAL_LenBinMap",
   "srv_fixed_sel_pars", "srv_idx_ages", "srv_idx_type", "srv_q_blocks", "srv_q_prior", "srv_q_type", "srv_sel_bicubic_binnodes", "srv_sel_bicubic_nselbins",
   "srv_sel_bicubic_selstyr", "srv_sel_bicubic_Wbin", "srv_sel_bicubic_Wyr",
   "srv_sel_bicubic_yrnodes", "srv_sel_bin_dev_bins", "srv_sel_blocks",

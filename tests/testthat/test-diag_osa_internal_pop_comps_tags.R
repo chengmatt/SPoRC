@@ -540,6 +540,11 @@ test_that("OSA residuals are well-calibrated under correct EM and mis-calibrated
   # correct EM
   input_correct <- setup_em_variant(sim_obj, 1, TRUE, misspecify_movement = FALSE)
   obj_correct   <- fit_model(input_correct$data, input_correct$par, input_correct$map, NULL, 3, silent = TRUE, do_optim = TRUE)
+
+  # the internal path is the ordinary likelihood up to a constant, the population compositions included
+  gaps <- osa_path_gaps(input_correct$data, input_correct$par, input_correct$map)
+  expect_equal(gaps[[1]][["objective"]], gaps[[2]][["objective"]], tolerance = 1e-8)
+  expect_lt(max(gaps[[1]][["gradient"]], gaps[[2]][["gradient"]]), 1e-7)
   obj_francis_correct <- run_francis(
     data = input_correct$data,
     parameters = input_correct$par,

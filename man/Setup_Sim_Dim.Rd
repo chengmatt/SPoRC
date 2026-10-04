@@ -14,6 +14,8 @@ Setup_Sim_Dim(
   n_ages,
   n_lens = NULL,
   n_obs_ages = n_ages,
+  n_obs_lens = n_lens,
+  n_caal_lens = n_lens,
   n_sexes,
   n_fish_fleets,
   n_srv_fleets,
@@ -58,6 +60,14 @@ and at-age data, the columns of \code{AgeingError_input}. Can differ from
 \code{n_ages} when the plus group or youngest ages are pooled differently in
 observations. Defaults to \code{n_ages}.}
 
+\item{n_obs_lens}{Positive integer. Number of length bins the length
+compositions are recorded on, the columns of \code{LenBinMap_input} in
+\code{\link{Setup_Sim_Biologicals}}. Defaults to \code{n_lens}.}
+
+\item{n_caal_lens}{Positive integer. Number of length rows of the conditional
+age-at-length data, the columns of \code{CAAL_LenBinMap_input} in
+\code{\link{Setup_Sim_Biologicals}}. Defaults to \code{n_lens}.}
+
 \item{n_sexes}{Integer. Number of sexes; must be either \code{1}
 (sex-aggregated) or \code{2} (sex-structured).}
 
@@ -90,7 +100,8 @@ A named list (\code{sim_list}) containing:
   \describe{
     \item{\code{n_sims}, \code{n_yrs}, \code{n_pop}, \code{n_regions},
       \code{n_seas}, \code{n_ages}, \code{n_obs_ages}, \code{n_lens},
-      \code{n_sexes}, \code{n_fish_fleets}, \code{n_srv_fleets}}{
+      \code{n_obs_lens}, \code{n_caal_lens}, \code{n_sexes}, \code{n_fish_fleets},
+      \code{n_srv_fleets}}{
       Dimension scalars supplied as inputs.}
     \item{\code{natal_region}}{Integer vector of length \code{n_pop}
       defining natal regions.}

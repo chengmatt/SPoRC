@@ -8,7 +8,8 @@ draw_sim_growth_devs(sim_env)
 }
 \arguments{
 \item{sim_env}{Simulation environment holding what \code{Setup_Sim_Growth_RE}
-stored, \code{n_yrs} and \code{n_sims}.}
+stored, \code{n_yrs}, \code{n_sims} and \code{n_cond_yrs} (\code{NULL} or
+\code{0} draws every year).}
 }
 \value{
 \code{invisible(NULL)}; \code{sim_env} is modified in place.
@@ -20,7 +21,10 @@ model penalizes them under, at the fitted process error parameters: a
 parameter's sd in the time-varying half of \code{growth_pe_pars} and the
 surface's in the semi-parametric half, as \code{Get_PE_loglik} reads them.
 The fit's maps decide what is drawn: a cell the map fixes stays at zero, a
-shared level takes one draw, and years past the fit are active. Growth is
+shared level takes one draw, and years past the fit are active. The first
+\code{n_cond_yrs} years of every replicate keep the fit's own deviations, or
+the replicate's own draw of them under a joint self test, and the years after
+them are drawn given those at that replicate's process error. Growth is
 then rebuilt through \code{derive_sim_growth}; under cohort growth that
 builds only the years before the propagation starts, and the annual cycle
 advances the rest from each replicate's own numbers at age.

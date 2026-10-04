@@ -44,8 +44,9 @@ n_cat × n_sexes × n_fleets × n_sims]}.}
 \item{ISS}{Integer sample sizes \code{[n_regions × n_yrs × n_seas × n_sexes ×
 n_fleets × n_sims]}, read when \code{pop_specific = FALSE}.}
 
-\item{AgeingError}{Ageing error matrices \code{[n_yrs × n_obs_ages × n_ages ×
-n_sims]}, ignored when \code{age_or_len = 1}.}
+\item{AgeingError}{Ageing error matrices \code{[n_yrs × n_ages × n_obs_ages ×
+n_sims]}. For length compositions, the length bin map \code{[n_lens ×
+n_obs_lens]}, or \code{NULL} when the lengths are recorded on the model's bins.}
 
 \item{comp_like}{Integer vector \code{[n_fleets]} of the likelihood per fleet:
 \code{0} multinomial, \code{1} Dirichlet-multinomial, \code{2}-\code{4} the
@@ -67,8 +68,8 @@ across regions, \code{1} split by sex, \code{2} joint across sexes,
 \item{n_sexes, n_pop, n_regions, n_cat}{Model dimensions, \code{n_cat} being the
 number of ages or lengths.}
 
-\item{Obs}{Observed composition container, dimensioned like \code{Exp} and
-written in place.}
+\item{Obs}{Observed composition container, dimensioned like \code{Exp} with
+the observed bins in place of \code{n_cat}, written in place.}
 
 \item{pop_specific}{Logical. \code{TRUE} simulates each population separately
 from population-specific inputs.}
@@ -92,7 +93,7 @@ population-specific aggregated compositions, each \code{[n_pop ×
 n_fleets]}.}
 
 \item{age_or_len}{Integer. \code{0} for age compositions, which take ageing
-error, \code{1} for length compositions, which do not.}
+error, \code{1} for length compositions, which take the length bin map.}
 }
 \value{
 \code{Obs} with the draws filled in at \code{[r, y, seas, , , f, sim]},
@@ -101,15 +102,16 @@ error, \code{1} for length compositions, which do not.}
 }
 \description{
 Draws composition samples for one region, year, fleet, season and replicate
-under the multinomial, Dirichlet-multinomial or logistic-normal likelihoods,
-applying ageing error after the draw for age compositions. A
+under the multinomial, Dirichlet-multinomial or logistic-normal likelihoods.
+The expected composition is mapped onto the bins the data are recorded on
+before the draw, through the ageing error for ages and the length bin map for
+lengths, so the draw comes from the distribution the fit evaluates. A
 \code{comp_type} or \code{comp_like} of \code{999} returns \code{Obs}
 unchanged.
 }
 \details{
-Joint compositions (\code{comp_type = 2}) apply ageing error across the
-combined age by sex vector through the Kronecker product
-\code{diag(n_sexes)} and \code{AgeingError}. Aggregated compositions
+Joint compositions (\code{comp_type = 2}) map each sex's ages or lengths on
+their own before one draw across the stack. Aggregated compositions
 (\code{comp_type = 0}) are drawn only on the final region pass, from expected
 proportions marginalized over regions and sexes. Under
 \code{pop_specific = TRUE} each population is drawn separately from its own

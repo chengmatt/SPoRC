@@ -22,7 +22,11 @@ Named list, every array with \code{y} in its year dim. The
   dim, \code{MatAA}, \code{SizeAgeTrans}, \code{AgeingError} \code{[y x n_ages x
   n_obs_ages]}, whose columns are the observed ages the model ages are read
   onto, and \code{AgeingError_fish} and \code{AgeingError_srv}, \code{NULL} when
-  the fleets share one matrix. The tagging elements are
+  the fleets share one matrix. \code{LenBinMap} is the map onto the length bins
+  the length compositions are recorded on, \code{NULL} when those are the
+  model's bins, and goes to \code{\link{Setup_Mod_Biologicals}} with the rest,
+  as does \code{CAAL_LenBinMap}, the model bins each age-at-length row covers.
+  The tagging elements are
   \code{use_conv_fish_tagging}, \code{conv_tag_release_indicator},
   \code{obs_conv_tag_fish_recap}, \code{conv_tagged_fish},
   \code{conv_tagged_fish_attr} and \code{n_tag_cohorts}.

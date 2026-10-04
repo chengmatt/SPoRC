@@ -10,7 +10,7 @@ Setup_Sim_Containers(sim_list)
 \item{sim_list}{A simulation list returned by \code{\link{Setup_Sim_Dim}}, whose
 \code{n_pop}, \code{n_regions}, \code{n_yrs}, \code{n_seas}, \code{n_ages},
 \code{n_sexes}, \code{n_sims}, \code{n_fish_fleets}, \code{n_srv_fleets},
-\code{n_obs_ages} and \code{n_lens} size every container.}
+\code{n_obs_ages}, \code{n_lens} and \code{n_obs_lens} size every container.}
 }
 \value{
 \code{sim_list} with the containers added.
@@ -32,7 +32,7 @@ Setup_Sim_Containers(sim_list)
   dims; \code{$ObsFishAgeComps} and \code{$ObsFishAgeComps_discard} with
   \code{n_obs_ages × n_sexes} before the fleet dim, and
   \code{$ObsFishLenComps} and \code{$ObsFishLenComps_discard} with
-  \code{n_lens × n_sexes}. Each has a \code{_pop} counterpart with a leading
+  \code{n_obs_lens × n_sexes}. Each has a \code{_pop} counterpart with a leading
   \code{n_pop}. The true catch and discards at age and length are \code{$CAA},
   \code{$DAA} \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes ×
   n_fish_fleets × n_sims]} and \code{$CAL}, \code{$DAL} with \code{n_lens} in
@@ -40,8 +40,8 @@ Setup_Sim_Containers(sim_list)
 
   Survey: \code{$ObsSrvIdx} and \code{$TrueSrvIdx} \code{[n_regions × n_yrs ×
   n_seas × n_srv_fleets × n_sims]}, \code{$ObsSrvAgeComps} and
-  \code{$ObsSrvLenComps} with the bin and sex dims before the fleet dim, each
-  with a \code{_pop} counterpart, and the true \code{$SrvIAA} \code{[n_pop ×
+  \code{$ObsSrvLenComps} with the observed bin and sex dims before the fleet
+  dim, each with a \code{_pop} counterpart, and the true \code{$SrvIAA} \code{[n_pop ×
   n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]} and
   \code{$SrvIAL} with \code{n_lens} in place of \code{n_ages}.
 }

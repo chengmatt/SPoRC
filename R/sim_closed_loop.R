@@ -179,6 +179,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
                               dim(data$AgeingError)[3] # otherwise the ageing error's observed ages, which the at-age data sit on
                             },
                             n_lens = length(data$lens),
+                            n_obs_lens = if(is.null(data$LenBinMap)) length(data$lens) else ncol(data$LenBinMap), # length bins the comps are recorded on
+                            n_caal_lens = length(caal_row_lens(data)), # age-at-length rows, each covering the bins CAAL_LenBinMap gives it
                             n_sexes = data$n_sexes,
                             n_fish_fleets = data$n_fish_fleets,
                             n_srv_fleets = data$n_srv_fleets,
@@ -401,10 +403,16 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     dmr_input = extend_years(replicate(n = sim_list$n_sims, rep$dmr[,seq_along(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
     fish_sel_input = fish_sel_input,
     ret_sel_input = ret_sel_input,
+    # length comps selected at length read the fit's selectivity at length, kept at its last year after the data
+    FishLenComps_sel = if(is.null(data$fish_len_comp_sel)) rep("age", data$n_fish_fleets) else ifelse(data$fish_len_comp_sel == 1, "length", "age"),
+    fish_sel_l_input = if(any(data$fish_len_comp_sel == 1)) extend_years(replicate(n = sim_list$n_sims, rep$fish_sel_l[,seq_along(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last') else NULL,
+    ret_sel_l_input = if(any(data$fish_len_comp_sel == 1) && isTRUE(data$ret_selex_type == 1)) extend_years(replicate(n = sim_list$n_sims, rep$ret_sel_l[,seq_along(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last') else NULL,
     fish_q_input = fish_q_input,
     ObsFishIdx_SE = ObsFishIdx_SE,
     ObsFishIdx_pop_SE = ObsFishIdx_pop_SE,
     fish_idx_type = data$fish_idx_type,
+    fish_idx_ages = data$fish_idx_ages, # ages in each index total
+    t_fish = if(is.null(data$t_fish)) array(0, dim = c(data$n_regions, data$n_seas, data$n_fish_fleets)) else data$t_fish, # fishery index timing
     init_F_val = rep$init_F,
     catch_units = data$catch_units,
     discard_units = data$discard_units,
@@ -576,6 +584,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   sim_list <- Setup_Sim_Survey(
     sim_list = sim_list,
     srv_sel_input = srv_sel_input,
+    # length comps selected at length read the fit's selectivity at length, kept at its last year after the data
+    SrvLenComps_sel = if(is.null(data$srv_len_comp_sel)) rep("age", data$n_srv_fleets) else ifelse(data$srv_len_comp_sel == 1, "length", "age"),
+    srv_sel_l_input = if(any(data$srv_len_comp_sel == 1)) extend_years(replicate(n = sim_list$n_sims, rep$srv_sel_l[,seq_along(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last') else NULL,
     srv_q_input = srv_q_input,
     ObsSrvIdx_SE = ObsSrvIdx_SE,
     ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
@@ -590,6 +601,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     SrvAgeComps_seas_Type = data$SrvAgeComps_seas_Type,
     ObsSrvIdx_pop_SE = ObsSrvIdx_pop_SE,
     srv_idx_type = data$srv_idx_type,
+    srv_idx_ages = data$srv_idx_ages, # ages in each index total
     t_srv = data$t_srv,
 
     # Survey age composition specifications
@@ -671,6 +683,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     AgeingError_input = AgeingError_input,
     AgeingError_fish_input = AgeingError_fish_input,
     AgeingError_srv_input = AgeingError_srv_input,
+    LenBinMap_input = data$LenBinMap, # model length bins onto the recorded ones, as the fit maps them
+    CAAL_LenBinMap_input = data$CAAL_LenBinMap, # model length bins each age-at-length row covers
     SizeAgeTrans_input = SizeAgeTrans_input,
     # keys per fleet from the growth module, each at its fleet's own timing
     SizeAgeTrans_fish_input = if(is.null(rep$SizeAgeTrans_fish)) NULL else extend_years(replicate(n = sim_list$n_sims, rep$SizeAgeTrans_fish[,,seq_along(data$years),,,,,,drop = FALSE]), closed_loop_yrs, 3, 'last'),

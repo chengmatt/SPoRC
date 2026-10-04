@@ -42,6 +42,12 @@
 #'   observations. Defaults to \code{n_ages}.
 #' @param n_lens Positive integer. Number of length bins. Set to \code{NULL}
 #'   (default) when length compositions are not simulated.
+#' @param n_obs_lens Positive integer. Number of length bins the length
+#'   compositions are recorded on, the columns of \code{LenBinMap_input} in
+#'   \code{\link{Setup_Sim_Biologicals}}. Defaults to \code{n_lens}.
+#' @param n_caal_lens Positive integer. Number of length rows of the conditional
+#'   age-at-length data, the columns of \code{CAAL_LenBinMap_input} in
+#'   \code{\link{Setup_Sim_Biologicals}}. Defaults to \code{n_lens}.
 #' @param n_sexes Integer. Number of sexes; must be either \code{1}
 #'   (sex-aggregated) or \code{2} (sex-structured).
 #' @param n_fish_fleets Positive integer. Number of fishery fleets.
@@ -62,7 +68,8 @@
 #'   \describe{
 #'     \item{\code{n_sims}, \code{n_yrs}, \code{n_pop}, \code{n_regions},
 #'       \code{n_seas}, \code{n_ages}, \code{n_obs_ages}, \code{n_lens},
-#'       \code{n_sexes}, \code{n_fish_fleets}, \code{n_srv_fleets}}{
+#'       \code{n_obs_lens}, \code{n_caal_lens}, \code{n_sexes}, \code{n_fish_fleets},
+#'       \code{n_srv_fleets}}{
 #'       Dimension scalars supplied as inputs.}
 #'     \item{\code{natal_region}}{Integer vector of length \code{n_pop}
 #'       defining natal regions.}
@@ -85,6 +92,8 @@ Setup_Sim_Dim <- function(n_sims,
                           n_ages,
                           n_lens = NULL,
                           n_obs_ages = n_ages,
+                          n_obs_lens = n_lens,
+                          n_caal_lens = n_lens,
                           n_sexes,
                           n_fish_fleets,
                           n_srv_fleets,
@@ -131,6 +140,8 @@ Setup_Sim_Dim <- function(n_sims,
   sim_list$n_ages <- n_ages
   sim_list$n_lens <- n_lens
   sim_list$n_obs_ages <- n_obs_ages
+  sim_list$n_obs_lens <- n_obs_lens
+  sim_list$n_caal_lens <- n_caal_lens
   sim_list$n_sexes <- n_sexes
   sim_list$n_fish_fleets <- n_fish_fleets
   sim_list$n_srv_fleets <- n_srv_fleets

@@ -138,3 +138,33 @@ test_that("a conditioned closed loop keeps the fit's deviations and continues th
   expect_equal(d[1,1,1,s$n_yrs + 2,1,7,1,], proj[2,]) # ages still share the year's deviation
 
 })
+
+test_that("replicates on their own parameter draws rebuild movement from their own", {
+
+  # two draws of the deviations, one value per map level so sharing across ages holds
+  s <- move_re_setup()
+  move_level <- as.integer(s$em$map$move_devs)
+  n_levels <- max(move_level, na.rm = TRUE)
+  set.seed(9)
+  pars_by_sim <- vector("list", 2)
+  for(sim in 1:2) {
+    pars_sim <- s$truth
+    level_draw <- stats::rnorm(n_levels, 0, 0.3)
+    pars_sim$move_devs[!is.na(move_level)] <- level_draw[move_level[!is.na(move_level)]]
+    pars_by_sim[[sim]] <- pars_sim
+  } # end sim loop
+
+  # every year conditioned, so each replicate keeps its own deviations throughout
+  sim_list <- list(n_pop = 1, n_regions = 2, n_yrs = s$n_yrs, n_seas = 1, n_ages = 7, n_sexes = 1, n_sims = 2, n_cond_yrs = s$n_yrs,
+                   Movement = replicate(2, s$base_fit$rep$Movement), move_timing = 0, expm_nsub = 0)
+  sim_list <- Setup_Sim_Movement(sim_list, s$em$data, s$truth, pars_by_sim = pars_by_sim)
+  se <- Setup_sim_env(sim_list)
+
+  for(sim in 1:2) {
+    expect_equal(as.numeric(se$move_devs[,,,,,,,sim]), as.numeric(pars_by_sim[[sim]]$move_devs))
+    at_draw <- fit_model(s$em$data, pars_by_sim[[sim]], s$em$map, random = NULL, do_optim = FALSE, silent = TRUE)
+    expect_equal(as.numeric(se$Movement[,,,,,,,sim]), as.numeric(at_draw$rep$Movement), tolerance = 1e-12)
+  } # end sim loop
+  expect_gt(max(abs(se$Movement[,,,,,,,1] - se$Movement[,,,,,,,2])), 1e-3)
+
+})

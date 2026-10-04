@@ -59,6 +59,8 @@ caal_growth <- function(n_ages, n_sexes) {
 #' @param caal_bins length bins that receive aged fish; others get none.
 #' @param n_sexes one or two sexes.
 #' @param n_sims replicates to simulate.
+#' @param len_bin_map,caal_len_bin_map optional maps of the model's length bins onto the recorded
+#'   length bins of the compositions and onto the CAAL rows.
 #' @keywords internal
 caal_make_om <- function(
   caal_like = "Multinomial",
@@ -67,13 +69,16 @@ caal_make_om <- function(
   caal_bins = NULL,
   n_sexes = 1,
   n_sims = 1,
-  seed = 55
+  seed = 55,
+  len_bin_map = NULL,
+  caal_len_bin_map = NULL
 ) {
 
   n_yrs <- caal_cfg$n_yrs
   n_ages <- caal_cfg$n_ages
   n_lens <- caal_cfg$n_lens
-  if(is.null(caal_bins)) caal_bins <- 1:n_lens
+  n_caal_rows <- if(is.null(caal_len_bin_map)) n_lens else ncol(caal_len_bin_map)
+  if(is.null(caal_bins)) caal_bins <- 1:n_caal_rows
 
   sim_list <- Setup_Sim_Dim(
     n_sims = n_sims,
@@ -81,6 +86,8 @@ caal_make_om <- function(
     n_regions = 1,
     n_ages = n_ages,
     n_lens = n_lens,
+    n_obs_lens = if(is.null(len_bin_map)) n_lens else ncol(len_bin_map),
+    n_caal_lens = n_caal_rows,
     n_sexes = n_sexes,
     n_fish_fleets = 1,
     n_srv_fleets = 1,
@@ -94,7 +101,7 @@ caal_make_om <- function(
   }
 
   # a fixed number of otoliths per length bin in the bins that are sampled
-  iss_caal <- array(0, dim = c(1, n_yrs, 1, n_lens, n_sexes, 1, n_sims))
+  iss_caal <- array(0, dim = c(1, n_yrs, 1, n_caal_rows, n_sexes, 1, n_sims))
   iss_caal[,,,caal_bins,,,] <- caal_cfg$caal_per_bin
   type_mat <- array(c(agg = 0, spltRspltS = 1, spltRjntS = 2)[[caal_type]], dim = c(n_yrs, 1))
 
@@ -148,6 +155,8 @@ caal_make_om <- function(
     WAA_fish_input = replicate(n_sims, array(rep(waa, each = n_yrs), dim = c(1, 1, n_yrs, 1, n_ages, n_sexes, 1))),
     WAA_srv_input = replicate(n_sims, array(rep(waa, each = n_yrs), dim = c(1, 1, n_yrs, 1, n_ages, n_sexes, 1))),
     MatAA_input = replicate(n_sims, biol6(mat)),
+    LenBinMap_input = len_bin_map,
+    CAAL_LenBinMap_input = caal_len_bin_map,
     SizeAgeTrans_input = sat
   ))
 
@@ -175,6 +184,8 @@ caal_make_om <- function(
 #' @param use_caal whether CAAL is fit at all; FALSE gives a lengths only model.
 #' @param use_age_comps whether marginal age comps are fit instead of CAAL.
 #' @param osa whether to track compositions for one step ahead residuals.
+#' @param len_bin_map,caal_len_bin_map optional maps of the model's length bins onto the recorded
+#'   length bins of the compositions and onto the CAAL rows, as the operating model drew them.
 #' @keywords internal
 caal_build_input <- function(
   sim_data,
@@ -183,7 +194,9 @@ caal_build_input <- function(
   use_caal = TRUE,
   use_age_comps = FALSE,
   osa = FALSE,
-  n_sexes = 1
+  n_sexes = 1,
+  len_bin_map = NULL,
+  caal_len_bin_map = NULL
 ) {
 
   n_yrs <- caal_cfg$n_yrs
@@ -225,6 +238,8 @@ caal_build_input <- function(
     SizeAgeTrans = sim_data$SizeAgeTrans,
     comp_const_obs = 0,
     AgeingError = sim_data$AgeingError,
+    LenBinMap = len_bin_map,
+    CAAL_LenBinMap = caal_len_bin_map,
     M_spec = "fix",
     Fixed_natmort = array(0.3, dim = c(1, 1, n_yrs, n_ages, n_sexes))
   )

@@ -410,36 +410,64 @@ eval_caal_osa = function(nLL_arr, tracked, ExpArrFn,
 #' The conditional age-at-length arrays have a population dimension the
 #' likelihood does not use, so it is summed away before the comparison. A single
 #' population needs only a reshape, which avoids an apply over a degenerate
-#' dim.
+#' dim. With \code{caal_len_bin_map}, each age-at-length row then sums the model
+#' length bins it covers.
 #'
 #' @param arr Array indexed population, region, year, season, length, age, sex, fleet.
 #' @param y,seas,f Year, season and fleet to extract.
 #' @param n_pop,n_regions,n_lens,n_ages,n_sexes Model dimensions.
+#' @param caal_len_bin_map Optional 0/1 matrix \code{[n_lens x n_caal_lens]}, the
+#'   model length bins each age-at-length row covers. \code{NULL} (default)
+#'   keeps one row per model bin.
 #'
-#' @return An array indexed region, length, age, sex.
+#' @return An array indexed region, length row, age, sex.
 #'
 #' @keywords internal
-caal_sum_pop = function(arr, y, seas, f, n_pop, n_regions, n_lens, n_ages, n_sexes) {
+caal_sum_pop = function(arr, y, seas, f, n_pop, n_regions, n_lens, n_ages, n_sexes, caal_len_bin_map = NULL) {
+
+  "[<-" <- RTMB::ADoverload("[<-")
+
   extracted = arr[,,y,seas,,,,f, drop = FALSE]
   if(n_pop == 1) dim(extracted) = c(n_regions, n_lens, n_ages, n_sexes)
   else extracted = apply(extracted, c(2,5,6,7), sum)
-  return(extracted)
+  if(is.null(caal_len_bin_map)) return(extracted)
+
+  # each age-at-length row sums the model length bins it covers
+  rows = array(0, dim = c(n_regions, ncol(caal_len_bin_map), n_ages, n_sexes))
+  for(k in seq_len(ncol(caal_len_bin_map))) {
+    for(l in which(caal_len_bin_map[,k] != 0)) rows[,k,,] = rows[,k,,] + extracted[,l,,]
+  } # end k loop
+  return(rows)
 }
 
-#' Sum a conditional age-at-length array across populations, for one length bin
+#' Sum a conditional age-at-length array across populations, for one length row
 #'
-#' As \code{\link{caal_sum_pop}}, for a single length bin.
+#' As \code{\link{caal_sum_pop}}, for a single length row.
 #'
 #' @param arr Array indexed population, region, year, season, length, age, sex, fleet.
-#' @param y,seas,l,f Year, season, length bin and fleet to extract.
+#' @param y,seas,l,f Year, season, length row and fleet to extract.
 #' @param n_pop,n_regions,n_ages,n_sexes Model dimensions.
+#' @param caal_len_bin_map Optional 0/1 matrix \code{[n_lens x n_caal_lens]}, the
+#'   model length bins each age-at-length row covers. \code{NULL} (default)
+#'   makes \code{l} a model length bin.
 #'
 #' @return An array indexed region, age, sex.
 #'
 #' @keywords internal
-caal_sum_pop_len = function(arr, y, seas, l, f, n_pop, n_regions, n_ages, n_sexes) {
-  extracted = arr[,,y,seas,l,,,f, drop = FALSE]
-  if(n_pop == 1) dim(extracted) = c(n_regions, n_ages, n_sexes)
-  else extracted = apply(extracted, c(2,6,7), sum)
-  return(extracted)
+caal_sum_pop_len = function(arr, y, seas, l, f, n_pop, n_regions, n_ages, n_sexes, caal_len_bin_map = NULL) {
+
+  # one model length bin, summed over populations
+  one_bin = function(bin) {
+    extracted = arr[,,y,seas,bin,,,f, drop = FALSE]
+    if(n_pop == 1) dim(extracted) = c(n_regions, n_ages, n_sexes)
+    else extracted = apply(extracted, c(2,6,7), sum)
+    return(extracted)
+  }
+  if(is.null(caal_len_bin_map)) return(one_bin(l))
+
+  # an age-at-length row sums the model length bins it covers
+  out = 0
+  for(bin in which(caal_len_bin_map[,l] != 0)) out = out + one_bin(bin)
+  dim(out) = c(n_regions, n_ages, n_sexes)
+  return(out)
 }

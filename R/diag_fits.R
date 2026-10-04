@@ -1078,7 +1078,7 @@ get_caal_prop <- function(data, rep) {
   n_regions <- data$n_regions
   n_yrs <- length(data$years)
   n_seas <- data$n_seas
-  n_lens <- length(data$lens)
+  n_lens <- length(caal_row_lens(data)) # age-at-length rows, one per model length bin without CAAL_LenBinMap
   n_sexes <- data$n_sexes
 
   # ageing error by year, as get_comp_prop reads it
@@ -1095,6 +1095,13 @@ get_caal_prop <- function(data, rep) {
 
     n_obs_ages <- dim(Obs_arr)[5]
     Exp_arr <- apply(Exp_arr, 2:8, sum) # sum over populations
+
+    # each age-at-length row sums the model length bins it covers
+    if(!is.null(data$CAAL_LenBinMap)) {
+      Exp_rows <- array(0, dim = replace(dim(Exp_arr), 4, n_lens))
+      for(k in 1:n_lens) for(l in which(data$CAAL_LenBinMap[,k] != 0)) Exp_rows[,,,k,,,] <- Exp_rows[,,,k,,,] + Exp_arr[,,,l,,,]
+      Exp_arr <- Exp_rows
+    }
     Obs_out <- array(NA, dim = c(n_regions, n_yrs, n_seas, n_lens, n_obs_ages, n_sexes, n_fleets))
     Pred_out <- Obs_out
 
@@ -1205,7 +1212,7 @@ get_caal_fits <- function(data, rep) {
                   Year = data$years[y],
                   Season = seas,
                   Len_Bin = l,
-                  Length = data$lens[l],
+                  Length = caal_row_lens(data)[l], # the row's first model length bin
                   Sex = s,
                   Fleet = f,
                   Type = label,

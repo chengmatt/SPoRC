@@ -32,7 +32,7 @@ A named list containing all simulation outputs, including (among
   \code{ObsSrvIdx_pop}, \code{TrueSrvIdx_pop},
   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
   \code{conv_tag_fish_avail}, \code{pred_conv_tag_fish_recap},
-  \code{obs_conv_tag_fish_recap}, and key dimension scalars
+  \code{obs_conv_tag_fish_recap}, \code{LenBinMap}, and key dimension scalars
   (\code{n_regions}, \code{n_pop}, \code{n_yrs}, \code{n_ages}, etc.).
   Note that \code{n_years} and \code{n_yrs} are both present for backwards
   compatibility.

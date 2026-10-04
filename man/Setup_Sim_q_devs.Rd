@@ -25,11 +25,13 @@ series from \code{\link{Setup_Sim_DSEM}}.}
 
 \item{sigma_fish_q, sigma_srv_q}{Numeric arrays
 \code{[n_regions, n_fleets]} of deviation standard deviations on the log
-scale, or a single value used for every region and fleet. Default zero.}
+scale, or a single value used for every region and fleet. Default zero.
+An array \code{[n_regions, n_fleets, n_sims]} gives each replicate its own.}
 
 \item{fish_q_rho, srv_q_rho}{Numeric arrays \code{[n_regions, n_fleets]} of
 ar1 correlations on the natural scale, read only under \code{"ar1"}.
-Default zero.}
+Default zero. An array \code{[n_regions, n_fleets, n_sims]} gives each
+replicate its own.}
 }
 \value{
 \code{sim_list} with the deviation settings stored.

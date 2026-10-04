@@ -272,37 +272,47 @@ get_fishery_observation_model <- function(
 
             if(fit_lengths == 1) {
               for(s in 1:n_sexes) {
+
                 # the fleet's own key when the growth module built one, the shared data key otherwise
                 key_f <- if(is.null(SizeAgeTrans_fish)) SizeAgeTrans[p,r,y,seas,,,s] else SizeAgeTrans_fish[p,r,y,seas,,,s,f]
                 if(fish_len_comp_sel[f] == 0) {
                   CAL[p,r,y,seas,,s,f] <- key_f %*% CAA[p,r,y,seas,,s,f] # Retained Catch at length
                   DAL[p,r,y,seas,,s,f] <- key_f %*% DAA[p,r,y,seas,,s,f] # Discarded Catch at length
-                  # joint catch at length and age. SizeAgeTrans holds P(len | age), so scaling each
-                  # age column by the catch at that age gives length dim CAL and age dim CAA
+
+                  # compute conditional age at length
                   if(do_caal == 1) {
                     Fish_caal[p,r,y,seas,,,s,f] <- key_f * rep(CAA[p,r,y,seas,,s,f], each = n_lens) # Retained catch at length and age
                     Fish_caal_discard[p,r,y,seas,,,s,f] <- key_f * rep(DAA[p,r,y,seas,,s,f], each = n_lens) # Discarded catch at length and age
                   } # building caal
+
                 } else {
-                  # selectivity applied at length: the fish available over the season at each age are
-                  # spread over length by the composition key, then taken length by length
+
+                  # selectivity applied at length: the fish available over the season at each age are spread over length by the composition key, then taken length by length
                   avail <- Avail[p,r,y,seas,,s] * Fmort[r,y,seas,f]
-                  if(ret_selex_type == 1) {
+                  if(ret_selex_type == 1) { # if length based selex
                     ret_l <- ret_sel_l[r,y,,s,f]
                     ret_a <- rep(1, length(avail))
                   } else {
                     ret_l <- rep(1, n_lens)
                     ret_a <- ret_sel[p,r,y,seas,,s,f]
                   }
+
+                  # length based selex
                   sel_at_l <- fish_sel_l[r,y,,s,f]
-                  joint_ret <- (key_f * rep(avail * ret_a, each = n_lens)) * (sel_at_l * ret_l) # [len, age]
-                  joint_disc <- (key_f * rep(avail * (1 - ret_a), each = n_lens)) * (sel_at_l * (1 - ret_l)) * dmr[r,y,seas,f]
+                  kept <- rep(ret_l, length(avail)) * rep(ret_a, each = n_lens) # fraction retained by length and age, one of the two is 1
+                  joint_ret <- (key_f * rep(avail, each = n_lens)) * sel_at_l * kept # get joint length age retained catch
+                  joint_disc <- (key_f * rep(avail, each = n_lens)) * sel_at_l * (1 - kept) * dmr[r,y,seas,f] # get joint length age discarded catch
+
+                  # get catch at length
                   CAL[p,r,y,seas,,s,f] <- rowSums(joint_ret)
                   DAL[p,r,y,seas,,s,f] <- rowSums(joint_disc)
+
+                  # building caal
                   if(do_caal == 1) {
                     Fish_caal[p,r,y,seas,,,s,f] <- joint_ret
                     Fish_caal_discard[p,r,y,seas,,,s,f] <- joint_disc
-                  } # building caal
+                  }
+
                 }
               } # end s loop
             } # fitting lengths

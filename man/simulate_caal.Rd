@@ -10,8 +10,7 @@ simulate_caal(
   f,
   seas,
   sim,
-  SizeAgeTrans,
-  AtAge,
+  Joint,
   ISS,
   AgeingError,
   comp_like,
@@ -21,20 +20,18 @@ simulate_caal(
   n_sexes,
   n_regions,
   n_lens,
-  Obs
+  Obs,
+  CAAL_LenBinMap = NULL
 )
 }
 \arguments{
 \item{r, y, f, seas, sim}{Region, year, fleet, season and replicate indices.}
 
-\item{SizeAgeTrans}{Array \code{[pop, region, year, season, len, age, sex,
-sim]} of \eqn{P(l \mid a)}.}
+\item{Joint}{Array \code{[pop, region, len, age, sex]} of the fleet's numbers
+at length and age in this year, season and replicate.}
 
-\item{AtAge}{Array \code{[pop, region, year, season, age, sex, fleet, sim]}
-of true numbers at age for this fleet type.}
-
-\item{ISS}{Array \code{[region, year, season, len, sex, fleet, sim]} of fish
-aged per length bin. A zero skips the bin.}
+\item{ISS}{Array \code{[region, year, season, length row, sex, fleet, sim]} of
+fish aged per length row. A zero skips the row.}
 
 \item{AgeingError}{Array \code{[year, model_age, obs_age, sim]}.}
 
@@ -48,22 +45,26 @@ aged per length bin. A zero skips the bin.}
 
 \item{n_sexes, n_regions, n_lens}{Dimension sizes.}
 
-\item{Obs}{Array \code{[region, year, season, len, obs_age, sex, fleet, sim]}
-the draws are written into.}
+\item{Obs}{Array \code{[region, year, season, length row, obs_age, sex, fleet,
+sim]} the draws are written into.}
+
+\item{CAAL_LenBinMap}{Optional 0/1 matrix \code{[n_lens x n_caal_lens]} of the model
+length bins each length row covers. \code{NULL} (default) gives one row per
+model bin.}
 }
 \value{
 The updated \code{Obs} array.
 }
 \description{
-Draws one age composition per length bin from the joint distribution of
-length and age implied by the size-age transition matrix and the true numbers
-at age (catch at age for the fishery, index at age for the survey). The joint
-for a region, length bin and sex is \eqn{P(l \mid a) N_a} summed over
-populations, and the draw for bin \eqn{l} is a multinomial (or
-Dirichlet-multinomial) of \code{ISS[l]} fish across ages with that row as
-the probability, which is the conditional \eqn{P(a \mid l)} by construction.
-Ageing error is applied to the drawn counts the same way
-\code{\link{simulate_comps}} applies it to marginal age compositions.
+Draws one age composition per length bin from the joint numbers at length
+and age the fit builds for the same fleet: the catch or index at each age
+spread over length by the size-age key, or under selectivity at length the
+fish available at each age spread over length and selected length by length.
+The row for a region, length bin and sex is summed over populations and read
+through the fleet's ageing error onto the observed ages, and the draw for bin
+\eqn{l} is a multinomial (or Dirichlet-multinomial) of \code{ISS[l]} fish
+across observed ages with that row as the probability, which is the
+conditional \eqn{P(a \mid l)} the fit evaluates.
 }
 \details{
 Composition types follow \code{simulate_comps}: split by region and sex (1)

@@ -340,6 +340,11 @@ test_that("Internal composition OSAs are producing consistent results with an in
 
   expect_jnLL_decomposes(model_correct)
 
+  # the internal path is the ordinary likelihood up to a constant, the discard compositions included
+  gaps <- osa_path_gaps(input_list$data, input_list$par, input_list$map)
+  expect_equal(gaps[[1]][["objective"]], gaps[[2]][["objective"]], tolerance = 1e-8)
+  expect_lt(max(gaps[[1]][["gradient"]], gaps[[2]][["gradient"]]), 1e-7)
+
   # index
   osa_idx_correct <- oneStepPredict(
     model_correct,

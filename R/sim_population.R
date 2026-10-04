@@ -725,7 +725,7 @@ run_annual_cycle <- function(y,
 #'   \code{ObsSrvIdx_pop}, \code{TrueSrvIdx_pop},
 #'   \code{conv_tagged_fish}, \code{conv_tagged_fish_attr},
 #'   \code{conv_tag_fish_avail}, \code{pred_conv_tag_fish_recap},
-#'   \code{obs_conv_tag_fish_recap}, and key dimension scalars
+#'   \code{obs_conv_tag_fish_recap}, \code{LenBinMap}, and key dimension scalars
 #'   (\code{n_regions}, \code{n_pop}, \code{n_yrs}, \code{n_ages}, etc.).
 #'   Note that \code{n_years} and \code{n_yrs} are both present for backwards
 #'   compatibility.
@@ -884,6 +884,8 @@ Simulate_Pop_Static <- function(sim_list,
                   AgeingError = sim_env$AgeingError,
                   AgeingError_fish = if(!is.null(sim_env$AgeingError_fish)) sim_env$AgeingError_fish else NULL,
                   AgeingError_srv = if(!is.null(sim_env$AgeingError_srv)) sim_env$AgeingError_srv else NULL,
+                  LenBinMap = sim_env$LenBinMap,
+                  CAAL_LenBinMap = sim_env$CAAL_LenBinMap,
                   ISS_FishAgeComps = sim_env$ISS_FishAgeComps,
                   ISS_FishLenComps = sim_env$ISS_FishLenComps,
                   ISS_SrvAgeComps = sim_env$ISS_SrvAgeComps,
@@ -910,6 +912,8 @@ Simulate_Pop_Static <- function(sim_list,
                   seasdur = sim_env$seasdur,
                   spawn_seas = sim_env$spawn_seas,
                   n_lens = if(!is.null(sim_env$n_lens)) sim_env$n_lens else NULL,
+                  n_obs_lens = sim_env$n_obs_lens,
+                  n_caal_lens = sim_env$n_caal_lens,
                   n_sexes = sim_env$n_sexes,
                   n_fish_fleets = sim_env$n_fish_fleets,
                   n_srv_fleets = sim_env$n_srv_fleets

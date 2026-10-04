@@ -164,6 +164,7 @@ test_that("cohort growth advances from drawn deviations through the closed loop"
                                                 sd_rep = list(par.fixed = obj$par, par.random = NULL), rep = obj$rep, random = NULL)
   expect_false(is.null(sim_list$growth_args))
   expect_equal(sim_list$growth_length_sel$fish_selex_type, 1)
+  sim_list$n_cond_yrs <- 0 # draw every year, so the propagated years are not the report's
   set.seed(8)
   sim_env <- Setup_sim_env(sim_list) # built here, since the annual cycle finds the environment by this name in the frame that built it
   devs <- sim_env$ln_growth_devs
@@ -213,10 +214,34 @@ test_that("a refit on simulated data recovers the growth process error", {
   set.seed(31)
   self_test <- suppressWarnings(simulation_self_test(data = input_list$data, parameters = truth, mapping = pinned_map, random = c("ln_growth_devs", "ln_RecDevs"),
                                                rep = at_truth$rep, sd_rep = NULL, n_sims = 3, newton_loops = 1,
-                                               what = "SSB", what_par = "growth_pe_pars"))
+                                               what = "SSB", what_par = "growth_pe_pars", n_cond_yrs = 0))
   expect_equal(sum(is.na(self_test$SSB)), 0) # every replicate refit
   est_sd <- exp(self_test$growth_pe_pars[1,1,3,1,1,])
   expect_true(all(is.finite(est_sd)))
   expect_lt(max(abs(log(est_sd / 0.15))), log(2)) # within a factor of two in every replicate
+
+})
+
+test_that("a joint self test rebuilds each replicate's growth from its own draw", {
+
+  # iid deviations on L1 and a random walk on K, integrated, so the joint precision draws them with the rest
+  input_list <- growth_re_input(list(growth_tv_model = c(L1 = "iid", K = "rw"), growth_tv_sigma_spec = "fix", growth_semipar = "none"))
+  truth <- input_list$par
+  truth$growth_pe_pars[1,1,1,1,1] <- log(0.1)
+  truth$growth_pe_pars[1,1,3,1,1] <- log(0.05)
+  fit <- fit_model(input_list$data, truth, input_list$map, random = "ln_growth_devs", silent = TRUE, newton_loops = 0)
+  sd_rep <- RTMB::sdreport(fit, getJointPrecision = TRUE)
+
+  set.seed(4)
+  sim_path <- tempfile(fileext = ".rds")
+  st <- suppressWarnings(simulation_self_test(data = fit$data, parameters = fit$parameters, mapping = fit$mapping, random = "ln_growth_devs",
+                                              rep = fit$rep, sd_rep = sd_rep, obj = fit, n_sims = 2, newton_loops = 0,
+                                              what = "SSB", what_par = "ln_growth_devs", sim_type = "joint", output_path = sim_path))
+  om_ssb <- readRDS(sim_path)$SSB
+  n_yrs <- length(input_list$data$years)
+
+  # each replicate's operating model runs on that replicate's own growth, so its spawning biomass is its truth
+  expect_gt(max(abs(st$truth$ln_growth_devs[,,,,,1] - st$truth$ln_growth_devs[,,,,,2])), 0.01) # the draws differ
+  for(sim in 1:2) expect_equal(om_ssb[,,1:n_yrs,sim], st$truth$SSB[,,1:n_yrs,sim], tolerance = 1e-8)
 
 })

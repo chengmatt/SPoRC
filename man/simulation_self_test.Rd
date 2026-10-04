@@ -96,7 +96,7 @@ deviations and data this clean remove it. Default \code{FALSE}.}
   composition parameters stay at the fit, having no replicate dim.}
 
 \item{n_cond_yrs}{Integer. The first years of every replicate reproduce the
-fit's catchability and movement deviations, and later years are drawn.
+fit's catchability, movement and growth deviations, and later years are drawn.
 Default every year of the fit, so nothing is redrawn; \code{0} draws every
 year from the fitted process.}
 }

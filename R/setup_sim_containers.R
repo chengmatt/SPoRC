@@ -12,7 +12,7 @@
 #' @param sim_list A simulation list returned by \code{\link{Setup_Sim_Dim}}, whose
 #'   \code{n_pop}, \code{n_regions}, \code{n_yrs}, \code{n_seas}, \code{n_ages},
 #'   \code{n_sexes}, \code{n_sims}, \code{n_fish_fleets}, \code{n_srv_fleets},
-#'   \code{n_obs_ages} and \code{n_lens} size every container.
+#'   \code{n_obs_ages}, \code{n_lens} and \code{n_obs_lens} size every container.
 #'
 #' @return \code{sim_list} with the containers added.
 #'
@@ -33,7 +33,7 @@
 #'   dims; \code{$ObsFishAgeComps} and \code{$ObsFishAgeComps_discard} with
 #'   \code{n_obs_ages × n_sexes} before the fleet dim, and
 #'   \code{$ObsFishLenComps} and \code{$ObsFishLenComps_discard} with
-#'   \code{n_lens × n_sexes}. Each has a \code{_pop} counterpart with a leading
+#'   \code{n_obs_lens × n_sexes}. Each has a \code{_pop} counterpart with a leading
 #'   \code{n_pop}. The true catch and discards at age and length are \code{$CAA},
 #'   \code{$DAA} \code{[n_pop × n_regions × n_yrs × n_seas × n_ages × n_sexes ×
 #'   n_fish_fleets × n_sims]} and \code{$CAL}, \code{$DAL} with \code{n_lens} in
@@ -41,14 +41,18 @@
 #'
 #'   Survey: \code{$ObsSrvIdx} and \code{$TrueSrvIdx} \code{[n_regions × n_yrs ×
 #'   n_seas × n_srv_fleets × n_sims]}, \code{$ObsSrvAgeComps} and
-#'   \code{$ObsSrvLenComps} with the bin and sex dims before the fleet dim, each
-#'   with a \code{_pop} counterpart, and the true \code{$SrvIAA} \code{[n_pop ×
+#'   \code{$ObsSrvLenComps} with the observed bin and sex dims before the fleet
+#'   dim, each with a \code{_pop} counterpart, and the true \code{$SrvIAA} \code{[n_pop ×
 #'   n_regions × n_yrs × n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]} and
 #'   \code{$SrvIAL} with \code{n_lens} in place of \code{n_ages}.
 #'
 #' @export Setup_Sim_Containers
 #' @family Simulation Setup
 Setup_Sim_Containers <- function(sim_list) {
+
+  # backwards compatibility for obs lens
+  if(is.null(sim_list$n_obs_lens)) sim_list$n_obs_lens <- sim_list$n_lens
+  if(is.null(sim_list$n_caal_lens)) sim_list$n_caal_lens <- sim_list$n_lens
 
   # Biological Containers
   sim_list$NAA_aft = sim_list$NAA_bef = sim_list$NAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs + 1, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_sims))
@@ -79,13 +83,13 @@ Setup_Sim_Containers <- function(sim_list) {
   sim_list$ObsFishIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$TrueFishIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$ObsFishAgeComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
-  sim_list$ObsFishLenComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
+  sim_list$ObsFishLenComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
   # Conditional age-at-length, one age composition per length bin
-  sim_list$ObsFish_caal <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
+  sim_list$ObsFish_caal <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_caal_lens, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$ObsDiscard <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$TrueDiscard <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$ObsFishAgeComps_discard <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
-  sim_list$ObsFishLenComps_discard <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
+  sim_list$ObsFishLenComps_discard <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
 
   # Population-specific
   sim_list$ObsCatch_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
@@ -93,11 +97,11 @@ Setup_Sim_Containers <- function(sim_list) {
   sim_list$ObsFishIdx_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$TrueFishIdx_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$ObsFishAgeComps_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
-  sim_list$ObsFishLenComps_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
+  sim_list$ObsFishLenComps_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$ObsDiscard_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$TrueDiscard_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$ObsFishAgeComps_discard_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
-  sim_list$ObsFishLenComps_discard_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
+  sim_list$ObsFishLenComps_discard_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
 
   # True catch-at-age/length (always pop-resolved)
   sim_list$CAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))
@@ -110,14 +114,14 @@ Setup_Sim_Containers <- function(sim_list) {
   sim_list$ObsSrvIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets, sim_list$n_sims))
   sim_list$TrueSrvIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets, sim_list$n_sims))
   sim_list$ObsSrvAgeComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
-  sim_list$ObsSrvLenComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
-  sim_list$ObsSrv_caal <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
+  sim_list$ObsSrvLenComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
+  sim_list$ObsSrv_caal <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_caal_lens, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
 
   # Population-specific
   sim_list$ObsSrvIdx_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets, sim_list$n_sims))
   sim_list$TrueSrvIdx_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets, sim_list$n_sims))
   sim_list$ObsSrvAgeComps_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
-  sim_list$ObsSrvLenComps_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
+  sim_list$ObsSrvLenComps_pop <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))
 
   # True index-at-age/length (always pop-resolved)
   sim_list$SrvIAA <- array(0, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims))

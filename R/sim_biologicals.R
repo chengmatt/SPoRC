@@ -57,6 +57,7 @@ derive_sim_growth <- function(sim_env) {
   built_yrs <- if(cohort_growth) seq_len(max(1, growth_args$growth_cohort_styr - 1)) else seq_len(sim_env$n_yrs)
 
   for(sim in seq_len(sim_env$n_sims)) {
+    growth_args <- sim_growth_args(sim_env, sim)
     growth_args$ln_growth_devs <- sim_growth_devs(sim_env, "ln_growth_devs", sim)
     growth_args$ln_growth_semipar_devs <- sim_growth_devs(sim_env, "ln_growth_semipar_devs", sim)
     growth <- do.call(Get_Growth, growth_args)
@@ -101,7 +102,7 @@ sim_growth_devs <- function(sim_env, par_name, sim) {
 #' @keywords internal
 advance_sim_growth_year <- function(y, sim, sim_env) {
 
-  growth_args <- sim_growth_args(sim_env)
+  growth_args <- sim_growth_args(sim_env, sim)
   growth_args <- growth_args[names(growth_args) %in% names(formals(Get_Growth_Year))]
   growth_args$ln_growth_devs <- sim_growth_devs(sim_env, "ln_growth_devs", sim)
   growth_args$ln_growth_semipar_devs <- sim_growth_devs(sim_env, "ln_growth_semipar_devs", sim)
@@ -134,8 +135,8 @@ advance_sim_growth_year <- function(y, sim, sim_env) {
 #' @keywords internal
 take_sim_growth_years <- function(sim_env, sim, growth, yrs) {
 
-  growth_args <- sim_growth_args(sim_env)
-  length_sel <- sim_env$growth_length_sel
+  growth_args <- sim_growth_args(sim_env, sim)
+  length_sel <- if(!is.null(sim_env$growth_length_sel_by_sim)) sim_env$growth_length_sel_by_sim[[sim]] else sim_env$growth_length_sel
   len_mid <- growth_len_mid(growth_args$growth_len_lower)
   n_pop <- sim_env$n_pop
   n_regions <- sim_env$n_regions
@@ -179,14 +180,16 @@ take_sim_growth_years <- function(sim_env, sim, growth, yrs) {
 #'
 #' \code{growth_args} from \code{Setup_Sim_Growth_RE} when the fit penalizes
 #' its own growth deviations, else \code{dsem_growth_args} from
-#' \code{Setup_Sim_DSEM}.
+#' \code{Setup_Sim_DSEM}. A replicate on its own parameter draw takes its own.
 #'
 #' @param sim_env Simulation environment.
+#' @param sim Replicate, or \code{NULL} for the arguments every replicate shares.
 #'
 #' @return Named list of \code{Get_Growth} arguments, or \code{NULL}.
 #'
 #' @keywords internal
-sim_growth_args <- function(sim_env) {
+sim_growth_args <- function(sim_env, sim = NULL) {
+  if(!is.null(sim) && !is.null(sim_env$growth_args_by_sim)) return(sim_env$growth_args_by_sim[[sim]])
   if(!is.null(sim_env$growth_args)) sim_env$growth_args else sim_env$dsem_growth_args
 }
 
@@ -243,7 +246,8 @@ sim_growth_length_sel <- function(data, rep, n_sim_yrs) {
 #' deviation maps, the process error parameters, the \code{Get_Growth}
 #' arguments and, under selectivity at length, the report's selectivity at
 #' length the rebuilt keys are read through. With the fit's own penalty on the
-#' deviations, \code{\link{draw_sim_growth_devs}} draws them in
+#' deviations, \code{\link{draw_sim_growth_devs}} keeps the fit's values over
+#' the simulation list's \code{n_cond_yrs} and draws the years after them in
 #' \code{Setup_sim_env}. With a dsem holding or linking any growth deviation,
 #' \code{\link{Setup_Sim_DSEM}} builds both arrays itself and nothing is stored
 #' here, so the deviations of a parameter outside the arrows keep the fit's
@@ -253,11 +257,17 @@ sim_growth_length_sel <- function(data, rep, n_sim_yrs) {
 #' @param data Data list of the fit.
 #' @param pars Parameter list at the fitted values.
 #' @param rep Report of the fit, needed under selectivity at length.
+#' @param pars_by_sim,rep_by_sim Optional lists of one parameter list and one
+#'   report per replicate, for replicates that each run on their own parameter
+#'   draw (\code{sim_type = "joint"} in \code{\link{simulation_self_test}}).
+#'   Each replicate's growth is then rebuilt from its own parameters and
+#'   deviations. \code{NULL} (default) gives every replicate \code{pars} and
+#'   \code{rep}.
 #'
 #' @return \code{sim_list} with \code{growth_args} and the fields above added.
 #'
 #' @export Setup_Sim_Growth_RE
-Setup_Sim_Growth_RE <- function(sim_list, data, pars, rep = NULL) {
+Setup_Sim_Growth_RE <- function(sim_list, data, pars, rep = NULL, pars_by_sim = NULL, rep_by_sim = NULL) {
 
   # return if no growth model
   if(is.null(data$growth_model) || data$growth_model == 0) return(sim_list)
@@ -277,6 +287,19 @@ Setup_Sim_Growth_RE <- function(sim_list, data, pars, rep = NULL) {
   sim_list$growth_pe_pars <- pars$growth_pe_pars
   sim_list$growth_args <- match_model_args(Get_Growth, data, pars, n_yrs = sim_list$n_yrs)
   sim_list$growth_length_sel <- sim_growth_length_sel(data, rep, sim_list$n_yrs)
+
+  # replicates on their own parameter draws rebuild growth from their own
+  if(!is.null(pars_by_sim)) {
+    sim_list$growth_args_by_sim <- sim_list$growth_pe_pars_by_sim <- vector("list", sim_list$n_sims)
+    for(sim in seq_len(sim_list$n_sims)) {
+      sim_list$growth_args_by_sim[[sim]] <- match_model_args(Get_Growth, data, pars_by_sim[[sim]], n_yrs = sim_list$n_yrs)
+      sim_list$growth_pe_pars_by_sim[[sim]] <- pars_by_sim[[sim]]$growth_pe_pars
+    } # end sim loop
+  }
+  if(!is.null(rep_by_sim)) {
+    sim_list$growth_length_sel_by_sim <- vector("list", sim_list$n_sims)
+    for(sim in seq_len(sim_list$n_sims)) sim_list$growth_length_sel_by_sim[[sim]] <- sim_growth_length_sel(data, rep_by_sim[[sim]], sim_list$n_yrs)
+  }
   return(sim_list)
 
 } # end function
@@ -323,20 +346,31 @@ sim_map_over_years <- function(map, n_yrs) {
 #' years and \code{bins} from the form's precision, conditional on the cells
 #' the map fixes at zero, which is the density the penalty evaluates at them.
 #'
+#' The first \code{n_cond} years keep the fit's deviations, and the years after
+#' them are drawn given those: a random walk steps on from the fit's last value,
+#' and the correlated forms draw from the precision conditional on the fit's
+#' cells as well as the fixed ones.
+#'
 #' @param PE_model Integer process error code, as \code{Get_PE_loglik} reads it.
 #' @param map Integer array \code{[pop, region, year, bin, sex]} of the levels,
 #'   \code{NA} where a cell is fixed.
 #' @param pe_pars Array \code{[pop, region, slot, sex]}, the half of
 #'   \code{growth_pe_pars} the form reads.
 #' @param bins Bins the correlated forms run over.
+#' @param fit_devs The fit's deviations, shaped as \code{map}, read in the first
+#'   \code{n_cond} years only.
+#' @param n_cond Integer. Years that keep the fit's deviations. Default \code{0}
+#'   draws every year.
 #'
-#' @return Array shaped as \code{map}, zero where the map is \code{NA}.
+#' @return Array shaped as \code{map}, zero where the map is \code{NA} outside
+#'   the conditioned years.
 #'
 #' @keywords internal
-draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins) {
+draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins, fit_devs = NULL, n_cond = 0) {
 
   map_dim <- dim(map)
   devs <- array(0, dim = map_dim)
+  if(n_cond > 0) devs[,,seq_len(n_cond),,] <- fit_devs[,,seq_len(n_cond),,] # conditioned years are the fit's
   levels <- sort(unique(as.vector(map))) # sort drops the fixed cells
   if(length(levels) == 0) return(devs)
 
@@ -346,7 +380,9 @@ draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins) {
       first_cell <- arrayInd(level_cells[1], map_dim) # the slot the penalty reads this level at
       p <- first_cell[1]; r <- first_cell[2]; y <- first_cell[3]; bin <- first_cell[4]; s <- first_cell[5]
       sigma <- exp(pe_pars[p,r,bin,s])
-      draw <- if(PE_model == 1 || y == 1) stats::rnorm(1, 0, sigma) else devs[p,r,y - 1,bin,s] + stats::rnorm(1, 0, sigma)
+      if(y <= n_cond) draw <- fit_devs[p,r,y,bin,s] # conditioned years keep the fit's deviation
+      else if(PE_model == 1 || y == 1) draw <- stats::rnorm(1, 0, sigma)
+      else draw <- devs[p,r,y - 1,bin,s] + stats::rnorm(1, 0, sigma) # walks on from the year before, the fit's when conditioned
       devs[level_cells] <- draw
     } # end level loop
     return(devs)
@@ -356,22 +392,32 @@ draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins) {
   for(p in seq_len(map_dim[1])) for(r in seq_len(map_dim[2])) for(s in seq_len(map_dim[5])) {
     map_slice <- array(map[p,r,,bins,s], dim = c(map_dim[3], length(bins))) # [year, bin]
     if(all(is.na(map_slice))) next
+    fit_slice <- array(devs[p,r,,bins,s], dim = c(map_dim[3], length(bins))) # [year, bin], the fit's in conditioned years and zero after
     if(PE_model == 5) {
       rho_bin <- rho_trans(pe_pars[p,r,1,s])
       rho_year <- rho_trans(pe_pars[p,r,2,s])
       marginal_sd <- exp(pe_pars[p,r,4,s]) / sqrt(1 - rho_year^2) / sqrt(1 - rho_bin^2) # marginal sd from the conditional one
       precision <- kronecker(ar1_precision(length(bins), rho_bin), ar1_precision(map_dim[3], rho_year)) / marginal_sd^2 # year fastest
       is_free <- !is.na(as.vector(map_slice))
+      nodes <- as.vector(fit_slice)
+      node_year <- rep(seq_len(map_dim[3]), times = length(bins))
     } else {
       precision <- Get_3d_precision(length(bins), map_dim[3], pe_pars[p,r,1,s], pe_pars[p,r,2,s], pe_pars[p,r,3,s], pe_pars[p,r,4,s],
                                     Var_Type = if(PE_model == 3) 0 else 1) # bin fastest
       precision <- as.matrix(precision)
       precision <- (precision + t(precision)) / 2
       is_free <- !is.na(as.vector(t(map_slice)))
+      nodes <- as.vector(t(fit_slice))
+      node_year <- rep(seq_len(map_dim[3]), each = length(bins))
     }
-    # the free cells given the fixed ones at zero have the precision's free block
-    nodes <- numeric(length(is_free))
-    nodes[is_free] <- backsolve(chol(precision[is_free, is_free, drop = FALSE]), stats::rnorm(sum(is_free)))
+    # the free cells given the known ones (fixed at zero, or the fit's in conditioned years) have the precision's free block,
+    # centered on the conditional mean
+    is_free <- is_free & node_year > n_cond
+    if(any(is_free)) {
+      free_precision <- precision[is_free, is_free, drop = FALSE]
+      cond_mean <- -solve(free_precision, precision[is_free, !is_free, drop = FALSE] %*% nodes[!is_free])
+      nodes[is_free] <- as.vector(cond_mean) + backsolve(chol(free_precision), stats::rnorm(sum(is_free)))
+    }
     devs[p,r,,bins,s] <- if(PE_model == 5) matrix(nodes, map_dim[3], length(bins)) else t(matrix(nodes, length(bins), map_dim[3]))
   } # end p, r, s loop
 
@@ -387,13 +433,17 @@ draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins) {
 #' parameter's sd in the time-varying half of \code{growth_pe_pars} and the
 #' surface's in the semi-parametric half, as \code{Get_PE_loglik} reads them.
 #' The fit's maps decide what is drawn: a cell the map fixes stays at zero, a
-#' shared level takes one draw, and years past the fit are active. Growth is
+#' shared level takes one draw, and years past the fit are active. The first
+#' \code{n_cond_yrs} years of every replicate keep the fit's own deviations, or
+#' the replicate's own draw of them under a joint self test, and the years after
+#' them are drawn given those at that replicate's process error. Growth is
 #' then rebuilt through \code{derive_sim_growth}; under cohort growth that
 #' builds only the years before the propagation starts, and the annual cycle
 #' advances the rest from each replicate's own numbers at age.
 #'
 #' @param sim_env Simulation environment holding what \code{Setup_Sim_Growth_RE}
-#'   stored, \code{n_yrs} and \code{n_sims}.
+#'   stored, \code{n_yrs}, \code{n_sims} and \code{n_cond_yrs} (\code{NULL} or
+#'   \code{0} draws every year).
 #'
 #' @return \code{invisible(NULL)}; \code{sim_env} is modified in place.
 #'
@@ -404,8 +454,7 @@ draw_sim_growth_devs <- function(sim_env) {
   growth_args <- sim_env$growth_args
   n_yrs <- sim_env$n_yrs
   n_sims <- sim_env$n_sims
-  pe_pars <- sim_env$growth_pe_pars # [pop, region, slot, sex, half]
-  growth_tv_model <- if(is.null(sim_env$growth_tv_model)) rep(0, dim(growth_args$ln_growth_devs)[4]) else sim_env$growth_tv_model
+  growth_tv_model <-if(is.null(sim_env$growth_tv_model)) rep(0, dim(growth_args$ln_growth_devs)[4]) else sim_env$growth_tv_model
   growth_semipar <- if(is.null(sim_env$growth_semipar)) 0 else sim_env$growth_semipar
 
   # get mapping stuff
@@ -416,15 +465,34 @@ draw_sim_growth_devs <- function(sim_env) {
   semipar_dim <- dim(map_semipar_devs)
 
   # do draws of growth devs
+  n_cond <- min(n_yrs, if(is.null(sim_env$n_cond_yrs)) 0 else sim_env$n_cond_yrs) # years that take the fit's deviations
   tv_devs <- array(0, dim = c(tv_dim, n_sims))
   semipar_devs <- array(0, dim = c(semipar_dim, n_sims))
   for(sim in seq_len(n_sims)) {
+
+    # the deviations the first n_cond_yrs years keep, and the process error after them. the fit's, or this
+    # replicate's own draw under a joint self test. zero past the fit's years
+    growth_args_sim <- sim_growth_args(sim_env, sim)
+    pe_pars <- if(!is.null(sim_env$growth_pe_pars_by_sim)) sim_env$growth_pe_pars_by_sim[[sim]] else sim_env$growth_pe_pars # [pop, region, slot, sex, half]
+    fit_tv_devs <- array(0, dim = tv_dim)
+    fit_semipar_devs <- array(0, dim = semipar_dim)
+    if(any(growth_tv_model > 0)) {
+      fit_yrs <- seq_len(min(n_yrs, dim(growth_args_sim$ln_growth_devs)[3]))
+      fit_tv_devs[,,fit_yrs,,] <- growth_args_sim$ln_growth_devs[,,fit_yrs,,]
+    }
+    if(growth_semipar > 0) {
+      fit_yrs <- seq_len(min(n_yrs, dim(growth_args_sim$ln_growth_semipar_devs)[3]))
+      fit_semipar_devs[,,fit_yrs,,] <- growth_args_sim$ln_growth_semipar_devs[,,fit_yrs,,]
+    }
+
     # one column wide surface per varying parameter, its sd in that parameter's time-varying slot
     for(par_idx in which(growth_tv_model > 0)) {
       pe_par <- array(pe_pars[,,par_idx,,1], dim = c(tv_dim[1:2], 1, tv_dim[5]))
-      tv_devs[,,,par_idx,,sim] <- draw_growth_pe_surface(growth_tv_model[par_idx], map_tv_devs[,,,par_idx,,drop = FALSE], pe_par, 1)
+      tv_devs[,,,par_idx,,sim] <- draw_growth_pe_surface(growth_tv_model[par_idx], map_tv_devs[,,,par_idx,,drop = FALSE], pe_par, 1,
+                                                         fit_devs = fit_tv_devs[,,,par_idx,,drop = FALSE], n_cond = n_cond)
     } # end par_idx loop
-    if(growth_semipar > 0) semipar_devs[,,,,,sim] <- draw_growth_pe_surface(growth_semipar, map_semipar_devs, array(pe_pars[,,,,2], dim = dim(pe_pars)[1:4]), bins)
+    if(growth_semipar > 0) semipar_devs[,,,,,sim] <- draw_growth_pe_surface(growth_semipar, map_semipar_devs, array(pe_pars[,,,,2], dim = dim(pe_pars)[1:4]), bins,
+                                                                            fit_devs = fit_semipar_devs, n_cond = n_cond)
   } # end sim loop
 
   # return stuff
@@ -434,6 +502,27 @@ draw_sim_growth_devs <- function(sim_env) {
   return(invisible(NULL))
 
 } # end function
+
+#' One replicate's movement setting
+#'
+#' The replicate's own under a joint self test, where \code{Setup_Sim_Movement}
+#' stored one per replicate, else the one every replicate shares, with
+#' \code{move_args} falling back on the dsem's.
+#'
+#' @param sim_env Simulation environment.
+#' @param name \code{"move_args"}, \code{"move_devs_fit"}, \code{"move_pe_pars"},
+#'   \code{"move_pop_corr_pars"}, \code{"move_seas_corr_pars"} or
+#'   \code{"move_sex_corr_pars"}.
+#' @param sim Replicate.
+#'
+#' @return The setting.
+#'
+#' @keywords internal
+sim_move_setting <- function(sim_env, name, sim) {
+  if(!is.null(sim_env$move_by_sim)) return(sim_env$move_by_sim[[sim]][[name]])
+  if(name == "move_args" && is.null(sim_env$move_args)) return(sim_env$dsem_move_args)
+  sim_env[[name]]
+}
 
 #' Rebuild movement for every replicate from its deviation array
 #'
@@ -450,10 +539,9 @@ draw_sim_growth_devs <- function(sim_env) {
 #' @keywords internal
 derive_sim_movement <- function(sim_env) {
 
-  move_args <- if(!is.null(sim_env$move_args)) sim_env$move_args else sim_env$dsem_move_args
-
   for(sim in seq_len(sim_env$n_sims)) {
-    move_args$move_devs <- array(sim_env$move_devs[,,,,,,,sim], dim = dim(sim_env$move_devs)[-8])
+    move_args <- sim_move_setting(sim_env, "move_args", sim)
+    move_args$move_devs <-array(sim_env$move_devs[,,,,,,,sim], dim = dim(sim_env$move_devs)[-8])
     movement <- do.call(Get_Movement, move_args)
     sim_env$Movement[,,,,,,,sim] <- movement$Movement
     if(!is.null(sim_env$Mrate) && !is.null(movement$Mrate)) sim_env$Mrate[,,,,,,,sim] <- movement$Mrate
@@ -480,11 +568,16 @@ derive_sim_movement <- function(sim_env) {
 #'   \code{expm_nsub}.
 #' @param data Data list of the fit.
 #' @param pars Parameter list at the fitted values.
+#' @param pars_by_sim Optional list of one parameter list per replicate, for
+#'   replicates that each run on their own parameter draw (\code{sim_type =
+#'   "joint"} in \code{\link{simulation_self_test}}). Each replicate's movement
+#'   is then rebuilt from its own parameters, deviations and process error.
+#'   \code{NULL} (default) gives every replicate \code{pars}.
 #'
 #' @return \code{sim_list} with \code{move_args} and the fields above added.
 #'
 #' @export Setup_Sim_Movement
-Setup_Sim_Movement <- function(sim_list, data, pars) {
+Setup_Sim_Movement <- function(sim_list, data, pars, pars_by_sim = NULL) {
 
   if(is.null(data$map_move_devs) || all(is.na(data$map_move_devs)) || isTRUE(data$use_fixed_movement == 1)) return(sim_list) # no deviations to draw
 
@@ -501,6 +594,26 @@ Setup_Sim_Movement <- function(sim_list, data, pars) {
                                          n_proj_yrs_devs = max(0, n_sim_yrs - n_fit_yrs),
                                          n_ages = length(data$ages),
                                          expm_nsub = if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub)
+
+  # replicates on their own parameter draws rebuild movement from their own
+  if(!is.null(pars_by_sim)) {
+    sim_list$move_by_sim <- vector("list", sim_list$n_sims)
+    for(sim in seq_len(sim_list$n_sims)) {
+      pars_sim <- pars_by_sim[[sim]]
+      sim_list$move_by_sim[[sim]] <- list(
+        move_args = match_model_args(Get_Movement, data, pars_sim,
+                                     n_yrs = min(n_fit_yrs, n_sim_yrs),
+                                     n_proj_yrs_devs = max(0, n_sim_yrs - n_fit_yrs),
+                                     n_ages = length(data$ages),
+                                     expm_nsub = if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub),
+        move_devs_fit = pars_sim$move_devs, # the conditioned years reproduce these
+        move_pe_pars = pars_sim$move_pe_pars,
+        move_pop_corr_pars = pars_sim$move_pop_corr_pars,
+        move_seas_corr_pars = pars_sim$move_seas_corr_pars,
+        move_sex_corr_pars = pars_sim$move_sex_corr_pars
+      )
+    } # end sim loop
+  }
   return(sim_list)
 
 } # end function
@@ -508,8 +621,9 @@ Setup_Sim_Movement <- function(sim_list, data, pars) {
 #' Draw movement deviations for every replicate and rebuild movement
 #'
 #' The first \code{n_cond_yrs} years of every replicate take the fit's own
-#' deviations, and the years after them are drawn from the process the
-#' estimation model penalizes: a stationary AR1 over ages where that dim is
+#' deviations, or the replicate's own draw of them under a joint self test, and
+#' the years after them are drawn from the process the estimation model
+#' penalizes, at that replicate's parameters: a stationary AR1 over ages where that dim is
 #' \code{"ar1"}, an unstructured correlation across populations, seasons or
 #' sexes where a dim is \code{"us"}, independent otherwise, with the
 #' conditional sd \code{exp(move_pe_pars[..., 1])} raised to the marginal by
@@ -544,7 +658,7 @@ draw_sim_move_devs <- function(sim_env) {
 
   # the conditioned years are the fit's, for every replicate
   move_devs <- array(0, dim = c(fit_dims[1:3], n_years_sim, fit_dims[5:7], n_sims))
-  for(sim in seq_len(n_sims)) move_devs[,,,seq_len(n_cond),,,,sim] <- sim_env$move_devs_fit[,,,seq_len(n_cond),,,]
+  for(sim in seq_len(n_sims)) move_devs[,,,seq_len(n_cond),,,,sim] <- sim_move_setting(sim_env, "move_devs_fit", sim)[,,,seq_len(n_cond),,,] # each replicate's own draw under a joint self test
   if(length(drawn_years) == 0) {
     sim_env$move_devs <- move_devs
     derive_sim_movement(sim_env)
@@ -573,9 +687,6 @@ draw_sim_move_devs <- function(sim_env) {
   # the factors that color each dim: ar1 over ages, unstructured over populations, seasons and sexes, identity otherwise
   ar1_chol <- function(n, rho) if(n == 1 || rho == 0) diag(n) else t(chol(rho^abs(outer(1:n, 1:n, "-"))))
   us_or_identity <- function(code, pars, n) if(code == 2) build_us_chol(pars, n) else diag(n)
-  chol_pop <- us_or_identity(sim_env$move_pop_re, sim_env$move_pop_corr_pars, n_blocks[["pop"]])
-  chol_season <- us_or_identity(sim_env$move_seas_re, sim_env$move_seas_corr_pars, n_blocks[["season"]])
-  chol_sex <- us_or_identity(sim_env$move_sex_re, sim_env$move_sex_corr_pars, n_blocks[["sex"]])
 
   for(b in seq_len(max(sim_env$move_pe_block))) {
 
@@ -584,26 +695,36 @@ draw_sim_move_devs <- function(sim_env) {
     n_pairs_drawn <- length(pairs_drawn)
     n_drawn <- c(n_pairs_drawn, n_blocks[["pop"]], n_drawn_years, n_blocks[["season"]], n_blocks[["age"]], n_blocks[["sex"]]) # [pair, pop, year, season, age, sex]
     estimated <- array(FALSE, dim = n_drawn)
-    last_fit <- array(0, dim = n_drawn[-3]) # the last conditioned year's deviation, per drawn cell
     for(j in 1:n_pairs_drawn) {
       region_from <- move_pairs[pairs_drawn[j], 1]
       region_to <- move_pairs[pairs_drawn[j], 2]
       estimated[j,,,,,] <- !is.na(sim_env$map_move_devs[reads$pop, region_from, region_to, read_year, reads$season, reads$age, reads$sex, drop = FALSE])
-      if(last_cond_year > 0) last_fit[j,,,,] <- sim_env$move_devs_fit[reads$pop, region_from, region_to, last_cond_year, reads$season, reads$age, reads$sex, drop = FALSE]
     } # end j loop
     if(!any(estimated)) next # nothing estimated in this block
-
-    # this block's correlations and marginal sd
-    region_from <- move_pairs[pairs_drawn[1], 1]
+    region_from <- move_pairs[pairs_drawn[1], 1] # the pair this block's process error is read at
     region_to <- move_pairs[pairs_drawn[1], 2]
-    rho_year <- if(year_ar1) rho_trans(sim_env$move_pe_pars[region_from, region_to, 3]) else 0
-    rho_age <- if(sim_env$move_age_re == 2) rho_trans(sim_env$move_pe_pars[region_from, region_to, 2]) else 0
-    sd_marginal <- exp(sim_env$move_pe_pars[region_from, region_to, 1]) / sqrt(1 - rho_year^2) / sqrt(1 - rho_age^2)
-    chol_age <- ar1_chol(n_blocks[["age"]], rho_age)
     continues <- year_ar1 && last_cond_year > 0 # the ar1 runs on from the fit's last year rather than restarting
-    chol_year <- if(year_ar1 && !continues) ar1_chol(n_drawn_years, rho_year) else diag(n_drawn_years)
 
     for(sim in 1:n_sims) {
+
+      # this replicate's correlations and marginal sd: the fit's, or its own draw under a joint self test
+      move_pe_pars <- sim_move_setting(sim_env, "move_pe_pars", sim)
+      chol_pop <- us_or_identity(sim_env$move_pop_re, sim_move_setting(sim_env, "move_pop_corr_pars", sim), n_blocks[["pop"]])
+      chol_season <- us_or_identity(sim_env$move_seas_re, sim_move_setting(sim_env, "move_seas_corr_pars", sim), n_blocks[["season"]])
+      chol_sex <- us_or_identity(sim_env$move_sex_re, sim_move_setting(sim_env, "move_sex_corr_pars", sim), n_blocks[["sex"]])
+      rho_year <- if(year_ar1) rho_trans(move_pe_pars[region_from, region_to, 3]) else 0
+      rho_age <- if(sim_env$move_age_re == 2) rho_trans(move_pe_pars[region_from, region_to, 2]) else 0
+      sd_marginal <- exp(move_pe_pars[region_from, region_to, 1]) / sqrt(1 - rho_year^2) / sqrt(1 - rho_age^2)
+      chol_age <- ar1_chol(n_blocks[["age"]], rho_age)
+      chol_year <- if(year_ar1 && !continues) ar1_chol(n_drawn_years, rho_year) else diag(n_drawn_years)
+
+      # the last conditioned year's deviation, per drawn cell
+      move_devs_fit <- sim_move_setting(sim_env, "move_devs_fit", sim)
+      last_fit <- array(0, dim = n_drawn[-3])
+      if(last_cond_year > 0) for(j in 1:n_pairs_drawn) {
+        last_fit[j,,,,] <- move_devs_fit[reads$pop, move_pairs[pairs_drawn[j], 1], move_pairs[pairs_drawn[j], 2], last_cond_year, reads$season, reads$age, reads$sex, drop = FALSE]
+      } # end j loop
+
       # color a standard normal array along each dim, in the drawn order [pair, pop, year, season, age, sex]
       draw <- array(stats::rnorm(prod(n_drawn)), dim = n_drawn)
       draw <- color_naa_dim(draw, chol_pop, 2)

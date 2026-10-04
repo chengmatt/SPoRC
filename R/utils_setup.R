@@ -1151,6 +1151,58 @@ check_bin_map <- function(x, n_model_bins, what, strict = TRUE, tol = 1e-8) {
   invisible(x)
 }
 
+#' Validate the length rows of the conditional age-at-length data
+#'
+#' Each column is one length row of the age-at-length data and holds a 1 for
+#' every model length bin that row covers, so a row can span several bins.
+#'
+#' @param x The matrix to check.
+#' @param n_model_bins Integer. Number of model length bins, the required row count.
+#' @param what Character. Argument name, used in messages.
+#'
+#' @return \code{x}, as a matrix.
+#' @keywords internal
+check_caal_len_bin_map <- function(x, n_model_bins, what) {
+  x <- as.matrix(x)
+  if(nrow(x) != n_model_bins) stop(what, " must have one row per model length bin (", n_model_bins, "), but has ", nrow(x), ".")
+  if(!all(x %in% c(0, 1))) stop(what, " must hold only 0 and 1, a 1 where an age-at-length row covers a model length bin.")
+  empty <- which(colSums(x) == 0)
+  if(length(empty) > 0) stop(what, " leaves age-at-length rows ", paste(utils::head(empty, 10), collapse = ", "), " covering no model length bin.")
+  x
+}
+
+#' Length labels of the conditional age-at-length rows
+#'
+#' Each row is labeled by the first model length bin it covers, so without
+#' \code{CAAL_LenBinMap} the labels are the model's own lengths.
+#'
+#' @param data Data list.
+#'
+#' @return Numeric vector, one label per age-at-length row.
+#' @keywords internal
+caal_row_lens <- function(data) {
+  if(is.null(data$CAAL_LenBinMap)) return(data$lens)
+  row_lens <- numeric(ncol(data$CAAL_LenBinMap))
+  for(k in seq_along(row_lens)) row_lens[k] <- data$lens[which(data$CAAL_LenBinMap[,k] != 0)[1]]
+  row_lens
+}
+
+#' Length labels of the recorded length bins of the compositions
+#'
+#' Each recorded bin is labeled by the first model length bin mapped into it,
+#' so without \code{LenBinMap} the labels are the model's own lengths.
+#'
+#' @param data Data list.
+#'
+#' @return Numeric vector, one label per recorded length bin.
+#' @keywords internal
+obs_len_labels <- function(data) {
+  if(is.null(data$LenBinMap)) return(data$lens)
+  labels <- numeric(ncol(data$LenBinMap))
+  for(k in seq_along(labels)) labels[k] <- data$lens[which(data$LenBinMap[,k] != 0)[1]]
+  labels
+}
+
 #' The composition likelihoods a fleet can be given
 #'
 #' @return Character vector of accepted values, in the order the message lists them.
@@ -1628,6 +1680,7 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("SizeAgeTrans_fish")) set("SizeAgeTrans_fish", NULL)
   if(!has("SizeAgeTrans_srv")) set("SizeAgeTrans_srv", NULL)
   if(!has("LenBinMap")) set("LenBinMap", NULL)
+  if(!has("CAAL_LenBinMap")) set("CAAL_LenBinMap", NULL) # one age-at-length row per model length bin
   if(!has("Use_rinit_pen")) set("Use_rinit_pen", 0)
   if(!has("rinit_pen_sd")) set("rinit_pen_sd", 1)
   if(!has("UseFish_caal")) set("UseFish_caal", NULL)

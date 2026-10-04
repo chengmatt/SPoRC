@@ -4,7 +4,14 @@
 \alias{Setup_Sim_Growth_RE}
 \title{Growth deviations in the operating model}
 \usage{
-Setup_Sim_Growth_RE(sim_list, data, pars, rep = NULL)
+Setup_Sim_Growth_RE(
+  sim_list,
+  data,
+  pars,
+  rep = NULL,
+  pars_by_sim = NULL,
+  rep_by_sim = NULL
+)
 }
 \arguments{
 \item{sim_list}{Simulation list with \code{n_yrs} and \code{n_sims}.}
@@ -14,6 +21,13 @@ Setup_Sim_Growth_RE(sim_list, data, pars, rep = NULL)
 \item{pars}{Parameter list at the fitted values.}
 
 \item{rep}{Report of the fit, needed under selectivity at length.}
+
+\item{pars_by_sim, rep_by_sim}{Optional lists of one parameter list and one
+report per replicate, for replicates that each run on their own parameter
+draw (\code{sim_type = "joint"} in \code{\link{simulation_self_test}}).
+Each replicate's growth is then rebuilt from its own parameters and
+deviations. \code{NULL} (default) gives every replicate \code{pars} and
+\code{rep}.}
 }
 \value{
 \code{sim_list} with \code{growth_args} and the fields above added.
@@ -24,7 +38,8 @@ the fit's time variation codes, the semi-parametric form and its ages, the
 deviation maps, the process error parameters, the \code{Get_Growth}
 arguments and, under selectivity at length, the report's selectivity at
 length the rebuilt keys are read through. With the fit's own penalty on the
-deviations, \code{\link{draw_sim_growth_devs}} draws them in
+deviations, \code{\link{draw_sim_growth_devs}} keeps the fit's values over
+the simulation list's \code{n_cond_yrs} and draws the years after them in
 \code{Setup_sim_env}. With a dsem holding or linking any growth deviation,
 \code{\link{Setup_Sim_DSEM}} builds both arrays itself and nothing is stored
 here, so the deviations of a parameter outside the arrows keep the fit's

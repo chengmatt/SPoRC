@@ -72,6 +72,7 @@ SPoRC_rtmb = function(pars, data) {
   n_ages = length(ages) # number of ages
   n_yrs = length(years) # number of years
   n_lens = length(lens) # number of lengths
+  n_caal_lens = if(is.null(CAAL_LenBinMap)) n_lens else ncol(CAAL_LenBinMap) # age-at-length rows, each covering the length bins CAAL_LenBinMap gives it
 
   # container shapes, named once so a dim ordering is written down in one place.
   dim_naa = c(n_pop, n_regions, n_yrs + 1, n_seas, n_ages, n_sexes) # numbers at age, one extra year
@@ -87,7 +88,7 @@ SPoRC_rtmb = function(pars, data) {
   dim_fish_age = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)
   dim_pop_fish_len = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets) # at length
   dim_pop_fish_caal = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes, n_fish_fleets) # at length and age
-  dim_fish_caal = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_fish_fleets) # one value per length bin
+  dim_fish_caal = c(n_regions, n_yrs, n_seas, n_caal_lens, n_sexes, n_fish_fleets) # one value per age-at-length row
   dim_pop_fish_comp = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets) # one value per sex
   dim_fish_comp = c(n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets)
   dim_fish_yr = c(n_regions, n_yrs, n_fish_fleets) # annual, no season
@@ -99,7 +100,7 @@ SPoRC_rtmb = function(pars, data) {
   dim_srv_age = c(n_regions, n_yrs, n_seas, n_ages, n_sexes, n_srv_fleets)
   dim_pop_srv_len = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets)
   dim_pop_srv_caal = c(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_sexes, n_srv_fleets)
-  dim_srv_caal = c(n_regions, n_yrs, n_seas, n_lens, n_sexes, n_srv_fleets)
+  dim_srv_caal = c(n_regions, n_yrs, n_seas, n_caal_lens, n_sexes, n_srv_fleets)
   dim_pop_srv_comp = c(n_pop, n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)
   dim_srv_comp = c(n_regions, n_yrs, n_seas, n_sexes, n_srv_fleets)
   dim_srv_yr = c(n_regions, n_yrs, n_srv_fleets)
@@ -2447,8 +2448,8 @@ SPoRC_rtmb = function(pars, data) {
   ## Conditional Age-at-Length Likelihoods -----------------------------------
   # population summing helpers for the conditional age-at-length data sources live in
   # model_lik_caal.R, alongside the likelihood that uses them
-  caal_exp = function(arr, y, seas, f) caal_sum_pop(arr, y, seas, f, n_pop, n_regions, n_lens, n_ages, n_sexes)
-  caal_exp_len = function(arr, y, seas, l, f) caal_sum_pop_len(arr, y, seas, l, f, n_pop, n_regions, n_ages, n_sexes)
+  caal_exp = function(arr, y, seas, f) caal_sum_pop(arr, y, seas, f, n_pop, n_regions, n_lens, n_ages, n_sexes, caal_len_bin_map = CAAL_LenBinMap)
+  caal_exp_len = function(arr, y, seas, l, f) caal_sum_pop_len(arr, y, seas, l, f, n_pop, n_regions, n_ages, n_sexes, caal_len_bin_map = CAAL_LenBinMap)
 
 
   ### Fishery Conditional Age-at-Length --------------------------------------
@@ -2470,7 +2471,7 @@ SPoRC_rtmb = function(pars, data) {
                 Comp_Type = Fish_caal_Type[y,f],
                 Likelihood_Type = Fish_caal_LikeType[f],
                 n_regions = n_regions,
-                n_lens = n_lens,
+                n_lens = n_caal_lens,
                 n_model_bins = n_ages,
                 n_obs_bins = dim(ObsFish_caal)[5],
                 n_sexes = n_sexes,
@@ -2496,7 +2497,7 @@ SPoRC_rtmb = function(pars, data) {
         LikeTypeVec = Fish_caal_LikeType,
         n_yrs = n_yrs,
         n_seas = n_seas,
-        n_lens = n_lens,
+        n_lens = n_caal_lens,
         n_fleets = n_fish_fleets,
         n_sexes = n_sexes,
         addtocomp = addtocomp,
@@ -2518,7 +2519,7 @@ SPoRC_rtmb = function(pars, data) {
           n_regions = n_regions,
           n_yrs = n_yrs,
           n_seas = n_seas,
-          n_lens = n_lens,
+          n_lens = n_caal_lens,
           n_fleets = n_fish_fleets,
           n_sexes = n_sexes,
           n_model_bins = n_ages,
@@ -2551,7 +2552,7 @@ SPoRC_rtmb = function(pars, data) {
                 Comp_Type = Srv_caal_Type[y,sf],
                 Likelihood_Type = Srv_caal_LikeType[sf],
                 n_regions = n_regions,
-                n_lens = n_lens,
+                n_lens = n_caal_lens,
                 n_model_bins = n_ages,
                 n_obs_bins = dim(ObsSrv_caal)[5],
                 n_sexes = n_sexes,
@@ -2577,7 +2578,7 @@ SPoRC_rtmb = function(pars, data) {
         LikeTypeVec = Srv_caal_LikeType,
         n_yrs = n_yrs,
         n_seas = n_seas,
-        n_lens = n_lens,
+        n_lens = n_caal_lens,
         n_fleets = n_srv_fleets,
         n_sexes = n_sexes,
         addtocomp = addtocomp,
@@ -2599,7 +2600,7 @@ SPoRC_rtmb = function(pars, data) {
           n_regions = n_regions,
           n_yrs = n_yrs,
           n_seas = n_seas,
-          n_lens = n_lens,
+          n_lens = n_caal_lens,
           n_fleets = n_srv_fleets,
           n_sexes = n_sexes,
           n_model_bins = n_ages,

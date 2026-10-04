@@ -239,14 +239,15 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
 #' Simulate age or length compositions
 #'
 #' Draws composition samples for one region, year, fleet, season and replicate
-#' under the multinomial, Dirichlet-multinomial or logistic-normal likelihoods,
-#' applying ageing error after the draw for age compositions. A
+#' under the multinomial, Dirichlet-multinomial or logistic-normal likelihoods.
+#' The expected composition is mapped onto the bins the data are recorded on
+#' before the draw, through the ageing error for ages and the length bin map for
+#' lengths, so the draw comes from the distribution the fit evaluates. A
 #' \code{comp_type} or \code{comp_like} of \code{999} returns \code{Obs}
 #' unchanged.
 #'
-#' Joint compositions (\code{comp_type = 2}) apply ageing error across the
-#' combined age by sex vector through the Kronecker product
-#' \code{diag(n_sexes)} and \code{AgeingError}. Aggregated compositions
+#' Joint compositions (\code{comp_type = 2}) map each sex's ages or lengths on
+#' their own before one draw across the stack. Aggregated compositions
 #' (\code{comp_type = 0}) are drawn only on the final region pass, from expected
 #' proportions marginalized over regions and sexes. Under
 #' \code{pop_specific = TRUE} each population is drawn separately from its own
@@ -258,8 +259,9 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
 #'   n_cat × n_sexes × n_fleets × n_sims]}.
 #' @param ISS Integer sample sizes \code{[n_regions × n_yrs × n_seas × n_sexes ×
 #'   n_fleets × n_sims]}, read when \code{pop_specific = FALSE}.
-#' @param AgeingError Ageing error matrices \code{[n_yrs × n_obs_ages × n_ages ×
-#'   n_sims]}, ignored when \code{age_or_len = 1}.
+#' @param AgeingError Ageing error matrices \code{[n_yrs × n_ages × n_obs_ages ×
+#'   n_sims]}. For length compositions, the length bin map \code{[n_lens ×
+#'   n_obs_lens]}, or \code{NULL} when the lengths are recorded on the model's bins.
 #' @param comp_like Integer vector \code{[n_fleets]} of the likelihood per fleet:
 #'   \code{0} multinomial, \code{1} Dirichlet-multinomial, \code{2}-\code{4} the
 #'   logistic-normal forms.
@@ -274,12 +276,12 @@ draw_index_obs <- function(true, se, like_type = 0, d = NULL, lambda = NULL, u =
 #'   \code{999} no data.
 #' @param n_sexes,n_pop,n_regions,n_cat Model dimensions, \code{n_cat} being the
 #'   number of ages or lengths.
-#' @param Obs Observed composition container, dimensioned like \code{Exp} and
-#'   written in place.
+#' @param Obs Observed composition container, dimensioned like \code{Exp} with
+#'   the observed bins in place of \code{n_cat}, written in place.
 #' @param pop_specific Logical. \code{TRUE} simulates each population separately
 #'   from population-specific inputs.
 #' @param age_or_len Integer. \code{0} for age compositions, which take ageing
-#'   error, \code{1} for length compositions, which do not.
+#'   error, \code{1} for length compositions, which take the length bin map.
 #' @param ISS_pop Population-specific sample sizes \code{[n_pop × n_regions ×
 #'   n_yrs × n_seas × n_sexes × n_fleets × n_sims]}, read when
 #'   \code{pop_specific = TRUE}.
@@ -333,21 +335,14 @@ simulate_comps <- function(r,
 
   # helper functions
   get_expected <- function(prob_vec) prob_vec / sum(prob_vec)
-  apply_error <- function(mat, age_or_len, AgeingError) {
-    if(age_or_len == 0) return(mat %*% AgeingError)
-    if(age_or_len == 1) return(mat)
-  }
 
-  if(!pop_specific) {
-    if(age_or_len == 0) {
-      if(comp_type[y,f] %in% c(0,1)) age_error_mat <- AgeingError[y,,,sim]
-      if(comp_type[y,f] == 2) age_error_mat <- kronecker(diag(n_sexes), AgeingError[y,,,sim])
-    }
-  } else {
-    if(age_or_len == 0) {
-      if(pop_comp_type[y,f] %in% c(0,1)) age_error_mat <- AgeingError[y,,,sim]
-      if(pop_comp_type[y,f] == 2) age_error_mat <- kronecker(diag(n_sexes), AgeingError[y,,,sim])
-    }
+  # ageing error for ages, the length bin map for lengths (NULL when lengths sit on the model bins)
+  bin_map <- if(age_or_len == 0) array(AgeingError[y,,,sim], dim = dim(AgeingError)[2:3]) else AgeingError
+
+  # map the expected composition onto the recorded bins before the draw, as the fit does. one column per sex
+  map_bins <- function(prob) {
+    if(is.null(bin_map)) return(prob)
+    as.vector(t(bin_map) %*% matrix(prob, nrow = nrow(bin_map)))
   }
 
   if(pop_specific == FALSE) {
@@ -356,32 +351,33 @@ simulate_comps <- function(r,
       for(s in 1:n_sexes) {
 
         tmp_prob <- apply(Exp[,r,y,seas,,s,f,sim, drop = FALSE], 5, sum) # extract compositions
+        tmp_prob <- map_bins(tmp_prob) # onto the recorded bins
 
         # multinomial
         if(comp_like[f] == 0) {
           Obs[r,y,seas,,s,f,sim] <- array(
-            apply_error(as.vector(
-              stats::rmultinom(n = 1, ISS[r,y,seas,s,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
+            as.vector(
+              stats::rmultinom(n = 1, ISS[r,y,seas,s,f,sim], get_expected(tmp_prob))),
             dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
           )
 
           # dirichlet-multinomial
         } else if(comp_like[f] == 1) {
           Obs[r,y,seas,,s,f,sim] <- array(
-            apply_error(as.vector(
+            as.vector(
               rdirM(
                 n = 1,
                 N = ISS[r,y,seas,s,f,sim],
                 alpha = (exp(ln_theta[r,s,f]) * ISS[r,y,seas,s,f,sim]) * get_expected(tmp_prob)
               )
-            ), age_or_len, age_error_mat),
+            ),
             dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
           )
 
           # logistic normal
         } else if(comp_like[f] %in% 2:7) {
           Obs[r,y,seas,,s,f,sim] <- array(
-            apply_error(as.vector(
+            as.vector(
               rlogistnormal(
                 exp = get_expected(tmp_prob),
                 pars = c(exp(ln_theta[r,s,f]), comp_corr_natural(corr_pars[r,s,f,], comp_like[f])),
@@ -389,7 +385,7 @@ simulate_comps <- function(r,
                 n_sexes = n_sexes,
                 ISS = ISS[r,y,seas,s,f,sim]
               )
-            ), age_or_len, age_error_mat),
+            ),
             dim = dim(Obs[r,y,seas,,s,f,sim, drop = FALSE])
           )
         }
@@ -401,32 +397,32 @@ simulate_comps <- function(r,
     if(comp_type[y,f] == 2) {
 
       tmp_prob <- apply(Exp[,r,y,seas,,,f,sim, drop = FALSE], c(5,6), sum) # extract compositions
+      tmp_prob <- map_bins(tmp_prob) # onto the recorded bins, sex by sex
 
       # multinomial
       if(comp_like[f] == 0) {
         Obs[r,y,seas,,,f,sim] <- array(
-          apply_error(as.vector(stats::rmultinom(1, ISS[r,y,seas,1,f,sim], get_expected(tmp_prob))),
-                      age_or_len, age_error_mat),
+          as.vector(stats::rmultinom(1, ISS[r,y,seas,1,f,sim], get_expected(tmp_prob))),
           dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
         )
 
         # dirichlet-multinomial
       } else if(comp_like[f] == 1) {
         Obs[r,y,seas,,,f,sim] <- array(
-          apply_error(as.vector(
+          as.vector(
             rdirM(
               n = 1,
               N = ISS[r,y,seas,1,f,sim],
               alpha = (exp(ln_theta[r,1,f]) * ISS[r,y,seas,1,f,sim]) * get_expected(tmp_prob)
             )
-          ), age_or_len, age_error_mat),
+          ),
           dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
         )
 
         # logistic normal
       } else if(comp_like[f] %in% 2:7) {
         Obs[r,y,seas,,,f,sim] <- array(
-          apply_error(as.vector(
+          as.vector(
             rlogistnormal(
               exp = get_expected(tmp_prob),
               pars = c(exp(ln_theta[r,1,f]), comp_corr_natural(corr_pars[r,1,f,], comp_like[f])),
@@ -434,7 +430,7 @@ simulate_comps <- function(r,
               n_sexes = n_sexes,
               ISS = ISS[r,y,seas,1,f,sim]
             )
-          ), age_or_len, age_error_mat),
+          ),
           dim = dim(Obs[r,y,seas,,,f,sim, drop = FALSE])
         )
       }
@@ -447,31 +443,32 @@ simulate_comps <- function(r,
       # extract compositions
       tmp_prob <- apply(Exp[,,y,seas,,,f,sim, drop = FALSE], 5, sum)
       tmp_prob <- tmp_prob / sum(tmp_prob)
+      tmp_prob <- map_bins(tmp_prob) # onto the recorded bins
 
       # multinomial
       if(comp_like[f] == 0) {
         Obs[1,y,seas,,1,f,sim] <- array(
-          apply_error(as.vector(stats::rmultinom(1, ISS[1,y,seas,1,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
+          as.vector(stats::rmultinom(1, ISS[1,y,seas,1,f,sim], get_expected(tmp_prob))),
           dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
         )
 
         # dirichlet-multinomial
       } else if(comp_like[f] == 1) {
         Obs[1,y,seas,,1,f,sim] <- array(
-          apply_error(as.vector(
+          as.vector(
             rdirM(
               n = 1,
               N = ISS[1,y,seas,1,f,sim],
               alpha = (exp(ln_theta_agg[f]) * ISS[1,y,seas,1,f,sim]) * get_expected(tmp_prob)
             )
-          ), age_or_len, age_error_mat),
+          ),
           dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
         )
 
         # logistic normal
       } else if(comp_like[f] %in% 2:7) {
         Obs[1,y,seas,,1,f,sim] <- array(
-          apply_error(as.vector(
+          as.vector(
             rlogistnormal(
               exp = get_expected(tmp_prob),
               pars = c(exp(ln_theta_agg[f]), comp_corr_natural(corr_pars_agg[f], comp_like[f])),
@@ -479,7 +476,7 @@ simulate_comps <- function(r,
               n_sexes = n_sexes,
               ISS = ISS[1,y,seas,1,f,sim]
             )
-          ), age_or_len, age_error_mat),
+          ),
           dim = dim(Obs[1,y,seas,,1,f,sim, drop = FALSE])
         )
       }
@@ -493,32 +490,33 @@ simulate_comps <- function(r,
         for(s in 1:n_sexes) {
 
           tmp_prob <- Exp[p,r,y,seas,,s,f,sim, drop = FALSE]# extract compositions
+          tmp_prob <- map_bins(tmp_prob) # onto the recorded bins
 
           # multinomial
           if(pop_comp_like[f] == 0) {
             Obs[p,r,y,seas,,s,f,sim] <- array(
-              apply_error(as.vector(
-                stats::rmultinom(n = 1, ISS_pop[p,r,y,seas,s,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
+              as.vector(
+                stats::rmultinom(n = 1, ISS_pop[p,r,y,seas,s,f,sim], get_expected(tmp_prob))),
               dim = dim(Obs[p,r,y,seas,,s,f,sim, drop = FALSE])
             )
 
             # dirichlet-multinomial
           } else if(pop_comp_like[f] == 1) {
             Obs[p,r,y,seas,,s,f,sim] <- array(
-              apply_error(as.vector(
+              as.vector(
                 rdirM(
                   n = 1,
                   N = ISS_pop[p,r,y,seas,s,f,sim],
                   alpha = (exp(ln_pop_theta[p,r,s,f]) * ISS_pop[p,r,y,seas,s,f,sim]) * get_expected(tmp_prob)
                 )
-              ), age_or_len, age_error_mat),
+              ),
               dim = dim(Obs[p,r,y,seas,,s,f,sim, drop = FALSE])
             )
 
             # logistic normal
           } else if(pop_comp_like[f] %in% 2:7) {
             Obs[p,r,y,seas,,s,f,sim] <- array(
-              apply_error(as.vector(
+              as.vector(
                 rlogistnormal(
                   exp = get_expected(tmp_prob),
                   pars = c(exp(ln_pop_theta[p,r,s,f]), comp_corr_natural(pop_corr_pars[p,r,s,f,], pop_comp_like[f])),
@@ -526,7 +524,7 @@ simulate_comps <- function(r,
                   n_sexes = n_sexes,
                   ISS = ISS_pop[p,r,y,seas,s,f,sim]
                 )
-              ), age_or_len, age_error_mat),
+              ),
               dim = dim(Obs[p,r,y,seas,,s,f,sim, drop = FALSE])
             )
           }
@@ -538,32 +536,32 @@ simulate_comps <- function(r,
       if(pop_comp_type[y,f] == 2) {
 
         tmp_prob <- Exp[p,r,y,seas,,,f,sim, drop = FALSE] # extract compositions
+        tmp_prob <- map_bins(tmp_prob) # onto the recorded bins, sex by sex
 
         # multinomial
         if(pop_comp_like[f] == 0) {
           Obs[p,r,y,seas,,,f,sim] <- array(
-            apply_error(as.vector(stats::rmultinom(1, ISS_pop[p,r,y,seas,1,f,sim], get_expected(tmp_prob))),
-                        age_or_len, age_error_mat),
+            as.vector(stats::rmultinom(1, ISS_pop[p,r,y,seas,1,f,sim], get_expected(tmp_prob))),
             dim = dim(Obs[p,r,y,seas,,,f,sim, drop = FALSE])
           )
 
           # dirichlet-multinomial
         } else if(pop_comp_like[f] == 1) {
           Obs[p,r,y,seas,,,f,sim] <- array(
-            apply_error(as.vector(
+            as.vector(
               rdirM(
                 n = 1,
                 N = ISS_pop[p,r,y,seas,1,f,sim],
                 alpha = (exp(ln_pop_theta[p,r,1,f]) * ISS_pop[p,r,y,seas,1,f,sim]) * get_expected(tmp_prob)
               )
-            ), age_or_len, age_error_mat),
+            ),
             dim = dim(Obs[p,r,y,seas,,,f,sim, drop = FALSE])
           )
 
           # logistic normal
         } else if(pop_comp_like[f] %in% 2:7) {
           Obs[p,r,y,seas,,,f,sim] <- array(
-            apply_error(as.vector(
+            as.vector(
               rlogistnormal(
                 exp = get_expected(tmp_prob),
                 pars = c(exp(ln_pop_theta[p,r,1,f]), comp_corr_natural(pop_corr_pars[p,r,1,f,], pop_comp_like[f])),
@@ -571,7 +569,7 @@ simulate_comps <- function(r,
                 n_sexes = n_sexes,
                 ISS = ISS_pop[p,r,y,seas,1,f,sim]
               )
-            ), age_or_len, age_error_mat),
+            ),
             dim = dim(Obs[p,r,y,seas,,,f,sim, drop = FALSE])
           )
         }
@@ -584,31 +582,32 @@ simulate_comps <- function(r,
         # extract compositions
         tmp_prob <- apply(Exp[p,,y,seas,,,f,sim, drop = FALSE], 5, sum)
         tmp_prob <- tmp_prob / sum(tmp_prob)
+        tmp_prob <- map_bins(tmp_prob) # onto the recorded bins
 
         # multinomial
         if(pop_comp_like[f] == 0) {
           Obs[p,1,y,seas,,1,f,sim] <- array(
-            apply_error(as.vector(stats::rmultinom(1, ISS_pop[p,1,y,seas,1,f,sim], get_expected(tmp_prob))), age_or_len, age_error_mat),
+            as.vector(stats::rmultinom(1, ISS_pop[p,1,y,seas,1,f,sim], get_expected(tmp_prob))),
             dim = dim(Obs[p,1,y,seas,,1,f,sim, drop = FALSE])
           )
 
           # dirichlet-multinomial
         } else if(pop_comp_like[f] == 1) {
           Obs[p,1,y,seas,,1,f,sim] <- array(
-            apply_error(as.vector(
+            as.vector(
               rdirM(
                 n = 1,
                 N = ISS_pop[p,1,y,seas,1,f,sim],
                 alpha = (exp(ln_pop_theta_agg[p,f]) * ISS_pop[p,1,y,seas,1,f,sim]) * get_expected(tmp_prob)
               )
-            ), age_or_len, age_error_mat),
+            ),
             dim = dim(Obs[p,1,y,seas,,1,f,sim, drop = FALSE])
           )
 
           # logistic normal
         } else if(pop_comp_like[f] %in% 2:7) {
           Obs[p,1,y,seas,,1,f,sim] <- array(
-            apply_error(as.vector(
+            as.vector(
               rlogistnormal(
                 exp = get_expected(tmp_prob),
                 pars = c(exp(ln_pop_theta_agg[p,f]), comp_corr_natural(pop_corr_pars_agg[p,f], pop_comp_like[f])),
@@ -616,7 +615,7 @@ simulate_comps <- function(r,
                 n_sexes = n_sexes,
                 ISS = ISS_pop[p,1,y,seas,1,f,sim]
               )
-            ), age_or_len, age_error_mat),
+            ),
             dim = dim(Obs[p,1,y,seas,,1,f,sim, drop = FALSE])
           )
         }
@@ -629,15 +628,15 @@ simulate_comps <- function(r,
 
 #' Simulate conditional age-at-length observations
 #'
-#' Draws one age composition per length bin from the joint distribution of
-#' length and age implied by the size-age transition matrix and the true numbers
-#' at age (catch at age for the fishery, index at age for the survey). The joint
-#' for a region, length bin and sex is \eqn{P(l \mid a) N_a} summed over
-#' populations, and the draw for bin \eqn{l} is a multinomial (or
-#' Dirichlet-multinomial) of \code{ISS[l]} fish across ages with that row as
-#' the probability, which is the conditional \eqn{P(a \mid l)} by construction.
-#' Ageing error is applied to the drawn counts the same way
-#' \code{\link{simulate_comps}} applies it to marginal age compositions.
+#' Draws one age composition per length bin from the joint numbers at length
+#' and age the fit builds for the same fleet: the catch or index at each age
+#' spread over length by the size-age key, or under selectivity at length the
+#' fish available at each age spread over length and selected length by length.
+#' The row for a region, length bin and sex is summed over populations and read
+#' through the fleet's ageing error onto the observed ages, and the draw for bin
+#' \eqn{l} is a multinomial (or Dirichlet-multinomial) of \code{ISS[l]} fish
+#' across observed ages with that row as the probability, which is the
+#' conditional \eqn{P(a \mid l)} the fit evaluates.
 #'
 #' Composition types follow \code{simulate_comps}: split by region and sex (1)
 #' draws each sex separately, joint by sex (2) draws one sample across the age
@@ -646,39 +645,41 @@ simulate_comps <- function(r,
 #' multinomial families exist for CAAL.
 #'
 #' @param r,y,f,seas,sim Region, year, fleet, season and replicate indices.
-#' @param SizeAgeTrans Array \code{[pop, region, year, season, len, age, sex,
-#'   sim]} of \eqn{P(l \mid a)}.
-#' @param AtAge Array \code{[pop, region, year, season, age, sex, fleet, sim]}
-#'   of true numbers at age for this fleet type.
-#' @param ISS Array \code{[region, year, season, len, sex, fleet, sim]} of fish
-#'   aged per length bin. A zero skips the bin.
+#' @param Joint Array \code{[pop, region, len, age, sex]} of the fleet's numbers
+#'   at length and age in this year, season and replicate.
+#' @param ISS Array \code{[region, year, season, length row, sex, fleet, sim]} of
+#'   fish aged per length row. A zero skips the row.
 #' @param AgeingError Array \code{[year, model_age, obs_age, sim]}.
 #' @param comp_like Likelihood code per fleet (0 multinomial, 1 DM, 999 none).
 #' @param ln_theta Array \code{[region, sex, fleet]} of DM log overdispersion.
 #' @param ln_theta_agg Vector of aggregated DM log overdispersion per fleet.
 #' @param comp_type Matrix \code{[year, fleet]} of composition type codes.
 #' @param n_sexes,n_regions,n_lens Dimension sizes.
-#' @param Obs Array \code{[region, year, season, len, obs_age, sex, fleet, sim]}
-#'   the draws are written into.
+#' @param Obs Array \code{[region, year, season, length row, obs_age, sex, fleet,
+#'   sim]} the draws are written into.
+#' @param CAAL_LenBinMap Optional 0/1 matrix \code{[n_lens x n_caal_lens]} of the model
+#'   length bins each length row covers. \code{NULL} (default) gives one row per
+#'   model bin.
 #'
 #' @return The updated \code{Obs} array.
 #'
 #' @keywords internal
-simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingError,
+simulate_caal <- function(r, y, f, seas, sim, Joint, ISS, AgeingError,
                           comp_like, ln_theta, ln_theta_agg, comp_type,
-                          n_sexes, n_regions, n_lens, Obs) {
+                          n_sexes, n_regions, n_lens, Obs, CAAL_LenBinMap = NULL) {
 
   if(comp_type[y,f] == 999 || comp_like[f] == 999) return(Obs)
 
-  n_pop <- dim(AtAge)[1]
-  ae <- AgeingError[y,,,sim] # model age by observed age
-  if(is.null(dim(ae))) ae <- matrix(ae, nrow = 1) # a single model age arrives as a vector
+  n_pop <- dim(Joint)[1]
+  n_rows <- if(is.null(CAAL_LenBinMap)) n_lens else ncol(CAAL_LenBinMap) # age-at-length rows
+  ae <- array(AgeingError[y,,,sim], dim = dim(AgeingError)[2:3]) # model age by observed age
 
-  # P(l, a) for one region, length bin and sex, summed over populations
+  # numbers at observed age for one region, length row and sex, summed over populations and the bins the row covers
   joint_row <- function(rr, l, s) {
+    bins <- if(is.null(CAAL_LenBinMap)) l else which(CAAL_LenBinMap[,l] != 0)
     out <- 0
-    for(p in 1:n_pop) out <- out + SizeAgeTrans[p,rr,y,seas,l,,s,sim] * AtAge[p,rr,y,seas,,s,f,sim]
-    return(out)
+    for(p in 1:n_pop) for(bin in bins) out <- out + Joint[p,rr,bin,,s]
+    return(as.vector(out %*% ae))
   }
 
   # one draw of N fish across the cells of prob, under the fleet's family
@@ -690,21 +691,20 @@ simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingEr
     return(as.vector(rdirM(n = 1, N = N, alpha = (exp(theta) * N) * prob)))
   }
 
-  for(l in 1:n_lens) {
+  for(l in 1:n_rows) {
 
     # Split by region and sex: each sex in this bin is its own sample
     if(comp_type[y,f] == 1) {
       for(s in 1:n_sexes) {
-        counts <- draw(ISS[r,y,seas,l,s,f,sim], joint_row(r, l, s), ln_theta[r,s,f])
-        Obs[r,y,seas,l,,s,f,sim] <- as.vector(counts %*% ae)
+        Obs[r,y,seas,l,,s,f,sim] <- draw(ISS[r,y,seas,l,s,f,sim], joint_row(r, l, s), ln_theta[r,s,f])
       } # end s loop
     }
 
-    # Joint by sex: one sample across the age by sex stack, bin fastest then sex
+    # Joint by sex: one sample across the age by sex stack, age fastest then sex
     if(comp_type[y,f] == 2) {
-      prob <- as.vector(sapply(1:n_sexes, function(s) joint_row(r, l, s)))
+      prob <- c()
+      for(s in 1:n_sexes) prob <- c(prob, joint_row(r, l, s))
       counts <- draw(ISS[r,y,seas,l,1,f,sim], prob, ln_theta[r,1,f])
-      counts <- as.vector(counts %*% kronecker(diag(n_sexes), ae))
       Obs[r,y,seas,l,,,f,sim] <- array(counts, dim = c(ncol(ae), n_sexes))
     }
 
@@ -712,8 +712,7 @@ simulate_caal <- function(r, y, f, seas, sim, SizeAgeTrans, AtAge, ISS, AgeingEr
     if(r == n_regions && comp_type[y,f] == 0) {
       prob <- 0
       for(rr in 1:n_regions) for(s in 1:n_sexes) prob <- prob + joint_row(rr, l, s)
-      counts <- draw(ISS[1,y,seas,l,1,f,sim], prob, ln_theta_agg[f])
-      Obs[1,y,seas,l,,1,f,sim] <- as.vector(counts %*% ae)
+      Obs[1,y,seas,l,,1,f,sim] <- draw(ISS[1,y,seas,l,1,f,sim], prob, ln_theta_agg[f])
     }
 
   } # end l loop
@@ -972,6 +971,9 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                        dim = c(n_pop, n_regions, n_ages, n_sexes))
       }
 
+      # this season's retained catch at length and age, filled region by region and read by the age-at-length draw
+      if(exists("do_fish_caal") && isTRUE(do_fish_caal)) fish_caal_joint <- array(0, dim = c(n_pop, n_regions, n_lens, n_ages, n_sexes, n_fish_fleets))
+
       for(r in 1:n_regions) {
         for(f in 1:n_fish_fleets) {
 
@@ -983,9 +985,35 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
             sim_env$DAA[p,r,y,seas,,,f,sim] <- (Fmort[r,y,seas,f,sim] * fish_sel[p,r,y,seas,,,f,sim] * (1 - ret_sel[p,r,y,seas,,,f,sim]) * dmr[r,y,seas,f,sim]) *
               Avail[p,r,,]
 
-            # Catch-at-length
-            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) for(s in 1:n_sexes) sim_env$CAL[p,r,y,seas,,s,f,sim] <- (if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) SizeAgeTrans_fish[p,r,y,seas,,,s,f,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim]) %*% CAA[p,r,y,seas,,s,f,sim] # Retained Catch at length
-            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) for(s in 1:n_sexes) sim_env$DAL[p,r,y,seas,,s,f,sim] <- (if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) SizeAgeTrans_fish[p,r,y,seas,,,s,f,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim]) %*% DAA[p,r,y,seas,,s,f,sim] # Discarded Catch at length
+            # do catch-at-length observations
+            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish))) {
+              for(s in 1:n_sexes) {
+
+                # get size age
+                key_f <- matrix(if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) SizeAgeTrans_fish[p,r,y,seas,,,s,f,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim], n_lens, n_ages) # P(len | age)
+                # if length-based selex converts then selects age by age
+                if(!isTRUE(sim_env$fish_len_comp_sel[f] == 1)) {
+                  # selectivity at age: the catch at each age spread over length by the key
+                  joint_ret <- key_f * rep(CAA[p,r,y,seas,,s,f,sim], each = n_lens) # [len, age]
+                  joint_disc <- key_f * rep(DAA[p,r,y,seas,,s,f,sim], each = n_lens)
+                } else {
+                  # if length based selex spread over length by length
+                  avail <- Avail[p,r,,s] * Fmort[r,y,seas,f,sim]
+                  ret_l <- if(is.null(sim_env$ret_sel_l)) rep(1, n_lens) else sim_env$ret_sel_l[r,y,,s,f,sim] # retention at length
+                  ret_a <- if(is.null(sim_env$ret_sel_l)) ret_sel[p,r,y,seas,,s,f,sim] else rep(1, n_ages) # or at age
+                  sel_at_l <- sim_env$fish_sel_l[r,y,,s,f,sim]
+                  kept <- rep(ret_l, n_ages) * rep(ret_a, each = n_lens) # fraction retained by length and age, one of the two is 1
+                  joint_ret <- (key_f * rep(avail, each = n_lens)) * sel_at_l * kept # [len, age]
+                  joint_disc <- (key_f * rep(avail, each = n_lens)) * sel_at_l * (1 - kept) * dmr[r,y,seas,f,sim]
+                }
+
+                # get derived quants here
+                sim_env$CAL[p,r,y,seas,,s,f,sim] <- rowSums(joint_ret) # Retained Catch at length
+                sim_env$DAL[p,r,y,seas,,s,f,sim] <- rowSums(joint_disc) # Discarded Catch at length
+                if(exists("do_fish_caal") && isTRUE(do_fish_caal)) fish_caal_joint[p,r,,,s,f] <- joint_ret # joint caal
+
+              } # end s loop
+            } # end if size-age key
 
           } # end p loop
 
@@ -1069,6 +1097,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           tmp_NAA <- NAA[,r,y,seas,,,sim, drop = FALSE]
           if(any(t_fish[r,seas,f] != 0))
             tmp_NAA <- tmp_NAA * exp(-t_fish[r,seas,f] * ZAA[,r,y,seas,,,sim, drop = FALSE])
+          idx_ages <- if(is.null(sim_env$fish_idx_ages)) rep(1, n_ages) else sim_env$fish_idx_ages[,f] # 1 for ages in the index total
+          tmp_NAA <- tmp_NAA * array(rep(rep(idx_ages, each = n_pop), times = n_sexes), dim = dim(tmp_NAA))
           tmp_expl_abd <- sweep(tmp_NAA, c(1,5,6), fish_sel[,r,y,seas,,,f,sim, drop = FALSE] * ret_sel[,r,y,seas,,,f,sim, drop = FALSE], "*")
           tmp_expl_biom <- sweep(tmp_expl_abd, c(1,5,6), WAA_fish[,r,y,seas,,,f,sim, drop = FALSE], "*") # get exploitable abundance
           if(fish_idx_type[f] == 0) sim_env$TrueFishIdx[r,y,seas,f,sim] <- fish_q[r,y,f,sim] * sum(tmp_expl_abd) # True Fishery Index (abundance)
@@ -1186,7 +1216,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                         sim = sim,
                                                         Exp = CAL,
                                                         ISS = ISS_FishLenComps,
-                                                        AgeingError = NULL,
+                                                        AgeingError = sim_env$LenBinMap, # length bin map, NULL when lengths sit on the model bins
                                                         comp_like = comp_fishlen_like,
                                                         ln_theta = ln_FishLen_theta,
                                                         ln_theta_agg = ln_FishLen_theta_agg,
@@ -1208,7 +1238,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                             sim = sim,
                                                             Exp = CAL,
                                                             ISS_pop = ISS_FishLenComps_pop,
-                                                            AgeingError = NULL,
+                                                            AgeingError = sim_env$LenBinMap, # length bin map, NULL when lengths sit on the model bins
                                                             pop_comp_like = comp_fishlen_pop_like,
                                                             ln_pop_theta = ln_FishLen_pop_theta,
                                                             ln_pop_theta_agg = ln_FishLen_pop_theta_agg,
@@ -1223,8 +1253,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                             pop_specific = TRUE,
                                                             age_or_len = 1)
 
-              # sample fishery conditional age-at-length. the joint of length and age is formed inside
-              # the sampler from SizeAgeTrans and CAA, so no joint array is kept per replicate
+              # sample fishery conditional age-at-length from this season's retained catch at length and age,
+              # built with the catch at length above
               if(exists("do_fish_caal") && isTRUE(do_fish_caal)) {
                 sim_env$ObsFish_caal <- simulate_caal(
                   r = r,
@@ -1232,8 +1262,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                   f = f,
                   seas = seas,
                   sim = sim,
-                  SizeAgeTrans = if(exists("SizeAgeTrans_fish") && !is.null(SizeAgeTrans_fish)) array(SizeAgeTrans_fish[,,,,,,,f,], dim = dim(SizeAgeTrans_fish)[-8]) else SizeAgeTrans,
-                  AtAge = CAA,
+                  Joint = array(fish_caal_joint[,,,,,f], dim = dim(fish_caal_joint)[1:5]), # [pop, region, len, age, sex]
                   ISS = ISS_Fish_caal,
                   AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
                   comp_like = comp_fish_caal_like,
@@ -1243,7 +1272,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                   n_sexes = n_sexes,
                   n_regions = n_regions,
                   n_lens = n_lens,
-                  Obs = ObsFish_caal
+                  Obs = ObsFish_caal,
+                  CAAL_LenBinMap = sim_env$CAAL_LenBinMap # model length bins each row covers
                 )
               } # end fishery caal
 
@@ -1337,7 +1367,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                                   sim = sim,
                                                                   Exp = DAL,
                                                                   ISS = ISS_FishLenComps_discard,
-                                                                  AgeingError = NULL,
+                                                                  AgeingError = sim_env$LenBinMap, # length bin map, NULL when lengths sit on the model bins
                                                                   comp_like = comp_fishlen_discard_like,
                                                                   ln_theta = ln_FishLen_discard_theta,
                                                                   ln_theta_agg = ln_FishLen_discard_theta_agg,
@@ -1359,7 +1389,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                                       sim = sim,
                                                                       Exp = DAL,
                                                                       ISS_pop = ISS_FishLenComps_discard_pop,
-                                                                      AgeingError = NULL,
+                                                                      AgeingError = sim_env$LenBinMap, # length bin map, NULL when lengths sit on the model bins
                                                                       pop_comp_like = comp_fishlen_discard_pop_like,
                                                                       ln_pop_theta = ln_FishLen_discard_pop_theta,
                                                                       ln_pop_theta_agg = ln_FishLen_discard_pop_theta_agg,
@@ -1582,6 +1612,9 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
         }
       }
 
+      # this season's index at length and age, filled region by region and read by the age-at-length draw
+      if(exists("do_srv_caal") && isTRUE(do_srv_caal)) srv_caal_joint <- array(0, dim = c(n_pop, n_regions, n_lens, n_ages, n_sexes, n_srv_fleets))
+
       for(r in 1:n_regions) {
         for(sf in 1:n_srv_fleets) {
 
@@ -1592,12 +1625,33 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
             } else {
               sim_env$SrvIAA[p,r,y,seas,,,sf,sim] <- NAA[p,r,y,seas,,,sim] * srv_sel[p,r,y,seas,,,sf,sim] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,,sim])
             }
-            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv))) for(s in 1:n_sexes) sim_env$SrvIAL[p,r,y,seas,,s,sf,sim] <- (if(exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv)) SizeAgeTrans_srv[p,r,y,seas,,,s,sf,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim]) %*% SrvIAA[p,r,y,seas,,s,sf,sim] # Survey index at length
+
+            # survey index at length stuff
+            if((exists("SizeAgeTrans") && !is.null(SizeAgeTrans)) || (exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv))) {
+              for(s in 1:n_sexes) {
+
+                # if we have a size age
+                key_sf <- matrix(if(exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv)) SizeAgeTrans_srv[p,r,y,seas,,,s,sf,sim] else SizeAgeTrans[p,r,y,seas,,,s,sim], n_lens, n_ages) # P(len | age)
+                if(!isTRUE(sim_env$srv_len_comp_sel[sf] == 1)) {
+                  # length based selex selected age by age
+                  joint_srv <- key_sf * rep(SrvIAA[p,r,y,seas,,s,sf,sim], each = n_lens)
+                } else {
+                  # length based selex selected length by slength
+                  present <- if(move_timing == 2) SrvN_sim[p,r,,s,sf] else NAA[p,r,y,seas,,s,sim] * exp(-t_srv[r,seas,sf] * ZAA[p,r,y,seas,,s,sim])
+                  joint_srv <- (key_sf * rep(present, each = n_lens)) * sim_env$srv_sel_l[r,y,,s,sf,sim] # [len, age]
+                }
+                sim_env$SrvIAL[p,r,y,seas,,s,sf,sim] <- rowSums(joint_srv) # Survey index at length
+                if(exists("do_srv_caal") && isTRUE(do_srv_caal)) srv_caal_joint[p,r,,,s,sf] <- joint_srv # joint caal
+
+              } # end s loop
+            } # end if size-age key
           } # end p loop
 
-          # Survey Index - Regional
-          if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim]) # True Survey Index (abundance)
-          if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(SrvIAA[,r,y,seas,,,sf,sim] * WAA_srv[,r,y,seas,,,sf,sim]) # True Survey Index (biomass)
+          # Survey Index - Regional, over the ages the index counts
+          idx_ages <- if(is.null(sim_env$srv_idx_ages)) rep(1, n_ages) else sim_env$srv_idx_ages[,sf] # 1 for ages in the index total
+          srv_idx_n <- SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE] * array(rep(rep(idx_ages, each = n_pop), times = n_sexes), dim = c(n_pop, 1, 1, 1, n_ages, n_sexes, 1, 1))
+          if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(srv_idx_n) # True Survey Index (abundance)
+          if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx[r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * sum(srv_idx_n * WAA_srv[,r,y,seas,,,sf,sim, drop = FALSE]) # True Survey Index (biomass)
 
           # observed index. an mvn fleet takes its scale from the covariance's factor decomposition
           # rather than the SE array, with one factor draw shared across its series per replicate
@@ -1635,8 +1689,8 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
 
           # population-specific index. the covariance describes the regional series only, so an mvn
           # fleet's population data source keeps lognormal error, mirroring the estimation model
-          if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (abundance)
-          if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(SrvIAA[,r,y,seas,,,sf,sim, drop = FALSE] * WAA_srv[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (biomass)
+          if(srv_idx_type[sf] == 0) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(srv_idx_n, 1, sum) # True Survey Index (abundance)
+          if(srv_idx_type[sf] == 1) sim_env$TrueSrvIdx_pop[,r,y,seas,sf,sim] <- srv_q[r,y,sf,sim] * apply(srv_idx_n * WAA_srv[,r,y,seas,,,sf,sim, drop = FALSE], 1, sum) # True Survey Index (biomass)
           sim_env$ObsSrvIdx_pop[,r,y,seas,sf,sim] <- draw_index_obs(TrueSrvIdx_pop[,r,y,seas,sf,sim], ObsSrvIdx_pop_SE[,r,y,seas,sf], bias_correct_oe = oe_use, if(sidx_like == 1) 1 else 0)
 
           # Survey Compositions
@@ -1693,7 +1747,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                                      sim = sim,
                                                      Exp = SrvIAL,
                                                      ISS = ISS_SrvLenComps,
-                                                     AgeingError = NULL,
+                                                     AgeingError = sim_env$LenBinMap, # length bin map, NULL when lengths sit on the model bins
                                                      comp_like = comp_srvlen_like,
                                                      ln_theta = ln_SrvLen_theta,
                                                      ln_theta_agg = ln_SrvLen_theta_agg,
@@ -1714,7 +1768,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                                          sim = sim,
                                                          Exp = SrvIAL,
                                                          ISS_pop = ISS_SrvLenComps_pop,
-                                                         AgeingError = NULL,
+                                                         AgeingError = sim_env$LenBinMap, # length bin map, NULL when lengths sit on the model bins
                                                          pop_comp_like = comp_srvlen_pop_like,
                                                          ln_pop_theta = ln_SrvLen_pop_theta,
                                                          ln_pop_theta_agg = ln_SrvLen_pop_theta_agg,
@@ -1729,7 +1783,8 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                                          pop_specific = TRUE,
                                                          age_or_len = 1)
 
-            # Sample survey conditional age-at-length
+            # Sample survey conditional age-at-length from this season's index at length and age, built with
+            # the index at length above
             if(exists("do_srv_caal") && isTRUE(do_srv_caal)) {
               sim_env$ObsSrv_caal <- simulate_caal(
                 r = r,
@@ -1737,8 +1792,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                 f = sf,
                 seas = seas,
                 sim = sim,
-                SizeAgeTrans = if(exists("SizeAgeTrans_srv") && !is.null(SizeAgeTrans_srv)) array(SizeAgeTrans_srv[,,,,,,,sf,], dim = dim(SizeAgeTrans_srv)[-8]) else SizeAgeTrans,
-                AtAge = SrvIAA,
+                Joint = array(srv_caal_joint[,,,,,sf], dim = dim(srv_caal_joint)[1:5]), # [pop, region, len, age, sex]
                 ISS = ISS_Srv_caal,
                 AgeingError = array(AgeingError_srv[,,,sf,], dim = dim(AgeingError)),
                 comp_like = comp_srv_caal_like,
@@ -1748,7 +1802,8 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                 n_sexes = n_sexes,
                 n_regions = n_regions,
                 n_lens = n_lens,
-                Obs = ObsSrv_caal
+                Obs = ObsSrv_caal,
+                CAAL_LenBinMap = sim_env$CAAL_LenBinMap # model length bins each row covers
               )
             } # end survey caal
 

@@ -14,6 +14,8 @@ Setup_Sim_Biologicals(
   AgeingError_input = NULL,
   AgeingError_fish_input = NULL,
   AgeingError_srv_input = NULL,
+  LenBinMap_input = NULL,
+  CAAL_LenBinMap_input = NULL,
   SizeAgeTrans_input = NULL,
   SizeAgeTrans_fish_input = NULL,
   SizeAgeTrans_srv_input = NULL
@@ -53,6 +55,16 @@ fleets, \code{[n_yrs × n_ages × n_obs_ages × n_fish_fleets × n_sims]}, or
 \item{AgeingError_srv_input}{As \code{AgeingError_fish_input} with
 \code{n_srv_fleets} in place of \code{n_fish_fleets}.}
 
+\item{LenBinMap_input}{Matrix \code{[n_lens × n_obs_lens]} mapping the model's
+length bins onto the bins the length compositions are recorded on, the
+\code{LenBinMap} of \code{\link{Setup_Mod_Biologicals}}. \code{NULL} (default)
+when the two coincide.}
+
+\item{CAAL_LenBinMap_input}{0/1 matrix \code{[n_lens × n_caal_lens]} of the model
+length bins each conditional age-at-length row covers, the \code{CAAL_LenBinMap}
+of \code{\link{Setup_Mod_Biologicals}}. \code{NULL} (default) gives one row per
+model bin.}
+
 \item{SizeAgeTrans_input}{Size-age transition array \code{[n_pop × n_regions ×
 n_yrs × n_seas × n_lens × n_ages × n_sexes × n_sims]}, column-stochastic over
 ages. Only needed when fitting length compositions. Default \code{NULL}.}
@@ -66,7 +78,8 @@ here when growth was estimated.}
 \value{
 \code{sim_list} with \code{$natmort}, \code{$WAA}, \code{$WAA_fish},
   \code{$WAA_srv}, \code{$MatAA}, \code{$AgeingError} (an identity matrix when
-  none was supplied) and, when supplied, \code{$SizeAgeTrans}.
+  none was supplied) and, when supplied, \code{$LenBinMap} and
+  \code{$SizeAgeTrans}.
 }
 \description{
 Sets natural mortality, weight-at-age, maturity-at-age, ageing error and an

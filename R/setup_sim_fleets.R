@@ -28,6 +28,9 @@
 #'   second. Default 0.2.
 #' @param fish_idx_type Index type, 0 = abundance, 1 = biomass (default),
 #'   `n_regions x n_fish_fleets`.
+#' @param fish_idx_ages Ages counted in each fleet's index total, a 0/1 array
+#'   `n_ages x n_fish_fleets`, the estimation model's `fish_idx_ages`. `NULL`
+#'   (default) counts every age.
 #' @param Catch_seas_Type,Catch_pop_seas_Type,FishIdx_seas_Type,FishIdx_pop_seas_Type,FishAgeComps_seas_Type
 #'   Whether the operating model reports a data source once a season
 #'   (`"spltSeas"`, the default) or once a year as a season total (`"aggSeas"`),
@@ -89,6 +92,14 @@
 #'   999 = none.
 #' @param ret_sel_input Retained selectivity at age, `n_pop x n_regions x n_yrs x
 #'   n_seas x n_ages x n_sexes x n_fish_fleets x n_sims`. Default 1.
+#' @param FishLenComps_sel Character vector `[n_fish_fleets]`, `"age"` (default) or
+#'   `"length"`, as in [Setup_Mod_FishIdx_and_Comps()]. `"length"` spreads the fish
+#'   available at each age over length and selects them length by length, so the
+#'   length compositions read `fish_sel_l_input`.
+#' @param fish_sel_l_input,ret_sel_l_input Fishery and retention selectivity at
+#'   length, `n_regions x n_yrs x n_lens x n_sexes x n_fish_fleets x n_sims`, read
+#'   under `FishLenComps_sel = "length"`. `ret_sel_l_input = NULL` (default) keeps
+#'   retention at age.
 #' @param dmr_input Discard mortality rate, `n_regions x n_yrs x n_seas x
 #'   n_fish_fleets x n_sims`. Default 0.
 #' @param discard_units Discard units per fleet: 0 = abundance, 1 = biomass, 2 =
@@ -119,8 +130,8 @@
 #'   Only these two families exist for CAAL, since a CAAL row is the age
 #'   composition of the otoliths from one length bin, usually a small and mostly
 #'   zero sample.
-#' @param ISS_Fish_caal Number of fish aged within each length bin, `n_regions x
-#'   n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`. A bin whose sample
+#' @param ISS_Fish_caal Number of fish aged within each length row, `n_regions x
+#'   n_yrs x n_seas x n_caal_lens x n_sexes x n_fish_fleets x n_sims`. A bin whose sample
 #'   size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
 #'   alongside a likelihood other than `"none"` is what switches `do_fish_caal` on.
 #'   Requires `n_lens`.
@@ -169,6 +180,7 @@ Setup_Sim_Fishing <- function(sim_list,
                               ObsFishIdx_SE = array(0.2, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
                               fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
+                              fish_idx_ages = NULL,
                               FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
                               Catch_seas_Type = NULL,
                               Catch_pop_seas_Type = NULL,
@@ -222,6 +234,11 @@ Setup_Sim_Fishing <- function(sim_list,
                               FishLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sexes, sim_list$n_fish_fleets, 2)),
                               FishLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_fish_fleets)),
                               FishLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
+
+                              # Length compositions selected at length
+                              FishLenComps_sel = rep("age", sim_list$n_fish_fleets),
+                              fish_sel_l_input = NULL,
+                              ret_sel_l_input = NULL,
 
                               # Retention and discards
                               ret_sel_input = array(1, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -543,6 +560,20 @@ Setup_Sim_Fishing <- function(sim_list,
     n_sims = sim_list$n_sims,
     what = "ret_sel_input"
   )
+
+  # selectivity at length checks
+  if(length(FishLenComps_sel) != sim_list$n_fish_fleets || !all(FishLenComps_sel %in% c("age", "length"))) stop("FishLenComps_sel must be one of age or length for each fishery fleet")
+  fish_sel_l_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)
+  if(any(FishLenComps_sel == "length")) {
+    if(is.null(fish_sel_l_input) || !identical(as.numeric(dim(fish_sel_l_input)), as.numeric(fish_sel_l_dim))) stop("FishLenComps_sel = 'length' selects the length compositions at length, so fish_sel_l_input must be n_regions x n_yrs x n_lens x n_sexes x n_fish_fleets x n_sims")
+    if(!is.null(ret_sel_l_input) && !identical(as.numeric(dim(ret_sel_l_input)), as.numeric(fish_sel_l_dim))) stop("ret_sel_l_input must be n_regions x n_yrs x n_lens x n_sexes x n_fish_fleets x n_sims")
+  }
+
+  # index age checks
+  if(!is.null(fish_idx_ages) && (!identical(as.numeric(dim(fish_idx_ages)), as.numeric(c(sim_list$n_ages, sim_list$n_fish_fleets))) || !all(fish_idx_ages %in% c(0, 1)))) {
+    stop("fish_idx_ages must be a 0/1 array n_ages x n_fish_fleets, 1 for the ages each fleet's index counts")
+  }
+
   check_sim_dimensions(
     dmr_input,
     n_regions = sim_list$n_regions,
@@ -776,6 +807,7 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$ObsFishIdx_SE <- ObsFishIdx_SE # fishery index SE
   sim_list$ObsFishIdx_pop_SE <- ObsFishIdx_pop_SE # fishery index SE pop-specific
   sim_list$fish_idx_type <- fish_idx_type # fishery index type
+  sim_list$fish_idx_ages <- if(is.null(fish_idx_ages)) array(1, dim = c(sim_list$n_ages, sim_list$n_fish_fleets)) else fish_idx_ages # ages in the index total
   sim_list$FishIdx_LikeType <- FishIdx_LikeType # fishery index error structure
   if(!is.null(fish_idx_mvn)) {
     sim_list$fish_idx_mvn <- fish_idx_mvn # factor parameters for mvn index fleets
@@ -800,8 +832,9 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$do_fish_caal <- !is.null(ISS_Fish_caal) && any(comp_fish_caal_like != 999)
   if(sim_list$do_fish_caal) {
     if(is.null(sim_list$n_lens)) stop("ISS_Fish_caal was supplied, but the simulation has no length bins (n_lens is NULL)")
-    if(length(dim(ISS_Fish_caal)) != 7 || !all(dim(ISS_Fish_caal) == c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)))
-      stop("Dimensions of ISS_Fish_caal are not correct. Should be n_regions, n_years, n_seas, n_lens, n_sexes, n_fish_fleets, and n_sims")
+    n_caal_lens <- if(is.null(sim_list$n_caal_lens)) sim_list$n_lens else sim_list$n_caal_lens # age-at-length rows
+    if(length(dim(ISS_Fish_caal)) != 7 || !all(dim(ISS_Fish_caal) == c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, n_caal_lens, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims)))
+      stop("Dimensions of ISS_Fish_caal are not correct. Should be n_regions, n_years, n_seas, n_caal_lens, n_sexes, n_fish_fleets, and n_sims")
   }
   sim_list$comp_fish_caal_like <- comp_fish_caal_like
   sim_list$ISS_Fish_caal <- ISS_Fish_caal
@@ -834,6 +867,11 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$FishLen_pop_corr_pars <- FishLen_pop_corr_pars
   sim_list$FishLen_pop_corr_pars_agg <- FishLen_pop_corr_pars_agg
   sim_list$FishLenComps_pop_Type <- FishLenComps_pop_Type
+
+  # Length compositions selected at length
+  sim_list$fish_len_comp_sel <- as.numeric(FishLenComps_sel == "length") # 1 where the length comps select at length
+  sim_list$fish_sel_l <- fish_sel_l_input
+  sim_list$ret_sel_l <- ret_sel_l_input # NULL keeps retention at age
 
   # Retention and discards
   sim_list$ret_sel <- ret_sel_input
@@ -904,6 +942,13 @@ Setup_Sim_Fishing <- function(sim_list,
 #' @param sim_list Simulation list returned by \code{\link{Setup_Sim_Dim}}.
 #' @param srv_sel_input Survey selectivity array \code{[n_pop x n_regions x n_yrs x
 #'   n_seas × n_ages × n_sexes × n_srv_fleets × n_sims]}. No default.
+#' @param SrvLenComps_sel Character vector \code{[n_srv_fleets]}, \code{"age"}
+#'   (default) or \code{"length"}, as in \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
+#'   \code{"length"} spreads the numbers present at each age over length and selects
+#'   them length by length, so the length compositions read \code{srv_sel_l_input}.
+#' @param srv_sel_l_input Survey selectivity at length \code{[n_regions × n_yrs ×
+#'   n_lens × n_sexes × n_srv_fleets × n_sims]}, read under
+#'   \code{SrvLenComps_sel = "length"}.
 #' @param srv_q_input Survey catchability array \code{[n_regions × n_yrs ×
 #'   n_srv_fleets × n_sims]}. Default 1.
 #' @param ObsSrvIdx_SE,ObsSrvIdx_pop_SE Lognormal observation error sd for the
@@ -913,6 +958,9 @@ Setup_Sim_Fishing <- function(sim_list,
 #'   × n_seas × n_srv_fleets]}. Default 1.
 #' @param srv_idx_type Index type per fleet: 0/\code{"abd"} or 1/\code{"biom"}
 #'   (default).
+#' @param srv_idx_ages Ages counted in each fleet's index total, a 0/1 array
+#'   \code{[n_ages × n_srv_fleets]}, the estimation model's \code{srv_idx_ages}.
+#'   \code{NULL} (default) counts every age.
 #' @param SrvIdx_seas_Type,SrvIdx_pop_seas_Type,SrvAgeComps_seas_Type Whether the
 #'   operating model reports a survey data source once a season (\code{"spltSeas"},
 #'   the default) or once a year as a season total (\code{"aggSeas"}), one value
@@ -986,8 +1034,8 @@ Setup_Sim_Fishing <- function(sim_list,
 #'   `"Multinomial"` (0), `"Dirichlet-Multinomial"` (1) or `"none"` (999, default).
 #'   The survey twin of `comp_fish_caal_like`, and only these two families exist
 #'   for CAAL.
-#' @param ISS_Srv_caal Number of fish aged within each length bin, `n_regions x
-#'   n_yrs x n_seas x n_lens x n_sexes x n_srv_fleets x n_sims`. A bin whose sample
+#' @param ISS_Srv_caal Number of fish aged within each length row, `n_regions x
+#'   n_yrs x n_seas x n_caal_lens x n_sexes x n_srv_fleets x n_sims`. A bin whose sample
 #'   size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
 #'   alongside a likelihood other than `"none"` switches `do_srv_caal` on. Requires
 #'   `n_lens`.
@@ -1023,6 +1071,7 @@ Setup_Sim_Survey <- function(sim_list,
                              srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_srv_fleets, sim_list$n_sims)),
                              t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
                              srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
+                             srv_idx_ages = NULL,
                              SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
                              SrvIdx_seas_Type = NULL,
                              SrvIdx_pop_seas_Type = NULL,
@@ -1061,7 +1110,11 @@ Setup_Sim_Survey <- function(sim_list,
                              ln_SrvLen_pop_theta_agg = array(log(1), dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
                              SrvLen_pop_corr_pars = array(0.01, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sexes, sim_list$n_srv_fleets, 2)),
                              SrvLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop, sim_list$n_srv_fleets)),
-                             SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets))
+                             SrvLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_srv_fleets)),
+
+                             # Length compositions selected at length
+                             SrvLenComps_sel = rep("age", sim_list$n_srv_fleets),
+                             srv_sel_l_input = NULL
                              ) {
 
   # Convert Options to Codes ------------------------------------------------
@@ -1091,6 +1144,19 @@ Setup_Sim_Survey <- function(sim_list,
     n_sims = sim_list$n_sims,
     what = "srv_sel_input"
   )
+
+  # selex at length checks
+  if(length(SrvLenComps_sel) != sim_list$n_srv_fleets || !all(SrvLenComps_sel %in% c("age", "length"))) stop("SrvLenComps_sel must be one of age or length for each survey fleet")
+  srv_sel_l_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)
+  if(any(SrvLenComps_sel == "length") && (is.null(srv_sel_l_input) || !identical(as.numeric(dim(srv_sel_l_input)), as.numeric(srv_sel_l_dim)))) {
+    stop("SrvLenComps_sel = 'length' selects the length compositions at length, so srv_sel_l_input must be n_regions x n_yrs x n_lens x n_sexes x n_srv_fleets x n_sims")
+  }
+
+  # index age checks
+  if(!is.null(srv_idx_ages) && (!identical(as.numeric(dim(srv_idx_ages)), as.numeric(c(sim_list$n_ages, sim_list$n_srv_fleets))) || !all(srv_idx_ages %in% c(0, 1)))) {
+    stop("srv_idx_ages must be a 0/1 array n_ages x n_srv_fleets, 1 for the ages each fleet's index counts")
+  }
+
   check_sim_dimensions(
     srv_q_input,
     n_regions = sim_list$n_regions,
@@ -1301,6 +1367,8 @@ Setup_Sim_Survey <- function(sim_list,
   # Populate Simulation List ------------------------------------------------
   # output into list
   sim_list$srv_sel <- srv_sel_input
+  sim_list$srv_len_comp_sel <- as.numeric(SrvLenComps_sel == "length") # 1 where the length comps select at length
+  sim_list$srv_sel_l <- srv_sel_l_input
   sim_list$srv_q <- srv_q_input
   sim_list$ObsSrvIdx_SE <- ObsSrvIdx_SE
   srv_aa_dim <- c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages,
@@ -1324,6 +1392,7 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$ObsSrvIdx_pop_SE <- ObsSrvIdx_pop_SE
   sim_list$t_srv <- t_srv
   sim_list$srv_idx_type <- srv_idx_type
+  sim_list$srv_idx_ages <- if(is.null(srv_idx_ages)) array(1, dim = c(sim_list$n_ages, sim_list$n_srv_fleets)) else srv_idx_ages # ages in the index total
   sim_list$SrvIdx_LikeType <- SrvIdx_LikeType # survey index error structure
   if(!is.null(srv_idx_mvn)) {
     sim_list$srv_idx_mvn <- srv_idx_mvn # factor parameters for mvn index fleets
@@ -1347,8 +1416,9 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$do_srv_caal <- !is.null(ISS_Srv_caal) && any(comp_srv_caal_like != 999)
   if(sim_list$do_srv_caal) {
     if(is.null(sim_list$n_lens)) stop("ISS_Srv_caal was supplied, but the simulation has no length bins (n_lens is NULL)")
-    if(length(dim(ISS_Srv_caal)) != 7 || !all(dim(ISS_Srv_caal) == c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)))
-      stop("Dimensions of ISS_Srv_caal are not correct. Should be n_regions, n_years, n_seas, n_lens, n_sexes, n_srv_fleets, and n_sims")
+    n_caal_lens <- if(is.null(sim_list$n_caal_lens)) sim_list$n_lens else sim_list$n_caal_lens # age-at-length rows
+    if(length(dim(ISS_Srv_caal)) != 7 || !all(dim(ISS_Srv_caal) == c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, n_caal_lens, sim_list$n_sexes, sim_list$n_srv_fleets, sim_list$n_sims)))
+      stop("Dimensions of ISS_Srv_caal are not correct. Should be n_regions, n_years, n_seas, n_caal_lens, n_sexes, n_srv_fleets, and n_sims")
   }
   sim_list$comp_srv_caal_like <- comp_srv_caal_like
   sim_list$ISS_Srv_caal <- ISS_Srv_caal

@@ -17,8 +17,7 @@ test_that("simulate_caal draws from P(age | length) and applies ageing error", {
   joint <- phi * rep(caa, each = n_lens)
   cond <- joint / rowSums(joint) # P(age | length)
 
-  sat <- array(phi, dim = c(1, 1, 1, 1, n_lens, n_ages, 1, 1))
-  at_age <- array(caa, dim = c(1, 1, 1, 1, n_ages, 1, 1, 1))
+  joint_arr <- array(joint, dim = c(1, 1, n_lens, n_ages, 1)) # [pop, region, len, age, sex]
   iss <- array(2e5, dim = c(1, 1, 1, n_lens, 1, 1, 1))
   ae <- array(diag(n_ages), dim = c(1, n_ages, n_ages, 1))
   obs <- array(0, dim = c(1, 1, 1, n_lens, n_ages, 1, 1, 1))
@@ -30,8 +29,7 @@ test_that("simulate_caal draws from P(age | length) and applies ageing error", {
     f = 1,
     seas = 1,
     sim = 1,
-    SizeAgeTrans = sat,
-    AtAge = at_age,
+    Joint = joint_arr,
     ISS = iss,
     AgeingError = ae,
     comp_like = 0,
@@ -56,8 +54,7 @@ test_that("simulate_caal draws from P(age | length) and applies ageing error", {
     f = 1,
     seas = 1,
     sim = 1,
-    SizeAgeTrans = sat,
-    AtAge = at_age,
+    Joint = joint_arr,
     ISS = iss,
     AgeingError = ae_shift,
     comp_like = 0,

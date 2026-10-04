@@ -41,6 +41,7 @@ Setup_Sim_Fishing(
   ObsFishIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets)),
   fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
+  fish_idx_ages = NULL,
   FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
   Catch_seas_Type = NULL,
   Catch_pop_seas_Type = NULL,
@@ -101,6 +102,9 @@ Setup_Sim_Fishing(
   FishLen_pop_corr_pars_agg = array(0.01, dim = c(sim_list$n_pop,
     sim_list$n_fish_fleets)),
   FishLenComps_pop_Type = array(2, dim = c(sim_list$n_yrs, sim_list$n_fish_fleets)),
+  FishLenComps_sel = rep("age", sim_list$n_fish_fleets),
+  fish_sel_l_input = NULL,
+  ret_sel_l_input = NULL,
   ret_sel_input = array(1, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_seas, sim_list$n_ages, sim_list$n_sexes, sim_list$n_fish_fleets,
     sim_list$n_sims)),
@@ -215,6 +219,10 @@ second. Default 0.2.}
 \item{fish_idx_type}{Index type, 0 = abundance, 1 = biomass (default),
 `n_regions x n_fish_fleets`.}
 
+\item{fish_idx_ages}{Ages counted in each fleet's index total, a 0/1 array
+`n_ages x n_fish_fleets`, the estimation model's `fish_idx_ages`. `NULL`
+(default) counts every age.}
+
 \item{FishIdx_LikeType}{Error structure each fleet's index is drawn under:
 `"lognormal"` (0, default), `"normal"` (1) or `"mvn"` (2), matching the
 estimation model. An mvn fleet draws from `FishIdx_Cov` through a
@@ -251,8 +259,8 @@ Only these two families exist for CAAL, since a CAAL row is the age
 composition of the otoliths from one length bin, usually a small and mostly
 zero sample.}
 
-\item{ISS_Fish_caal}{Number of fish aged within each length bin, `n_regions x
-n_yrs x n_seas x n_lens x n_sexes x n_fish_fleets x n_sims`. A bin whose sample
+\item{ISS_Fish_caal}{Number of fish aged within each length row, `n_regions x
+n_yrs x n_seas x n_caal_lens x n_sexes x n_fish_fleets x n_sims`. A bin whose sample
 size rounds to zero is skipped. `NULL` (default) draws no CAAL; supplying it
 alongside a likelihood other than `"none"` is what switches `do_fish_caal` on.
 Requires `n_lens`.}
@@ -305,6 +313,16 @@ n_regions x n_sexes x n_fish_fleets`. Default log(1).}
 n_regions x n_sexes x n_fish_fleets x 2`. Default 0.01.}
 
 \item{FishAge_pop_corr_pars_agg, FishLen_pop_corr_pars_agg, FishAge_discard_pop_corr_pars_agg, FishLen_discard_pop_corr_pars_agg}{Their aggregated counterparts, `n_pop x n_fish_fleets`. Default 0.01.}
+
+\item{FishLenComps_sel}{Character vector `[n_fish_fleets]`, `"age"` (default) or
+`"length"`, as in [Setup_Mod_FishIdx_and_Comps()]. `"length"` spreads the fish
+available at each age over length and selects them length by length, so the
+length compositions read `fish_sel_l_input`.}
+
+\item{fish_sel_l_input, ret_sel_l_input}{Fishery and retention selectivity at
+length, `n_regions x n_yrs x n_lens x n_sexes x n_fish_fleets x n_sims`, read
+under `FishLenComps_sel = "length"`. `ret_sel_l_input = NULL` (default) keeps
+retention at age.}
 
 \item{ret_sel_input}{Retained selectivity at age, `n_pop x n_regions x n_yrs x
 n_seas x n_ages x n_sexes x n_fish_fleets x n_sims`. Default 1.}

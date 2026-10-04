@@ -18,13 +18,14 @@ setup_caal_source(
 \item{input_list}{Named list with \code{$data}, \code{$par} and \code{$map}.}
 
 \item{ObsCAAL}{Observed CAAL array \code{[n_regions x n_years x n_seas x
-n_lens x n_ages x n_sexes x n_fleets]}, or \code{NULL} for none.}
+n_caal_lens x n_ages x n_sexes x n_fleets]}, or \code{NULL} for none. The
+length rows are the model's length bins, or the columns of \code{CAAL_LenBinMap}.}
 
-\item{UseCAAL}{Use flags \code{[n_regions x n_years x n_seas x n_lens x
+\item{UseCAAL}{Use flags \code{[n_regions x n_years x n_seas x n_caal_lens x
 n_fleets]}. A length bin with no aged fish has a zero and is skipped.}
 
 \item{ISS_CAAL}{Input sample sizes \code{[n_regions x n_years x n_seas x
-n_lens x n_sexes x n_fleets]}, the number aged within each length bin. When
+n_caal_lens x n_sexes x n_fleets]}, the number aged within each length bin. When
 \code{NULL} it is summed from \code{ObsCAAL}.}
 
 \item{CAAL_LikeType}{Character vector of length \code{n_fleets}. One of

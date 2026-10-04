@@ -183,12 +183,8 @@ Functions for setting up and running closed-loop population simulations
   : Construct and Condition Closed-Loop Simulation Inputs
 - [`get_closed_loop_reference_points()`](https://chengmatt.github.io/SPoRC/dev/reference/get_closed_loop_reference_points.md)
   : Get Closed Loop Reference Points
-- [`catch_to_F_singlefleet()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_singlefleet.md)
-  : Convert a target catch to fishing mortality for a single fleet via
-  bisection
-- [`catch_to_F_multifleet()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_multifleet.md)
-  : Convert target catches to fishing mortality rates for multiple
-  fleets
+- [`catch_to_F_om()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_om.md)
+  : Convert Catch Advice To Fishing Mortality In The Operating Model
 
 ## Francis Reweighting
 

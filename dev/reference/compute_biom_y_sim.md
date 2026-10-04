@@ -8,7 +8,7 @@ which the estimation model and the forward projection also run.
 ## Usage
 
 ``` r
-compute_biom_y_sim(y, seas, sim, sim_env)
+compute_biom_y_sim(y, seas, sim, sim_env, NAA_s = NULL, ZAA_s = NULL)
 ```
 
 ## Arguments
@@ -28,3 +28,9 @@ compute_biom_y_sim(y, seas, sim, sim_env)
 - sim_env:
 
   Simulation environment
+
+- NAA_s, ZAA_s:
+
+  Arrays `[n_pop, n_regions, 1, 1, n_ages, n_sexes]` of numbers and
+  total mortality to use instead of the stored ones, for a trial F.
+  `NULL` reads `sim_env`.

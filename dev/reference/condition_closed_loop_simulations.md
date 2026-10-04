@@ -137,6 +137,5 @@ Feedback begins in the first projection year.
 ## See also
 
 Other Closed Loop Simulations:
-[`catch_to_F_multifleet()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_multifleet.md),
-[`catch_to_F_singlefleet()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_singlefleet.md),
+[`catch_to_F_om()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_om.md),
 [`get_closed_loop_reference_points()`](https://chengmatt.github.io/SPoRC/dev/reference/get_closed_loop_reference_points.md)

@@ -133,6 +133,5 @@ A list with elements:
 ## See also
 
 Other Closed Loop Simulations:
-[`catch_to_F_multifleet()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_multifleet.md),
-[`catch_to_F_singlefleet()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_singlefleet.md),
+[`catch_to_F_om()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_om.md),
 [`condition_closed_loop_simulations()`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md)

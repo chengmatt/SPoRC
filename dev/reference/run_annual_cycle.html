@@ -102,7 +102,10 @@ by reference and modified in place by every annual-cycle helper.</p></dd>
     <p>Those two standalone <code><a href="generate_recruitment.html">generate_recruitment()</a></code> calls only run when
 <code>rec_lag != 0</code>. Under <code>rec_lag = 0</code> recruitment depends on year
 <code>y</code>'s own SSB, which is not known until <code><a href="apply_pop_dy.html">apply_pop_dy</a></code> reaches
-<code>spawn_seas</code>, so it is called from inside <code><a href="apply_pop_dy.html">apply_pop_dy()</a></code> instead.</p>
+<code>spawn_seas</code>, so it is called from inside <code><a href="apply_pop_dy.html">apply_pop_dy()</a></code> instead.
+Its deviations are still drawn here at the end of the year before, through
+<code>draw_sim_rec_devs</code>, so a catch target for that year can be converted to F
+knowing its recruits.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

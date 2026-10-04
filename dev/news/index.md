@@ -247,6 +247,14 @@
   which never reached the tagging simulation. Seven optimizer,
   [`tryCatch()`](https://rdrr.io/r/base/conditions.html) and block-final
   lines keep their call and drop only the unused name (for developers).
+- `catch_to_F_singlefleet()` and `catch_to_F_multifleet()` are replaced
+  by
+  [`catch_to_F_om()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_om.md),
+  which converts catch advice by region, season and fleet into the
+  operating model’s F by running the year through the operating model’s
+  own dynamics, solved with Newton steps on an
+  [`RTMB::MakeTape()`](https://rdrr.io/pkg/RTMB/man/Tape.html) tape of
+  each season’s catch.
 
 ### Bug Fixes
 

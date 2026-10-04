@@ -3,11 +3,10 @@
 Creates a new R environment populated with all objects from `sim_list`
 and binds the SPoRC simulation functions required by
 [`run_annual_cycle`](https://chengmatt.github.io/SPoRC/dev/reference/run_annual_cycle.md).
-Isolating the simulation state in a dedicated environment prevents name
-collisions with the calling frame and allows
-[`with()`](https://rdrr.io/r/base/with.html) / `<<-` assignment patterns
-used internally by the annual-cycle helpers to modify shared state
-without polluting the global workspace.
+Keeping the simulation state in its own environment lets the annual
+cycle helpers update shared arrays in place from inside
+[`with()`](https://rdrr.io/r/base/with.html) blocks, without threading
+them through every call.
 
 ## Usage
 
@@ -35,6 +34,15 @@ SPoRC simulation functions: `generate_initial_age_structure`,
 `Get_Det_Recruitment`, `Get_Init_NAA`, `predict_sim_fish_iss_fmort`,
 `rho_trans`, `simulate_comps`, `simulate_conv_tag_fish_recaptures`,
 `draw_index_obs`, `resolve_idx_factor`.
+
+## Details
+
+Each helper first stores the environment inside itself as `sim_env`, the
+same object under a second name, so its
+[`with()`](https://rdrr.io/r/base/with.html) block writes to the
+environment it was given whatever the script calls it; see
+[`vignette("architecture")`](https://chengmatt.github.io/SPoRC/dev/articles/architecture.md)
+for why.
 
 ## See also
 

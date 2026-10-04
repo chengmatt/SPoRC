@@ -144,6 +144,8 @@
 <li>
 <code>compResidual</code> is declared in Suggests and DESCRIPTION has a BugReports link; the help pages for <code><a href="../reference/Setup_Mod_Tagging.html">Setup_Mod_Tagging()</a></code> and <code><a href="../reference/osa_one_step_predict.html">osa_one_step_predict()</a></code> are regenerated, and <code><a href="../reference/Get_Comp_Likelihoods.html">Get_Comp_Likelihoods()</a></code> no longer documents a <code>seas_agg</code> argument it does not take (for developers).</li>
 <li>Removed 25 values that were computed and never read, and a duplicated <code>Mrate</code> entry in the closed loop report list; among them the <code>tag_selex</code> and <code>tag_natmort</code> lookups in <code><a href="../reference/condition_closed_loop_simulations.html">condition_closed_loop_simulations()</a></code>, which never reached the tagging simulation. Seven optimizer, <code><a href="https://rdrr.io/r/base/conditions.html" class="external-link">tryCatch()</a></code> and block-final lines keep their call and drop only the unused name (for developers).</li>
+<li>
+<code>catch_to_F_singlefleet()</code> and <code>catch_to_F_multifleet()</code> are replaced by <code><a href="../reference/catch_to_F_om.html">catch_to_F_om()</a></code>, which converts catch advice by region, season and fleet into the operating model’s F by running the year through the operating model’s own dynamics, solved with Newton steps on an <code><a href="https://rdrr.io/pkg/RTMB/man/Tape.html" class="external-link">RTMB::MakeTape()</a></code> tape of each season’s catch.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>

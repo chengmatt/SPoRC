@@ -124,8 +124,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/caal_sum_pop.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/caal_sum_pop_len.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_at_age.html</loc></url>
-<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_multifleet.html</loc></url>
-<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_singlefleet.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_om.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_at_age_read.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_at_age_shape.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_bin_map.html</loc></url>
@@ -228,6 +227,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/draw_sim_growth_devs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/draw_sim_move_devs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/draw_sim_q_devs.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/draw_sim_rec_devs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/draw_tweedie.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/drop_empty_fitted_blocks.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dsem_cov_link_mean.html</loc></url>
@@ -377,6 +377,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/obs_bin_count.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/obs_len_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/obs_len_labels.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/om_season_catch.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/optim_ref_pts.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/option_reference.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/osa_dbetabinom.html</loc></url>
@@ -468,6 +469,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_sable_rep.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_wc_sablefish_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sim_at_age_cell.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sim_det_recruitment.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sim_draw_views.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sim_growth_args.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sim_growth_devs.html</loc></url>
@@ -481,6 +483,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/simulation_self_test.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/single_region_Fmsy.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/single_region_SPR.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/solve_om_season_F.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/solve_plus_group.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/spawn_state.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/split_reported_q.html</loc></url>

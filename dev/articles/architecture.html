@@ -929,8 +929,8 @@ one file.</p>
 <code>model_population_dynamics.R</code>,
 <code>model_recruitment.R</code>, <code>projection.R</code>,
 <code>refpts_main.R</code>, <code>refpts_msy.R</code>,
-<code>refpts_spr.R</code>, <code>sim_observations.R</code>,
-<code>sim_population.R</code>
+<code>refpts_spr.R</code>, <code>sim_closed_loop.R</code>,
+<code>sim_observations.R</code>, <code>sim_population.R</code>
 </td>
 </tr>
 </tbody>
@@ -958,8 +958,8 @@ one file.</p>
 <td>
 <code>bind_proj_SSB</code>, <code>build_proj_F</code>,
 <code>Do_Population_Projection</code>, <code>proj_catch_at_F</code>,
-<code>proj_log_catch_resid</code>, <code>proj_target_catch</code>,
-<code>run_proj_year</code>, <code>solve_proj_F_catch</code>,
+<code>proj_target_catch</code>, <code>run_proj_year</code>,
+<code>solve_log_catch_newton</code>, <code>solve_proj_F_catch</code>,
 <code>solve_proj_year_F</code>
 </td>
 <td>
@@ -967,7 +967,10 @@ one file.</p>
 <code>model_transition.R</code>, <code>sim_random_variates.R</code>,
 <code>utils_setup.R</code>
 </td>
-<td><code>plot_figures_tables.R</code></td>
+<td>
+<code>plot_figures_tables.R</code>,
+<code>sim_closed_loop.R</code>
+</td>
 </tr>
 <tr class="even">
 <td><code>refpts_main.R</code></td>
@@ -1080,19 +1083,21 @@ one file.</p>
 <tr class="odd">
 <td><code>sim_closed_loop.R</code></td>
 <td>
-<code>catch_to_F_multifleet</code>,
-<code>catch_to_F_singlefleet</code>,
+<code>catch_to_F_om</code>,
 <code>condition_closed_loop_simulations</code>,
-<code>get_closed_loop_reference_points</code>
+<code>get_closed_loop_reference_points</code>,
+<code>om_season_catch</code>, <code>solve_om_season_F</code>
 </td>
 <td>
+<code>model_transition.R</code>, <code>projection.R</code>,
 <code>refpts_main.R</code>, <code>setup_biologicals.R</code>,
 <code>setup_dimensions.R</code>, <code>setup_recruitment.R</code>,
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
 <code>setup_tagging.R</code>, <code>sim_biologicals.R</code>,
 <code>sim_catchability.R</code>, <code>sim_dsem.R</code>,
-<code>sim_self_test.R</code>, <code>utils_math.R</code>,
-<code>utils_postfit.R</code>, <code>utils_setup.R</code>
+<code>sim_population.R</code>, <code>sim_self_test.R</code>,
+<code>utils_math.R</code>, <code>utils_postfit.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td></td>
 </tr>
@@ -1155,9 +1160,10 @@ one file.</p>
 <td><code>sim_population.R</code></td>
 <td>
 <code>apply_pop_dy</code>, <code>compute_biom_y_sim</code>,
+<code>draw_sim_rec_devs</code>,
 <code>generate_initial_age_structure</code>,
 <code>generate_recruitment</code>, <code>run_annual_cycle</code>,
-<code>Simulate_Pop_Static</code>
+<code>sim_det_recruitment</code>, <code>Simulate_Pop_Static</code>
 </td>
 <td>
 <code>model_biomass.R</code>, <code>model_init_naa.R</code>,
@@ -1166,7 +1172,9 @@ one file.</p>
 <code>sim_naa_state.R</code>, <code>sim_observations.R</code>,
 <code>sim_setup.R</code>
 </td>
-<td><code>sim_self_test.R</code></td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+</td>
 </tr>
 <tr class="even">
 <td><code>sim_random_variates.R</code></td>
@@ -1854,7 +1862,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-sim_*</code></td>
-<td>8</td>
+<td>10</td>
 <td>Operating model, including simulate then refit self tests</td>
 </tr>
 <tr class="odd">
@@ -1886,7 +1894,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 218 test files in total.</p>
+<p>That is 221 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

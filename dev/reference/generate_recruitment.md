@@ -1,11 +1,10 @@
 # Generate recruitment for a simulation year
 
-Takes deterministic recruitment from
-[`Get_Det_Recruitment`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Det_Recruitment.md),
-multiplies it by lognormal deviations, apportions it across sexes and
-seasons, and writes it into the age-one slot of `sim_env$NAA`, with
-`NAA0` synchronized to match. A `Rec_input` covering year `y` overrides
-the draw entirely.
+Takes deterministic recruitment from `sim_det_recruitment`, multiplies
+it by the year's lognormal deviations from `draw_sim_rec_devs`,
+apportions it across sexes and seasons, and writes it into the age-one
+slot of `sim_env$NAA`, with `NAA0` synchronized to match. A `Rec_input`
+covering year `y` overrides the draw entirely.
 
 ## Usage
 
@@ -41,16 +40,3 @@ generate_recruitment(y, sim, sim_env, seas = 1)
 ## Value
 
 `invisible(NULL)`; everything is modified by reference within `sim_env`.
-
-## Details
-
-Deviation sharing follows
-[`generate_initial_age_structure`](https://chengmatt.github.io/SPoRC/dev/reference/generate_initial_age_structure.md):
-one draw per population when `n_pop > 1`, or one per region when
-`n_pop = 1` under local density dependence. Populations with `R0 = 0`
-get zero deviations, and `sigma_idx` picks the natal region's
-`ln_sigmaR` for the bias correction. `RecDevs_model` sets what the draw
-is centered on: zero for independent deviations, the previous year's for
-a random walk, and `RecDevs_rho` times it for an AR1. Only the
-independent draws are bias corrected, a walk's deviation not being mean
-zero.

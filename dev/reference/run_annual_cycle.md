@@ -43,7 +43,9 @@ depends on year `y`'s own SSB, which is not known until
 [`apply_pop_dy`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md)
 reaches `spawn_seas`, so it is called from inside
 [`apply_pop_dy()`](https://chengmatt.github.io/SPoRC/dev/reference/apply_pop_dy.md)
-instead.
+instead. Its deviations are still drawn here at the end of the year
+before, through `draw_sim_rec_devs`, so a catch target for that year can
+be converted to F knowing its recruits.
 
 ## See also
 

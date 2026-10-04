@@ -521,15 +521,15 @@ advice based on management procedures defined later.</p>
 <span><span class="op">}</span></span></code></pre></div>
 <p>The next function converts the (possibly constrained) TAC into a
 corresponding fishing mortality rate (<code>Fmort</code>) used by the
-operating model. This function uses a bisection algorithm to find the
-value of fishing mortality that achieves the specified TAC for each
-region and fleet combination. The updated <code>Fmort</code> values are
-then stored in the simulation environment for use in the next time step
-of the closed-loop cycle.</p>
+operating model. It calls <code><a href="../reference/catch_to_F_om.html">catch_to_F_om()</a></code>, which finds the
+fishing mortality by region, season and fleet that takes each TAC from
+the operating model, with fleets in a region sharing total mortality.
+The updated <code>Fmort</code> values are then stored in the simulation
+environment for use in the next time step of the closed-loop cycle.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co">#' Convert TAC to Fishing Mortality</span></span>
 <span><span class="co">#'</span></span>
-<span><span class="co">#' Uses bisection method to find fishing mortality rate that achieves target TAC.</span></span>
+<span><span class="co">#' Finds the fishing mortality by region, season and fleet that takes the TAC from the operating model.</span></span>
 <span><span class="co">#'</span></span>
 <span><span class="co">#' @param sim_env Simulation environment</span></span>
 <span><span class="co">#' @param tmp_TAC Target total allowable catch</span></span>
@@ -544,30 +544,14 @@ of the closed-loop cycle.</p>
 <span>  <span class="va">last_assess_year</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">assessment_years</span><span class="op">[</span><span class="va">assessment_years</span> <span class="op">&lt;=</span> <span class="va">y</span><span class="op">]</span><span class="op">)</span></span>
 <span>  <span class="va">tac_year_index</span> <span class="op">&lt;-</span> <span class="va">y</span> <span class="op">-</span> <span class="va">last_assess_year</span> <span class="op">+</span> <span class="fl">1</span></span>
 <span></span>
-<span>  <span class="co"># Create grid of region-fleet combinations</span></span>
-<span>  <span class="va">rf_grid</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span></span>
-<span>    r <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">sim_env</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span>,</span>
-<span>    f <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">sim_env</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span></span>
-<span>  <span class="op">)</span></span>
+<span>  <span class="co"># Catch advice by region, season and fleet, summed over populations</span></span>
+<span>  <span class="va">tac</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/apply.html" class="external-link">apply</a></span><span class="op">(</span><span class="va">tmp_TAC</span><span class="op">[</span>,, <span class="va">tac_year_index</span>,,, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">2</span>, <span class="fl">4</span>, <span class="fl">5</span><span class="op">)</span>, <span class="va">sum</span><span class="op">)</span></span>
 <span></span>
-<span>  <span class="co"># Solve for F that achieves target catch for each region-fleet combination</span></span>
-<span>  <span class="va">tmp_f</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/mapply.html" class="external-link">mapply</a></span><span class="op">(</span></span>
-<span>    <span class="kw">function</span><span class="op">(</span><span class="va">r</span>, <span class="va">f</span><span class="op">)</span> <span class="op">{</span></span>
-<span>      <span class="fu">SPoRC</span><span class="fu">::</span><span class="fu"><a href="../reference/catch_to_F_singlefleet.html">catch_to_F_singlefleet</a></span><span class="op">(</span></span>
-<span>        f_guess <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>        catch <span class="op">=</span> <span class="va">tmp_TAC</span><span class="op">[</span><span class="fl">1</span>, <span class="va">r</span>, <span class="va">tac_year_index</span>, <span class="fl">1</span>, <span class="va">f</span><span class="op">]</span>,</span>
-<span>        NAA <span class="op">=</span> <span class="va">sim_env</span><span class="op">$</span><span class="va">NAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">r</span>, <span class="va">y</span> <span class="op">+</span> <span class="fl">1</span>, <span class="fl">1</span>, , , <span class="va">sim</span><span class="op">]</span>,</span>
-<span>        WAA <span class="op">=</span> <span class="va">sim_env</span><span class="op">$</span><span class="va">WAA</span><span class="op">[</span><span class="fl">1</span>, <span class="va">r</span>, <span class="va">y</span> <span class="op">+</span> <span class="fl">1</span>, <span class="fl">1</span>, , , <span class="va">sim</span><span class="op">]</span>,</span>
-<span>        natmort <span class="op">=</span> <span class="va">sim_env</span><span class="op">$</span><span class="va">natmort</span><span class="op">[</span><span class="fl">1</span>, <span class="va">r</span>, <span class="va">y</span> <span class="op">+</span> <span class="fl">1</span>, , , , <span class="va">sim</span><span class="op">]</span>,</span>
-<span>        fish_sel <span class="op">=</span> <span class="va">sim_env</span><span class="op">$</span><span class="va">fish_sel</span><span class="op">[</span><span class="fl">1</span>,<span class="va">r</span>, <span class="va">y</span> <span class="op">+</span> <span class="fl">1</span>, <span class="fl">1</span>, , , <span class="va">f</span>, <span class="va">sim</span><span class="op">]</span></span>
-<span>      <span class="op">)</span></span>
-<span>    <span class="op">}</span>,</span>
-<span>    r <span class="op">=</span> <span class="va">rf_grid</span><span class="op">$</span><span class="va">r</span>,</span>
-<span>    f <span class="op">=</span> <span class="va">rf_grid</span><span class="op">$</span><span class="va">f</span></span>
-<span>  <span class="op">)</span></span>
+<span>  <span class="co"># Solve for the F that takes that catch from the operating model</span></span>
+<span>  <span class="va">F_solve</span> <span class="op">&lt;-</span> <span class="fu">SPoRC</span><span class="fu">::</span><span class="fu"><a href="../reference/catch_to_F_om.html">catch_to_F_om</a></span><span class="op">(</span>target <span class="op">=</span> <span class="va">tac</span>, y <span class="op">=</span> <span class="va">y</span> <span class="op">+</span> <span class="fl">1</span>, sim <span class="op">=</span> <span class="va">sim</span>, sim_env <span class="op">=</span> <span class="va">sim_env</span><span class="op">)</span></span>
 <span></span>
 <span>  <span class="co"># Update fishing mortality in simulation environment</span></span>
-<span>  <span class="va">sim_env</span><span class="op">$</span><span class="va">Fmort</span><span class="op">[</span>, <span class="va">y</span> <span class="op">+</span> <span class="fl">1</span>, <span class="fl">1</span>, , <span class="va">sim</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="va">tmp_f</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_env</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_env</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_env</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">sim_env</span><span class="op">$</span><span class="va">Fmort</span><span class="op">[</span>, <span class="va">y</span> <span class="op">+</span> <span class="fl">1</span>, , , <span class="va">sim</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">F_solve</span><span class="op">$</span><span class="va">Fmort</span></span>
 <span></span>
 <span>  <span class="kw"><a href="https://rdrr.io/r/base/function.html" class="external-link">return</a></span><span class="op">(</span><span class="va">sim_env</span><span class="op">)</span></span>
 <span><span class="op">}</span></span></code></pre></div>

@@ -30,12 +30,6 @@ and binds the SPoRC simulation functions required by
 environment lets the annual cycle helpers update shared arrays in place
 from inside \code{with()} blocks, without threading them through every call.
 }
-\details{
-Each helper first stores the environment inside itself as \code{sim_env}, the
-same object under a second name, so its \code{with()} block writes to the
-environment it was given whatever the script calls it; see
-\code{vignette("architecture")} for why.
-}
 \examples{
 \dontrun{
 sim_env <- Setup_sim_env(sim_list)

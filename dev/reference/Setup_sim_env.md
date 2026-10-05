@@ -35,15 +35,6 @@ SPoRC simulation functions: `generate_initial_age_structure`,
 `rho_trans`, `simulate_comps`, `simulate_conv_tag_fish_recaptures`,
 `draw_index_obs`, `resolve_idx_factor`.
 
-## Details
-
-Each helper first stores the environment inside itself as `sim_env`, the
-same object under a second name, so its
-[`with()`](https://rdrr.io/r/base/with.html) block writes to the
-environment it was given whatever the script calls it; see
-[`vignette("architecture")`](https://chengmatt.github.io/SPoRC/dev/articles/architecture.md)
-for why.
-
 ## See also
 
 Other Simulation Setup:

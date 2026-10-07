@@ -61,6 +61,10 @@ bind_sims <- function(parts) {
 #'
 #' Every observation gets a standard deviation of \code{obs_sd} and every composition
 #' a sample size of \code{iss}. Process error is left alone, being part of the truth.
+#' That covers the population-specific at-age sources, the estimated part of an
+#' index sd, and a multivariate normal index, whose covariance keeps its
+#' correlations at a marginal sd of \code{obs_sd}. Tag recaptures are counts and
+#' keep their error.
 #'
 #' @param sim_list The simulation list, once the setup routines have filled it.
 #' @param obs_sd Observation standard deviation to impose. Default \code{1e-3}.
@@ -72,9 +76,12 @@ bind_sims <- function(parts) {
 make_data_perfect <- function(sim_list, obs_sd = 1e-3, iss = 1e6) {
 
   ln_sigma_names <- c("ln_sigmaC", "ln_sigmaC_pop", "ln_sigmaD", "ln_sigmaD_pop",
-                      "ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaSrvIdxAA")
+                      "ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaSrvIdxAA",
+                      "ln_sigmaCAA_pop", "ln_sigmaDAA_pop", "ln_sigmaSrvIdxAA_pop",
+                      "ln_sigmaFishIdx", "ln_sigmaFishIdx_pop", "ln_sigmaSrvIdx", "ln_sigmaSrvIdx_pop") # the last four are an index sd's estimated part
   se_names <- c("ObsFishIdx_SE", "ObsFishIdx_pop_SE", "ObsSrvIdx_SE", "ObsSrvIdx_pop_SE",
-                "ObsCatchAA_SE", "ObsDiscardAA_SE", "ObsSrvIdxAA_SE", "dsem_cov_obs_sd")
+                "ObsCatchAA_SE", "ObsDiscardAA_SE", "ObsSrvIdxAA_SE",
+                "ObsCatchAA_pop_SE", "ObsDiscardAA_pop_SE", "ObsSrvIdxAA_pop_SE", "dsem_cov_obs_sd")
   iss_names <- grep("^ISS_", names(sim_list), value = TRUE)
 
   # catch, discards and the at-age sources take their sd on the log scale
@@ -91,6 +98,18 @@ make_data_perfect <- function(sim_list, obs_sd = 1e-3, iss = 1e6) {
     sim_list[[se_name]] <- survey_se
   } # end se_name loop
 
+  # a multivariate normal index keeps its correlations, each cell at a marginal sd of obs_sd
+  for(mvn_name in c("fish_idx_mvn", "srv_idx_mvn")) {
+    for(f in seq_along(sim_list[[mvn_name]])) {
+      mvn <- sim_list[[mvn_name]][[f]]
+      if(is.null(mvn)) next
+      if(!is.null(mvn$chol_lower)) mvn$chol_lower <- obs_sd * mvn$chol_lower / mvn$d # rows of the factor over each cell's sd
+      mvn$d[] <- obs_sd
+      mvn$d_mean <- obs_sd
+      sim_list[[mvn_name]][[f]] <- mvn
+    } # end f loop
+  } # end mvn_name loop
+
   # a composition with no fish aged stays at zero, so only the ones with a sample change
   for(iss_name in iss_names) {
     if(is.null(sim_list[[iss_name]])) next
@@ -102,6 +121,303 @@ make_data_perfect <- function(sim_list, obs_sd = 1e-3, iss = 1e6) {
   sim_list
 
 }
+
+#' Give failed replicates the shape of the ones that refit
+#'
+#' A replicate whose refit fails is left empty or a single \code{NA}, and
+#' \code{simplify2array} returns a list rather than an array as soon as one
+#' replicate does. Each failed replicate becomes \code{NA} in the shape of a
+#' replicate that refit, so the results keep their replicate dim and arithmetic
+#' against the truth runs, \code{NA} where a refit failed.
+#'
+#' @param x List of one result per replicate.
+#'
+#' @return \code{x}, failed replicates filled.
+#'
+#' @keywords internal
+fill_failed_replicates <- function(x) {
+
+  failed <- vapply(x, function(res) length(res) == 0 || (length(res) == 1 && is.na(res)), logical(1))
+  if(!any(failed) || all(failed)) return(x)
+  template <- x[[which(!failed)[1]]]
+  for(i in which(failed)) x[[i]] <- array(NA, dim = if(is.null(dim(template))) length(template) else dim(template))
+  x
+
+} # end fill_failed_replicates
+
+#' The priors a self test's refits read
+#'
+#' A prior's mean is data the refit reads, but a self test does not redraw it with the
+#' observations, so where the data pulled the fit away from a prior every replicate is pulled
+#' back toward it, a bias of the design rather than of the estimator. \code{"assessment"} keeps
+#' the priors as the assessment gives them; \code{"truth"} moves the mean of every catchability,
+#' natural mortality, steepness, R0 and selectivity prior to the value the replicate ran on,
+#' keeping its sd, so the prior keeps its information and loses its pull; \code{"off"} turns every
+#' prior off, which leaves a parameter only a prior identifies unidentified. A Dirichlet (on
+#' movement and on the recruitment apportionment) or a mean and sd beta (on the stray rate and the
+#' tag reporting rate) is moved the same way, its mode put on the value the replicate ran on and
+#' its concentration kept, so it has no gradient there (\code{\link{dirichlet_mode_at}},
+#' \code{\link{beta_mode_at}}); one with no interior mode is left as given, as is the symmetric
+#' beta on the tag reporting rate, which sits at one half by construction.
+#'
+#' @param data Data list of the fit.
+#' @param prior_means \code{"assessment"}, \code{"truth"} or \code{"off"}.
+#' @param pars,rep The parameter list and report the replicate ran on.
+#'
+#' @return \code{data} with its priors set.
+#'
+#' @keywords internal
+self_test_priors <- function(data, prior_means, pars, rep) {
+
+  if(prior_means == "assessment") return(data)
+
+  if(prior_means == "off") {
+    prior_flags <- c("Use_fish_q_prior", "Use_srv_q_prior", "Use_M_prior", "Use_h_prior", "use_r0_prior",
+                     "Use_fish_selex_prior", "Use_srv_selex_prior", "Use_ret_selex_prior", "Use_Movement_Prior",
+                     "use_conv_tag_fishrep_prior", "use_rec_region_prop_prior", "use_rec_seas_prop_prior", "use_stray_rate_prior")
+    for(flag in intersect(prior_flags, names(data))) data[[flag]][] <- 0
+    return(data)
+  }
+
+  # catchability, normal on log q with its mean on the natural scale
+  for(prefix in c("fish", "srv")) {
+    if(!isTRUE(any(data[[paste0("Use_", prefix, "_q_prior")]] == 1))) next
+    q_prior <- data[[paste0(prefix, "_q_prior")]]
+    ln_q <- pars[[paste0("ln_", prefix, "_q")]]
+    for(i in seq_len(nrow(q_prior))) q_prior$mu[i] <- exp(ln_q[q_prior$region[i], q_prior$block[i], q_prior$fleet[i]])
+    data[[paste0(prefix, "_q_prior")]] <- q_prior
+  } # end prefix loop
+
+  # natural mortality, read through its blocks
+  if(isTRUE(any(data$Use_M_prior == 1))) {
+    for(i in seq_len(nrow(data$M_prior))) {
+      seas <- if(is.null(data$M_prior$seasblk)) 1 else data$M_prior$seasblk[i]
+      M_idx <- data$M_blocks[data$M_prior$popblk[i], data$M_prior$regionblk[i], data$M_prior$yearblk[i], seas, data$M_prior$ageblk[i], data$M_prior$sexblk[i]]
+      data$M_prior$mu[i] <- exp(pars$ln_M[M_idx])
+    } # end i loop
+  }
+
+  # steepness and R0, both with their means on the natural scale
+  if(isTRUE(any(data$Use_h_prior == 1))) {
+    for(i in seq_len(nrow(data$h_prior))) data$h_prior$mu[i] <- rep$h_trans[data$h_prior$pop[i], data$h_prior$region[i]]
+  }
+  if(isTRUE(any(data$use_r0_prior == 1))) {
+    for(i in seq_len(nrow(data$r0_prior))) data$r0_prior$mu[i] <- rep$R0[data$r0_prior$pop[i]]
+  }
+
+  # selectivity, a parameter on the log scale or the selectivity in the first year of its block
+  for(prefix in c("fish", "srv", "ret")) {
+    if(!isTRUE(any(data[[paste0("Use_", prefix, "_selex_prior")]] == 1))) next
+    selex_prior <- data[[paste0(prefix, "_selex_prior")]]
+    row_type <- if(is.null(selex_prior$type)) rep("par", nrow(selex_prior)) else selex_prior$type
+    for(i in seq_len(nrow(selex_prior))) {
+      r <- selex_prior$region[i]
+      p <- selex_prior$par[i]
+      b <- selex_prior$block[i]
+      s <- selex_prior$sex[i]
+      f <- selex_prior$fleet[i]
+      if(row_type[i] == "value") {
+        y <- min(which(data[[paste0(prefix, "_sel_blocks")]][r,,f] == b))
+        selex_prior$mu[i] <- if(data[[paste0(prefix, "_selex_type")]] == 0) rep[[paste0(prefix, "_sel")]][1,r,y,1,p,s,f] else rep[[paste0(prefix, "_sel_l")]][r,y,p,s,f]
+      } else selex_prior$mu[i] <- exp(pars[[paste0(prefix, "_fixed_sel_pars")]][r,p,b,s,f])
+    } # end i loop
+    data[[paste0(prefix, "_selex_prior")]] <- selex_prior
+  } # end prefix loop
+
+  # movement, a Dirichlet on the annual fractions out of a region
+  if(isTRUE(data$Use_Movement_Prior == 1) && !is.null(data$Movement_prior)) {
+    move_prior <- data$Movement_prior
+    for(i in seq_len(nrow(move_prior))) {
+      p <- move_prior$pop[i]
+      r_from <- move_prior$region_from[i]
+      y <- move_prior$year[i]
+      seas <- move_prior$seas[i]
+      a <- move_prior$age[i]
+      s <- move_prior$sex[i]
+      frac <- if(is.null(rep$Mrate)) rep$Movement[p,r_from,,y,seas,a,s] else as.matrix(Matrix::expm(methods::as(rep$Mrate[p,,,y,seas,a,s], "sparseMatrix")))[r_from,]
+      move_prior$alpha[[i]] <- dirichlet_mode_at(move_prior$alpha[[i]], frac)
+    } # end i loop
+    data$Movement_prior <- move_prior
+  }
+
+  # recruitment apportionment over regions, and over the seasons the penalty reads
+  if(isTRUE(data$use_rec_region_prop_prior == 1) && !is.null(data$rec_region_prop_prior)) {
+    for(i in seq_len(nrow(data$rec_region_prop_prior))) {
+      p <- data$rec_region_prop_prior$pop[i]
+      data$rec_region_prop_prior$alpha[[i]] <- dirichlet_mode_at(data$rec_region_prop_prior$alpha[[i]], rep$rec_region_prop[p,])
+    } # end i loop
+  }
+  if(isTRUE(data$use_rec_seas_prop_prior == 1) && isTRUE(data$use_fixed_rec_seas_prop == 0) && !is.null(data$rec_seas_prop_prior)) {
+    seas_read <- if(isTRUE(data$rec_lag == 0) && isTRUE(data$spawn_seas > 1)) data$spawn_seas:data$n_seas else seq_len(data$n_seas)
+    for(i in seq_len(nrow(data$rec_seas_prop_prior))) {
+      p <- data$rec_seas_prop_prior$pop[i]
+      data$rec_seas_prop_prior$alpha[[i]] <- dirichlet_mode_at(data$rec_seas_prop_prior$alpha[[i]], rep$rec_seas_prop[p,seas_read])
+    } # end i loop
+  }
+
+  # the stray rate and the tag reporting rate, each a mean and sd beta on the rate the penalty reads
+  if(isTRUE(data$use_stray_rate_prior == 1) && !is.null(data$stray_rate_prior)) {
+    for(i in seq_len(nrow(data$stray_rate_prior))) {
+      stray <- 1e-4 + (1 - 2 * 1e-4) * stats::plogis(pars$stray_rate_pars[data$stray_rate_prior$pop[i], data$stray_rate_prior$block[i]])
+      moved <- beta_mode_at(data$stray_rate_prior$mu[i], data$stray_rate_prior$sd[i], stray)
+      data$stray_rate_prior$mu[i] <- moved[1]
+      data$stray_rate_prior$sd[i] <- moved[2]
+    } # end i loop
+  }
+  if(isTRUE(data$use_conv_tag_fishrep_prior == 1) && !is.null(data$conv_tag_fishrep_prior)) {
+    tag_prior <- data$conv_tag_fishrep_prior
+    for(i in which(tag_prior$type == 1)) {
+      reporting <- stats::plogis(pars$conv_tag_fish_reporting_pars[tag_prior$region[i], tag_prior$block[i], tag_prior$fleet[i]])
+      moved <- beta_mode_at(tag_prior$mu[i], tag_prior$sd[i], reporting)
+      tag_prior$mu[i] <- moved[1]
+      tag_prior$sd[i] <- moved[2]
+    } # end i loop
+    data$conv_tag_fishrep_prior <- tag_prior
+  }
+
+  data
+
+} # end self_test_priors
+
+#' A Dirichlet moved so its mode sits at given fractions
+#'
+#' The concentration (the sum of \code{alpha}) is kept, so the prior keeps its
+#' strength and loses its pull at \code{frac}. A Dirichlet whose concentration is
+#' at or below its number of cells has no interior mode and is returned as given.
+#'
+#' @param alpha Concentration vector.
+#' @param frac Fractions summing to one, the same length.
+#'
+#' @return The moved \code{alpha}.
+#'
+#' @keywords internal
+dirichlet_mode_at <- function(alpha, frac) {
+  if(sum(alpha) <= length(alpha)) return(alpha)
+  1 + (sum(alpha) - length(alpha)) * frac
+}
+
+#' A mean and sd beta moved so its mode sits at a given value
+#'
+#' The concentration \code{mu * (1 - mu) / sd^2 - 1} is kept and the mean and sd
+#' are read back from the moved shape parameters, as
+#' \code{\link{get_tagrep_prior}} forms them. A beta whose concentration is at
+#' or below two has no interior mode and is returned as given.
+#'
+#' @param mu,sd The prior's mean and sd on the natural scale.
+#' @param x Value in (0, 1) the mode is put at.
+#'
+#' @return The moved \code{c(mu, sd)}.
+#'
+#' @keywords internal
+beta_mode_at <- function(mu, sd, x) {
+  conc <- mu * (1 - mu) / sd^2 - 1
+  if(conc <= 2) return(c(mu, sd))
+  mu_new <- (1 + (conc - 2) * x) / conc
+  c(mu_new, sqrt(mu_new * (1 - mu_new) / (conc + 1)))
+}
+
+#' One replicate's true value of a reported quantity or parameter
+#'
+#' The operating model's own value where it holds the quantity under the same
+#' name with a replicate dim last, so each replicate is compared with what it
+#' ran on rather than with the fit. Where the fit's
+#' array runs longer along one dim, a projected year say, the operating model's
+#' cells fill the leading part and the fit's the rest; where the operating
+#' model's runs longer, as recruitment deviations that stop before the last year
+#' do, the fit's cells take its leading part. Anything else is the fit's.
+#'
+#' @param om_arr The operating model's array, or \code{NULL}.
+#' @param fit_arr The fit's value, or under a joint self test the replicate's draw.
+#' @param sim Replicate.
+#' @param n_sims Number of replicates, which the operating model's last dim must be.
+#'
+#' @return \code{fit_arr} with the operating model's values in it.
+#'
+#' @keywords internal
+om_truth <- function(om_arr, fit_arr, sim, n_sims) {
+
+  om_dim <- dim(om_arr)
+  n_om <- length(om_dim)
+  fit_dim <- if(is.null(dim(fit_arr))) length(fit_arr) else dim(fit_arr)
+  if(is.null(om_dim) || is.null(fit_arr) || om_dim[n_om] != n_sims || length(fit_dim) != n_om - 1) return(fit_arr)
+
+  rep_dim <- om_dim[-n_om] # one replicate's shape
+  replicate_cells <- array(om_arr[slice.index(om_arr, n_om) == sim], dim = rep_dim)
+  if(all(fit_dim == rep_dim)) return(array(replicate_cells, dim = fit_dim))
+
+  # one array runs longer along one dim: the operating model's leading part when it is the longer one
+  longer <- which(fit_dim != rep_dim)
+  if(length(longer) != 1) return(fit_arr)
+  if(fit_dim[longer] < rep_dim[longer]) {
+    replicate_arr <- array(replicate_cells, dim = rep_dim)
+    return(array(replicate_arr[slice.index(replicate_arr, longer) <= fit_dim[longer]], dim = fit_dim))
+  }
+
+  # otherwise the fit's array runs longer, and the operating model fills its leading part
+  truth <- array(fit_arr, dim = fit_dim)
+  truth[slice.index(truth, longer) <= rep_dim[longer]] <- replicate_cells
+  truth
+
+} # end om_truth
+
+#' Seasons a fit holds its year totals in
+#'
+#' For each data source a fleet reports once a year, the season its \code{Use}
+#' array turns on in each year, which is where the operating model draws that
+#' year's total (\code{seas_agg_slot} in \code{\link{Setup_Sim_Fishing}} and
+#' \code{\link{Setup_Sim_Survey}}). A year with no observation takes season one,
+#' and years past the fit repeat the last fitted year.
+#'
+#' @param data Data list of the fitted model.
+#' @param n_yrs Number of years the operating model runs.
+#' @param platform \code{"fish"} or \code{"srv"}.
+#'
+#' @return Named list of integer matrices \code{[n_yrs, n_fleets]}, one for each
+#'   data source with a fleet reporting once a year.
+#'
+#' @keywords internal
+seas_agg_slot_list <- function(data, n_yrs, platform) {
+
+  data_names <- if(platform == "fish") c("Catch", "Catch_pop", "Discard", "Discard_pop", "FishIdx", "FishIdx_pop",
+                                         "FishAgeComps", "FishLenComps", "FishAgeComps_pop", "FishLenComps_pop",
+                                         "FishAgeComps_discard", "FishLenComps_discard",
+                                         "FishAgeComps_discard_pop", "FishLenComps_discard_pop")
+                else c("SrvIdx", "SrvIdx_pop", "SrvAgeComps", "SrvLenComps", "SrvAgeComps_pop", "SrvLenComps_pop")
+  n_fleets <- if(platform == "fish") data$n_fish_fleets else data$n_srv_fleets
+  slots <- list()
+
+  for(data_name in data_names) {
+
+    seas_agg <- data[[paste0(data_name, "_seas_Type")]]
+    use <- data[[paste0("Use", data_name)]]
+    if(is.null(seas_agg) || is.null(use) || !any(seas_agg == 1)) next
+    pop_source <- grepl("_pop$", data_name) # population leads the use array
+    n_fit_yrs <- dim(use)[if(pop_source) 3 else 2]
+    slot <- matrix(1, nrow = n_yrs, ncol = n_fleets) # season one unless the fit says otherwise
+
+    for(f in which(seas_agg == 1)) {
+      for(y in seq_len(n_yrs)) {
+
+        y_fit <- min(y, n_fit_yrs) # past the fit, the last fitted year
+        season_on <- if(pop_source) apply(use[,,y_fit,,f,drop = FALSE] == 1, 4, any)
+                     else apply(use[,y_fit,,f,drop = FALSE] == 1, 3, any)
+        seasons <- which(season_on)
+        if(length(seasons) > 1)
+          stop("Use", data_name, " puts fleet ", f, "'s year total for year ", y_fit, " in seasons ",
+               paste(seasons, collapse = " and "), " across its regions or populations. The operating model ",
+               "draws a fleet's year total into one season, so put every region's and population's in the same one.")
+        if(length(seasons) == 1) slot[y,f] <- seasons
+
+      } # end y loop
+    } # end f loop
+
+    slots[[data_name]] <- slot
+
+  } # end data_name loop
+
+  slots
+
+} # end seas_agg_slot_list
 
 #' Parameters each replicate's operating model runs on
 #'
@@ -163,8 +479,16 @@ sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_re
 #' \code{future}/\code{future.apply}. Likelihood weights from the original fit
 #' are propagated into the simulation (e.g., ISS scaled by
 #' \code{Wt_FishAgeComps}; \code{ObsSrvIdx_SE} divided by
-#' \code{sqrt(Wt_SrvIdx)}); all weights are reset to 1 when re-fitting.
-#' Failed replicates are silently stored as \code{NA}.
+#' \code{sqrt(Wt_SrvIdx)}), and the data weights are reset to 1 when refitting.
+#' A penalty weight (\code{Wt_Rec}, \code{Wt_Init_Rec}, \code{Wt_F},
+#' \code{Wt_D}, \code{*_pe_wt}) is kept, the operating model drawing that
+#' process at its sd over the root of the weight, so each refit is the fit's
+#' own estimator. A weighted penalty whose sd is estimated comes back at the
+#' sd over the root of the weight, a weighted penalty being a density only up
+#' to its normalizing constant.
+#' Failed replicates are silently stored as \code{NA}. The operating model takes
+#' the fit's \code{bias_correct_pe}, \code{bias_correct_oe} and
+#' \code{sigmaR_switch}, so both sides center process and observation error alike.
 #'
 #' @param data Named list of model data from a fitted RTMB object
 #'   (\code{$data}).
@@ -203,20 +527,41 @@ sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_re
 #'   \code{parameters}. Default \code{NULL}, which stores none.
 #' @param perfect_data Logical. Whether to shrink the observation error before
 #'   simulating, sds to 0.001 and sample sizes to 1e6, leaving process error alone.
-#'   A correct model then returns the operating model to several decimals. A
-#'   process error sd is the exception and comes back low by about 1/(2n) for n
-#'   deviations, since the fitted value holds the posterior variance of its own
-#'   deviations and data this clean remove it. Default \code{FALSE}.
-#' @param n_cond_yrs Integer. The first years of every replicate reproduce the
-#'   fit's catchability, movement and growth deviations, and later years are drawn.
-#'   Default every year of the fit, so nothing is redrawn; \code{0} draws every
-#'   year from the fitted process.
-#' @param sim_type Character. Where each replicate's parameters come from.
-#'   \code{"conditional"} (default) runs every replicate at the fitted values, so
-#'   one truth covers them all and the spread is observation error. \code{"joint"}
-#'   draws each replicate from \code{sd_rep$jointPrecision}, so each has its own
-#'   truth. A fit with no random effects has no joint precision, and the fixed
-#'   effect covariance is inverted in its place.
+#'   A correct model whose data identify the population then returns the
+#'   operating model to several decimals. A state-space model need not: exact
+#'   catch and survey indices at age still leave each age's scale to cohort
+#'   continuity under process error, so recovery there is to a few percent. A
+#'   process error sd conditioned on the fit comes back low, since the fitted
+#'   value includes the posterior variance of its own deviations and data this
+#'   clean remove it; on NEA cod the numbers at age sd returns 0.12 against 0.19.
+#'   The truth for an estimated observation sd is the 0.001 the data were drawn at.
+#'   Default \code{FALSE}.
+#' @param prior_means Where each refit's priors are centered (see
+#'   \code{\link{self_test_priors}}). \code{"assessment"} (default) keeps them as
+#'   the assessment gives them, so every replicate is pulled toward a prior the fit
+#'   sits away from; \code{"truth"} centers each catchability, natural mortality,
+#'   steepness, R0 and selectivity prior on the value the replicate ran on,
+#'   keeping its sd, and puts the mode of each Dirichlet (movement, recruitment
+#'   apportionment) and mean and sd beta (stray rate, tag reporting) there,
+#'   keeping its concentration; \code{"off"} turns every prior off.
+#' @param sim_type Character. Which self test to run. \code{"conditional"}
+#'   (default) runs every replicate at the fitted parameters and every process
+#'   deviation at the fit's estimate, so one population covers every replicate
+#'   and only the observations are new. It measures how well the data determine
+#'   this history; a process sd comes back low, since the fit's deviations are
+#'   shrunk estimates that vary less than the sd describes. \code{"joint"} draws
+#'   each replicate's parameters from the fit's uncertainty
+#'   (\code{sd_rep$jointPrecision}) and then every process fresh at them:
+#'   recruitment and the initial ages from their penalty
+#'   (\code{\link{rec_devs_past_fit}}, \code{\link{init_devs_past_fit}}), the
+#'   numbers at age, selectivity, catchability, movement, growth and a linked
+#'   dsem from their processes, and F and discard mortality deviations when the
+#'   fit integrates them out (fixed effect F deviations come from the parameter
+#'   draw). Each replicate is a new population with its own truth, so the self
+#'   test measures bias in every estimate, process sds included, and with
+#'   \code{do_sdrep = TRUE} whether the standard errors cover the truth. A fit
+#'   with no random effects has no joint precision, and the fixed effect
+#'   covariance is inverted in its place.
 #'
 #'   Joint moves F, both selectivities, catchability, natural mortality, weight and
 #'   size at age, movement, steepness, sex ratio, recruitment, the initial
@@ -228,9 +573,11 @@ sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_re
 #'   simulation replicates (via \code{simplify2array}). If \code{do_sdrep = TRUE},
 #'   an additional element \code{"sd_rep"} contains a list of \code{sdreport}
 #'   objects (or \code{NA} for failed replicates). A final element \code{"truth"}
-#'   holds the operating model's own values for the same names, which under
-#'   \code{sim_type = "joint"} differ from replicate to replicate and are what the
-#'   estimates should be scored against.
+#'   holds each replicate's true values for the same names, the operating model's
+#'   own wherever it holds the quantity (\code{\link{om_truth}}), so replicates
+#'   drawn under \code{sim_type = "joint"} are each compared with what they ran on.
+#'   Observation error, composition, at-age correlation and tag loss parameters
+#'   take the fit's values, which every replicate runs at.
 #'
 #'
 #' @export
@@ -245,7 +592,7 @@ sim_draw_views <- function(sim_type, n_sims, fit_rep, parameters, mapping, sd_re
 #' )
 #' str(res$SSB)
 #'
-#' # parameter uncertainty carried in, scored against each replicate's own truth
+#' # parameters drawn from the fit's uncertainty, each replicate compared with its own truth
 #' sd_rep <- RTMB::sdreport(fit, getJointPrecision = TRUE)
 #' res <- simulation_self_test(
 #'   data = fit$data, parameters = par, mapping = map, random = NULL,
@@ -272,10 +619,12 @@ simulation_self_test <- function(
   what_par = NULL,
   perfect_data = FALSE,
   sim_type = c("conditional", "joint"),
-  n_cond_yrs = length(data$years)
+  prior_means = c("assessment", "truth", "off")
 ) {
 
   sim_type <- match.arg(sim_type)
+  prior_means <- match.arg(prior_means)
+  n_cond_yrs <- if(sim_type == "joint") 0 else length(data$years) # conditional keeps every process deviation at the fit; joint draws every one fresh
   warn_R0_ref_block_om(data, "simulation_self_test")
 
   missing_names <- setdiff(what, names(rep))
@@ -294,6 +643,10 @@ simulation_self_test <- function(
     w[!is.finite(w) | w <= 0] <- 1
     sd / sqrt(w)
   }
+
+  # an index sd with an estimated part (sigma*Idx_form) is drawn unweighted: a weight scales the likelihood, so it
+  # cancels from that sd's estimate, which already matches the fit's residual spread
+  idx_draw_se <- function(se, wt, form) if(is.null(form) || form == 0) deweight(se, wt) else se
 
   # Modify any data weights that are NA to 0
   if(any(is.na(data$Wt_Catch))) data$Wt_Catch[is.na(data$Wt_Catch)] <- 0
@@ -348,7 +701,10 @@ simulation_self_test <- function(
                             seasdur = data$seasdur,
                             # Population stuff
                             n_pop = data$n_pop,
-                            natal_region = data$natal_region
+                            natal_region = data$natal_region,
+                            # the fit's centering of process and observation error, so both sides draw what the other evaluates
+                            bias_correct_pe = if(is.null(data$bias_correct_pe)) "rec" else data$bias_correct_pe,
+                            bias_correct_oe = if(is.null(data$bias_correct_oe)) 0 else data$bias_correct_oe
   )
 
   # Setup Simulation Containers ---------------------------------------------
@@ -401,6 +757,9 @@ simulation_self_test <- function(
   catch_aa_used <- any(data$UseCatchAA == 1) # whether the fit observes catch at age
   discard_aa_used <- any(data$UseDiscardAA == 1) # discards at age
   srv_idx_aa_used <- any(data$UseSrvIdxAA == 1) # survey index at age
+  catch_aa_pop_used <- any(data$UseCatchAA_pop == 1) # population-specific catch at age
+  discard_aa_pop_used <- any(data$UseDiscardAA_pop == 1) # population-specific discards at age
+  srv_idx_aa_pop_used <- any(data$UseSrvIdxAA_pop == 1) # population-specific survey index at age
 
   # setup fishery simulation processes
   sim_list <- Setup_Sim_Fishing(sim_list = sim_list,
@@ -414,6 +773,40 @@ simulation_self_test <- function(
                                 UseDiscardAA = unused_at_age_on_obs_ages(data$UseDiscardAA, discard_aa_used, 4, n_obs_om),
                                 use_catch_aa = data$use_catch_aa,
                                 use_discard_aa = data$use_discard_aa,
+                                # the fit's correlation of each fleet's at-age residuals, under the estimation model's names
+                                AgeObsCorr_catch = data$AgeObsCorr_catch,
+                                AgeObsCorr_discard = data$AgeObsCorr_discard,
+                                trans_rho_catch = if(catch_aa_used) optim_parameters_list$trans_rho_catch,
+                                trans_rho_catch_year = if(catch_aa_used) optim_parameters_list$trans_rho_catch_year,
+                                trans_rho_catch_us = if(catch_aa_used) optim_parameters_list$trans_rho_catch_us,
+                                trans_rho_discard = if(discard_aa_used) optim_parameters_list$trans_rho_discard,
+                                trans_rho_discard_year = if(discard_aa_used) optim_parameters_list$trans_rho_discard_year,
+                                trans_rho_discard_us = if(discard_aa_used) optim_parameters_list$trans_rho_discard_us,
+                                # the population-specific at-age data sources and the year totals, as the fit reads them
+                                CatchAA_seas_Type = data$CatchAA_seas_Type,
+                                DiscardAA_seas_Type = data$DiscardAA_seas_Type,
+                                UseCatchAA_pop = if(catch_aa_pop_used) data$UseCatchAA_pop,
+                                UseDiscardAA_pop = if(discard_aa_pop_used) data$UseDiscardAA_pop,
+                                ln_sigmaCAA_pop = if(catch_aa_pop_used) optim_parameters_list$ln_sigmaCAA_pop,
+                                ln_sigmaDAA_pop = if(discard_aa_pop_used) optim_parameters_list$ln_sigmaDAA_pop,
+                                ObsCatchAA_pop_SE = if(catch_aa_pop_used) data$ObsCatchAA_pop_SE,
+                                ObsDiscardAA_pop_SE = if(discard_aa_pop_used) data$ObsDiscardAA_pop_SE,
+                                CatchAA_pop_Type = data$CatchAA_pop_Type,
+                                DiscardAA_pop_Type = data$DiscardAA_pop_Type,
+                                CatchAA_pop_LikeType = data$CatchAA_pop_LikeType,
+                                DiscardAA_pop_LikeType = data$DiscardAA_pop_LikeType,
+                                CatchAA_pop_sigma_form = data$CatchAA_pop_sigma_form,
+                                DiscardAA_pop_sigma_form = data$DiscardAA_pop_sigma_form,
+                                CatchAA_pop_seas_Type = data$CatchAA_pop_seas_Type,
+                                DiscardAA_pop_seas_Type = data$DiscardAA_pop_seas_Type,
+                                AgeObsCorr_catch_pop = data$AgeObsCorr_catch_pop,
+                                AgeObsCorr_discard_pop = data$AgeObsCorr_discard_pop,
+                                trans_rho_catch_pop = if(catch_aa_pop_used) optim_parameters_list$trans_rho_catch_pop,
+                                trans_rho_catch_pop_year = if(catch_aa_pop_used) optim_parameters_list$trans_rho_catch_pop_year,
+                                trans_rho_catch_pop_us = if(catch_aa_pop_used) optim_parameters_list$trans_rho_catch_pop_us,
+                                trans_rho_discard_pop = if(discard_aa_pop_used) optim_parameters_list$trans_rho_discard_pop,
+                                trans_rho_discard_pop_year = if(discard_aa_pop_used) optim_parameters_list$trans_rho_discard_pop_year,
+                                trans_rho_discard_pop_us = if(discard_aa_pop_used) optim_parameters_list$trans_rho_discard_pop_us,
                                 ObsCatchAA_SE = unused_at_age_on_obs_ages(data$ObsCatchAA_SE, catch_aa_used, 4, n_obs_om),
                                 ObsDiscardAA_SE = unused_at_age_on_obs_ages(data$ObsDiscardAA_SE, discard_aa_used, 4, n_obs_om),
                                 CatchAA_Type = data$CatchAA_Type,
@@ -430,6 +823,16 @@ simulation_self_test <- function(
                                 FishIdx_seas_Type = data$FishIdx_seas_Type,
                                 FishIdx_pop_seas_Type = data$FishIdx_pop_seas_Type,
                                 FishAgeComps_seas_Type = data$FishAgeComps_seas_Type,
+                                Discard_seas_Type = data$Discard_seas_Type,
+                                Discard_pop_seas_Type = data$Discard_pop_seas_Type,
+                                FishLenComps_seas_Type = data$FishLenComps_seas_Type,
+                                FishAgeComps_pop_seas_Type = data$FishAgeComps_pop_seas_Type,
+                                FishLenComps_pop_seas_Type = data$FishLenComps_pop_seas_Type,
+                                FishAgeComps_discard_seas_Type = data$FishAgeComps_discard_seas_Type,
+                                FishLenComps_discard_seas_Type = data$FishLenComps_discard_seas_Type,
+                                FishAgeComps_discard_pop_seas_Type = data$FishAgeComps_discard_pop_seas_Type,
+                                FishLenComps_discard_pop_seas_Type = data$FishLenComps_discard_pop_seas_Type,
+                                seas_agg_slot = seas_agg_slot_list(data, length(data$years), "fish"), # the season each year total sits in
                                 Fmort_input = bind_sims(lapply(views$reps, function(rp) rp$Fmort[,seq_along(data$years),,,drop = FALSE])),
                                 dmr_input = bind_sims(lapply(views$reps, function(rp) rp$dmr[,seq_along(data$years),,,drop = FALSE])),
                                 fish_sel_input = bind_sims(lapply(views$reps, function(rp) rp$fish_sel[,,seq_along(data$years),,,,,drop = FALSE])),
@@ -439,10 +842,14 @@ simulation_self_test <- function(
                                 fish_sel_l_input = if(any(data$fish_len_comp_sel == 1)) bind_sims(lapply(views$reps, function(rp) rp$fish_sel_l[,seq_along(data$years),,,,drop = FALSE])) else NULL,
                                 ret_sel_l_input = if(any(data$fish_len_comp_sel == 1) && isTRUE(data$ret_selex_type == 1)) bind_sims(lapply(views$reps, function(rp) rp$ret_sel_l[,seq_along(data$years),,,,drop = FALSE])) else NULL,
                                 fish_q_input = bind_sims(lapply(fish_q_fit, function(q) q$q_mean)),
-                                ObsFishIdx_SE = deweight(if(is.null(rep$FishIdx_SD)) data$ObsFishIdx_SE else rep$FishIdx_SD,
-                             data$Wt_FishIdx),
+                                # the reported errors, with any estimated part of the sd drawn on top as the fit forms it
+                                ObsFishIdx_SE = idx_draw_se(data$ObsFishIdx_SE, data$Wt_FishIdx, data$sigmaFishIdx_form),
+                                sigmaFishIdx_form = if(is.null(data$sigmaFishIdx_form)) 0 else data$sigmaFishIdx_form,
+                                ln_sigmaFishIdx = optim_parameters_list$ln_sigmaFishIdx,
+                                sigmaFishIdx_pop_form = if(is.null(data$sigmaFishIdx_pop_form)) 0 else data$sigmaFishIdx_pop_form,
+                                ln_sigmaFishIdx_pop = optim_parameters_list$ln_sigmaFishIdx_pop,
                                 ObsFishIdx_pop_SE = if(any(data$UseFishIdx_pop == 1)) {
-                                  deweight(if(is.null(rep$FishIdx_pop_SD)) data$ObsFishIdx_pop_SE else rep$FishIdx_pop_SD, data$Wt_FishIdx_pop)
+                                  idx_draw_se(data$ObsFishIdx_pop_SE, data$Wt_FishIdx_pop, data$sigmaFishIdx_pop_form)
                                 } else {
                                   array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
                                 },
@@ -473,7 +880,7 @@ simulation_self_test <- function(
                                 FishLen_corr_pars = optim_parameters_list$FishLen_corr_pars[,,,,drop = FALSE],
 
                                 # population-specific age composition specifications
-                                comp_fishage_pop_like = data$pop_FishAgeComps_LikeType,
+                                comp_fishage_pop_like = data$FishAgeComps_pop_LikeType,
                                 FishAgeComps_pop_Type = data$FishAgeComps_pop_Type,
                                 ISS_FishAgeComps_pop = if(any(data$UseFishAgeComps_pop == 1)) {
                                   replicate(sim_list$n_sims, data$ISS_FishAgeComps_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_pop)
@@ -561,17 +968,38 @@ simulation_self_test <- function(
     SrvLenComps_sel = if(is.null(data$srv_len_comp_sel)) rep("age", data$n_srv_fleets) else ifelse(data$srv_len_comp_sel == 1, "length", "age"),
     srv_sel_l_input = if(any(data$srv_len_comp_sel == 1)) bind_sims(lapply(views$reps, function(rp) rp$srv_sel_l[,seq_along(data$years),,,,drop = FALSE])) else NULL,
     srv_q_input = bind_sims(lapply(srv_q_fit, function(q) q$q_mean)),
-    ObsSrvIdx_SE = deweight(if(is.null(rep$SrvIdx_SD)) data$ObsSrvIdx_SE else rep$SrvIdx_SD, data$Wt_SrvIdx),
+    # the reported errors, with any estimated part of the sd drawn on top as the fit forms it
+    ObsSrvIdx_SE = idx_draw_se(data$ObsSrvIdx_SE, data$Wt_SrvIdx, data$sigmaSrvIdx_form),
+    sigmaSrvIdx_form = if(is.null(data$sigmaSrvIdx_form)) 0 else data$sigmaSrvIdx_form,
+    ln_sigmaSrvIdx = optim_parameters_list$ln_sigmaSrvIdx,
+    sigmaSrvIdx_pop_form = if(is.null(data$sigmaSrvIdx_pop_form)) 0 else data$sigmaSrvIdx_pop_form,
+    ln_sigmaSrvIdx_pop = optim_parameters_list$ln_sigmaSrvIdx_pop,
     # the index at age has its own error by age and fleet, so no weight is applied to it
     ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
     UseSrvIdxAA = unused_at_age_on_obs_ages(data$UseSrvIdxAA, srv_idx_aa_used, 4, n_obs_om),
     use_srv_idx_aa = data$use_srv_idx_aa,
+    AgeObsCorr_srv_idx = data$AgeObsCorr_srv_idx,
+    trans_rho_srv_idx = if(srv_idx_aa_used) optim_parameters_list$trans_rho_srv_idx,
+    trans_rho_srv_idx_year = if(srv_idx_aa_used) optim_parameters_list$trans_rho_srv_idx_year,
+    trans_rho_srv_idx_us = if(srv_idx_aa_used) optim_parameters_list$trans_rho_srv_idx_us,
+    SrvIdxAA_seas_Type = data$SrvIdxAA_seas_Type,
+    UseSrvIdxAA_pop = if(srv_idx_aa_pop_used) data$UseSrvIdxAA_pop,
+    ln_sigmaSrvIdxAA_pop = if(srv_idx_aa_pop_used) optim_parameters_list$ln_sigmaSrvIdxAA_pop,
+    ObsSrvIdxAA_pop_SE = if(srv_idx_aa_pop_used) data$ObsSrvIdxAA_pop_SE,
+    SrvIdxAA_pop_Type = data$SrvIdxAA_pop_Type,
+    SrvIdxAA_pop_LikeType = data$SrvIdxAA_pop_LikeType,
+    SrvIdxAA_pop_sigma_form = data$SrvIdxAA_pop_sigma_form,
+    SrvIdxAA_pop_seas_Type = data$SrvIdxAA_pop_seas_Type,
+    AgeObsCorr_srv_idx_pop = data$AgeObsCorr_srv_idx_pop,
+    trans_rho_srv_idx_pop = if(srv_idx_aa_pop_used) optim_parameters_list$trans_rho_srv_idx_pop,
+    trans_rho_srv_idx_pop_year = if(srv_idx_aa_pop_used) optim_parameters_list$trans_rho_srv_idx_pop_year,
+    trans_rho_srv_idx_pop_us = if(srv_idx_aa_pop_used) optim_parameters_list$trans_rho_srv_idx_pop_us,
     ObsSrvIdxAA_SE = unused_at_age_on_obs_ages(data$ObsSrvIdxAA_SE, srv_idx_aa_used, 4, n_obs_om),
     SrvIdxAA_Type = data$SrvIdxAA_Type,
     SrvIdxAA_LikeType = data$SrvIdxAA_LikeType,
     SrvIdxAA_sigma_form = data$SrvIdxAA_sigma_form,
     ObsSrvIdx_pop_SE = if(any(data$UseSrvIdx_pop == 1)) {
-      deweight(if(is.null(rep$SrvIdx_pop_SD)) data$ObsSrvIdx_pop_SE else rep$SrvIdx_pop_SD, data$Wt_SrvIdx_pop)
+      idx_draw_se(data$ObsSrvIdx_pop_SE, data$Wt_SrvIdx_pop, data$sigmaSrvIdx_pop_form)
     } else {
       array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets))
     },
@@ -584,6 +1012,10 @@ simulation_self_test <- function(
     SrvIdx_seas_Type = data$SrvIdx_seas_Type,
     SrvIdx_pop_seas_Type = data$SrvIdx_pop_seas_Type,
     SrvAgeComps_seas_Type = data$SrvAgeComps_seas_Type,
+    SrvLenComps_seas_Type = data$SrvLenComps_seas_Type,
+    SrvAgeComps_pop_seas_Type = data$SrvAgeComps_pop_seas_Type,
+    SrvLenComps_pop_seas_Type = data$SrvLenComps_pop_seas_Type,
+    seas_agg_slot = seas_agg_slot_list(data, length(data$years), "srv"), # the season each year total sits in
     t_srv = data$t_srv,
 
     # survey age composition specifications
@@ -661,7 +1093,7 @@ simulation_self_test <- function(
     SizeAgeTrans_srv_input = if(is.null(rep$SizeAgeTrans_srv)) NULL else bind_sims(lapply(views$reps, function(rp) rp$SizeAgeTrans_srv[,,seq_along(data$years),,,,,,drop = FALSE])) # size age transition matrix, derived by the growth module when present
   )
 
-  # growth deviations, the fit's over n_cond_yrs (each replicate's own draw under joint) and drawn fresh after them
+  # growth deviations, the fit's under conditional, drawn fresh at each replicate's own parameters under joint
   sim_list <- Setup_Sim_Growth_RE(sim_list, data, optim_parameters_list, rep = rep,
                                   pars_by_sim = if(sim_type == "joint") views$pars,
                                   rep_by_sim = if(sim_type == "joint") views$reps)
@@ -675,11 +1107,20 @@ simulation_self_test <- function(
   sim_list$expm_nsub <- if(is.null(data$move_expm_nsub)) 0 else data$move_expm_nsub
   # The instantaneous rate matrix only exists for an estimated CTMC, and is only needed for continuous movement
   sim_list$Mrate <- if(sim_list$move_timing == 2) bind_sims(lapply(views$reps, function(rp) rp$Mrate[,,,seq_along(data$years),,,,drop = FALSE])) else NULL
-  # movement deviations, the fit's over n_cond_yrs (each replicate's own draw under joint) and drawn fresh after them
+  # movement deviations, the fit's under conditional, drawn fresh at each replicate's own parameters under joint
   sim_list <- Setup_Sim_Movement(sim_list, data, optim_parameters_list,
                                  pars_by_sim = if(sim_type == "joint") views$pars)
 
+  # selectivity deviations, and F and discard mortality deviations the fit integrates out, the fit's under conditional and
+  # drawn fresh at each replicate's own parameters under joint
+  sim_list <- Setup_Sim_Fleet_Devs(sim_list, data, optim_parameters_list, random = random,
+                                   pars_by_sim = if(sim_type == "joint") views$pars)
+
   # Setup Recruitment Processes ---------------------------------------------
+
+  # under joint recruitment and the initial ages are drawn fresh from each replicate's penalty, unless a dsem links them
+  draw_rec <- sim_type == "joint" && !("rec" %in% data$dsem_declared)
+
   sim_list <- Setup_Sim_Rec(
     sim_list = sim_list,
     spawn_seas = data$spawn_seas, # spawning season
@@ -708,12 +1149,17 @@ simulation_self_test <- function(
     },
     use_rinit = data$use_rinit,
     sexratio_input = bind_sims(lapply(views$reps, function(rp) rp$sexratio[,,seq_along(data$years),,drop = FALSE])), # sex ratio
-    # rescaling by the recruitment weight is only an identity for a single scalar. recruitment and
-    # the initial age deviations are supplied directly below, so ln_sigmaR passes through unscaled
-    ln_sigmaR = if(length(data$Wt_Rec) == 1) optim_parameters_list$ln_sigmaR / sqrt(data$Wt_Rec) else optim_parameters_list$ln_sigmaR, # ln_sigmaR
-    # recruitment goes in year by year, so the stock-recruit curve is not drawn from
-    Rec_input = bind_sims(lapply(views$reps, function(rp) rp$Rec[,,seq_along(data$years),drop = FALSE])), # recruitment time series
-    ln_InitDevs_input = bind_sims(lapply(views$pars, function(pr) pr$ln_InitDevs)),  # init devs
+    # the fit's own; recruitment and the initial ages are supplied below, drawn under Wt_Rec and Wt_Init_Rec where they are drawn
+    ln_sigmaR = optim_parameters_list$ln_sigmaR,
+    sigmaR_switch = if(is.null(data$sigmaR_switch)) 1 else data$sigmaR_switch, # first year on the late sigmaR, as the fit reads it
+    # under conditional recruitment goes in year by year as the fit has it; under joint drawn deviations go on the stock-recruit curve
+    Rec_input = if(sim_type == "conditional") bind_sims(lapply(views$reps, function(rp) rp$Rec[,,seq_along(data$years),drop = FALSE])),
+    ln_RecDevs_input = if(draw_rec) {
+      bind_sims(lapply(seq_len(n_sims), function(i) rec_devs_past_fit(data, views$pars[[i]], views$reps[[i]], 0, length(data$years), mapping$ln_RecDevs)))
+    },
+    ln_InitDevs_input = if(draw_rec) {
+      bind_sims(lapply(seq_len(n_sims), function(i) init_devs_past_fit(data, views$pars[[i]], views$reps[[i]], mapping$ln_InitDevs)))
+    } else bind_sims(lapply(views$pars, function(pr) pr$ln_InitDevs)),
     stray_rate_input = replicate(sim_list$n_sims, data$stray_rate[,seq_along(data$years), drop = FALSE]),
     rec_seas_prop_input = array(
       unlist(lapply(views$reps, function(rp) rp$rec_seas_prop)),
@@ -753,18 +1199,22 @@ simulation_self_test <- function(
       NAA_re_ages = data$naa_re_ages,
       NAA_re_years = data$naa_re_yrs,
       NAA_re_seasons = data$naa_re_seas,
-      naa_eta_input = eta
+      naa_eta_input = if(sim_type == "conditional") eta
     )
+
+    # the fit's process, its sd and correlations, and under joint each replicate's own, which its fresh draw reads
+    naa_process <- naa_process_from_fit(data, optim_parameters_list)
+    sim_list[names(naa_process)] <- naa_process
+    if(sim_type == "joint") sim_list$naa_process_by_sim <- lapply(views$pars, function(pr) naa_process_from_fit(data, pr))
   }
 
   # Catchability Stuff -------------------------------------------------
-  sim_list$n_cond_yrs <- n_cond_yrs # the years whose catchability, movement and growth deviations reproduce the fit's
+  sim_list$n_cond_yrs <- n_cond_yrs # the leading years whose catchability, movement and growth deviations are the fit's
   sim_list$ln_fish_q_devs <- bind_sims(lapply(fish_q_fit, function(q) q$devs))
   sim_list$ln_srv_q_devs <- bind_sims(lapply(srv_q_fit, function(q) q$devs))
 
-  # past the conditioning years, the process the fit penalizes: its forms, each replicate's own sigma and
-  # correlation, and only the cells it estimates
-  if(n_cond_yrs < length(fit_yrs) && any(c(data$fish_q_model, data$srv_q_model) %in% c(2, 3, 4))) {
+  # under joint the process the fit penalizes: its forms, each replicate's own sigma and correlation, and only the cells it estimates
+  if(sim_type == "joint" && any(c(data$fish_q_model, data$srv_q_model) %in% c(2, 3, 4))) {
     q_forms <- c("none", "iid", "rw", "ar1", "dsem") # the fit's codes, in order
     sim_list <- Setup_Sim_q_devs(
       sim_list = sim_list,
@@ -773,7 +1223,9 @@ simulation_self_test <- function(
       sigma_fish_q = bind_sims(lapply(views$pars, function(pr) exp(pr$ln_sigma_fish_q))),
       sigma_srv_q = bind_sims(lapply(views$pars, function(pr) exp(pr$ln_sigma_srv_q))),
       fish_q_rho = bind_sims(lapply(views$pars, function(pr) rho_trans(pr$fish_q_rho))),
-      srv_q_rho = bind_sims(lapply(views$pars, function(pr) rho_trans(pr$srv_q_rho)))
+      srv_q_rho = bind_sims(lapply(views$pars, function(pr) rho_trans(pr$srv_q_rho))),
+      fish_q_rw_init_sigma = if(is.null(data$fish_q_rw_init_sigma)) NA else data$fish_q_rw_init_sigma,
+      srv_q_rw_init_sigma = if(is.null(data$srv_q_rw_init_sigma)) NA else data$srv_q_rw_init_sigma
     )
     est_cells <- function(map) if(is.null(map)) NULL else !is.na(map[,fit_yrs,,drop = FALSE]) # a year outside q_re_years or a region with no index keeps the fit's value
     sim_list$fish_q_devs_est <- est_cells(data$map_ln_fish_q_devs)
@@ -781,10 +1233,9 @@ simulation_self_test <- function(
   }
 
   # Setup DSEM --------------------------------------------------------------
-  # joint draws a dsem per replicate, so each conditions on its own states. conditional runs them
-  # all at the fit, so one set of states covers every replicate
+  # conditional keeps the dsem's states at the fit; joint draws them fresh from each replicate's own arrows
   if(!is.null(data$dsem_model)) {
-    sim_list <- Setup_Sim_DSEM(sim_list, data, optim_parameters_list, rep = rep, condition_on_fit = TRUE,
+    sim_list <- Setup_Sim_DSEM(sim_list, data, optim_parameters_list, rep = rep, condition_on_fit = sim_type == "conditional",
                                pars_by_sim = if(sim_type == "joint") views$pars else NULL,
                                rep_by_sim = if(sim_type == "joint") views$reps else NULL)
   }
@@ -805,8 +1256,12 @@ simulation_self_test <- function(
     conv_tag_fish_reporting_input = conv_tag_fish_reporting_input, # tag reporting rates
     use_conv_fish_tagging = data$use_conv_fish_tagging, # whether or not tagging is used / simulated
     conv_fish_tag_like = data$conv_fish_tag_like, # tag likelihood
-    ln_conv_fish_tag_theta = parameters$ln_conv_fish_tag_theta, # tag overdispersion
-    conv_tag_release_platform = data$conv_tag_release_platform,  # tag release platform
+    ln_conv_fish_tag_theta = optim_parameters_list$ln_conv_fish_tag_theta, # tag overdispersion, the fit's
+    conv_tag_pop_pool = data$conv_tag_pop_pool, # recaptures the fit pools into one count
+    conv_tag_age_pool = data$conv_tag_age_pool,
+    conv_tag_sex_pool = data$conv_tag_sex_pool,
+    conv_tagged_fish_input = if(!anyNA(data$conv_tagged_fish)) data$conv_tagged_fish * data$Wt_Tagging, # the fit's releases by age, released as they were
+    conv_tag_release_platform = if(is.null(data$conv_tag_release_platform)) default_tag_release_platform(conv_tag_release_indicator) else data$conv_tag_release_platform, # a data list built before the setup stored one
     conv_fish_tag_attr = data$conv_fish_tag_attr # tag attributes
   )
 
@@ -843,11 +1298,12 @@ simulation_self_test <- function(
       tryCatch({
 
         # set up data stuff
-        tmp_data <- data
+        tmp_data <- self_test_priors(data, prior_means, views$pars[[i]], views$reps[[i]])
         tmp_pars <- parameters
         tmp_data$ObsFishIdx <- array(sim_obj$ObsFishIdx[,,,,i], dim = dim(tmp_data$ObsFishIdx))
         tmp_data$ObsSrvIdx <- array(sim_obj$ObsSrvIdx[,,,,i], dim = dim(tmp_data$ObsSrvIdx))
         tmp_data$ObsCatch <- array(sim_obj$ObsCatch[,,,,i], dim = dim(tmp_data$ObsCatch))
+        tmp_data$ObsCatch[is.na(data$ObsCatch)] <- NA # a catch the fit had missing stays missing, which keeps its fleet fishing
         tmp_data$ObsFishAgeComps <- array(sim_obj$ObsFishAgeComps[,,,,,,i], dim = dim(tmp_data$ObsFishAgeComps))
         tmp_data$ObsSrvAgeComps  <- array(sim_obj$ObsSrvAgeComps[,,,,,,i], dim = dim(tmp_data$ObsSrvAgeComps))
         if(tmp_data$fit_lengths != 0) {
@@ -896,8 +1352,8 @@ simulation_self_test <- function(
         }
 
         # reset weights
-        tmp_data$Wt_Rec[] <- 1
-        tmp_data$Wt_D <- 1
+        # the data weights go to one, the operating model having drawn at the error they imply; the penalty weights
+        # (Wt_Rec, Wt_Init_Rec, Wt_F, Wt_D, *_pe_wt) stay, the operating model having drawn from the weighted penalty's density
         tmp_data$Wt_Tagging <- 1
         tmp_data$Wt_Catch[] <- 1
         tmp_data$Wt_Discard[] <- 1
@@ -934,6 +1390,11 @@ simulation_self_test <- function(
           tmp_data$ObsDiscardAA[] <- sim_obj$ObsDiscardAA[,,,,,,i]
         if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_obj$ObsSrvIdxAA) && any(tmp_data$UseSrvIdxAA == 1))
           tmp_data$ObsSrvIdxAA[] <- sim_obj$ObsSrvIdxAA[,,,,,,i]
+        # population-specific at-age data sources, wherever the fit observes them
+        for(name in c("CatchAA_pop", "DiscardAA_pop", "SrvIdxAA_pop")) {
+          if(is.null(tmp_data[[paste0("Obs", name)]]) || !any(tmp_data[[paste0("Use", name)]] == 1)) next
+          tmp_data[[paste0("Obs", name)]][] <- sim_obj[[paste0("Obs", name)]][,,,,,,,i]
+        } # end name loop
         if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
         if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
         if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx
@@ -1014,7 +1475,7 @@ simulation_self_test <- function(
     } # end i loop
 
     # Convert result lists to array
-    for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- simplify2array(store_res_list[[j]])
+    for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- simplify2array(fill_failed_replicates(store_res_list[[j]]))
 
   } # not doing parallelization
 
@@ -1032,11 +1493,12 @@ simulation_self_test <- function(
         tryCatch({
 
           # set up data stuff
-          tmp_data <- data
+          tmp_data <- self_test_priors(data, prior_means, views$pars[[i]], views$reps[[i]])
           tmp_pars <- parameters
           tmp_data$ObsFishIdx <- array(sim_obj$ObsFishIdx[,,,,i], dim = dim(tmp_data$ObsFishIdx))
           tmp_data$ObsSrvIdx <- array(sim_obj$ObsSrvIdx[,,,,i], dim = dim(tmp_data$ObsSrvIdx))
           tmp_data$ObsCatch <- array(sim_obj$ObsCatch[,,,,i], dim = dim(tmp_data$ObsCatch))
+          tmp_data$ObsCatch[is.na(data$ObsCatch)] <- NA # a catch the fit had missing stays missing, which keeps its fleet fishing
           tmp_data$ObsFishAgeComps <- array(sim_obj$ObsFishAgeComps[,,,,,,i], dim = dim(tmp_data$ObsFishAgeComps))
           tmp_data$ObsSrvAgeComps  <- array(sim_obj$ObsSrvAgeComps[,,,,,,i], dim = dim(tmp_data$ObsSrvAgeComps))
           if(tmp_data$fit_lengths != 0) {
@@ -1085,8 +1547,8 @@ simulation_self_test <- function(
           }
 
           # reset weights
-          tmp_data$Wt_Rec[] <- 1
-          tmp_data$Wt_D <- 1
+          # the data weights go to one, the operating model having drawn at the error they imply; the penalty weights
+          # (Wt_Rec, Wt_Init_Rec, Wt_F, Wt_D, *_pe_wt) stay, the operating model having drawn from the weighted penalty's density
           tmp_data$Wt_Tagging <- 1
           tmp_data$Wt_Catch[] <- 1
           tmp_data$Wt_Discard[] <- 1
@@ -1123,6 +1585,11 @@ simulation_self_test <- function(
             tmp_data$ObsDiscardAA[] <- sim_obj$ObsDiscardAA[,,,,,,i]
           if(!is.null(tmp_data$ObsSrvIdxAA) && !is.null(sim_obj$ObsSrvIdxAA) && any(tmp_data$UseSrvIdxAA == 1))
             tmp_data$ObsSrvIdxAA[] <- sim_obj$ObsSrvIdxAA[,,,,,,i]
+          # population-specific at-age data sources, wherever the fit observes them
+          for(name in c("CatchAA_pop", "DiscardAA_pop", "SrvIdxAA_pop")) {
+            if(is.null(tmp_data[[paste0("Obs", name)]]) || !any(tmp_data[[paste0("Use", name)]] == 1)) next
+            tmp_data[[paste0("Obs", name)]][] <- sim_obj[[paste0("Obs", name)]][,,,,,,,i]
+          } # end name loop
           if(!is.null(tmp_pars$ln_sigmaCAA)) tmp_pars$ln_sigmaCAA[] <- parameters$ln_sigmaCAA
           if(!is.null(tmp_pars$ln_sigmaSrvIdxAA)) tmp_pars$ln_sigmaSrvIdxAA[] <- parameters$ln_sigmaSrvIdxAA
           if(!is.null(tmp_pars$ln_sigmaFishIdx)) tmp_pars$ln_sigmaFishIdx[] <- parameters$ln_sigmaFishIdx
@@ -1154,6 +1621,15 @@ simulation_self_test <- function(
             tmp_data$Wt_Srv_caal[] <- 1
           }
 
+          # dsem covariates, as in the single-model path
+          if(!is.null(tmp_data$dsem_model)) {
+            tmp_data$dsem_cov_obs <- array(sim_obj$dsem_cov_obs_sim[,,i], dim = dim(tmp_data$dsem_cov_obs))
+            for(k in seq_along(tmp_data$dsem_cov_var_idx)) {
+              if(tmp_data$dsem_cov_family[k] != 0) next
+              seen <- !is.na(tmp_data$dsem_cov_obs[,k])
+              tmp_pars$dsem_x[seen,tmp_data$dsem_cov_var_idx[k]] <- tmp_data$dsem_cov_obs[seen,k]
+            } # end k loop
+          }
 
           # see the note at the single-model path above
           tmp_data <- resync_fitted_blocks(tmp_data)
@@ -1208,14 +1684,36 @@ simulation_self_test <- function(
     # Populate results from parallel run
     for(i in 1:n_sims) for(j in seq_along(c(what, what_par))) store_res_list[[j]][[i]] <- sim_results[[i]][[c(what, what_par)[j]]]
     if(do_sdrep == TRUE) for(i in 1:n_sims) store_res_list[[n_store]][[i]] <- sim_results[[i]][[n_store]]
-    for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- simplify2array(store_res_list[[j]])  # Convert lists to array
+    for(j in seq_along(c(what, what_par))) store_res_list[[j]] <- simplify2array(fill_failed_replicates(store_res_list[[j]]))  # Convert lists to array
   }
 
-  # the values the OM ran on. under joint each replicate has its own
+  # the values the OM ran on, its own wherever it holds them; anything it does not hold is the fit's, or under
+  # joint the replicate's draw
+  # observation error, composition, at-age correlation and tag loss parameters have no replicate dim in the OM,
+  # so every replicate ran at the fit's
+  # a catch or discard sd the fit weighted was drawn, and is refit, at the sd over the root of the weight
+  fit_valued <- grepl("^ln_sigma(C|D|CAA|DAA|SrvIdxAA|FishIdx|SrvIdx)(_pop)?$|_theta(_agg)?$|_corr_pars(_agg)?$|^trans_rho_|^ln_conv_tag_shed$|^ln_init_conv_tag_mort$", what_par)
+  deweighted <- what_par %in% c("ln_sigmaC", "ln_sigmaC_pop", "ln_sigmaD", "ln_sigmaD_pop")
+  fit_value <- function(w, j) {
+    if(deweighted[j] && !is.null(sim_list[[w]]) && identical(dim(sim_list[[w]]), dim(views$fit_pars[[w]]))) return(sim_list[[w]])
+    views$fit_pars[[w]]
+  }
   store_res_list$truth <- c(
-    stats::setNames(lapply(what, function(w) simplify2array(lapply(views$reps, function(rp) rp[[w]]))), what),
-    stats::setNames(lapply(what_par, function(w) simplify2array(lapply(views$pars, function(pr) pr[[w]]))), what_par)
+    stats::setNames(lapply(what, function(w) simplify2array(lapply(seq_len(n_sims), function(i) om_truth(sim_obj[[w]], views$reps[[i]][[w]], i, n_sims)))), what),
+    stats::setNames(lapply(seq_along(what_par), function(j) {
+      w <- what_par[j]
+      simplify2array(lapply(seq_len(n_sims), function(i) om_truth(sim_obj[[w]], if(fit_valued[j]) fit_value(w, j) else views$pars[[i]][[w]], i, n_sims)))
+    }), what_par)
   )
+
+  # perfect data were drawn at make_data_perfect's sd rather than the fit's, so that is the true observation sd
+  if(isTRUE(perfect_data)) {
+    perfect_sd_names <- c("ln_sigmaC", "ln_sigmaC_pop", "ln_sigmaD", "ln_sigmaD_pop",
+                          "ln_sigmaCAA", "ln_sigmaDAA", "ln_sigmaSrvIdxAA",
+                          "ln_sigmaCAA_pop", "ln_sigmaDAA_pop", "ln_sigmaSrvIdxAA_pop",
+                          "ln_sigmaFishIdx", "ln_sigmaFishIdx_pop", "ln_sigmaSrvIdx", "ln_sigmaSrvIdx_pop")
+    for(w in intersect(what_par, perfect_sd_names)) store_res_list$truth[[w]][] <- log(1e-3)
+  }
 
   return(store_res_list)
 
@@ -1268,6 +1766,12 @@ simulation_self_test <- function(
 #'   the fishery compositions also have \code{_discard} and \code{_discard_pop}
 #'   ones. The length composition elements and their input sample sizes are
 #'   \code{NULL} when no size-age transition matrix is present.
+#'
+#'   The at-age data sources, \code{ObsCatchAA}, \code{ObsDiscardAA} and
+#'   \code{ObsSrvIdxAA} and their \code{_pop} counterparts, come with their
+#'   \code{_SE} arrays and the operating model's own use flags, since a normal
+#'   likelihood can draw a value at or below zero. Each is \code{NULL} when the
+#'   operating model draws none of it.
 #'
 #' @seealso \code{\link{Setup_Mod_Biologicals}},
 #'   \code{\link{Setup_Mod_Catch_and_F}},
@@ -1478,6 +1982,61 @@ simulation_data_to_SPoRC <- function(sim_env,
     UseSrv_caal[] <- as.numeric(!is.na(UseSrv_caal) & UseSrv_caal > 0)
   } else ObsSrv_caal <- ISS_Srv_caal <- UseSrv_caal <- NULL
 
+  # At-age data keep the operating model's use flags, since a normal likelihood can draw a value at or
+  # below zero. A data source the operating model never draws comes back NULL.
+  fish_aa_dim <- c(sim_env$n_regions, length(1:y), sim_env$n_seas, n_obs_ages, sim_env$n_sexes, sim_env$n_fish_fleets)
+  srv_aa_dim <- c(sim_env$n_regions, length(1:y), sim_env$n_seas, n_obs_ages, sim_env$n_sexes, sim_env$n_srv_fleets)
+  fish_aa_pop_dim <- c(sim_env$n_pop, fish_aa_dim)
+  srv_aa_pop_dim <- c(sim_env$n_pop, srv_aa_dim)
+
+  # Catch at age
+  UseCatchAA <- ObsCatchAA <- ObsCatchAA_SE <- NULL
+  if(isTRUE(any(sim_env$UseCatchAA == 1))) {
+    UseCatchAA <- array(sim_env$UseCatchAA[,1:y,,,,, drop = FALSE], dim = fish_aa_dim)
+    ObsCatchAA <- array(sim_env$ObsCatchAA[,1:y,,,,,sim, drop = FALSE], dim = fish_aa_dim)
+    ObsCatchAA_SE <- array(sim_env$ObsCatchAA_SE[,1:y,,,,, drop = FALSE], dim = fish_aa_dim)
+  }
+
+  # Discards at age
+  UseDiscardAA <- ObsDiscardAA <- ObsDiscardAA_SE <- NULL
+  if(isTRUE(any(sim_env$UseDiscardAA == 1))) {
+    UseDiscardAA <- array(sim_env$UseDiscardAA[,1:y,,,,, drop = FALSE], dim = fish_aa_dim)
+    ObsDiscardAA <- array(sim_env$ObsDiscardAA[,1:y,,,,,sim, drop = FALSE], dim = fish_aa_dim)
+    ObsDiscardAA_SE <- array(sim_env$ObsDiscardAA_SE[,1:y,,,,, drop = FALSE], dim = fish_aa_dim)
+  }
+
+  # Survey index at age
+  UseSrvIdxAA <- ObsSrvIdxAA <- ObsSrvIdxAA_SE <- NULL
+  if(isTRUE(any(sim_env$UseSrvIdxAA == 1))) {
+    UseSrvIdxAA <- array(sim_env$UseSrvIdxAA[,1:y,,,,, drop = FALSE], dim = srv_aa_dim)
+    ObsSrvIdxAA <- array(sim_env$ObsSrvIdxAA[,1:y,,,,,sim, drop = FALSE], dim = srv_aa_dim)
+    ObsSrvIdxAA_SE <- array(sim_env$ObsSrvIdxAA_SE[,1:y,,,,, drop = FALSE], dim = srv_aa_dim)
+  }
+
+  # Population-specific catch at age
+  UseCatchAA_pop <- ObsCatchAA_pop <- ObsCatchAA_pop_SE <- NULL
+  if(isTRUE(any(sim_env$UseCatchAA_pop == 1))) {
+    UseCatchAA_pop <- array(sim_env$UseCatchAA_pop[,,1:y,,,,, drop = FALSE], dim = fish_aa_pop_dim)
+    ObsCatchAA_pop <- array(sim_env$ObsCatchAA_pop[,,1:y,,,,,sim, drop = FALSE], dim = fish_aa_pop_dim)
+    ObsCatchAA_pop_SE <- array(sim_env$ObsCatchAA_pop_SE[,,1:y,,,,, drop = FALSE], dim = fish_aa_pop_dim)
+  }
+
+  # Population-specific discards at age
+  UseDiscardAA_pop <- ObsDiscardAA_pop <- ObsDiscardAA_pop_SE <- NULL
+  if(isTRUE(any(sim_env$UseDiscardAA_pop == 1))) {
+    UseDiscardAA_pop <- array(sim_env$UseDiscardAA_pop[,,1:y,,,,, drop = FALSE], dim = fish_aa_pop_dim)
+    ObsDiscardAA_pop <- array(sim_env$ObsDiscardAA_pop[,,1:y,,,,,sim, drop = FALSE], dim = fish_aa_pop_dim)
+    ObsDiscardAA_pop_SE <- array(sim_env$ObsDiscardAA_pop_SE[,,1:y,,,,, drop = FALSE], dim = fish_aa_pop_dim)
+  }
+
+  # Population-specific survey index at age
+  UseSrvIdxAA_pop <- ObsSrvIdxAA_pop <- ObsSrvIdxAA_pop_SE <- NULL
+  if(isTRUE(any(sim_env$UseSrvIdxAA_pop == 1))) {
+    UseSrvIdxAA_pop <- array(sim_env$UseSrvIdxAA_pop[,,1:y,,,,, drop = FALSE], dim = srv_aa_pop_dim)
+    ObsSrvIdxAA_pop <- array(sim_env$ObsSrvIdxAA_pop[,,1:y,,,,,sim, drop = FALSE], dim = srv_aa_pop_dim)
+    ObsSrvIdxAA_pop_SE <- array(sim_env$ObsSrvIdxAA_pop_SE[,,1:y,,,,, drop = FALSE], dim = srv_aa_pop_dim)
+  }
+
   # Return
   return(list(
     # Biologicals
@@ -1590,7 +2149,27 @@ simulation_data_to_SPoRC <- function(sim_env,
     UseFish_caal = UseFish_caal,
     ObsSrv_caal = ObsSrv_caal,
     ISS_Srv_caal = ISS_Srv_caal,
-    UseSrv_caal = UseSrv_caal
+    UseSrv_caal = UseSrv_caal,
+
+    # At-age data
+    ObsCatchAA = ObsCatchAA,
+    ObsCatchAA_SE = ObsCatchAA_SE,
+    UseCatchAA = UseCatchAA,
+    ObsDiscardAA = ObsDiscardAA,
+    ObsDiscardAA_SE = ObsDiscardAA_SE,
+    UseDiscardAA = UseDiscardAA,
+    ObsSrvIdxAA = ObsSrvIdxAA,
+    ObsSrvIdxAA_SE = ObsSrvIdxAA_SE,
+    UseSrvIdxAA = UseSrvIdxAA,
+    ObsCatchAA_pop = ObsCatchAA_pop,
+    ObsCatchAA_pop_SE = ObsCatchAA_pop_SE,
+    UseCatchAA_pop = UseCatchAA_pop,
+    ObsDiscardAA_pop = ObsDiscardAA_pop,
+    ObsDiscardAA_pop_SE = ObsDiscardAA_pop_SE,
+    UseDiscardAA_pop = UseDiscardAA_pop,
+    ObsSrvIdxAA_pop = ObsSrvIdxAA_pop,
+    ObsSrvIdxAA_pop_SE = ObsSrvIdxAA_pop_SE,
+    UseSrvIdxAA_pop = UseSrvIdxAA_pop
   ))
 
 }

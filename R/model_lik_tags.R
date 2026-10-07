@@ -214,7 +214,6 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
           tmp_obs_all = numeric(n_cells)
           ci = 0 # counter
 
-          tmp_n_tags_recap = sum(obs_ev + addtotag)
 
           for(f in 1:n_fish_fleets) {
             if(use_conv_fish_tagging[f] == 1) {
@@ -238,6 +237,8 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
             }
           }
 
+          # the total is the recaptures in the cells fit, so a fleet that reports no tags adds none to it
+          tmp_n_tags_recap = sum(tmp_obs_all)
           tmp_pred_all = do.call(c, tmp_pred_cells)
           tmp_pred_all = tmp_pred_all / sum(tmp_pred_all)
           tmp_obs_all = tmp_obs_all / tmp_n_tags_recap

@@ -89,6 +89,10 @@
 #'   \code{[n_pop x n_regions x (n_ages - 1) x n_sexes x n_sims]} for one per sex. The
 #'   \code{n_ages - 1} dim excludes the reference age. \code{NULL} (default) draws one
 #'   shared curve per population and region; pass zeros to start in equilibrium.
+#' @param ln_RecDevs_input Optional log recruitment deviations \code{[n_pop x
+#'   n_regions x n_input_yrs x n_sims]}, used as given in every year they cover
+#'   instead of being drawn, the years after them drawn as usual. A year that
+#'   \code{Rec_input} covers takes its recruitment from there. Default \code{NULL}.
 #' @param SR_ref_yr Integer year index supplying the biological inputs to unfished
 #'   spawning biomass per recruit, and so the curve's scale. Matches the estimation
 #'   model's \code{SR_ref_yr}. Default \code{1}.
@@ -97,8 +101,8 @@
 #'   \code{$init_dd}, \code{$R0}, \code{$h}, \code{$sexratio}, \code{$ln_sigmaR},
 #'   \code{$rec_seas_prop}, \code{$spawn_seas}, \code{$t_spawn}, \code{$rec_lag},
 #'   \code{$init_age_strc}, \code{$do_recruits_move}, \code{$move_age},
-#'   \code{$stray_rate}, and optionally \code{$Rec_input} and
-#'   \code{$ln_InitDevs_input}. Character codes are converted to integers before
+#'   \code{$stray_rate}, and optionally \code{$Rec_input},
+#'   \code{$ln_InitDevs_input} and \code{$ln_RecDevs_input}. Character codes are converted to integers before
 #'   storage.
 #'
 #' @export Setup_Sim_Rec
@@ -128,6 +132,7 @@ Setup_Sim_Rec <- function(
   SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
+  ln_RecDevs_input = NULL,
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
   RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
@@ -263,6 +268,13 @@ Setup_Sim_Rec <- function(
   sim_list$stray_rate <- stray_rate_input
   if(!is.null(Rec_input)) sim_list$Rec_input <- Rec_input
   if(!is.null(ln_InitDevs_input)) sim_list$ln_InitDevs_input <- ln_InitDevs_input
+  if(!is.null(ln_RecDevs_input)) {
+    rec_devs_dim <- c(sim_list$n_pop, sim_list$n_regions, sim_list$n_sims)
+    if(length(dim(ln_RecDevs_input)) != 4 || any(dim(ln_RecDevs_input)[c(1, 2, 4)] != rec_devs_dim) || dim(ln_RecDevs_input)[3] > sim_list$n_yrs)
+      stop("ln_RecDevs_input must be [n_pop, n_regions, years, n_sims] = [", paste(rec_devs_dim[1:2], collapse = ", "),
+           ", up to ", sim_list$n_yrs, ", ", rec_devs_dim[3], "]; it is [", paste(dim(ln_RecDevs_input), collapse = ", "), "].")
+    sim_list$ln_RecDevs_input <- ln_RecDevs_input
+  }
 
 
   # the recruitment and initial age deviations follow bias_correct_pe, set in Setup_Sim_Dim, as the fit's do.

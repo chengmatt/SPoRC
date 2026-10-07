@@ -41,6 +41,12 @@ Named list, every array with \code{y} in its year dim. The
   the fishery compositions also have \code{_discard} and \code{_discard_pop}
   ones. The length composition elements and their input sample sizes are
   \code{NULL} when no size-age transition matrix is present.
+
+  The at-age data sources, \code{ObsCatchAA}, \code{ObsDiscardAA} and
+  \code{ObsSrvIdxAA} and their \code{_pop} counterparts, come with their
+  \code{_SE} arrays and the operating model's own use flags, since a normal
+  likelihood can draw a value at or below zero. Each is \code{NULL} when the
+  operating model draws none of it.
 }
 \description{
 Subsets and reshapes the biological, tagging, fishery and survey arrays of a

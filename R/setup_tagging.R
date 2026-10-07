@@ -3,6 +3,23 @@
 # Conventional tagging inputs: release design, reporting rates, tag shedding and tag induced
 # mortality, plus the overdispersion parameters for the recapture likelihood.
 
+#' Release platform every tag cohort takes when none is given
+#'
+#' The survey, fleet 1, which the estimation and operating models read only when
+#' the attribution leaves a dim of the released fish to be spread by selectivity.
+#'
+#' @param conv_tag_release_indicator Release cohorts, one row each.
+#'
+#' @return Character matrix \code{[n_cohorts, 2]} of platform and fleet, or
+#'   \code{NULL} when there are no cohorts.
+#'
+#' @keywords internal
+default_tag_release_platform <- function(conv_tag_release_indicator) {
+  n_cohorts <- nrow(conv_tag_release_indicator)
+  if(is.null(n_cohorts) || n_cohorts == 0) return(NULL)
+  matrix(c("survey", "1"), nrow = n_cohorts, ncol = 2, byrow = TRUE, dimnames = list(NULL, c("platform", "fleet")))
+}
+
 #' Set up conventional tagging dynamics for the operating model simulation
 #'
 #' Sets the release cohorts, release platform, tagging timing, tag-induced
@@ -55,6 +72,19 @@
 #' @param conv_tag_fish_reporting_input Fishery reporting rate array
 #'   \code{[n_regions × n_yrs × n_fish_fleets × n_sims]} in \eqn{[0, 1]}, the
 #'   probability a recaptured tag is reported. Default \code{0.5}.
+#' @param conv_tagged_fish_input Released tags by event, population, age and sex
+#'   \code{[n_tag_rel_events × n_pop × n_ages × n_sexes]}, the estimation model's
+#'   \code{conv_tagged_fish}. An event given here is released exactly so, and one
+#'   left \code{NA} is spread over populations, ages and sexes by the release
+#'   platform's selected abundance as before. \code{simulation_self_test} and
+#'   \code{condition_closed_loop_simulations} pass the fit's releases, so the tags
+#'   at liberty are the ones the fit followed. Default \code{NULL}.
+#' @param conv_tag_pop_pool,conv_tag_age_pool,conv_tag_sex_pool Lists of integer
+#'   vectors grouping populations, ages and sexes whose recaptures the estimation
+#'   model fits as one count, as in \code{\link{Setup_Mod_Tagging}}. A negative
+#'   binomial is drawn once per group, since a sum of negative binomials is not
+#'   the negative binomial the pooled count is fit with. \code{NULL} (default) is
+#'   one group per level.
 #'
 #' @return \code{sim_list} with the tagging fields appended: \code{$n_tags} or
 #'   \code{$n_tags_rel_input}, \code{$conv_tag_max_liberty},
@@ -81,20 +111,18 @@ Setup_Sim_Tagging <- function(
     tag_years = 1:sim_list$n_yrs,
     tag_seas = 1:sim_list$n_seas
   ),
-  conv_tag_release_platform = matrix(
-    c("survey", "1"),
-    nrow = nrow(conv_tag_release_indicator),
-    ncol = 2,
-    byrow = TRUE,
-    dimnames = list(NULL, c("platform", "fleet"))
-  ),
+  conv_tag_release_platform = default_tag_release_platform(conv_tag_release_indicator),
   conv_tag_t_tagging = 1,
   ln_init_conv_tag_mort = -1000,
   ln_conv_tag_shed = -1000,
   conv_fish_tag_attr = 'p_a_s',
   conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_fish_fleets, sim_list$n_sims)),
   conv_fish_tag_like = 0,
-  ln_conv_fish_tag_theta = log(1)
+  ln_conv_fish_tag_theta = log(1),
+  conv_tag_pop_pool = NULL,
+  conv_tag_age_pool = NULL,
+  conv_tag_sex_pool = NULL,
+  conv_tagged_fish_input = NULL
 ) {
 
   if(any(use_conv_fish_tagging == 1)) {
@@ -154,6 +182,21 @@ Setup_Sim_Tagging <- function(
   sim_list$conv_fish_tag_like <- conv_fish_tag_like # tag likelihood
   sim_list$conv_fish_tag_attr <- recycle_tag_event_par(conv_fish_tag_attr, sim_list$n_tag_rel_events, "conv_fish_tag_attr") # tag release/recapture attributes for fishery conventional tags (one per release event; scalar recycled)
   sim_list$ln_conv_fish_tag_theta <- ln_conv_fish_tag_theta # tag likelihood overdispersion parameter
+  sim_list$conv_tag_pop_pool <- if(is.null(conv_tag_pop_pool)) as.list(seq_len(sim_list$n_pop)) else conv_tag_pop_pool # recaptures fit as one count
+  sim_list$conv_tag_age_pool <- if(is.null(conv_tag_age_pool)) as.list(seq_len(sim_list$n_ages)) else conv_tag_age_pool
+  sim_list$conv_tag_sex_pool <- if(is.null(conv_tag_sex_pool)) as.list(seq_len(sim_list$n_sexes)) else conv_tag_sex_pool
+
+  # releases given by age are taken as they are, an event of NA is spread at release
+  if(!is.null(conv_tagged_fish_input)) {
+    release_dim <- c(sim_list$n_tag_rel_events, sim_list$n_pop, sim_list$n_ages, sim_list$n_sexes)
+    if(length(dim(conv_tagged_fish_input)) != 4 || any(dim(conv_tagged_fish_input)[2:4] != release_dim[2:4]) ||
+       dim(conv_tagged_fish_input)[1] > release_dim[1])
+      stop("conv_tagged_fish_input must be [n_tag_rel_events, n_pop, n_ages, n_sexes] (", paste(release_dim, collapse = ", "),
+           "), the tags each release event put out by population, age and sex.")
+    releases <- array(NA, dim = release_dim)
+    releases[seq_len(dim(conv_tagged_fish_input)[1]),,,] <- conv_tagged_fish_input # events past the given ones are spread at release
+    sim_list$conv_tagged_fish_input <- releases
+  }
 
   return(sim_list)
 }
@@ -526,7 +569,9 @@ do_conv_tag_fish_reporting_pars_mapping <- function(input_list, conv_tagrep_spec
 #'   otherwise its pooling argument is overridden to a single group with a warning.
 #' @param conv_tag_release_platform Character matrix \code{[n_conv_tag_cohorts ×
 #'   2]} of the release platform and fleet index per cohort, in the format
-#'   \code{\link{Setup_Sim_Tagging}} uses. Default \code{NULL}.
+#'   \code{\link{Setup_Sim_Tagging}} uses. Default \code{NULL} releases from the
+#'   survey, fleet 1, which is read only when \code{conv_fish_tag_attr} leaves a
+#'   dim of the released fish to be spread.
 #' @param conv_tag_pop_pool,conv_tag_age_pool,conv_tag_sex_pool Lists of integer
 #'   vectors defining the population, age and sex pooling groups for the tagging
 #'   likelihood. Use \code{list(1:n)} for a dim that is not attended; custom
@@ -763,6 +808,7 @@ Setup_Mod_Tagging <- function(input_list,
   input_list$data$conv_tag_sex_pool <- move_sex_tag_pool_vals
   input_list$data$conv_tag_fish_reporting_blocks <- conv_tag_fish_reporting_blocks_mat
   input_list$data$conv_fish_tag_attr <- conv_fish_tag_attr
+  if(is.null(conv_tag_release_platform)) conv_tag_release_platform <- default_tag_release_platform(conv_tag_release_indicator)
   input_list$data$conv_tag_release_platform <- conv_tag_release_platform
 
   # Populate Parameter List ------------------------------------------------------

@@ -28,6 +28,11 @@
 #'   ar1 correlations on the natural scale, read only under \code{"ar1"}.
 #'   Default zero. An array \code{[n_regions, n_fleets, n_sims]} gives each
 #'   replicate its own.
+#' @param fish_q_rw_init_sigma,srv_q_rw_init_sigma The sd the estimation model
+#'   gives a walk's first estimated year (\code{*_q_rw_init_sigma} there). Under
+#'   a value that year keeps each replicate's own deviation, since a diffuse start
+#'   leaves the level to the data; under \code{NA} (default) it is drawn at the
+#'   walk's own sd from zero, as the penalty reads it.
 #'
 #' @return \code{sim_list} with the deviation settings stored.
 #'
@@ -38,7 +43,9 @@ Setup_Sim_q_devs <- function(sim_list,
                              sigma_fish_q = 0,
                              sigma_srv_q = 0,
                              fish_q_rho = 0,
-                             srv_q_rho = 0) {
+                             srv_q_rho = 0,
+                             fish_q_rw_init_sigma = NA,
+                             srv_q_rw_init_sigma = NA) {
 
   forms <- c("none", "iid", "rw", "ar1", "dsem") # catchability forms
 
@@ -49,6 +56,7 @@ Setup_Sim_q_devs <- function(sim_list,
     model <- if(prefix == "fish") fish_q_model else srv_q_model
     sigma <- if(prefix == "fish") sigma_fish_q else sigma_srv_q
     rho <- if(prefix == "fish") fish_q_rho else srv_q_rho
+    init_sigma <- if(prefix == "fish") fish_q_rw_init_sigma else srv_q_rw_init_sigma
 
     # if left null no model form (none)
     if(is.null(model)) model <- rep("none", n_fleets)
@@ -65,6 +73,7 @@ Setup_Sim_q_devs <- function(sim_list,
     sim_list[[paste0(prefix, "_q_model")]] <- match(model, forms)
     sim_list[[paste0("sigma_", prefix, "_q")]] <- if(length(dim(sigma)) == 3) sigma else array(sigma, dim = dims)
     sim_list[[paste0(prefix, "_q_rho")]] <- if(length(dim(rho)) == 3) rho else array(rho, dim = dims)
+    sim_list[[paste0(prefix, "_q_rw_init_sigma")]] <- if(is.null(init_sigma)) NA else init_sigma[1]
 
   } # end prefix loop
 
@@ -176,7 +185,9 @@ check_q_dsem_drawable <- function(sim_list) {
 #' A self test also stores \code{<prefix>_q_devs_est}, \code{[region, year,
 #' fleet]}, TRUE where the fit estimates a deviation. A cell the fit keeps fixed
 #' keeps the fit's value, and a walk or ar1 starts at the fleet's first
-#' estimated year, as the penalty does.
+#' estimated year, as the penalty does. A walk whose first year the fit gives a
+#' diffuse start (\code{<prefix>_q_rw_init_sigma}) keeps that year at the
+#' replicate's own deviation and steps on from it.
 #'
 #' @param sim Replicate index.
 #' @param sim_env Simulation environment.
@@ -206,6 +217,8 @@ draw_sim_q_devs <- function(sim, sim_env) {
     n_fleets <- dim(sim_env[[q_name]])[3]
     sigma <- sim_env[[paste0("sigma_", prefix, "_q")]]
     rho <- sim_env[[paste0(prefix, "_q_rho")]]
+    init_sigma <- sim_env[[paste0(prefix, "_q_rw_init_sigma")]]
+    diffuse_start <- !is.null(init_sigma) && !is.na(init_sigma[1]) # the penalty leaves a walk's first year to the data
     if(length(dim(sigma)) == 3) sigma <- array(sigma[,,sim], dim = dim(sigma)[1:2]) # this replicate's own
     if(length(dim(rho)) == 3) rho <- array(rho[,,sim], dim = dim(rho)[1:2])
     est <- sim_env[[paste0(prefix, "_q_devs_est")]] # cells the fit estimates, or NULL for every cell
@@ -227,6 +240,7 @@ draw_sim_q_devs <- function(sim, sim_env) {
           if(fleet_drawn && isTRUE(drawn[r,y,f])) next # a dsem wrote this cell
           if(q_model[f] %in% c(1, 5)) { devs[y] <- 0; next } # no innovation of its own to draw
           if(!is_est[y]) next # fixed in the fit, so it keeps the fit's value
+          if(q_model[f] == 3 && y == first_est && diffuse_start) next # a diffuse first year keeps the replicate's own value
           dev_mu <- if(q_model[f] == 2 || y == first_est) 0 else if(q_model[f] == 3) devs[y - 1] else rho[r,f] * devs[y - 1]
           dev_sd <- if(q_model[f] == 4 && y == first_est) sigma[r,f] / sqrt(1 - rho[r,f]^2) else sigma[r,f] # an ar1 starts at its stationary spread
           devs[y] <- stats::rnorm(1, dev_mu, dev_sd)

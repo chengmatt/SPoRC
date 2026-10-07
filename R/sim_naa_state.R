@@ -127,6 +127,58 @@ Setup_Sim_NAA_state <- function(sim_list,
 }
 
 
+#' The fit's numbers-at-age process, as the operating model draws it
+#'
+#' The sd by cell, read through the fit's sigma blocks; one correlation per dim
+#' of the age-year field, a per-cell parameter averaged before it is transformed;
+#' and the unstructured correlations across populations, regions, sexes and
+#' seasons in the lower-triangle order \code{draw_naa_innovations} reads.
+#' \code{simulation_self_test} draws the years after \code{n_cond_yrs} from it
+#' and \code{condition_closed_loop_simulations} the projection years.
+#'
+#' @param data Data list of the fit.
+#' @param pars Parameter list at the fitted values.
+#'
+#' @return List of \code{sigmaNAA} \code{[n_pop, n_regions, n_yrs, n_seas,
+#'   n_ages, n_sexes]} over the fitted years, \code{naa_rho}, the four margin
+#'   switches \code{NAA_re_pop}, \code{NAA_re_region}, \code{NAA_re_sex} and
+#'   \code{NAA_re_season}, and their correlations \code{naa_pop_corr},
+#'   \code{naa_region_corr}, \code{naa_sex_corr} and \code{naa_season_corr}.
+#'
+#' @keywords internal
+naa_process_from_fit <- function(data, pars) {
+
+  # the sd each cell's innovation is drawn at, through the fit's blocks
+  blocks <- data$naa_sigma_blocks[,,seq_along(data$years),,,,drop = FALSE]
+  sigma <- array(exp(pars$ln_sigmaNAA)[as.vector(blocks)], dim = dim(blocks))
+
+  # one correlation per dim of the age-year field, a per-cell parameter averaged first
+  pe <- pars$NAA_pe_pars
+  naa_rho <- if(is.null(pe)) c(age = 0, year = 0, cohort = 0)
+             else c(age = rho_trans(mean(pe[,,1,])), year = rho_trans(mean(pe[,,2,])), cohort = rho_trans(mean(pe[,,3,])))
+
+  # unstructured correlations, in the lower-triangle order the draw reads them in
+  corr_from <- function(corr_pars, n) {
+    if(is.null(corr_pars) || n < 2) return(0)
+    C <- build_us_corr(as.vector(corr_pars), n)
+    C[lower.tri(C)]
+  }
+  margin_on <- function(opt_name) if(is.null(data[[opt_name]])) 0 else data[[opt_name]]
+  n_seas_re <- if(is.null(data$naa_re_seas)) 1 else length(data$naa_re_seas)
+
+  list(sigmaNAA = sigma,
+       naa_rho = naa_rho,
+       NAA_re_pop = margin_on("NAA_re_pop"),
+       NAA_re_region = margin_on("NAA_re_region"),
+       NAA_re_sex = margin_on("NAA_re_sex"),
+       NAA_re_season = margin_on("NAA_re_season"),
+       naa_pop_corr = if(margin_on("NAA_re_pop") == 1) corr_from(pars$NAA_pop_corr_pars, data$n_pop) else 0,
+       naa_region_corr = if(margin_on("NAA_re_region") == 1) corr_from(pars$NAA_region_corr_pars, data$n_regions) else 0,
+       naa_sex_corr = if(margin_on("NAA_re_sex") == 1) corr_from(pars$NAA_sex_corr_pars, data$n_sexes) else 0,
+       naa_season_corr = if(margin_on("NAA_re_season") == 1) corr_from(pars$NAA_season_corr_pars, n_seas_re) else 0)
+
+} # end naa_process_from_fit
+
 # Innovation Draws ----------------------------------------------------------
 
 #' Apply a correlation factor along one dim of an array

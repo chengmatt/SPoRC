@@ -1,31 +1,31 @@
-# Catchability deviations in the self test: past the conditioning years the operating model draws the
-# process the fit penalizes, at each replicate's own sigma under joint, and only where the fit estimates.
+# Catchability deviations in the self test: conditional keeps the fit's, and joint draws the process the fit
+# penalizes fresh, at each replicate's own sigma and only where the fit estimates.
 
 library(SPoRC)
 library(testthat)
 
-test_that("past the conditioning years the self test draws the fit's catchability walk", {
+test_that("conditional keeps the fit's catchability walk and joint draws a fresh one at each replicate's own sigma", {
 
   rw <- q_rw_fit()
-  sigma_fit <- exp(as.numeric(rw$fit$env$parList(par = rw$fit$env$last.par.best)$ln_sigma_srv_q)) # the estimate the self test reads
 
-  # conditional: every replicate walks at the fitted sigma
-  sl <- q_selftest_capture(rw$fit, rw$sd_rep, n_sims = 2, n_cond_yrs = 30, sim_type = "conditional")
+  # conditional: every replicate runs on the fit's deviations
+  sl <- q_selftest_capture(rw$fit, rw$sd_rep, n_sims = 2, sim_type = "conditional")
+  expect_equal(sl$ln_srv_q_devs[1,,1,1], sl$ln_srv_q_devs[1,,1,2])
+
+  # joint: a random walk at each replicate's own sigma
+  sl <- q_selftest_capture(rw$fit, rw$sd_rep, n_sims = 2, sim_type = "joint")
   expect_equal(sl$srv_q_model, 3) # a random walk
-  expect_equal(as.numeric(sl$sigma_srv_q), rep(sigma_fit, 2))
   expect_true(all(sl$srv_q_devs_est))
-
-  # joint: each replicate has its own sigma and its own deviations over the conditioning years
-  sl <- q_selftest_capture(rw$fit, rw$sd_rep, n_sims = 2, n_cond_yrs = 30, sim_type = "joint")
   expect_false(isTRUE(all.equal(sl$sigma_srv_q[1,1,1], sl$sigma_srv_q[1,1,2])))
-  expect_false(isTRUE(all.equal(sl$ln_srv_q_devs[1,1:30,1,1], sl$ln_srv_q_devs[1,1:30,1,2])))
 
   env <- Setup_sim_env(sl)
   set.seed(1)
   for(sim in 1:2) draw_sim_q_devs(sim, env)
   devs <- env$ln_srv_q_devs[1,,1,]
-  expect_equal(devs[1:30,], sl$ln_srv_q_devs[1,1:30,1,]) # the conditioning years are each replicate's own
-  for(sim in 1:2) expect_equal(stats::sd(diff(devs[30:60,sim])), sl$sigma_srv_q[1,1,sim], tolerance = 0.3) # steps at its own sigma
+  for(sim in 1:2) {
+    expect_false(isTRUE(all.equal(devs[,sim], sl$ln_srv_q_devs[1,,1,sim]))) # drawn, not the deviations it was handed
+    expect_equal(stats::sd(diff(devs[,sim])), sl$sigma_srv_q[1,1,sim], tolerance = 0.3) # steps at its own sigma
+  } # end sim loop
 
 })
 
@@ -48,22 +48,48 @@ test_that("a deviation the fit keeps fixed keeps its value, and a walk starts at
 
 })
 
-test_that("a self test drawn without conditioning recovers the catchability sigma", {
+test_that("a walk the fit starts diffusely keeps its first estimated year and steps on from it", {
+
+  # the first estimated year, 16, sits at 0.7, a level the replicate's own fit or draw set
+  n_yrs <- 30
+  fit_devs <- c(rep(0, 15), 0.7, rep(0, 14))
+  draw_devs <- function(init_sigma) {
+    sl <- Setup_Sim_q_devs(q_cond_sl(n_yrs = n_yrs, devs = fit_devs, n_cond = 0), srv_q_model = "rw", sigma_srv_q = 0.2,
+                           srv_q_rw_init_sigma = init_sigma)
+    sl$srv_q_devs_est <- array(c(rep(FALSE, 15), rep(TRUE, 15)), dim = c(1, n_yrs, 1))
+    env <- Setup_sim_env(sl)
+    replicate(3000, { draw_sim_q_devs(1, env); env$ln_srv_q_devs[1,,1,1] })
+  }
+
+  set.seed(3)
+  diffuse <- draw_devs(5)
+  expect_true(all(diffuse[16,] == 0.7)) # the diffuse start keeps its value
+  expect_equal(mean(diffuse[17,]), 0.7, tolerance = 0.02) # and the walk steps on from it
+  expect_equal(sd(diffuse[17,]), 0.2, tolerance = 0.05)
+
+  # under NA the penalty starts the walk at zero under its own sigma, and so does the draw
+  own <- draw_devs(NA)
+  expect_equal(mean(own[16,]), 0, tolerance = 0.02)
+  expect_equal(sd(own[16,]), 0.2, tolerance = 0.05)
+
+})
+
+test_that("a joint self test recovers the catchability sigma", {
 
   skip_on_cran()
 
-  # with no conditioning years every deviation is drawn from the fitted walk. before the walk was routed
-  # the refits saw flat catchability and put sigma at zero
+  # every deviation is drawn fresh from each replicate's walk. before the walk was routed the refits saw flat
+  # catchability and put sigma at zero
   rw <- q_rw_fit()
-  sigma_fit <- exp(as.numeric(rw$fit$env$parList(par = rw$fit$env$last.par.best)$ln_sigma_srv_q)) # the estimate the self test reads
   set.seed(11)
   st <- suppressWarnings(suppressMessages(
     simulation_self_test(data = rw$fit$data, parameters = rw$fit$env$parList(), mapping = rw$fit$mapping,
                          random = "ln_srv_q_devs", rep = rw$fit$rep, sd_rep = rw$sd_rep, obj = rw$fit,
-                         n_sims = 4, n_cond_yrs = 0, newton_loops = 1, what = "SSB", what_par = "ln_sigma_srv_q")))
+                         n_sims = 4, sim_type = "joint", newton_loops = 1, what = "SSB", what_par = "ln_sigma_srv_q")))
   sigma_hat <- exp(as.numeric(st$ln_sigma_srv_q))
+  sigma_true <- exp(as.numeric(st$truth$ln_sigma_srv_q)) # each replicate's own draw
 
-  expect_true(all(sigma_hat > 0.5 * sigma_fit))
-  expect_equal(mean(sigma_hat), sigma_fit, tolerance = 0.2)
+  expect_true(all(sigma_hat > 0.5 * sigma_true))
+  expect_equal(mean(sigma_hat / sigma_true), 1, tolerance = 0.2)
 
 })

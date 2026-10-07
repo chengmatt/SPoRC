@@ -36,6 +36,8 @@
 #' @param srvsel_pe_pars_spec Character vector \code{[n_srv_fleets]} or \code{NULL}
 #'   (default) of the sharing structure for the process error hyperparameters. See
 #'   \code{\link{do_sel_pe_pars_mapping}}.
+#'   Deviations shared over regions or fleets in \code{srv_sel_devs_spec} share
+#'   these the same way, whatever this says.
 #' @param srv_sel_devs_spec Character vector \code{[n_srv_fleets]} or \code{NULL}
 #'   (default) of the sharing structure for the deviation series. See
 #'   \code{\link{do_sel_devs_mapping}}.

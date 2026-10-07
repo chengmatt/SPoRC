@@ -41,7 +41,10 @@
 #'   \code{rinit_input}, \code{h_input}, \code{Rec_input},
 #'   \code{conv_tag_fish_reporting_input} and \code{Movement}. Dimensions must
 #'   match the model structure, \code{length(data$years) + closed_loop_yrs} years
-#'   and \code{n_sims} simulations.
+#'   and \code{n_sims} simulations. \code{bias_correct_pe} and
+#'   \code{bias_correct_oe} of \code{\link{Setup_Sim_Dim}} may be given as well;
+#'   without them the operating model takes the fit's, as it does
+#'   \code{sigmaR_switch}.
 #'
 #' @details
 #' The conditioning years are the fitted model's own, reconstructed from its report
@@ -189,7 +192,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
                             seasdur = data$seasdur,
                             n_pop = data$n_pop,
                             natal_region = data$natal_region,
-                            run_feedback = TRUE
+                            run_feedback = TRUE,
+                            bias_correct_pe = if("bias_correct_pe" %in% names(args)) args$bias_correct_pe else if(is.null(data$bias_correct_pe)) "rec" else data$bias_correct_pe,
+                            bias_correct_oe = if("bias_correct_oe" %in% names(args)) args$bias_correct_oe else if(is.null(data$bias_correct_oe)) 0 else data$bias_correct_oe
   )
 
   # Setup Simulation Containers ---------------------------------------------
@@ -266,10 +271,14 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   fish_q_input <- if(!"fish_q_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, fish_q_fit$q_mean), n_years = closed_loop_yrs, 2, fill = 'last')
   } else args$fish_q_input
+
+  # determine how to draw index se... index with no form = rescale / deweight it, otherwise use the raw se
+  idx_draw_se <- function(se, wt, form) if(is.null(form) || form == 0) se / sqrt(wt) else se
+
   # Fishery index uncertainty
   ObsFishIdx_SE <- if(!"ObsFishIdx_SE" %in% names(args)) {
     extend_years(
-      arr = data$ObsFishIdx_SE / sqrt(data$Wt_FishIdx),
+      arr = idx_draw_se(data$ObsFishIdx_SE, data$Wt_FishIdx, data$sigmaFishIdx_form),
       n_years = closed_loop_yrs,
       2,
       fill = FishIdx_SE_fill
@@ -323,7 +332,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # Population-specific fishery index SE
   ObsFishIdx_pop_SE <- if(!"ObsFishIdx_pop_SE" %in% names(args)) {
     if(any(data$UseFishIdx_pop == 1)) {
-      extend_years(data$ObsFishIdx_pop_SE / sqrt(data$Wt_FishIdx_pop), closed_loop_yrs, 3, fill = FishIdx_SE_pop_fill)
+      extend_years(idx_draw_se(data$ObsFishIdx_pop_SE, data$Wt_FishIdx_pop, data$sigmaFishIdx_pop_form), closed_loop_yrs, 3, fill = FishIdx_SE_pop_fill)
     } else {
       array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets))
     }
@@ -348,7 +357,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   FishLen_pop_corr_pars <- if(!"FishLen_pop_corr_pars" %in% names(args)) optim_parameters_list$FishLen_pop_corr_pars[,,,,,drop = FALSE] else args$FishLen_pop_corr_pars
 
   # Discarded Population-specific fishery age compositions
-  comp_fishage_discard_pop_like <- if(!"comp_fishage_discard_pop_like" %in% names(args)) data$FishAgeComps_pop_LikeType else args$comp_fishage_discard_pop_like
+  comp_fishage_discard_pop_like <- if(!"comp_fishage_discard_pop_like" %in% names(args)) data$FishAgeComps_discard_pop_LikeType else args$comp_fishage_discard_pop_like
   FishAgeComps_discard_pop_Type <- if(!"FishAgeComps_discard_pop_Type" %in% names(args)) extend_years(data$FishAgeComps_discard_pop_Type, closed_loop_yrs, 1, 'last') else args$FishAgeComps_discard_pop_Type
   ISS_FishAgeComps_discard_pop <- if(!"ISS_FishAgeComps_discard_pop" %in% names(args)) extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard_pop[,,,,,,drop = FALSE] * data$Wt_FishAgeComps_discard_pop), closed_loop_yrs, 3, fill = ISS_FishAgeComps_discard_pop_fill) else args$ISS_FishAgeComps_discard_pop
   ln_FishAge_discard_pop_theta <- if(!"ln_FishAge_discard_pop_theta" %in% names(args)) optim_parameters_list$ln_FishAge_discard_pop_theta[,,,,drop = FALSE] else args$ln_FishAge_discard_pop_theta
@@ -357,7 +366,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   FishAge_discard_pop_corr_pars <- if(!"FishAge_discard_pop_corr_pars" %in% names(args)) optim_parameters_list$FishAge_discard_pop_corr_pars[,,,,,drop = FALSE] else args$FishAge_discard_pop_corr_pars
 
   # Discarded Population-specific fishery length compositions
-  comp_fishlen_discard_pop_like <- if(!"comp_fishlen_discard_pop_like" %in% names(args)) data$FishLenComps_pop_LikeType else args$comp_fishlen_discard_pop_like
+  comp_fishlen_discard_pop_like <- if(!"comp_fishlen_discard_pop_like" %in% names(args)) data$FishLenComps_discard_pop_LikeType else args$comp_fishlen_discard_pop_like
   FishLenComps_discard_pop_Type <- if(!"FishLenComps_discard_pop_Type" %in% names(args)) extend_years(data$FishLenComps_discard_pop_Type, closed_loop_yrs, 1, 'last') else args$FishLenComps_discard_pop_Type
   ISS_FishLenComps_discard_pop <- if(!"ISS_FishLenComps_discard_pop" %in% names(args)) extend_years(replicate(sim_list$n_sims, data$ISS_FishLenComps_discard_pop[,,,,,,drop = FALSE] * data$Wt_FishLenComps_discard_pop), closed_loop_yrs, 3, fill = ISS_FishLenComps_discard_pop_fill) else args$ISS_FishLenComps_discard_pop
   ln_FishLen_discard_pop_theta <- if(!"ln_FishLen_discard_pop_theta" %in% names(args)) optim_parameters_list$ln_FishLen_discard_pop_theta[,,,,drop = FALSE] else args$ln_FishLen_discard_pop_theta
@@ -369,6 +378,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   catch_aa_used <- any(data$UseCatchAA == 1) # whether the fit observes catch at age
   discard_aa_used <- any(data$UseDiscardAA == 1) # discards at age
   srv_idx_aa_used <- any(data$UseSrvIdxAA == 1) # survey index at age
+  catch_aa_pop_used <- any(data$UseCatchAA_pop == 1) # population-specific catch at age
+  discard_aa_pop_used <- any(data$UseDiscardAA_pop == 1) # population-specific discards at age
+  srv_idx_aa_pop_used <- any(data$UseSrvIdxAA_pop == 1) # population-specific survey index at age
 
   # setup fishery simulation processes
   sim_list <- Setup_Sim_Fishing(
@@ -384,6 +396,40 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     UseDiscardAA = unused_at_age_on_obs_ages(extend_years(data$UseDiscardAA, closed_loop_yrs, 2, fill = 'last'), discard_aa_used, 4, n_obs_om),
     use_catch_aa = data$use_catch_aa,
     use_discard_aa = data$use_discard_aa,
+    # the fit's correlation of each fleet's at-age residuals, under the estimation model's names
+    AgeObsCorr_catch = data$AgeObsCorr_catch,
+    AgeObsCorr_discard = data$AgeObsCorr_discard,
+    trans_rho_catch = if(catch_aa_used) optim_parameters_list$trans_rho_catch,
+    trans_rho_catch_year = if(catch_aa_used) optim_parameters_list$trans_rho_catch_year,
+    trans_rho_catch_us = if(catch_aa_used) optim_parameters_list$trans_rho_catch_us,
+    trans_rho_discard = if(discard_aa_used) optim_parameters_list$trans_rho_discard,
+    trans_rho_discard_year = if(discard_aa_used) optim_parameters_list$trans_rho_discard_year,
+    trans_rho_discard_us = if(discard_aa_used) optim_parameters_list$trans_rho_discard_us,
+    # the population-specific at-age data sources and the year totals, as the fit reads them
+    CatchAA_seas_Type = data$CatchAA_seas_Type,
+    DiscardAA_seas_Type = data$DiscardAA_seas_Type,
+    UseCatchAA_pop = if(catch_aa_pop_used) extend_years(data$UseCatchAA_pop, closed_loop_yrs, 3, fill = 'last'),
+    UseDiscardAA_pop = if(discard_aa_pop_used) extend_years(data$UseDiscardAA_pop, closed_loop_yrs, 3, fill = 'last'),
+    ln_sigmaCAA_pop = if(catch_aa_pop_used) optim_parameters_list$ln_sigmaCAA_pop,
+    ln_sigmaDAA_pop = if(discard_aa_pop_used) optim_parameters_list$ln_sigmaDAA_pop,
+    ObsCatchAA_pop_SE = if(catch_aa_pop_used) extend_years(data$ObsCatchAA_pop_SE, closed_loop_yrs, 3, fill = 'last'),
+    ObsDiscardAA_pop_SE = if(discard_aa_pop_used) extend_years(data$ObsDiscardAA_pop_SE, closed_loop_yrs, 3, fill = 'last'),
+    CatchAA_pop_Type = data$CatchAA_pop_Type,
+    DiscardAA_pop_Type = data$DiscardAA_pop_Type,
+    CatchAA_pop_LikeType = data$CatchAA_pop_LikeType,
+    DiscardAA_pop_LikeType = data$DiscardAA_pop_LikeType,
+    CatchAA_pop_sigma_form = data$CatchAA_pop_sigma_form,
+    DiscardAA_pop_sigma_form = data$DiscardAA_pop_sigma_form,
+    CatchAA_pop_seas_Type = data$CatchAA_pop_seas_Type,
+    DiscardAA_pop_seas_Type = data$DiscardAA_pop_seas_Type,
+    AgeObsCorr_catch_pop = data$AgeObsCorr_catch_pop,
+    AgeObsCorr_discard_pop = data$AgeObsCorr_discard_pop,
+    trans_rho_catch_pop = if(catch_aa_pop_used) optim_parameters_list$trans_rho_catch_pop,
+    trans_rho_catch_pop_year = if(catch_aa_pop_used) optim_parameters_list$trans_rho_catch_pop_year,
+    trans_rho_catch_pop_us = if(catch_aa_pop_used) optim_parameters_list$trans_rho_catch_pop_us,
+    trans_rho_discard_pop = if(discard_aa_pop_used) optim_parameters_list$trans_rho_discard_pop,
+    trans_rho_discard_pop_year = if(discard_aa_pop_used) optim_parameters_list$trans_rho_discard_pop_year,
+    trans_rho_discard_pop_us = if(discard_aa_pop_used) optim_parameters_list$trans_rho_discard_pop_us,
     ObsCatchAA_SE = unused_at_age_on_obs_ages(extend_years(data$ObsCatchAA_SE, closed_loop_yrs, 2, fill = 'last'), catch_aa_used, 4, n_obs_om),
     ObsDiscardAA_SE = unused_at_age_on_obs_ages(extend_years(data$ObsDiscardAA_SE, closed_loop_yrs, 2, fill = 'last'), discard_aa_used, 4, n_obs_om),
     CatchAA_Type = extend_years(data$CatchAA_Type, closed_loop_yrs, 1, fill = 'last'),
@@ -395,6 +441,16 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     FishIdx_seas_Type = data$FishIdx_seas_Type,
     FishIdx_pop_seas_Type = data$FishIdx_pop_seas_Type,
     FishAgeComps_seas_Type = data$FishAgeComps_seas_Type,
+    Discard_seas_Type = data$Discard_seas_Type,
+    Discard_pop_seas_Type = data$Discard_pop_seas_Type,
+    FishLenComps_seas_Type = data$FishLenComps_seas_Type,
+    FishAgeComps_pop_seas_Type = data$FishAgeComps_pop_seas_Type,
+    FishLenComps_pop_seas_Type = data$FishLenComps_pop_seas_Type,
+    FishAgeComps_discard_seas_Type = data$FishAgeComps_discard_seas_Type,
+    FishLenComps_discard_seas_Type = data$FishLenComps_discard_seas_Type,
+    FishAgeComps_discard_pop_seas_Type = data$FishAgeComps_discard_pop_seas_Type,
+    FishLenComps_discard_pop_seas_Type = data$FishLenComps_discard_pop_seas_Type,
+    seas_agg_slot = seas_agg_slot_list(data, length(data$years) + closed_loop_yrs, "fish"), # the season each year total sits in, the last fitted year's after the fit
     CatchAA_sigma_form = data$CatchAA_sigma_form, DiscardAA_sigma_form = data$DiscardAA_sigma_form,
     ln_sigmaC_pop = ln_sigmaC_pop,
     Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,seq_along(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
@@ -409,6 +465,10 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     ret_sel_l_input = if(any(data$fish_len_comp_sel == 1) && isTRUE(data$ret_selex_type == 1)) extend_years(replicate(n = sim_list$n_sims, rep$ret_sel_l[,seq_along(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last') else NULL,
     fish_q_input = fish_q_input,
     ObsFishIdx_SE = ObsFishIdx_SE,
+    sigmaFishIdx_form = if(is.null(data$sigmaFishIdx_form)) 0 else data$sigmaFishIdx_form, # any estimated part of the index sd, drawn on top of the reported errors
+    ln_sigmaFishIdx = optim_parameters_list$ln_sigmaFishIdx,
+    sigmaFishIdx_pop_form = if(is.null(data$sigmaFishIdx_pop_form)) 0 else data$sigmaFishIdx_pop_form,
+    ln_sigmaFishIdx_pop = optim_parameters_list$ln_sigmaFishIdx_pop,
     ObsFishIdx_pop_SE = ObsFishIdx_pop_SE,
     fish_idx_type = data$fish_idx_type,
     fish_idx_ages = data$fish_idx_ages, # ages in each index total
@@ -512,7 +572,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # Survey index uncertainty
   ObsSrvIdx_SE <- if(!"ObsSrvIdx_SE" %in% names(args)) {
     extend_years(
-      arr = data$ObsSrvIdx_SE / sqrt(data$Wt_SrvIdx),
+      arr = idx_draw_se(data$ObsSrvIdx_SE, data$Wt_SrvIdx, data$sigmaSrvIdx_form),
       n_years = closed_loop_yrs,
       2,
       fill = SrvIdx_SE_fill
@@ -544,7 +604,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # Population-specific survey index SE
   ObsSrvIdx_pop_SE <- if(!"ObsSrvIdx_pop_SE" %in% names(args)) {
     if(any(data$UseSrvIdx_pop == 1)) {
-      extend_years(data$ObsSrvIdx_pop_SE / sqrt(data$Wt_SrvIdx_pop), closed_loop_yrs, 3, fill = SrvIdx_SE_pop_fill)
+      extend_years(idx_draw_se(data$ObsSrvIdx_pop_SE, data$Wt_SrvIdx_pop, data$sigmaSrvIdx_pop_form), closed_loop_yrs, 3, fill = SrvIdx_SE_pop_fill)
     } else {
       array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets))
     }
@@ -589,9 +649,29 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     srv_sel_l_input = if(any(data$srv_len_comp_sel == 1)) extend_years(replicate(n = sim_list$n_sims, rep$srv_sel_l[,seq_along(data$years),,,,drop = FALSE]), closed_loop_yrs, 2, 'last') else NULL,
     srv_q_input = srv_q_input,
     ObsSrvIdx_SE = ObsSrvIdx_SE,
+    sigmaSrvIdx_form = if(is.null(data$sigmaSrvIdx_form)) 0 else data$sigmaSrvIdx_form, # any estimated part of the index sd, drawn on top of the reported errors
+    ln_sigmaSrvIdx = optim_parameters_list$ln_sigmaSrvIdx,
+    sigmaSrvIdx_pop_form = if(is.null(data$sigmaSrvIdx_pop_form)) 0 else data$sigmaSrvIdx_pop_form,
+    ln_sigmaSrvIdx_pop = optim_parameters_list$ln_sigmaSrvIdx_pop,
     ln_sigmaSrvIdxAA = unused_at_age_on_obs_ages(optim_parameters_list$ln_sigmaSrvIdxAA, srv_idx_aa_used, 1, n_obs_om, log(0.5)),
     UseSrvIdxAA = unused_at_age_on_obs_ages(extend_years(data$UseSrvIdxAA, closed_loop_yrs, 2, fill = 'last'), srv_idx_aa_used, 4, n_obs_om),
     use_srv_idx_aa = data$use_srv_idx_aa,
+    AgeObsCorr_srv_idx = data$AgeObsCorr_srv_idx,
+    trans_rho_srv_idx = if(srv_idx_aa_used) optim_parameters_list$trans_rho_srv_idx,
+    trans_rho_srv_idx_year = if(srv_idx_aa_used) optim_parameters_list$trans_rho_srv_idx_year,
+    trans_rho_srv_idx_us = if(srv_idx_aa_used) optim_parameters_list$trans_rho_srv_idx_us,
+    SrvIdxAA_seas_Type = data$SrvIdxAA_seas_Type,
+    UseSrvIdxAA_pop = if(srv_idx_aa_pop_used) extend_years(data$UseSrvIdxAA_pop, closed_loop_yrs, 3, fill = 'last'),
+    ln_sigmaSrvIdxAA_pop = if(srv_idx_aa_pop_used) optim_parameters_list$ln_sigmaSrvIdxAA_pop,
+    ObsSrvIdxAA_pop_SE = if(srv_idx_aa_pop_used) extend_years(data$ObsSrvIdxAA_pop_SE, closed_loop_yrs, 3, fill = 'last'),
+    SrvIdxAA_pop_Type = data$SrvIdxAA_pop_Type,
+    SrvIdxAA_pop_LikeType = data$SrvIdxAA_pop_LikeType,
+    SrvIdxAA_pop_sigma_form = data$SrvIdxAA_pop_sigma_form,
+    SrvIdxAA_pop_seas_Type = data$SrvIdxAA_pop_seas_Type,
+    AgeObsCorr_srv_idx_pop = data$AgeObsCorr_srv_idx_pop,
+    trans_rho_srv_idx_pop = if(srv_idx_aa_pop_used) optim_parameters_list$trans_rho_srv_idx_pop,
+    trans_rho_srv_idx_pop_year = if(srv_idx_aa_pop_used) optim_parameters_list$trans_rho_srv_idx_pop_year,
+    trans_rho_srv_idx_pop_us = if(srv_idx_aa_pop_used) optim_parameters_list$trans_rho_srv_idx_pop_us,
     ObsSrvIdxAA_SE = unused_at_age_on_obs_ages(extend_years(data$ObsSrvIdxAA_SE, closed_loop_yrs, 2, fill = 'last'), srv_idx_aa_used, 4, n_obs_om),
     SrvIdxAA_Type = extend_years(data$SrvIdxAA_Type, closed_loop_yrs, 1, fill = 'last'),
     SrvIdxAA_LikeType = data$SrvIdxAA_LikeType, SrvIdxAA_sigma_form = data$SrvIdxAA_sigma_form,
@@ -599,6 +679,10 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     SrvIdx_seas_Type = data$SrvIdx_seas_Type,
     SrvIdx_pop_seas_Type = data$SrvIdx_pop_seas_Type,
     SrvAgeComps_seas_Type = data$SrvAgeComps_seas_Type,
+    SrvLenComps_seas_Type = data$SrvLenComps_seas_Type,
+    SrvAgeComps_pop_seas_Type = data$SrvAgeComps_pop_seas_Type,
+    SrvLenComps_pop_seas_Type = data$SrvLenComps_pop_seas_Type,
+    seas_agg_slot = seas_agg_slot_list(data, length(data$years) + closed_loop_yrs, "srv"), # the season each year total sits in, the last fitted year's after the fit
     ObsSrvIdx_pop_SE = ObsSrvIdx_pop_SE,
     srv_idx_type = data$srv_idx_type,
     srv_idx_ages = data$srv_idx_ages, # ages in each index total
@@ -754,6 +838,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     use_rinit = data$use_rinit,
     sexratio_input = sexratio_input,
     ln_sigmaR = ln_sigmaR,
+    sigmaR_switch = if("sigmaR_switch" %in% names(args)) args$sigmaR_switch else if(is.null(data$sigmaR_switch)) 1 else data$sigmaR_switch, # first year on the late sigmaR
     Rec_input = Rec_input,
     ln_InitDevs_input = ln_InitDevs_input,
     recruitment_opt = recruitment_opt,
@@ -782,7 +867,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   } else args$conv_tag_fish_reporting_input
   use_conv_fish_tagging <- if(!"use_conv_fish_tagging" %in% names(args)) data$use_conv_fish_tagging else args$use_conv_fish_tagging
   conv_fish_tag_like <- if(!"conv_fish_tag_like" %in% names(args)) data$conv_fish_tag_like else args$conv_fish_tag_like
-  ln_conv_fish_tag_theta <- if(!"ln_conv_fish_tag_theta" %in% names(args)) parameters$ln_conv_fish_tag_theta else args$ln_conv_fish_tag_theta
+  ln_conv_fish_tag_theta <- if(!"ln_conv_fish_tag_theta" %in% names(args)) optim_parameters_list$ln_conv_fish_tag_theta else args$ln_conv_fish_tag_theta
 
   # setup tagging simulation
   if(!is.null(n_tags)) sim_list$n_tags_rel_input <- NULL # set release input to NULL if n_tags is specified.
@@ -793,14 +878,19 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     n_tags = n_tags,
     n_tags_rel_input = n_tags_rel_input * data$Wt_Tagging,
     conv_tag_release_indicator = conv_tag_release_indicator,
-    conv_tag_release_platform = data$conv_tag_release_platform,
+    conv_tag_release_platform = if(is.null(data$conv_tag_release_platform)) default_tag_release_platform(conv_tag_release_indicator) else data$conv_tag_release_platform,
     ln_init_conv_tag_mort = ln_init_conv_tag_mort,
     ln_conv_tag_shed = ln_conv_tag_shed,
     conv_fish_tag_attr = data$conv_fish_tag_attr,
     conv_tag_fish_reporting_input = conv_tag_fish_reporting_input,
     use_conv_fish_tagging = use_conv_fish_tagging,
     conv_fish_tag_like = conv_fish_tag_like,
-    ln_conv_fish_tag_theta = ln_conv_fish_tag_theta
+    ln_conv_fish_tag_theta = ln_conv_fish_tag_theta,
+    conv_tag_pop_pool = data$conv_tag_pop_pool, # recaptures the fit pools into one count
+    conv_tag_age_pool = data$conv_tag_age_pool,
+    conv_tag_sex_pool = data$conv_tag_sex_pool,
+    conv_tagged_fish_input = if("conv_tagged_fish_input" %in% names(args)) args$conv_tagged_fish_input
+                             else if(!anyNA(data$conv_tagged_fish)) data$conv_tagged_fish * data$Wt_Tagging # the fit's releases by age
   )
 
   # Movement ----------------------------------------------------------------
@@ -822,58 +912,29 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   # movement deviations; conditional during conditioning years, new draws after
   sim_list <- Setup_Sim_Movement(sim_list, data, optim_parameters_list)
 
+  # selectivity deviations; the fit's over the conditioning years, and then drawn on through the projection. F is
+  # the control rule's past the fit, so its deviations and discard mortality's stay at the fit
+  if(!any(c("fish_sel_input", "ret_sel_input", "srv_sel_input") %in% names(args))) {
+    sim_list <- Setup_Sim_Fleet_Devs(sim_list, data, optim_parameters_list, random = random)
+    if(!is.null(sim_list$fleet_devs_on)) sim_list$fleet_devs_on[c("F", "dmr")] <- FALSE
+  }
+
   # State-space numbers at age ----------------------------------------------
   sim_list$NAA_re <- if("NAA_re" %in% names(args)) args$NAA_re else {
     if(is.null(data$NAA_re)) 0 else data$NAA_re
   }
   state_on <- isTRUE(sim_list$NAA_re > 0)
 
-  # Extend sigma blocks for years etc
-  sim_list$sigmaNAA <- if("sigmaNAA" %in% names(args)) args$sigmaNAA else {
-    if(!state_on || is.null(optim_parameters_list$ln_sigmaNAA)) 0 else {
-      blk <- data$naa_sigma_blocks[,,seq_along(data$years),,,,drop = FALSE]
-      extend_years(array(exp(optim_parameters_list$ln_sigmaNAA)[as.vector(blk)], dim = dim(blk)),
-                   closed_loop_yrs, 3, 'last')
-    }
-  }
-
-  # The simulator takes one correlation per dim, so shared parameters come across as they are
-  # and per-cell ones are averaged before transforming.
-  sim_list$naa_rho <- if("naa_rho" %in% names(args)) args$naa_rho else {
-    pe <- optim_parameters_list$NAA_pe_pars
-    if(!state_on || is.null(pe)) c(age = 0, year = 0, cohort = 0)
-    else c(
-      age = rho_trans(mean(pe[,,1,])),
-      year = rho_trans(mean(pe[,,2,])),
-      cohort = rho_trans(mean(pe[,,3,]))
-    )
-  }
-
-  for(opt_name in c("NAA_re_pop", "NAA_re_region", "NAA_re_sex", "NAA_re_season")) {
-    sim_list[[opt_name]] <- if(opt_name %in% names(args)) args[[opt_name]] else {
-      if(!state_on || is.null(data[[opt_name]])) 0 else data[[opt_name]]
-    }
+  # the fit's process error in naa, the sd kept at the terminal year through the projection years
+  naa_process <- if(state_on && !is.null(optim_parameters_list$ln_sigmaNAA)) naa_process_from_fit(data, optim_parameters_list)
+  if(!is.null(naa_process)) naa_process$sigmaNAA <- extend_years(naa_process$sigmaNAA, closed_loop_yrs, 3, 'last')
+  for(opt_name in c("sigmaNAA", "naa_rho", "NAA_re_pop", "NAA_re_region", "NAA_re_sex", "NAA_re_season",
+                    "naa_pop_corr", "naa_region_corr", "naa_sex_corr")) {
+    sim_list[[opt_name]] <- if(opt_name %in% names(args)) args[[opt_name]]
+                            else if(!is.null(naa_process)) naa_process[[opt_name]]
+                            else if(opt_name == "naa_rho") c(age = 0, year = 0, cohort = 0)
+                            else 0
   } # end opt_name loop
-
-  # Unconstrained parameters become the correlations themselves, in the lower-triangle order the
-  # simulator's unstructured factor reads them in.
-  corr_from <- function(pars, n) {
-    if(is.null(pars) || n < 2) return(0)
-    C <- build_us_corr(as.vector(pars), n)
-    C[lower.tri(C)]
-  }
-  sim_list$naa_pop_corr <- if("naa_pop_corr" %in% names(args)) args$naa_pop_corr else {
-    if(!state_on || !isTRUE(sim_list$NAA_re_pop == 1)) 0
-    else corr_from(optim_parameters_list$NAA_pop_corr_pars, sim_list$n_pop)
-  }
-  sim_list$naa_region_corr <- if("naa_region_corr" %in% names(args)) args$naa_region_corr else {
-    if(!state_on || !isTRUE(sim_list$NAA_re_region == 1)) 0
-    else corr_from(optim_parameters_list$NAA_region_corr_pars, sim_list$n_regions)
-  }
-  sim_list$naa_sex_corr <- if("naa_sex_corr" %in% names(args)) args$naa_sex_corr else {
-    if(!state_on || !isTRUE(sim_list$NAA_re_sex == 1)) 0
-    else corr_from(optim_parameters_list$NAA_sex_corr_pars, sim_list$n_sexes)
-  }
 
   # The active ages are reused unchanged, and the active years run on through the projection: the
   # operating model should keep generating process error in the future, not stop at the data.
@@ -889,10 +950,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   sim_list$naa_re_seas <- if("naa_re_seas" %in% names(args)) args$naa_re_seas else {
     if(!state_on) 1 else if(is.null(data$naa_re_seas)) 1 else data$naa_re_seas
   }
-  sim_list$naa_season_corr <- if("naa_season_corr" %in% names(args)) args$naa_season_corr else {
-    if(!state_on || !isTRUE(sim_list$NAA_re_season == 1)) 0
-    else corr_from(optim_parameters_list$NAA_season_corr_pars, length(sim_list$naa_re_seas))
-  }
+  sim_list$naa_season_corr <- if("naa_season_corr" %in% names(args)) args$naa_season_corr
+                              else if(!is.null(naa_process)) naa_process$naa_season_corr
+                              else 0
 
   # number of conditioning years
   sim_list$n_cond_yrs <- if("n_cond_yrs" %in% names(args)) args$n_cond_yrs else length(data$years)

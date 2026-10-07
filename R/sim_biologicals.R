@@ -283,7 +283,7 @@ Setup_Sim_Growth_RE <- function(sim_list, data, pars, rep = NULL, pars_by_sim = 
   if(dsem_holds) return(sim_list)
 
   # return if not using dsem to get devs
-  for(name in c("growth_tv_model", "growth_semipar", "growth_semipar_bins", "map_ln_growth_devs", "map_ln_growth_semipar_devs")) sim_list[[name]] <- data[[name]]
+  for(name in c("growth_tv_model", "growth_semipar", "growth_semipar_bins", "map_ln_growth_devs", "map_ln_growth_semipar_devs", "growth_rw_init_sigma")) sim_list[[name]] <- data[[name]]
   sim_list$growth_pe_pars <- pars$growth_pe_pars
   sim_list$growth_args <- match_model_args(Get_Growth, data, pars, n_yrs = sim_list$n_yrs)
   sim_list$growth_length_sel <- sim_growth_length_sel(data, rep, sim_list$n_yrs)
@@ -339,9 +339,10 @@ sim_map_over_years <- function(map, n_yrs) {
 #' The reverse of \code{\link{Get_PE_loglik}}. A shared level is drawn once and
 #' written wherever it appears, at the sd of the slot the penalty reads it at.
 #' Under iid every level is its own normal. Under the random walk each level
-#' steps from the year before; the first year starts at the walk's own sd, as
-#' the recruitment walk does in the operating model, since the diffuse start
-#' the estimation model gives it only leaves the level free. The 3D GMRF and
+#' steps from the year before. A first year the estimation model gives a diffuse
+#' start (\code{rw_init_sigma}) keeps the replicate's own value, since that start
+#' leaves the level to the data, as the recruitment and F walks do; under
+#' \code{NA} it starts at the walk's own sd, as the penalty does. The 3D GMRF and
 #' the separable AR1 draw each population, region and sex's whole surface over
 #' years and \code{bins} from the form's precision, conditional on the cells
 #' the map fixes at zero, which is the density the penalty evaluates at them.
@@ -361,15 +362,18 @@ sim_map_over_years <- function(map, n_yrs) {
 #'   \code{n_cond} years only.
 #' @param n_cond Integer. Years that keep the fit's deviations. Default \code{0}
 #'   draws every year.
+#' @param rw_init_sigma The sd the estimation model gives a walk's first year, or
+#'   \code{NA} (default) for the walk's own.
 #'
-#' @return Array shaped as \code{map}, zero where the map is \code{NA} outside
-#'   the conditioned years.
+#' @return Array shaped as \code{map}. A cell the map fixes keeps the fit's
+#'   value, as the penalty reads it, zero when no fit is given.
 #'
 #' @keywords internal
-draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins, fit_devs = NULL, n_cond = 0) {
+draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins, fit_devs = NULL, n_cond = 0, rw_init_sigma = NA) {
 
   map_dim <- dim(map)
   devs <- array(0, dim = map_dim)
+  if(!is.null(fit_devs)) devs[is.na(map)] <- fit_devs[is.na(map)] # a fixed cell keeps its value, which a walk or field steps from
   if(n_cond > 0) devs[,,seq_len(n_cond),,] <- fit_devs[,,seq_len(n_cond),,] # conditioned years are the fit's
   levels <- sort(unique(as.vector(map))) # sort drops the fixed cells
   if(length(levels) == 0) return(devs)
@@ -381,6 +385,7 @@ draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins, fit_devs = NULL
       p <- first_cell[1]; r <- first_cell[2]; y <- first_cell[3]; bin <- first_cell[4]; s <- first_cell[5]
       sigma <- exp(pe_pars[p,r,bin,s])
       if(y <= n_cond) draw <- fit_devs[p,r,y,bin,s] # conditioned years keep the fit's deviation
+      else if(PE_model == 2 && y == 1 && !is.na(rw_init_sigma) && !is.null(fit_devs)) draw <- fit_devs[p,r,y,bin,s] # a diffuse start keeps its value
       else if(PE_model == 1 || y == 1) draw <- stats::rnorm(1, 0, sigma)
       else draw <- devs[p,r,y - 1,bin,s] + stats::rnorm(1, 0, sigma) # walks on from the year before, the fit's when conditioned
       devs[level_cells] <- draw
@@ -392,7 +397,7 @@ draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins, fit_devs = NULL
   for(p in seq_len(map_dim[1])) for(r in seq_len(map_dim[2])) for(s in seq_len(map_dim[5])) {
     map_slice <- array(map[p,r,,bins,s], dim = c(map_dim[3], length(bins))) # [year, bin]
     if(all(is.na(map_slice))) next
-    fit_slice <- array(devs[p,r,,bins,s], dim = c(map_dim[3], length(bins))) # [year, bin], the fit's in conditioned years and zero after
+    fit_slice <- array(devs[p,r,,bins,s], dim = c(map_dim[3], length(bins))) # [year, bin], the fit's in conditioned and fixed cells, zero elsewhere
     if(PE_model == 5) {
       rho_bin <- rho_trans(pe_pars[p,r,1,s])
       rho_year <- rho_trans(pe_pars[p,r,2,s])
@@ -410,8 +415,8 @@ draw_growth_pe_surface <- function(PE_model, map, pe_pars, bins, fit_devs = NULL
       nodes <- as.vector(t(fit_slice))
       node_year <- rep(seq_len(map_dim[3]), each = length(bins))
     }
-    # the free cells given the known ones (fixed at zero, or the fit's in conditioned years) have the precision's free block,
-    # centered on the conditional mean
+    # the free cells given the known ones (fixed cells at their values, the fit's in conditioned years) have the precision's
+    # free block, centered on the conditional mean
     is_free <- is_free & node_year > n_cond
     if(any(is_free)) {
       free_precision <- precision[is_free, is_free, drop = FALSE]
@@ -456,6 +461,7 @@ draw_sim_growth_devs <- function(sim_env) {
   n_sims <- sim_env$n_sims
   growth_tv_model <-if(is.null(sim_env$growth_tv_model)) rep(0, dim(growth_args$ln_growth_devs)[4]) else sim_env$growth_tv_model
   growth_semipar <- if(is.null(sim_env$growth_semipar)) 0 else sim_env$growth_semipar
+  rw_init_sigma <- if(is.null(sim_env$growth_rw_init_sigma)) NA else sim_env$growth_rw_init_sigma
 
   # get mapping stuff
   map_tv_devs <- sim_map_over_years(sim_env$map_ln_growth_devs, n_yrs)
@@ -489,10 +495,10 @@ draw_sim_growth_devs <- function(sim_env) {
     for(par_idx in which(growth_tv_model > 0)) {
       pe_par <- array(pe_pars[,,par_idx,,1], dim = c(tv_dim[1:2], 1, tv_dim[5]))
       tv_devs[,,,par_idx,,sim] <- draw_growth_pe_surface(growth_tv_model[par_idx], map_tv_devs[,,,par_idx,,drop = FALSE], pe_par, 1,
-                                                         fit_devs = fit_tv_devs[,,,par_idx,,drop = FALSE], n_cond = n_cond)
+                                                         fit_devs = fit_tv_devs[,,,par_idx,,drop = FALSE], n_cond = n_cond, rw_init_sigma = rw_init_sigma)
     } # end par_idx loop
     if(growth_semipar > 0) semipar_devs[,,,,,sim] <- draw_growth_pe_surface(growth_semipar, map_semipar_devs, array(pe_pars[,,,,2], dim = dim(pe_pars)[1:4]), bins,
-                                                                            fit_devs = fit_semipar_devs, n_cond = n_cond)
+                                                                            fit_devs = fit_semipar_devs, n_cond = n_cond, rw_init_sigma = rw_init_sigma)
   } # end sim loop
 
   # return stuff

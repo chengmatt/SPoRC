@@ -377,6 +377,38 @@ Get_PE_loglik <- function(PE_model,
   return(loglik)
 } # return log likelihood
 
+#' A selectivity deviation map laid out by region and fleet
+#'
+#' The units \code{\link{Get_PE_loglik}} divides a shared deviation's penalty
+#' between, one row per region and fleet whose penalty is evaluated. A
+#' deviation copied to another fleet under \code{"est_shared_f_x"} is then one
+#' parameter held by both fleets and penalized once, as one shared over regions
+#' already is.
+#'
+#' @param map Array \code{[region, year, bin, sex, fleet]} of deviation levels.
+#' @param cont_tv Integer array \code{[region, fleet]} of time variation codes.
+#' @param pe_wt Penalty weight by fleet; a fleet at zero is not penalized.
+#'
+#' @return Array \code{[n_regions * n_fleets, year, bin, sex, 1]}, unit
+#'   \code{r + (f - 1) * n_regions}, \code{NA} where a unit is not penalized.
+#'
+#' @keywords internal
+sel_devs_by_unit <- function(map, cont_tv, pe_wt) {
+
+  n_regions <- dim(map)[1]
+  n_fleets <- dim(map)[5]
+  if(is.null(pe_wt)) pe_wt <- rep(1, n_fleets) # lists from before the weight existed
+  out <- array(NA, dim = c(n_regions * n_fleets, dim(map)[2:4], 1))
+  for(f in seq_len(n_fleets)) {
+    for(r in seq_len(n_regions)) {
+      if(cont_tv[r,f] == 0 || pe_wt[f] == 0) next # no penalty here
+      out[r + (f - 1) * n_regions,,,,1] <- map[r,,,,f]
+    } # end r loop
+  } # end f loop
+  out
+
+} # end function
+
 #' Compute Movement Process Error Log-Likelihood (Positive Scale)
 #'
 #' The log likelihood of \code{move_devs}, a field over origin-destination

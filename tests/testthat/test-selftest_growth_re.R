@@ -49,9 +49,9 @@ test_that("the operating model draws iid and random walk series on the growth pa
   devs <- sim_env$ln_growth_devs
   expect_equal(dim(devs), c(dim(truth$ln_growth_devs), n_sims))
 
-  # the iid sd, the walk's first year at its own sd and its steps at that sd, across replicates
+  # the iid sd, and the walk's steps at its sd from a first year that keeps its value under the diffuse start
   expect_equal(sd(as.vector(devs[1,1,,1,1,])), 0.1, tolerance = 0.1)
-  expect_equal(sd(devs[1,1,1,3,1,]), 0.05, tolerance = 0.25)
+  expect_true(all(devs[1,1,1,3,1,] == truth$ln_growth_devs[1,1,1,3,1]))
   expect_equal(sd(as.vector(apply(devs[1,1,,3,1,], 2, diff))), 0.05, tolerance = 0.1)
   expect_true(all(devs[1,1,,c(2, 4, 5),1,] == 0)) # the parameters that do not vary
   expect_gt(max(abs(devs[1,1,,1,1,1] - devs[1,1,,1,1,2])), 0.05) # replicates draw their own
@@ -71,11 +71,16 @@ test_that("the operating model draws iid and random walk series on the growth pa
   expect_equal(as.numeric(at_draw$rep$SizeAgeTrans_fish), as.numeric(by_hand$SizeAgeTrans_fish), tolerance = 1e-12)
   expect_gt(max(abs(sim_env$WAA[1,1,,1,,1,1] - obj$rep$WAA[1,1,,1,,1])), 1e-3) # and the draw moved growth
 
-  # the penalty at the draw is the density by hand; the estimation model gives the walk's first year
-  # the diffuse sd growth_rw_init_sigma, the one convention the draw does not copy
+  # the penalty at the draw is the density by hand, the walk's first year at the diffuse sd growth_rw_init_sigma
   by_hand_ll <- sum(dnorm(devs_rep1[1,1,,1,1], 0, 0.1, TRUE)) + dnorm(devs_rep1[1,1,1,3,1], 0, input_list$data$growth_rw_init_sigma, TRUE) +
     sum(dnorm(diff(devs_rep1[1,1,,3,1]), 0, 0.05, TRUE))
   expect_equal(-at_draw$rep$growth_tv_nLL, by_hand_ll, tolerance = 1e-8)
+
+  # under NA the estimation model starts the walk at its own sd, and so does the draw
+  sim_list$growth_rw_init_sigma <- NA
+  set.seed(6)
+  devs_na <- Setup_sim_env(sim_list)$ln_growth_devs
+  expect_equal(sd(devs_na[1,1,1,3,1,]), 0.05, tolerance = 0.25)
 
 })
 
@@ -213,8 +218,9 @@ test_that("a refit on simulated data recovers the growth process error", {
 
   set.seed(31)
   self_test <- suppressWarnings(simulation_self_test(data = input_list$data, parameters = truth, mapping = pinned_map, random = c("ln_growth_devs", "ln_RecDevs"),
-                                               rep = at_truth$rep, sd_rep = NULL, n_sims = 3, newton_loops = 1,
-                                               what = "SSB", what_par = "growth_pe_pars", n_cond_yrs = 0))
+                                               rep = at_truth$rep, sd_rep = exact_pars_sd_rep(at_truth, c("ln_growth_devs", "ln_RecDevs")),
+                                               obj = at_truth, n_sims = 3, newton_loops = 1, sim_type = "joint",
+                                               what = "SSB", what_par = "growth_pe_pars"))
   expect_equal(sum(is.na(self_test$SSB)), 0) # every replicate refit
   est_sd <- exp(self_test$growth_pe_pars[1,1,3,1,1,])
   expect_true(all(is.finite(est_sd)))

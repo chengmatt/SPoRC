@@ -29,7 +29,8 @@ correction. \code{RecDevs_model} sets what the draw is centered on: zero for
 independent deviations, the previous year's for a random walk, and
 \code{RecDevs_rho} times it for an AR1. Only the independent draws are bias
 corrected, a walk's deviation not being mean zero. A year covered by
-\code{Rec_input} draws nothing.
+\code{Rec_input} draws nothing, and one covered by \code{ln_RecDevs_input}
+reads its deviations from there.
 }
 \details{
 Under \code{rec_lag = 0}, \code{\link{run_annual_cycle}} draws year \code{y}'s

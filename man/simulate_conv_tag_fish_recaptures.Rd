@@ -19,7 +19,9 @@ simulate_conv_tag_fish_recaptures(
   n_regions,
   n_ages,
   n_sexes,
-  n_fish_fleets
+  n_fish_fleets,
+  tag_pools = NULL,
+  tag_fleets = NULL
 )
 }
 \arguments{
@@ -53,6 +55,17 @@ Poisson and the multinomial.}
 replicate indices.}
 
 \item{n_pop, n_regions, n_ages, n_sexes, n_fish_fleets}{Dimension sizes.}
+
+\item{tag_pools}{List of the population, age and sex groups the estimation
+model pools recaptures over (\code{conv_tag_pop_pool} and the rest). A
+negative binomial with a group of more than one attended level is drawn once
+per group, into the group's first level. \code{NULL} (default) draws every
+cell on its own.}
+
+\item{tag_fleets}{Fleets whose recaptures the estimation model fits
+(\code{use_conv_fish_tagging == 1}). The recovery-conditioned forms draw their
+total over these fleets alone, as the estimation model conditions on it;
+\code{NULL} (default) is every fleet.}
 }
 \value{
 \code{obs_conv_tag_fish_recap} with the draws filled in at

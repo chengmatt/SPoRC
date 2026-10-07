@@ -95,7 +95,7 @@ utils::globalVariables(c(
   "AgeObsCorr_srv_idx_pop", "trans_rho_srv_idx_pop", "trans_rho_srv_idx_pop_year",
   "trans_rho_srv_idx_pop_us", "SrvIdxAA_pop_Type", "SrvIdxAA_pop_LikeType",
   "SrvIdxAA_pop_sigma_form", "ObsSrvIdxAA_pop_SE",
-  "TrueFishIdx_pop", "TrueSrvIdx_pop", "CAA_yr", "SrvIAA_yr",
+  "TrueFishIdx_pop", "TrueSrvIdx_pop", "fish_idx_mvn_eps", "srv_idx_mvn_eps",
   "catch_agg", "catch_pop_agg", "fidx_agg", "fidx_pop_agg", "sidx_agg", "sidx_pop_agg",
   "dont_pen_recdev_first",
   "Catch_seas_Type", "Catch_pop_seas_Type", "Discard_seas_Type",

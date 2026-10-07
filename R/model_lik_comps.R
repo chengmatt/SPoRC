@@ -5,6 +5,23 @@
 
 # Composition Likelihoods ---------------------------------------------------
 
+#' One sum of the written out multinomial
+#'
+#' \code{sum(obs_w * log(props + const))}, with a bin observed empty adding zero
+#' rather than \code{0 * log(0)}, which is \code{NaN} under \code{addtocomp = 0}.
+#'
+#' @param obs_w Observed proportions weighting the sum, plus \code{const} or not.
+#' @param props Expected or observed proportions the logarithm is taken of.
+#' @param const Composition constant, \code{addtocomp}.
+#'
+#' @return Numeric scalar.
+#'
+#' @keywords internal
+comp_mltnml_term = function(obs_w, props, const) {
+  empty = as.numeric(obs_w) == 0 # an empty bin owes nothing, so keep its log finite
+  sum(obs_w * log(props + const + empty))
+}
+
 #' Composition Data Likelihood
 #'
 #' Computes the negative log-likelihood contribution for composition data
@@ -138,6 +155,11 @@ Get_Comp_Likelihoods = function(Exp,
   ln_theta = array(ln_theta, dim = c(n_regions, n_sexes))
   LN_corr_pars = array(LN_corr_pars, dim = c(n_regions, n_sexes, 3))
 
+  # an aggregated composition is the whole model's, every region and sex summed, so it is read
+  # before the per-region inputs are cut down to the regions with observations
+  Exp_all = 0
+  for(r in 1:n_regions) for(s in 1:n_sexes) Exp_all = Exp_all + Exp[r,,s] # expected numbers by bin
+
   # Filter every per-region input down to the regions that have observations, so the
   # loop index r lines up across Obs/Exp/ISS/Wt_Mltnml/ln_theta/LN_corr_pars
   used = which(use == 1)
@@ -163,7 +185,7 @@ Get_Comp_Likelihoods = function(Exp,
     # NaN. Same guard the split and joint comps have.
     if(!any(is.finite(Obs[1,,1])) || sum(Obs[1,,1], na.rm = TRUE) == 0) return(comp_nLL)
 
-    tmp_Exp = matrix(rowSums(matrix(Exp, nrow = n_model_bins)) / (n_sexes * n_regions), nrow = 1) # aggregate
+    tmp_Exp = matrix(Exp_all, nrow = 1) # every region and sex
     tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize
 
     # Expected age bins get collapsed to observed age bins if ageing error is
@@ -181,8 +203,8 @@ Get_Comp_Likelihoods = function(Exp,
       tmp_Obs = (Obs[1,,1]) / sum(Obs[1,,1]) # Normalize observed values
       ESS = ISS[1,1] * Wt_Mltnml[1,1] # Effective sample size
       obs_w = if(comp_const_obs == 1) tmp_Obs + const else tmp_Obs # add composition constant to observed or not
-      comp_nLL[1,1] = -1 * ESS * sum((obs_w * log(tmp_Exp + const))) # ADMB multinomial likelihood
-      comp_nLL[1,1] = comp_nLL[1,1] - -1 * ESS * sum((obs_w * log(tmp_Obs + const))) # Multinomial offset (subtract offset from actual likelihood)
+      comp_nLL[1,1] = -1 * ESS * comp_mltnml_term(obs_w, tmp_Exp, const) # ADMB multinomial likelihood
+      comp_nLL[1,1] = comp_nLL[1,1] - -1 * ESS * comp_mltnml_term(obs_w, tmp_Obs, const) # Multinomial offset (subtract offset from actual likelihood)
     } # end if multinomial likelihood
 
     if(Likelihood_Type == 1) {
@@ -271,8 +293,8 @@ Get_Comp_Likelihoods = function(Exp,
           tmp_Obs = (Obs[r,,s]) / sum(Obs[r,,s]) # Normalize observed temporary variable
           ESS = ISS[r,s] * Wt_Mltnml[r,s] # Effective sample size
           obs_w = if(comp_const_obs == 1) tmp_Obs + const else tmp_Obs
-          comp_nLL[r,s] = -1 * ESS * sum((obs_w * log(tmp_Exp + const))) # ADMB multinomial likelihood
-          comp_nLL[r,s] = comp_nLL[r,s] - -1 * ESS * sum((obs_w * log(tmp_Obs + const))) # Multinomial offset (subtract offset from actual likelihood)
+          comp_nLL[r,s] = -1 * ESS * comp_mltnml_term(obs_w, tmp_Exp, const) # ADMB multinomial likelihood
+          comp_nLL[r,s] = comp_nLL[r,s] - -1 * ESS * comp_mltnml_term(obs_w, tmp_Obs, const) # Multinomial offset (subtract offset from actual likelihood)
         } # end if multinomial likelihood
 
         if(Likelihood_Type == 1) {
@@ -366,8 +388,8 @@ Get_Comp_Likelihoods = function(Exp,
         tmp_Obs = as.vector((Obs[r,,]) / sum(Obs[r,,])) # Normalize observed temporary variable
         ESS = ISS[r,1] * Wt_Mltnml[r,1] # Effective sample size
         obs_w = if(comp_const_obs == 1) tmp_Obs + const else tmp_Obs
-        comp_nLL[r,1] = -1 * ESS * sum((obs_w * log(tmp_Exp + const))) # ADMB multinomial likelihood
-        comp_nLL[r,1] = comp_nLL[r,1] - -1 * ESS * sum((obs_w * log(tmp_Obs + const))) # Multinomial offset (subtract offset from actual likelihood)
+        comp_nLL[r,1] = -1 * ESS * comp_mltnml_term(obs_w, tmp_Exp, const) # ADMB multinomial likelihood
+        comp_nLL[r,1] = comp_nLL[r,1] - -1 * ESS * comp_mltnml_term(obs_w, tmp_Obs, const) # Multinomial offset (subtract offset from actual likelihood)
       } # end if multinomial likelihood
 
       if(Likelihood_Type == 1) {
@@ -575,8 +597,12 @@ Get_Comp_Likelihoods_OSA = function(Exp,
   comp_nLL = RTMB::AD(comp_nLL)
   dim(comp_nLL) = c(n_regions, n_sexes)
 
-  # predicted quantities: reshaped and cut down to the observed regions, not registered
-  Exp          = array(Exp,          dim = c(n_regions, n_model_bins, n_sexes))[used, , , drop = FALSE]
+  # predicted quantities: reshaped and cut down to the observed regions, not registered. an aggregated
+  # composition is the whole model's, so it is summed over every region and sex first
+  Exp          = array(Exp,          dim = c(n_regions, n_model_bins, n_sexes))
+  Exp_all      = 0
+  for(r in 1:n_regions) for(s in 1:n_sexes) Exp_all = Exp_all + Exp[r,,s] # expected numbers by bin
+  Exp          = Exp[used, , , drop = FALSE]
   ISS          = array(ISS,          dim = c(n_regions, n_sexes))[used, , drop = FALSE]
   ln_theta     = array(ln_theta,     dim = c(n_regions, n_sexes))[used, , drop = FALSE]
   LN_corr_pars = array(LN_corr_pars, dim = c(n_regions, n_sexes, 3))[used, , , drop = FALSE]
@@ -584,7 +610,7 @@ Get_Comp_Likelihoods_OSA = function(Exp,
   # Comp_Type 0 (aggregated)
   if(Comp_Type == 0) {
 
-    tmp_Exp = rowSums(matrix(Exp, nrow = n_model_bins)) / (n_sexes * n_ru)
+    tmp_Exp = Exp_all # every region and sex
     tmp_Exp = tmp_Exp / sum(tmp_Exp)
     if(age_or_len == 0 || is.matrix(AgeingError)) {
       tmp_Exp = as.vector(matrix(tmp_Exp, nrow = 1) %*% AgeingError)

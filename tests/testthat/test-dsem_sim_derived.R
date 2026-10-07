@@ -24,11 +24,12 @@ derived_growth_om <- function(n_sims = 2, closed_loop_yrs = 3, condition_on_fit 
 }
 
 # what the fit forms after growth, for one year: the fishery weight of what its length selectivity takes, and
-# fishery and survey selectivity at age read through the keys
-pcod_after_growth <- function(dd, rep, pars, growth, y, n_ages) {
+# fishery and survey selectivity at age read through the keys. om_sel_l is a replicate's own selectivity at
+# length, whose time-varying survey curve the closed loop draws past the fit
+pcod_after_growth <- function(dd, rep, pars, growth, y, n_ages, om_sel_l = NULL) {
   n_extra <- dim(growth$WAA)[3] - dim(rep$fish_sel_l)[2] # years past the fit read the last fitted selectivity
   fish_sel_l <- extend_years(rep$fish_sel_l, n_extra, 2, "last")
-  srv_sel_l <- extend_years(rep$srv_sel_l, n_extra, 2, "last")
+  srv_sel_l <- if(is.null(om_sel_l)) extend_years(rep$srv_sel_l, n_extra, 2, "last") else om_sel_l$srv_sel_l
   WAA_fish <- growth_selected_waa_year(growth$WAA_fish, growth$SizeAgeTrans_fish, fish_sel_l, dd$wt_len_pars, growth_len_mid(dd$growth_len_lower),
                                        dd$fish_waa_selected, y, 1, 1, dd$n_seas, 1)
   list(WAA_fish = WAA_fish[1,1,y,,,1,1],
@@ -78,7 +79,7 @@ test_that("a drawn growth series rebuilds weight at age and the keys through Get
     expect_equal(as.numeric(se$SizeAgeTrans_fish[,,,,,,,,sim]), as.numeric(by_hand$SizeAgeTrans_fish), tolerance = 1e-10)
     expect_equal(as.numeric(se$SizeAgeTrans_srv[,,,,,,,,sim]), as.numeric(by_hand$SizeAgeTrans_srv), tolerance = 1e-10)
     for(y in c(1, om$n_yrs, n_sim_yrs)) {
-      after <- pcod_after_growth(om$obj$data, om$obj$rep, om$pars, by_hand, y, length(om$obj$data$ages))
+      after <- pcod_after_growth(om$obj$data, om$obj$rep, om$pars, by_hand, y, length(om$obj$data$ages), se$growth_length_sel_by_sim[[sim]])
       expect_equal(se$WAA_fish[1,1,y,,,1,1,sim], after$WAA_fish, tolerance = 1e-10)
       expect_equal(se$fish_sel[1,1,y,1,,1,1,sim], after$fish_sel, tolerance = 1e-10)
       expect_equal(se$srv_sel[1,1,y,1,,1,1,sim], after$srv_sel, tolerance = 1e-10)
@@ -145,7 +146,7 @@ test_that("cohort growth advances year by year from the operating model's own nu
   expect_equal(as.numeric(sim_env$WAA[1,1,,,,,1]), as.numeric(g$WAA[1,1,,,,]), tolerance = 1e-10)
   expect_equal(as.numeric(sim_env$SizeAgeTrans_fish[1,1,,,,,,,1]), as.numeric(g$SizeAgeTrans_fish[1,1,,,,,,]), tolerance = 1e-10)
   for(y in c(styr, n_sim_yrs)) {
-    after <- pcod_after_growth(dd, om$obj$rep, om$pars, g, y, length(dd$ages))
+    after <- pcod_after_growth(dd, om$obj$rep, om$pars, g, y, length(dd$ages), sim_env$growth_length_sel_by_sim[[1]])
     expect_equal(sim_env$WAA_fish[1,1,y,,,1,1,1], after$WAA_fish, tolerance = 1e-10)
     expect_equal(sim_env$fish_sel[1,1,y,1,,1,1,1], after$fish_sel, tolerance = 1e-10)
     expect_equal(sim_env$srv_sel[1,1,y,1,,1,1,1], after$srv_sel, tolerance = 1e-10)

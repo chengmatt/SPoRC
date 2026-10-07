@@ -112,7 +112,9 @@ otherwise its pooling argument is overridden to a single group with a warning.}
 
 \item{conv_tag_release_platform}{Character matrix \code{[n_conv_tag_cohorts ×
 2]} of the release platform and fleet index per cohort, in the format
-\code{\link{Setup_Sim_Tagging}} uses. Default \code{NULL}.}
+\code{\link{Setup_Sim_Tagging}} uses. Default \code{NULL} releases from the
+survey, fleet 1, which is read only when \code{conv_fish_tag_attr} leaves a
+dim of the released fish to be spread.}
 
 \item{...}{Optional starting values: \code{ln_init_conv_tag_mort} and
 \code{ln_conv_tag_shed}, each a scalar or a vector

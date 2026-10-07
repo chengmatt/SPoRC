@@ -37,3 +37,7 @@ dev/design_age_disaggregated_observations.md
 dev/design_wham_move_re.md
 /dev/transboundary_sablefish
 /dev/catch_to_F_om
+/dev/checkconsistency
+/dev/selftest_unbiased
+dev/check_consistency_simple/check_consistency.R
+/dev/check_consistency_simple

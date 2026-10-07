@@ -24,7 +24,9 @@
 #'   \code{Get_Det_Recruitment}, \code{Get_Init_NAA},
 #'   \code{predict_sim_fish_iss_fmort}, \code{rho_trans},
 #'   \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures},
-#'   \code{draw_index_obs}, \code{resolve_idx_factor}.
+#'   \code{draw_index_obs}, \code{resolve_idx_factor}, \code{draw_at_age_sources},
+#'   \code{collapse_seas_discards}, \code{redraw_year_total_comps},
+#'   \code{seas_agg_season}.
 #'
 #'
 #' @export Setup_sim_env
@@ -65,6 +67,10 @@ Setup_sim_env <- function(sim_list) {
   sim_env$draw_naa_innovations <- draw_naa_innovations
   sim_env$color_naa_dim <- color_naa_dim
   sim_env$Get_3d_precision <- Get_3d_precision
+  sim_env$draw_at_age_sources <- draw_at_age_sources
+  sim_env$collapse_seas_discards <- collapse_seas_discards
+  sim_env$redraw_year_total_comps <- redraw_year_total_comps
+  sim_env$seas_agg_season <- seas_agg_season
 
   # state-space numbers at age; lists built before the option existed have none of it
   if(is.null(sim_list$NAA_re)) sim_list$NAA_re <- 0
@@ -75,6 +81,14 @@ Setup_sim_env <- function(sim_list) {
   if(is.null(sim_list$naa_re_ages)) sim_list$naa_re_ages <- if(isTRUE(sim_list$n_ages > 1)) 2:sim_list$n_ages else integer(0)
   if(is.null(sim_list$naa_re_yrs)) sim_list$naa_re_yrs <- if(isTRUE(sim_list$n_yrs > 1)) 2:sim_list$n_yrs else integer(0)
   if(is.null(sim_list$naa_re_seas)) sim_list$naa_re_seas <- 1
+
+  # the estimated part of each index sd; lists built before the option existed draw at the reported errors
+  for(data_name in c("FishIdx", "FishIdx_pop", "SrvIdx", "SrvIdx_pop")) {
+    n_fleets <- if(grepl("^Fish", data_name)) sim_list$n_fish_fleets else sim_list$n_srv_fleets
+    if(is.null(n_fleets)) next # a list with no such fleets draws no index
+    if(is.null(sim_list[[paste0("sigma", data_name, "_form")]])) sim_list[[paste0("sigma", data_name, "_form")]] <- 0
+    if(is.null(sim_list[[paste0("ln_sigma", data_name)]])) sim_list[[paste0("ln_sigma", data_name)]] <- rep(0, n_fleets)
+  } # end data_name loop
 
   # recruitment deviation process error; lists built before the option existed drew independently
   if(is.null(sim_list$RecDevs_model)) sim_list$RecDevs_model <- 1
@@ -116,6 +130,15 @@ Setup_sim_env <- function(sim_list) {
     dims <- dim(sim_env[[entry$sim_par]])
     sim_env$dsem_drawn[[entry$sim_par]] <- array(FALSE, dim = dims[-length(dims)]) # every dim but the replicate
   } # end entry loop
+
+  # draw F, discard mortality and selectivity devs, before any of any growth rebuild that reads selectivity at length
+  if(!is.null(sim_env$fleet_devs_on)) draw_sim_fleet_devs(sim_env)
+
+  # standardized residuals of the at-age fleets whose ages are correlated, all drawn before the first year
+  draw_sim_at_age_corr(sim_env)
+
+  # multivariate normal index errors over each fleet's covariance, all drawn before the first year
+  draw_sim_idx_mvn(sim_env)
 
   # the conditioning years reproduce the fit's reported catchability, so a dsem does not rewrite them
   q_devs_cond <- stats::setNames(lapply(q_dev_par_names(), function(name) sim_env[[name]]), q_dev_par_names())

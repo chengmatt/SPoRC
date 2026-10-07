@@ -3,7 +3,18 @@
 # Francis data weighting: iteratively rescale composition sample sizes so the model's fit to them is
 # consistent with the variability actually observed.
 
-# Inverse variance calculations used in Francis reweighting (makes it so that it doesn't take variance from vector of length 1)
+#' Inverse variance for Francis reweighting
+#'
+#' Inverse of the sample variance of \code{x} after dropping \code{NA}, used to
+#' weight each year's standardized residual. A vector with fewer than two values,
+#' or a variance that is zero or not finite, returns \code{1} rather than
+#' \code{NA} or \code{Inf}.
+#'
+#' @param x Numeric vector.
+#'
+#' @return Numeric scalar, \code{1 / var(x)} or \code{1} where that is undefined.
+#'
+#' @keywords internal
 safe_inv_var <- function(x) {
   x <- x[!is.na(x)]
   if(length(x) < 2) return(1)

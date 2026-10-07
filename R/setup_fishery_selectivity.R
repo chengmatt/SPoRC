@@ -577,6 +577,8 @@ Setup_Mod_Retsel <- function(
 #'   estimation structure for the selectivity process error hyperparameters,
 #'   required when any fleet varies continuously. See
 #'   \code{\link{do_sel_pe_pars_mapping}}.
+#'   Deviations shared over regions or fleets in \code{fish_sel_devs_spec} share
+#'   these the same way, whatever this says, since one series has one variance.
 #' @param fish_sel_devs_spec Character vector \code{[n_fish_fleets]} of the
 #'   estimation structure for the annual selectivity deviations, required when any
 #'   fleet varies continuously. See \code{\link{do_sel_devs_mapping}}.

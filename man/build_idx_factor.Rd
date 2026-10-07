@@ -25,8 +25,10 @@ extend past the data.}
 List with one element per fleet: \code{NULL} for non-mvn fleets, and
   otherwise \code{d} and \code{lambda} from \code{\link{cov_to_factor}}, a
   \code{row} lookup array \code{[region, year, season]} holding each used
-  cell's covariance row (\code{NA} elsewhere), and the means \code{d_mean}
-  and \code{lambda_mean} used for cells outside the covariance.
+  cell's covariance row (\code{NA} elsewhere), the means \code{d_mean}
+  and \code{lambda_mean} used for cells outside the covariance, and
+  \code{chol_lower}, the lower Cholesky factor of the covariance, which
+  \code{\link{draw_sim_idx_mvn}} draws the cells inside it from.
 }
 \description{
 Validates each multivariate normal fleet's covariance against its use flags

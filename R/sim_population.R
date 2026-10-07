@@ -161,7 +161,8 @@ generate_initial_age_structure <- function(y,
 #' independent deviations, the previous year's for a random walk, and
 #' \code{RecDevs_rho} times it for an AR1. Only the independent draws are bias
 #' corrected, a walk's deviation not being mean zero. A year covered by
-#' \code{Rec_input} draws nothing.
+#' \code{Rec_input} draws nothing, and one covered by \code{ln_RecDevs_input}
+#' reads its deviations from there.
 #'
 #' Under \code{rec_lag = 0}, \code{\link{run_annual_cycle}} draws year \code{y}'s
 #' deviations at the end of year \code{y - 1}, so catch advice for year \code{y}
@@ -195,7 +196,11 @@ draw_sim_rec_devs <- function(y,
     use_rec_input <- exists("Rec_input") && (y <= dim(Rec_input)[3])
     tmp_ln_rec_devs <- NULL
 
-    if(!use_rec_input) {
+    # which regions rec devs are zero or not
+    use_dev_input <- !use_rec_input && !is.null(sim_env$ln_RecDevs_input) && y <= dim(sim_env$ln_RecDevs_input)[3]
+    if(use_dev_input) sim_env$ln_RecDevs[,,y,sim] <- ln_RecDevs_input[,,y,sim] * (R0[,,y,sim] != 0)
+
+    if(!use_rec_input && !use_dev_input) {
       for(p in 1:n_pop) {
 
         # reset deviations for each population (draws for each popn)
@@ -244,6 +249,199 @@ draw_sim_rec_devs <- function(y,
   return(invisible(NULL))
 
 }
+
+
+#' One replicate's recruitment deviations, the fit's first and drawn from its penalty after
+#'
+#' Deviations over the first \code{n_cond_yrs} years are the fit's. After them, every deviation
+#' the fit penalizes is drawn from the penalty \code{\link{get_rec_devs_penalty}} puts on it:
+#' independent deviations about minus half their variance times the year's bias ramp, or about
+#' the fit's own mean under \code{RecDevs_pen_center = 1}; a random walk from the previous
+#' calendar year; or an AR1 about its centered mean. Each sd is divided by the square root of
+#' the cell's \code{Wt_Rec}, since a weighted penalty is the same density at that smaller sd.
+#'
+#' A deviation the fit leaves unpenalized keeps the fit's value: one mapped off, the first years
+#' under \code{dont_pen_recdev_first}, a walk's first year under its diffuse start, a zero
+#' weight, or a region with no recruits. Cells sharing a penalty level take one draw, and years
+#' past the fit's deviations take none, as in the estimation model.
+#'
+#' @param data,pars,rep The fit's data list, parameter list and report, or one replicate's
+#'   view of them.
+#' @param n_cond_yrs Years whose deviations stay at the fit's.
+#' @param n_yrs Years the operating model runs.
+#' @param map_RecDevs The fit's map for \code{ln_RecDevs}, whose \code{NA} cells are fixed
+#'   values rather than a process, or \code{NULL} when every cell is estimated.
+#'
+#' @return Array \code{[n_pop, n_regions, n_yrs]} of log recruitment deviations.
+#'
+#' @keywords internal
+rec_devs_past_fit <- function(data, pars, rep, n_cond_yrs, n_yrs, map_RecDevs = NULL) {
+
+  fit_devs <- pars$ln_RecDevs
+  n_pop <- dim(fit_devs)[1]
+  n_regions <- dim(fit_devs)[2]
+  n_fit_dev_yrs <- dim(fit_devs)[3]
+  n_dev_yrs <- min(n_fit_dev_yrs, n_yrs)
+  devs <- array(0, dim = c(n_pop, n_regions, n_yrs)) # years past the fit's deviations take none
+  devs[,,seq_len(n_dev_yrs)] <- fit_devs[,,seq_len(n_dev_yrs)]
+
+  # the penalty's own switch and sharing, every cell its own level when the fit gives none
+  pen_map <- if(is.null(data$map_ln_RecDevs)) array(seq_along(fit_devs), dim = dim(fit_devs)) else array(data$map_ln_RecDevs, dim = dim(fit_devs))
+  if(!is.null(map_RecDevs)) pen_map[is.na(array(map_RecDevs, dim = dim(fit_devs)))] <- NA # a data list not yet synced to the map still penalizes them
+  pen_wt <- array(if(is.null(data$Wt_Rec)) 1 else data$Wt_Rec, dim = dim(fit_devs))
+  PE_model <- if(is.null(data$RecDevs_model)) 1 else data$RecDevs_model
+  own_mean <- isTRUE(data$RecDevs_pen_center == 1)
+  init_sd <- if(is.null(data$RecDevs_rw_init_sigma)) 5 else data$RecDevs_rw_init_sigma
+  sigmaR_switch <- if(is.null(data$sigmaR_switch)) 1 else data$sigmaR_switch
+  rho <- if(is.null(pars$RecDevs_rho)) array(0, dim = c(n_pop, n_regions)) else array(rho_trans(pars$RecDevs_rho), dim = c(n_pop, n_regions))
+  ramp <- rep$bias_ramp
+  shared_draw <- list() # the value each shared penalty level drew
+
+  for(y in seq_len(n_dev_yrs)) {
+
+    if(y <= n_cond_yrs) next # the fit's own year
+
+    for(p in seq_len(n_pop)) {
+      for(r in seq_len(n_regions)) {
+
+        # unpenalized cells keep the fit's value, and a shared level takes the draw it already made
+        no_recruits <- isTRUE(data$rec_region_prop_spec == 1) && rep$rec_region_prop[p,r] == 0
+        if(is.na(pen_map[p,r,y]) || pen_wt[p,r,y] == 0 || no_recruits) next
+        level <- as.character(pen_map[p,r,y])
+        if(!is.null(shared_draw[[level]])) {
+          devs[p,r,y] <- shared_draw[[level]]
+          next
+        }
+
+        regime <- if(y < sigmaR_switch) 1 else 2
+        sigma <- exp(pars$ln_sigmaR[regime,p,r])
+        draw_sd <- sigma / sqrt(pen_wt[p,r,y])
+
+        # independent, about the bias-corrected mean or the fit's own mean over the regime's years
+        if(PE_model == 1) {
+          regime_yrs <- if(regime == 1) seq_len(sigmaR_switch - 1) else sigmaR_switch:n_fit_dev_yrs
+          center <- if(own_mean) dev_own_mean(fit_devs[p,r,regime_yrs], as.numeric(!is.na(pen_map[p,r,regime_yrs]))) else -sigma^2 / 2 * ramp[y]
+          devs[p,r,y] <- stats::rnorm(1, center, draw_sd)
+        }
+
+        # a walk steps from the previous calendar year, and a diffuse first year leaves the level to the fit
+        if(PE_model == 2) {
+          if(y == 1 && !is.na(init_sd)) next
+          devs[p,r,y] <- stats::rnorm(1, if(y == 1) 0 else devs[p,r,y - 1], draw_sd)
+        }
+
+        # an ar1 about its centered mean, year one at the stationary sd
+        if(PE_model == 3) {
+          center <- -sigma^2 / (2 * (1 - rho[p,r]^2)) * ramp[y]
+          if(y == 1) devs[p,r,y] <- stats::rnorm(1, center, draw_sd / sqrt(1 - rho[p,r]^2))
+          else {
+            sigma_prev <- exp(pars$ln_sigmaR[if(y - 1 < sigmaR_switch) 1 else 2, p, r])
+            center_prev <- -sigma_prev^2 / (2 * (1 - rho[p,r]^2)) * ramp[y - 1]
+            devs[p,r,y] <- stats::rnorm(1, center + rho[p,r] * (devs[p,r,y - 1] - center_prev), draw_sd)
+          }
+        }
+
+        shared_draw[[level]] <- devs[p,r,y]
+
+      } # end r loop
+    } # end p loop
+  } # end y loop
+
+  devs
+
+} # end rec_devs_past_fit
+
+#' One replicate's initial age deviations, drawn from the penalty the fit puts on them
+#'
+#' Each initial age deviation the fit penalizes is drawn from that penalty, as
+#' \code{\link{get_init_devs_penalty}} writes it: about minus half the early recruitment
+#' variance times the bias ramp at the year the age was born (no correction under a walk),
+#' or about the fit's own mean under \code{InitDevs_pen_center = 1}, at the early sigma (its
+#' stationary value under an AR1) over the square root of the cell's \code{Wt_Init_Rec}. A
+#' later sex tied to the first by \code{Use_init_sex_pen} is drawn from both penalties
+#' together, given the first sex's draw.
+#'
+#' Deviations the fit leaves unpenalized keep its values, which is all of them under
+#' \code{equil_init_age_strc} 0 or 4, and cells sharing a level take one draw.
+#'
+#' @param data,pars,rep The fit's data list, parameter list and report, or one replicate's
+#'   view of them.
+#' @param map_InitDevs The fit's map for \code{ln_InitDevs}, whose \code{NA} cells are fixed,
+#'   or \code{NULL} when every cell is estimated.
+#'
+#' @return Array \code{[n_pop, n_regions, n_ages - 1, n_sexes]} of initial age deviations.
+#'
+#' @keywords internal
+init_devs_past_fit <- function(data, pars, rep, map_InitDevs = NULL) {
+
+  fit_devs <- pars$ln_InitDevs
+  if(length(dim(fit_devs)) == 3) fit_devs <- array(fit_devs, dim = c(dim(fit_devs), 1)) # one curve shared by every sex
+  devs <- fit_devs
+  structure <- if(is.null(data$equil_init_age_strc)) 2 else data$equil_init_age_strc
+  if(!structure %in% c(1, 2, 3)) return(devs) # nothing penalized, so nothing to draw from
+
+  dev_dim <- dim(fit_devs)
+  n_init_ages <- dev_dim[3]
+  n_init_sexes <- dev_dim[4]
+  init_idx <- if(structure == 1) seq_len(length(data$ages) - 2) else if(structure == 2) seq_len(n_init_ages) else unique(data$init_age_devs_shared[!is.na(data$init_age_devs_shared)])
+
+  # which cells the penalty reads, how they share, and the weight it takes
+  pen_use <- array(0, dim = dev_dim)
+  if(is.null(data$init_devs_pen_use)) pen_use[,,,1] <- 1 else pen_use[] <- data$init_devs_pen_use
+  pen_map <- if(is.null(data$map_ln_InitDevs)) array(seq_along(fit_devs), dim = dev_dim) else array(data$map_ln_InitDevs, dim = dev_dim)
+  if(!is.null(map_InitDevs)) pen_map[is.na(array(map_InitDevs, dim = dev_dim))] <- NA # a data list not yet synced to the map
+  pen_wt <- array(if(is.null(data$Wt_Init_Rec)) 1 else data$Wt_Init_Rec, dim = dev_dim)
+  PE_model <- if(is.null(data$RecDevs_model)) 1 else data$RecDevs_model
+  ramp <- if(is.null(rep$init_bias_ramp)) rep(rep$bias_ramp[1], n_init_ages) else rep$init_bias_ramp
+  sex_tie <- isTRUE(data$Use_init_sex_pen == 1) && n_init_sexes > 1
+  shared_draw <- list() # the value each shared level drew
+
+  for(p in seq_len(dev_dim[1])) {
+    for(r in seq_len(dev_dim[2])) {
+
+      if(isTRUE(data$rec_region_prop_spec == 1) && rep$rec_region_prop[p,r] == 0) next # no recruits, no penalty
+
+      # the early sigma, stationary under an ar1, and the center the penalty reads at each age
+      sigma <- exp(pars$ln_sigmaR[1,p,r])
+      if(PE_model == 3) sigma <- sigma / sqrt(1 - rho_trans(pars$RecDevs_rho[p,r])^2)
+      center <- if(isTRUE(data$InitDevs_pen_center == 1)) rep(dev_own_mean(fit_devs[p,r,init_idx,], pen_use[p,r,init_idx,]), length(init_idx))
+                else if(PE_model == 2) rep(0, length(init_idx))
+                else -sigma^2 / 2 * ramp[init_idx]
+
+      for(s in seq_len(n_init_sexes)) {
+        for(k in seq_along(init_idx)) {
+
+          a <- init_idx[k]
+          if(is.na(pen_map[p,r,a,s])) next # fixed, so the fit's value
+          level <- as.character(pen_map[p,r,a,s])
+          if(!is.null(shared_draw[[level]])) {
+            devs[p,r,a,s] <- shared_draw[[level]] # a sex or region sharing a drawn parameter
+            next
+          }
+          if(pen_use[p,r,a,s] == 0 || pen_wt[p,r,a,s] == 0) next # estimated but unpenalized
+
+          draw_mean <- center[k]
+          draw_sd <- sigma / sqrt(pen_wt[p,r,a,s])
+
+          # a later sex tied to the first: the product of both normals, given the first sex's draw
+          if(sex_tie && s > 1) {
+            tie_sd <- exp(data$ln_sigma_init_sex)
+            precision <- 1 / draw_sd^2 + 1 / tie_sd^2
+            draw_mean <- (draw_mean / draw_sd^2 + devs[p,r,a,1] / tie_sd^2) / precision
+            draw_sd <- sqrt(1 / precision)
+          }
+
+          devs[p,r,a,s] <- stats::rnorm(1, draw_mean, draw_sd)
+          shared_draw[[level]] <- devs[p,r,a,s]
+
+        } # end k loop
+      } # end s loop
+    } # end r loop
+  } # end p loop
+
+  devs
+
+} # end init_devs_past_fit
 
 #' Deterministic recruitment for a simulation year
 #'
@@ -753,6 +951,9 @@ run_annual_cycle <- function(y,
     # note that some innovations are drawn before hand (in y = 1 here)
     if(isTRUE(sim_env$NAA_re > 0)) {
 
+      # a joint self test gives each replicate its own sd and correlations
+      naa_process <- sim_env$naa_process_by_sim[[sim]]
+      for(setting in names(naa_process)) sim_env[[setting]] <- naa_process[[setting]]
       sim_env$naa_eta <- draw_naa_innovations(sim_env) # get naa PE
       if(!is.null(sim_env$naa_eta_input)) { # if provided input eta
         n_cond <- dim(sim_env$naa_eta_input)[3]
@@ -812,7 +1013,7 @@ run_annual_cycle <- function(y,
 #' @return A named list containing all simulation outputs, including (among
 #'   others): \code{NAA}, \code{NAA0}, \code{SSB}, \code{Dynamic_SSB0},
 #'   \code{eff_SSB}, \code{Rec}, \code{ln_RecDevs}, \code{ln_InitDevs},
-#'   \code{ZAA}, \code{TrueCatch}, \code{ObsCatch}, \code{TrueCatch_pop},
+#'   \code{ZAA}, \code{tot_FAA}, \code{TrueCatch}, \code{ObsCatch}, \code{TrueCatch_pop},
 #'   \code{ObsCatch_pop}, \code{CAA}, \code{CAL},
 #'   \code{ObsFishAgeComps}, \code{ObsFishAgeComps_pop},
 #'   \code{ObsFishLenComps}, \code{ObsFishLenComps_pop},
@@ -828,7 +1029,15 @@ run_annual_cycle <- function(y,
 #'   \code{obs_conv_tag_fish_recap}, \code{LenBinMap}, and key dimension scalars
 #'   (\code{n_regions}, \code{n_pop}, \code{n_yrs}, \code{n_ages}, etc.).
 #'   Note that \code{n_years} and \code{n_yrs} are both present for backwards
-#'   compatibility.
+#'   compatibility. The deviations each replicate ran on are returned as the
+#'   estimation model names them, the replicate dim last: \code{ln_F_devs},
+#'   \code{logit_dmr_devs}, \code{ln_fishsel_devs}, \code{ln_retsel_devs},
+#'   \code{ln_srvsel_devs} and their \code{_bin_devs}, \code{move_devs},
+#'   \code{ln_growth_devs} and \code{ln_growth_semipar_devs}, each \code{NULL}
+#'   where the operating model drew none. The at-age data sources,
+#'   \code{CatchAA}, \code{DiscardAA} and \code{SrvIdxAA} and their \code{_pop}
+#'   counterparts, come back as \code{True*} and \code{Obs*} with their
+#'   \code{Use*} flags and \code{_SE} arrays.
 #'
 #'
 #' @export Simulate_Pop_Static
@@ -850,9 +1059,18 @@ Simulate_Pop_Static <- function(sim_list,
     } # end y loop
   } # end sim loop
 
+  # fishing mortality at age by fleet, the retained catch plus the discards that die, as the estimation model reports it
+  tot_FAA <- array(0, dim = dim(sim_env$fish_sel))
+  for(p in seq_len(sim_env$n_pop)) for(a in seq_len(sim_env$n_ages)) for(s in seq_len(sim_env$n_sexes)) {
+    sel <- array(sim_env$fish_sel[p,,,,a,s,,], dim = dim(sim_env$Fmort)) # region, year, season, fleet, replicate
+    ret <- array(sim_env$ret_sel[p,,,,a,s,,], dim = dim(sim_env$Fmort))
+    tot_FAA[p,,,,a,s,,] <- sim_env$Fmort * sel * (ret + (1 - ret) * sim_env$dmr)
+  } # end p, a, s loop
+
   # Output simulation outputs as a list
   sim_out <- list(init_F = sim_env$init_F,
                   Fmort = sim_env$Fmort,
+                  tot_FAA = tot_FAA,
                   dmr = sim_env$dmr,
                   ln_sigmaC = sim_env$ln_sigmaC,
                   ln_sigmaC_pop = sim_env$ln_sigmaC_pop,
@@ -864,6 +1082,18 @@ Simulate_Pop_Static <- function(sim_list,
                   srv_q = sim_env$srv_q, # note already scaled by catchability deviations
                   ln_fish_q_devs = sim_env$ln_fish_q_devs,
                   ln_srv_q_devs = sim_env$ln_srv_q_devs,
+                  # the drawn deviations of each process, NULL where none were drawn
+                  ln_F_devs = sim_env$ln_F_devs,
+                  logit_dmr_devs = sim_env$logit_dmr_devs,
+                  ln_fishsel_devs = sim_env$ln_fishsel_devs,
+                  ln_fishsel_bin_devs = sim_env$ln_fishsel_bin_devs,
+                  ln_retsel_devs = sim_env$ln_retsel_devs,
+                  ln_retsel_bin_devs = sim_env$ln_retsel_bin_devs,
+                  ln_srvsel_devs = sim_env$ln_srvsel_devs,
+                  ln_srvsel_bin_devs = sim_env$ln_srvsel_bin_devs,
+                  move_devs = sim_env$move_devs,
+                  ln_growth_devs = sim_env$ln_growth_devs,
+                  ln_growth_semipar_devs = sim_env$ln_growth_semipar_devs,
                   ln_RecDevs = sim_env$ln_RecDevs,
                   dsem_x_sim = sim_env$dsem_x_sim, # the dsem grid every replicate was drawn on, NULL without one
                   dsem_cov_obs_sim = sim_env$dsem_cov_obs_sim, # dsem covariate observations a refit reads
@@ -905,6 +1135,16 @@ Simulate_Pop_Static <- function(sim_list,
                   TrueCatchAA = sim_env$TrueCatchAA, ObsCatchAA = sim_env$ObsCatchAA,
                   TrueDiscardAA = sim_env$TrueDiscardAA, ObsDiscardAA = sim_env$ObsDiscardAA,
                   TrueSrvIdxAA = sim_env$TrueSrvIdxAA, ObsSrvIdxAA = sim_env$ObsSrvIdxAA,
+                  TrueCatchAA_pop = sim_env$TrueCatchAA_pop, ObsCatchAA_pop = sim_env$ObsCatchAA_pop,
+                  TrueDiscardAA_pop = sim_env$TrueDiscardAA_pop, ObsDiscardAA_pop = sim_env$ObsDiscardAA_pop,
+                  TrueSrvIdxAA_pop = sim_env$TrueSrvIdxAA_pop, ObsSrvIdxAA_pop = sim_env$ObsSrvIdxAA_pop,
+                  # the at-age use flags and reported errors, which simulation_data_to_SPoRC hands to a refit
+                  UseCatchAA = sim_env$UseCatchAA, ObsCatchAA_SE = sim_env$ObsCatchAA_SE,
+                  UseDiscardAA = sim_env$UseDiscardAA, ObsDiscardAA_SE = sim_env$ObsDiscardAA_SE,
+                  UseSrvIdxAA = sim_env$UseSrvIdxAA, ObsSrvIdxAA_SE = sim_env$ObsSrvIdxAA_SE,
+                  UseCatchAA_pop = sim_env$UseCatchAA_pop, ObsCatchAA_pop_SE = sim_env$ObsCatchAA_pop_SE,
+                  UseDiscardAA_pop = sim_env$UseDiscardAA_pop, ObsDiscardAA_pop_SE = sim_env$ObsDiscardAA_pop_SE,
+                  UseSrvIdxAA_pop = sim_env$UseSrvIdxAA_pop, ObsSrvIdxAA_pop_SE = sim_env$ObsSrvIdxAA_pop_SE,
                   ObsCatch = sim_env$ObsCatch,
                   ObsFishIdx = sim_env$ObsFishIdx,
                   TrueFishIdx = sim_env$TrueFishIdx,

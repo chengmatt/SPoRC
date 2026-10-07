@@ -423,10 +423,10 @@ check_sim_dimensions <- function(x,
 
   if(what %in% c('comp_fishage_like', 'ln_FishAge_theta_agg', 'FishAge_corr_pars_agg',
                  'comp_fishlen_like', 'ln_FishLen_theta_agg', 'FishLen_corr_pars_agg',
-                 'pop_comp_fishage_like', 'pop_comp_fishlen_like',
+                 'comp_fishage_pop_like', 'comp_fishlen_pop_like',
                  'comp_fishage_discard_like', 'ln_FishAge_discard_theta_agg', 'FishAge_discard_corr_pars_agg',
                  'comp_fishlen_discard_like', 'ln_FishLen_discard_theta_agg', 'FishLen_discard_corr_pars_agg',
-                 'pop_comp_fishage_discard_like', 'pop_comp_fishlen_discard_like')) {
+                 'comp_fishage_discard_pop_like', 'comp_fishlen_discard_pop_like')) {
     if(length(x) != n_fish_fleets)
       stop(paste(what, "needs to have a length of n_fish_fleets"))
   }
@@ -496,7 +496,7 @@ check_sim_dimensions <- function(x,
 
   if(what %in% c('comp_srvage_like', 'ln_SrvAge_theta_agg', 'SrvAge_corr_pars_agg',
                  'comp_srvlen_like', 'ln_SrvLen_theta_agg', 'SrvLen_corr_pars_agg',
-                 "pop_comp_srvage_like", "pop_comp_srvlen_like")) {
+                 "comp_srvage_pop_like", "comp_srvlen_pop_like")) {
     if(length(x) != n_srv_fleets)
       stop(paste(what, "needs to have a length of n_srv_fleets"))
   }

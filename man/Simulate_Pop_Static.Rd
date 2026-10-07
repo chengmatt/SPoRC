@@ -19,7 +19,7 @@ written.}
 A named list containing all simulation outputs, including (among
   others): \code{NAA}, \code{NAA0}, \code{SSB}, \code{Dynamic_SSB0},
   \code{eff_SSB}, \code{Rec}, \code{ln_RecDevs}, \code{ln_InitDevs},
-  \code{ZAA}, \code{TrueCatch}, \code{ObsCatch}, \code{TrueCatch_pop},
+  \code{ZAA}, \code{tot_FAA}, \code{TrueCatch}, \code{ObsCatch}, \code{TrueCatch_pop},
   \code{ObsCatch_pop}, \code{CAA}, \code{CAL},
   \code{ObsFishAgeComps}, \code{ObsFishAgeComps_pop},
   \code{ObsFishLenComps}, \code{ObsFishLenComps_pop},
@@ -35,7 +35,15 @@ A named list containing all simulation outputs, including (among
   \code{obs_conv_tag_fish_recap}, \code{LenBinMap}, and key dimension scalars
   (\code{n_regions}, \code{n_pop}, \code{n_yrs}, \code{n_ages}, etc.).
   Note that \code{n_years} and \code{n_yrs} are both present for backwards
-  compatibility.
+  compatibility. The deviations each replicate ran on are returned as the
+  estimation model names them, the replicate dim last: \code{ln_F_devs},
+  \code{logit_dmr_devs}, \code{ln_fishsel_devs}, \code{ln_retsel_devs},
+  \code{ln_srvsel_devs} and their \code{_bin_devs}, \code{move_devs},
+  \code{ln_growth_devs} and \code{ln_growth_semipar_devs}, each \code{NULL}
+  where the operating model drew none. The at-age data sources,
+  \code{CatchAA}, \code{DiscardAA} and \code{SrvIdxAA} and their \code{_pop}
+  counterparts, come back as \code{True*} and \code{Obs*} with their
+  \code{Use*} flags and \code{_SE} arrays.
 }
 \description{
 Runs a complete multi-replicate operating model simulation with no
@@ -53,6 +61,7 @@ Other Simulation Setup:
 \code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
 \code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
 \code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Fleet_Devs]{Setup_Sim_Fleet_Devs()}},
 \code{\link[=Setup_Sim_NAA_state]{Setup_Sim_NAA_state()}},
 \code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
 \code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},

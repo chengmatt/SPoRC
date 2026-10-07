@@ -32,7 +32,8 @@ simulate_comps(
   pop_corr_pars = NULL,
   ln_pop_theta_agg = NULL,
   pop_corr_pars_agg = NULL,
-  age_or_len = 0
+  age_or_len = 0,
+  exp_seas = seas
 )
 }
 \arguments{
@@ -94,6 +95,10 @@ n_fleets]}.}
 
 \item{age_or_len}{Integer. \code{0} for age compositions, which take ageing
 error, \code{1} for length compositions, which take the length bin map.}
+
+\item{exp_seas}{Seasons whose expected numbers are summed into the
+composition drawn in \code{seas}. The drawn season alone by default; every
+season for a data source reported as a year total.}
 }
 \value{
 \code{Obs} with the draws filled in at \code{[r, y, seas, , , f, sim]},

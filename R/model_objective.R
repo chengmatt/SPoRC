@@ -1441,7 +1441,8 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsDiscard_map[i, 4]
 
       Discard_nLL[r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard[i],
-                                                 log(get_seas_pred(PredDiscard, r, y, seas, f, Discard_seas_Type[f])) - oe_disc[r,y,seas,f],
+                                                 log(get_discard_pred(PredDiscard, CAA, DAA, dmr, WAA_fish, discard_units[f], seq_len(n_pop), r, y,
+                                                                      if(Discard_seas_Type[f] == 1) seq_len(n_seas) else seas, f)) - oe_disc[r,y,seas,f],
                                                  exp(ln_sigmaD[r,y,seas,f]), TRUE)
     }
   }
@@ -1493,7 +1494,8 @@ SPoRC_rtmb = function(pars, data) {
       f    = ObsDiscard_pop_map[i, 5]
 
       Discard_pop_nLL[p,r,y,seas,f] = -1 * RTMB::dnorm(ObsDiscard_pop[i],
-                                                       log(get_seas_pred_pop(PredDiscard, p, r, y, seas, f, Discard_pop_seas_Type[f])) - oe_disc_pop[p,r,y,seas,f],
+                                                       log(get_discard_pred(PredDiscard, CAA, DAA, dmr, WAA_fish, discard_units[f], p, r, y,
+                                                                            if(Discard_pop_seas_Type[f] == 1) seq_len(n_seas) else seas, f)) - oe_disc_pop[p,r,y,seas,f],
                                                        exp(ln_sigmaD_pop[p,r,y,seas,f]), TRUE)
     }
   }
@@ -2748,6 +2750,11 @@ SPoRC_rtmb = function(pars, data) {
 
   ## Selectivity -------------------------------------------------------------
   ### Selectivity (Penalty) --------------------------------------------------
+  # a deviation shared over regions or fleets is penalized once, divided between the region and fleet units holding it
+  fishsel_devs_units = sel_devs_by_unit(map_ln_fishsel_devs, cont_tv_fish_sel, fishsel_pe_wt)
+  retsel_devs_units = sel_devs_by_unit(map_ln_retsel_devs, cont_tv_ret_sel, retsel_pe_wt)
+  srvsel_devs_units = sel_devs_by_unit(map_ln_srvsel_devs, cont_tv_srv_sel, srvsel_pe_wt)
+
   for(r in 1:n_regions) {
 
     for(f in 1:n_fish_fleets) {
@@ -2759,7 +2766,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = fishsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_fishsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_fishsel_devs[r,,,,f, drop = FALSE],
-                                                map_sel_devs_full = map_ln_fishsel_devs[,,,,f, drop = FALSE],
+                                                map_sel_devs_full = fishsel_devs_units,
                                                 min_sel_devs_shared_bins = fishsel_devs_min_shared_bins,
                                                 rw_init_sigma = fishsel_rw_init_sigma[f]
 
@@ -2773,7 +2780,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = retsel_pe_pars[r,,,f, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_retsel_devs[r,,,,f, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_retsel_devs[r,,,,f, drop = FALSE],
-                                                map_sel_devs_full = map_ln_retsel_devs[,,,,f, drop = FALSE],
+                                                map_sel_devs_full = retsel_devs_units,
                                                 min_sel_devs_shared_bins = retsel_devs_min_shared_bins,
                                                 rw_init_sigma = retsel_rw_init_sigma[f]
 
@@ -2790,7 +2797,7 @@ SPoRC_rtmb = function(pars, data) {
                                                 PE_pars = srvsel_pe_pars[r,,,sf, drop = FALSE], # process error parameters for a given fleet (correlaiton and sigmas)
                                                 ln_devs = ln_srvsel_devs[r,,,,sf, drop = FALSE], # extract out process error deviations for a given fleet
                                                 map_sel_devs = map_ln_srvsel_devs[r,,,,sf, drop = FALSE],
-                                                map_sel_devs_full = map_ln_srvsel_devs[,,,,sf, drop = FALSE],
+                                                map_sel_devs_full = srvsel_devs_units,
                                                 min_sel_devs_shared_bins = srvsel_devs_min_shared_bins,
                                                 rw_init_sigma = srvsel_rw_init_sigma[sf]
 

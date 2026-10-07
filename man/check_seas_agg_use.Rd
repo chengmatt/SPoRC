@@ -7,8 +7,9 @@
 check_seas_agg_use(use_arr, seas_agg, arg_name)
 }
 \arguments{
-\item{use_arr}{Use array with region, year, season and fleet in its last four
-dims. A population-specific array is allowed to have a leading dim.}
+\item{use_arr}{Use array, region by year by season by fleet, or region by year
+by season by observed age by sex by fleet for an at-age data source. A
+population-specific array has a leading population dim on either.}
 
 \item{seas_agg}{Integer vector from \code{\link{parse_seas_agg_spec}}.}
 

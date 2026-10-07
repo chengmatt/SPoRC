@@ -152,10 +152,10 @@ test_that("est_shared_b estimates one process error sigma per bin group, each wi
   } # end prefix loop
 })
 
-test_that("a fleet borrowing another fleet's bin-grouped deviations gets one sigma per group too", {
+test_that("a fleet borrowing another fleet's bin-grouped deviations reads the reference fleet's sigmas", {
 
-  # est_shared_f copies the reference fleet's deviations wholesale, bin groups included, so the
-  # borrowing fleet's own sigmas answer to the reference fleet's spec rather than to its own
+  # est_shared_f copies the reference fleet's deviations wholesale, and the penalty counts a shared
+  # series once, so the borrowing fleet's sigmas are mirrored onto the reference fleet's groups
   il <- sweep_input(
     dims = list(n_regions = 1, n_sexes = 1, n_fish_fleets = 2, n_srv_fleets = 1,
                 n_yrs = n_yrs, n_ages = n_ages),
@@ -169,8 +169,8 @@ test_that("a fleet borrowing another fleet's bin-grouped deviations gets one sig
       fishsel_devs_shared_bins = dev_groups
     ))
 
-  # one sigma per group for each of the two fleets
-  expect_equal(n_estimated(il$map$fishsel_pe_pars), 2 * n_groups)
+  # one sigma per group, all of them the reference fleet's
+  expect_equal(n_estimated(il$map$fishsel_pe_pars), n_groups)
 
   obj <- fit_model(il$data, il$par, il$map, do_optim = FALSE, silent = TRUE)
   grad <- as.numeric(obj$gr(obj$par))[names(obj$par) == "fishsel_pe_pars"]
@@ -185,12 +185,13 @@ test_that("sharing deviations across sexes leaves one sigma per sex-shared serie
   n_regions <- 2
   n_sexes <- 2
 
-  # sharing over sexes halves the sigma count, and over bin groups takes it from bins to groups
+  # sharing over sexes halves the sigma count, over regions leaves the first region's, and over bin
+  # groups takes it from bins to groups
   expected <- c(
     est_shared_s     = n_regions * n_ages,
-    est_shared_r_s   = n_regions * n_ages,
+    est_shared_r_s   = n_ages,
     est_shared_b_s   = n_regions * n_groups,
-    est_shared_r_b_s = n_regions * n_groups
+    est_shared_r_b_s = n_groups
   )
 
   for(prefix in c("fish", "ret", "srv")) {

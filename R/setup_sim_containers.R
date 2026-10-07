@@ -80,6 +80,13 @@ Setup_Sim_Containers <- function(sim_list) {
   sim_list$ObsDiscardAA <- array(0, dim = aa_fish)
   sim_list$TrueSrvIdxAA <- array(0, dim = aa_srv)
   sim_list$ObsSrvIdxAA <- array(0, dim = aa_srv)
+  # population-specific at-age data, never summed over populations
+  sim_list$TrueCatchAA_pop <- array(0, dim = c(sim_list$n_pop, aa_fish))
+  sim_list$ObsCatchAA_pop <- array(0, dim = c(sim_list$n_pop, aa_fish))
+  sim_list$TrueDiscardAA_pop <- array(0, dim = c(sim_list$n_pop, aa_fish))
+  sim_list$ObsDiscardAA_pop <- array(0, dim = c(sim_list$n_pop, aa_fish))
+  sim_list$TrueSrvIdxAA_pop <- array(0, dim = c(sim_list$n_pop, aa_srv))
+  sim_list$ObsSrvIdxAA_pop <- array(0, dim = c(sim_list$n_pop, aa_srv))
   sim_list$ObsFishIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$TrueFishIdx <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims))
   sim_list$ObsFishAgeComps <- array(0, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_fish_fleets, sim_list$n_sims))

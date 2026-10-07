@@ -22,7 +22,7 @@ simulation_self_test(
   what_par = NULL,
   perfect_data = FALSE,
   sim_type = c("conditional", "joint"),
-  n_cond_yrs = length(data$years)
+  prior_means = c("assessment", "truth", "off")
 )
 }
 \arguments{
@@ -78,27 +78,48 @@ the map gave them. An error is raised if any name is not found in
 
 \item{perfect_data}{Logical. Whether to shrink the observation error before
 simulating, sds to 0.001 and sample sizes to 1e6, leaving process error alone.
-A correct model then returns the operating model to several decimals. A
-process error sd is the exception and comes back low by about 1/(2n) for n
-deviations, since the fitted value holds the posterior variance of its own
-deviations and data this clean remove it. Default \code{FALSE}.}
+A correct model whose data identify the population then returns the
+operating model to several decimals. A state-space model need not: exact
+catch and survey indices at age still leave each age's scale to cohort
+continuity under process error, so recovery there is to a few percent. A
+process error sd conditioned on the fit comes back low, since the fitted
+value includes the posterior variance of its own deviations and data this
+clean remove it; on NEA cod the numbers at age sd returns 0.12 against 0.19.
+The truth for an estimated observation sd is the 0.001 the data were drawn at.
+Default \code{FALSE}.}
 
-\item{sim_type}{Character. Where each replicate's parameters come from.
-  \code{"conditional"} (default) runs every replicate at the fitted values, so
-  one truth covers them all and the spread is observation error. \code{"joint"}
-  draws each replicate from \code{sd_rep$jointPrecision}, so each has its own
-  truth. A fit with no random effects has no joint precision, and the fixed
-  effect covariance is inverted in its place.
+\item{sim_type}{Character. Which self test to run. \code{"conditional"}
+  (default) runs every replicate at the fitted parameters and every process
+  deviation at the fit's estimate, so one population covers every replicate
+  and only the observations are new. It measures how well the data determine
+  this history; a process sd comes back low, since the fit's deviations are
+  shrunk estimates that vary less than the sd describes. \code{"joint"} draws
+  each replicate's parameters from the fit's uncertainty
+  (\code{sd_rep$jointPrecision}) and then every process fresh at them:
+  recruitment and the initial ages from their penalty
+  (\code{\link{rec_devs_past_fit}}, \code{\link{init_devs_past_fit}}), the
+  numbers at age, selectivity, catchability, movement, growth and a linked
+  dsem from their processes, and F and discard mortality deviations when the
+  fit integrates them out (fixed effect F deviations come from the parameter
+  draw). Each replicate is a new population with its own truth, so the self
+  test measures bias in every estimate, process sds included, and with
+  \code{do_sdrep = TRUE} whether the standard errors cover the truth. A fit
+  with no random effects has no joint precision, and the fixed effect
+  covariance is inverted in its place.
 
   Joint moves F, both selectivities, catchability, natural mortality, weight and
   size at age, movement, steepness, sex ratio, recruitment, the initial
   deviations, the numbers at age and a linked dsem. Observation error and the
   composition parameters stay at the fit, having no replicate dim.}
 
-\item{n_cond_yrs}{Integer. The first years of every replicate reproduce the
-fit's catchability, movement and growth deviations, and later years are drawn.
-Default every year of the fit, so nothing is redrawn; \code{0} draws every
-year from the fitted process.}
+\item{prior_means}{Where each refit's priors are centered (see
+\code{\link{self_test_priors}}). \code{"assessment"} (default) keeps them as
+the assessment gives them, so every replicate is pulled toward a prior the fit
+sits away from; \code{"truth"} centers each catchability, natural mortality,
+steepness, R0 and selectivity prior on the value the replicate ran on,
+keeping its sd, and puts the mode of each Dirichlet (movement, recruitment
+apportionment) and mean and sd beta (stray rate, tag reporting) there,
+keeping its concentration; \code{"off"} turns every prior off.}
 }
 \value{
 Named list with one element per entry in \code{what} and then one per
@@ -106,9 +127,11 @@ Named list with one element per entry in \code{what} and then one per
   simulation replicates (via \code{simplify2array}). If \code{do_sdrep = TRUE},
   an additional element \code{"sd_rep"} contains a list of \code{sdreport}
   objects (or \code{NA} for failed replicates). A final element \code{"truth"}
-  holds the operating model's own values for the same names, which under
-  \code{sim_type = "joint"} differ from replicate to replicate and are what the
-  estimates should be scored against.
+  holds each replicate's true values for the same names, the operating model's
+  own wherever it holds the quantity (\code{\link{om_truth}}), so replicates
+  drawn under \code{sim_type = "joint"} are each compared with what they ran on.
+  Observation error, composition, at-age correlation and tag loss parameters
+  take the fit's values, which every replicate runs at.
 }
 \description{
 Validates model performance by: (1) generating \code{n_sims} new datasets
@@ -119,8 +142,16 @@ Supports sequential or parallel execution via
 \code{future}/\code{future.apply}. Likelihood weights from the original fit
 are propagated into the simulation (e.g., ISS scaled by
 \code{Wt_FishAgeComps}; \code{ObsSrvIdx_SE} divided by
-\code{sqrt(Wt_SrvIdx)}); all weights are reset to 1 when re-fitting.
-Failed replicates are silently stored as \code{NA}.
+\code{sqrt(Wt_SrvIdx)}), and the data weights are reset to 1 when refitting.
+A penalty weight (\code{Wt_Rec}, \code{Wt_Init_Rec}, \code{Wt_F},
+\code{Wt_D}, \code{*_pe_wt}) is kept, the operating model drawing that
+process at its sd over the root of the weight, so each refit is the fit's
+own estimator. A weighted penalty whose sd is estimated comes back at the
+sd over the root of the weight, a weighted penalty being a density only up
+to its normalizing constant.
+Failed replicates are silently stored as \code{NA}. The operating model takes
+the fit's \code{bias_correct_pe}, \code{bias_correct_oe} and
+\code{sigmaR_switch}, so both sides center process and observation error alike.
 }
 \examples{
 \dontrun{
@@ -131,7 +162,7 @@ res <- simulation_self_test(
 )
 str(res$SSB)
 
-# parameter uncertainty carried in, scored against each replicate's own truth
+# parameters drawn from the fit's uncertainty, each replicate compared with its own truth
 sd_rep <- RTMB::sdreport(fit, getJointPrecision = TRUE)
 res <- simulation_self_test(
   data = fit$data, parameters = par, mapping = map, random = NULL,
@@ -147,6 +178,7 @@ Other Simulation Setup:
 \code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
 \code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
 \code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Fleet_Devs]{Setup_Sim_Fleet_Devs()}},
 \code{\link[=Setup_Sim_NAA_state]{Setup_Sim_NAA_state()}},
 \code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
 \code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},

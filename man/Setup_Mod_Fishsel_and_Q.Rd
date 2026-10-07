@@ -168,7 +168,9 @@ ahead of it. Read only for a fleet whose \code{fish_q_model} is not
 \item{fishsel_pe_pars_spec}{Character vector \code{[n_fish_fleets]} of the
 estimation structure for the selectivity process error hyperparameters,
 required when any fleet varies continuously. See
-\code{\link{do_sel_pe_pars_mapping}}.}
+\code{\link{do_sel_pe_pars_mapping}}.
+Deviations shared over regions or fleets in \code{fish_sel_devs_spec} share
+these the same way, whatever this says, since one series has one variance.}
 
 \item{fish_fixed_sel_pars_spec}{Character vector \code{[n_fish_fleets]} of how
 the fixed-effect selectivity parameters are estimated: \code{"est_all"},

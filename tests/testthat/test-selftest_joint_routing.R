@@ -70,10 +70,15 @@ test_that("the drawn parameters reach the operating model's own inputs", {
 
   # R0 and the seasonal split were built from the fitted report until 2026-09-28, so every replicate
   # ran at the same recruitment scale whatever it drew
-  for(nm in c("R0", "Rec_input", "Fmort", "fish_sel", "srv_sel")) {
+  for(nm in c("R0", "Fmort", "fish_sel", "srv_sel")) {
     expect_gt(rep_spread(sl_j[[nm]]), 0)
     expect_equal(rep_spread(sl_c[[nm]]), 0)
   }
+
+  # conditional runs the fit's recruitment, joint draws each replicate's deviations fresh
+  expect_equal(rep_spread(sl_c$Rec_input), 0)
+  expect_null(sl_j$Rec_input)
+  expect_gt(rep_spread(sl_j$ln_RecDevs_input), 0)
 
   # rinit is mapped off here under use_rinit = 0, so it has nothing to draw and stays put
   expect_equal(rep_spread(sl_j$rinit), 0)

@@ -564,6 +564,49 @@ get_seas_pred_pop = function(pred, p, r, y, seas, f, seas_agg) {
   if(seas_agg == 1) sum(pred[p,r,y,,f]) else pred[p,r,y,seas,f]
 } # end get_seas_pred_pop
 
+#' Predicted discards over the populations and seasons an observation covers
+#'
+#' Discards in numbers or weight add up, so the prediction is the sum of
+#' \code{PredDiscard} over the populations and seasons the observation covers, as
+#' \code{\link{get_seas_pred}} gives. A discard fraction does not add up: two
+#' populations each discarding 30 percent of their catch discard 30 percent
+#' together, not 60. So a fraction is the discards over the total catch, each
+#' summed over those populations and seasons first.
+#'
+#' @param PredDiscard Prediction array \code{[pop, region, year, season, fleet]}.
+#' @param CAA,DAA Retained and dead discarded catch at age \code{[pop, region,
+#'   year, season, age, sex, fleet]}.
+#' @param dmr Discard mortality rate \code{[region, year, season, fleet]}, which
+#'   raises dead discards to all discards.
+#' @param WAA_fish Fishery weight at age, shaped like \code{CAA}, read for a
+#'   fraction of weight.
+#' @param units The fleet's \code{discard_units}: 0 numbers, 1 weight, 2 fraction
+#'   of numbers, 3 fraction of weight.
+#' @param pops Populations summed: every one for a regional observation, one for a
+#'   population-specific one.
+#' @param r,y,f Region, year and fleet of the observation.
+#' @param seasons Seasons summed: the observation's own, or every season for a
+#'   year total.
+#'
+#' @return Scalar prediction.
+#'
+#' @keywords internal
+get_discard_pred = function(PredDiscard, CAA, DAA, dmr, WAA_fish, units, pops, r, y, seasons, f) {
+
+  if(units %in% c(0, 1)) return(sum(PredDiscard[pops,r,y,seasons,f]))
+
+  retained = 0
+  discarded = 0
+  for(seas in seasons) {
+    wt = if(units == 3) WAA_fish[pops,r,y,seas,,,f] else 1 # a fraction of weight weighs each fish
+    retained = retained + sum(CAA[pops,r,y,seas,,,f] * wt) # landed
+    discarded = discarded + sum(DAA[pops,r,y,seas,,,f] / dmr[r,y,seas,f] * wt) # dead discards raised to all discards
+  } # end seas loop
+
+  discarded / (retained + discarded)
+
+} # end get_discard_pred
+
 # Index Likelihoods ---------------------------------------------------------
 
 #' Index likelihoods for the fleets not fitted on the log scale

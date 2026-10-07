@@ -12,7 +12,8 @@ resolve_idx_factor(mvn, r, y, seas)
 \item{r, y, seas}{Integer indices of the simulated cell.}
 }
 \value{
-List with scalars \code{d} and \code{lambda}.
+List with scalars \code{d} and \code{lambda}, and \code{row}, the
+  cell's row in the covariance, \code{NA} outside it.
 }
 \description{
 Looks a cell up in a fleet's factor decomposition from

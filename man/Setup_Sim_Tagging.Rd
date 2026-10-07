@@ -12,9 +12,7 @@ Setup_Sim_Tagging(
   conv_tag_max_liberty = sim_list$n_ages/2,
   conv_tag_release_indicator = expand.grid(regions = 1:sim_list$n_regions, tag_years =
     1:sim_list$n_yrs, tag_seas = 1:sim_list$n_seas),
-  conv_tag_release_platform = matrix(c("survey", "1"), nrow =
-    nrow(conv_tag_release_indicator), ncol = 2, byrow = TRUE, dimnames = list(NULL,
-    c("platform", "fleet"))),
+  conv_tag_release_platform = default_tag_release_platform(conv_tag_release_indicator),
   conv_tag_t_tagging = 1,
   ln_init_conv_tag_mort = -1000,
   ln_conv_tag_shed = -1000,
@@ -22,7 +20,11 @@ Setup_Sim_Tagging(
   conv_tag_fish_reporting_input = array(0.5, dim = c(sim_list$n_regions, sim_list$n_yrs,
     sim_list$n_fish_fleets, sim_list$n_sims)),
   conv_fish_tag_like = 0,
-  ln_conv_fish_tag_theta = log(1)
+  ln_conv_fish_tag_theta = log(1),
+  conv_tag_pop_pool = NULL,
+  conv_tag_age_pool = NULL,
+  conv_tag_sex_pool = NULL,
+  conv_tagged_fish_input = NULL
 )
 }
 \arguments{
@@ -85,6 +87,21 @@ probability a recaptured tag is reported. Default \code{0.5}.}
 \item{ln_conv_fish_tag_theta}{Log-scale overdispersion for the negative binomial
 and the two Dirichlet-multinomial likelihoods, ignored by the others. Default
 \code{log(1)}.}
+
+\item{conv_tag_pop_pool, conv_tag_age_pool, conv_tag_sex_pool}{Lists of integer
+vectors grouping populations, ages and sexes whose recaptures the estimation
+model fits as one count, as in \code{\link{Setup_Mod_Tagging}}. A negative
+binomial is drawn once per group, since a sum of negative binomials is not
+the negative binomial the pooled count is fit with. \code{NULL} (default) is
+one group per level.}
+
+\item{conv_tagged_fish_input}{Released tags by event, population, age and sex
+\code{[n_tag_rel_events × n_pop × n_ages × n_sexes]}, the estimation model's
+\code{conv_tagged_fish}. An event given here is released exactly so, and one
+left \code{NA} is spread over populations, ages and sexes by the release
+platform's selected abundance as before. \code{simulation_self_test} and
+\code{condition_closed_loop_simulations} pass the fit's releases, so the tags
+at liberty are the ones the fit followed. Default \code{NULL}.}
 }
 \value{
 \code{sim_list} with the tagging fields appended: \code{$n_tags} or
@@ -110,6 +127,7 @@ Other Simulation Setup:
 \code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
 \code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
 \code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Fleet_Devs]{Setup_Sim_Fleet_Devs()}},
 \code{\link[=Setup_Sim_NAA_state]{Setup_Sim_NAA_state()}},
 \code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
 \code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},

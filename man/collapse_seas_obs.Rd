@@ -16,7 +16,8 @@ collapse_seas_obs(
   n_regions,
   n_fleets,
   pop = FALSE,
-  bias_correct_oe = 0
+  bias_correct_oe = 0,
+  slot = rep(1, n_fleets)
 )
 }
 \arguments{
@@ -24,7 +25,7 @@ collapse_seas_obs(
 with a leading population dim, of the true quantity and the observation.}
 
 \item{se_arr}{Standard deviation array matching \code{true_arr} without the
-simulation dim.}
+simulation dim, read in the season the total is drawn into.}
 
 \item{seas_agg}{Integer vector, one per fleet.}
 
@@ -36,6 +37,11 @@ simulation dim.}
 \item{n_seas, n_regions, n_fleets}{Dimension sizes.}
 
 \item{pop}{Logical, whether the arrays have a leading population dim.}
+
+\item{bias_correct_oe}{Whether lognormal draws sit at their mean.}
+
+\item{slot}{Integer vector, one per fleet, of the season the total is drawn
+into. From \code{\link{seas_agg_season}}.}
 }
 \value{
 A list with the updated \code{true} and \code{obs} arrays.
@@ -43,9 +49,9 @@ A list with the updated \code{true} and \code{obs} arrays.
 \description{
 A data source set to \code{"aggSeas"} reports once a year rather than once a
 season, so the operating model has to draw one observation from the year's
-total rather than eleven from its parts. The total is written into season one
-by convention and the other seasons are left at zero, which is where the
-estimation model's \code{Use} array should mark it.
+total rather than eleven from its parts. The total is written into the season
+the fit holds it in, season one unless \code{slot} says otherwise, and the
+other seasons are left at zero.
 }
 \details{
 The true quantity is summed first and the observation error is applied once to

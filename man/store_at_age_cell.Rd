@@ -4,7 +4,7 @@
 \alias{store_at_age_cell}
 \title{Write a simulated at-age cell into its true and observed containers}
 \usage{
-store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim)
+store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim, p = NULL)
 }
 \arguments{
 \item{sim_env}{Environment holding the simulation containers.}
@@ -14,6 +14,9 @@ store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim)
 \item{drawn}{List returned by \code{\link{sim_at_age_cell}}.}
 
 \item{r, y, seas, f, sim}{Region, year, season, fleet and replicate.}
+
+\item{p}{Population, for a population-specific data source, whose containers
+have a leading population dim. \code{NULL} (default) for the aggregated one.}
 }
 \value{
 \code{invisible(NULL)}, called for its side effect.

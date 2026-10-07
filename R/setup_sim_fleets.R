@@ -31,20 +31,37 @@
 #' @param fish_idx_ages Ages counted in each fleet's index total, a 0/1 array
 #'   `n_ages x n_fish_fleets`, the estimation model's `fish_idx_ages`. `NULL`
 #'   (default) counts every age.
-#' @param Catch_seas_Type,Catch_pop_seas_Type,FishIdx_seas_Type,FishIdx_pop_seas_Type,FishAgeComps_seas_Type
+#' @param Catch_seas_Type,Catch_pop_seas_Type,Discard_seas_Type,Discard_pop_seas_Type,FishIdx_seas_Type,FishIdx_pop_seas_Type,FishAgeComps_seas_Type,FishLenComps_seas_Type,FishAgeComps_pop_seas_Type,FishLenComps_pop_seas_Type,FishAgeComps_discard_seas_Type,FishLenComps_discard_seas_Type,FishAgeComps_discard_pop_seas_Type,FishLenComps_discard_pop_seas_Type
 #'   Whether the operating model reports a data source once a season
 #'   (`"spltSeas"`, the default) or once a year as a season total (`"aggSeas"`),
 #'   one value for every fleet or one per fleet. An annual total is written into
-#'   season one with the other seasons left at zero and the observation error
-#'   applied once to that total, so an estimation model reading it should mark
-#'   season one in its `Use` array and set the matching argument in
-#'   \code{\link{Setup_Mod_Catch_and_F}} or
+#'   the season `seas_agg_slot` names, season one by default, with the other
+#'   seasons left at zero and the observation error applied once to that total.
+#'   A discard fraction is the year's discards over the year's catch, and a
+#'   composition is drawn from the numbers summed over the year. An estimation
+#'   model reading it should mark the same season in its `Use` array and set the
+#'   matching argument in \code{\link{Setup_Mod_Catch_and_F}} or
 #'   \code{\link{Setup_Mod_FishIdx_and_Comps}}.
+#' @param seas_agg_slot Named list, by data source (`"Catch"`, `"FishIdx_pop"`,
+#'   `"FishAgeComps_discard"` and so on), of the season each fleet's year total is
+#'   written into, an integer matrix `n_yrs x n_fleets`. A data source left out
+#'   writes into season one. \code{\link{simulation_self_test}} and
+#'   \code{\link{condition_closed_loop_simulations}} fill it from the fit's `Use`
+#'   arrays, so a total the fit holds in season two is drawn there. Default
+#'   `NULL`.
 #' @param FishIdx_LikeType Error structure each fleet's index is drawn under:
 #'   `"lognormal"` (0, default), `"normal"` (1) or `"mvn"` (2), matching the
 #'   estimation model. An mvn fleet draws from `FishIdx_Cov` through a
 #'   common-factor decomposition (see \code{\link{cov_to_factor}}) instead of
 #'   `ObsFishIdx_SE`, and its population-specific data source stays lognormal.
+#' @param sigmaFishIdx_form,sigmaFishIdx_pop_form How the index sd combines the
+#'   reported errors with an estimated part, as \code{sigmaFishIdx_spec} in
+#'   \code{\link{Setup_Mod_FishIdx_and_Comps}}: `"fix"` (0, default) draws at
+#'   `ObsFishIdx_SE`, `"est_additive"` (1) at `SE + sigma`, `"est_quadrature"` (2)
+#'   at `sqrt(SE^2 + sigma^2)` and `"est_replace"` (3) at `sigma`. The reported
+#'   errors stay in `ObsFishIdx_SE`, so a refit reading them estimates the same part.
+#' @param ln_sigmaFishIdx,ln_sigmaFishIdx_pop Log of the estimated part, one per
+#'   fleet, read under a form other than `"fix"`. Default `NULL`.
 #' @param FishIdx_Cov List with one element per fleet holding the fixed covariance
 #'   over that fleet's fitted index observations, ordered by scanning
 #'   `UseFishIdx` in array order. Required for mvn fleets. Default `NULL`.
@@ -125,6 +142,27 @@
 #'   `"normal"`, per fleet.
 #' @param CatchAA_sigma_form,DiscardAA_sigma_form Where the observation error comes
 #'   from: `"none"` (default), `"data"`, `"est_additive"` or `"est_quadrature"`.
+#' @param AgeObsCorr_catch,AgeObsCorr_discard How each fleet's at-age residuals are
+#'   correlated, as in [Setup_Mod_Catch_and_F()]: `"iid"` (default), `"1dar1"`
+#'   across ages, `"us"` across ages, or `"2dar1"` across ages and the observed
+#'   years. A correlated fleet's standardized residuals are drawn before the first
+#'   year, so its years and ages are drawn together.
+#' @param trans_rho_catch,trans_rho_catch_year,trans_rho_catch_us,trans_rho_discard,trans_rho_discard_year,trans_rho_discard_us
+#'   Unconstrained correlations under the estimation model's names and shapes:
+#'   across ages and across years `[n_regions, n_sexes, n_fish_fleets]`, and the
+#'   unstructured parameters `[n_pairs, n_regions, n_sexes, n_fish_fleets]` over
+#'   pairs of observed ages. `NULL` (default) is zero.
+#' @param CatchAA_seas_Type,DiscardAA_seas_Type,CatchAA_pop_seas_Type,DiscardAA_pop_seas_Type
+#'   Per fleet, `1` where the at-age observation is a year total, as `"aggSeas"`
+#'   in [Setup_Mod_Catch_and_F()]: drawn once a year from every season summed,
+#'   into the season its use flags name. `0` (default) draws each season.
+#' @param UseCatchAA_pop,UseDiscardAA_pop,ln_sigmaCAA_pop,ln_sigmaDAA_pop,ObsCatchAA_pop_SE,ObsDiscardAA_pop_SE,CatchAA_pop_Type,DiscardAA_pop_Type,CatchAA_pop_LikeType,DiscardAA_pop_LikeType,CatchAA_pop_sigma_form,DiscardAA_pop_sigma_form
+#'   The population-specific at-age data sources, as the aggregated ones with a
+#'   leading `n_pop` dim on the arrays: each population is drawn on its own from
+#'   its own numbers, never summed over populations. `NULL` draws none.
+#' @param AgeObsCorr_catch_pop,AgeObsCorr_discard_pop,trans_rho_catch_pop,trans_rho_catch_pop_year,trans_rho_catch_pop_us,trans_rho_discard_pop,trans_rho_discard_pop_year,trans_rho_discard_pop_us
+#'   Their correlation across ages, as the aggregated settings with a leading
+#'   `n_pop` dim on the parameters.
 #' @param comp_fish_caal_like Conditional age-at-length likelihood per fleet:
 #'   `"Multinomial"` (0), `"Dirichlet-Multinomial"` (1) or `"none"` (999, default).
 #'   Only these two families exist for CAAL, since a CAAL row is the age
@@ -172,6 +210,38 @@ Setup_Sim_Fishing <- function(sim_list,
                               DiscardAA_sigma_form = "none",
                               use_catch_aa = rep(0, sim_list$n_fish_fleets),
                               use_discard_aa = rep(0, sim_list$n_fish_fleets),
+                              AgeObsCorr_catch = "iid",
+                              AgeObsCorr_discard = "iid",
+                              trans_rho_catch = NULL,
+                              trans_rho_catch_year = NULL,
+                              trans_rho_catch_us = NULL,
+                              trans_rho_discard = NULL,
+                              trans_rho_discard_year = NULL,
+                              trans_rho_discard_us = NULL,
+                              CatchAA_seas_Type = 0,
+                              DiscardAA_seas_Type = 0,
+                              UseCatchAA_pop = NULL,
+                              UseDiscardAA_pop = NULL,
+                              ln_sigmaCAA_pop = NULL,
+                              ln_sigmaDAA_pop = NULL,
+                              ObsCatchAA_pop_SE = NULL,
+                              ObsDiscardAA_pop_SE = NULL,
+                              CatchAA_pop_Type = "spltRaggS",
+                              DiscardAA_pop_Type = "spltRaggS",
+                              CatchAA_pop_LikeType = "lognormal",
+                              DiscardAA_pop_LikeType = "lognormal",
+                              CatchAA_pop_sigma_form = "none",
+                              DiscardAA_pop_sigma_form = "none",
+                              CatchAA_pop_seas_Type = 0,
+                              DiscardAA_pop_seas_Type = 0,
+                              AgeObsCorr_catch_pop = "iid",
+                              AgeObsCorr_discard_pop = "iid",
+                              trans_rho_catch_pop = NULL,
+                              trans_rho_catch_pop_year = NULL,
+                              trans_rho_catch_pop_us = NULL,
+                              trans_rho_discard_pop = NULL,
+                              trans_rho_discard_pop_year = NULL,
+                              trans_rho_discard_pop_us = NULL,
                               catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
                               init_F_val = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
                               Fmort_input = array(0.1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas, sim_list$n_fish_fleets, sim_list$n_sims)),
@@ -182,11 +252,25 @@ Setup_Sim_Fishing <- function(sim_list,
                               fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
                               fish_idx_ages = NULL,
                               FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
+                              sigmaFishIdx_form = "fix",
+                              ln_sigmaFishIdx = NULL,
+                              sigmaFishIdx_pop_form = "fix",
+                              ln_sigmaFishIdx_pop = NULL,
                               Catch_seas_Type = NULL,
                               Catch_pop_seas_Type = NULL,
                               FishIdx_seas_Type = NULL,
                               FishIdx_pop_seas_Type = NULL,
                               FishAgeComps_seas_Type = NULL,
+                              Discard_seas_Type = NULL,
+                              Discard_pop_seas_Type = NULL,
+                              FishLenComps_seas_Type = NULL,
+                              FishAgeComps_pop_seas_Type = NULL,
+                              FishLenComps_pop_seas_Type = NULL,
+                              FishAgeComps_discard_seas_Type = NULL,
+                              FishLenComps_discard_seas_Type = NULL,
+                              FishAgeComps_discard_pop_seas_Type = NULL,
+                              FishLenComps_discard_pop_seas_Type = NULL,
+                              seas_agg_slot = NULL,
                               FishIdx_Cov = NULL,
                               UseFishIdx = NULL,
                               t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
@@ -287,26 +371,45 @@ Setup_Sim_Fishing <- function(sim_list,
 
   # Convert Options to Codes ------------------------------------------------
   # Convert character inputs to numeric codes
+  # the composition likelihoods as the estimation model codes them, the miss0 forms dropping empty bins
+  comp_like_codes <- list(Multinomial = 0, `Dirichlet-Multinomial` = 1,
+                          `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4,
+                          `iid-Logistic-Normal-miss0` = 5, `1d-Logistic-Normal-miss0` = 6, `2d-Logistic-Normal-miss0` = 7,
+                          none = 999)
   catch_units <- convert_to_numeric(catch_units,  list(abd = 0, biom = 1))
-  fish_idx_type <- convert_to_numeric(fish_idx_type, list(abd = 0, biom = 1))
+  fish_idx_type <- convert_to_numeric(fish_idx_type, list(abd = 0, biom = 1, none = 999))
   FishIdx_LikeType <- convert_to_numeric(FishIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
-  comp_fishage_like <- convert_to_numeric(comp_fishage_like, list(Multinomial = 0,  `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
-  comp_fishlen_like <- convert_to_numeric(comp_fishlen_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
+  sigmaFishIdx_form <- convert_to_numeric(sigmaFishIdx_form, list(fix = 0, est_additive = 1, est_quadrature = 2, est_replace = 3))
+  sigmaFishIdx_pop_form <- convert_to_numeric(sigmaFishIdx_pop_form, list(fix = 0, est_additive = 1, est_quadrature = 2, est_replace = 3))
+  comp_fishage_like <- convert_to_numeric(comp_fishage_like, comp_like_codes)
+  comp_fishlen_like <- convert_to_numeric(comp_fishlen_like, comp_like_codes)
+  comp_fishage_pop_like <- convert_to_numeric(comp_fishage_pop_like, comp_like_codes)
+  comp_fishlen_pop_like <- convert_to_numeric(comp_fishlen_pop_like, comp_like_codes)
   FishAgeComps_Type <- convert_to_numeric(FishAgeComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   FishLenComps_Type <- convert_to_numeric(FishLenComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   FishAgeComps_pop_Type <- convert_to_numeric(FishAgeComps_pop_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   FishLenComps_pop_Type <- convert_to_numeric(FishLenComps_pop_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
-  comp_fishage_discard_like <- convert_to_numeric(comp_fishage_discard_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4, none = 999))
-  comp_fishlen_discard_like <- convert_to_numeric(comp_fishlen_discard_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4, none = 999))
+  comp_fishage_discard_like <- convert_to_numeric(comp_fishage_discard_like, comp_like_codes)
+  comp_fishlen_discard_like <- convert_to_numeric(comp_fishlen_discard_like, comp_like_codes)
   FishAgeComps_discard_Type <- convert_to_numeric(FishAgeComps_discard_Type, list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   FishLenComps_discard_Type <- convert_to_numeric(FishLenComps_discard_Type, list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
-  comp_fishage_discard_pop_like <- convert_to_numeric(comp_fishage_discard_pop_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4, none = 999))
-  comp_fishlen_discard_pop_like <- convert_to_numeric(comp_fishlen_discard_pop_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4, none = 999))
+  comp_fishage_discard_pop_like <- convert_to_numeric(comp_fishage_discard_pop_like, comp_like_codes)
+  comp_fishlen_discard_pop_like <- convert_to_numeric(comp_fishlen_discard_pop_like, comp_like_codes)
   FishAgeComps_discard_pop_Type <- convert_to_numeric(FishAgeComps_discard_pop_Type, list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   FishLenComps_discard_pop_Type <- convert_to_numeric(FishLenComps_discard_pop_Type, list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   discard_units <- convert_to_numeric(discard_units, list(abd = 0, biom = 1, abd_frac = 2, biom_frac = 3))
 
   # Input Validation --------------------------------------------------------
+  # a 2d logistic normal correlates bins across sexes, so it needs the composition joint by sex
+  check_sim_2d_comp(comp_fishage_like, FishAgeComps_Type, "comp_fishage_like", "FishAgeComps_Type")
+  check_sim_2d_comp(comp_fishlen_like, FishLenComps_Type, "comp_fishlen_like", "FishLenComps_Type")
+  check_sim_2d_comp(comp_fishage_pop_like, FishAgeComps_pop_Type, "comp_fishage_pop_like", "FishAgeComps_pop_Type")
+  check_sim_2d_comp(comp_fishlen_pop_like, FishLenComps_pop_Type, "comp_fishlen_pop_like", "FishLenComps_pop_Type")
+  check_sim_2d_comp(comp_fishage_discard_like, FishAgeComps_discard_Type, "comp_fishage_discard_like", "FishAgeComps_discard_Type")
+  check_sim_2d_comp(comp_fishlen_discard_like, FishLenComps_discard_Type, "comp_fishlen_discard_like", "FishLenComps_discard_Type")
+  check_sim_2d_comp(comp_fishage_discard_pop_like, FishAgeComps_discard_pop_Type, "comp_fishage_discard_pop_like", "FishAgeComps_discard_pop_Type")
+  check_sim_2d_comp(comp_fishlen_discard_pop_like, FishLenComps_discard_pop_Type, "comp_fishlen_discard_pop_like", "FishLenComps_discard_pop_Type")
+
   # Validate dimensions of all input parameters
   check_sim_dimensions(
     ln_sigmaC,
@@ -785,11 +888,24 @@ Setup_Sim_Fishing <- function(sim_list,
   # a conditioned model built before these settings existed passes them through
   # as NULL, which means the default rather than an error
   or_default <- function(x, default) if(is.null(x)) default else x
-  for(data_name in c("CatchAA", "DiscardAA")) {
+
+  # the population-specific data sources have a leading population dim and nothing drawn by default
+  aa_pop_use_dim <- c(sim_list$n_pop, aa_use_dim)
+  aa_pop_sigma_dim <- c(sim_list$n_pop, aa_sigma_dim)
+  sim_list$UseCatchAA_pop <- or_default(UseCatchAA_pop, array(0, dim = aa_pop_use_dim))
+  sim_list$UseDiscardAA_pop <- or_default(UseDiscardAA_pop, array(0, dim = aa_pop_use_dim))
+  sim_list$ln_sigmaCAA_pop <- or_default(ln_sigmaCAA_pop, array(log(0.2), dim = aa_pop_sigma_dim))
+  sim_list$ln_sigmaDAA_pop <- or_default(ln_sigmaDAA_pop, array(log(0.2), dim = aa_pop_sigma_dim))
+  for(data_name in c("UseCatchAA_pop", "UseDiscardAA_pop")) check_at_age_shape(sim_list[[data_name]], aa_pop_use_dim, data_name)
+  for(data_name in c("ln_sigmaCAA_pop", "ln_sigmaDAA_pop")) check_at_age_shape(sim_list[[data_name]], aa_pop_sigma_dim, data_name)
+
+  for(data_name in c("CatchAA", "DiscardAA", "CatchAA_pop", "DiscardAA_pop")) {
     se <- get(paste0("Obs", data_name, "_SE"))
-    check_at_age_shape(se, aa_use_dim, paste0("Obs", data_name, "_SE"))
+    check_at_age_shape(se, if(grepl("_pop$", data_name)) aa_pop_use_dim else aa_use_dim, paste0("Obs", data_name, "_SE"))
     use_dim <- dim(sim_list[[paste0("Use", data_name)]])
     sim_list[[paste0("Obs", data_name, "_SE")]] <- if(is.null(se) && !is.null(use_dim)) array(0, dim = use_dim) else se
+    # a year total is drawn once a year from every season summed
+    sim_list[[paste0(data_name, "_seas_Type")]] <- parse_seas_agg_spec(get(paste0(data_name, "_seas_Type")), paste0(data_name, "_seas_Type"), sim_list$n_fish_fleets)
     sim_list[[paste0(data_name, "_Type")]] <- at_age_type_matrix(or_default(get(paste0(data_name, "_Type")), "spltRaggS"),
                                                           sim_list$n_fish_fleets, sim_list$n_yrs,
                                                           paste0(data_name, "_Type"))
@@ -801,6 +917,12 @@ Setup_Sim_Fishing <- function(sim_list,
   } # end data_name loop
   sim_list$use_catch_aa <- use_catch_aa
   sim_list$use_discard_aa <- use_discard_aa
+  sim_list <- sim_at_age_corr_setup(sim_list, "catch", AgeObsCorr_catch, trans_rho_catch, trans_rho_catch_year, trans_rho_catch_us, sim_list$n_fish_fleets)
+  sim_list <- sim_at_age_corr_setup(sim_list, "discard", AgeObsCorr_discard, trans_rho_discard, trans_rho_discard_year, trans_rho_discard_us, sim_list$n_fish_fleets)
+  sim_list <- sim_at_age_corr_setup(sim_list, "catch_pop", AgeObsCorr_catch_pop, trans_rho_catch_pop, trans_rho_catch_pop_year, trans_rho_catch_pop_us,
+                                    sim_list$n_fish_fleets, pop = TRUE)
+  sim_list <- sim_at_age_corr_setup(sim_list, "discard_pop", AgeObsCorr_discard_pop, trans_rho_discard_pop, trans_rho_discard_pop_year, trans_rho_discard_pop_us,
+                                    sim_list$n_fish_fleets, pop = TRUE)
   sim_list$init_F <- init_F_val # initial F value
   sim_list$fish_sel <- fish_sel_input # fishery selectivity
   sim_list$fish_q <- fish_q_input # fishery catchability
@@ -809,6 +931,8 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$fish_idx_type <- fish_idx_type # fishery index type
   sim_list$fish_idx_ages <- if(is.null(fish_idx_ages)) array(1, dim = c(sim_list$n_ages, sim_list$n_fish_fleets)) else fish_idx_ages # ages in the index total
   sim_list$FishIdx_LikeType <- FishIdx_LikeType # fishery index error structure
+  sim_list <- store_idx_sigma(sim_list, "FishIdx", sigmaFishIdx_form, ln_sigmaFishIdx, sim_list$n_fish_fleets) # estimated part of the index sd
+  sim_list <- store_idx_sigma(sim_list, "FishIdx_pop", sigmaFishIdx_pop_form, ln_sigmaFishIdx_pop, sim_list$n_fish_fleets)
   if(!is.null(fish_idx_mvn)) {
     sim_list$fish_idx_mvn <- fish_idx_mvn # factor parameters for mvn index fleets
     sim_list$fish_idx_u <- matrix(NA, sim_list$n_fish_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
@@ -916,13 +1040,23 @@ Setup_Sim_Fishing <- function(sim_list,
   sim_list$FishLen_discard_pop_corr_pars_agg <- FishLen_discard_pop_corr_pars_agg
   sim_list$FishLenComps_discard_pop_Type <- FishLenComps_discard_pop_Type
 
-  # whether a data source reports once a season or once a year, the annual total landing in season one
+  # whether a data source reports once a season or once a year, and the season an annual total lands in
   n_fish <- sim_list$n_fish_fleets
   sim_list$Catch_seas_Type <- parse_seas_agg_spec(Catch_seas_Type, "Catch_seas_Type", n_fish)
   sim_list$Catch_pop_seas_Type <- parse_seas_agg_spec(Catch_pop_seas_Type, "Catch_pop_seas_Type", n_fish)
   sim_list$FishIdx_seas_Type <- parse_seas_agg_spec(FishIdx_seas_Type, "FishIdx_seas_Type", n_fish)
   sim_list$FishIdx_pop_seas_Type <- parse_seas_agg_spec(FishIdx_pop_seas_Type, "FishIdx_pop_seas_Type", n_fish)
   sim_list$FishAgeComps_seas_Type <- parse_seas_agg_spec(FishAgeComps_seas_Type, "FishAgeComps_seas_Type", n_fish)
+  sim_list$Discard_seas_Type <- parse_seas_agg_spec(Discard_seas_Type, "Discard_seas_Type", n_fish)
+  sim_list$Discard_pop_seas_Type <- parse_seas_agg_spec(Discard_pop_seas_Type, "Discard_pop_seas_Type", n_fish)
+  sim_list$FishLenComps_seas_Type <- parse_seas_agg_spec(FishLenComps_seas_Type, "FishLenComps_seas_Type", n_fish)
+  sim_list$FishAgeComps_pop_seas_Type <- parse_seas_agg_spec(FishAgeComps_pop_seas_Type, "FishAgeComps_pop_seas_Type", n_fish)
+  sim_list$FishLenComps_pop_seas_Type <- parse_seas_agg_spec(FishLenComps_pop_seas_Type, "FishLenComps_pop_seas_Type", n_fish)
+  sim_list$FishAgeComps_discard_seas_Type <- parse_seas_agg_spec(FishAgeComps_discard_seas_Type, "FishAgeComps_discard_seas_Type", n_fish)
+  sim_list$FishLenComps_discard_seas_Type <- parse_seas_agg_spec(FishLenComps_discard_seas_Type, "FishLenComps_discard_seas_Type", n_fish)
+  sim_list$FishAgeComps_discard_pop_seas_Type <- parse_seas_agg_spec(FishAgeComps_discard_pop_seas_Type, "FishAgeComps_discard_pop_seas_Type", n_fish)
+  sim_list$FishLenComps_discard_pop_seas_Type <- parse_seas_agg_spec(FishLenComps_discard_pop_seas_Type, "FishLenComps_discard_pop_seas_Type", n_fish)
+  sim_list <- store_seas_agg_slot(sim_list, seas_agg_slot, n_fish)
 
   # an mvn index is one draw over a covariance the season layout defines, so it cannot be collapsed
   if(any(sim_list$FishIdx_seas_Type == 1 & FishIdx_LikeType == 2))
@@ -961,20 +1095,33 @@ Setup_Sim_Fishing <- function(sim_list,
 #' @param srv_idx_ages Ages counted in each fleet's index total, a 0/1 array
 #'   \code{[n_ages × n_srv_fleets]}, the estimation model's \code{srv_idx_ages}.
 #'   \code{NULL} (default) counts every age.
-#' @param SrvIdx_seas_Type,SrvIdx_pop_seas_Type,SrvAgeComps_seas_Type Whether the
-#'   operating model reports a survey data source once a season (\code{"spltSeas"},
-#'   the default) or once a year as a season total (\code{"aggSeas"}), one value
-#'   for every survey or one per survey. An annual total is written into season one
-#'   with the other seasons left at zero and the observation error applied once to
-#'   that total, so an estimation model reading it should mark season one in its
-#'   \code{Use} array and set the matching argument in
+#' @param SrvIdx_seas_Type,SrvIdx_pop_seas_Type,SrvAgeComps_seas_Type,SrvLenComps_seas_Type,SrvAgeComps_pop_seas_Type,SrvLenComps_pop_seas_Type
+#'   Whether the operating model reports a survey data source once a season
+#'   (\code{"spltSeas"}, the default) or once a year as a season total
+#'   (\code{"aggSeas"}), one value for every survey or one per survey. An annual
+#'   total is written into the season \code{seas_agg_slot} names, season one by
+#'   default, with the other seasons left at zero and the observation error
+#'   applied once to that total. A composition is drawn from the numbers summed
+#'   over the year. An estimation model reading it should mark the same season in
+#'   its \code{Use} array and set the matching argument in
 #'   \code{\link{Setup_Mod_SrvIdx_and_Comps}}.
+#' @param seas_agg_slot Named list, by survey data source (\code{"SrvIdx"},
+#'   \code{"SrvAgeComps_pop"} and so on), of the season each survey's year total
+#'   is written into, an integer matrix \code{[n_yrs x n_srv_fleets]}. See
+#'   \code{\link{Setup_Sim_Fishing}}. Default \code{NULL}.
 #' @param SrvIdx_LikeType Error structure each fleet's index is drawn under:
 #'   \code{"lognormal"} (0, default), \code{"normal"} (1) or \code{"mvn"} (2),
 #'   matching the estimation model. An mvn fleet draws from \code{SrvIdx_Cov}
 #'   through a common-factor decomposition (see \code{\link{cov_to_factor}})
 #'   instead of \code{ObsSrvIdx_SE}, and its population-specific data source stays
 #'   lognormal.
+#' @param sigmaSrvIdx_form,sigmaSrvIdx_pop_form How the index sd combines the
+#'   reported errors with an estimated part, as \code{sigmaSrvIdx_spec} in
+#'   \code{\link{Setup_Mod_SrvIdx_and_Comps}}: \code{"fix"} (0, default),
+#'   \code{"est_additive"} (1), \code{"est_quadrature"} (2) or
+#'   \code{"est_replace"} (3). See \code{\link{Setup_Sim_Fishing}}.
+#' @param ln_sigmaSrvIdx,ln_sigmaSrvIdx_pop Log of the estimated part, one per
+#'   survey, read under a form other than \code{"fix"}. Default \code{NULL}.
 #' @param SrvIdx_Cov List with one element per fleet holding the fixed covariance
 #'   over that fleet's fitted index observations, ordered by scanning
 #'   \code{UseSrvIdx} in array order. Required for mvn fleets. Default \code{NULL}.
@@ -1030,6 +1177,19 @@ Setup_Sim_Fishing <- function(sim_list,
 #' @param SrvIdxAA_LikeType `"lognormal"` (default) or `"normal"`, per fleet.
 #' @param SrvIdxAA_sigma_form Where the observation error comes from: `"none"`
 #'   (default), `"data"`, `"est_additive"` or `"est_quadrature"`.
+#' @param AgeObsCorr_srv_idx How each fleet's index-at-age residuals are
+#'   correlated, as in [Setup_Mod_SrvIdx_and_Comps()]: `"iid"` (default),
+#'   `"1dar1"`, `"us"` or `"2dar1"`; see [Setup_Sim_Fishing()].
+#' @param trans_rho_srv_idx,trans_rho_srv_idx_year,trans_rho_srv_idx_us
+#'   Unconstrained correlations under the estimation model's names and shapes,
+#'   as for the fishery's. `NULL` (default) is zero.
+#' @param SrvIdxAA_seas_Type,SrvIdxAA_pop_seas_Type Per fleet, `1` where the index at
+#'   age is a year total, drawn once a year from every season summed; see
+#'   [Setup_Sim_Fishing()]. `0` (default) draws each season.
+#' @param UseSrvIdxAA_pop,ln_sigmaSrvIdxAA_pop,ObsSrvIdxAA_pop_SE,SrvIdxAA_pop_Type,SrvIdxAA_pop_LikeType,SrvIdxAA_pop_sigma_form,AgeObsCorr_srv_idx_pop,trans_rho_srv_idx_pop,trans_rho_srv_idx_pop_year,trans_rho_srv_idx_pop_us
+#'   The population-specific index at age, as the aggregated one with a leading
+#'   `n_pop` dim on the arrays and parameters, each population drawn on its own.
+#'   `NULL` draws none.
 #' @param comp_srv_caal_like Conditional age-at-length likelihood per fleet:
 #'   `"Multinomial"` (0), `"Dirichlet-Multinomial"` (1) or `"none"` (999, default).
 #'   The survey twin of `comp_fish_caal_like`, and only these two families exist
@@ -1067,15 +1227,39 @@ Setup_Sim_Survey <- function(sim_list,
                              SrvIdxAA_LikeType = "lognormal",
                              SrvIdxAA_sigma_form = "none",
                              use_srv_idx_aa = rep(0, sim_list$n_srv_fleets),
+                             AgeObsCorr_srv_idx = "iid",
+                             trans_rho_srv_idx = NULL,
+                             trans_rho_srv_idx_year = NULL,
+                             trans_rho_srv_idx_us = NULL,
+                             SrvIdxAA_seas_Type = 0,
+                             UseSrvIdxAA_pop = NULL,
+                             ln_sigmaSrvIdxAA_pop = NULL,
+                             ObsSrvIdxAA_pop_SE = NULL,
+                             SrvIdxAA_pop_Type = "spltRaggS",
+                             SrvIdxAA_pop_LikeType = "lognormal",
+                             SrvIdxAA_pop_sigma_form = "none",
+                             SrvIdxAA_pop_seas_Type = 0,
+                             AgeObsCorr_srv_idx_pop = "iid",
+                             trans_rho_srv_idx_pop = NULL,
+                             trans_rho_srv_idx_pop_year = NULL,
+                             trans_rho_srv_idx_pop_us = NULL,
                              ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions, sim_list$n_yrs, sim_list$n_seas,  sim_list$n_srv_fleets)),
                              srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs, sim_list$n_srv_fleets, sim_list$n_sims)),
                              t_srv = array(1, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_srv_fleets)),
                              srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
                              srv_idx_ages = NULL,
                              SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+                             sigmaSrvIdx_form = "fix",
+                             ln_sigmaSrvIdx = NULL,
+                             sigmaSrvIdx_pop_form = "fix",
+                             ln_sigmaSrvIdx_pop = NULL,
                              SrvIdx_seas_Type = NULL,
                              SrvIdx_pop_seas_Type = NULL,
                              SrvAgeComps_seas_Type = NULL,
+                             SrvLenComps_seas_Type = NULL,
+                             SrvAgeComps_pop_seas_Type = NULL,
+                             SrvLenComps_pop_seas_Type = NULL,
+                             seas_agg_slot = NULL,
                              SrvIdx_Cov = NULL,
                              UseSrvIdx = NULL,
                              comp_srv_caal_like = rep(999, sim_list$n_srv_fleets),
@@ -1119,18 +1303,31 @@ Setup_Sim_Survey <- function(sim_list,
 
   # Convert Options to Codes ------------------------------------------------
   # Convert character inputs to numeric codes
-  srv_idx_type <- convert_to_numeric(srv_idx_type, list(abd = 0, biom = 1))
+  # the composition likelihoods as the estimation model codes them, the miss0 forms dropping empty bins
+  comp_like_codes <- list(Multinomial = 0, `Dirichlet-Multinomial` = 1,
+                          `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4,
+                          `iid-Logistic-Normal-miss0` = 5, `1d-Logistic-Normal-miss0` = 6, `2d-Logistic-Normal-miss0` = 7,
+                          none = 999)
+  srv_idx_type <- convert_to_numeric(srv_idx_type, list(abd = 0, biom = 1, none = 999))
   SrvIdx_LikeType <- convert_to_numeric(SrvIdx_LikeType, list(lognormal = 0, normal = 1, mvn = 2))
-  comp_srvage_like <- convert_to_numeric(comp_srvage_like, list(Multinomial = 0,  `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
-  comp_srvlen_like <- convert_to_numeric(comp_srvlen_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
+  sigmaSrvIdx_form <- convert_to_numeric(sigmaSrvIdx_form, list(fix = 0, est_additive = 1, est_quadrature = 2, est_replace = 3))
+  sigmaSrvIdx_pop_form <- convert_to_numeric(sigmaSrvIdx_pop_form, list(fix = 0, est_additive = 1, est_quadrature = 2, est_replace = 3))
+  comp_srvage_like <- convert_to_numeric(comp_srvage_like, comp_like_codes)
+  comp_srvlen_like <- convert_to_numeric(comp_srvlen_like, comp_like_codes)
   SrvAgeComps_Type <- convert_to_numeric(SrvAgeComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   SrvLenComps_Type <- convert_to_numeric(SrvLenComps_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   SrvAgeComps_pop_Type <- convert_to_numeric(SrvAgeComps_pop_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
   SrvLenComps_pop_Type <- convert_to_numeric(SrvLenComps_pop_Type,  list(agg = 0, spltRspltS = 1, spltRjntS = 2, none = 999))
-  comp_srvage_pop_like <- convert_to_numeric(comp_srvage_pop_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
-  comp_srvlen_pop_like <- convert_to_numeric(comp_srvlen_pop_like, list(Multinomial = 0, `Dirichlet-Multinomial` = 1, `iid-Logistic-Normal` = 2, `1d-Logistic-Normal` = 3, `2d-Logistic-Normal` = 4))
+  comp_srvage_pop_like <- convert_to_numeric(comp_srvage_pop_like, comp_like_codes)
+  comp_srvlen_pop_like <- convert_to_numeric(comp_srvlen_pop_like, comp_like_codes)
 
   # Input Validation --------------------------------------------------------
+  # a 2d logistic normal correlates bins across sexes, so it needs the composition joint by sex
+  check_sim_2d_comp(comp_srvage_like, SrvAgeComps_Type, "comp_srvage_like", "SrvAgeComps_Type")
+  check_sim_2d_comp(comp_srvlen_like, SrvLenComps_Type, "comp_srvlen_like", "SrvLenComps_Type")
+  check_sim_2d_comp(comp_srvage_pop_like, SrvAgeComps_pop_Type, "comp_srvage_pop_like", "SrvAgeComps_pop_Type")
+  check_sim_2d_comp(comp_srvlen_pop_like, SrvLenComps_pop_Type, "comp_srvlen_pop_like", "SrvLenComps_pop_Type")
+
   # Validate dimensions of all input parameters
   check_sim_dimensions(
     srv_sel_input,
@@ -1389,11 +1586,33 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$SrvIdxAA_LikeType <- rep_len(convert_to_numeric(SrvIdxAA_LikeType, list(lognormal = 0, normal = 1)), sim_list$n_srv_fleets)
   sim_list$SrvIdxAA_sigma_form <- rep_len(convert_to_numeric(SrvIdxAA_sigma_form, list(none = 0, data = 1, est_additive = 2, est_quadrature = 3)), sim_list$n_srv_fleets)
   sim_list$use_srv_idx_aa <- use_srv_idx_aa
+  sim_list <- sim_at_age_corr_setup(sim_list, "srv_idx", AgeObsCorr_srv_idx, trans_rho_srv_idx, trans_rho_srv_idx_year, trans_rho_srv_idx_us, sim_list$n_srv_fleets)
+  sim_list$SrvIdxAA_seas_Type <- parse_seas_agg_spec(SrvIdxAA_seas_Type, "SrvIdxAA_seas_Type", sim_list$n_srv_fleets)
+
+  # the population-specific index at age, with a leading population dim and nothing drawn by default
+  srv_aa_pop_dim <- c(sim_list$n_pop, srv_aa_dim)
+  srv_sigma_pop_dim <- c(sim_list$n_pop, sim_list$n_obs_ages, sim_list$n_sexes, sim_list$n_srv_fleets)
+  sim_list$UseSrvIdxAA_pop <- if(is.null(UseSrvIdxAA_pop)) array(0, dim = srv_aa_pop_dim) else UseSrvIdxAA_pop
+  sim_list$ln_sigmaSrvIdxAA_pop <- if(is.null(ln_sigmaSrvIdxAA_pop)) array(log(0.2), dim = srv_sigma_pop_dim) else ln_sigmaSrvIdxAA_pop
+  sim_list$ObsSrvIdxAA_pop_SE <- if(is.null(ObsSrvIdxAA_pop_SE)) array(0, dim = srv_aa_pop_dim) else ObsSrvIdxAA_pop_SE
+  check_at_age_shape(sim_list$UseSrvIdxAA_pop, srv_aa_pop_dim, "UseSrvIdxAA_pop")
+  check_at_age_shape(sim_list$ln_sigmaSrvIdxAA_pop, srv_sigma_pop_dim, "ln_sigmaSrvIdxAA_pop")
+  check_at_age_shape(sim_list$ObsSrvIdxAA_pop_SE, srv_aa_pop_dim, "ObsSrvIdxAA_pop_SE")
+  sim_list$SrvIdxAA_pop_Type <- at_age_type_matrix(if(is.null(SrvIdxAA_pop_Type)) "spltRaggS" else SrvIdxAA_pop_Type, sim_list$n_srv_fleets, sim_list$n_yrs, "SrvIdxAA_pop_Type")
+  sim_list$SrvIdxAA_pop_LikeType <- rep_len(convert_to_numeric(if(is.null(SrvIdxAA_pop_LikeType)) "lognormal" else SrvIdxAA_pop_LikeType,
+                                                               list(lognormal = 0, normal = 1)), sim_list$n_srv_fleets)
+  sim_list$SrvIdxAA_pop_sigma_form <- rep_len(convert_to_numeric(if(is.null(SrvIdxAA_pop_sigma_form)) "none" else SrvIdxAA_pop_sigma_form,
+                                                                 list(none = 0, data = 1, est_additive = 2, est_quadrature = 3)), sim_list$n_srv_fleets)
+  sim_list$SrvIdxAA_pop_seas_Type <- parse_seas_agg_spec(SrvIdxAA_pop_seas_Type, "SrvIdxAA_pop_seas_Type", sim_list$n_srv_fleets)
+  sim_list <- sim_at_age_corr_setup(sim_list, "srv_idx_pop", AgeObsCorr_srv_idx_pop, trans_rho_srv_idx_pop, trans_rho_srv_idx_pop_year, trans_rho_srv_idx_pop_us,
+                                    sim_list$n_srv_fleets, pop = TRUE)
   sim_list$ObsSrvIdx_pop_SE <- ObsSrvIdx_pop_SE
   sim_list$t_srv <- t_srv
   sim_list$srv_idx_type <- srv_idx_type
   sim_list$srv_idx_ages <- if(is.null(srv_idx_ages)) array(1, dim = c(sim_list$n_ages, sim_list$n_srv_fleets)) else srv_idx_ages # ages in the index total
   sim_list$SrvIdx_LikeType <- SrvIdx_LikeType # survey index error structure
+  sim_list <- store_idx_sigma(sim_list, "SrvIdx", sigmaSrvIdx_form, ln_sigmaSrvIdx, sim_list$n_srv_fleets) # estimated part of the index sd
+  sim_list <- store_idx_sigma(sim_list, "SrvIdx_pop", sigmaSrvIdx_pop_form, ln_sigmaSrvIdx_pop, sim_list$n_srv_fleets)
   if(!is.null(srv_idx_mvn)) {
     sim_list$srv_idx_mvn <- srv_idx_mvn # factor parameters for mvn index fleets
     sim_list$srv_idx_u <- matrix(NA, sim_list$n_srv_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
@@ -1452,11 +1671,15 @@ Setup_Sim_Survey <- function(sim_list,
   sim_list$SrvLen_pop_corr_pars_agg <- SrvLen_pop_corr_pars_agg
   sim_list$SrvLenComps_pop_Type <- SrvLenComps_pop_Type
 
-  # whether a data source reports once a season or once a year, the annual total landing in season one
+  # whether a data source reports once a season or once a year, and the season an annual total lands in
   n_srv <- sim_list$n_srv_fleets
   sim_list$SrvIdx_seas_Type <- parse_seas_agg_spec(SrvIdx_seas_Type, "SrvIdx_seas_Type", n_srv)
   sim_list$SrvIdx_pop_seas_Type <- parse_seas_agg_spec(SrvIdx_pop_seas_Type, "SrvIdx_pop_seas_Type", n_srv)
   sim_list$SrvAgeComps_seas_Type <- parse_seas_agg_spec(SrvAgeComps_seas_Type, "SrvAgeComps_seas_Type", n_srv)
+  sim_list$SrvLenComps_seas_Type <- parse_seas_agg_spec(SrvLenComps_seas_Type, "SrvLenComps_seas_Type", n_srv)
+  sim_list$SrvAgeComps_pop_seas_Type <- parse_seas_agg_spec(SrvAgeComps_pop_seas_Type, "SrvAgeComps_pop_seas_Type", n_srv)
+  sim_list$SrvLenComps_pop_seas_Type <- parse_seas_agg_spec(SrvLenComps_pop_seas_Type, "SrvLenComps_pop_seas_Type", n_srv)
+  sim_list <- store_seas_agg_slot(sim_list, seas_agg_slot, n_srv)
 
   # an mvn index is one draw over a covariance the season layout defines, so it cannot be collapsed
   if(any(sim_list$SrvIdx_seas_Type == 1 & SrvIdx_LikeType == 2))

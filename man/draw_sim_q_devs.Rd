@@ -28,6 +28,8 @@ says, so the series reaches catchability rather than an array nothing reads.
 A self test also stores \code{<prefix>_q_devs_est}, \code{[region, year,
 fleet]}, TRUE where the fit estimates a deviation. A cell the fit keeps fixed
 keeps the fit's value, and a walk or ar1 starts at the fleet's first
-estimated year, as the penalty does.
+estimated year, as the penalty does. A walk whose first year the fit gives a
+diffuse start (\code{<prefix>_q_rw_init_sigma}) keeps that year at the
+replicate's own deviation and steps on from it.
 }
 \keyword{internal}

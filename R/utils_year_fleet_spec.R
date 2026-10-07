@@ -202,13 +202,57 @@ parse_seas_agg_spec <- function(spec, arg_name, n_fleets) {
 
 } # end parse_seas_agg_spec
 
+#' Warn when an aggregated composition is flagged outside region one
+#'
+#' An aggregated composition (\code{"agg"}) is one over every region and sex,
+#' kept in region one, where the default input sample size is written and where
+#' the operating model draws it. The likelihood reads the first region flagged, so
+#' a flag in another region is a region-resolved composition fit against the
+#' whole model's, or a second copy of the same one that is never read.
+#'
+#' @param use_arr Use array, region by year by season by fleet, with a leading
+#'   population dim for a population-specific data source.
+#' @param comp_type Composition type matrix \code{[n_years, n_fleets]}, 0 for
+#'   aggregated.
+#' @param arg_name Name of the \code{Use} argument, used in the warning.
+#'
+#' @return \code{NULL}, invisibly. Called for the warning it raises.
+#'
+#' @keywords internal
+check_agg_comp_regions <- function(use_arr, comp_type, arg_name) {
+
+  if(is.null(use_arr) || is.null(comp_type)) return(invisible(NULL))
+  pop_source <- length(dim(use_arr)) == 5 # population leads the use array
+  n_regions <- dim(use_arr)[if(pop_source) 2 else 1]
+  if(n_regions == 1) return(invisible(NULL))
+
+  for(f in seq_len(ncol(comp_type))) {
+    for(y in which(comp_type[,f] == 0)) {
+
+      outside_region_one <- if(pop_source) any(use_arr[,-1,y,,f] == 1) else any(use_arr[-1,y,,f] == 1)
+      if(outside_region_one) {
+        warning(arg_name, " flags fleet ", f, "'s aggregated composition in a region other than region one (year ", y,
+                " is the first). An aggregated composition is the whole model's, every region and sex summed, and the ",
+                "likelihood reads the first region flagged, so flag region one only. For compositions resolved by region ",
+                "use 'spltRspltS' or 'spltRjntS'.", call. = FALSE)
+        return(invisible(NULL))
+      }
+
+    } # end y loop
+  } # end f loop
+
+  invisible(NULL)
+
+} # end check_agg_comp_regions
+
 #' Check that a seasonally aggregated data source has one observation per year
 #'
 #' Under \code{"aggSeas"} the prediction is a year total, so more than one season
 #' turned on in a region and year would fit that same total twice.
 #'
-#' @param use_arr Use array with region, year, season and fleet in its last four
-#'   dims. A population-specific array is allowed to have a leading dim.
+#' @param use_arr Use array, region by year by season by fleet, or region by year
+#'   by season by observed age by sex by fleet for an at-age data source. A
+#'   population-specific array has a leading population dim on either.
 #' @param seas_agg Integer vector from \code{\link{parse_seas_agg_spec}}.
 #' @param arg_name Name of the \code{Use} argument, used in error messages.
 #'
@@ -220,12 +264,16 @@ check_seas_agg_use <- function(use_arr, seas_agg, arg_name) {
   if(is.null(use_arr) || !any(seas_agg == 1)) return(invisible(NULL))
 
   n_dims <- length(dim(use_arr))
-  seas_dim <- n_dims - 1 # season always sits just before fleet
+  seas_dim <- if(n_dims %in% c(4, 6)) 3 else 4 # third after region and year, fourth behind a population dim
 
   for(f in which(seas_agg == 1)) {
 
-    # count the seasons fit in each region and year for this fleet
-    slice <- if(n_dims == 5) use_arr[, , , , f, drop = FALSE] else use_arr[, , , f, drop = FALSE]
+    # count the seasons fit in each cell for this fleet
+    slice <- switch(as.character(n_dims),
+                    "4" = use_arr[, , , f, drop = FALSE],
+                    "5" = use_arr[, , , , f, drop = FALSE],
+                    "6" = use_arr[, , , , , f, drop = FALSE],
+                    "7" = use_arr[, , , , , , f, drop = FALSE])
     per_year <- apply(slice, seq_len(n_dims)[-seas_dim], sum)
 
     if(any(per_year > 1))

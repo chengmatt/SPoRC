@@ -473,6 +473,12 @@ Setup_Mod_Discard_Comps     <- function(input_list,
   input_list$data$FishAgeComps_discard_pop_Type <- FishAgeComps_discard_pop_Type_Mat
   input_list$data$FishLenComps_discard_pop_Type <- FishLenComps_discard_pop_Type_Mat
 
+  # an aggregated composition is the whole model's, every region summed, kept in region one
+  check_agg_comp_regions(UseFishAgeComps_discard, FishAgeComps_discard_Type_Mat, "UseFishAgeComps_discard")
+  check_agg_comp_regions(UseFishAgeComps_discard_pop, FishAgeComps_discard_pop_Type_Mat, "UseFishAgeComps_discard_pop")
+  check_agg_comp_regions(UseFishLenComps_discard, FishLenComps_discard_Type_Mat, "UseFishLenComps_discard")
+  check_agg_comp_regions(UseFishLenComps_discard_pop, FishLenComps_discard_pop_Type_Mat, "UseFishLenComps_discard_pop")
+
   # Populate Parameter List -------------------------------------------------
 
   # Dispersion parameters for the fishery age comps
@@ -1328,6 +1334,16 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   check_seas_agg_use(UseFishAgeComps_pop, input_list$data$FishAgeComps_pop_seas_Type, "UseFishAgeComps_pop")
   check_seas_agg_use(UseFishLenComps, input_list$data$FishLenComps_seas_Type, "UseFishLenComps")
   check_seas_agg_use(UseFishLenComps_pop, input_list$data$FishLenComps_pop_seas_Type, "UseFishLenComps_pop")
+  check_seas_agg_use(input_list$data$UseFishAgeComps_discard, input_list$data$FishAgeComps_discard_seas_Type, "UseFishAgeComps_discard")
+  check_seas_agg_use(input_list$data$UseFishAgeComps_discard_pop, input_list$data$FishAgeComps_discard_pop_seas_Type, "UseFishAgeComps_discard_pop")
+  check_seas_agg_use(input_list$data$UseFishLenComps_discard, input_list$data$FishLenComps_discard_seas_Type, "UseFishLenComps_discard")
+  check_seas_agg_use(input_list$data$UseFishLenComps_discard_pop, input_list$data$FishLenComps_discard_pop_seas_Type, "UseFishLenComps_discard_pop")
+
+  # an aggregated composition is the whole model's, every region summed, kept in region one
+  check_agg_comp_regions(UseFishAgeComps, FishAgeComps_Type_Mat, "UseFishAgeComps")
+  check_agg_comp_regions(UseFishAgeComps_pop, FishAgeComps_pop_Type_Mat, "UseFishAgeComps_pop")
+  check_agg_comp_regions(UseFishLenComps, FishLenComps_Type_Mat, "UseFishLenComps")
+  check_agg_comp_regions(UseFishLenComps_pop, FishLenComps_pop_Type_Mat, "UseFishLenComps_pop")
 
   for(f in 1:n_fish) {
     if(input_list$data$FishIdx_seas_Type[f] == 1) collect_message("Fishery index for fishery fleet ", f, " is fit as a season total")

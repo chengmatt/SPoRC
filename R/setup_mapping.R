@@ -1550,7 +1550,10 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #' first sex. Under iid or a random walk on a non-parametric fleet the log sigmas
 #' are indexed by bin, so \code{"est_shared_b"} leaves one per bin group, and
 #' sharing deviations across sexes leaves one set for the first sex under every
-#' form. The rest are fixed.
+#' form. The rest are fixed. Deviations shared across regions share their sigmas
+#' across regions, read at the fleet's first region with data, and a fleet using
+#' another fleet's deviations (\code{"est_shared_f_x"}) uses that fleet's sigmas,
+#' whatever \code{pe_pars_spec} says, since one series has one variance.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param pe_pars_spec Character vector, one entry per fleet: \code{"est_all"},
@@ -1856,6 +1859,28 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
       collect_message(prefix, "sel_pe_pars_spec is specified as: ", pe_pars_spec[f], " for ", fleet_label, " ", f, " (sharing with fleet ", flt_shared, ")")
     } # end if statement
   } # end f loop
+
+  # a deviation series shared over regions or fleets is one series with one variance, so its sigmas are shared the same way.
+  # regions take the anchor region's, and a fleet using another fleet's deviations takes that fleet's
+  shared_region_specs <- c("est_shared_r", "est_shared_r_s", "est_shared_r_b", "est_shared_r_b_s")
+  if(!is.null(sel_devs_spec)) {
+    for(f in 1:n_fleets) {
+      if(!devs_spec_resolved[f] %in% shared_region_specs) next
+      data_r <- which(sapply(1:input_list$data$n_regions, function(rr) sel_has_data(input_list$data, use_field, rr, f)))
+      anchor_r <- if(length(data_r) > 0) data_r[1] else 1
+      for(r in setdiff(1:input_list$data$n_regions, anchor_r)) {
+        if(input_list$data[[cont_tv_field]][r,f] == 0 || !sel_has_data(input_list$data, use_field, r, f)) next
+        map_pe_pars[r,,,f] <- map_pe_pars[anchor_r,,,f]
+      } # end r loop
+    } # end f loop
+    for(f in 1:n_fleets) {
+      if(!stringr::str_detect(sel_devs_spec[f], "est_shared_f")) next
+      flt_shared <- as.numeric(unlist(stringr::str_extract_all(sel_devs_spec[f], "\\d+")))
+      map_pe_pars[,,,f] <- map_pe_pars[,,,flt_shared]
+      collect_message(prefix, "sel_pe_pars for ", fleet_label, " ", f, " are fleet ", flt_shared, "'s, since it uses that fleet's deviations")
+    } # end f loop
+    map_pe_pars <- renumber_map_levels(map_pe_pars) # close the gaps the copies left
+  } # end if a deviation spec was given
 
   # input into mapping list
   input_list$map[[par_name]] <- factor(map_pe_pars)

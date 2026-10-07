@@ -21,7 +21,9 @@ A new environment (parent = calling frame) containing every element
   \code{Get_Det_Recruitment}, \code{Get_Init_NAA},
   \code{predict_sim_fish_iss_fmort}, \code{rho_trans},
   \code{simulate_comps}, \code{simulate_conv_tag_fish_recaptures},
-  \code{draw_index_obs}, \code{resolve_idx_factor}.
+  \code{draw_index_obs}, \code{resolve_idx_factor}, \code{draw_at_age_sources},
+  \code{collapse_seas_discards}, \code{redraw_year_total_comps},
+  \code{seas_agg_season}.
 }
 \description{
 Creates a new R environment populated with all objects from \code{sim_list}
@@ -41,6 +43,7 @@ Other Simulation Setup:
 \code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
 \code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
 \code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Fleet_Devs]{Setup_Sim_Fleet_Devs()}},
 \code{\link[=Setup_Sim_NAA_state]{Setup_Sim_NAA_state()}},
 \code{\link[=Setup_Sim_Rec]{Setup_Sim_Rec()}},
 \code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},

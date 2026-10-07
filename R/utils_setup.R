@@ -1059,6 +1059,131 @@ unused_at_age_on_obs_ages <- function(x, used, age_dim, n_obs_ages, fill = 0) {
   return(array(fill, dim = d))
 }
 
+#' The correlation an operating model draws one at-age data source's residuals under
+#'
+#' Stores the form and the unconstrained correlations under the names the
+#' estimation model holds them, so a fit's values pass straight through and both
+#' sides read them through \code{rho_trans} and \code{build_us_corr}.
+#'
+#' @param sim_list Simulation list with \code{n_regions}, \code{n_sexes} and
+#'   \code{n_obs_ages}.
+#' @param tag \code{"catch"}, \code{"discard"} or \code{"srv_idx"}.
+#' @param corr Form per fleet, \code{"iid"}, \code{"1dar1"}, \code{"us"} or
+#'   \code{"2dar1"}, or their codes 0 to 3. \code{NULL} is \code{"iid"}.
+#' @param rho,rho_year Unconstrained correlations across ages and across years,
+#'   \code{[n_regions, n_sexes, n_fleets]}, or \code{NULL} for zero.
+#' @param us_pars Unconstrained unstructured correlation parameters, pair by
+#'   region by sex by fleet, or \code{NULL} for zero.
+#' @param n_fleets Number of fleets of this data source.
+#' @param pop Logical. \code{TRUE} for a population-specific data source, whose
+#'   parameters have a leading population dim.
+#'
+#' @return \code{sim_list} with \code{AgeObsCorr_<tag>}, \code{trans_rho_<tag>},
+#'   \code{trans_rho_<tag>_year} and \code{trans_rho_<tag>_us}.
+#'
+#' @keywords internal
+sim_at_age_corr_setup <- function(sim_list, tag, corr, rho, rho_year, us_pars, n_fleets, pop = FALSE) {
+  par_dim <- c(if(pop) sim_list$n_pop, sim_list$n_regions, sim_list$n_sexes, n_fleets)
+  n_pairs <- max(1, sim_list$n_obs_ages * (sim_list$n_obs_ages - 1) / 2) # one per pair of observed ages
+  sim_list[[paste0("AgeObsCorr_", tag)]] <- rep_len(convert_to_numeric(if(is.null(corr)) "iid" else corr,
+                                                                       list(iid = 0, `1dar1` = 1, us = 2, `2dar1` = 3)), n_fleets)
+  sim_list[[paste0("trans_rho_", tag)]] <- array(if(is.null(rho)) 0 else rho, dim = par_dim)
+  sim_list[[paste0("trans_rho_", tag, "_year")]] <- array(if(is.null(rho_year)) 0 else rho_year, dim = par_dim)
+  sim_list[[paste0("trans_rho_", tag, "_us")]] <- array(if(is.null(us_pars)) 0 else us_pars, dim = c(n_pairs, par_dim))
+  return(sim_list)
+}
+
+#' Refuse a 2d logistic normal composition that is not joint by sex
+#'
+#' The 2d logistic normal correlates bins within and across sexes, so it reads one
+#' composition stacked over sexes. Aggregated or split by sex, the operating model
+#' would cut the bins in half as if they were two sexes, or fail inside the draw.
+#' The estimation model refuses the same pairing.
+#'
+#' @param comp_like Likelihood code per fleet, 4 and 7 the 2d forms.
+#' @param comp_type Composition type per year and fleet, or per fleet.
+#' @param like_name,type_name Argument names, for the message.
+#'
+#' @return \code{NULL}, invisibly. Called for the error it raises.
+#'
+#' @keywords internal
+check_sim_2d_comp <- function(comp_like, comp_type, like_name, type_name) {
+
+  for(f in which(comp_like %in% c(4, 7))) {
+    type_f <- if(is.null(dim(comp_type))) comp_type[f] else comp_type[,f] # every year of this fleet
+    if(any(type_f %in% c(0, 1)))
+      stop(like_name, " is a 2d logistic normal for fleet ", f, ", which correlates the bins across sexes and so ",
+           "reads one composition stacked over sexes. Set ", type_name, " to 'spltRjntS' (joint by sex) in every ",
+           "year the fleet is drawn, as the estimation model requires.")
+  } # end f loop
+
+  invisible(NULL)
+
+} # end check_sim_2d_comp
+
+#' Store the estimated part of an index sd
+#'
+#' The operating model keeps the reported errors in \code{Obs*_SE} and draws at
+#' their combination with the estimated part, the way the estimation model's
+#' \code{build_idx_sd} forms its sd, so the reported errors it hands a refit are
+#' the ones the fit read.
+#'
+#' @param sim_list Simulation list.
+#' @param data_name \code{"FishIdx"}, \code{"FishIdx_pop"}, \code{"SrvIdx"} or
+#'   \code{"SrvIdx_pop"}.
+#' @param form Code 0 to 3, see \code{\link{combine_idx_sd}}.
+#' @param ln_sigma Log of the estimated part, one per fleet, or \code{NULL} under
+#'   form 0.
+#' @param n_fleets Number of fleets.
+#'
+#' @return \code{sim_list} with \code{sigma<data_name>_form} and
+#'   \code{ln_sigma<data_name>}.
+#'
+#' @keywords internal
+store_idx_sigma <- function(sim_list, data_name, form, ln_sigma, n_fleets) {
+
+  if(length(form) != 1 || !form %in% 0:3) stop("sigma", data_name, "_form must be one of 'fix', 'est_additive', 'est_quadrature' or 'est_replace'.")
+  if(form != 0 && length(ln_sigma) != n_fleets)
+    stop("sigma", data_name, "_form estimates part of the index sd, so ln_sigma", data_name,
+         " must give its log, one value per fleet (", n_fleets, ").")
+
+  sim_list[[paste0("sigma", data_name, "_form")]] <- form
+  sim_list[[paste0("ln_sigma", data_name)]] <- if(form == 0) rep(0, n_fleets) else ln_sigma # unread under form 0
+
+  return(sim_list)
+
+} # end store_idx_sigma
+
+#' Store the season each fleet's year total is drawn into
+#'
+#' Checks and stores the \code{seas_agg_slot} entries a
+#' \code{\link{Setup_Sim_Fishing}} or \code{\link{Setup_Sim_Survey}} call was
+#' given, leaving any from the other call in place.
+#'
+#' @param sim_list Simulation list with \code{n_yrs} and \code{n_seas}.
+#' @param seas_agg_slot Named list of integer matrices \code{[n_yrs, n_fleets]},
+#'   or \code{NULL}.
+#' @param n_fleets Number of fleets of these data sources.
+#'
+#' @return \code{sim_list} with \code{seas_agg_slot} updated.
+#'
+#' @keywords internal
+store_seas_agg_slot <- function(sim_list, seas_agg_slot, n_fleets) {
+
+  for(data_name in names(seas_agg_slot)) {
+
+    slot <- seas_agg_slot[[data_name]]
+    if(!identical(as.numeric(dim(slot)), as.numeric(c(sim_list$n_yrs, n_fleets))) || any(!slot %in% seq_len(sim_list$n_seas)))
+      stop("seas_agg_slot$", data_name, " must be an n_yrs x n_fleets matrix (", sim_list$n_yrs, " x ", n_fleets,
+           ") of seasons between 1 and ", sim_list$n_seas, ", the season each fleet's year total is written into.")
+    sim_list$seas_agg_slot[[data_name]] <- slot
+
+  } # end data_name loop
+
+  return(sim_list)
+
+} # end store_seas_agg_slot
+
 #' A bin selection array, or NULL when it restricts nothing
 #'
 #' The composition routines treats \code{NULL} as "fit every bin", which lets

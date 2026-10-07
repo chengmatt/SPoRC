@@ -89,8 +89,9 @@ test_that("a refit on simulated data recovers the movement process error", {
 
   set.seed(31)
   res <- suppressWarnings(simulation_self_test(data = pinned$data, parameters = truth, mapping = pinned$map, random = "move_devs",
-                                               rep = at_truth$rep, sd_rep = NULL, n_sims = 3, newton_loops = 1,
-                                               what = "SSB", what_par = c("move_pe_pars", "log_move_diffusion_pars"), n_cond_yrs = 0))
+                                               rep = at_truth$rep, sd_rep = exact_pars_sd_rep(at_truth, "move_devs"), obj = at_truth,
+                                               n_sims = 3, newton_loops = 1, sim_type = "joint",
+                                               what = "SSB", what_par = c("move_pe_pars", "log_move_diffusion_pars")))
   expect_equal(sum(is.na(res$SSB)), 0) # every replicate refit
 
   # the diffusion rate, the conditional sd and the year correlation come back

@@ -34,6 +34,7 @@ Setup_Sim_Rec(
   SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
+  ln_RecDevs_input = NULL,
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
   RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
@@ -130,6 +131,11 @@ replacement. Default \code{NULL}.}
 \code{n_ages - 1} dim excludes the reference age. \code{NULL} (default) draws one
 shared curve per population and region; pass zeros to start in equilibrium.}
 
+\item{ln_RecDevs_input}{Optional log recruitment deviations \code{[n_pop x
+n_regions x n_input_yrs x n_sims]}, used as given in every year they cover
+instead of being drawn, the years after them drawn as usual. A year that
+\code{Rec_input} covers takes its recruitment from there. Default \code{NULL}.}
+
 \item{InitDevs_sex_spec}{How initial age deviations are drawn across sexes when
 \code{ln_InitDevs_input} is not supplied. \code{"est_shared_s"} (default) draws
 one curve per population or region for every sex, \code{"est_all"} draws each sex
@@ -153,8 +159,8 @@ Default \code{1}, which reads index 2 in every year.}
   \code{$init_dd}, \code{$R0}, \code{$h}, \code{$sexratio}, \code{$ln_sigmaR},
   \code{$rec_seas_prop}, \code{$spawn_seas}, \code{$t_spawn}, \code{$rec_lag},
   \code{$init_age_strc}, \code{$do_recruits_move}, \code{$move_age},
-  \code{$stray_rate}, and optionally \code{$Rec_input} and
-  \code{$ln_InitDevs_input}. Character codes are converted to integers before
+  \code{$stray_rate}, and optionally \code{$Rec_input},
+  \code{$ln_InitDevs_input} and \code{$ln_RecDevs_input}. Character codes are converted to integers before
   storage.
 }
 \description{
@@ -168,6 +174,7 @@ Other Simulation Setup:
 \code{\link[=Setup_Sim_Containers]{Setup_Sim_Containers()}},
 \code{\link[=Setup_Sim_Dim]{Setup_Sim_Dim()}},
 \code{\link[=Setup_Sim_Fishing]{Setup_Sim_Fishing()}},
+\code{\link[=Setup_Sim_Fleet_Devs]{Setup_Sim_Fleet_Devs()}},
 \code{\link[=Setup_Sim_NAA_state]{Setup_Sim_NAA_state()}},
 \code{\link[=Setup_Sim_Survey]{Setup_Sim_Survey()}},
 \code{\link[=Setup_Sim_Tagging]{Setup_Sim_Tagging()}},

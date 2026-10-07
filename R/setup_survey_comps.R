@@ -745,6 +745,12 @@ Setup_Mod_SrvIdx_and_Comps <- function(input_list,
   check_seas_agg_use(UseSrvLenComps, input_list$data$SrvLenComps_seas_Type, "UseSrvLenComps")
   check_seas_agg_use(UseSrvLenComps_pop, input_list$data$SrvLenComps_pop_seas_Type, "UseSrvLenComps_pop")
 
+  # an aggregated composition is the whole model's, every region summed, kept in region one
+  check_agg_comp_regions(UseSrvAgeComps, SrvAgeComps_Type_Mat, "UseSrvAgeComps")
+  check_agg_comp_regions(UseSrvAgeComps_pop, SrvAgeComps_pop_Type_Mat, "UseSrvAgeComps_pop")
+  check_agg_comp_regions(UseSrvLenComps, SrvLenComps_Type_Mat, "UseSrvLenComps")
+  check_agg_comp_regions(UseSrvLenComps_pop, SrvLenComps_pop_Type_Mat, "UseSrvLenComps_pop")
+
   for(sf in 1:n_srv) {
     if(input_list$data$SrvIdx_seas_Type[sf] == 1) collect_message("Survey index for survey fleet ", sf, " is fit as a season total")
     if(input_list$data$SrvAgeComps_seas_Type[sf] == 1) collect_message("Survey age compositions for survey fleet ", sf, " are fit as a season total")

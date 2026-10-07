@@ -162,13 +162,42 @@ test_that("collapse_seas_obs puts the year in season one and draws once from tha
   expect_equal(out$true[1, 2, , 1, 1], c(1, 1, 1))
 })
 
-test_that("collapse_seas_at_age sums the numbers behind a composition into season one", {
+test_that("collapse_seas_obs writes the year into the season the fit holds it in", {
 
-  arr <- array(stats::runif(1 * 1 * 2 * 3 * 4 * 1 * 1 * 1), dim = c(1, 1, 2, 3, 4, 1, 1, 1))
-  out <- SPoRC:::collapse_seas_at_age(arr, seas_agg = 1L, y = 1, sim = 1, n_seas = 3)
+  true_arr <- array(0, dim = c(1, 1, 3, 1, 1)) # region, year, season, fleet, sim
+  true_arr[1, 1, , 1, 1] <- c(2, 3, 5)
 
-  expect_equal(as.vector(out[1, 1, 1, 1, , 1, 1, 1]),
-               as.vector(apply(arr[1, 1, 1, , , 1, 1, 1], 2, sum)))
-  expect_true(all(out[1, 1, 1, -1, , 1, 1, 1] == 0))
-  expect_equal(out[, , 2, , , , , , drop = FALSE], arr[, , 2, , , , , , drop = FALSE]) # other years untouched
+  out <- SPoRC:::collapse_seas_obs(true_arr, true_arr, array(0, dim = c(1, 1, 3, 1)),
+                                   seas_agg = 1, like_type = 0, y = 1, sim = 1,
+                                   n_seas = 3, n_regions = 1, n_fleets = 1, slot = 2)
+
+  expect_equal(as.vector(out$true[1, 1, , 1, 1]), c(0, 10, 0))
+  expect_equal(as.vector(out$obs[1, 1, , 1, 1]), c(0, 10, 0))
+})
+
+test_that("simulate_comps draws a year total from the numbers summed over its seasons", {
+
+  # pop, region, year, season, age, sex, fleet, sim
+  numbers <- array(stats::runif(2 * 3 * 4), dim = c(1, 1, 2, 3, 4, 1, 1, 1))
+  year_summed <- numbers
+  year_summed[1, 1, 1, 1, , 1, 1, 1] <- apply(numbers[1, 1, 1, , , 1, 1, 1], 2, sum)
+
+  comp_args <- list(r = 1, y = 1, f = 1, seas = 1, sim = 1,
+                    ISS = array(100, dim = c(1, 2, 3, 1, 1, 1)),
+                    AgeingError = array(diag(4), dim = c(2, 4, 4, 1)),
+                    comp_like = 0,
+                    comp_type = matrix(1, nrow = 2, ncol = 1),
+                    n_sexes = 1,
+                    n_regions = 1,
+                    n_cat = 4,
+                    Obs = array(0, dim = c(1, 2, 3, 4, 1, 1, 1)),
+                    age_or_len = 0)
+
+  set.seed(5)
+  over_seasons <- do.call(SPoRC:::simulate_comps, c(comp_args, list(Exp = numbers, exp_seas = 1:3)))
+  set.seed(5)
+  presummed <- do.call(SPoRC:::simulate_comps, c(comp_args, list(Exp = year_summed)))
+
+  expect_equal(over_seasons, presummed)
+  expect_equal(sum(over_seasons[1, 1, 1, , 1, 1, 1]), 100)
 })

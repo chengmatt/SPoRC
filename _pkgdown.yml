@@ -44,6 +44,8 @@ navbar:
           href: articles/ae_ebs_pacific_cod_case_study.html
         - text: "North Sea Sand Eel"
           href: articles/ah_north_sea_sandeel_case_study.html
+        - text: "Northeast Arctic Cod"
+          href: articles/ai_nea_cod_case_study.html
 
 articles:
   - title: "Getting Started"
@@ -76,6 +78,7 @@ articles:
       - ad_goa_rex_sole_case_study
       - ae_ebs_pacific_cod_case_study
       - ah_north_sea_sandeel_case_study
+      - ai_nea_cod_case_study
 
   - title: "Simulation and Projections"
     contents:
@@ -137,6 +140,7 @@ reference:
       - Setup_Sim_Biologicals
       - Setup_Sim_Containers
       - Setup_Sim_Fishing
+      - Setup_Sim_Fleet_Devs
       - Setup_Sim_Growth_RE
       - Setup_Sim_Movement
       - Setup_Sim_NAA_state
@@ -226,6 +230,7 @@ reference:
       - sgl_rg_rebs_data
       - mlt_rg_goa_rex_data
       - sgl_rg_ebs_pcod_data
+      - sgl_rg_neacod_data
 
   - title: "Fitted Model Objects"
     desc: "Fitted model output provided by SPoRC"

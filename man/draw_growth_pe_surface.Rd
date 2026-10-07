@@ -10,7 +10,8 @@ draw_growth_pe_surface(
   pe_pars,
   bins,
   fit_devs = NULL,
-  n_cond = 0
+  n_cond = 0,
+  rw_init_sigma = NA
 )
 }
 \arguments{
@@ -29,18 +30,22 @@ draw_growth_pe_surface(
 
 \item{n_cond}{Integer. Years that keep the fit's deviations. Default \code{0}
 draws every year.}
+
+\item{rw_init_sigma}{The sd the estimation model gives a walk's first year, or
+\code{NA} (default) for the walk's own.}
 }
 \value{
-Array shaped as \code{map}, zero where the map is \code{NA} outside
-  the conditioned years.
+Array shaped as \code{map}. A cell the map fixes keeps the fit's
+  value, as the penalty reads it, zero when no fit is given.
 }
 \description{
 The reverse of \code{\link{Get_PE_loglik}}. A shared level is drawn once and
 written wherever it appears, at the sd of the slot the penalty reads it at.
 Under iid every level is its own normal. Under the random walk each level
-steps from the year before; the first year starts at the walk's own sd, as
-the recruitment walk does in the operating model, since the diffuse start
-the estimation model gives it only leaves the level free. The 3D GMRF and
+steps from the year before. A first year the estimation model gives a diffuse
+start (\code{rw_init_sigma}) keeps the replicate's own value, since that start
+leaves the level to the data, as the recruitment and F walks do; under
+\code{NA} it starts at the walk's own sd, as the penalty does. The 3D GMRF and
 the separable AR1 draw each population, region and sex's whole surface over
 years and \code{bins} from the form's precision, conditional on the cells
 the map fixes at zero, which is the density the penalty evaluates at them.

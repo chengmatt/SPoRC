@@ -73,7 +73,10 @@ the common ones are \code{Fmort_input}, \code{fish_sel_input},
 \code{rinit_input}, \code{h_input}, \code{Rec_input},
 \code{conv_tag_fish_reporting_input} and \code{Movement}. Dimensions must
 match the model structure, \code{length(data$years) + closed_loop_yrs} years
-and \code{n_sims} simulations.}
+and \code{n_sims} simulations. \code{bias_correct_pe} and
+\code{bias_correct_oe} of \code{\link{Setup_Sim_Dim}} may be given as well;
+without them the operating model takes the fit's, as it does
+\code{sigmaR_switch}.}
 }
 \value{
 A \code{sim_list} holding the model dimensions and simulation

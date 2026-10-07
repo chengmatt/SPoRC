@@ -15,7 +15,9 @@ sim_at_age_cell(
   form_code,
   use_weight,
   r,
-  ageing_error = NULL
+  ageing_error = NULL,
+  bias_correct_oe = 0,
+  std_resid = NULL
 )
 }
 \arguments{
@@ -39,6 +41,15 @@ error-source codes.}
 
 \item{ageing_error}{Matrix \code{[n_ages, n_obs_ages]} reading model ages as
 observed ages for this year and fleet, or \code{NULL} for the identity.}
+
+\item{bias_correct_oe}{\code{1} draws a lognormal observation at its mean, as
+the estimation model reads it under the same setting; \code{0} (default) at
+its median.}
+
+\item{std_resid}{Standardized residuals \code{[n_obs_ages, n_sexes]} drawn up
+front by \code{\link{draw_sim_at_age_corr}} for a fleet whose ages are
+correlated, each scaled here by its age's sd. \code{NULL} (default) draws
+each age on its own.}
 }
 \value{
 A list with \code{true} and \code{obs}, both \code{[n_obs_ages, n_sexes]}

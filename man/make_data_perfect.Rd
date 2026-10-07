@@ -19,5 +19,9 @@ make_data_perfect(sim_list, obs_sd = 0.001, iss = 1e+06)
 \description{
 Every observation gets a standard deviation of \code{obs_sd} and every composition
 a sample size of \code{iss}. Process error is left alone, being part of the truth.
+That covers the population-specific at-age sources, the estimated part of an
+index sd, and a multivariate normal index, whose covariance keeps its
+correlations at a marginal sd of \code{obs_sd}. Tag recaptures are counts and
+keep their error.
 }
 \keyword{internal}

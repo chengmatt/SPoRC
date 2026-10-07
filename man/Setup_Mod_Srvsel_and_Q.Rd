@@ -84,7 +84,9 @@ the format of \code{srv_sel_blocks}. Parsed into an \code{[n_regions × n_years
 
 \item{srvsel_pe_pars_spec}{Character vector \code{[n_srv_fleets]} or \code{NULL}
 (default) of the sharing structure for the process error hyperparameters. See
-\code{\link{do_sel_pe_pars_mapping}}.}
+\code{\link{do_sel_pe_pars_mapping}}.
+Deviations shared over regions or fleets in \code{srv_sel_devs_spec} share
+these the same way, whatever this says.}
 
 \item{srv_fixed_sel_pars_spec}{Character vector \code{[n_srv_fleets]} of the
 sharing structure for the fixed-effect selectivity parameters. No default. See

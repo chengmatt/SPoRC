@@ -25,9 +25,10 @@ jobs:
       contents: write
     steps:
       - uses: actions/checkout@v6
-      - name: Pin apt to the canonical Ubuntu mirror
+      - name: Set apt mirrors, canonical first with Azure fallback
         run: |
-          echo 'http://archive.ubuntu.com/ubuntu/' | sudo tee /etc/apt/apt-mirrors.txt
+          printf 'http://archive.ubuntu.com/ubuntu/\tpriority:1\nhttp://azure.archive.ubuntu.com/ubuntu/\tpriority:2\n' \
+            | sudo tee /etc/apt/apt-mirrors.txt
           printf 'Acquire::Retries "2";\nAcquire::http::Timeout "15";\nAcquire::https::Timeout "15";\n' \
             | sudo tee /etc/apt/apt.conf.d/99-timeouts
       - name: Install system dependencies

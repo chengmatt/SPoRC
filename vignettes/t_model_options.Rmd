@@ -1301,21 +1301,15 @@ An index measured at a point in time belongs in its own season with its own
 the year, such as a fishery index built from a whole year of effort.
 
 An operating model reports the same way through `Setup_Sim_Fishing()` and
-`Setup_Sim_Survey()`, which take the same argument names. There the annual total is
-drawn once from the year's numbers, with the observation error applied to that total
-rather than to each season and then added up, and written into the season
-`seas_agg_slot` names, season one unless told otherwise. `simulation_self_test()`
-and `condition_closed_loop_simulations()` fill `seas_agg_slot` from the fit's `Use`
-arrays, so a total the fit holds in season two is drawn there; every region and
-population of a fleet must then hold a year's total in the same season. A
-multivariate normal index cannot be aggregated, since it is drawn once over a
-covariance the season layout defines.
+`Setup_Sim_Survey()`, which take the same argument names: the annual total is drawn
+once from the year's numbers and written into the season `seas_agg_slot` names, which
+the self test and the closed loop fill from the fit's `Use` arrays. A multivariate
+normal index cannot be aggregated.
 
-A discard fraction (`discard_units = "abd_frac"` or `"biom_frac"`) does not add up
-over seasons or populations, so a year total of one, or a regional observation over
-several populations, is the year's discards over the year's catch, each summed
-first: two populations each discarding 30 percent of their catch discard 30 percent
-together, not 60.
+A discard fraction (`discard_units = "abd_frac"` or `"biom_frac"`) over several
+seasons or populations is the year's discards over the year's catch, each summed
+first, so two populations each discarding 30 percent discard 30 percent together, not
+60.
 
 ### Age-disaggregated observations
 
@@ -1491,12 +1485,9 @@ Each takes one setting for every fleet or one per fleet, so a model can leave on
 fleet independent and correlate another. The three ICES `obsCorStruct` options are
 `"iid"`, `"1dar1"` and `"us"`; `"2dar1"` adds the year dimension.
 
-The operating model draws under the same form, from the same parameters: the self test
-and the closed loop pass them from the fit, and an operating model built by hand takes
-them under the same names in `Setup_Sim_Fishing()` and `Setup_Sim_Survey()`. A correlated
-fleet's standardized residuals are drawn before the first year, the ages of a year
-together, or the whole block of observed years by ages under `"2dar1"`. The
-population-specific at-age data sources are not drawn by the operating model.
+The operating model draws under the same form and parameters, which the self test and
+the closed loop pass from the fit and `Setup_Sim_Fishing()` and `Setup_Sim_Survey()`
+take by hand; the population-specific at-age data sources are not drawn.
 
 `"1dar1"` is a statement about age distance, not about position in the observed
 vector. A fleet observing ages 2, 3, 5 and 6 has a gap, and lag one across that

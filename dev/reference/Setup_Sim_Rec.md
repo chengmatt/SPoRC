@@ -38,6 +38,7 @@ rec_seas_prop[, 1, ] <- 1
   SR_ref_yr = 1,
   Rec_input = NULL,
   ln_InitDevs_input = NULL,
+  ln_RecDevs_input = NULL,
   InitDevs_sex_spec = "est_shared_s",
   RecDevs_model = "iid",
   RecDevs_rho = array(0, dim = c(sim_list$n_pop, sim_list$n_regions)),
@@ -180,6 +181,14 @@ rec_seas_prop[, 1, ] <- 1
   draws one shared curve per population and region; pass zeros to start
   in equilibrium.
 
+- ln_RecDevs_input:
+
+  Optional log recruitment deviations
+  `[n_pop x n_regions x n_input_yrs x n_sims]`, used as given in every
+  year they cover instead of being drawn, the years after them drawn as
+  usual. A year that `Rec_input` covers takes its recruitment from
+  there. Default `NULL`.
+
 - InitDevs_sex_spec:
 
   How initial age deviations are drawn across sexes when
@@ -213,8 +222,9 @@ rec_seas_prop[, 1, ] <- 1
 `sim_list` with `$recruitment_opt`, `$rec_dd`, `$init_dd`, `$R0`, `$h`,
 `$sexratio`, `$ln_sigmaR`, `$rec_seas_prop`, `$spawn_seas`, `$t_spawn`,
 `$rec_lag`, `$init_age_strc`, `$do_recruits_move`, `$move_age`,
-`$stray_rate`, and optionally `$Rec_input` and `$ln_InitDevs_input`.
-Character codes are converted to integers before storage.
+`$stray_rate`, and optionally `$Rec_input`, `$ln_InitDevs_input` and
+`$ln_RecDevs_input`. Character codes are converted to integers before
+storage.
 
 ## See also
 
@@ -223,6 +233,7 @@ Other Simulation Setup:
 [`Setup_Sim_Containers()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Containers.md),
 [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
 [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md),
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md),
 [`Setup_Sim_NAA_state()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_NAA_state.md),
 [`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md),
 [`Setup_Sim_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md),

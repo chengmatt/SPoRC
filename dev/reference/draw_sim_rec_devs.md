@@ -10,7 +10,8 @@ get zero deviations, and `sigma_idx` picks the natal region's
 is centered on: zero for independent deviations, the previous year's for
 a random walk, and `RecDevs_rho` times it for an AR1. Only the
 independent draws are bias corrected, a walk's deviation not being mean
-zero. A year covered by `Rec_input` draws nothing.
+zero. A year covered by `Rec_input` draws nothing, and one covered by
+`ln_RecDevs_input` reads its deviations from there.
 
 ## Usage
 

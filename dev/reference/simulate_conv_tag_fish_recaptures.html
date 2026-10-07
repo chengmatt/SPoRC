@@ -41,6 +41,7 @@ written into index 1 of each."><meta name="robots" content="noindex"></head><bod
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -85,7 +86,9 @@ written into index 1 of each.</p>
 <span>  <span class="va">n_regions</span>,</span>
 <span>  <span class="va">n_ages</span>,</span>
 <span>  <span class="va">n_sexes</span>,</span>
-<span>  <span class="va">n_fish_fleets</span></span>
+<span>  <span class="va">n_fish_fleets</span>,</span>
+<span>  tag_pools <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tag_fleets <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -138,6 +141,21 @@ replicate indices.</p></dd>
 
 <dt id="arg-n-pop-n-regions-n-ages-n-sexes-n-fish-fleets">n_pop, n_regions, n_ages, n_sexes, n_fish_fleets<a class="anchor" aria-label="anchor" href="#arg-n-pop-n-regions-n-ages-n-sexes-n-fish-fleets"></a></dt>
 <dd><p>Dimension sizes.</p></dd>
+
+
+<dt id="arg-tag-pools">tag_pools<a class="anchor" aria-label="anchor" href="#arg-tag-pools"></a></dt>
+<dd><p>List of the population, age and sex groups the estimation
+model pools recaptures over (<code>conv_tag_pop_pool</code> and the rest). A
+negative binomial with a group of more than one attended level is drawn once
+per group, into the group's first level. <code>NULL</code> (default) draws every
+cell on its own.</p></dd>
+
+
+<dt id="arg-tag-fleets">tag_fleets<a class="anchor" aria-label="anchor" href="#arg-tag-fleets"></a></dt>
+<dd><p>Fleets whose recaptures the estimation model fits
+(<code>use_conv_fish_tagging == 1</code>). The recovery-conditioned forms draw their
+total over these fleets alone, as the estimation model conditions on it;
+<code>NULL</code> (default) is every fleet.</p></dd>
 
 </dl></div>
     <div class="section level2">

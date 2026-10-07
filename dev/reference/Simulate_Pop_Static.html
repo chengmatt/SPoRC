@@ -47,6 +47,7 @@ to an RDS file."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -103,7 +104,7 @@ written.</p></dd>
     <p>A named list containing all simulation outputs, including (among
   others): <code>NAA</code>, <code>NAA0</code>, <code>SSB</code>, <code>Dynamic_SSB0</code>,
   <code>eff_SSB</code>, <code>Rec</code>, <code>ln_RecDevs</code>, <code>ln_InitDevs</code>,
-  <code>ZAA</code>, <code>TrueCatch</code>, <code>ObsCatch</code>, <code>TrueCatch_pop</code>,
+  <code>ZAA</code>, <code>tot_FAA</code>, <code>TrueCatch</code>, <code>ObsCatch</code>, <code>TrueCatch_pop</code>,
   <code>ObsCatch_pop</code>, <code>CAA</code>, <code>CAL</code>,
   <code>ObsFishAgeComps</code>, <code>ObsFishAgeComps_pop</code>,
   <code>ObsFishLenComps</code>, <code>ObsFishLenComps_pop</code>,
@@ -119,7 +120,15 @@ written.</p></dd>
   <code>obs_conv_tag_fish_recap</code>, <code>LenBinMap</code>, and key dimension scalars
   (<code>n_regions</code>, <code>n_pop</code>, <code>n_yrs</code>, <code>n_ages</code>, etc.).
   Note that <code>n_years</code> and <code>n_yrs</code> are both present for backwards
-  compatibility.</p>
+  compatibility. The deviations each replicate ran on are returned as the
+  estimation model names them, the replicate dim last: <code>ln_F_devs</code>,
+  <code>logit_dmr_devs</code>, <code>ln_fishsel_devs</code>, <code>ln_retsel_devs</code>,
+  <code>ln_srvsel_devs</code> and their <code>_bin_devs</code>, <code>move_devs</code>,
+  <code>ln_growth_devs</code> and <code>ln_growth_semipar_devs</code>, each <code>NULL</code>
+  where the operating model drew none. The at-age data sources,
+  <code>CatchAA</code>, <code>DiscardAA</code> and <code>SrvIdxAA</code> and their <code>_pop</code>
+  counterparts, come back as <code>True*</code> and <code>Obs*</code> with their
+  <code>Use*</code> flags and <code>_SE</code> arrays.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -128,6 +137,7 @@ written.</p></dd>
 <code><a href="Setup_Sim_Containers.html">Setup_Sim_Containers()</a></code>,
 <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim()</a></code>,
 <code><a href="Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code>,
+<code><a href="Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>,
 <code><a href="Setup_Sim_NAA_state.html">Setup_Sim_NAA_state()</a></code>,
 <code><a href="Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>,
 <code><a href="Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,

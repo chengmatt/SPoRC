@@ -16,7 +16,9 @@ Setup_Sim_q_devs(
   sigma_fish_q = 0,
   sigma_srv_q = 0,
   fish_q_rho = 0,
-  srv_q_rho = 0
+  srv_q_rho = 0,
+  fish_q_rw_init_sigma = NA,
+  srv_q_rw_init_sigma = NA
 )
 ```
 
@@ -45,6 +47,14 @@ Setup_Sim_q_devs(
   Numeric arrays `[n_regions, n_fleets]` of ar1 correlations on the
   natural scale, read only under `"ar1"`. Default zero. An array
   `[n_regions, n_fleets, n_sims]` gives each replicate its own.
+
+- fish_q_rw_init_sigma, srv_q_rw_init_sigma:
+
+  The sd the estimation model gives a walk's first estimated year
+  (`*_q_rw_init_sigma` there). Under a value that year keeps each
+  replicate's own deviation, since a diffuse start leaves the level to
+  the data; under `NA` (default) it is drawn at the walk's own sd from
+  zero, as the penalty reads it.
 
 ## Value
 

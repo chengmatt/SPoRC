@@ -5,7 +5,7 @@ Write a simulated at-age cell into its true and observed containers
 ## Usage
 
 ``` r
-store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim)
+store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim, p = NULL)
 ```
 
 ## Arguments
@@ -26,6 +26,12 @@ store_at_age_cell(sim_env, data_source, drawn, r, y, seas, f, sim)
 - r, y, seas, f, sim:
 
   Region, year, season, fleet and replicate.
+
+- p:
+
+  Population, for a population-specific data source, whose containers
+  have a leading population dim. `NULL` (default) for the aggregated
+  one.
 
 ## Value
 

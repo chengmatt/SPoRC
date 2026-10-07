@@ -61,6 +61,9 @@ Functions for setting up simulations
   : Initialize output containers for the operating model simulation
 - [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md)
   : Setup Simulation Fishing Inputs
+- [`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md)
+  : Fishing mortality, discard mortality and selectivity deviations in
+  the operating model
 - [`Setup_Sim_Growth_RE()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Growth_RE.md)
   : Growth deviations in the operating model
 - [`Setup_Sim_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Movement.md)
@@ -226,6 +229,8 @@ Assessment data inputs provided by SPoRC
   : GOA rex sole bridge data (Model 25.1)
 - [`sgl_rg_ebs_pcod_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebs_pcod_data.md)
   : EBS Pacific cod bridge data (Model 24.1)
+- [`sgl_rg_neacod_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_neacod_data.md)
+  : Northeast Arctic cod data for the SAM case study
 
 ## Fitted Model Objects
 

@@ -39,6 +39,7 @@ Setup_Mod_SrvIdx_and_Comps."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -166,7 +167,9 @@ the format of <code>srv_sel_blocks</code>. Parsed into an <code>[n_regions × n_
 <dt id="arg-srvsel-pe-pars-spec">srvsel_pe_pars_spec<a class="anchor" aria-label="anchor" href="#arg-srvsel-pe-pars-spec"></a></dt>
 <dd><p>Character vector <code>[n_srv_fleets]</code> or <code>NULL</code>
 (default) of the sharing structure for the process error hyperparameters. See
-<code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code>.</p></dd>
+<code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code>.
+Deviations shared over regions or fleets in <code>srv_sel_devs_spec</code> share
+these the same way, whatever this says.</p></dd>
 
 
 <dt id="arg-srv-fixed-sel-pars-spec">srv_fixed_sel_pars_spec<a class="anchor" aria-label="anchor" href="#arg-srv-fixed-sel-pars-spec"></a></dt>

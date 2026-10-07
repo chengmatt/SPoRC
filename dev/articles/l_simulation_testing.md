@@ -417,27 +417,33 @@ self_test <- simulation_self_test(
 )
 ```
 
-A fit with movement random effects (`move_year_re`, `move_age_re`,
-`move_pop_re`, `move_seas_re` or `move_sex_re` in
+`simulation_self_test` has two designs. Under `sim_type = "conditional"`
+(the default) every replicate runs at the fitted parameters and the
+fitted process deviations, and only the observations are drawn again, so
+the self test asks how well the data return the population the fit
+describes. In theory the process sds come back low under it, since the
+replicates run on deviations the fit has already shrunk toward zero.
+Under `sim_type = "joint"` each replicate draws its parameters from the
+fit’s joint precision (`RTMB::sdreport(obj, getJointPrecision = TRUE)`,
+passed with `obj`), then every process from the penalty the estimation
+model puts on it, then the observations, and is compared with its own
+truth, so the self test asks whether the model recovers a population it
+could itself have generated, process sds included. F deviations
+estimated as penalized fixed effects are not redrawn: they come from the
+parameter draw, and are drawn from their penalty only when the fit
+integrates them out.
+
+A fit with movement random effects (`move_*_re` in
 [`Setup_Mod_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md))
-comes into the self test and the closed loop on its own without
-additional setup. Over the conditioning years (`n_cond_yrs`, every year
-of the fit by default) each replicate keeps the fit’s own deviations, or
-under `sim_type = "joint"` its own draw of them, so the historical
-movement is the conditioned fit’s; the years after them are drawn from
-the process the estimation model penalizes, at the fitted / specified sd
-and correlations, with an AR1 continuing from the last fitted year, and
-the movement matrix is rebuilt from them before the population is run.
-An operating model built by hand from such a fit takes the same step
-through
+needs no additional setup. A conditional self test and a closed loop’s
+fitted years keep the fit’s deviations; a joint self test, and a closed
+loop’s projection years, draw them from the process the estimation model
+penalizes and rebuild the movement matrix before the population is run.
+An operating model built by hand takes the same step through
 [`Setup_Sim_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Movement.md),
-which stores the fit’s switches, process error parameters and movement
-arguments on the simulation list;
-[`Setup_sim_env()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.md)
-then draws and rebuilds. A fit whose movement deviations a dsem holds or
-links is drawn by
+or
 [`Setup_Sim_DSEM()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_DSEM.md)
-instead and rebuilt through the same arguments.
+when a dsem holds the deviations.
 
 ``` r
 
@@ -454,30 +460,14 @@ sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own move_devs
 
 A fit with growth deviations (`growth_tv_model` or `growth_semipar` in
 [`Setup_Mod_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Biologicals.md))
-can be setup in the same way. Over the conditioning years each replicate
-keeps the fit’s own deviations, or under `sim_type = "joint"` its own
-draw of them and of the growth parameters, as it does for movement, and
-the years after them are drawn given those from the form the estimation
-model penalizes them under, iid, random walk, separable AR1 or the three
-dimensional field, at the fitted process error parameters and under the
-fit’s maps, so a random walk steps on from the last fitted year, the
-correlated forms are drawn conditional on the fitted years, a cell the
-map fixes stays at zero and a shared level takes one draw; weight at
-age, the size-age keys and selectivity at age are then rebuilt through
-the fit’s own
-[`Get_Growth()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md).
-An operating model built by hand without `n_cond_yrs` on its simulation
-list draws every year. Under cohort growth only the years before the
-propagation starts are built up front, and the annual cycle advances the
-rest from each replicate’s own numbers at age. An operating model built
-by hand takes the step through
+is treated the same way, under the form the penalty gives them and the
+fit’s maps, with weight at age, the size-age keys and selectivity at age
+rebuilt through the fit’s own
+[`Get_Growth()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md);
+under cohort growth the annual cycle advances growth from each
+replicate’s own numbers at age. By hand the step is
 [`Setup_Sim_Growth_RE()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Growth_RE.md),
-which needs the fit’s report under selectivity at length. A dsem holding
-or linking any growth deviation draws both arrays through
-[`Setup_Sim_DSEM()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_DSEM.md)
-instead. One convention differs from the penalty: a random walk’s first
-year is drawn at the walk’s own sd rather than the diffuse
-`growth_rw_init_sigma` the estimation model gives it.
+which needs the fit’s report under selectivity at length.
 
 ``` r
 
@@ -491,17 +481,63 @@ sim_list <- Setup_Sim_Growth_RE(sim_list, fit$data, fit$env$parList(), rep = fit
 sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own ln_growth_devs and weight at age
 ```
 
-A fit with catchability deviations (`fish_q_model` or `srv_q_model` set
-to `"iid"`, `"rw"` or `"ar1"`) is treated the same way in the self test.
-Over the conditioning years each replicate keeps the fit’s own
-deviations, or under `sim_type = "joint"` its own draw of them, and the
-years after them are drawn from the form the estimation model penalizes,
-at the fitted sigma and correlation (each replicate’s own draw of them
-under joint), so a random walk steps on from the last conditioned year.
-A year that `q_re_years` leaves out, or a region with no index, keeps
-the fit’s value, since the fit estimates no deviation there. An
-operating model built by hand sets the same process through
+Recruitment is treated the same way. A conditional self test runs each
+replicate on the fit’s recruitment; a joint self test draws the
+recruitment and initial age deviations from the penalties the fit puts
+on them, under their form, bias ramp, sigma switch and weight, and a
+deviation the fit leaves unpenalized or fixed keeps its value. An
+operating model built by hand passes deviations of its own through
+`ln_RecDevs_input` in
+[`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md).
+
+Priors and penalties need separate treatment. A prior’s mean is data
+each refit reads but the self test does not redraw, so wherever the data
+pulled the fit away from a prior every replicate is pulled back toward
+it, a bias of the design rather than of the estimator.
+`prior_means = "truth"` moves every prior onto the value the replicate
+ran on and keeps its strength (the mean of a normal, the mode of a
+Dirichlet or beta), `"off"` turns them off, and the default
+`"assessment"` keeps them as given. A penalty that describes a process
+is drawn from, as above; a penalty that regularizes, such as the
+smoothing penalties on a bicubic selectivity surface, has nothing to
+draw from, so any bias it shows is real. Recruitment deviations
+estimated as penalized fixed effects rather than integrated out tend to
+show a real bias too, an R0 that rises to reproduce the indices from
+shrunk deviations, while spawning biomass, F and mean recruitment stay
+close to the truth.
+
+A fit with catchability deviations (`fish_q_model` or `srv_q_model`) is
+treated the same way, each year the fit estimates drawn under its form
+and each fixed year kept; by hand the step is
 [`Setup_Sim_q_devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_q_devs.md).
+
+A fit with selectivity deviations (`cont_tv_*_sel` or the bin-override
+deviations) is treated the same way, selectivity at age rebuilt through
+the fit’s own
+[`Get_Selex_Array()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Array.md)
+and, at length, read through each replicate’s own size-age key. F and
+discard mortality deviations are drawn only when the fit integrates them
+out; as fixed effects they come from the parameter draw, since their
+penalty is a loose constraint rather than a description of how F varies
+(`F_devs_draw = "all"` in
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md)
+draws them anyway). Three rules hold for every process: a penalty
+weighted by `Wt_*` or `*_pe_wt` is drawn at its sd over the square root
+of the weight and the refits keep the weight; a random walk’s diffuse
+first year keeps the replicate’s own value, since that start leaves the
+level to the data; and a cell the fit’s map fixes keeps its value. A
+closed loop draws selectivity deviations on through its projection years
+while F past the fit stays the control rule’s.
+[`Simulate_Pop_Static()`](https://chengmatt.github.io/SPoRC/dev/reference/Simulate_Pop_Static.md)
+returns every draw.
+
+The observations are drawn under the likelihood the fit evaluates them
+with, so a self test refits data of the kind it was fit to: year totals
+into the season the fit holds them in, an index with a partly estimated
+sd at the sd the fit forms, a multivariate normal index over its whole
+covariance, and pooled tag recaptures once per pool.
+[`simulation_data_to_SPoRC()`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_data_to_SPoRC.md)
+returns all of them.
 
 A fit whose length compositions are recorded on coarser bins than the
 population (`LenBinMap` in

@@ -37,6 +37,7 @@ composition settings for the aggregate and population-specific data sources."><m
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -88,6 +89,38 @@ composition settings for the aggregate and population-specific data sources.</p>
 <span>  DiscardAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  use_catch_aa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  use_discard_aa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
+<span>  AgeObsCorr_catch <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  AgeObsCorr_discard <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  trans_rho_catch <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_catch_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_catch_us <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_discard <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_discard_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_discard_us <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CatchAA_seas_Type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  DiscardAA_seas_Type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  UseCatchAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  UseDiscardAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ln_sigmaCAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ln_sigmaDAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsCatchAA_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsDiscardAA_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  CatchAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  DiscardAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  CatchAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  DiscardAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  CatchAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  DiscardAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  CatchAA_pop_seas_Type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  DiscardAA_pop_seas_Type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  AgeObsCorr_catch_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  AgeObsCorr_discard_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  trans_rho_catch_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_catch_pop_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_catch_pop_us <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_discard_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_discard_pop_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_discard_pop_us <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  catch_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  init_F_val <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -103,11 +136,25 @@ composition settings for the aggregate and population-specific data sources.</p>
 <span>  fish_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  fish_idx_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
+<span>  sigmaFishIdx_form <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  ln_sigmaFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaFishIdx_pop_form <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  ln_sigmaFishIdx_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Catch_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  Catch_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishAgeComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Discard_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  Discard_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_discard_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_discard_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishAgeComps_discard_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  FishLenComps_discard_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seas_agg_slot <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  t_fish <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -280,6 +327,38 @@ from: `"none"` (default), `"data"`, `"est_additive"` or `"est_quadrature"`.</p><
 fleets whose at-age data sources are drawn.</p></dd>
 
 
+<dt id="arg-ageobscorr-catch-ageobscorr-discard">AgeObsCorr_catch, AgeObsCorr_discard<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-catch-ageobscorr-discard"></a></dt>
+<dd><p>How each fleet's at-age residuals are
+correlated, as in [Setup_Mod_Catch_and_F()]: `"iid"` (default), `"1dar1"`
+across ages, `"us"` across ages, or `"2dar1"` across ages and the observed
+years. A correlated fleet's standardized residuals are drawn before the first
+year, so its years and ages are drawn together.</p></dd>
+
+
+<dt id="arg-trans-rho-catch-trans-rho-catch-year-trans-rho-catch-us-trans-rho-discard-trans-rho-discard-year-trans-rho-discard-us">trans_rho_catch, trans_rho_catch_year, trans_rho_catch_us, trans_rho_discard, trans_rho_discard_year, trans_rho_discard_us<a class="anchor" aria-label="anchor" href="#arg-trans-rho-catch-trans-rho-catch-year-trans-rho-catch-us-trans-rho-discard-trans-rho-discard-year-trans-rho-discard-us"></a></dt>
+<dd><p>Unconstrained correlations under the estimation model's names and shapes:
+across ages and across years `[n_regions, n_sexes, n_fish_fleets]`, and the
+unstructured parameters `[n_pairs, n_regions, n_sexes, n_fish_fleets]` over
+pairs of observed ages. `NULL` (default) is zero.</p></dd>
+
+
+<dt id="arg-catchaa-seas-type-discardaa-seas-type-catchaa-pop-seas-type-discardaa-pop-seas-type">CatchAA_seas_Type, DiscardAA_seas_Type, CatchAA_pop_seas_Type, DiscardAA_pop_seas_Type<a class="anchor" aria-label="anchor" href="#arg-catchaa-seas-type-discardaa-seas-type-catchaa-pop-seas-type-discardaa-pop-seas-type"></a></dt>
+<dd><p>Per fleet, `1` where the at-age observation is a year total, as `"aggSeas"`
+in [Setup_Mod_Catch_and_F()]: drawn once a year from every season summed,
+into the season its use flags name. `0` (default) draws each season.</p></dd>
+
+
+<dt id="arg-usecatchaa-pop-usediscardaa-pop-ln-sigmacaa-pop-ln-sigmadaa-pop-obscatchaa-pop-se-obsdiscardaa-pop-se-catchaa-pop-type-discardaa-pop-type-catchaa-pop-liketype-discardaa-pop-liketype-catchaa-pop-sigma-form-discardaa-pop-sigma-form">UseCatchAA_pop, UseDiscardAA_pop, ln_sigmaCAA_pop, ln_sigmaDAA_pop, ObsCatchAA_pop_SE, ObsDiscardAA_pop_SE, CatchAA_pop_Type, DiscardAA_pop_Type, CatchAA_pop_LikeType, DiscardAA_pop_LikeType, CatchAA_pop_sigma_form, DiscardAA_pop_sigma_form<a class="anchor" aria-label="anchor" href="#arg-usecatchaa-pop-usediscardaa-pop-ln-sigmacaa-pop-ln-sigmadaa-pop-obscatchaa-pop-se-obsdiscardaa-pop-se-catchaa-pop-type-discardaa-pop-type-catchaa-pop-liketype-discardaa-pop-liketype-catchaa-pop-sigma-form-discardaa-pop-sigma-form"></a></dt>
+<dd><p>The population-specific at-age data sources, as the aggregated ones with a
+leading `n_pop` dim on the arrays: each population is drawn on its own from
+its own numbers, never summed over populations. `NULL` draws none.</p></dd>
+
+
+<dt id="arg-ageobscorr-catch-pop-ageobscorr-discard-pop-trans-rho-catch-pop-trans-rho-catch-pop-year-trans-rho-catch-pop-us-trans-rho-discard-pop-trans-rho-discard-pop-year-trans-rho-discard-pop-us">AgeObsCorr_catch_pop, AgeObsCorr_discard_pop, trans_rho_catch_pop, trans_rho_catch_pop_year, trans_rho_catch_pop_us, trans_rho_discard_pop, trans_rho_discard_pop_year, trans_rho_discard_pop_us<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-catch-pop-ageobscorr-discard-pop-trans-rho-catch-pop-trans-rho-catch-pop-year-trans-rho-catch-pop-us-trans-rho-discard-pop-trans-rho-discard-pop-year-trans-rho-discard-pop-us"></a></dt>
+<dd><p>Their correlation across ages, as the aggregated settings with a leading
+`n_pop` dim on the parameters.</p></dd>
+
+
 <dt id="arg-catch-units">catch_units<a class="anchor" aria-label="anchor" href="#arg-catch-units"></a></dt>
 <dd><p>Catch units per fleet, 0 = abundance, 1 = biomass (default).</p></dd>
 
@@ -329,15 +408,41 @@ common-factor decomposition (see <code><a href="cov_to_factor.html">cov_to_facto
 `ObsFishIdx_SE`, and its population-specific data source stays lognormal.</p></dd>
 
 
-<dt id="arg-catch-seas-type-catch-pop-seas-type-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type">Catch_seas_Type, Catch_pop_seas_Type, FishIdx_seas_Type, FishIdx_pop_seas_Type, FishAgeComps_seas_Type<a class="anchor" aria-label="anchor" href="#arg-catch-seas-type-catch-pop-seas-type-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type"></a></dt>
+<dt id="arg-sigmafishidx-form-sigmafishidx-pop-form">sigmaFishIdx_form, sigmaFishIdx_pop_form<a class="anchor" aria-label="anchor" href="#arg-sigmafishidx-form-sigmafishidx-pop-form"></a></dt>
+<dd><p>How the index sd combines the
+reported errors with an estimated part, as <code>sigmaFishIdx_spec</code> in
+<code><a href="Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></code>: `"fix"` (0, default) draws at
+`ObsFishIdx_SE`, `"est_additive"` (1) at `SE + sigma`, `"est_quadrature"` (2)
+at `sqrt(SE^2 + sigma^2)` and `"est_replace"` (3) at `sigma`. The reported
+errors stay in `ObsFishIdx_SE`, so a refit reading them estimates the same part.</p></dd>
+
+
+<dt id="arg-ln-sigmafishidx-ln-sigmafishidx-pop">ln_sigmaFishIdx, ln_sigmaFishIdx_pop<a class="anchor" aria-label="anchor" href="#arg-ln-sigmafishidx-ln-sigmafishidx-pop"></a></dt>
+<dd><p>Log of the estimated part, one per
+fleet, read under a form other than `"fix"`. Default `NULL`.</p></dd>
+
+
+<dt id="arg-catch-seas-type-catch-pop-seas-type-discard-seas-type-discard-pop-seas-type-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type-fishlencomps-seas-type-fishagecomps-pop-seas-type-fishlencomps-pop-seas-type-fishagecomps-discard-seas-type-fishlencomps-discard-seas-type-fishagecomps-discard-pop-seas-type-fishlencomps-discard-pop-seas-type">Catch_seas_Type, Catch_pop_seas_Type, Discard_seas_Type, Discard_pop_seas_Type, FishIdx_seas_Type, FishIdx_pop_seas_Type, FishAgeComps_seas_Type, FishLenComps_seas_Type, FishAgeComps_pop_seas_Type, FishLenComps_pop_seas_Type, FishAgeComps_discard_seas_Type, FishLenComps_discard_seas_Type, FishAgeComps_discard_pop_seas_Type, FishLenComps_discard_pop_seas_Type<a class="anchor" aria-label="anchor" href="#arg-catch-seas-type-catch-pop-seas-type-discard-seas-type-discard-pop-seas-type-fishidx-seas-type-fishidx-pop-seas-type-fishagecomps-seas-type-fishlencomps-seas-type-fishagecomps-pop-seas-type-fishlencomps-pop-seas-type-fishagecomps-discard-seas-type-fishlencomps-discard-seas-type-fishagecomps-discard-pop-seas-type-fishlencomps-discard-pop-seas-type"></a></dt>
 <dd><p>Whether the operating model reports a data source once a season
 (`"spltSeas"`, the default) or once a year as a season total (`"aggSeas"`),
 one value for every fleet or one per fleet. An annual total is written into
-season one with the other seasons left at zero and the observation error
-applied once to that total, so an estimation model reading it should mark
-season one in its `Use` array and set the matching argument in
-<code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code> or
+the season `seas_agg_slot` names, season one by default, with the other
+seasons left at zero and the observation error applied once to that total.
+A discard fraction is the year's discards over the year's catch, and a
+composition is drawn from the numbers summed over the year. An estimation
+model reading it should mark the same season in its `Use` array and set the
+matching argument in <code><a href="Setup_Mod_Catch_and_F.html">Setup_Mod_Catch_and_F</a></code> or
 <code><a href="Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></code>.</p></dd>
+
+
+<dt id="arg-seas-agg-slot">seas_agg_slot<a class="anchor" aria-label="anchor" href="#arg-seas-agg-slot"></a></dt>
+<dd><p>Named list, by data source (`"Catch"`, `"FishIdx_pop"`,
+`"FishAgeComps_discard"` and so on), of the season each fleet's year total is
+written into, an integer matrix `n_yrs x n_fleets`. A data source left out
+writes into season one. <code><a href="simulation_self_test.html">simulation_self_test</a></code> and
+<code><a href="condition_closed_loop_simulations.html">condition_closed_loop_simulations</a></code> fill it from the fit's `Use`
+arrays, so a total the fit holds in season two is drawn there. Default
+`NULL`.</p></dd>
 
 
 <dt id="arg-fishidx-cov">FishIdx_Cov<a class="anchor" aria-label="anchor" href="#arg-fishidx-cov"></a></dt>
@@ -501,6 +606,7 @@ Default log(0.02).</p></dd>
 <code><a href="Setup_Sim_Biologicals.html">Setup_Sim_Biologicals()</a></code>,
 <code><a href="Setup_Sim_Containers.html">Setup_Sim_Containers()</a></code>,
 <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim()</a></code>,
+<code><a href="Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>,
 <code><a href="Setup_Sim_NAA_state.html">Setup_Sim_NAA_state()</a></code>,
 <code><a href="Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>,
 <code><a href="Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,

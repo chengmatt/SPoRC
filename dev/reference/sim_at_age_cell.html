@@ -43,6 +43,7 @@ region one."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -84,7 +85,9 @@ region one.</p>
 <span>  <span class="va">form_code</span>,</span>
 <span>  <span class="va">use_weight</span>,</span>
 <span>  <span class="va">r</span>,</span>
-<span>  ageing_error <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  ageing_error <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bias_correct_oe <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  std_resid <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -129,6 +132,19 @@ error-source codes.</p></dd>
 <dt id="arg-ageing-error">ageing_error<a class="anchor" aria-label="anchor" href="#arg-ageing-error"></a></dt>
 <dd><p>Matrix <code>[n_ages, n_obs_ages]</code> reading model ages as
 observed ages for this year and fleet, or <code>NULL</code> for the identity.</p></dd>
+
+
+<dt id="arg-bias-correct-oe">bias_correct_oe<a class="anchor" aria-label="anchor" href="#arg-bias-correct-oe"></a></dt>
+<dd><p><code>1</code> draws a lognormal observation at its mean, as
+the estimation model reads it under the same setting; <code>0</code> (default) at
+its median.</p></dd>
+
+
+<dt id="arg-std-resid">std_resid<a class="anchor" aria-label="anchor" href="#arg-std-resid"></a></dt>
+<dd><p>Standardized residuals <code>[n_obs_ages, n_sexes]</code> drawn up
+front by <code><a href="draw_sim_at_age_corr.html">draw_sim_at_age_corr</a></code> for a fleet whose ages are
+correlated, each scaled here by its age's sd. <code>NULL</code> (default) draws
+each age on its own.</p></dd>
 
 </dl></div>
     <div class="section level2">

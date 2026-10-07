@@ -33,6 +33,7 @@
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -58,7 +59,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">store_at_age_cell</span><span class="op">(</span><span class="va">sim_env</span>, <span class="va">data_source</span>, <span class="va">drawn</span>, <span class="va">r</span>, <span class="va">y</span>, <span class="va">seas</span>, <span class="va">f</span>, <span class="va">sim</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">store_at_age_cell</span><span class="op">(</span><span class="va">sim_env</span>, <span class="va">data_source</span>, <span class="va">drawn</span>, <span class="va">r</span>, <span class="va">y</span>, <span class="va">seas</span>, <span class="va">f</span>, <span class="va">sim</span>, p <span class="op">=</span> <span class="cn">NULL</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -79,6 +80,11 @@
 
 <dt id="arg-r-y-seas-f-sim">r, y, seas, f, sim<a class="anchor" aria-label="anchor" href="#arg-r-y-seas-f-sim"></a></dt>
 <dd><p>Region, year, season, fleet and replicate.</p></dd>
+
+
+<dt id="arg-p">p<a class="anchor" aria-label="anchor" href="#arg-p"></a></dt>
+<dd><p>Population, for a population-specific data source, whose containers
+have a leading population dim. <code>NULL</code> (default) for the aggregated one.</p></dd>
 
 </dl></div>
     <div class="section level2">

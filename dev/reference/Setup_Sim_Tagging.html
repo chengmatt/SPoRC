@@ -37,6 +37,7 @@ allocates the recapture containers. Call after Setup_Sim_Dim."><meta name="robot
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -72,9 +73,7 @@ allocates the recapture containers. Call after <code><a href="Setup_Sim_Dim.html
 <span>  conv_tag_max_liberty <span class="op">=</span> <span class="va">sim_list</span><span class="op">$</span><span class="va">n_ages</span><span class="op">/</span><span class="fl">2</span>,</span>
 <span>  conv_tag_release_indicator <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/expand.grid.html" class="external-link">expand.grid</a></span><span class="op">(</span>regions <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, tag_years <span class="op">=</span></span>
 <span>    <span class="fl">1</span><span class="op">:</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, tag_seas <span class="op">=</span> <span class="fl">1</span><span class="op">:</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span><span class="op">)</span>,</span>
-<span>  conv_tag_release_platform <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/matrix.html" class="external-link">matrix</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"survey"</span>, <span class="st">"1"</span><span class="op">)</span>, nrow <span class="op">=</span></span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/nrow.html" class="external-link">nrow</a></span><span class="op">(</span><span class="va">conv_tag_release_indicator</span><span class="op">)</span>, ncol <span class="op">=</span> <span class="fl">2</span>, byrow <span class="op">=</span> <span class="cn">TRUE</span>, dimnames <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="cn">NULL</span>,</span>
-<span>    <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"platform"</span>, <span class="st">"fleet"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>,</span>
+<span>  conv_tag_release_platform <span class="op">=</span> <span class="fu"><a href="default_tag_release_platform.html">default_tag_release_platform</a></span><span class="op">(</span><span class="va">conv_tag_release_indicator</span><span class="op">)</span>,</span>
 <span>  conv_tag_t_tagging <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ln_init_conv_tag_mort <span class="op">=</span> <span class="op">-</span><span class="fl">1000</span>,</span>
 <span>  ln_conv_tag_shed <span class="op">=</span> <span class="op">-</span><span class="fl">1000</span>,</span>
@@ -82,7 +81,11 @@ allocates the recapture containers. Call after <code><a href="Setup_Sim_Dim.html
 <span>  conv_tag_fish_reporting_input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.5</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  conv_fish_tag_like <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  ln_conv_fish_tag_theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span></span>
+<span>  ln_conv_fish_tag_theta <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fl">1</span><span class="op">)</span>,</span>
+<span>  conv_tag_pop_pool <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  conv_tag_age_pool <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  conv_tag_sex_pool <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  conv_tagged_fish_input <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -177,6 +180,25 @@ probability a recaptured tag is reported. Default <code>0.5</code>.</p></dd>
 and the two Dirichlet-multinomial likelihoods, ignored by the others. Default
 <code>log(1)</code>.</p></dd>
 
+
+<dt id="arg-conv-tag-pop-pool-conv-tag-age-pool-conv-tag-sex-pool">conv_tag_pop_pool, conv_tag_age_pool, conv_tag_sex_pool<a class="anchor" aria-label="anchor" href="#arg-conv-tag-pop-pool-conv-tag-age-pool-conv-tag-sex-pool"></a></dt>
+<dd><p>Lists of integer
+vectors grouping populations, ages and sexes whose recaptures the estimation
+model fits as one count, as in <code><a href="Setup_Mod_Tagging.html">Setup_Mod_Tagging</a></code>. A negative
+binomial is drawn once per group, since a sum of negative binomials is not
+the negative binomial the pooled count is fit with. <code>NULL</code> (default) is
+one group per level.</p></dd>
+
+
+<dt id="arg-conv-tagged-fish-input">conv_tagged_fish_input<a class="anchor" aria-label="anchor" href="#arg-conv-tagged-fish-input"></a></dt>
+<dd><p>Released tags by event, population, age and sex
+<code>[n_tag_rel_events × n_pop × n_ages × n_sexes]</code>, the estimation model's
+<code>conv_tagged_fish</code>. An event given here is released exactly so, and one
+left <code>NA</code> is spread over populations, ages and sexes by the release
+platform's selected abundance as before. <code>simulation_self_test</code> and
+<code>condition_closed_loop_simulations</code> pass the fit's releases, so the tags
+at liberty are the ones the fit followed. Default <code>NULL</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -199,6 +221,7 @@ and the two Dirichlet-multinomial likelihoods, ignored by the others. Default
 <code><a href="Setup_Sim_Containers.html">Setup_Sim_Containers()</a></code>,
 <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim()</a></code>,
 <code><a href="Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code>,
+<code><a href="Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>,
 <code><a href="Setup_Sim_NAA_state.html">Setup_Sim_NAA_state()</a></code>,
 <code><a href="Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>,
 <code><a href="Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,

@@ -35,7 +35,7 @@ Simulate_Pop_Static(sim_list, output_path = NULL)
 
 A named list containing all simulation outputs, including (among
 others): `NAA`, `NAA0`, `SSB`, `Dynamic_SSB0`, `eff_SSB`, `Rec`,
-`ln_RecDevs`, `ln_InitDevs`, `ZAA`, `TrueCatch`, `ObsCatch`,
+`ln_RecDevs`, `ln_InitDevs`, `ZAA`, `tot_FAA`, `TrueCatch`, `ObsCatch`,
 `TrueCatch_pop`, `ObsCatch_pop`, `CAA`, `CAL`, `ObsFishAgeComps`,
 `ObsFishAgeComps_pop`, `ObsFishLenComps`, `ObsFishLenComps_pop`,
 `ObsFishIdx`, `TrueFishIdx`, `ObsFishIdx_pop`, `TrueFishIdx_pop`,
@@ -46,7 +46,14 @@ others): `NAA`, `NAA0`, `SSB`, `Dynamic_SSB0`, `eff_SSB`, `Rec`,
 `pred_conv_tag_fish_recap`, `obs_conv_tag_fish_recap`, `LenBinMap`, and
 key dimension scalars (`n_regions`, `n_pop`, `n_yrs`, `n_ages`, etc.).
 Note that `n_years` and `n_yrs` are both present for backwards
-compatibility.
+compatibility. The deviations each replicate ran on are returned as the
+estimation model names them, the replicate dim last: `ln_F_devs`,
+`logit_dmr_devs`, `ln_fishsel_devs`, `ln_retsel_devs`, `ln_srvsel_devs`
+and their `_bin_devs`, `move_devs`, `ln_growth_devs` and
+`ln_growth_semipar_devs`, each `NULL` where the operating model drew
+none. The at-age data sources, `CatchAA`, `DiscardAA` and `SrvIdxAA` and
+their `_pop` counterparts, come back as `True*` and `Obs*` with their
+`Use*` flags and `_SE` arrays.
 
 ## See also
 
@@ -55,6 +62,7 @@ Other Simulation Setup:
 [`Setup_Sim_Containers()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Containers.md),
 [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
 [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md),
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md),
 [`Setup_Sim_NAA_state()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_NAA_state.md),
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md),
 [`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md),

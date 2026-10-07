@@ -37,6 +37,7 @@ timing and the equilibrium initialization. Call after Setup_Sim_Dim."><meta name
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -94,6 +95,7 @@ timing and the equilibrium initialization. Call after <code><a href="Setup_Sim_D
 <span>  SR_ref_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  Rec_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ln_InitDevs_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ln_RecDevs_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  InitDevs_sex_spec <span class="op">=</span> <span class="st">"est_shared_s"</span>,</span>
 <span>  RecDevs_model <span class="op">=</span> <span class="st">"iid"</span>,</span>
 <span>  RecDevs_rho <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
@@ -234,6 +236,13 @@ replacement. Default <code>NULL</code>.</p></dd>
 shared curve per population and region; pass zeros to start in equilibrium.</p></dd>
 
 
+<dt id="arg-ln-recdevs-input">ln_RecDevs_input<a class="anchor" aria-label="anchor" href="#arg-ln-recdevs-input"></a></dt>
+<dd><p>Optional log recruitment deviations <code>[n_pop x
+n_regions x n_input_yrs x n_sims]</code>, used as given in every year they cover
+instead of being drawn, the years after them drawn as usual. A year that
+<code>Rec_input</code> covers takes its recruitment from there. Default <code>NULL</code>.</p></dd>
+
+
 <dt id="arg-initdevs-sex-spec">InitDevs_sex_spec<a class="anchor" aria-label="anchor" href="#arg-initdevs-sex-spec"></a></dt>
 <dd><p>How initial age deviations are drawn across sexes when
 <code>ln_InitDevs_input</code> is not supplied. <code>"est_shared_s"</code> (default) draws
@@ -266,8 +275,8 @@ Default <code>1</code>, which reads index 2 in every year.</p></dd>
   <code>$init_dd</code>, <code>$R0</code>, <code>$h</code>, <code>$sexratio</code>, <code>$ln_sigmaR</code>,
   <code>$rec_seas_prop</code>, <code>$spawn_seas</code>, <code>$t_spawn</code>, <code>$rec_lag</code>,
   <code>$init_age_strc</code>, <code>$do_recruits_move</code>, <code>$move_age</code>,
-  <code>$stray_rate</code>, and optionally <code>$Rec_input</code> and
-  <code>$ln_InitDevs_input</code>. Character codes are converted to integers before
+  <code>$stray_rate</code>, and optionally <code>$Rec_input</code>,
+  <code>$ln_InitDevs_input</code> and <code>$ln_RecDevs_input</code>. Character codes are converted to integers before
   storage.</p>
     </div>
     <div class="section level2">
@@ -277,6 +286,7 @@ Default <code>1</code>, which reads index 2 in every year.</p></dd>
 <code><a href="Setup_Sim_Containers.html">Setup_Sim_Containers()</a></code>,
 <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim()</a></code>,
 <code><a href="Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code>,
+<code><a href="Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>,
 <code><a href="Setup_Sim_NAA_state.html">Setup_Sim_NAA_state()</a></code>,
 <code><a href="Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,
 <code><a href="Setup_Sim_Tagging.html">Setup_Sim_Tagging()</a></code>,

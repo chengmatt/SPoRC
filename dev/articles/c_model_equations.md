@@ -1509,8 +1509,19 @@ alive):
 ```
 
 Discards can also be expressed as a fraction of total catch (abundance
-or biomass). Population-specific discards follow the same structure
-without summing across $`p`$.
+or biomass). A fraction does not add up, so the discards and the total
+catch are each summed over the populations, and for a year total the
+seasons, the observation covers before the ratio is taken:
+
+``` math
+\begin{matrix}
+\text{Discard}_{r,y,f} = \dfrac{\sum_{p}\sum_{\tau}\sum_{a}\sum_{s} D_{p,r,y,\tau,a,s,f}^{a} / \delta_{r,y,\tau,f}}{\sum_{p}\sum_{\tau}\sum_{a}\sum_{s}\left( C_{p,r,y,\tau,a,s,f}^{a} + D_{p,r,y,\tau,a,s,f}^{a} / \delta_{r,y,\tau,f} \right)} \quad \text{(abundance fraction)} \\
+\end{matrix}
+```
+
+with each term weighted by $`W_{p,r,y,\tau,a,s,f}^{fish}`$ for a biomass
+fraction. Population-specific discards follow the same structure without
+summing across $`p`$.
 
 Similarly, expected fishery indices ($`\text{FshIdx}_{p,r,y,\tau,f}`$)
 can be computed as either abundance-based or biomass-based, using the
@@ -3019,9 +3030,11 @@ E_{y,\tau,b}^{'} = \frac{\sum_{r = 1}^{n_{r}}{\sum_{s = 1}^{n_{s}}E_{r,y,\tau,b,
 ```
 
 where compositions are summed across regions and sexes and normalized to
-sum to one. Ageing error ($`\mathbf{\Theta}_{y}`$) can then be applied
-using standard matrix multiplication. Expected compositions that are
-specified as ‘Split’ by sexes and regions are computed as:
+sum to one. Every region enters the sum, and the observation sits in
+region one, where its default input sample size is written. Ageing error
+($`\mathbf{\Theta}_{y}`$) can then be applied using standard matrix
+multiplication. Expected compositions that are specified as ‘Split’ by
+sexes and regions are computed as:
 
 ``` math
 \begin{matrix}
@@ -4220,6 +4233,13 @@ fleet entirely while its deviations remain estimated, which is how a
 model reproduces assessments that let selectivity deviations float
 subject only to explicit smoothness penalties rather than a
 distributional assumption.
+
+A deviation shared over regions or fleets (`est_shared_r`,
+`est_shared_f_x`) is a single parameter appearing in several of the
+region and fleet terms above. Its penalty is therefore divided equally
+between the $`n`$ region and fleet units holding it, each contributing
+$`1/n`$ of the density, so the series is penalized once, and those units
+share its standard deviation.
 
 The bin-override deviations described in the selectivity section have
 their own process error (`cont_tv_sel_bin_devs`), either iid or a random

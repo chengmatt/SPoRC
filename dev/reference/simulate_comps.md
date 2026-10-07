@@ -39,7 +39,8 @@ simulate_comps(
   pop_corr_pars = NULL,
   ln_pop_theta_agg = NULL,
   pop_corr_pars_agg = NULL,
-  age_or_len = 0
+  age_or_len = 0,
+  exp_seas = seas
 )
 ```
 
@@ -135,6 +136,12 @@ simulate_comps(
 
   Integer. `0` for age compositions, which take ageing error, `1` for
   length compositions, which take the length bin map.
+
+- exp_seas:
+
+  Seasons whose expected numbers are summed into the composition drawn
+  in `seas`. The drawn season alone by default; every season for a data
+  source reported as a year total.
 
 ## Value
 

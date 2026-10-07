@@ -148,7 +148,9 @@ Setup_Mod_Tagging(
   Character matrix `[n_conv_tag_cohorts × 2]` of the release platform
   and fleet index per cohort, in the format
   [`Setup_Sim_Tagging`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md)
-  uses. Default `NULL`.
+  uses. Default `NULL` releases from the survey, fleet 1, which is read
+  only when `conv_fish_tag_attr` leaves a dim of the released fish to be
+  spread.
 
 - ...:
 

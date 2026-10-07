@@ -4,13 +4,14 @@ The reverse of
 [`Get_PE_loglik`](https://chengmatt.github.io/SPoRC/dev/reference/Get_PE_loglik.md).
 A shared level is drawn once and written wherever it appears, at the sd
 of the slot the penalty reads it at. Under iid every level is its own
-normal. Under the random walk each level steps from the year before; the
-first year starts at the walk's own sd, as the recruitment walk does in
-the operating model, since the diffuse start the estimation model gives
-it only leaves the level free. The 3D GMRF and the separable AR1 draw
-each population, region and sex's whole surface over years and `bins`
-from the form's precision, conditional on the cells the map fixes at
-zero, which is the density the penalty evaluates at them.
+normal. Under the random walk each level steps from the year before. A
+first year the estimation model gives a diffuse start (`rw_init_sigma`)
+keeps the replicate's own value, since that start leaves the level to
+the data, as the recruitment and F walks do; under `NA` it starts at the
+walk's own sd, as the penalty does. The 3D GMRF and the separable AR1
+draw each population, region and sex's whole surface over years and
+`bins` from the form's precision, conditional on the cells the map fixes
+at zero, which is the density the penalty evaluates at them.
 
 ## Usage
 
@@ -21,7 +22,8 @@ draw_growth_pe_surface(
   pe_pars,
   bins,
   fit_devs = NULL,
-  n_cond = 0
+  n_cond = 0,
+  rw_init_sigma = NA
 )
 ```
 
@@ -55,10 +57,15 @@ draw_growth_pe_surface(
   Integer. Years that keep the fit's deviations. Default `0` draws every
   year.
 
+- rw_init_sigma:
+
+  The sd the estimation model gives a walk's first year, or `NA`
+  (default) for the walk's own.
+
 ## Value
 
-Array shaped as `map`, zero where the map is `NA` outside the
-conditioned years.
+Array shaped as `map`. A cell the map fixes keeps the fit's value, as
+the penalty reads it, zero when no fit is given.
 
 ## Details
 

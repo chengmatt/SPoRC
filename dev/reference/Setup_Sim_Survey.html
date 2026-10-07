@@ -37,6 +37,7 @@ parameters. Call after Setup_Sim_Dim."><meta name="robots" content="noindex"></h
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -78,6 +79,22 @@ parameters. Call after <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></cod
 <span>  SrvIdxAA_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
 <span>  SrvIdxAA_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
 <span>  use_srv_idx_aa <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
+<span>  AgeObsCorr_srv_idx <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  trans_rho_srv_idx <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_srv_idx_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_srv_idx_us <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvIdxAA_seas_Type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  UseSrvIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ln_sigmaSrvIdxAA_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  ObsSrvIdxAA_pop_SE <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvIdxAA_pop_Type <span class="op">=</span> <span class="st">"spltRaggS"</span>,</span>
+<span>  SrvIdxAA_pop_LikeType <span class="op">=</span> <span class="st">"lognormal"</span>,</span>
+<span>  SrvIdxAA_pop_sigma_form <span class="op">=</span> <span class="st">"none"</span>,</span>
+<span>  SrvIdxAA_pop_seas_Type <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  AgeObsCorr_srv_idx_pop <span class="op">=</span> <span class="st">"iid"</span>,</span>
+<span>  trans_rho_srv_idx_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_srv_idx_pop_year <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  trans_rho_srv_idx_pop_us <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsSrvIdx_pop_SE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.2</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>,</span>
 <span>    <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  srv_q_input <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_yrs</span>,</span>
@@ -86,9 +103,17 @@ parameters. Call after <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim</a></cod
 <span>  srv_idx_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">1</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  srv_idx_ages <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_LikeType <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
+<span>  sigmaSrvIdx_form <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  ln_sigmaSrvIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sigmaSrvIdx_pop_form <span class="op">=</span> <span class="st">"fix"</span>,</span>
+<span>  ln_sigmaSrvIdx_pop <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvAgeComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvLenComps_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvAgeComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvLenComps_pop_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  seas_agg_slot <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SrvIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseSrvIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  comp_srv_caal_like <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">999</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_srv_fleets</span><span class="op">)</span>,</span>
@@ -198,6 +223,29 @@ only when `SrvIdxAA_sigma_form` asks for them.</p></dd>
 at age is drawn.</p></dd>
 
 
+<dt id="arg-ageobscorr-srv-idx">AgeObsCorr_srv_idx<a class="anchor" aria-label="anchor" href="#arg-ageobscorr-srv-idx"></a></dt>
+<dd><p>How each fleet's index-at-age residuals are
+correlated, as in [Setup_Mod_SrvIdx_and_Comps()]: `"iid"` (default),
+`"1dar1"`, `"us"` or `"2dar1"`; see [Setup_Sim_Fishing()].</p></dd>
+
+
+<dt id="arg-trans-rho-srv-idx-trans-rho-srv-idx-year-trans-rho-srv-idx-us">trans_rho_srv_idx, trans_rho_srv_idx_year, trans_rho_srv_idx_us<a class="anchor" aria-label="anchor" href="#arg-trans-rho-srv-idx-trans-rho-srv-idx-year-trans-rho-srv-idx-us"></a></dt>
+<dd><p>Unconstrained correlations under the estimation model's names and shapes,
+as for the fishery's. `NULL` (default) is zero.</p></dd>
+
+
+<dt id="arg-srvidxaa-seas-type-srvidxaa-pop-seas-type">SrvIdxAA_seas_Type, SrvIdxAA_pop_seas_Type<a class="anchor" aria-label="anchor" href="#arg-srvidxaa-seas-type-srvidxaa-pop-seas-type"></a></dt>
+<dd><p>Per fleet, `1` where the index at
+age is a year total, drawn once a year from every season summed; see
+[Setup_Sim_Fishing()]. `0` (default) draws each season.</p></dd>
+
+
+<dt id="arg-usesrvidxaa-pop-ln-sigmasrvidxaa-pop-obssrvidxaa-pop-se-srvidxaa-pop-type-srvidxaa-pop-liketype-srvidxaa-pop-sigma-form-ageobscorr-srv-idx-pop-trans-rho-srv-idx-pop-trans-rho-srv-idx-pop-year-trans-rho-srv-idx-pop-us">UseSrvIdxAA_pop, ln_sigmaSrvIdxAA_pop, ObsSrvIdxAA_pop_SE, SrvIdxAA_pop_Type, SrvIdxAA_pop_LikeType, SrvIdxAA_pop_sigma_form, AgeObsCorr_srv_idx_pop, trans_rho_srv_idx_pop, trans_rho_srv_idx_pop_year, trans_rho_srv_idx_pop_us<a class="anchor" aria-label="anchor" href="#arg-usesrvidxaa-pop-ln-sigmasrvidxaa-pop-obssrvidxaa-pop-se-srvidxaa-pop-type-srvidxaa-pop-liketype-srvidxaa-pop-sigma-form-ageobscorr-srv-idx-pop-trans-rho-srv-idx-pop-trans-rho-srv-idx-pop-year-trans-rho-srv-idx-pop-us"></a></dt>
+<dd><p>The population-specific index at age, as the aggregated one with a leading
+`n_pop` dim on the arrays and parameters, each population drawn on its own.
+`NULL` draws none.</p></dd>
+
+
 <dt id="arg-srv-q-input">srv_q_input<a class="anchor" aria-label="anchor" href="#arg-srv-q-input"></a></dt>
 <dd><p>Survey catchability array <code>[n_regions × n_yrs ×
 n_srv_fleets × n_sims]</code>. Default 1.</p></dd>
@@ -228,15 +276,36 @@ instead of <code>ObsSrvIdx_SE</code>, and its population-specific data source st
 lognormal.</p></dd>
 
 
-<dt id="arg-srvidx-seas-type-srvidx-pop-seas-type-srvagecomps-seas-type">SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvAgeComps_seas_Type<a class="anchor" aria-label="anchor" href="#arg-srvidx-seas-type-srvidx-pop-seas-type-srvagecomps-seas-type"></a></dt>
-<dd><p>Whether the
-operating model reports a survey data source once a season (<code>"spltSeas"</code>,
-the default) or once a year as a season total (<code>"aggSeas"</code>), one value
-for every survey or one per survey. An annual total is written into season one
-with the other seasons left at zero and the observation error applied once to
-that total, so an estimation model reading it should mark season one in its
-<code>Use</code> array and set the matching argument in
+<dt id="arg-sigmasrvidx-form-sigmasrvidx-pop-form">sigmaSrvIdx_form, sigmaSrvIdx_pop_form<a class="anchor" aria-label="anchor" href="#arg-sigmasrvidx-form-sigmasrvidx-pop-form"></a></dt>
+<dd><p>How the index sd combines the
+reported errors with an estimated part, as <code>sigmaSrvIdx_spec</code> in
+<code><a href="Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></code>: <code>"fix"</code> (0, default),
+<code>"est_additive"</code> (1), <code>"est_quadrature"</code> (2) or
+<code>"est_replace"</code> (3). See <code><a href="Setup_Sim_Fishing.html">Setup_Sim_Fishing</a></code>.</p></dd>
+
+
+<dt id="arg-ln-sigmasrvidx-ln-sigmasrvidx-pop">ln_sigmaSrvIdx, ln_sigmaSrvIdx_pop<a class="anchor" aria-label="anchor" href="#arg-ln-sigmasrvidx-ln-sigmasrvidx-pop"></a></dt>
+<dd><p>Log of the estimated part, one per
+survey, read under a form other than <code>"fix"</code>. Default <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-srvidx-seas-type-srvidx-pop-seas-type-srvagecomps-seas-type-srvlencomps-seas-type-srvagecomps-pop-seas-type-srvlencomps-pop-seas-type">SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvAgeComps_seas_Type, SrvLenComps_seas_Type, SrvAgeComps_pop_seas_Type, SrvLenComps_pop_seas_Type<a class="anchor" aria-label="anchor" href="#arg-srvidx-seas-type-srvidx-pop-seas-type-srvagecomps-seas-type-srvlencomps-seas-type-srvagecomps-pop-seas-type-srvlencomps-pop-seas-type"></a></dt>
+<dd><p>Whether the operating model reports a survey data source once a season
+(<code>"spltSeas"</code>, the default) or once a year as a season total
+(<code>"aggSeas"</code>), one value for every survey or one per survey. An annual
+total is written into the season <code>seas_agg_slot</code> names, season one by
+default, with the other seasons left at zero and the observation error
+applied once to that total. A composition is drawn from the numbers summed
+over the year. An estimation model reading it should mark the same season in
+its <code>Use</code> array and set the matching argument in
 <code><a href="Setup_Mod_SrvIdx_and_Comps.html">Setup_Mod_SrvIdx_and_Comps</a></code>.</p></dd>
+
+
+<dt id="arg-seas-agg-slot">seas_agg_slot<a class="anchor" aria-label="anchor" href="#arg-seas-agg-slot"></a></dt>
+<dd><p>Named list, by survey data source (<code>"SrvIdx"</code>,
+<code>"SrvAgeComps_pop"</code> and so on), of the season each survey's year total
+is written into, an integer matrix <code>[n_yrs x n_srv_fleets]</code>. See
+<code><a href="Setup_Sim_Fishing.html">Setup_Sim_Fishing</a></code>. Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-srvidx-cov">SrvIdx_Cov<a class="anchor" aria-label="anchor" href="#arg-srvidx-cov"></a></dt>
@@ -380,6 +449,7 @@ n_lens × n_sexes × n_srv_fleets × n_sims]</code>, read under
 <code><a href="Setup_Sim_Containers.html">Setup_Sim_Containers()</a></code>,
 <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim()</a></code>,
 <code><a href="Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code>,
+<code><a href="Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>,
 <code><a href="Setup_Sim_NAA_state.html">Setup_Sim_NAA_state()</a></code>,
 <code><a href="Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>,
 <code><a href="Setup_Sim_Tagging.html">Setup_Sim_Tagging()</a></code>,

@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -377,7 +378,7 @@ one file.</p>
 </td>
 <td>
 <code>setup_dsem.R</code>, <code>setup_fishery_selectivity.R</code>,
-<code>setup_survey_selectivity.R</code>,
+<code>setup_mapping.R</code>, <code>setup_survey_selectivity.R</code>,
 <code>sim_catchability.R</code>, <code>sim_dsem.R</code>,
 <code>sim_setup.R</code>
 </td>
@@ -498,8 +499,9 @@ one file.</p>
 <code>sel_has_data</code>, <code>sync_dev_map_data</code>
 </td>
 <td>
-<code>model_lik_at_age.R</code>, <code>setup_dsem.R</code>,
-<code>utils_setup.R</code>, <code>utils_year_fleet_spec.R</code>
+<code>model_lik_at_age.R</code>, <code>setup_catchability.R</code>,
+<code>setup_dsem.R</code>, <code>utils_setup.R</code>,
+<code>utils_year_fleet_spec.R</code>
 </td>
 <td>
 <code>model_fit.R</code>, <code>setup_biologicals.R</code>,
@@ -591,6 +593,7 @@ one file.</p>
 <tr class="odd">
 <td><code>setup_tagging.R</code></td>
 <td>
+<code>default_tag_release_platform</code>,
 <code>do_conv_init_tag_mort_mapping</code>,
 <code>do_conv_tag_fish_reporting_pars_mapping</code>,
 <code>do_conv_tag_shed_mapping</code>,
@@ -653,8 +656,8 @@ one file.</p>
 <code>dnbinom_robust_noint</code>, <code>dpois_noint</code>,
 <code>eval_index_osa_nLL</code>, <code>get_at_age_2dar1_nLL</code>,
 <code>get_at_age_nLL</code>, <code>get_beta_scaled_pars</code>,
-<code>get_index_nLL</code>, <code>get_index_pop_nLL</code>,
-<code>get_index_regional_nLL</code>,
+<code>get_discard_pred</code>, <code>get_index_nLL</code>,
+<code>get_index_pop_nLL</code>, <code>get_index_regional_nLL</code>,
 <code>get_logistnormal_miss0_nLL</code>, <code>get_seas_pred</code>,
 <code>get_seas_pred_pop</code>
 </td>
@@ -662,7 +665,8 @@ one file.</p>
 <td>
 <code>model_lik_at_age.R</code>, <code>model_lik_comps.R</code>,
 <code>model_lik_tags.R</code>, <code>model_objective.R</code>,
-<code>model_priors_penalties.R</code>
+<code>model_priors_penalties.R</code>,
+<code>sim_observations.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -743,8 +747,8 @@ one file.</p>
 <tr class="even">
 <td><code>model_lik_comps.R</code></td>
 <td>
-<code>eval_comp_osa</code>, <code>eval_comp_source_osa</code>,
-<code>Get_Comp_Likelihoods</code>,
+<code>comp_mltnml_term</code>, <code>eval_comp_osa</code>,
+<code>eval_comp_source_osa</code>, <code>Get_Comp_Likelihoods</code>,
 <code>Get_Comp_Likelihoods_OSA</code>, <code>get_comp_source_nLL</code>,
 <code>get_seas_comp_exp</code>, <code>pack_comp_osa</code>,
 <code>pack_comp_source_osa</code>
@@ -887,13 +891,15 @@ one file.</p>
 <code>get_selex_fixed_penalty</code>, <code>get_selex_prior</code>,
 <code>Get_Selex_Smoothness_Penalty</code>, <code>get_sr_penalty</code>,
 <code>get_steepness_prior</code>, <code>get_tagrep_prior</code>,
-<code>penalize_naa_age_year</code>
+<code>penalize_naa_age_year</code>, <code>sel_devs_by_unit</code>
 </td>
 <td>
 <code>model_distributions.R</code>, <code>model_precision.R</code>,
 <code>utils_math.R</code>
 </td>
-<td><code>model_objective.R</code></td>
+<td>
+<code>model_objective.R</code>, <code>sim_population.R</code>
+</td>
 </tr>
 <tr class="even">
 <td><code>model_recruitment.R</code></td>
@@ -1063,8 +1069,8 @@ one file.</p>
 </td>
 <td>
 <code>sim_closed_loop.R</code>, <code>sim_dsem.R</code>,
-<code>sim_population.R</code>, <code>sim_self_test.R</code>,
-<code>sim_setup.R</code>
+<code>sim_fleet_devs.R</code>, <code>sim_population.R</code>,
+<code>sim_self_test.R</code>, <code>sim_setup.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -1095,6 +1101,7 @@ one file.</p>
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
 <code>setup_tagging.R</code>, <code>sim_biologicals.R</code>,
 <code>sim_catchability.R</code>, <code>sim_dsem.R</code>,
+<code>sim_fleet_devs.R</code>, <code>sim_naa_state.R</code>,
 <code>sim_population.R</code>, <code>sim_self_test.R</code>,
 <code>utils_math.R</code>, <code>utils_postfit.R</code>,
 <code>utils_setup.R</code>
@@ -1120,63 +1127,90 @@ one file.</p>
 </td>
 </tr>
 <tr class="odd">
-<td><code>sim_naa_state.R</code></td>
+<td><code>sim_fleet_devs.R</code></td>
 <td>
-<code>color_naa_dim</code>, <code>draw_naa_innovations</code>,
-<code>Setup_Sim_NAA_state</code>
+<code>draw_F_dev_series</code>, <code>draw_sel_dev_surface</code>,
+<code>draw_sel_devs_past_fit</code>, <code>draw_sim_fleet_devs</code>,
+<code>extend_devs_past_fit</code>, <code>pe_pars_at_weight</code>,
+<code>Setup_Sim_Fleet_Devs</code>, <code>sim_fleet_dev_pars</code>,
+<code>sim_sel_at_length</code>, <code>sim_selex_args</code>
 </td>
-<td><code>model_precision.R</code></td>
 <td>
-<code>sim_biologicals.R</code>, <code>sim_population.R</code>,
-<code>sim_self_test.R</code>
+<code>sim_biologicals.R</code>, <code>utils_math.R</code>
+</td>
+<td>
+<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>,
+<code>sim_setup.R</code>
 </td>
 </tr>
 <tr class="even">
+<td><code>sim_naa_state.R</code></td>
+<td>
+<code>color_naa_dim</code>, <code>draw_naa_innovations</code>,
+<code>naa_process_from_fit</code>, <code>Setup_Sim_NAA_state</code>
+</td>
+<td>
+<code>model_precision.R</code>, <code>utils_math.R</code>
+</td>
+<td>
+<code>sim_biologicals.R</code>, <code>sim_closed_loop.R</code>,
+<code>sim_population.R</code>, <code>sim_self_test.R</code>
+</td>
+</tr>
+<tr class="odd">
 <td><code>sim_observations.R</code></td>
 <td>
-<code>build_idx_factor</code>, <code>collapse_seas_at_age</code>,
+<code>at_age_cell_std_resid</code>, <code>at_age_quantity</code>,
+<code>build_idx_factor</code>, <code>collapse_seas_discards</code>,
 <code>collapse_seas_obs</code>, <code>cov_to_factor</code>,
-<code>draw_index_obs</code>,
+<code>draw_at_age_sources</code>, <code>draw_index_obs</code>,
+<code>draw_sim_at_age_corr</code>, <code>draw_sim_idx_mvn</code>,
 <code>generate_fishery_catch_comp_idx</code>,
 <code>generate_fishery_conv_tags_recap</code>,
 <code>generate_survey_comp_idx</code>,
 <code>marginalize_conv_fish_tags</code>,
-<code>predict_sim_fish_iss_fmort</code>, <code>release_conv_tags</code>,
-<code>resolve_idx_factor</code>, <code>sim_at_age_cell</code>,
-<code>simulate_caal</code>, <code>simulate_comps</code>,
+<code>predict_sim_fish_iss_fmort</code>,
+<code>redraw_year_total_comps</code>, <code>release_conv_tags</code>,
+<code>resolve_idx_factor</code>, <code>seas_agg_season</code>,
+<code>sim_at_age_cell</code>, <code>simulate_caal</code>,
+<code>simulate_comps</code>,
 <code>simulate_conv_tag_fish_recaptures</code>,
-<code>store_at_age_cell</code>
+<code>store_at_age_cell</code>, <code>year_discard_total</code>
 </td>
 <td>
-<code>model_lik_at_age.R</code>, <code>model_obs_tagging.R</code>,
-<code>model_transition.R</code>, <code>sim_random_variates.R</code>,
+<code>model_distributions.R</code>, <code>model_lik_at_age.R</code>,
+<code>model_obs_tagging.R</code>, <code>model_transition.R</code>,
+<code>sim_random_variates.R</code>, <code>utils_math.R</code>,
 <code>utils_setup.R</code>
 </td>
 <td>
-<code>setup_sim_fleets.R</code>, <code>sim_population.R</code>
+<code>setup_sim_fleets.R</code>, <code>sim_population.R</code>,
+<code>sim_setup.R</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sim_population.R</code></td>
 <td>
 <code>apply_pop_dy</code>, <code>compute_biom_y_sim</code>,
 <code>draw_sim_rec_devs</code>,
 <code>generate_initial_age_structure</code>,
-<code>generate_recruitment</code>, <code>run_annual_cycle</code>,
+<code>generate_recruitment</code>, <code>init_devs_past_fit</code>,
+<code>rec_devs_past_fit</code>, <code>run_annual_cycle</code>,
 <code>sim_det_recruitment</code>, <code>Simulate_Pop_Static</code>
 </td>
 <td>
 <code>model_biomass.R</code>, <code>model_init_naa.R</code>,
-<code>model_recruitment.R</code>, <code>model_transition.R</code>,
-<code>sim_biologicals.R</code>, <code>sim_catchability.R</code>,
-<code>sim_naa_state.R</code>, <code>sim_observations.R</code>,
-<code>sim_setup.R</code>
+<code>model_priors_penalties.R</code>, <code>model_recruitment.R</code>,
+<code>model_transition.R</code>, <code>sim_biologicals.R</code>,
+<code>sim_catchability.R</code>, <code>sim_naa_state.R</code>,
+<code>sim_observations.R</code>, <code>sim_setup.R</code>,
+<code>utils_math.R</code>
 </td>
 <td>
 <code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sim_random_variates.R</code></td>
 <td>
 <code>comp_corr_natural</code>, <code>rdirM</code>,
@@ -1187,10 +1221,13 @@ one file.</p>
 <code>projection.R</code>, <code>sim_observations.R</code>
 </td>
 </tr>
-<tr class="odd">
+<tr class="even">
 <td><code>sim_self_test.R</code></td>
 <td>
-<code>bind_sims</code>, <code>make_data_perfect</code>,
+<code>beta_mode_at</code>, <code>bind_sims</code>,
+<code>dirichlet_mode_at</code>, <code>fill_failed_replicates</code>,
+<code>make_data_perfect</code>, <code>om_truth</code>,
+<code>seas_agg_slot_list</code>, <code>self_test_priors</code>,
 <code>sim_draw_views</code>, <code>simulation_data_to_SPoRC</code>,
 <code>simulation_self_test</code>,
 <code>warn_R0_ref_block_om</code>
@@ -1201,19 +1238,20 @@ one file.</p>
 <code>setup_sim_containers.R</code>, <code>setup_sim_fleets.R</code>,
 <code>setup_tagging.R</code>, <code>sim_biologicals.R</code>,
 <code>sim_catchability.R</code>, <code>sim_dsem.R</code>,
-<code>sim_naa_state.R</code>, <code>sim_population.R</code>,
-<code>utils_math.R</code>, <code>utils_postfit.R</code>,
-<code>utils_setup.R</code>
+<code>sim_fleet_devs.R</code>, <code>sim_naa_state.R</code>,
+<code>sim_population.R</code>, <code>utils_math.R</code>,
+<code>utils_postfit.R</code>, <code>utils_setup.R</code>
 </td>
 <td><code>sim_closed_loop.R</code></td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>sim_setup.R</code></td>
 <td><code>Setup_sim_env</code></td>
 <td>
 <code>setup_catchability.R</code>, <code>setup_dsem.R</code>,
 <code>sim_biologicals.R</code>, <code>sim_catchability.R</code>,
-<code>sim_dsem.R</code>
+<code>sim_dsem.R</code>, <code>sim_fleet_devs.R</code>,
+<code>sim_observations.R</code>
 </td>
 <td><code>sim_population.R</code></td>
 </tr>
@@ -1398,7 +1436,9 @@ one file.</p>
 <code>model_priors_penalties.R</code>, <code>model_transition.R</code>,
 <code>setup_fishery_selectivity.R</code>,
 <code>setup_survey_selectivity.R</code>, <code>sim_biologicals.R</code>,
-<code>sim_closed_loop.R</code>, <code>sim_random_variates.R</code>,
+<code>sim_closed_loop.R</code>, <code>sim_fleet_devs.R</code>,
+<code>sim_naa_state.R</code>, <code>sim_observations.R</code>,
+<code>sim_population.R</code>, <code>sim_random_variates.R</code>,
 <code>sim_self_test.R</code>
 </td>
 </tr>
@@ -1430,9 +1470,9 @@ one file.</p>
 <code>caal_row_lens</code>, <code>check_bin_map</code>,
 <code>check_caal_len_bin_map</code>, <code>check_comp_bins_min</code>,
 <code>check_comp_like_type</code>, <code>check_par_map_lengths</code>,
-<code>collapse_natmort_annual</code>, <code>collect_message</code>,
-<code>comp_like_type_options</code>, <code>convert_to_numeric</code>,
-<code>drop_empty_fitted_blocks</code>,
+<code>check_sim_2d_comp</code>, <code>collapse_natmort_annual</code>,
+<code>collect_message</code>, <code>comp_like_type_options</code>,
+<code>convert_to_numeric</code>, <code>drop_empty_fitted_blocks</code>,
 <code>expand_fleet_ageing_error</code>,
 <code>expand_natmort_seasons</code>, <code>extend_years</code>,
 <code>fill_optional_modules</code>, <code>fleet_ageing_error</code>,
@@ -1446,8 +1486,10 @@ one file.</p>
 <code>set_data_indicator_unused</code>, <code>setup_dbnrml_raw</code>,
 <code>setup_dbnrml_startbin</code>, <code>setup_sel_bin_devs</code>,
 <code>setup_sel_norm_bins</code>, <code>setup_sel_sex_offset</code>,
-<code>truncate_years</code>, <code>unused_at_age_on_obs_ages</code>,
-<code>use_starting_value</code>, <code>validate_selex_penalty</code>,
+<code>sim_at_age_corr_setup</code>, <code>store_idx_sigma</code>,
+<code>store_seas_agg_slot</code>, <code>truncate_years</code>,
+<code>unused_at_age_on_obs_ages</code>, <code>use_starting_value</code>,
+<code>validate_selex_penalty</code>,
 <code>validate_selex_prior_types</code>
 </td>
 <td>
@@ -1476,7 +1518,8 @@ one file.</p>
 <tr class="odd">
 <td><code>utils_year_fleet_spec.R</code></td>
 <td>
-<code>at_age_type_matrix</code>, <code>check_seas_agg_use</code>,
+<code>at_age_type_matrix</code>,
+<code>check_agg_comp_regions</code>, <code>check_seas_agg_use</code>,
 <code>parse_seas_agg_spec</code>,
 <code>parse_year_fleet_spec</code>
 </td>
@@ -1851,7 +1894,7 @@ test setup happens to use.</p>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>34</td>
+<td>36</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1862,7 +1905,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-sim_*</code></td>
-<td>10</td>
+<td>18</td>
 <td>Operating model, including simulate then refit self tests</td>
 </tr>
 <tr class="odd">
@@ -1894,7 +1937,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 221 test files in total.</p>
+<p>That is 235 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

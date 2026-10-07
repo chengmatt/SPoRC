@@ -45,6 +45,7 @@ unchanged."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -104,7 +105,8 @@ unchanged.</p>
 <span>  pop_corr_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ln_pop_theta_agg <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  pop_corr_pars_agg <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  age_or_len <span class="op">=</span> <span class="fl">0</span></span>
+<span>  age_or_len <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  exp_seas <span class="op">=</span> <span class="va">seas</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -205,6 +207,12 @@ n_fleets]</code>.</p></dd>
 <dt id="arg-age-or-len">age_or_len<a class="anchor" aria-label="anchor" href="#arg-age-or-len"></a></dt>
 <dd><p>Integer. <code>0</code> for age compositions, which take ageing
 error, <code>1</code> for length compositions, which take the length bin map.</p></dd>
+
+
+<dt id="arg-exp-seas">exp_seas<a class="anchor" aria-label="anchor" href="#arg-exp-seas"></a></dt>
+<dd><p>Seasons whose expected numbers are summed into the
+composition drawn in <code>seas</code>. The drawn season alone by default; every
+season for a data source reported as a year total.</p></dd>
 
 </dl></div>
     <div class="section level2">

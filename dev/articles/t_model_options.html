@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -1194,6 +1195,12 @@ the same <code>"est_all"</code> / <code>"est_shared_&lt;dims&gt;"</code>
 / <code>"fix"</code> convention as everywhere else, and is only used
 under <code>"ar1"</code>; the other two recruitment options map it to
 <code>NA</code> regardless of what is supplied.</p>
+<p>In a joint self test (<code>sim_type = "joint"</code>) the operating
+model draws the recruitment deviations from this same penalty, under the
+form, bias ramp, sigma switch and weight the fit used, and keeps the
+fit’s value for any deviation the fit leaves unpenalized. The initial
+age deviations are drawn from their penalty too; see
+<code><a href="../articles/l_simulation_testing.html">vignette("l_simulation_testing")</a></code>.</p>
 <p>The first year’s recruitment is the first year’s age one abundance.
 Under an equilibrium initialization that abundance belongs to the
 initial condition, and giving it a recruitment penalty as well prices it
@@ -1550,7 +1557,8 @@ fixed.</p>
 <td><code>addtocomp</code></td>
 <td>Small constant guarding
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">log</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mn>0</mn><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\log(0)</annotation></semantics></math>
-in composition likelihoods (default <code>1e-3</code>)</td>
+in composition likelihoods (default <code>1e-3</code>). <code>0</code>
+gives the multinomial itself: an empty bin adds nothing</td>
 </tr>
 <tr class="even">
 <td><code>comp_const_obs</code></td>
@@ -2124,6 +2132,23 @@ well</td>
 </tr>
 </tbody>
 </table>
+<p>In the operating model a fit’s selectivity deviations, bin-override
+deviations included, keep the fit’s values in a conditional self test
+and are drawn in a joint one from the form the penalty gives them, at
+the fitted process error parameters and under the fit’s maps, and
+selectivity at age is rebuilt from them through
+<code><a href="../reference/Get_Selex_Array.html">Get_Selex_Array()</a></code>. The self test does this on its own;
+<code><a href="../reference/Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code> can do it for an operating model
+built by hand. Selectivity at length is drawn at length and read through
+each replicate’s size-age key, and a penalty weighted by
+<code>*_pe_wt</code> is drawn at its sd over the square root of the
+weight.</p>
+<p>A deviation series shared over regions or fleets
+(<code>est_shared_r</code> and <code>est_shared_f_x</code> in
+<code>*_sel_devs_spec</code>) is one series: it is penalized once,
+divided between the regions and fleets holding it, and its sigmas are
+shared the same way whatever <code>*sel_pe_pars_spec</code> says, so no
+region or fleet keeps a sigma that no penalty reads.</p>
 </div>
 <div class="section level4">
 <h4 id="bin-override-selectivity-deviations">Bin-override selectivity deviations<a class="anchor" aria-label="anchor" href="#bin-override-selectivity-deviations"></a>
@@ -3810,7 +3835,10 @@ penalized</a>
 </h4>
 <p><code>ln_F_devs</code> (annual log-scale deviations about
 <code>ln_F_mean</code>) can follow one of three process-error
-structures, set via <code>Fdev_model</code>:</p>
+structures, set via <code>Fdev_model</code>. In the operating model a
+joint self test draws them from that structure only when the fit
+integrates them out; as fixed effects they take the parameter draw’s
+values (see <code><a href="../reference/Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>).</p>
 <table class="table">
 <thead><tr class="header">
 <th>String</th>
@@ -4441,15 +4469,16 @@ curve, so within-year growth differences across fleets are entirely a
 function of <em>when</em> in the year they sample, not of the growth
 rate itself varying by season.</p>
 <p>In the operating model a fit’s growth deviations keep the fit’s
-values over the conditioning years (<code>n_cond_yrs</code>, every year
-of the fit by default) and are drawn after them for every replicate from
-the form the penalty gives them, given the fitted years, at the fitted
-process error parameters and under the fit’s maps, and weight at age,
-the size-age keys and selectivity at age are rebuilt from them. The self
-test and the closed loop do this on their own;
-<code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code> can also do it for an operating model
-built by hand. A dsem holding or linking any growth deviation draws both
-arrays through <code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code> instead.</p>
+values in a conditional self test and over a closed loop’s fitted years,
+and are drawn for every replicate in a joint self test and in a closed
+loop’s projection years, given the fitted ones, from the form the
+penalty gives them, at the fitted process error parameters and under the
+fit’s maps, and weight at age, the size-age keys and selectivity at age
+are rebuilt from them. The self test and the closed loop do this on
+their own; <code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code> can also do it for an
+operating model built by hand. A dsem holding or linking any growth
+deviation draws both arrays through <code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code>
+instead.</p>
 <hr>
 </div>
 <div class="section level2">
@@ -4607,11 +4636,16 @@ for a data source that accumulates across the year, such as a fishery
 index built from a whole year of effort.</p>
 <p>An operating model reports the same way through
 <code><a href="../reference/Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code> and <code><a href="../reference/Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,
-which take the same argument names. There the annual total is written
-into season one by convention, with the observation error applied once
-to that total rather than to each season and then added up. A
-multivariate normal index cannot be aggregated, since it is drawn once
-over a covariance the season layout defines.</p>
+which take the same argument names: the annual total is drawn once from
+the year’s numbers and written into the season
+<code>seas_agg_slot</code> names, which the self test and the closed
+loop fill from the fit’s <code>Use</code> arrays. A multivariate normal
+index cannot be aggregated.</p>
+<p>A discard fraction (<code>discard_units = "abd_frac"</code> or
+<code>"biom_frac"</code>) over several seasons or populations is the
+year’s discards over the year’s catch, each summed first, so two
+populations each discarding 30 percent discard 30 percent together, not
+60.</p>
 </div>
 <div class="section level4">
 <h4 id="age-disaggregated-observations-1">Age-disaggregated observations<a class="anchor" aria-label="anchor" href="#age-disaggregated-observations-1"></a>
@@ -4951,6 +4985,11 @@ can leave one fleet independent and correlate another. The three ICES
 <code>obsCorStruct</code> options are <code>"iid"</code>,
 <code>"1dar1"</code> and <code>"us"</code>; <code>"2dar1"</code> adds
 the year dimension.</p>
+<p>The operating model draws under the same form and parameters, which
+the self test and the closed loop pass from the fit and
+<code><a href="../reference/Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code> and <code><a href="../reference/Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>
+take by hand; the population-specific at-age data sources are not
+drawn.</p>
 <p><code>"1dar1"</code> is a statement about age distance, not about
 position in the observed vector. A fleet observing ages 2, 3, 5 and 6
 has a gap, and lag one across that gap is not lag one, so the covariance

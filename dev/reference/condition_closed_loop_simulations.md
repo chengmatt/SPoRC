@@ -114,6 +114,10 @@ condition_closed_loop_simulations(
   `Rec_input`, `conv_tag_fish_reporting_input` and `Movement`.
   Dimensions must match the model structure,
   `length(data$years) + closed_loop_yrs` years and `n_sims` simulations.
+  `bias_correct_pe` and `bias_correct_oe` of
+  [`Setup_Sim_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md)
+  may be given as well; without them the operating model takes the
+  fit's, as it does `sigmaR_switch`.
 
 ## Value
 

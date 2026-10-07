@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -1898,7 +1899,15 @@ released alive):</p>
 \text{Discard}_{r,y,\tau,f} = \sum_{p}^{n_p}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\frac{D_{p,r,y,\tau,a,s,f}^{a}}{\delta_{r,y,\tau,f}}}W_{p,r,y,\tau,a,s,f}^{fish} \quad \text{(biomass)} \\
 \end{matrix}</annotation></semantics></math></p>
 <p>Discards can also be expressed as a fraction of total catch
-(abundance or biomass). Population-specific discards follow the same
+(abundance or biomass). A fraction does not add up, so the discards and
+the total catch are each summed over the populations, and for a year
+total the seasons, the observation covers before the ratio is taken:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mtext mathvariant="normal">Discard</mtext><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mstyle displaystyle="true"><mfrac><mrow><munder><mo>∑</mo><mi>p</mi></munder><munder><mo>∑</mo><mi>τ</mi></munder><munder><mo>∑</mo><mi>a</mi></munder><munder><mo>∑</mo><mi>s</mi></munder><msubsup><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup><mi>/</mi><msub><mi>δ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><munder><mo>∑</mo><mi>p</mi></munder><munder><mo>∑</mo><mi>τ</mi></munder><munder><mo>∑</mo><mi>a</mi></munder><munder><mo>∑</mo><mi>s</mi></munder><mrow><mo stretchy="true" form="prefix">(</mo><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup><mo>+</mo><msubsup><mi>D</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup><mi>/</mi><msub><mi>δ</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac></mstyle><mspace width="1.0em"></mspace><mtext mathvariant="normal">(abundance fraction)</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+\text{Discard}_{r,y,f} = \dfrac{\sum_{p}\sum_{\tau}\sum_{a}\sum_{s} D_{p,r,y,\tau,a,s,f}^{a} / \delta_{r,y,\tau,f}}{\sum_{p}\sum_{\tau}\sum_{a}\sum_{s}\left( C_{p,r,y,\tau,a,s,f}^{a} + D_{p,r,y,\tau,a,s,f}^{a} / \delta_{r,y,\tau,f} \right)} \quad \text{(abundance fraction)} \\
+\end{matrix}</annotation></semantics></math></p>
+<p>with each term weighted by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup><annotation encoding="application/x-tex">W_{p,r,y,\tau,a,s,f}^{fish}</annotation></semantics></math>
+for a biomass fraction. Population-specific discards follow the same
 structure without summing across
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>.</p>
 <p>Similarly, expected fishery indices
@@ -3466,7 +3475,8 @@ E_{y,\tau,b}^{'} = \frac{\sum_{r = 1}^{n_{r}}{\sum_{s = 1}^{n_{s}}E_{r,y,\tau,b,
 \end{matrix}
 }{\mathbf{E}_{y,\tau} = \mathbf{E}_{y,\tau}^{\mathbf{'}}\mathbf{\Theta}_{y}}</annotation></semantics></math></p>
 <p>where compositions are summed across regions and sexes and normalized
-to sum to one. Ageing error
+to sum to one. Every region enters the sum, and the observation sits in
+region one, where its default input sample size is written. Ageing error
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>𝚯</mi><mi>y</mi></msub><annotation encoding="application/x-tex">\mathbf{\Theta}_{y}</annotation></semantics></math>)
 can then be applied using standard matrix multiplication. Expected
 compositions that are specified as ‘Split’ by sexes and regions are
@@ -4879,6 +4889,15 @@ process error penalty for that fleet entirely while its deviations
 remain estimated, which is how a model reproduces assessments that let
 selectivity deviations float subject only to explicit smoothness
 penalties rather than a distributional assumption.</p>
+<p>A deviation shared over regions or fleets (<code>est_shared_r</code>,
+<code>est_shared_f_x</code>) is a single parameter appearing in several
+of the region and fleet terms above. Its penalty is therefore divided
+equally between the
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>n</mi><annotation encoding="application/x-tex">n</annotation></semantics></math>
+region and fleet units holding it, each contributing
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mi>n</mi></mrow><annotation encoding="application/x-tex">1/n</annotation></semantics></math>
+of the density, so the series is penalized once, and those units share
+its standard deviation.</p>
 <p>The bin-override deviations described in the selectivity section have
 their own process error (<code>cont_tv_sel_bin_devs</code>), either iid
 or a random walk of exactly the forms above, with their own estimated

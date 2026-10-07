@@ -63,6 +63,12 @@ counterpart, and the fishery compositions also have `_discard` and
 `_discard_pop` ones. The length composition elements and their input
 sample sizes are `NULL` when no size-age transition matrix is present.
 
+The at-age data sources, `ObsCatchAA`, `ObsDiscardAA` and `ObsSrvIdxAA`
+and their `_pop` counterparts, come with their `_SE` arrays and the
+operating model's own use flags, since a normal likelihood can draw a
+value at or below zero. Each is `NULL` when the operating model draws
+none of it.
+
 ## Details
 
 Population-specific arrays are extracted when `sim_env` holds them, with

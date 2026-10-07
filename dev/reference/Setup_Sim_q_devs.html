@@ -41,6 +41,7 @@ Setup_Sim_Fishery and Setup_Sim_Survey supplied."><meta name="robots" content="n
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -77,7 +78,9 @@ Catchability in replicate \(i\) becomes
 <span>  sigma_fish_q <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  sigma_srv_q <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  fish_q_rho <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  srv_q_rho <span class="op">=</span> <span class="fl">0</span></span>
+<span>  srv_q_rho <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  fish_q_rw_init_sigma <span class="op">=</span> <span class="cn">NA</span>,</span>
+<span>  srv_q_rw_init_sigma <span class="op">=</span> <span class="cn">NA</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -109,6 +112,14 @@ An array <code>[n_regions, n_fleets, n_sims]</code> gives each replicate its own
 ar1 correlations on the natural scale, read only under <code>"ar1"</code>.
 Default zero. An array <code>[n_regions, n_fleets, n_sims]</code> gives each
 replicate its own.</p></dd>
+
+
+<dt id="arg-fish-q-rw-init-sigma-srv-q-rw-init-sigma">fish_q_rw_init_sigma, srv_q_rw_init_sigma<a class="anchor" aria-label="anchor" href="#arg-fish-q-rw-init-sigma-srv-q-rw-init-sigma"></a></dt>
+<dd><p>The sd the estimation model
+gives a walk's first estimated year (<code>*_q_rw_init_sigma</code> there). Under
+a value that year keeps each replicate's own deviation, since a diffuse start
+leaves the level to the data; under <code>NA</code> (default) it is drawn at the
+walk's own sd from zero, as the penalty reads it.</p></dd>
 
 </dl></div>
     <div class="section level2">

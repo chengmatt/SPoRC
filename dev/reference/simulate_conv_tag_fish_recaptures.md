@@ -24,7 +24,9 @@ simulate_conv_tag_fish_recaptures(
   n_regions,
   n_ages,
   n_sexes,
-  n_fish_fleets
+  n_fish_fleets,
+  tag_pools = NULL,
+  tag_fleets = NULL
 )
 ```
 
@@ -72,6 +74,21 @@ simulate_conv_tag_fish_recaptures(
 - n_pop, n_regions, n_ages, n_sexes, n_fish_fleets:
 
   Dimension sizes.
+
+- tag_pools:
+
+  List of the population, age and sex groups the estimation model pools
+  recaptures over (`conv_tag_pop_pool` and the rest). A negative
+  binomial with a group of more than one attended level is drawn once
+  per group, into the group's first level. `NULL` (default) draws every
+  cell on its own.
+
+- tag_fleets:
+
+  Fleets whose recaptures the estimation model fits
+  (`use_conv_fish_tagging == 1`). The recovery-conditioned forms draw
+  their total over these fleets alone, as the estimation model
+  conditions on it; `NULL` (default) is every fleet.
 
 ## Value
 

@@ -32,6 +32,38 @@ Setup_Sim_Fishing(
   DiscardAA_sigma_form = "none",
   use_catch_aa = rep(0, sim_list$n_fish_fleets),
   use_discard_aa = rep(0, sim_list$n_fish_fleets),
+  AgeObsCorr_catch = "iid",
+  AgeObsCorr_discard = "iid",
+  trans_rho_catch = NULL,
+  trans_rho_catch_year = NULL,
+  trans_rho_catch_us = NULL,
+  trans_rho_discard = NULL,
+  trans_rho_discard_year = NULL,
+  trans_rho_discard_us = NULL,
+  CatchAA_seas_Type = 0,
+  DiscardAA_seas_Type = 0,
+  UseCatchAA_pop = NULL,
+  UseDiscardAA_pop = NULL,
+  ln_sigmaCAA_pop = NULL,
+  ln_sigmaDAA_pop = NULL,
+  ObsCatchAA_pop_SE = NULL,
+  ObsDiscardAA_pop_SE = NULL,
+  CatchAA_pop_Type = "spltRaggS",
+  DiscardAA_pop_Type = "spltRaggS",
+  CatchAA_pop_LikeType = "lognormal",
+  DiscardAA_pop_LikeType = "lognormal",
+  CatchAA_pop_sigma_form = "none",
+  DiscardAA_pop_sigma_form = "none",
+  CatchAA_pop_seas_Type = 0,
+  DiscardAA_pop_seas_Type = 0,
+  AgeObsCorr_catch_pop = "iid",
+  AgeObsCorr_discard_pop = "iid",
+  trans_rho_catch_pop = NULL,
+  trans_rho_catch_pop_year = NULL,
+  trans_rho_catch_pop_us = NULL,
+  trans_rho_discard_pop = NULL,
+  trans_rho_discard_pop_year = NULL,
+  trans_rho_discard_pop_us = NULL,
   catch_units = array(1, dim = c(sim_list$n_fish_fleets)),
   init_F_val = array(0, dim = c(sim_list$n_regions, sim_list$n_seas,
     sim_list$n_fish_fleets)),
@@ -47,11 +79,25 @@ Setup_Sim_Fishing(
   fish_idx_type = array(1, dim = c(sim_list$n_regions, sim_list$n_fish_fleets)),
   fish_idx_ages = NULL,
   FishIdx_LikeType = rep(0, sim_list$n_fish_fleets),
+  sigmaFishIdx_form = "fix",
+  ln_sigmaFishIdx = NULL,
+  sigmaFishIdx_pop_form = "fix",
+  ln_sigmaFishIdx_pop = NULL,
   Catch_seas_Type = NULL,
   Catch_pop_seas_Type = NULL,
   FishIdx_seas_Type = NULL,
   FishIdx_pop_seas_Type = NULL,
   FishAgeComps_seas_Type = NULL,
+  Discard_seas_Type = NULL,
+  Discard_pop_seas_Type = NULL,
+  FishLenComps_seas_Type = NULL,
+  FishAgeComps_pop_seas_Type = NULL,
+  FishLenComps_pop_seas_Type = NULL,
+  FishAgeComps_discard_seas_Type = NULL,
+  FishLenComps_discard_seas_Type = NULL,
+  FishAgeComps_discard_pop_seas_Type = NULL,
+  FishLenComps_discard_pop_seas_Type = NULL,
+  seas_agg_slot = NULL,
   FishIdx_Cov = NULL,
   UseFishIdx = NULL,
   t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
@@ -222,6 +268,49 @@ Setup_Sim_Fishing(
   Integer vectors \`n_fish_fleets\`, \`1\` for fleets whose at-age data
   sources are drawn.
 
+- AgeObsCorr_catch, AgeObsCorr_discard:
+
+  How each fleet's at-age residuals are correlated, as in
+  \[Setup_Mod_Catch_and_F()\]: \`"iid"\` (default), \`"1dar1"\` across
+  ages, \`"us"\` across ages, or \`"2dar1"\` across ages and the
+  observed years. A correlated fleet's standardized residuals are drawn
+  before the first year, so its years and ages are drawn together.
+
+- trans_rho_catch, trans_rho_catch_year, trans_rho_catch_us,
+  trans_rho_discard, trans_rho_discard_year, trans_rho_discard_us:
+
+  Unconstrained correlations under the estimation model's names and
+  shapes: across ages and across years \`\[n_regions, n_sexes,
+  n_fish_fleets\]\`, and the unstructured parameters \`\[n_pairs,
+  n_regions, n_sexes, n_fish_fleets\]\` over pairs of observed ages.
+  \`NULL\` (default) is zero.
+
+- CatchAA_seas_Type, DiscardAA_seas_Type, CatchAA_pop_seas_Type,
+  DiscardAA_pop_seas_Type:
+
+  Per fleet, \`1\` where the at-age observation is a year total, as
+  \`"aggSeas"\` in \[Setup_Mod_Catch_and_F()\]: drawn once a year from
+  every season summed, into the season its use flags name. \`0\`
+  (default) draws each season.
+
+- UseCatchAA_pop, UseDiscardAA_pop, ln_sigmaCAA_pop, ln_sigmaDAA_pop,
+  ObsCatchAA_pop_SE, ObsDiscardAA_pop_SE, CatchAA_pop_Type,
+  DiscardAA_pop_Type, CatchAA_pop_LikeType, DiscardAA_pop_LikeType,
+  CatchAA_pop_sigma_form, DiscardAA_pop_sigma_form:
+
+  The population-specific at-age data sources, as the aggregated ones
+  with a leading \`n_pop\` dim on the arrays: each population is drawn
+  on its own from its own numbers, never summed over populations.
+  \`NULL\` draws none.
+
+- AgeObsCorr_catch_pop, AgeObsCorr_discard_pop, trans_rho_catch_pop,
+  trans_rho_catch_pop_year, trans_rho_catch_pop_us,
+  trans_rho_discard_pop, trans_rho_discard_pop_year,
+  trans_rho_discard_pop_us:
+
+  Their correlation across ages, as the aggregated settings with a
+  leading \`n_pop\` dim on the parameters.
+
 - catch_units:
 
   Catch units per fleet, 0 = abundance, 1 = biomass (default).
@@ -272,19 +361,55 @@ Setup_Sim_Fishing(
   instead of \`ObsFishIdx_SE\`, and its population-specific data source
   stays lognormal.
 
-- Catch_seas_Type, Catch_pop_seas_Type, FishIdx_seas_Type,
-  FishIdx_pop_seas_Type, FishAgeComps_seas_Type:
+- sigmaFishIdx_form, sigmaFishIdx_pop_form:
+
+  How the index sd combines the reported errors with an estimated part,
+  as `sigmaFishIdx_spec` in
+  [`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md):
+  \`"fix"\` (0, default) draws at \`ObsFishIdx_SE\`,
+  \`"est_additive"\` (1) at \`SE + sigma\`, \`"est_quadrature"\` (2) at
+  \`sqrt(SE^2 + sigma^2)\` and \`"est_replace"\` (3) at \`sigma\`. The
+  reported errors stay in \`ObsFishIdx_SE\`, so a refit reading them
+  estimates the same part.
+
+- ln_sigmaFishIdx, ln_sigmaFishIdx_pop:
+
+  Log of the estimated part, one per fleet, read under a form other than
+  \`"fix"\`. Default \`NULL\`.
+
+- Catch_seas_Type, Catch_pop_seas_Type, Discard_seas_Type,
+  Discard_pop_seas_Type, FishIdx_seas_Type, FishIdx_pop_seas_Type,
+  FishAgeComps_seas_Type, FishLenComps_seas_Type,
+  FishAgeComps_pop_seas_Type, FishLenComps_pop_seas_Type,
+  FishAgeComps_discard_seas_Type, FishLenComps_discard_seas_Type,
+  FishAgeComps_discard_pop_seas_Type,
+  FishLenComps_discard_pop_seas_Type:
 
   Whether the operating model reports a data source once a season
   (\`"spltSeas"\`, the default) or once a year as a season total
   (\`"aggSeas"\`), one value for every fleet or one per fleet. An annual
-  total is written into season one with the other seasons left at zero
-  and the observation error applied once to that total, so an estimation
-  model reading it should mark season one in its \`Use\` array and set
-  the matching argument in
+  total is written into the season \`seas_agg_slot\` names, season one
+  by default, with the other seasons left at zero and the observation
+  error applied once to that total. A discard fraction is the year's
+  discards over the year's catch, and a composition is drawn from the
+  numbers summed over the year. An estimation model reading it should
+  mark the same season in its \`Use\` array and set the matching
+  argument in
   [`Setup_Mod_Catch_and_F`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Catch_and_F.md)
   or
   [`Setup_Mod_FishIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md).
+
+- seas_agg_slot:
+
+  Named list, by data source (\`"Catch"\`, \`"FishIdx_pop"\`,
+  \`"FishAgeComps_discard"\` and so on), of the season each fleet's year
+  total is written into, an integer matrix \`n_yrs x n_fleets\`. A data
+  source left out writes into season one.
+  [`simulation_self_test`](https://chengmatt.github.io/SPoRC/dev/reference/simulation_self_test.md)
+  and
+  [`condition_closed_loop_simulations`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md)
+  fill it from the fit's \`Use\` arrays, so a total the fit holds in
+  season two is drawn there. Default \`NULL\`.
 
 - FishIdx_Cov:
 
@@ -470,6 +595,7 @@ Other Simulation Setup:
 [`Setup_Sim_Biologicals()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Biologicals.md),
 [`Setup_Sim_Containers()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Containers.md),
 [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md),
 [`Setup_Sim_NAA_state()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_NAA_state.md),
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md),
 [`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md),

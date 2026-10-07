@@ -26,4 +26,5 @@ resolve_idx_factor(mvn, r, y, seas)
 
 ## Value
 
-List with scalars `d` and `lambda`.
+List with scalars `d` and `lambda`, and `row`, the cell's row in the
+covariance, `NA` outside it.

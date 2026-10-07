@@ -7,8 +7,16 @@ Supports sequential or parallel execution via
 future/future.apply. Likelihood weights from the original fit
 are propagated into the simulation (e.g., ISS scaled by
 Wt_FishAgeComps; ObsSrvIdx_SE divided by
-sqrt(Wt_SrvIdx)); all weights are reset to 1 when re-fitting.
-Failed replicates are silently stored as NA."><meta property="og:description" content="Validates model performance by: (1) generating n_sims new datasets
+sqrt(Wt_SrvIdx)), and the data weights are reset to 1 when refitting.
+A penalty weight (Wt_Rec, Wt_Init_Rec, Wt_F,
+Wt_D, *_pe_wt) is kept, the operating model drawing that
+process at its sd over the root of the weight, so each refit is the fit's
+own estimator. A weighted penalty whose sd is estimated comes back at the
+sd over the root of the weight, a weighted penalty being a density only up
+to its normalizing constant.
+Failed replicates are silently stored as NA. The operating model takes
+the fit's bias_correct_pe, bias_correct_oe and
+sigmaR_switch, so both sides center process and observation error alike."><meta property="og:description" content="Validates model performance by: (1) generating n_sims new datasets
 from the fitted model parameters using Simulate_Pop_Static,
 (2) re-fitting the estimation model to each simulated dataset, and (3)
 storing user-specified report quantities for comparison against true values.
@@ -16,8 +24,16 @@ Supports sequential or parallel execution via
 future/future.apply. Likelihood weights from the original fit
 are propagated into the simulation (e.g., ISS scaled by
 Wt_FishAgeComps; ObsSrvIdx_SE divided by
-sqrt(Wt_SrvIdx)); all weights are reset to 1 when re-fitting.
-Failed replicates are silently stored as NA."><meta name="robots" content="noindex"></head><body>
+sqrt(Wt_SrvIdx)), and the data weights are reset to 1 when refitting.
+A penalty weight (Wt_Rec, Wt_Init_Rec, Wt_F,
+Wt_D, *_pe_wt) is kept, the operating model drawing that
+process at its sd over the root of the weight, so each refit is the fit's
+own estimator. A weighted penalty whose sd is estimated comes back at the
+sd over the root of the weight, a weighted penalty being a density only up
+to its normalizing constant.
+Failed replicates are silently stored as NA. The operating model takes
+the fit's bias_correct_pe, bias_correct_oe and
+sigmaR_switch, so both sides center process and observation error alike."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -51,6 +67,7 @@ Failed replicates are silently stored as NA."><meta name="robots" content="noind
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -79,8 +96,16 @@ Supports sequential or parallel execution via
 <code>future</code>/<code>future.apply</code>. Likelihood weights from the original fit
 are propagated into the simulation (e.g., ISS scaled by
 <code>Wt_FishAgeComps</code>; <code>ObsSrvIdx_SE</code> divided by
-<code>sqrt(Wt_SrvIdx)</code>); all weights are reset to 1 when re-fitting.
-Failed replicates are silently stored as <code>NA</code>.</p>
+<code>sqrt(Wt_SrvIdx)</code>), and the data weights are reset to 1 when refitting.
+A penalty weight (<code>Wt_Rec</code>, <code>Wt_Init_Rec</code>, <code>Wt_F</code>,
+<code>Wt_D</code>, <code>*_pe_wt</code>) is kept, the operating model drawing that
+process at its sd over the root of the weight, so each refit is the fit's
+own estimator. A weighted penalty whose sd is estimated comes back at the
+sd over the root of the weight, a weighted penalty being a density only up
+to its normalizing constant.
+Failed replicates are silently stored as <code>NA</code>. The operating model takes
+the fit's <code>bias_correct_pe</code>, <code>bias_correct_oe</code> and
+<code>sigmaR_switch</code>, so both sides center process and observation error alike.</p>
     </div>
 
     <div class="section level2">
@@ -103,7 +128,7 @@ Failed replicates are silently stored as <code>NA</code>.</p>
 <span>  what_par <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  perfect_data <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  sim_type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"conditional"</span>, <span class="st">"joint"</span><span class="op">)</span>,</span>
-<span>  n_cond_yrs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span></span>
+<span>  prior_means <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"assessment"</span>, <span class="st">"truth"</span>, <span class="st">"off"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -194,30 +219,51 @@ the map gave them. An error is raised if any name is not found in
 <dt id="arg-perfect-data">perfect_data<a class="anchor" aria-label="anchor" href="#arg-perfect-data"></a></dt>
 <dd><p>Logical. Whether to shrink the observation error before
 simulating, sds to 0.001 and sample sizes to 1e6, leaving process error alone.
-A correct model then returns the operating model to several decimals. A
-process error sd is the exception and comes back low by about 1/(2n) for n
-deviations, since the fitted value holds the posterior variance of its own
-deviations and data this clean remove it. Default <code>FALSE</code>.</p></dd>
+A correct model whose data identify the population then returns the
+operating model to several decimals. A state-space model need not: exact
+catch and survey indices at age still leave each age's scale to cohort
+continuity under process error, so recovery there is to a few percent. A
+process error sd conditioned on the fit comes back low, since the fitted
+value includes the posterior variance of its own deviations and data this
+clean remove it; on NEA cod the numbers at age sd returns 0.12 against 0.19.
+The truth for an estimated observation sd is the 0.001 the data were drawn at.
+Default <code>FALSE</code>.</p></dd>
 
 
 <dt id="arg-sim-type">sim_type<a class="anchor" aria-label="anchor" href="#arg-sim-type"></a></dt>
-<dd><p>Character. Where each replicate's parameters come from.
-  <code>"conditional"</code> (default) runs every replicate at the fitted values, so
-  one truth covers them all and the spread is observation error. <code>"joint"</code>
-  draws each replicate from <code>sd_rep$jointPrecision</code>, so each has its own
-  truth. A fit with no random effects has no joint precision, and the fixed
-  effect covariance is inverted in its place.</p>
+<dd><p>Character. Which self test to run. <code>"conditional"</code>
+  (default) runs every replicate at the fitted parameters and every process
+  deviation at the fit's estimate, so one population covers every replicate
+  and only the observations are new. It measures how well the data determine
+  this history; a process sd comes back low, since the fit's deviations are
+  shrunk estimates that vary less than the sd describes. <code>"joint"</code> draws
+  each replicate's parameters from the fit's uncertainty
+  (<code>sd_rep$jointPrecision</code>) and then every process fresh at them:
+  recruitment and the initial ages from their penalty
+  (<code><a href="rec_devs_past_fit.html">rec_devs_past_fit</a></code>, <code><a href="init_devs_past_fit.html">init_devs_past_fit</a></code>), the
+  numbers at age, selectivity, catchability, movement, growth and a linked
+  dsem from their processes, and F and discard mortality deviations when the
+  fit integrates them out (fixed effect F deviations come from the parameter
+  draw). Each replicate is a new population with its own truth, so the self
+  test measures bias in every estimate, process sds included, and with
+  <code>do_sdrep = TRUE</code> whether the standard errors cover the truth. A fit
+  with no random effects has no joint precision, and the fixed effect
+  covariance is inverted in its place.</p>
 <p>Joint moves F, both selectivities, catchability, natural mortality, weight and
   size at age, movement, steepness, sex ratio, recruitment, the initial
   deviations, the numbers at age and a linked dsem. Observation error and the
   composition parameters stay at the fit, having no replicate dim.</p></dd>
 
 
-<dt id="arg-n-cond-yrs">n_cond_yrs<a class="anchor" aria-label="anchor" href="#arg-n-cond-yrs"></a></dt>
-<dd><p>Integer. The first years of every replicate reproduce the
-fit's catchability, movement and growth deviations, and later years are drawn.
-Default every year of the fit, so nothing is redrawn; <code>0</code> draws every
-year from the fitted process.</p></dd>
+<dt id="arg-prior-means">prior_means<a class="anchor" aria-label="anchor" href="#arg-prior-means"></a></dt>
+<dd><p>Where each refit's priors are centered (see
+<code><a href="self_test_priors.html">self_test_priors</a></code>). <code>"assessment"</code> (default) keeps them as
+the assessment gives them, so every replicate is pulled toward a prior the fit
+sits away from; <code>"truth"</code> centers each catchability, natural mortality,
+steepness, R0 and selectivity prior on the value the replicate ran on,
+keeping its sd, and puts the mode of each Dirichlet (movement, recruitment
+apportionment) and mean and sd beta (stray rate, tag reporting) there,
+keeping its concentration; <code>"off"</code> turns every prior off.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -227,9 +273,11 @@ year from the fitted process.</p></dd>
   simulation replicates (via <code>simplify2array</code>). If <code>do_sdrep = TRUE</code>,
   an additional element <code>"sd_rep"</code> contains a list of <code>sdreport</code>
   objects (or <code>NA</code> for failed replicates). A final element <code>"truth"</code>
-  holds the operating model's own values for the same names, which under
-  <code>sim_type = "joint"</code> differ from replicate to replicate and are what the
-  estimates should be scored against.</p>
+  holds each replicate's true values for the same names, the operating model's
+  own wherever it holds the quantity (<code><a href="om_truth.html">om_truth</a></code>), so replicates
+  drawn under <code>sim_type = "joint"</code> are each compared with what they ran on.
+  Observation error, composition, at-age correlation and tag loss parameters
+  take the fit's values, which every replicate runs at.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -238,6 +286,7 @@ year from the fitted process.</p></dd>
 <code><a href="Setup_Sim_Containers.html">Setup_Sim_Containers()</a></code>,
 <code><a href="Setup_Sim_Dim.html">Setup_Sim_Dim()</a></code>,
 <code><a href="Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code>,
+<code><a href="Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>,
 <code><a href="Setup_Sim_NAA_state.html">Setup_Sim_NAA_state()</a></code>,
 <code><a href="Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>,
 <code><a href="Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,
@@ -257,7 +306,7 @@ year from the fitted process.</p></dd>
 <span class="r-in"><span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/str.html" class="external-link">str</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">SSB</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="co"># parameter uncertainty carried in, scored against each replicate's own truth</span></span></span>
+<span class="r-in"><span><span class="co"># parameters drawn from the fit's uncertainty, each replicate compared with its own truth</span></span></span>
 <span class="r-in"><span><span class="va">sd_rep</span> <span class="op">&lt;-</span> <span class="fu">RTMB</span><span class="fu">::</span><span class="fu">sdreport</span><span class="op">(</span><span class="va">fit</span>, getJointPrecision <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu">simulation_self_test</span><span class="op">(</span></span></span>
 <span class="r-in"><span>  data <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">data</span>, parameters <span class="op">=</span> <span class="va">par</span>, mapping <span class="op">=</span> <span class="va">map</span>, random <span class="op">=</span> <span class="cn">NULL</span>,</span></span>

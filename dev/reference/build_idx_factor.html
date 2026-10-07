@@ -45,6 +45,7 @@ the observation vector in, so the simulated and fitted series line up."><meta na
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -112,8 +113,10 @@ extend past the data.</p></dd>
     <p>List with one element per fleet: <code>NULL</code> for non-mvn fleets, and
   otherwise <code>d</code> and <code>lambda</code> from <code><a href="cov_to_factor.html">cov_to_factor</a></code>, a
   <code>row</code> lookup array <code>[region, year, season]</code> holding each used
-  cell's covariance row (<code>NA</code> elsewhere), and the means <code>d_mean</code>
-  and <code>lambda_mean</code> used for cells outside the covariance.</p>
+  cell's covariance row (<code>NA</code> elsewhere), the means <code>d_mean</code>
+  and <code>lambda_mean</code> used for cells outside the covariance, and
+  <code>chol_lower</code>, the lower Cholesky factor of the covariance, which
+  <code><a href="draw_sim_idx_mvn.html">draw_sim_idx_mvn</a></code> draws the cells inside it from.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

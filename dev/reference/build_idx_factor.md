@@ -48,5 +48,8 @@ List with one element per fleet: `NULL` for non-mvn fleets, and
 otherwise `d` and `lambda` from
 [`cov_to_factor`](https://chengmatt.github.io/SPoRC/dev/reference/cov_to_factor.md),
 a `row` lookup array `[region, year, season]` holding each used cell's
-covariance row (`NA` elsewhere), and the means `d_mean` and
-`lambda_mean` used for cells outside the covariance.
+covariance row (`NA` elsewhere), the means `d_mean` and `lambda_mean`
+used for cells outside the covariance, and `chol_lower`, the lower
+Cholesky factor of the covariance, which
+[`draw_sim_idx_mvn`](https://chengmatt.github.io/SPoRC/dev/reference/draw_sim_idx_mvn.md)
+draws the cells inside it from.

@@ -488,6 +488,13 @@ by that one term and $`R_0`$’s standard error comes back near
 else, and is only used under `"ar1"`; the other two recruitment options
 map it to `NA` regardless of what is supplied.
 
+In a joint self test (`sim_type = "joint"`) the operating model draws
+the recruitment deviations from this same penalty, under the form, bias
+ramp, sigma switch and weight the fit used, and keeps the fit’s value
+for any deviation the fit leaves unpenalized. The initial age deviations
+are drawn from their penalty too; see
+[`vignette("l_simulation_testing")`](https://chengmatt.github.io/SPoRC/dev/articles/l_simulation_testing.md).
+
 The first year’s recruitment is the first year’s age one abundance.
 Under an equilibrium initialization that abundance belongs to the
 initial condition, and giving it a recruitment penalty as well prices it
@@ -653,7 +660,7 @@ $`\sigma_R`$ fixed.
 
 | Argument | Description |
 |----|----|
-| `addtocomp` | Small constant guarding $`\log(0)`$ in composition likelihoods (default `1e-3`) |
+| `addtocomp` | Small constant guarding $`\log(0)`$ in composition likelihoods (default `1e-3`). `0` gives the multinomial itself: an empty bin adds nothing |
 | `comp_const_obs` | 0/1. Whether `addtocomp` is also added to the observed proportions used as multinomial weights. `1` (default) is the long-standing SPoRC behavior; `0` adds it only inside the logarithms, a convention several existing assessments use. The difference slightly reweights every bin, so set `0` when bridging such assessments and otherwise leave the default. The Dirichlet-multinomial also honors it, and there the constant is not neutral: every bin with no observed and no expected mass contributes $`\log(\theta/(1+\theta))`$, so compositions with many structurally empty bins (conditional age-at-length above all) bias $`\theta`$ upward under `1`; use `0` for those. `Setup_Mod_Weighting` warns if any conditional age-at-length fleet uses the Dirichlet-Multinomial while this is `1` |
 | `addtofishidx`, `addtosrvidx` | Small constants guarding $`\log(0)`$ in the fishery/survey index likelihoods (default `1e-4` each) |
 | `addtotag` | Small constant guarding zero tag releases/recoveries (default `1e-10`) |
@@ -929,6 +936,25 @@ Three further controls tune the process-error penalty itself:
 | `fishsel_pe_wt` / `retsel_pe_wt` / `srvsel_pe_wt` | Per-fleet multiplier on the selectivity process-error likelihood (default 1). `0` removes the distributional penalty entirely while the deviations remain estimated; use it when deviations should float subject only to explicit smoothness penalties, as several existing assessments do. Anything other than 0 or 1 makes an estimated PE sigma reinterpretable, so prefer 0/1 unless deliberately down-weighting |
 | `fishsel_rw_init_sigma` / `retsel_rw_init_sigma` / `srvsel_rw_init_sigma` | Standard deviation on the first year of an `"rw"` deviation series. Default 5 (first year effectively free). `NA` starts the walk at zero under the walk’s own estimated sigma, making the first year as smooth as every later step; appropriate when the base parametric curve already describes the first year well |
 | `*_sel_bin_dev_bins`, `cont_tv_*sel_bin_devs` | Bin-override deviations; see below |
+
+In the operating model a fit’s selectivity deviations, bin-override
+deviations included, keep the fit’s values in a conditional self test
+and are drawn in a joint one from the form the penalty gives them, at
+the fitted process error parameters and under the fit’s maps, and
+selectivity at age is rebuilt from them through
+[`Get_Selex_Array()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex_Array.md).
+The self test does this on its own;
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md)
+can do it for an operating model built by hand. Selectivity at length is
+drawn at length and read through each replicate’s size-age key, and a
+penalty weighted by `*_pe_wt` is drawn at its sd over the square root of
+the weight.
+
+A deviation series shared over regions or fleets (`est_shared_r` and
+`est_shared_f_x` in `*_sel_devs_spec`) is one series: it is penalized
+once, divided between the regions and fleets holding it, and its sigmas
+are shared the same way whatever `*sel_pe_pars_spec` says, so no region
+or fleet keeps a sigma that no penalty reads.
 
 #### Bin-override selectivity deviations
 
@@ -1721,7 +1747,11 @@ Configured via
 #### Fishing mortality process error
 
 `ln_F_devs` (annual log-scale deviations about `ln_F_mean`) can follow
-one of three process-error structures, set via `Fdev_model`:
+one of three process-error structures, set via `Fdev_model`. In the
+operating model a joint self test draws them from that structure only
+when the fit integrates them out; as fixed effects they take the
+parameter draw’s values (see
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md)).
 
 | String  | Description                             |
 |---------|-----------------------------------------|
@@ -1946,12 +1976,13 @@ differences across fleets are entirely a function of *when* in the year
 they sample, not of the growth rate itself varying by season.
 
 In the operating model a fit’s growth deviations keep the fit’s values
-over the conditioning years (`n_cond_yrs`, every year of the fit by
-default) and are drawn after them for every replicate from the form the
-penalty gives them, given the fitted years, at the fitted process error
-parameters and under the fit’s maps, and weight at age, the size-age
-keys and selectivity at age are rebuilt from them. The self test and the
-closed loop do this on their own;
+in a conditional self test and over a closed loop’s fitted years, and
+are drawn for every replicate in a joint self test and in a closed
+loop’s projection years, given the fitted ones, from the form the
+penalty gives them, at the fitted process error parameters and under the
+fit’s maps, and weight at age, the size-age keys and selectivity at age
+are rebuilt from them. The self test and the closed loop do this on
+their own;
 [`Setup_Sim_Growth_RE()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Growth_RE.md)
 can also do it for an operating model built by hand. A dsem holding or
 linking any growth deviation draws both arrays through
@@ -2042,11 +2073,15 @@ An operating model reports the same way through
 [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md)
 and
 [`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md),
-which take the same argument names. There the annual total is written
-into season one by convention, with the observation error applied once
-to that total rather than to each season and then added up. A
-multivariate normal index cannot be aggregated, since it is drawn once
-over a covariance the season layout defines.
+which take the same argument names: the annual total is drawn once from
+the year’s numbers and written into the season `seas_agg_slot` names,
+which the self test and the closed loop fill from the fit’s `Use`
+arrays. A multivariate normal index cannot be aggregated.
+
+A discard fraction (`discard_units = "abd_frac"` or `"biom_frac"`) over
+several seasons or populations is the year’s discards over the year’s
+catch, each summed first, so two populations each discarding 30 percent
+discard 30 percent together, not 60.
 
 #### Age-disaggregated observations
 
@@ -2236,6 +2271,13 @@ Each takes one setting for every fleet or one per fleet, so a model can
 leave one fleet independent and correlate another. The three ICES
 `obsCorStruct` options are `"iid"`, `"1dar1"` and `"us"`; `"2dar1"` adds
 the year dimension.
+
+The operating model draws under the same form and parameters, which the
+self test and the closed loop pass from the fit and
+[`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md)
+and
+[`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md)
+take by hand; the population-specific at-age data sources are not drawn.
 
 `"1dar1"` is a statement about age distance, not about position in the
 observed vector. A fleet observing ages 2, 3, 5 and 6 has a gap, and lag

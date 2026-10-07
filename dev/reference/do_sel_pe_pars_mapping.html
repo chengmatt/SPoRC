@@ -47,6 +47,7 @@ year correlations plus a log sigma). Fleet sharing is handled in a second pass."
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -170,7 +171,10 @@ evaluates, which is one per shared group read at the group's lowest bin and
 first sex. Under iid or a random walk on a non-parametric fleet the log sigmas
 are indexed by bin, so <code>"est_shared_b"</code> leaves one per bin group, and
 sharing deviations across sexes leaves one set for the first sex under every
-form. The rest are fixed.</p>
+form. The rest are fixed. Deviations shared across regions share their sigmas
+across regions, read at the fleet's first region with data, and a fleet using
+another fleet's deviations (<code>"est_shared_f_x"</code>) uses that fleet's sigmas,
+whatever <code>pe_pars_spec</code> says, since one series has one variance.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

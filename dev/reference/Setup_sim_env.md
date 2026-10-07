@@ -33,7 +33,8 @@ SPoRC simulation functions: `generate_initial_age_structure`,
 `release_conv_tags`, `generate_fishery_conv_tags_recap`,
 `Get_Det_Recruitment`, `Get_Init_NAA`, `predict_sim_fish_iss_fmort`,
 `rho_trans`, `simulate_comps`, `simulate_conv_tag_fish_recaptures`,
-`draw_index_obs`, `resolve_idx_factor`.
+`draw_index_obs`, `resolve_idx_factor`, `draw_at_age_sources`,
+`collapse_seas_discards`, `redraw_year_total_comps`, `seas_agg_season`.
 
 ## See also
 
@@ -42,6 +43,7 @@ Other Simulation Setup:
 [`Setup_Sim_Containers()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Containers.md),
 [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
 [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md),
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md),
 [`Setup_Sim_NAA_state()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_NAA_state.md),
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md),
 [`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md),

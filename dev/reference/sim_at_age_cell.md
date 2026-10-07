@@ -21,7 +21,9 @@ sim_at_age_cell(
   form_code,
   use_weight,
   r,
-  ageing_error = NULL
+  ageing_error = NULL,
+  bias_correct_oe = 0,
+  std_resid = NULL
 )
 ```
 
@@ -64,6 +66,18 @@ sim_at_age_cell(
 
   Matrix `[n_ages, n_obs_ages]` reading model ages as observed ages for
   this year and fleet, or `NULL` for the identity.
+
+- bias_correct_oe:
+
+  `1` draws a lognormal observation at its mean, as the estimation model
+  reads it under the same setting; `0` (default) at its median.
+
+- std_resid:
+
+  Standardized residuals `[n_obs_ages, n_sexes]` drawn up front by
+  [`draw_sim_at_age_corr`](https://chengmatt.github.io/SPoRC/dev/reference/draw_sim_at_age_corr.md)
+  for a fleet whose ages are correlated, each scaled here by its age's
+  sd. `NULL` (default) draws each age on its own.
 
 ## Value
 

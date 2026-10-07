@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -2109,7 +2110,7 @@ overridden to a single group. Default one group per level.
 <td><code>"p_a_s"</code></td>
 <td>Character scalar or vector [n_conv_tag_cohorts] naming which dims are resolved at release, built from "p" (population), "a" (age) and "s" (sex) joined by underscores: "p_a_s" (default), "a_s", "p_a", "p_s", "a", "s", "p" or "none". A scalar is recycled; a vector lets events resolve different dims. Region and fleet are always kept. An unattended dim takes all that event's fish in index 1 and is apportioned to full resolution by the release platform. A dim may only be split into several pooling groups if it is attended in every release event; otherwise its pooling argument is overridden to a single group with a warning.</td>
 </tr>
-<tr data-k="conv_tag_release_platform null character matrix [n_conv_tag_cohorts × 2] of the release platform and fleet index per cohort, in the format setup_sim_tagging uses. default null.">
+<tr data-k="conv_tag_release_platform null character matrix [n_conv_tag_cohorts × 2] of the release platform and fleet index per cohort, in the format setup_sim_tagging uses. default null releases from the survey, fleet 1, which is read only when conv_fish_tag_attr leaves a dim of the released fish to be spread.">
 <td>
 <code class="optref-arg">conv_tag_release_platform</code>
 </td>
@@ -2119,7 +2120,8 @@ overridden to a single group. Default one group per level.
 <td>
 Character matrix [n_conv_tag_cohorts × 2] of the release platform and
 fleet index per cohort, in the format Setup_Sim_Tagging uses. Default
-NULL.
+NULL releases from the survey, fleet 1, which is read only when
+conv_fish_tag_attr leaves a dim of the released fish to be spread.
 </td>
 </tr>
 </tbody>
@@ -4314,7 +4316,7 @@ ln_fish_q as the level of the series.
 <td><code>NULL</code></td>
 <td>List [n_fish_fleets], each element the model years (as indices into data$years, not calendar years) that fleet's catchability deviations are estimated over, or NULL for every year. NULL (default) gives every fleet every year. Projection years are always estimated regardless. A year left out of a fleet's vector holds that fleet's deviation fixed at zero, which a random walk or ar1 then steps through like any other fixed cell, except at that fleet's first estimated year: there a random walk gets the diffuse fish_q_rw_init_sigma start and an ar1 its stationary marginal sd, the same treatment year one gets when nothing is fixed ahead of it. Read only for a fleet whose fish_q_model is not "none".</td>
 </tr>
-<tr data-k="fishsel_pe_pars_spec null character vector [n_fish_fleets] of the estimation structure for the selectivity process error hyperparameters, required when any fleet varies continuously. see do_sel_pe_pars_mapping.">
+<tr data-k="fishsel_pe_pars_spec null character vector [n_fish_fleets] of the estimation structure for the selectivity process error hyperparameters, required when any fleet varies continuously. see do_sel_pe_pars_mapping. deviations shared over regions or fleets in fish_sel_devs_spec share these the same way, whatever this says, since one series has one variance.">
 <td>
 <code class="optref-arg">fishsel_pe_pars_spec</code>
 </td>
@@ -4324,7 +4326,9 @@ ln_fish_q as the level of the series.
 <td>
 Character vector [n_fish_fleets] of the estimation structure for the
 selectivity process error hyperparameters, required when any fleet
-varies continuously. See do_sel_pe_pars_mapping.
+varies continuously. See do_sel_pe_pars_mapping. Deviations shared over
+regions or fleets in fish_sel_devs_spec share these the same way,
+whatever this says, since one series has one variance.
 </td>
 </tr>
 <tr data-k="fish_fixed_sel_pars_spec null character vector [n_fish_fleets] of how the fixed-effect selectivity parameters are estimated: " est_all or see do_fixed_sel_pars_mapping.>
@@ -4791,7 +4795,7 @@ and sd on the log scale, one row per ((), ) prior. Default NA.
 <td><code>paste("none_Fleet_", 1:input_list$data$n_srv_fleets, sep = "")</code></td>
 <td>Character vector of discrete catchability time blocks, in the format of srv_sel_blocks. Parsed into an [n_regions × n_years × n_srv_fleets] array. Default "none_Fleet_x".</td>
 </tr>
-<tr data-k="srvsel_pe_pars_spec null character vector [n_srv_fleets] or null (default) of the sharing structure for the process error hyperparameters. see do_sel_pe_pars_mapping.">
+<tr data-k="srvsel_pe_pars_spec null character vector [n_srv_fleets] or null (default) of the sharing structure for the process error hyperparameters. see do_sel_pe_pars_mapping. deviations shared over regions or fleets in srv_sel_devs_spec share these the same way, whatever this says.">
 <td>
 <code class="optref-arg">srvsel_pe_pars_spec</code>
 </td>
@@ -4801,7 +4805,8 @@ and sd on the log scale, one row per ((), ) prior. Default NA.
 <td>
 Character vector [n_srv_fleets] or NULL (default) of the sharing
 structure for the process error hyperparameters. See
-do_sel_pe_pars_mapping.
+do_sel_pe_pars_mapping. Deviations shared over regions or fleets in
+srv_sel_devs_spec share these the same way, whatever this says.
 </td>
 </tr>
 <tr data-k="srv_fixed_sel_pars_spec required character vector [n_srv_fleets] of the sharing structure for the fixed-effect selectivity parameters. no default. see do_fixed_sel_pars_mapping.">

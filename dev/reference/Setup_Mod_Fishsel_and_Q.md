@@ -204,6 +204,9 @@ Setup_Mod_Fishsel_and_Q(
   selectivity process error hyperparameters, required when any fleet
   varies continuously. See
   [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md).
+  Deviations shared over regions or fleets in `fish_sel_devs_spec` share
+  these the same way, whatever this says, since one series has one
+  variance.
 
 - fish_fixed_sel_pars_spec:
 

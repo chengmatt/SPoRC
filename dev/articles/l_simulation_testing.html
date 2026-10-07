@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -478,25 +479,31 @@ SSB and recruitment.</p>
 <span>  output_path <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  what <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"SSB"</span>, <span class="st">"Rec"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
-<p>A fit with movement random effects (<code>move_year_re</code>,
-<code>move_age_re</code>, <code>move_pop_re</code>,
-<code>move_seas_re</code> or <code>move_sex_re</code> in
-<code><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement()</a></code>) comes into the self test and the
-closed loop on its own without additional setup. Over the conditioning
-years (<code>n_cond_yrs</code>, every year of the fit by default) each
-replicate keeps the fit’s own deviations, or under
-<code>sim_type = "joint"</code> its own draw of them, so the historical
-movement is the conditioned fit’s; the years after them are drawn from
-the process the estimation model penalizes, at the fitted / specified sd
-and correlations, with an AR1 continuing from the last fitted year, and
-the movement matrix is rebuilt from them before the population is run.
-An operating model built by hand from such a fit takes the same step
-through <code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code>, which stores the fit’s
-switches, process error parameters and movement arguments on the
-simulation list; <code><a href="../reference/Setup_sim_env.html">Setup_sim_env()</a></code> then draws and rebuilds. A
-fit whose movement deviations a dsem holds or links is drawn by
-<code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code> instead and rebuilt through the same
-arguments.</p>
+<p><code>simulation_self_test</code> has two designs. Under
+<code>sim_type = "conditional"</code> (the default) every replicate runs
+at the fitted parameters and the fitted process deviations, and only the
+observations are drawn again, so the self test asks how well the data
+return the population the fit describes. In theory the process sds come
+back low under it, since the replicates run on deviations the fit has
+already shrunk toward zero. Under <code>sim_type = "joint"</code> each
+replicate draws its parameters from the fit’s joint precision
+(<code>RTMB::sdreport(obj, getJointPrecision = TRUE)</code>, passed with
+<code>obj</code>), then every process from the penalty the estimation
+model puts on it, then the observations, and is compared with its own
+truth, so the self test asks whether the model recovers a population it
+could itself have generated, process sds included. F deviations
+estimated as penalized fixed effects are not redrawn: they come from the
+parameter draw, and are drawn from their penalty only when the fit
+integrates them out.</p>
+<p>A fit with movement random effects (<code>move_*_re</code> in
+<code><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement()</a></code>) needs no additional setup. A
+conditional self test and a closed loop’s fitted years keep the fit’s
+deviations; a joint self test, and a closed loop’s projection years,
+draw them from the process the estimation model penalizes and rebuild
+the movement matrix before the population is run. An operating model
+built by hand takes the same step through
+<code><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement()</a></code>, or <code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code> when
+a dsem holds the deviations.</p>
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a fit with AR1 movement deviations over years, sex-specific and correlated across sexes</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement</a></span><span class="op">(</span><span class="va">input_list</span>, use_fixed_movement <span class="op">=</span> <span class="fl">0</span>, Fixed_Movement <span class="op">=</span> <span class="cn">NA</span>,</span>
@@ -508,29 +515,13 @@ arguments.</p>
 <span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Movement.html">Setup_Sim_Movement</a></span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">fit</span><span class="op">$</span><span class="va">data</span>, <span class="va">fit</span><span class="op">$</span><span class="va">env</span><span class="op">$</span><span class="fu">parList</span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own move_devs and Movement</span></span></code></pre></div>
 <p>A fit with growth deviations (<code>growth_tv_model</code> or
-<code>growth_semipar</code> in <code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>) can
-be setup in the same way. Over the conditioning years each replicate
-keeps the fit’s own deviations, or under <code>sim_type = "joint"</code>
-its own draw of them and of the growth parameters, as it does for
-movement, and the years after them are drawn given those from the form
-the estimation model penalizes them under, iid, random walk, separable
-AR1 or the three dimensional field, at the fitted process error
-parameters and under the fit’s maps, so a random walk steps on from the
-last fitted year, the correlated forms are drawn conditional on the
-fitted years, a cell the map fixes stays at zero and a shared level
-takes one draw; weight at age, the size-age keys and selectivity at age
-are then rebuilt through the fit’s own <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code>. An
-operating model built by hand without <code>n_cond_yrs</code> on its
-simulation list draws every year. Under cohort growth only the years
-before the propagation starts are built up front, and the annual cycle
-advances the rest from each replicate’s own numbers at age. An operating
-model built by hand takes the step through
-<code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code>, which needs the fit’s report under
-selectivity at length. A dsem holding or linking any growth deviation
-draws both arrays through <code><a href="../reference/Setup_Sim_DSEM.html">Setup_Sim_DSEM()</a></code> instead. One
-convention differs from the penalty: a random walk’s first year is drawn
-at the walk’s own sd rather than the diffuse
-<code>growth_rw_init_sigma</code> the estimation model gives it.</p>
+<code>growth_semipar</code> in <code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>) is
+treated the same way, under the form the penalty gives them and the
+fit’s maps, with weight at age, the size-age keys and selectivity at age
+rebuilt through the fit’s own <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code>; under cohort
+growth the annual cycle advances growth from each replicate’s own
+numbers at age. By hand the step is <code><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE()</a></code>,
+which needs the fit’s report under selectivity at length.</p>
 <div class="sourceCode" id="cb13"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># a fit with iid deviations on L1 and a random walk on K, their sds estimated</span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals</a></span><span class="op">(</span><span class="va">input_list</span>, <span class="va">...</span>, growth_tv_model <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span>L1 <span class="op">=</span> <span class="st">"iid"</span>, K <span class="op">=</span> <span class="st">"rw"</span><span class="op">)</span>, growth_tv_sigma_spec <span class="op">=</span> <span class="st">"est"</span><span class="op">)</span></span>
@@ -540,18 +531,54 @@ at the walk’s own sd rather than the diffuse
 <span><span class="va">sim_list</span><span class="op">$</span><span class="va">WAA</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/lapply.html" class="external-link">replicate</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_sims</span>, <span class="va">fit</span><span class="op">$</span><span class="va">rep</span><span class="op">$</span><span class="va">WAA</span><span class="op">)</span> <span class="co"># and WAA_fish, WAA_srv, SizeAgeTrans_fish, SizeAgeTrans_srv the same way</span></span>
 <span><span class="va">sim_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Sim_Growth_RE.html">Setup_Sim_Growth_RE</a></span><span class="op">(</span><span class="va">sim_list</span>, <span class="va">fit</span><span class="op">$</span><span class="va">data</span>, <span class="va">fit</span><span class="op">$</span><span class="va">env</span><span class="op">$</span><span class="fu">parList</span><span class="op">(</span><span class="op">)</span>, rep <span class="op">=</span> <span class="va">fit</span><span class="op">$</span><span class="va">rep</span><span class="op">)</span></span>
 <span><span class="va">sim_env</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_sim_env.html">Setup_sim_env</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">)</span> <span class="co"># every replicate now holds its own ln_growth_devs and weight at age</span></span></code></pre></div>
+<p>Recruitment is treated the same way. A conditional self test runs
+each replicate on the fit’s recruitment; a joint self test draws the
+recruitment and initial age deviations from the penalties the fit puts
+on them, under their form, bias ramp, sigma switch and weight, and a
+deviation the fit leaves unpenalized or fixed keeps its value. An
+operating model built by hand passes deviations of its own through
+<code>ln_RecDevs_input</code> in <code><a href="../reference/Setup_Sim_Rec.html">Setup_Sim_Rec()</a></code>.</p>
+<p>Priors and penalties need separate treatment. A prior’s mean is data
+each refit reads but the self test does not redraw, so wherever the data
+pulled the fit away from a prior every replicate is pulled back toward
+it, a bias of the design rather than of the estimator.
+<code>prior_means = "truth"</code> moves every prior onto the value the
+replicate ran on and keeps its strength (the mean of a normal, the mode
+of a Dirichlet or beta), <code>"off"</code> turns them off, and the
+default <code>"assessment"</code> keeps them as given. A penalty that
+describes a process is drawn from, as above; a penalty that regularizes,
+such as the smoothing penalties on a bicubic selectivity surface, has
+nothing to draw from, so any bias it shows is real. Recruitment
+deviations estimated as penalized fixed effects rather than integrated
+out tend to show a real bias too, an R0 that rises to reproduce the
+indices from shrunk deviations, while spawning biomass, F and mean
+recruitment stay close to the truth.</p>
 <p>A fit with catchability deviations (<code>fish_q_model</code> or
-<code>srv_q_model</code> set to <code>"iid"</code>, <code>"rw"</code> or
-<code>"ar1"</code>) is treated the same way in the self test. Over the
-conditioning years each replicate keeps the fit’s own deviations, or
-under <code>sim_type = "joint"</code> its own draw of them, and the
-years after them are drawn from the form the estimation model penalizes,
-at the fitted sigma and correlation (each replicate’s own draw of them
-under joint), so a random walk steps on from the last conditioned year.
-A year that <code>q_re_years</code> leaves out, or a region with no
-index, keeps the fit’s value, since the fit estimates no deviation
-there. An operating model built by hand sets the same process through
-<code><a href="../reference/Setup_Sim_q_devs.html">Setup_Sim_q_devs()</a></code>.</p>
+<code>srv_q_model</code>) is treated the same way, each year the fit
+estimates drawn under its form and each fixed year kept; by hand the
+step is <code><a href="../reference/Setup_Sim_q_devs.html">Setup_Sim_q_devs()</a></code>.</p>
+<p>A fit with selectivity deviations (<code>cont_tv_*_sel</code> or the
+bin-override deviations) is treated the same way, selectivity at age
+rebuilt through the fit’s own <code><a href="../reference/Get_Selex_Array.html">Get_Selex_Array()</a></code> and, at
+length, read through each replicate’s own size-age key. F and discard
+mortality deviations are drawn only when the fit integrates them out; as
+fixed effects they come from the parameter draw, since their penalty is
+a loose constraint rather than a description of how F varies
+(<code>F_devs_draw = "all"</code> in <code><a href="../reference/Setup_Sim_Fleet_Devs.html">Setup_Sim_Fleet_Devs()</a></code>
+draws them anyway). Three rules hold for every process: a penalty
+weighted by <code>Wt_*</code> or <code>*_pe_wt</code> is drawn at its sd
+over the square root of the weight and the refits keep the weight; a
+random walk’s diffuse first year keeps the replicate’s own value, since
+that start leaves the level to the data; and a cell the fit’s map fixes
+keeps its value. A closed loop draws selectivity deviations on through
+its projection years while F past the fit stays the control rule’s.
+<code><a href="../reference/Simulate_Pop_Static.html">Simulate_Pop_Static()</a></code> returns every draw.</p>
+<p>The observations are drawn under the likelihood the fit evaluates
+them with, so a self test refits data of the kind it was fit to: year
+totals into the season the fit holds them in, an index with a partly
+estimated sd at the sd the fit forms, a multivariate normal index over
+its whole covariance, and pooled tag recaptures once per pool.
+<code><a href="../reference/simulation_data_to_SPoRC.html">simulation_data_to_SPoRC()</a></code> returns all of them.</p>
 <p>A fit whose length compositions are recorded on coarser bins than the
 population (<code>LenBinMap</code> in
 <code><a href="../reference/Setup_Mod_Biologicals.html">Setup_Mod_Biologicals()</a></code>), or are selected at length

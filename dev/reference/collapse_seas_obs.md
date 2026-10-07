@@ -3,8 +3,8 @@
 A data source set to `"aggSeas"` reports once a year rather than once a
 season, so the operating model has to draw one observation from the
 year's total rather than eleven from its parts. The total is written
-into season one by convention and the other seasons are left at zero,
-which is where the estimation model's `Use` array should mark it.
+into the season the fit holds it in, season one unless `slot` says
+otherwise, and the other seasons are left at zero.
 
 ## Usage
 
@@ -21,7 +21,8 @@ collapse_seas_obs(
   n_regions,
   n_fleets,
   pop = FALSE,
-  bias_correct_oe = 0
+  bias_correct_oe = 0,
+  slot = rep(1, n_fleets)
 )
 ```
 
@@ -35,7 +36,7 @@ collapse_seas_obs(
 - se_arr:
 
   Standard deviation array matching `true_arr` without the simulation
-  dim.
+  dim, read in the season the total is drawn into.
 
 - seas_agg:
 
@@ -57,6 +58,16 @@ collapse_seas_obs(
 - pop:
 
   Logical, whether the arrays have a leading population dim.
+
+- bias_correct_oe:
+
+  Whether lognormal draws sit at their mean.
+
+- slot:
+
+  Integer vector, one per fleet, of the season the total is drawn into.
+  From
+  [`seas_agg_season`](https://chengmatt.github.io/SPoRC/dev/reference/seas_agg_season.md).
 
 ## Value
 

@@ -8,8 +8,16 @@ storing user-specified report quantities for comparison against true
 values. Supports sequential or parallel execution via
 `future`/`future.apply`. Likelihood weights from the original fit are
 propagated into the simulation (e.g., ISS scaled by `Wt_FishAgeComps`;
-`ObsSrvIdx_SE` divided by `sqrt(Wt_SrvIdx)`); all weights are reset to 1
-when re-fitting. Failed replicates are silently stored as `NA`.
+`ObsSrvIdx_SE` divided by `sqrt(Wt_SrvIdx)`), and the data weights are
+reset to 1 when refitting. A penalty weight (`Wt_Rec`, `Wt_Init_Rec`,
+`Wt_F`, `Wt_D`, `*_pe_wt`) is kept, the operating model drawing that
+process at its sd over the root of the weight, so each refit is the
+fit's own estimator. A weighted penalty whose sd is estimated comes back
+at the sd over the root of the weight, a weighted penalty being a
+density only up to its normalizing constant. Failed replicates are
+silently stored as `NA`. The operating model takes the fit's
+`bias_correct_pe`, `bias_correct_oe` and `sigmaR_switch`, so both sides
+center process and observation error alike.
 
 ## Usage
 
@@ -32,7 +40,7 @@ simulation_self_test(
   what_par = NULL,
   perfect_data = FALSE,
   sim_type = c("conditional", "joint"),
-  n_cond_yrs = length(data$years)
+  prior_means = c("assessment", "truth", "off")
 )
 ```
 
@@ -120,18 +128,36 @@ simulation_self_test(
 
   Logical. Whether to shrink the observation error before simulating,
   sds to 0.001 and sample sizes to 1e6, leaving process error alone. A
-  correct model then returns the operating model to several decimals. A
-  process error sd is the exception and comes back low by about 1/(2n)
-  for n deviations, since the fitted value holds the posterior variance
-  of its own deviations and data this clean remove it. Default `FALSE`.
+  correct model whose data identify the population then returns the
+  operating model to several decimals. A state-space model need not:
+  exact catch and survey indices at age still leave each age's scale to
+  cohort continuity under process error, so recovery there is to a few
+  percent. A process error sd conditioned on the fit comes back low,
+  since the fitted value includes the posterior variance of its own
+  deviations and data this clean remove it; on NEA cod the numbers at
+  age sd returns 0.12 against 0.19. The truth for an estimated
+  observation sd is the 0.001 the data were drawn at. Default `FALSE`.
 
 - sim_type:
 
-  Character. Where each replicate's parameters come from.
-  `"conditional"` (default) runs every replicate at the fitted values,
-  so one truth covers them all and the spread is observation error.
-  `"joint"` draws each replicate from `sd_rep$jointPrecision`, so each
-  has its own truth. A fit with no random effects has no joint
+  Character. Which self test to run. `"conditional"` (default) runs
+  every replicate at the fitted parameters and every process deviation
+  at the fit's estimate, so one population covers every replicate and
+  only the observations are new. It measures how well the data determine
+  this history; a process sd comes back low, since the fit's deviations
+  are shrunk estimates that vary less than the sd describes. `"joint"`
+  draws each replicate's parameters from the fit's uncertainty
+  (`sd_rep$jointPrecision`) and then every process fresh at them:
+  recruitment and the initial ages from their penalty
+  ([`rec_devs_past_fit`](https://chengmatt.github.io/SPoRC/dev/reference/rec_devs_past_fit.md),
+  [`init_devs_past_fit`](https://chengmatt.github.io/SPoRC/dev/reference/init_devs_past_fit.md)),
+  the numbers at age, selectivity, catchability, movement, growth and a
+  linked dsem from their processes, and F and discard mortality
+  deviations when the fit integrates them out (fixed effect F deviations
+  come from the parameter draw). Each replicate is a new population with
+  its own truth, so the self test measures bias in every estimate,
+  process sds included, and with `do_sdrep = TRUE` whether the standard
+  errors cover the truth. A fit with no random effects has no joint
   precision, and the fixed effect covariance is inverted in its place.
 
   Joint moves F, both selectivities, catchability, natural mortality,
@@ -140,12 +166,17 @@ simulation_self_test(
   Observation error and the composition parameters stay at the fit,
   having no replicate dim.
 
-- n_cond_yrs:
+- prior_means:
 
-  Integer. The first years of every replicate reproduce the fit's
-  catchability, movement and growth deviations, and later years are
-  drawn. Default every year of the fit, so nothing is redrawn; `0` draws
-  every year from the fitted process.
+  Where each refit's priors are centered (see
+  [`self_test_priors`](https://chengmatt.github.io/SPoRC/dev/reference/self_test_priors.md)).
+  `"assessment"` (default) keeps them as the assessment gives them, so
+  every replicate is pulled toward a prior the fit sits away from;
+  `"truth"` centers each catchability, natural mortality, steepness, R0
+  and selectivity prior on the value the replicate ran on, keeping its
+  sd, and puts the mode of each Dirichlet (movement, recruitment
+  apportionment) and mean and sd beta (stray rate, tag reporting) there,
+  keeping its concentration; `"off"` turns every prior off.
 
 ## Value
 
@@ -153,10 +184,14 @@ Named list with one element per entry in `what` and then one per entry
 in `what_par`, each an array with the last dimension indexing simulation
 replicates (via `simplify2array`). If `do_sdrep = TRUE`, an additional
 element `"sd_rep"` contains a list of `sdreport` objects (or `NA` for
-failed replicates). A final element `"truth"` holds the operating
-model's own values for the same names, which under `sim_type = "joint"`
-differ from replicate to replicate and are what the estimates should be
-scored against.
+failed replicates). A final element `"truth"` holds each replicate's
+true values for the same names, the operating model's own wherever it
+holds the quantity
+([`om_truth`](https://chengmatt.github.io/SPoRC/dev/reference/om_truth.md)),
+so replicates drawn under `sim_type = "joint"` are each compared with
+what they ran on. Observation error, composition, at-age correlation and
+tag loss parameters take the fit's values, which every replicate runs
+at.
 
 ## See also
 
@@ -165,6 +200,7 @@ Other Simulation Setup:
 [`Setup_Sim_Containers()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Containers.md),
 [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
 [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md),
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md),
 [`Setup_Sim_NAA_state()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_NAA_state.md),
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md),
 [`Setup_Sim_Survey()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Survey.md),
@@ -184,7 +220,7 @@ res <- simulation_self_test(
 )
 str(res$SSB)
 
-# parameter uncertainty carried in, scored against each replicate's own truth
+# parameters drawn from the fit's uncertainty, each replicate compared with its own truth
 sd_rep <- RTMB::sdreport(fit, getJointPrecision = TRUE)
 res <- simulation_self_test(
   data = fit$data, parameters = par, mapping = map, random = NULL,

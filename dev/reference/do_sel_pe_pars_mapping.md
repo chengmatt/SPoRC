@@ -101,4 +101,8 @@ actually evaluates, which is one per shared group read at the group's
 lowest bin and first sex. Under iid or a random walk on a non-parametric
 fleet the log sigmas are indexed by bin, so `"est_shared_b"` leaves one
 per bin group, and sharing deviations across sexes leaves one set for
-the first sex under every form. The rest are fixed.
+the first sex under every form. The rest are fixed. Deviations shared
+across regions share their sigmas across regions, read at the fleet's
+first region with data, and a fleet using another fleet's deviations
+(`"est_shared_f_x"`) uses that fleet's sigmas, whatever `pe_pars_spec`
+says, since one series has one variance.

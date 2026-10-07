@@ -9,7 +9,8 @@ correction. RecDevs_model sets what the draw is centered on: zero for
 independent deviations, the previous year's for a random walk, and
 RecDevs_rho times it for an AR1. Only the independent draws are bias
 corrected, a walk's deviation not being mean zero. A year covered by
-Rec_input draws nothing."><meta property="og:description" content="Writes each population and region's log recruitment deviation into
+Rec_input draws nothing, and one covered by ln_RecDevs_input
+reads its deviations from there."><meta property="og:description" content="Writes each population and region's log recruitment deviation into
 sim_env$ln_RecDevs[, , y, sim]. Deviation sharing follows
 generate_initial_age_structure: one draw per population when
 n_pop &amp;gt; 1, or one per region when n_pop = 1 under local density
@@ -19,7 +20,8 @@ correction. RecDevs_model sets what the draw is centered on: zero for
 independent deviations, the previous year's for a random walk, and
 RecDevs_rho times it for an AR1. Only the independent draws are bias
 corrected, a walk's deviation not being mean zero. A year covered by
-Rec_input draws nothing."><meta name="robots" content="noindex"></head><body>
+Rec_input draws nothing, and one covered by ln_RecDevs_input
+reads its deviations from there."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -53,6 +55,7 @@ Rec_input draws nothing."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -83,7 +86,8 @@ correction. <code>RecDevs_model</code> sets what the draw is centered on: zero f
 independent deviations, the previous year's for a random walk, and
 <code>RecDevs_rho</code> times it for an AR1. Only the independent draws are bias
 corrected, a walk's deviation not being mean zero. A year covered by
-<code>Rec_input</code> draws nothing.</p>
+<code>Rec_input</code> draws nothing, and one covered by <code>ln_RecDevs_input</code>
+reads its deviations from there.</p>
     </div>
 
     <div class="section level2">

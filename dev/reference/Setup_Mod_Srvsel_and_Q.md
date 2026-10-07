@@ -108,6 +108,8 @@ Setup_Mod_Srvsel_and_Q(
   Character vector `[n_srv_fleets]` or `NULL` (default) of the sharing
   structure for the process error hyperparameters. See
   [`do_sel_pe_pars_mapping`](https://chengmatt.github.io/SPoRC/dev/reference/do_sel_pe_pars_mapping.md).
+  Deviations shared over regions or fleets in `srv_sel_devs_spec` share
+  these the same way, whatever this says.
 
 - srv_fixed_sel_pars_spec:
 

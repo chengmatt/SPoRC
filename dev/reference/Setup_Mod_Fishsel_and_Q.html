@@ -41,6 +41,7 @@ after Setup_Mod_FishIdx_and_Comps."><meta name="robots" content="noindex"></head
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -263,7 +264,9 @@ ahead of it. Read only for a fleet whose <code>fish_q_model</code> is not
 <dd><p>Character vector <code>[n_fish_fleets]</code> of the
 estimation structure for the selectivity process error hyperparameters,
 required when any fleet varies continuously. See
-<code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code>.</p></dd>
+<code><a href="do_sel_pe_pars_mapping.html">do_sel_pe_pars_mapping</a></code>.
+Deviations shared over regions or fleets in <code>fish_sel_devs_spec</code> share
+these the same way, whatever this says, since one series has one variance.</p></dd>
 
 
 <dt id="arg-fish-fixed-sel-pars-spec">fish_fixed_sel_pars_spec<a class="anchor" aria-label="anchor" href="#arg-fish-fixed-sel-pars-spec"></a></dt>

@@ -43,6 +43,7 @@ extracted observations, 1 where a value is present and positive."><meta name="ro
     <li><a class="dropdown-item" href="../articles/ad_goa_rex_sole_case_study.html">GOA Rex Sole</a></li>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
+    <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -120,6 +121,11 @@ operating model arrays.</p></dd>
   the fishery compositions also have <code>_discard</code> and <code>_discard_pop</code>
   ones. The length composition elements and their input sample sizes are
   <code>NULL</code> when no size-age transition matrix is present.</p>
+<p>The at-age data sources, <code>ObsCatchAA</code>, <code>ObsDiscardAA</code> and
+  <code>ObsSrvIdxAA</code> and their <code>_pop</code> counterparts, come with their
+  <code>_SE</code> arrays and the operating model's own use flags, since a normal
+  likelihood can draw a value at or below zero. Each is <code>NULL</code> when the
+  operating model draws none of it.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>

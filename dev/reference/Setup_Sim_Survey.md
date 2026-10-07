@@ -22,6 +22,22 @@ Setup_Sim_Survey(
   SrvIdxAA_LikeType = "lognormal",
   SrvIdxAA_sigma_form = "none",
   use_srv_idx_aa = rep(0, sim_list$n_srv_fleets),
+  AgeObsCorr_srv_idx = "iid",
+  trans_rho_srv_idx = NULL,
+  trans_rho_srv_idx_year = NULL,
+  trans_rho_srv_idx_us = NULL,
+  SrvIdxAA_seas_Type = 0,
+  UseSrvIdxAA_pop = NULL,
+  ln_sigmaSrvIdxAA_pop = NULL,
+  ObsSrvIdxAA_pop_SE = NULL,
+  SrvIdxAA_pop_Type = "spltRaggS",
+  SrvIdxAA_pop_LikeType = "lognormal",
+  SrvIdxAA_pop_sigma_form = "none",
+  SrvIdxAA_pop_seas_Type = 0,
+  AgeObsCorr_srv_idx_pop = "iid",
+  trans_rho_srv_idx_pop = NULL,
+  trans_rho_srv_idx_pop_year = NULL,
+  trans_rho_srv_idx_pop_us = NULL,
   ObsSrvIdx_pop_SE = array(0.2, dim = c(sim_list$n_pop, sim_list$n_regions,
     sim_list$n_yrs, sim_list$n_seas, sim_list$n_srv_fleets)),
   srv_q_input = array(1, dim = c(sim_list$n_regions, sim_list$n_yrs,
@@ -30,9 +46,17 @@ Setup_Sim_Survey(
   srv_idx_type = array(1, dim = c(sim_list$n_srv_fleets)),
   srv_idx_ages = NULL,
   SrvIdx_LikeType = rep(0, sim_list$n_srv_fleets),
+  sigmaSrvIdx_form = "fix",
+  ln_sigmaSrvIdx = NULL,
+  sigmaSrvIdx_pop_form = "fix",
+  ln_sigmaSrvIdx_pop = NULL,
   SrvIdx_seas_Type = NULL,
   SrvIdx_pop_seas_Type = NULL,
   SrvAgeComps_seas_Type = NULL,
+  SrvLenComps_seas_Type = NULL,
+  SrvAgeComps_pop_seas_Type = NULL,
+  SrvLenComps_pop_seas_Type = NULL,
+  seas_agg_slot = NULL,
   SrvIdx_Cov = NULL,
   UseSrvIdx = NULL,
   comp_srv_caal_like = rep(999, sim_list$n_srv_fleets),
@@ -143,6 +167,32 @@ Setup_Sim_Survey(
   Integer vector \`n_srv_fleets\`, \`1\` for fleets whose index at age
   is drawn.
 
+- AgeObsCorr_srv_idx:
+
+  How each fleet's index-at-age residuals are correlated, as in
+  \[Setup_Mod_SrvIdx_and_Comps()\]: \`"iid"\` (default), \`"1dar1"\`,
+  \`"us"\` or \`"2dar1"\`; see \[Setup_Sim_Fishing()\].
+
+- trans_rho_srv_idx, trans_rho_srv_idx_year, trans_rho_srv_idx_us:
+
+  Unconstrained correlations under the estimation model's names and
+  shapes, as for the fishery's. \`NULL\` (default) is zero.
+
+- SrvIdxAA_seas_Type, SrvIdxAA_pop_seas_Type:
+
+  Per fleet, \`1\` where the index at age is a year total, drawn once a
+  year from every season summed; see \[Setup_Sim_Fishing()\]. \`0\`
+  (default) draws each season.
+
+- UseSrvIdxAA_pop, ln_sigmaSrvIdxAA_pop, ObsSrvIdxAA_pop_SE,
+  SrvIdxAA_pop_Type, SrvIdxAA_pop_LikeType, SrvIdxAA_pop_sigma_form,
+  AgeObsCorr_srv_idx_pop, trans_rho_srv_idx_pop,
+  trans_rho_srv_idx_pop_year, trans_rho_srv_idx_pop_us:
+
+  The population-specific index at age, as the aggregated one with a
+  leading \`n_pop\` dim on the arrays and parameters, each population
+  drawn on its own. \`NULL\` draws none.
+
 - srv_q_input:
 
   Survey catchability array
@@ -173,16 +223,41 @@ Setup_Sim_Survey(
   instead of `ObsSrvIdx_SE`, and its population-specific data source
   stays lognormal.
 
-- SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvAgeComps_seas_Type:
+- sigmaSrvIdx_form, sigmaSrvIdx_pop_form:
+
+  How the index sd combines the reported errors with an estimated part,
+  as `sigmaSrvIdx_spec` in
+  [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md):
+  `"fix"` (0, default), `"est_additive"` (1), `"est_quadrature"` (2) or
+  `"est_replace"` (3). See
+  [`Setup_Sim_Fishing`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md).
+
+- ln_sigmaSrvIdx, ln_sigmaSrvIdx_pop:
+
+  Log of the estimated part, one per survey, read under a form other
+  than `"fix"`. Default `NULL`.
+
+- SrvIdx_seas_Type, SrvIdx_pop_seas_Type, SrvAgeComps_seas_Type,
+  SrvLenComps_seas_Type, SrvAgeComps_pop_seas_Type,
+  SrvLenComps_pop_seas_Type:
 
   Whether the operating model reports a survey data source once a season
   (`"spltSeas"`, the default) or once a year as a season total
   (`"aggSeas"`), one value for every survey or one per survey. An annual
-  total is written into season one with the other seasons left at zero
-  and the observation error applied once to that total, so an estimation
-  model reading it should mark season one in its `Use` array and set the
-  matching argument in
+  total is written into the season `seas_agg_slot` names, season one by
+  default, with the other seasons left at zero and the observation error
+  applied once to that total. A composition is drawn from the numbers
+  summed over the year. An estimation model reading it should mark the
+  same season in its `Use` array and set the matching argument in
   [`Setup_Mod_SrvIdx_and_Comps`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md).
+
+- seas_agg_slot:
+
+  Named list, by survey data source (`"SrvIdx"`, `"SrvAgeComps_pop"` and
+  so on), of the season each survey's year total is written into, an
+  integer matrix `[n_yrs x n_srv_fleets]`. See
+  [`Setup_Sim_Fishing`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md).
+  Default `NULL`.
 
 - SrvIdx_Cov:
 
@@ -326,6 +401,7 @@ Other Simulation Setup:
 [`Setup_Sim_Containers()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Containers.md),
 [`Setup_Sim_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Dim.md),
 [`Setup_Sim_Fishing()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fishing.md),
+[`Setup_Sim_Fleet_Devs()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Fleet_Devs.md),
 [`Setup_Sim_NAA_state()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_NAA_state.md),
 [`Setup_Sim_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Rec.md),
 [`Setup_Sim_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_Tagging.md),

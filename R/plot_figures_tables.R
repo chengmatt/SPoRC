@@ -1600,15 +1600,20 @@ get_key_quants <- function(data,
       perm = c(1, 2, 7, 3, 4, 5, 6))
 
     # movement
+    # averaging drops the year dim, so put it back in as dim 4 (pop, from, to, year, seas, age, sex)
     Movement_avg <- apply(rep[[i]]$Movement[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean) # movement
-    Movement <- abind::abind(replicate(n_proj_yrs, Movement_avg, simplify = FALSE), along = 4)
+    Movement <- aperm(
+      array(rep(Movement_avg, times = n_proj_yrs), dim = c(dim(Movement_avg), n_proj_yrs)),
+      perm = c(1, 2, 3, 7, 4, 5, 6))
     # Movement / mortality sequencing must follow the fitted model. Under continuous movement
     # the generator has to be averaged on the rate scale, since mean(expm(Q)) != expm(mean(Q)).
     proj_move_timing <- if(is.null(data[[i]]$move_timing)) 0 else data[[i]]$move_timing
     proj_expm_nsub <- if(is.null(data[[i]]$move_expm_nsub)) 0 else data[[i]]$move_expm_nsub
     if(proj_move_timing == 2) {
       Mrate_avg <- apply(rep[[i]]$Mrate[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean)
-      proj_Mrate <- abind::abind(replicate(n_proj_yrs, Mrate_avg, simplify = FALSE), along = 4)
+      proj_Mrate <- aperm(
+        array(rep(Mrate_avg, times = n_proj_yrs), dim = c(dim(Mrate_avg), n_proj_yrs)),
+        perm = c(1, 2, 3, 7, 4, 5, 6))
     } else proj_Mrate <- NULL
     stray_rate <- array(apply(rep[[i]]$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = c(data[[i]]$n_pop, n_proj_yrs))
 

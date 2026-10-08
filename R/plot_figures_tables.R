@@ -1425,8 +1425,10 @@ plot_all_basic <- function(data,
 #'   before being kept constant across the projection), \code{HCR_function} with
 #'   signature \code{function(x, frp, brp, ...)}, \code{recruitment_opt}
 #'   (\code{"mean_rec"}, \code{"bh_rec"}, \code{"zero_rec"} or
-#'   \code{"inv_gauss"}), and \code{fmort_opt} (\code{"input"} to hold terminal F
-#'   or \code{"HCR"}).
+#'   \code{"inv_gauss"}), and \code{fmort_opt} (\code{"HCR"} to apply the control
+#'   rule to each region's SSB, \code{"HCR_global"} to apply it to SSB summed
+#'   across regions as global reference points need, or \code{"Input"} to fish at
+#'   the F reference point every year without the control rule).
 #' @param model_names Character vector of length \code{n_models} of display names.
 #'
 #' @return A list of two. The first is a data frame of key quantities by model and
@@ -1476,7 +1478,7 @@ plot_all_basic <- function(data,
 #'       else                                              0
 #'     },
 #'     recruitment_opt = "mean_rec",
-#'     fmort_opt       = "HCR"
+#'     fmort_opt       = "HCR_global"
 #'   )
 #'
 #'   out <- get_key_quants(
@@ -1687,7 +1689,7 @@ get_key_quants <- function(data,
                                          b_ref_pt = b_ref_pt, # biological reference points
                                          HCR_function = proj_model_opt$HCR_function, # HCR function
                                          recruitment_opt = proj_model_opt$recruitment_opt, # recruitment assumption
-                                         fmort_opt = 'Input', # Fishing mortality in projection years (whether input or HCR)
+                                         fmort_opt = proj_model_opt$fmort_opt, # Fishing mortality in projection years (whether input or HCR)
                                          srr_opt = srr_opt, # beverton holt projection options
                                          move_timing = proj_move_timing, # movement / mortality sequencing
                                          expm_nsub = proj_expm_nsub, # exact or implicit matrix exponential

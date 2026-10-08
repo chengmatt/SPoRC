@@ -28,8 +28,10 @@ model year averaged over for recruitment), \code{rec_age}, \code{type} (e.g.
 before being kept constant across the projection), \code{HCR_function} with
 signature \code{function(x, frp, brp, ...)}, \code{recruitment_opt}
 (\code{"mean_rec"}, \code{"bh_rec"}, \code{"zero_rec"} or
-\code{"inv_gauss"}), and \code{fmort_opt} (\code{"input"} to hold terminal F
-or \code{"HCR"}).}
+\code{"inv_gauss"}), and \code{fmort_opt} (\code{"HCR"} to apply the control
+rule to each region's SSB, \code{"HCR_global"} to apply it to SSB summed
+across regions as global reference points need, or \code{"Input"} to fish at
+the F reference point every year without the control rule).}
 
 \item{model_names}{Character vector of length \code{n_models} of display names.}
 }
@@ -86,7 +88,7 @@ These quantities are approximate and are not catch advice. This is a
       else                                              0
     },
     recruitment_opt = "mean_rec",
-    fmort_opt       = "HCR"
+    fmort_opt       = "HCR_global"
   )
 
   out <- get_key_quants(

@@ -42,8 +42,11 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
   inputs are averaged over before being kept constant across the
   projection), `HCR_function` with signature
   `function(x, frp, brp, ...)`, `recruitment_opt` (`"mean_rec"`,
-  `"bh_rec"`, `"zero_rec"` or `"inv_gauss"`), and `fmort_opt` (`"input"`
-  to hold terminal F or `"HCR"`).
+  `"bh_rec"`, `"zero_rec"` or `"inv_gauss"`), and `fmort_opt` (`"HCR"`
+  to apply the control rule to each region's SSB, `"HCR_global"` to
+  apply it to SSB summed across regions as global reference points need,
+  or `"Input"` to fish at the F reference point every year without the
+  control rule).
 
 - model_names:
 
@@ -113,7 +116,7 @@ if (FALSE) { # \dontrun{
       else                                              0
     },
     recruitment_opt = "mean_rec",
-    fmort_opt       = "HCR"
+    fmort_opt       = "HCR_global"
   )
 
   out <- get_key_quants(

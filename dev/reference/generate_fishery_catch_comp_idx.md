@@ -45,8 +45,10 @@ generate_fishery_catch_comp_idx(y, sim, sim_env)
 Composition draws are skipped where `Fmort = 0`, and the discard ones
 also where retention selectivity is fully 1, so nothing is discarded.
 Discard indices come in four units: abundance, biomass, abundance
-fraction and biomass fraction. Under
-`ISS_FishAgeComps_fill = "F_pattern"` with feedback active, the sample
-sizes for the current and prior years are rescaled by
+fraction and biomass fraction. Under an `"F_pattern"` fill on a fishery
+input sample size (see
+[`condition_closed_loop_simulations`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md))
+with feedback active, the current year's sample size is predicted from
+that year's F by
 [`predict_sim_fish_iss_fmort`](https://chengmatt.github.io/SPoRC/dev/reference/predict_sim_fish_iss_fmort.md)
-before sampling.
+before sampling, and earlier years are left unchanged.

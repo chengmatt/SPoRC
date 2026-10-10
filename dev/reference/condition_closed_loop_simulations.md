@@ -94,9 +94,10 @@ condition_closed_loop_simulations(
 
   Every `*_fill` argument takes `"zeros"`, `"last"` (repeat the final
   observed year), `"mean"`, `"F_pattern"` (scale the sample sizes with
-  the simulated fishing mortality pattern, pooled fishery input sample
-  sizes only), or a constant. An array passed instead is taken as the
-  fully specified input and the fill rule is ignored.
+  the simulated fishing mortality pattern; fishery input sample sizes
+  only, pooled and population-specific, retained and discarded), or a
+  constant. An array passed instead is taken as the fully specified
+  input and the fill rule is ignored.
 
 - ...:
 

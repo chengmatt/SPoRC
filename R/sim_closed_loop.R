@@ -28,9 +28,10 @@
 #'
 #'   Every \code{*_fill} argument takes \code{"zeros"}, \code{"last"} (repeat the
 #'   final observed year), \code{"mean"}, \code{"F_pattern"} (scale the sample
-#'   sizes with the simulated fishing mortality pattern, pooled fishery input
-#'   sample sizes only), or a constant. An array passed instead is taken as the
-#'   fully specified input and the fill rule is ignored.
+#'   sizes with the simulated fishing mortality pattern; fishery input sample
+#'   sizes only, pooled and population-specific, retained and discarded), or a
+#'   constant. An array passed instead is taken as the fully specified input and
+#'   the fill rule is ignored.
 #' @param ... Optional named simulation inputs overriding what is generated
 #'   internally. Any argument of \code{\link{Setup_Sim_Fishing}},
 #'   \code{\link{Setup_Sim_Survey}}, \code{\link{Setup_Sim_Biologicals}},

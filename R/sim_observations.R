@@ -1241,9 +1241,11 @@ marginalize_conv_fish_tags <- function(vals,
 #' Composition draws are skipped where \code{Fmort = 0}, and the discard ones also
 #' where retention selectivity is fully 1, so nothing is discarded. Discard
 #' indices come in four units: abundance, biomass, abundance fraction and biomass
-#' fraction. Under \code{ISS_FishAgeComps_fill = "F_pattern"} with feedback
-#' active, the sample sizes for the current and prior years are rescaled by
-#' \code{\link{predict_sim_fish_iss_fmort}} before sampling.
+#' fraction. Under an \code{"F_pattern"} fill on a fishery input sample size
+#' (see \code{\link{condition_closed_loop_simulations}}) with feedback active,
+#' the current year's sample size is predicted from that year's F by
+#' \code{\link{predict_sim_fish_iss_fmort}} before sampling, and earlier years
+#' are left unchanged.
 #'
 #' @param y Integer. Year index.
 #' @param sim Integer. Simulation replicate index.
@@ -1424,7 +1426,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
             if(exists("ISS_FishAgeComps_fill") && isTRUE(ISS_FishAgeComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
               sim_env$ISS_FishAgeComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishAgeComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
             }
-            if(exists("ISS_FishAgeComps_pop_fill") && isTRUE(ISS_FishAgeComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
+            if(exists("ISS_FishAgeComps_pop_fill") && isTRUE(ISS_FishAgeComps_pop_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
               for(p in 1:n_pop) sim_env$ISS_FishAgeComps_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
                 ISS_FishComps = array(ISS_FishAgeComps_pop[p,,1:y,,,,sim],
                                                                                                                                     dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),
@@ -1439,7 +1441,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
             if(exists("ISS_FishLenComps_fill") && isTRUE(ISS_FishLenComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
               sim_env$ISS_FishLenComps[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishLenComps, Fmort = Fmort, y = y, sim = sim, seas = seas)
             }
-            if(exists("ISS_FishLenComps_pop_fill") && isTRUE(ISS_FishLenComps_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
+            if(exists("ISS_FishLenComps_pop_fill") && isTRUE(ISS_FishLenComps_pop_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
               for(p in 1:n_pop) sim_env$ISS_FishLenComps_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
                 ISS_FishComps = array(ISS_FishLenComps_pop[p,,1:y,,,,sim],
                                                                                                                                     dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),
@@ -2727,9 +2729,9 @@ predict_sim_fish_iss_fmort <- function(ISS_FishComps,
   tmp_iss <- ISS_FishComps[, 1:(y - 1), seas , , , sim, drop = FALSE]
   tmp_fmort <- Fmort[, 1:(y - 1), seas ,, sim, drop = FALSE]
 
-  # container
+  # container for the one season being predicted, which the caller writes back into season seas
   iss_container <- array(0, dim = c(n_regions, length(1:y), 1, n_sexes, n_fish_fleets))
-  iss_container[, 1:(y - 1), seas, , ] <- ISS_FishComps[, 1:(y - 1), seas , , , sim] # fill in values back
+  iss_container[, 1:(y - 1), 1, , ] <- ISS_FishComps[, 1:(y - 1), seas , , , sim] # fill in values back
 
   for(r in 1:n_regions) {
     for(s in 1:n_sexes) {

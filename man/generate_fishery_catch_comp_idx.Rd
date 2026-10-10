@@ -37,8 +37,10 @@ in \code{sim_env}.
 Composition draws are skipped where \code{Fmort = 0}, and the discard ones also
 where retention selectivity is fully 1, so nothing is discarded. Discard
 indices come in four units: abundance, biomass, abundance fraction and biomass
-fraction. Under \code{ISS_FishAgeComps_fill = "F_pattern"} with feedback
-active, the sample sizes for the current and prior years are rescaled by
-\code{\link{predict_sim_fish_iss_fmort}} before sampling.
+fraction. Under an \code{"F_pattern"} fill on a fishery input sample size
+(see \code{\link{condition_closed_loop_simulations}}) with feedback active,
+the current year's sample size is predicted from that year's F by
+\code{\link{predict_sim_fish_iss_fmort}} before sampling, and earlier years
+are left unchanged.
 }
 \keyword{internal}

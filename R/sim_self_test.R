@@ -1805,7 +1805,7 @@ simulation_data_to_SPoRC <- function(sim_env,
   }
 
   # Tagging
-  if(sim_env$use_conv_fish_tagging == 1) {
+  if(any(sim_env$use_conv_fish_tagging == 1)) {
     keep_tag_cohorts <- which(sim_env$conv_tag_release_indicator[,2] %in% 1:y)
     conv_tag_release_indicator <- sim_env$conv_tag_release_indicator[keep_tag_cohorts,,drop = FALSE]
     obs_conv_tag_fish_recap <- array(sim_env$obs_conv_tag_fish_recap[,,keep_tag_cohorts,,,,,,sim], dim = dim(sim_env$obs_conv_tag_fish_recap)[-length(dim(sim_env$obs_conv_tag_fish_recap))])

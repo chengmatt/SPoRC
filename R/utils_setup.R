@@ -291,8 +291,9 @@ extend_years <- function(arr, n_years, yr_dim, fill = "zeros") {
       valid_values <- x[!is.na(x) & !is.nan(x) & x != 0]
       if(length(valid_values) == 0) return(0) else mean(valid_values)
     })
-    # extend mean_slice along year dimension
-    fill_array <- array(mean_slice, dim = new_dims)
+    # extend mean_slice along year dimension, built with year last so every year gets the whole slice
+    fill_array <- array(mean_slice, dim = c(dim(arr)[dims], n_years))
+    fill_array <- aperm(fill_array, order(c(dims, yr_dim))) # move year back to position yr_dim
   } else if (is.numeric(fill)) {
     fill_array <- array(fill, dim = new_dims)
   }

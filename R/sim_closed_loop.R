@@ -312,7 +312,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   FishAgeComps_discard_Type <- if(!"FishAgeComps_discard_Type" %in% names(args)) extend_years(data$FishAgeComps_discard_Type, closed_loop_yrs, 1, 'last') else args$FishAgeComps_discard_Type
   ISS_FishAgeComps_discard <- if(!"ISS_FishAgeComps_discard" %in% names(args)) {
     extend_years(replicate(sim_list$n_sims, data$ISS_FishAgeComps_discard[,,,,,drop = FALSE] * data$Wt_FishAgeComps_discard), closed_loop_yrs, 2, fill = ISS_FishAgeComps_discard_fill)
-  } else args$ISS_FishAgeComps_discard_fill
+  } else args$ISS_FishAgeComps_discard
   ln_FishAge_discard_theta <- if(!"ln_FishAge_discard_theta" %in% names(args)) optim_parameters_list$ln_FishAge_discard_theta[,,,drop = FALSE] else args$ln_FishAge_discard_theta
   ln_FishAge_discard_theta_agg <- if(!"ln_FishAge_discard_theta_agg" %in% names(args)) optim_parameters_list$ln_FishAge_discard_theta_agg else args$ln_FishAge_discard_theta_agg
   FishAge_discard_corr_pars_agg <- if(!"FishAge_discard_corr_pars_agg" %in% names(args)) optim_parameters_list$FishAge_discard_corr_pars_agg else args$FishAge_discard_corr_pars_agg
@@ -323,7 +323,7 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
   FishLenComps_discard_Type <- if(!"FishLenComps_discard_Type" %in% names(args)) extend_years(data$FishLenComps_discard_Type, closed_loop_yrs, 1, 'last') else args$FishLenComps_discard_Type
   ISS_FishLenComps_discard <- if(!"ISS_FishLenComps_discard" %in% names(args)) {
     extend_years(replicate(sim_list$n_sims, data$ISS_FishLenComps_discard[,,,,,drop = FALSE] * data$Wt_FishLenComps_discard), closed_loop_yrs, 2, fill = ISS_FishLenComps_discard_fill)
-  } else args$ISS_FishLenComps_discard_fill
+  } else args$ISS_FishLenComps_discard
   ln_FishLen_discard_theta <- if(!"ln_FishLen_discard_theta" %in% names(args)) optim_parameters_list$ln_FishLen_discard_theta[,,,drop = FALSE] else args$ln_FishLen_discard_theta
   ln_FishLen_discard_theta_agg <- if(!"ln_FishLen_discard_theta_agg" %in% names(args)) optim_parameters_list$ln_FishLen_discard_theta_agg else args$ln_FishLen_discard_theta_agg
   FishLen_discard_corr_pars_agg <- if(!"FishLen_discard_corr_pars_agg" %in% names(args)) optim_parameters_list$FishLen_discard_corr_pars_agg else args$FishLen_discard_corr_pars_agg

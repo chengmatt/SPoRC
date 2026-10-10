@@ -306,7 +306,7 @@ Get_Movement <- function(move_type,
       if(bound_form == "softplus") {
         u_e = t_e + d_e
         eps = ctmc_diffusion_eps # softplus width; softplus(0) = eps * log(2)
-        q_e = (u_e + abs(u_e)) / 2 + eps * log(1 + exp(-abs(u_e) / eps))
+        q_e = (u_e + abs(u_e)) / 2 + eps * log1p(exp(-abs(u_e) / eps))   # log1p: a small flow stays positive instead of rounding to 0
       }
 
       # discontinuous Galerkin (upwind) flux

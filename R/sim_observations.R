@@ -1574,7 +1574,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
               if(exists("ISS_FishAgeComps_discard_fill") && isTRUE(ISS_FishAgeComps_discard_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
                 sim_env$ISS_FishAgeComps_discard[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishAgeComps_discard, Fmort = Fmort, y = y, sim = sim, seas = seas)
               }
-              if(exists("ISS_FishAgeComps_pop_discard_fill") && isTRUE(ISS_FishAgeComps_pop_discard_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
+              if(exists("ISS_FishAgeComps_discard_pop_fill") && isTRUE(ISS_FishAgeComps_discard_pop_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
                 for(p in 1:n_pop) sim_env$ISS_FishAgeComps_discard_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
                   ISS_FishComps = array(ISS_FishAgeComps_discard_pop[p,,1:y,,,,sim],
                                                                                                                                               dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),
@@ -1589,7 +1589,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
               if(exists("ISS_FishLenComps_discard_fill") && isTRUE(ISS_FishLenComps_discard_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
                 sim_env$ISS_FishLenComps_discard[,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(ISS_FishComps = ISS_FishLenComps_discard, Fmort = Fmort, y = y, sim = sim, seas = seas)
               }
-              if(exists("ISS_FishLenComps_pop_discard_fill") && isTRUE(ISS_FishLenComps_pop_discard_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
+              if(exists("ISS_FishLenComps_discard_pop_fill") && isTRUE(ISS_FishLenComps_discard_pop_fill == "F_pattern") && isTRUE(run_feedback) && y >= feedback_start_yr + 1 && r == 1 && f == 1) {
                 for(p in 1:n_pop) sim_env$ISS_FishLenComps_discard_pop[p,,1:y,seas,,,sim] <- predict_sim_fish_iss_fmort(
                   ISS_FishComps = array(ISS_FishLenComps_discard_pop[p,,1:y,,,,sim],
                                                                                                                                               dim = c(n_regions, length(1:y), n_seas, n_sexes, n_fish_fleets, n_sims)),

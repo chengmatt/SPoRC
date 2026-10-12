@@ -42,3 +42,4 @@ dev/design_wham_move_re.md
 dev/check_consistency_simple/check_consistency.R
 /dev/check_consistency_simple
 /dev/dsem_mse
+/dev/mse_wrapper

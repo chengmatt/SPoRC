@@ -357,22 +357,28 @@ dev.off()
 # Setup necessary inputs
 t_spawn <- 0 # spawn timing
 n_proj_yrs <- 15 # number of projection years
-n_regions <- 5 # number of regions
+n_regions <- mlt_rg_sable_data$n_regions # number of regions
 n_ages <- length(mlt_rg_sable_data$ages) # number of ages
 n_sexes <- mlt_rg_sable_data$n_sexes # number of sexes
 n_fish_fleets <- mlt_rg_sable_data$n_fish_fleets # number of fishery fleets
 do_recruits_move <- 0 # recruits don't move
-n_seas <- 1
-n_pop <- 1
+n_seas <- mlt_rg_sable_data$n_seas # number of seasons
+n_pop <- mlt_rg_sable_data$n_pop # number of populations
 terminal_NAA <- array(mlt_rg_sable_rep$NAA[,,length(mlt_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
 terminal_NAA0 <- array(mlt_rg_sable_rep$NAA0[,,length(mlt_rg_sable_data$years),,,], dim = c(n_pop, n_regions, n_seas, n_ages, n_sexes)) # terminal numbers at age
-WAA <- array(rep(mlt_rg_sable_data$WAA[,,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
-WAA_fish <- array(rep(mlt_rg_sable_data$WAA[,,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
-MatAA <- array(rep(mlt_rg_sable_data$MatAA[,,length(mlt_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
-fish_sel <- array(rep(mlt_rg_sable_rep$fish_sel[,,length(mlt_rg_sable_data$years),,,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
+WAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # weight at age
+for(y in 1:n_proj_yrs) WAA[,,y,,,] <- mlt_rg_sable_data$WAA[,,length(mlt_rg_sable_data$years),,,]
+WAA_fish <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # weight at age for fishery
+for(y in 1:n_proj_yrs) WAA_fish[,,y,,,,] <- mlt_rg_sable_data$WAA[,,length(mlt_rg_sable_data$years),,,]
+MatAA <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes)) # maturity at age
+for(y in 1:n_proj_yrs) MatAA[,,y,,,] <- mlt_rg_sable_data$MatAA[,,length(mlt_rg_sable_data$years),,,]
+fish_sel <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes, n_fish_fleets)) # selectivity
+for(y in 1:n_proj_yrs) fish_sel[,,y,,,,] <- mlt_rg_sable_rep$fish_sel[,,length(mlt_rg_sable_data$years),,,,]
 Movement <- abind::abind(replicate(n_proj_yrs,  mlt_rg_sable_rep$Movement[,,,length(mlt_rg_sable_data$years),,,,drop = FALSE],  simplify = FALSE), along = 4) # movement
 terminal_F <- array(mlt_rg_sable_rep$Fmort[,length(mlt_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
-natmort <- array(mlt_rg_sable_rep$natmort[,,length(mlt_rg_sable_data$years),,], dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
+natmort <- array(0, dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
+for(y in 1:n_proj_yrs) natmort[,,y,,] <- mlt_rg_sable_rep$natmort[,,length(mlt_rg_sable_data$years),1,,] # season 1
+natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas) # M is constant within the year, so repeat season 1 over seasons
 recruitment <- array(mlt_rg_sable_rep$Rec[,,20:(length(mlt_rg_sable_data$years) - 2)], dim = c(n_pop, n_regions, length(20:(length(mlt_rg_sable_data$years) - 2)))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
 sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
@@ -405,7 +411,8 @@ out <- Do_Population_Projection(n_proj_yrs = n_proj_yrs, # Number of projection 
                                 HCR_function = HCR_function, # threshold control rule defined above
                                 recruitment_opt = "mean_rec", # recruitment assumption utilizes the mean recruits for the supplied recruitment estimates
                                 fmort_opt = "HCR", # Fishing mortality in projection years are determined using a HCR
-                                t_spawn = t_spawn # Spawn timing
+                                t_spawn = t_spawn, # Spawn timing
+                                n_seas = n_seas # number of seasons
 )
 
 combined_ssb <- cbind(mlt_rg_sable_rep$SSB[1,,-62], out$proj_SSB[1,,]) # removing terminal year becauase repeated in projection calculations
@@ -424,7 +431,7 @@ ggplot(combined_ssb_df, aes(x = Year + 1959, y = SSB, color = factor(Region))) +
   theme(legend.position = 'none')
 dev.off()
 
-combined_catch <- cbind(apply(mlt_rg_sable_rep$PredCatch[1,,,,], c(1,2), sum), apply(out$proj_Catch[1,,,,], c(1,2), sum))
+combined_catch <- cbind(apply(mlt_rg_sable_rep$PredCatch[1,,-62,,], c(1,2), sum), apply(out$proj_Catch[1,,,,], c(1,2), sum)) # removing terminal year becauase repeated in projection calculations
 combined_catch_df <- reshape2::melt(combined_catch) %>%
   rename(Region = Var1, Year = Var2, Catch = value)
 
@@ -469,7 +476,7 @@ for(y in 1:n_proj_yrs) fish_sel[,,y,,,,] <- sgl_rg_sable_rep$fish_sel[,,length(s
 Movement <- array(rep(sgl_rg_sable_rep$Movement[,,,length(sgl_rg_sable_data$years),,,], each = n_proj_yrs), dim = c(n_pop, n_regions, n_regions, n_seas, n_proj_yrs, n_ages, n_sexes)) # movement
 terminal_F <- array(sgl_rg_sable_rep$Fmort[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
 natmort <- array(sgl_rg_sable_rep$natmort[,,length(sgl_rg_sable_data$years),,], dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes)) # natural mortality
-recruitment <- array(sgl_rg_sable_rep$Rec[,,20:(length(sgl_rg_sable_data$years) - 2)], dim = c(n_pop, n_regions, length(20:length(sgl_rg_sable_data$years) - 2))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
+recruitment <- array(sgl_rg_sable_rep$Rec[,,20:(length(sgl_rg_sable_data$years) - 2)], dim = c(n_pop, n_regions, length(20:(length(sgl_rg_sable_data$years) - 2)))) # recruitment values to use for mean recruitment calculations or inverse gaussian parameterization
 sexratio <- array(0.5, dim = c(n_pop, n_regions, n_proj_yrs, n_sexes)) # recruitment sex ratio
 
 # Define the F used for each scenario

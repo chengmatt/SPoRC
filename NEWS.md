@@ -72,6 +72,7 @@
 * Improved Newton refinement in `fit_model` by obtaining the Hessian directly from the AD tape rather than finite differencing.
 * Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.
 * Added OSA residuals for time-series observations, compositions, and tagging data.
+* Added `data$extra_nll`, a likelihood from outside the package: a function `(pars, env)` whose value is added to the joint likelihood (reported as `extra_nLL`), where `env` is the objective's environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, ...).
 
 ## Improvements
 - Numeric and character codes are both accepted for simulator dynamics, matching the estimation model.

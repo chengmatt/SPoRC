@@ -3204,6 +3204,12 @@ SPoRC_rtmb = function(pars, data) {
     dsem_nLL +                                 # Dynamic structural equation model density
     dsem_obs_nLL                               # Covariates observed with error
 
+  # A likelihood from outside the package: data$extra_nll(pars, env), with env this function's environment, so it can
+  # use anything the model has computed
+  extra_nLL = 0
+  if(is.function(data$extra_nll)) extra_nLL = data$extra_nll(pars, environment())
+  jnLL = jnLL + extra_nLL
+
   # Report Section ----------------------------------------------------------
   ## Biological Processes ----------------------------------------------------
   RTMB::REPORT(R0)
@@ -3381,6 +3387,7 @@ SPoRC_rtmb = function(pars, data) {
   RTMB::REPORT(rec_prop_nLL)
   RTMB::REPORT(dsem_nLL)
   RTMB::REPORT(dsem_obs_nLL)
+  RTMB::REPORT(extra_nLL)
   RTMB::REPORT(jnLL)
 
   ## Derived Quantities ------------------------------------------------------

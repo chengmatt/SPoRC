@@ -285,11 +285,16 @@ input_list$data$ISS_FishAgeComps[2, , , , ] <- 20  # AI
 input_list$data$ISS_FishAgeComps[3, , , , ] <- 14  # WGOA
 input_list$data$ISS_FishAgeComps[4, , , , ] <- 18  # CGOA
 input_list$data$ISS_FishAgeComps[5, , , , ] <- 18  # EGOA
-input_list$data$ISS_FishLenComps[1, , , , ] <- 12  # BS
-input_list$data$ISS_FishLenComps[2, , , , ] <- 12  # AI
-input_list$data$ISS_FishLenComps[3, , , , ] <-  7  # WGOA
-input_list$data$ISS_FishLenComps[4, , , , ] <-  7  # CGOA
-input_list$data$ISS_FishLenComps[5, , , , ] <-  7  # EGOA
+input_list$data$ISS_FishLenComps[1, , , , 1] <- 12  # BS, fixed gear
+input_list$data$ISS_FishLenComps[2, , , , 1] <- 12  # AI
+input_list$data$ISS_FishLenComps[3, , , , 1] <-  7  # WGOA
+input_list$data$ISS_FishLenComps[4, , , , 1] <-  7  # CGOA
+input_list$data$ISS_FishLenComps[5, , , , 1] <-  7  # EGOA
+input_list$data$ISS_FishLenComps[1, , , , 2] <- 24  # BS, trawl gear
+input_list$data$ISS_FishLenComps[2, , , , 2] <-  8  # AI
+input_list$data$ISS_FishLenComps[3, , , , 2] <-  4  # WGOA
+input_list$data$ISS_FishLenComps[4, , , , 2] <-  4  # CGOA
+input_list$data$ISS_FishLenComps[5, , , , 2] <-  4  # EGOA
 
 data <- input_list$data
 parameters <- input_list$par
@@ -333,7 +338,7 @@ ggplot2::ggsave(
 # Movement -------------------------------------------------------------------
 # Movement is [pop, from, to, year, season, age, sex]; year and sex are constant
 # blocks here, so the first index of each stands for all of them.
-move_df <- reshape2::melt(rep$Movement[1, , , 1, 1, , 1]) %>%
+move_df <- reshape2::melt(unname(rep$Movement[1, , , 1, 1, , 1])) %>% # unname so melt gives Var1..Var3, not the report's dimnames
   dplyr::rename(From = Var1, To = Var2, Age = Var3) %>%
   dplyr::filter(Age %in% c(6, 7, 16)) %>%
   dplyr::mutate(dplyr::across(c(From, To), ~ factor(region_lab[.x], levels = region_lvl)),
@@ -358,7 +363,7 @@ ggplot2::ggsave(
 
 cat("\n=== Regional recruitment apportionment ===\n")
 print(data.frame(Region = region_lvl,
-                 proportion = as.vector(rep$Rec_prop[1, ])),
+                 proportion = as.vector(rep$rec_region_prop[1, ])),
       row.names = FALSE, digits = 3)
 
 cat("\n=== Residency by age block (diagonal of the movement matrix) ===\n")

@@ -70,7 +70,8 @@ jnLL_terms <- list(
   TagRep_nLL                   = list(weight = NA, mode = "scalar"),
   fish_q_nLL                   = list(weight = NA, mode = "scalar"),
   srv_q_nLL                    = list(weight = NA, mode = "scalar"),
-  rec_prop_nLL                 = list(weight = NA, mode = "scalar")
+  rec_prop_nLL                 = list(weight = NA, mode = "scalar"),
+  extra_nLL                    = list(weight = NA, mode = "scalar")
 )
 
 

@@ -549,11 +549,19 @@ input_list$data$ISS_FishAgeComps[3,,,,] <- 14  # WGOA
 input_list$data$ISS_FishAgeComps[4,,,,] <- 18  # CGOA
 input_list$data$ISS_FishAgeComps[5,,,,] <- 18  # EGOA
 
-input_list$data$ISS_FishLenComps[1,,,,] <- 12  # BS
-input_list$data$ISS_FishLenComps[2,,,,] <- 12  # AI
-input_list$data$ISS_FishLenComps[3,,,,] <-  7  # WGOA
-input_list$data$ISS_FishLenComps[4,,,,] <-  7  # CGOA
-input_list$data$ISS_FishLenComps[5,,,,] <-  7  # EGOA
+# fixed gear lengths
+input_list$data$ISS_FishLenComps[1,,,,1] <- 12  # BS
+input_list$data$ISS_FishLenComps[2,,,,1] <- 12  # AI
+input_list$data$ISS_FishLenComps[3,,,,1] <-  7  # WGOA
+input_list$data$ISS_FishLenComps[4,,,,1] <-  7  # CGOA
+input_list$data$ISS_FishLenComps[5,,,,1] <-  7  # EGOA
+
+# trawl gear lengths
+input_list$data$ISS_FishLenComps[1,,,,2] <- 24  # BS
+input_list$data$ISS_FishLenComps[2,,,,2] <-  8  # AI
+input_list$data$ISS_FishLenComps[3,,,,2] <-  4  # WGOA
+input_list$data$ISS_FishLenComps[4,,,,2] <-  4  # CGOA
+input_list$data$ISS_FishLenComps[5,,,,2] <-  4  # EGOA
 ```
 
 ## Fitting

@@ -273,16 +273,6 @@ fish_selex_prior <- cbind(
   sd = 3                                                                       # All selex sd = 5
 )
 
-fish_selex_prior_tf <- fish_selex_prior %>%                                    # set tighter selex prior for TF
-  dplyr::filter((fleet == 2 & par == 1)) %>%
-  dplyr::mutate(mu = 2, sd = 1) %>%
-  dplyr::full_join(fish_selex_prior %>%  dplyr::filter(!(fleet == 2 & par == 1 )))
-
-fish_selex_prior_tf <- fish_selex_prior_tf %>%                                    # set tighter selex prior for TF
-  dplyr::filter((fleet == 2 & par == 2)) %>%
-  dplyr::mutate(mu = 5, sd = 2) %>%
-  dplyr::full_join(fish_selex_prior_tf %>%  dplyr::filter(!(fleet == 2 & par == 2)))
-
 input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
                                       # Model options
@@ -439,18 +429,18 @@ data$ISS_FishAgeComps[4,,,,] <- 18  # CGOA
 data$ISS_FishAgeComps[5,,,,] <- 18  # EGOA
 
 # Fishery Lengths - Fixed Gear
-data$ISS_FishLenComps[1,,,,] <- 12  # BS
-data$ISS_FishLenComps[2,,,,] <- 12  # AI
-data$ISS_FishLenComps[3,,,,] <-  7  # WGOA
-data$ISS_FishLenComps[4,,,,] <-  7  # CGOA
-data$ISS_FishLenComps[5,,,,] <-  7  # EGOA
+data$ISS_FishLenComps[1,,,,1] <- 12  # BS
+data$ISS_FishLenComps[2,,,,1] <- 12  # AI
+data$ISS_FishLenComps[3,,,,1] <-  7  # WGOA
+data$ISS_FishLenComps[4,,,,1] <-  7  # CGOA
+data$ISS_FishLenComps[5,,,,1] <-  7  # EGOA
 
 # Fishery Lengths - Trawl Gear
-data$ISS_FishLenComps[1,,,,] <- 24  # BS
-data$ISS_FishLenComps[2,,,,] <- 8  # AI
-data$ISS_FishLenComps[3,,,,] <-  4  # WGOA
-data$ISS_FishLenComps[4,,,,] <-  4  # CGOA
-data$ISS_FishLenComps[5,,,,] <-  4  # EGOA
+data$ISS_FishLenComps[1,,,,2] <- 24  # BS
+data$ISS_FishLenComps[2,,,,2] <-  8  # AI
+data$ISS_FishLenComps[3,,,,2] <-  4  # WGOA
+data$ISS_FishLenComps[4,,,,2] <-  4  # CGOA
+data$ISS_FishLenComps[5,,,,2] <-  4  # EGOA
 
 # Map off early delta for fishery
 map_fish_fixed <- array(mapping$fish_fixed_sel_pars, dim = dim(parameters$fish_fixed_sel_pars))

@@ -73,9 +73,9 @@ test_that("a long projection under the control rule settles at the global MSY re
   terminal_dmr <- array(mlt_rg_sable_rep$dmr[,length(mlt_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal dmr
 
   # Natural Mortality
-  natmort_slice <- mlt_rg_sable_rep$natmort[,, length(mlt_rg_sable_data$years), , ]  # [n_pop, n_regions, n_ages, n_sexes]
+  natmort_slice <- mlt_rg_sable_rep$natmort[,, length(mlt_rg_sable_data$years), 1, , ]  # [n_pop, n_regions, n_ages, n_sexes], season 1
   natmort <- array(rep(natmort_slice, each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
-  # packaged report predates seasonal M, so repeat it over seasons
+  # M is constant within the year, so repeat season 1 over seasons
   natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
 
   # Recruitment

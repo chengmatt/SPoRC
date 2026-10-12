@@ -273,16 +273,6 @@ fish_selex_prior <- cbind(
   sd = 3                                                                       # All selex sd = 5
 )
 
-fish_selex_prior_tf <- fish_selex_prior %>%                                    # set tighter selex prior for TF
-  dplyr::filter((fleet == 2 & par == 1)) %>%
-  dplyr::mutate(mu = 2, sd = 1) %>%
-  dplyr::full_join(fish_selex_prior %>%  dplyr::filter(!(fleet == 2 & par == 1 )))
-
-fish_selex_prior_tf <- fish_selex_prior_tf %>%                                    # set tighter selex prior for TF
-  dplyr::filter((fleet == 2 & par == 2)) %>%
-  dplyr::mutate(mu = 5, sd = 2) %>%
-  dplyr::full_join(fish_selex_prior_tf %>%  dplyr::filter(!(fleet == 2 & par == 2)))
-
 input_list <- Setup_Mod_Fishsel_and_Q(input_list = input_list,
 
                                       # Model options
@@ -431,20 +421,22 @@ mapping <- input_list$map
 # Survey Ages (~100 total across all regions)
 data$ISS_SrvAgeComps[] <- 33
 
+# Fishery comps: five region values summed over BS, AI, and WGOA for region 1
+
 # Fishery Ages
-data$ISS_FishAgeComps[1,,,,] <- 25  # BS
-data$ISS_FishAgeComps[2,,,,] <- 25  # AI
-data$ISS_FishAgeComps[3,,,,] <- 50  # GOA
+data$ISS_FishAgeComps[1,,,,] <- 59  # BS_AI_WGOA
+data$ISS_FishAgeComps[2,,,,] <- 18  # CGOA
+data$ISS_FishAgeComps[3,,,,] <- 18  # EGOA
 
 # Fishery Lengths - Fixed Gear
-data$ISS_FishLenComps[1,,,,1] <- 13  # BS
-data$ISS_FishLenComps[2,,,,1] <- 13  # AI
-data$ISS_FishLenComps[3,,,,1] <- 18  # GOA
+data$ISS_FishLenComps[1,,,,1] <- 31  # BS_AI_WGOA
+data$ISS_FishLenComps[2,,,,1] <-  7  # CGOA
+data$ISS_FishLenComps[3,,,,1] <-  7  # EGOA
 
 # Fishery Lengths - Trawl Gear
-data$ISS_FishLenComps[1,,,,1] <- 25  # BS
-data$ISS_FishLenComps[2,,,,1] <- 10  # AI
-data$ISS_FishLenComps[3,,,,1] <- 10  # GOA
+data$ISS_FishLenComps[1,,,,2] <- 36  # BS_AI_WGOA
+data$ISS_FishLenComps[2,,,,2] <-  4  # CGOA
+data$ISS_FishLenComps[3,,,,2] <-  4  # EGOA
 
 # Map off early delta for fishery
 map_fish_fixed <- array(mapping$fish_fixed_sel_pars, dim = dim(parameters$fish_fixed_sel_pars))

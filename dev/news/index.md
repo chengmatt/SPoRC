@@ -199,6 +199,11 @@
   for OSA residuals.
 - Added OSA residuals for time-series observations, compositions, and
   tagging data.
+- Added `data$extra_nll`, a likelihood from outside the package: a
+  function `(pars, env)` whose value is added to the joint likelihood
+  (reported as `extra_nLL`), where `env` is the objective’s environment,
+  so the function can read anything the model computes (movement,
+  mortality, numbers at age, spawning biomass, selectivities, …).
 
 ### Improvements
 

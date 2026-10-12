@@ -132,6 +132,7 @@
 <li>Improved Newton refinement in <code>fit_model</code> by obtaining the Hessian directly from the AD tape rather than finite differencing.</li>
 <li>Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.</li>
 <li>Added OSA residuals for time-series observations, compositions, and tagging data.</li>
+<li>Added <code>data$extra_nll</code>, a likelihood from outside the package: a function <code>(pars, env)</code> whose value is added to the joint likelihood (reported as <code>extra_nLL</code>), where <code>env</code> is the objective’s environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, …).</li>
 </ul></div>
 </div>
 <div class="section level3">

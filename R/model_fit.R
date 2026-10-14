@@ -125,7 +125,7 @@ fit_model <- function(
 
     # newton steps
     tryCatch(expr =
-               for(i in 1:newton_loops) {
+               for(i in seq_len(newton_loops)) { # 1:0 would run two steps when asked for none
                  g = as.numeric(obj$gr(optim$par))
 
                  # the tape gives the Hessian exactly in one call; optimHess

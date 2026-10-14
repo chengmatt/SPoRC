@@ -18,10 +18,12 @@ jitter_start_values(obj, par_vec, sd, jitter_random)
 \item{jitter_random}{Whether the random effects are perturbed as well.}
 }
 \value{
-A list with \code{fixed}, the jittered fixed-effect vector, and
+A list with \code{fixed}, the jittered fixed-effect vector;
   \code{random}, the random-effect starting values in \code{obj$env$random}
   order, jittered when \code{jitter_random = TRUE} and taken straight from
-  \code{par_vec} otherwise. Length zero when the model has no random effects.
+  \code{par_vec} otherwise, and of length zero when the model has no random
+  effects; and \code{joint}, the two combined into one vector in
+  \code{obj$env$par} order.
 }
 \description{
 \code{nlminb()} only ever sees the fixed effects, so a jittered random effect

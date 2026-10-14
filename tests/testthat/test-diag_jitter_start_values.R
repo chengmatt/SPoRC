@@ -75,6 +75,22 @@ test_that("jitter_start_values() returns no random values when the model has no 
   out <- jitter_start_values(obj, par_vec = NULL, sd = 0.1, jitter_random = TRUE)
   expect_length(out$fixed, length(obj$par))
   expect_length(out$random, 0)
+  expect_equal(unname(out$joint), unname(out$fixed)) # no random effects, so the joint start is the fixed one
+})
+
+test_that("jitter_start_values() puts the fixed and random starts back together in tape order", {
+
+  obj <- make_toy_re_obj()
+  rand_idx <- obj$env$random
+
+  out <- jitter_start_values(obj, par_vec = NULL, sd = 0.1, jitter_random = TRUE)
+  expect_equal(names(out$joint), names(obj$env$par))
+  expect_equal(unname(out$joint[-rand_idx]), unname(out$fixed))
+  expect_equal(unname(out$joint[rand_idx]), unname(out$random))
+
+  # the joint start passed back with sd = 0 comes out unchanged, which is what lets do_jitter repeat a run
+  again <- jitter_start_values(obj, par_vec = out$joint, sd = 0, jitter_random = TRUE)
+  expect_equal(again$joint, out$joint)
 })
 
 test_that("the drawn random effects can be seeded into last.par, where the inner solve starts", {

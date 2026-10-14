@@ -139,9 +139,9 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
   })
 
   # Test jitter analysis
-  test_that("do_jitter runs", {
+  test_that("do_jitter runs, and returns each run's starting values when asked", {
     jit_df <- do_jitter(data, parameters, mapping, NULL, sd = 0.1, n_jitter = 1, do_par = FALSE)
-    jit_par_df <- do_jitter(
+    jit_par <- do_jitter(
       data = data,
       parameters = parameters,
       mapping = mapping,
@@ -149,10 +149,13 @@ test_that("Diagnostic and utility functions run on fitted dusky model", {
       sd = 0.1,
       n_jitter = 1,
       do_par = TRUE,
-      n_cores = 1
+      n_cores = 1,
+      return_start_values = TRUE
     )
-    expect_type(jit_df, "list")
-    expect_type(jit_par_df, "list")
+    expect_s3_class(jit_df, "data.frame") # the default return is the data frame alone, as before the flag
+    expect_s3_class(jit_par$jitter_df, "data.frame")
+    expect_equal(nrow(jit_par$start_values), 1) # one row per jitter
+    expect_equal(colnames(jit_par$start_values), names(dusky_rtmb_model$env$par)) # joint vector, named by parameter
   })
 
   # Test francis

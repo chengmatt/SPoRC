@@ -958,7 +958,7 @@ local_Fmsy_sglpop <- function(pars, data) {
   # define initial guess to solve for equilibrium recruitment from origin region
   Req_o = R0 * rec_region_prop
 
-  for(nit in 1:newton_steps) {
+  for(nit in seq_len(newton_steps)) {
     # compute equilibrium spawning biomass (SSBR * Req) in destination region
     x_vec = as.numeric(t(SB_fished_mat) %*% Req_o)  # function of equilibrium recruitment in origin region (what we are solving for)
     g_vec = equil_rec_ssb(x_vec, S0_d, R0_d, h, rec_model) # equilibrium recruitment in destination region
@@ -1418,7 +1418,7 @@ local_Fmsy_multipop <- function(pars, data) {
   # define initial guess to solve for equilibrium recruitment from origin region
   Req_o <- R0
 
-  for(nit in 1:newton_steps) {
+  for(nit in seq_len(newton_steps)) {
 
     # Effective fished SSB at each pop's natal region
     # divide stray contributions by n_pop_in_region to preserve mass balance

@@ -15,7 +15,8 @@ do_jitter(
   do_par,
   n_cores,
   par_vec = NULL,
-  jitter_random = FALSE
+  jitter_random = FALSE,
+  return_start_values = FALSE
 )
 }
 \arguments{
@@ -50,12 +51,28 @@ alongside the fixed effects. Only the fixed effects are searched by
 Laplace solve and check whether it settles on the same modes. Either way the
 inner solve starts from the random values in \code{par_vec}, or from the
 model's own start when \code{par_vec} holds none. Default \code{FALSE}.}
+
+\item{return_start_values}{Logical, whether the starting values of each run
+are returned with the results. Default \code{FALSE}. \code{TRUE} returns a
+list of \code{jitter_df} and \code{start_values}, described under Value.}
 }
 \value{
 A data frame of the jitter results: the spawning stock biomass and
   recruitment series of each run, with its jitter index, whether the Hessian
   was positive definite, the joint negative log-likelihood, and the maximum
-  absolute gradient of the fixed effects.
+  absolute gradient of the fixed effects. Under
+  \code{return_start_values = TRUE}, a list of two elements:
+  \describe{
+    \item{\code{jitter_df}}{The data frame above.}
+    \item{\code{start_values}}{A matrix of the values each run started from,
+      with one row per jitter (row \code{i} is \code{jitter == i}) and one
+      column per element of the model's joint parameter vector
+      (\code{obj$env$par}), named by parameter. Random effects sit in their
+      own columns, the ones named in \code{random}, and hold the unperturbed
+      start when \code{jitter_random = FALSE}. Passing row \code{i} back as
+      \code{par_vec} with \code{sd = 0} and \code{n_jitter = 1} repeats run
+      \code{i}.}
+  }
 }
 \description{
 Tests how sensitive the optimization is to its starting values by perturbing
@@ -63,7 +80,9 @@ the parameter vector with additive normal noise, refitting, and recording the
 resulting series and diagnostics. Each iteration perturbs the fixed effects,
 and the random effects too under \code{jitter_random = TRUE}, optimizes with
 \code{stats::nlminb()}, optionally takes extra Newton steps, and extracts the
-reported quantities. Iterations run sequentially or in parallel through
+reported quantities. The starting values of every iteration can be returned
+alongside the results with \code{return_start_values = TRUE}, so any run can be
+inspected or repeated. Iterations run sequentially or in parallel through
 \code{future}.
 }
 \seealso{

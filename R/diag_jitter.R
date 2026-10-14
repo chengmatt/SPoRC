@@ -17,10 +17,12 @@
 #' @param sd Standard deviation of the additive normal draws.
 #' @param jitter_random Whether the random effects are perturbed as well.
 #'
-#' @return A list with \code{fixed}, the jittered fixed-effect vector, and
+#' @return A list with \code{fixed}, the jittered fixed-effect vector;
 #'   \code{random}, the random-effect starting values in \code{obj$env$random}
 #'   order, jittered when \code{jitter_random = TRUE} and taken straight from
-#'   \code{par_vec} otherwise. Length zero when the model has no random effects.
+#'   \code{par_vec} otherwise, and of length zero when the model has no random
+#'   effects; and \code{joint}, the two combined into one vector in
+#'   \code{obj$env$par} order.
 #' @keywords internal
 #' @importFrom stats rnorm
 jitter_start_values <- function(obj, par_vec, sd, jitter_random) {
@@ -55,7 +57,16 @@ jitter_start_values <- function(obj, par_vec, sd, jitter_random) {
             else if(isTRUE(jitter_random)) rand_start + stats::rnorm(length(rand_start), 0, sd)
             else rand_start
 
-  list(fixed = fixed, random = random)
+  # the whole start in tape order, so passing it back as par_vec with sd = 0 reruns this draw
+  joint <- obj$env$par # keeps the parameter names
+  if(is.null(rand_idx)) {
+    joint[] <- fixed
+  } else {
+    joint[-rand_idx] <- fixed
+    joint[rand_idx] <- random
+  }
+
+  list(fixed = fixed, random = random, joint = joint)
 }
 
 #' Run Jitter Analysis for Model Diagnostics
@@ -65,7 +76,9 @@ jitter_start_values <- function(obj, par_vec, sd, jitter_random) {
 #' resulting series and diagnostics. Each iteration perturbs the fixed effects,
 #' and the random effects too under \code{jitter_random = TRUE}, optimizes with
 #' \code{stats::nlminb()}, optionally takes extra Newton steps, and extracts the
-#' reported quantities. Iterations run sequentially or in parallel through
+#' reported quantities. The starting values of every iteration can be returned
+#' alongside the results with \code{return_start_values = TRUE}, so any run can be
+#' inspected or repeated. Iterations run sequentially or in parallel through
 #' \code{future}.
 #'
 #' @param data List of model data for the \code{RTMB} objective function.
@@ -89,11 +102,26 @@ jitter_start_values <- function(obj, par_vec, sd, jitter_random) {
 #'   Laplace solve and check whether it settles on the same modes. Either way the
 #'   inner solve starts from the random values in \code{par_vec}, or from the
 #'   model's own start when \code{par_vec} holds none. Default \code{FALSE}.
+#' @param return_start_values Logical, whether the starting values of each run
+#'   are returned with the results. Default \code{FALSE}. \code{TRUE} returns a
+#'   list of \code{jitter_df} and \code{start_values}, described under Value.
 #'
 #' @return A data frame of the jitter results: the spawning stock biomass and
 #'   recruitment series of each run, with its jitter index, whether the Hessian
 #'   was positive definite, the joint negative log-likelihood, and the maximum
-#'   absolute gradient of the fixed effects.
+#'   absolute gradient of the fixed effects. Under
+#'   \code{return_start_values = TRUE}, a list of two elements:
+#'   \describe{
+#'     \item{\code{jitter_df}}{The data frame above.}
+#'     \item{\code{start_values}}{A matrix of the values each run started from,
+#'       with one row per jitter (row \code{i} is \code{jitter == i}) and one
+#'       column per element of the model's joint parameter vector
+#'       (\code{obj$env$par}), named by parameter. Random effects sit in their
+#'       own columns, the ones named in \code{random}, and hold the unperturbed
+#'       start when \code{jitter_random = FALSE}. Passing row \code{i} back as
+#'       \code{par_vec} with \code{sd = 0} and \code{n_jitter = 1} repeats run
+#'       \code{i}.}
+#'   }
 #'
 #' @import RTMB
 #' @import future
@@ -115,7 +143,8 @@ do_jitter <- function(data,
                       do_par,
                       n_cores,
                       par_vec = NULL,
-                      jitter_random = FALSE
+                      jitter_random = FALSE,
+                      return_start_values = FALSE
                       ) {
 
   jitter_all <- data.frame()
@@ -131,6 +160,7 @@ do_jitter <- function(data,
   if(do_par == FALSE) {
 
     par_start <- obj$env$par # the model's own start, before any iteration moves the tape
+    start_values <- matrix(NA, n_jitter, length(par_start), dimnames = list(NULL, names(par_start))) # jitter by joint par
 
     for(i in 1:n_jitter) {
 
@@ -142,6 +172,7 @@ do_jitter <- function(data,
 
       # jitter starting values (additive normal draws)
       jit <- jitter_start_values(obj = obj, par_vec = par_vec, sd = sd, jitter_random = jitter_random)
+      start_values[i, ] <- jit$joint # record where this run starts
 
       # the inner Laplace solve starts from last.par, so the random start goes there,
       # whether it came from par_vec, the model's own start, or a draw around either
@@ -159,7 +190,7 @@ do_jitter <- function(data,
       # newton steps
       tryCatch(
         expr =
-                 for(j in 1:n_newton_loops) {
+                 for(j in seq_len(n_newton_loops)) { # 1:0 would run two steps when asked for none
                    g = as.numeric(obj$gr(optim$par))
                    h = optimHess(optim$par, fn = obj$fn, gr = obj$gr)
                    optim$par = optim$par - solve(h,g)
@@ -197,7 +228,7 @@ do_jitter <- function(data,
 
       p <- progressr::progressor(along = 1:n_jitter) # progress bar
 
-      jitter_all <- future.apply::future_lapply(1:n_jitter, function(i) {
+      jitter_results <- future.apply::future_lapply(1:n_jitter, function(i) {
 
         # make obj
         obj <- RTMB::MakeADFun(
@@ -225,7 +256,7 @@ do_jitter <- function(data,
 
         # Newton steps
         tryCatch({
-          for (j in 1:n_newton_loops) {
+          for(j in seq_len(n_newton_loops)) { # 1:0 would run two steps when asked for none
             g <- as.numeric(obj$gr(optim$par))
             h <- optimHess(optim$par, fn = obj$fn, gr = obj$gr)
             optim$par <- optim$par - solve(h, g)
@@ -251,16 +282,31 @@ do_jitter <- function(data,
 
         p() # update progress
 
-        jitter_ts_df
+        list(df = jitter_ts_df, start = jit$joint)
 
-      }, future.seed = TRUE) %>%
-        bind_rows() # bine rows to combine results
+      }, future.seed = TRUE)
 
       future::plan(future::sequential)  # Reset
 
     })
 
+    # collate results
+    start_values <- matrix(NA, n_jitter, length(obj$env$par), dimnames = list(NULL, names(obj$env$par))) # jitter by joint par
+    for(i in 1:n_jitter) {
+      jitter_all <- rbind(jitter_all, jitter_results[[i]]$df) # bind dataframes
+      start_values[i, ] <- jitter_results[[i]]$start # where run i started
+    } # end i loop
+
   } # end dor par
 
-  return(jitter_all)
+  # return starting values
+  if(return_start_values) {
+    return(list(
+      jitter_df    = jitter_all,
+      start_values = start_values
+    ))
+  } else {
+    return(jitter_all)
+  }
+
 }

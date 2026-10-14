@@ -25,13 +25,29 @@ test_that("a likelihood profile over a dsem coefficient runs and bowls", {
 
 })
 
-test_that("jitter and Francis reweighting run on a dsem model", {
+test_that("Francis reweighting runs on a dsem model", {
 
   d <- dsem_diag_setup()
-  jit <- do_jitter(d$data, d$par, d$map, random = dsem_random, sd = 0.1, n_jitter = 2, n_newton_loops = 0, do_par = FALSE)
-  expect_true(!is.null(jit))
   fr <- run_francis(d$data, d$par, d$map, random = dsem_random, n_francis_iter = 1, newton_loops = 0)
   expect_true(!is.null(fr))
+
+})
+
+test_that("jitter runs on a dsem model, and a run's returned start, passed back with sd = 0, repeats that run", {
+
+  d <- dsem_diag_setup()
+  set.seed(5)
+  jit <- do_jitter(d$data, d$par, d$map, random = dsem_random, sd = 0.1, n_jitter = 2, n_newton_loops = 0,
+                   do_par = FALSE, jitter_random = TRUE, return_start_values = TRUE)
+  start <- jit$start_values
+  expect_equal(nrow(start), 2)
+  expect_true(any(colnames(start) %in% dsem_random)) # random effects sit in their own columns
+  expect_false(isTRUE(all.equal(start[1, ], start[2, ]))) # each run drew its own start
+
+  rerun <- do_jitter(d$data, d$par, d$map, random = dsem_random, sd = 0, n_jitter = 1, n_newton_loops = 0,
+                     do_par = FALSE, par_vec = start[2, ], return_start_values = TRUE)
+  expect_equal(rerun$start_values[1, ], start[2, ])
+  expect_equal(unique(rerun$jitter_df$jnLL), unique(jit$jitter_df$jnLL[jit$jitter_df$jitter == 2]))
 
 })
 

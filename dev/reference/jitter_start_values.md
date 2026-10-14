@@ -33,7 +33,8 @@ jitter_start_values(obj, par_vec, sd, jitter_random)
 
 ## Value
 
-A list with `fixed`, the jittered fixed-effect vector, and `random`, the
+A list with `fixed`, the jittered fixed-effect vector; `random`, the
 random-effect starting values in `obj$env$random` order, jittered when
-`jitter_random = TRUE` and taken straight from `par_vec` otherwise.
-Length zero when the model has no random effects.
+`jitter_random = TRUE` and taken straight from `par_vec` otherwise, and
+of length zero when the model has no random effects; and `joint`, the
+two combined into one vector in `obj$env$par` order.

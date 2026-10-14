@@ -6,8 +6,10 @@ and recording the resulting series and diagnostics. Each iteration
 perturbs the fixed effects, and the random effects too under
 `jitter_random = TRUE`, optimizes with
 [`stats::nlminb()`](https://rdrr.io/r/stats/nlminb.html), optionally
-takes extra Newton steps, and extracts the reported quantities.
-Iterations run sequentially or in parallel through `future`.
+takes extra Newton steps, and extracts the reported quantities. The
+starting values of every iteration can be returned alongside the results
+with `return_start_values = TRUE`, so any run can be inspected or
+repeated. Iterations run sequentially or in parallel through `future`.
 
 ## Usage
 
@@ -23,7 +25,8 @@ do_jitter(
   do_par,
   n_cores,
   par_vec = NULL,
-  jitter_random = FALSE
+  jitter_random = FALSE,
+  return_start_values = FALSE
 )
 ```
 
@@ -85,12 +88,32 @@ do_jitter(
   the random values in `par_vec`, or from the model's own start when
   `par_vec` holds none. Default `FALSE`.
 
+- return_start_values:
+
+  Logical, whether the starting values of each run are returned with the
+  results. Default `FALSE`. `TRUE` returns a list of `jitter_df` and
+  `start_values`, described under Value.
+
 ## Value
 
 A data frame of the jitter results: the spawning stock biomass and
 recruitment series of each run, with its jitter index, whether the
 Hessian was positive definite, the joint negative log-likelihood, and
-the maximum absolute gradient of the fixed effects.
+the maximum absolute gradient of the fixed effects. Under
+`return_start_values = TRUE`, a list of two elements:
+
+- `jitter_df`:
+
+  The data frame above.
+
+- `start_values`:
+
+  A matrix of the values each run started from, with one row per jitter
+  (row `i` is `jitter == i`) and one column per element of the model's
+  joint parameter vector (`obj$env$par`), named by parameter. Random
+  effects sit in their own columns, the ones named in `random`, and hold
+  the unperturbed start when `jitter_random = FALSE`. Passing row `i`
+  back as `par_vec` with `sd = 0` and `n_jitter = 1` repeats run `i`.
 
 ## See also
 

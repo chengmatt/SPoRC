@@ -834,7 +834,13 @@ model is optimized using three Newton loops, and parallel processing
 with 8 cores is used to enhance computational speed. We can then plot
 the jitter results to understand the number of times the model has
 converged, whether a better solution was achieved, and trajectories of
-spawning biomass and recruitment from these jitter results.
+spawning biomass and recruitment from these jitter results. Setting
+`return_start_values = TRUE` makes `do_jitter` return a list instead,
+with these results as `jitter_df` and the values each run started from
+as `start_values`, one row per jitter. If a run finds a lower negative
+log-likelihood than the fitted model, its row of `start_values` can be
+passed back to `do_jitter` as `par_vec` with `sd = 0` and `n_jitter = 1`
+to repeat that run.
 
 ``` r
 

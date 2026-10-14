@@ -4,13 +4,17 @@ the parameter vector with additive normal noise, refitting, and recording the
 resulting series and diagnostics. Each iteration perturbs the fixed effects,
 and the random effects too under jitter_random = TRUE, optimizes with
 stats::nlminb(), optionally takes extra Newton steps, and extracts the
-reported quantities. Iterations run sequentially or in parallel through
+reported quantities. The starting values of every iteration can be returned
+alongside the results with return_start_values = TRUE, so any run can be
+inspected or repeated. Iterations run sequentially or in parallel through
 future."><meta property="og:description" content="Tests how sensitive the optimization is to its starting values by perturbing
 the parameter vector with additive normal noise, refitting, and recording the
 resulting series and diagnostics. Each iteration perturbs the fixed effects,
 and the random effects too under jitter_random = TRUE, optimizes with
 stats::nlminb(), optionally takes extra Newton steps, and extracts the
-reported quantities. Iterations run sequentially or in parallel through
+reported quantities. The starting values of every iteration can be returned
+alongside the results with return_start_values = TRUE, so any run can be
+inspected or repeated. Iterations run sequentially or in parallel through
 future."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
@@ -71,7 +75,9 @@ the parameter vector with additive normal noise, refitting, and recording the
 resulting series and diagnostics. Each iteration perturbs the fixed effects,
 and the random effects too under <code>jitter_random = TRUE</code>, optimizes with
 <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb()</a></code>, optionally takes extra Newton steps, and extracts the
-reported quantities. Iterations run sequentially or in parallel through
+reported quantities. The starting values of every iteration can be returned
+alongside the results with <code>return_start_values = TRUE</code>, so any run can be
+inspected or repeated. Iterations run sequentially or in parallel through
 <code>future</code>.</p>
     </div>
 
@@ -88,7 +94,8 @@ reported quantities. Iterations run sequentially or in parallel through
 <span>  <span class="va">do_par</span>,</span>
 <span>  <span class="va">n_cores</span>,</span>
 <span>  par_vec <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  jitter_random <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  jitter_random <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  return_start_values <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -149,14 +156,34 @@ Laplace solve and check whether it settles on the same modes. Either way the
 inner solve starts from the random values in <code>par_vec</code>, or from the
 model's own start when <code>par_vec</code> holds none. Default <code>FALSE</code>.</p></dd>
 
+
+<dt id="arg-return-start-values">return_start_values<a class="anchor" aria-label="anchor" href="#arg-return-start-values"></a></dt>
+<dd><p>Logical, whether the starting values of each run
+are returned with the results. Default <code>FALSE</code>. <code>TRUE</code> returns a
+list of <code>jitter_df</code> and <code>start_values</code>, described under Value.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame of the jitter results: the spawning stock biomass and
   recruitment series of each run, with its jitter index, whether the Hessian
   was positive definite, the joint negative log-likelihood, and the maximum
-  absolute gradient of the fixed effects.</p>
-    </div>
+  absolute gradient of the fixed effects. Under
+  <code>return_start_values = TRUE</code>, a list of two elements:</p><dl><dt><code>jitter_df</code></dt>
+<dd><p>The data frame above.</p></dd>
+
+    <dt><code>start_values</code></dt>
+<dd><p>A matrix of the values each run started from,
+      with one row per jitter (row <code>i</code> is <code>jitter == i</code>) and one
+      column per element of the model's joint parameter vector
+      (<code>obj$env$par</code>), named by parameter. Random effects sit in their
+      own columns, the ones named in <code>random</code>, and hold the unperturbed
+      start when <code>jitter_random = FALSE</code>. Passing row <code>i</code> back as
+      <code>par_vec</code> with <code>sd = 0</code> and <code>n_jitter = 1</code> repeats run
+      <code>i</code>.</p></dd>
+
+
+</dl></div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p>Other Model Diagnostics:

@@ -95,10 +95,12 @@ there by the caller.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A list with <code>fixed</code>, the jittered fixed-effect vector, and
+    <p>A list with <code>fixed</code>, the jittered fixed-effect vector;
   <code>random</code>, the random-effect starting values in <code>obj$env$random</code>
   order, jittered when <code>jitter_random = TRUE</code> and taken straight from
-  <code>par_vec</code> otherwise. Length zero when the model has no random effects.</p>
+  <code>par_vec</code> otherwise, and of length zero when the model has no random
+  effects; and <code>joint</code>, the two combined into one vector in
+  <code>obj$env$par</code> order.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

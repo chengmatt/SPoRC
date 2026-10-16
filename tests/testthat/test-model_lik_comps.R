@@ -114,6 +114,23 @@ test_that("Get_Comp_Likelihoods evaluates every composition type and likelihood"
     expect_true(is.finite(res[1, 1]))
   })
 
+  test_that("with one region and one sex, the aggregated Dirichlet-multinomial matches the split one", {
+    # empty tail bins, where the composition constant matters most
+    Obs <- array(c(30, 25, 20, 15, 10, 0, 0), dim = c(1, 7, 1))
+    Exp <- array(exp(-0.4 * (1:7)), dim = c(1, 7, 1))
+    for (const_obs in 0:1) {
+      res <- sapply(0:1, function(ct) Get_Comp_Likelihoods(
+        Exp = Exp, Obs = Obs, ISS = 50, Wt_Mltnml = 1,
+        ln_theta_agg = log(0.5), ln_theta = log(0.5),
+        Comp_Type = ct, Likelihood_Type = 1,
+        n_regions = 1, n_model_bins = 7, n_obs_bins = 7, n_sexes = 1,
+        age_or_len = 0, AgeingError = diag(7), use = 1,
+        addtocomp = 1e-3, comp_const_obs = const_obs
+      )[1, 1])
+      expect_equal(res[1], res[2], label = sprintf("aggregated, comp_const_obs = %d", const_obs))
+    }
+  })
+
   # Split by Region and Sex --------------------------------------------------
 
   test_that("split by region and sex, the multinomial is finite in every cell that is fit", {

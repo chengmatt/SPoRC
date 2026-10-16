@@ -32,6 +32,17 @@
 #'   models that have not converged, where second derivatives can be undefined
 #'   at parameter values the objective and gradient still evaluate at. The
 #'   \code{nlminb} solution is kept in that case.
+#' @param newton_hessian Character. Where each refinement step's Hessian comes
+#'   from. \code{"exact"} (default) is the behaviour above. \code{"diff"}
+#'   differences the exact gradient (\code{\link[stats]{optimHess}}, steps of
+#'   1e-5), for models whose tape Hessian is too large to build, and in place of
+#'   the Newton step reruns \code{nlminb} with each parameter in its own
+#'   standard errors (the parameters scaled by the Cholesky factor of the
+#'   inverse Hessian). A differenced Hessian is not accurate enough for a raw
+#'   Newton step when the curvature spans many orders of magnitude, but it
+#'   makes the surface round for \code{nlminb}, which then converges in a few
+#'   iterations. The last Hessian is returned as \code{$hessian}, for
+#'   \code{RTMB::sdreport(obj, hessian.fixed = obj$hessian)}.
 #' @param silent Logical. If \code{TRUE}, suppresses RTMB and optimizer
 #'   console output. Default \code{FALSE}.
 #' @param do_optim Logical. If \code{TRUE} (default), runs \code{nlminb}
@@ -58,8 +69,10 @@
 #'   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
 #'   the bounds used), \code{$rep} (the model report evaluated at
 #'   \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
-#'   \code{$mapping}, \code{$random}, and \code{$provenance} (the package
-#'   version and commit that built the fit, see \code{\link{fit_provenance}}).
+#'   \code{$mapping}, \code{$random}, \code{$provenance} (the package
+#'   version and commit that built the fit, see \code{\link{fit_provenance}}),
+#'   and \code{$hessian} (the last refinement step's Hessian; \code{NULL} if
+#'   none was taken).
 #'
 #' @importFrom stats nlminb optimHess
 #' @export fit_model
@@ -76,6 +89,7 @@ fit_model <- function(
   mapping,
   random = NULL,
   newton_loops = 3,
+  newton_hessian = "exact",
   silent = FALSE,
   do_optim = TRUE,
   nlminb_control = list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-12),
@@ -124,9 +138,25 @@ fit_model <- function(
     )
 
     # newton steps
+    if(!newton_hessian %in% c("exact", "diff")) stop("newton_hessian must be exact or diff")
     tryCatch(expr =
                for(i in seq_len(newton_loops)) { # 1:0 would run two steps when asked for none
                  g = as.numeric(obj$gr(optim$par))
+
+                 # differenced Hessian: nlminb again with each parameter in its own standard errors, par + C y, where the
+                 # surface is round; the remaining gain is tiny, so a tight tolerance
+                 if(newton_hessian == "diff") {
+                   h = stats::optimHess(optim$par, fn = obj$fn, gr = obj$gr, control = list(ndeps = rep(1e-5, length(g))))
+                   if(!all(is.finite(h))) break
+                   obj$hessian = h
+                   C = t(chol(solve(h)))
+                   x0 = optim$par
+                   scaled = stats::nlminb(0 * x0, function(y) obj$fn(x0 + C %*% y), function(y) as.numeric(obj$gr(x0 + C %*% y) %*% C),
+                                          control = utils::modifyList(nlminb_control, list(rel.tol = 1e-14)))
+                   optim$par[] = pmax(lower, pmin(upper, as.numeric(x0 + C %*% scaled$par)))
+                   optim$objective = obj$fn(optim$par)
+                   next
+                 }
 
                  # the tape gives the Hessian exactly in one call; optimHess
                  # differences the gradient once per parameter
@@ -141,6 +171,7 @@ fit_model <- function(
                  # gradient still are, showing up as a non-finite Hessian
                  if(!all(is.finite(h))) break
 
+                 obj$hessian = h
                  new_par = optim$par - solve(h,g)
                  optim$par = pmax(lower, pmin(upper, new_par)) # keep Newton step within bounds
                  optim$objective = obj$fn(optim$par)

@@ -208,7 +208,8 @@ Get_Comp_Likelihoods = function(Exp,
     } # end if multinomial likelihood
 
     if(Likelihood_Type == 1) {
-      tmp_Obs = (Obs[1,,1]) / sum(Obs[1,,1]) # Normalize observed values
+      tmp_Obs = if(comp_const_obs == 1) (Obs[1,,1] + const) / sum(Obs[1,,1] + const) else Obs[1,,1] / sum(Obs[1,,1]) # Normalize observed values
+      tmp_Exp = (tmp_Exp + const) / sum(tmp_Exp + const) # Normalize expected values (lgamma can't take 0s)
       comp_nLL[1,1] = -1 * ddirmult(obs = tmp_Obs, pred = tmp_Exp, Ntotal = ISS[1,1], ln_theta = ln_theta_agg, TRUE) # Dirichlet Multinomial likelihood
     } # end if dirichlet multinomial
 

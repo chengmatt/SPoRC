@@ -70,6 +70,7 @@
 * Recruitment deviations under `RecDevs_model = "ar1"` are now mean unbiased, centered on minus half the stationary variance rather than on zero. A random walk takes no correction, since it has no stationary variance.
 * `Setup_Sim_Rec` gained `sigmaR_switch`, so the operating model reads the early and late recruitment sigma by year as the estimation model does. It previously used the late value in every year.
 * Improved Newton refinement in `fit_model` by obtaining the Hessian directly from the AD tape rather than finite differencing.
+* Added `newton_hessian` to `fit_model`. `"exact"` (the default) is the tape Hessian above. `"diff"` differences the exact gradient for models whose tape Hessian is too large to build, and in place of the Newton step reruns `nlminb` with each parameter in its own standard errors, which converges where a raw Newton step on a differenced Hessian goes astray. The last Hessian is returned as `$hessian` for `sdreport`.
 * Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.
 * Added OSA residuals for time-series observations, compositions, and tagging data.
 * Added `data$extra_nll`, a likelihood from outside the package: a function `(pars, env)` whose value is added to the joint likelihood (reported as `extra_nLL`), where `env` is the objective's environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, ...).
@@ -89,6 +90,7 @@
 - Fixed the time-varying selectivity smoothing penalty not being applied in the first year.
 - Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.
 - Fixed `do_runs_test()` returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.
+- Fixed the aggregated Dirichlet-multinomial composition likelihood (`_Type = 0`) not adding `addtocomp` to the expected and observed proportions.
 
 # version 1.1.0
 Release Date: 2026-3-31

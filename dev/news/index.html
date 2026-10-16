@@ -130,6 +130,7 @@
 <li>
 <code>Setup_Sim_Rec</code> gained <code>sigmaR_switch</code>, so the operating model reads the early and late recruitment sigma by year as the estimation model does. It previously used the late value in every year.</li>
 <li>Improved Newton refinement in <code>fit_model</code> by obtaining the Hessian directly from the AD tape rather than finite differencing.</li>
+<li>Added <code>newton_hessian</code> to <code>fit_model</code>. <code>"exact"</code> (the default) is the tape Hessian above. <code>"diff"</code> differences the exact gradient for models whose tape Hessian is too large to build, and in place of the Newton step reruns <code>nlminb</code> with each parameter in its own standard errors, which converges where a raw Newton step on a differenced Hessian goes astray. The last Hessian is returned as <code>$hessian</code> for <code>sdreport</code>.</li>
 <li>Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.</li>
 <li>Added OSA residuals for time-series observations, compositions, and tagging data.</li>
 <li>Added <code>data$extra_nll</code>, a likelihood from outside the package: a function <code>(pars, env)</code> whose value is added to the joint likelihood (reported as <code>extra_nLL</code>), where <code>env</code> is the objective’s environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, …).</li>
@@ -154,6 +155,7 @@
 <ul><li>Fixed the time-varying selectivity smoothing penalty not being applied in the first year.</li>
 <li>Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.</li>
 <li>Fixed <code><a href="../reference/do_runs_test.html">do_runs_test()</a></code> returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.</li>
+<li>Fixed the aggregated Dirichlet-multinomial composition likelihood (<code>_Type = 0</code>) not adding <code>addtocomp</code> to the expected and observed proportions.</li>
 </ul></div>
 </div>
     <div class="section level2">

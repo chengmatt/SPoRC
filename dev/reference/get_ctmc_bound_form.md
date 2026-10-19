@@ -12,8 +12,8 @@ get_ctmc_bound_form(x)
 
 - x:
 
-  The `ctmc_diffusion_bounds` value: the code `0`, `1` or `2`, or the
-  matching name `"none"`, `"softplus"` or `"upwind"`.
+  The `ctmc_diffusion_bounds` value: the code `0`, `1`, `2` or `3`, or
+  the matching name `"none"`, `"softplus"`, `"upwind"` or `"sg"`.
 
 ## Value
 

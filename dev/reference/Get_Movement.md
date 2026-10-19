@@ -134,7 +134,13 @@ Get_Movement(
   exchange rate and not only a smoothing constant; `"upwind"` (or `2`)
   is the finite volume upwind flux \\q = \theta_j + \max(d, 0)\\, which
   keeps diffusion whole and adds only the down-gradient half of the
-  taxis flux, so positivity never depends on the two cancelling.
+  taxis flux, so positivity never depends on the two cancelling; `"sg"`
+  (or `3`) is the Scharfetter-Gummel flux \\q = \theta_j B(-d /
+  \theta_j)\\ with \\B(x) = x / (e^x - 1)\\, which is positive and
+  smooth everywhere, the central difference \\\theta_j + d / 2\\ at
+  small \\d / \theta_j\\ and upwind at large, with no hinge, floor or
+  width, and a net flow along the edge of exactly \\d\\ when the
+  diffusion rates of its two ends are equal.
 
 - ctmc_diffusion_eps:
 

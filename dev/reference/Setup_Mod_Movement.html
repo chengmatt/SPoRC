@@ -259,7 +259,9 @@ matrix when taxis outweighs diffusion. <code>"softplus"</code> takes a softplus 
 \(\theta_j + d\) of width <code>ctmc_diffusion_eps</code>; <code>"upwind"</code> takes
 the finite volume flux \(\theta_j + \max(d, 0)\), which keeps diffusion
 whole and adds only the down-gradient taxis, so positivity never depends on
-the two cancelling.</p></dd>
+the two cancelling; <code>"sg"</code> takes the Scharfetter-Gummel flux
+\(\theta_j B(-d / \theta_j)\), \(B(x) = x / (e^x - 1)\), smooth and
+positive everywhere with no width to choose.</p></dd>
 
 
 <dt id="arg-ctmc-diffusion-eps">ctmc_diffusion_eps<a class="anchor" aria-label="anchor" href="#arg-ctmc-diffusion-eps"></a></dt>

@@ -201,6 +201,16 @@
   step reruns `nlminb` with each parameter in its own standard errors,
   which converges where a raw Newton step on a differenced Hessian goes
   astray. The last Hessian is returned as `$hessian` for `sdreport`.
+- Added `ctmc_diffusion_bounds = "sg"`, the Scharfetter-Gummel flux with
+  : diffusion and taxis go into one rate that is positive and smooth
+  everywhere, central at small taxis and upwind at large. It has none of
+  the softplus’s hinge, where an edge that taxis nearly cancels sits at
+  a bend of width `ctmc_diffusion_eps` that the optimiser crawls along,
+  nor its floor of `eps * log(2)`.
+- `fit_model` no longer takes a Newton step that raises the largest
+  absolute gradient. With an indefinite Hessian the step could leave the
+  `nlminb` optimum for a worse point; refinement now stops there
+  instead.
 - Added 95% confidence intervals for SDNR based on a chi-squared test
   for OSA residuals.
 - Added OSA residuals for time-series observations, compositions, and
@@ -224,11 +234,6 @@
 - Newton refinement in `fit_model` now takes its Hessian from the AD
   tape (`obj$he`) instead of finite-differencing, and stops early on a
   non-finite Hessian.
-- Declared the 59 data, parameter and column names that R CMD check
-  reported as undefined globals (conditional age at length, growth,
-  double normal selectivity, selected weight at age, initial deviation
-  penalties), and added a `.lintr.R` that follows the package coding
-  style (for developers).
 - Index ranges built from
   [`length()`](https://rdrr.io/r/base/length.html),
   [`nrow()`](https://rdrr.io/r/base/nrow.html),
@@ -242,22 +247,6 @@
   around them, blocks that sat 2 or 4 spaces off their braces are
   re-indented, and multi-line pipelines put each step on its own line
   (for developers).
-- `compResidual` is declared in Suggests and DESCRIPTION has a
-  BugReports link; the help pages for
-  [`Setup_Mod_Tagging()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Tagging.md)
-  and
-  [`osa_one_step_predict()`](https://chengmatt.github.io/SPoRC/dev/reference/osa_one_step_predict.md)
-  are regenerated, and
-  [`Get_Comp_Likelihoods()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Comp_Likelihoods.md)
-  no longer documents a `seas_agg` argument it does not take (for
-  developers).
-- Removed 25 values that were computed and never read, and a duplicated
-  `Mrate` entry in the closed loop report list; among them the
-  `tag_selex` and `tag_natmort` lookups in
-  [`condition_closed_loop_simulations()`](https://chengmatt.github.io/SPoRC/dev/reference/condition_closed_loop_simulations.md),
-  which never reached the tagging simulation. Seven optimizer,
-  [`tryCatch()`](https://rdrr.io/r/base/conditions.html) and block-final
-  lines keep their call and drop only the unused name (for developers).
 - `catch_to_F_singlefleet()` and `catch_to_F_multifleet()` are replaced
   by
   [`catch_to_F_om()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_om.md),

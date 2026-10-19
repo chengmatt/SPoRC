@@ -77,6 +77,7 @@ optimizer output, and model report are attached to the returned object.</p>
 <span>  <span class="va">mapping</span>,</span>
 <span>  random <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  newton_loops <span class="op">=</span> <span class="fl">3</span>,</span>
+<span>  newton_hessian <span class="op">=</span> <span class="st">"exact"</span>,</span>
 <span>  silent <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  do_optim <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  nlminb_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>iter.max <span class="op">=</span> <span class="fl">1e+05</span>, eval.max <span class="op">=</span> <span class="fl">1e+05</span>, rel.tol <span class="op">=</span> <span class="fl">1e-12</span><span class="op">)</span>,</span>
@@ -114,7 +115,9 @@ random effects. <code>NULL</code> (default) fits a fixed-effects-only model.</p>
 <dd><p>Integer. Number of Newton refinement steps applied
 after <code>nlminb</code> convergence to reduce gradient magnitudes. Each
 step solves \(\Delta\theta = -H^{-1} g\) and updates the objective.
-Default <code>3</code>. Errors and warnings are caught silently via
+Default <code>3</code>. A step that would raise the largest absolute gradient
+is not taken and refinement stops there, as happens when the Hessian is
+not positive definite. Errors and warnings are caught silently via
 <code>tryCatch</code>, so a step that fails leaves the <code>nlminb</code> solution
 in place without a message.
 \(H\) comes from the AD tape (<code>obj$he</code>) for fixed-effects models,
@@ -125,6 +128,20 @@ Refinement stops early if \(H\) comes back non-finite, which happens on
 models that have not converged, where second derivatives can be undefined
 at parameter values the objective and gradient still evaluate at. The
 <code>nlminb</code> solution is kept in that case.</p></dd>
+
+
+<dt id="arg-newton-hessian">newton_hessian<a class="anchor" aria-label="anchor" href="#arg-newton-hessian"></a></dt>
+<dd><p>Character. Where each refinement step's Hessian comes
+from. <code>"exact"</code> (default) is the behaviour above. <code>"diff"</code>
+differences the exact gradient (<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optimHess</a></code>, steps of
+1e-5), for models whose tape Hessian is too large to build, and in place of
+the Newton step reruns <code>nlminb</code> with each parameter in its own
+standard errors (the parameters scaled by the Cholesky factor of the
+inverse Hessian). A differenced Hessian is not accurate enough for a raw
+Newton step when the curvature spans many orders of magnitude, but it
+makes the surface round for <code>nlminb</code>, which then converges in a few
+iterations. The last Hessian is returned as <code>$hessian</code>, for
+<code>RTMB::sdreport(obj, hessian.fixed = obj$hessian)</code>.</p></dd>
 
 
 <dt id="arg-silent">silent<a class="anchor" aria-label="anchor" href="#arg-silent"></a></dt>
@@ -175,8 +192,10 @@ Newton-refinement routines.</p></dd>
   (the <code>nlminb</code> output list, with <code>$lower</code>/<code>$upper</code> recording
   the bounds used), <code>$rep</code> (the model report evaluated at
   <code>obj$env$last.par.best</code>), <code>$data</code>, <code>$parameters</code>,
-  <code>$mapping</code>, <code>$random</code>, and <code>$provenance</code> (the package
-  version and commit that built the fit, see <code><a href="fit_provenance.html">fit_provenance</a></code>).</p>
+  <code>$mapping</code>, <code>$random</code>, <code>$provenance</code> (the package
+  version and commit that built the fit, see <code><a href="fit_provenance.html">fit_provenance</a></code>),
+  and <code>$hessian</code> (the last refinement step's Hessian; <code>NULL</code> if
+  none was taken).</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

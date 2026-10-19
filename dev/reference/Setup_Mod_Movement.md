@@ -198,7 +198,9 @@ Setup_Mod_Movement(
   of width `ctmc_diffusion_eps`; `"upwind"` takes the finite volume flux
   \\\theta_j + \max(d, 0)\\, which keeps diffusion whole and adds only
   the down-gradient taxis, so positivity never depends on the two
-  cancelling.
+  cancelling; `"sg"` takes the Scharfetter-Gummel flux \\\theta_j B(-d /
+  \theta_j)\\, \\B(x) = x / (e^x - 1)\\, smooth and positive everywhere
+  with no width to choose.
 
 - ctmc_diffusion_eps:
 

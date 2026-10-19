@@ -16,6 +16,7 @@ fit_model(
   mapping,
   random = NULL,
   newton_loops = 3,
+  newton_hessian = "exact",
   silent = FALSE,
   do_optim = TRUE,
   nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-12),
@@ -50,18 +51,34 @@ fit_model(
 
   Integer. Number of Newton refinement steps applied after `nlminb`
   convergence to reduce gradient magnitudes. Each step solves
-  \\\Delta\theta = -H^{-1} g\\ and updates the objective. Default `3`.
-  Errors and warnings are caught silently via `tryCatch`, so a step that
-  fails leaves the `nlminb` solution in place without a message. \\H\\
-  comes from the AD tape (`obj$he`) for fixed-effects models, which is
-  exact and costs a single call. Random-effects models fall back to
-  [`optimHess`](https://rdrr.io/r/stats/optim.html) differencing the
-  gradient, since RTMB does not implement a tape Hessian when random
-  effects are present. Refinement stops early if \\H\\ comes back
-  non-finite, which happens on models that have not converged, where
-  second derivatives can be undefined at parameter values the objective
-  and gradient still evaluate at. The `nlminb` solution is kept in that
-  case.
+  \\\Delta\theta = -H^{-1} g\\ and updates the objective. Default `3`. A
+  step that would raise the largest absolute gradient is not taken and
+  refinement stops there, as happens when the Hessian is not positive
+  definite. Errors and warnings are caught silently via `tryCatch`, so a
+  step that fails leaves the `nlminb` solution in place without a
+  message. \\H\\ comes from the AD tape (`obj$he`) for fixed-effects
+  models, which is exact and costs a single call. Random-effects models
+  fall back to [`optimHess`](https://rdrr.io/r/stats/optim.html)
+  differencing the gradient, since RTMB does not implement a tape
+  Hessian when random effects are present. Refinement stops early if
+  \\H\\ comes back non-finite, which happens on models that have not
+  converged, where second derivatives can be undefined at parameter
+  values the objective and gradient still evaluate at. The `nlminb`
+  solution is kept in that case.
+
+- newton_hessian:
+
+  Character. Where each refinement step's Hessian comes from. `"exact"`
+  (default) is the behaviour above. `"diff"` differences the exact
+  gradient ([`optimHess`](https://rdrr.io/r/stats/optim.html), steps of
+  1e-5), for models whose tape Hessian is too large to build, and in
+  place of the Newton step reruns `nlminb` with each parameter in its
+  own standard errors (the parameters scaled by the Cholesky factor of
+  the inverse Hessian). A differenced Hessian is not accurate enough for
+  a raw Newton step when the curvature spans many orders of magnitude,
+  but it makes the surface round for `nlminb`, which then converges in a
+  few iterations. The last Hessian is returned as `$hessian`, for
+  `RTMB::sdreport(obj, hessian.fixed = obj$hessian)`.
 
 - silent:
 
@@ -113,9 +130,11 @@ fit_model(
 The RTMB `ADFun` object with additional fields: `$optim` (the `nlminb`
 output list, with `$lower`/`$upper` recording the bounds used), `$rep`
 (the model report evaluated at `obj$env$last.par.best`), `$data`,
-`$parameters`, `$mapping`, `$random`, and `$provenance` (the package
-version and commit that built the fit, see
-[`fit_provenance`](https://chengmatt.github.io/SPoRC/dev/reference/fit_provenance.md)).
+`$parameters`, `$mapping`, `$random`, `$provenance` (the package version
+and commit that built the fit, see
+[`fit_provenance`](https://chengmatt.github.io/SPoRC/dev/reference/fit_provenance.md)),
+and `$hessian` (the last refinement step's Hessian; `NULL` if none was
+taken).
 
 ## See also
 

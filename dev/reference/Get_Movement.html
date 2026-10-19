@@ -198,7 +198,12 @@ has a floor of <code>eps * log(2)</code>, so the width is a minimum exchange rat
 and not only a smoothing constant; <code>"upwind"</code> (or <code>2</code>) is the
 finite volume upwind flux \(q = \theta_j + \max(d, 0)\), which keeps
 diffusion whole and adds only the down-gradient half of the taxis flux, so
-positivity never depends on the two cancelling.</p></dd>
+positivity never depends on the two cancelling; <code>"sg"</code> (or <code>3</code>) is
+the Scharfetter-Gummel flux \(q = \theta_j B(-d / \theta_j)\) with
+\(B(x) = x / (e^x - 1)\), which is positive and smooth everywhere, the
+central difference \(\theta_j + d / 2\) at small \(d / \theta_j\) and
+upwind at large, with no hinge, floor or width, and a net flow along the
+edge of exactly \(d\) when the diffusion rates of its two ends are equal.</p></dd>
 
 
 <dt id="arg-ctmc-diffusion-eps">ctmc_diffusion_eps<a class="anchor" aria-label="anchor" href="#arg-ctmc-diffusion-eps"></a></dt>

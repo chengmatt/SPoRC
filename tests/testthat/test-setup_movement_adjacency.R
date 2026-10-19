@@ -150,11 +150,11 @@ test_that("ctmc_diffusion_bounds stores its form and rejects an unknown one", {
       ...
     )
   }
-  for (bf in c("none", "softplus", "upwind"))
+  for (bf in c("none", "softplus", "upwind", "sg"))
     expect_equal(setup_bf(ctmc_diffusion_bounds = bf)$data$ctmc_diffusion_bounds, bf)
-  for (code in 0:2) expect_equal(setup_bf(ctmc_diffusion_bounds = code)$data$ctmc_diffusion_bounds, code) # codes store as-is
+  for (code in 0:3) expect_equal(setup_bf(ctmc_diffusion_bounds = code)$data$ctmc_diffusion_bounds, code) # codes store as-is
   for (bad in c("upstream", "clamp", "barker", "logsoftplus"))
     expect_error(setup_bf(ctmc_diffusion_bounds = bad), "ctmc_diffusion_bounds must be")
-  expect_error(setup_bf(ctmc_diffusion_bounds = 3), "ctmc_diffusion_bounds must be")
+  expect_error(setup_bf(ctmc_diffusion_bounds = 4), "ctmc_diffusion_bounds must be")
   expect_error(setup_bf(ctmc_diffusion_bounds = -1), "ctmc_diffusion_bounds must be")
 })

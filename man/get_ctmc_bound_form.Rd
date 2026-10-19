@@ -7,9 +7,9 @@
 get_ctmc_bound_form(x)
 }
 \arguments{
-\item{x}{The \code{ctmc_diffusion_bounds} value: the code \code{0}, \code{1} or
-\code{2}, or the matching name \code{"none"}, \code{"softplus"} or
-\code{"upwind"}.}
+\item{x}{The \code{ctmc_diffusion_bounds} value: the code \code{0}, \code{1},
+\code{2} or \code{3}, or the matching name \code{"none"}, \code{"softplus"},
+\code{"upwind"} or \code{"sg"}.}
 }
 \value{
 Character scalar naming the form, or \code{NA} if \code{x} is

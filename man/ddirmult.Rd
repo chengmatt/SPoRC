@@ -28,8 +28,10 @@ Numeric. Log-likelihood (or likelihood if \code{give_log = FALSE}).
 Computes the Dirichlet-multinomial log-likelihood following the
 parameterization of Thorson et al. (CCSRA). The concentration parameters
 are \eqn{\alpha_k = \exp(\ln\theta) \times N \times \hat{p}_k}, so
-\eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar: values
-near zero approach the multinomial and larger values increase variance.
+\eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar: large
+values approach the multinomial at sample size \eqn{N}, and values near zero
+increase variance. With \eqn{\theta = \exp(\ln\theta)}, the effective sample
+size is \eqn{(1 + \theta N) / (1 + \theta)}, which never exceeds \eqn{N}.
 Non-integer observed counts are supported via \code{lgamma}.
 }
 \keyword{internal}

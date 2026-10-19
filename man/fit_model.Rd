@@ -10,6 +10,7 @@ fit_model(
   mapping,
   random = NULL,
   newton_loops = 3,
+  newton_hessian = "exact",
   silent = FALSE,
   do_optim = TRUE,
   nlminb_control = list(iter.max = 1e+05, eval.max = 1e+05, rel.tol = 1e-12),
@@ -34,7 +35,9 @@ random effects. \code{NULL} (default) fits a fixed-effects-only model.}
 \item{newton_loops}{Integer. Number of Newton refinement steps applied
 after \code{nlminb} convergence to reduce gradient magnitudes. Each
 step solves \eqn{\Delta\theta = -H^{-1} g} and updates the objective.
-Default \code{3}. Errors and warnings are caught silently via
+Default \code{3}. A step that would raise the largest absolute gradient
+is not taken and refinement stops there, as happens when the Hessian is
+not positive definite. Errors and warnings are caught silently via
 \code{tryCatch}, so a step that fails leaves the \code{nlminb} solution
 in place without a message.
 \eqn{H} comes from the AD tape (\code{obj$he}) for fixed-effects models,
@@ -45,6 +48,18 @@ Refinement stops early if \eqn{H} comes back non-finite, which happens on
 models that have not converged, where second derivatives can be undefined
 at parameter values the objective and gradient still evaluate at. The
 \code{nlminb} solution is kept in that case.}
+
+\item{newton_hessian}{Character. Where each refinement step's Hessian comes
+from. \code{"exact"} (default) is the behaviour above. \code{"diff"}
+differences the exact gradient (\code{\link[stats]{optimHess}}, steps of
+1e-5), for models whose tape Hessian is too large to build, and in place of
+the Newton step reruns \code{nlminb} with each parameter in its own
+standard errors (the parameters scaled by the Cholesky factor of the
+inverse Hessian). A differenced Hessian is not accurate enough for a raw
+Newton step when the curvature spans many orders of magnitude, but it
+makes the surface round for \code{nlminb}, which then converges in a few
+iterations. The last Hessian is returned as \code{$hessian}, for
+\code{RTMB::sdreport(obj, hessian.fixed = obj$hessian)}.}
 
 \item{silent}{Logical. If \code{TRUE}, suppresses RTMB and optimizer
 console output. Default \code{FALSE}.}
@@ -79,8 +94,10 @@ The RTMB \code{ADFun} object with additional fields: \code{$optim}
   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
   the bounds used), \code{$rep} (the model report evaluated at
   \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
-  \code{$mapping}, \code{$random}, and \code{$provenance} (the package
-  version and commit that built the fit, see \code{\link{fit_provenance}}).
+  \code{$mapping}, \code{$random}, \code{$provenance} (the package
+  version and commit that built the fit, see \code{\link{fit_provenance}}),
+  and \code{$hessian} (the last refinement step's Hessian; \code{NULL} if
+  none was taken).
 }
 \description{
 Constructs an RTMB automatic differentiation function via

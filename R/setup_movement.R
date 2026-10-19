@@ -516,7 +516,9 @@ do_move_re_mapping <- function(input_list, move_year_re, move_age_re, move_pop_r
 #'   \eqn{\theta_j + d} of width \code{ctmc_diffusion_eps}; \code{"upwind"} takes
 #'   the finite volume flux \eqn{\theta_j + \max(d, 0)}, which keeps diffusion
 #'   whole and adds only the down-gradient taxis, so positivity never depends on
-#'   the two cancelling.
+#'   the two cancelling; \code{"sg"} takes the Scharfetter-Gummel flux
+#'   \eqn{\theta_j B(-d / \theta_j)}, \eqn{B(x) = x / (e^x - 1)}, smooth and
+#'   positive everywhere with no width to choose.
 #' @param ctmc_diffusion_eps Positive width of the softplus under
 #'   \code{ctmc_diffusion_bounds = "softplus"}. Default \code{0.1}. An edge where
 #'   taxis exactly cancels diffusion has \code{eps * log(2)}, so this is a floor on
@@ -900,7 +902,7 @@ Setup_Mod_Movement <- function(input_list,
 
   # taxis makes Q = D + Z, so without a bound an off diagonal of Q can go negative
   bound_form <- get_ctmc_bound_form(ctmc_diffusion_bounds)
-  if(is.na(bound_form)) stop('ctmc_diffusion_bounds must be 0, 1, 2, or the matching name "none", "softplus", "upwind"')
+  if(is.na(bound_form)) stop('ctmc_diffusion_bounds must be 0, 1, 2, 3, or the matching name "none", "softplus", "upwind", "sg"')
 
   if(move_type == 1 && !is.null(preference_formula) && bound_form == "none") {
     pref_terms <- length(attr(stats::terms(preference_formula), "term.labels")) + attr(stats::terms(preference_formula), "intercept")
@@ -918,10 +920,11 @@ Setup_Mod_Movement <- function(input_list,
       bound_form,
       none = "unbounded generator",
       softplus = paste0("softplus of width ", ctmc_diffusion_eps, " on the adjacency edges, so a cancelled edge has a floor of ", signif(ctmc_diffusion_eps * log(2), 3)),
-      upwind = "discontinuous Galerkin upwind flux, diffusion kept whole"
+      upwind = "discontinuous Galerkin upwind flux, diffusion kept whole",
+      sg = "Scharfetter-Gummel flux, smooth and positive with no width"
     )
     collect_message("CTMC generator bounds: ", msg)
-    if(bound_form == "upwind" && ctmc_diffusion_eps != 0.1) collect_message('ctmc_diffusion_eps is not read by the "upwind" form.')
+    if(bound_form %in% c("upwind", "sg") && ctmc_diffusion_eps != 0.1) collect_message('ctmc_diffusion_eps is not read by the "', bound_form, '" form.')
   }
   input_list$data$ctmc_diffusion_eps <- ctmc_diffusion_eps
   input_list$data$move_timing <- move_timing

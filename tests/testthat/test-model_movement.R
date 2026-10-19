@@ -357,9 +357,9 @@ test_that("Get_Movement works", {
       expect_equal(make_ctmc_call(ctmc_diffusion_bounds = 2, pref_pars = pref, preference_formula = ff)$Mrate,
                    make_ctmc_call(ctmc_diffusion_bounds = "upwind", pref_pars = pref, preference_formula = ff)$Mrate)
     }
-    expect_equal(unname(sapply(0:2, get_ctmc_bound_form)), c("none", "softplus", "upwind"))
+    expect_equal(unname(sapply(0:3, get_ctmc_bound_form)), c("none", "softplus", "upwind", "sg"))
     expect_true(is.na(get_ctmc_bound_form("nonsense")))
-    expect_true(is.na(get_ctmc_bound_form(3)))
+    expect_true(is.na(get_ctmc_bound_form(4)))
   })
 
   test_that("CTMC movement: every bound form gives a valid generator and valid movement", {
@@ -412,6 +412,30 @@ test_that("Get_Movement works", {
     }
     expect_equal(steep("softplus"), 0)
     expect_equal(steep("upwind"), 1) # theta = exp(0) / area 1
+  })
+
+  test_that("CTMC movement: the Scharfetter-Gummel form is theta B(-d / theta), smooth, positive and without a floor", {
+    sg <- function(pref, eps = 0.1) {
+      q <- make_ctmc_call(
+        ctmc_diffusion_bounds = "sg",
+        ctmc_diffusion_eps = eps,
+        pref_pars = pref,
+        preference_formula = ~ 0 + factor(regions)
+      )$Mrate[1, , , 1, 1, 2, 1]
+      c(cancelled = q[2, 1], open = q[1, 2]) # Mrate is [origin, destination]
+    }
+    B <- function(x) x / (exp(x) - 1)
+    # theta is one, so a taxis of -1 out of region 2 and +1 into it gives B(1) and B(-1), whose difference is the taxis
+    expect_equal(unname(sg(c(0, 1, 0))), c(B(1), B(-1)), tolerance = 1e-9)
+    expect_equal(unname(diff(sg(c(0, 1, 0)))), 1, tolerance = 1e-9)
+    # no taxis leaves the diffusion rate, and the code 3 and the name agree
+    expect_equal(unname(sg(c(0, 0, 0))), c(1, 1), tolerance = 1e-9)
+    expect_equal(make_ctmc_call(ctmc_diffusion_bounds = 3, pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))$Mrate,
+                 make_ctmc_call(ctmc_diffusion_bounds = "sg", pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))$Mrate)
+    # a steep gradient shrinks the edge towards zero without reaching it, and the width is not read
+    expect_equal(unname(sg(c(0, 20, 0))["cancelled"]), B(20), tolerance = 1e-6) # to the 1e-12 that keeps y off 0
+    expect_gt(unname(sg(c(0, 20, 0))["cancelled"]), 0)
+    expect_equal(sg(c(0, 1, 0), eps = 0.001), sg(c(0, 1, 0), eps = 0.5))
   })
 
   test_that("CTMC movement: a move_dev shifts its own region's preference, on every edge that touches it", {

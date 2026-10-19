@@ -5,16 +5,16 @@
 
 #' Names for the CTMC generator bound forms
 #'
-#' @param x The \code{ctmc_diffusion_bounds} value: the code \code{0}, \code{1} or
-#'   \code{2}, or the matching name \code{"none"}, \code{"softplus"} or
-#'   \code{"upwind"}.
+#' @param x The \code{ctmc_diffusion_bounds} value: the code \code{0}, \code{1},
+#'   \code{2} or \code{3}, or the matching name \code{"none"}, \code{"softplus"},
+#'   \code{"upwind"} or \code{"sg"}.
 #'
 #' @return Character scalar naming the form, or \code{NA} if \code{x} is
 #'   not one of the accepted values.
 #'
 #' @keywords internal
 get_ctmc_bound_form <- function(x) {
-  forms <- c("none", "softplus", "upwind") # codes 0, 1 and 2 in this order
+  forms <- c("none", "softplus", "upwind", "sg") # codes 0, 1, 2 and 3 in this order
   if(is.numeric(x) && length(x) == 1 && x %in% (seq_along(forms) - 1)) return(forms[x + 1])
   if(is.character(x) && length(x) == 1 && x %in% forms) return(x)
   NA
@@ -112,7 +112,12 @@ get_movement_dp_design_matrix <- function(data,
 #'   and not only a smoothing constant; \code{"upwind"} (or \code{2}) is the
 #'   finite volume upwind flux \eqn{q = \theta_j + \max(d, 0)}, which keeps
 #'   diffusion whole and adds only the down-gradient half of the taxis flux, so
-#'   positivity never depends on the two cancelling.
+#'   positivity never depends on the two cancelling; \code{"sg"} (or \code{3}) is
+#'   the Scharfetter-Gummel flux \eqn{q = \theta_j B(-d / \theta_j)} with
+#'   \eqn{B(x) = x / (e^x - 1)}, which is positive and smooth everywhere, the
+#'   central difference \eqn{\theta_j + d / 2} at small \eqn{d / \theta_j} and
+#'   upwind at large, with no hinge, floor or width, and a net flow along the
+#'   edge of exactly \eqn{d} when the diffusion rates of its two ends are equal.
 #' @param ctmc_diffusion_eps Positive width of the softplus under
 #'   \code{ctmc_diffusion_bounds = "softplus"}. Default 0.1.
 #' @param seasdur Numeric vector \code{[n_seas]} of season durations summing to 1,
@@ -311,6 +316,14 @@ Get_Movement <- function(move_type,
 
       # discontinuous Galerkin (upwind) flux
       if(bound_form == "upwind") q_e = t_e + (d_e + abs(d_e)) / 2
+
+      # Scharfetter-Gummel flux, theta * B(-pe) with pe the edge's Peclet number d / theta, written as y / 2 * coth(y / 2) + pe / 2
+      # with y = |pe| kept off 0 so it has a derivative where taxis vanishes, and exp(-y) so it does not overflow at large pe
+      if(bound_form == "sg") {
+        pe_e = d_e / t_e
+        y_e = sqrt(pe_e^2 + 1e-12)
+        q_e = t_e * ((y_e + pe_e) / 2 + y_e * exp(-y_e) / (1 - exp(-y_e)))
+      }
 
       # distribute the edge flows back and conserve abundance
       Q_ss = adjacency_mat * 0

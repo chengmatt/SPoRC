@@ -96,7 +96,12 @@ has a floor of \code{eps * log(2)}, so the width is a minimum exchange rate
 and not only a smoothing constant; \code{"upwind"} (or \code{2}) is the
 finite volume upwind flux \eqn{q = \theta_j + \max(d, 0)}, which keeps
 diffusion whole and adds only the down-gradient half of the taxis flux, so
-positivity never depends on the two cancelling.}
+positivity never depends on the two cancelling; \code{"sg"} (or \code{3}) is
+the Scharfetter-Gummel flux \eqn{q = \theta_j B(-d / \theta_j)} with
+\eqn{B(x) = x / (e^x - 1)}, which is positive and smooth everywhere, the
+central difference \eqn{\theta_j + d / 2} at small \eqn{d / \theta_j} and
+upwind at large, with no hinge, floor or width, and a net flow along the
+edge of exactly \eqn{d} when the diffusion rates of its two ends are equal.}
 
 \item{ctmc_diffusion_eps}{Positive width of the softplus under
 \code{ctmc_diffusion_bounds = "softplus"}. Default 0.1.}

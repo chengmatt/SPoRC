@@ -112,7 +112,8 @@ generate_initial_age_structure <- function(y,
       # Movement / mortality sequencing must match the estimation model, otherwise the
       # operating model's initial age structure is built under a different set of dynamics
       Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # rates in first year
-      move_timing = move_timing
+      move_timing = move_timing,
+      expm_nsub = expm_nsub # matrix exponential the annual cycle uses
     )
 
     # Get initial unfished NAA
@@ -138,7 +139,8 @@ generate_initial_age_structure <- function(y,
       do_recruits_move = do_recruits_move, # whether recruits move
       ln_InitDevs = array(ln_InitDevs[,,,,sim], dim = c(n_pop, n_regions, n_ages - 1, n_sexes)), # initial deviations
       Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,1,,,,sim], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages, n_sexes)), # rates in first year
-      move_timing = move_timing
+      move_timing = move_timing,
+      expm_nsub = expm_nsub # matrix exponential the annual cycle uses
     )
 
     # Input into model arrays and assign back to simulation environment (first year and first season)

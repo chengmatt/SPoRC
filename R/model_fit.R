@@ -21,7 +21,9 @@
 #' @param newton_loops Integer. Number of Newton refinement steps applied
 #'   after \code{nlminb} convergence to reduce gradient magnitudes. Each
 #'   step solves \eqn{\Delta\theta = -H^{-1} g} and updates the objective.
-#'   Default \code{3}. Errors and warnings are caught silently via
+#'   Default \code{3}. A step that would raise the largest absolute gradient
+#'   is not taken and refinement stops there, as happens when the Hessian is
+#'   not positive definite. Errors and warnings are caught silently via
 #'   \code{tryCatch}, so a step that fails leaves the \code{nlminb} solution
 #'   in place without a message.
 #'   \eqn{H} comes from the AD tape (\code{obj$he}) for fixed-effects models,
@@ -172,8 +174,9 @@ fit_model <- function(
                  if(!all(is.finite(h))) break
 
                  obj$hessian = h
-                 new_par = optim$par - solve(h,g)
-                 optim$par = pmax(lower, pmin(upper, new_par)) # keep Newton step within bounds
+                 new_par = pmax(lower, pmin(upper, optim$par - solve(h,g))) # keep Newton step within bounds
+                 if(max(abs(obj$gr(new_par))) >= max(abs(g))) break # a step that raises the gradient (an indefinite Hessian) is not taken
+                 optim$par = new_par
                  optim$objective = obj$fn(optim$par)
                }
              , error = function(e) {e}, warning = function(w) {w})

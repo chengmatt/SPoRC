@@ -365,7 +365,8 @@ get_population_projection <- function(
     ret_sel = array(ret_sel[,,SR_ref_yr,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)), # retained fishery selectivity
     dmr = array(dmr[,SR_ref_yr,,], dim = c(n_regions, n_seas, n_fish_fleets)),
     Mrate = if(is.null(Mrate)) NULL else array(Mrate[,,,SR_ref_yr,,,1], dim = c(n_pop, n_regions, n_regions, n_seas, n_ages)),
-    move_timing = move_timing
+    move_timing = move_timing,
+    expm_nsub = expm_nsub # same matrix exponential as the dynamics, so S0 is their unfished equilibrium
   )
 
   # only call if doing bh or rick rec
@@ -433,7 +434,7 @@ get_population_projection <- function(
       # Record values prior to movement
       NAA_bef[,,y,seas,,] <- NAA[,,y,seas,,]
 
-      # Movement is applied at the start of the season only under move_timing == 0
+      # Movement is applied at the start of the season only under move_timing == 0, to fished and unfished numbers alike
       if(n_regions > 1 && move_timing == 0) {
         for(p in 1:n_pop) {
           # Recruits don't move
@@ -442,6 +443,7 @@ get_population_projection <- function(
             for(a in 2:n_ages) {
               for(s in 1:n_sexes) {
                 NAA[p,,y,seas,a,s] <- t(NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Fished
+                NAA0[p,,y,seas,a,s] <- t(NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Unfished
               } # end s loop
             } # end a loop
           } # end if recruits don't move
@@ -451,6 +453,7 @@ get_population_projection <- function(
             for(a in 1:n_ages) {
               for(s in 1:n_sexes) {
                 NAA[p,,y,seas,a,s] <- t(NAA[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Fished
+                NAA0[p,,y,seas,a,s] <- t(NAA0[p,,y,seas,a,s]) %*% Movement[p,,,y,seas,a,s] # Unfished
               } # end s loop
             } # end a loop
           } # end if

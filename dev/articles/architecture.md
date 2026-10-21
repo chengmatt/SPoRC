@@ -265,6 +265,7 @@ that moves fish through a season goes through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
+| `utils_dim_labels.R` | `label_dims` | nothing |  |
 | `utils_math.R` | `ar1_precision`, `build_us_chol`, `build_us_corr`, `get_AR1_CorrMat`, `get_Constant_CorrMat`, `get_logistN_Sigma`, `Get_Natural_Cubic_Spline_Weights`, `mat_exp`, `rho_trans`, `rmvnorm_prec` | nothing | `model_distributions.R`, `model_lik_at_age.R`, `model_lik_comps.R`, `model_movement.R`, `model_priors_penalties.R`, `model_transition.R`, `setup_fishery_selectivity.R`, `setup_survey_selectivity.R`, `sim_biologicals.R`, `sim_closed_loop.R`, `sim_fleet_devs.R`, `sim_naa_state.R`, `sim_observations.R`, `sim_population.R`, `sim_random_variates.R`, `sim_self_test.R` |
 | `utils_option_reference.R` | `option_reference`, `rd_argument_text`, `rd_database`, `setup_stage_order` | nothing |  |
 | `utils_postfit.R` | `get_model_rep_from_mcmc`, `get_optim_param_list`, `get_par_est_info`, `marg_AIC`, `post_optim_sanity_checks` | nothing | `sim_closed_loop.R`, `sim_self_test.R` |
@@ -487,7 +488,7 @@ use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 244 test files in total.
+That is 245 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

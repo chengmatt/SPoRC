@@ -244,17 +244,18 @@ rec_seas_prop[, 1] <- 1
 
   Numeric array `[n_regions x n_seas x n_fish_fleets]`. Legacy
   interface. A non-zero value without `init_F_par` is converted to
-  `ln_init_F = log(init_F_prop)` with `init_F_form = "prop"`. Prefer
-  `init_F_par`. Default zero.
+  `init_F_par = qlogis(init_F_prop)` with `init_F_form = "prop"`, so
+  each value must be below one. Prefer `init_F_par`. Default zero.
 
 - init_F_form:
 
   What `init_F_par` means. `"prop"` (default) gives
-  `init_F = exp(ln_init_F) * exp(ln_F_mean)`, a proportion of the
-  estimated mean F. `"abs"` gives `init_F = exp(ln_init_F)`, independent
-  of `ln_F_mean`. Use `"abs"` when bridging an assessment with a
-  separate historical F; under `"prop"` the two collapse into one
-  parameter and catch constrains only their product.
+  `init_F = plogis(init_F_par) * exp(ln_F_mean)`, a proportion of the
+  estimated mean F bounded to \\(0, 1)\\. `"abs"` gives
+  `init_F = exp(init_F_par)`, independent of `ln_F_mean`. Use `"abs"`
+  when bridging an assessment with a separate historical F; under
+  `"prop"` the two collapse into one parameter and catch constrains only
+  their product.
 
 - init_F_spec:
 

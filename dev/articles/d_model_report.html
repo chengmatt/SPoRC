@@ -89,6 +89,35 @@ females and the second dimension will always be males. Similarly, when
 <code>n_pop &gt; 1</code>, populations are indexed in the order they are
 defined.</p>
 <div class="section level2">
+<h2 id="naming-the-dimensions">Naming the Dimensions<a class="anchor" aria-label="anchor" href="#naming-the-dimensions"></a>
+</h2>
+<p>The arrays in <code>obj$rep</code> have no dimension names, and the
+plotting and diagnostic functions read them by position.
+<code><a href="../reference/label_dims.html">label_dims()</a></code> returns a copy with every dimension named and
+labeled, and leaves <code>obj$rep</code> as it was. It does the same for
+the parameter list and the data list:</p>
+<div class="sourceCode" id="cb1"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">labels</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>Sex <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Female"</span>, <span class="st">"Male"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">rep</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_dims.html">label_dims</a></span><span class="op">(</span><span class="va">obj</span><span class="op">$</span><span class="va">rep</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">labels</span><span class="op">)</span></span>
+<span><span class="va">par</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_dims.html">label_dims</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">par</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, <span class="va">labels</span><span class="op">)</span></span>
+<span><span class="va">dat</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/label_dims.html">label_dims</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span>, labels <span class="op">=</span> <span class="va">labels</span><span class="op">)</span></span>
+<span><span class="va">rep</span><span class="op">$</span><span class="va">SSB</span><span class="op">[</span><span class="fl">1</span>, , <span class="st">"2020"</span><span class="op">]</span>    <span class="co"># spawning biomass in 2020, by region</span></span>
+<span><span class="fu">reshape2</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/reshape2/man/melt.html" class="external-link">melt</a></span><span class="op">(</span><span class="va">rep</span><span class="op">$</span><span class="va">NAA</span><span class="op">)</span> <span class="co"># columns Pop, Region, Year, Seas, Age, Sex, value</span></span></code></pre></div>
+<p>Years, ages and length bins are taken from the data list.
+Populations, regions, seasons, sexes and fleets are numbered from one
+unless <code>labels</code> names them (<code>Pop</code>,
+<code>Region</code>, <code>Seas</code>, <code>Sex</code>,
+<code>Fish_Fleet</code>, <code>Srv_Fleet</code>). Movement arrays name
+their two region dimensions <code>Region_From</code> and
+<code>Region_To</code>, and the ageing error matrix names its columns
+<code>Obs_Age</code>. A year dimension longer than the model years,
+<code>NAA</code> and the projection years of the deviation and
+selectivity arrays, continues the calendar years. Dimensions that count
+blocks, parameters or selectivity bins (<code>Block</code>,
+<code>Sel_Par</code>, <code>PE_Par</code>, <code>Bin</code> and so on)
+are numbered from one.</p>
+</div>
+<div class="section level2">
 <h2 id="biological-processes">Biological Processes<a class="anchor" aria-label="anchor" href="#biological-processes"></a>
 </h2>
 <table class="table">

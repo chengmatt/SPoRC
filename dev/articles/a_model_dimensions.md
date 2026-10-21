@@ -11,6 +11,10 @@ first dimension will always be females and the second dimension will
 always be males. Similarly, when `n_pop > 1`, populations are indexed in
 the order they are defined.
 
+`label_dims(input_list$data)` returns a copy of the data list with each
+array’s dimensions named and labeled with calendar years and ages; see
+the model report article for the details.
+
 ## Data Inputs for Defining Model Dimensions
 
 | Name | Description |

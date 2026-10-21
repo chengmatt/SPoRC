@@ -55,6 +55,7 @@ A named list with two elements:
 Other Utility:
 [`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md),
 [`get_logistN_Sigma()`](https://chengmatt.github.io/SPoRC/dev/reference/get_logistN_Sigma.md),
+[`label_dims()`](https://chengmatt.github.io/SPoRC/dev/reference/label_dims.md),
 [`post_optim_sanity_checks()`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md),
 [`rho_trans()`](https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.md),
 [`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md)

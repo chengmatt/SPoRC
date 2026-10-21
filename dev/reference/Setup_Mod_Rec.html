@@ -307,17 +307,18 @@ every age and penalizes none, for pairing with <code>init_age_strc = "free"</cod
 <dt id="arg-init-f-prop">init_F_prop<a class="anchor" aria-label="anchor" href="#arg-init-f-prop"></a></dt>
 <dd><p>Numeric array <code>[n_regions x n_seas x n_fish_fleets]</code>.
 Legacy interface. A non-zero value without <code>init_F_par</code> is converted to
-<code>ln_init_F = log(init_F_prop)</code> with <code>init_F_form = "prop"</code>. Prefer
-<code>init_F_par</code>. Default zero.</p></dd>
+<code>init_F_par = qlogis(init_F_prop)</code> with <code>init_F_form = "prop"</code>, so
+each value must be below one. Prefer <code>init_F_par</code>. Default zero.</p></dd>
 
 
 <dt id="arg-init-f-form">init_F_form<a class="anchor" aria-label="anchor" href="#arg-init-f-form"></a></dt>
 <dd><p>What <code>init_F_par</code> means. <code>"prop"</code> (default) gives
-<code>init_F = exp(ln_init_F) * exp(ln_F_mean)</code>, a proportion of the estimated
-mean F. <code>"abs"</code> gives <code>init_F = exp(ln_init_F)</code>, independent of
-<code>ln_F_mean</code>. Use <code>"abs"</code> when bridging an assessment with a separate
-historical F; under <code>"prop"</code> the two collapse into one parameter and catch
-constrains only their product.</p></dd>
+<code>init_F = plogis(init_F_par) * exp(ln_F_mean)</code>, a proportion of the
+estimated mean F bounded to \((0, 1)\). <code>"abs"</code> gives
+<code>init_F = exp(init_F_par)</code>, independent of <code>ln_F_mean</code>. Use
+<code>"abs"</code> when bridging an assessment with a separate historical F; under
+<code>"prop"</code> the two collapse into one parameter and catch constrains only
+their product.</p></dd>
 
 
 <dt id="arg-init-f-spec">init_F_spec<a class="anchor" aria-label="anchor" href="#arg-init-f-spec"></a></dt>

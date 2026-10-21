@@ -211,6 +211,17 @@
   absolute gradient. With an indefinite Hessian the step could leave the
   `nlminb` optimum for a worse point; refinement now stops there
   instead.
+- Added
+  [`label_dims()`](https://chengmatt.github.io/SPoRC/dev/reference/label_dims.md),
+  which returns a copy of the report, the parameter list or the data
+  list with every array’s dims named (`Pop`, `Region`, `Year`, `Seas`,
+  `Age`, `Len`, `Sex`, `Fleet`, and `Block`, `Sel_Par`, `Bin` and so on
+  for block and parameter dims) and labeled with calendar years, model
+  ages and length bins, so
+  [`reshape2::melt()`](https://rdrr.io/pkg/reshape2/man/melt.html) gives
+  named columns. The lists themselves are left as they were, since the
+  model and the plotting and diagnostic functions read their arrays by
+  position.
 - Added 95% confidence intervals for SDNR based on a chi-squared test
   for OSA residuals.
 - Added OSA residuals for time-series observations, compositions, and

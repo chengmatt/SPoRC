@@ -570,15 +570,15 @@ but left out of the penalty. 0 (default) penalizes every year.
 <td><code>1</code></td>
 <td>Plus-group treatment during stochastic initialization, default 1. 0/"equil" estimates no ln_InitDevs, 1/"stoch_no_plus" estimates every age but the plus group, 2/"stoch_all" estimates every age, 3/"stoch_shared_ages" shares ages through init_age_devs_shared (non-NULL required; the plus group is not fixed automatically), and 4/"stoch_all_no_pen" estimates every age and penalizes none, for pairing with init_age_strc = "free".</td>
 </tr>
-<tr data-k="init_f_prop array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,      input_list$data$n_fish_fleets)) numeric array [n_regions x n_seas x n_fish_fleets]. legacy interface. a non-zero value without init_f_par is converted to ln_init_f = log(init_f_prop) with init_f_form = " prop prefer init_f_par. default zero.>
+<tr data-k="init_f_prop array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,      input_list$data$n_fish_fleets)) numeric array [n_regions x n_seas x n_fish_fleets]. legacy interface. a non-zero value without init_f_par is converted to init_f_par = qlogis(init_f_prop) with init_f_form = " prop so each value must be below one. prefer init_f_par. default zero.>
 <td><code class="optref-arg">init_F_prop</code></td>
 <td><code>array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,      input_list$data$n_fish_fleets))</code></td>
-<td>Numeric array [n_regions x n_seas x n_fish_fleets]. Legacy interface. A non-zero value without init_F_par is converted to ln_init_F = log(init_F_prop) with init_F_form = "prop". Prefer init_F_par. Default zero.</td>
+<td>Numeric array [n_regions x n_seas x n_fish_fleets]. Legacy interface. A non-zero value without init_F_par is converted to init_F_par = qlogis(init_F_prop) with init_F_form = "prop", so each value must be below one. Prefer init_F_par. Default zero.</td>
 </tr>
-<tr data-k="init_f_form " prop what init_f_par means. gives init_f="exp(ln_init_f)" exp a proportion of the estimated mean f. independent ln_f_mean. use when bridging an assessment with separate historical f under two collapse into one parameter and catch constrains only their product.>
+<tr data-k="init_f_form " prop what init_f_par means. gives init_f="plogis(init_f_par)" exp a proportion of the estimated mean f bounded to independent ln_f_mean. use when bridging an assessment with separate historical under two collapse into one parameter and catch constrains only their product.>
 <td><code class="optref-arg">init_F_form</code></td>
 <td><code>"prop"</code></td>
-<td>What init_F_par means. "prop" (default) gives init_F = exp(ln_init_F) * exp(ln_F_mean), a proportion of the estimated mean F. "abs" gives init_F = exp(ln_init_F), independent of ln_F_mean. Use "abs" when bridging an assessment with a separate historical F; under "prop" the two collapse into one parameter and catch constrains only their product.</td>
+<td>What init_F_par means. "prop" (default) gives init_F = plogis(init_F_par) * exp(ln_F_mean), a proportion of the estimated mean F bounded to (0, 1). "abs" gives init_F = exp(init_F_par), independent of ln_F_mean. Use "abs" when bridging an assessment with a separate historical F; under "prop" the two collapse into one parameter and catch constrains only their product.</td>
 </tr>
 <tr data-k="init_f_spec " fix or whether init_f_par is estimated. sets only the mapping so it combines freely with init_f_form. refused under init_age_strc="free" . value comes from x n_seas n_fish_fleets passed through ... on logit scale and log>
 <td><code class="optref-arg">init_F_spec</code></td>

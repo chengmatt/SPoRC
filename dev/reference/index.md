@@ -170,6 +170,8 @@ Functions for convenience
 - [`get_par_est_info()`](https://chengmatt.github.io/SPoRC/dev/reference/get_par_est_info.md)
   : Extract and tabulate parameter estimates and metadata from a fitted
   SPoRC model
+- [`label_dims()`](https://chengmatt.github.io/SPoRC/dev/reference/label_dims.md)
+  : Name the dimensions of a report, parameter list or data list
 - [`rho_trans()`](https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.md)
   : Transform a real-valued parameter to the interval (-1, 1)
 - [`get_logistN_Sigma()`](https://chengmatt.github.io/SPoRC/dev/reference/get_logistN_Sigma.md)

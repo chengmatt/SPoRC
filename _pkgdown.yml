@@ -198,6 +198,7 @@ reference:
       - set_data_indicator_unused
       - post_optim_sanity_checks
       - get_par_est_info
+      - label_dims
       - rho_trans
       - get_logistN_Sigma
       - rmvnorm_prec

@@ -189,15 +189,16 @@ every age and penalizes none, for pairing with \code{init_age_strc = "free"}.}
 
 \item{init_F_prop}{Numeric array \code{[n_regions x n_seas x n_fish_fleets]}.
 Legacy interface. A non-zero value without \code{init_F_par} is converted to
-\code{ln_init_F = log(init_F_prop)} with \code{init_F_form = "prop"}. Prefer
-\code{init_F_par}. Default zero.}
+\code{init_F_par = qlogis(init_F_prop)} with \code{init_F_form = "prop"}, so
+each value must be below one. Prefer \code{init_F_par}. Default zero.}
 
 \item{init_F_form}{What \code{init_F_par} means. \code{"prop"} (default) gives
-\code{init_F = exp(ln_init_F) * exp(ln_F_mean)}, a proportion of the estimated
-mean F. \code{"abs"} gives \code{init_F = exp(ln_init_F)}, independent of
-\code{ln_F_mean}. Use \code{"abs"} when bridging an assessment with a separate
-historical F; under \code{"prop"} the two collapse into one parameter and catch
-constrains only their product.}
+\code{init_F = plogis(init_F_par) * exp(ln_F_mean)}, a proportion of the
+estimated mean F bounded to \eqn{(0, 1)}. \code{"abs"} gives
+\code{init_F = exp(init_F_par)}, independent of \code{ln_F_mean}. Use
+\code{"abs"} when bridging an assessment with a separate historical F; under
+\code{"prop"} the two collapse into one parameter and catch constrains only
+their product.}
 
 \item{init_F_spec}{\code{"fix"} (default) or \code{"est"}, whether
 \code{init_F_par} is estimated. Sets only the mapping, so it combines freely with

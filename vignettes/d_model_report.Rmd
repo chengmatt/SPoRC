@@ -16,6 +16,21 @@ knitr::opts_chunk$set(
 
 The following tables describe all elements contained within `obj$rep`, which is generated after a model is run. Note that when `n_sexes > 1`, the first dimension will always be females and the second dimension will always be males. Similarly, when `n_pop > 1`, populations are indexed in the order they are defined.
 
+## Naming the Dimensions
+
+The arrays in `obj$rep` have no dimension names, and the plotting and diagnostic functions read them by position. `label_dims()` returns a copy with every dimension named and labeled, and leaves `obj$rep` as it was. It does the same for the parameter list and the data list:
+
+```{r, eval = FALSE}
+labels <- list(Sex = c("Female", "Male"))
+rep <- label_dims(obj$rep, input_list$data, labels)
+par <- label_dims(input_list$par, input_list$data, labels)
+dat <- label_dims(input_list$data, labels = labels)
+rep$SSB[1, , "2020"]    # spawning biomass in 2020, by region
+reshape2::melt(rep$NAA) # columns Pop, Region, Year, Seas, Age, Sex, value
+```
+
+Years, ages and length bins are taken from the data list. Populations, regions, seasons, sexes and fleets are numbered from one unless `labels` names them (`Pop`, `Region`, `Seas`, `Sex`, `Fish_Fleet`, `Srv_Fleet`). Movement arrays name their two region dimensions `Region_From` and `Region_To`, and the ageing error matrix names its columns `Obs_Age`. A year dimension longer than the model years, `NAA` and the projection years of the deviation and selectivity arrays, continues the calendar years. Dimensions that count blocks, parameters or selectivity bins (`Block`, `Sel_Par`, `PE_Par`, `Bin` and so on) are numbered from one.
+
 ## Biological Processes
 | Name                      | Description                                                                                                                                         | Dimensions                                                                                    |
 | ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |

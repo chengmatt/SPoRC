@@ -49,6 +49,7 @@ Other Utility:
 \code{\link[=fit_model]{fit_model()}},
 \code{\link[=get_logistN_Sigma]{get_logistN_Sigma()}},
 \code{\link[=get_par_est_info]{get_par_est_info()}},
+\code{\link[=label_dims]{label_dims()}},
 \code{\link[=rho_trans]{rho_trans()}},
 \code{\link[=set_data_indicator_unused]{set_data_indicator_unused()}}
 }

@@ -17,6 +17,8 @@ knitr::opts_chunk$set(
 
 The following table describes all elements contained within `input_list$pars`, which are generated using the `SPoRC::Setup_x` functions. Note that when `n_sexes > 1`, the first dimension will always be females and the second dimension will always be males.
 
+`label_dims(input_list$par, input_list$data)` returns a copy of the parameter list with these dimensions named and labeled with calendar years and ages; see the model report article for the details.
+
 ## Fishery Removals
 
 | Parameter | Dimension | Description | Default |
@@ -26,6 +28,7 @@ The following table describes all elements contained within `input_list$pars`, w
 | `ln_sigmaF` | `n_regions × n_seas × n_fish_fleets` | Log-scale standard deviation for fishing mortality process error (used under all three `Fdev_model` structures: `"iid"`, `"rw"`, `"ar1"`) | 0 |
 | `Fdev_rho` | `n_regions × n_seas × n_fish_fleets` | Unconstrained AR1 correlation parameter for fishing mortality deviations, transformed to `(-1, 1)` via `2 / (1 + exp(-2x)) - 1`. Only used when `Fdev_model = "ar1"`; mapped to `NA` (unused) otherwise regardless of `Fdev_rho_spec` | 0 |
 | `ln_F_mean` | `n_regions × n_seas × n_fish_fleets` | Log-scale mean fishing mortality rate | 0.1 |
+| `init_F_par` | `n_regions × n_seas × n_fish_fleets` | Initial fishing mortality applied to the equilibrium age structure. Under `init_F_form = "prop"` (default) it is a logit-scale proportion of `exp(ln_F_mean)`; under `"abs"` it is the log of the initial F itself. Estimated only under `init_F_spec = "est"` | Effectively zero: `qlogis(1e-10)` under `"prop"`, `log(1e-100)` under `"abs"` |
 | `ln_F_devs` | `n_regions × n_years × n_seas × n_fish_fleets` | Log-scale annual fishing mortality deviations (can be specified as random effects). Process error structure set via `Fdev_model`: `"iid"` (default), `"rw"`, or `"ar1"`; catch-active years need not be contiguous for `"rw"`/`"ar1"` (see `vignette("c_model_equations")`) | 0 |
 | `ln_sigmaD` | `n_regions × n_years × n_seas × n_fish_fleets` | Log-scale standard deviation for aggregated (regional) discard likelihood | 0.01 |
 | `ln_sigmaD_pop` | `n_pop × n_regions × n_years × n_seas × n_fish_fleets` | Log-scale standard deviation for population-specific discard likelihood | 0.01 |
@@ -38,19 +41,21 @@ The following table describes all elements contained within `input_list$pars`, w
 Estimated only when a fleet fits catch, discards or an index at age. Each is
 keyed by age and fleet through an integer matrix in which equal entries share a
 parameter and `NA` excludes one, so one structure gives a standard deviation per
-age, per age group, or per fleet. See `vignette("t_model_options")`.
+age, per age group, or per fleet. See `vignette("t_model_options")`. The age
+dimension is the observed ages, `n_obs_ages`, the columns of the fleet's ageing
+error matrix, which equals `n_ages` under the default identity matrix.
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_sigmaCAA` | `n_ages × n_sexes × n_fish_fleets` | Log-scale standard deviation for the catch-at-age likelihood. Keyed by `sigmaCAA_key` | log(0.5) |
-| `ln_sigmaCAA_pop` | `n_pop × n_ages × n_sexes × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaCAA_pop_key` | log(0.5) |
-| `ln_sigmaDAA` | `n_ages × n_sexes × n_fish_fleets` | Log-scale standard deviation for the discard-at-age likelihood, keyed by `sigmaDAA_key` | log(0.5) |
-| `ln_sigmaDAA_pop` | `n_pop × n_ages × n_sexes × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaDAA_pop_key` | log(0.5) |
-| `ln_sigmaSrvIdxAA` | `n_ages × n_sexes × n_srv_fleets` | Log-scale standard deviation for the survey index at age, keyed by `sigmaSrvIdxAA_key` | log(0.5) |
-| `ln_sigmaSrvIdxAA_pop` | `n_pop × n_ages × n_sexes × n_srv_fleets` | Population-specific counterpart | log(0.5) |
+| `ln_sigmaCAA` | `n_obs_ages × n_sexes × n_fish_fleets` | Log-scale standard deviation for the catch-at-age likelihood. Keyed by `sigmaCAA_key` | log(0.5) |
+| `ln_sigmaCAA_pop` | `n_pop × n_obs_ages × n_sexes × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaCAA_pop_key` | log(0.5) |
+| `ln_sigmaDAA` | `n_obs_ages × n_sexes × n_fish_fleets` | Log-scale standard deviation for the discard-at-age likelihood, keyed by `sigmaDAA_key` | log(0.5) |
+| `ln_sigmaDAA_pop` | `n_pop × n_obs_ages × n_sexes × n_fish_fleets` | Population-specific counterpart, keyed by `sigmaDAA_pop_key` | log(0.5) |
+| `ln_sigmaSrvIdxAA` | `n_obs_ages × n_sexes × n_srv_fleets` | Log-scale standard deviation for the survey index at age, keyed by `sigmaSrvIdxAA_key` | log(0.5) |
+| `ln_sigmaSrvIdxAA_pop` | `n_pop × n_obs_ages × n_sexes × n_srv_fleets` | Population-specific counterpart | log(0.5) |
 | `trans_rho_catch` | `n_regions × n_sexes × n_fish_fleets` | Unconstrained AR(1) correlation across ages for catch at age. Transformed to `(-1, 1)` by `rho_trans()`. Shared according to `rho_catch_spec`, one per fleet by default, and mapped to `NA` unless `AgeObsCorr_catch` is `"1dar1"` or `"2dar1"` | 0 |
 | `trans_rho_catch_year` | `n_regions × n_sexes × n_fish_fleets` | Correlation across years, read only under `AgeObsCorr_catch = "2dar1"` | 0 |
-| `trans_rho_catch_us` | `n_pairs × n_regions × n_sexes × n_fish_fleets` | Unconstrained entries of the unstructured across-age correlation, `n_pairs = n_ages(n_ages - 1)/2`. Read only under `AgeObsCorr_catch = "us"` | 0 |
+| `trans_rho_catch_us` | `n_pairs × n_regions × n_sexes × n_fish_fleets` | Unconstrained entries of the unstructured across-age correlation, `n_pairs = n_obs_ages(n_obs_ages - 1)/2`. Read only under `AgeObsCorr_catch = "us"` | 0 |
 | `trans_rho_discard`, `trans_rho_discard_year`, `trans_rho_discard_us` | as above | As above, for discards at age | 0 |
 | `trans_rho_srv_idx`, `trans_rho_srv_idx_year`, `trans_rho_srv_idx_us` | `n_regions × n_sexes × n_srv_fleets` (and `n_pairs × …`) | As above, for the survey index at age | 0 |
 | `trans_rho_catch_pop`, `trans_rho_discard_pop`, `trans_rho_srv_idx_pop` | as above with a leading `n_pop` | Population-specific counterparts, with their own `_year` and `_us` forms. The `_pop` data sources have their own correlation rather than borrowing the aggregated one | 0 |
@@ -82,6 +87,8 @@ Note that `fish_fixed_sel_pars` holds parameters on the scale of the chosen func
 | `ln_fish_q_devs` | `n_regions × n_years × n_fish_fleets` | Log-scale annual deviations about the mean fishery catchability, under `fish_q_model` | 0 |
 | `ln_sigma_fish_q` | `n_regions × n_fish_fleets` | Log-scale standard deviation of the fishery catchability deviations | log(0.1) |
 | `fish_q_rho` | `n_regions × n_fish_fleets` | Unconstrained ar1 correlation of the fishery catchability deviations, read only under `fish_q_model = "ar1"` | 0 |
+| `ln_sigmaFishIdx` | `n_fish_fleets` | Log-scale estimated component of the region-aggregated fishery index standard deviation. It is added to the reported standard errors, added in quadrature, or replaces them under `sigmaFishIdx_spec = "est_additive"`, `"est_quadrature"` or `"est_replace"`, and is not used under `"fix"` (default) | log(0.01) |
+| `ln_sigmaFishIdx_pop` | `n_fish_fleets` | Population-specific counterpart, under `sigmaFishIdx_pop_spec` | log(0.01) |
 
 ## Fishery Composition Likelihoods
 
@@ -89,38 +96,40 @@ Region-aggregated and population-specific composition likelihoods have separate 
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_FishAge_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated fishery age compositions | 0 |
+| `ln_FishAge_theta` | `n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for region-aggregated fishery age compositions | 0 |
 | `ln_FishAge_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region- and sex-aggregated fishery age compositions | 0 |
 | `FishAge_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal region-aggregated fishery age composition likelihood | 0.01 |
 | `FishAge_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal fishery age compositions | 0.01 |
-| `ln_FishAge_pop_theta` | `n_pop × n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific fishery age compositions | 0 |
+| `ln_FishAge_pop_theta` | `n_pop × n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for population-specific fishery age compositions | 0 |
 | `ln_FishAge_pop_theta_agg` | `n_pop × n_fish_fleets` | Log-scale overdispersion for population-specific sex-aggregated fishery age compositions | 0 |
 | `FishAge_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal population-specific fishery age composition likelihood | 0.01 |
 | `FishAge_pop_corr_pars_agg` | `n_pop × n_fish_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal fishery age compositions | 0.01 |
-| `ln_FishLen_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated fishery length compositions | 0 |
+| `ln_FishLen_theta` | `n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for region-aggregated fishery length compositions | 0 |
 | `ln_FishLen_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region- and sex-aggregated fishery length compositions | 0 |
 | `FishLen_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal region-aggregated fishery length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
 | `FishLen_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal fishery length compositions. The correlation represents bin correlations | 0.01 |
-| `ln_FishLen_pop_theta` | `n_pop × n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific fishery length compositions | 0 |
+| `ln_FishLen_pop_theta` | `n_pop × n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for population-specific fishery length compositions | 0 |
 | `ln_FishLen_pop_theta_agg` | `n_pop × n_fish_fleets` | Log-scale overdispersion for population-specific sex-aggregated fishery length compositions | 0 |
 | `FishLen_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal population-specific fishery length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
 | `FishLen_pop_corr_pars_agg` | `n_pop × n_fish_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal fishery length compositions. The correlation represents bin correlations | 0.01 |
-| `ln_FishAge_discard_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated discard age compositions | 0 |
+| `ln_FishAge_discard_theta` | `n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for region-aggregated discard age compositions | 0 |
 | `ln_FishAge_discard_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region- and sex-aggregated discard age compositions | 0 |
 | `FishAge_discard_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal region-aggregated discard age composition likelihood | 0.01 |
 | `FishAge_discard_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal discard age compositions | 0.01 |
-| `ln_FishAge_discard_pop_theta` | `n_pop × n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific discard age compositions | 0 |
+| `ln_FishAge_discard_pop_theta` | `n_pop × n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for population-specific discard age compositions | 0 |
 | `ln_FishAge_discard_pop_theta_agg` | `n_pop × n_fish_fleets` | Log-scale overdispersion for population-specific sex-aggregated discard age compositions | 0 |
 | `FishAge_discard_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal population-specific discard age composition likelihood | 0.01 |
 | `FishAge_discard_pop_corr_pars_agg` | `n_pop × n_fish_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal discard age compositions | 0.01 |
-| `ln_FishLen_discard_theta` | `n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated discard length compositions | 0 |
+| `ln_FishLen_discard_theta` | `n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for region-aggregated discard length compositions | 0 |
 | `ln_FishLen_discard_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region- and sex-aggregated discard length compositions | 0 |
 | `FishLen_discard_corr_pars` | `n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal region-aggregated discard length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
 | `FishLen_discard_corr_pars_agg` | `n_fish_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal discard length compositions. The correlation represents bin correlations | 0.01 |
-| `ln_FishLen_discard_pop_theta` | `n_pop × n_regions × n_fish_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific discard length compositions | 0 |
+| `ln_FishLen_discard_pop_theta` | `n_pop × n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion parameter for population-specific discard length compositions | 0 |
 | `ln_FishLen_discard_pop_theta_agg` | `n_pop × n_fish_fleets` | Log-scale overdispersion for population-specific sex-aggregated discard length compositions | 0 |
 | `FishLen_discard_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_fish_fleets × 2` | Correlation parameters for logistic-normal population-specific discard length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
 | `FishLen_discard_pop_corr_pars_agg` | `n_pop × n_fish_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal discard length compositions. The correlation represents bin correlations | 0.01 |
+| `ln_Fish_caal_theta` | `n_regions × n_sexes × n_fish_fleets` | Log-scale overdispersion for fishery conditional age-at-length data, one per region and sex and shared across length bins. Estimated only under `Fish_caal_LikeType = "Dirichlet-Multinomial"` | 0 |
+| `ln_Fish_caal_theta_agg` | `n_fish_fleets` | Log-scale overdispersion for region- and sex-aggregated fishery conditional age-at-length data | 0 |
 
 
 ## Survey Selectivity
@@ -142,6 +151,8 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | `ln_srv_q_devs` | `n_regions × n_years × n_srv_fleets` | Log-scale annual deviations about the mean survey catchability, under `srv_q_model` | 0 |
 | `ln_sigma_srv_q` | `n_regions × n_srv_fleets` | Log-scale standard deviation of the survey catchability deviations | log(0.1) |
 | `srv_q_rho` | `n_regions × n_srv_fleets` | Unconstrained ar1 correlation of the survey catchability deviations, read only under `srv_q_model = "ar1"` | 0 |
+| `ln_sigmaSrvIdx` | `n_srv_fleets` | Log-scale estimated component of the region-aggregated survey index standard deviation. It is added to the reported standard errors, added in quadrature, or replaces them under `sigmaSrvIdx_spec = "est_additive"`, `"est_quadrature"` or `"est_replace"`, and is not used under `"fix"` (default) | log(0.01) |
+| `ln_sigmaSrvIdx_pop` | `n_srv_fleets` | Population-specific counterpart, under `sigmaSrvIdx_pop_spec` | log(0.01) |
 
 ## Survey Composition Likelihoods
 
@@ -149,34 +160,47 @@ Region-aggregated and population-specific composition likelihoods have separate 
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_SrvAge_theta` | `n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated survey age compositions | 0 |
+| `ln_SrvAge_theta` | `n_regions × n_sexes × n_srv_fleets` | Log-scale overdispersion parameter for region-aggregated survey age compositions | 0 |
 | `ln_SrvAge_theta_agg` | `n_srv_fleets` | Log-scale overdispersion for region- and sex-aggregated survey age compositions | 0 |
 | `SrvAge_corr_pars` | `n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal region-aggregated survey age composition likelihood | 0.01 |
 | `SrvAge_corr_pars_agg` | `n_srv_fleets` | Correlation parameters for region-aggregated logistic-normal survey age compositions | 0.01 |
-| `ln_SrvAge_pop_theta` | `n_pop × n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific survey age compositions | 0 |
+| `ln_SrvAge_pop_theta` | `n_pop × n_regions × n_sexes × n_srv_fleets` | Log-scale overdispersion parameter for population-specific survey age compositions | 0 |
 | `ln_SrvAge_pop_theta_agg` | `n_pop × n_srv_fleets` | Log-scale overdispersion for population-specific sex-aggregated survey age compositions | 0 |
 | `SrvAge_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal population-specific survey age composition likelihood | 0.01 |
 | `SrvAge_pop_corr_pars_agg` | `n_pop × n_srv_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal survey age compositions | 0.01 |
-| `ln_SrvLen_theta` | `n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for region-aggregated survey length compositions | 0 |
+| `ln_SrvLen_theta` | `n_regions × n_sexes × n_srv_fleets` | Log-scale overdispersion parameter for region-aggregated survey length compositions | 0 |
 | `ln_SrvLen_theta_agg` | `n_srv_fleets` | Log-scale overdispersion for region- and sex-aggregated survey length compositions | 0 |
 | `SrvLen_corr_pars` | `n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal region-aggregated survey length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
 | `SrvLen_corr_pars_agg` | `n_srv_fleets` | Correlation parameters for region- and sex-aggregated logistic-normal survey length compositions. The correlation represents bin correlations | 0.01 |
-| `ln_SrvLen_pop_theta` | `n_pop × n_regions × n_srv_fleets × n_sexes` | Log-scale overdispersion parameter for population-specific survey length compositions | 0 |
+| `ln_SrvLen_pop_theta` | `n_pop × n_regions × n_sexes × n_srv_fleets` | Log-scale overdispersion parameter for population-specific survey length compositions | 0 |
 | `ln_SrvLen_pop_theta_agg` | `n_pop × n_srv_fleets` | Log-scale overdispersion for population-specific sex-aggregated survey length compositions | 0 |
 | `SrvLen_pop_corr_pars` | `n_pop × n_regions × n_sexes × n_srv_fleets × 2` | Correlation parameters for logistic-normal population-specific survey length composition likelihood. The first parameter represents bin correlations, while the second represents sex correlations (if specified) | 0.01 |
 | `SrvLen_pop_corr_pars_agg` | `n_pop × n_srv_fleets` | Correlation parameters for population-specific sex-aggregated logistic-normal survey length compositions. The correlation represents bin correlations | 0.01 |
+| `ln_Srv_caal_theta` | `n_regions × n_sexes × n_srv_fleets` | Log-scale overdispersion for survey conditional age-at-length data, one per region and sex and shared across length bins. Estimated only under `Srv_caal_LikeType = "Dirichlet-Multinomial"` | 0 |
+| `ln_Srv_caal_theta_agg` | `n_srv_fleets` | Log-scale overdispersion for region- and sex-aggregated survey conditional age-at-length data | 0 |
 
 ## Natural Mortality
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_M` | `n_pop_block × n_regions_block × n_years_block × n_ages_block × n_sexes_block` | Log-scale natural mortality rate (dimensioned by user-defined blocks) | 0.5 |
+| `ln_M` | `n_pop_block × n_regions_block × n_years_block × n_seasons_block × n_ages_block × n_sexes_block` | Log-scale natural mortality rate (dimensioned by user-defined blocks) | 0.5 |
+
+## Growth
+
+Estimated only when `growth_model` is `"vb_schnute"` or `"richards"`, which build the size-age transition inside the model. `n_growth_pars` is 5 under `"vb_schnute"` (L1, L2, K, CV1, CV2) and 6 under `"richards"`, which adds rho.
+
+| Parameter | Dimension | Description | Default |
+|-----------|-----------|-------------|---------|
+| `ln_growth_pars` | `n_pop × n_regions × n_sexes × n_growth_pars` | Log-scale growth parameters in the order L1, L2, K, CV1, CV2 and rho. Shared according to `growth_spec` | The log of L1 and L2 at the smallest and largest length bins, K of 0.15, CVs of 0.1 and rho of 1 |
+| `ln_growth_devs` | `n_pop × n_regions × (n_years + n_proj_yrs_devs) × n_growth_pars × n_sexes` | Annual deviations of each growth parameter under `growth_tv_model`, entering on the scale `growth_tv_link` sets | 0 |
+| `ln_growth_semipar_devs` | `n_pop × n_regions × (n_years + n_proj_yrs_devs) × n_ages × n_sexes` | Year by age deviations multiplying the parametric mean length under `growth_semipar` | 0 |
+| `growth_pe_pars` | `n_pop × n_regions × max(4, n_ages, n_growth_pars) × n_sexes × 2` | Process error for growth. The first half (last index 1) holds one log sigma per time-varying growth parameter. The second holds the semi-parametric surface's correlations by age, year and cohort in slots one to three and its log scale in slot four, or one log sigma per age under `"iid"` and `"rw"` | log(0.1) in the first half and log(0.05) in the second, with correlations of 0.3 where a form reads them |
 
 ## Recruitment
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_global_R0` | `n_pop x n_R0_blocks` | Log-scale unfished/mean recruitment per population and R0 time block. One column unless `R0_blocks` asks for more, so a model without R0 blocks is unchanged. Only the recruitment computed each year reads that year's block; the initial age structure, the regional apportionment, the R0 prior, the `ln_rinit` penalty and the stock-recruit scale all read `R0_ref_block`. Also supplies the scale of the stock-recruit penalty curve when `sr_R0_spec = "shared"` (the default) | 15 |
+| `ln_global_R0` | `n_pop × n_R0_blocks` | Log-scale unfished/mean recruitment per population and R0 time block. One column unless `R0_blocks` asks for more, so a model without R0 blocks is unchanged. Only the recruitment computed each year reads that year's block; the initial age structure, the regional apportionment, the R0 prior, the `ln_rinit` penalty and the stock-recruit scale all read `R0_ref_block`. Also supplies the scale of the stock-recruit penalty curve when `sr_R0_spec = "shared"` (the default) | 15 |
 | `ln_rinit` | `n_pop` | Log-scale initial recruitment scalar per population. Initializes the equilibrium age structure when `use_rinit = 1`, and additionally supplies the scale of the stock-recruit penalty curve when `sr_R0_spec = "rinit"`, so one parameter sets both; ignored when `use_rinit = 0`. | 15 |
 | `ln_sr_R0` | `n_pop` | Log-scale asymptote of the stock-recruit curve fitted as a penalty under `rec_model = "mean_rec"`. Estimated only when `sr_R0_spec = "est"` and `sr_penalty` is not `"none"`; mapped off in every other configuration, so it never enters the parameter vector by accident | `ln_global_R0` |
 | `rec_region_prop_pars` | `n_pop × (n_regions - 1)` | Logit-scale regional recruitment proportion parameters (simplex parameterization; omitted when `rec_region_prop_spec == 1`) | 0 |
@@ -185,6 +209,7 @@ Region-aggregated and population-specific composition likelihoods have separate 
 | `ln_sigmaR` | `2 × n_pop × n_regions` | Log-scale standard deviations for early (index 1) and late (index 2) recruitment periods | 0 |
 | `ln_InitDevs` | `n_pop × n_regions × (n_ages - 1) × n_sexes` | Log-scale initial age structure deviations (can be specified as random effects). Under `InitDevs_sex_spec = "est_shared_s"` (default) every sex reads one shared curve; under `"est_all"` each sex has its own | 0 |
 | `ln_RecDevs` | `n_pop × n_regions × (n_recdev_years + n_proj_yrs_devs)` | Log-scale annual recruitment deviations w/ projection years (can be specified as random effects) | 0 |
+| `RecDevs_rho` | `n_pop × n_regions` | Unconstrained AR1 correlation of the recruitment deviations, transformed to `(-1, 1)` via `2 / (1 + exp(-2x)) - 1`. Read only under `RecDevs_model = "ar1"` and shared according to `RecDevs_rho_spec` | 0 |
 | `ln_NAA` | `n_pop × n_regions × n_years × n_seasons × n_ages × n_sexes` | Log-scale numbers at the start of a season when `NAA_re` is on. A centered state, the log numbers themselves rather than a deviation, estimated for ages two and older in years two onward including the plus group; cells outside `NAA_re_ages`, `NAA_re_years` and `NAA_re_seasons` are mapped off. Season one is the year boundary, so the default `NAA_re_seasons = "annual"` leaves the numbers deterministic within a year. Specified as random effects. Starts from an equilibrium decay from $R_0$ at the mean $M$, split over regions and sexes, with the plus group accumulated; supply `ln_NAA` in `starting_values` to override | equilibrium |
 | `ln_sigmaNAA` | `n_pop_block × n_regions_block × n_years_block × n_seasons_block × n_ages_block × n_sexes_block` | Log-scale process error standard deviation for `ln_NAA`, dimensioned by the `NAA_sigma_*blk_spec` blocks as `ln_M` is. Only `NAA_re = "iid"` admits variation over the year and age dims; the season dim varies freely unless `NAA_re_season = "us"` | log(0.3) |
 | `NAA_pe_pars` | `n_pop × n_regions × 3 × n_sexes` | Unconstrained correlations over the age-year grid for `ln_NAA`, read as age, year and cohort. Only the slots the chosen `NAA_re` form uses are estimated | 0 |
@@ -224,7 +249,7 @@ Only present when `Setup_Mod_DSEM()` was called. The grid has one column per ser
 
 | Parameter | Dimension | Description | Default |
 |-----------|-----------|-------------|---------|
-| `ln_init_conv_tag_mort` | `1` | Log-scale initial tagging mortality rate | -1000 |
-| `ln_conv_tag_shed` | `1` | Log-scale chronic tag shedding rate | -1000 |
+| `ln_init_conv_tag_mort` | `n_conv_tag_cohorts` | Log-scale initial tagging mortality rate, one per release event; a scalar is recycled | -1000 |
+| `ln_conv_tag_shed` | `n_conv_tag_cohorts` | Log-scale chronic tag shedding rate, one per release event; a scalar is recycled | -1000 |
 | `conv_tag_fish_reporting_pars` | `n_regions × n_blocks × n_fish_fleets` | Logit-scale tag reporting rates | 0 |
 | `ln_conv_fish_tag_theta` | `1` | Log-scale overdispersion parameter for tag recapture likelihood | 0 |

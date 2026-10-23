@@ -39,6 +39,9 @@ get_closed_loop_reference_points(
   \item{SPR_x}{Target SPR fraction for reference point calculations. Default is 0.4.}
   \item{calc_rec_st_yr}{Year to start calculating mean recruitment. Default is 1.}
   \item{rec_age}{Age at recruitment. Default is 1.}
+  \item{calc_rec_yrs}{Optional model years to average recruitment over,
+    overriding \code{calc_rec_st_yr} and \code{rec_age}. These stay fixed as
+    the loop adds years. Default is \code{NULL}.}
   \item{type}{Reference point type: "single_region" or "multi_region". Default is "single_region".}
   \item{what}{Method for reference point calculation. Options include "SPR", "MSY",
     "independent_SPR", "independent_MSY", "global_SPR", "global_MSY". Default is "SPR".}

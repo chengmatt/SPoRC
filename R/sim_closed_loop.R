@@ -1008,6 +1008,9 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 #'     \item{SPR_x}{Target SPR fraction for reference point calculations. Default is 0.4.}
 #'     \item{calc_rec_st_yr}{Year to start calculating mean recruitment. Default is 1.}
 #'     \item{rec_age}{Age at recruitment. Default is 1.}
+#'     \item{calc_rec_yrs}{Optional model years to average recruitment over,
+#'       overriding \code{calc_rec_st_yr} and \code{rec_age}. These stay fixed as
+#'       the loop adds years. Default is \code{NULL}.}
 #'     \item{type}{Reference point type: "single_region" or "multi_region". Default is "single_region".}
 #'     \item{what}{Method for reference point calculation. Options include "SPR", "MSY",
 #'       "independent_SPR", "independent_MSY", "global_SPR", "global_MSY". Default is "SPR".}
@@ -1106,6 +1109,10 @@ get_closed_loop_reference_points <- function(use_true_values,
     tmp_sex_ratio_f <- if(data_obj$n_sexes == 1) array(0.5, dim = c(sim_env$n_pop, sim_env$n_regions)) else rep_obj$sexratio[,,y,1]
   }
 
+  # mean recruitment is reported under every method, so MSY option lists without a recruitment window get the defaults
+  if(is.null(reference_points_opt$calc_rec_st_yr)) reference_points_opt$calc_rec_st_yr <- 1
+  if(is.null(reference_points_opt$rec_age)) reference_points_opt$rec_age <- 1
+
   # dealing with whether there are any discard fleets
   reference_points_opt$is_discard_fleet <- if(!is.null(reference_points_opt$is_discard_fleet)) {
     reference_points_opt$is_discard_fleet
@@ -1121,6 +1128,7 @@ get_closed_loop_reference_points <- function(use_true_values,
                                            sex_ratio_f = tmp_sex_ratio_f,
                                            calc_rec_st_yr = reference_points_opt$calc_rec_st_yr,
                                            rec_age = reference_points_opt$rec_age,
+                                           calc_rec_yrs = reference_points_opt$calc_rec_yrs,
                                            type = reference_points_opt$type,
                                            what = reference_points_opt$what,
                                            n_avg_yrs = reference_points_opt$n_avg_yrs,

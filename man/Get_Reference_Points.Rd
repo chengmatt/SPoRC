@@ -12,6 +12,7 @@ Get_Reference_Points(
   sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
   calc_rec_st_yr = 1,
   rec_age = 1,
+  calc_rec_yrs = NULL,
   type,
   what,
   n_avg_yrs = 1,
@@ -37,11 +38,17 @@ mid-season mortality correction. Default 0.}
 \item{sex_ratio_f}{Numeric array \code{[n_pop, n_regions]} of the female sex
 ratio at recruitment. Default 0.5.}
 
-\item{calc_rec_st_yr}{First year included in the mean historical recruitment
-the biological reference points are scaled by. Default 1.}
+\item{calc_rec_st_yr}{First model year in the mean historical recruitment the
+SPR biomass reference points are scaled by. The mean runs over
+\code{calc_rec_st_yr:(n_years - rec_age)}. Default 1.}
 
-\item{rec_age}{Recruitment lag in years, excluding the most recent years from
-that mean. Default 1.}
+\item{rec_age}{Recruitment lag in years, the number of most recent years left
+out of that mean. Default 1.}
+
+\item{calc_rec_yrs}{Integer vector of model years (1 is the first model year)
+to average recruitment over instead, for a mean that runs to the terminal
+year or skips years. Overrides \code{calc_rec_st_yr} and \code{rec_age}
+when provided Default \code{NULL}.}
 
 \item{type}{Spatial structure. \code{"single_region"} has no movement and takes
 \code{"SPR"} or \code{"MSY"}; \code{"multi_region"} takes
@@ -78,7 +85,9 @@ A named list holding \code{f_ref_pt} \code{[n_regions]}, one value per
   \eqn{SBPR_0 \times \bar{R}}); and \code{pop_b_ref_pt} and
   \code{virgin_pop_b_ref_pt}, the population-specific effective spawning
   biomass at each population's natal region, with the stray contributions from
-  the other populations.
+  the other populations. \code{mean_rec} \code{[n_pop, n_regions]} is the mean
+  recruitment over the averaged years, reported under every method although
+  only the SPR methods scale by it.
 }
 \description{
 Builds the data list, calls the inner objective through RTMB, and returns the

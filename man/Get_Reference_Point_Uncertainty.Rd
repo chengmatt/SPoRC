@@ -11,6 +11,7 @@ Get_Reference_Point_Uncertainty(
   sex_ratio_f = NULL,
   calc_rec_st_yr = 1,
   rec_age = 1,
+  calc_rec_yrs = NULL,
   type,
   what,
   n_avg_yrs = 1,
@@ -39,6 +40,9 @@ Get_Reference_Point_Uncertainty(
 \item{calc_rec_st_yr}{Integer. First year of the mean recruitment window. Default = 1.}
 
 \item{rec_age}{Integer. Recruitment lag in years. Default = 1.}
+
+\item{calc_rec_yrs}{Integer vector. Model years of the mean recruitment window,
+overriding \code{calc_rec_st_yr} and \code{rec_age}. Default = \code{NULL}.}
 
 \item{type}{Character. \code{"single_region"} or \code{"multi_region"}.}
 

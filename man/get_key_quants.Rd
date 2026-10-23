@@ -20,7 +20,9 @@ potential ratio, which may be \code{NULL} under \code{type = "bh_msy"}),
 \code{t_spawn} (the fraction of the year elapsed before spawning),
 \code{sex_ratio_f} \code{(n_pop, n_regions)}, \code{calc_rec_st_yr} (the first
 model year averaged over for recruitment), \code{rec_age}, \code{type} (e.g.
-\code{"multi_region"}) and \code{what} (e.g. \code{"global_SPR"}).}
+\code{"multi_region"}) and \code{what} (e.g. \code{"global_SPR"}), and
+optionally \code{calc_rec_yrs}, the model years recruitment is averaged and
+projected from, which overrides \code{calc_rec_st_yr} and \code{rec_age}.}
 
 \item{proj_model_opt}{Named list passed to
 \code{\link{Do_Population_Projection}}, holding \code{n_proj_yrs},

@@ -276,10 +276,15 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
 #'   mid-season mortality correction. Default 0.
 #' @param sex_ratio_f Numeric array \code{[n_pop, n_regions]} of the female sex
 #'   ratio at recruitment. Default 0.5.
-#' @param calc_rec_st_yr First year included in the mean historical recruitment
-#'   the biological reference points are scaled by. Default 1.
-#' @param rec_age Recruitment lag in years, excluding the most recent years from
-#'   that mean. Default 1.
+#' @param calc_rec_st_yr First model year in the mean historical recruitment the
+#'   SPR biomass reference points are scaled by. The mean runs over
+#'   \code{calc_rec_st_yr:(n_years - rec_age)}. Default 1.
+#' @param rec_age Recruitment lag in years, the number of most recent years left
+#'   out of that mean. Default 1.
+#' @param calc_rec_yrs Integer vector of model years (1 is the first model year)
+#'   to average recruitment over instead, for a mean that runs to the terminal
+#'   year or skips years. Overrides \code{calc_rec_st_yr} and \code{rec_age}
+#'   when provided Default \code{NULL}.
 #' @param type Spatial structure. \code{"single_region"} has no movement and takes
 #'   \code{"SPR"} or \code{"MSY"}; \code{"multi_region"} takes
 #'   \code{"independent_SPR"}, \code{"independent_MSY"}, \code{"global_SPR"},
@@ -310,7 +315,9 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
 #'   \eqn{SBPR_0 \times \bar{R}}); and \code{pop_b_ref_pt} and
 #'   \code{virgin_pop_b_ref_pt}, the population-specific effective spawning
 #'   biomass at each population's natal region, with the stray contributions from
-#'   the other populations.
+#'   the other populations. \code{mean_rec} \code{[n_pop, n_regions]} is the mean
+#'   recruitment over the averaged years, reported under every method although
+#'   only the SPR methods scale by it.
 #'
 #' @importFrom stats nlminb
 #' @import RTMB
@@ -324,6 +331,7 @@ Get_Reference_Points <- function(
   sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
   calc_rec_st_yr = 1,
   rec_age = 1,
+  calc_rec_yrs = NULL,
   type,
   what,
   n_avg_yrs = 1,
@@ -339,6 +347,7 @@ Get_Reference_Points <- function(
     global_BH_MSY = "global_MSY",
     local_BH_MSY = "local_MSY"
   )
+
   if(what %in% names(deprecated_what)) {
     warning("'", what, "' is deprecated and will be removed; use '", deprecated_what[[what]],
             "'. These reference points follow the fitted stock-recruit curve, so the BH_ prefix no longer describes them.", call. = FALSE)
@@ -362,6 +371,15 @@ Get_Reference_Points <- function(
   # determine years to average over demographics
   n_yrs <- length(data$years)
   avg_yrs <- (n_yrs - n_avg_yrs + 1):n_yrs
+
+  # determine years to average over recruitment, calc_rec_st_yr:(n_years - rec_age) unless given outright
+  if(is.null(calc_rec_yrs)) calc_rec_yrs <- calc_rec_st_yr:(n_years - rec_age)
+  if(length(calc_rec_yrs) == 0 || any(!calc_rec_yrs %in% 1:n_years))
+    stop("Recruitment years (calc_rec_yrs, or calc_rec_st_yr:(n_years - rec_age)) must be model years between 1 and ", n_years,
+         ", not calendar years. Use calc_rec_yrs = 1:", n_years, " to average over every year.")
+
+  # mean recruitment, which the SPR methods multiply spawning biomass per recruit by
+  mean_rec <- array(apply(rep$Rec[,,calc_rec_yrs,drop = FALSE], c(1,2), mean), dim = c(n_pop, n_regions)) # [n_pop, n_regions]
 
   # precompute number of populations per natal region (used throughout for mass-balance stray scaling)
   n_pop_in_region <- rep(0, n_regions)
@@ -441,24 +459,22 @@ Get_Reference_Points <- function(
       f_ref_pt[1] <- tmp_obj$rep$F_x
 
       # Compute population specific reference points, by using stray rates
-      mean_rec <- apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age),drop = FALSE], 1, mean)
-
       for(p2 in 1:n_pop) {
         r <- data$natal_region[p2]
-        pop_b_ref_pt[p2,1]        <- tmp_obj$rep$SB[p2]  * mean_rec[p2]
-        virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * mean_rec[p2]
+        pop_b_ref_pt[p2,1]        <- tmp_obj$rep$SB[p2]  * mean_rec[p2,1]
+        virgin_pop_b_ref_pt[p2,1] <- tmp_obj$rep$SB0[p2] * mean_rec[p2,1]
         for(p in 1:n_pop) {
           if(p != p2) {
             sc <- data_list$stray_rate[p] / n_pop_in_region[r]
-            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + sc * tmp_obj$rep$SB[p]  * mean_rec[p]
-            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + sc * tmp_obj$rep$SB0[p] * mean_rec[p]
+            pop_b_ref_pt[p2,1]        <- pop_b_ref_pt[p2,1]        + sc * tmp_obj$rep$SB[p]  * mean_rec[p,1]
+            virgin_pop_b_ref_pt[p2,1] <- virgin_pop_b_ref_pt[p2,1] + sc * tmp_obj$rep$SB0[p] * mean_rec[p,1]
           }
         }
       }
 
       # Compute global reference points (sum across populations)
-      b_ref_pt[,1] <- tmp_obj$rep$SB * apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
-      virgin_b_ref_pt[,1] <- tmp_obj$rep$SB0 * apply(rep$Rec[,1,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
+      b_ref_pt[,1] <- tmp_obj$rep$SB * mean_rec[,1]
+      virgin_b_ref_pt[,1] <- tmp_obj$rep$SB0 * mean_rec[,1]
 
     } # end SPR reference points
 
@@ -559,25 +575,24 @@ Get_Reference_Points <- function(
           f_ref_pt[r] <- tmp_obj[[r]]$rep$F_x
 
           # Compute population specific reference points, by using stray rates
-          mean_rec <- apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age),drop = FALSE], 1, mean)
           if(n_pop > 1) {
             for(p2 in 1:n_pop) {
               rn <- data$natal_region[p2]
-              pop_b_ref_pt[p2,r]        <- tmp_obj[[r]]$rep$SB[p2]  * mean_rec[p2]
-              virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * mean_rec[p2]
+              pop_b_ref_pt[p2,r]        <- tmp_obj[[r]]$rep$SB[p2]  * mean_rec[p2,r]
+              virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * mean_rec[p2,r]
               for(p in 1:n_pop) {
                 if(p != p2) {
                   sc <- data_list$stray_rate[p] / n_pop_in_region[rn]
-                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + sc * tmp_obj[[r]]$rep$SB[p]  * mean_rec[p]
-                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + sc * tmp_obj[[r]]$rep$SB0[p] * mean_rec[p]
+                  pop_b_ref_pt[p2,r]        <- pop_b_ref_pt[p2,r]        + sc * tmp_obj[[r]]$rep$SB[p]  * mean_rec[p,r]
+                  virgin_pop_b_ref_pt[p2,r] <- virgin_pop_b_ref_pt[p2,r] + sc * tmp_obj[[r]]$rep$SB0[p] * mean_rec[p,r]
                 } # end if
               } # end p loop
             } # end p2 loop
           }
 
           # Compute global reference points (sum across populations)
-          b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
-          virgin_b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB0 * apply(rep$Rec[,r,calc_rec_st_yr:(n_years - rec_age), drop = FALSE], 1, mean)
+          b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB * mean_rec[,r]
+          virgin_b_ref_pt[,r] <- tmp_obj[[r]]$rep$SB0 * mean_rec[,r]
 
         } # independent SPR
 
@@ -663,7 +678,6 @@ Get_Reference_Points <- function(
       data_list$n_pop_in_region <- n_pop_in_region
 
       data_list$SPR_x <- SPR_x # SPR fraction
-      mean_rec <- apply(rep$Rec[,,calc_rec_st_yr:(n_years - rec_age),drop = FALSE], c(1,2), mean) # [n_pop, n_regions]
       total_mean_rec <- apply(mean_rec, 1, sum) # [n_pop] - total recruitment across regions
       data_list$rec_region_prop <- mean_rec / total_mean_rec # recruitment proportions
 
@@ -847,6 +861,7 @@ Get_Reference_Points <- function(
               virgin_b_ref_pt = virgin_b_ref_pt,
               pop_b_ref_pt = pop_b_ref_pt,
               virgin_pop_b_ref_pt = virgin_pop_b_ref_pt,
+              mean_rec = mean_rec,
               obj = tmp_obj))
 
 }

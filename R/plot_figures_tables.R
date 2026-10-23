@@ -1418,7 +1418,9 @@ plot_all_basic <- function(data,
 #'   \code{t_spawn} (the fraction of the year elapsed before spawning),
 #'   \code{sex_ratio_f} \code{(n_pop, n_regions)}, \code{calc_rec_st_yr} (the first
 #'   model year averaged over for recruitment), \code{rec_age}, \code{type} (e.g.
-#'   \code{"multi_region"}) and \code{what} (e.g. \code{"global_SPR"}).
+#'   \code{"multi_region"}) and \code{what} (e.g. \code{"global_SPR"}), and
+#'   optionally \code{calc_rec_yrs}, the model years recruitment is averaged and
+#'   projected from, which overrides \code{calc_rec_st_yr} and \code{rec_age}.
 #' @param proj_model_opt Named list passed to
 #'   \code{\link{Do_Population_Projection}}, holding \code{n_proj_yrs},
 #'   \code{n_avg_yrs} (terminal years the demographic inputs are averaged over
@@ -1544,6 +1546,7 @@ get_key_quants <- function(data,
                                         sex_ratio_f = reference_points_opt$sex_ratio_f,
                                         calc_rec_st_yr = reference_points_opt$calc_rec_st_yr,
                                         rec_age = reference_points_opt$rec_age,
+                                        calc_rec_yrs = reference_points_opt$calc_rec_yrs,
                                         type = reference_points_opt$type,
                                         what = reference_points_opt$what
     )
@@ -1558,8 +1561,9 @@ get_key_quants <- function(data,
     terminal_NAA <-  array(rep[[i]]$NAA[,,length(data[[i]]$years),,,], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
     terminal_NAA0 <-  array(rep[[i]]$NAA0[,,length(data[[i]]$years),,,], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes)) # terminal NAA
     terminal_F <- array(rep[[i]]$Fmort[,length(data[[i]]$years),,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, data[[i]]$n_fish_fleets)) # terminal F
-    recruitment <- array(rep[[i]]$Rec[,,reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)],
-                         dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)))) # recruitment
+    rec_yrs <- reference_points_opt$calc_rec_yrs # same recruitment years the reference points average over
+    if(is.null(rec_yrs)) rec_yrs <- reference_points_opt$calc_rec_st_yr:(length(data[[i]]$years) - reference_points_opt$rec_age)
+    recruitment <- array(rep[[i]]$Rec[,,rec_yrs], dim = c(data[[i]]$n_pop, data[[i]]$n_regions, length(rec_yrs))) # recruitment
 
     # demographics
     # determine years to average over demogrphaics

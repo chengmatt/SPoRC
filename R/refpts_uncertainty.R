@@ -180,6 +180,8 @@ eval_refpt_log_quantities <- function(obj, p, refpt_args, extra_quantities = NUL
 #' @param sex_ratio_f Numeric array \code{[n_pop, n_regions]}. Defaults to 0.5.
 #' @param calc_rec_st_yr Integer. First year of the mean recruitment window. Default = 1.
 #' @param rec_age Integer. Recruitment lag in years. Default = 1.
+#' @param calc_rec_yrs Integer vector. Model years of the mean recruitment window,
+#'   overriding \code{calc_rec_st_yr} and \code{rec_age}. Default = \code{NULL}.
 #' @param type Character. \code{"single_region"} or \code{"multi_region"}.
 #' @param what Character. Reference point method, as in \code{\link{Get_Reference_Points}}.
 #' @param n_avg_yrs Integer. Terminal years averaged for demographic rates. Default = 1.
@@ -245,6 +247,7 @@ Get_Reference_Point_Uncertainty <- function(obj,
                                             sex_ratio_f = NULL,
                                             calc_rec_st_yr = 1,
                                             rec_age = 1,
+                                            calc_rec_yrs = NULL,
                                             type,
                                             what,
                                             n_avg_yrs = 1,
@@ -275,6 +278,7 @@ Get_Reference_Point_Uncertainty <- function(obj,
     sex_ratio_f = sex_ratio_f,
     calc_rec_st_yr = calc_rec_st_yr,
     rec_age = rec_age,
+    calc_rec_yrs = calc_rec_yrs,
     type = type,
     what = what,
     n_avg_yrs = n_avg_yrs,

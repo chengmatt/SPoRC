@@ -209,7 +209,9 @@ These include:</p>
 and</li>
 <li>the first year in the recruitment vector
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow><annotation encoding="application/x-tex">RecYear</annotation></semantics></math>)
-to be used for mean recruitment calculations.</li>
+to be used for mean recruitment calculations, or the full set of
+recruitment years
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒴</mi><annotation encoding="application/x-tex">\mathcal{Y}</annotation></semantics></math>).</li>
 </ul>
 <p>For relative fishing mortality between fleets and discard mortality
 rates, the terminal year is utilized for these calculations. In
@@ -304,11 +306,28 @@ minimizing the following criteria:</p>
 reference points
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>x</mi></mrow></msub><annotation encoding="application/x-tex">B_{p,x}</annotation></semantics></math>)
 are then computed as:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>x</mi></mrow></msub><mo>=</mo><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mi>p</mi><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow><mrow><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi></mrow></munderover><msub><mrow><mi>R</mi><mi>e</mi><mi>c</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><mrow><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">B_{p,x} = SS{BPR}_{p}^{\text{fished}} \cdot \frac{\sum_{RecYear}^{n_{y} - RecAge}{Rec}_{p,y}}{n_{y} - RecAge - RecYear}</annotation></semantics></math></p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>x</mi></mrow></msub><mo>=</mo><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mi>p</mi><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mn>1</mn><msub><mi>n</mi><mi>𝒴</mi></msub></mfrac><munder><mo>∑</mo><mrow><mi>y</mi><mo>∈</mo><mi>𝒴</mi></mrow></munder><msub><mrow><mi>R</mi><mi>e</mi><mi>c</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">B_{p,x} = SS{BPR}_{p}^{\text{fished}} \cdot \frac{1}{n_{\mathcal{Y}}}\sum_{y \in \mathcal{Y}}{Rec}_{p,y}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mi>p</mi><mtext mathvariant="normal">fished</mtext></msubsup><mspace width="0.222em"></mspace></mrow><annotation encoding="application/x-tex">SS{BPR}_{p}^{\text{fished}}\ </annotation></semantics></math>is
-multiplied by mean recruitment over a user-defined period (i.e.,
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow><annotation encoding="application/x-tex">n_{y} - RecAge - RecYear</annotation></semantics></math>).</p>
+multiplied by mean recruitment over the set of recruitment years
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒴</mi><annotation encoding="application/x-tex">\mathcal{Y}</annotation></semantics></math>,
+which has
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>𝒴</mi></msub><annotation encoding="application/x-tex">n_{\mathcal{Y}}</annotation></semantics></math>
+years. By default
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>𝒴</mi><mo>=</mo><mo stretchy="false" form="prefix">{</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi><mo>,</mo><mi>…</mi><mo>,</mo><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi><mo stretchy="false" form="postfix">}</mo></mrow><annotation encoding="application/x-tex">\mathcal{Y} = \{RecYear, \ldots, n_{y} - RecAge\}</annotation></semantics></math>,
+so that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>n</mi><mi>𝒴</mi></msub><mo>=</mo><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi><mo>+</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">n_{\mathcal{Y}} = n_{y} - RecAge - RecYear + 1</annotation></semantics></math>,
+where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>n</mi><mi>y</mi></msub><annotation encoding="application/x-tex">n_{y}</annotation></semantics></math>
+is the number of model years,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow><annotation encoding="application/x-tex">RecYear</annotation></semantics></math>
+the first model year averaged over, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi></mrow><annotation encoding="application/x-tex">RecAge</annotation></semantics></math>
+the number of most recent years left out.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒴</mi><annotation encoding="application/x-tex">\mathcal{Y}</annotation></semantics></math>
+can instead be given directly, for a mean that runs to the terminal year
+or leaves out years whose recruitment is poorly estimated. The mean
+recruitment is returned alongside the reference points.</p>
 </div>
 <div class="section level5">
 <h5 id="maximum-sustainable-yield-beverton-holt">Maximum Sustainable Yield (Beverton-Holt)<a class="anchor" aria-label="anchor" href="#maximum-sustainable-yield-beverton-holt"></a>
@@ -445,8 +464,9 @@ reference points
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>x</mi></mrow></msub><annotation encoding="application/x-tex">B_{p,x}</annotation></semantics></math>)
 can then be derived by multiplying
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup></mrow><annotation encoding="application/x-tex">SS{BPR}_{p,r}^{\text{fished}}</annotation></semantics></math>
-by regional mean recruitment over a user-defined period:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>x</mi></mrow></msub><mo>=</mo><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow><mrow><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi></mrow></munderover><msub><mrow><mi>R</mi><mi>e</mi><mi>c</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><mrow><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{\sum_{RecYear}^{n_{y} - RecAge}{Rec}_{p,r,y}}{n_{y} - RecAge - RecYear}</annotation></semantics></math></p>
+by regional mean recruitment over the recruitment years
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒴</mi><annotation encoding="application/x-tex">\mathcal{Y}</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>x</mi></mrow></msub><mo>=</mo><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mn>1</mn><msub><mi>n</mi><mi>𝒴</mi></msub></mfrac><munder><mo>∑</mo><mrow><mi>y</mi><mo>∈</mo><mi>𝒴</mi></mrow></munder><msub><mrow><mi>R</mi><mi>e</mi><mi>c</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{1}{n_{\mathcal{Y}}}\sum_{y \in \mathcal{Y}}{Rec}_{p,r,y}</annotation></semantics></math></p>
 </div>
 <div class="section level6">
 <h6 id="global">Global<a class="anchor" aria-label="anchor" href="#global"></a>
@@ -518,7 +538,9 @@ and
 and</li>
 <li>the first year in the recruitment vector
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow><annotation encoding="application/x-tex">RecYear</annotation></semantics></math>)
-to be used for mean recruitment calculations.</li>
+to be used for mean recruitment calculations, or the full set of
+recruitment years
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒴</mi><annotation encoding="application/x-tex">\mathcal{Y}</annotation></semantics></math>).</li>
 </ul>
 <p>Global
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>P</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">SPR</annotation></semantics></math>
@@ -670,8 +692,9 @@ and are derived by multiplying
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup></mrow><annotation encoding="application/x-tex">SS{BPR}_{p,r}^{\text{fished}}</annotation></semantics></math>
 by the total mean recruitment (summed across regions) for population
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>
-over a user-defined period:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>x</mi></mrow></msub><mo>=</mo><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mrow><munderover><mo>∑</mo><mrow><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow><mrow><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi></mrow></munderover><munder><mo>∑</mo><mi>r</mi></munder><msub><mrow><mi>R</mi><mi>e</mi><mi>c</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><mrow><msub><mi>n</mi><mi>y</mi></msub><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>A</mi><mi>g</mi><mi>e</mi><mo>−</mo><mi>R</mi><mi>e</mi><mi>c</mi><mi>Y</mi><mi>e</mi><mi>a</mi><mi>r</mi></mrow></mfrac></mrow><annotation encoding="application/x-tex">B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{\sum_{RecYear}^{n_{y} - RecAge}\sum_r{Rec}_{p,r,y}}{n_{y} - RecAge - RecYear}</annotation></semantics></math></p>
+over the recruitment years
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>𝒴</mi><annotation encoding="application/x-tex">\mathcal{Y}</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>B</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>x</mi></mrow></msub><mo>=</mo><mi>S</mi><mi>S</mi><msubsup><mrow><mi>B</mi><mi>P</mi><mi>R</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi></mrow><mtext mathvariant="normal">fished</mtext></msubsup><mo>⋅</mo><mfrac><mn>1</mn><msub><mi>n</mi><mi>𝒴</mi></msub></mfrac><munder><mo>∑</mo><mrow><mi>y</mi><mo>∈</mo><mi>𝒴</mi></mrow></munder><munder><mo>∑</mo><mi>r</mi></munder><msub><mrow><mi>R</mi><mi>e</mi><mi>c</mi></mrow><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi></mrow></msub></mrow><annotation encoding="application/x-tex">B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{1}{n_{\mathcal{Y}}}\sum_{y \in \mathcal{Y}}\sum_r{Rec}_{p,r,y}</annotation></semantics></math></p>
 <p>Thus, the global
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>S</mi><mi>P</mi><mi>R</mi></mrow><annotation encoding="application/x-tex">SPR</annotation></semantics></math>
 calculations result in a single
@@ -1654,18 +1677,23 @@ the recruitment age (which excludes the last <code>rec_age</code> years
 when computing the mean), the timing of spawning, and the sex ratio used
 in the
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>B</mi><mn>40</mn></msub><annotation encoding="application/x-tex">B_{40}</annotation></semantics></math>
-calculation. Note that the sablefish example does not utilize a stock
-recruitment relationship. However, if a Beverton-Holt stock recruitment
-relationship is utilized and users want to estimate MSY-based reference
-points, this can be derived by setting <code>what = 'BH_MSY'</code>. The
-<code>n_avg_yrs</code> argument controls how many terminal years of
-demographic rates (selectivity, natural mortality, weight, maturity) are
-averaged before computing reference points; the default is 1 (terminal
-year only). The <code>is_discard_fleet</code> argument (relevant only
-for MSY methods) is an integer vector of length
-<code>n_fish_fleets</code> indicating which fleets should be excluded
-from landed yield calculations (0 = landing fleet, 1 = discard-only
-fleet).</p>
+calculation. Alternatively, <code>calc_rec_yrs</code> takes the model
+years to average recruitment over directly (e.g.,
+<code>calc_rec_yrs = 1:65</code> for every year of the sablefish model),
+overriding <code>calc_rec_st_yr</code> and <code>rec_age</code>. The
+mean recruitment used is returned as <code>mean_rec</code>, by
+population and region. Note that the sablefish example does not utilize
+a stock recruitment relationship. However, if a Beverton-Holt stock
+recruitment relationship is utilized and users want to estimate
+MSY-based reference points, this can be derived by setting
+<code>what = 'BH_MSY'</code>. The <code>n_avg_yrs</code> argument
+controls how many terminal years of demographic rates (selectivity,
+natural mortality, weight, maturity) are averaged before computing
+reference points; the default is 1 (terminal year only). The
+<code>is_discard_fleet</code> argument (relevant only for MSY methods)
+is an integer vector of length <code>n_fish_fleets</code> indicating
+which fleets should be excluded from landed yield calculations (0 =
+landing fleet, 1 = discard-only fleet).</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_sable_rep"</span><span class="op">)</span> <span class="co"># read in single region report</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="st">"sgl_rg_sable_data"</span><span class="op">)</span> <span class="co"># read in single region data</span></span>

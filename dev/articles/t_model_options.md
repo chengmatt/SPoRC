@@ -2936,6 +2936,7 @@ compute SBPR and YPR.
 | `n_avg_yrs` | Terminal years to average demographic rates (selectivity, $`M`$, WAA, maturity, movement) |
 | `calc_rec_st_yr` | First year for computing mean historical recruitment |
 | `rec_age` | Recruitment lag used to exclude most-recent years from the mean |
+| `calc_rec_yrs` | Model years to average recruitment over (e.g., `1:n_years` for every year), overriding `calc_rec_st_yr` and `rec_age`. The mean is returned as `mean_rec` |
 | `is_discard_fleet` | Integer vector (per fleet) flagging discard-only fleets to exclude from landed yield in MSY calculations |
 | `local_bh_msy_newton_steps` | Newton iterations for the local $`F_\text{MSY}`$ solve (default 6) |
 

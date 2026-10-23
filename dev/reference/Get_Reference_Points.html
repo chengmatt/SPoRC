@@ -73,6 +73,7 @@ Covers single-region and spatially explicit models, on SPR or Beverton-Holt MSY.
 <span>  sex_ratio_f <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.5</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">data</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  calc_rec_st_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  rec_age <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  calc_rec_yrs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">type</span>,</span>
 <span>  <span class="va">what</span>,</span>
 <span>  n_avg_yrs <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -113,13 +114,21 @@ ratio at recruitment. Default 0.5.</p></dd>
 
 
 <dt id="arg-calc-rec-st-yr">calc_rec_st_yr<a class="anchor" aria-label="anchor" href="#arg-calc-rec-st-yr"></a></dt>
-<dd><p>First year included in the mean historical recruitment
-the biological reference points are scaled by. Default 1.</p></dd>
+<dd><p>First model year in the mean historical recruitment the
+SPR biomass reference points are scaled by. The mean runs over
+<code>calc_rec_st_yr:(n_years - rec_age)</code>. Default 1.</p></dd>
 
 
 <dt id="arg-rec-age">rec_age<a class="anchor" aria-label="anchor" href="#arg-rec-age"></a></dt>
-<dd><p>Recruitment lag in years, excluding the most recent years from
-that mean. Default 1.</p></dd>
+<dd><p>Recruitment lag in years, the number of most recent years left
+out of that mean. Default 1.</p></dd>
+
+
+<dt id="arg-calc-rec-yrs">calc_rec_yrs<a class="anchor" aria-label="anchor" href="#arg-calc-rec-yrs"></a></dt>
+<dd><p>Integer vector of model years (1 is the first model year)
+to average recruitment over instead, for a mean that runs to the terminal
+year or skips years. Overrides <code>calc_rec_st_yr</code> and <code>rec_age</code>
+when provided Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
@@ -168,7 +177,9 @@ methods only. Default all zeros.</p></dd>
   \(SBPR_0 \times \bar{R}\)); and <code>pop_b_ref_pt</code> and
   <code>virgin_pop_b_ref_pt</code>, the population-specific effective spawning
   biomass at each population's natal region, with the stray contributions from
-  the other populations.</p>
+  the other populations. <code>mean_rec</code> <code>[n_pop, n_regions]</code> is the mean
+  recruitment over the averaged years, reported under every method although
+  only the SPR methods scale by it.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -32,7 +32,9 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
   elapsed before spawning), `sex_ratio_f` `(n_pop, n_regions)`,
   `calc_rec_st_yr` (the first model year averaged over for recruitment),
   `rec_age`, `type` (e.g. `"multi_region"`) and `what` (e.g.
-  `"global_SPR"`).
+  `"global_SPR"`), and optionally `calc_rec_yrs`, the model years
+  recruitment is averaged and projected from, which overrides
+  `calc_rec_st_yr` and `rec_age`.
 
 - proj_model_opt:
 

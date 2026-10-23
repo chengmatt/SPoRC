@@ -16,6 +16,7 @@ Get_Reference_Points(
   sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
   calc_rec_st_yr = 1,
   rec_age = 1,
+  calc_rec_yrs = NULL,
   type,
   what,
   n_avg_yrs = 1,
@@ -54,13 +55,21 @@ Get_Reference_Points(
 
 - calc_rec_st_yr:
 
-  First year included in the mean historical recruitment the biological
-  reference points are scaled by. Default 1.
+  First model year in the mean historical recruitment the SPR biomass
+  reference points are scaled by. The mean runs over
+  `calc_rec_st_yr:(n_years - rec_age)`. Default 1.
 
 - rec_age:
 
-  Recruitment lag in years, excluding the most recent years from that
-  mean. Default 1.
+  Recruitment lag in years, the number of most recent years left out of
+  that mean. Default 1.
+
+- calc_rec_yrs:
+
+  Integer vector of model years (1 is the first model year) to average
+  recruitment over instead, for a mean that runs to the terminal year or
+  skips years. Overrides `calc_rec_st_yr` and `rec_age` when provided
+  Default `NULL`.
 
 - type:
 
@@ -107,7 +116,9 @@ point (\\SBPR_F \times R\_{eq}\\ or \\SBPR_F \times \bar{R}\\);
 \\SBPR_0 \times \bar{R}\\); and `pop_b_ref_pt` and
 `virgin_pop_b_ref_pt`, the population-specific effective spawning
 biomass at each population's natal region, with the stray contributions
-from the other populations.
+from the other populations. `mean_rec` `[n_pop, n_regions]` is the mean
+recruitment over the averaged years, reported under every method
+although only the SPR methods scale by it.
 
 ## See also
 

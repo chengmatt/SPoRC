@@ -482,13 +482,13 @@ use.
 | `test-model_*` | 40 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 7 | Shared numerical helpers |
 | `test-sim_*` | 19 | Operating model, including simulate then refit self tests |
-| `test-refpts_*` | 12 | SPR and MSY solvers, one file per spatial structure |
+| `test-refpts_*` | 13 | SPR and MSY solvers, one file per spatial structure |
 | `test-projection_*` | 5 | Forward projection off a fitted model |
 | `test-diag_*` | 19 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 245 test files in total.
+That is 246 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

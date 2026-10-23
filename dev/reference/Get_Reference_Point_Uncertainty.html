@@ -69,6 +69,7 @@ estimates only.</p>
 <span>  sex_ratio_f <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  calc_rec_st_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  rec_age <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  calc_rec_yrs <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">type</span>,</span>
 <span>  <span class="va">what</span>,</span>
 <span>  n_avg_yrs <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -112,6 +113,11 @@ estimates only.</p>
 
 <dt id="arg-rec-age">rec_age<a class="anchor" aria-label="anchor" href="#arg-rec-age"></a></dt>
 <dd><p>Integer. Recruitment lag in years. Default = 1.</p></dd>
+
+
+<dt id="arg-calc-rec-yrs">calc_rec_yrs<a class="anchor" aria-label="anchor" href="#arg-calc-rec-yrs"></a></dt>
+<dd><p>Integer vector. Model years of the mean recruitment window,
+overriding <code>calc_rec_st_yr</code> and <code>rec_age</code>. Default = <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>

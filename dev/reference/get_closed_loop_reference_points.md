@@ -79,6 +79,12 @@ get_closed_loop_reference_points(
 
   :   Age at recruitment. Default is 1.
 
+  calc_rec_yrs
+
+  :   Optional model years to average recruitment over, overriding
+      `calc_rec_st_yr` and `rec_age`. These stay fixed as the loop adds
+      years. Default is `NULL`.
+
   type
 
   :   Reference point type: "single_region" or "multi_region". Default

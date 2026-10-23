@@ -6391,11 +6391,19 @@ WAA, maturity, movement)</td>
 <td>Recruitment lag used to exclude most-recent years from the mean</td>
 </tr>
 <tr class="odd">
+<td><code>calc_rec_yrs</code></td>
+<td>Model years to average recruitment over (e.g.,
+<code>1:n_years</code> for every year), overriding
+<code>calc_rec_st_yr</code> and <code>rec_age</code>. The mean is
+returned as <code>mean_rec</code>
+</td>
+</tr>
+<tr class="even">
 <td><code>is_discard_fleet</code></td>
 <td>Integer vector (per fleet) flagging discard-only fleets to exclude
 from landed yield in MSY calculations</td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>local_bh_msy_newton_steps</code></td>
 <td>Newton iterations for the local
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mtext mathvariant="normal">MSY</mtext></msub><annotation encoding="application/x-tex">F_\text{MSY}</annotation></semantics></math>

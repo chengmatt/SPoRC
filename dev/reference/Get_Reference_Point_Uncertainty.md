@@ -14,6 +14,7 @@ Get_Reference_Point_Uncertainty(
   sex_ratio_f = NULL,
   calc_rec_st_yr = 1,
   rec_age = 1,
+  calc_rec_yrs = NULL,
   type,
   what,
   n_avg_yrs = 1,
@@ -58,6 +59,11 @@ Get_Reference_Point_Uncertainty(
 - rec_age:
 
   Integer. Recruitment lag in years. Default = 1.
+
+- calc_rec_yrs:
+
+  Integer vector. Model years of the mean recruitment window, overriding
+  `calc_rec_st_yr` and `rec_age`. Default = `NULL`.
 
 - type:
 

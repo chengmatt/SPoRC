@@ -95,7 +95,8 @@ to compute these reference points. These include:
 - stray rates between populations ($`\phi_p`$),
 - recruitment age ($`RecAge`$), and
 - the first year in the recruitment vector ($`RecYear`$) to be used for
-  mean recruitment calculations.
+  mean recruitment calculations, or the full set of recruitment years
+  ($`\mathcal{Y}`$).
 
 For relative fishing mortality between fleets and discard mortality
 rates, the terminal year is utilized for these calculations. In
@@ -212,11 +213,20 @@ Biological $`SPR`$-based reference points ($`B_{p,x}`$) are then
 computed as:
 
 ``` math
-B_{p,x} = SS{BPR}_{p}^{\text{fished}} \cdot \frac{\sum_{RecYear}^{n_{y} - RecAge}{Rec}_{p,y}}{n_{y} - RecAge - RecYear}
+B_{p,x} = SS{BPR}_{p}^{\text{fished}} \cdot \frac{1}{n_{\mathcal{Y}}}\sum_{y \in \mathcal{Y}}{Rec}_{p,y}
 ```
 
 where $`SS{BPR}_{p}^{\text{fished}}\ `$is multiplied by mean recruitment
-over a user-defined period (i.e., $`n_{y} - RecAge - RecYear`$).
+over the set of recruitment years $`\mathcal{Y}`$, which has
+$`n_{\mathcal{Y}}`$ years. By default
+$`\mathcal{Y} = \{RecYear, \ldots, n_{y} - RecAge\}`$, so that
+$`n_{\mathcal{Y}} = n_{y} - RecAge - RecYear + 1`$, where $`n_{y}`$ is
+the number of model years, $`RecYear`$ the first model year averaged
+over, and $`RecAge`$ the number of most recent years left out.
+$`\mathcal{Y}`$ can instead be given directly, for a mean that runs to
+the terminal year or leaves out years whose recruitment is poorly
+estimated. The mean recruitment is returned alongside the reference
+points.
 
 ##### Maximum Sustainable Yield (Beverton-Holt)
 
@@ -328,10 +338,10 @@ F_{r,x} = \arg\min_{F_{r}}\left\{ \left( \text{SPR}\left( F_{r} \right) - x\%\ \
 
 Regional biological $`SPR`$-based reference points ($`B_{p,x}`$) can
 then be derived by multiplying $`SS{BPR}_{p,r}^{\text{fished}}`$ by
-regional mean recruitment over a user-defined period:
+regional mean recruitment over the recruitment years $`\mathcal{Y}`$:
 
 ``` math
-B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{\sum_{RecYear}^{n_{y} - RecAge}{Rec}_{p,r,y}}{n_{y} - RecAge - RecYear}
+B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{1}{n_{\mathcal{Y}}}\sum_{y \in \mathcal{Y}}{Rec}_{p,r,y}
 ```
 
 ###### Global
@@ -376,7 +386,8 @@ inputs. These include:
 - the recruitment proportions (apportionment) by area ($`\zeta_{p,r}`$),
 - recruitment age ($`RecAge`$), and
 - the first year in the recruitment vector ($`RecYear`$) to be used for
-  mean recruitment calculations.
+  mean recruitment calculations, or the full set of recruitment years
+  ($`\mathcal{Y}`$).
 
 Global $`SPR`$ reference points are calculated by first setting the
 regional numbers-at-age per-recruit to the estimated recruitment
@@ -522,10 +533,10 @@ F_{x} = \arg\min_{F}\left\{ \left( \text{SPR}(F) - x\% \right)^{2} \right\}
 Biological $`SPR`$-based reference points are regional ($`B_{p,r,x}`$)
 and are derived by multiplying $`SS{BPR}_{p,r}^{\text{fished}}`$ by the
 total mean recruitment (summed across regions) for population $`p`$ over
-a user-defined period:
+the recruitment years $`\mathcal{Y}`$:
 
 ``` math
-B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{\sum_{RecYear}^{n_{y} - RecAge}\sum_r{Rec}_{p,r,y}}{n_{y} - RecAge - RecYear}
+B_{p,r,x} = SS{BPR}_{p,r}^{\text{fished}} \cdot \frac{1}{n_{\mathcal{Y}}}\sum_{y \in \mathcal{Y}}\sum_r{Rec}_{p,r,y}
 ```
 
 Thus, the global $`SPR`$ calculations result in a single $`F_{x}`$ and
@@ -1394,7 +1405,11 @@ SPR-based and pertains to a single region. Additional inputs include the
 first year of recruitment used for calculating $`B_{40}`$, the
 recruitment age (which excludes the last `rec_age` years when computing
 the mean), the timing of spawning, and the sex ratio used in the
-$`B_{40}`$ calculation. Note that the sablefish example does not utilize
+$`B_{40}`$ calculation. Alternatively, `calc_rec_yrs` takes the model
+years to average recruitment over directly (e.g., `calc_rec_yrs = 1:65`
+for every year of the sablefish model), overriding `calc_rec_st_yr` and
+`rec_age`. The mean recruitment used is returned as `mean_rec`, by
+population and region. Note that the sablefish example does not utilize
 a stock recruitment relationship. However, if a Beverton-Holt stock
 recruitment relationship is utilized and users want to estimate
 MSY-based reference points, this can be derived by setting

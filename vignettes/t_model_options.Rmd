@@ -2018,6 +2018,10 @@ Key closed-loop arguments in `condition_closed_loop_simulations()`:
 | `newton_loops` | `3` | Post-convergence Newton steps ($\Delta\theta = -H^{-1}g$) to reduce residual gradients |
 | `do_optim` | `TRUE` | `FALSE` returns the un-optimized `MakeADFun` object for debugging |
 | `nlminb_control` | `list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)` | Passed to `stats::nlminb` |
+| `do_sdrep` | `FALSE` | `TRUE` runs `RTMB::sdreport()` at the fit, returned as `$sd_rep`, and the convergence checks of `post_optim_sanity_checks()` on it, returned as `$post_optim_sanity_checks` |
+| `post_optim_sanity_checks_control` | `list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99)` | Largest absolute gradient, standard error and absolute correlation the checks accept; any left out of the list take their defaults, and any other name is an error |
+
+`sdreport()` differences the gradient for its Hessian, so on an ill-conditioned fit the checks can report a Hessian that is not positive definite where the tape Hessian is. Rerun `RTMB::sdreport(obj, hessian.fixed = obj$he())` before reading that as non-convergence. The checks print their messages whatever `silent` is set to.
 
 ### Lognormal bias corrections (`bias_correct_pe`, `bias_correct_oe`)
 

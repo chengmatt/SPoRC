@@ -17,6 +17,9 @@ fit_model(
   lower = NULL,
   upper = NULL,
   model = SPoRC_rtmb,
+  do_sdrep = FALSE,
+  post_optim_sanity_checks_control = list(gradient_tol = 0.001, se_tol = 100, corr_tol =
+    0.99),
   ...
 )
 }
@@ -87,6 +90,27 @@ Newton refinement step. \code{NULL} (default) is unbounded
 Allows non-SPoRC RTMB models to be fit with the same optimization and
 Newton-refinement routines.}
 
+\item{do_sdrep}{Logical. If \code{TRUE}, runs \code{RTMB::sdreport(obj)} at
+the fitted parameters, returns it as \code{$sd_rep}, and runs
+\code{\link{post_optim_sanity_checks}} on it. Default \code{FALSE}, which
+skips both. \code{sdreport} differences the gradient for its Hessian, so on
+an ill-conditioned fit it can report a Hessian that is not positive definite
+where the tape Hessian is; rerun it as
+\code{RTMB::sdreport(obj, hessian.fixed = obj$he())} before reading that
+check as a real failure.}
+
+\item{post_optim_sanity_checks_control}{Named list of the tolerances passed to
+\code{\link{post_optim_sanity_checks}} under \code{do_sdrep = TRUE}:
+\code{gradient_tol} (largest absolute gradient), \code{se_tol} (largest
+standard error) and \code{corr_tol} (largest absolute correlation between
+two parameters). Default
+\code{list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99)}. A list
+naming only some of them, such as \code{list(gradient_tol = 1e-4)}, takes
+the defaults for the rest. Any other element, named or not, stops the fit
+with an error before it starts. The checks print a message for each one
+that fails, or a single message when all pass, whatever \code{silent} is
+set to.}
+
 \item{...}{Additional arguments forwarded to \code{RTMB::MakeADFun}.}
 }
 \value{
@@ -96,8 +120,11 @@ The RTMB \code{ADFun} object with additional fields: \code{$optim}
   \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
   \code{$mapping}, \code{$random}, \code{$provenance} (the package
   version and commit that built the fit, see \code{\link{fit_provenance}}),
-  and \code{$hessian} (the last refinement step's Hessian; \code{NULL} if
-  none was taken).
+  \code{$hessian} (the last refinement step's Hessian; \code{NULL} if
+  none was taken), and under \code{do_sdrep = TRUE} \code{$sd_rep} (the
+  \code{sdreport}) and \code{$post_optim_sanity_checks} (\code{TRUE} if
+  every check passed, \code{FALSE} otherwise). Both are \code{NULL} under
+  \code{do_sdrep = FALSE}.
 }
 \description{
 Constructs an RTMB automatic differentiation function via

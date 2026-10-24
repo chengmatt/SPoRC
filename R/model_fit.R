@@ -65,6 +65,25 @@
 #'   \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
 #'   Allows non-SPoRC RTMB models to be fit with the same optimization and
 #'   Newton-refinement routines.
+#' @param do_sdrep Logical. If \code{TRUE}, runs \code{RTMB::sdreport(obj)} at
+#'   the fitted parameters, returns it as \code{$sd_rep}, and runs
+#'   \code{\link{post_optim_sanity_checks}} on it. Default \code{FALSE}, which
+#'   skips both. \code{sdreport} differences the gradient for its Hessian, so on
+#'   an ill-conditioned fit it can report a Hessian that is not positive definite
+#'   where the tape Hessian is; rerun it as
+#'   \code{RTMB::sdreport(obj, hessian.fixed = obj$he())} before reading that
+#'   check as a real failure.
+#' @param post_optim_sanity_checks_control Named list of the tolerances passed to
+#'   \code{\link{post_optim_sanity_checks}} under \code{do_sdrep = TRUE}:
+#'   \code{gradient_tol} (largest absolute gradient), \code{se_tol} (largest
+#'   standard error) and \code{corr_tol} (largest absolute correlation between
+#'   two parameters). Default
+#'   \code{list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99)}. A list
+#'   naming only some of them, such as \code{list(gradient_tol = 1e-4)}, takes
+#'   the defaults for the rest. Any other element, named or not, stops the fit
+#'   with an error before it starts. The checks print a message for each one
+#'   that fails, or a single message when all pass, whatever \code{silent} is
+#'   set to.
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'
 #' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
@@ -73,8 +92,11 @@
 #'   \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
 #'   \code{$mapping}, \code{$random}, \code{$provenance} (the package
 #'   version and commit that built the fit, see \code{\link{fit_provenance}}),
-#'   and \code{$hessian} (the last refinement step's Hessian; \code{NULL} if
-#'   none was taken).
+#'   \code{$hessian} (the last refinement step's Hessian; \code{NULL} if
+#'   none was taken), and under \code{do_sdrep = TRUE} \code{$sd_rep} (the
+#'   \code{sdreport}) and \code{$post_optim_sanity_checks} (\code{TRUE} if
+#'   every check passed, \code{FALSE} otherwise). Both are \code{NULL} under
+#'   \code{do_sdrep = FALSE}.
 #'
 #' @importFrom stats nlminb optimHess
 #' @export fit_model
@@ -98,11 +120,20 @@ fit_model <- function(
   lower = NULL,
   upper = NULL,
   model = SPoRC_rtmb,
+  do_sdrep = FALSE,
+  post_optim_sanity_checks_control = list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99),
   ...
 ) {
 
   # check par n map len
   check_par_map_lengths(parameters, mapping)
+
+  # modifyList below would drop a misspelled tolerance without a word, so stop on it before fitting
+  tol_names <- names(post_optim_sanity_checks_control)
+  if(is.null(tol_names)) tol_names <- rep("", length(post_optim_sanity_checks_control))
+  bad_tol <- setdiff(tol_names, c("gradient_tol", "se_tol", "corr_tol"))
+  if(length(bad_tol) > 0) stop("post_optim_sanity_checks_control takes only gradient_tol, se_tol and corr_tol, not: ",
+                               paste0("'", bad_tol, "'", collapse = ", "))
 
   # movement, tagging and the dsem are optional, so figure out what each needs when not set up
   filled <- fill_optional_modules(data, parameters, mapping)
@@ -198,6 +229,9 @@ fit_model <- function(
   # save report
   obj$rep <- obj$report(obj$env$last.par.best)
 
+  # if doing sdrep
+  if(do_sdrep) obj$sd_rep <- RTMB::sdreport(obj)
+
   # attach inputs used to construct the model for reference, reuse, and serialization
   obj$data <- data
   obj$parameters <- parameters
@@ -206,6 +240,16 @@ fit_model <- function(
 
   # input the fit with the package build
   obj$provenance <- fit_provenance()
+
+  # check convergence, tolerances left out of the control list take defaults
+  if(do_sdrep) {
+    check_control <- utils::modifyList(list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99), post_optim_sanity_checks_control)
+    obj$post_optim_sanity_checks <- post_optim_sanity_checks(sd_rep = obj$sd_rep, rep = obj$rep,
+                                                             gradient_tol = check_control$gradient_tol,
+                                                             se_tol = check_control$se_tol,
+                                                             corr_tol = check_control$corr_tol
+    )
+  }
 
   return(obj)
 }

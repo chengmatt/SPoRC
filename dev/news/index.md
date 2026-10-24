@@ -200,6 +200,13 @@
   absolute gradient. With an indefinite Hessian the step could leave the
   `nlminb` optimum for a worse point; refinement now stops there
   instead.
+- Added `do_sdrep` to `fit_model`. `TRUE` runs `RTMB::sdreport` at the
+  fit, returned as `$sd_rep`, and `post_optim_sanity_checks` on it,
+  returned as `$post_optim_sanity_checks`;
+  `post_optim_sanity_checks_control` sets the gradient, standard error
+  and correlation tolerances, and any left out take their defaults; any
+  other name stops the fit with an error. The default `FALSE` skips
+  both.
 - Added
   [`label_dims()`](https://chengmatt.github.io/SPoRC/dev/reference/label_dims.md),
   which returns a copy of the report, the parameter list or the data

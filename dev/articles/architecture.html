@@ -676,7 +676,8 @@ one file.</p>
 <code>fit_provenance</code>
 </td>
 <td>
-<code>setup_mapping.R</code>, <code>utils_setup.R</code>
+<code>setup_mapping.R</code>, <code>utils_postfit.R</code>,
+<code>utils_setup.R</code>
 </td>
 <td>
 <code>diag_francis.R</code>, <code>diag_jitter.R</code>,
@@ -1466,7 +1467,8 @@ one file.</p>
 </td>
 <td>nothing</td>
 <td>
-<code>sim_closed_loop.R</code>, <code>sim_self_test.R</code>
+<code>model_fit.R</code>, <code>sim_closed_loop.R</code>,
+<code>sim_self_test.R</code>
 </td>
 </tr>
 <tr class="odd">
@@ -1900,7 +1902,7 @@ test setup happens to use.</p>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>40</td>
+<td>41</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1943,7 +1945,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 246 test files in total.</p>
+<p>That is 247 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

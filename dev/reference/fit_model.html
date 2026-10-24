@@ -84,6 +84,9 @@ optimizer output, and model report are attached to the returned object.</p>
 <span>  lower <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  upper <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  model <span class="op">=</span> <span class="va">SPoRC_rtmb</span>,</span>
+<span>  do_sdrep <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  post_optim_sanity_checks_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>gradient_tol <span class="op">=</span> <span class="fl">0.001</span>, se_tol <span class="op">=</span> <span class="fl">100</span>, corr_tol <span class="op">=</span></span>
+<span>    <span class="fl">0.99</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -182,6 +185,31 @@ Allows non-SPoRC RTMB models to be fit with the same optimization and
 Newton-refinement routines.</p></dd>
 
 
+<dt id="arg-do-sdrep">do_sdrep<a class="anchor" aria-label="anchor" href="#arg-do-sdrep"></a></dt>
+<dd><p>Logical. If <code>TRUE</code>, runs <code>RTMB::sdreport(obj)</code> at
+the fitted parameters, returns it as <code>$sd_rep</code>, and runs
+<code><a href="post_optim_sanity_checks.html">post_optim_sanity_checks</a></code> on it. Default <code>FALSE</code>, which
+skips both. <code>sdreport</code> differences the gradient for its Hessian, so on
+an ill-conditioned fit it can report a Hessian that is not positive definite
+where the tape Hessian is; rerun it as
+<code>RTMB::sdreport(obj, hessian.fixed = obj$he())</code> before reading that
+check as a real failure.</p></dd>
+
+
+<dt id="arg-post-optim-sanity-checks-control">post_optim_sanity_checks_control<a class="anchor" aria-label="anchor" href="#arg-post-optim-sanity-checks-control"></a></dt>
+<dd><p>Named list of the tolerances passed to
+<code><a href="post_optim_sanity_checks.html">post_optim_sanity_checks</a></code> under <code>do_sdrep = TRUE</code>:
+<code>gradient_tol</code> (largest absolute gradient), <code>se_tol</code> (largest
+standard error) and <code>corr_tol</code> (largest absolute correlation between
+two parameters). Default
+<code>list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99)</code>. A list
+naming only some of them, such as <code>list(gradient_tol = 1e-4)</code>, takes
+the defaults for the rest. Any other element, named or not, stops the fit
+with an error before it starts. The checks print a message for each one
+that fails, or a single message when all pass, whatever <code>silent</code> is
+set to.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments forwarded to <code>RTMB::MakeADFun</code>.</p></dd>
 
@@ -194,8 +222,11 @@ Newton-refinement routines.</p></dd>
   <code>obj$env$last.par.best</code>), <code>$data</code>, <code>$parameters</code>,
   <code>$mapping</code>, <code>$random</code>, <code>$provenance</code> (the package
   version and commit that built the fit, see <code><a href="fit_provenance.html">fit_provenance</a></code>),
-  and <code>$hessian</code> (the last refinement step's Hessian; <code>NULL</code> if
-  none was taken).</p>
+  <code>$hessian</code> (the last refinement step's Hessian; <code>NULL</code> if
+  none was taken), and under <code>do_sdrep = TRUE</code> <code>$sd_rep</code> (the
+  <code>sdreport</code>) and <code>$post_optim_sanity_checks</code> (<code>TRUE</code> if
+  every check passed, <code>FALSE</code> otherwise). Both are <code>NULL</code> under
+  <code>do_sdrep = FALSE</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

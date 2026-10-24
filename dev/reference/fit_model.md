@@ -23,6 +23,9 @@ fit_model(
   lower = NULL,
   upper = NULL,
   model = SPoRC_rtmb,
+  do_sdrep = FALSE,
+  post_optim_sanity_checks_control = list(gradient_tol = 0.001, se_tol = 100, corr_tol =
+    0.99),
   ...
 )
 ```
@@ -121,6 +124,31 @@ fit_model(
   Allows non-SPoRC RTMB models to be fit with the same optimization and
   Newton-refinement routines.
 
+- do_sdrep:
+
+  Logical. If `TRUE`, runs `RTMB::sdreport(obj)` at the fitted
+  parameters, returns it as `$sd_rep`, and runs
+  [`post_optim_sanity_checks`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md)
+  on it. Default `FALSE`, which skips both. `sdreport` differences the
+  gradient for its Hessian, so on an ill-conditioned fit it can report a
+  Hessian that is not positive definite where the tape Hessian is; rerun
+  it as `RTMB::sdreport(obj, hessian.fixed = obj$he())` before reading
+  that check as a real failure.
+
+- post_optim_sanity_checks_control:
+
+  Named list of the tolerances passed to
+  [`post_optim_sanity_checks`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md)
+  under `do_sdrep = TRUE`: `gradient_tol` (largest absolute gradient),
+  `se_tol` (largest standard error) and `corr_tol` (largest absolute
+  correlation between two parameters). Default
+  `list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99)`. A list
+  naming only some of them, such as `list(gradient_tol = 1e-4)`, takes
+  the defaults for the rest. Any other element, named or not, stops the
+  fit with an error before it starts. The checks print a message for
+  each one that fails, or a single message when all pass, whatever
+  `silent` is set to.
+
 - ...:
 
   Additional arguments forwarded to `RTMB::MakeADFun`.
@@ -133,8 +161,10 @@ output list, with `$lower`/`$upper` recording the bounds used), `$rep`
 `$parameters`, `$mapping`, `$random`, `$provenance` (the package version
 and commit that built the fit, see
 [`fit_provenance`](https://chengmatt.github.io/SPoRC/dev/reference/fit_provenance.md)),
-and `$hessian` (the last refinement step's Hessian; `NULL` if none was
-taken).
+`$hessian` (the last refinement step's Hessian; `NULL` if none was
+taken), and under `do_sdrep = TRUE` `$sd_rep` (the `sdreport`) and
+`$post_optim_sanity_checks` (`TRUE` if every check passed, `FALSE`
+otherwise). Both are `NULL` under `do_sdrep = FALSE`.
 
 ## See also
 

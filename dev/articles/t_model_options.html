@@ -6546,8 +6546,31 @@ object for debugging</td>
 <td>Passed to <code><a href="https://rdrr.io/r/stats/nlminb.html" class="external-link">stats::nlminb</a></code>
 </td>
 </tr>
+<tr class="even">
+<td><code>do_sdrep</code></td>
+<td><code>FALSE</code></td>
+<td>
+<code>TRUE</code> runs <code>RTMB::sdreport()</code> at the fit,
+returned as <code>$sd_rep</code>, and the convergence checks of
+<code><a href="../reference/post_optim_sanity_checks.html">post_optim_sanity_checks()</a></code> on it, returned as
+<code>$post_optim_sanity_checks</code>
+</td>
+</tr>
+<tr class="odd">
+<td><code>post_optim_sanity_checks_control</code></td>
+<td><code>list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99)</code></td>
+<td>Largest absolute gradient, standard error and absolute correlation
+the checks accept; any left out of the list take their defaults, and any
+other name is an error</td>
+</tr>
 </tbody>
 </table>
+<p><code>sdreport()</code> differences the gradient for its Hessian, so
+on an ill-conditioned fit the checks can report a Hessian that is not
+positive definite where the tape Hessian is. Rerun
+<code>RTMB::sdreport(obj, hessian.fixed = obj$he())</code> before
+reading that as non-convergence. The checks print their messages
+whatever <code>silent</code> is set to.</p>
 <div class="section level4">
 <h4 id="lognormal-bias-corrections-bias_correct_pe-bias_correct_oe">Lognormal bias corrections (<code>bias_correct_pe</code>,
 <code>bias_correct_oe</code>)<a class="anchor" aria-label="anchor" href="#lognormal-bias-corrections-bias_correct_pe-bias_correct_oe"></a>

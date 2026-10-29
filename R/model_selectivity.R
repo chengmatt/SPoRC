@@ -149,8 +149,8 @@ Get_Selex = function(
     } # end if iid or random walk
 
     # Now, calculate/derive power parameter + selex values
-    p = 0.5 * (sqrt(bmax^2 + (4 * delta^2)) - bmax)
-    selex = (Bin / bmax)^(bmax / p) * exp((bmax - Bin) / p) # return parametric form
+    p = (2 * delta^2) / (sqrt(bmax^2 + (4 * delta^2)) + bmax)
+    selex = exp((bmax * log(Bin / bmax) + (bmax - Bin)) / p)
   }
 
   if(Selex_Model == 2) { # power function selectivity

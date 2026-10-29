@@ -85,6 +85,7 @@
 - Newton refinement in `fit_model` now takes its Hessian from the AD tape (`obj$he`) instead of finite-differencing, and stops early on a non-finite Hessian.
 - Index ranges built from `length()`, `nrow()`, `ncol()` and `dim()` now use `seq_along()` and `seq_len()`, so an empty object gives no iterations instead of the indices 1 and 0. Semicolon chains are split one statement per line, `T`/`F` are written as `TRUE`/`FALSE`, two `if()` conditions use `&&`, operators have spaces around them, blocks that sat 2 or 4 spaces off their braces are re-indented, and multi-line pipelines put each step on its own line (for developers).
 - `catch_to_F_singlefleet()` and `catch_to_F_multifleet()` are replaced by `catch_to_F_om()`, which converts catch advice by region, season and fleet into the operating model's F by running the year through the operating model's own dynamics, solved with Newton steps on an `RTMB::MakeTape()` tape of each season's catch. 
+- Improved gamma dome selectivity parameterization (`Selex_Model = 1`) returning NaN at extreme optimizer guesess. Should give equivalent results to the old form.
 
 ## Bug Fixes
 - Fixed the time-varying selectivity smoothing penalty not being applied in the first year.

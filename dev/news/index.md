@@ -262,6 +262,9 @@
   own dynamics, solved with Newton steps on an
   [`RTMB::MakeTape()`](https://rdrr.io/pkg/RTMB/man/Tape.html) tape of
   each season’s catch.
+- Improved gamma dome selectivity parameterization (`Selex_Model = 1`)
+  returning NaN at extreme optimizer guesess. Should give equivalent
+  results to the old form.
 
 ### Bug Fixes
 

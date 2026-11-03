@@ -166,6 +166,17 @@ taken), and under `do_sdrep = TRUE` `$sd_rep` (the `sdreport`) and
 `$post_optim_sanity_checks` (`TRUE` if every check passed, `FALSE`
 otherwise). Both are `NULL` under `do_sdrep = FALSE`.
 
+## Details
+
+With a projection set up by
+[`Setup_Mod_Projection`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Projection.md),
+the model is fitted with the projection off, since it adds nothing to
+the likelihood, then rebuilt at the estimates with the projection on.
+RTMB records a model once, at its starting values, and a rule or cap
+that compares two numbers keeps whichever side held then, so the rebuild
+is what puts the estimated stock on the right side. `do_sdrep = TRUE`
+then covers the projected quantities.
+
 ## See also
 
 Other Utility:

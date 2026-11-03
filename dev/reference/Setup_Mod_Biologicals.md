@@ -459,10 +459,17 @@ Setup_Mod_Biologicals(
   `ln_RecDevs` and year one at ages two and older to `ln_InitDevs`, so
   the three partition the numbers at age. Which cells are estimated is
   set by `map$ln_NAA` and `data$n_est_naa_re`, never by `dim(ln_NAA)`.
-  The state covers the assessment years only, so a forecast from
+  With `n_proj_yrs_devs` in
+  [`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md),
+  a state that reaches the terminal year runs on over the projection
+  years, so `ln_NAA` has `n_years + n_proj_yrs_devs` years. Those cells
+  hold the innovation itself rather than log numbers, since the
+  estimation model makes no prediction there, and are penalized under
+  the same process with no data behind them: so their estimates are the
+  forecast of the process error given the fitted years.
   [`Do_Population_Projection`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
-  omits this process error while the closed loop operating model
-  projects the state forward.
+  applies them through `naa_devs`. Under `"dsem"` `ln_NAA` keeps the
+  fitted years and the dsem grid forecasts the state instead.
 
 - NAA_re_ages:
 

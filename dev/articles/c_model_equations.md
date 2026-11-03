@@ -916,10 +916,14 @@ ever independent or unstructured and neither reads adjacency. Outside
 them the numbers at age are the deterministic prediction, exactly as
 they are when `NAA_re` is `"none"`.
 
-The state runs over the assessment years. It is not projected: numbers
-past the terminal year advance deterministically in
-[`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md),
-with recruitment the only stochastic element.
+With `n_proj_yrs_devs` set in
+[`Setup_Mod_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md),
+a state that reaches the terminal year $`T`$ runs on over the projection
+years. The fit makes no prediction past $`T`$, so those cells hold the
+innovation $`\eta_{p,r,T+j,k,a,s}`$ itself rather than the log numbers.
+Their estimates are the process forecast given the fitted innovations:
+zero under independent innovations, and
+$`\rho_y^{\,j}\,\eta_{p,r,T,k,a,s}`$ under an autoregression over years.
 
 Whether to give the seasons their own states is a question about data.
 Within a year there is no ageing, so nothing separates one season’s

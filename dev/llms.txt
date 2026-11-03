@@ -114,6 +114,8 @@ Functions for setting up a `SPoRC` model
   : Initialize model dimension settings
 - [`Setup_Mod_DSEM()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md)
   : Set up a dynamic structural equation model on any deviation process
+- [`Setup_Mod_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Projection.md)
+  : Set Up A Projection Inside The Estimation Model
 - [`read_dsem_arrows()`](https://chengmatt.github.io/SPoRC/dev/reference/read_dsem_arrows.md)
   : Read dsem arrow and lag notation
 - [`dsem_series()`](https://chengmatt.github.io/SPoRC/dev/reference/dsem_series.md)
@@ -133,6 +135,14 @@ Functions for deriving reference points and catch projections
   : Confidence intervals for reference points
 - [`get_key_quants()`](https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.md)
   : Generate Key Projection Quantities and Table Plot
+- [`catch_cap()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_cap.md)
+  : Cap The Catch A Projection Takes
+- [`catch_stability()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_stability.md)
+  : Keep A Projection's Catch Within some percentage of Last Year's
+- [`ad_value()`](https://chengmatt.github.io/SPoRC/dev/reference/ad_value.md)
+  : Turn Model Quantities Into Plain Numbers
+- [`hcr_threshold()`](https://chengmatt.github.io/SPoRC/dev/reference/hcr_threshold.md)
+  : Threshold Harvest Control Rule
 
 ## Simulation Setup
 

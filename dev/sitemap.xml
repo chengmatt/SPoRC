@@ -76,6 +76,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Projection.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Retsel.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.html</loc></url>
@@ -97,6 +98,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_Sim_q_devs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Setup_sim_env.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/Simulate_Pop_Static.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ad_value.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/advance_seas.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/advance_sim_growth_year.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/apply_dsem_link_switch.html</loc></url>
@@ -129,6 +131,8 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/caal_sum_pop.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/caal_sum_pop_len.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_at_age.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_cap.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_stability.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/catch_to_F_om.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_agg_comp_regions.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/check_at_age_read.html</loc></url>
@@ -377,6 +381,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/growth_selected_waa_year.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/growth_start_state.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/growth_take_year.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/hcr_threshold.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/index.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/index_osa_field_map.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/init_devs_past_fit.html</loc></url>

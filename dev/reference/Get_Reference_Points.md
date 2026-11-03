@@ -125,4 +125,8 @@ although only the SPR methods scale by it.
 Other Reference Points and Projections:
 [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md),
 [`Get_Reference_Point_Uncertainty()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.md),
-[`get_key_quants()`](https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.md)
+[`Setup_Mod_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Projection.md),
+[`catch_cap()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_cap.md),
+[`catch_stability()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_stability.md),
+[`get_key_quants()`](https://chengmatt.github.io/SPoRC/dev/reference/get_key_quants.md),
+[`hcr_threshold()`](https://chengmatt.github.io/SPoRC/dev/reference/hcr_threshold.md)

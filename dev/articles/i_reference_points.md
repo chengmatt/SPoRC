@@ -827,10 +827,14 @@ F_{r,msy} = \arg\min_{F_{r,msy}} \left\{-\sum_{p}\sum_r Yield_{p,r}\right\}
 #### Uncertainty in Reference Points
 
 Every reference point above is solved with the estimated quantities
-handed in as fixed data, so each comes back as a single number. They are
-not fixed quantities, though. They are built from selectivity, natural
-mortality, weight at age, and where a stock recruitment curve is used,
-$`R_0`$ and steepness, all of which the assessment estimated with error.
+handed in as fixed data, so each comes back as a single number. However,
+we also note that projections can be done internally to obtain standard
+errors from associated reference points. Nonetheless, in cases where
+reference points and projections are not computed internally inside the
+model, they are not fixed quantities and are built from selectivity,
+natural mortality, weight at age, and where a stock recruitment curve is
+used, $`R_0`$ and steepness, all of which the assessment estimated with
+error.
 
 Let $`\boldsymbol{p}`$ be everything the model estimated stacked into
 one vector, and $`\Sigma`$ its covariance matrix from `sdreport`. Every
@@ -1380,6 +1384,48 @@ is the only place the answer lives when seasonal targets are used.
 $`\varepsilon_r`$ on each target and is `NA` for years without one. It
 should be checked directly rather than relying on warnings alone.
 
+#### Constraining the Rule’s Catch
+
+A control rule returns a fishing mortality before the year has run, and
+the only catch it can see is the previous year’s. A cap on the catch, or
+a limit on how far the catch may move from one year to the next,
+therefore cannot be written inside the rule exactly (i.e., limits on
+catch itself on the control rule). `F_constraint` applies such a
+constraint at the start of the year instead, where the year’s numbers at
+age are known: each constraint is a function of the fishing mortality
+vector the rule (or `f_ref_pt` under `"Input"`) gave and a `state` list,
+and returns the fishing mortality to fish at. It runs from projection
+year 2 on, since year 1 replays the terminal year, and never in a year
+solved to a catch target.
+
+The `state` list holds `y`, the rule’s fishing mortality `F_rule`, the
+previous year’s retained catch by region `last_catch` and spawning
+biomass `SSB`, this year’s starting numbers at age `NAA`, and two
+functions built on this year’s numbers. `catch_at_F(F)` returns the
+retained catch each region would take at an annual fishing mortality,
+and `F_at_catch(target, F)` returns the fishing mortality that takes
+`target` where it is given and keeps `F` where it is `NA`, solved
+jointly across regions the same way a catch target is. Catch is in the
+units of `proj_Catch`, summed over populations, seasons and fleets.
+
+Two constraints are built in. `catch_cap(cap)` lowers the fishing
+mortality wherever the catch the rule would take is above the cap; the
+cap is one value, one per region, or a matrix by region and year indexed
+as `catch_input` is. `catch_stability(down, up)` keeps each year’s catch
+within a band of the previous year’s, lowering or raising the fishing
+mortality to the nearer edge, and leaves a region alone when it took no
+catch the year before. Both take `scope = "region"` (the default),
+applied to each region’s own catch, or `scope = "global"`, applied to
+the catch summed over regions with the allowed total shared across
+regions in proportion to the catch the rule would have taken. Note that
+`"global"` is the companion to `fmort_opt = "HCR_global"`, which reads
+one stock status across regions, but either scope runs under either
+rule. A list of constraints is applied in the order given, each reading
+the fishing mortality the one before it returned, so a cap goes last
+when nothing is to exceed it. `proj_F_rule` in the returned list holds
+the fishing mortality before any constraint, so a year where it differs
+from `proj_F` is a year a constraint was invoked.
+
 ## Code Demonstration
 
 In the subsequent sections, we will demonstrate how reference points,
@@ -1763,6 +1809,62 @@ sum(out$proj_Catch[1,1,2,1,]) # Catch advice in terminal year + 1
 Catch advice should be based on terminal year+1 rather than the first
 projection year, since the first projection year serves only as an
 initialization step for the projection.
+
+#### Capping and Stabilizing the Catch Advice
+
+A cap on the catch, or a limit on how far the advice may move from one
+year to the next, is applied through `F_constraint`. The rule still sets
+the fishing mortality. Each constraint then reads the catch that rate
+would take in the coming year and modifies the rate wherever that catch
+falls outside what is allowed, solving for the rate the same way a catch
+target is solved. Here the advice is kept within 15% of the previous
+year’s catch and capped at 25 kt, with the cap applied last so that
+nothing exceeds it:
+
+``` r
+
+out_constrained <- Do_Population_Projection(n_proj_yrs = n_proj_yrs,
+                                           n_regions = n_regions,
+                                           n_ages = n_ages,
+                                           n_sexes = n_sexes,
+                                           sexratio = sexratio,
+                                           n_fish_fleets = n_fish_fleets,
+                                           do_recruits_move = do_recruits_move,
+                                           recruitment = recruitment,
+                                           terminal_NAA = terminal_NAA,
+                                           terminal_NAA0 = terminal_NAA0,
+                                           n_pop = 1,
+                                           terminal_F = terminal_F,
+                                           natmort = natmort,
+                                           WAA = WAA,
+                                           WAA_fish = WAA_fish,
+                                           MatAA = MatAA,
+                                           fish_sel = fish_sel,
+                                           Movement = Movement,
+                                           f_ref_pt = f_ref_pt,
+                                           b_ref_pt = b_ref_pt,
+                                           HCR_function = HCR_function,
+                                           recruitment_opt = "mean_rec",
+                                           fmort_opt = "HCR",
+                                           F_constraint = list(catch_stability(down = 0.15, up = 0.15), # within 15% of last year's catch
+                                                               catch_cap(25)), # and never above 25 kt
+                                           t_spawn = t_spawn)
+
+# the rule's F and the F fished; a year where they differ is one a constraint bound
+cbind(rule = out_constrained$proj_F_rule[1,], fished = out_constrained$proj_F[1,])
+
+# catch by projection year; year 2 is the first year the constraints apply
+rowSums(out_constrained$proj_Catch[1,1,,1,])
+```
+
+For a multi-region projection, defining `scope = "global"` in
+`catch_cap` or `catch_stability` (e.g.,
+`catch_cap(cap = 25, scope = 'global')`) applies the cap or the band to
+the catch summed over regions and shares the allowed total across
+regions in proportion to the catch the rule would have taken, which
+pairs with `fmort_opt = "HCR_global"`. The default `scope = "region"`
+constrains each region’s catch on its own. Either scope runs under
+either rule.
 
 #### Projecting on a Specified Catch
 

@@ -53,7 +53,9 @@ Get_NAA_state_penalty(
 
 - naa_re_yrs:
 
-  Integer vector of year indices the state is active over.
+  Integer vector of year indices the state is active over. Indices past
+  `dim(NAA_pred)[3]` are projection years from `n_proj_yrs_devs`, whose
+  cells hold the innovation itself.
 
 - naa_re_seas:
 

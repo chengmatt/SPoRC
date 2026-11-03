@@ -37,18 +37,41 @@
   over them. `ln_NAA`, `ln_sigmaNAA`, `naa_sigma_blocks`, `NAA_pred` and
   `NAA_scalar` all have the season dim between year and age; saved input
   lists without it are promoted and hold the state at season one.
-- The state-space numbers at age are not projected.
-  [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
-  advances projected numbers deterministically from the terminal year
-  with recruitment the only stochastic element, so a forecast from a
-  state-space fit omits that process error. The closed loop operating
-  model does advance the state forward.
 - Fixed the tag cohort rescale under a state-space fit: it indexed the
   state factor by years at liberty rather than by calendar year, so it
   was correct only for cohorts released in the first model year.
 - Added support for local density dependence in reference points for
   meta-population and natal homing models.
 - Added uncertainty estimation for reference points.
+- Added `F_constraint` to
+  [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md):
+  a function, or a list of them applied in order, that reads the catch
+  the rule’s F would take in the coming year and moves F so the catch
+  stays within what is allowed, solved the same way a catch target is.
+  [`catch_cap()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_cap.md)
+  caps the catch and
+  [`catch_stability()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_stability.md)
+  keeps it within the constraints of the previous year’s, each per
+  region or, with `scope = "global"`, on the total across regions shared
+  in proportion to the rule’s catch. `proj_F_rule` in the returned list
+  holds the F before any constraint. The constraints run on a tape: the
+  built-in ones decide on the values, through the new
+  [`ad_value()`](https://chengmatt.github.io/SPoRC/dev/reference/ad_value.md),
+  and the solved F takes two Newton steps on the tape so it has the
+  derivative of the implicit solve.
+- Added
+  [`Setup_Mod_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Projection.md),
+  a projection inside the objective. With `n_proj_yrs > 0` the
+  population is projected forward inside the model from the terminal
+  year under the terminal F, an input F, or the threshold rule
+  ([`hcr_threshold()`](https://chengmatt.github.io/SPoRC/dev/reference/hcr_threshold.md),
+  or a rule of your own) on reference points given as data or solved
+  inside the model (`f_opt = "refpt"`, every option of
+  [`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md),
+  whose uncertainty then reaches the projected quantities), with any
+  `F_constraint`, demographics averaged over the terminal years or read
+  from the years the fit extended, and mean recruitment times the fit’s
+  projected deviations from `n_proj_yrs_devs`.
 
 #### Data and observation processes
 

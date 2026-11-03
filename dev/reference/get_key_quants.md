@@ -7,7 +7,14 @@ and region, returned as a tidy data frame and a formatted table plot.
 ## Usage
 
 ``` r
-get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
+get_key_quants(
+  data,
+  rep,
+  reference_points_opt,
+  proj_model_opt,
+  model_names,
+  pars = NULL
+)
 ```
 
 ## Arguments
@@ -48,11 +55,61 @@ get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
   to apply the control rule to each region's SSB, `"HCR_global"` to
   apply it to SSB summed across regions as global reference points need,
   or `"Input"` to fish at the F reference point every year without the
-  control rule).
+  control rule). It can also hold the choices
+  [`Setup_Mod_Projection`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Projection.md)
+  offers, so the advice here matches a projection inside the model:
+
+  `rec_opt`
+
+  :   Recruitment deviations in the projection years. `"mean"` (the
+      default here) applies none, `"propagate"` applies the fit's
+      projected deviations, and `"terminal"` repeats the terminal year's
+      deviation. The last two need `pars`.
+
+  `sel_opt`
+
+  :   Fishery and retention selectivity. `"average"` (default) averages
+      the last `n_avg_yrs` years, and `"propagate"` uses the years the
+      fit projected selectivity, set by `n_proj_yrs_devs` in
+      [`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md).
+
+  `move_opt`
+
+  :   Movement. `"average"` (default) averages the last `n_avg_yrs`
+      years, and `"propagate"` uses the years the fit projected
+      movement.
+
+  `growth_opt`
+
+  :   Weight at age. `"average"` (default) averages the last `n_avg_yrs`
+      years, and `"propagate"` uses the years the fit projected growth,
+      which needs weight at age derived by a growth model.
+
+  `naa_opt`
+
+  :   Numbers at age under a state-space fit. `"terminal"` (default)
+      projects from the terminal numbers with no innovations, and
+      `"propagate"` applies the fit's projected innovations, which needs
+      `pars`.
+
+  `F_constraint`
+
+  :   A catch cap or stability limit from
+      [`catch_cap`](https://chengmatt.github.io/SPoRC/dev/reference/catch_cap.md)
+      or
+      [`catch_stability`](https://chengmatt.github.io/SPoRC/dev/reference/catch_stability.md),
+      or a list of them applied in order. Default none.
 
 - model_names:
 
   Character vector of length `n_models` of display names.
+
+- pars:
+
+  List of length `n_models`, each the fitted parameter list from
+  `fit$env$parList()`. Needed only when `rec_opt` is `"propagate"` or
+  `"terminal"`, or `naa_opt` is `"propagate"`, since those read the
+  fit's deviations. Default `NULL`.
 
 ## Value
 
@@ -92,7 +149,11 @@ directly.
 Other Reference Points and Projections:
 [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md),
 [`Get_Reference_Point_Uncertainty()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.md),
-[`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md)
+[`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md),
+[`Setup_Mod_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Projection.md),
+[`catch_cap()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_cap.md),
+[`catch_stability()`](https://chengmatt.github.io/SPoRC/dev/reference/catch_stability.md),
+[`hcr_threshold()`](https://chengmatt.github.io/SPoRC/dev/reference/hcr_threshold.md)
 
 ## Examples
 

@@ -198,7 +198,7 @@ Other dimension controls (EM only)
 
 | Argument | Description |
 |----|----|
-| `n_proj_yrs_devs` | How many projection-year slots to pre-allocate for deviation parameters (`ln_RecDevs`, `move_devs`, selectivity deviations). Default `0` |
+| `n_proj_yrs_devs` | How many projection-year slots to pre-allocate for deviation parameters (`ln_RecDevs`, `move_devs`, selectivity deviations, and the numbers at age state when it reaches the terminal year). Default `0` |
 | `store_config` | If `TRUE`, archives all `Setup_Mod_*` arguments inside `input_list$config` for reproducibility |
 
 Additional simulation dimensions (OM only)
@@ -1449,13 +1449,34 @@ reason: put states only in the seasons that have observations. It is the
 same weak-information story as a seasonal split of $`M`$, and the same
 advice follows.
 
-The state covers the assessment years only.
+With `n_proj_yrs_devs` set in
+[`Setup_Mod_Dim()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md),
+a state that reaches the terminal year runs on over the projection
+years, as the recruitment, selectivity, growth and movement deviations
+do, and `ln_NAA` gains those years. The fit makes no prediction there,
+so these cells hold the innovation itself rather than log numbers. With
+no data behind them, their estimates are the process forecast given the
+fitted years: zero under `"iid"`, the terminal innovation shrunk by
+$`\rho_y`$ each year under `"1dar1_y"` and `"2dar1"`, with standard
+errors that widen toward the process’s own spread. Passing them to
 [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
-does not read it, so projected numbers at age advance deterministically
-from the terminal year with recruitment the only stochastic element, and
-a forecast from a state-space fit therefore omits this process error.
-The closed loop operating model is a separate path that does advance the
-state, extending its active years over the projection period.
+as `naa_devs` applies them where the fit applies the state:
+
+``` r
+
+n_yrs <- length(input_list$data$years)
+n_proj_devs <- input_list$data$n_proj_yrs_devs
+ln_NAA <- fit$env$parList()$ln_NAA
+naa_devs <- array(1, dim = c(dim(ln_NAA)[1:2], n_proj_devs + 1, dim(ln_NAA)[4:6]))
+naa_devs[,, 1 + seq_len(n_proj_devs),,,] <- exp(ln_NAA[,, n_yrs + seq_len(n_proj_devs),,,, drop = FALSE])
+```
+
+Year one of a projection replays the terminal year, so its slice is
+never read. Cells outside the state sit at zero and give one. Note that
+the state is not extended when `NAA_re_years` stops before the terminal
+year, nor under `NAA_re = "dsem"`, where the dsem grid’s rows past the
+terminal year forecast it instead (i.e., not projected). The closed loop
+operating model draws its own process error over the projection years.
 
 The split of what varies by season is deliberate. `NAA_pe_pars` has no
 season dim, so every active season shares the age, year and cohort

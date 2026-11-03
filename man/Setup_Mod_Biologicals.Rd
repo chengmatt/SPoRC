@@ -342,9 +342,15 @@ series is the log state with the log deterministic prediction as its mean.
 Age one belongs to \code{ln_RecDevs} and year one at ages two and older to
 \code{ln_InitDevs}, so the three partition the numbers at age. Which cells are
 estimated is set by \code{map$ln_NAA} and \code{data$n_est_naa_re}, never by
-\code{dim(ln_NAA)}. The state covers the assessment years only, so a forecast
-from \code{\link{Do_Population_Projection}} omits this process error while the
-closed loop operating model projects the state forward.}
+\code{dim(ln_NAA)}. With \code{n_proj_yrs_devs} in \code{\link{Setup_Mod_Dim}},
+a state that reaches the terminal year runs on over the projection years, so
+\code{ln_NAA} has \code{n_years + n_proj_yrs_devs} years. Those cells hold the
+innovation itself rather than log numbers, since the estimation model makes no prediction
+there, and are penalized under the same process with no data behind them:
+so their estimates are the forecast of the process error given the fitted years.
+\code{\link{Do_Population_Projection}} applies them through \code{naa_devs}.
+Under \code{"dsem"} \code{ln_NAA} keeps the fitted years and the dsem grid
+forecasts the state instead.}
 
 \item{NAA_re_ages}{Ages the state is estimated over, matched against
 \code{input_list$data$ages} by value. A model on ages \code{0:4} takes

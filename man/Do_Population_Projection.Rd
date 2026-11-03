@@ -55,7 +55,9 @@ Do_Population_Projection(
   Mrate = NULL,
   move_timing = 0,
   expm_nsub = 0,
-  rec_devs = NULL
+  rec_devs = NULL,
+  naa_devs = NULL,
+  F_constraint = NULL
 )
 }
 \arguments{
@@ -152,7 +154,9 @@ or `"Catch"`, which solves each year's F so realized catch matches
   `catch_input[r, y]` is the catch removed in projection year `y`, indexed as
   `proj_Catch` is rather than with the one year lag `f_ref_pt` uses. Targets are
   totals over populations and fleets, and over seasons in the annual case; a
-  target of 0 sets `F = 0` without a solve.
+  target of 0 sets `F = 0` without a solve. Inside the model the F that takes the
+  catch is solved numerically first, then refined with two Newton steps the model
+  differentiates through, so the F moves with the estimates.
 
   Annual targets solve one F per region, split over seasons at the terminal year
   shares. Seasonal targets solve an F per region and season, with the fleet split
@@ -179,9 +183,9 @@ estimated and so changes the numbers entering year 2. With `n_seas > 1` the
 terminal year takes all its seasons from `terminal_NAA`, so only the last
 season's F feeds year 2.}
 
-\item{catch_f_max}{Upper bound on the F searched under `fmort_opt = "Catch"`.
-Default 5. An unreachable target caps F here, undershoots, and warns with the
-regions named.}
+\item{catch_f_max}{Upper bound on the F searched under `fmort_opt = "Catch"` and
+by `F_constraint`. Default 5. An unreachable target caps F here, undershoots,
+and warns with the regions named.}
 
 \item{catch_tol}{Relative catch tolerance for the F solver. Default 1e-6.}
 
@@ -250,6 +254,34 @@ the option gives it. Year 1 generates no recruitment, so its slice is never
 read. Drawing outside is what lets replicates share recruitment across
 management procedures, and what lets the projection be differentiated with
 respect to the rule with the deviations kept fixed.}
+
+\item{naa_devs}{Optional array \code{[n_pop, n_regions, n_proj_yrs, n_seas,
+n_ages, n_sexes]} of multiplicative innovations on the numbers at age, applied
+where a state-space fit applies its state: at the start of a year after ageing
+and the plus group, and at a later season's start after survival and movement.
+Unfished numbers are scaled too, as in the fit. One wherever there is no
+state. Year 1 is the terminal year replayed from \code{terminal_NAA}, so its
+slice is never read. A fit with \code{n_proj_yrs_devs} holds the projected
+innovations in \code{ln_NAA} past the fitted years, so
+\code{exp(ln_NAA[,, n_yrs + k,,,])} fills year \code{k + 1}. \code{NULL}
+(default) applies none.}
+
+\item{F_constraint}{Optional constraint on the F the rule or input gives, a
+function \code{(F, state)} returning the annual F by region to fish at, or a
+list of them applied in the order given. \code{\link{catch_cap}} and
+\code{\link{catch_stability}} build the two usual ones. Applied at the front of
+each year from year 2 on, since year 1 replays the terminal year, and never in a
+year solved to a catch target. \code{state} holds \code{y}, \code{F_rule},
+\code{last_catch} and \code{SSB} \code{[n_pop, n_regions]} from the year before,
+\code{NAA} \code{[n_pop, n_regions, n_ages, n_sexes]} at the start of this year,
+\code{catch_at_F(F)}, the retained catch each region would take this year at an
+annual F, and \code{F_at_catch(target, F)}, the F that takes \code{target} where it
+is given and keeps \code{F} where it is \code{NA}. Catch is in the units of
+\code{proj_Catch}, summed over populations, seasons and fleets. Inside the model
+the F that takes the allowed catch is solved numerically first, then refined with
+two Newton steps the model differentiates through, so \code{sdreport} accounts for
+how that F moves with the estimates. A constraint of your own must make its
+comparisons through \code{\link{ad_value}}.}
 }
 \value{
 A named list of projected quantities. Year index 1 is the terminal
@@ -264,6 +296,9 @@ A named list of projected quantities. Year index 1 is the terminal
     over seasons and fleets. The trailing column holds the F the rule or input
     would apply in the year after the projection, and stays 0 under
     `fmort_opt = "Catch"`.}
+  \item{\code{proj_F_rule}}{Dimensioned as `proj_F`. The F the rule or input gave
+    before any `F_constraint`, so a year where it differs from `proj_F` is one a
+    constraint bound. 0 in years solved to a catch target.}
   \item{\code{proj_F_seas}}{`[n_regions, n_proj_yrs + 1, n_seas]`. The same F by
     season, so `rowSums(proj_F_seas[, y, ])` recovers `proj_F[, y]`. The only
     place the answer lives under seasonal catch targets.}
@@ -339,31 +374,48 @@ exact because a season's catch depends only on the F in that season and earlier
 ones. The catch solved against is retained catch, so a fleet that discards
 exerts more total F than the target implies.
 
+Under \code{F_constraint} the F the rule or input gave is checked at the front of
+the year in the same way, from year 2 on. Each constraint reads the retained catch
+that F would take this year, through the same trial runs, and may lower or raise F
+by solving for the catch it allows. \code{\link{catch_cap}} and
+\code{\link{catch_stability}} build the two usual ones.
+
 Spawning biomass is multiplied by 0.5 when \code{n_sexes = 1}, and movement is
 skipped when \code{n_regions = 1}.
 }
 \section{Differentiating through the projection}{
 
 
-The projection uses RTMB's replacement operators, so it can be taped with
-\code{\link[RTMB]{MakeTape}} or \code{\link[RTMB]{MakeADFun}} and optimized with
-an exact gradient, giving an F schedule solved against an objective rather than
-scanned over a grid.
+The projection uses RTMB's replacement operators, so it can run inside
+\code{\link[RTMB]{MakeTape}} or \code{\link[RTMB]{MakeADFun}} and be optimized
+with an exact gradient, giving an F schedule solved against an objective rather
+than scanned over a grid.
 
-Two options are refused on AD types, since neither has a derivative and both
-would otherwise return a wrong gradient rather than an error:
-\code{recruitment_opt = "inv_gauss"} draws at random, and
-\code{fmort_opt = "Catch"} inverts the target numerically. Tape under
-\code{"mean_rec"}, \code{"bh_rec"} or \code{"ricker_rec"} with
-\code{fmort_opt = "Input"}. A control rule that branches on stock status stops
-on its own, since comparing an AD spawning biomass raises an error inside RTMB,
-so optimizing through a rule means writing a smooth one.
+Catch targets (\code{fmort_opt = "Catch"}) and \code{F_constraint} run inside the
+model too. The F that takes a given or an allowed catch is solved on the plain
+numbers, then refined with two Newton steps the model differentiates through, so
+the F has the derivative of the solve. RTMB records the model once, when it is
+built, and keeps whichever side of each comparison was true then, so a model that
+must compare at the estimates is built again there before \code{sdreport}, as
+\code{\link{fit_model}} does.
+
+One option is refused inside the model, since it has no derivative and would
+otherwise return a wrong gradient rather than an error:
+\code{recruitment_opt = "inv_gauss"} draws at random. Use \code{"mean_rec"},
+\code{"bh_rec"} or \code{"ricker_rec"} there. A control rule that compares spawning biomass
+directly stops with an error inside RTMB. One that reads it through
+\code{\link{ad_value}}, as \code{\link{hcr_threshold}} does, runs, with the side
+of the comparison fixed where the model was built.
 }
 
 \seealso{
 Other Reference Points and Projections:
 \code{\link[=Get_Reference_Point_Uncertainty]{Get_Reference_Point_Uncertainty()}},
 \code{\link[=Get_Reference_Points]{Get_Reference_Points()}},
-\code{\link[=get_key_quants]{get_key_quants()}}
+\code{\link[=Setup_Mod_Projection]{Setup_Mod_Projection()}},
+\code{\link[=catch_cap]{catch_cap()}},
+\code{\link[=catch_stability]{catch_stability()}},
+\code{\link[=get_key_quants]{get_key_quants()}},
+\code{\link[=hcr_threshold]{hcr_threshold()}}
 }
 \concept{Reference Points and Projections}

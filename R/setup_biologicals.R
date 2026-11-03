@@ -660,9 +660,15 @@ do_growth_mapping <- function(input_list,
 #'   Age one belongs to \code{ln_RecDevs} and year one at ages two and older to
 #'   \code{ln_InitDevs}, so the three partition the numbers at age. Which cells are
 #'   estimated is set by \code{map$ln_NAA} and \code{data$n_est_naa_re}, never by
-#'   \code{dim(ln_NAA)}. The state covers the assessment years only, so a forecast
-#'   from \code{\link{Do_Population_Projection}} omits this process error while the
-#'   closed loop operating model projects the state forward.
+#'   \code{dim(ln_NAA)}. With \code{n_proj_yrs_devs} in \code{\link{Setup_Mod_Dim}},
+#'   a state that reaches the terminal year runs on over the projection years, so
+#'   \code{ln_NAA} has \code{n_years + n_proj_yrs_devs} years. Those cells hold the
+#'   innovation itself rather than log numbers, since the estimation model makes no prediction
+#'   there, and are penalized under the same process with no data behind them:
+#'   so their estimates are the forecast of the process error given the fitted years.
+#'   \code{\link{Do_Population_Projection}} applies them through \code{naa_devs}.
+#'   Under \code{"dsem"} \code{ln_NAA} keeps the fitted years and the dsem grid
+#'   forecasts the state instead.
 #' @param NAA_re_ages Ages the state is estimated over, matched against
 #'   \code{input_list$data$ages} by value. A model on ages \code{0:4} takes
 #'   \code{c(1, 2, 3, 4)} for the full state. \code{NULL} (default) uses
@@ -1548,10 +1554,19 @@ do_NAAstate_mapping <- function(input_list,
   eq_naa <- ln_R0 - log(n_regions) - log(n_sexes) - M_bar * (seq_len(n_ages) - 1)
   eq_naa[n_ages] <- eq_naa[n_ages] - log(1 - exp(-M_bar)) # plus group at equilibrium
   if(!all(is.finite(eq_naa))) eq_naa <- rep(5, n_ages)
-  input_list$par$ln_NAA <- use_starting_value(
-    array(rep(eq_naa, each = n_pop * n_regions * n_yrs * n_seas),
-          dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes)),
-    starting_values, "ln_NAA")
+
+  # a state reaching the terminal year runs on over the n_proj_yrs_devs projection years. the estimation model makes no
+  # prediction there, so those cells hold the innovation itself rather than log numbers, and start at zero
+  n_proj_devs <- if(is.null(input_list$data$n_proj_yrs_devs)) 0 else input_list$data$n_proj_yrs_devs
+  state_end <- if(is.null(NAA_re_years)) years[n_yrs] else max(NAA_re_years)
+  n_ext <- if(!NAA_re %in% c("none", "dsem") && state_end == years[n_yrs]) n_proj_devs else 0
+  ln_naa_start <- array(0, dim = c(n_pop, n_regions, n_yrs + n_ext, n_seas, n_ages, n_sexes))
+  ln_naa_start[,,seq_len(n_yrs),,,] <- rep(eq_naa, each = n_pop * n_regions * n_yrs * n_seas)
+  if(n_ext > 0 && isTRUE(dim(starting_values$ln_NAA)[3] == n_yrs)) {
+    ln_naa_start[,,seq_len(n_yrs),,,] <- starting_values$ln_NAA # a seed over the fitted years alone leaves the projected cells at zero
+    starting_values$ln_NAA <- NULL
+  }
+  input_list$par$ln_NAA <- use_starting_value(ln_naa_start, starting_values, "ln_NAA")
 
   # map all of this stuff off if no process error
   if(NAA_re == "none") {
@@ -1611,6 +1626,13 @@ do_NAAstate_mapping <- function(input_list,
     stop("NAA_re_years must be a contiguous run of years. The state is penalized as one rectangular ",
          "slice, so a gap would leave penalized cells the dynamics never wrote.")
 
+  # the projection years at attacthed to the state after the terminal year
+  if(n_ext > 0) yr_idx <- c(yr_idx, n_yrs + seq_len(n_ext))
+  if(n_proj_devs > 0 && n_ext == 0) {
+    if(NAA_re == "dsem") collect_message("NAA_re = 'dsem': ln_NAA stays on the fitted years, and the dsem grid's rows past the terminal year forecast the state over the ", n_proj_devs, " projection years.")
+    else collect_message("The numbers at age state stops before the terminal year, so it does not run over the ", n_proj_devs, " projection years.")
+  }
+
   # the seasons the state runs over. season one is the year boundary, so it alone is the annual state
   seas_idx <- if(identical(NAA_re_seasons, "annual")) 1 else
               if(identical(NAA_re_seasons, "all")) seq_len(n_seas) else
@@ -1663,6 +1685,14 @@ do_NAAstate_mapping <- function(input_list,
   if(any(sigma_blocks == 0))
     stop("The NAA_sigma block specifications do not cover every cell. Each of the population, ",
          "region, year, season, age and sex block lists must partition its dimension.")
+
+  # the projection years take the terminal year's blocks
+  if(n_ext > 0) {
+    sigma_blocks_ext <- array(0, dim = c(n_pop, n_regions, n_yrs + n_ext, n_seas, n_ages, n_sexes))
+    sigma_blocks_ext[,,seq_len(n_yrs),,,] <- sigma_blocks
+    for(k in seq_len(n_ext)) sigma_blocks_ext[,,n_yrs + k,,,] <- sigma_blocks[,,n_yrs,,,]
+    sigma_blocks <- sigma_blocks_ext
+  }
 
   input_list$par$ln_sigmaNAA <- array(log(0.3), dim = c(length(NAA_sigma_popblk_spec_vals),
                                                         length(NAA_sigma_regionblk_spec_vals),
@@ -1850,7 +1880,8 @@ do_NAAstate_mapping <- function(input_list,
   input_list$data$naa_sigma_blocks <- sigma_blocks
 
   collect_message("State-space numbers at age: ", NAA_re, " innovations over ",
-                  length(yr_idx), " years, ", n_seas_re, " of ", n_seas, " seasons and ",
+                  length(yr_idx) - n_ext, " years", if(n_ext > 0) paste0(" plus ", n_ext, " projection years"),
+                  ", ", n_seas_re, " of ", n_seas, " seasons and ",
                   length(age_idx), " ages (", n_active, " states), season correlation ",
                   NAA_re_season, ", process error ", NAA_sigma_spec)
 

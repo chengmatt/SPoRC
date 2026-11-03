@@ -1764,6 +1764,10 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   # CAAL
   if(!has("do_caal")) set("do_caal", 0)
 
+  # projection inside the objective, off for input lists that predate it
+  if(!has("proj_n_yrs")) set("proj_n_yrs", 0)
+  if(!has("proj_catch_input")) set("proj_catch_input", NULL)
+
   # dynamic structural equation model. NULL means no dsem
   if(!has("dsem_model")) set("dsem_model", NULL)
   if(!has("dsem_declared")) set("dsem_declared", character(0))

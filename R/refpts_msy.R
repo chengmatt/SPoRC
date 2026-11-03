@@ -96,12 +96,57 @@ equil_rec_ssb_deriv <- function(S, S0, R0, h, rec_model) {
 #'
 #' @keywords internal
 #' @import RTMB
-single_region_Fmsy <- function(pars, data) {
+single_region_Fmsy <- function(pars,
+                                 data
+) {
+
+  out <- single_region_Fmsy_quantities(pars$log_Fmsy, data)
+
+  SB_age <- out$SB_age
+  Nspr <- out$Nspr
+  effective_SB <- out$effective_SB
+  effective_SB0 <- out$effective_SB0
+  SB <- out$SB
+  SB0 <- out$SB0
+  Fmsy <- out$Fmsy
+  Yield <- out$Yield
+  Req <- out$Req
+  CAA <- out$CAA
+
+  RTMB::REPORT(SB_age)
+  RTMB::REPORT(Nspr)
+  RTMB::REPORT(effective_SB)
+  RTMB::REPORT(effective_SB0)
+  RTMB::REPORT(SB)
+  RTMB::REPORT(SB0)
+  RTMB::REPORT(Fmsy)
+  RTMB::REPORT(Yield)
+  RTMB::REPORT(Req)
+  RTMB::REPORT(CAA)
+
+  return(out$obj_fun)
+}
+
+#' Quantities behind \code{\link{single_region_Fmsy}} at one trial fishing mortality
+#'
+#' The per-recruit and equilibrium calculations of \code{single_region_Fmsy}, returned as a
+#' list rather than reported, so the solve can run on the tape inside the objective.
+#'
+#' @param log_Fmsy Log scale trial fishing mortality, as \code{single_region_Fmsy} takes it in \code{pars}.
+#' @param data Named list of RTMB data, as \code{single_region_Fmsy} takes it.
+#'
+#' @return Named list: \code{obj_fun}, the value \code{single_region_Fmsy} returns, and every
+#'   quantity it reports.
+#'
+#' @keywords internal
+#' @noRd
+single_region_Fmsy_quantities <- function(log_Fmsy,
+                                            data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  RTMB::getAll(pars, data)
+  RTMB::getAll(data)
 
   # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
@@ -290,19 +335,17 @@ single_region_Fmsy <- function(pars, data) {
   Yield = array(0, dim = c(n_pop))
   for(p in 1:n_pop) Yield[p] = sum(CAA[p,,] * WAA[p,,]) * Req[p]
   obj_fun = -sum(Yield)
-
-  RTMB::REPORT(SB_age)
-  RTMB::REPORT(Nspr)
-  RTMB::REPORT(effective_SB)
-  RTMB::REPORT(effective_SB0)
-  RTMB::REPORT(SB)
-  RTMB::REPORT(SB0)
-  RTMB::REPORT(Fmsy)
-  RTMB::REPORT(Yield)
-  RTMB::REPORT(Req)
-  RTMB::REPORT(CAA)
-
-  return(obj_fun)
+  return(list(obj_fun = obj_fun,
+              SB_age = SB_age,
+              Nspr = Nspr,
+              effective_SB = effective_SB,
+              effective_SB0 = effective_SB0,
+              SB = SB,
+              SB0 = SB0,
+              Fmsy = Fmsy,
+              Yield = Yield,
+              Req = Req,
+              CAA = CAA))
 }
 
 # Global MSY ----------------------------------------------------------------
@@ -349,12 +392,54 @@ single_region_Fmsy <- function(pars, data) {
 #' @keywords internal
 #' @import RTMB
 global_Fmsy <- function(pars,
-                           data) {
+                          data
+) {
+
+  out <- global_Fmsy_quantities(pars$log_Fmsy, data)
+
+  SB_age <- out$SB_age
+  Nspr <- out$Nspr
+  SBPR_0 <- out$SBPR_0
+  SBPR_F <- out$SBPR_F
+  Fmsy <- out$Fmsy
+  Yield <- out$Yield
+  Yield_r <- out$Yield_r
+  Req <- out$Req
+  SPR <- out$SPR
+
+  RTMB::REPORT(SB_age)
+  RTMB::REPORT(Nspr)
+  RTMB::REPORT(SBPR_0)
+  RTMB::REPORT(SBPR_F)
+  RTMB::REPORT(Fmsy)
+  RTMB::REPORT(Yield)
+  RTMB::REPORT(Yield_r)
+  RTMB::REPORT(Req)
+  RTMB::REPORT(SPR)
+
+  return(out$obj_fun)
+}
+
+#' Quantities behind \code{\link{global_Fmsy}} at one trial fishing mortality
+#'
+#' The per-recruit and equilibrium calculations of \code{global_Fmsy}, returned as a
+#' list rather than reported, so the solve can run on the tape inside the objective.
+#'
+#' @param log_Fmsy Log scale trial fishing mortality, as \code{global_Fmsy} takes it in \code{pars}.
+#' @param data Named list of RTMB data, as \code{global_Fmsy} takes it.
+#'
+#' @return Named list: \code{obj_fun}, the value \code{global_Fmsy} returns, and every
+#'   quantity it reports.
+#'
+#' @keywords internal
+#' @noRd
+global_Fmsy_quantities <- function(log_Fmsy,
+                                     data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  RTMB::getAll(pars, data) # get parameters and data
+  RTMB::getAll(data, warn = FALSE)
 
   # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
@@ -604,18 +689,16 @@ global_Fmsy <- function(pars,
 
   # compute objective function to get Fmsy
   obj_fun = -Yield
-
-  RTMB::REPORT(SB_age)
-  RTMB::REPORT(Nspr)
-  RTMB::REPORT(SBPR_0)
-  RTMB::REPORT(SBPR_F)
-  RTMB::REPORT(Fmsy)
-  RTMB::REPORT(Yield)
-  RTMB::REPORT(Yield_r)
-  RTMB::REPORT(Req)
-  RTMB::REPORT(SPR)
-
-  return(obj_fun)
+  return(list(obj_fun = obj_fun,
+              SB_age = SB_age,
+              Nspr = Nspr,
+              SBPR_0 = SBPR_0,
+              SBPR_F = SBPR_F,
+              Fmsy = Fmsy,
+              Yield = Yield,
+              Yield_r = Yield_r,
+              Req = Req,
+              SPR = SPR))
 }
 
 # Local MSY, Single Population ----------------------------------------------
@@ -671,12 +754,63 @@ global_Fmsy <- function(pars,
 #'
 #' @keywords internal
 #' @import RTMB
-local_Fmsy_sglpop <- function(pars, data) {
+local_Fmsy_sglpop <- function(pars,
+                                data
+) {
+
+  out <- local_Fmsy_sglpop_quantities(pars$log_Fmsy, data)
+
+  Fmsy <- out$Fmsy
+  Req_o <- out$Req_o
+  Yield_r <- out$Yield_r
+  Yield_total <- out$Yield_total
+  dg_dReq <- out$dg_dReq
+  iter_vec <- out$iter_vec
+  SB_fished_mat <- out$SB_fished_mat
+  SB_unfished_mat <- out$SB_unfished_mat
+  sum_SB_unfished_mat <- out$sum_SB_unfished_mat
+  Nspr <- out$Nspr
+  SB_age <- out$SB_age
+  SB <- out$SB
+  SB0 <- out$SB0
+
+  RTMB::REPORT(Fmsy)
+  RTMB::REPORT(Req_o)
+  RTMB::REPORT(Yield_r)
+  RTMB::REPORT(Yield_total)
+  RTMB::REPORT(dg_dReq)
+  RTMB::REPORT(iter_vec)
+  RTMB::REPORT(SB_fished_mat)
+  RTMB::REPORT(SB_unfished_mat)
+  RTMB::REPORT(sum_SB_unfished_mat)
+  RTMB::REPORT(Nspr)
+  RTMB::REPORT(SB_age)
+  RTMB::REPORT(SB)
+  RTMB::REPORT(SB0)
+
+  return(out$obj_fun)
+}
+
+#' Quantities behind \code{\link{local_Fmsy_sglpop}} at one trial fishing mortality
+#'
+#' The per-recruit and equilibrium calculations of \code{local_Fmsy_sglpop}, returned as a
+#' list rather than reported, so the solve can run on the tape inside the objective.
+#'
+#' @param log_Fmsy Log scale trial fishing mortality, as \code{local_Fmsy_sglpop} takes it in \code{pars}.
+#' @param data Named list of RTMB data, as \code{local_Fmsy_sglpop} takes it.
+#'
+#' @return Named list: \code{obj_fun}, the value \code{local_Fmsy_sglpop} returns, and every
+#'   quantity it reports.
+#'
+#' @keywords internal
+#' @noRd
+local_Fmsy_sglpop_quantities <- function(log_Fmsy,
+                                           data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  RTMB::getAll(pars, data) # get parameters and data
+  RTMB::getAll(data, warn = FALSE)
 
   # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
@@ -1002,22 +1136,20 @@ local_Fmsy_sglpop <- function(pars, data) {
   obj_fun = -Yield_total
 
   sum_SB_unfished_mat = sum(SB_unfished_mat)
-
-  RTMB::REPORT(Fmsy)
-  RTMB::REPORT(Req_o)
-  RTMB::REPORT(Yield_r)
-  RTMB::REPORT(Yield_total)
-  RTMB::REPORT(dg_dReq)
-  RTMB::REPORT(iter_vec)
-  RTMB::REPORT(SB_fished_mat)
-  RTMB::REPORT(SB_unfished_mat)
-  RTMB::REPORT(sum_SB_unfished_mat)
-  RTMB::REPORT(Nspr)
-  RTMB::REPORT(SB_age)
-  RTMB::REPORT(SB)
-  RTMB::REPORT(SB0)
-
-  return(obj_fun)
+  return(list(obj_fun = obj_fun,
+              Fmsy = Fmsy,
+              Req_o = Req_o,
+              Yield_r = Yield_r,
+              Yield_total = Yield_total,
+              dg_dReq = dg_dReq,
+              iter_vec = iter_vec,
+              SB_fished_mat = SB_fished_mat,
+              SB_unfished_mat = SB_unfished_mat,
+              sum_SB_unfished_mat = sum_SB_unfished_mat,
+              Nspr = Nspr,
+              SB_age = SB_age,
+              SB = SB,
+              SB0 = SB0))
 }
 
 # Local MSY, Multiple Populations -------------------------------------------
@@ -1072,12 +1204,63 @@ local_Fmsy_sglpop <- function(pars, data) {
 #'
 #' @keywords internal
 #' @import RTMB
-local_Fmsy_multipop <- function(pars, data) {
+local_Fmsy_multipop <- function(pars,
+                                  data
+) {
+
+  out <- local_Fmsy_multipop_quantities(pars$log_Fmsy, data)
+
+  Fmsy <- out$Fmsy
+  Req_o <- out$Req_o
+  Yield_pr <- out$Yield_pr
+  Yield_total <- out$Yield_total
+  iter_vec <- out$iter_vec
+  SB_fished_mat <- out$SB_fished_mat
+  SB_unfished_mat <- out$SB_unfished_mat
+  Nspr <- out$Nspr
+  SBPR_unfished <- out$SBPR_unfished
+  SBPR_fished <- out$SBPR_fished
+  SB_age <- out$SB_age
+  SB <- out$SB
+  SB0 <- out$SB0
+
+  RTMB::REPORT(Fmsy)
+  RTMB::REPORT(Req_o)
+  RTMB::REPORT(Yield_pr)
+  RTMB::REPORT(Yield_total)
+  RTMB::REPORT(iter_vec)
+  RTMB::REPORT(SB_fished_mat)
+  RTMB::REPORT(SB_unfished_mat)
+  RTMB::REPORT(Nspr)
+  RTMB::REPORT(SBPR_unfished)
+  RTMB::REPORT(SBPR_fished)
+  RTMB::REPORT(SB_age)
+  RTMB::REPORT(SB)
+  RTMB::REPORT(SB0)
+
+  return(out$obj_fun)
+}
+
+#' Quantities behind \code{\link{local_Fmsy_multipop}} at one trial fishing mortality
+#'
+#' The per-recruit and equilibrium calculations of \code{local_Fmsy_multipop}, returned as a
+#' list rather than reported, so the solve can run on the tape inside the objective.
+#'
+#' @param log_Fmsy Log scale trial fishing mortality, as \code{local_Fmsy_multipop} takes it in \code{pars}.
+#' @param data Named list of RTMB data, as \code{local_Fmsy_multipop} takes it.
+#'
+#' @return Named list: \code{obj_fun}, the value \code{local_Fmsy_multipop} returns, and every
+#'   quantity it reports.
+#'
+#' @keywords internal
+#' @noRd
+local_Fmsy_multipop_quantities <- function(log_Fmsy,
+                                             data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  RTMB::getAll(pars, data) # get parameters and data
+  RTMB::getAll(data, warn = FALSE)
 
   # an older data list has no rec_model, so default to Beverton-Holt
   if(!exists("rec_model", inherits = FALSE)) rec_model <- 1
@@ -1475,20 +1658,18 @@ local_Fmsy_multipop <- function(pars, data) {
   # maximize total yield
   Yield_total = sum(Yield_pr)
   obj_fun = -Yield_total
-
-  RTMB::REPORT(Fmsy)
-  RTMB::REPORT(Req_o)
-  RTMB::REPORT(Yield_pr)
-  RTMB::REPORT(Yield_total)
-  RTMB::REPORT(iter_vec)
-  RTMB::REPORT(SB_fished_mat)
-  RTMB::REPORT(SB_unfished_mat)
-  RTMB::REPORT(Nspr)
-  RTMB::REPORT(SBPR_unfished)
-  RTMB::REPORT(SBPR_fished)
-  RTMB::REPORT(SB_age)
-  RTMB::REPORT(SB)
-  RTMB::REPORT(SB0)
-
-  return(obj_fun)
+  return(list(obj_fun = obj_fun,
+              Fmsy = Fmsy,
+              Req_o = Req_o,
+              Yield_pr = Yield_pr,
+              Yield_total = Yield_total,
+              iter_vec = iter_vec,
+              SB_fished_mat = SB_fished_mat,
+              SB_unfished_mat = SB_unfished_mat,
+              Nspr = Nspr,
+              SBPR_unfished = SBPR_unfished,
+              SBPR_fished = SBPR_fished,
+              SB_age = SB_age,
+              SB = SB,
+              SB0 = SB0))
 }

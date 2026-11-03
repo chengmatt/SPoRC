@@ -3210,6 +3210,102 @@ SPoRC_rtmb = function(pars, data) {
   if(is.function(data$extra_nll)) extra_nLL = data$extra_nll(pars, environment())
   jnLL = jnLL + extra_nLL
 
+  # Internal Projection -----------------------------------------------------
+  if(proj_n_yrs > 0) {
+
+    proj = get_internal_projection(
+      proj_n_yrs = proj_n_yrs, # projection years, the first replays the terminal year
+      proj_f_opt = proj_f_opt, # 1 terminal F, 2 input F, 3 the rule on the reference points given
+      proj_f_input = proj_f_input, # F by region and year under option 2
+      proj_f_ref_pt = proj_f_ref_pt, # the F reference point the rule reads, by region and year
+      proj_b_ref_pt = proj_b_ref_pt, # the biomass reference point, by population, region and year
+      proj_hcr_function = proj_hcr_function, # the rule, NULL for the threshold rule
+      proj_hcr_scope = proj_hcr_scope, # 1 each region reads its own biomass, 2 the total
+      proj_F_constraint = proj_F_constraint, # catch cap or stability band, NULL for none
+      proj_catch_input = proj_catch_input, # catch by region and year solved for F, NA years fished under proj_f_opt, NULL for none
+      proj_refpt_type = proj_refpt_type, # under option 4: 1 single region, 2 multi region
+      proj_refpt_what = proj_refpt_what, # which reference point, the Get_Reference_Points options in order
+      proj_spr_x = proj_spr_x, # target spawning potential ratio
+      proj_sex_ratio_f = proj_sex_ratio_f, # female share of recruits the per-recruit loop starts from, NULL for the model's own
+      proj_is_discard_fleet = proj_is_discard_fleet, # fleets whose catch is discarded, read by the MSY options
+      proj_local_bh_msy_newton_steps = proj_local_bh_msy_newton_steps, # inner steps of local MSY
+      proj_refpt_newton_steps = proj_refpt_newton_steps, # newton steps the model differentiates through, after the numerical solve
+      proj_refpt_log_f_start = proj_refpt_log_f_start, # start of the value solve
+      proj_n_avg_yrs = proj_n_avg_yrs, # terminal years the demographics are averaged over
+      proj_sel_opt = proj_sel_opt, # 1 averaged, 2 the years the fit extended
+      proj_move_opt = proj_move_opt,
+      proj_growth_opt = proj_growth_opt, # 1 weight at age averaged, 2 the years the fit projected growth
+      proj_calc_rec_yrs = proj_calc_rec_yrs, # model years mean recruitment is taken over
+      proj_rec_opt = proj_rec_opt, # 1 the fit's projected deviations, 2 the mean alone, 3 the terminal deviation kept
+      proj_naa_opt = proj_naa_opt, # 1 the fit's projected state innovations, 2 the terminal state with none
+
+      # additional inputs
+      n_yrs = n_yrs, n_pop = n_pop, n_regions = n_regions, n_ages = n_ages, n_sexes = n_sexes, n_seas = n_seas, n_fish_fleets = n_fish_fleets,
+      seasdur = seasdur, spawn_seas = spawn_seas, natal_region = natal_region, do_recruits_move = do_recruits_move,
+      move_timing = move_timing, expm_nsub = move_expm_nsub, t_spawn = t_spawn, rec_model = rec_model,
+      NAA = NAA, NAA0 = NAA0, Fmort = Fmort, Rec = Rec, natmort = natmort, WAA = WAA, WAA_fish = WAA_fish, MatAA = MatAA,
+      fish_sel = fish_sel, ret_sel = ret_sel, dmr = dmr, Movement = Movement, Mrate = Mrate, sgl_seas_spawning_movement = sgl_seas_spawning_movement,
+      sexratio = sexratio, stray_rate = stray_rate, rec_seas_prop = rec_seas_prop, rec_region_prop = rec_region_prop,
+      R0 = R0, h_trans = h_trans, ln_RecDevs = ln_RecDevs,
+      ln_NAA = ln_NAA, n_est_naa_re = n_est_naa_re, naa_re_ages = naa_re_ages, naa_re_seas = naa_re_seas, naa_re_where = naa_re_where
+    )
+
+    # Reporting Stuff Out
+    proj_SSB = proj$proj_SSB # spawning biomass [pop, region, projection year]
+    proj_Catch = proj$proj_Catch # retained catch [pop, region, projection year, season, fleet]
+    proj_F = proj$proj_F # fishing mortality fished [region, projection year + 1]
+    proj_F_rule = proj$proj_F_rule # the rule's or input F before any constraint
+    proj_Total_Biom = proj$proj_Total_Biom # total biomass [pop, region, projection year]
+    proj_NAA = proj$proj_NAA # numbers at age [pop, region, projection year + 1, season, age, sex]
+
+    # log scale, so the intervals sdreport gives stay positive
+    log_proj_SSB = log(proj_SSB + 1e-5)
+    log_proj_Catch = log(proj$proj_Catch_reg + 1e-5) # by region and year, populations, seasons and fleets summed
+    log_proj_F = log(proj_F[,1:proj_n_yrs,drop = FALSE] + 1e-8)
+    log_proj_Total_Biom = log(proj_Total_Biom + 1e-5)
+    log_proj_NAA = log(proj_NAA[,,1:proj_n_yrs,,,,drop = FALSE] + 1e-5) # the projection years, the spare year after them left out
+
+    # spawning biomass relative to its target
+    proj_status = proj$proj_status # [region, projection year], populations summed
+
+    # reference point stuff
+    if(!is.null(proj$refpts)) {
+      proj_f_ref_pt = proj$refpts$f_ref_pt # [region]
+      proj_b_ref_pt = proj$refpts$b_ref_pt # [pop, region]
+      proj_virgin_b_ref_pt = proj$refpts$virgin_b_ref_pt
+      proj_pop_b_ref_pt = proj$refpts$pop_b_ref_pt # at each population's natal region, straying included
+      proj_virgin_pop_b_ref_pt = proj$refpts$virgin_pop_b_ref_pt
+      log_proj_f_ref_pt = log(proj_f_ref_pt + 1e-8)
+      log_proj_b_ref_pt = log(proj_b_ref_pt + 1e-5)
+      log_proj_status = log(proj_status + 1e-5)
+
+      RTMB::REPORT(proj_f_ref_pt)
+      RTMB::REPORT(proj_b_ref_pt)
+      RTMB::REPORT(proj_virgin_b_ref_pt)
+      RTMB::REPORT(proj_pop_b_ref_pt)
+      RTMB::REPORT(proj_virgin_pop_b_ref_pt)
+      RTMB::ADREPORT(log_proj_f_ref_pt)
+      RTMB::ADREPORT(log_proj_b_ref_pt)
+      RTMB::ADREPORT(log_proj_status)
+    } # end if the rule reads reference points solved inside the model
+
+    # more reporting stuff
+    RTMB::REPORT(proj_SSB)
+    RTMB::REPORT(proj_Catch)
+    RTMB::REPORT(proj_F)
+    RTMB::REPORT(proj_F_rule)
+    RTMB::REPORT(proj_Total_Biom)
+    RTMB::REPORT(proj_NAA)
+    RTMB::REPORT(proj_status)
+    RTMB::ADREPORT(log_proj_SSB)
+    RTMB::ADREPORT(log_proj_Catch)
+    RTMB::ADREPORT(log_proj_F)
+    RTMB::ADREPORT(log_proj_Total_Biom)
+    RTMB::ADREPORT(log_proj_NAA)
+
+
+  } # end internal projection
+
   # Report Section ----------------------------------------------------------
   ## Biological Processes ----------------------------------------------------
   RTMB::REPORT(R0)

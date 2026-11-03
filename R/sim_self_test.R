@@ -1184,11 +1184,12 @@ simulation_self_test <- function(
 
     # figure out eta from NAA PE
     naa_codes <- c("none", "iid", "1dar1_a", "1dar1_y", "2dar1", "3dcond", "3dmarg")
-    ny_state <- dim(optim_parameters_list$ln_NAA)[3]
+    ny_state <- length(data$years)
     draw_eta <- function(rp, pr) {
       pred <- rp$NAA_pred[,,seq_len(ny_state),,,,drop = FALSE]
-      out <- array(0, dim = dim(pr$ln_NAA))
-      out[pred > 0] <- pr$ln_NAA[pred > 0] - log(pred[pred > 0])
+      state <- pr$ln_NAA[,,seq_len(ny_state),,,,drop = FALSE]
+      out <- array(0, dim = dim(state))
+      out[pred > 0] <- state[pred > 0] - log(pred[pred > 0])
       out
     }
     eta <- bind_sims(lapply(seq_len(n_sims), function(i) draw_eta(views$reps[[i]], views$pars[[i]])))
@@ -1197,7 +1198,7 @@ simulation_self_test <- function(
       sim_list = sim_list,
       NAA_re = naa_codes[data$NAA_re + 1],
       NAA_re_ages = data$naa_re_ages,
-      NAA_re_years = data$naa_re_yrs,
+      NAA_re_years = data$naa_re_yrs[data$naa_re_yrs <= ny_state],
       NAA_re_seasons = data$naa_re_seas,
       naa_eta_input = if(sim_type == "conditional") eta
     )

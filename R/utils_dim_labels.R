@@ -317,6 +317,18 @@ dim_roles <- list(
   # derived quantities
   Total_Biom = c("Pop", "Region", "Year"),
   SSB = c("Pop", "Region", "Year"),
+  proj_SSB = c("Pop", "Region", "Proj_Year"), # projection years, numbered from the replayed terminal year
+  proj_Total_Biom = c("Pop", "Region", "Proj_Year"),
+  proj_NAA = c("Pop", "Region", "Proj_Year", "Seas", "Age", "Sex"), # years run to the last projection year plus one
+  proj_Catch = c("Pop", "Region", "Proj_Year", "Seas", "Fish_Fleet"),
+  proj_F = c("Region", "Proj_Year"),
+  proj_F_rule = c("Region", "Proj_Year"),
+  proj_status = c("Region", "Proj_Year"),
+  proj_f_ref_pt = "Region",
+  proj_b_ref_pt = c("Pop", "Region"),
+  proj_virgin_b_ref_pt = c("Pop", "Region"),
+  proj_pop_b_ref_pt = c("Pop", "Region"),
+  proj_virgin_pop_b_ref_pt = c("Pop", "Region"),
   Dynamic_SSB0 = c("Pop", "Region", "Year"),
   eff_SSB = c("Pop", "Year"),
   Aggregated_SSB = "Year",

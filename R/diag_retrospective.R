@@ -3,6 +3,42 @@
 # Retrospective analysis: refit the model with terminal years peeled off and measure how the
 # estimates shift.
 
+#' Keep The Fitted Years A Peel Leaves And Every Projected Year
+#'
+#' A deviation array built with \code{n_proj_yrs_devs} runs over the fitted years and then the
+#' projected ones. A peel drops the last fitted years and keeps the projected cells, which the
+#' projection reads, so the array stays the length the model expects.
+#'
+#' @param x Array with a year dim, a vector over years, or \code{NULL}.
+#' @param yr_dim Integer. Which dim is years.
+#' @param n_fitted Integer. Fitted years before the peel.
+#' @param n_keep Integer. Fitted years kept.
+#' @return \code{x} over the kept fitted years and the projected ones, or \code{NULL} as given.
+#' @keywords internal
+#' @noRd
+peel_year_dim <- function(x, yr_dim, n_fitted, n_keep) {
+  if(is.null(x)) return(NULL)
+  n_total <- if(is.null(dim(x))) length(x) else dim(x)[yr_dim]
+  keep <- c(seq_len(n_keep), n_fitted + seq_len(max(0, n_total - n_fitted))) # kept fitted years, then the projected ones
+  if(is.null(dim(x))) return(x[keep])
+  idx <- rep(list(TRUE), length(dim(x)))
+  idx[[yr_dim]] <- keep
+  return(do.call("[", c(list(x), idx, list(drop = FALSE))))
+}
+
+#' Peel A Parameter Map The Same Way As Its Parameter
+#'
+#' @param map The map, a factor over the parameter's cells, or \code{NULL}.
+#' @param par The parameter array it maps.
+#' @param yr_dim,n_fitted,n_keep As \code{peel_year_dim}.
+#' @return The peeled map as a factor, or \code{NULL} as given.
+#' @keywords internal
+#' @noRd
+peel_map <- function(map, par, yr_dim, n_fitted, n_keep) {
+  if(is.null(map) || is.null(par)) return(NULL)
+  return(factor(peel_year_dim(array(map, dim = dim(par)), yr_dim, n_fitted, n_keep)))
+}
+
 #' Truncate Model Inputs for Retrospective Diagnostics
 #'
 #' Removes the last \code{j} years from the model inputs and updates the data,
@@ -38,11 +74,20 @@ truncate_yr <- function(j,
 
 # Recruitment -------------------------------------------------------------
 
-  # Recruitment devs
-  retro_parameters$ln_RecDevs <- parameters$ln_RecDevs[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # Recruitment deviations
-  if(any(names(retro_mapping) == 'ln_RecDevs')) retro_mapping$ln_RecDevs <- factor(array(mapping$ln_RecDevs, dim = dim(parameters$ln_RecDevs))[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE]) # modify mapping if we have recruitment map
-  if(!is.null(data$map_ln_RecDevs)) retro_data$map_ln_RecDevs <- data$map_ln_RecDevs[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # keep the penalty's map mirror in step
-  if(length(data$Wt_Rec) > 1) retro_data$Wt_Rec <- data$Wt_Rec[,,1:(dim(parameters$ln_RecDevs)[3] - j), drop = FALSE] # keep per-deviation recruitment weights in step
+  # Recruitment devs: the kept fitted years, then the projected ones from n_proj_yrs_devs
+  n_fitted <- length(data$years)
+  n_keep <- n_fitted - j
+  retro_parameters$ln_RecDevs <- peel_year_dim(parameters$ln_RecDevs, 3, n_fitted, n_keep)
+  retro_mapping$ln_RecDevs <- peel_map(mapping$ln_RecDevs, parameters$ln_RecDevs, 3, n_fitted, n_keep)
+  retro_data$map_ln_RecDevs <- peel_year_dim(data$map_ln_RecDevs, 3, n_fitted, n_keep) # the penalty's map mirror
+  if(length(data$Wt_Rec) > 1) retro_data$Wt_Rec <- peel_year_dim(data$Wt_Rec, 3, n_fitted, n_keep) # per-deviation weights
+
+  # the projection's mean recruitment window ends the same number of years before the new terminal year
+  if(!is.null(data$proj_calc_rec_yrs)) {
+    rec_age_implied <- n_fitted - max(data$proj_calc_rec_yrs)
+    retro_data$proj_calc_rec_yrs <- data$proj_calc_rec_yrs[data$proj_calc_rec_yrs <= n_keep - rec_age_implied]
+  }
+  retro_data$move_year_block <- peel_year_dim(data$move_year_block, 1, n_fitted, n_keep) # movement's year blocks run over the projected years too
 
   # R0 time blocks. a peel deep enough to remove every year of the terminal block would leave that
   # column with no data and a zero row in the Hessian, so drop it the same way ln_fish_q is
@@ -112,15 +157,23 @@ truncate_yr <- function(j,
 
     n_keep <- length(data$years) - j
 
-    retro_parameters$ln_NAA <- parameters$ln_NAA[,, 1:n_keep,,,, drop = FALSE]
+    # projection years from n_proj_yrs_devs sit past the fitted ones and hold innovations, so they follow the
+    # kept years rather than being peeled, and take the new terminal year's sigma blocks
+    n_ext <- dim(parameters$ln_NAA)[3] - length(data$years)
+    keep_yrs <- c(seq_len(n_keep), length(data$years) + seq_len(n_ext))
+
+    retro_parameters$ln_NAA <- parameters$ln_NAA[,, keep_yrs,,,, drop = FALSE]
     if(any(names(retro_mapping) == 'ln_NAA')) {
-      retro_mapping$ln_NAA <- factor(array(mapping$ln_NAA, dim = dim(parameters$ln_NAA))[,, 1:n_keep,,,, drop = FALSE])
+      retro_mapping$ln_NAA <- factor(array(mapping$ln_NAA, dim = dim(parameters$ln_NAA))[,, keep_yrs,,,, drop = FALSE])
     }
-    if(!is.null(data$map_ln_NAA)) retro_data$map_ln_NAA <- data$map_ln_NAA[,, 1:n_keep,,,, drop = FALSE]
-    retro_data$naa_sigma_blocks <- data$naa_sigma_blocks[,, 1:n_keep,,,, drop = FALSE]
+    if(!is.null(data$map_ln_NAA)) retro_data$map_ln_NAA <- data$map_ln_NAA[,, keep_yrs,,,, drop = FALSE]
+    retro_data$naa_sigma_blocks <- data$naa_sigma_blocks[,, keep_yrs,,,, drop = FALSE]
+    for(k in seq_len(n_ext)) retro_data$naa_sigma_blocks[,, n_keep + k,,,] <- retro_data$naa_sigma_blocks[,, n_keep,,,]
 
     # the active years are indices into the year axis, so the peeled ones simply drop out
     retro_data$naa_re_yrs <- data$naa_re_yrs[data$naa_re_yrs <= n_keep]
+    if(n_ext > 0 && any(data$naa_re_yrs > length(data$years)) && length(retro_data$naa_re_yrs) > 0)
+      retro_data$naa_re_yrs <- c(retro_data$naa_re_yrs, n_keep + seq_len(n_ext))
     retro_data$n_est_naa_re <- dim(parameters$ln_NAA)[1] * dim(parameters$ln_NAA)[2] *
                                length(retro_data$naa_re_yrs) * length(data$naa_re_seas) *
                                length(data$naa_re_ages) * dim(parameters$ln_NAA)[6]
@@ -143,15 +196,12 @@ truncate_yr <- function(j,
   # Truncate the growth stuff
   if(!is.null(data$growth_model) && data$growth_model != 0) {
 
-    # deviations on the growth parameters
-    retro_parameters$ln_growth_devs <- parameters$ln_growth_devs[,,1:(length(data$years) - j),,,drop = FALSE]
-    retro_mapping$ln_growth_devs <- factor(array(mapping$ln_growth_devs, dim = dim(parameters$ln_growth_devs))[,,1:(length(data$years) - j),,,drop = FALSE])
-    if(!is.null(data$map_ln_growth_devs)) retro_data$map_ln_growth_devs <- data$map_ln_growth_devs[,,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
-
-    # the semi-parametric surface on mean length at age
-    retro_parameters$ln_growth_semipar_devs <- parameters$ln_growth_semipar_devs[,,1:(length(data$years) - j),,,drop = FALSE]
-    retro_mapping$ln_growth_semipar_devs <- factor(array(mapping$ln_growth_semipar_devs, dim = dim(parameters$ln_growth_semipar_devs))[,,1:(length(data$years) - j),,,drop = FALSE])
-    if(!is.null(data$map_ln_growth_semipar_devs)) retro_data$map_ln_growth_semipar_devs <- data$map_ln_growth_semipar_devs[,,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
+    # deviations on the growth parameters and the semi-parametric surface, projected years kept
+    for(devs_name in c("ln_growth_devs", "ln_growth_semipar_devs")) {
+      retro_parameters[[devs_name]] <- peel_year_dim(parameters[[devs_name]], 3, n_fitted, n_keep)
+      retro_mapping[[devs_name]] <- peel_map(mapping[[devs_name]], parameters[[devs_name]], 3, n_fitted, n_keep)
+      retro_data[[paste0("map_", devs_name)]] <- peel_year_dim(data[[paste0("map_", devs_name)]], 3, n_fitted, n_keep) # the penalty's map mirror
+    } # end devs_name loop
     if(!is.null(data$growth_cohort_styr)) retro_data$growth_cohort_styr <- min(data$growth_cohort_styr, length(data$years) - j) # cohort year
 
   }
@@ -177,15 +227,17 @@ truncate_yr <- function(j,
   retro_mapping$logit_dmr_devs <- factor(array(mapping$logit_dmr_devs, dim = dim(parameters$logit_dmr_devs))[,1:(length(data$years) - j),,,drop = FALSE]) # modify map
   if(!is.null(data$map_logit_dmr_devs)) retro_data$map_logit_dmr_devs <- data$map_logit_dmr_devs[,1:(length(data$years) - j),,,drop = FALSE] # keep the penalty's map mirror in step
 
-  # Fishery selectivity deviations
-  retro_parameters$ln_fishsel_devs <- parameters$ln_fishsel_devs[,1:(length(data$years) - j),,,,drop = FALSE] # modify parameter length
-  retro_mapping$ln_fishsel_devs <- factor(array(mapping$ln_fishsel_devs, dim = dim(parameters$ln_fishsel_devs))[,1:(length(data$years) - j),,,,drop = FALSE]) # modify map
-  retro_data$map_ln_fishsel_devs <- data$map_ln_fishsel_devs[,1:(length(data$years) - j),,,,drop = FALSE]
-
-  # Retention selectivity deviations
-  retro_parameters$ln_retsel_devs <- parameters$ln_retsel_devs[,1:(length(data$years) - j),,,,drop = FALSE] # modify parameter length
-  retro_mapping$ln_retsel_devs <- factor(array(mapping$ln_retsel_devs, dim = dim(parameters$ln_retsel_devs))[,1:(length(data$years) - j),,,,drop = FALSE]) # modify map
-  retro_data$ln_retsel_devs <- data$ln_retsel_devs[,1:(length(data$years) - j),,,,drop = FALSE]
+  # Fishery and retention selectivity deviations, their bin deviations and bicubic year weights, projected years kept
+  for(sel in c("fishsel", "retsel")) {
+    for(devs_name in paste0("ln_", sel, c("_devs", "_bin_devs"))) {
+      retro_parameters[[devs_name]] <- peel_year_dim(parameters[[devs_name]], 2, n_fitted, n_keep)
+      retro_mapping[[devs_name]] <- peel_map(mapping[[devs_name]], parameters[[devs_name]], 2, n_fitted, n_keep)
+      retro_data[[paste0("map_", devs_name)]] <- peel_year_dim(data[[paste0("map_", devs_name)]], 2, n_fitted, n_keep)
+    } # end devs_name loop
+  } # end sel loop
+  retro_data$fish_sel_bicubic_Wyr <- peel_year_dim(data$fish_sel_bicubic_Wyr, 2, n_fitted, n_keep)
+  retro_data$ret_sel_bicubic_Wyr <- peel_year_dim(data$ret_sel_bicubic_Wyr, 2, n_fitted, n_keep)
+  retro_data$ln_retsel_devs <- peel_year_dim(data$ln_retsel_devs, 2, n_fitted, n_keep) # a data copy some input lists hold
 
   # Fishery selectivity and catchability blocks
   retro_data$fish_q_blocks <- data$fish_q_blocks[,1:(length(data$years) - j),, drop = FALSE]
@@ -247,19 +299,21 @@ truncate_yr <- function(j,
   retro_data$ObsSrvAgeComps <- data$ObsSrvAgeComps[,1:(length(data$years) - j),,,,,drop = FALSE]
   retro_data$ObsSrvLenComps <- data$ObsSrvLenComps[,1:(length(data$years) - j),,,,,drop = FALSE]
 
-  # Survey selectivity deviations
-  retro_parameters$ln_srvsel_devs <- parameters$ln_srvsel_devs[,1:(length(data$years) - j),,,,drop = FALSE] # Survey selectivity deviations
-  retro_mapping$ln_srvsel_devs <- factor(array(mapping$ln_srvsel_devs, dim = dim(parameters$ln_srvsel_devs))[,1:(length(data$years) - j),,,,drop = FALSE]) # modify map
-  retro_data$map_ln_srvsel_devs <- data$map_ln_srvsel_devs[,1:(length(data$years) - j),,,,drop = FALSE]
+  # Survey selectivity deviations, their bin deviations and bicubic year weights, projected years kept
+  for(devs_name in c("ln_srvsel_devs", "ln_srvsel_bin_devs")) {
+    retro_parameters[[devs_name]] <- peel_year_dim(parameters[[devs_name]], 2, n_fitted, n_keep)
+    retro_mapping[[devs_name]] <- peel_map(mapping[[devs_name]], parameters[[devs_name]], 2, n_fitted, n_keep)
+    retro_data[[paste0("map_", devs_name)]] <- peel_year_dim(data[[paste0("map_", devs_name)]], 2, n_fitted, n_keep)
+  } # end devs_name loop
+  retro_data$srv_sel_bicubic_Wyr <- peel_year_dim(data$srv_sel_bicubic_Wyr, 2, n_fitted, n_keep)
 
-  # Catchability deviations, both fleets
+  # Catchability deviations, both fleets, projected years kept
   for(prefix in c("fish", "srv")) {
     devs_name <- paste0("ln_", prefix, "_q_devs")
     if(is.null(parameters[[devs_name]])) next
-    keep_yr <- 1:(dim(parameters[[devs_name]])[2] - j)
-    retro_parameters[[devs_name]] <- parameters[[devs_name]][,keep_yr,,drop = FALSE]
-    if(!is.null(mapping[[devs_name]])) retro_mapping[[devs_name]] <- factor(array(mapping[[devs_name]], dim = dim(parameters[[devs_name]]))[,keep_yr,,drop = FALSE])
-    if(!is.null(data[[paste0("map_", devs_name)]])) retro_data[[paste0("map_", devs_name)]] <- data[[paste0("map_", devs_name)]][,keep_yr,,drop = FALSE]
+    retro_parameters[[devs_name]] <- peel_year_dim(parameters[[devs_name]], 2, n_fitted, n_keep)
+    retro_mapping[[devs_name]] <- peel_map(mapping[[devs_name]], parameters[[devs_name]], 2, n_fitted, n_keep)
+    retro_data[[paste0("map_", devs_name)]] <- peel_year_dim(data[[paste0("map_", devs_name)]], 2, n_fitted, n_keep)
   } # end prefix loop
 
   # Survey selectivity and catchability blocks
@@ -313,13 +367,13 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
   if(data$n_regions > 1) {
     # Movement stuff
     retro_parameters$move_pars <- parameters$move_pars[,,,1:(length(data$years) - j),,,,drop = FALSE]
-    retro_parameters$move_devs <- parameters$move_devs[,,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_parameters$move_devs <- peel_year_dim(parameters$move_devs, 4, n_fitted, n_keep) # projected years kept
     retro_mapping$move_pars <- factor(array(mapping$move_pars, dim = dim(parameters$move_pars))[,,,1:(length(data$years) - j),,,,drop = FALSE])
-    retro_mapping$move_devs <- factor(array(mapping$move_devs, dim = dim(parameters$move_devs))[,,,1:(length(data$years) - j),,,,drop = FALSE])
+    retro_mapping$move_devs <- peel_map(mapping$move_devs, parameters$move_devs, 4, n_fitted, n_keep)
     retro_data$Fixed_Movement <- data$Fixed_Movement[,,,1:(length(data$years) - j),,,,drop = FALSE]
     retro_data$sgl_seas_spawning_movement <- data$sgl_seas_spawning_movement[,,,1:(length(data$years) - j),,,drop = FALSE]
     retro_data$ctmc_move_dat <- retro_data$ctmc_move_dat[which(data$ctmc_move_dat$years %in% 1:(length(data$years) - j)),]
-    retro_data$map_move_devs <- retro_data$map_move_devs[,,,1:(length(data$years) - j),,,,drop = FALSE]
+    retro_data$map_move_devs <- peel_year_dim(data$map_move_devs, 4, n_fitted, n_keep)
   }
 
 # Tagging -----------------------------------------------------------------

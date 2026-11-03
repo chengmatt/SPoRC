@@ -123,6 +123,7 @@ reference:
       - Setup_Mod_Tagging
       - Setup_Mod_Dim
       - Setup_Mod_DSEM
+      - Setup_Mod_Projection
       - read_dsem_arrows
       - dsem_series
 
@@ -133,6 +134,10 @@ reference:
       - Get_Reference_Points
       - Get_Reference_Point_Uncertainty
       - get_key_quants
+      - catch_cap
+      - catch_stability
+      - ad_value
+      - hcr_threshold
 
   - title: "Simulation Setup"
     desc: "Functions for setting up simulations"

@@ -114,3 +114,26 @@ test_that("adding the AD operators leaves an ordinary projection unchanged", {
   expect_type(out$proj_Catch, "double")
   expect_true(all(is.finite(out$proj_SSB)))
 })
+
+test_that("recruitment deviations, terminal F and past recruitment from a fit tape through the projection", {
+
+  # log F, a log recruitment deviation in year 4, a log scale on the terminal F and one on past recruitment,
+  # the four things an in-objective projection reads off the model as AD values
+  f <- function(p) {
+    "[<-" <- RTMB::ADoverload("[<-")
+    rp <- sgl_rg_sable_rep
+    rp$Fmort <- rp$Fmort * exp(p[3])
+    rp$Rec <- rp$Rec * exp(p[4])
+    devs <- array(1, dim = c(1, 1, 8))
+    devs[1,1,4] <- exp(p[2])
+    out <- project_at_F(f = exp(p[1]), n_proj_yrs = 8, rep = rp, rec_devs = devs)
+    sum(out$proj_Total_Biom)
+  }
+
+  p0 <- c(log(0.06), 0, 0, 0)
+  tape <- RTMB::MakeTape(f, p0)
+  grad <- as.vector(tape$jacobian(p0))
+  expect_equal(tape(p0), f(p0), tolerance = 1e-10)
+  expect_equal(grad, numDeriv::grad(f, p0), tolerance = 1e-5)
+  expect_true(all(abs(grad) > 1e-6)) # every one of the four reaches the projected biomass
+})

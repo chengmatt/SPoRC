@@ -133,6 +133,14 @@ optionally refines the solution with Newton steps using the analytic
 Hessian. The best parameter vector (\code{obj$env$last.par.best}),
 optimizer output, and model report are attached to the returned object.
 }
+\details{
+With a projection set up by \code{\link{Setup_Mod_Projection}}, the model is
+fitted with the projection off, since it adds nothing to the likelihood, then
+rebuilt at the estimates with the projection on. RTMB records a model once, at
+its starting values, and a rule or cap that compares two numbers keeps whichever
+side held then, so the rebuild is what puts the estimated stock on the right
+side. \code{do_sdrep = TRUE} then covers the projected quantities.
+}
 \examples{
 \dontrun{
 obj <- fit_model(data, parameters, mapping, random = NULL, newton_loops = 3)

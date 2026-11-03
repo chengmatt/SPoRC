@@ -41,14 +41,48 @@
 
 # Single Region SPR ---------------------------------------------------------
 
-single_region_SPR <- function(pars,
-                              data
-) {
+single_region_SPR <- function(pars, data) {
+
+  out <- single_region_SPR_quantities(pars$log_F_x, data)
+
+  SB_age <- out$SB_age
+  Nspr <- out$Nspr
+  effective_SB0 <- out$effective_SB0
+  effective_SB <- out$effective_SB
+  F_x <- out$F_x
+  SB <- out$SB
+  SB0 <- out$SB0
+
+  RTMB::REPORT(SB_age)
+  RTMB::REPORT(Nspr)
+  RTMB::REPORT(effective_SB0)
+  RTMB::REPORT(effective_SB)
+  RTMB::REPORT(F_x)
+  RTMB::REPORT(SB)
+  RTMB::REPORT(SB0)
+
+  return(out$obj_fun)
+}
+
+#' Quantities behind \code{\link{single_region_SPR}} at one trial fishing mortality
+#'
+#' The per-recruit and equilibrium calculations of \code{single_region_SPR}, returned as a
+#' list rather than reported, so the solve can run on the tape inside the objective.
+#'
+#' @param log_F_x Log scale trial fishing mortality, as \code{single_region_SPR} takes it in \code{pars}.
+#' @param data Named list of RTMB data, as \code{single_region_SPR} takes it.
+#'
+#' @return Named list: \code{obj_fun}, the value \code{single_region_SPR} returns, and every
+#'   quantity it reports.
+#'
+#' @keywords internal
+#' @noRd
+single_region_SPR_quantities <- function(log_F_x, data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  RTMB::getAll(pars, data) # get parameters and data
+  RTMB::getAll(data, warn = FALSE)
 
   F_x = exp(log_F_x) # Exponentiate reference point
   SB_age = Nspr = array(0, dim = c(2, n_pop, n_ages)) # 2 slots in rows, for unfished, and fished at F_x
@@ -196,15 +230,14 @@ single_region_SPR <- function(pars,
   SPR = sum(effective_SB) / sum(effective_SB0)
   sprpen =  (SPR - SPR_x)^2
 
-  RTMB::REPORT(SB_age)
-  RTMB::REPORT(Nspr)
-  RTMB::REPORT(effective_SB0)
-  RTMB::REPORT(effective_SB)
-  RTMB::REPORT(F_x)
-  RTMB::REPORT(SB)
-  RTMB::REPORT(SB0)
-
-  return(sprpen)
+  return(list(obj_fun = sprpen,
+              SB_age = SB_age,
+              Nspr = Nspr,
+              effective_SB0 = effective_SB0,
+              effective_SB = effective_SB,
+              F_x = F_x,
+              SB = SB,
+              SB0 = SB0))
 }
 
 # Global SPR ----------------------------------------------------------------
@@ -255,13 +288,52 @@ single_region_SPR <- function(pars,
 #' @keywords internal
 #' @import RTMB
 global_SPR <- function(pars,
-                       data
+                         data
 ) {
+
+  out <- global_SPR_quantities(pars$log_F_x, data)
+
+  SPR <- out$SPR
+  effective_SB0 <- out$effective_SB0
+  effective_SB <- out$effective_SB
+  F_x <- out$F_x
+  SB <- out$SB
+  SB0 <- out$SB0
+  Nspr <- out$Nspr
+  SB_age <- out$SB_age
+
+  RTMB::REPORT(SPR)
+  RTMB::REPORT(effective_SB0)
+  RTMB::REPORT(effective_SB)
+  RTMB::REPORT(F_x)
+  RTMB::REPORT(SB)
+  RTMB::REPORT(SB0)
+  RTMB::REPORT(Nspr)
+  RTMB::REPORT(SB_age)
+
+  return(out$obj_fun)
+}
+
+#' Quantities behind \code{\link{global_SPR}} at one trial fishing mortality
+#'
+#' The per-recruit and equilibrium calculations of \code{global_SPR}, returned as a
+#' list rather than reported, so the solve can run on the tape inside the objective.
+#'
+#' @param log_F_x Log scale trial fishing mortality, as \code{global_SPR} takes it in \code{pars}.
+#' @param data Named list of RTMB data, as \code{global_SPR} takes it.
+#'
+#' @return Named list: \code{obj_fun}, the value \code{global_SPR} returns, and every
+#'   quantity it reports.
+#'
+#' @keywords internal
+#' @noRd
+global_SPR_quantities <- function(log_F_x,
+                                    data) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  RTMB::getAll(pars, data) # get parameters and data
+  RTMB::getAll(data, warn = FALSE)
 
   # an older data list has no expm_nsub, so use the exact matrix exponential
   if(!exists("expm_nsub", inherits = FALSE)) expm_nsub <- 0
@@ -508,15 +580,13 @@ global_SPR <- function(pars,
   # Get spawning biomass per recruit to get spawning potential ratio
   SPR = if(n_pop == 1) sum(SB) / sum(SB0) else sum(effective_SB) / sum(effective_SB0)
   sprpen = (SPR - SPR_x)^2
-
-  RTMB::REPORT(SPR)
-  RTMB::REPORT(effective_SB0)
-  RTMB::REPORT(effective_SB)
-  RTMB::REPORT(F_x)
-  RTMB::REPORT(SB)
-  RTMB::REPORT(SB0)
-  RTMB::REPORT(Nspr)
-  RTMB::REPORT(SB_age)
-
-  return(sprpen)
+  return(list(obj_fun = sprpen,
+              SPR = SPR,
+              effective_SB0 = effective_SB0,
+              effective_SB = effective_SB,
+              F_x = F_x,
+              SB = SB,
+              SB0 = SB0,
+              Nspr = Nspr,
+              SB_age = SB_age))
 }

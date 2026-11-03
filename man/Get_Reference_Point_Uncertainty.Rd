@@ -143,6 +143,10 @@ points in an age-based state-space stock assessment model. Fisheries Research
 Other Reference Points and Projections:
 \code{\link[=Do_Population_Projection]{Do_Population_Projection()}},
 \code{\link[=Get_Reference_Points]{Get_Reference_Points()}},
-\code{\link[=get_key_quants]{get_key_quants()}}
+\code{\link[=Setup_Mod_Projection]{Setup_Mod_Projection()}},
+\code{\link[=catch_cap]{catch_cap()}},
+\code{\link[=catch_stability]{catch_stability()}},
+\code{\link[=get_key_quants]{get_key_quants()}},
+\code{\link[=hcr_threshold]{hcr_threshold()}}
 }
 \concept{Reference Points and Projections}

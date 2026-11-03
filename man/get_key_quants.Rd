@@ -4,7 +4,14 @@
 \alias{get_key_quants}
 \title{Generate Key Projection Quantities and Table Plot}
 \usage{
-get_key_quants(data, rep, reference_points_opt, proj_model_opt, model_names)
+get_key_quants(
+  data,
+  rep,
+  reference_points_opt,
+  proj_model_opt,
+  model_names,
+  pars = NULL
+)
 }
 \arguments{
 \item{data}{List of length \code{n_models}, each a SPoRC data list holding the
@@ -33,9 +40,40 @@ signature \code{function(x, frp, brp, ...)}, \code{recruitment_opt}
 \code{"inv_gauss"}), and \code{fmort_opt} (\code{"HCR"} to apply the control
 rule to each region's SSB, \code{"HCR_global"} to apply it to SSB summed
 across regions as global reference points need, or \code{"Input"} to fish at
-the F reference point every year without the control rule).}
+the F reference point every year without the control rule). It can also hold
+the choices \code{\link{Setup_Mod_Projection}} offers, so the advice here
+matches a projection inside the model:
+\describe{
+  \item{\code{rec_opt}}{Recruitment deviations in the projection years.
+    \code{"mean"} (the default here) applies none, \code{"propagate"} applies
+    the fit's projected deviations, and \code{"terminal"} repeats the terminal
+    year's deviation. The last two need \code{pars}.}
+  \item{\code{sel_opt}}{Fishery and retention selectivity. \code{"average"}
+    (default) averages the last \code{n_avg_yrs} years, and
+    \code{"propagate"} uses the years the fit projected selectivity, set by
+    \code{n_proj_yrs_devs} in \code{\link{Setup_Mod_Dim}}.}
+  \item{\code{move_opt}}{Movement. \code{"average"} (default) averages the
+    last \code{n_avg_yrs} years, and \code{"propagate"} uses the years the fit
+    projected movement.}
+  \item{\code{growth_opt}}{Weight at age. \code{"average"} (default) averages
+    the last \code{n_avg_yrs} years, and \code{"propagate"} uses the years the
+    fit projected growth, which needs weight at age derived by a growth model.}
+  \item{\code{naa_opt}}{Numbers at age under a state-space fit.
+    \code{"terminal"} (default) projects from the terminal numbers with no
+    innovations, and \code{"propagate"} applies the fit's projected
+    innovations, which needs \code{pars}.}
+  \item{\code{F_constraint}}{A catch cap or stability limit from
+    \code{\link{catch_cap}} or \code{\link{catch_stability}}, or a list of them
+    applied in order. Default none.}
+}}
 
 \item{model_names}{Character vector of length \code{n_models} of display names.}
+
+\item{pars}{List of length \code{n_models}, each the fitted parameter list from
+\code{fit$env$parList()}. Needed only when \code{rec_opt} is
+\code{"propagate"} or \code{"terminal"}, or \code{naa_opt} is
+\code{"propagate"}, since those read the fit's deviations. Default
+\code{NULL}.}
 }
 \value{
 A list of two. The first is a data frame of key quantities by model and
@@ -112,6 +150,10 @@ These quantities are approximate and are not catch advice. This is a
 Other Reference Points and Projections:
 \code{\link[=Do_Population_Projection]{Do_Population_Projection()}},
 \code{\link[=Get_Reference_Point_Uncertainty]{Get_Reference_Point_Uncertainty()}},
-\code{\link[=Get_Reference_Points]{Get_Reference_Points()}}
+\code{\link[=Get_Reference_Points]{Get_Reference_Points()}},
+\code{\link[=Setup_Mod_Projection]{Setup_Mod_Projection()}},
+\code{\link[=catch_cap]{catch_cap()}},
+\code{\link[=catch_stability]{catch_stability()}},
+\code{\link[=hcr_threshold]{hcr_threshold()}}
 }
 \concept{Reference Points and Projections}

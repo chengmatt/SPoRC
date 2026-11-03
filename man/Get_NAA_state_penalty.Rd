@@ -37,7 +37,9 @@ deviation for each cell, already expanded from its blocking structure.}
 
 \item{naa_re_ages}{Integer vector of age indices the state is active over.}
 
-\item{naa_re_yrs}{Integer vector of year indices the state is active over.}
+\item{naa_re_yrs}{Integer vector of year indices the state is active over.
+Indices past \code{dim(NAA_pred)[3]} are projection years from
+\code{n_proj_yrs_devs}, whose cells hold the innovation itself.}
 
 \item{naa_re_seas}{Integer vector of season indices the state is active over.
 Season one alone is the annual state, with the numbers deterministic between

@@ -98,6 +98,10 @@ Covers single-region and spatially explicit models, on SPR or Beverton-Holt MSY.
 Other Reference Points and Projections:
 \code{\link[=Do_Population_Projection]{Do_Population_Projection()}},
 \code{\link[=Get_Reference_Point_Uncertainty]{Get_Reference_Point_Uncertainty()}},
-\code{\link[=get_key_quants]{get_key_quants()}}
+\code{\link[=Setup_Mod_Projection]{Setup_Mod_Projection()}},
+\code{\link[=catch_cap]{catch_cap()}},
+\code{\link[=catch_stability]{catch_stability()}},
+\code{\link[=get_key_quants]{get_key_quants()}},
+\code{\link[=hcr_threshold]{hcr_threshold()}}
 }
 \concept{Reference Points and Projections}

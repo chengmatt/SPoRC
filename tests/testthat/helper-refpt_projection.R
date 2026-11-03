@@ -21,6 +21,8 @@
 #'   the deprecation shim itself can be tested. Leave it \code{NULL}.
 #' @param srr_opt Beverton-Holt settings, required when
 #'   \code{recruitment_opt = "bh_rec"}.
+#' @param F_constraint Passed through, a constraint on the rule's or input F.
+#' @param naa_devs Passed through, innovations on the numbers at age.
 #'
 #' @return The list from \code{Do_Population_Projection}.
 #'
@@ -37,7 +39,9 @@ project_at_F <- function(
   bh_rec_opt = NULL,
   rec_devs = NULL,
   fmort_opt = "Input",
-  HCR_function = function(x, frp, brp, alpha = 0.05) frp
+  HCR_function = function(x, frp, brp, alpha = 0.05) frp,
+  F_constraint = NULL,
+  naa_devs = NULL
 ) {
 
   d <- if(is.null(data)) sgl_rg_sable_data else data
@@ -124,6 +128,8 @@ project_at_F <- function(
     HCR_function = HCR_function,
     recruitment_opt = recruitment_opt, fmort_opt = fmort_opt,
     rec_devs = rec_devs,
+    F_constraint = F_constraint,
+    naa_devs = naa_devs,
     t_spawn = 0, srr_opt = srr_opt, bh_rec_opt = bh_rec_opt)
 }
 
@@ -136,10 +142,11 @@ project_at_F <- function(
 #'   optionally \code{state}.
 #' @param f The F reference point the rule is given.
 #' @param n_proj_yrs Years to project.
+#' @param F_constraint Passed through, a constraint on the rule's F.
 #' @keywords internal
-project_with_HCR <- function(rule, f = 0.06, n_proj_yrs = 8) {
+project_with_HCR <- function(rule, f = 0.06, n_proj_yrs = 8, F_constraint = NULL) {
   project_at_F(f = f, n_proj_yrs = n_proj_yrs,
-               fmort_opt = "HCR", HCR_function = rule)
+               fmort_opt = "HCR", HCR_function = rule, F_constraint = F_constraint)
 }
 
 # projected quantities run with year third. the last projection year is read one short

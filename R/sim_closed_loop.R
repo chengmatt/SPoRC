@@ -974,8 +974,8 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
 
   # derive NAA PE to use in conditioning period
   if(state_on && state_estimates_known && !("naa_eta_input" %in% names(args)) && !is.null(rep$NAA_pred)) {
-    ln_NAA <- optim_parameters_list$ln_NAA
-    n_cond <- dim(ln_NAA)[3]
+    n_cond <- dim(rep$NAA_pred)[3] # the fitted years
+    ln_NAA <- optim_parameters_list$ln_NAA[,,seq_len(n_cond),,,,drop = FALSE]
     pred <- rep$NAA_pred[,,seq_len(n_cond),,,,drop = FALSE]
     fit_eta <- array(0, dim = dim(ln_NAA))
     fit_eta[pred > 0] <- ln_NAA[pred > 0] - log(pred[pred > 0])

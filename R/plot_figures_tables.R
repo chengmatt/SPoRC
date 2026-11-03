@@ -1430,8 +1430,38 @@ plot_all_basic <- function(data,
 #'   \code{"inv_gauss"}), and \code{fmort_opt} (\code{"HCR"} to apply the control
 #'   rule to each region's SSB, \code{"HCR_global"} to apply it to SSB summed
 #'   across regions as global reference points need, or \code{"Input"} to fish at
-#'   the F reference point every year without the control rule).
+#'   the F reference point every year without the control rule). It can also hold
+#'   the choices \code{\link{Setup_Mod_Projection}} offers, so the advice here
+#'   matches a projection inside the model:
+#'   \describe{
+#'     \item{\code{rec_opt}}{Recruitment deviations in the projection years.
+#'       \code{"mean"} (the default here) applies none, \code{"propagate"} applies
+#'       the fit's projected deviations, and \code{"terminal"} repeats the terminal
+#'       year's deviation. The last two need \code{pars}.}
+#'     \item{\code{sel_opt}}{Fishery and retention selectivity. \code{"average"}
+#'       (default) averages the last \code{n_avg_yrs} years, and
+#'       \code{"propagate"} uses the years the fit projected selectivity, set by
+#'       \code{n_proj_yrs_devs} in \code{\link{Setup_Mod_Dim}}.}
+#'     \item{\code{move_opt}}{Movement. \code{"average"} (default) averages the
+#'       last \code{n_avg_yrs} years, and \code{"propagate"} uses the years the fit
+#'       projected movement.}
+#'     \item{\code{growth_opt}}{Weight at age. \code{"average"} (default) averages
+#'       the last \code{n_avg_yrs} years, and \code{"propagate"} uses the years the
+#'       fit projected growth, which needs weight at age derived by a growth model.}
+#'     \item{\code{naa_opt}}{Numbers at age under a state-space fit.
+#'       \code{"terminal"} (default) projects from the terminal numbers with no
+#'       innovations, and \code{"propagate"} applies the fit's projected
+#'       innovations, which needs \code{pars}.}
+#'     \item{\code{F_constraint}}{A catch cap or stability limit from
+#'       \code{\link{catch_cap}} or \code{\link{catch_stability}}, or a list of them
+#'       applied in order. Default none.}
+#'   }
 #' @param model_names Character vector of length \code{n_models} of display names.
+#' @param pars List of length \code{n_models}, each the fitted parameter list from
+#'   \code{fit$env$parList()}. Needed only when \code{rec_opt} is
+#'   \code{"propagate"} or \code{"terminal"}, or \code{naa_opt} is
+#'   \code{"propagate"}, since those read the fit's deviations. Default
+#'   \code{NULL}.
 #'
 #' @return A list of two. The first is a data frame of key quantities by model and
 #'   region with columns \code{Model}, \code{Region}, \code{Terminal_SSB},
@@ -1498,7 +1528,8 @@ get_key_quants <- function(data,
                            rep,
                            reference_points_opt,
                            proj_model_opt,
-                           model_names
+                           model_names,
+                           pars = NULL
 ) {
 
   # old reports have no season dim
@@ -1530,6 +1561,29 @@ get_key_quants <- function(data,
 
   if(proj_model_opt$recruitment_opt == 'inv_gauss') {
     warning("Recruitment during the projection period is set to 'inv_gauss', but only a single simulation will be run. This is likely inappropriate. Consider using an alternative recruitment option such as zero_rec, mean_rec, or bh_rec.")
+  }
+
+  # choices for what the fit projected itself, named as in Setup_Mod_Projection. the defaults are what this
+  # function always did: averages over the terminal years, mean recruitment, the terminal state advanced
+  rec_opt <- if(is.null(proj_model_opt$rec_opt)) "mean" else proj_model_opt$rec_opt
+  sel_opt <- if(is.null(proj_model_opt$sel_opt)) "average" else proj_model_opt$sel_opt
+  move_opt <- if(is.null(proj_model_opt$move_opt)) "average" else proj_model_opt$move_opt
+  growth_opt <- if(is.null(proj_model_opt$growth_opt)) "average" else proj_model_opt$growth_opt
+  naa_opt <- if(is.null(proj_model_opt$naa_opt)) "terminal" else proj_model_opt$naa_opt
+  F_constraint <- proj_model_opt$F_constraint
+  if(!rec_opt %in% c("mean", "propagate", "terminal")) stop("proj_model_opt$rec_opt should be 'mean', 'propagate' or 'terminal'")
+  if(!sel_opt %in% c("average", "propagate")) stop("proj_model_opt$sel_opt should be 'average' or 'propagate'")
+  if(!move_opt %in% c("average", "propagate")) stop("proj_model_opt$move_opt should be 'average' or 'propagate'")
+  if(!growth_opt %in% c("average", "propagate")) stop("proj_model_opt$growth_opt should be 'average' or 'propagate'")
+  if(!naa_opt %in% c("terminal", "propagate")) stop("proj_model_opt$naa_opt should be 'terminal' or 'propagate'")
+  if((rec_opt != "mean" || naa_opt == "propagate") && (is.null(pars) || length(pars) != length(rep))) stop("rec_opt = 'propagate' or 'terminal' and naa_opt = 'propagate' read the fit's deviations: give pars, a list with one parameter list per model, as fit$env$parList() returns.")
+
+  # the terminal year then the years the fit projected itself, for a process set to propagate
+  past_years <- function(arr, yr_dim, n_yrs, n_proj_yrs, opt_name) {
+    if(is.null(arr) || dim(arr)[yr_dim] < n_yrs + n_proj_yrs - 1) stop(opt_name, " = 'propagate', but the fit holds ", if(is.null(arr)) 0 else dim(arr)[yr_dim] - n_yrs, " years past the terminal year and the projection needs ", n_proj_yrs - 1, ". Set n_proj_yrs_devs in Setup_Mod_Dim, or use 'average'.")
+    idx <- rep(list(TRUE), length(dim(arr)))
+    idx[[yr_dim]] <- n_yrs + 0:(n_proj_yrs - 1)
+    do.call("[", c(list(arr), idx, list(drop = FALSE)))
   }
 
   # containers
@@ -1572,18 +1626,25 @@ get_key_quants <- function(data,
     n_yrs <- length(data[[i]]$years)
     avg_yrs <- (n_yrs - n_avg_yrs + 1):n_yrs
 
-    # spawning weight-at-age
-    WAA_avg <- apply(data[[i]]$WAA[,,avg_yrs,,,,drop = FALSE], c(1, 2, 4, 5, 6), mean)
-    WAA <- aperm(
-      array(rep(WAA_avg, times = n_proj_yrs),
-            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, n_proj_yrs)),
-      perm = c(1, 2, 6, 3, 4, 5))
-
-    WAA_fish_avg <- apply(data[[i]]$WAA_fish[,,avg_yrs,,,,,drop = FALSE], c(1, 2, 4, 5, 6, 7), mean)
-    WAA_fish <- aperm(
-      array(rep(WAA_fish_avg, times = n_proj_yrs),
-            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
-      perm = c(1, 2, 7, 3, 4, 5, 6))
+    # spawning and fishery weight at age, from the report when a growth model derives them, else the data
+    WAA_src <- if(is.null(rep[[i]]$WAA)) data[[i]]$WAA else rep[[i]]$WAA
+    WAA_fish_src <- if(is.null(rep[[i]]$WAA_fish)) data[[i]]$WAA_fish else rep[[i]]$WAA_fish
+    if(growth_opt == "propagate") {
+      if(is.null(rep[[i]]$WAA)) stop("growth_opt = 'propagate' needs weight at age derived by a growth model, which this report does not hold. Use 'average'.")
+      WAA <- past_years(WAA_src, 3, n_yrs, n_proj_yrs, "growth_opt")
+      WAA_fish <- past_years(WAA_fish_src, 3, n_yrs, n_proj_yrs, "growth_opt")
+    } else {
+      WAA_avg <- apply(WAA_src[,,avg_yrs,,,,drop = FALSE], c(1, 2, 4, 5, 6), mean)
+      WAA <- aperm(
+        array(rep(WAA_avg, times = n_proj_yrs),
+              dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, n_proj_yrs)),
+        perm = c(1, 2, 6, 3, 4, 5))
+      WAA_fish_avg <- apply(WAA_fish_src[,,avg_yrs,,,,,drop = FALSE], c(1, 2, 4, 5, 6, 7), mean)
+      WAA_fish <- aperm(
+        array(rep(WAA_fish_avg, times = n_proj_yrs),
+              dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
+        perm = c(1, 2, 7, 3, 4, 5, 6))
+    }
 
     # maturity at age
     MatAA_avg <- apply(data[[i]]$MatAA[,,avg_yrs,,,,drop = FALSE], c(1, 2, 4, 5, 6), mean)
@@ -1598,35 +1659,82 @@ get_key_quants <- function(data,
                            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas,
                                    length(data[[i]]$ages), data[[i]]$n_sexes, n_proj_yrs)),
                      perm = c(1, 2, 6, 3, 4, 5))
-    # fishery selectivity
-    fish_sel_avg <- apply(rep[[i]]$fish_sel[,,avg_yrs,,,,,drop = FALSE], c(1, 2, 4, 5, 6, 7), mean)
-    fish_sel <- aperm(
-      array(rep(fish_sel_avg, times = n_proj_yrs),
-            dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
-      perm = c(1, 2, 7, 3, 4, 5, 6))
+    # fishery and retention selectivity, and the terminal year's discard mortality, as the model has them
+    ret_sel_src <- if(is.null(rep[[i]]$ret_sel)) array(1, dim = dim(rep[[i]]$fish_sel)) else rep[[i]]$ret_sel # full retention when the report predates it
+    if(sel_opt == "propagate") {
+      fish_sel <- past_years(rep[[i]]$fish_sel, 3, n_yrs, n_proj_yrs, "sel_opt")
+      ret_sel <- past_years(ret_sel_src, 3, n_yrs, n_proj_yrs, "sel_opt")
+    } else {
+      fish_sel_avg <- apply(rep[[i]]$fish_sel[,,avg_yrs,,,,,drop = FALSE], c(1, 2, 4, 5, 6, 7), mean)
+      fish_sel <- aperm(
+        array(rep(fish_sel_avg, times = n_proj_yrs),
+              dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
+        perm = c(1, 2, 7, 3, 4, 5, 6))
+      ret_sel_avg <- apply(ret_sel_src[,,avg_yrs,,,,,drop = FALSE], c(1, 2, 4, 5, 6, 7), mean)
+      ret_sel <- aperm(
+        array(rep(ret_sel_avg, times = n_proj_yrs),
+              dim = c(data[[i]]$n_pop, data[[i]]$n_regions, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes, data[[i]]$n_fish_fleets, n_proj_yrs)),
+        perm = c(1, 2, 7, 3, 4, 5, 6))
+    }
+    dmr_terminal <- if(is.null(rep[[i]]$dmr)) array(0, dim = c(data[[i]]$n_regions, data[[i]]$n_seas, data[[i]]$n_fish_fleets)) else array(rep[[i]]$dmr[,n_yrs,,], dim = c(data[[i]]$n_regions, data[[i]]$n_seas, data[[i]]$n_fish_fleets))
 
-    # movement
-    # averaging drops the year dim, so put it back in as dim 4 (pop, from, to, year, seas, age, sex)
-    Movement_avg <- apply(rep[[i]]$Movement[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean) # movement
-    Movement <- aperm(
-      array(rep(Movement_avg, times = n_proj_yrs), dim = c(dim(Movement_avg), n_proj_yrs)),
-      perm = c(1, 2, 3, 7, 4, 5, 6))
-    # Movement / mortality sequencing must follow the fitted model. Under continuous movement
-    # the generator has to be averaged on the rate scale, since mean(expm(Q)) != expm(mean(Q)).
+    # movement, averaged over the terminal years or the years the fit projected it. the movement / mortality
+    # sequencing follows the fitted model, and under continuous movement the generator is averaged on the rate
+    # scale, since mean(expm(Q)) != expm(mean(Q))
     proj_move_timing <- if(is.null(data[[i]]$move_timing)) 0 else data[[i]]$move_timing
     proj_expm_nsub <- if(is.null(data[[i]]$move_expm_nsub)) 0 else data[[i]]$move_expm_nsub
-    if(proj_move_timing == 2) {
-      Mrate_avg <- apply(rep[[i]]$Mrate[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean)
-      proj_Mrate <- aperm(
-        array(rep(Mrate_avg, times = n_proj_yrs), dim = c(dim(Mrate_avg), n_proj_yrs)),
+    if(move_opt == "propagate") {
+      Movement <- past_years(rep[[i]]$Movement, 4, n_yrs, n_proj_yrs, "move_opt")
+      proj_Mrate <- if(proj_move_timing == 2) past_years(rep[[i]]$Mrate, 4, n_yrs, n_proj_yrs, "move_opt") else NULL
+    } else {
+      # averaging drops the year dim, so put it back in as dim 4 (pop, from, to, year, seas, age, sex)
+      Movement_avg <- apply(rep[[i]]$Movement[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean)
+      Movement <- aperm(
+        array(rep(Movement_avg, times = n_proj_yrs), dim = c(dim(Movement_avg), n_proj_yrs)),
         perm = c(1, 2, 3, 7, 4, 5, 6))
-    } else proj_Mrate <- NULL
+      if(proj_move_timing == 2) {
+        Mrate_avg <- apply(rep[[i]]$Mrate[,,,avg_yrs,,,,drop = FALSE], c(1,2,3,5,6,7), mean)
+        proj_Mrate <- aperm(
+          array(rep(Mrate_avg, times = n_proj_yrs), dim = c(dim(Mrate_avg), n_proj_yrs)),
+          perm = c(1, 2, 3, 7, 4, 5, 6))
+      } else proj_Mrate <- NULL
+    }
     stray_rate <- array(apply(rep[[i]]$stray_rate[,avg_yrs, drop = FALSE], 1, mean), dim = c(data[[i]]$n_pop, n_proj_yrs))
 
     # Sex ratio
     sexratio_avg <- apply(rep[[i]]$sexratio[,,avg_yrs,,drop = FALSE], c(1,2,4), mean)
     sexratio <- array(dim = c(data[[i]]$n_pop, data[[i]]$n_regions, proj_model_opt$n_proj_yrs, data[[i]]$n_sexes)) # empty array
     for(yr in 1:proj_model_opt$n_proj_yrs) sexratio[,, yr, ] <- sexratio_avg # populate empty array
+
+    # recruitment deviations in the projection years: none at the mean, the fit's projected ones, or the terminal one kept
+    rec_devs <- NULL
+    if(rec_opt != "mean") {
+      ln_rec <- pars[[i]]$ln_RecDevs
+      rec_devs <- array(1, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, n_proj_yrs))
+      if(rec_opt == "propagate") {
+        if(dim(ln_rec)[3] < n_yrs + n_proj_yrs - 1) stop("rec_opt = 'propagate' needs the fit's recruitment deviations over ", n_proj_yrs - 1, " years past the terminal year, but it holds ", dim(ln_rec)[3] - n_yrs, ". Set n_proj_yrs_devs in Setup_Mod_Dim, or use 'mean' or 'terminal'.")
+        for(k in seq_len(n_proj_yrs - 1)) rec_devs[,,k + 1] <- exp(ln_rec[,,n_yrs + k])
+      }
+      if(rec_opt == "terminal") for(k in seq_len(n_proj_yrs - 1)) rec_devs[,,k + 1] <- exp(ln_rec[,,n_yrs])
+    }
+
+    # the state's projected innovations where a state-space fit has them, over the years it projected the state,
+    # with none after, as in the fit's own projection
+    naa_devs <- NULL
+    n_state_ahead <- 0
+    if(naa_opt == "propagate" && !is.null(data[[i]]$n_est_naa_re) && data[[i]]$n_est_naa_re > 0) n_state_ahead <- max(0, dim(pars[[i]]$ln_NAA)[3] - n_yrs)
+    if(n_state_ahead > 0) {
+      ln_naa <- pars[[i]]$ln_NAA
+      naa_devs <- array(1, dim = c(data[[i]]$n_pop, data[[i]]$n_regions, n_proj_yrs, data[[i]]$n_seas, length(data[[i]]$ages), data[[i]]$n_sexes))
+      for(k in seq_len(min(n_proj_yrs - 1, n_state_ahead))) {
+        for(p in 1:data[[i]]$n_pop) {
+          for(r in 1:data[[i]]$n_regions) {
+            if(data[[i]]$naa_re_where[p,r] == 0) next # a population that never reaches this region has no state here
+            for(seas in data[[i]]$naa_re_seas) for(a in data[[i]]$naa_re_ages) naa_devs[p,r,k + 1,seas,a,] <- exp(ln_naa[p,r,n_yrs + k,seas,a,])
+          } # end r loop
+        } # end p loop
+      } # end k loop
+    }
 
     # Now, set up inputs for reference points
     f_ref_pt = array(tmp_ref_pts$f_ref_pt, dim = c(data[[i]]$n_regions, n_proj_yrs))
@@ -1688,6 +1796,8 @@ get_key_quants <- function(data,
                                          WAA_fish = WAA_fish, # fishery weight at age to use in projection
                                          MatAA = MatAA, # maturity at age values to use in projection
                                          fish_sel = fish_sel, # fishery selectivity values to use in projection
+                                         ret_sel = ret_sel, # retention selectivity, the model's
+                                         dmr = dmr_terminal, # discard mortality, the terminal year's
                                          Movement = Movement, # movement values
                                          f_ref_pt = f_ref_pt, # fishery reference points
                                          b_ref_pt = b_ref_pt, # biological reference points
@@ -1695,6 +1805,9 @@ get_key_quants <- function(data,
                                          recruitment_opt = proj_model_opt$recruitment_opt, # recruitment assumption
                                          fmort_opt = proj_model_opt$fmort_opt, # Fishing mortality in projection years (whether input or HCR)
                                          srr_opt = srr_opt, # beverton holt projection options
+                                         rec_devs = rec_devs, # the fit's projected recruitment deviations, when propagated
+                                         naa_devs = naa_devs, # the state's projected innovations, when propagated
+                                         F_constraint = F_constraint, # catch cap or stability band, when given
                                          move_timing = proj_move_timing, # movement / mortality sequencing
                                          expm_nsub = proj_expm_nsub, # exact or implicit matrix exponential
                                          Mrate = proj_Mrate # instantaneous rates (continuous movement only)

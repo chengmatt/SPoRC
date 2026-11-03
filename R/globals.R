@@ -179,5 +179,9 @@ utils::globalVariables(c(
   "Wt_FishAgeComps_pop", "Wt_FishIdx", "Wt_FishIdx_pop", "Wt_FishLenComps",
   "Wt_FishLenComps_discard", "Wt_FishLenComps_discard_pop", "Wt_FishLenComps_pop", "Wt_Init_Rec",
   "Wt_Rec", "Wt_SrvAgeComps", "Wt_SrvAgeComps_pop", "Wt_SrvIdx", "Wt_SrvIdx_pop", "Wt_SrvLenComps",
-  "Wt_SrvLenComps_pop", "Wt_Tagging", "year", "Year", "years", "years_est"
+  "Wt_SrvLenComps_pop", "Wt_Tagging", "year", "Year", "years", "years_est",
+  "proj_n_yrs", "proj_f_opt", "proj_f_input", "proj_f_ref_pt", "proj_b_ref_pt", "proj_hcr_function",
+  "proj_hcr_scope", "proj_F_constraint", "proj_catch_input", "proj_n_avg_yrs", "proj_sel_opt", "proj_move_opt",
+  "proj_calc_rec_yrs", "proj_refpt_type", "proj_refpt_what", "proj_spr_x", "proj_sex_ratio_f", "proj_is_discard_fleet",
+  "proj_local_bh_msy_newton_steps", "proj_refpt_newton_steps", "proj_refpt_log_f_start", "proj_rec_opt", "proj_naa_opt", "proj_growth_opt"
 ))

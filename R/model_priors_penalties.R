@@ -1811,6 +1811,8 @@ get_tagrep_prior <- function(conv_tag_fishrep_prior, conv_tag_fish_reporting_par
 #'   deviation for each cell, already expanded from its blocking structure.
 #' @param naa_re_ages Integer vector of age indices the state is active over.
 #' @param naa_re_yrs Integer vector of year indices the state is active over.
+#'   Indices past \code{dim(NAA_pred)[3]} are projection years from
+#'   \code{n_proj_yrs_devs}, whose cells hold the innovation itself.
 #' @param naa_re_seas Integer vector of season indices the state is active over.
 #'   Season one alone is the annual state, with the numbers deterministic between
 #'   seasons.
@@ -1907,11 +1909,17 @@ Get_NAA_state_penalty <- function(
     }
   }
 
-  pred <- NAA_pred[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE]
-  pred[keep == 0] <- 1 # never read, and it keeps the logarithm and value finite
+  # a projection year has no prediction, and its cell holds the innovation itself, so its log prediction is zero
+  fitted <- which(naa_re_yrs <= dim(NAA_pred)[3])
+  log_pred <- array(0, dim = c(n_pop, n_regions, ny, nk, na, n_sexes))
+  if(length(fitted) > 0) {
+    pred <- NAA_pred[,,naa_re_yrs[fitted],naa_re_seas,naa_re_ages,,drop = FALSE] # only filter to fitted years
+    pred[keep[,,fitted,,,,drop = FALSE] == 0] <- 1 # not read ... so just input to keep the logarithm and value finite
+    log_pred[,,fitted,,,] <- log(pred) # only input for fitted years
+  }
 
-  # compute the epsilon
-  eta <- ln_NAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] - log(pred)
+  # compute the epsilon for fitted years
+  eta <- ln_NAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] - log_pred
   eta[keep == 0] <- 0
   sig <- sigmaNAA[,,naa_re_yrs,naa_re_seas,naa_re_ages,,drop = FALSE] # get sigma NAA
 

@@ -11,6 +11,13 @@
 #' Hessian. The best parameter vector (\code{obj$env$last.par.best}),
 #' optimizer output, and model report are attached to the returned object.
 #'
+#' With a projection set up by \code{\link{Setup_Mod_Projection}}, the model is
+#' fitted with the projection off, since it adds nothing to the likelihood, then
+#' rebuilt at the estimates with the projection on. RTMB records a model once, at
+#' its starting values, and a rule or cap that compares two numbers keeps whichever
+#' side held then, so the rebuild is what puts the estimated stock on the right
+#' side. \code{do_sdrep = TRUE} then covers the projected quantities.
+#'
 #' @param data Named list of model data as constructed by the
 #'   \code{Setup_Mod_*} family of functions.
 #' @param parameters Named list of parameter starting values.
@@ -144,9 +151,14 @@ fit_model <- function(
   # refresh data mapping stuff if mapping declared after setup
   data <- sync_dev_map_data(data, mapping)
 
+  # the projection adds nothing to the likelihood, so the model is fitted without it
+  proj_on <- !is.null(data$proj_n_yrs) && data$proj_n_yrs > 0
+  data_fit <- data # new data object for fitting only
+  if(proj_on) data_fit$proj_n_yrs <- 0 # set projection years to zero here if actually projection since the devs aren't actually fit
+
   # make AD model function
   obj <- RTMB::MakeADFun(
-    cmb(model, data),
+    cmb(model, data_fit),
     parameters = parameters,
     map = mapping,
     random = random,
@@ -221,9 +233,25 @@ fit_model <- function(
   }
 
   # make sure to rename if naming got stripped by nlminb
-  if (is.null(names(obj$env$last.par.best)) && !is.null(names(obj$par)) &&
-      length(obj$env$last.par.best) == length(obj$par)) {
+  if (is.null(names(obj$env$last.par.best)) && !is.null(names(obj$par)) && length(obj$env$last.par.best) == length(obj$par)) {
     names(obj$env$last.par.best) <- names(obj$par)
+  }
+
+  # RTMB records arithmetic only and an if in the an HCR or a cap is decided by R on the plain numbers (ad_value) while
+  # recording, so the record keeps the estiamtes bascially held at the starting values (B/B40 above one, catch over the cap).
+  # rebuild at the estimates
+  if(proj_on) {
+    obj_proj <- RTMB::MakeADFun(
+      cmb(model, data), # use actual data (fitting + projection options to do the projections)
+      parameters = obj$env$parList(),
+      map = mapping,
+      random = random,
+      silent = silent,
+      ...
+    )
+    obj_proj$optim <- obj$optim
+    obj_proj$hessian <- obj$hessian # the likelihood's, which the projection leaves as it was
+    obj <- obj_proj # replace obj with obj_proj here
   }
 
   # save report

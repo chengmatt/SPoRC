@@ -68,7 +68,17 @@ regional series, so those fleets are fit on the log scale here and go through
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_index_pop_nLL</span><span class="op">(</span><span class="va">nLL_arr</span>, <span class="va">Use</span>, <span class="va">Obs</span>, <span class="va">Pred</span>, <span class="va">SD</span>, <span class="va">LikeType</span>, <span class="va">seas_Type</span>, <span class="va">n_fleets</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_index_pop_nLL</span><span class="op">(</span></span>
+<span>  <span class="va">nLL_arr</span>,</span>
+<span>  <span class="va">Use</span>,</span>
+<span>  <span class="va">Obs</span>,</span>
+<span>  <span class="va">Pred</span>,</span>
+<span>  <span class="va">SD</span>,</span>
+<span>  <span class="va">LikeType</span>,</span>
+<span>  <span class="va">seas_Type</span>,</span>
+<span>  <span class="va">n_fleets</span>,</span>
+<span>  seas_wt <span class="op">=</span> <span class="cn">NULL</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -105,6 +115,10 @@ regional series, so those fleets are fit on the log scale here and go through
 
 <dt id="arg-n-fleets">n_fleets<a class="anchor" aria-label="anchor" href="#arg-n-fleets"></a></dt>
 <dd><p>Number of fleets.</p></dd>
+
+
+<dt id="arg-seas-wt">seas_wt<a class="anchor" aria-label="anchor" href="#arg-seas-wt"></a></dt>
+<dd><p>Season weights as in <code><a href="get_index_regional_nLL.html">get_index_regional_nLL</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

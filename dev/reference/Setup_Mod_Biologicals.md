@@ -382,10 +382,10 @@ Setup_Mod_Biologicals(
   `WAA_fish` and `WAA_srv`. `"wt_len"` builds them from the size-age key
   and \\W = a L^b\\ at the bin midpoints, so weight at age holds the
   spread of length at age; the spawning weight uses the key at spawning
-  time and each fleet's weight the key at `t_fish` or `t_srv`. Under
-  `"wt_len"` `WAA` may be `NULL`, and reference point and projection
-  code still read `data$WAA`, so copy the reported arrays into the data
-  list before calling them.
+  time, each fishery fleet's weight the key at mid season, and each
+  survey's weight the key at `t_srv`. Under `"wt_len"` `WAA` may be
+  `NULL`, and reference point and projection code still read `data$WAA`,
+  so copy the reported arrays into the data list before calling them.
 
 - wt_len_pars:
 

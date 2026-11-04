@@ -4,10 +4,13 @@
 
 This case study reproduces the 2024 eastern Bering Sea walleye pollock
 assessment in `SPoRC`. Every structural choice below follows the
-assessment rather than `SPoRC`’s defaults, and the result is an exact
-bridge: spawning biomass and recruitment agree with the ADMB model to
-within $`4\times10^{-6}`$ percent, and the joint negative log likelihood
-is unchanged between the two.
+assessment rather than `SPoRC`’s defaults. At the assessment’s estimate
+the population is reproduced exactly. The one difference is the early
+fishery CPUE, which `SPoRC` predicts from the mean numbers available
+over the year where the assessment uses start-of-year numbers. Refitting
+therefore moves only the years that series informs: spawning biomass and
+recruitment agree with the ADMB model to within 0.04 percent at the
+median, and differ by up to 5.8 and 2.7 percent before 1980.
 
 The model is single region, single sex, single season, with one fishery
 fleet and four survey indices:
@@ -270,7 +273,11 @@ input_list <- Setup_Mod_Catch_and_F(
 
 The early fishery CPUE series covers twelve years and is fit on the
 arithmetic scale with a normal likelihood. Fishery age compositions are
-multinomial.
+multinomial. `SPoRC` predicts the CPUE from the mean numbers available
+over the year, $`N(1 - e^{-Z})/Z`$, the numbers the catch is taken from,
+so the prediction is catchability times the year’s catch over its
+fishing mortality. The assessment uses the numbers at the start of the
+year instead.
 
 ``` r
 
@@ -708,20 +715,22 @@ idx_fq <- which(names(free) == "ln_fish_q")
 free[idx_fq] <- free[idx_fq] + log(mean(dat$admb$pred_cpue / as.vector(r$PredFishIdx[1, 1, 2:13, 1, 1])))
 ```
 
-At that point every reported quantity agrees with the ADMB model to
-numerical precision, and the gradient is already near zero:
+At that point the selectivities and the population agree with the ADMB
+model to numerical precision. The gradient does not vanish, because the
+early CPUE is predicted from the year’s mean numbers rather than the
+start-of-year numbers the assessment was fit to:
 
     fishery selectivity max pct diff: 4.8e-13
     trawl selectivity   max pct diff: 1.4e-13
     numbers at age      max pct diff: 1.2e-11
     spawning biomass    max pct diff: 2.3e-12
-    jnLL at the pollock MLE:  1547.851
-    max |gradient| there   :  2.7e-05
+    jnLL at the pollock MLE:  1547.673
+    max |gradient| there   :  4.7
 
 ## Fitting and comparison
 
-Optimizing from that point moves nothing, which is the expected result
-when a model is already at its own optimum.
+Optimizing from that point lowers the joint negative log likelihood by
+0.32 and moves only the years the early CPUE informs.
 
 ``` r
 
@@ -731,16 +740,21 @@ est$sdrep <- RTMB::sdreport(est)
 ```
 
     free parameters: 1207
-    final jnLL: 1547.851   max |gradient|: 1.4e-11
+    final jnLL: 1547.349   max |gradient|: 2.0e-12
 
-Spawning biomass and recruitment are compared below. Because the two
-series overplot exactly, the percent difference needs its own panel to
-be readable at all; its axis is in units of $`10^{-6}`$ percent.
+Spawning biomass and recruitment are compared below, with the percent
+difference in its own panel. From 1980 on spawning biomass agrees to
+within 0.12 percent and recruitment to within 0.04 percent. The
+differences sit in the years before. At the assessment’s estimate, the
+CPUE predicted from the year’s mean numbers rises less over 1965 to 1976
+than one predicted from the numbers at the start of the year, and the
+fit makes up the difference by starting the population lower: spawning
+biomass in the first years is up to 5.8 percent below the assessment’s.
 
-| Quantity         | Median difference      | Maximum difference     |
-|------------------|------------------------|------------------------|
-| Spawning biomass | $`4.6\times10^{-7}`$ % | $`3.4\times10^{-6}`$ % |
-| Recruitment      | $`1.8\times10^{-7}`$ % | $`5.8\times10^{-6}`$ % |
+| Quantity         | Median difference | Maximum difference |
+|------------------|-------------------|--------------------|
+| Spawning biomass | $`-0.034`$ %      | $`5.8`$ %          |
+| Recruitment      | $`-0.020`$ %      | $`2.7`$ %          |
 
 ![](figures/f_ebs_pol_ts_comparison.png)
 

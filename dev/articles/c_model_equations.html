@@ -1763,15 +1763,15 @@ being the weight of the mean length.</p>
 <div class="section level5">
 <h5 id="timing-within-the-year">Timing within the year<a class="anchor" aria-label="anchor" href="#timing-within-the-year"></a>
 </h5>
-<p>Every fleet has its own size-age transition and weight, read at the
-point in the season that fleet’s observations are taken: each fishery
-fleet’s at <code>t_fish</code>, each survey’s at <code>t_srv</code>, and
-the spawning weight at the spawning time. A season starts at the
-cumulative duration of the seasons before it, and a point inside it is
-that start plus the fraction elapsed times the season’s duration. With
-growth constant over years the curve read at the real age gives the same
-mean length whatever the seasons’ durations, so seasons add no
-approximation to growth.</p>
+<p>Every fleet has its own size-age transition and weight. Each survey’s
+is read at the point in the season the survey is taken,
+<code>t_srv</code>, and the spawning weight at the spawning time. Each
+fishery fleet’s is read at mid season, since its catch is spread across
+the whole season. A season starts at the cumulative duration of the
+seasons before it, and a point inside it is that start plus the fraction
+elapsed times the season’s duration. With growth constant over years the
+curve read at the real age gives the same mean length whatever the
+seasons’ durations, so seasons add no approximation to growth.</p>
 </div>
 </div>
 <div class="section level4">
@@ -1917,62 +1917,64 @@ total the seasons, the observation covers before the ratio is taken:</p>
 for a biomass fraction. Population-specific discards follow the same
 structure without summing across
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>p</mi><annotation encoding="application/x-tex">p</annotation></semantics></math>.</p>
-<p>Similarly, expected fishery indices
+<p>Expected fishery indices
 (<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\text{FshIdx}_{p,r,y,\tau,f}</annotation></semantics></math>)
-can be computed as either abundance-based or biomass-based, using the
-product of total fishery selectivity and retention selectivity:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><munderover><mo>∑</mo><mi>s</mi><msub><mi>n</mi><mi>s</mi></msub></munderover><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \\
+are formed from the mean numbers available over the season, the same
+numbers the catch equation applies fishing mortality to:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mover><mi>N</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>=</mo><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mfrac><mrow><mn>1</mn><mo>−</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo stretchy="true" form="postfix">)</mo></mrow></mrow><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mfrac></mrow><annotation encoding="application/x-tex">\bar{N}_{p,r,y,\tau,a,s} = N_{p,r,y,\tau,a,s}\frac{1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right)}{Z_{p,r,y,\tau,a,s}}</annotation></semantics></math></p>
+<p>so that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>C</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mi>a</mi></msubsup><mo>=</mo><msub><mtext mathvariant="normal">retFmort</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mover><mi>N</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><annotation encoding="application/x-tex">C_{p,r,y,\tau,a,s,f}^{a} = \text{retFmort}_{p,r,y,\tau,a,s,f}\,\bar{N}_{p,r,y,\tau,a,s}</annotation></semantics></math>.
+Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
+0 and 1 this is taken at the post-movement and pre-movement locations
+respectively. Under
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mover><mi>N</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">\bar{N}_{p,r,y,\tau,a,s}</annotation></semantics></math>
+is the season-integrated abundance
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mo>∫</mo></msubsup><annotation encoding="application/x-tex">N^{\int}_{p,r,y,\tau,a,s}</annotation></semantics></math>
+(see Catch Under Continuous Movement above), which reduces to the
+expression above when the regions decouple. The index is abundance-based
+or biomass-based, using the product of total fishery selectivity and
+retention selectivity:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><munderover><mo>∑</mo><mi>s</mi><msub><mi>n</mi><mi>s</mi></msub></munderover><msub><mover><mi>N</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><mspace width="1.0em"></mspace><mtext mathvariant="normal">(abundance)</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><munderover><mo>∑</mo><mi>s</mi><msub><mi>n</mi><mi>s</mi></msub></munderover><msub><mover><mi>N</mi><mo accent="true">‾</mo></mover><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup><mspace width="1.0em"></mspace><mtext mathvariant="normal">(biomass)</mtext></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\bar{N}_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \quad \text{(abundance)} \\
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\bar{N}_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \quad \text{(biomass)} \\
 \end{matrix}</annotation></semantics></math></p>
 <p>where
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><annotation encoding="application/x-tex">q_{r,y,f}^{\text{Fsh}}</annotation></semantics></math>
-is the catchability coefficient for a given fishery fleet. By default
-the fishery index is computed directly from start-of-season
-numbers-at-age without survival discounting, on the rationale that
-fishing is spread across the whole season rather than occurring at a
-point within it. However, an optional within-season timing
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup><annotation encoding="application/x-tex">t_{r,\tau,f}^{fish}</annotation></semantics></math>
-(<code>t_fish</code>, a fraction of the season) can be specified per
-region, season, and fleet, mirroring the survey convention: when
-supplied, the numbers entering the index are first decayed by</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><msub><mi>Z</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><mo>⋅</mo><msubsup><mi>t</mi><mrow><mi>r</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \cdot t_{r,\tau,f}^{fish} \right)</annotation></semantics></math></p>
-<p>with
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msup><mi>t</mi><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msup><mo>=</mo><mn>0</mn></mrow><annotation encoding="application/x-tex">t^{fish} = 0</annotation></semantics></math>
-reproducing the start-of-season default. This is appropriate for fishery
-CPUE series that reflect a survey-like snapshot (e.g., an index
-standardized to a particular part of the season).</p>
+is the catchability coefficient for a given fishery fleet. Since
+retained fishing mortality at age is the fleet’s fully selected
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">F_{r,y,\tau,f}</annotation></semantics></math>
+times the two selectivities, the abundance index is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>q</mi><mtext mathvariant="normal">Fsh</mtext></msup><annotation encoding="application/x-tex">q^{\text{Fsh}}</annotation></semantics></math>
+times the retained catch in numbers divided by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">F_{r,y,\tau,f}</annotation></semantics></math>.
+That ratio is a catch per unit effort when fishing mortality is
+proportional to effort, and it has no within-season timing to set,
+because the catch it is built from is spread across the season.</p>
 <p>The set of ages entering the index sum can also be restricted per
 fleet via <code>fish_idx_ages</code>, replacing
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mo>∑</mo><mi>a</mi></msub><annotation encoding="application/x-tex">\sum_a</annotation></semantics></math>
 with a sum over the named ages only. The restriction applies to the
 index total alone; the fleet’s selectivity, catch, and compositions are
 unaffected.</p>
-<p>For the same reason, the fishery index follows catch rather than the
-survey when movement is continuous. Under
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtext mathvariant="normal">move_timing</mtext><mo>=</mo><mn>2</mn></mrow><annotation encoding="application/x-tex">\text{move\_timing} = 2</annotation></semantics></math>
-the fleet encounters fish as they redistribute, so
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}</annotation></semantics></math>
-above is replaced by the season-integrated abundance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow><mo>∫</mo></msubsup><annotation encoding="application/x-tex">N^{\int}_{p,r,y,\tau,a,s}</annotation></semantics></math>.
-The integral has units of abundance
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>
-time, and the resulting constant is absorbed by the estimated
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><annotation encoding="application/x-tex">q_{r,y,f}^{\text{Fsh}}</annotation></semantics></math>.
-Under
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtext mathvariant="normal">move_timing</mtext><annotation encoding="application/x-tex">\text{move\_timing}</annotation></semantics></math>
-0 and 1 the index uses
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub><annotation encoding="application/x-tex">N_{p,r,y,\tau,a,s}</annotation></semantics></math>
-as written, at the post-movement and pre-movement locations
-respectively. Biomass-based fishery indices are computed as:</p>
-<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><msubsup><mi>q</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><munderover><mo>∑</mo><mi>a</mi><msub><mi>a</mi><mo>+</mo></msub></munderover><mrow><munderover><mo>∑</mo><mi>s</mi><msub><mi>n</mi><mi>s</mi></msub></munderover><msub><mi>N</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi></mrow></msub></mrow><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Fsh</mtext></msubsup><msubsup><mtext mathvariant="normal">Sel</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mtext mathvariant="normal">Ret</mtext></msubsup><msubsup><mi>W</mi><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>a</mi><mo>,</mo><mi>s</mi><mo>,</mo><mi>f</mi></mrow><mrow><mi>f</mi><mi>i</mi><mi>s</mi><mi>h</mi></mrow></msubsup></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \\
-\end{matrix}</annotation></semantics></math></p>
 <p>The observed region-aggregated fishery index is compared to the sum
 of predicted indices across populations:
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mo>∑</mo><mi>p</mi></msub><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><annotation encoding="application/x-tex">\sum_p \text{FshIdx}_{p,r,y,\tau,f}</annotation></semantics></math>.
 Population-specific fishery indices are compared directly to
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">\text{FshIdx}_{p,r,y,\tau,f}</annotation></semantics></math>
 without summation.</p>
+<p>A fishery index reported once a year
+(<code>FishIdx_seas_Type = "aggSeas"</code>) is the year’s catch over
+the year’s effort. With fishing mortality proportional to effort, that
+is each season’s index weighted by the season’s fully selected fishing
+mortality
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><annotation encoding="application/x-tex">F_{r,y,\tau,f}</annotation></semantics></math>:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>f</mi></mrow></msub><mo>=</mo><mfrac><mrow><munder><mo>∑</mo><mi>τ</mi></munder><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub><mspace width="0.167em"></mspace><msub><mtext mathvariant="normal">FshIdx</mtext><mrow><mi>p</mi><mo>,</mo><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow><mrow><munder><mo>∑</mo><mi>τ</mi></munder><msub><mi>F</mi><mrow><mi>r</mi><mo>,</mo><mi>y</mi><mo>,</mo><mi>τ</mi><mo>,</mo><mi>f</mi></mrow></msub></mrow></mfrac></mrow><annotation encoding="application/x-tex">\text{FshIdx}_{p,r,y,f} = \frac{\sum_{\tau}F_{r,y,\tau,f}\,\text{FshIdx}_{p,r,y,\tau,f}}{\sum_{\tau}F_{r,y,\tau,f}}</annotation></semantics></math></p>
+<p>rather than the seasons added together. A season fished at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mn>0.3</mn></mrow><annotation encoding="application/x-tex">F = 0.3</annotation></semantics></math>
+with an index of 100, followed by a closed season with 60, gives a year
+index of 100, where the sum would give 160.</p>
 </div>
 </div>
 <div class="section level4">

@@ -1348,14 +1348,15 @@ the weight of the mean length.
 
 ##### Timing within the year
 
-Every fleet has its own size-age transition and weight, read at the
-point in the season that fleet’s observations are taken: each fishery
-fleet’s at `t_fish`, each survey’s at `t_srv`, and the spawning weight
-at the spawning time. A season starts at the cumulative duration of the
-seasons before it, and a point inside it is that start plus the fraction
-elapsed times the season’s duration. With growth constant over years the
-curve read at the real age gives the same mean length whatever the
-seasons’ durations, so seasons add no approximation to growth.
+Every fleet has its own size-age transition and weight. Each survey’s is
+read at the point in the season the survey is taken, `t_srv`, and the
+spawning weight at the spawning time. Each fishery fleet’s is read at
+mid season, since its catch is spread across the whole season. A season
+starts at the cumulative duration of the seasons before it, and a point
+inside it is that start plus the fraction elapsed times the season’s
+duration. With growth constant over years the curve read at the real age
+gives the same mean length whatever the seasons’ durations, so seasons
+add no approximation to growth.
 
 #### Fishery Observation Model
 
@@ -1527,61 +1528,64 @@ with each term weighted by $`W_{p,r,y,\tau,a,s,f}^{fish}`$ for a biomass
 fraction. Population-specific discards follow the same structure without
 summing across $`p`$.
 
-Similarly, expected fishery indices ($`\text{FshIdx}_{p,r,y,\tau,f}`$)
-can be computed as either abundance-based or biomass-based, using the
-product of total fishery selectivity and retention selectivity:
+Expected fishery indices ($`\text{FshIdx}_{p,r,y,\tau,f}`$) are formed
+from the mean numbers available over the season, the same numbers the
+catch equation applies fishing mortality to:
+
+``` math
+\bar{N}_{p,r,y,\tau,a,s} = N_{p,r,y,\tau,a,s}\frac{1 - \exp\left( - Z_{p,r,y,\tau,a,s} \right)}{Z_{p,r,y,\tau,a,s}}
+```
+
+so that
+$`C_{p,r,y,\tau,a,s,f}^{a} = \text{retFmort}_{p,r,y,\tau,a,s,f}\,\bar{N}_{p,r,y,\tau,a,s}`$.
+Under $`\text{move\_timing}`$ 0 and 1 this is taken at the post-movement
+and pre-movement locations respectively. Under
+$`\text{move\_timing} = 2`$, $`\bar{N}_{p,r,y,\tau,a,s}`$ is the
+season-integrated abundance $`N^{\int}_{p,r,y,\tau,a,s}`$ (see Catch
+Under Continuous Movement above), which reduces to the expression above
+when the regions decouple. The index is abundance-based or
+biomass-based, using the product of total fishery selectivity and
+retention selectivity:
 
 ``` math
 \begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \\
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\bar{N}_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}} \quad \text{(abundance)} \\
+\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}\bar{N}_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \quad \text{(biomass)} \\
 \end{matrix}
 ```
 
 where $`q_{r,y,f}^{\text{Fsh}}`$ is the catchability coefficient for a
-given fishery fleet. By default the fishery index is computed directly
-from start-of-season numbers-at-age without survival discounting, on the
-rationale that fishing is spread across the whole season rather than
-occurring at a point within it. However, an optional within-season
-timing $`t_{r,\tau,f}^{fish}`$ (`t_fish`, a fraction of the season) can
-be specified per region, season, and fleet, mirroring the survey
-convention: when supplied, the numbers entering the index are first
-decayed by
-
-``` math
-N_{p,r,y,\tau,a,s}\exp\left( - Z_{p,r,y,\tau,a,s} \cdot t_{r,\tau,f}^{fish} \right)
-```
-
-with $`t^{fish} = 0`$ reproducing the start-of-season default. This is
-appropriate for fishery CPUE series that reflect a survey-like snapshot
-(e.g., an index standardized to a particular part of the season).
+given fishery fleet. Since retained fishing mortality at age is the
+fleet’s fully selected $`F_{r,y,\tau,f}`$ times the two selectivities,
+the abundance index is $`q^{\text{Fsh}}`$ times the retained catch in
+numbers divided by $`F_{r,y,\tau,f}`$. That ratio is a catch per unit
+effort when fishing mortality is proportional to effort, and it has no
+within-season timing to set, because the catch it is built from is
+spread across the season.
 
 The set of ages entering the index sum can also be restricted per fleet
 via `fish_idx_ages`, replacing $`\sum_a`$ with a sum over the named ages
 only. The restriction applies to the index total alone; the fleet’s
 selectivity, catch, and compositions are unaffected.
 
-For the same reason, the fishery index follows catch rather than the
-survey when movement is continuous. Under $`\text{move\_timing} = 2`$
-the fleet encounters fish as they redistribute, so
-$`N_{p,r,y,\tau,a,s}`$ above is replaced by the season-integrated
-abundance $`N^{\int}_{p,r,y,\tau,a,s}`$. The integral has units of
-abundance $`\times`$ time, and the resulting constant is absorbed by the
-estimated $`q_{r,y,f}^{\text{Fsh}}`$. Under $`\text{move\_timing}`$ 0
-and 1 the index uses $`N_{p,r,y,\tau,a,s}`$ as written, at the
-post-movement and pre-movement locations respectively. Biomass-based
-fishery indices are computed as:
-
-``` math
-\begin{matrix}
-\text{FshIdx}_{p,r,y,\tau,f} = q_{r,y,f}^{\text{Fsh}}\sum_{a}^{a_{+}}{\sum_{s}^{n_{s}}N_{p,r,y,\tau,a,s}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Fsh}}\text{Sel}_{p,r,y,\tau,a,s,f}^{\text{Ret}}W_{p,r,y,\tau,a,s,f}^{fish} \\
-\end{matrix}
-```
-
 The observed region-aggregated fishery index is compared to the sum of
 predicted indices across populations:
 $`\sum_p \text{FshIdx}_{p,r,y,\tau,f}`$. Population-specific fishery
 indices are compared directly to $`\text{FshIdx}_{p,r,y,\tau,f}`$
 without summation.
+
+A fishery index reported once a year (`FishIdx_seas_Type = "aggSeas"`)
+is the year’s catch over the year’s effort. With fishing mortality
+proportional to effort, that is each season’s index weighted by the
+season’s fully selected fishing mortality $`F_{r,y,\tau,f}`$:
+
+``` math
+\text{FshIdx}_{p,r,y,f} = \frac{\sum_{\tau}F_{r,y,\tau,f}\,\text{FshIdx}_{p,r,y,\tau,f}}{\sum_{\tau}F_{r,y,\tau,f}}
+```
+
+rather than the seasons added together. A season fished at $`F = 0.3`$
+with an index of 100, followed by a closed season with 60, gives a year
+index of 100, where the sum would give 160.
 
 #### Survey Observation Model
 

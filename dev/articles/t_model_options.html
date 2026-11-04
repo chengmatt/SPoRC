@@ -4198,10 +4198,10 @@ inside the model from von Bertalanffy parameters in Schnute’s form
 up to <code>L1</code>, CV interpolated on length between the references,
 the plus-group mean size adjusted for fish older than the accumulator
 age, and a binned normal key with the tails in the end bins, read at
-each fleet’s own timing (<code>t_fish</code>, <code>t_srv</code>).
-<code>"richards"</code> is the same curve applied to lengths raised to a
-sixth estimated parameter <code>rho</code>, which nests the von
-Bertalanffy form at <code>rho = 1</code>. Requires
+each survey’s own timing (<code>t_srv</code>) and at mid season for each
+fishery fleet. <code>"richards"</code> is the same curve applied to
+lengths raised to a sixth estimated parameter <code>rho</code>, which
+nests the von Bertalanffy form at <code>rho = 1</code>. Requires
 <code>fit_lengths = 1</code>
 </td>
 </tr>
@@ -4462,8 +4462,8 @@ operating model too, as <code>AgeingError_fish_input</code> /
 <code>"data"</code> (default) reads weight at age from the
 <code>WAA*</code> arguments. <code>"wt_len"</code> derives
 <code>WAA</code> (at spawning time) and each fleet’s
-<code>WAA_fish</code> and <code>WAA_srv</code> (at that fleet’s
-<code>t_fish</code> or <code>t_srv</code>) from its key and
+<code>WAA_fish</code> (at mid season) and <code>WAA_srv</code> (at that
+survey’s <code>t_srv</code>) from its key and
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>W</mi><mo>=</mo><mi>a</mi><msup><mi>L</mi><mi>b</mi></msup></mrow><annotation encoding="application/x-tex">W = aL^b</annotation></semantics></math>
 at the bin midpoints instead of reading them as data.
 <code>Get_Reference_Points</code> reads the derived <code>rep$WAA</code>
@@ -4482,7 +4482,7 @@ points is one whole year or several sub-annual steps that sum to it.
 There is no option to give <code>K</code> (or any other growth
 parameter) a within-year seasonal pattern, e.g. a multiplier per season
 the way Stock Synthesis’s <code>MGparm_seas_effects</code> does. Every
-fleet’s timing (<code>t_fish</code>, <code>t_srv</code>,
+reading point (mid season for a fishery fleet, <code>t_srv</code>,
 <code>t_spawn</code>) still reads its own point on that single annual
 curve, so within-year growth differences across fleets are entirely a
 function of <em>when</em> in the year they sample, not of the growth
@@ -4583,7 +4583,8 @@ existed</td>
 <tr class="even">
 <td><code>"aggSeas"</code></td>
 <td>Sum the prediction over every season of the year and fit it against
-one observation</td>
+one observation. A fishery index weighs the seasons by their fishing
+mortality instead, below</td>
 </tr>
 </tbody>
 </table>
@@ -4653,6 +4654,22 @@ observation sits in.</p>
 its own <code>t_srv</code>, not aggregated. Use <code>"aggSeas"</code>
 for a data source that accumulates across the year, such as a fishery
 index built from a whole year of effort.</p>
+<p>A fishery index set to <code>"aggSeas"</code> is not summed over the
+seasons, because a catch rate does not add up any more than a discard
+fraction does. The year’s catch per unit effort is the year’s catch over
+the year’s effort, and with fishing mortality proportional to effort
+that is each season’s index weighted by the season’s fully selected
+fishing mortality,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>I</mi><mi>y</mi></msub><mo>=</mo><msub><mo>∑</mo><mi>τ</mi></msub><msub><mi>F</mi><mi>τ</mi></msub><msub><mi>I</mi><mi>τ</mi></msub><mi>/</mi><msub><mo>∑</mo><mi>τ</mi></msub><msub><mi>F</mi><mi>τ</mi></msub></mrow><annotation encoding="application/x-tex">I_{y} = \sum_{\tau} F_{\tau} I_{\tau} / \sum_{\tau} F_{\tau}</annotation></semantics></math>.
+A season fished at
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>F</mi><mo>=</mo><mn>0.3</mn></mrow><annotation encoding="application/x-tex">F = 0.3</annotation></semantics></math>
+with an index of 100, followed by a closed season with 60, gives a year
+index of 100 rather than 160. Adding the seasons would only be right if
+every year split its effort across the seasons the same way, since a
+constant share is absorbed by catchability. A catchability solved
+analytically (<code>fish_q_type = "arith"</code> or <code>"geo"</code>)
+is solved against the same year total, and the weights are reported as
+<code>FishIdx_seas_wt</code>.</p>
 <p>An operating model reports the same way through
 <code><a href="../reference/Setup_Sim_Fishing.html">Setup_Sim_Fishing()</a></code> and <code><a href="../reference/Setup_Sim_Survey.html">Setup_Sim_Survey()</a></code>,
 which take the same argument names: the annual total is drawn once from
@@ -5272,6 +5289,12 @@ arithmetic scale.</p>
 <div class="section level4">
 <h4 id="index-timing-and-age-restriction">Index timing and age restriction<a class="anchor" aria-label="anchor" href="#index-timing-and-age-restriction"></a>
 </h4>
+<p>A fishery index has no timing to set. It is formed from the mean
+numbers available over the season,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>Z</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>Z</mi></mrow><annotation encoding="application/x-tex">N(1 - e^{-Z})/Z</annotation></semantics></math>,
+the numbers the catch equation applies fishing mortality to, so the
+expected index is catchability times the fleet’s catch over its fishing
+mortality. A survey index is a snapshot at its <code>t_srv</code>.</p>
 <table class="table">
 <colgroup>
 <col width="50%">
@@ -5281,18 +5304,7 @@ arithmetic scale.</p>
 <th>Argument</th>
 <th>Description</th>
 </tr></thead>
-<tbody>
-<tr class="odd">
-<td><code>t_fish</code></td>
-<td>
-<code>[r × τ × f]</code>, fraction of the season elapsed when the
-fishery index is observed; numbers decay by
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>e</mi><mrow><mi>−</mi><mi>t</mi><mi>Z</mi></mrow></msup><annotation encoding="application/x-tex">e^{-t Z}</annotation></semantics></math>
-before the index is formed, mirroring <code>t_srv</code>. Default
-<code>0</code> (start of season, the historical behavior). Set
-<code>0.5</code> for a mid-season CPUE snapshot</td>
-</tr>
-<tr class="even">
+<tbody><tr class="odd">
 <td>
 <code>fish_idx_ages</code> / <code>srv_idx_ages</code>
 </td>
@@ -5304,8 +5316,7 @@ compositions are untouched. Restricting a survey to one age turns it
 into an index of that age alone (e.g., an age-1 acoustic recruitment
 index), without needing a knife-edge selectivity that would corrupt the
 compositions</td>
-</tr>
-</tbody>
+</tr></tbody>
 </table>
 </div>
 <div class="section level4">
@@ -5347,10 +5358,10 @@ size-age key’s own. <code>"length"</code> spreads the fish at each age
 over the key first and selects them length by length,
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>C</mi><mi>l</mi></msub><mo>=</mo><mi>s</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo stretchy="false" form="postfix">)</mo><msub><mo>∑</mo><mi>a</mi></msub><mi>P</mi><mo stretchy="false" form="prefix">(</mo><mi>l</mi><mo>∣</mo><mi>a</mi><mo stretchy="false" form="postfix">)</mo><mspace width="0.167em"></mspace><msub><mi>N</mi><mi>a</mi></msub><mspace width="-0.167em"></mspace><mrow><mo stretchy="true" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><msub><mi>Z</mi><mi>a</mi></msub></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mi>F</mi><mi>/</mi><msub><mi>Z</mi><mi>a</mi></msub></mrow><annotation encoding="application/x-tex">C_{l} = s(l)\sum_{a}P(l \mid a)\,N_{a}\!\left( 1 - e^{-Z_{a}} \right)F/Z_{a}</annotation></semantics></math>,
 so the long fish of an age are taken more often. The key is the fleet’s
-own, at <code>t_fish</code> or <code>t_srv</code>. Use
-<code>"length"</code> when selectivity is length based and the length
-compositions are what inform it. The two are different expected
-compositions, not two roundings of the same one, and the length
+own, at mid season for a fishery fleet or at <code>t_srv</code> for a
+survey. Use <code>"length"</code> when selectivity is length based and
+the length compositions are what inform it. The two are different
+expected compositions, not two roundings of the same one, and the length
 likelihood can differ substantially between them. The operating model
 forms its length compositions the same way, from
 <code>FishLenComps_sel</code> and <code>SrvLenComps_sel</code> in

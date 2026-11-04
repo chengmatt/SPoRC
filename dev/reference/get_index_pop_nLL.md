@@ -11,7 +11,17 @@ with the lognormal ones.
 ## Usage
 
 ``` r
-get_index_pop_nLL(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets)
+get_index_pop_nLL(
+  nLL_arr,
+  Use,
+  Obs,
+  Pred,
+  SD,
+  LikeType,
+  seas_Type,
+  n_fleets,
+  seas_wt = NULL
+)
 ```
 
 ## Arguments
@@ -47,6 +57,11 @@ get_index_pop_nLL(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets)
 - n_fleets:
 
   Number of fleets.
+
+- seas_wt:
+
+  Season weights as in
+  [`get_index_regional_nLL`](https://chengmatt.github.io/SPoRC/dev/reference/get_index_regional_nLL.md).
 
 ## Value
 

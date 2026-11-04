@@ -100,7 +100,6 @@ Setup_Sim_Fishing(
   seas_agg_slot = NULL,
   FishIdx_Cov = NULL,
   UseFishIdx = NULL,
-  t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
   comp_fish_caal_like = rep(999, sim_list$n_fish_fleets),
   ISS_Fish_caal = NULL,
   ln_Fish_caal_theta = NULL,
@@ -424,14 +423,6 @@ Setup_Sim_Fishing(
   Its year dim may be shorter than the simulation, in which case later
   years draw with the mean factor scale and loading. Required for mvn
   fleets. Default \`NULL\`.
-
-- t_fish:
-
-  Fishery index timing, \`n_regions x n_seas x n_fish_fleets\`, the
-  fraction of the season elapsed when the index is observed. Numbers at
-  age are decayed by \`exp(-t_fish \* ZAA)\` before the index is formed,
-  matching \`t_srv\` and the estimation model's own \`t_fish\`. Default
-  0.
 
 - comp_fish_caal_like:
 

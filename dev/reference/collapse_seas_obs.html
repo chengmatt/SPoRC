@@ -84,7 +84,8 @@ other seasons are left at zero.</p>
 <span>  <span class="va">n_fleets</span>,</span>
 <span>  pop <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  bias_correct_oe <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  slot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">n_fleets</span><span class="op">)</span></span>
+<span>  slot <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">n_fleets</span><span class="op">)</span>,</span>
+<span>  seas_wt <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -130,6 +131,13 @@ simulation dim, read in the season the total is drawn into.</p></dd>
 <dt id="arg-slot">slot<a class="anchor" aria-label="anchor" href="#arg-slot"></a></dt>
 <dd><p>Integer vector, one per fleet, of the season the total is drawn
 into. From <code><a href="seas_agg_season.html">seas_agg_season</a></code>.</p></dd>
+
+
+<dt id="arg-seas-wt">seas_wt<a class="anchor" aria-label="anchor" href="#arg-seas-wt"></a></dt>
+<dd><p>Array <code>[region, season, fleet]</code> each season is multiplied
+by before the seasons are added, or <code>NULL</code> to add them unweighted. A
+fishery index takes them from <code><a href="get_fish_idx_seas_wt.html">get_fish_idx_seas_wt</a></code>, as the
+estimation model does.</p></dd>
 
 </dl></div>
     <div class="section level2">

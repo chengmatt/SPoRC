@@ -22,7 +22,8 @@ collapse_seas_obs(
   n_fleets,
   pop = FALSE,
   bias_correct_oe = 0,
-  slot = rep(1, n_fleets)
+  slot = rep(1, n_fleets),
+  seas_wt = NULL
 )
 ```
 
@@ -68,6 +69,14 @@ collapse_seas_obs(
   Integer vector, one per fleet, of the season the total is drawn into.
   From
   [`seas_agg_season`](https://chengmatt.github.io/SPoRC/dev/reference/seas_agg_season.md).
+
+- seas_wt:
+
+  Array `[region, season, fleet]` each season is multiplied by before
+  the seasons are added, or `NULL` to add them unweighted. A fishery
+  index takes them from
+  [`get_fish_idx_seas_wt`](https://chengmatt.github.io/SPoRC/dev/reference/get_fish_idx_seas_wt.md),
+  as the estimation model does.
 
 ## Value
 

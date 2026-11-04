@@ -88,8 +88,6 @@ source's composition type. Call after <code><a href="Setup_Mod_Catch_and_F.html"
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/length.html" class="external-link">length</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">years</span><span class="op">)</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
 <span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  <span class="va">fish_idx_type</span>,</span>
-<span>  t_fish <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_seas</span>,</span>
-<span>    <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  FishLenComps_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"age"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fish_waa_selected <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  <span class="va">UseFishIdx</span>,</span>
@@ -239,14 +237,10 @@ Default all zeros.</p></dd>
 
 <dt id="arg-fish-idx-type">fish_idx_type<a class="anchor" aria-label="anchor" href="#arg-fish-idx-type"></a></dt>
 <dd><p>Character vector <code>[n_fish_fleets]</code>: <code>"biom"</code>,
-<code>"abd"</code>, or <code>"none"</code>.</p></dd>
-
-
-<dt id="arg-t-fish">t_fish<a class="anchor" aria-label="anchor" href="#arg-t-fish"></a></dt>
-<dd><p>Array <code>[n_regions x n_seas x n_fish_fleets]</code> of the fraction
-of the season elapsed when each index is observed. Numbers at age are decayed
-by <code>exp(-t_fish * ZAA)</code> before the index is formed, as <code>t_srv</code> does
-for surveys. Default <code>0</code>; use <code>0.5</code> for a mid-season index.</p></dd>
+<code>"abd"</code>, or <code>"none"</code>. The index is formed from the mean numbers
+available over the season, \(N (1 - e^{-Z}) / Z\), the numbers the catch
+equation applies fishing mortality to, times the fleet's selectivity and
+retention. There is no within-season timing to set.</p></dd>
 
 
 <dt id="arg-fishlencomps-sel">FishLenComps_sel<a class="anchor" aria-label="anchor" href="#arg-fishlencomps-sel"></a></dt>
@@ -255,7 +249,7 @@ length-based selectivity applies before or after the fish are spread over
 lengths. <code>"age"</code> (default) selects at age and spreads afterwards, so the
 length composition within an age is the key's. <code>"length"</code> spreads first
 and selects length by length, so the long fish of an age are taken more often.
-The key is the fleet's own at <code>t_fish</code>, and length-based fishery
+The key is the fleet's own at mid season, and length-based fishery
 selectivity is required. The two give different expected compositions.</p></dd>
 
 

@@ -607,9 +607,8 @@ sim_env <- Setup_sim_env(sim_list) # every replicate now holds its own move_devs
 
 Growth setup needs a little bit more, since
 [`Get_Growth()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md)
-also reads `t_fish`, `t_srv`, `spawn_seas` and `t_spawn`, the
-within-season timing that
-[`Setup_Mod_FishIdx_and_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_FishIdx_and_Comps.md),
+also reads `t_srv`, `spawn_seas` and `t_spawn`, the within-season timing
+that
 [`Setup_Mod_SrvIdx_and_Comps()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_SrvIdx_and_Comps.md)
 and
 [`Setup_Mod_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
@@ -623,8 +622,7 @@ actually being fit:
 input_list <- Setup_Mod_Biologicals(input_list, ..., growth_tv_model = c(L1 = "iid", K = "rw"), growth_tv_sigma_spec = "est")
 input_list$par$growth_pe_pars[] <- ... # chosen sd, not an estimate
 
-# the timing Setup_Mod_FishIdx_and_Comps / Setup_Mod_SrvIdx_and_Comps / Setup_Mod_Rec would otherwise supply
-input_list$data$t_fish <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets))
+# the timing Setup_Mod_SrvIdx_and_Comps / Setup_Mod_Rec would otherwise supply
 input_list$data$t_srv <- array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets))
 input_list$data$spawn_seas <- 1
 input_list$data$t_spawn <- 0

@@ -25,8 +25,6 @@ Setup_Mod_FishIdx_and_Comps(
     length(input_list$data$years), input_list$data$n_seas,
     input_list$data$n_fish_fleets)),
   fish_idx_type,
-  t_fish = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
-    input_list$data$n_fish_fleets)),
   FishLenComps_sel = rep("age", input_list$data$n_fish_fleets),
   fish_waa_selected = rep(0, input_list$data$n_fish_fleets),
   UseFishIdx,
@@ -171,13 +169,10 @@ Setup_Mod_FishIdx_and_Comps(
 - fish_idx_type:
 
   Character vector `[n_fish_fleets]`: `"biom"`, `"abd"`, or `"none"`.
-
-- t_fish:
-
-  Array `[n_regions x n_seas x n_fish_fleets]` of the fraction of the
-  season elapsed when each index is observed. Numbers at age are decayed
-  by `exp(-t_fish * ZAA)` before the index is formed, as `t_srv` does
-  for surveys. Default `0`; use `0.5` for a mid-season index.
+  The index is formed from the mean numbers available over the season,
+  \\N (1 - e^{-Z}) / Z\\, the numbers the catch equation applies fishing
+  mortality to, times the fleet's selectivity and retention. There is no
+  within-season timing to set.
 
 - FishLenComps_sel:
 
@@ -186,7 +181,7 @@ Setup_Mod_FishIdx_and_Comps(
   (default) selects at age and spreads afterwards, so the length
   composition within an age is the key's. `"length"` spreads first and
   selects length by length, so the long fish of an age are taken more
-  often. The key is the fleet's own at `t_fish`, and length-based
+  often. The key is the fleet's own at mid season, and length-based
   fishery selectivity is required. The two give different expected
   compositions.
 

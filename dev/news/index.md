@@ -89,6 +89,12 @@
   tagging data.
 - Added support for at-age data sources (e.g., ICES-style stock
   assessments).
+- A fishery index is formed from the mean numbers available over the
+  season, the numbers the catch is taken from, and `t_fish` is removed;
+  fishery size-age keys and weights are read at mid season. A fishery
+  index reported once a year (`"aggSeas"`) weighs the seasons by their
+  fishing mortality, and a solved catchability uses the same year total
+  as the likelihood.
 
 #### Recruitment and fishing mortality
 

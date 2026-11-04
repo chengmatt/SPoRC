@@ -204,10 +204,9 @@ selectivity at length and sums over ages instead of folding it to age
 first, and `fish_waa_selected = 1` puts the catch in biomass on the
 selection weighted weight at age.
 
-`t_fish` is 0.5 because a fishing fleet’s compositions are read at mid
-season whatever month the data file records, so the age-length key, the
-selected weight behind the catch biomass, and the compositions all sit
-there.
+A fishing fleet’s age-length key, the selected weight behind its catch
+biomass, and its compositions are all read at mid season, whatever month
+the data file records.
 
 ``` r
 
@@ -216,7 +215,6 @@ none <- function(n) paste0("none_Year_1-terminal_Fleet_", seq_len(n))
 
 input_list <- Setup_Mod_FishIdx_and_Comps(
   input_list = input_list,
-  t_fish = array(0.5, dim = c(n_reg, 1, n_fish)),
   FishLenComps_sel = "length", fish_waa_selected = 1,
   ObsFishIdx = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
   ObsFishIdx_SE = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),

@@ -434,8 +434,8 @@ accumulator age.</p></dd>
 <code>WAA</code>, <code>WAA_fish</code> and <code>WAA_srv</code>. <code>"wt_len"</code> builds them
 from the size-age key and \(W = a L^b\) at the bin midpoints, so weight at
 age holds the spread of length at age; the spawning weight uses the key at
-spawning time and each fleet's weight the key at <code>t_fish</code> or
-<code>t_srv</code>. Under <code>"wt_len"</code> <code>WAA</code> may be <code>NULL</code>, and
+spawning time, each fishery fleet's weight the key at mid season, and each
+survey's weight the key at <code>t_srv</code>. Under <code>"wt_len"</code> <code>WAA</code> may be <code>NULL</code>, and
 reference point and projection code still read <code>data$WAA</code>, so copy the
 reported arrays into the data list before calling them.</p></dd>
 

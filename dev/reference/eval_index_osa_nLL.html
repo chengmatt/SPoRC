@@ -74,7 +74,8 @@ observations arrive already flattened and on the log scale.</p>
 <span>  <span class="va">seas_Type</span>,</span>
 <span>  <span class="va">const</span>,</span>
 <span>  <span class="va">pop</span>,</span>
-<span>  bias_correct_oe <span class="op">=</span> <span class="fl">0</span></span>
+<span>  bias_correct_oe <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  seas_wt <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -112,6 +113,10 @@ observations arrive already flattened and on the log scale.</p>
 
 <dt id="arg-pop">pop<a class="anchor" aria-label="anchor" href="#arg-pop"></a></dt>
 <dd><p>Logical, whether the data source is population-specific.</p></dd>
+
+
+<dt id="arg-seas-wt">seas_wt<a class="anchor" aria-label="anchor" href="#arg-seas-wt"></a></dt>
+<dd><p>Season weights as in <code><a href="get_index_regional_nLL.html">get_index_regional_nLL</a></code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

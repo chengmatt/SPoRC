@@ -18,7 +18,8 @@ eval_index_osa_nLL(
   seas_Type,
   const,
   pop,
-  bias_correct_oe = 0
+  bias_correct_oe = 0,
+  seas_wt = NULL
 )
 ```
 
@@ -56,6 +57,11 @@ eval_index_osa_nLL(
 - pop:
 
   Logical, whether the data source is population-specific.
+
+- seas_wt:
+
+  Season weights as in
+  [`get_index_regional_nLL`](https://chengmatt.github.io/SPoRC/dev/reference/get_index_regional_nLL.md).
 
 ## Value
 

@@ -40,6 +40,7 @@ get_survey_observation_model(
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
   UseSrvIdx = NULL,
+  SrvIdx_seas_Type = NULL,
   do_caal = 0,
   Srv_caal = NULL,
   SizeAgeTrans_srv = NULL,
@@ -154,6 +155,12 @@ get_survey_observation_model(
   Arrays `[region, year, season, srv_fleet]` of observed index values
   and their use flags. Required only when a fleet solves catchability
   analytically.
+
+- SrvIdx_seas_Type:
+
+  Integer vector `[srv_fleet]`, `1` where a fleet's index is fit as a
+  year total, so the analytic catchability is solved against that total.
+  `NULL` means every fleet is fit by season.
 
 - do_caal:
 

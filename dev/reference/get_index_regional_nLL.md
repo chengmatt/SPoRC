@@ -19,7 +19,8 @@ get_index_regional_nLL(
   seas_Type,
   const,
   n_fleets,
-  bias_correct_oe = 0
+  bias_correct_oe = 0,
+  seas_wt = NULL
 )
 ```
 
@@ -65,6 +66,12 @@ get_index_regional_nLL(
 - n_fleets:
 
   Number of fleets.
+
+- seas_wt:
+
+  Season weights for a season total, as in
+  [`get_seas_pred`](https://chengmatt.github.io/SPoRC/dev/reference/get_seas_pred.md),
+  or `NULL` to add the seasons.
 
 ## Value
 

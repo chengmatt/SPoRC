@@ -76,7 +76,7 @@ because sharing across them is a separate choice (`growth_spec`).
 | $`\tau`$ | season, $`\tau = 1, \dots, n_{\tau}`$ | index |
 | $`l`$ | length bin, $`l = 1, \dots, n_{l}`$ | index |
 | $`d_{\tau}`$ | duration of season $`\tau`$ as a fraction of the year, $`\sum_{\tau} d_{\tau} = 1`$ (`seasdur`) | data |
-| $`t`$ | fraction of a season elapsed at a reading point (`t_fish`, `t_srv`, `t_spawn`) | data |
+| $`t`$ | fraction of a season elapsed at a reading point (0.5 for a fishery fleet, `t_srv`, `t_spawn`) | data |
 | $`e`$ | fraction of the year elapsed at that reading point | derived |
 | $`x`$ | real age, $`x = a + e`$ | derived |
 | $`\ell_{l}`$ | lower edge of length bin $`l`$ (`growth_len_lower`) | data |
@@ -113,7 +113,8 @@ Weight at age is data too. Nothing about size is estimated.
 Under `growth_model = "vb_schnute"` or `"richards"`, the size-age
 transition is a function of five or six estimable parameters.
 `SizeAgeTrans` is then ignored and may be `NA`. One is built per fleet
-at that fleet’s timing (`t_fish`, `t_srv`), plus one at spawning time.
+at that fleet’s timing (mid season for a fishery fleet, `t_srv` for a
+survey), plus one at spawning time.
 
 We would generally keep `"none"` when growth has been determined
 externally and is not itself under study, when bridging an assessment

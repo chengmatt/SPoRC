@@ -663,8 +663,9 @@ one file.</p>
 <code>dnbinom_robust_noint</code>, <code>dpois_noint</code>,
 <code>eval_index_osa_nLL</code>, <code>get_at_age_2dar1_nLL</code>,
 <code>get_at_age_nLL</code>, <code>get_beta_scaled_pars</code>,
-<code>get_discard_pred</code>, <code>get_index_nLL</code>,
-<code>get_index_pop_nLL</code>, <code>get_index_regional_nLL</code>,
+<code>get_discard_pred</code>, <code>get_fish_idx_seas_wt</code>,
+<code>get_index_nLL</code>, <code>get_index_pop_nLL</code>,
+<code>get_index_regional_nLL</code>,
 <code>get_logistnormal_miss0_nLL</code>, <code>get_seas_pred</code>,
 <code>get_seas_pred_pop</code>
 </td>
@@ -672,6 +673,7 @@ one file.</p>
 <td>
 <code>model_lik_at_age.R</code>, <code>model_lik_comps.R</code>,
 <code>model_lik_tags.R</code>, <code>model_objective.R</code>,
+<code>model_obs_fishery_survey.R</code>,
 <code>model_priors_penalties.R</code>,
 <code>sim_observations.R</code>
 </td>
@@ -821,7 +823,10 @@ one file.</p>
 <code>get_fishery_observation_model</code>,
 <code>get_survey_observation_model</code>
 </td>
-<td><code>model_transition.R</code></td>
+<td>
+<code>model_distributions.R</code>,
+<code>model_transition.R</code>
+</td>
 <td><code>model_objective.R</code></td>
 </tr>
 <tr class="odd">
@@ -1702,15 +1707,11 @@ either.</td>
 </tr>
 <tr class="odd">
 <td><code><a href="../reference/growth_fill_year.html">growth_fill_year()</a></code></td>
-<td>“Every fleet, timing, and spawning point in one year,” given a
-start-of-year state: walks each distinct
-<code>t_fish</code>/<code>t_srv</code>/<code>t_spawn</code> value once
-(deduplicated), builds the key via <code><a href="../reference/get_alk.html">get_alk()</a></code>, and writes it
-into every fleet that reads at that timing. Both
-<code><a href="../reference/Get_Growth.html">Get_Growth()</a></code> (looping over years on the “curve” path) and
-<code><a href="../reference/Get_Growth_Year.html">Get_Growth_Year()</a></code> (one year at a time on the “cohort” path)
-call it with a different start-of-year state, so the fleet-timing
-residual tracking is written once.</td>
+<td>Works out mean length at age and the age-length key for one year, at
+each time of year the model needs them: mid season for the fishery, the
+survey date (<code>t_srv</code>) for each survey, and the spawning date.
+Used by both <code><a href="../reference/Get_Growth.html">Get_Growth()</a></code> and
+<code><a href="../reference/Get_Growth_Year.html">Get_Growth_Year()</a></code>.</td>
 </tr>
 <tr class="even">
 <td><code><a href="../reference/plus_group_size.html">plus_group_size()</a></code></td>

@@ -3,8 +3,8 @@
 Builds the size-age transition arrays and, when asked, weight at age and
 maturity at age from the growth parameters, for every year. Every fleet
 gets its own key and weight, read at that fleet's timing within the
-season: each fishery fleet's at `t_fish`, each survey's at `t_srv`, and
-the spawning weight at `t_spawn`.
+season: each fishery fleet's at mid season, each survey's at `t_srv`,
+and the spawning weight at `t_spawn`.
 
 ## Usage
 
@@ -33,7 +33,6 @@ Get_Growth(
   n_sexes,
   n_fish_fleets,
   n_srv_fleets,
-  t_fish,
   t_srv,
   ln_growth_devs = NULL,
   growth_tv_model = NULL,
@@ -103,12 +102,6 @@ Get_Growth(
 - n_pop, n_regions, n_yrs, n_seas, n_sexes, n_fish_fleets, n_srv_fleets:
 
   Dimensions.
-
-- t_fish:
-
-  Array `[region, season, fish_fleet]` of fishery timings, the fraction
-  of the season elapsed at which each fishery fleet's key and weight at
-  age are read.
 
 - t_srv:
 
@@ -199,8 +192,9 @@ its adjusted size by the curve's increment over the same elapsed time.
 Under constant growth the increment over a season is exactly the curve's
 difference between the two real ages, so splitting the year into seasons
 of any durations changes no mean length. The spawning weight is read at
-the spawning fraction of the season, and each fleet's key and weight at
-that fleet's own timing, `t_fish` or `t_srv`, so a composition and the
-weight behind an index are formed at the point in the season the
-observation is taken. Fleets that share a timing share one evaluation.
-Seasonal multipliers on \\K\\ are not kept.
+the spawning fraction of the season, and each survey's key and weight at
+its own `t_srv`, so a survey composition and the weight behind a survey
+index are formed at the point in the season the survey is taken. A
+fishery fleet's key and weight are read at mid season, since its catch
+is taken across the whole season. Fleets that share a timing share one
+evaluation. Seasonal multipliers on \\K\\ are not kept.

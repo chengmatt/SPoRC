@@ -9,7 +9,7 @@ them separately.
 ## Usage
 
 ``` r
-get_seas_pred(pred, r, y, seas, f, seas_agg)
+get_seas_pred(pred, r, y, seas, f, seas_agg, wt = NULL)
 ```
 
 ## Arguments
@@ -25,6 +25,13 @@ get_seas_pred(pred, r, y, seas, f, seas_agg)
 - seas_agg:
 
   Integer, `1` for a season total and `0` otherwise.
+
+- wt:
+
+  Weights `[region, year, season, fleet]` each season is multiplied by
+  before the seasons are added, or `NULL` to add them unweighted. A
+  fishery index takes them from
+  [`get_fish_idx_seas_wt`](https://chengmatt.github.io/SPoRC/dev/reference/get_fish_idx_seas_wt.md).
 
 ## Value
 

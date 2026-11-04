@@ -7,7 +7,7 @@ Options](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md)
 explains why it exists and which ones to specify.
 
 All stages Dim (17) Rec (65) Biologicals (73) Movement (32) Tagging (19)
-Catch_and_F (72) FishIdx_and_Comps (77) SrvIdx_and_Comps (74)
+Catch_and_F (72) FishIdx_and_Comps (76) SrvIdx_and_Comps (74)
 Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35) Projection
 (26)
 
@@ -157,7 +157,7 @@ Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35) Projection
 | `growth_sd_type` | `"cv"` | "cv" (default) scales the mean by the CV parameters, "sd" reads them as standard deviations. |
 | `growth_dist` | `"normal"` | "normal" (default) or "lognormal" length at age. |
 | `growth_plus_group` | `"mixture"` | "mixture" (default) takes the plus group's mean length as the survivorship-weighted mixture of the ages it holds, their numbers declining at an assumed 0.2 per year; "curve" reads the curve at the accumulator age. |
-| `waa_model` | `"data"` | Where weight at age comes from. "data" (default) reads WAA, WAA_fish and WAA_srv. "wt_len" builds them from the size-age key and W = a L^b at the bin midpoints, so weight at age holds the spread of length at age; the spawning weight uses the key at spawning time and each fleet's weight the key at t_fish or t_srv. Under "wt_len" WAA may be NULL, and reference point and projection code still read data\$WAA, so copy the reported arrays into the data list before calling them. |
+| `waa_model` | `"data"` | Where weight at age comes from. "data" (default) reads WAA, WAA_fish and WAA_srv. "wt_len" builds them from the size-age key and W = a L^b at the bin midpoints, so weight at age holds the spread of length at age; the spawning weight uses the key at spawning time, each fishery fleet's weight the key at mid season, and each survey's weight the key at t_srv. Under "wt_len" WAA may be NULL, and reference point and projection code still read data\$WAA, so copy the reported arrays into the data list before calling them. |
 | `wt_len_pars` | `NULL` | Weight-length parameters a, b, a vector of two or an array \[n_pop x n_regions x n_sexes x 2\]. Required under waa_model = "wt_len". |
 | `M_spec` | `"est_ln_M"` | Natural mortality estimation. "est_ln_M" (default) estimates ln_M across the blocks; "fix" holds mortality at Fixed_natmort and maps ln_M off. |
 | `M_popblk_spec` | `"constant"` | Blocking for ln_M across populations, either "constant" (default) or a list of integer index vectors, e.g. list(1, 2). |
@@ -333,7 +333,7 @@ Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35) Projection
 
 ### Setup_Mod_FishIdx_and_Comps
 
-77 arguments
+76 arguments
 
 | Argument | Default | Description |
 |----|----|----|
@@ -346,9 +346,8 @@ Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35) Projection
 | `ObsFishIdx_pop` | `NULL` | Observed population-specific index array \[n_pop × n_regions × n_years × n_seas × n_fish_fleets\]. |
 | `ObsFishIdx_pop_SE` | `NULL` | Lognormal standard errors for ObsFishIdx_pop, same dims. |
 | `UseFishIdx_pop` | `array(0, dim = c(input_list`$`data`$`n_pop, input_list`$`data`$`n_regions, length(input_list`$`data`$`years), input_list`$`data`$`n_seas, input_list`$`data`$`n_fish_fleets))` | Binary array dimensioned like ObsFishIdx_pop. Default all zeros. |
-| `fish_idx_type` | *required* | Character vector \[n_fish_fleets\]: "biom", "abd", or "none". |
-| `t_fish` | `array(0, dim = c(input_list`$`data`$`n_regions, input_list`$`data`$`n_seas, input_list`$`data`$`n_fish_fleets))` | Array \[n_regions x n_seas x n_fish_fleets\] of the fraction of the season elapsed when each index is observed. Numbers at age are decayed by exp(-t_fish \* ZAA) before the index is formed, as t_srv does for surveys. Default 0; use 0.5 for a mid-season index. |
-| `FishLenComps_sel` | `rep("age", input_list$data$n_fish_fleets)` | Character vector \[n_fish_fleets\], whether length-based selectivity applies before or after the fish are spread over lengths. "age" (default) selects at age and spreads afterwards, so the length composition within an age is the key's. "length" spreads first and selects length by length, so the long fish of an age are taken more often. The key is the fleet's own at t_fish, and length-based fishery selectivity is required. The two give different expected compositions. |
+| `fish_idx_type` | *required* | Character vector \[n_fish_fleets\]: "biom", "abd", or "none". The index is formed from the mean numbers available over the season, N (1 - e^{-Z}) / Z, the numbers the catch equation applies fishing mortality to, times the fleet's selectivity and retention. There is no within-season timing to set. |
+| `FishLenComps_sel` | `rep("age", input_list$data$n_fish_fleets)` | Character vector \[n_fish_fleets\], whether length-based selectivity applies before or after the fish are spread over lengths. "age" (default) selects at age and spreads afterwards, so the length composition within an age is the key's. "length" spreads first and selects length by length, so the long fish of an age are taken more often. The key is the fleet's own at mid season, and length-based fishery selectivity is required. The two give different expected compositions. |
 | `fish_waa_selected` | `rep(0, input_list`$`data`$`n_fish_fleets)` | Integer vector \[n_fish_fleets\] (0/1). With weight at age derived from growth and length-based selectivity, 1 makes the fleet’s catch biomass use the mean weight of the fish it takes at each age, \_l P(l a) s(l) w(l) / \_l P(l a) s(l), rather than the population mean weight. With flat or age-based selectivity the two agree. |
 | `UseFishIdx` | *required* | Binary array dimensioned like ObsFishIdx, 1 to include the index in the likelihood. |
 | `ObsFishAgeComps` | *required* | Observed fishery age composition array \[n_regions × n_years × n_seas × n_ages × n_sexes × n_fish_fleets\], raw counts or proportions; supply ISS_FishAgeComps for proportions. |

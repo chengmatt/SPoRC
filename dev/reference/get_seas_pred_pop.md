@@ -7,7 +7,7 @@ which keeps the population it is given rather than summing over them.
 ## Usage
 
 ``` r
-get_seas_pred_pop(pred, p, r, y, seas, f, seas_agg)
+get_seas_pred_pop(pred, p, r, y, seas, f, seas_agg, wt = NULL)
 ```
 
 ## Arguments
@@ -23,6 +23,12 @@ get_seas_pred_pop(pred, p, r, y, seas, f, seas_agg)
 - seas_agg:
 
   Integer, `1` for a season total and `0` otherwise.
+
+- wt:
+
+  Season weights as in
+  [`get_seas_pred`](https://chengmatt.github.io/SPoRC/dev/reference/get_seas_pred.md),
+  or `NULL`.
 
 ## Value
 

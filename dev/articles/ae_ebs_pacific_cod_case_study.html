@@ -322,17 +322,15 @@ have conventions rather than choices.
 and sums over ages instead of folding it to age first, and
 <code>fish_waa_selected = 1</code> puts the catch in biomass on the
 selection weighted weight at age.</p>
-<p><code>t_fish</code> is 0.5 because a fishing fleet’s compositions are
-read at mid season whatever month the data file records, so the
-age-length key, the selected weight behind the catch biomass, and the
-compositions all sit there.</p>
+<p>A fishing fleet’s age-length key, the selected weight behind its
+catch biomass, and its compositions are all read at mid season, whatever
+month the data file records.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">joint</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"spltRjntS_Year_1-terminal_Fleet_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">none</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">n</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"none_Year_1-terminal_Fleet_"</span>, <span class="fu"><a href="https://rdrr.io/r/base/seq.html" class="external-link">seq_len</a></span><span class="op">(</span><span class="va">n</span><span class="op">)</span><span class="op">)</span></span>
 <span></span>
 <span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
-<span>  t_fish <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.5</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_reg</span>, <span class="fl">1</span>, <span class="va">n_fish</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  FishLenComps_sel <span class="op">=</span> <span class="st">"length"</span>, fish_waa_selected <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ObsFishIdx <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="cn">NA_real_</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_reg</span>, <span class="va">n_yrs</span>, <span class="fl">1</span>, <span class="va">n_fish</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  ObsFishIdx_SE <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="cn">NA_real_</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">n_reg</span>, <span class="va">n_yrs</span>, <span class="fl">1</span>, <span class="va">n_fish</span><span class="op">)</span><span class="op">)</span>,</span>

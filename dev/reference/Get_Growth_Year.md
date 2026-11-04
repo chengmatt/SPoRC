@@ -45,7 +45,6 @@ Get_Growth_Year(
   n_regions,
   n_seas,
   n_sexes,
-  t_fish,
   t_srv,
   ln_growth_semipar_devs = NULL,
   growth_semipar = 0
@@ -88,9 +87,9 @@ Get_Growth_Year(
   As in
   [`Get_Growth`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md).
 
-- t_fish, t_srv:
+- t_srv:
 
-  Timings as in
+  Survey timings as in
   [`Get_Growth`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Growth.md).
 
 ## Value

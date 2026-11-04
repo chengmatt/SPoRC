@@ -205,8 +205,8 @@ as a fraction of the year,
 </tr>
 <tr class="even">
 <td><math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math></td>
-<td>fraction of a season elapsed at a reading point
-(<code>t_fish</code>, <code>t_srv</code>, <code>t_spawn</code>)</td>
+<td>fraction of a season elapsed at a reading point (0.5 for a fishery
+fleet, <code>t_srv</code>, <code>t_spawn</code>)</td>
 <td>data</td>
 </tr>
 <tr class="odd">
@@ -391,8 +391,8 @@ season. Weight at age is data too. Nothing about size is estimated.</p>
 <code>"richards"</code>, the size-age transition is a function of five
 or six estimable parameters. <code>SizeAgeTrans</code> is then ignored
 and may be <code>NA</code>. One is built per fleet at that fleet’s
-timing (<code>t_fish</code>, <code>t_srv</code>), plus one at spawning
-time.</p>
+timing (mid season for a fishery fleet, <code>t_srv</code> for a
+survey), plus one at spawning time.</p>
 <p>We would generally keep <code>"none"</code> when growth has been
 determined externally and is not itself under study, when bridging an
 assessment that fixes it, or when there are no length data to inform a

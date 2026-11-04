@@ -157,7 +157,6 @@ composition settings for the aggregate and population-specific data sources.</p>
 <span>  seas_agg_slot <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  FishIdx_Cov <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseFishIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  t_fish <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">sim_list</span><span class="op">$</span><span class="va">n_regions</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_seas</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  comp_fish_caal_like <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">999</span>, <span class="va">sim_list</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  ISS_Fish_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ln_Fish_caal_theta <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -457,13 +456,6 @@ estimation model, used to place each simulated cell in the covariance. Its
 year dim may be shorter than the simulation, in which case later years draw
 with the mean factor scale and loading. Required for mvn fleets. Default
 `NULL`.</p></dd>
-
-
-<dt id="arg-t-fish">t_fish<a class="anchor" aria-label="anchor" href="#arg-t-fish"></a></dt>
-<dd><p>Fishery index timing, `n_regions x n_seas x n_fish_fleets`, the
-fraction of the season elapsed when the index is observed. Numbers at age are
-decayed by `exp(-t_fish * ZAA)` before the index is formed, matching `t_srv`
-and the estimation model's own `t_fish`. Default 0.</p></dd>
 
 
 <dt id="arg-comp-fish-caal-like">comp_fish_caal_like<a class="anchor" aria-label="anchor" href="#arg-comp-fish-caal-like"></a></dt>

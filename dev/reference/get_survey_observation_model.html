@@ -105,6 +105,7 @@ fully populated (or, for <code>srv_sel</code>, further updated) over
 <span>  srv_q_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ObsSrvIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  UseSrvIdx <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  SrvIdx_seas_Type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  do_caal <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  Srv_caal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  SizeAgeTrans_srv <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -225,6 +226,12 @@ predicted, <code>2</code> solved analytically on the log scale as
 <dd><p>Arrays <code>[region, year, season, srv_fleet]</code>
 of observed index values and their use flags. Required only when a fleet
 solves catchability analytically.</p></dd>
+
+
+<dt id="arg-srvidx-seas-type">SrvIdx_seas_Type<a class="anchor" aria-label="anchor" href="#arg-srvidx-seas-type"></a></dt>
+<dd><p>Integer vector <code>[srv_fleet]</code>, <code>1</code> where a
+fleet's index is fit as a year total, so the analytic catchability is
+solved against that total. <code>NULL</code> means every fleet is fit by season.</p></dd>
 
 
 <dt id="arg-do-caal">do_caal<a class="anchor" aria-label="anchor" href="#arg-do-caal"></a></dt>

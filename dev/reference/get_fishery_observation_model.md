@@ -1,11 +1,14 @@
 # Fishery observation model
 
 Converts realized fishing mortality and population state into predicted
-catch-at-age/length, discards, and fishery indices. Called once from the
-"Fishery Observation Model" section of `SPoRC_rtmb.R`. All array
-arguments matching an output name (e.g. `fish_q`, `CAA`) are passed in
-already dimensioned (typically all-zero) and returned fully populated
-over `1:n_yrs`.
+catch-at-age/length, discards, and fishery indices. A fishery index is
+formed from the mean numbers available over the season, \\N (1 - e^{-Z})
+/ Z\\ with \\Z\\ the season's total mortality (the season integral under
+`move_timing = 2`), which are the numbers the catch equation applies
+fishing mortality to. Called once from the "Fishery Observation Model"
+section of `SPoRC_rtmb.R`. All array arguments matching an output name
+(e.g. `fish_q`, `CAA`) are passed in already dimensioned (typically
+all-zero) and returned fully populated over `1:n_yrs`.
 
 ## Usage
 
@@ -44,12 +47,13 @@ get_fishery_observation_model(
   move_timing = 0,
   seasdur = rep(1, n_seas),
   NAA_int = NULL,
-  t_fish = NULL,
   fish_idx_ages = NULL,
   fish_q_type = NULL,
   ln_fish_q_devs = NULL,
   ObsFishIdx = NULL,
   UseFishIdx = NULL,
+  FishIdx_seas_Type = NULL,
+  fish_idx_seas_wt = NULL,
   do_caal = 0,
   Fish_caal = NULL,
   Fish_caal_discard = NULL,
@@ -143,18 +147,23 @@ get_fishery_observation_model(
   Arrays `[pop, region, year, season, age, sex, fish_fleet]` of
   total/retained fishery selectivity.
 
-- t_fish:
-
-  Array `[region, season, fish_fleet]` of fishery index timing, the
-  fraction of the season elapsed when the index is observed. Numbers at
-  age are decayed by `exp(-t_fish * ZAA)` before the index is formed,
-  mirroring `t_srv` for surveys. `NULL` (the default) skips the decay
-  entirely and reproduces a start-of-season index.
-
 - ln_fish_q_devs:
 
   Array `[region, year, fish_fleet]` of log-scale annual catchability
   deviations, or `NULL` for none.
+
+- FishIdx_seas_Type:
+
+  Integer vector `[fish_fleet]`, `1` where a fleet's index is fit as a
+  year total, so an analytic catchability is solved against that total.
+  `NULL` means every fleet is fit by season.
+
+- fish_idx_seas_wt:
+
+  Array `[region, year, season, fish_fleet]` of each season's weight in
+  a year total, from
+  [`get_fish_idx_seas_wt`](https://chengmatt.github.io/SPoRC/dev/reference/get_fish_idx_seas_wt.md),
+  or `NULL` when no fleet is fit as one.
 
 - do_caal:
 

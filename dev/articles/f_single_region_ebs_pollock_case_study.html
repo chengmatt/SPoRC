@@ -86,12 +86,14 @@
 </h2>
 <p>This case study reproduces the 2024 eastern Bering Sea walleye
 pollock assessment in <code>SPoRC</code>. Every structural choice below
-follows the assessment rather than <code>SPoRC</code>’s defaults, and
-the result is an exact bridge: spawning biomass and recruitment agree
-with the ADMB model to within
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup></mrow><annotation encoding="application/x-tex">4\times10^{-6}</annotation></semantics></math>
-percent, and the joint negative log likelihood is unchanged between the
-two.</p>
+follows the assessment rather than <code>SPoRC</code>’s defaults. At the
+assessment’s estimate the population is reproduced exactly. The one
+difference is the early fishery CPUE, which <code>SPoRC</code> predicts
+from the mean numbers available over the year where the assessment uses
+start-of-year numbers. Refitting therefore moves only the years that
+series informs: spawning biomass and recruitment agree with the ADMB
+model to within 0.04 percent at the median, and differ by up to 5.8 and
+2.7 percent before 1980.</p>
 <p>The model is single region, single sex, single season, with one
 fishery fleet and four survey indices:</p>
 <table class="table">
@@ -369,7 +371,12 @@ together with <code>Fdev_pen_center = "own_mean"</code>:</p>
 </h2>
 <p>The early fishery CPUE series covers twelve years and is fit on the
 arithmetic scale with a normal likelihood. Fishery age compositions are
-multinomial.</p>
+multinomial. <code>SPoRC</code> predicts the CPUE from the mean numbers
+available over the year,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>N</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>−</mo><msup><mi>e</mi><mrow><mi>−</mi><mi>Z</mi></mrow></msup><mo stretchy="false" form="postfix">)</mo><mi>/</mi><mi>Z</mi></mrow><annotation encoding="application/x-tex">N(1 - e^{-Z})/Z</annotation></semantics></math>,
+the numbers the catch is taken from, so the prediction is catchability
+times the year’s catch over its fishing mortality. The assessment uses
+the numbers at the start of the year instead.</p>
 <div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">input_list</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Comps</a></span><span class="op">(</span></span>
 <span>  input_list <span class="op">=</span> <span class="va">input_list</span>,</span>
@@ -779,31 +786,37 @@ enters multiplicatively.</p>
 <span>  <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">admb</span><span class="op">$</span><span class="va">pred_avo</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">r</span><span class="op">$</span><span class="va">PredSrvIdx</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="va">i_avo</span>, <span class="fl">1</span>, <span class="fl">3</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="va">idx_fq</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/which.html" class="external-link">which</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">free</span><span class="op">)</span> <span class="op">==</span> <span class="st">"ln_fish_q"</span><span class="op">)</span></span>
 <span><span class="va">free</span><span class="op">[</span><span class="va">idx_fq</span><span class="op">]</span> <span class="op">&lt;-</span> <span class="va">free</span><span class="op">[</span><span class="va">idx_fq</span><span class="op">]</span> <span class="op">+</span> <span class="fu"><a href="https://rdrr.io/r/base/Log.html" class="external-link">log</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">dat</span><span class="op">$</span><span class="va">admb</span><span class="op">$</span><span class="va">pred_cpue</span> <span class="op">/</span> <span class="fu"><a href="https://rdrr.io/r/base/vector.html" class="external-link">as.vector</a></span><span class="op">(</span><span class="va">r</span><span class="op">$</span><span class="va">PredFishIdx</span><span class="op">[</span><span class="fl">1</span>, <span class="fl">1</span>, <span class="fl">2</span><span class="op">:</span><span class="fl">13</span>, <span class="fl">1</span>, <span class="fl">1</span><span class="op">]</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
-<p>At that point every reported quantity agrees with the ADMB model to
-numerical precision, and the gradient is already near zero:</p>
+<p>At that point the selectivities and the population agree with the
+ADMB model to numerical precision. The gradient does not vanish, because
+the early CPUE is predicted from the year’s mean numbers rather than the
+start-of-year numbers the assessment was fit to:</p>
 <pre><code>fishery selectivity max pct diff: 4.8e-13
 trawl selectivity   max pct diff: 1.4e-13
 numbers at age      max pct diff: 1.2e-11
 spawning biomass    max pct diff: 2.3e-12
-jnLL at the pollock MLE:  1547.851
-max |gradient| there   :  2.7e-05</code></pre>
+jnLL at the pollock MLE:  1547.673
+max |gradient| there   :  4.7</code></pre>
 </div>
 <div class="section level2">
 <h2 id="fitting-and-comparison">Fitting and comparison<a class="anchor" aria-label="anchor" href="#fitting-and-comparison"></a>
 </h2>
-<p>Optimizing from that point moves nothing, which is the expected
-result when a model is already at its own optimum.</p>
+<p>Optimizing from that point lowers the joint negative log likelihood
+by 0.32 and moves only the years the early CPUE informs.</p>
 <div class="sourceCode" id="cb17"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">parameters2</span> <span class="op">&lt;-</span> <span class="va">obj</span><span class="op">$</span><span class="va">env</span><span class="op">$</span><span class="fu">parList</span><span class="op">(</span><span class="va">free</span><span class="op">)</span></span>
 <span><span class="va">est</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/fit_model.html">fit_model</a></span><span class="op">(</span><span class="va">data</span>, <span class="va">parameters2</span>, <span class="va">mapping</span>, do_optim <span class="op">=</span> <span class="cn">TRUE</span>, newton_loops <span class="op">=</span> <span class="fl">2</span>, silent <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="va">est</span><span class="op">$</span><span class="va">sdrep</span> <span class="op">&lt;-</span> <span class="fu">RTMB</span><span class="fu">::</span><span class="fu">sdreport</span><span class="op">(</span><span class="va">est</span><span class="op">)</span></span></code></pre></div>
 <pre><code>free parameters: 1207
-final jnLL: 1547.851   max |gradient|: 1.4e-11</code></pre>
-<p>Spawning biomass and recruitment are compared below. Because the two
-series overplot exactly, the percent difference needs its own panel to
-be readable at all; its axis is in units of
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup><annotation encoding="application/x-tex">10^{-6}</annotation></semantics></math>
-percent.</p>
+final jnLL: 1547.349   max |gradient|: 2.0e-12</code></pre>
+<p>Spawning biomass and recruitment are compared below, with the percent
+difference in its own panel. From 1980 on spawning biomass agrees to
+within 0.12 percent and recruitment to within 0.04 percent. The
+differences sit in the years before. At the assessment’s estimate, the
+CPUE predicted from the year’s mean numbers rises less over 1965 to 1976
+than one predicted from the numbers at the start of the year, and the
+fit makes up the difference by starting the population lower: spawning
+biomass in the first years is up to 5.8 percent below the
+assessment’s.</p>
 <table class="table">
 <thead><tr class="header">
 <th>Quantity</th>
@@ -814,19 +827,19 @@ percent.</p>
 <tr class="odd">
 <td>Spawning biomass</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>4.6</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>7</mn></mrow></msup></mrow><annotation encoding="application/x-tex">4.6\times10^{-7}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.034</mn></mrow><annotation encoding="application/x-tex">-0.034</annotation></semantics></math>
 %</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>3.4</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup></mrow><annotation encoding="application/x-tex">3.4\times10^{-6}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>5.8</mn><annotation encoding="application/x-tex">5.8</annotation></semantics></math>
 %</td>
 </tr>
 <tr class="even">
 <td>Recruitment</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1.8</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>7</mn></mrow></msup></mrow><annotation encoding="application/x-tex">1.8\times10^{-7}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>−</mi><mn>0.020</mn></mrow><annotation encoding="application/x-tex">-0.020</annotation></semantics></math>
 %</td>
 <td>
-<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>5.8</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>6</mn></mrow></msup></mrow><annotation encoding="application/x-tex">5.8\times10^{-6}</annotation></semantics></math>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mn>2.7</mn><annotation encoding="application/x-tex">2.7</annotation></semantics></math>
 %</td>
 </tr>
 </tbody>

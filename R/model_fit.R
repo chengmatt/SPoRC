@@ -199,7 +199,7 @@ fit_model <- function(
                    scaled = stats::nlminb(0 * x0, function(y) obj$fn(x0 + C %*% y), function(y) as.numeric(obj$gr(x0 + C %*% y) %*% C),
                                           control = utils::modifyList(nlminb_control, list(rel.tol = 1e-14)))
                    optim$par[] = pmax(lower, pmin(upper, as.numeric(x0 + C %*% scaled$par)))
-                   optim$objective = obj$fn(optim$par)
+                   optim$objective = as.numeric(obj$fn(optim$par))
                    next
                  }
 
@@ -220,7 +220,7 @@ fit_model <- function(
                  new_par = pmax(lower, pmin(upper, optim$par - solve(h,g))) # keep Newton step within bounds
                  if(max(abs(obj$gr(new_par))) >= max(abs(g))) break # a step that raises the gradient (an indefinite Hessian) is not taken
                  optim$par = new_par
-                 optim$objective = obj$fn(optim$par)
+                 optim$objective = as.numeric(obj$fn(optim$par))
                }
              , error = function(e) {e}, warning = function(w) {w})
 

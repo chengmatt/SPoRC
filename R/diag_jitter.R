@@ -194,7 +194,7 @@ do_jitter <- function(data,
                    g = as.numeric(obj$gr(optim$par))
                    h = optimHess(optim$par, fn = obj$fn, gr = obj$gr)
                    optim$par = optim$par - solve(h,g)
-                   optim$objective = obj$fn(optim$par)
+                   optim$objective = as.numeric(obj$fn(optim$par))
                  },
         error = function(e) {e},
         warning = function(w) {w}
@@ -260,7 +260,7 @@ do_jitter <- function(data,
             g <- as.numeric(obj$gr(optim$par))
             h <- optimHess(optim$par, fn = obj$fn, gr = obj$gr)
             optim$par <- optim$par - solve(h, g)
-            optim$objective <- obj$fn(optim$par)
+            optim$objective <- as.numeric(obj$fn(optim$par))
           }
         }, error = function(e) e, warning = function(w) w)
 

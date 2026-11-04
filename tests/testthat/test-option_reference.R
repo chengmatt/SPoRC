@@ -51,10 +51,10 @@ test_that("the reference reports which settings the written guide also discusses
 
 test_that("the stages are listed in the order a model is built", {
   # the vignette groups by this order, so a reader going top to bottom follows the stages.
-  # dimensions first and weighting last are the two ends that mean anything
+  # dimensions first and the projection last, since it projects the model the other stages build
   o <- setup_stage_order()
 
   expect_equal(o[1], "Setup_Mod_Dim")
-  expect_equal(o[length(o)], "Setup_Mod_Weighting")
+  expect_equal(o[length(o)], "Setup_Mod_Projection")
   expect_setequal(o, grep("^Setup_Mod_", getNamespaceExports("SPoRC"), value = TRUE))
 })

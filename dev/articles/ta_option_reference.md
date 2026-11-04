@@ -1,14 +1,15 @@
 # Setup Estimation Model Argument Reference
 
-Every argument the twelve `Setup_Mod_*` stages accept, with its default
-and its own documentation. This page is the place to look for what a
-given setting is, whereas [Overview of Model
+Every argument the thirteen `Setup_Mod_*` stages accept, with its
+default and its own documentation. This page is the place to look for
+what a given setting is, whereas [Overview of Model
 Options](https://chengmatt.github.io/SPoRC/dev/articles/t_model_options.md)
 explains why it exists and which ones to specify.
 
 All stages Dim (17) Rec (65) Biologicals (73) Movement (32) Tagging (19)
 Catch_and_F (72) FishIdx_and_Comps (77) SrvIdx_and_Comps (74)
-Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35)
+Fishsel_and_Q (53) Srvsel_and_Q (36) DSEM (11) Weighting (35) Projection
+(26)
 
 ### Setup_Mod_Dim
 

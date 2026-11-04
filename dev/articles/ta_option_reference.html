@@ -81,13 +81,13 @@
 
     
     
-<p>Every argument the twelve <code>Setup_Mod_*</code> stages accept,
+<p>Every argument the thirteen <code>Setup_Mod_*</code> stages accept,
 with its default and its own documentation. This page is the place to
 look for what a given setting is, whereas <a href="t_model_options.html">Overview of Model Options</a> explains why
 it exists and which ones to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 564 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 590 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (17)</option>
 <option value="Rec">Rec (65)</option>
@@ -100,7 +100,8 @@ it exists and which ones to specify.</p>
 <option value="Fishsel_and_Q">Fishsel_and_Q (53)</option>
 <option value="Srvsel_and_Q">Srvsel_and_Q (36)</option>
 <option value="DSEM">DSEM (11)</option>
-<option value="Weighting">Weighting (35)</option></select><span id="optref-tally"></span></p>
+<option value="Weighting">Weighting (35)</option>
+<option value="Projection">Projection (26)</option></select><span id="optref-tally"></span></p>
 </div>
 <section class="optref-stage" data-stage="Dim"><h3>
 Setup_Mod_Dim
@@ -5745,6 +5746,287 @@ As fish_sel_pen_wts, for retained fishery selectivity.
 <td>
 As fish_sel_pen_wts, for survey selectivity. Call after
 Setup_Mod_Srvsel_and_Q.
+</td>
+</tr>
+</tbody>
+</table></section><section class="optref-stage" data-stage="Projection"><h3>
+Setup_Mod_Projection
+</h3>
+<p class="optref-n">
+26 arguments
+</p>
+<table class="table optref-table">
+<thead><tr>
+<th>
+Argument
+</th>
+<th>
+Default
+</th>
+<th>
+Description
+</th>
+</tr></thead>
+<tbody>
+<tr data-k="n_proj_yrs 0 integer. number of years to project, counting the terminal assessment year, which is run again as projection year 1. 0 (default) leaves the projection off and the model as it was.">
+<td>
+<code class="optref-arg">n_proj_yrs</code>
+</td>
+<td>
+<code>0</code>
+</td>
+<td>
+Integer. Number of years to project, counting the terminal assessment
+year, which is run again as projection year 1. 0 (default) leaves the
+projection off and the model as it was.
+</td>
+</tr>
+<tr data-k="f_opt " terminal" how fishing mortality is set in the projection years. "terminal" (default) fishes every year at terminal year's f. "input" f given f_input. "hcr" runs a harvest control rule on reference points f_ref_pt and b_ref_pt, treated as known numbers. "refpt" model solves for itself from its own estimates, so uncertainty f40, b40 or msy part of projection's standard errors.">
+<td><code class="optref-arg">f_opt</code></td>
+<td><code>"terminal"</code></td>
+<td>How fishing mortality is set in the projection years. "terminal" (default) fishes every year at the terminal year's F. "input" fishes at the F given in f_input. "hcr" runs a harvest control rule on reference points given in f_ref_pt and b_ref_pt, treated as known numbers. "refpt" runs the rule on reference points the model solves for itself from its own estimates, so the uncertainty in F40, B40 or MSY is part of the projection's standard errors.</td>
+</tr>
+<tr data-k="f_input null array [n_regions, n_proj_yrs] of the f to fish at in each region and projection year, read under f_opt = " input". year 1 replays the terminal year, so column is not read.">
+<td><code class="optref-arg">f_input</code></td>
+<td><code>NULL</code></td>
+<td>Array [n_regions, n_proj_yrs] of the F to fish at in each region and projection year, read under f_opt = "input". Year 1 replays the terminal year, so column 1 is not read.</td>
+</tr>
+<tr data-k="catch_input null retained catch to take in each region and projection year, an array [n_regions, n_proj_yrs], or [n_regions, n_proj_yrs, n_seas] for catch by season, in the units of proj_catch. the model finds the f that takes it, so the catch has no uncertainty and the uncertainty moves into that f and the projected biomass. a year left na in every region is fished under f_opt, so known catch in the first years can be followed by the rule; a year is given in every region or in none. year 1 replays the terminal year, so column 1 is not read. f_constraint applies only in the years left to f_opt. default null, no catch given.">
+<td>
+<code class="optref-arg">catch_input</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Retained catch to take in each region and projection year, an array
+[n_regions, n_proj_yrs], or [n_regions, n_proj_yrs, n_seas] for catch by
+season, in the units of proj_Catch. The model finds the F that takes it,
+so the catch has no uncertainty and the uncertainty moves into that F
+and the projected biomass. A year left NA in every region is fished
+under f_opt, so known catch in the first years can be followed by the
+rule; a year is given in every region or in none. Year 1 replays the
+terminal year, so column 1 is not read. F_constraint applies only in the
+years left to f_opt. Default NULL, no catch given.
+</td>
+</tr>
+<tr data-k="f_ref_pt null the f reference point the rule reads under f_opt = " hcr": the target f, one value per region, or [n_regions, n_proj_yrs] to vary it by year. a fixed number here, so its own uncertainty is not in standard errors; f_opt="refpt" way include it.">
+<td><code class="optref-arg">f_ref_pt</code></td>
+<td><code>NULL</code></td>
+<td>The F reference point the rule reads under f_opt = "hcr": the target F, one value per region, or [n_regions, n_proj_yrs] to vary it by year. A fixed number here, so its own uncertainty is not in the standard errors; f_opt = "refpt" is the way to include it.</td>
+</tr>
+<tr data-k="b_ref_pt null the biomass reference point the rule reads under f_opt = " hcr": one value per population and region, or [n_pop, n_regions, n_proj_yrs] to vary it by year. a fixed number here, as f_ref_pt is.">
+<td><code class="optref-arg">b_ref_pt</code></td>
+<td><code>NULL</code></td>
+<td>The biomass reference point the rule reads under f_opt = "hcr": one value per population and region, or [n_pop, n_regions, n_proj_yrs] to vary it by year. A fixed number here, as f_ref_pt is.</td>
+</tr>
+<tr data-k="hcr_function hcr_threshold the harvest control rule: a function of x, the spawning biomass the rule reads, frp, the f reference point, and brp, the biomass reference point, returning the f to apply, as do_population_projection takes it. default hcr_threshold: the target f above brp, no fishing below 0.05 times brp, and a straight line between. for another cutoff, pass function(x, frp, brp) hcr_threshold(x, frp, brp, alpha = 0.1). a rule of your own runs inside the model, where the spawning biomass it is given is a quantity the model is differentiating, and such a quantity cannot be compared with &gt; or &lt;. compare ad_value(x), the plain number, to decide which part of the rule applies, and use x itself in the arithmetic that follows, as hcr_threshold does.">
+<td>
+<code class="optref-arg">hcr_function</code>
+</td>
+<td>
+<code>hcr_threshold</code>
+</td>
+<td>
+The harvest control rule: a function of x, the spawning biomass the rule
+reads, frp, the F reference point, and brp, the biomass reference point,
+returning the F to apply, as Do_Population_Projection takes it. Default
+hcr_threshold: the target F above brp, no fishing below 0.05 times brp,
+and a straight line between. For another cutoff, pass function(x, frp,
+brp) hcr_threshold(x, frp, brp, alpha = 0.1). A rule of your own runs
+inside the model, where the spawning biomass it is given is a quantity
+the model is differentiating, and such a quantity cannot be compared
+with &gt; or &lt;. Compare ad_value(x), the plain number, to decide
+which part of the rule applies, and use x itself in the arithmetic that
+follows, as hcr_threshold does.
+</td>
+</tr>
+<tr data-k="hcr_scope " region" which spawning biomass a region's rule reads. "region" (default), its own, against own reference point. "global", the total over regions points summed regions, so every region shares one stock status.">
+<td><code class="optref-arg">hcr_scope</code></td>
+<td><code>"region"</code></td>
+<td>Which spawning biomass a region's rule reads. "region" (default), its own, against its own biomass reference point. "global", the total over regions against the reference points summed over regions, so every region shares one stock status.</td>
+</tr>
+<tr data-k="f_constraint null a limit on the catch the rule's or input f would take. catch_cap lowers f wherever the catch would exceed a cap; catch_stability keeps the catch within a band of the previous year's, lowering or raising f; a list of them is applied in the order given, so put the cap last when nothing may exceed it. null (default) applies none.">
+<td>
+<code class="optref-arg">F_constraint</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+A limit on the catch the rule’s or input F would take. catch_cap lowers
+F wherever the catch would exceed a cap; catch_stability keeps the catch
+within a band of the previous year’s, lowering or raising F; a list of
+them is applied in the order given, so put the cap last when nothing may
+exceed it. NULL (default) applies none.
+</td>
+</tr>
+<tr data-k="refpt_type " single_region" under f_opt="refpt" , "single_region" (default) or "multi_region", named as in get_reference_points.">
+<td><code class="optref-arg">refpt_type</code></td>
+<td><code>"single_region"</code></td>
+<td>Under f_opt = "refpt", "single_region" (default) or "multi_region", named as in Get_Reference_Points.</td>
+</tr>
+<tr data-k="refpt_what " spr" under f_opt="refpt" , which reference point the model solves, named as in get_reference_points: "spr" (default) or "msy" for one region, and "independent_spr", "independent_msy", "global_spr", "global_msy" "local_msy" several. msy options need a fitted with stock-recruit curve.">
+<td><code class="optref-arg">refpt_what</code></td>
+<td><code>"SPR"</code></td>
+<td>Under f_opt = "refpt", which reference point the model solves, named as in Get_Reference_Points: "SPR" (default) or "MSY" for one region, and "independent_SPR", "independent_MSY", "global_SPR", "global_MSY" or "local_MSY" for several. The MSY options need a model fitted with a stock-recruit curve.</td>
+</tr>
+<tr data-k="spr_x null the target spawning potential ratio for the spr reference points, for example 0.4 for f40 and b40.">
+<td>
+<code class="optref-arg">SPR_x</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+The target spawning potential ratio for the SPR reference points, for
+example 0.4 for F40 and B40.
+</td>
+</tr>
+<tr data-k="sex_ratio_f null array [n_pop, n_regions]. female share of recruits the per-recruit calculation behind the reference points starts from. default null reads it from the model: in a two-sex model the recruitment sex ratio averaged over the last n_avg_yrs years, so an estimated sex ratio and its uncertainty reach the reference points; in a one-sex model 0.5, since the model halves its spawning biomass. a value given here is used instead, for instance to match a post hoc get_reference_points run.">
+<td>
+<code class="optref-arg">sex_ratio_f</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Array [n_pop, n_regions]. Female share of recruits the per-recruit
+calculation behind the reference points starts from. Default NULL reads
+it from the model: in a two-sex model the recruitment sex ratio averaged
+over the last n_avg_yrs years, so an estimated sex ratio and its
+uncertainty reach the reference points; in a one-sex model 0.5, since
+the model halves its spawning biomass. A value given here is used
+instead, for instance to match a post hoc Get_Reference_Points run.
+</td>
+</tr>
+<tr data-k="is_discard_fleet null integer vector [n_fish_fleets], 1 for a fleet whose catch is discarded rather than landed, so the msy options do not count it as yield. default all zero.">
+<td>
+<code class="optref-arg">is_discard_fleet</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer vector [n_fish_fleets], 1 for a fleet whose catch is discarded
+rather than landed, so the MSY options do not count it as yield. Default
+all zero.
+</td>
+</tr>
+<tr data-k="local_bh_msy_newton_steps 6 integer. steps the local msy solve takes for the equilibrium recruitment at each trial f. default 6, as in get_reference_points.">
+<td>
+<code class="optref-arg">local_bh_msy_newton_steps</code>
+</td>
+<td>
+<code>6</code>
+</td>
+<td>
+Integer. Steps the local MSY solve takes for the equilibrium recruitment
+at each trial F. Default 6, as in Get_Reference_Points.
+</td>
+</tr>
+<tr data-k="refpt_newton_steps 2 integer. the reference points are solved numerically first, then refined with this many newton steps that the model differentiates through, which is what gives a reference point its standard error. default 2, which is enough. 0 leaves the reference points as fixed numbers with no standard error.">
+<td>
+<code class="optref-arg">refpt_newton_steps</code>
+</td>
+<td>
+<code>2</code>
+</td>
+<td>
+Integer. The reference points are solved numerically first, then refined
+with this many Newton steps that the model differentiates through, which
+is what gives a reference point its standard error. Default 2, which is
+enough. 0 leaves the reference points as fixed numbers with no standard
+error.
+</td>
+</tr>
+<tr data-k="refpt_log_f_start log(0.1) numeric. where the numerical solve for a reference point starts, on the log scale. default log(0.1).">
+<td>
+<code class="optref-arg">refpt_log_f_start</code>
+</td>
+<td>
+<code>log(0.1)</code>
+</td>
+<td>
+Numeric. Where the numerical solve for a reference point starts, on the
+log scale. Default log(0.1).
+</td>
+</tr>
+<tr data-k="n_avg_yrs 1 integer. how many terminal years weight at age, maturity, natural mortality, sex ratio and straying are averaged over, for the projection and for the reference points alike. default 1, the terminal year alone.">
+<td>
+<code class="optref-arg">n_avg_yrs</code>
+</td>
+<td>
+<code>1</code>
+</td>
+<td>
+Integer. How many terminal years weight at age, maturity, natural
+mortality, sex ratio and straying are averaged over, for the projection
+and for the reference points alike. Default 1, the terminal year alone.
+</td>
+</tr>
+<tr data-k="sel_opt " average" selectivity in the projection years. "average" (default) repeats its average over last n_avg_yrs. "propagate" uses years model projected itself, which needs n_proj_yrs_devs setup_mod_dim and a time-varying selectivity, so deviations their uncertainty come along.">
+<td><code class="optref-arg">sel_opt</code></td>
+<td><code>"average"</code></td>
+<td>Selectivity in the projection years. "average" (default) repeats its average over the last n_avg_yrs. "propagate" uses the years the model projected itself, which needs n_proj_yrs_devs in Setup_Mod_Dim and a time-varying selectivity, so its projected deviations and their uncertainty come along.</td>
+</tr>
+<tr data-k="move_opt " average" movement in the projection years, with same two choices as sel_opt: "average" (default) over last n_avg_yrs, or "propagate" from years model projected itself.">
+<td><code class="optref-arg">move_opt</code></td>
+<td><code>"average"</code></td>
+<td>Movement in the projection years, with the same two choices as sel_opt: "average" (default) over the last n_avg_yrs, or "propagate" from the years the model projected itself.</td>
+</tr>
+<tr data-k="growth_opt " average" weight at age in the projection years, when a growth model derives it (waa_model="wt_len" setup_mod_biologicals). "average" (default) repeats its average over last n_avg_yrs. "propagate" uses years projected itself, which needs n_proj_yrs_devs setup_mod_dim, time-varying growth, and growth_tv_type="curve" , so deviations their uncertainty come along. read from data has nothing to propagate is always averaged.">
+<td><code class="optref-arg">growth_opt</code></td>
+<td><code>"average"</code></td>
+<td>Weight at age in the projection years, when a growth model derives it (waa_model = "wt_len" in Setup_Mod_Biologicals). "average" (default) repeats its average over the last n_avg_yrs. "propagate" uses the years the model projected growth itself, which needs n_proj_yrs_devs in Setup_Mod_Dim, time-varying growth, and growth_tv_type = "curve", so the projected growth deviations and their uncertainty come along. Weight at age read from data has nothing to propagate and is always averaged.</td>
+</tr>
+<tr data-k="rec_opt " propagate" recruitment in the projection years, always mean over years calc_rec_yrs picks, times a deviation. "propagate" (default) uses deviations model estimated for which needs n_proj_yrs_devs setup_mod_dim. with no data behind them they sit at zero, so runs mean, but each has process error as its standard error, projected errors widen forecast's should. "mean" applies deviation: is and uncertainty only that of small. "terminal" terminal year's deviation every year, one value shared by all them, cohorts rise or fall together rather than averaging out.">
+<td><code class="optref-arg">rec_opt</code></td>
+<td><code>"propagate"</code></td>
+<td>Recruitment in the projection years, always mean recruitment over the years calc_rec_yrs picks, times a deviation. "propagate" (default) uses the deviations the model estimated for the projection years, which needs n_proj_yrs_devs in Setup_Mod_Dim. With no data behind them they sit at zero, so the projection runs at the mean, but each has the recruitment process error as its standard error, so the projected standard errors widen as a forecast's should. "mean" applies no deviation: recruitment is the mean, and its uncertainty is only that of the mean, which is small. "terminal" applies the terminal year's deviation in every projection year, one value shared by all of them, so the projected cohorts rise or fall together rather than averaging out.</td>
+</tr>
+<tr data-k="naa_opt " propagate" the numbers at age state of a state-space model in projection years. "propagate" (default) applies innovations estimated for years, which needs n_proj_yrs_devs setup_mod_dim; they sit their forecast, zero under "iid", and bring state's process error into standard errors. "terminal" advances terminal year's with no further innovations. ignored by without state.">
+<td><code class="optref-arg">naa_opt</code></td>
+<td><code>"propagate"</code></td>
+<td>The numbers at age state of a state-space model in the projection years. "propagate" (default) applies the state innovations the model estimated for the projection years, which needs n_proj_yrs_devs in Setup_Mod_Dim; they sit at their forecast, zero under "iid", and bring the state's process error into the standard errors. "terminal" advances the terminal year's state with no further innovations. Ignored by a model without a state.</td>
+</tr>
+<tr data-k="calc_rec_st_yr 1 integer. first model year of the window mean recruitment is averaged over, as in get_reference_points; the window is calc_rec_st_yr:(n_years - rec_age). default 1, the first model year.">
+<td>
+<code class="optref-arg">calc_rec_st_yr</code>
+</td>
+<td>
+<code>1</code>
+</td>
+<td>
+Integer. First model year of the window mean recruitment is averaged
+over, as in Get_Reference_Points; the window is calc_rec_st_yr:(n_years
+- rec_age). Default 1, the first model year.
+</td>
+</tr>
+<tr data-k="rec_age 1 integer. years left off the end of that window, the most recent years whose recruitment is still poorly known. default 1.">
+<td>
+<code class="optref-arg">rec_age</code>
+</td>
+<td>
+<code>1</code>
+</td>
+<td>
+Integer. Years left off the end of that window, the most recent years
+whose recruitment is still poorly known. Default 1.
+</td>
+</tr>
+<tr data-k="calc_rec_yrs null integer vector of model years to average recruitment over instead of the window, for a mean that runs to the terminal year or skips years. model year indices, 1 for the first year, not calendar years. default null, the window.">
+<td>
+<code class="optref-arg">calc_rec_yrs</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+Integer vector of model years to average recruitment over instead of the
+window, for a mean that runs to the terminal year or skips years. Model
+year indices, 1 for the first year, not calendar years. Default NULL,
+the window.
 </td>
 </tr>
 </tbody>

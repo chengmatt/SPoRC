@@ -115,14 +115,15 @@ lockstep_diffs <- function(run) {
       if(is.null(seas_agg)) seas_agg <- rep(0, dim(use)[length(dim(use))])
       cells <- which(use == 1, arr.ind = TRUE)
       truth <- pred <- numeric(nrow(cells))
+      wt <- if(data_name == "FishIdx") rep$FishIdx_seas_wt else NULL # a fishery index year total weighs seasons by F
       for(i in seq_len(nrow(cells))) {
         cell <- cells[i,]
         if(pop_source) {
           truth[i] <- truth_arr[cell[1], cell[2], cell[3], cell[4], cell[5], 1]
-          pred[i] <- get_seas_pred_pop(rep[[total_sources[[data_name]]]], cell[1], cell[2], cell[3], cell[4], cell[5], seas_agg[cell[5]])
+          pred[i] <- get_seas_pred_pop(rep[[total_sources[[data_name]]]], cell[1], cell[2], cell[3], cell[4], cell[5], seas_agg[cell[5]], wt)
         } else {
           truth[i] <- truth_arr[cell[1], cell[2], cell[3], cell[4], 1]
-          pred[i] <- get_seas_pred(rep[[total_sources[[data_name]]]], cell[1], cell[2], cell[3], cell[4], seas_agg[cell[4]])
+          pred[i] <- get_seas_pred(rep[[total_sources[[data_name]]]], cell[1], cell[2], cell[3], cell[4], seas_agg[cell[4]], wt)
         }
       } # end i loop
       out[name] <- lockstep_rel(truth, pred)

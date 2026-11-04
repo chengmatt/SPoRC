@@ -37,14 +37,14 @@ caal_alk <- function(len_lower, mean_laa, sd_laa) {
   alk
 }
 
-# von Bertalanffy mean length at age with a constant CV, per sex
-caal_growth <- function(n_ages, n_sexes) {
+# von Bertalanffy mean length at age with a constant CV, per sex, read `elapsed` of a year past each integer age
+caal_growth <- function(n_ages, n_sexes, elapsed = 0) {
   linf <- c(60, 52)[1:n_sexes]
   k <- c(0.30, 0.35)[1:n_sexes]
   t0 <- -0.5
   cv <- 0.10
   lapply(1:n_sexes, function(s) {
-    mu <- linf[s] * (1 - exp(-k[s] * ((1:n_ages) - t0)))
+    mu <- linf[s] * (1 - exp(-k[s] * ((1:n_ages) + elapsed - t0)))
     list(mean = mu, sd = cv * mu)
   })
 }
@@ -61,6 +61,8 @@ caal_growth <- function(n_ages, n_sexes) {
 #' @param n_sims replicates to simulate.
 #' @param len_bin_map,caal_len_bin_map optional maps of the model's length bins onto the recorded
 #'   length bins of the compositions and onto the CAAL rows.
+#' @param fish_key_elapsed fraction of a year past each integer age at which the fishery's key is
+#'   read, or NULL for the shared start-of-year key both fleets use.
 #' @keywords internal
 caal_make_om <- function(
   caal_like = "Multinomial",
@@ -71,7 +73,8 @@ caal_make_om <- function(
   n_sims = 1,
   seed = 55,
   len_bin_map = NULL,
-  caal_len_bin_map = NULL
+  caal_len_bin_map = NULL,
+  fish_key_elapsed = NULL
 ) {
 
   n_yrs <- caal_cfg$n_yrs
@@ -145,7 +148,18 @@ caal_make_om <- function(
     for(y in 1:n_yrs) for(i in 1:n_sims) sat[1,1,y,1,,,s,i] <- alk
   } # end s loop
 
-  waa <- 5 / (1 + exp(-3 * ((1:n_ages) - 3)))
+  # the fishery's own key, read later in the year than the survey's when asked
+  sat_fish <- NULL
+  if(!is.null(fish_key_elapsed)) {
+    growth_fish <- caal_growth(n_ages, n_sexes, fish_key_elapsed)
+    sat_fish <- array(0, dim = c(1, 1, n_yrs, 1, n_lens, n_ages, n_sexes, 1, n_sims))
+    for(s in 1:n_sexes) {
+      alk <- caal_alk(caal_cfg$len_lower, growth_fish[[s]]$mean, growth_fish[[s]]$sd)
+      for(y in 1:n_yrs) for(i in 1:n_sims) sat_fish[1,1,y,1,,,s,1,i] <- alk
+    } # end s loop
+  }
+
+  waa <-5 / (1 + exp(-3 * ((1:n_ages) - 3)))
   mat <- 1 / (1 + exp(-3 * ((1:n_ages) - 3)))
   biol6 <- function(val) array(rep(val, each = n_yrs), dim = c(1, 1, n_yrs, 1, n_ages, n_sexes))
   suppressWarnings(sim_list <- Setup_Sim_Biologicals(
@@ -157,7 +171,8 @@ caal_make_om <- function(
     MatAA_input = replicate(n_sims, biol6(mat)),
     LenBinMap_input = len_bin_map,
     CAAL_LenBinMap_input = caal_len_bin_map,
-    SizeAgeTrans_input = sat
+    SizeAgeTrans_input = sat,
+    SizeAgeTrans_fish_input = sat_fish
   ))
 
   sim_list <- Setup_Sim_Tagging(sim_list = sim_list, use_conv_fish_tagging = 0)

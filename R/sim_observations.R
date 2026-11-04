@@ -1382,10 +1382,8 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
           disc_pop_oe <- if(oe_use == 1) -0.5 * exp(ln_sigmaD_pop[,r,y,seas,f])^2 else 0
           sim_env$ObsDiscard_pop[,r,y,seas,f,sim] <- sim_env$TrueDiscard_pop[,r,y,seas,f,sim] * exp(stats::rnorm(n_pop, disc_pop_oe, exp(ln_sigmaD_pop[,r,y,seas,f])))
 
-          # Fishery Index
-          tmp_NAA <- NAA[,r,y,seas,,,sim, drop = FALSE]
-          if(any(t_fish[r,seas,f] != 0))
-            tmp_NAA <- tmp_NAA * exp(-t_fish[r,seas,f] * ZAA[,r,y,seas,,,sim, drop = FALSE])
+          # Fishery Index, from the mean numbers available over the season, the ones the catch is taken from
+          tmp_NAA <- array(Avail[,r,,, drop = FALSE], dim = c(n_pop, 1, 1, 1, n_ages, n_sexes, 1))
           idx_ages <- if(is.null(sim_env$fish_idx_ages)) rep(1, n_ages) else sim_env$fish_idx_ages[,f] # 1 for ages in the index total
           tmp_NAA <- tmp_NAA * array(rep(rep(idx_ages, each = n_pop), times = n_sexes), dim = dim(tmp_NAA))
           tmp_expl_abd <- sweep(tmp_NAA, c(1,5,6), fish_sel[,r,y,seas,,,f,sim, drop = FALSE] * ret_sel[,r,y,seas,,,f,sim, drop = FALSE], "*")
@@ -1723,17 +1721,21 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
       # discards summed over the year before any fraction is taken
       collapse_seas_discards(sim_env, y, sim, bias_correct_oe = oe_use)
 
+      # a year's fishery index weighs each season by its fishing mortality, as the estimation model does
+      fidx_wt <- array(1, dim = c(n_regions, n_seas, n_fish_fleets))
+      for(r in 1:n_regions) for(f in 1:n_fish_fleets) fidx_wt[r,,f] <- get_fish_idx_seas_wt(Fmort[r,y,,f,sim])
+
       fidx_agg <- collapse_seas_obs(sim_env$TrueFishIdx, sim_env$ObsFishIdx, build_idx_sd(ObsFishIdx_SE, ln_sigmaFishIdx, sigmaFishIdx_form),
                                     FishIdx_seas_Type, FishIdx_LikeType, y, sim, n_seas,
                                     n_regions, n_fish_fleets, bias_correct_oe = oe_use,
-                                    slot = seas_agg_season(sim_env, "FishIdx", y, n_fish_fleets))
+                                    slot = seas_agg_season(sim_env, "FishIdx", y, n_fish_fleets), seas_wt = fidx_wt)
       sim_env$TrueFishIdx <- fidx_agg$true
       sim_env$ObsFishIdx <- fidx_agg$obs
 
       fidx_pop_agg <- collapse_seas_obs(sim_env$TrueFishIdx_pop, sim_env$ObsFishIdx_pop, build_idx_sd(ObsFishIdx_pop_SE, ln_sigmaFishIdx_pop, sigmaFishIdx_pop_form),
                                         FishIdx_pop_seas_Type, FishIdx_LikeType, y, sim, n_seas,
                                         n_regions, n_fish_fleets, pop = TRUE, bias_correct_oe = oe_use,
-                                        slot = seas_agg_season(sim_env, "FishIdx_pop", y, n_fish_fleets))
+                                        slot = seas_agg_season(sim_env, "FishIdx_pop", y, n_fish_fleets), seas_wt = fidx_wt)
       sim_env$TrueFishIdx_pop <- fidx_pop_agg$true
       sim_env$ObsFishIdx_pop <- fidx_pop_agg$obs
 
@@ -1794,29 +1796,35 @@ seas_agg_season <- function(sim_env, data_name, y, n_fleets) {
 #' @param bias_correct_oe Whether lognormal draws sit at their mean.
 #' @param slot Integer vector, one per fleet, of the season the total is drawn
 #'   into. From \code{\link{seas_agg_season}}.
+#' @param seas_wt Array \code{[region, season, fleet]} each season is multiplied
+#'   by before the seasons are added, or \code{NULL} to add them unweighted. A
+#'   fishery index takes them from \code{\link{get_fish_idx_seas_wt}}, as the
+#'   estimation model does.
 #'
 #' @return A list with the updated \code{true} and \code{obs} arrays.
 #'
 #' @keywords internal
 collapse_seas_obs <- function(true_arr, obs_arr, se_arr, seas_agg, like_type,
                               y, sim, n_seas, n_regions, n_fleets, pop = FALSE, bias_correct_oe = 0,
-                              slot = rep(1, n_fleets)) {
+                              slot = rep(1, n_fleets), seas_wt = NULL) {
 
   if(!any(seas_agg == 1) || n_seas == 1) return(list(true = true_arr, obs = obs_arr))
+  if(is.null(seas_wt)) seas_wt <- array(1, dim = c(n_regions, n_seas, n_fleets))
 
   for(f in which(seas_agg == 1)) {
     s_obs <- slot[f] # the season the fit holds this fleet's year total in
     for(r in 1:n_regions) {
 
       if(pop) {
-        year_total <- rowSums(matrix(true_arr[,r,y,,f,sim], ncol = n_seas)) # one total per population
+        seas_vals <- sweep(matrix(true_arr[,r,y,,f,sim], ncol = n_seas), 2, seas_wt[r,,f], "*") # each season at its weight
+        year_total <- rowSums(seas_vals) # one total per population
         true_arr[,r,y,,f,sim] <- 0
         true_arr[,r,y,s_obs,f,sim] <- year_total
         obs_arr[,r,y,,f,sim] <- 0
         obs_arr[,r,y,s_obs,f,sim] <- draw_index_obs(year_total, se_arr[,r,y,s_obs,f], like_type[f], bias_correct_oe = bias_correct_oe)
 
       } else {
-        year_total <- sum(true_arr[r,y,,f,sim])
+        year_total <- sum(true_arr[r,y,,f,sim] * seas_wt[r,,f]) # each season at its weight
         true_arr[r,y,,f,sim] <- 0
         true_arr[r,y,s_obs,f,sim] <- year_total
         obs_arr[r,y,,f,sim] <- 0

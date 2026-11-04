@@ -35,6 +35,7 @@ get_survey_observation_model(
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
   UseSrvIdx = NULL,
+  SrvIdx_seas_Type = NULL,
   do_caal = 0,
   Srv_caal = NULL,
   SizeAgeTrans_srv = NULL,
@@ -110,6 +111,10 @@ predicted, \code{2} solved analytically on the log scale as
 \item{ObsSrvIdx, UseSrvIdx}{Arrays \code{[region, year, season, srv_fleet]}
 of observed index values and their use flags. Required only when a fleet
 solves catchability analytically.}
+
+\item{SrvIdx_seas_Type}{Integer vector \code{[srv_fleet]}, \code{1} where a
+fleet's index is fit as a year total, so the analytic catchability is
+solved against that total. \code{NULL} means every fleet is fit by season.}
 
 \item{do_caal}{Integer (0/1) switch for building the joint survey index at
 length and age array. Off by default.}

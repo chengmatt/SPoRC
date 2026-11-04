@@ -273,8 +273,7 @@ semipar_input <- function(form = "2dar1", obs = NULL) {
     ISS_FishLenComps = obs$ISS_FishLenComps,
     UseFishLenComps = obs$UseFishLenComps,
     FishLenComps_LikeType = "Multinomial",
-    FishLenComps_Type = "spltRspltS_Year_1-terminal_Fleet_1",
-    t_fish = array(0, dim = c(1, 1, 1))
+    FishLenComps_Type = "spltRspltS_Year_1-terminal_Fleet_1"
   )
   input_list <- Setup_Mod_SrvIdx_and_Comps(
     input_list = input_list,

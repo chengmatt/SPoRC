@@ -18,8 +18,6 @@ Setup_Mod_FishIdx_and_Comps(
     length(input_list$data$years), input_list$data$n_seas,
     input_list$data$n_fish_fleets)),
   fish_idx_type,
-  t_fish = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas,
-    input_list$data$n_fish_fleets)),
   FishLenComps_sel = rep("age", input_list$data$n_fish_fleets),
   fish_waa_selected = rep(0, input_list$data$n_fish_fleets),
   UseFishIdx,
@@ -148,19 +146,17 @@ same dims.}
 Default all zeros.}
 
 \item{fish_idx_type}{Character vector \code{[n_fish_fleets]}: \code{"biom"},
-\code{"abd"}, or \code{"none"}.}
-
-\item{t_fish}{Array \code{[n_regions x n_seas x n_fish_fleets]} of the fraction
-of the season elapsed when each index is observed. Numbers at age are decayed
-by \code{exp(-t_fish * ZAA)} before the index is formed, as \code{t_srv} does
-for surveys. Default \code{0}; use \code{0.5} for a mid-season index.}
+\code{"abd"}, or \code{"none"}. The index is formed from the mean numbers
+available over the season, \eqn{N (1 - e^{-Z}) / Z}, the numbers the catch
+equation applies fishing mortality to, times the fleet's selectivity and
+retention. There is no within-season timing to set.}
 
 \item{FishLenComps_sel}{Character vector \code{[n_fish_fleets]}, whether
 length-based selectivity applies before or after the fish are spread over
 lengths. \code{"age"} (default) selects at age and spreads afterwards, so the
 length composition within an age is the key's. \code{"length"} spreads first
 and selects length by length, so the long fish of an age are taken more often.
-The key is the fleet's own at \code{t_fish}, and length-based fishery
+The key is the fleet's own at mid season, and length-based fishery
 selectivity is required. The two give different expected compositions.}
 
 \item{fish_waa_selected}{Integer vector \code{[n_fish_fleets]} (0/1). With weight

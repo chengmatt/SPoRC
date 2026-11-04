@@ -1878,14 +1878,6 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
     set("RecDevs_rho", array(0, dim = c(get("n_pop", envir = env), get("n_regions", envir = env))))
   }
 
-  # fishery index timing. older input lists have no t_fish and formed the index from
-  # start-of-season numbers, so default to zero rather than shifting their predicted index
-  if(!has("t_fish")) {
-    set("t_fish", array(0, dim = c(get("n_regions", envir = env),
-                                   get("n_seas", envir = env),
-                                   get("n_fish_fleets", envir = env))))
-  }
-
   # index age selection, catchability solving and index error. older input lists sum over all ages,
   # estimate every catchability and use a lognormal likelihood, so default to that
   n_ages_bc <- length(get("ages", envir = env))

@@ -4,7 +4,7 @@
 \alias{get_seas_pred}
 \title{Sum a prediction over the seasons a data source is fit against}
 \usage{
-get_seas_pred(pred, r, y, seas, f, seas_agg)
+get_seas_pred(pred, r, y, seas, f, seas_agg, wt = NULL)
 }
 \arguments{
 \item{pred}{Prediction array \code{[pop, region, year, season, fleet]}.}
@@ -12,6 +12,11 @@ get_seas_pred(pred, r, y, seas, f, seas_agg)
 \item{r, y, seas, f}{Region, year, season and fleet of the observation.}
 
 \item{seas_agg}{Integer, \code{1} for a season total and \code{0} otherwise.}
+
+\item{wt}{Weights \code{[region, year, season, fleet]} each season is
+multiplied by before the seasons are added, or \code{NULL} to add them
+unweighted. A fishery index takes them from
+\code{\link{get_fish_idx_seas_wt}}.}
 }
 \value{
 Scalar prediction.

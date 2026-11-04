@@ -23,6 +23,7 @@
 * Recoded tagging to allow fleet-specific reporting rates and missing attributes in tagged fish. `conv_tag_t_tagging`, `ln_init_conv_tag_mort`, and `ln_conv_tag_shed` are now per-release-event vectors rather than global scalars; scalars remain supported and are recycled. `init_conv_tag_mort_spec`/`conv_tag_shed_spec` accept `"fix"`, `"est_shared"`, or `"est_all"`.
 * Added internal OSA residuals for catch, indices, compositions, and tagging data.
 * Added support for at-age data sources (e.g., ICES-style stock assessments).
+* A fishery index is formed from the mean numbers available over the season, the numbers the catch is taken from, and `t_fish` is removed; fishery size-age keys and weights are read at mid season. A fishery index reported once a year (`"aggSeas"`) weighs the seasons by their fishing mortality, and a solved catchability uses the same year total as the likelihood.
 
 ### Recruitment and fishing mortality
 

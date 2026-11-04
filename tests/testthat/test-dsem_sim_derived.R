@@ -43,7 +43,7 @@ pcod_growth_by_hand <- function(dd, pars, ln_growth_devs, ln_growth_semipar_devs
              growth_len_lower = dd$growth_len_lower, growth_cv_type = dd$growth_cv_type, growth_sd_type = dd$growth_sd_type, growth_dist = dd$growth_dist,
              growth_plus_group = dd$growth_plus_group, growth_L2_asymptote = dd$growth_L2_asymptote, derive_waa = dd$derive_waa, wt_len_pars = dd$wt_len_pars,
              ages = dd$ages, seasdur = dd$seasdur, spawn_seas = dd$spawn_seas, t_spawn = dd$t_spawn, n_pop = 1, n_regions = 1, n_yrs = n_yrs, n_seas = dd$n_seas,
-             n_sexes = 1, n_fish_fleets = dd$n_fish_fleets, n_srv_fleets = dd$n_srv_fleets, t_fish = dd$t_fish, t_srv = dd$t_srv,
+             n_sexes = 1, n_fish_fleets = dd$n_fish_fleets, n_srv_fleets = dd$n_srv_fleets, t_srv = dd$t_srv,
              ln_growth_devs = ln_growth_devs, growth_tv_model = dd$growth_tv_model, growth_tv_link = dd$growth_tv_link, growth_par_bounds = dd$growth_par_bounds,
              growth_tv_type = growth_tv_type, growth_cohort_styr = dd$growth_cohort_styr, years_eval = NULL,
              ln_growth_semipar_devs = ln_growth_semipar_devs, growth_semipar = dd$growth_semipar)
@@ -140,7 +140,7 @@ test_that("cohort growth advances year by year from the operating model's own nu
                          growth_A1 = dd$growth_A1, growth_A2 = dd$growth_A2, growth_L0 = dd$growth_L0, growth_len_lower = dd$growth_len_lower,
                          growth_cv_type = dd$growth_cv_type, growth_sd_type = dd$growth_sd_type, growth_dist = dd$growth_dist, growth_plus_group = dd$growth_plus_group,
                          growth_L2_asymptote = dd$growth_L2_asymptote, derive_waa = dd$derive_waa, wt_len_pars = dd$wt_len_pars, ages = dd$ages, seasdur = dd$seasdur,
-                         spawn_seas = dd$spawn_seas, t_spawn = dd$t_spawn, n_pop = 1, n_regions = 1, n_seas = dd$n_seas, n_sexes = 1, t_fish = dd$t_fish, t_srv = dd$t_srv,
+                         spawn_seas = dd$spawn_seas, t_spawn = dd$t_spawn, n_pop = 1, n_regions = 1, n_seas = dd$n_seas, n_sexes = 1, t_srv = dd$t_srv,
                          ln_growth_semipar_devs = array(sim_env$ln_growth_semipar_devs[,,,,,1], dim = dim(sim_env$ln_growth_semipar_devs)[-6]), growth_semipar = dd$growth_semipar)
   } # end y loop
   expect_equal(as.numeric(sim_env$WAA[1,1,,,,,1]), as.numeric(g$WAA[1,1,,,,]), tolerance = 1e-10)

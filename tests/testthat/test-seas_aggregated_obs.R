@@ -1,6 +1,6 @@
 # Data set to "aggSeas" are fit once a year against the season total rather than once a season.
 # Checks the parser, the one observation a year rule, that a fleet reporting annually still fishes
-# every season, and that the likelihood reads the year total.
+# every season, that the likelihood reads the year total, and that a fishery index weighs seasons by F.
 
 library(SPoRC)
 library(testthat)
@@ -121,6 +121,45 @@ test_that("aggregating the catch leaves the population dynamics alone", {
   expect_equal(annual_fit$rep$SSB, seasonal_fit$rep$SSB, tolerance = 1e-12)
   expect_equal(apply(annual_fit$rep$PredCatch, c(2, 3, 5), sum),
                apply(seasonal_fit$rep$PredCatch, c(2, 3, 5), sum), tolerance = 1e-12)
+})
+
+test_that("a fishery index reported once a year weighs each season by its fishing mortality", {
+
+  # season one fished at F = 0.3 with an index of 100 and season two closed with 60: the year's catch
+  # over the year's effort sees season one alone, where adding the seasons would give 160
+  wt <- SPoRC:::get_fish_idx_seas_wt(c(0.3, 0))
+  pred <- array(c(100, 60), dim = c(1, 1, 1, 2, 1))
+  expect_equal(SPoRC:::get_seas_pred(pred, 1, 1, 1, 1, 1, array(wt, dim = c(1, 1, 2, 1))), 100, tolerance = 1e-8)
+  expect_equal(SPoRC:::get_seas_pred(pred, 1, 1, 1, 1, 1), 160)
+  expect_equal(SPoRC:::get_fish_idx_seas_wt(c(0, 0, 0)), rep(1 / 3, 3)) # no fishing weighs the seasons equally
+
+  # in a fit, the year's index is catchability times the year's catch over the year's fishing mortality
+  il <- year_total_input()
+  il$par$ln_F_devs[,,2,] <- log(0.3) # season two fished more lightly
+  fit <- fit_model(il$data, il$par, il$map, random = NULL, do_optim = FALSE, silent = TRUE)
+  rep <- fit$rep
+  expect_true(all(rep$Fmort[,,1,1] > rep$Fmort[,,2,1]))
+  for(r in 1:year_total_dims$n_regions) {
+    for(y in 1:year_total_dims$n_yrs) {
+      pred_year <- SPoRC:::get_seas_pred(rep$PredFishIdx, r, y, 2, 1, 1, rep$FishIdx_seas_wt)
+      expect_equal(pred_year, rep$fish_q[r,y,1] * sum(rep$PredCatch[,r,y,,1]) / sum(rep$Fmort[r,y,,1]), tolerance = 1e-8)
+    } # end y loop
+  } # end r loop
+
+  # the likelihood reads that total
+  const <- il$data$addtofishidx
+  pred_year <- SPoRC:::get_seas_pred(rep$PredFishIdx, 1, 1, 2, 1, 1, rep$FishIdx_seas_wt)
+  expect_equal(rep$FishIdx_nLL[1,1,2,1],
+               -stats::dnorm(log(il$data$ObsFishIdx[1,1,2,1] + const), log(pred_year + const), rep$FishIdx_SD[1,1,2,1], log = TRUE),
+               tolerance = 1e-10)
+
+  # and a catchability solved on the log scale is solved against the same total
+  il$data$fish_q_type[] <- 2
+  rep_q <- fit_model(il$data, il$par, il$map, random = NULL, do_optim = FALSE, silent = TRUE)$rep
+  for(r in 1:year_total_dims$n_regions) {
+    pred_year <- sapply(1:year_total_dims$n_yrs, function(y) SPoRC:::get_seas_pred(rep_q$PredFishIdx, r, y, 2, 1, 1, rep_q$FishIdx_seas_wt))
+    expect_equal(mean(log(il$data$ObsFishIdx[r,,2,1]) - log(pred_year)), 0, tolerance = 1e-10)
+  } # end r loop
 })
 
 test_that("the setting is inert when the model has one season", {

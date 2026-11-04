@@ -89,7 +89,11 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
 #' Fishery observation model
 #'
 #' Converts realized fishing mortality and population state into predicted
-#' catch-at-age/length, discards, and fishery indices. Called once from the
+#' catch-at-age/length, discards, and fishery indices. A fishery index is
+#' formed from the mean numbers available over the season,
+#' \eqn{N (1 - e^{-Z}) / Z} with \eqn{Z} the season's total mortality (the
+#' season integral under \code{move_timing = 2}), which are the numbers the
+#' catch equation applies fishing mortality to. Called once from the
 #' "Fishery Observation Model" section of \code{SPoRC_rtmb.R}. All array
 #' arguments matching an output name (e.g. \code{fish_q}, \code{CAA}) are
 #' passed in already dimensioned (typically all-zero) and returned fully
@@ -124,15 +128,17 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
 #'   fish_fleet]} of fishery weight at age.
 #' @param dmr Array \code{[region, year, season, fish_fleet]} of discard
 #'   mortality rate.
-#' @param t_fish Array \code{[region, season, fish_fleet]} of fishery index
-#'   timing, the fraction of the season elapsed when the index is observed.
-#'   Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before the index is
-#'   formed, mirroring \code{t_srv} for surveys. \code{NULL} (the default) skips
-#'   the decay entirely and reproduces a start-of-season index.
 #' @param fish_idx_type Integer vector \code{[fish_fleet]} selecting
 #'   abundance/biomass fishery index type.
 #' @param fish_sel,ret_sel Arrays \code{[pop, region, year, season, age, sex,
 #'   fish_fleet]} of total/retained fishery selectivity.
+#' @param FishIdx_seas_Type Integer vector \code{[fish_fleet]}, \code{1} where a
+#'   fleet's index is fit as a year total, so an analytic catchability is solved
+#'   against that total. \code{NULL} means every fleet is fit by season.
+#' @param fish_idx_seas_wt Array \code{[region, year, season, fish_fleet]} of
+#'   each season's weight in a year total, from
+#'   \code{\link{get_fish_idx_seas_wt}}, or \code{NULL} when no fleet is fit as
+#'   one.
 #' @param do_caal Integer (0/1) switch for building the joint catch at length
 #'   and age arrays. Off by default.
 #' @param Fish_caal,Fish_caal_discard Arrays \code{[pop, region, year, season, len, age, sex,
@@ -197,12 +203,13 @@ get_fishery_observation_model <- function(
   move_timing = 0,
   seasdur = rep(1, n_seas),
   NAA_int = NULL,
-  t_fish = NULL,
   fish_idx_ages = NULL,
   fish_q_type = NULL,
   ln_fish_q_devs = NULL,
   ObsFishIdx = NULL,
   UseFishIdx = NULL,
+  FishIdx_seas_Type = NULL,
+  fish_idx_seas_wt = NULL,
   do_caal = 0,
   Fish_caal = NULL,
   Fish_caal_discard = NULL,
@@ -221,6 +228,7 @@ get_fishery_observation_model <- function(
 
   if(is.null(fish_q_type)) fish_q_type <- rep(0, n_fish_fleets)
   if(is.null(fish_len_comp_sel)) fish_len_comp_sel <- rep(0, n_fish_fleets)
+  if(is.null(FishIdx_seas_Type)) FishIdx_seas_Type <- rep(0, n_fish_fleets)
 
   n_lens <- dim(CAL)[5] # length bins, read off a container that is always allocated
 
@@ -333,10 +341,8 @@ get_fishery_observation_model <- function(
               PredDiscard[p,r,y,seas,f] <- 1 - sum(CAA[p,r,y,seas,,,f] * WAA_fish[p,r,y,seas,,,f]) / sum(total_catch * WAA_fish[p,r,y,seas,,,f])
             } # biomass fraction
 
-            # get fishery index. t_fish is the fraction of the season elapsed when the index is
-            # observed, so the numbers are decayed by that much total mortality first
-            FishIdxN <- if(move_timing == 2) NAA_int[p,r,y,seas,,] else NAA[p,r,y,seas,,]
-            if(!is.null(t_fish)) FishIdxN <- FishIdxN * exp(-t_fish[r,seas,f] * ZAA[p,r,y,seas,,])
+            # get fishery index from the mean numbers available over the season, the ones the catch is taken from
+            FishIdxN <- Avail[p,r,y,seas,,]
             # fish_idx_ages restricts which ages enter the index total without
             # touching the selectivity the compositions share.
             fidx_ages <- array(fish_idx_ages[,f], dim = c(dim(NAA)[5], n_sexes))
@@ -351,8 +357,8 @@ get_fishery_observation_model <- function(
     } # end r loop
   } # end p loop
 
-  # a catchability that is a scaling nuisance is concentrated out rather than estimated, solved on
-  # the population-summed index over observed years only, and once per catchability time block
+  # a catchability that is a scaling nuisance is concentrated out rather than estimated, solved on the
+  # prediction the likelihood compares each observation with, once per catchability time block
   if(any(fish_q_type != 0) && !is.null(ObsFishIdx) && !is.null(UseFishIdx)) {
     for(f in 1:n_fish_fleets) {
       if(fish_q_type[f] == 0) next
@@ -369,7 +375,7 @@ get_fishery_observation_model <- function(
           y <- obs_map[i,1]
           seas <- obs_map[i,2]
           obs_vec[i] <- ObsFishIdx[r,y,seas,f]
-          pred_vec[i] <- sum(PredFishIdx[,r,y,seas,f])
+          pred_vec[i] <- get_seas_pred(PredFishIdx, r, y, seas, f, FishIdx_seas_Type[f], fish_idx_seas_wt)
         } # end i loop
 
         # one solved catchability per time block, from the observations in that block
@@ -468,6 +474,9 @@ get_fishery_observation_model <- function(
 #' @param ObsSrvIdx,UseSrvIdx Arrays \code{[region, year, season, srv_fleet]}
 #'   of observed index values and their use flags. Required only when a fleet
 #'   solves catchability analytically.
+#' @param SrvIdx_seas_Type Integer vector \code{[srv_fleet]}, \code{1} where a
+#'   fleet's index is fit as a year total, so the analytic catchability is
+#'   solved against that total. \code{NULL} means every fleet is fit by season.
 #'
 #' @param do_caal Integer (0/1) switch for building the joint survey index at
 #'   length and age array. Off by default.
@@ -511,6 +520,7 @@ get_survey_observation_model <- function(
   srv_q_type = NULL,
   ObsSrvIdx = NULL,
   UseSrvIdx = NULL,
+  SrvIdx_seas_Type = NULL,
   do_caal = 0,
   Srv_caal = NULL,
   SizeAgeTrans_srv = NULL,
@@ -528,6 +538,7 @@ get_survey_observation_model <- function(
   # fleet estimates its own catchability unless it solves one analytically.
   if(is.null(srv_idx_ages)) srv_idx_ages <- array(1, dim = c(n_ages, n_srv_fleets))
   if(is.null(srv_q_type)) srv_q_type <- rep(0, n_srv_fleets)
+  if(is.null(SrvIdx_seas_Type)) SrvIdx_seas_Type <- rep(0, n_srv_fleets)
 
   # Numbers at survey timing
   if(move_timing == 2) {
@@ -629,7 +640,7 @@ get_survey_observation_model <- function(
           y <- obs_map[i,1]
           seas <- obs_map[i,2]
           obs_vec[i] <- ObsSrvIdx[r,y,seas,sf]
-          pred_vec[i] <- sum(PredSrvIdx[,r,y,seas,sf])
+          pred_vec[i] <- get_seas_pred(PredSrvIdx, r, y, seas, sf, SrvIdx_seas_Type[sf]) # the year's total for a season total
         } # end i loop
 
         # one solved catchability per time block, from the observations in that block

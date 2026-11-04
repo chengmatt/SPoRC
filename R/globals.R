@@ -161,7 +161,7 @@ utils::globalVariables(c(
   "srvsel_bin_devs_pe_pars",
   "srvsel_bin_devs_rw_init_sigma", "srvsel_devs_min_shared_bins", "srvsel_pe_pars", "srvsel_pe_wt",
   "srvsel_rw_init_sigma", "steepness_h", "stray_rate", "stray_rate_blocks", "stray_rate_pars",
-  "stray_rate_prior", "t_fish", "t_spawn", "t_srv", "tc", "terminal", "to", "tr", "tseas", "ty",
+  "stray_rate_prior", "t_spawn", "t_srv", "tc", "terminal", "to", "tr", "tseas", "ty",
   "type", "Type", "uci", "upr", "use_conv_fish_tagging", "use_conv_tag_fishrep_prior",
   "Use_dmr_pen", "Use_F_pen", "Use_fish_q_prior", "Use_fish_selex_penalty", "Use_fish_selex_prior",
   "use_fixed_fish_sel", "use_fixed_movement", "use_fixed_natmort", "use_fixed_rec_seas_prop",

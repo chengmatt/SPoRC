@@ -17,7 +17,8 @@ collapse_seas_obs(
   n_fleets,
   pop = FALSE,
   bias_correct_oe = 0,
-  slot = rep(1, n_fleets)
+  slot = rep(1, n_fleets),
+  seas_wt = NULL
 )
 }
 \arguments{
@@ -42,6 +43,11 @@ simulation dim, read in the season the total is drawn into.}
 
 \item{slot}{Integer vector, one per fleet, of the season the total is drawn
 into. From \code{\link{seas_agg_season}}.}
+
+\item{seas_wt}{Array \code{[region, season, fleet]} each season is multiplied
+by before the seasons are added, or \code{NULL} to add them unweighted. A
+fishery index takes them from \code{\link{get_fish_idx_seas_wt}}, as the
+estimation model does.}
 }
 \value{
 A list with the updated \code{true} and \code{obs} arrays.

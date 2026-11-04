@@ -15,7 +15,6 @@ build_aa <- function(
   aa = TRUE,
   ObsCatchAA_in = NULL,
   UseCatchAA_in = NULL,
-  fish_t = NULL,
   ...
 ) {
   yrs <- seq_len(n_yrs)
@@ -85,8 +84,7 @@ build_aa <- function(
     FishAgeComps_LikeType = "none",
     FishLenComps_LikeType = "none",
     FishAgeComps_Type = "agg_Year_1-terminal_Fleet_1",
-    FishLenComps_Type = "agg_Year_1-terminal_Fleet_1",
-    t_fish = fish_t
+    FishLenComps_Type = "agg_Year_1-terminal_Fleet_1"
   )
 
   il <- Setup_Mod_SrvIdx_and_Comps(

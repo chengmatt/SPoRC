@@ -542,13 +542,40 @@ get_beta_scaled_pars <- function(low, high, mu, sigma) {
 #' @param pred Prediction array \code{[pop, region, year, season, fleet]}.
 #' @param r,y,seas,f Region, year, season and fleet of the observation.
 #' @param seas_agg Integer, \code{1} for a season total and \code{0} otherwise.
+#' @param wt Weights \code{[region, year, season, fleet]} each season is
+#'   multiplied by before the seasons are added, or \code{NULL} to add them
+#'   unweighted. A fishery index takes them from
+#'   \code{\link{get_fish_idx_seas_wt}}.
 #'
 #' @return Scalar prediction.
 #'
 #' @keywords internal
-get_seas_pred = function(pred, r, y, seas, f, seas_agg) {
-  if(seas_agg == 1) sum(pred[,r,y,,f]) else sum(pred[,r,y,seas,f])
+get_seas_pred = function(pred, r, y, seas, f, seas_agg, wt = NULL) {
+  if(seas_agg == 0) return(sum(pred[,r,y,seas,f]))
+  if(is.null(wt)) return(sum(pred[,r,y,,f]))
+  tot = 0
+  for(s in seq_len(dim(pred)[4])) tot = tot + sum(pred[,r,y,s,f]) * wt[r,y,s,f] # each season at its weight
+  tot
 } # end get_seas_pred
+
+#' Season weights for a fishery index reported once a year
+#'
+#' A catch per unit effort reported for the year is the year's catch over the
+#' year's effort. With fishing mortality proportional to effort, that is each
+#' season's index weighted by the season's fully selected fishing mortality,
+#' \eqn{\sum_\tau F_\tau I_\tau / \sum_\tau F_\tau}, rather than the seasons
+#' added together. A year with no fishing weighs its seasons equally.
+#'
+#' @param F_seas Fully selected fishing mortality of one fleet in one region and
+#'   year, one value per season.
+#'
+#' @return Weights over the seasons, summing to one.
+#'
+#' @keywords internal
+get_fish_idx_seas_wt = function(F_seas) {
+  F_pos = F_seas + 1e-10 # a year with no fishing weighs its seasons equally
+  F_pos / sum(F_pos)
+} # end get_fish_idx_seas_wt
 
 #' Sum a population-specific prediction over the seasons a data source is fit against
 #'
@@ -558,12 +585,17 @@ get_seas_pred = function(pred, r, y, seas, f, seas_agg) {
 #' @param pred Prediction array \code{[pop, region, year, season, fleet]}.
 #' @param p,r,y,seas,f Population, region, year, season and fleet of the observation.
 #' @param seas_agg Integer, \code{1} for a season total and \code{0} otherwise.
+#' @param wt Season weights as in \code{\link{get_seas_pred}}, or \code{NULL}.
 #'
 #' @return Scalar prediction.
 #'
 #' @keywords internal
-get_seas_pred_pop = function(pred, p, r, y, seas, f, seas_agg) {
-  if(seas_agg == 1) sum(pred[p,r,y,,f]) else pred[p,r,y,seas,f]
+get_seas_pred_pop = function(pred, p, r, y, seas, f, seas_agg, wt = NULL) {
+  if(seas_agg == 0) return(pred[p,r,y,seas,f])
+  if(is.null(wt)) return(sum(pred[p,r,y,,f]))
+  tot = 0
+  for(s in seq_len(dim(pred)[4])) tot = tot + pred[p,r,y,s,f] * wt[r,y,s,f] # each season at its weight
+  tot
 } # end get_seas_pred_pop
 
 #' Predicted discards over the populations and seasons an observation covers
@@ -636,11 +668,13 @@ get_discard_pred = function(PredDiscard, CAA, DAA, dmr, WAA_fish, units, pops, r
 #' @param seas_Type Integer vector, whether each fleet is fit as a season total.
 #' @param const Constant added inside the log.
 #' @param n_fleets Number of fleets.
+#' @param seas_wt Season weights for a season total, as in
+#'   \code{\link{get_seas_pred}}, or \code{NULL} to add the seasons.
 #'
 #' @return \code{nLL_arr} with the fitted cells filled.
 #'
 #' @keywords internal
-get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, seas_Type, const, n_fleets, bias_correct_oe = 0) {
+get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, seas_Type, const, n_fleets, bias_correct_oe = 0, seas_wt = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -663,7 +697,7 @@ get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, se
       seas = obs_map_f[i, 3] # season
       obs_vec_f[i] = Obs[r,y,seas,f] # observed index
       se_vec_f[i] = SD[r,y,seas,f] # index standard deviation
-      pred_vec_f[i] = get_seas_pred(Pred, r, y, seas, f, seas_Type[f]) # predicted index, summed across populations
+      pred_vec_f[i] = get_seas_pred(Pred, r, y, seas, f, seas_Type[f], seas_wt) # predicted index, summed across populations
     } # end i loop
 
     tmp_nLL = get_index_nLL(obs_vec_f, pred_vec_f, se_vec_f, LikeType[f], Cov[[f]], const, bias_correct_oe)
@@ -691,11 +725,12 @@ get_index_regional_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, Cov, se
 #' @param LikeType Integer vector, one likelihood code per fleet.
 #' @param seas_Type Integer vector, whether each fleet is fit as a season total.
 #' @param n_fleets Number of fleets.
+#' @param seas_wt Season weights as in \code{\link{get_index_regional_nLL}}.
 #'
 #' @return \code{nLL_arr} with the fitted cells filled.
 #'
 #' @keywords internal
-get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets) {
+get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets, seas_wt = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -717,7 +752,7 @@ get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n
       seas = obs_map_fp[i, 4] # season
 
       nLL_arr[p,r,y,seas,f] = -1 * RTMB::dnorm(Obs[p,r,y,seas,f],
-                                               get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f]),
+                                               get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f], seas_wt),
                                                SD[p,r,y,seas,f], TRUE)
     } # end i loop
   } # end f loop
@@ -739,11 +774,12 @@ get_index_pop_nLL = function(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n
 #' @param seas_Type Integer vector, whether each fleet is fit as a season total.
 #' @param const Constant added inside the log.
 #' @param pop Logical, whether the data source is population-specific.
+#' @param seas_wt Season weights as in \code{\link{get_index_regional_nLL}}.
 #'
 #' @return \code{nLL_arr} with the fitted cells filled.
 #'
 #' @keywords internal
-eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, const, pop, bias_correct_oe = 0) {
+eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, const, pop, bias_correct_oe = 0, seas_wt = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -759,7 +795,7 @@ eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, co
 
       oe = if(bias_correct_oe == 1) 0.5 * SD[p,r,y,seas,f]^2 else 0
       nLL_arr[p,r,y,seas,f] = -1 * RTMB::dnorm(obs_vec[i],
-                                               log(get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f]) + const) - oe,
+                                               log(get_seas_pred_pop(Pred, p, r, y, seas, f, seas_Type[f], seas_wt) + const) - oe,
                                                SD[p,r,y,seas,f], TRUE)
     } else {
       r    = obs_map[i, 1] # region
@@ -769,7 +805,7 @@ eval_index_osa_nLL = function(nLL_arr, obs_vec, obs_map, Pred, SD, seas_Type, co
 
       oe = if(bias_correct_oe == 1) 0.5 * SD[r,y,seas,f]^2 else 0
       nLL_arr[r,y,seas,f] = -1 * RTMB::dnorm(obs_vec[i],
-                                             log(get_seas_pred(Pred, r, y, seas, f, seas_Type[f]) + const) - oe,
+                                             log(get_seas_pred(Pred, r, y, seas, f, seas_Type[f], seas_wt) + const) - oe,
                                              SD[r,y,seas,f], TRUE)
     }
   } # end i loop

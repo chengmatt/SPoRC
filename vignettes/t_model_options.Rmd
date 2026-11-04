@@ -1220,7 +1220,7 @@ Supplied via `Setup_Mod_Biologicals()` (EM) or `Setup_Sim_Biologicals()` (OM).
 | `SizeAgeTrans_fish`, `SizeAgeTrans_srv` | `NULL` or `[p × r × y × τ × l × a × s × f]` | Optional per-fleet size-age keys, `SizeAgeTrans` with a trailing fleet dimension appended. `NULL` (default) reads every fleet from the shared `SizeAgeTrans`. Only valid under `growth_model = "none"`; a growth model already derives one key per fleet at that fleet's own timing and rejects these to avoid two sources for the same quantity. The fixed-data counterpart of `WAA_fish`/`WAA_srv` overriding the shared `WAA`, and of `Setup_Sim_Biologicals`'s `SizeAgeTrans_fish_input`/`SizeAgeTrans_srv_input` on the operating-model side |
 | `fit_lengths` | 0/1 | Toggle for fitting length compositions |
 | `do_caal` | 0/1 | Toggle for reporting the joint arrays at length and age (`Fish_caal`, `Fish_caal_discard`, `Srv_caal`), dimensioned `[p × r × y × τ × l × a × s × f]` like `CAA` and `CAL`. Requires `fit_lengths = 1`, and is switched on by itself when conditional age-at-length data are supplied, since their expected rows are read from these arrays. Each array has a length and an age dimension at once, so they are the largest objects the model builds and every cell lands on the AD tape; leave off unless they are wanted |
-| `growth_model` | `"none"` / `"vb_schnute"` / `"richards"` | `"vb_schnute"` builds each fleet's size-age transition inside the model from von Bertalanffy parameters in Schnute's form (`L1` at `growth_A1`, `L2` at `growth_A2`, `K`, `CV1`, `CV2`): linear growth from `growth_L0` at age zero up to `L1`, CV interpolated on length between the references, the plus-group mean size adjusted for fish older than the accumulator age, and a binned normal key with the tails in the end bins, read at each fleet's own timing (`t_fish`, `t_srv`). `"richards"` is the same curve applied to lengths raised to a sixth estimated parameter `rho`, which nests the von Bertalanffy form at `rho = 1`. Requires `fit_lengths = 1` |
+| `growth_model` | `"none"` / `"vb_schnute"` / `"richards"` | `"vb_schnute"` builds each fleet's size-age transition inside the model from von Bertalanffy parameters in Schnute's form (`L1` at `growth_A1`, `L2` at `growth_A2`, `K`, `CV1`, `CV2`): linear growth from `growth_L0` at age zero up to `L1`, CV interpolated on length between the references, the plus-group mean size adjusted for fish older than the accumulator age, and a binned normal key with the tails in the end bins, read at each survey's own timing (`t_srv`) and at mid season for each fishery fleet. `"richards"` is the same curve applied to lengths raised to a sixth estimated parameter `rho`, which nests the von Bertalanffy form at `rho = 1`. Requires `fit_lengths = 1` |
 | `ln_growth_pars` (via `...`) | `[p × r × s × n]` | Starting values for `L1, L2, K, CV1, CV2` (then `rho` under `"richards"`), log scale, passed through `starting_values` as every other parameter's are. Defaults to the ends of the length bins with `K = 0.15` and CVs of `0.1`, so supply your own for any real model |
 | `growth_spec` | `"est_all"` / `"est_shared_r"` / `"est_shared_s"` / `"est_shared_r_s"` / `"fix"` | How the growth parameters are shared across regions and sexes. `growth_fix` holds individual parameters at their starting values |
 | `growth_A1`, `growth_A2` | scalars | Reference ages for `L1` and `L2`; `growth_A2 = "Linf"` makes `L2` the asymptote itself, with no second reference age to solve it from |
@@ -1241,9 +1241,9 @@ Supplied via `Setup_Mod_Biologicals()` (EM) or `Setup_Sim_Biologicals()` (OM).
 | `CAAL_LenBinMap` | `NULL` or 0/1 `[l × l_\text{caal}]` | Which model length bins each length row of the conditional age-at-length data covers, one column per row. A row's expected ages are the joint numbers at length and age summed over the bins it covers, so the ages can be recorded on coarser length ranges than the population has, and a row need not cover every model bin. Unlike `LenBinMap` its rows need not sum to one, since a model bin can sit in no row or in several. The age-at-length arrays are then dimensioned by the rows, and the operating model draws on the same rows |
 | `AgeingError` | `NULL`, `[a × a_\text{obs}]` or `[y × a × a_\text{obs}]` | Maps the model's ages onto the ages the compositions and the at-age data sources are recorded on: genuine misclassification (a true age 7 read as 6, 7 or 8), a collapse onto coarser observed bins, or both. Each row sums to one, or to zero to drop a model age from the observations. The age-axis twin of `LenBinMap`, applied in the same position inside the likelihood and validated by the same `check_bin_map()` |
 | `AgeingError_fish`, `AgeingError_srv` | `NULL`, `[a × a_\text{obs} × n_f]` or `[y × a × a_\text{obs} × n_f]` | Per-fleet ageing error, for when a fishery reading otoliths and a survey reading scales do not misclassify the same way. `NULL` (default) gives every fleet the shared `AgeingError`, which is what a model written before these existed does. Every fleet must land on the same observed age bins, since the observed composition and at-age arrays have one age dimension shared across fleets. Wired through the operating model too, as `AgeingError_fish_input` / `AgeingError_srv_input` in `Setup_Sim_Biologicals` |
-| `waa_model`, `wt_len_pars` | `"data"` / `"wt_len"`; 2 values or `[p × r × s × 2]` | `"data"` (default) reads weight at age from the `WAA*` arguments. `"wt_len"` derives `WAA` (at spawning time) and each fleet's `WAA_fish` and `WAA_srv` (at that fleet's `t_fish` or `t_srv`) from its key and $W = aL^b$ at the bin midpoints instead of reading them as data. `Get_Reference_Points` reads the derived `rep$WAA` when it is present, falling back to `data$WAA` otherwise; that fallback is a zero placeholder under `"wt_len"`, so pass `rep` from a fitted model rather than calling it on `data` alone |
+| `waa_model`, `wt_len_pars` | `"data"` / `"wt_len"`; 2 values or `[p × r × s × 2]` | `"data"` (default) reads weight at age from the `WAA*` arguments. `"wt_len"` derives `WAA` (at spawning time) and each fleet's `WAA_fish` (at mid season) and `WAA_srv` (at that survey's `t_srv`) from its key and $W = aL^b$ at the bin midpoints instead of reading them as data. `Get_Reference_Points` reads the derived `rep$WAA` when it is present, falling back to `data$WAA` otherwise; that fallback is a zero placeholder under `"wt_len"`, so pass `rep` from a fitted model rather than calling it on `data` alone |
 
-Growth is not seasonal. The curve depends only on real elapsed time since `A1`, so splitting a year into more seasons changes nothing about size at age: a von Bertalanffy or Richards curve with a single `K` gives the same length whether the time between two points is one whole year or several sub-annual steps that sum to it. There is no option to give `K` (or any other growth parameter) a within-year seasonal pattern, e.g. a multiplier per season the way Stock Synthesis's `MGparm_seas_effects` does. Every fleet's timing (`t_fish`, `t_srv`, `t_spawn`) still reads its own point on that single annual curve, so within-year growth differences across fleets are entirely a function of *when* in the year they sample, not of the growth rate itself varying by season.
+Growth is not seasonal. The curve depends only on real elapsed time since `A1`, so splitting a year into more seasons changes nothing about size at age: a von Bertalanffy or Richards curve with a single `K` gives the same length whether the time between two points is one whole year or several sub-annual steps that sum to it. There is no option to give `K` (or any other growth parameter) a within-year seasonal pattern, e.g. a multiplier per season the way Stock Synthesis's `MGparm_seas_effects` does. Every reading point (mid season for a fishery fleet, `t_srv`, `t_spawn`) still reads its own point on that single annual curve, so within-year growth differences across fleets are entirely a function of *when* in the year they sample, not of the growth rate itself varying by season.
 
 In the operating model a fit's growth deviations keep the fit's values in a conditional self test and over a closed loop's fitted years, and are drawn for every replicate in a joint self test and in a closed loop's projection years, given the fitted ones, from the form the penalty gives them, at the fitted process error parameters and under the fit's maps, and weight at age, the size-age keys and selectivity at age are rebuilt from them. The self test and the closed loop do this on their own; `Setup_Sim_Growth_RE()` can also do it for an operating model built by hand. A dsem holding or linking any growth deviation draws both arrays through `Setup_Sim_DSEM()` instead.
 
@@ -1274,7 +1274,7 @@ saying which of the two it is.
 | Value | What it does |
 |---|---|
 | `"spltSeas"` | Fit the observation against the prediction for the season it sits in. The default, and what every data source did before this setting existed |
-| `"aggSeas"` | Sum the prediction over every season of the year and fit it against one observation |
+| `"aggSeas"` | Sum the prediction over every season of the year and fit it against one observation. A fishery index weighs the seasons by their fishing mortality instead, below |
 
 The observation still lives in whichever season it was placed in, and exactly one
 season per region and year may be turned on in the matching `Use` array. More than
@@ -1317,6 +1317,19 @@ the observation sits in.
 An index measured at a point in time belongs in its own season with its own
 `t_srv`, not aggregated. Use `"aggSeas"` for a data source that accumulates across
 the year, such as a fishery index built from a whole year of effort.
+
+A fishery index set to `"aggSeas"` is not summed over the seasons, because a catch
+rate does not add up any more than a discard fraction does. The year's catch per
+unit effort is the year's catch over the year's effort, and with fishing mortality
+proportional to effort that is each season's index weighted by the season's fully
+selected fishing mortality,
+$I_{y} = \sum_{\tau} F_{\tau} I_{\tau} / \sum_{\tau} F_{\tau}$. A season fished at
+$F = 0.3$ with an index of 100, followed by a closed season with 60, gives a year
+index of 100 rather than 160. Adding the seasons would only be right if every year
+split its effort across the seasons the same way, since a constant share is absorbed
+by catchability. A catchability solved analytically (`fish_q_type = "arith"` or
+`"geo"`) is solved against the same year total, and the weights are reported as
+`FishIdx_seas_wt`.
 
 An operating model reports the same way through `Setup_Sim_Fishing()` and
 `Setup_Sim_Survey()`, which take the same argument names: the annual total is drawn
@@ -1655,9 +1668,14 @@ We would recommend `"lognormal"` for almost all abundance indices, since their e
 
 ### Index timing and age restriction
 
+A fishery index has no timing to set. It is formed from the mean numbers
+available over the season, $N(1 - e^{-Z})/Z$, the numbers the catch equation
+applies fishing mortality to, so the expected index is catchability times the
+fleet's catch over its fishing mortality. A survey index is a snapshot at its
+`t_srv`.
+
 | Argument | Description |
 |---|---|
-| `t_fish` | `[r × τ × f]`, fraction of the season elapsed when the fishery index is observed; numbers decay by $e^{-t Z}$ before the index is formed, mirroring `t_srv`. Default `0` (start of season, the historical behavior). Set `0.5` for a mid-season CPUE snapshot |
 | `fish_idx_ages` / `srv_idx_ages` | Which ages contribute to each fleet's index total: a list (one vector of ages per fleet, `NULL` = all) or an `[n_ages × n_fleets]` 0/1 array. The restriction applies to the index *sum* only; selectivity, catch, and the fleet's compositions are untouched. Restricting a survey to one age turns it into an index of that age alone (e.g., an age-1 acoustic recruitment index), without needing a knife-edge selectivity that would corrupt the compositions |
 
 ### Selecting fish at length rather than at age
@@ -1679,7 +1697,7 @@ is over one age's length range.
 
 | Argument | Description |
 |---|---|
-| `FishLenComps_sel` / `SrvLenComps_sel` | `"age"` (default) or `"length"`, per fleet. `"age"` selects the catch or index at age and spreads it over lengths afterwards, so the length composition within an age is the size-age key's own. `"length"` spreads the fish at each age over the key first and selects them length by length, $C_{l} = s(l)\sum_{a}P(l \mid a)\,N_{a}\!\left( 1 - e^{-Z_{a}} \right)F/Z_{a}$, so the long fish of an age are taken more often. The key is the fleet's own, at `t_fish` or `t_srv`. Use `"length"` when selectivity is length based and the length compositions are what inform it. The two are different expected compositions, not two roundings of the same one, and the length likelihood can differ substantially between them. The operating model forms its length compositions the same way, from `FishLenComps_sel` and `SrvLenComps_sel` in `Setup_Sim_Fishing()` and `Setup_Sim_Survey()` |
+| `FishLenComps_sel` / `SrvLenComps_sel` | `"age"` (default) or `"length"`, per fleet. `"age"` selects the catch or index at age and spreads it over lengths afterwards, so the length composition within an age is the size-age key's own. `"length"` spreads the fish at each age over the key first and selects them length by length, $C_{l} = s(l)\sum_{a}P(l \mid a)\,N_{a}\!\left( 1 - e^{-Z_{a}} \right)F/Z_{a}$, so the long fish of an age are taken more often. The key is the fleet's own, at mid season for a fishery fleet or at `t_srv` for a survey. Use `"length"` when selectivity is length based and the length compositions are what inform it. The two are different expected compositions, not two roundings of the same one, and the length likelihood can differ substantially between them. The operating model forms its length compositions the same way, from `FishLenComps_sel` and `SrvLenComps_sel` in `Setup_Sim_Fishing()` and `Setup_Sim_Survey()` |
 | `fish_waa_selected` / `srv_waa_selected` | 0/1 per fishery or survey fleet. `1` makes the fleet's catch biomass, or a survey's index in weight, use the mean weight of the fish it takes at each age, $\sum_{l}P(l \mid a)s(l)w(l)/\sum_{l}P(l \mid a)s(l)$, instead of the population mean weight at that age. Use `1` when the gear selects strongly within an age, so that a caught fish is larger or smaller than an average fish of its age, though the resulting change in catch biomass is generally small. With flat or age-based selectivity the two are the same |
 
 ### Composition bin restriction (`*_bins`)

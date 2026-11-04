@@ -36,7 +36,6 @@ growth_call <- function(..., n_yrs = gcfg$n_yrs, n_ages = gcfg$n_ages) {
     n_sexes = 1,
     n_fish_fleets = 1,
     n_srv_fleets = 1,
-    t_fish = array(0.5, dim = c(1, 1, 1)),
     t_srv = array(0.5, dim = c(1, 1, 1))
   )
   do.call(Get_Growth, utils::modifyList(args, list(...)))
@@ -199,7 +198,6 @@ test_that("cohort growth advances size at age and blends the plus group by numbe
     n_regions = 1,
     n_seas = 1,
     n_sexes = 1,
-    t_fish = array(0.5, dim = c(1, 1, 1)),
     t_srv = array(0.5, dim = c(1, 1, 1))
   )
 

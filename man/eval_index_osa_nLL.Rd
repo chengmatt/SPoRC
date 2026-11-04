@@ -13,7 +13,8 @@ eval_index_osa_nLL(
   seas_Type,
   const,
   pop,
-  bias_correct_oe = 0
+  bias_correct_oe = 0,
+  seas_wt = NULL
 )
 }
 \arguments{
@@ -32,6 +33,8 @@ eval_index_osa_nLL(
 \item{const}{Constant added inside the log.}
 
 \item{pop}{Logical, whether the data source is population-specific.}
+
+\item{seas_wt}{Season weights as in \code{\link{get_index_regional_nLL}}.}
 }
 \value{
 \code{nLL_arr} with the fitted cells filled.

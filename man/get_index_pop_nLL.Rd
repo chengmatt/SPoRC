@@ -4,7 +4,17 @@
 \alias{get_index_pop_nLL}
 \title{Population-specific index likelihoods on the arithmetic scale}
 \usage{
-get_index_pop_nLL(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets)
+get_index_pop_nLL(
+  nLL_arr,
+  Use,
+  Obs,
+  Pred,
+  SD,
+  LikeType,
+  seas_Type,
+  n_fleets,
+  seas_wt = NULL
+)
 }
 \arguments{
 \item{nLL_arr}{Container \code{[pop, region, year, season, fleet]}.}
@@ -22,6 +32,8 @@ get_index_pop_nLL(nLL_arr, Use, Obs, Pred, SD, LikeType, seas_Type, n_fleets)
 \item{seas_Type}{Integer vector, whether each fleet is fit as a season total.}
 
 \item{n_fleets}{Number of fleets.}
+
+\item{seas_wt}{Season weights as in \code{\link{get_index_regional_nLL}}.}
 }
 \value{
 \code{nLL_arr} with the fitted cells filled.

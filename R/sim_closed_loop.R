@@ -473,7 +473,6 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     ObsFishIdx_pop_SE = ObsFishIdx_pop_SE,
     fish_idx_type = data$fish_idx_type,
     fish_idx_ages = data$fish_idx_ages, # ages in each index total
-    t_fish = if(is.null(data$t_fish)) array(0, dim = c(data$n_regions, data$n_seas, data$n_fish_fleets)) else data$t_fish, # fishery index timing
     init_F_val = rep$init_F,
     catch_units = data$catch_units,
     discard_units = data$discard_units,

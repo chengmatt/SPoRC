@@ -10,8 +10,8 @@ use_in_season <- function(dims, seas, pop = FALSE) {
   use
 }
 
-# Catch and discard fractions kept in season two, population discards every season, and three
-# compositions reported once a year: by population in season two for the fishery and the survey,
+# Catch, discard fractions and the fishery index kept in season two, population discards every season, and
+# three compositions reported once a year: by population in season two for the fishery and the survey,
 # and the discards' in season one
 year_total_input <- function() {
 
@@ -39,6 +39,8 @@ year_total_input <- function() {
       sigmaD_pop_spec = "fix"
     ),
     fishidx = list(
+      UseFishIdx = use_in_season(agg_dim, 2),
+      FishIdx_seas_Type = "aggSeas",
       ObsFishAgeComps_pop = array(1 / d$n_ages, dim = comp_pop_dim),
       UseFishAgeComps_pop = use_in_season(pop_dim, 2, pop = TRUE),
       ISS_FishAgeComps_pop = array(100, dim = iss_pop_dim),

@@ -26,7 +26,7 @@
 #   the survey at month 7, the fishery length compositions at month 1
 #
 # the last of those is a trap: SS3 reads a fishing fleet's compositions at mid season whatever month
-# the data file records, so the bridge helper sets t_fish = 0.5 instead
+# the data file records, which is where SPoRC reads every fishery fleet's key
 
 library(r4ss)
 

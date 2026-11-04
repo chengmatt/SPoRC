@@ -4,7 +4,7 @@
 \alias{get_seas_pred_pop}
 \title{Sum a population-specific prediction over the seasons a data source is fit against}
 \usage{
-get_seas_pred_pop(pred, p, r, y, seas, f, seas_agg)
+get_seas_pred_pop(pred, p, r, y, seas, f, seas_agg, wt = NULL)
 }
 \arguments{
 \item{pred}{Prediction array \code{[pop, region, year, season, fleet]}.}
@@ -12,6 +12,8 @@ get_seas_pred_pop(pred, p, r, y, seas, f, seas_agg)
 \item{p, r, y, seas, f}{Population, region, year, season and fleet of the observation.}
 
 \item{seas_agg}{Integer, \code{1} for a season total and \code{0} otherwise.}
+
+\item{wt}{Season weights as in \code{\link{get_seas_pred}}, or \code{NULL}.}
 }
 \value{
 Scalar prediction.

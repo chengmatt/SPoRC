@@ -70,10 +70,6 @@
 #'   year dim may be shorter than the simulation, in which case later years draw
 #'   with the mean factor scale and loading. Required for mvn fleets. Default
 #'   `NULL`.
-#' @param t_fish Fishery index timing, `n_regions x n_seas x n_fish_fleets`, the
-#'   fraction of the season elapsed when the index is observed. Numbers at age are
-#'   decayed by `exp(-t_fish * ZAA)` before the index is formed, matching `t_srv`
-#'   and the estimation model's own `t_fish`. Default 0.
 #' @param comp_fishage_like,comp_fishlen_like,comp_fishage_pop_like,comp_fishlen_pop_like,comp_fishage_discard_like,comp_fishlen_discard_like,comp_fishage_discard_pop_like,comp_fishlen_discard_pop_like
 #'   Composition likelihood per fleet for the eight fishery composition data
 #'   sources: 0 = multinomial (default), 1 = Dirichlet-multinomial, 2-4 =
@@ -273,7 +269,6 @@ Setup_Sim_Fishing <- function(sim_list,
                               seas_agg_slot = NULL,
                               FishIdx_Cov = NULL,
                               UseFishIdx = NULL,
-                              t_fish = array(0, dim = c(sim_list$n_regions, sim_list$n_seas, sim_list$n_fish_fleets)),
 
                               # Conditional age-at-length. Off unless an ISS array is supplied; the
                               # thetas default to log(1) and are only read by the Dirichlet-multinomial
@@ -937,7 +932,6 @@ Setup_Sim_Fishing <- function(sim_list,
     sim_list$fish_idx_mvn <- fish_idx_mvn # factor parameters for mvn index fleets
     sim_list$fish_idx_u <- matrix(NA, sim_list$n_fish_fleets, sim_list$n_sims) # shared factor draw, filled per fleet and replicate
   }
-  sim_list$t_fish <- t_fish # fishery index timing within the season
 
   # Fishery age compositions
   sim_list$comp_fishage_like <- comp_fishage_like

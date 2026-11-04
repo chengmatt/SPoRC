@@ -108,12 +108,16 @@ test_that("get_fishery_observation_model: fish_q and fishery index (abundance vs
   out <- do.call(SPoRC:::get_fishery_observation_model, il)
 
   expect_equal(out$fish_q[1,1,1], 0.001, tolerance = 1e-10) # exp(log(0.001))
-  # full selectivity (fish_sel = ret_sel = 1) -> index is just q * sum(NAA)
-  expect_equal(out$PredFishIdx[1,1,1,1,1], 0.001 * sum(c(100, 50)), tolerance = 1e-8)
+  # full selectivity, so the index is q times the mean numbers over the season, N (1 - exp(-Z)) / Z
+  n_mean <- c(100, 50) * (1 - exp(-c(0.5, 0.3))) / c(0.5, 0.3)
+  expect_equal(out$PredFishIdx[1,1,1,1,1], 0.001 * sum(n_mean), tolerance = 1e-8)
 
   il_b <- make_fishery_obs_input(fish_idx_type = 1)
   out_b <- do.call(SPoRC:::get_fishery_observation_model, il_b)
-  expect_equal(out_b$PredFishIdx[1,1,1,1,1], 0.001 * sum(c(100, 50) * c(1.5, 3.0)), tolerance = 1e-8)
+  expect_equal(out_b$PredFishIdx[1,1,1,1,1], 0.001 * sum(n_mean * c(1.5, 3.0)), tolerance = 1e-8)
+
+  # the same numbers the catch is taken from: catch at age over F at age
+  expect_equal(as.numeric(out$CAA[1,1,1,1,,1,1]) / c(0.2, 0.1), n_mean, tolerance = 1e-10)
 })
 
 test_that("get_fishery_observation_model: length compositions via SizeAgeTrans (identity here)", {

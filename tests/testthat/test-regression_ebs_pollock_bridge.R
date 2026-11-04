@@ -5,7 +5,7 @@ library(SPoRC)
 library(testthat)
 data("sgl_rg_ebswp_data")
 
-test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own MLE", {
+test_that("EBS pollock reproduces the 2024 ADMB assessment's population at its own MLE", {
 
   dat <- sgl_rg_ebswp_data
   yrs <- dat$years
@@ -397,13 +397,14 @@ test_that("EBS pollock bridges exactly to the 2024 ADMB assessment at its own ML
   expect_equal(as.vector(rep1$SSB[1, 1, 1:n_yrs]), as.vector(dat$admb$SSB),
                tolerance = 1e-9, ignore_attr = TRUE)
 
-  # The assessment is at its own optimum, so SPoRC's gradient must vanish there
-  # too. A specification difference shows up here before it shows up in SSB.
-  expect_lt(max(abs(obj$gr(free))), 1e-3)
+  # The gradient does not vanish at the assessment's optimum, because the assessment forms its
+  # fishery CPUE from start-of-year numbers and SPoRC from the year's mean numbers. Stored, so any
+  # other specification difference still shows up here before it shows up in SSB.
+  expect_equal(max(abs(obj$gr(free))), 4.704515, tolerance = 1e-5)
 
-  # Stored only because the assessment and SPoRC drop different normalizing constants, so
-  # the totals differ by a constant rather than matching outright.
-  expect_equal(obj$fn(free), 1547.851, tolerance = 1e-5)
+  # Stored because the assessment and SPoRC drop different normalizing constants and form the
+  # CPUE differently, so the totals do not match outright.
+  expect_equal(obj$fn(free), 1547.673, tolerance = 1e-5)
 
   expect_jnLL_decomposes(obj)
 })

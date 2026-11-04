@@ -162,9 +162,6 @@ build_ebs_pcod_input <- function(dat) {
   # no fishery index and no fishery ages, lengths only
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
-    # Stock Synthesis puts a fishing fleet's compositions at mid season whatever
-    # month the data file records, so growth, weight and the compositions all sit there
-    t_fish = array(0.5, dim = c(n_reg, 1, n_fish)),
     # selectivity is applied at length and then summed over ages, which keeps length
     # and selection varying together within an age
     FishLenComps_sel = "length",

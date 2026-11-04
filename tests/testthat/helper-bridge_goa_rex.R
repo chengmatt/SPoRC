@@ -159,8 +159,7 @@ build_goa_rex_input <- function(dat) {
   # age-at-length. the fishery's growth and weight are read at mid season
   input_list <- Setup_Mod_FishIdx_and_Comps(
     input_list = input_list,
-    t_fish = array(0.5, dim = c(n_reg, 1, n_fish)),
-    ObsFishIdx = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
+    ObsFishIdx =array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
     ObsFishIdx_SE = array(NA_real_, dim = c(n_reg, n_yrs, 1, n_fish)),
     UseFishIdx = array(0, dim = c(n_reg, n_yrs, 1, n_fish)),
     fish_idx_type = rep("none", n_fish),

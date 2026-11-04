@@ -297,7 +297,6 @@ SPoRC_rtmb = function(pars, data) {
       n_regions = n_regions,
       n_seas = n_seas,
       n_sexes = n_sexes,
-      t_fish = t_fish,
       t_srv = t_srv,
       ln_growth_devs = ln_growth_devs,
       growth_tv_model = growth_tv_model,
@@ -1141,6 +1140,19 @@ SPoRC_rtmb = function(pars, data) {
   } # end if a dsem is set up
 
   ## Fishery Observation Model -----------------------------------------------
+  # a fishery index reported once a year weighs each season by its fishing mortality, the year's catch over
+  # its effort. the analytic catchability and the index likelihoods both read these weights
+  FishIdx_seas_wt = NULL
+  if(n_seas > 1 && any(c(FishIdx_seas_Type, FishIdx_pop_seas_Type) == 1)) {
+    FishIdx_seas_wt = array(0, dim = dim(Fmort))
+    for(r in 1:n_regions) {
+      for(y in 1:dim(Fmort)[2]) {
+        for(f in 1:n_fish_fleets) FishIdx_seas_wt[r,y,,f] = get_fish_idx_seas_wt(Fmort[r,y,,f])
+      } # end y loop
+    } # end r loop
+    RTMB::REPORT(FishIdx_seas_wt)
+  }
+
   tmp_fish_obs = get_fishery_observation_model(
     n_pop = n_pop,
     n_regions = n_regions,
@@ -1183,12 +1195,13 @@ SPoRC_rtmb = function(pars, data) {
     expm_nsub = move_expm_nsub,
     seasdur = seasdur,
     NAA_int = if(move_timing == 2) NAA_int else NULL, # reuse the dynamics' exponentials
-    t_fish = t_fish,
     fish_idx_ages = fish_idx_ages,
     fish_q_type = fish_q_type,
     ln_fish_q_devs = ln_fish_q_devs,
     ObsFishIdx = ObsFishIdx,
     UseFishIdx = UseFishIdx,
+    FishIdx_seas_Type = FishIdx_seas_Type,
+    fish_idx_seas_wt = FishIdx_seas_wt,
     do_caal = do_caal,
     Fish_caal = Fish_caal,
     Fish_caal_discard = Fish_caal_discard
@@ -1240,6 +1253,7 @@ SPoRC_rtmb = function(pars, data) {
     srv_q_type = srv_q_type,
     ObsSrvIdx = ObsSrvIdx,
     UseSrvIdx = UseSrvIdx,
+    SrvIdx_seas_Type = SrvIdx_seas_Type,
     do_caal = do_caal,
     Srv_caal = Srv_caal
   )
@@ -1544,7 +1558,8 @@ SPoRC_rtmb = function(pars, data) {
     seas_Type = FishIdx_seas_Type, # whether each fleet is fit as a season total
     const = addtofishidx, # constant added inside the log
     n_fleets = n_fish_fleets,
-    bias_correct_oe = bias_correct_oe # bias correct oe
+    bias_correct_oe = bias_correct_oe, # bias correct oe
+    seas_wt = FishIdx_seas_wt # each season's weight in a year total
   )
 
   # only lognormal fleets register OSA observations, so drop the fleets already done above
@@ -1567,7 +1582,8 @@ SPoRC_rtmb = function(pars, data) {
       seas_Type = FishIdx_seas_Type, # whether each fleet is fit as a season total
       const = addtofishidx, # constant added inside the log
       pop = FALSE,
-      bias_correct_oe = bias_correct_oe
+      bias_correct_oe = bias_correct_oe,
+      seas_wt = FishIdx_seas_wt # each season's weight in a year total
     )
   }
 
@@ -1582,7 +1598,8 @@ SPoRC_rtmb = function(pars, data) {
     SD = FishIdx_pop_SD, # index standard deviation
     LikeType = FishIdx_LikeType, # likelihood for each fleet
     seas_Type = FishIdx_pop_seas_Type, # whether each fleet is fit as a season total
-    n_fleets = n_fish_fleets
+    n_fleets = n_fish_fleets,
+    seas_wt = FishIdx_seas_wt # each season's weight in a year total
   )
 
   # only lognormal fleets register OSA observations, so drop the fleets already done above
@@ -1605,7 +1622,8 @@ SPoRC_rtmb = function(pars, data) {
       seas_Type = FishIdx_pop_seas_Type, # whether each fleet is fit as a season total
       const = addtofishidx, # constant added inside the log
       pop = TRUE,
-      bias_correct_oe = bias_correct_oe
+      bias_correct_oe = bias_correct_oe,
+      seas_wt = FishIdx_seas_wt # each season's weight in a year total
     )
   }
 

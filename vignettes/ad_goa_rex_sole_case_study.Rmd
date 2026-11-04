@@ -168,8 +168,8 @@ input_list <- Setup_Mod_Biologicals(
 
 `WAA = NULL` and `SizeAgeTrans = NA` because both come out of the growth module
 rather than going in as data. Each fleet's age-length key and weight at age are
-read at that fleet's own timing: the surveys' at `t_srv` and the fishery's at
-`t_fish`, both the middle of the year here, where the assessment reads them,
+read at that fleet's timing: the surveys' at `t_srv`, the middle of the year
+here, and the fishery's at mid season, both where the assessment reads them,
 and the spawning weight at `t_spawn`. `growth_len_lower` holds the lower
 edges of the bins, which is what the assessment's key is built on, rather than
 the midpoints in `lens`.

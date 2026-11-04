@@ -112,6 +112,10 @@ test_that("with parameters that regenerate the test setup's key, the objective m
   # supplied as data: the size-age transition matrix built from von Bertalanffy at linf 60, k
   # 0.3 and t0 -0.5, with a CV of 0.10, read at integer ages at the start of the year
   inp_data <- caal_build_input(sim_data)
+  # the growth module reads the fishery's key at mid season, so the data-driven model is given that one
+  g_mid <- caal_growth(n_ages, 1, elapsed = 0.5)[[1]]
+  alk_mid <- caal_alk(caal_cfg$len_lower, g_mid$mean, g_mid$sd)
+  inp_data$data$SizeAgeTrans_fish <- array(rep(alk_mid, each = caal_cfg$n_yrs), dim = c(1, 1, caal_cfg$n_yrs, 1, caal_cfg$n_lens, n_ages, 1, 1))
   fit_data <- fit_model(
     inp_data$data,
     inp_data$par,
@@ -179,9 +183,8 @@ test_that("with parameters that regenerate the test setup's key, the objective m
   expect_true(all(is.na(inp_g$map$ln_growth_pars)))
   fit_g <- fit_model(inp_g$data, inp_g$par, inp_g$map, random = NULL, silent = TRUE, do_optim = FALSE)
 
-  # the derived key regenerates the test setup's key
-  # one key per fleet, both read at the season start here, so both are the test setup's
-  expect_equal(as.vector(fit_g$rep$SizeAgeTrans_fish[,,,,,,,1]), as.vector(sim_data$SizeAgeTrans), tolerance = 1e-10)
+  # the derived keys regenerate the test setup's: the survey's at the season start, the fishery's at mid season
+  expect_equal(as.vector(fit_g$rep$SizeAgeTrans_fish[,,,,,,,1]), as.vector(inp_data$data$SizeAgeTrans_fish), tolerance = 1e-10)
   expect_equal(as.vector(fit_g$rep$SizeAgeTrans_srv[,,,,,,,1]), as.vector(sim_data$SizeAgeTrans), tolerance = 1e-10)
   expect_equal(fit_g$rep$mean_LAA_srv[1, 1, 1, 1, , 1, 1], g$mean, tolerance = 1e-10)
   # and so the objective and gradient are those of the data-driven model
@@ -200,7 +203,7 @@ test_that("with parameters that regenerate the test setup's key, the objective m
 
 test_that("growth parameters are recovered from lengths plus conditional age-at-length", {
   source(test_path("helper-selftest_caal.R"), local = TRUE)
-  om <- caal_make_om()
+  om <- caal_make_om(fish_key_elapsed = 0.5) # fishery lengths drawn at mid season, where the model reads them
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = caal_cfg$n_yrs, sim = 1)
   n_ages <- caal_cfg$n_ages
   g <- caal_growth(n_ages, 1)[[1]]
@@ -264,12 +267,12 @@ test_that("growth parameters are recovered from lengths plus conditional age-at-
 
 # Fleet Timing and Selected Weight -------------------------------------------
 
-test_that("each fleet's key and weight are read at that fleet's own timing", {
+test_that("each survey's key and weight are read at its own timing, the fishery's at mid season", {
   ages <- 0:6
   lower <- seq(10, 60, by = 5)
   pars <- array(log(c(15, 55, 0.3, 0.15, 0.08)), dim = c(1, 1, 1, 5))
   wl <- array(c(1e-5, 3), dim = c(1, 1, 1, 2))
-  run <- function(t_fish, t_srv) {
+  run <- function(t_srv) {
     Get_Growth(
       ln_growth_pars = pars,
       growth_A1 = 1,
@@ -293,11 +296,10 @@ test_that("each fleet's key and weight are read at that fleet's own timing", {
       n_sexes = 1,
       n_fish_fleets = 1,
       n_srv_fleets = 2,
-      t_fish = array(t_fish, dim = c(1, 1, 1)),
       t_srv = array(t_srv, dim = c(1, 1, 2))
     )
   }
-  g <- run(0.5, c(0.25, 0.5))
+  g <- run(c(0.25, 0.5))
 
   # the second survey is taken when the fishery is, the first is not
   expect_equal(g$SizeAgeTrans_srv[,,,,,,,2], g$SizeAgeTrans_fish[,,,,,,,1])

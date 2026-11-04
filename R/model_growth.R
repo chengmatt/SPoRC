@@ -365,7 +365,7 @@ growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, 
 #' Builds the size-age transition arrays and, when asked, weight at age and
 #' maturity at age from the growth parameters, for every year. Every fleet gets
 #' its own key and weight, read at that fleet's timing within the season: each
-#' fishery fleet's at \code{t_fish}, each survey's at \code{t_srv}, and the
+#' fishery fleet's at mid season, each survey's at \code{t_srv}, and the
 #' spawning weight at \code{t_spawn}.
 #'
 #' @section Time variation:
@@ -391,10 +391,11 @@ growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, 
 #' the increment over a season is exactly the curve's difference between the two
 #' real ages, so splitting the year into seasons of any durations changes no mean
 #' length. The spawning
-#' weight is read at the spawning fraction of the season, and each fleet's key
-#' and weight at that fleet's own timing, \code{t_fish} or \code{t_srv}, so a
-#' composition and the weight behind an index are formed at the point in the
-#' season the observation is taken. Fleets that share a timing share one
+#' weight is read at the spawning fraction of the season, and each survey's key
+#' and weight at its own \code{t_srv}, so a survey composition and the weight
+#' behind a survey index are formed at the point in the season the survey is
+#' taken. A fishery fleet's key and weight are read at mid season, since its
+#' catch is taken across the whole season. Fleets that share a timing share one
 #' evaluation. Seasonal multipliers on \eqn{K} are not kept.
 #'
 #' @param ln_growth_pars Array \code{[pop, region, sex, n_growth_pars]} of log growth
@@ -421,9 +422,6 @@ growth_laa_at = function(e, growth_pars, ages, growth_A1, growth_A2, growth_L0, 
 #' @param growth_A1,growth_A2 Reference ages; see \code{\link{get_laa_curve}}.
 #' @param growth_L0 Length at age zero.
 #' @param growth_len_lower Lower edges of the length bins.
-#' @param t_fish Array \code{[region, season, fish_fleet]} of fishery timings,
-#'   the fraction of the season elapsed at which each fishery fleet's key and
-#'   weight at age are read.
 #' @param t_srv Array \code{[region, season, srv_fleet]} of survey timings, the
 #'   fraction of the season elapsed when each survey is taken, at which that
 #'   survey's key and weight at age are read.
@@ -477,7 +475,6 @@ Get_Growth = function(
   n_sexes,
   n_fish_fleets,
   n_srv_fleets,
-  t_fish,
   t_srv,
   ln_growth_devs = NULL,
   growth_tv_model = NULL,
@@ -551,7 +548,6 @@ Get_Growth = function(
             spawn_seas,
             t_spawn,
             n_seas,
-            t_fish,
             t_srv,
             len_devs = if(semipar) ln_growth_semipar_devs[p,r,y,,s] else NULL,
             growth_L2_asymptote = growth_L2_asymptote
@@ -610,7 +606,7 @@ growth_containers = function(n_pop, n_regions, n_yrs, n_seas, n_lens, n_ages, n_
 #' @keywords internal
 growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth, cv_ref_fn, a_prop, cohort,
                             ages, growth_A1, growth_A2, growth_L0, growth_len_lower, growth_cv_type, growth_sd_type, growth_dist,
-                            derive_waa, w_mid, seasdur, spawn_seas, t_spawn, n_seas, t_fish, t_srv, len_devs = NULL,
+                            derive_waa, w_mid, seasdur, spawn_seas, t_spawn, n_seas, t_srv, len_devs = NULL,
                             growth_L2_asymptote = 0) {
 
   "c" <- RTMB::ADoverload("c")
@@ -627,11 +623,11 @@ growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth
 
   for(seas in 1:n_seas) {
 
-    # every point in the season something is read at: each fishery fleet at its t_fish, each survey
+    # every point in the season something is read at: each fishery fleet at mid season, each survey
     # at its t_srv, and the spawning weight at t_spawn. each distinct point is evaluated once
-    t_fish_seas = as.vector(t_fish[r, seas, ])
+    fish_t_seas = rep(0.5, dim(out$SizeAgeTrans_fish)[8])
     t_srv_seas = as.vector(t_srv[r, seas, ])
-    t_unique = unique(c(t_fish_seas, t_srv_seas, if(seas == spawn_seas) t_spawn))
+    t_unique = unique(c(fish_t_seas, t_srv_seas, if(seas == spawn_seas) t_spawn))
 
     for(k in seq_along(t_unique)) {
 
@@ -662,7 +658,7 @@ growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth
       waa = if(derive_waa == 1) as.vector(t(alk) %*% w_mid) else NULL
 
       # get fishery
-      for(f in which(t_fish_seas == timing)) {
+      for(f in which(fish_t_seas == timing)) {
         out$SizeAgeTrans_fish[p,r,fill_yrs,seas,,,s,f] = rep_yrs(alk)
         out$mean_LAA_fish[p,r,fill_yrs,seas,,s,f] = rep_yrs(L)
         out$sd_LAA_fish[p,r,fill_yrs,seas,,s,f] = rep_yrs(sd)
@@ -716,7 +712,7 @@ growth_fill_year = function(out, p, r, s, fill_yrs, growth_pars, L_beg, L1_birth
 #'   As in \code{\link{Get_Growth}}.
 #' @param derive_waa,wt_len_pars,ages,seasdur,spawn_seas,t_spawn,n_pop,n_regions,n_seas,n_sexes
 #'   As in \code{\link{Get_Growth}}.
-#' @param t_fish,t_srv Timings as in \code{\link{Get_Growth}}.
+#' @param t_srv Survey timings as in \code{\link{Get_Growth}}.
 #'
 #' @return The \code{growth} list with year \code{y} filled and, when a year
 #'   follows, \code{L_beg[,, y + 1,,]} set to the state the next year starts
@@ -752,7 +748,6 @@ Get_Growth_Year = function(
   n_regions,
   n_seas,
   n_sexes,
-  t_fish,
   t_srv,
   ln_growth_semipar_devs = NULL,
   growth_semipar = 0
@@ -830,7 +825,6 @@ Get_Growth_Year = function(
           spawn_seas,
           t_spawn,
           n_seas,
-          t_fish,
           t_srv,
           len_devs = if(growth_semipar > 0 && !is.null(ln_growth_semipar_devs)) ln_growth_semipar_devs[p,r,y,,s] else NULL,
           growth_L2_asymptote = growth_L2_asymptote

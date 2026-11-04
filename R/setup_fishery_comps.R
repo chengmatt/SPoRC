@@ -603,17 +603,16 @@ Setup_Mod_Discard_Comps     <- function(input_list,
 #'   one row per observation the fleet fits, ordered as they appear when scanning
 #'   that fleet's \code{UseFishIdx} slice in array order.
 #' @param fish_idx_type Character vector \code{[n_fish_fleets]}: \code{"biom"},
-#'   \code{"abd"}, or \code{"none"}.
-#' @param t_fish Array \code{[n_regions x n_seas x n_fish_fleets]} of the fraction
-#'   of the season elapsed when each index is observed. Numbers at age are decayed
-#'   by \code{exp(-t_fish * ZAA)} before the index is formed, as \code{t_srv} does
-#'   for surveys. Default \code{0}; use \code{0.5} for a mid-season index.
+#'   \code{"abd"}, or \code{"none"}. The index is formed from the mean numbers
+#'   available over the season, \eqn{N (1 - e^{-Z}) / Z}, the numbers the catch
+#'   equation applies fishing mortality to, times the fleet's selectivity and
+#'   retention. There is no within-season timing to set.
 #' @param FishLenComps_sel Character vector \code{[n_fish_fleets]}, whether
 #'   length-based selectivity applies before or after the fish are spread over
 #'   lengths. \code{"age"} (default) selects at age and spreads afterwards, so the
 #'   length composition within an age is the key's. \code{"length"} spreads first
 #'   and selects length by length, so the long fish of an age are taken more often.
-#'   The key is the fleet's own at \code{t_fish}, and length-based fishery
+#'   The key is the fleet's own at mid season, and length-based fishery
 #'   selectivity is required. The two give different expected compositions.
 #' @param fish_waa_selected Integer vector \code{[n_fish_fleets]} (0/1). With weight
 #'   at age derived from growth and length-based selectivity, \code{1} makes the
@@ -795,7 +794,6 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
                                         ObsFishIdx_pop_SE = NULL,
                                         UseFishIdx_pop = array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         fish_idx_type,
-                                        t_fish = array(0, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_fish_fleets)),
                                         FishLenComps_sel = rep("age", input_list$data$n_fish_fleets),
                                         fish_waa_selected = rep(0, input_list$data$n_fish_fleets),
                                         UseFishIdx,
@@ -1074,15 +1072,6 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
 
 
   # Fishery Index Options ---------------------------------------------------
-
-  check_data_dimensions(
-    t_fish,
-    n_regions = input_list$data$n_regions,
-    n_seas = input_list$data$n_seas,
-    n_fish_fleets = input_list$data$n_fish_fleets,
-    what = "t_fish"
-  )
-  if(any(t_fish < 0 | t_fish > 1)) stop("t_fish must be a fraction of the season in [0, 1]")
 
   fish_idx_type_vals <- array(NA, dim = c(input_list$data$n_fish_fleets))
   for(f in 1:input_list$data$n_fish_fleets) {
@@ -1394,7 +1383,6 @@ Setup_Mod_FishIdx_and_Comps <- function(input_list,
   UseFishLenComps_pop <- drop_empty_fitted_blocks(ObsFishLenComps_pop, UseFishLenComps_pop, input_list$data$FishLenComps_pop_bins, 5, "FishLenComps_pop")
 
   input_list$data$FishIdx_Cov <- fish_idx_cov_parsed
-  input_list$data$t_fish <- t_fish
   input_list$data$fish_len_comp_sel <- fish_len_comp_sel_vals
   input_list$data$fish_waa_selected <- fish_waa_selected
   input_list$data$ObsFishAgeComps <- ObsFishAgeComps

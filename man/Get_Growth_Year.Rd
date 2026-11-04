@@ -32,7 +32,6 @@ Get_Growth_Year(
   n_regions,
   n_seas,
   n_sexes,
-  t_fish,
   t_srv,
   ln_growth_semipar_devs = NULL,
   growth_semipar = 0
@@ -53,7 +52,7 @@ output containers and the years before the propagation started.}
 
 \item{derive_waa, wt_len_pars, ages, seasdur, spawn_seas, t_spawn, n_pop, n_regions, n_seas, n_sexes}{As in \code{\link{Get_Growth}}.}
 
-\item{t_fish, t_srv}{Timings as in \code{\link{Get_Growth}}.}
+\item{t_srv}{Survey timings as in \code{\link{Get_Growth}}.}
 }
 \value{
 The \code{growth} list with year \code{y} filled and, when a year

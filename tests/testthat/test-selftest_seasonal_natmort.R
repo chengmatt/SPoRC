@@ -81,5 +81,5 @@ test_that("at realistic noise the annual total is identified far better than the
 
   # errors run opposite ways, i.e. trading between seasons while holding the
   # total, rather than moving as a pair
-  expect_lt(stats::median(r$M1 - M_true[1]) * stats::median(r$M2 - M_true[2]), 0)
+  expect_lt(stats::cor(r$M1 - M_true[1], r$M2 - M_true[2]), -0.5)
 })

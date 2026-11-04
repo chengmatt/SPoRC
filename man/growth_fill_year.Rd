@@ -30,7 +30,6 @@ growth_fill_year(
   spawn_seas,
   t_spawn,
   n_seas,
-  t_fish,
   t_srv,
   len_devs = NULL,
   growth_L2_asymptote = 0

@@ -855,7 +855,6 @@ simulation_self_test <- function(
                                 },
                                 fish_idx_type = data$fish_idx_type,
                                 fish_idx_ages = data$fish_idx_ages, # ages in each index total
-                                t_fish = if(is.null(data$t_fish)) array(0, dim = c(data$n_regions, data$n_seas, data$n_fish_fleets)) else data$t_fish, # fishery index timing
                                 FishIdx_LikeType = if(is.null(data$FishIdx_LikeType)) rep(0, data$n_fish_fleets) else data$FishIdx_LikeType,
                                 FishIdx_Cov = data$FishIdx_Cov,
                                 UseFishIdx = data$UseFishIdx,

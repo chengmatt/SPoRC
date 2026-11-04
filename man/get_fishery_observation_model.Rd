@@ -38,12 +38,13 @@ get_fishery_observation_model(
   move_timing = 0,
   seasdur = rep(1, n_seas),
   NAA_int = NULL,
-  t_fish = NULL,
   fish_idx_ages = NULL,
   fish_q_type = NULL,
   ln_fish_q_devs = NULL,
   ObsFishIdx = NULL,
   UseFishIdx = NULL,
+  FishIdx_seas_Type = NULL,
+  fish_idx_seas_wt = NULL,
   do_caal = 0,
   Fish_caal = NULL,
   Fish_caal_discard = NULL,
@@ -106,14 +107,17 @@ abundance/biomass fishery index type.}
 \item{fish_sel, ret_sel}{Arrays \code{[pop, region, year, season, age, sex,
 fish_fleet]} of total/retained fishery selectivity.}
 
-\item{t_fish}{Array \code{[region, season, fish_fleet]} of fishery index
-timing, the fraction of the season elapsed when the index is observed.
-Numbers at age are decayed by \code{exp(-t_fish * ZAA)} before the index is
-formed, mirroring \code{t_srv} for surveys. \code{NULL} (the default) skips
-the decay entirely and reproduces a start-of-season index.}
-
 \item{ln_fish_q_devs}{Array \code{[region, year, fish_fleet]} of log-scale
 annual catchability deviations, or \code{NULL} for none.}
+
+\item{FishIdx_seas_Type}{Integer vector \code{[fish_fleet]}, \code{1} where a
+fleet's index is fit as a year total, so an analytic catchability is solved
+against that total. \code{NULL} means every fleet is fit by season.}
+
+\item{fish_idx_seas_wt}{Array \code{[region, year, season, fish_fleet]} of
+each season's weight in a year total, from
+\code{\link{get_fish_idx_seas_wt}}, or \code{NULL} when no fleet is fit as
+one.}
 
 \item{do_caal}{Integer (0/1) switch for building the joint catch at length
 and age arrays. Off by default.}
@@ -152,7 +156,11 @@ List with elements \code{fish_q}, \code{CAA}, \code{DAA},
 }
 \description{
 Converts realized fishing mortality and population state into predicted
-catch-at-age/length, discards, and fishery indices. Called once from the
+catch-at-age/length, discards, and fishery indices. A fishery index is
+formed from the mean numbers available over the season,
+\eqn{N (1 - e^{-Z}) / Z} with \eqn{Z} the season's total mortality (the
+season integral under \code{move_timing = 2}), which are the numbers the
+catch equation applies fishing mortality to. Called once from the
 "Fishery Observation Model" section of \code{SPoRC_rtmb.R}. All array
 arguments matching an output name (e.g. \code{fish_q}, \code{CAA}) are
 passed in already dimensioned (typically all-zero) and returned fully

@@ -15,7 +15,8 @@ get_index_regional_nLL(
   seas_Type,
   const,
   n_fleets,
-  bias_correct_oe = 0
+  bias_correct_oe = 0,
+  seas_wt = NULL
 )
 }
 \arguments{
@@ -38,6 +39,9 @@ get_index_regional_nLL(
 \item{const}{Constant added inside the log.}
 
 \item{n_fleets}{Number of fleets.}
+
+\item{seas_wt}{Season weights for a season total, as in
+\code{\link{get_seas_pred}}, or \code{NULL} to add the seasons.}
 }
 \value{
 \code{nLL_arr} with the fitted cells filled.

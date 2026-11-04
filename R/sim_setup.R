@@ -71,6 +71,18 @@ Setup_sim_env <- function(sim_list) {
   sim_env$collapse_seas_discards <- collapse_seas_discards
   sim_env$redraw_year_total_comps <- redraw_year_total_comps
   sim_env$seas_agg_season <- seas_agg_season
+  # index sd, season aggregation and season operators, reached from the same with() blocks
+  sim_env$combine_idx_sd <- combine_idx_sd
+  sim_env$build_idx_sd <- build_idx_sd
+  sim_env$collapse_seas_obs <- collapse_seas_obs
+  sim_env$get_fish_idx_seas_wt <- get_fish_idx_seas_wt
+  sim_env$integrate_seas_abundance <- integrate_seas_abundance
+  sim_env$survey_state <- survey_state
+  sim_env$advance_seas <- advance_seas
+  sim_env$seas_operator_and_integral <- seas_operator_and_integral
+  sim_env$Get_SBPR_Table <- Get_SBPR_Table
+  sim_env$get_tag_mort <- get_tag_mort
+  sim_env$marginalize_conv_fish_tags <- marginalize_conv_fish_tags
 
   # state-space numbers at age; lists built before the option existed have none of it
   if(is.null(sim_list$NAA_re)) sim_list$NAA_re <- 0

@@ -28,10 +28,10 @@ naaproj_fits <- local({
   }
 })
 
-# fitted innovation in the terminal year, ages two and older
+# fitted innovation in the terminal year, ages two and older, read from the report the comparisons use. a bare parList()
+# reads the last point evaluated, which can sit 1e-11 from the best point the report was taken at
 naaproj_eta_T <- function(fit, n_yrs) {
-  ln_NAA <- fit$env$parList()$ln_NAA
-  ln_NAA[1,1,n_yrs,1,2:8,1] - log(fit$rep$NAA_pred[1,1,n_yrs,1,2:8,1])
+  log(fit$rep$NAA[1,1,n_yrs,1,2:8,1]) - log(fit$rep$NAA_pred[1,1,n_yrs,1,2:8,1])
 }
 
 test_that("the state runs over the projection years only when it reaches the terminal year", {

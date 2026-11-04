@@ -224,6 +224,9 @@ fit_model <- function(
                }
              , error = function(e) {e}, warning = function(w) {w})
 
+    # return obj estimate here
+    optim$objective = as.numeric(obj$fn(optim$par))
+
     # record bounds used alongside optim output
     optim$lower <- lower
     optim$upper <- upper

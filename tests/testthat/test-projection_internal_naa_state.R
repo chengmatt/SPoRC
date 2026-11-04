@@ -79,7 +79,8 @@ test_that("the projected innovations have the process sd, and the projection tak
   ip_fixed <- Setup_Mod_Projection(il_fixed, n_proj_yrs = n_proj_yrs, f_opt = "terminal")
   fit_fixed <- fit_model(ip_fixed$data, ip_fixed$par, ip_fixed$map, random = "ln_NAA", newton_loops = 1, silent = TRUE)
   sdr_fixed <- RTMB::sdreport(fit_fixed)
-  expect_equal(fit$optim$objective, fit_fixed$optim$objective, tolerance = 1e-6)
+  # the marginal likelihood is unchanged, compared at one point since both optimizations stop on a flat surface
+  expect_equal(as.numeric(fit_fixed$fn(fit$optim$par)), fit$optim$objective, tolerance = 1e-8)
 
   naa_se <- array(se_of("log_proj_NAA"), dim = c(1, 1, n_proj_yrs, 1, naa_dims$n_ages, 1))
   naa_se_fixed <- array(as.numeric(sdr_fixed$sd[names(sdr_fixed$value) == "log_proj_NAA"]), dim = c(1, 1, n_proj_yrs, 1, naa_dims$n_ages, 1))

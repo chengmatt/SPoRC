@@ -252,6 +252,15 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     tmp
   } else args$ln_sigmaD_pop
 
+  # Fishing mortality, the fit's over the conditioning years and zero after until a management procedure sets it
+  Fmort_input <- if(!"Fmort_input" %in% names(args)) {
+    extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,seq_along(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros')
+  } else args$Fmort_input
+  # Discard mortality
+  dmr_input <- if(!"dmr_input" %in% names(args)) {
+    extend_years(replicate(n = sim_list$n_sims, rep$dmr[,seq_along(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros')
+  } else args$dmr_input
+
   # Fishery selectivity
   fish_sel_input <- if(!"fish_sel_input" %in% names(args)) {
     extend_years(replicate(n = sim_list$n_sims, rep$fish_sel[,,seq_along(data$years),,,,,drop = FALSE]), n_years = closed_loop_yrs, 3, fill = 'last')
@@ -454,10 +463,10 @@ condition_closed_loop_simulations <- function(closed_loop_yrs,
     seas_agg_slot = seas_agg_slot_list(data, length(data$years) + closed_loop_yrs, "fish"), # the season each year total sits in, the last fitted year's after the fit
     CatchAA_sigma_form = data$CatchAA_sigma_form, DiscardAA_sigma_form = data$DiscardAA_sigma_form,
     ln_sigmaC_pop = ln_sigmaC_pop,
-    Fmort_input = extend_years(replicate(n = sim_list$n_sims, rep$Fmort[,seq_along(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
+    Fmort_input = Fmort_input,
     ln_sigmaD = ln_sigmaD,
     ln_sigmaD_pop = ln_sigmaD_pop,
-    dmr_input = extend_years(replicate(n = sim_list$n_sims, rep$dmr[,seq_along(data$years),,,drop = FALSE]), n_years = closed_loop_yrs, 2, fill = 'zeros'),
+    dmr_input = dmr_input,
     fish_sel_input = fish_sel_input,
     ret_sel_input = ret_sel_input,
     # length comps selected at length read the fit's selectivity at length, kept at its last year after the data

@@ -1289,6 +1289,11 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
 
       for(r in 1:n_regions) {
         for(f in 1:n_fish_fleets) {
+          # cache ageing error since costs a lot to store...
+          ae_key_f <- paste0(".AgeingError_fish_cache_", f)
+          if(is.null(sim_env[[ae_key_f]]))
+            sim_env[[ae_key_f]] <- array(AgeingError_fish[,,,f,], dim = dim(AgeingError))
+          AgeingError_f <- sim_env[[ae_key_f]]
 
           for(p in 1:n_pop) {
 
@@ -1458,7 +1463,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                       sim = sim,
                                                       Exp = CAA,
                                                       ISS = ISS_FishAgeComps,
-                                                      AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
+                                                      AgeingError = AgeingError_f,
                                                       comp_like = comp_fishage_like,
                                                       ln_theta = ln_FishAge_theta,
                                                       ln_theta_agg = ln_FishAge_theta_agg,
@@ -1480,7 +1485,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                           sim = sim,
                                                           Exp = CAA,
                                                           ISS_pop = ISS_FishAgeComps_pop,
-                                                          AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
+                                                          AgeingError = AgeingError_f,
                                                           pop_comp_like = comp_fishage_pop_like,
                                                           ln_pop_theta = ln_FishAge_pop_theta,
                                                           ln_pop_theta_agg = ln_FishAge_pop_theta_agg,
@@ -1552,7 +1557,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                   sim = sim,
                   Joint = array(fish_caal_joint[,,,,,f], dim = dim(fish_caal_joint)[1:5]), # [pop, region, len, age, sex]
                   ISS = ISS_Fish_caal,
-                  AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
+                  AgeingError = AgeingError_f,
                   comp_like = comp_fish_caal_like,
                   ln_theta = ln_Fish_caal_theta,
                   ln_theta_agg = ln_Fish_caal_theta_agg,
@@ -1608,7 +1613,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                                 sim = sim,
                                                                 Exp = DAA,
                                                                 ISS = ISS_FishAgeComps_discard,
-                                                                AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
+                                                                AgeingError = AgeingError_f,
                                                                 comp_like = comp_fishage_discard_like,
                                                                 ln_theta = ln_FishAge_discard_theta,
                                                                 ln_theta_agg = ln_FishAge_discard_theta_agg,
@@ -1630,7 +1635,7 @@ generate_fishery_catch_comp_idx <- function(y, sim, sim_env) {
                                                                     sim = sim,
                                                                     Exp = DAA,
                                                                     ISS_pop = ISS_FishAgeComps_discard_pop,
-                                                                    AgeingError = array(AgeingError_fish[,,,f,], dim = dim(AgeingError)),
+                                                                    AgeingError = AgeingError_f,
                                                                     pop_comp_like = comp_fishage_discard_pop_like,
                                                                     ln_pop_theta = ln_FishAge_discard_pop_theta,
                                                                     ln_pop_theta_agg = ln_FishAge_discard_pop_theta_agg,
@@ -2112,6 +2117,12 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
       for(r in 1:n_regions) {
         for(sf in 1:n_srv_fleets) {
 
+          # cache ageing error since costs a lot to store...
+          ae_key_sf <- paste0(".AgeingError_srv_cache_", sf)
+          if(is.null(sim_env[[ae_key_sf]]))
+            sim_env[[ae_key_sf]] <- array(AgeingError_srv[,,,sf,], dim = dim(AgeingError))
+          AgeingError_sf <- sim_env[[ae_key_sf]]
+
           for(p in 1:n_pop) {
             # Survey Ages Indexed (midpoint year)
             if(move_timing == 2) {
@@ -2184,7 +2195,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                                    sim = sim,
                                                    Exp = SrvIAA,
                                                    ISS = ISS_SrvAgeComps,
-                                                   AgeingError = array(AgeingError_srv[,,,sf,], dim = dim(AgeingError)),
+                                                   AgeingError = AgeingError_sf,
                                                    comp_like = comp_srvage_like,
                                                    ln_theta = ln_SrvAge_theta,
                                                    ln_theta_agg = ln_SrvAge_theta_agg,
@@ -2205,7 +2216,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                                                        sim = sim,
                                                        Exp = SrvIAA,
                                                        ISS_pop = ISS_SrvAgeComps_pop,
-                                                       AgeingError = array(AgeingError_srv[,,,sf,], dim = dim(AgeingError)),
+                                                       AgeingError = AgeingError_sf,
                                                        pop_comp_like = comp_srvage_pop_like,
                                                        ln_pop_theta = ln_SrvAge_pop_theta,
                                                        ln_pop_theta_agg = ln_SrvAge_pop_theta_agg,
@@ -2276,7 +2287,7 @@ generate_survey_comp_idx <- function(y, sim, sim_env) {
                 sim = sim,
                 Joint = array(srv_caal_joint[,,,,,sf], dim = dim(srv_caal_joint)[1:5]), # [pop, region, len, age, sex]
                 ISS = ISS_Srv_caal,
-                AgeingError = array(AgeingError_srv[,,,sf,], dim = dim(AgeingError)),
+                AgeingError = AgeingError_sf,
                 comp_like = comp_srv_caal_like,
                 ln_theta = ln_Srv_caal_theta,
                 ln_theta_agg = ln_Srv_caal_theta_agg,
@@ -2491,7 +2502,7 @@ generate_fishery_conv_tags_recap <- function(y, sim, sim_env) {
   sim_env$y   <- y
   sim_env$sim <- sim
   sim_env$sim_env <- sim_env # rename to make sure with() finds it
-  
+
   with(sim_env,{
 
     for(rseas in 1:n_seas) {

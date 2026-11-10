@@ -49,7 +49,10 @@ wiring_unconfigured <- c(
   "FishLenComps_LikeType", "FishLenComps_Type", "SrvLenComps_LikeType", "SrvLenComps_Type",
   # only the age setting builds without length data, so there is no second value to compare
   # against here. the length route is driven directly in its own test file instead
-  "fish_selex_type", "ret_selex_type", "srv_selex_type"
+  "fish_selex_type", "ret_selex_type", "srv_selex_type",
+  # the test setup's survey has no annual selectivity deviations, so "additive" is refused here.
+  # test-selex_devs_additive.R builds a survey that walks and checks it there
+  "srv_sel_devs_form"
 )
 
 #' Build one option value all the way through, ready to evaluate

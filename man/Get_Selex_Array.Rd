@@ -36,7 +36,9 @@ Get_Selex_Array(
   sex_scale = NULL,
   nselbins = NULL,
   dbnrml_raw = NULL,
-  dbnrml_startbin = NULL
+  dbnrml_startbin = NULL,
+  devs_additive = NULL,
+  zero_bins = NULL
 )
 }
 \arguments{
@@ -115,6 +117,14 @@ unaffected.}
 \item{dbnrml_startbin}{Integer vector \code{[n_fleets]} or \code{NULL}, the
 bin each fleet's double normal anchors its ascending limb at; see
 \code{\link{Get_Selex}}.}
+
+\item{devs_additive}{Integer matrix \code{n_slots x n_fleets} (0/1) or
+\code{NULL}, flagging the parameters whose deviations are added on the
+natural scale for each fleet; see \code{\link{Get_Selex}}.}
+
+\item{zero_bins}{Integer matrix \code{n_bins x n_fleets} (0/1) or \code{NULL},
+flagging the bins each fleet does not select. Their selectivity is set to
+zero after everything else, for fleets whose selectivity is estimated.}
 }
 \value{
 List with \code{sel}, the age-based array (\code{n_pop x n_regions x

@@ -130,11 +130,12 @@ rlogistnormal <- function(exp,
 #' \eqn{\exp(\ln\theta)} is the per-observation overdispersion scalar.
 #'
 #' @param n Integer. Number of independent draws to generate.
-#' @param N Integer. Total count per draw (multinomial sample size).
+#' @param N Integer. Total count per draw (multinomial sample size). Zero, a year
+#'   with no sample, returns zeros.
 #' @param alpha Numeric vector of length \eqn{K}. Dirichlet concentration
-#'   parameters. All elements must be positive. Larger values relative to
-#'   \eqn{N} produce draws closer to the expected proportions
-#'   \eqn{\alpha / \sum \alpha}.
+#'   parameters, none negative. A category at zero is never drawn, and a vector
+#'   of zeros returns zeros. Larger values relative to \eqn{N} produce draws
+#'   closer to the expected proportions \eqn{\alpha / \sum \alpha}.
 #'
 #' @return Integer matrix of dimensions \eqn{K \times n}. Each column is one
 #'   draw: a vector of category counts summing to \code{N}.
@@ -142,6 +143,9 @@ rlogistnormal <- function(exp,
 #' @importFrom stats rgamma rmultinom
 #' @keywords internal
 rdirM <- function(n, N, alpha) {
+
+  # no sample that year, so nothing to draw (all-zero concentrations would give 0/0)
+  if(N <= 0 || sum(alpha) <= 0) return(matrix(0, nrow = length(alpha), ncol = n))
 
   # Get dirichlet draws
   rdirichlet <- function(alpha) {

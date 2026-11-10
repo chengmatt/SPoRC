@@ -719,7 +719,11 @@ get_dmr_penalty <- function(logit_dmr_devs, ln_sigma_dmr, map_logit_dmr_devs,
 #'   \code{type}, one row per prior. A \code{"par"} row (the default when the
 #'   column is absent) is a lognormal prior on one fixed selectivity parameter,
 #'   \code{dnorm(pars[region,par,block,sex,fleet], log(mu), sd)}, with \code{mu}
-#'   on the natural scale and \code{sd} on the log scale. A \code{"value"} row is
+#'   on the natural scale and \code{sd} on the log scale. A \code{"par_normal"}
+#'   row is a normal prior on the same parameter on its natural scale,
+#'   \code{dnorm(exp(pars[region,par,block,sex,fleet]), mu, sd)}, with \code{mu}
+#'   and \code{sd} both on the natural scale, for a parameter estimated on the
+#'   log scale such as an age at 50\% selection. A \code{"value"} row is
 #'   a normal prior on the realized selectivity at one bin,
 #'   \code{dnorm(sel[bin], mu, sd)}, with both on the natural scale; \code{par}
 #'   then names the bin on whichever grid the data source is parameterized over,
@@ -767,6 +771,8 @@ get_selex_prior <- function(selex_prior, fixed_sel_pars, sel, sel_l, selex_type,
       y <- min(which(sel_blocks[r,,f] == b)) # first model year in the block
       sel_val <- if(selex_type == 0) sel[1,r,y,1,p,s,f] else sel_l[r,y,p,s,f]
       nLL <- nLL - RTMB::dnorm(sel_val, selex_prior$mu[i], selex_prior$sd[i], TRUE)
+    } else if(row_type[i] == "par_normal") {
+      nLL <- nLL - RTMB::dnorm(exp(fixed_sel_pars[r,p,b,s,f]), selex_prior$mu[i], selex_prior$sd[i], TRUE) # normal on the natural scale, e.g. an age at 50% selection
     } else {
       nLL <- nLL - RTMB::dnorm(fixed_sel_pars[r,p,b,s,f], log(selex_prior$mu[i]), selex_prior$sd[i], TRUE)
     }

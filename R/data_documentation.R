@@ -212,6 +212,20 @@
 #'   Fisheries Research 158: 96-101).
 "sgl_rg_neacod_data"
 
+#' Gulf of Alaska walleye pollock data for the Rceattle case study
+#'
+#' Inputs for the two models proposed for the 2026 Gulf of Alaska walleye pollock
+#' assessment (models 26a and 26b), 1970 to 2026 at ages 1 to 10 with a plus
+#' group: catch and age compositions from one fishery, indices and age
+#' compositions from four surveys, the covariate Shelikof Strait catchability is
+#' measured through and the ten ecosystem series of model 26b, with the estimates
+#' \code{Rceattle} returns for the same inputs, used to check the bridge.
+#'
+#' @format Data list containing inputs and outputs for the 2026 GOA Pollock Assessment
+#' @source Monnahan, C., Adams, G., Lauffenberger, N. 2026. Gulf of Alaska pollock
+#'   model updates. Alaska Fisheries Science Center, September 2026.
+"sgl_rg_goa_pollock_data"
+
 #' Dusky data for single region assessment case study
 #'
 #' A data list containing inputs for the 2024 GOA Dusky Rockfish Assessment
@@ -220,7 +234,7 @@
 #' @source Omori, K. L., Williams, B. C., Hulson, P.-J., Ferriss, B. 2024. Assessment of the dusky rockfish stock in the Gulf of Alaska. North Pacific Fishery Management Council, Anchorage, AK.
 "sgl_rg_dusky_data"
 
-#' Dusky model outputs from single regino model
+#' Dusky model outputs from single region model
 #'
 #' A list containing inputs and outputs for the 2024 GOA Dusky Rockfish Assessment
 #'

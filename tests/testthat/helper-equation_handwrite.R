@@ -142,6 +142,8 @@ oracle_total_biomass <- function(N, Z, WAA, t_spawn) {
 #'   gamma:    p   = 0.5 (sqrt(bmax^2 + 4 delta^2) - bmax)
 #'             sel = (b / bmax)^(bmax / p) exp((bmax - b) / p)
 #'   power:    1 / b^phi
+#'   desclogist1:  1 / (1 + exp(k (b - b50)))
+#'   dbllogist1:   1 / (1 + exp(-k_asc (b - b50_asc))) / (1 + exp(k_desc (b - b50_desc)))
 #'
 #' Two things the vignette leaves out. It gives no parameter order, which the model
 #' fixes: logist1 takes (b50, slope), not (slope, b50).
@@ -149,7 +151,7 @@ oracle_total_biomass <- function(N, Z, WAA, t_spawn) {
 #' And it prints the gamma root as sqrt(bmax + 4 delta^2), without the square on bmax
 #' that the code has. Unsquared it is not the standard reparameterized gamma.
 #'
-#' @param form One of "logist1", "logist2", "gamma", "power".
+#' @param form One of "logist1", "logist2", "gamma", "power", "desclogist1", "dbllogist1".
 #' @param bins Numeric bin vector.
 #' @param pars Parameters on their natural scale.
 #'
@@ -165,6 +167,8 @@ oracle_selex <- function(form, bins, pars) {
       (bins / bmax)^(bmax / p) * exp((bmax - bins) / p)
     },
     power   = 1 / bins^pars[1],
+    desclogist1 = 1 / (1 + exp(pars[2] * (bins - pars[1]))),
+    dbllogist1 = 1 / (1 + exp(-pars[2] * (bins - pars[1]))) / (1 + exp(pars[4] * (bins - pars[3]))),
     stop("oracle_selex has no reference implementation for '", form, "'"))
 }
 

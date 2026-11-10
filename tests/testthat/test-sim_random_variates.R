@@ -88,6 +88,19 @@ test_that("Custom Random Samplers produce consistent results", {
     expect_gt(dm_var, multinom_var)
   })
 
+  test_that("rdirM returns zeros for a year with no sample", {
+    # a sample size of zero makes every concentration zero, which used to stop on 0/0
+    expect_equal(rdirM(n = 1, N = 0, alpha = c(0, 0, 0)), matrix(0, nrow = 3, ncol = 1))
+    expect_equal(rdirM(n = 2, N = 0, alpha = c(2, 5, 3)), matrix(0, nrow = 3, ncol = 2))
+    expect_equal(rdirM(n = 1, N = 50, alpha = c(0, 0, 0)), matrix(0, nrow = 3, ncol = 1))
+  })
+
+  test_that("rdirM never draws a category whose concentration is zero", {
+    result <- rdirM(n = 50, N = 100, alpha = c(0, 4, 6))
+    expect_true(all(result[1, ] == 0))
+    expect_true(all(colSums(result) == 100))
+  })
+
   # --- rinvgauss_rec ---
   test_that("rinvgauss_rec returns a vector of the correct length", {
     rec <- c(100, 200, 150, 180, 130)

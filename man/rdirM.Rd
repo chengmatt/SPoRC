@@ -9,12 +9,13 @@ rdirM(n, N, alpha)
 \arguments{
 \item{n}{Integer. Number of independent draws to generate.}
 
-\item{N}{Integer. Total count per draw (multinomial sample size).}
+\item{N}{Integer. Total count per draw (multinomial sample size). Zero, a year
+with no sample, returns zeros.}
 
 \item{alpha}{Numeric vector of length \eqn{K}. Dirichlet concentration
-parameters. All elements must be positive. Larger values relative to
-\eqn{N} produce draws closer to the expected proportions
-\eqn{\alpha / \sum \alpha}.}
+parameters, none negative. A category at zero is never drawn, and a vector
+of zeros returns zeros. Larger values relative to \eqn{N} produce draws
+closer to the expected proportions \eqn{\alpha / \sum \alpha}.}
 }
 \value{
 Integer matrix of dimensions \eqn{K \times n}. Each column is one

@@ -35,6 +35,9 @@ Setup_Mod_Srvsel_and_Q(
   t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_srv_fleets)),
   srvsel_devs_shared_bins = NULL,
+  srv_sel_devs_pars = NULL,
+  srv_sel_devs_form = rep("multiplicative", input_list$data$n_srv_fleets),
+  srv_sel_zero_bins = NULL,
   srv_selex_type = "age",
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
   srv_sel_input = NULL,
@@ -152,7 +155,9 @@ parameters. Default \code{0}.}
 \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
 \code{type}. \code{"par"} (the default) is a lognormal prior on one fixed
 selectivity parameter, with \code{mu} on the natural scale and \code{sd} on
-the log scale. \code{"value"} is a normal prior on the realized selectivity at
+the log scale. \code{"par_normal"} is a normal prior on that parameter's
+natural scale, \code{dnorm(exp(par), mu, sd)}, with \code{mu} and \code{sd}
+both on the natural scale. \code{"value"} is a normal prior on the realized selectivity at
 one bin, both on the natural scale, where \code{par} names the bin and the
 value is read at the first model year of \code{block}; that is the ADMB
 convention of pinning survey selectivity at a reference age near one, which no
@@ -210,6 +215,22 @@ Default \code{1}, the end of the period.}
 share one deviation series, e.g. \code{list(1:5, 6:10, 11:30)}. Required when
 \code{srv_sel_devs_spec} names an \code{"est_shared_b"} variant. Default
 \code{NULL}.}
+
+\item{srv_sel_devs_pars}{List with one element per fleet naming the
+selectivity parameters that fleet's \code{"iid"} or \code{"rw"} deviations
+apply to, in the order the form lists them, or \code{NULL} for every
+parameter. A parameter left out has no deviations and no process error
+standard deviation. Default \code{NULL}.}
+
+\item{srv_sel_devs_form}{Character vector \code{[n_srv_fleets]} of how
+\code{"iid"} or \code{"rw"} deviations enter the selectivity parameters,
+\code{"multiplicative"} (default) or \code{"additive"}, or a list with one
+string per parameter for a fleet, as \code{fish_sel_devs_form} in
+\code{\link{Setup_Mod_Fishsel_and_Q}}.}
+
+\item{srv_sel_zero_bins}{List with one element per fleet naming the bins that
+fleet does not select, or \code{NULL} for none, as \code{fish_sel_zero_bins}
+in \code{\link{Setup_Mod_Fishsel_and_Q}}. Default \code{NULL}.}
 
 \item{srv_selex_type}{Character scalar, \code{"age"} (default) or
 \code{"length"}.}

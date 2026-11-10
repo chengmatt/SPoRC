@@ -49,6 +49,11 @@
 * Corrected the double-normal (`"dbnrml"`) selectivity parameterization and added flexible anchoring of its ascending limb.
 * Added `_NSelBins_<n>` suffixes to selectivity model strings to hold bins beyond `n` at the value of bin `n`.
 * Added `fish_sel_norm_bins`/`srv_sel_norm_bins` to specify the bins over which non-parametric log-scale selectivity is standardized.
+* Added descending logistic (`"desclogist1"`) and double logistic (`"dbllogist1"`) selectivity forms.
+* Added `fish_sel_devs_pars`/`srv_sel_devs_pars` to name the selectivity parameters that `"iid"` or `"rw"` deviations apply to.
+* Added `fish_sel_devs_form`/`srv_sel_devs_form`, `"multiplicative"` (default) or `"additive"`, for how those deviations enter the parameters.
+* Added a `"par_normal"` selectivity prior type, a normal prior on a parameter's natural scale.
+* Added `fish_sel_zero_bins`/`srv_sel_zero_bins` to set selectivity to zero at named bins.
 * `Setup_Mod_Rec` has a new `R0_blocks` argument, which takes the same string forms as the selectivity blocks (`"none_Pop_p"`, `"Block_b_Year_a-e_Pop_p"`) and gives `ln_global_R0` a block dimension, together with `R0_ref_block` for the single value the initial age structure, the R0 prior, the `ln_rinit` penalty and the stock-recruit scale all read. Under mean recruitment an R0 block is a productivity regime; under a stock-recruit form it is the curve's scale. `R0_yr` is reported. A model without R0 blocks keeps one column and is byte-identical to before.
 * An analytically solved catchability is now solved **within each catchability time block** rather than pooled over the whole series. `srv_q_type` / `fish_q_type` of `"arith"` or `"geo"` previously computed one value per region and fleet and discarded `srv_q_blocks` / `fish_q_blocks` silently, so a blocked analytic q looked configured and did nothing. Each block is now solved from the observations it owns, a block with none takes the pooled value, and a fleet with a single block is unchanged to machine precision.
 
@@ -62,10 +67,12 @@
 ### Case studies and applications
 
 * Added BSAI Atka mackerel, West Coast sablefish, EBS Pacific cod, North Sea sand eel, GOA Rex Sole, BSAI Northern Rock Sole case studies bridging recent assessments.
+* Added a GOA walleye pollock case study bridging the 2026 `Rceattle` models 26a and 26b.
 
 ### Model fitting and diagnostics
 
 * Added dynamic structural equation models via `Setup_Mod_DSEM`, linking recruitment, growth, movement, catchability and the numbers at age to each other and to covariates through arrow notation.
+* A dsem series with an sd of zero is solved out with sparse matrices, so a large dsem with one now builds in seconds.
 * `Setup_Mod_Movement` and `Setup_Mod_Tagging` no longer need to be specified; `fit_model` fills their off settings, movement for one region only.
 * Added `bias_correct_pe` and `bias_correct_oe` to `Setup_Mod_Dim` and `Setup_Sim_Dim`. `bias_correct_pe` takes `"none"`, `"rec"` (the default, and what every model did before it existed) or `"all"`, and decides which process deviations are centered on minus half their marginal variance: recruitment and the initial ages under `"rec"`, those plus the numbers at age state under `"all"`. `do_rec_bias_ramp` and `bias_year` still scale the recruitment part. `bias_correct_oe` predicts a lognormally fit observation at its mean rather than its median, covering indices, catch, discards and the age-disaggregated sources.
 * Recruitment deviations under `RecDevs_model = "ar1"` are now mean unbiased, centered on minus half the stationary variance rather than on zero. A random walk takes no correction, since it has no stationary variance.
@@ -94,6 +101,7 @@
 - Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.
 - Fixed `do_runs_test()` returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.
 - Fixed the aggregated Dirichlet-multinomial composition likelihood (`_Type = 0`) not adding `addtocomp` to the expected and observed proportions.
+- Fixed simulating a Dirichlet-multinomial composition stopping in a year with no sample.
 
 # version 1.1.0
 Release Date: 2026-3-31

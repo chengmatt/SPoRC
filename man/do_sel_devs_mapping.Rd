@@ -10,6 +10,7 @@ do_sel_devs_mapping(
   sel_devs_shared_bins,
   bins,
   dont_est_dev_first = NULL,
+  sel_devs_pars = NULL,
   prefix,
   fleet_field,
   use_field,
@@ -37,6 +38,11 @@ of bins that share a single estimated deviation. Required when
 the map so the walk starts in year two and the fixed selectivity parameters
 hold year one. Refused for the GMRF and 2D AR1 forms, whose deviations are a
 field rather than a walk anchored at year one.}
+
+\item{sel_devs_pars}{List with one element per fleet naming the curve
+parameters that fleet's iid or random walk deviations apply to, or
+\code{NULL} for every parameter. \code{list(1:2)} on a double logistic lets
+the ascending limb vary by year and keeps the descending limb constant.}
 
 \item{prefix}{Character, one of \code{"fish"}, \code{"ret"}, or \code{"srv"}.
 Drives the domain-specific field names: \code{cont_tv_<prefix>_sel},

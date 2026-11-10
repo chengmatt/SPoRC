@@ -28,6 +28,8 @@ utils::globalVariables(c(
   "fish_sel_norm_bins", "ret_sel_norm_bins", "srv_sel_norm_bins",
   "fish_dbnrml_raw", "fish_dbnrml_startbin", "ret_dbnrml_raw", "ret_dbnrml_startbin",
   "srv_dbnrml_raw", "srv_dbnrml_startbin", "fish_len_comp_sel", "srv_len_comp_sel",
+  "fish_sel_devs_additive", "ret_sel_devs_additive", "srv_sel_devs_additive",
+  "fish_sel_zero_bins", "ret_sel_zero_bins", "srv_sel_zero_bins",
   "fish_waa_selected", "srv_waa_selected",
   "sr_R0",
   "fish_sel_bin_dev_bins", "fish_sel_blocks", "fish_sel_input", "fish_sel_model",

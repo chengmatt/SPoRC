@@ -56,6 +56,19 @@
 #'   share one deviation series, e.g. \code{list(1:5, 6:10, 11:30)}. Required when
 #'   \code{srv_sel_devs_spec} names an \code{"est_shared_b"} variant. Default
 #'   \code{NULL}.
+#' @param srv_sel_devs_pars List with one element per fleet naming the
+#'   selectivity parameters that fleet's \code{"iid"} or \code{"rw"} deviations
+#'   apply to, in the order the form lists them, or \code{NULL} for every
+#'   parameter. A parameter left out has no deviations and no process error
+#'   standard deviation. Default \code{NULL}.
+#' @param srv_sel_zero_bins List with one element per fleet naming the bins that
+#'   fleet does not select, or \code{NULL} for none, as \code{fish_sel_zero_bins}
+#'   in \code{\link{Setup_Mod_Fishsel_and_Q}}. Default \code{NULL}.
+#' @param srv_sel_devs_form Character vector \code{[n_srv_fleets]} of how
+#'   \code{"iid"} or \code{"rw"} deviations enter the selectivity parameters,
+#'   \code{"multiplicative"} (default) or \code{"additive"}, or a list with one
+#'   string per parameter for a fleet, as \code{fish_sel_devs_form} in
+#'   \code{\link{Setup_Mod_Fishsel_and_Q}}.
 #' @param corr_opt_semipar Character vector \code{[n_srv_fleets]} or \code{NULL}
 #'   (default) of which correlation components to suppress under the 3D GMRF or 2D
 #'   AR1 forms. See \code{\link{do_sel_pe_pars_mapping}}.
@@ -140,7 +153,9 @@
 #'   \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
 #'   \code{type}. \code{"par"} (the default) is a lognormal prior on one fixed
 #'   selectivity parameter, with \code{mu} on the natural scale and \code{sd} on
-#'   the log scale. \code{"value"} is a normal prior on the realized selectivity at
+#'   the log scale. \code{"par_normal"} is a normal prior on that parameter's
+#'   natural scale, \code{dnorm(exp(par), mu, sd)}, with \code{mu} and \code{sd}
+#'   both on the natural scale. \code{"value"} is a normal prior on the realized selectivity at
 #'   one bin, both on the natural scale, where \code{par} names the bin and the
 #'   value is read at the first model year of \code{block}; that is the ADMB
 #'   convention of pinning survey selectivity at a reference age near one, which no
@@ -221,6 +236,9 @@ Setup_Mod_Srvsel_and_Q <- function(
   srv_selex_penalty = NULL,
   t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas, input_list$data$n_srv_fleets)),
   srvsel_devs_shared_bins = NULL,
+  srv_sel_devs_pars = NULL,
+  srv_sel_devs_form = rep("multiplicative", input_list$data$n_srv_fleets),
+  srv_sel_zero_bins = NULL,
   srv_selex_type = 'age',
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
   srv_sel_input = NULL,
@@ -249,6 +267,10 @@ Setup_Mod_Srvsel_and_Q <- function(
   check_fleet_spec_length(srvsel_pe_wt, input_list$data$n_srv_fleets, "srvsel_pe_wt")
   check_fleet_spec_length(srvsel_rw_init_sigma, input_list$data$n_srv_fleets, "srvsel_rw_init_sigma")
   check_fleet_spec_length(srvsel_dont_est_dev_first, input_list$data$n_srv_fleets, "srvsel_dont_est_dev_first")
+
+  # one element per fleet, the parameters its deviations apply to, NULL for all of them
+  if(!is.null(srv_sel_devs_pars) && (!is.list(srv_sel_devs_pars) || length(srv_sel_devs_pars) != input_list$data$n_srv_fleets))
+    stop("srv_sel_devs_pars must be a list with one element per survey fleet (", input_list$data$n_srv_fleets, "), each the selectivity parameters that fleet's deviations apply to, or NULL for every parameter. For example, list(1:2, NULL).")
   if(!all(srvsel_dont_est_dev_first %in% c(0, 1))) stop("srvsel_dont_est_dev_first must be 0 or 1 for every fleet")
 
   # Catchability Priors
@@ -376,7 +398,7 @@ Setup_Mod_Srvsel_and_Q <- function(
   for(f in 1:input_list$data$n_srv_fleets) collect_message(paste("Survey Selectivity Time Blocks for survey", f, "is specified at:", length(unique(srv_sel_blocks_arr[,,f]))))
 
   # Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree"), num = c(0,1,2,3,4,5,6,7,8,9,10)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree", "desclogist1", "dbllogist1"), num = c(0,1,2,3,4,5,6,7,8,9,10,11,12)) # set up values we can map to
   srv_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets))
   srv_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # number of bin nodes, only set where srv_sel_model == 8 (bicubic)
   srv_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_srv_fleets)) # number of year nodes, only set where srv_sel_model == 8 (bicubic)
@@ -424,7 +446,7 @@ Setup_Mod_Srvsel_and_Q <- function(
     }
 
     # validate options
-    if(!sel_form %in% c(sel_map$sel)) stop("srv_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
+    if(!sel_form %in% c(sel_map$sel)) stop("srv_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, desclogist1, dbllogist1, bicubic (the seltypes) and specified as seltype_Fleet_x")
     if(!tmp_fleet %in% c(1:input_list$data$n_srv_fleets)) stop("Invalid fleet specified for srv_sel_model This needs to be specified as seltype_Fleet_x or seltype_Fleet_x_Block_x (if blocks are specified to change for a fleet)")
 
     # Input options
@@ -543,7 +565,8 @@ Setup_Mod_Srvsel_and_Q <- function(
 
   for(i in seq_along(unique_srvsel_vals)) {
     if(unique_srvsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
-    if(unique_srvsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
+    if(unique_srvsel_vals[i] %in% c(0,1,3,11)) sel_pars_vec[i] <- 2 # logistic (ascending or descending) or gamma
+    if(unique_srvsel_vals[i] == 12) sel_pars_vec[i] <- 4 # double logistic
     if(unique_srvsel_vals[i] == 4) sel_pars_vec[i] <- 6 # double normal
     if(unique_srvsel_vals[i] %in% c(5,9,10)) sel_pars_vec[i] <- bins # non-parametric selex
     if(unique_srvsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic selex w/ asymptote
@@ -698,6 +721,13 @@ Setup_Mod_Srvsel_and_Q <- function(
     srv_q_spec[srv_q_type_vals != 0] <- "fix"
   }
 
+  # bins the fleet does not select at all
+  input_list$data$srv_sel_zero_bins <- setup_sel_zero_bins(srv_sel_zero_bins, input_list$data$n_srv_fleets, bins, "srv_sel_zero_bins")
+
+  # parameters whose deviations are added on the natural scale
+  input_list$data$srv_sel_devs_additive <- setup_sel_devs_form(srv_sel_devs_form, input_list$data$cont_tv_srv_sel, input_list$data$srv_sel_model,
+                                                               input_list$data$n_srv_fleets, bins, "srv_sel_devs_form")
+
   # Mapping Options ---------------------------------------------------------
   input_list <- do_fixed_sel_pars_mapping(
     input_list,
@@ -737,6 +767,7 @@ Setup_Mod_Srvsel_and_Q <- function(
     bins,
     sel_devs_spec = srv_sel_devs_spec,
     sel_devs_shared_bins = srvsel_devs_shared_bins,
+    sel_devs_pars = srv_sel_devs_pars,
     prefix = "srv",
     fleet_field = "n_srv_fleets",
     use_field = "SrvIdx",
@@ -748,6 +779,7 @@ Setup_Mod_Srvsel_and_Q <- function(
     srvsel_devs_shared_bins,
     bins,
     dont_est_dev_first = srvsel_dont_est_dev_first,
+    sel_devs_pars = srv_sel_devs_pars,
     prefix = "srv",
     fleet_field = "n_srv_fleets",
     use_field = "SrvIdx",

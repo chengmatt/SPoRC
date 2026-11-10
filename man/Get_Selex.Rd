@@ -23,7 +23,8 @@ Get_Selex(
   n_sel_bins = NULL,
   apical = 1,
   dbnrml_raw = c(0, 0),
-  dbnrml_startbin = 1
+  dbnrml_startbin = 1,
+  devs_additive = NULL
 )
 }
 \arguments{
@@ -37,7 +38,9 @@ asymptote \eqn{\alpha \in (0,1)}, \code{5} non-parametric on the logit scale
 through \code{plogis}, standardized over years and bins jointly, \code{9}
 non-parametric on the log scale with the level free and each year centered
 over \code{sel_norm_bins}, and \code{8} a bicubic spline over a bin-node by
-year-node grid, which takes no \code{TimeVary_Model} deviations.}
+year-node grid, which takes no \code{TimeVary_Model} deviations. \code{11} is
+a descending logistic (b50, slope) and \code{12} a double logistic, an
+ascending logistic times a descending one, not rescaled to peak at one.}
 
 \item{TimeVary_Model}{Integer temporal structure. \code{0} none, \code{1} iid
 and \code{2} random walk deviations on the model parameters, \code{3} and
@@ -51,7 +54,9 @@ in the order the form expects: \code{c(ln_b50, ln_slope)} for model 0,
 per bin for 5, \code{c(logit_alpha, ln_b50, ln_k)} for 6,
 \code{c(logit_alpha, ln_b50, ln_b95)} for 7, one log value per bin for 9, and
 for 8 the flattened bin-node by year-node grid, filled column-major into a
-\code{n_yr_nodes} by \code{n_bin_nodes} matrix.}
+\code{n_yr_nodes} by \code{n_bin_nodes} matrix. Model 11 takes
+\code{c(ln_b50, ln_slope)} and model 12
+\code{c(ln_b50_asc, ln_slope_asc, ln_b50_desc, ln_slope_desc)}.}
 
 \item{ln_seldevs}{Array of log-scale deviations \code{[n_regions, n_years,
 n_parameters_or_bins, n_sexes, 1]}. Under \code{TimeVary_Model} 1 and 2 they
@@ -126,6 +131,11 @@ anchored at and built up from. \code{1} (default) anchors at the first bin.
 Anchor later when the compositions start above the population's first length
 bin: \code{p5} is then the selectivity at that bin, and every bin below takes
 \eqn{(b / b_{start})^2} times the selectivity there.}
+
+\item{devs_additive}{Logical vector with one entry per selectivity parameter, in
+the order of \code{pars}: \code{TRUE} where that parameter's \code{TimeVary_Model}
+1 or 2 deviation is added, \code{par + dev}, and \code{FALSE} where it multiplies,
+\code{par * exp(dev)}. \code{NULL} (default) multiplies every one.}
 }
 \value{
 Numeric vector of selectivity at \code{Bin}, on the natural scale and

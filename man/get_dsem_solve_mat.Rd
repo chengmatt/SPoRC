@@ -12,7 +12,7 @@ get_dsem_solve_mat(IminusB, dsem_cells)
 \item{dsem_cells}{Output of \code{\link{get_dsem_cells}}.}
 }
 \value{
-Dense matrix, one row per solved cell and one column per cell that
+Sparse matrix, one row per solved cell and one column per cell that
   keeps an innovation, or \code{NULL} when nothing is solved out.
 }
 \description{
@@ -21,6 +21,9 @@ A series with an sd of zero has no innovation, so its rows of
 (\code{unobs_idx}) and \eqn{o} for the rest (\code{obs_idx}), those rows
 give every one of those cells from the others,
 \deqn{x_u - \mu_u = -(I - B)_{uu}^{-1}(I - B)_{uo}(x_o - \mu_o),}
-and this returns the matrix in the middle.
+and this returns the matrix in the middle. It is kept sparse: a solved cell
+is set only by the cells an arrow reaches it from, so most entries are zero.
+When no arrow runs between two solved cells, \eqn{(I - B)_{uu}} is the
+identity and the matrix is \eqn{(I - B)_{uo}} itself.
 }
 \keyword{internal}

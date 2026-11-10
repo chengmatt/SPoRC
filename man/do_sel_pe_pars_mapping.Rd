@@ -11,6 +11,7 @@ do_sel_pe_pars_mapping(
   bins,
   sel_devs_spec,
   sel_devs_shared_bins,
+  sel_devs_pars = NULL,
   prefix,
   fleet_field,
   use_field,
@@ -43,6 +44,11 @@ recognize which dims the deviations are shared over, and
 \item{sel_devs_shared_bins}{List of integer vectors grouping the bins that
 share one estimated deviation, as passed to
 \code{\link{do_sel_devs_mapping}}.}
+
+\item{sel_devs_pars}{List with one element per fleet naming the curve
+parameters that fleet's deviations apply to, as passed to
+\code{\link{do_sel_devs_mapping}}, or \code{NULL}. Only the named
+parameters keep a standard deviation.}
 
 \item{prefix}{\code{"fish"}, \code{"ret"} or \code{"srv"}, which drives the
 field names \code{cont_tv_<prefix>_sel}, \code{<prefix>_sel_model},

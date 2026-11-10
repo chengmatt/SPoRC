@@ -1423,7 +1423,8 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 
             # determine maximum selectivity parameters
             if(sel_model_this_block == 2) max_sel_pars <- 1 # exponential
-            if(sel_model_this_block %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
+            if(sel_model_this_block %in% c(0,1,3,11)) max_sel_pars <- 2 # logistic (ascending or descending) or gamma
+            if(sel_model_this_block == 12) max_sel_pars <- 4 # double logistic
             if(sel_model_this_block == 4) max_sel_pars <- 6 # double normal
             if(sel_model_this_block %in% c(6,7)) max_sel_pars <- 3 # logistic w/ asymptotic selectivity
             if(sel_model_this_block == 8) { # bicubic spline: flattened bin-node x year-node grid (group_bins below reduces to a plain 1:max_sel_pars mapping, same as other parametric forms)
@@ -1575,6 +1576,10 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #' @param sel_devs_shared_bins List of integer vectors grouping the bins that
 #'   share one estimated deviation, as passed to
 #'   \code{\link{do_sel_devs_mapping}}.
+#' @param sel_devs_pars List with one element per fleet naming the curve
+#'   parameters that fleet's deviations apply to, as passed to
+#'   \code{\link{do_sel_devs_mapping}}, or \code{NULL}. Only the named
+#'   parameters keep a standard deviation.
 #' @param prefix \code{"fish"}, \code{"ret"} or \code{"srv"}, which drives the
 #'   field names \code{cont_tv_<prefix>_sel}, \code{<prefix>_sel_model},
 #'   \code{<prefix>_selex_type} and \code{<prefix>sel_pe_pars}.
@@ -1593,7 +1598,7 @@ do_fixed_sel_pars_mapping <- function(input_list, sel_pars_spec, bins, sel_nonpa
 #' @keywords internal
 #' @importFrom stringr str_detect str_extract_all
 do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, bins,
-                                    sel_devs_spec, sel_devs_shared_bins,
+                                    sel_devs_spec, sel_devs_shared_bins, sel_devs_pars = NULL,
                                     prefix, fleet_field, use_field, fleet_label) {
 
   par_name <- paste0(prefix, "sel_pe_pars")
@@ -1615,13 +1620,17 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
   shared_sex_specs <- c("est_shared_s", "est_shared_r_s", "est_shared_b_s", "est_shared_r_b_s")
 
   # a fleet using another fleet's deviations takes that fleet's bins too, so its sigmas follow the
-  # other fleet's spec
+  # other fleet's spec, and the parameters that fleet names
   devs_spec_resolved <- sel_devs_spec
+  devs_pars_resolved <- sel_devs_pars
   if(!is.null(sel_devs_spec)) {
     for(f in 1:n_fleets) {
       if(!stringr::str_detect(sel_devs_spec[f], "est_shared_f")) next
       flt_shared <- as.numeric(unlist(stringr::str_extract_all(sel_devs_spec[f], "\\d+")))
-      if(flt_shared >= 1 && flt_shared <= n_fleets) devs_spec_resolved[f] <- sel_devs_spec[flt_shared]
+      if(flt_shared >= 1 && flt_shared <= n_fleets) {
+        devs_spec_resolved[f] <- sel_devs_spec[flt_shared]
+        if(!is.null(sel_devs_pars)) devs_pars_resolved[f] <- sel_devs_pars[flt_shared] # single bracket keeps a NULL element
+      }
     } # end f loop
   } # end if a deviation spec was given
 
@@ -1663,7 +1672,8 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 
         # Figure out max number of selectivity parameters for a given region and fleet
         if(unique(input_list$data[[sel_model_field]][r,,f]) %in% 2) max_sel_pars <- 1 # exponential
-        if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(0,1,3)) max_sel_pars <- 2 # logistic or gamma
+        if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(0,1,3,11)) max_sel_pars <- 2 # logistic (ascending or descending) or gamma
+        if(unique(input_list$data[[sel_model_field]][r,,f]) == 12) max_sel_pars <- 4 # double logistic
         if(unique(input_list$data[[sel_model_field]][r,,f]) == 4) max_sel_pars <- 6 # double normal
         if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(5,9,10)) max_sel_pars <- bins # non-parametric selectivity
         if(unique(input_list$data[[sel_model_field]][r,,f]) %in% c(6,7)) max_sel_pars <- 3 # logistic selectivity w/ asmyptote
@@ -1673,6 +1683,14 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
         nonpar_fleet <- all(input_list$data[[sel_model_field]][r,,f] %in% c(5,9,10))
         shares_bins <- !is.null(sel_devs_spec) && devs_spec_resolved[f] %in% shared_bin_specs && nonpar_fleet
         pe_slots <- if(shares_bins) min_shared_bins else 1:max_sel_pars # sigma slots this fleet reads
+
+        # deviations on named curve parameters only, so only those parameters keep a sigma
+        names_pars <- !is.null(devs_pars_resolved) && !is.null(devs_pars_resolved[[f]])
+        if(names_pars && !shares_bins) {
+          pe_slots <- devs_pars_resolved[[f]]
+          if(!all(pe_slots %in% 1:max_sel_pars) || anyDuplicated(pe_slots) > 0)
+            stop(prefix, "_sel_devs_pars for ", fleet_label, " ", f, " must name distinct parameters between 1 and ", max_sel_pars, ", the number that fleet's selectivity form has.")
+        }
 
         # sharing deviations across sexes leaves one series, read at the first sex, so the other sexes'
         # parameters would never be used
@@ -1913,6 +1931,10 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 #' @param sel_devs_shared_bins List of integer vectors, each defining a group
 #'   of bins that share a single estimated deviation. Required when
 #'   \code{sel_devs_spec} includes \code{"est_shared_b"} or its variants.
+#' @param sel_devs_pars List with one element per fleet naming the curve
+#'   parameters that fleet's iid or random walk deviations apply to, or
+#'   \code{NULL} for every parameter. \code{list(1:2)} on a double logistic lets
+#'   the ascending limb vary by year and keeps the descending limb constant.
 #' @param dont_est_dev_first Integer vector \code{[n_<fleet_field>]} of 0/1, or
 #'   \code{NULL}. Where \code{1}, the deviations of year one are dropped from
 #'   the map so the walk starts in year two and the fixed selectivity parameters
@@ -1940,6 +1962,7 @@ do_sel_pe_pars_mapping <- function(input_list, pe_pars_spec, corr_opt_semipar, b
 #' @keywords internal
 #' @importFrom stringr str_detect str_extract_all
 do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins, bins, dont_est_dev_first = NULL,
+                                 sel_devs_pars = NULL,
                                  prefix, fleet_field, use_field, fleet_label) {
 
   par_name <- paste0("ln_", prefix, "sel_devs")
@@ -1957,7 +1980,8 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
   # the slots beyond it stay unmapped
   sel_dev_slot_count <- function(code) {
     if(code == 2) return(1)                 # exponential
-    if(code %in% c(0, 1, 3)) return(2)      # logistic or gamma
+    if(code %in% c(0, 1, 3, 11)) return(2)  # logistic (ascending or descending) or gamma
+    if(code == 12) return(4)                # double logistic
     if(code == 4) return(6)                 # double normal
     if(code %in% c(5, 9, 10)) return(bins)      # non-parametric
     if(code %in% c(6, 7)) return(3)         # logistic w/ asymptote
@@ -1979,6 +2003,11 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
            !input_list$data[[cont_tv_field]][r,f] %in% c(3,4,5) && !nonpar_fleet)
           stop("Sharing bin deviations is only supported when the deviations are indexed by bin: either a GMRF or AR1 time-varying form, or a non-parametric selectivity form. A parametric form under iid or a random walk indexes its deviations by parameter instead.")
        }
+
+      # named parameters need deviations on curve parameters: iid or a random walk on a parametric form
+      names_pars <- !is.null(sel_devs_pars) && !is.null(sel_devs_pars[[f]])
+      if(names_pars && (!input_list$data[[cont_tv_field]][r,f] %in% c(1,2) || any(input_list$data[[sel_model_field]][r,,f] %in% c(5,9,10))))
+        stop(prefix, "_sel_devs_pars names parameters for ", fleet_label, " ", f, ", but that fleet's deviations are not iid or a random walk on the parameters of a parametric form. Under a GMRF, a 2D AR1 or a non-parametric form the deviations are indexed by bin. Set that fleet's element to NULL.")
 
       # Skip fleet sharing specs in first pass
       if(!is.null(sel_devs_spec)) if(stringr::str_detect(sel_devs_spec[f], "est_shared_f")) next
@@ -2006,7 +2035,10 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
             # If iid or random walk time-variation for this fleet
             if(input_list$data[[cont_tv_field]][r,f] %in% c(1,2)) {
 
-              for(i in 1:max_sel_pars) {
+              # parameters the deviations apply to, every one unless the fleet names some
+              dev_pars <- if(names_pars) sel_devs_pars[[f]] else 1:max_sel_pars
+
+              for(i in dev_pars) {
                 # Estimating all selectivity deviations across regions, sexes, fleets, and parameter
                 if(sel_devs_spec[f] == 'est_all') {
                   map_sel_devs[r,y,i,s,f] <- sel_devs_counter
@@ -2128,6 +2160,7 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
       } # end s loop
 
       if(!is.null(sel_devs_spec)) collect_message(prefix, "_sel_devs_spec is specified as: ", sel_devs_spec[f], "for ", fleet_label, f, "and region ", r)
+      if(names_pars) collect_message(prefix, "_sel_devs_pars: deviations for ", fleet_label, " ", f, " apply to parameters ", paste(sel_devs_pars[[f]], collapse = ", "))
 
     } # end f loop
   } # end r loop

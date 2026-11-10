@@ -5,6 +5,23 @@
 
 # Selectivity Curves --------------------------------------------------------
 
+#' A selectivity parameter in one year
+#'
+#' The parameter times \code{exp(dev)}, or the parameter plus \code{dev} where
+#' the fleet asks for deviations added on the natural scale.
+#'
+#' @param value Parameter on its natural scale, for example an age at 50\% selection.
+#' @param dev That year's deviation.
+#' @param additive \code{TRUE} adds the deviation, \code{FALSE} multiplies by its exponential.
+#'
+#' @return The parameter's value that year.
+#'
+#' @keywords internal
+sel_par_dev = function(value, dev, additive) {
+  if(additive) return(value + dev)
+  value * exp(dev)
+} # end function
+
 #' Calculate Selectivity
 #'
 #' Selectivity-at-bin under any of the parametric, semi-parametric and
@@ -21,7 +38,9 @@
 #'   through \code{plogis}, standardized over years and bins jointly, \code{9}
 #'   non-parametric on the log scale with the level free and each year centered
 #'   over \code{sel_norm_bins}, and \code{8} a bicubic spline over a bin-node by
-#'   year-node grid, which takes no \code{TimeVary_Model} deviations.
+#'   year-node grid, which takes no \code{TimeVary_Model} deviations. \code{11} is
+#'   a descending logistic (b50, slope) and \code{12} a double logistic, an
+#'   ascending logistic times a descending one, not rescaled to peak at one.
 #' @param TimeVary_Model Integer temporal structure. \code{0} none, \code{1} iid
 #'   and \code{2} random walk deviations on the model parameters, \code{3} and
 #'   \code{4} a 3D GMRF on the marginal or conditional variance and \code{5} a
@@ -33,7 +52,9 @@
 #'   per bin for 5, \code{c(logit_alpha, ln_b50, ln_k)} for 6,
 #'   \code{c(logit_alpha, ln_b50, ln_b95)} for 7, one log value per bin for 9, and
 #'   for 8 the flattened bin-node by year-node grid, filled column-major into a
-#'   \code{n_yr_nodes} by \code{n_bin_nodes} matrix.
+#'   \code{n_yr_nodes} by \code{n_bin_nodes} matrix. Model 11 takes
+#'   \code{c(ln_b50, ln_slope)} and model 12
+#'   \code{c(ln_b50_asc, ln_slope_asc, ln_b50_desc, ln_slope_desc)}.
 #' @param ln_seldevs Array of log-scale deviations \code{[n_regions, n_years,
 #'   n_parameters_or_bins, n_sexes, 1]}. Under \code{TimeVary_Model} 1 and 2 they
 #'   apply to the parameters after exponentiation; under 3 to 5 they apply
@@ -62,6 +83,10 @@
 #'   Anchor later when the compositions start above the population's first length
 #'   bin: \code{p5} is then the selectivity at that bin, and every bin below takes
 #'   \eqn{(b / b_{start})^2} times the selectivity there.
+#' @param devs_additive Logical vector with one entry per selectivity parameter, in
+#'   the order of \code{pars}: \code{TRUE} where that parameter's \code{TimeVary_Model}
+#'   1 or 2 deviation is added, \code{par + dev}, and \code{FALSE} where it multiplies,
+#'   \code{par * exp(dev)}. \code{NULL} (default) multiplies every one.
 #' @param apical Numeric, the height the double normal's limbs are built up to and
 #'   the plateau sits at. \code{1} (default) is the ordinary curve; a sex with an
 #'   apical offset takes \code{exp(ln_*sel_sex_scale)} here, which moves the middle
@@ -117,7 +142,8 @@ Get_Selex = function(
   n_sel_bins = NULL,
   apical = 1,
   dbnrml_raw = c(0, 0),
-  dbnrml_startbin = 1
+  dbnrml_startbin = 1,
+  devs_additive = NULL
 ) {
 
   "c" <- RTMB::ADoverload("c")
@@ -125,14 +151,17 @@ Get_Selex = function(
 
   selex = rep(0, length(Bin)) # Temporary container vector
 
+  # TRUE where a parameter's deviation is added, FALSE where it multiplies. every one multiplies unless told otherwise
+  if(is.null(devs_additive)) devs_additive = rep(FALSE, max(length(Bin), 6))
+
   if(Selex_Model == 0) { # logistic selectivity (b50 and slope)
     # Extract out and exponentiate the parameters here
     b50 = exp(pars[1]) # b50
     k = exp(pars[2]) # slope
 
     if(TimeVary_Model %in% c(1:2)) {
-      b50 = b50 * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # b50 parameter varying
-      k = k * exp(ln_seldevs[Region, Year, 2, Sex, 1]) # slope parameter varying
+      b50 = sel_par_dev(b50, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # b50 parameter varying
+      k = sel_par_dev(k, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # slope parameter varying
     } # end if iid or random walk
 
     selex = 1 / (1 + exp(-k * (Bin - b50))) # return parmetric form
@@ -144,8 +173,8 @@ Get_Selex = function(
     delta = exp(pars[2]) # slope parameter
 
     if(TimeVary_Model %in% c(1:2)) {
-      bmax = bmax * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # bmax parameter varying
-      delta = delta * exp(ln_seldevs[Region, Year, 2, Sex, 1]) # delta parameter varying
+      bmax = sel_par_dev(bmax, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # bmax parameter varying
+      delta = sel_par_dev(delta, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # delta parameter varying
     } # end if iid or random walk
 
     # Now, calculate/derive power parameter + selex values
@@ -158,7 +187,7 @@ Get_Selex = function(
     power = exp(pars[1]) # power parameter
 
     if(TimeVary_Model %in% c(1:2)) {
-      power = power * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # power parameter varying
+      power = sel_par_dev(power, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # power parameter varying
     } # end if iid or random walk
 
     selex = 1 / Bin^power # return parametric form
@@ -171,8 +200,8 @@ Get_Selex = function(
     b95 = exp(pars[2]) # b95
 
     if(TimeVary_Model %in% c(1:2)) {
-      b50 = b50 * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # b50 parameter varying
-      b95 = b95 * exp(ln_seldevs[Region, Year, 2, Sex, 1]) # b95 parameter varying
+      b50 = sel_par_dev(b50, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # b50 parameter varying
+      b95 = sel_par_dev(b95, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # b95 parameter varying
     } # end if iid or random walk
 
     selex = 1 / (1 + 19^((b50 - Bin) / b95)) # 19 b/c 0.95 / (1 - 0.95) return parametric form
@@ -192,12 +221,12 @@ Get_Selex = function(
     p6trans <- 1 / (1 + exp(-1.0 * pars[6])) # selectivity at the last bin
 
     if(TimeVary_Model %in% c(1:2)) {
-      p1trans = p1trans * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # p1 parameter varying
-      p2trans = p2trans * exp(ln_seldevs[Region, Year, 2, Sex, 1]) # p2 parameter varying
-      p3trans = p3trans * exp(ln_seldevs[Region, Year, 3, Sex, 1]) # p3 parameter varying
-      p4trans = p4trans * exp(ln_seldevs[Region, Year, 4, Sex, 1]) # p4 parameter varying
-      p5trans = p5trans * exp(ln_seldevs[Region, Year, 5, Sex, 1]) # p5 parameter varying
-      p6trans = p6trans * exp(ln_seldevs[Region, Year, 6, Sex, 1]) # p6 parameter varying
+      p1trans = sel_par_dev(p1trans, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # p1 parameter varying
+      p2trans = sel_par_dev(p2trans, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # p2 parameter varying
+      p3trans = sel_par_dev(p3trans, ln_seldevs[Region, Year, 3, Sex, 1], devs_additive[3]) # p3 parameter varying
+      p4trans = sel_par_dev(p4trans, ln_seldevs[Region, Year, 4, Sex, 1], devs_additive[4]) # p4 parameter varying
+      p5trans = sel_par_dev(p5trans, ln_seldevs[Region, Year, 5, Sex, 1], devs_additive[5]) # p5 parameter varying
+      p6trans = sel_par_dev(p6trans, ln_seldevs[Region, Year, 6, Sex, 1], devs_additive[6]) # p6 parameter varying
     } # end if iid or random walk
 
     # construct selectivity function. apical is the height the limbs build up to and the plateau
@@ -234,9 +263,9 @@ Get_Selex = function(
     k = exp(pars[3]) # slope parameter
 
     if(TimeVary_Model %in% c(1:2)) {
-      alpha = alpha * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # alpha parameter varying
-      b50 = b50 * exp(ln_seldevs[Region, Year, 2, Sex, 1]) # b50 parameter varying
-      k = k * exp(ln_seldevs[Region, Year, 3, Sex, 1]) # slope parameter varying
+      alpha = sel_par_dev(alpha, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # alpha parameter varying
+      b50 = sel_par_dev(b50, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # b50 parameter varying
+      k = sel_par_dev(k, ln_seldevs[Region, Year, 3, Sex, 1], devs_additive[3]) # slope parameter varying
     } # end if iid or random walk
 
     selex = alpha / (1 + exp(-k * (Bin - b50))) # return parmetric form
@@ -250,9 +279,9 @@ Get_Selex = function(
     b95 = exp(pars[3]) # b95 parameter
 
     if(TimeVary_Model %in% c(1:2)) {
-      alpha = alpha * exp(ln_seldevs[Region, Year, 1, Sex, 1]) # alpha parameter varying
-      b50 = b50 * exp(ln_seldevs[Region, Year, 2, Sex, 1]) # b50 parameter varying
-      b95 = b95 * exp(ln_seldevs[Region, Year, 3, Sex, 1]) # slope parameter varying
+      alpha = sel_par_dev(alpha, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # alpha parameter varying
+      b50 = sel_par_dev(b50, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # b50 parameter varying
+      b95 = sel_par_dev(b95, ln_seldevs[Region, Year, 3, Sex, 1], devs_additive[3]) # slope parameter varying
     } # end if iid or random walk
 
     selex = alpha / (1 + 19^((b50 - Bin) / b95)) # 19 b/c 0.95 / (1 - 0.95) return parametric form
@@ -296,6 +325,40 @@ Get_Selex = function(
 
   } # end if non-parametric on the log scale, free scale
 
+  if(Selex_Model == 11) {
+
+    b50 = exp(pars[1]) # bin where selectivity has fallen to half
+    k = exp(pars[2]) # slope parameter
+
+    if(TimeVary_Model %in% c(1:2)) {
+      b50 = sel_par_dev(b50, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # b50 parameter varying
+      k = sel_par_dev(k, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # slope parameter varying
+    } # end if iid or random walk
+
+    selex = 1 / (1 + exp(k * (Bin - b50))) # one minus the ascending logistic
+
+  } # end if descending logistic selex, w/ b50 k parameterization
+
+  if(Selex_Model == 12) {
+
+    b50_asc = exp(pars[1]) # bin at half selection on the ascending limb
+    k_asc = exp(pars[2]) # ascending slope
+    b50_desc = exp(pars[3]) # bin at half selection on the descending limb
+    k_desc = exp(pars[4]) # descending slope
+
+    if(TimeVary_Model %in% c(1:2)) {
+      b50_asc = sel_par_dev(b50_asc, ln_seldevs[Region, Year, 1, Sex, 1], devs_additive[1]) # ascending b50 varying
+      k_asc = sel_par_dev(k_asc, ln_seldevs[Region, Year, 2, Sex, 1], devs_additive[2]) # ascending slope varying
+      b50_desc = sel_par_dev(b50_desc, ln_seldevs[Region, Year, 3, Sex, 1], devs_additive[3]) # descending b50 varying
+      k_desc = sel_par_dev(k_desc, ln_seldevs[Region, Year, 4, Sex, 1], devs_additive[4]) # descending slope varying
+    } # end if iid or random walk
+
+    asc = 1 / (1 + exp(-k_asc * (Bin - b50_asc))) # ascending logistic
+    desc = 1 / (1 + exp(k_desc * (Bin - b50_desc))) # descending logistic
+    selex = asc * desc # not rescaled, so the peak sits below one
+
+  } # end if double logistic selex, w/ b50 k parameterization
+
   # Hold bins beyond n_sel_bins at the last computed bin's value.
   if(!is.null(n_sel_bins) && n_sel_bins > 0 && n_sel_bins < length(Bin) && Selex_Model != 8) {
     selex[(n_sel_bins + 1):length(Bin)] = selex[n_sel_bins]
@@ -331,6 +394,12 @@ Get_Selex = function(
 #' @param dbnrml_startbin Integer vector \code{[n_fleets]} or \code{NULL}, the
 #'   bin each fleet's double normal anchors its ascending limb at; see
 #'   \code{\link{Get_Selex}}.
+#' @param zero_bins Integer matrix \code{n_bins x n_fleets} (0/1) or \code{NULL},
+#'   flagging the bins each fleet does not select. Their selectivity is set to
+#'   zero after everything else, for fleets whose selectivity is estimated.
+#' @param devs_additive Integer matrix \code{n_slots x n_fleets} (0/1) or
+#'   \code{NULL}, flagging the parameters whose deviations are added on the
+#'   natural scale for each fleet; see \code{\link{Get_Selex}}.
 #' @param sel_model Integer array \code{n_regions x n_yrs x n_fleets} of
 #'   selectivity functional forms (see \code{\link{Get_Selex}}).
 #' @param fixed_sel_pars Array \code{n_regions x n_pars x n_blocks x n_sexes x
@@ -422,7 +491,9 @@ Get_Selex_Array = function(selex_type,
                            sex_scale = NULL,
                            nselbins = NULL,
                            dbnrml_raw = NULL,
-                           dbnrml_startbin = NULL) {
+                           dbnrml_startbin = NULL,
+                           devs_additive = NULL,
+                           zero_bins = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
@@ -473,6 +544,7 @@ Get_Selex_Array = function(selex_type,
                                 n_sel_bins = if(is.null(nselbins)) NULL else nselbins[r,y_idx,f], # plateau bin for parametric forms (0 = none)
                                 dbnrml_raw = if(is.null(dbnrml_raw)) c(0, 0) else dbnrml_raw[f,], # raw (unanchored) double normal limbs for this fleet
                                 dbnrml_startbin = if(is.null(dbnrml_startbin)) 1 else dbnrml_startbin[f], # bin the ascending limb is anchored at
+                                devs_additive = if(is.null(devs_additive)) NULL else devs_additive[,f] == 1, # TRUE for each parameter whose deviation is added
                                 # a sex with an apical offset builds its limbs up to its own height,
                                 # leaving the first and last bins where their own parameters put them
                                 apical = if(!is.null(sex_apical_offset) && s > 1 && sex_apical_offset[f] == 1) exp(sex_scale[r,sel_blk_idx,s,f]) else 1
@@ -530,6 +602,19 @@ Get_Selex_Array = function(selex_type,
       } # end if mean standardizing
     } # end f loop
   } # end r loop
+
+  # bins a fleet does not select at all, set last so no standardization moves them
+  if(!is.null(zero_bins)) {
+    for(f in 1:n_fleets) {
+
+      if(use_fixed_sel[f] == 1) next # a fixed selectivity is used as given
+      fleet_zero = which(zero_bins[,f] == 1)
+      if(length(fleet_zero) == 0) next
+      if(selex_type == 0) sel[,,,,fleet_zero,,f] = 0 # ages
+      if(selex_type == 1) sel_l[,,fleet_zero,,f] = 0 # length bins
+
+    } # end f loop
+  }
 
   return(list(sel = sel, sel_l = sel_l))
 } # end function

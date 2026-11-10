@@ -349,66 +349,6 @@ read_dsem_arrows <- function(dsem_arrows,
 
 } # end function
 
-#' Figure out which entries of the dsem precision can be non-zero
-#'
-#' \code{RTMB::dgmrf} takes the precision (the inverse of the covariance) as a
-#' sparse matrix, and on the tape only the entries it already stores can be
-#' filled, so the positions are fixed here at setup from the arrows alone.
-#'
-#' @param IminusB_m Numbered sparse template of \eqn{I - B}, from
-#'   \code{\link{get_dsem_cells}}, read for where the paths sit.
-#' @param Gamma_m Numbered sparse template of \eqn{\Gamma}. Not read: the
-#'   covariance entries only matter here through \code{has_cov}.
-#' @param obs_idx,unobs_idx Cells that keep a deviation of their own, and cells
-#'   of a series with an sd of zero, which are solved out of them.
-#' @param has_cov Whether any arrow is a covariance.
-#'
-#' @return \code{NULL} when nothing is solved out, since the precision then has
-#'   \eqn{I - B}'s own entries. Otherwise a list with \code{m}, the numbered
-#'   sparse template, and \code{slot_lin}, where each stored entry sits in the
-#'   dense matrix counted down the columns.
-#'
-#' @keywords internal
-get_dsem_Q_oo_pattern <- function(IminusB_m,
-                                  Gamma_m,
-                                  obs_idx,
-                                  unobs_idx,
-                                  has_cov) {
-
-  if(length(unobs_idx) == 0) return(NULL) # nothing solved out, so the precision keeps I - B's own entries
-
-  n_obs <- length(obs_idx)
-
-  # blank the values and keep only which entries are nonzero, since only that pattern matters here
-  flat <- function(m) { m <- methods::as(m, "generalMatrix"); m@x[] <- 1; m }
-
-  # follow paths through the series with no process error until no new pair turns up
-  P <- flat(IminusB_m)
-  within <- P[unobs_idx,unobs_idx,drop = FALSE]
-  reach <- P[unobs_idx,obs_idx,drop = FALSE]
-
-  repeat {
-    grown <- flat(reach + within %*% reach)
-    if(Matrix::nnzero(grown) == Matrix::nnzero(reach)) break
-    reach <- grown
-  }
-
-  # what reaches the series that keep their process error
-  S_pat <- flat(P[obs_idx,obs_idx,drop = FALSE] + P[obs_idx,unobs_idx,drop = FALSE] %*% reach)
-
-  # a covariance arrow ties two series together, so any pair of them can be nonzero
-  V_pat <- if(has_cov) flat(Matrix::Matrix(1, n_obs, n_obs, sparse = TRUE)) else Matrix::Diagonal(n_obs)
-
-  # figure out where to slot values into
-  Q_pat <- flat(Matrix::t(S_pat) %*% V_pat %*% S_pat)
-  Q_pat@x[] <- seq_along(Q_pat@x)
-  slot_row <- Q_pat@i + 1
-  slot_col <- rep(seq_len(n_obs), diff(Q_pat@p))
-
-  return(list(m = Q_pat, slot_lin = slot_row + (slot_col - 1) * n_obs))
-
-} # end function
-
 #' Grid cells each dsem arrow lands on
 #'
 #' Cells of the year by series grid are numbered series by series, years within
@@ -431,8 +371,11 @@ get_dsem_Q_oo_pattern <- function(IminusB_m,
 #'   \code{needs_dense_logdet} whether dgmrf will hold a random effect in the
 #'   precision, and, for a reduced rank model, \code{project_k} with the cells
 #'   of a solved series, \code{obs_idx} and \code{unobs_idx} splitting the
-#'   cells the way dsem does, and \code{Q_oo} the pattern
-#'   \code{\link{get_dsem_Q_oo}} fills.
+#'   cells the way dsem does, \code{solve_uu_identity} whether no arrow runs
+#'   between two solved cells, and \code{solve_has_ou} whether any arrow runs
+#'   from a solved cell into one that keeps its innovation, which
+#'   \code{\link{get_dsem_solve_mat}} and \code{\link{get_dsem_Q_oo}} read to
+#'   skip work.
 #'
 #' @keywords internal
 get_dsem_cells <- function(dsem_model,
@@ -503,7 +446,10 @@ get_dsem_cells <- function(dsem_model,
   project_cell <- rep(dsem_model$project_k, each = n_grid_yrs)
   unobs_idx <- which(project_cell)
   obs_idx <- which(!project_cell)
-  Q_oo <- get_dsem_Q_oo_pattern(IminusB_m, Gamma_m, obs_idx, unobs_idx, has_cov)
+
+  # a fixed time-series can often be costly since solving a dense amtrix ... figure out which parts are fixed and solve another way
+  solve_uu_identity <- !any(path_row %in% unobs_idx & path_col %in% unobs_idx)
+  solve_has_ou <- any(path_row %in% obs_idx & path_col %in% unobs_idx)
 
   # a moderated arrow puts a random effect in the precision, and TMB's atomic sparse log determinant
   # has no second derivative
@@ -535,7 +481,8 @@ get_dsem_cells <- function(dsem_model,
               project_k = project_cell,
               obs_idx = obs_idx,
               unobs_idx = unobs_idx,
-              Q_oo = Q_oo,
+              solve_uu_identity = solve_uu_identity,
+              solve_has_ou = solve_has_ou,
               needs_dense_logdet = needs_dense_logdet))
 
 } # end function

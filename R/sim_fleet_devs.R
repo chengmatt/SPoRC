@@ -42,6 +42,8 @@ sim_selex_args <- function(type, data, pars) {
        nselbins = data[[paste0(type, "_sel_bicubic_nselbins")]],
        dbnrml_raw = data[[paste0(type, "_dbnrml_raw")]],
        dbnrml_startbin = data[[paste0(type, "_dbnrml_startbin")]],
+       devs_additive = data[[paste0(type, "_sel_devs_additive")]],
+       zero_bins = data[[paste0(type, "_sel_zero_bins")]],
        sel_input = data[[paste0(type, "_sel_input")]],
        bicubic_Wbin = data[[paste0(type, "_sel_bicubic_Wbin")]],
        bicubic_Wyr = data[[paste0(type, "_sel_bicubic_Wyr")]],

@@ -36,5 +36,10 @@ The middle term is
 between a solved cell and one that keeps its innovation. That line is
 refused by \code{\link{read_dsem_arrows}}, so both terms are always zero and
 only \eqn{V_{oo}} is formed.
+
+Every step is a sparse product, so the cost grows with the number of arrows
+and not with the square of the number of cells. \eqn{S} has an entry only
+where an arrow, or a chain of arrows through solved cells, joins two cells,
+and \eqn{V_{oo}^{-1}} only within a group of series tied by covariance lines.
 }
 \keyword{internal}

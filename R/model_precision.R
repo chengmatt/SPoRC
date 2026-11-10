@@ -386,12 +386,15 @@ get_dsem_margvar = function(dsem_beta,
 #' (\code{unobs_idx}) and \eqn{o} for the rest (\code{obs_idx}), those rows
 #' give every one of those cells from the others,
 #' \deqn{x_u - \mu_u = -(I - B)_{uu}^{-1}(I - B)_{uo}(x_o - \mu_o),}
-#' and this returns the matrix in the middle.
+#' and this returns the matrix in the middle. It is kept sparse: a solved cell
+#' is set only by the cells an arrow reaches it from, so most entries are zero.
+#' When no arrow runs between two solved cells, \eqn{(I - B)_{uu}} is the
+#' identity and the matrix is \eqn{(I - B)_{uo}} itself.
 #'
 #' @param IminusB Sparse \eqn{I - B}, from \code{\link{get_dsem_matrices}}.
 #' @param dsem_cells Output of \code{\link{get_dsem_cells}}.
 #'
-#' @return Dense matrix, one row per solved cell and one column per cell that
+#' @return Sparse matrix, one row per solved cell and one column per cell that
 #'   keeps an innovation, or \code{NULL} when nothing is solved out.
 #'
 #' @keywords internal
@@ -401,7 +404,12 @@ get_dsem_solve_mat = function(IminusB,
   if(length(dsem_cells$unobs_idx) == 0) return(NULL) # nothing solved out, so nothing to do
   unobs = dsem_cells$unobs_idx
   obs = dsem_cells$obs_idx
-  return(solve(as.matrix(IminusB[unobs,unobs,drop = FALSE]), as.matrix(IminusB[unobs,obs,drop = FALSE]))) # solve to get those cells
+  into_solved = IminusB[unobs,obs,drop = FALSE] # arrows into a solved cell from a cell that keeps an innovation
+
+  # no arrow between two solved cells, so their block of I - B is the identity and there is nothing to invert
+  if(isTRUE(dsem_cells$solve_uu_identity)) return(into_solved)
+
+  return(solve(IminusB[unobs,unobs,drop = FALSE]) %*% into_solved) # solve to get those cells
 
 } # end function
 
@@ -427,7 +435,7 @@ set_dsem_solved_cells = function(x_grid,
 
 } # end function
 
-#' The precision of the cells that have an innovation
+#' The precision of the cells that have an innovation (i.e., not fully deterministic)
 #'
 #' With nothing solved out this is \eqn{(I - B)^{\top}V^{-1}(I - B)} over every
 #' cell. Once a series has an sd of zero
@@ -445,6 +453,11 @@ set_dsem_solved_cells = function(x_grid,
 #' between a solved cell and one that keeps its innovation. That line is
 #' refused by \code{\link{read_dsem_arrows}}, so both terms are always zero and
 #' only \eqn{V_{oo}} is formed.
+#'
+#' Every step is a sparse product, so the cost grows with the number of arrows
+#' and not with the square of the number of cells. \eqn{S} has an entry only
+#' where an arrow, or a chain of arrows through solved cells, joins two cells,
+#' and \eqn{V_{oo}^{-1}} only within a group of series tied by covariance lines.
 #'
 #' @param IminusB Sparse \eqn{I - B}, from \code{\link{get_dsem_matrices}}.
 #' @param parts The rest of that output, read for \eqn{V^{-1}}, \eqn{V} or the sds.
@@ -467,19 +480,27 @@ get_dsem_Q_oo = function(IminusB,
   # nothing solved out, so every cell keeps its innovation and the precision stays sparse throughout
   if(length(dsem_cells$unobs_idx) == 0) return(Matrix::t(IminusB) %*% parts$Vinv %*% IminusB)
 
-  # otherwise substitute out the cells with no innovation
-  S = as.matrix(IminusB[obs,obs,drop = FALSE]) - as.matrix(IminusB[obs,dsem_cells$unobs_idx,drop = FALSE]) %*% solve_mat
+  # otherwise substitute out the cells with no innovation, sparse at every step
+  S = IminusB[obs,obs,drop = FALSE]
+
+  # a solved cell that feeds a cell with an innovation adds what reaches it
+  has_ou = is.null(dsem_cells$solve_has_ou) || dsem_cells$solve_has_ou
+  if(has_ou) S = S - IminusB[obs,dsem_cells$unobs_idx,drop = FALSE] %*% solve_mat
 
   # the innovation covariance here is V_oo + C V_uo + V_ou t(C), the two cross terms covering a
   # covariance line onto a solved cell. read_dsem_arrows refuses that line, so they are always zero
-  Q_dense = if(is.null(parts$sd_cell)) t(S) %*% solve(as.matrix(parts$V[obs,obs,drop = FALSE])) %*% S
-            else t(S) %*% ((1 / parts$sd_cell[obs]^2) * S) # a diagonal V just scales the rows
+  if(is.null(parts$sd_cell)) {
 
-  # read the dense result back into the pattern get_dsem_Q_oo_pattern amd feed back into dgmrf
-  Q = RTMB::AD(dsem_cells$Q_oo$m)
-  Q@x = RTMB::AD(as.vector(Q_dense)[dsem_cells$Q_oo$slot_lin])
+    Vinv_oo = solve(parts$V[obs,obs,drop = FALSE]) # stays sparse outside the series a covariance line ties
 
-  return(Q)
+  } else {
+
+    Vinv_oo = RTMB::AD(Matrix::sparseMatrix(i = seq_along(obs), j = seq_along(obs), x = 1))
+    Vinv_oo@x = RTMB::AD(1 / parts$sd_cell[obs]^2) # independent innovations, so a diagonal
+
+  } # end if covariance lines
+
+  return(Matrix::t(S) %*% Vinv_oo %*% S)
 
 } # end function
 

@@ -116,6 +116,31 @@ test_that("logistic selectivity matches the documented form", {
 })
 
 
+test_that("descending and double logistic selectivity match the documented forms", {
+  # the descending logistic takes b50 then slope, the double logistic the ascending pair then the
+  # descending pair, and neither is rescaled
+  bins <- 1:12
+  forms <- list(desclogist1 = list(code = 11, pars = list(c(6, 0.8), c(9, 2))),
+                dbllogist1 = list(code = 12, pars = list(c(3, 1.2, 8, 0.9), c(2, 3, 5, 0.4))))
+  for(form in names(forms)) {
+    for(pars in forms[[form]]$pars) {
+      got <- Get_Selex(
+        Selex_Model = forms[[form]]$code,
+        Bin = bins,
+        pars = log(pars),
+        TimeVary_Model = 0,
+        ln_seldevs = array(0, c(1, 1, 6, 1, 1)),
+        Region = 1,
+        Year = 1,
+        Sex = 1
+      )
+      expect_equal(as.numeric(got), oracle_selex(form, bins, pars), tolerance = 1e-10,
+                   label = paste(form, "at", paste(pars, collapse = ", ")))
+    }
+  }
+})
+
+
 test_that("gamma selectivity squares the peak inside the root", {
   # the vignette prints sqrt(bmax + 4 delta^2) while the code and this reference both use
   # sqrt(bmax^2 + 4 delta^2), so what the model means is written down here

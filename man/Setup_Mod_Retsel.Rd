@@ -61,7 +61,7 @@ semi-parametric retention deviations, one entry per fishery fleet.}
 
 \item{ret_selex_prior}{Data frame with columns \code{region}, \code{fleet},
 \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
-\code{type} (\code{"par"} or \code{"value"}), as \code{fish_selex_prior} in
+\code{type} (\code{"par"}, \code{"par_normal"} or \code{"value"}), as \code{fish_selex_prior} in
 \code{\link{Setup_Mod_Fishsel_and_Q}}.}
 
 \item{retsel_devs_shared_bins}{Bins sharing one retention deviation series.}

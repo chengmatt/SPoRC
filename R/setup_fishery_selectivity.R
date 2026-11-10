@@ -33,7 +33,7 @@
 #' @param Use_ret_selex_prior Integer flag (0/1) for retention selectivity priors.
 #' @param ret_selex_prior Data frame with columns \code{region}, \code{fleet},
 #'   \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
-#'   \code{type} (\code{"par"} or \code{"value"}), as \code{fish_selex_prior} in
+#'   \code{type} (\code{"par"}, \code{"par_normal"} or \code{"value"}), as \code{fish_selex_prior} in
 #'   \code{\link{Setup_Mod_Fishsel_and_Q}}.
 #' @param retsel_devs_shared_bins Bins sharing one retention deviation series.
 #' @param ret_sel_bin_dev_bins List with one element per fleet naming the bins that
@@ -234,7 +234,7 @@ Setup_Mod_Retsel <- function(
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste("Retained Fishery Selectivity Time Blocks for fishery", f, "is specified at:", length(unique(ret_sel_blocks_arr[,,f]))))
 
   # Retained Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree"), num = c(0,1,2,3,4,5,6,7,8,9,10)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree", "desclogist1", "dbllogist1"), num = c(0,1,2,3,4,5,6,7,8,9,10,11,12)) # set up values we can map to
   ret_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
   ret_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bin nodes, only set where ret_sel_model == 8 (bicubic)
   ret_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of year nodes, only set where ret_sel_model == 8 (bicubic)
@@ -282,7 +282,7 @@ Setup_Mod_Retsel <- function(
     }
 
     # validate options
-    if(!sel_form %in% c(sel_map$sel)) stop("ret_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
+    if(!sel_form %in% c(sel_map$sel)) stop("ret_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, desclogist1, dbllogist1, bicubic (the seltypes) and specified as seltype_Fleet_x")
     if(!tmp_fleet %in% c(1:input_list$data$n_fish_fleets)) stop("Invalid fleet specified for ret_sel_model This needs to be specified as seltype_Fleet_x or seltype_Fleet_x_Block_x (if blocks are specified to change for a fleet)")
 
     # Input options
@@ -353,7 +353,8 @@ Setup_Mod_Retsel <- function(
 
   for(i in seq_along(unique_retsel_vals)) {
     if(unique_retsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
-    if(unique_retsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
+    if(unique_retsel_vals[i] %in% c(0,1,3,11)) sel_pars_vec[i] <- 2 # logistic (ascending or descending) or gamma
+    if(unique_retsel_vals[i] == 12) sel_pars_vec[i] <- 4 # double logistic
     if(unique_retsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
     if(unique_retsel_vals[i] %in% c(5,9,10)) sel_pars_vec[i] <- bins # non-parametric
     if(unique_retsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic w/ asymptote parameter
@@ -528,7 +529,10 @@ Setup_Mod_Retsel <- function(
 #'   \code{"gamma"} (dome, \eqn{a_{max}} and \eqn{\delta}), \code{"exponential"}
 #'   (one power), \code{"dbnrml"} (double normal, six parameters),
 #'   \code{"asymplogist1"} and \code{"asymplogist2"} (the two logistics with an
-#'   asymptote), the three non-parametric forms and \code{"bicubic"}.
+#'   asymptote), \code{"desclogist1"} (descending logistic, \eqn{a_{50}} and
+#'   slope), \code{"dbllogist1"} (double logistic, an ascending logistic times a
+#'   descending one, \eqn{a_{50}} and slope of each, not rescaled to peak at
+#'   one), the three non-parametric forms and \code{"bicubic"}.
 #'
 #'   \code{"nonpar"} is on the logit scale, mean-standardized jointly over years
 #'   and bins so the grand mean of the surface is one. \code{"nonparlog"} is on the
@@ -596,6 +600,21 @@ Setup_Mod_Retsel <- function(
 #' @param fishsel_devs_shared_bins List of integer vectors grouping the bins that
 #'   share one deviation series, e.g. \code{list(1:5, 6:10, 11:30)}. Only read when
 #'   \code{fish_sel_devs_spec} names an \code{"est_shared_b"} variant.
+#' @param fish_sel_devs_pars List with one element per fleet naming the
+#'   selectivity parameters that fleet's \code{"iid"} or \code{"rw"} deviations
+#'   apply to, in the order the form lists them, or \code{NULL} for every
+#'   parameter. \code{list(1:2)} on a \code{"dbllogist1"} fleet lets the ascending
+#'   limb vary by year and keeps the descending limb constant. A parameter left
+#'   out has no deviations and no process error standard deviation. Default
+#'   \code{NULL}.
+#' @param fish_sel_devs_form Character vector \code{[n_fish_fleets]} of how
+#'   \code{"iid"} or \code{"rw"} deviations enter the selectivity parameters.
+#'   \code{"multiplicative"} (default) is \eqn{\theta_y = \theta \exp(\epsilon_y)}
+#'   and \code{"additive"} is \eqn{\theta_y = \theta + \epsilon_y}, where the
+#'   process error standard deviation is on the parameter's own scale. A list
+#'   element with one string per parameter mixes the two within a fleet:
+#'   \code{list(c("additive", "multiplicative"))} on a logistic fleet walks the age
+#'   at 50\% selection in years of age and the slope in proportion.
 #' @param corr_opt_semipar Character vector \code{[n_fish_fleets]} of which
 #'   correlation components to suppress under 3D GMRF or 2D AR1 time variation.
 #'   \code{NA} (default) suppresses none, and the cohort options are invalid for
@@ -658,6 +677,12 @@ Setup_Mod_Retsel <- function(
 #'   \eqn{\exp(\epsilon_{y,b})} in place of what the functional form produced,
 #'   applied after every other transformation including standardization, while the
 #'   rest of the curve keeps its parametric shape. Default \code{NULL}.
+#' @param fish_sel_zero_bins List with one element per fleet naming the bins that
+#'   fleet does not select, or \code{NULL} for none, e.g. \code{list(1:2, NULL)}.
+#'   Their selectivity is set to exactly zero in every year, after the functional
+#'   form, its deviations and any standardization, so the rest of the curve keeps
+#'   its shape. For a gear that does not take the youngest ages. Ignored for a
+#'   fleet with a fixed selectivity. Default \code{NULL}.
 #' @param cont_tv_fishsel_bin_devs Character vector \code{[n_fish_fleets]} of the
 #'   process error on the bin-override deviations: \code{"none"} (default),
 #'   \code{"iid"} or \code{"rw"}. A walk has its own estimated sigma per bin.
@@ -680,7 +705,10 @@ Setup_Mod_Retsel <- function(
 #'   \code{block}, \code{sex}, \code{par}, \code{mu}, \code{sd} and an optional
 #'   \code{type}. \code{"par"} (the default) is a lognormal prior on one fixed
 #'   selectivity parameter, with \code{mu} on the natural scale and \code{sd} on the
-#'   log scale. \code{"value"} is a normal prior on the realized selectivity at one
+#'   log scale. \code{"par_normal"} is a normal prior on that parameter's natural
+#'   scale, \code{dnorm(exp(par), mu, sd)}, with \code{mu} and \code{sd} both on the
+#'   natural scale, for example \code{mu = 10, sd = 3} on an age at 50\% selection.
+#'   \code{"value"} is a normal prior on the realized selectivity at one
 #'   bin, both on the natural scale, where \code{par} names the bin and the value is
 #'   read at the first model year of \code{block}; that is the ADMB convention of
 #'   pinning selectivity at a reference age near one, which no set of independent
@@ -797,12 +825,15 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
                                     Use_fish_selex_penalty = 0,
                                     fish_sel_norm_bins = NULL,
                                     fish_sel_bin_dev_bins = NULL,
+                                    fish_sel_zero_bins = NULL,
                                     fishsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
                                     fishsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
                                     fishsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
                                     cont_tv_fishsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
                                     fish_selex_penalty = NULL,
                                     fishsel_devs_shared_bins = NULL,
+                                    fish_sel_devs_pars = NULL,
+                                    fish_sel_devs_form = rep("multiplicative", input_list$data$n_fish_fleets),
                                     fish_selex_type = 'age',
                                     use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
                                     fish_sel_input = NULL,
@@ -850,6 +881,10 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   check_fleet_spec_length(fishsel_pe_wt, input_list$data$n_fish_fleets, "fishsel_pe_wt")
   check_fleet_spec_length(fishsel_rw_init_sigma, input_list$data$n_fish_fleets, "fishsel_rw_init_sigma")
   check_fleet_spec_length(fishsel_dont_est_dev_first, input_list$data$n_fish_fleets, "fishsel_dont_est_dev_first")
+
+  # one element per fleet, the parameters its deviations apply to, NULL for all of them
+  if(!is.null(fish_sel_devs_pars) && (!is.list(fish_sel_devs_pars) || length(fish_sel_devs_pars) != input_list$data$n_fish_fleets))
+    stop("fish_sel_devs_pars must be a list with one element per fishery fleet (", input_list$data$n_fish_fleets, "), each the selectivity parameters that fleet's deviations apply to, or NULL for every parameter. For example, list(1:2, NULL).")
   if(!all(fishsel_dont_est_dev_first %in% c(0, 1))) stop("fishsel_dont_est_dev_first must be 0 or 1 for every fleet")
 
   # Catchability Priors
@@ -986,7 +1021,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   for(f in 1:input_list$data$n_fish_fleets) collect_message(paste("Fishery Selectivity Time Blocks for fishery", f, "is specified at:", length(unique(fish_sel_blocks_arr[,,f]))))
 
   # Selectivity Functional Forms --------------------------------------------
-  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree"), num = c(0,1,2,3,4,5,6,7,8,9,10)) # set up values we can map to
+  sel_map <- data.frame(sel = c('logist1', "gamma", "exponential", "logist2", "dbnrml", 'nonpar', 'asymplogist1', "asymplogist2", "bicubic", "nonparlog", "nonparfree", "desclogist1", "dbllogist1"), num = c(0,1,2,3,4,5,6,7,8,9,10,11,12)) # set up values we can map to
   fish_sel_model_arr <- array(NA, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets))
   fish_sel_bicubic_binnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of bin nodes, only set where fish_sel_model == 8 (bicubic)
   fish_sel_bicubic_yrnodes_arr <- array(0, dim = c(input_list$data$n_regions, length(input_list$data$years), input_list$data$n_fish_fleets)) # number of year nodes, only set where fish_sel_model == 8 (bicubic)
@@ -1034,7 +1069,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     }
 
     # validate options
-    if(!sel_form %in% c(sel_map$sel)) stop("fish_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, bicubic (the seltypes) and specified as seltype_Fleet_x")
+    if(!sel_form %in% c(sel_map$sel)) stop("fish_sel_model is not correctly specified. This needs to be one of these: logist1, gamma, exponential, logist2, dbnrml, nonpar, nonparlog, nonparfree, asymplogist1, asymplogist2, desclogist1, dbllogist1, bicubic (the seltypes) and specified as seltype_Fleet_x")
     if(!tmp_fleet %in% c(1:input_list$data$n_fish_fleets)) stop("Invalid fleet specified for fish_sel_model This needs to be specified as seltype_Fleet_x or seltype_Fleet_x_Block_x (if blocks are specified to change for a fleet)")
 
     # Input options
@@ -1157,7 +1192,8 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
 
   for(i in seq_along(unique_fishsel_vals)) {
     if(unique_fishsel_vals[i] %in% c(2)) sel_pars_vec[i] <- 1 # exponential
-    if(unique_fishsel_vals[i] %in% c(0,1,3)) sel_pars_vec[i] <- 2 # logistic or gamma
+    if(unique_fishsel_vals[i] %in% c(0,1,3,11)) sel_pars_vec[i] <- 2 # logistic (ascending or descending) or gamma
+    if(unique_fishsel_vals[i] == 12) sel_pars_vec[i] <- 4 # double logistic
     if(unique_fishsel_vals[i] %in% c(4)) sel_pars_vec[i] <- 6 # double normal
     if(unique_fishsel_vals[i] %in% c(5,9,10)) sel_pars_vec[i] <- bins # non-parametric selex
     if(unique_fishsel_vals[i] %in% c(6,7)) sel_pars_vec[i] <- 3 # logistic selex w/ asymptote
@@ -1290,6 +1326,13 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
   input_list$data$fish_dbnrml_startbin <- setup_dbnrml_startbin(fish_sel_dbnrml_startbin, input_list$data$n_fish_fleets, bins, "fish_sel_dbnrml_startbin")
   input_list$data$ret_dbnrml_startbin <- rep(1, input_list$data$n_fish_fleets)
 
+  # bins the fleet does not select at all
+  input_list$data$fish_sel_zero_bins <- setup_sel_zero_bins(fish_sel_zero_bins, input_list$data$n_fish_fleets, bins, "fish_sel_zero_bins")
+
+  # parameters whose deviations are added on the natural scale
+  input_list$data$fish_sel_devs_additive <- setup_sel_devs_form(fish_sel_devs_form, input_list$data$cont_tv_fish_sel, input_list$data$fish_sel_model,
+                                                                input_list$data$n_fish_fleets, bins, "fish_sel_devs_form")
+
   # Mapping Options ---------------------------------------------------------
   input_list <- do_fixed_sel_pars_mapping(
     input_list,
@@ -1329,6 +1372,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     bins,
     sel_devs_spec = fish_sel_devs_spec,
     sel_devs_shared_bins = fishsel_devs_shared_bins,
+    sel_devs_pars = fish_sel_devs_pars,
     prefix = "fish",
     fleet_field = "n_fish_fleets",
     use_field = "Catch",
@@ -1340,6 +1384,7 @@ Setup_Mod_Fishsel_and_Q <- function(input_list,
     fishsel_devs_shared_bins,
     bins,
     dont_est_dev_first = fishsel_dont_est_dev_first,
+    sel_devs_pars = fish_sel_devs_pars,
     prefix = "fish",
     fleet_field = "n_fish_fleets",
     use_field = "Catch",

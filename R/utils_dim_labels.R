@@ -606,6 +606,8 @@ dim_roles <- list(
   cont_tv_fishsel_bin_devs = "Fish_Fleet",
   map_ln_fishsel_bin_devs = c("Region", "Year", "Bin", "Sex", "Fish_Fleet"),
   fish_sel_norm_bins = c("Bin", "Fish_Fleet"),
+  fish_sel_zero_bins = c("Bin", "Fish_Fleet"),
+  fish_sel_devs_additive = c("Bin", "Fish_Fleet"), # rows are the curve's parameters, as in ln_fishsel_devs
   use_fixed_fish_sel = "Fish_Fleet",
   fish_sel_bicubic_Wbin = c("Region", "Bin", "Node", "Block", "Fish_Fleet"),
   fish_sel_bicubic_Wyr = c("Region", "Year", "Node", "Block", "Fish_Fleet"),
@@ -653,6 +655,8 @@ dim_roles <- list(
   cont_tv_srvsel_bin_devs = "Srv_Fleet",
   map_ln_srvsel_bin_devs = c("Region", "Year", "Bin", "Sex", "Srv_Fleet"),
   srv_sel_norm_bins = c("Bin", "Srv_Fleet"),
+  srv_sel_zero_bins = c("Bin", "Srv_Fleet"),
+  srv_sel_devs_additive = c("Bin", "Srv_Fleet"), # rows are the curve's parameters, as in ln_srvsel_devs
   use_fixed_srv_sel = "Srv_Fleet",
   srv_sel_bicubic_Wbin = c("Region", "Bin", "Node", "Block", "Srv_Fleet"),
   srv_sel_bicubic_Wyr = c("Region", "Year", "Node", "Block", "Srv_Fleet"),

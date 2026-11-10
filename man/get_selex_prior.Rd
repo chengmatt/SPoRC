@@ -19,7 +19,11 @@ get_selex_prior(
 \code{type}, one row per prior. A \code{"par"} row (the default when the
 column is absent) is a lognormal prior on one fixed selectivity parameter,
 \code{dnorm(pars[region,par,block,sex,fleet], log(mu), sd)}, with \code{mu}
-on the natural scale and \code{sd} on the log scale. A \code{"value"} row is
+on the natural scale and \code{sd} on the log scale. A \code{"par_normal"}
+row is a normal prior on the same parameter on its natural scale,
+\code{dnorm(exp(pars[region,par,block,sex,fleet]), mu, sd)}, with \code{mu}
+and \code{sd} both on the natural scale, for a parameter estimated on the
+log scale such as an age at 50\% selection. A \code{"value"} row is
 a normal prior on the realized selectivity at one bin,
 \code{dnorm(sel[bin], mu, sd)}, with both on the natural scale; \code{par}
 then names the bin on whichever grid the data source is parameterized over,

@@ -614,7 +614,11 @@ validate_selex_prior_types <- function(selex_prior, use_flag, what, sel_blocks, 
   if(is.null(use_flag) || use_flag != 1) return(selex_prior)
   if(is.null(selex_prior$type)) return(selex_prior)
 
-  if(any(!selex_prior$type %in% c("par", "value"))) stop(what, "$type must be 'par' or 'value'.")
+  if(any(!selex_prior$type %in% c("par", "par_normal", "value"))) stop(what, "$type must be 'par', 'par_normal' or 'value'.")
+
+  # a normal prior on the natural scale needs a positive sd, and its mean may be zero or negative
+  nat <- selex_prior$type == "par_normal"
+  if(any(!is.finite(selex_prior$sd[nat])) || any(selex_prior$sd[nat] <= 0)) stop(what, "$sd must be finite and positive on rows with type = 'par_normal'.")
 
   val <- selex_prior$type == "value"
   if(any(!selex_prior$par[val] %in% 1:n_bins)) stop(what, "$par must index the selectivity grid (1:", n_bins, " for this data source's selectivity type) on rows with type = 'value'.")
@@ -1624,6 +1628,73 @@ setup_dbnrml_startbin <- function(x, n_fleets, n_bins, what) {
   as.integer(x)
 }
 
+
+#' Flag the bins a fleet does not select
+#'
+#' @param x \code{NULL} or a list with one element per fleet, each the bins whose
+#'   selectivity is zero, or \code{NULL} for none.
+#' @param n_fleets Number of fleets.
+#' @param n_bins Number of selectivity bins.
+#' @param what Argument name for messages.
+#' @return 0/1 matrix \code{[n_bins, n_fleets]}, or \code{NULL} when \code{x} is \code{NULL}.
+#' @keywords internal
+setup_sel_zero_bins <- function(x, n_fleets, n_bins, what) {
+
+  if(is.null(x)) return(NULL)
+  if(!is.list(x) || length(x) != n_fleets)
+    stop(what, " must be a list with one element per fleet (", n_fleets, "), each the bins that fleet does not select, or NULL for none. For example, list(1:2, NULL).")
+
+  zero <- array(0, dim = c(n_bins, n_fleets))
+  for(f in seq_len(n_fleets)) {
+
+    if(is.null(x[[f]])) next
+    if(!all(x[[f]] %in% seq_len(n_bins))) stop(what, " for fleet ", f, " refers to bins outside 1:", n_bins)
+    if(length(unique(x[[f]])) == n_bins) stop(what, " for fleet ", f, " names every bin, which leaves that fleet selecting nothing.")
+    zero[x[[f]], f] <- 1
+
+  } # end f loop
+
+  zero
+}
+
+#' Flag the selectivity parameters whose deviations are added
+#'
+#' @param x Character vector or list with one element per fleet. Each element is
+#'   \code{"multiplicative"} or \code{"additive"} for every parameter of that
+#'   fleet, or one such string per selectivity parameter.
+#' @param cont_tv Integer array \code{[n_regions, n_fleets]} of time variation codes.
+#' @param sel_model Integer array \code{[n_regions, n_yrs, n_fleets]} of selectivity forms.
+#' @param n_fleets Number of fleets.
+#' @param n_bins Number of selectivity bins, the length of the deviation dim.
+#' @param what Argument name for messages.
+#' @return 0/1 matrix \code{[n_bins, n_fleets]}, 1 where a parameter's deviation is added.
+#' @keywords internal
+setup_sel_devs_form <- function(x, cont_tv, sel_model, n_fleets, n_bins, what) {
+
+  if(length(x) != n_fleets)
+    stop(what, " must have one element per fleet (", n_fleets, "), each 'multiplicative' or 'additive', or one of those per selectivity parameter. For example, c('multiplicative', 'additive') or list(c('additive', 'multiplicative'), 'multiplicative').")
+
+  additive <- array(0, dim = c(n_bins, n_fleets))
+  for(f in seq_len(n_fleets)) {
+
+    fleet_form <- x[[f]]
+    if(!is.character(fleet_form) || !all(fleet_form %in% c("multiplicative", "additive")))
+      stop(what, " for fleet ", f, " must be 'multiplicative' or 'additive'.")
+    if(length(fleet_form) > n_bins) stop(what, " for fleet ", f, " has more entries than the selectivity form has parameters.")
+    if(!any(fleet_form == "additive")) next
+
+    if(!all(cont_tv[,f] %in% c(1, 2)) || any(sel_model[,,f] %in% c(5, 8, 9, 10)))
+      stop(what, " is 'additive' for fleet ", f, ", but that fleet's deviations are not iid or a random walk on the parameters of a parametric form.")
+
+    # one string covers every parameter, several are read parameter by parameter
+    if(length(fleet_form) == 1) additive[,f] <- 1
+    else additive[which(fleet_form == "additive"), f] <- 1
+
+  } # end f loop
+
+  additive
+}
+
 #' Expand a natural mortality array over seasons
 #'
 #' M is an instantaneous rate per year on a
@@ -2131,6 +2202,12 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("fish_dbnrml_startbin")) set("fish_dbnrml_startbin", rep(1, n_fish_bc))
   if(!has("ret_dbnrml_startbin")) set("ret_dbnrml_startbin", rep(1, n_fish_bc))
   if(!has("srv_dbnrml_startbin")) set("srv_dbnrml_startbin", rep(1, n_srv_bc))
+  if(!has("fish_sel_devs_additive")) set("fish_sel_devs_additive", NULL) # older input lists multiply every deviation
+  if(!has("ret_sel_devs_additive")) set("ret_sel_devs_additive", NULL)
+  if(!has("srv_sel_devs_additive")) set("srv_sel_devs_additive", NULL)
+  if(!has("fish_sel_zero_bins")) set("fish_sel_zero_bins", NULL) # older input lists zero no bins
+  if(!has("ret_sel_zero_bins")) set("ret_sel_zero_bins", NULL)
+  if(!has("srv_sel_zero_bins")) set("srv_sel_zero_bins", NULL)
   if(!has("fishsel_sex_par_offset")) set("fishsel_sex_par_offset", rep(0, n_fish_bc))
   if(!has("srvsel_sex_par_offset")) set("srvsel_sex_par_offset", rep(0, n_srv_bc))
   if(!has("fishsel_sex_scale_offset")) set("fishsel_sex_scale_offset", rep(0, n_fish_bc))

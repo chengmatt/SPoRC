@@ -23,8 +23,11 @@ List with \code{n_cells}, \code{n_grid_yrs} and, for \eqn{I - B} and
   \code{needs_dense_logdet} whether dgmrf will hold a random effect in the
   precision, and, for a reduced rank model, \code{project_k} with the cells
   of a solved series, \code{obs_idx} and \code{unobs_idx} splitting the
-  cells the way dsem does, and \code{Q_oo} the pattern
-  \code{\link{get_dsem_Q_oo}} fills.
+  cells the way dsem does, \code{solve_uu_identity} whether no arrow runs
+  between two solved cells, and \code{solve_has_ou} whether any arrow runs
+  from a solved cell into one that keeps its innovation, which
+  \code{\link{get_dsem_solve_mat}} and \code{\link{get_dsem_Q_oo}} read to
+  skip work.
 }
 \description{
 Cells of the year by series grid are numbered series by series, years within

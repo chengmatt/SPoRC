@@ -243,6 +243,8 @@ Assessment data inputs provided by SPoRC
   : EBS Pacific cod bridge data (Model 24.1)
 - [`sgl_rg_neacod_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_neacod_data.md)
   : Northeast Arctic cod data for the SAM case study
+- [`sgl_rg_goa_pollock_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_goa_pollock_data.md)
+  : Gulf of Alaska walleye pollock data for the Rceattle case study
 
 ## Fitted Model Objects
 

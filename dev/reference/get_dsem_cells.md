@@ -35,6 +35,10 @@ everything an arrow comes from is set before what it points to,
 `needs_dense_logdet` whether dgmrf will hold a random effect in the
 precision, and, for a reduced rank model, `project_k` with the cells of
 a solved series, `obs_idx` and `unobs_idx` splitting the cells the way
-dsem does, and `Q_oo` the pattern
+dsem does, `solve_uu_identity` whether no arrow runs between two solved
+cells, and `solve_has_ou` whether any arrow runs from a solved cell into
+one that keeps its innovation, which
+[`get_dsem_solve_mat`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_solve_mat.md)
+and
 [`get_dsem_Q_oo`](https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo.md)
-fills.
+read to skip work.

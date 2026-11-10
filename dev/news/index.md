@@ -143,6 +143,17 @@
   bins beyond `n` at the value of bin `n`.
 - Added `fish_sel_norm_bins`/`srv_sel_norm_bins` to specify the bins
   over which non-parametric log-scale selectivity is standardized.
+- Added descending logistic (`"desclogist1"`) and double logistic
+  (`"dbllogist1"`) selectivity forms.
+- Added `fish_sel_devs_pars`/`srv_sel_devs_pars` to name the selectivity
+  parameters that `"iid"` or `"rw"` deviations apply to.
+- Added `fish_sel_devs_form`/`srv_sel_devs_form`, `"multiplicative"`
+  (default) or `"additive"`, for how those deviations enter the
+  parameters.
+- Added a `"par_normal"` selectivity prior type, a normal prior on a
+  parameter’s natural scale.
+- Added `fish_sel_zero_bins`/`srv_sel_zero_bins` to set selectivity to
+  zero at named bins.
 - `Setup_Mod_Rec` has a new `R0_blocks` argument, which takes the same
   string forms as the selectivity blocks (`"none_Pop_p"`,
   `"Block_b_Year_a-e_Pop_p"`) and gives `ln_global_R0` a block
@@ -185,12 +196,16 @@
 - Added BSAI Atka mackerel, West Coast sablefish, EBS Pacific cod, North
   Sea sand eel, GOA Rex Sole, BSAI Northern Rock Sole case studies
   bridging recent assessments.
+- Added a GOA walleye pollock case study bridging the 2026 `Rceattle`
+  models 26a and 26b.
 
 #### Model fitting and diagnostics
 
 - Added dynamic structural equation models via `Setup_Mod_DSEM`, linking
   recruitment, growth, movement, catchability and the numbers at age to
   each other and to covariates through arrow notation.
+- A dsem series with an sd of zero is solved out with sparse matrices,
+  so a large dsem with one now builds in seconds.
 - `Setup_Mod_Movement` and `Setup_Mod_Tagging` no longer need to be
   specified; `fit_model` fills their off settings, movement for one
   region only.
@@ -311,6 +326,8 @@
 - Fixed the aggregated Dirichlet-multinomial composition likelihood
   (`_Type = 0`) not adding `addtocomp` to the expected and observed
   proportions.
+- Fixed simulating a Dirichlet-multinomial composition stopping in a
+  year with no sample.
 
 ## version 1.1.0
 

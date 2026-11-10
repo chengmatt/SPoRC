@@ -26,7 +26,8 @@ Get_Selex(
   n_sel_bins = NULL,
   apical = 1,
   dbnrml_raw = c(0, 0),
-  dbnrml_startbin = 1
+  dbnrml_startbin = 1,
+  devs_additive = NULL
 )
 ```
 
@@ -44,7 +45,9 @@ Get_Selex(
   over years and bins jointly, `9` non-parametric on the log scale with
   the level free and each year centered over `sel_norm_bins`, and `8` a
   bicubic spline over a bin-node by year-node grid, which takes no
-  `TimeVary_Model` deviations.
+  `TimeVary_Model` deviations. `11` is a descending logistic (b50,
+  slope) and `12` a double logistic, an ascending logistic times a
+  descending one, not rescaled to peak at one.
 
 - TimeVary_Model:
 
@@ -62,7 +65,8 @@ Get_Selex(
   `c(logit_alpha, ln_b50, ln_k)` for 6, `c(logit_alpha, ln_b50, ln_b95)`
   for 7, one log value per bin for 9, and for 8 the flattened bin-node
   by year-node grid, filled column-major into a `n_yr_nodes` by
-  `n_bin_nodes` matrix.
+  `n_bin_nodes` matrix. Model 11 takes `c(ln_b50, ln_slope)` and model
+  12 `c(ln_b50_asc, ln_slope_asc, ln_b50_desc, ln_slope_desc)`.
 
 - ln_seldevs:
 
@@ -168,6 +172,13 @@ Get_Selex(
   when the compositions start above the population's first length bin:
   `p5` is then the selectivity at that bin, and every bin below takes
   \\(b / b\_{start})^2\\ times the selectivity there.
+
+- devs_additive:
+
+  Logical vector with one entry per selectivity parameter, in the order
+  of `pars`: `TRUE` where that parameter's `TimeVary_Model` 1 or 2
+  deviation is added, `par + dev`, and `FALSE` where it multiplies,
+  `par * exp(dev)`. `NULL` (default) multiplies every one.
 
 ## Value
 

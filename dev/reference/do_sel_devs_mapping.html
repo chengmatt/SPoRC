@@ -50,6 +50,7 @@ walk. Fleet sharing (&quot;est_shared_f_x&quot;) is handled in a second pass."><
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -89,6 +90,7 @@ walk. Fleet sharing (<code>"est_shared_f_x"</code>) is handled in a second pass.
 <span>  <span class="va">sel_devs_shared_bins</span>,</span>
 <span>  <span class="va">bins</span>,</span>
 <span>  dont_est_dev_first <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sel_devs_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">prefix</span>,</span>
 <span>  <span class="va">fleet_field</span>,</span>
 <span>  <span class="va">use_field</span>,</span>
@@ -129,6 +131,13 @@ of bins that share a single estimated deviation. Required when
 the map so the walk starts in year two and the fixed selectivity parameters
 hold year one. Refused for the GMRF and 2D AR1 forms, whose deviations are a
 field rather than a walk anchored at year one.</p></dd>
+
+
+<dt id="arg-sel-devs-pars">sel_devs_pars<a class="anchor" aria-label="anchor" href="#arg-sel-devs-pars"></a></dt>
+<dd><p>List with one element per fleet naming the curve
+parameters that fleet's iid or random walk deviations apply to, or
+<code>NULL</code> for every parameter. <code>list(1:2)</code> on a double logistic lets
+the ascending limb vary by year and keeps the descending limb constant.</p></dd>
 
 
 <dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>

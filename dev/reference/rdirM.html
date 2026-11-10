@@ -42,6 +42,7 @@ drawing multinomial counts conditioned on that probability vector."><meta name="
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -83,14 +84,15 @@ drawing multinomial counts conditioned on that probability vector.</p>
 
 
 <dt id="arg-n">N<a class="anchor" aria-label="anchor" href="#arg-n"></a></dt>
-<dd><p>Integer. Total count per draw (multinomial sample size).</p></dd>
+<dd><p>Integer. Total count per draw (multinomial sample size). Zero, a year
+with no sample, returns zeros.</p></dd>
 
 
 <dt id="arg-alpha">alpha<a class="anchor" aria-label="anchor" href="#arg-alpha"></a></dt>
 <dd><p>Numeric vector of length \(K\). Dirichlet concentration
-parameters. All elements must be positive. Larger values relative to
-\(N\) produce draws closer to the expected proportions
-\(\alpha / \sum \alpha\).</p></dd>
+parameters, none negative. A category at zero is never drawn, and a vector
+of zeros returns zeros. Larger values relative to \(N\) produce draws
+closer to the expected proportions \(\alpha / \sum \alpha\).</p></dd>
 
 </dl></div>
     <div class="section level2">

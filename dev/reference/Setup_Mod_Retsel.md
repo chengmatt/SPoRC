@@ -86,8 +86,8 @@ Setup_Mod_Retsel(
 - ret_selex_prior:
 
   Data frame with columns `region`, `fleet`, `block`, `sex`, `par`,
-  `mu`, `sd` and an optional `type` (`"par"` or `"value"`), as
-  `fish_selex_prior` in
+  `mu`, `sd` and an optional `type` (`"par"`, `"par_normal"` or
+  `"value"`), as `fish_selex_prior` in
   [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
 
 - retsel_devs_shared_bins:

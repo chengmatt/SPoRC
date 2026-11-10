@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -421,9 +422,9 @@ one file.</p>
 <code>dsem_rec_margvar_on</code>, <code>dsem_series</code>,
 <code>get_dsem_cells</code>, <code>get_dsem_link</code>,
 <code>get_dsem_link_sd_arrow</code>, <code>get_dsem_link_settles</code>,
-<code>get_dsem_Q_oo_pattern</code>, <code>peel_dsem_years</code>,
-<code>peel_series_order</code>, <code>read_dsem_arrows</code>,
-<code>set_dsem_logdet_atomic</code>, <code>Setup_Mod_DSEM</code>
+<code>peel_dsem_years</code>, <code>peel_series_order</code>,
+<code>read_dsem_arrows</code>, <code>set_dsem_logdet_atomic</code>,
+<code>Setup_Mod_DSEM</code>
 </td>
 <td>
 <code>model_precision.R</code>, <code>setup_catchability.R</code>,
@@ -942,7 +943,8 @@ one file.</p>
 <tr class="even">
 <td><code>model_selectivity.R</code></td>
 <td>
-<code>Get_Selex</code>, <code>Get_Selex_Array</code>
+<code>Get_Selex</code>, <code>Get_Selex_Array</code>,
+<code>sel_par_dev</code>
 </td>
 <td>nothing</td>
 <td><code>model_objective.R</code></td>
@@ -1541,7 +1543,8 @@ one file.</p>
 <code>safe_extract</code>, <code>seed_dbnrml_peak</code>,
 <code>set_data_indicator_unused</code>, <code>setup_dbnrml_raw</code>,
 <code>setup_dbnrml_startbin</code>, <code>setup_sel_bin_devs</code>,
-<code>setup_sel_norm_bins</code>, <code>setup_sel_sex_offset</code>,
+<code>setup_sel_devs_form</code>, <code>setup_sel_norm_bins</code>,
+<code>setup_sel_sex_offset</code>, <code>setup_sel_zero_bins</code>,
 <code>sim_at_age_corr_setup</code>, <code>store_idx_sigma</code>,
 <code>store_seas_agg_slot</code>, <code>truncate_years</code>,
 <code>unused_at_age_on_obs_ages</code>, <code>use_starting_value</code>,
@@ -1990,7 +1993,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 258 test files in total.</p>
+<p>That is 263 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

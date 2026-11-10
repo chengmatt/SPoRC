@@ -49,3 +49,9 @@ covering a covariance line between a solved cell and one that keeps its
 innovation. That line is refused by
 [`read_dsem_arrows`](https://chengmatt.github.io/SPoRC/dev/reference/read_dsem_arrows.md),
 so both terms are always zero and only \\V\_{oo}\\ is formed.
+
+Every step is a sparse product, so the cost grows with the number of
+arrows and not with the square of the number of cells. \\S\\ has an
+entry only where an arrow, or a chain of arrows through solved cells,
+joins two cells, and \\V\_{oo}^{-1}\\ only within a group of series tied
+by covariance lines.

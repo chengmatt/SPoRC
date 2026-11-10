@@ -48,6 +48,7 @@ year correlations plus a log sigma). Fleet sharing is handled in a second pass."
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -87,6 +88,7 @@ year correlations plus a log sigma). Fleet sharing is handled in a second pass.<
 <span>  <span class="va">bins</span>,</span>
 <span>  <span class="va">sel_devs_spec</span>,</span>
 <span>  <span class="va">sel_devs_shared_bins</span>,</span>
+<span>  sel_devs_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">prefix</span>,</span>
 <span>  <span class="va">fleet_field</span>,</span>
 <span>  <span class="va">use_field</span>,</span>
@@ -134,6 +136,13 @@ recognize which dims the deviations are shared over, and
 <dd><p>List of integer vectors grouping the bins that
 share one estimated deviation, as passed to
 <code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code>.</p></dd>
+
+
+<dt id="arg-sel-devs-pars">sel_devs_pars<a class="anchor" aria-label="anchor" href="#arg-sel-devs-pars"></a></dt>
+<dd><p>List with one element per fleet naming the curve
+parameters that fleet's deviations apply to, as passed to
+<code><a href="do_sel_devs_mapping.html">do_sel_devs_mapping</a></code>, or <code>NULL</code>. Only the named
+parameters keep a standard deviation.</p></dd>
 
 
 <dt id="arg-prefix">prefix<a class="anchor" aria-label="anchor" href="#arg-prefix"></a></dt>

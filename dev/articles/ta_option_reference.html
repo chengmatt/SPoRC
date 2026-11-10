@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -87,7 +88,7 @@ look for what a given setting is, whereas <a href="t_model_options.html">Overvie
 it exists and which ones to specify.</p>
 <div class="optref">
 <div class="optref-controls">
-<p><input type="search" id="optref-q" placeholder="Search 589 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
+<p><input type="search" id="optref-q" placeholder="Search 595 arguments…" aria-label="Search arguments"><select id="optref-stage" aria-label="Filter by setup stage"><option value="">All stages</option>
 <option value="Dim">Dim
 (17)</option>
 <option value="Rec">Rec (65)</option>
@@ -97,8 +98,8 @@ it exists and which ones to specify.</p>
 <option value="Catch_and_F">Catch_and_F (72)</option>
 <option value="FishIdx_and_Comps">FishIdx_and_Comps (76)</option>
 <option value="SrvIdx_and_Comps">SrvIdx_and_Comps (74)</option>
-<option value="Fishsel_and_Q">Fishsel_and_Q (53)</option>
-<option value="Srvsel_and_Q">Srvsel_and_Q (36)</option>
+<option value="Fishsel_and_Q">Fishsel_and_Q (56)</option>
+<option value="Srvsel_and_Q">Srvsel_and_Q (39)</option>
 <option value="DSEM">DSEM (11)</option>
 <option value="Weighting">Weighting (35)</option>
 <option value="Projection">Projection (26)</option></select><span id="optref-tally"></span></p>
@@ -4202,7 +4203,7 @@ n_srv_fleets]. Summed from ObsSrv_caal when NULL.
 Setup_Mod_Fishsel_and_Q
 </h3>
 <p class="optref-n">
-53 arguments
+56 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -4227,10 +4228,10 @@ Description
 <td><code>paste("none_Fleet_", 1:input_list$data$n_fish_fleets, sep = "")</code></td>
 <td>Character vector of discrete selectivity time blocks per fleet, each "Block_&lt;b&gt;_Year_&lt;s&gt;-&lt;e&gt;_Fleet_&lt;f&gt;" with "terminal" allowed as the end year, or "none_Fleet_&lt;f&gt;" (default) for one constant block. Blocks must not overlap and together must span every model year for that fleet. Mutually exclusive with cont_tv_fish_sel != "none".</td>
 </tr>
-<tr data-k="fish_sel_model required character vector of the selectivity form per fleet, and optionally per block: " &lt;model&gt;_fleet_&lt;f&gt;" or "&lt;model&gt;_fleet_&lt;f&gt;_block_&lt;b&gt;". the forms are "logist1" (a_{50} and slope), "logist2" a_{95}), "gamma" (dome, a_{max} \delta), "exponential" (one power), "dbnrml" (double normal, six parameters), "asymplogist1" "asymplogist2" (the two logistics with an asymptote), three non-parametric "bicubic". "nonpar" is on logit scale, mean-standardized jointly over years bins so grand mean of surface one. "nonparlog" log standardized each year averages to one *_sel_norm_bins, leaving only within-year contrasts identified. "nonparfree" scale no standardization, \exp(\theta), values hold height curve as well its shape; this form for a data source fit age by age, where free catchability per selectivity estimated at quantity written twice, set. pin bin, it out bins, whenever multiplies also free. "bicubic" spline bin-node year-node grid, "bicubic_bin_&lt;n_bin_nodes&gt;_yr_&lt;n_yr_nodes&gt;_fleet_x" optional _block_k. covers smooth bin (n_yr_nodes &gt; 1), time-invariant bin-only re-fit block. _selstyr_&lt;year&gt; restricts selstyr:block-end, holding earlier block selstyr curve, _nselbins_&lt;n&gt; first n rest last fitted bin. see get_selex model equations vignette.">
+<tr data-k="fish_sel_model required character vector of the selectivity form per fleet, and optionally per block: " &lt;model&gt;_fleet_&lt;f&gt;" or "&lt;model&gt;_fleet_&lt;f&gt;_block_&lt;b&gt;". the forms are "logist1" (a_{50} and slope), "logist2" a_{95}), "gamma" (dome, a_{max} \delta), "exponential" (one power), "dbnrml" (double normal, six parameters), "asymplogist1" "asymplogist2" (the two logistics with an asymptote), "desclogist1" (descending logistic, a_{50} "dbllogist1" ascending logistic times a descending one, slope of each, not rescaled to peak at one), three non-parametric "bicubic". "nonpar" is on logit scale, mean-standardized jointly over years bins so grand mean surface one. "nonparlog" log standardized each year averages one *_sel_norm_bins, leaving only within-year contrasts identified. "nonparfree" scale no standardization, \exp(\theta), values hold height curve as well its shape; this form for data source fit age by age, where free catchability per selectivity estimated quantity written twice, set. pin bin, it out bins, whenever multiplies also free. "bicubic" spline bin-node year-node grid, "bicubic_bin_&lt;n_bin_nodes&gt;_yr_&lt;n_yr_nodes&gt;_fleet_x" optional _block_k. covers smooth bin (n_yr_nodes &gt; 1), time-invariant bin-only re-fit block. _selstyr_&lt;year&gt; restricts selstyr:block-end, holding earlier block selstyr curve, _nselbins_&lt;n&gt; first n rest last fitted bin. see get_selex model equations vignette.">
 <td><code class="optref-arg">fish_sel_model</code></td>
 <td><em class="optref-req">required</em></td>
-<td>Character vector of the selectivity form per fleet, and optionally per block: "&lt;model&gt;_Fleet_&lt;f&gt;" or "&lt;model&gt;_Fleet_&lt;f&gt;_Block_&lt;b&gt;". The forms are "logist1" (a_{50} and slope), "logist2" (a_{50} and a_{95}), "gamma" (dome, a_{max} and \delta), "exponential" (one power), "dbnrml" (double normal, six parameters), "asymplogist1" and "asymplogist2" (the two logistics with an asymptote), the three non-parametric forms and "bicubic". "nonpar" is on the logit scale, mean-standardized jointly over years and bins so the grand mean of the surface is one. "nonparlog" is on the log scale, standardized so each year averages to one over *_sel_norm_bins, leaving only within-year contrasts identified. "nonparfree" is on the log scale with no standardization, \exp(\theta), so the values hold the height of the curve as well as its shape; this is the form for a data source fit age by age, where a free catchability per age and a selectivity estimated at age are one quantity written twice, so no catchability is set. Pin one bin, by leaving it out of the estimated bins, whenever the mean it multiplies is also free. "bicubic" is a spline over a bin-node by year-node grid, written "bicubic_Bin_&lt;n_bin_nodes&gt;_Yr_&lt;n_yr_nodes&gt;_Fleet_x" with an optional _Block_k. One form covers a smooth bin by year surface (n_yr_nodes &gt; 1), a time-invariant bin-only spline (n_yr_nodes == 1), and a bin-only spline re-fit per block. An optional _SelStyr_&lt;year&gt; restricts the fit to SelStyr:block-end, holding earlier years of the block at the SelStyr curve, and an optional _NSelBins_&lt;n&gt; restricts it to the first n bins, holding the rest at the last fitted bin. See Get_Selex and the model equations vignette.</td>
+<td>Character vector of the selectivity form per fleet, and optionally per block: "&lt;model&gt;_Fleet_&lt;f&gt;" or "&lt;model&gt;_Fleet_&lt;f&gt;_Block_&lt;b&gt;". The forms are "logist1" (a_{50} and slope), "logist2" (a_{50} and a_{95}), "gamma" (dome, a_{max} and \delta), "exponential" (one power), "dbnrml" (double normal, six parameters), "asymplogist1" and "asymplogist2" (the two logistics with an asymptote), "desclogist1" (descending logistic, a_{50} and slope), "dbllogist1" (double logistic, an ascending logistic times a descending one, a_{50} and slope of each, not rescaled to peak at one), the three non-parametric forms and "bicubic". "nonpar" is on the logit scale, mean-standardized jointly over years and bins so the grand mean of the surface is one. "nonparlog" is on the log scale, standardized so each year averages to one over *_sel_norm_bins, leaving only within-year contrasts identified. "nonparfree" is on the log scale with no standardization, \exp(\theta), so the values hold the height of the curve as well as its shape; this is the form for a data source fit age by age, where a free catchability per age and a selectivity estimated at age are one quantity written twice, so no catchability is set. Pin one bin, by leaving it out of the estimated bins, whenever the mean it multiplies is also free. "bicubic" is a spline over a bin-node by year-node grid, written "bicubic_Bin_&lt;n_bin_nodes&gt;_Yr_&lt;n_yr_nodes&gt;_Fleet_x" with an optional _Block_k. One form covers a smooth bin by year surface (n_yr_nodes &gt; 1), a time-invariant bin-only spline (n_yr_nodes == 1), and a bin-only spline re-fit per block. An optional _SelStyr_&lt;year&gt; restricts the fit to SelStyr:block-end, holding earlier years of the block at the SelStyr curve, and an optional _NSelBins_&lt;n&gt; restricts it to the first n bins, holding the rest at the last fitted bin. See Get_Selex and the model equations vignette.</td>
 </tr>
 <tr data-k="use_fish_q_prior 0 integer flag, 1 for lognormal priors on catchability. default 0.">
 <td>
@@ -4353,10 +4354,10 @@ continuously. See do_sel_devs_mapping.
 Integer flag, 1 for priors on the selectivity parameters. Default 0.
 </td>
 </tr>
-<tr data-k="fish_selex_prior null data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. " par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu the natural scale and sd log scale. "value" normal realized at bin, both scale, where par names bin value read first model year of block; that admb convention pinning reference age near one, which no set independent parameter priors can express. when use_fish_selex_prior="1.&quot;">
+<tr data-k="fish_selex_prior null data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. " par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu the natural scale and sd log scale. "par_normal" normal that parameter's scale, dnorm(exp(par), mu, sd), both for example an age at 50% selection. "value" realized bin, where par names bin value read first model year of block; admb convention pinning reference near one, which no set independent parameter priors can express. when use_fish_selex_prior="1.&quot;">
 <td><code class="optref-arg">fish_selex_prior</code></td>
 <td><code>NULL</code></td>
-<td>Data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. "par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu on the natural scale and sd on the log scale. "value" is a normal prior on the realized selectivity at one bin, both on the natural scale, where par names the bin and the value is read at the first model year of block; that is the ADMB convention of pinning selectivity at a reference age near one, which no set of independent parameter priors can express. Read when Use_fish_selex_prior = 1.</td>
+<td>Data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. "par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu on the natural scale and sd on the log scale. "par_normal" is a normal prior on that parameter's natural scale, dnorm(exp(par), mu, sd), with mu and sd both on the natural scale, for example mu = 10, sd = 3 on an age at 50% selection. "value" is a normal prior on the realized selectivity at one bin, both on the natural scale, where par names the bin and the value is read at the first model year of block; that is the ADMB convention of pinning selectivity at a reference age near one, which no set of independent parameter priors can express. Read when Use_fish_selex_prior = 1.</td>
 </tr>
 <tr data-k="use_fish_selex_penalty 0 integer (0/1). whether a centering penalty is applied to sets of fishery selectivity fixed-effect parameters. default 0.">
 <td>
@@ -4389,6 +4390,22 @@ estimated annual value (_{y,b}) in place of what the functional form
 produced, applied after every other transformation including
 standardization, while the rest of the curve keeps its parametric shape.
 Default NULL.
+</td>
+</tr>
+<tr data-k="fish_sel_zero_bins null list with one element per fleet naming the bins that fleet does not select, or null for none, e.g. list(1:2, null). their selectivity is set to exactly zero in every year, after the functional form, its deviations and any standardization, so the rest of the curve keeps its shape. for a gear that does not take the youngest ages. ignored for a fleet with a fixed selectivity. default null.">
+<td>
+<code class="optref-arg">fish_sel_zero_bins</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+List with one element per fleet naming the bins that fleet does not
+select, or NULL for none, e.g. list(1:2, NULL). Their selectivity is set
+to exactly zero in every year, after the functional form, its deviations
+and any standardization, so the rest of the curve keeps its shape. For a
+gear that does not take the youngest ages. Ignored for a fleet with a
+fixed selectivity. Default NULL.
 </td>
 </tr>
 <tr data-k="fishsel_pe_wt rep(1, input_list$data$n_fish_fleets) numeric vector [n_fish_fleets] multiplying the fishery selectivity process error likelihood. default 1. 0 skips that fleet's process error, so the deviations stay estimated but enter the objective only through the data and any smoothness or centering penalties. values other than 0 or 1 make an estimated process error sigma reinterpretable. applies to ln_fishsel_devs only; the bin-override deviations have their own process error.">
@@ -4458,6 +4475,16 @@ parameter sets on the log scale. Default NULL.
 <td><code class="optref-arg">fishsel_devs_shared_bins</code></td>
 <td><code>NULL</code></td>
 <td>List of integer vectors grouping the bins that share one deviation series, e.g. list(1:5, 6:10, 11:30). Only read when fish_sel_devs_spec names an "est_shared_b" variant.</td>
+</tr>
+<tr data-k="fish_sel_devs_pars null list with one element per fleet naming the selectivity parameters that fleet's " iid" or "rw" deviations apply to, in the order form lists them, null for every parameter. list(1:2) on a "dbllogist1" fleet lets ascending limb vary by year and keeps descending constant. parameter left out has no process error standard deviation. default null.">
+<td><code class="optref-arg">fish_sel_devs_pars</code></td>
+<td><code>NULL</code></td>
+<td>List with one element per fleet naming the selectivity parameters that fleet's "iid" or "rw" deviations apply to, in the order the form lists them, or NULL for every parameter. list(1:2) on a "dbllogist1" fleet lets the ascending limb vary by year and keeps the descending limb constant. A parameter left out has no deviations and no process error standard deviation. Default NULL.</td>
+</tr>
+<tr data-k="fish_sel_devs_form rep(" multiplicative", input_list$data$n_fish_fleets) character vector [n_fish_fleets] of how "iid" or "rw" deviations enter the selectivity parameters. "multiplicative" (default) is \theta_y="\theta" \exp(\epsilon_y) and "additive" + \epsilon_y, where process error standard deviation on parameter's own scale. a list element with one string per parameter mixes two within fleet: list(c("additive", "multiplicative")) logistic fleet walks age at 50% selection in years slope proportion.">
+<td><code class="optref-arg">fish_sel_devs_form</code></td>
+<td><code>rep("multiplicative", input_list$data$n_fish_fleets)</code></td>
+<td>Character vector [n_fish_fleets] of how "iid" or "rw" deviations enter the selectivity parameters. "multiplicative" (default) is \theta_y = \theta \exp(\epsilon_y) and "additive" is \theta_y = \theta + \epsilon_y, where the process error standard deviation is on the parameter's own scale. A list element with one string per parameter mixes the two within a fleet: list(c("additive", "multiplicative")) on a logistic fleet walks the age at 50% selection in years of age and the slope in proportion.</td>
 </tr>
 <tr data-k="fish_selex_type " age" character scalar, "age" or "length", the bin dim every fishery selectivity function is defined over.">
 <td><code class="optref-arg">fish_selex_type</code></td>
@@ -4720,7 +4747,7 @@ grouped parameters.
 Setup_Mod_Srvsel_and_Q
 </h3>
 <p class="optref-n">
-36 arguments
+39 arguments
 </p>
 <table class="table optref-table">
 <thead><tr>
@@ -4893,10 +4920,10 @@ Integer (0/1) for priors on the survey selectivity parameters. Default
 0.
 </td>
 </tr>
-<tr data-k="srv_selex_prior null data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. " par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu the natural scale and sd log scale. "value" normal realized at bin, both scale, where par names bin value read first model year of block; that admb convention pinning survey reference age near one, which no set independent parameter priors can express. default null.">
+<tr data-k="srv_selex_prior null data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. " par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu the natural scale and sd log scale. "par_normal" normal that parameter's scale, dnorm(exp(par), mu, sd), both "value" realized at bin, where par names bin value read first model year of block; admb convention pinning survey reference age near one, which no set independent parameter priors can express. default null.">
 <td><code class="optref-arg">srv_selex_prior</code></td>
 <td><code>NULL</code></td>
-<td>Data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. "par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu on the natural scale and sd on the log scale. "value" is a normal prior on the realized selectivity at one bin, both on the natural scale, where par names the bin and the value is read at the first model year of block; that is the ADMB convention of pinning survey selectivity at a reference age near one, which no set of independent parameter priors can express. Default NULL.</td>
+<td>Data frame with columns region, fleet, block, sex, par, mu, sd and an optional type. "par" (the default) is a lognormal prior on one fixed selectivity parameter, with mu on the natural scale and sd on the log scale. "par_normal" is a normal prior on that parameter's natural scale, dnorm(exp(par), mu, sd), with mu and sd both on the natural scale. "value" is a normal prior on the realized selectivity at one bin, both on the natural scale, where par names the bin and the value is read at the first model year of block; that is the ADMB convention of pinning survey selectivity at a reference age near one, which no set of independent parameter priors can express. Default NULL.</td>
 </tr>
 <tr data-k="use_srv_selex_penalty 0 integer (0/1). whether a centering penalty is applied to sets of survey selectivity fixed-effect parameters. default 0.">
 <td>
@@ -4996,6 +5023,29 @@ the end of the period.
 <td><code class="optref-arg">srvsel_devs_shared_bins</code></td>
 <td><code>NULL</code></td>
 <td>List of integer vectors grouping the bins that share one deviation series, e.g. list(1:5, 6:10, 11:30). Required when srv_sel_devs_spec names an "est_shared_b" variant. Default NULL.</td>
+</tr>
+<tr data-k="srv_sel_devs_pars null list with one element per fleet naming the selectivity parameters that fleet's " iid" or "rw" deviations apply to, in the order form lists them, null for every parameter. a parameter left out has no and process error standard deviation. default null.">
+<td><code class="optref-arg">srv_sel_devs_pars</code></td>
+<td><code>NULL</code></td>
+<td>List with one element per fleet naming the selectivity parameters that fleet's "iid" or "rw" deviations apply to, in the order the form lists them, or NULL for every parameter. A parameter left out has no deviations and no process error standard deviation. Default NULL.</td>
+</tr>
+<tr data-k="srv_sel_devs_form rep(" multiplicative", input_list$data$n_srv_fleets) character vector [n_srv_fleets] of how "iid" or "rw" deviations enter the selectivity parameters, "multiplicative" (default) "additive", a list with one string per parameter for fleet, as fish_sel_devs_form in setup_mod_fishsel_and_q.">
+<td><code class="optref-arg">srv_sel_devs_form</code></td>
+<td><code>rep("multiplicative", input_list$data$n_srv_fleets)</code></td>
+<td>Character vector [n_srv_fleets] of how "iid" or "rw" deviations enter the selectivity parameters, "multiplicative" (default) or "additive", or a list with one string per parameter for a fleet, as fish_sel_devs_form in Setup_Mod_Fishsel_and_Q.</td>
+</tr>
+<tr data-k="srv_sel_zero_bins null list with one element per fleet naming the bins that fleet does not select, or null for none, as fish_sel_zero_bins in setup_mod_fishsel_and_q. default null.">
+<td>
+<code class="optref-arg">srv_sel_zero_bins</code>
+</td>
+<td>
+<code>NULL</code>
+</td>
+<td>
+List with one element per fleet naming the bins that fleet does not
+select, or NULL for none, as fish_sel_zero_bins in
+Setup_Mod_Fishsel_and_Q. Default NULL.
+</td>
 </tr>
 <tr data-k="srv_selex_type " age" character scalar, "age" (default) or "length".">
 <td><code class="optref-arg">srv_selex_type</code></td>

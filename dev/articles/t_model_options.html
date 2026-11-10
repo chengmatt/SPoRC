@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -1855,6 +1856,24 @@ parameterization</td>
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>95</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{95}</annotation></semantics></math>)</td>
 </tr>
 <tr class="odd">
+<td><code>"desclogist1"</code></td>
+<td>Descending logistic:
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mn>1</mn><mi>/</mi><mo stretchy="false" form="prefix">(</mo><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><mi>k</mi><mo stretchy="false" form="prefix">(</mo><mtext mathvariant="normal">bin</mtext><mo>−</mo><msub><mi>a</mi><mn>50</mn></msub><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">1 / (1 + \exp(k(\text{bin} - a_{50})))</annotation></semantics></math>
+</td>
+<td>2
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>50</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{50}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">\ln k</annotation></semantics></math>)</td>
+</tr>
+<tr class="even">
+<td><code>"dbllogist1"</code></td>
+<td>Double logistic, an ascending logistic times a descending one, not
+rescaled to peak at one</td>
+<td>4
+(<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><msub><mi>a</mi><mn>50</mn></msub></mrow><annotation encoding="application/x-tex">\ln a_{50}</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mrow><mi mathvariant="normal">ln</mi><mo>⁡</mo></mrow><mi>k</mi></mrow><annotation encoding="application/x-tex">\ln k</annotation></semantics></math>
+of the ascending limb, then of the descending limb)</td>
+</tr>
+<tr class="odd">
 <td><code>"bicubic"</code></td>
 <td>Bicubic natural-cubic-spline surface over a bin-node
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>×</mi><annotation encoding="application/x-tex">\times</annotation></semantics></math>
@@ -2076,17 +2095,37 @@ deviation to estimate at the group’s lowest bin; sharing deviations
 across sexes leaves one set for the first sex under any form. The rest
 are fixed, so the number of hyperparameters reported as estimated is the
 number the fit can actually move.</p>
-<p><code>fishsel_pe_pars_spec</code> takes the same four <code>_b</code>
+<p><code>fishsel_pe_pars_spec</code> takes the same <code>_b</code>
 spellings, where they mean something related but distinct: one process
 error standard deviation across every bin the fleet reads, rather than
-one deviation series per bin group. That is the key matrix ICES
-assessments write for the fishing mortality process, with a single
-group. It needs a non-parametric form, since on a parametric one the
-slots are curve parameters on unrelated scales, and it needs
-<code>"iid"</code> or <code>"rw"</code>, since the GMRF and AR1 forms
-hold correlations and a single standard deviation rather than one per
-bin. Grouped standard deviations, where some ages share one and others
-share another, are not available.</p>
+one deviation series per bin group. It needs a non-parametric form,
+since on a parametric one the slots are curve parameters on unrelated
+scales, and it needs <code>"iid"</code> or <code>"rw"</code>, since the
+GMRF and AR1 forms hold correlations and a single standard deviation
+rather than one per bin.</p>
+<p><code>fish_sel_devs_pars</code> / <code>srv_sel_devs_pars</code> name
+the parameters a fleet’s <code>"iid"</code> or <code>"rw"</code>
+deviations apply to: a list with one element per fleet,
+<code>NULL</code> for every parameter (the default).
+<code>list(1:2, NULL)</code> on a <code>"dbllogist1"</code> fleet lets
+its ascending limb vary by year and keeps its descending limb constant.
+A parameter left out has no deviations and no process error standard
+deviation, in the fit and in the operating model alike. It needs a
+parametric form, since the GMRF, AR1 and non-parametric forms index
+their deviations by bin.</p>
+<p><code>fish_sel_devs_form</code> / <code>srv_sel_devs_form</code> set
+how <code>"iid"</code> or <code>"rw"</code> deviations enter the
+parameters, one entry per fleet. <code>"multiplicative"</code> (the
+default) is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mi>y</mi></msub><mo>=</mo><mi>θ</mi><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mo stretchy="false" form="prefix">(</mo><msub><mi>ϵ</mi><mi>y</mi></msub><mo stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\theta_y = \theta\exp(\epsilon_y)</annotation></semantics></math>.
+<code>"additive"</code> is
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>θ</mi><mi>y</mi></msub><mo>=</mo><mi>θ</mi><mo>+</mo><msub><mi>ϵ</mi><mi>y</mi></msub></mrow><annotation encoding="application/x-tex">\theta_y = \theta + \epsilon_y</annotation></semantics></math>,
+where the deviations and their process error standard deviation are on
+the parameter’s own scale, years of age for an age at 50% selection. A
+list element with one string per parameter mixes the two within a fleet:
+<code>list(c("additive", "multiplicative"))</code> on a logistic fleet
+walks the age at 50% selection in years of age and the slope in
+proportion.</p>
 <p>Three further controls tune the process-error penalty itself:</p>
 <table class="table">
 <colgroup>
@@ -2153,6 +2192,13 @@ region or fleet keeps a sigma that no penalty reads.</p>
 <div class="section level4">
 <h4 id="bin-override-selectivity-deviations">Bin-override selectivity deviations<a class="anchor" aria-label="anchor" href="#bin-override-selectivity-deviations"></a>
 </h4>
+<p>Bins a gear does not take at all are named in
+<code>fish_sel_zero_bins</code> / <code>srv_sel_zero_bins</code> (a list
+with one element per fleet, <code>NULL</code> for none):
+<code>list(1:2, NULL)</code> sets the selectivity of fleet 1 at bins 1
+and 2 to exactly zero in every year. It is applied after the functional
+form, its deviations and any standardization, so the rest of the curve
+keeps its shape, and the operating model does the same.</p>
 <p>Individual bins can be cut loose from the functional form entirely:
 bins named in <code>fish_sel_bin_dev_bins</code> /
 <code>ret_sel_bin_dev_bins</code> / <code>srv_sel_bin_dev_bins</code> (a
@@ -2286,9 +2332,9 @@ selectivity parameters are estimated:</p>
 (e.g. <code>"logist1_Fleet_1_NSelBins_17"</code>, composable with
 <code>_Block_&lt;b&gt;</code> in either order): bins beyond
 <code>n</code> are kept at bin <code>n</code>’s computed value rather
-than evaluated through the form. This is the plateau convention many
-existing assessments have, where selectivity is the functional form up
-to a chosen bin and constant after it. The bicubic form already had this
+than evaluated through the form. This is the plateau convention that
+some existing assessments have, where selectivity is the functional form
+up to a chosen bin and constant after it. The bicubic form had this
 suffix and builds its plateau into its spline weights; for every other
 form the hold is applied after the form and its parameter deviations,
 before bin-level semi-parametric deviations and bin overrides. The
@@ -2479,7 +2525,13 @@ with hyperparameters supplied in a data frame
 (<code>fish_selex_prior</code> / <code>srv_selex_prior</code>)
 containing <code>region</code>, <code>fleet</code>, <code>block</code>,
 <code>sex</code>, <code>par</code>, <code>mu</code>, and
-<code>sd</code>.</p>
+<code>sd</code>. An optional <code>type</code> column says what each row
+constrains: <code>"par"</code> (the default) is that lognormal prior,
+<code>"par_normal"</code> is a normal prior on the parameter’s natural
+scale with <code>mu</code> and <code>sd</code> both on that scale (for
+example <code>mu = 10</code>, <code>sd = 3</code> on an age at 50%
+selection), and <code>"value"</code> is a normal prior on the realized
+selectivity at the bin named in <code>par</code>.</p>
 </div>
 <div class="section level4">
 <h4 id="selectivity-smoothness-penalty-weights">Selectivity smoothness penalty weights<a class="anchor" aria-label="anchor" href="#selectivity-smoothness-penalty-weights"></a>
@@ -4902,12 +4954,8 @@ survey-design errors.</p>
 </h5>
 <p>Parameters are coupled through integer key arrays
 <code>[n_obs_ages, n_sexes, n_fleets]</code>, in which equal entries
-share a parameter and <code>NA</code> excludes one. This is the key
-matrix convention ICES assessments use for coupling variances and
-catchability, with <code>NA</code> marking an excluded parameter, and
-the fleet last because that is where <code>SPoRC</code> puts it. One
-structure covers every sharing pattern that would otherwise need its own
-argument:</p>
+share a parameter and <code>NA</code> excludes one. One structure covers
+every sharing pattern that would otherwise need its own argument:</p>
 <table class="table">
 <thead><tr class="header">
 <th>Intent</th>

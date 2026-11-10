@@ -38,6 +38,7 @@ equations vignette."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -84,7 +85,8 @@ equations vignette.</p>
 <span>  n_sel_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  apical <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  dbnrml_raw <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">0</span>, <span class="fl">0</span><span class="op">)</span>,</span>
-<span>  dbnrml_startbin <span class="op">=</span> <span class="fl">1</span></span>
+<span>  dbnrml_startbin <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  devs_additive <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -103,7 +105,9 @@ asymptote \(\alpha \in (0,1)\), <code>5</code> non-parametric on the logit scale
 through <code>plogis</code>, standardized over years and bins jointly, <code>9</code>
 non-parametric on the log scale with the level free and each year centered
 over <code>sel_norm_bins</code>, and <code>8</code> a bicubic spline over a bin-node by
-year-node grid, which takes no <code>TimeVary_Model</code> deviations.</p></dd>
+year-node grid, which takes no <code>TimeVary_Model</code> deviations. <code>11</code> is
+a descending logistic (b50, slope) and <code>12</code> a double logistic, an
+ascending logistic times a descending one, not rescaled to peak at one.</p></dd>
 
 
 <dt id="arg-timevary-model">TimeVary_Model<a class="anchor" aria-label="anchor" href="#arg-timevary-model"></a></dt>
@@ -121,7 +125,9 @@ in the order the form expects: <code>c(ln_b50, ln_slope)</code> for model 0,
 per bin for 5, <code>c(logit_alpha, ln_b50, ln_k)</code> for 6,
 <code>c(logit_alpha, ln_b50, ln_b95)</code> for 7, one log value per bin for 9, and
 for 8 the flattened bin-node by year-node grid, filled column-major into a
-<code>n_yr_nodes</code> by <code>n_bin_nodes</code> matrix.</p></dd>
+<code>n_yr_nodes</code> by <code>n_bin_nodes</code> matrix. Model 11 takes
+<code>c(ln_b50, ln_slope)</code> and model 12
+<code>c(ln_b50_asc, ln_slope_asc, ln_b50_desc, ln_slope_desc)</code>.</p></dd>
 
 
 <dt id="arg-ln-seldevs">ln_seldevs<a class="anchor" aria-label="anchor" href="#arg-ln-seldevs"></a></dt>
@@ -226,6 +232,13 @@ anchored at and built up from. <code>1</code> (default) anchors at the first bin
 Anchor later when the compositions start above the population's first length
 bin: <code>p5</code> is then the selectivity at that bin, and every bin below takes
 \((b / b_{start})^2\) times the selectivity there.</p></dd>
+
+
+<dt id="arg-devs-additive">devs_additive<a class="anchor" aria-label="anchor" href="#arg-devs-additive"></a></dt>
+<dd><p>Logical vector with one entry per selectivity parameter, in
+the order of <code>pars</code>: <code>TRUE</code> where that parameter's <code>TimeVary_Model</code>
+1 or 2 deviation is added, <code>par + dev</code>, and <code>FALSE</code> where it multiplies,
+<code>par * exp(dev)</code>. <code>NULL</code> (default) multiplies every one.</p></dd>
 
 </dl></div>
     <div class="section level2">

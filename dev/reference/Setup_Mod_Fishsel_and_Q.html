@@ -42,6 +42,7 @@ after Setup_Mod_FishIdx_and_Comps."><meta name="robots" content="noindex"></head
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -95,12 +96,15 @@ after <code><a href="Setup_Mod_FishIdx_and_Comps.html">Setup_Mod_FishIdx_and_Com
 <span>  Use_fish_selex_penalty <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  fish_sel_norm_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fish_sel_bin_dev_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fish_sel_zero_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fishsel_pe_wt <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">1</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fishsel_rw_init_sigma <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">5</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fishsel_dont_est_dev_first <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  cont_tv_fishsel_bin_devs <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fish_selex_penalty <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  fishsel_devs_shared_bins <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fish_sel_devs_pars <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  fish_sel_devs_form <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="st">"multiplicative"</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fish_selex_type <span class="op">=</span> <span class="st">"age"</span>,</span>
 <span>  use_fixed_fish_sel <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fl">0</span>, <span class="va">input_list</span><span class="op">$</span><span class="va">data</span><span class="op">$</span><span class="va">n_fish_fleets</span><span class="op">)</span>,</span>
 <span>  fish_sel_input <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -167,7 +171,10 @@ that fleet. Mutually exclusive with <code>cont_tv_fish_sel != "none"</code>.</p>
   <code>"gamma"</code> (dome, \(a_{max}\) and \(\delta\)), <code>"exponential"</code>
   (one power), <code>"dbnrml"</code> (double normal, six parameters),
   <code>"asymplogist1"</code> and <code>"asymplogist2"</code> (the two logistics with an
-  asymptote), the three non-parametric forms and <code>"bicubic"</code>.</p>
+  asymptote), <code>"desclogist1"</code> (descending logistic, \(a_{50}\) and
+  slope), <code>"dbllogist1"</code> (double logistic, an ascending logistic times a
+  descending one, \(a_{50}\) and slope of each, not rescaled to peak at
+  one), the three non-parametric forms and <code>"bicubic"</code>.</p>
 <p><code>"nonpar"</code> is on the logit scale, mean-standardized jointly over years
   and bins so the grand mean of the surface is one. <code>"nonparlog"</code> is on the
   log scale, standardized so each year averages to one over
@@ -306,7 +313,10 @@ parameters. Default <code>0</code>.</p></dd>
 <code>block</code>, <code>sex</code>, <code>par</code>, <code>mu</code>, <code>sd</code> and an optional
 <code>type</code>. <code>"par"</code> (the default) is a lognormal prior on one fixed
 selectivity parameter, with <code>mu</code> on the natural scale and <code>sd</code> on the
-log scale. <code>"value"</code> is a normal prior on the realized selectivity at one
+log scale. <code>"par_normal"</code> is a normal prior on that parameter's natural
+scale, <code>dnorm(exp(par), mu, sd)</code>, with <code>mu</code> and <code>sd</code> both on the
+natural scale, for example <code>mu = 10, sd = 3</code> on an age at 50% selection.
+<code>"value"</code> is a normal prior on the realized selectivity at one
 bin, both on the natural scale, where <code>par</code> names the bin and the value is
 read at the first model year of <code>block</code>; that is the ADMB convention of
 pinning selectivity at a reference age near one, which no set of independent
@@ -334,6 +344,15 @@ overridden bin takes a freely estimated annual value
 \(\exp(\epsilon_{y,b})\) in place of what the functional form produced,
 applied after every other transformation including standardization, while the
 rest of the curve keeps its parametric shape. Default <code>NULL</code>.</p></dd>
+
+
+<dt id="arg-fish-sel-zero-bins">fish_sel_zero_bins<a class="anchor" aria-label="anchor" href="#arg-fish-sel-zero-bins"></a></dt>
+<dd><p>List with one element per fleet naming the bins that
+fleet does not select, or <code>NULL</code> for none, e.g. <code>list(1:2, NULL)</code>.
+Their selectivity is set to exactly zero in every year, after the functional
+form, its deviations and any standardization, so the rest of the curve keeps
+its shape. For a gear that does not take the youngest ages. Ignored for a
+fleet with a fixed selectivity. Default <code>NULL</code>.</p></dd>
 
 
 <dt id="arg-fishsel-pe-wt">fishsel_pe_wt<a class="anchor" aria-label="anchor" href="#arg-fishsel-pe-wt"></a></dt>
@@ -385,6 +404,27 @@ scale. Default <code>NULL</code>.</p></dd>
 <dd><p>List of integer vectors grouping the bins that
 share one deviation series, e.g. <code>list(1:5, 6:10, 11:30)</code>. Only read when
 <code>fish_sel_devs_spec</code> names an <code>"est_shared_b"</code> variant.</p></dd>
+
+
+<dt id="arg-fish-sel-devs-pars">fish_sel_devs_pars<a class="anchor" aria-label="anchor" href="#arg-fish-sel-devs-pars"></a></dt>
+<dd><p>List with one element per fleet naming the
+selectivity parameters that fleet's <code>"iid"</code> or <code>"rw"</code> deviations
+apply to, in the order the form lists them, or <code>NULL</code> for every
+parameter. <code>list(1:2)</code> on a <code>"dbllogist1"</code> fleet lets the ascending
+limb vary by year and keeps the descending limb constant. A parameter left
+out has no deviations and no process error standard deviation. Default
+<code>NULL</code>.</p></dd>
+
+
+<dt id="arg-fish-sel-devs-form">fish_sel_devs_form<a class="anchor" aria-label="anchor" href="#arg-fish-sel-devs-form"></a></dt>
+<dd><p>Character vector <code>[n_fish_fleets]</code> of how
+<code>"iid"</code> or <code>"rw"</code> deviations enter the selectivity parameters.
+<code>"multiplicative"</code> (default) is \(\theta_y = \theta \exp(\epsilon_y)\)
+and <code>"additive"</code> is \(\theta_y = \theta + \epsilon_y\), where the
+process error standard deviation is on the parameter's own scale. A list
+element with one string per parameter mixes the two within a fleet:
+<code>list(c("additive", "multiplicative"))</code> on a logistic fleet walks the age
+at 50% selection in years of age and the slope in proportion.</p></dd>
 
 
 <dt id="arg-fish-selex-type">fish_selex_type<a class="anchor" aria-label="anchor" href="#arg-fish-selex-type"></a></dt>

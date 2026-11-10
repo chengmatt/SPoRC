@@ -42,6 +42,7 @@ in \(B\), for every year t &amp;gt; L."><meta name="robots" content="noindex"></
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -99,8 +100,11 @@ in \(B\), for every year <code>t &gt; L</code>.</p>
   <code>needs_dense_logdet</code> whether dgmrf will hold a random effect in the
   precision, and, for a reduced rank model, <code>project_k</code> with the cells
   of a solved series, <code>obs_idx</code> and <code>unobs_idx</code> splitting the
-  cells the way dsem does, and <code>Q_oo</code> the pattern
-  <code><a href="get_dsem_Q_oo.html">get_dsem_Q_oo</a></code> fills.</p>
+  cells the way dsem does, <code>solve_uu_identity</code> whether no arrow runs
+  between two solved cells, and <code>solve_has_ou</code> whether any arrow runs
+  from a solved cell into one that keeps its innovation, which
+  <code><a href="get_dsem_solve_mat.html">get_dsem_solve_mat</a></code> and <code><a href="get_dsem_Q_oo.html">get_dsem_Q_oo</a></code> read to
+  skip work.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

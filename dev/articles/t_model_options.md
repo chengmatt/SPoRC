@@ -752,6 +752,8 @@ are:
 | `"nonparfree"` | Non-parametric on the log scale with no standardization at all: $`\exp(\theta_\text{bin})`$, so the values hold the height of the curve as well as its shape | $`n_\text{bins}`$ |
 | `"asymplogist1"` | Logistic with asymptote $`\alpha \in (0,1)`$: $`\alpha / (1 + \exp(-k(\text{bin} - a_{50})))`$ | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln k`$) |
 | `"asymplogist2"` | Logistic with asymptote, $`a_{50}/a_{95}`$ parameterization | 3 ($`\text{logit}(\alpha)`$, $`\ln a_{50}`$, $`\ln a_{95}`$) |
+| `"desclogist1"` | Descending logistic: $`1 / (1 + \exp(k(\text{bin} - a_{50})))`$ | 2 ($`\ln a_{50}`$, $`\ln k`$) |
+| `"dbllogist1"` | Double logistic, an ascending logistic times a descending one, not rescaled to peak at one | 4 ($`\ln a_{50}`$, $`\ln k`$ of the ascending limb, then of the descending limb) |
 | `"bicubic"` | Bicubic natural-cubic-spline surface over a bin-node $`\times`$ year-node grid | $`n_\text{bin\_nodes} \times n_\text{yr\_nodes}`$ (see below) |
 
 The three non-parametric forms differ only in what happens after the
@@ -918,16 +920,32 @@ across sexes leaves one set for the first sex under any form. The rest
 are fixed, so the number of hyperparameters reported as estimated is the
 number the fit can actually move.
 
-`fishsel_pe_pars_spec` takes the same four `_b` spellings, where they
-mean something related but distinct: one process error standard
-deviation across every bin the fleet reads, rather than one deviation
-series per bin group. That is the key matrix ICES assessments write for
-the fishing mortality process, with a single group. It needs a
-non-parametric form, since on a parametric one the slots are curve
-parameters on unrelated scales, and it needs `"iid"` or `"rw"`, since
-the GMRF and AR1 forms hold correlations and a single standard deviation
-rather than one per bin. Grouped standard deviations, where some ages
-share one and others share another, are not available.
+`fishsel_pe_pars_spec` takes the same `_b` spellings, where they mean
+something related but distinct: one process error standard deviation
+across every bin the fleet reads, rather than one deviation series per
+bin group. It needs a non-parametric form, since on a parametric one the
+slots are curve parameters on unrelated scales, and it needs `"iid"` or
+`"rw"`, since the GMRF and AR1 forms hold correlations and a single
+standard deviation rather than one per bin.
+
+`fish_sel_devs_pars` / `srv_sel_devs_pars` name the parameters a fleet’s
+`"iid"` or `"rw"` deviations apply to: a list with one element per
+fleet, `NULL` for every parameter (the default). `list(1:2, NULL)` on a
+`"dbllogist1"` fleet lets its ascending limb vary by year and keeps its
+descending limb constant. A parameter left out has no deviations and no
+process error standard deviation, in the fit and in the operating model
+alike. It needs a parametric form, since the GMRF, AR1 and
+non-parametric forms index their deviations by bin.
+
+`fish_sel_devs_form` / `srv_sel_devs_form` set how `"iid"` or `"rw"`
+deviations enter the parameters, one entry per fleet. `"multiplicative"`
+(the default) is $`\theta_y = \theta\exp(\epsilon_y)`$. `"additive"` is
+$`\theta_y = \theta + \epsilon_y`$, where the deviations and their
+process error standard deviation are on the parameter’s own scale, years
+of age for an age at 50% selection. A list element with one string per
+parameter mixes the two within a fleet:
+`list(c("additive", "multiplicative"))` on a logistic fleet walks the
+age at 50% selection in years of age and the slope in proportion.
 
 Three further controls tune the process-error penalty itself:
 
@@ -957,6 +975,13 @@ are shared the same way whatever `*sel_pe_pars_spec` says, so no region
 or fleet keeps a sigma that no penalty reads.
 
 #### Bin-override selectivity deviations
+
+Bins a gear does not take at all are named in `fish_sel_zero_bins` /
+`srv_sel_zero_bins` (a list with one element per fleet, `NULL` for
+none): `list(1:2, NULL)` sets the selectivity of fleet 1 at bins 1 and 2
+to exactly zero in every year. It is applied after the functional form,
+its deviations and any standardization, so the rest of the curve keeps
+its shape, and the operating model does the same.
 
 Individual bins can be cut loose from the functional form entirely: bins
 named in `fish_sel_bin_dev_bins` / `ret_sel_bin_dev_bins` /
@@ -1018,9 +1043,9 @@ Any functional form’s model string accepts an optional `_NSelBins_<n>`
 suffix (e.g. `"logist1_Fleet_1_NSelBins_17"`, composable with
 `_Block_<b>` in either order): bins beyond `n` are kept at bin `n`’s
 computed value rather than evaluated through the form. This is the
-plateau convention many existing assessments have, where selectivity is
-the functional form up to a chosen bin and constant after it. The
-bicubic form already had this suffix and builds its plateau into its
+plateau convention that some existing assessments have, where
+selectivity is the functional form up to a chosen bin and constant after
+it. The bicubic form had this suffix and builds its plateau into its
 spline weights; for every other form the hold is applied after the form
 and its parameter deviations, before bin-level semi-parametric
 deviations and bin overrides. The plateau changes the model whenever the
@@ -1130,7 +1155,12 @@ unpenalized the choice makes no difference to the fit.
 Lognormal priors on selectivity parameters are toggled via
 `Use_fish_selex_prior` / `Use_srv_selex_prior`, with hyperparameters
 supplied in a data frame (`fish_selex_prior` / `srv_selex_prior`)
-containing `region`, `fleet`, `block`, `sex`, `par`, `mu`, and `sd`.
+containing `region`, `fleet`, `block`, `sex`, `par`, `mu`, and `sd`. An
+optional `type` column says what each row constrains: `"par"` (the
+default) is that lognormal prior, `"par_normal"` is a normal prior on
+the parameter’s natural scale with `mu` and `sd` both on that scale (for
+example `mu = 10`, `sd = 3` on an age at 50% selection), and `"value"`
+is a normal prior on the realized selectivity at the bin named in `par`.
 
 #### Selectivity smoothness penalty weights
 
@@ -2254,11 +2284,8 @@ index by age therefore no longer costs you its survey-design errors.
 
 Parameters are coupled through integer key arrays
 `[n_obs_ages, n_sexes, n_fleets]`, in which equal entries share a
-parameter and `NA` excludes one. This is the key matrix convention ICES
-assessments use for coupling variances and catchability, with `NA`
-marking an excluded parameter, and the fleet last because that is where
-`SPoRC` puts it. One structure covers every sharing pattern that would
-otherwise need its own argument:
+parameter and `NA` excludes one. One structure covers every sharing
+pattern that would otherwise need its own argument:
 
 | Intent                | Key column for a fleet and sex |
 |-----------------------|--------------------------------|

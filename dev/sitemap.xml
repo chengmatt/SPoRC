@@ -12,6 +12,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ai_nea_cod_case_study.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/aj_development_roadmap.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/ak_state_space_naa_spatial_sim.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/articles/al_goa_pollock_case_study.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/architecture.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/b_model_parameters.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/articles/c_model_equations.html</loc></url>
@@ -309,7 +310,6 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_discard_pred.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dmr_penalty.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo.html</loc></url>
-<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_Q_oo_pattern.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_arrow_values.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_cells.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/get_dsem_conditional.html</loc></url>
@@ -482,6 +482,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/seed_dbnrml_peak.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sel_devs_by_unit.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sel_has_data.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sel_par_dev.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/self_test_priors.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/set_dsem_logdet_atomic.html</loc></url>
@@ -491,8 +492,10 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_dbnrml_startbin.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_q_devs.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_bin_devs.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_devs_form.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_norm_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_sex_offset.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_zero_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_stage_order.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_atka_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nork_data.html</loc></url>
@@ -502,6 +505,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebs_pcod_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebswp_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_goa_nork_data.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_goa_pollock_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_neacod_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_rebs_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_sable_data.html</loc></url>

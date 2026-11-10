@@ -28,8 +28,12 @@ get_selex_prior(
   (the default when the column is absent) is a lognormal prior on one
   fixed selectivity parameter,
   `dnorm(pars[region,par,block,sex,fleet], log(mu), sd)`, with `mu` on
-  the natural scale and `sd` on the log scale. A `"value"` row is a
-  normal prior on the realized selectivity at one bin,
+  the natural scale and `sd` on the log scale. A `"par_normal"` row is a
+  normal prior on the same parameter on its natural scale,
+  `dnorm(exp(pars[region,par,block,sex,fleet]), mu, sd)`, with `mu` and
+  `sd` both on the natural scale, for a parameter estimated on the log
+  scale such as an age at 50% selection. A `"value"` row is a normal
+  prior on the realized selectivity at one bin,
   `dnorm(sel[bin], mu, sd)`, with both on the natural scale; `par` then
   names the bin on whichever grid the data source is parameterized over,
   and the value is read at the first model year of `block`, selectivity

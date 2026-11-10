@@ -43,7 +43,9 @@ Get_Selex_Array(
   sex_scale = NULL,
   nselbins = NULL,
   dbnrml_raw = NULL,
-  dbnrml_startbin = NULL
+  dbnrml_startbin = NULL,
+  devs_additive = NULL,
+  zero_bins = NULL
 )
 ```
 
@@ -161,6 +163,19 @@ Get_Selex_Array(
   Integer vector `[n_fleets]` or `NULL`, the bin each fleet's double
   normal anchors its ascending limb at; see
   [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md).
+
+- devs_additive:
+
+  Integer matrix `n_slots x n_fleets` (0/1) or `NULL`, flagging the
+  parameters whose deviations are added on the natural scale for each
+  fleet; see
+  [`Get_Selex`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Selex.md).
+
+- zero_bins:
+
+  Integer matrix `n_bins x n_fleets` (0/1) or `NULL`, flagging the bins
+  each fleet does not select. Their selectivity is set to zero after
+  everything else, for fleets whose selectivity is estimated.
 
 ## Value
 

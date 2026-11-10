@@ -2134,6 +2134,35 @@ asymptotic selectivity to be less than 1. These forms are useful for
 fleets where full vulnerability is not achieved even at the largest
 observed sizes or ages.
 
+A descending logistic and a double logistic are also available. The
+descending logistic falls from one toward zero:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \frac{1}{1 + \exp\left\lbrack k\left( b - b^{50} \right) \right\rbrack}
+\end{matrix}
+```
+
+where $`b^{50}`$ is the bin at which selectivity has fallen to 50% and
+$`k`$ is the slope, supplied in the order $`\left( b^{50},k \right)`$.
+The double logistic is an ascending logistic multiplied by a descending
+one:
+
+``` math
+\begin{matrix}
+{Sel}_{b} = \frac{1}{1 + \exp\left\lbrack - k^{asc}\left( b - b^{50,asc} \right) \right\rbrack} \cdot \frac{1}{1 + \exp\left\lbrack k^{desc}\left( b - b^{50,desc} \right) \right\rbrack}
+\end{matrix}
+```
+
+where $`b^{50,asc}`$ and $`k^{asc}`$ are the bin-at-50% selection and
+slope of the ascending limb, and $`b^{50,desc}`$ and $`k^{desc}`$ are
+the bin at which selectivity has fallen to 50% and the slope of the
+descending limb. Parameters are supplied in the order
+$`\left( b^{50,asc},k^{asc},b^{50,desc},k^{desc} \right)`$, all on the
+log scale. The curve is not rescaled, so its peak sits below one
+wherever the two limbs overlap, and fishing mortality or catchability
+absorbs the difference.
+
 ##### Selectivity Plateau
 
 Any functional form can additionally have a plateau (the `_NSelBins_<n>`
@@ -2149,6 +2178,19 @@ applied after the form and its parameter deviations. This is the plateau
 convention many existing assessments use, and it is part of the model
 rather than a display choice whenever the curve has not saturated by
 $`n^{\text{sel}}`$.
+
+##### Bins Not Selected
+
+A fleet can name bins it does not select at all (`fish_sel_zero_bins`,
+`srv_sel_zero_bins`). Their selectivity is zero in every year,
+
+``` math
+{Sel}_{y,b} = 0 \quad \text{for } b \in \mathcal{B}^{0}
+```
+
+where $`\mathcal{B}^{0}`$ is the set of bins named for that fleet. This
+is applied after the form, its deviations and any standardization, so
+the other bins are unchanged.
 
 ##### Sex Offsets
 
@@ -2342,6 +2384,19 @@ parametric deviations are invoked, the following expression is used:
 ```
 
 where the parameters of the logistic form are allowed to vary over time.
+Every parameter of a form varies by default. A fleet can instead name
+the parameters that vary (`fish_sel_devs_pars`, `srv_sel_devs_pars`),
+for example the ascending limb of a double logistic while its descending
+limb stays constant. Deviations can also be added on the parameter’s own
+scale (`fish_sel_devs_form`, `srv_sel_devs_form` set to `"additive"`):
+
+``` math
+b_{y}^{50} = b^{50} + \epsilon_{y,1}^{Sel}
+```
+
+where the deviation $`\epsilon_{y,1}^{Sel}`$ and its process error
+standard deviation are then in bins (years of age for an age-based
+curve) rather than proportions.
 
 In the context of semi-parametric selectivity, the following equation is
 used:

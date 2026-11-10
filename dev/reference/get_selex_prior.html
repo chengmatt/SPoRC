@@ -40,6 +40,7 @@ one prior, and its optional type column says what the row constrains."><meta nam
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -88,7 +89,11 @@ one prior, and its optional <code>type</code> column says what the row constrain
 <code>type</code>, one row per prior. A <code>"par"</code> row (the default when the
 column is absent) is a lognormal prior on one fixed selectivity parameter,
 <code>dnorm(pars[region,par,block,sex,fleet], log(mu), sd)</code>, with <code>mu</code>
-on the natural scale and <code>sd</code> on the log scale. A <code>"value"</code> row is
+on the natural scale and <code>sd</code> on the log scale. A <code>"par_normal"</code>
+row is a normal prior on the same parameter on its natural scale,
+<code>dnorm(exp(pars[region,par,block,sex,fleet]), mu, sd)</code>, with <code>mu</code>
+and <code>sd</code> both on the natural scale, for a parameter estimated on the
+log scale such as an age at 50% selection. A <code>"value"</code> row is
 a normal prior on the realized selectivity at one bin,
 <code>dnorm(sel[bin], mu, sd)</code>, with both on the natural scale; <code>par</code>
 then names the bin on whichever grid the data source is parameterized over,

@@ -40,6 +40,9 @@ Setup_Mod_Srvsel_and_Q(
   t_srv = array(1, dim = c(input_list$data$n_regions, input_list$data$n_seas,
     input_list$data$n_srv_fleets)),
   srvsel_devs_shared_bins = NULL,
+  srv_sel_devs_pars = NULL,
+  srv_sel_devs_form = rep("multiplicative", input_list$data$n_srv_fleets),
+  srv_sel_zero_bins = NULL,
   srv_selex_type = "age",
   use_fixed_srv_sel = rep(0, input_list$data$n_srv_fleets),
   srv_sel_input = NULL,
@@ -199,10 +202,12 @@ Setup_Mod_Srvsel_and_Q(
   Data frame with columns `region`, `fleet`, `block`, `sex`, `par`,
   `mu`, `sd` and an optional `type`. `"par"` (the default) is a
   lognormal prior on one fixed selectivity parameter, with `mu` on the
-  natural scale and `sd` on the log scale. `"value"` is a normal prior
-  on the realized selectivity at one bin, both on the natural scale,
-  where `par` names the bin and the value is read at the first model
-  year of `block`; that is the ADMB convention of pinning survey
+  natural scale and `sd` on the log scale. `"par_normal"` is a normal
+  prior on that parameter's natural scale, `dnorm(exp(par), mu, sd)`,
+  with `mu` and `sd` both on the natural scale. `"value"` is a normal
+  prior on the realized selectivity at one bin, both on the natural
+  scale, where `par` names the bin and the value is read at the first
+  model year of `block`; that is the ADMB convention of pinning survey
   selectivity at a reference age near one, which no set of independent
   parameter priors can express. Default `NULL`.
 
@@ -274,6 +279,28 @@ Setup_Mod_Srvsel_and_Q(
   List of integer vectors grouping the bins that share one deviation
   series, e.g. `list(1:5, 6:10, 11:30)`. Required when
   `srv_sel_devs_spec` names an `"est_shared_b"` variant. Default `NULL`.
+
+- srv_sel_devs_pars:
+
+  List with one element per fleet naming the selectivity parameters that
+  fleet's `"iid"` or `"rw"` deviations apply to, in the order the form
+  lists them, or `NULL` for every parameter. A parameter left out has no
+  deviations and no process error standard deviation. Default `NULL`.
+
+- srv_sel_devs_form:
+
+  Character vector `[n_srv_fleets]` of how `"iid"` or `"rw"` deviations
+  enter the selectivity parameters, `"multiplicative"` (default) or
+  `"additive"`, or a list with one string per parameter for a fleet, as
+  `fish_sel_devs_form` in
+  [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
+
+- srv_sel_zero_bins:
+
+  List with one element per fleet naming the bins that fleet does not
+  select, or `NULL` for none, as `fish_sel_zero_bins` in
+  [`Setup_Mod_Fishsel_and_Q`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Fishsel_and_Q.md).
+  Default `NULL`.
 
 - srv_selex_type:
 

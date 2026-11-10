@@ -4,12 +4,18 @@
 (unobs_idx) and \(o\) for the rest (obs_idx), those rows
 give every one of those cells from the others,
 $$x_u - \mu_u = -(I - B)_{uu}^{-1}(I - B)_{uo}(x_o - \mu_o),$$
-and this returns the matrix in the middle."><meta property="og:description" content="A series with an sd of zero has no innovation, so its rows of
+and this returns the matrix in the middle. It is kept sparse: a solved cell
+is set only by the cells an arrow reaches it from, so most entries are zero.
+When no arrow runs between two solved cells, \((I - B)_{uu}\) is the
+identity and the matrix is \((I - B)_{uo}\) itself."><meta property="og:description" content="A series with an sd of zero has no innovation, so its rows of
 \((I - B)(x - \mu) = \varepsilon\) read zero. Writing \(u\) for its cells
 (unobs_idx) and \(o\) for the rest (obs_idx), those rows
 give every one of those cells from the others,
 $$x_u - \mu_u = -(I - B)_{uu}^{-1}(I - B)_{uo}(x_o - \mu_o),$$
-and this returns the matrix in the middle."><meta name="robots" content="noindex"></head><body>
+and this returns the matrix in the middle. It is kept sparse: a solved cell
+is set only by the cells an arrow reaches it from, so most entries are zero.
+When no arrow runs between two solved cells, \((I - B)_{uu}\) is the
+identity and the matrix is \((I - B)_{uo}\) itself."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -44,6 +50,7 @@ and this returns the matrix in the middle."><meta name="robots" content="noindex
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -69,7 +76,10 @@ and this returns the matrix in the middle."><meta name="robots" content="noindex
 (<code>unobs_idx</code>) and \(o\) for the rest (<code>obs_idx</code>), those rows
 give every one of those cells from the others,
 $$x_u - \mu_u = -(I - B)_{uu}^{-1}(I - B)_{uo}(x_o - \mu_o),$$
-and this returns the matrix in the middle.</p>
+and this returns the matrix in the middle. It is kept sparse: a solved cell
+is set only by the cells an arrow reaches it from, so most entries are zero.
+When no arrow runs between two solved cells, \((I - B)_{uu}\) is the
+identity and the matrix is \((I - B)_{uo}\) itself.</p>
     </div>
 
     <div class="section level2">
@@ -91,7 +101,7 @@ and this returns the matrix in the middle.</p>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>Dense matrix, one row per solved cell and one column per cell that
+    <p>Sparse matrix, one row per solved cell and one column per cell that
   keeps an innovation, or <code>NULL</code> when nothing is solved out.</p>
     </div>
 

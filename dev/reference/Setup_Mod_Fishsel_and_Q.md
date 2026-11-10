@@ -34,12 +34,15 @@ Setup_Mod_Fishsel_and_Q(
   Use_fish_selex_penalty = 0,
   fish_sel_norm_bins = NULL,
   fish_sel_bin_dev_bins = NULL,
+  fish_sel_zero_bins = NULL,
   fishsel_pe_wt = rep(1, input_list$data$n_fish_fleets),
   fishsel_rw_init_sigma = rep(5, input_list$data$n_fish_fleets),
   fishsel_dont_est_dev_first = rep(0, input_list$data$n_fish_fleets),
   cont_tv_fishsel_bin_devs = rep("none", input_list$data$n_fish_fleets),
   fish_selex_penalty = NULL,
   fishsel_devs_shared_bins = NULL,
+  fish_sel_devs_pars = NULL,
+  fish_sel_devs_form = rep("multiplicative", input_list$data$n_fish_fleets),
   fish_selex_type = "age",
   use_fixed_fish_sel = rep(0, input_list$data$n_fish_fleets),
   fish_sel_input = NULL,
@@ -102,7 +105,10 @@ Setup_Mod_Fishsel_and_Q(
   (\\a\_{50}\\ and \\a\_{95}\\), `"gamma"` (dome, \\a\_{max}\\ and
   \\\delta\\), `"exponential"` (one power), `"dbnrml"` (double normal,
   six parameters), `"asymplogist1"` and `"asymplogist2"` (the two
-  logistics with an asymptote), the three non-parametric forms and
+  logistics with an asymptote), `"desclogist1"` (descending logistic,
+  \\a\_{50}\\ and slope), `"dbllogist1"` (double logistic, an ascending
+  logistic times a descending one, \\a\_{50}\\ and slope of each, not
+  rescaled to peak at one), the three non-parametric forms and
   `"bicubic"`.
 
   `"nonpar"` is on the logit scale, mean-standardized jointly over years
@@ -246,12 +252,15 @@ Setup_Mod_Fishsel_and_Q(
   Data frame with columns `region`, `fleet`, `block`, `sex`, `par`,
   `mu`, `sd` and an optional `type`. `"par"` (the default) is a
   lognormal prior on one fixed selectivity parameter, with `mu` on the
-  natural scale and `sd` on the log scale. `"value"` is a normal prior
-  on the realized selectivity at one bin, both on the natural scale,
-  where `par` names the bin and the value is read at the first model
-  year of `block`; that is the ADMB convention of pinning selectivity at
-  a reference age near one, which no set of independent parameter priors
-  can express. Read when `Use_fish_selex_prior = 1`.
+  natural scale and `sd` on the log scale. `"par_normal"` is a normal
+  prior on that parameter's natural scale, `dnorm(exp(par), mu, sd)`,
+  with `mu` and `sd` both on the natural scale, for example
+  `mu = 10, sd = 3` on an age at 50% selection. `"value"` is a normal
+  prior on the realized selectivity at one bin, both on the natural
+  scale, where `par` names the bin and the value is read at the first
+  model year of `block`; that is the ADMB convention of pinning
+  selectivity at a reference age near one, which no set of independent
+  parameter priors can express. Read when `Use_fish_selex_prior = 1`.
 
 - Use_fish_selex_penalty:
 
@@ -274,6 +283,15 @@ Setup_Mod_Fishsel_and_Q(
   what the functional form produced, applied after every other
   transformation including standardization, while the rest of the curve
   keeps its parametric shape. Default `NULL`.
+
+- fish_sel_zero_bins:
+
+  List with one element per fleet naming the bins that fleet does not
+  select, or `NULL` for none, e.g. `list(1:2, NULL)`. Their selectivity
+  is set to exactly zero in every year, after the functional form, its
+  deviations and any standardization, so the rest of the curve keeps its
+  shape. For a gear that does not take the youngest ages. Ignored for a
+  fleet with a fixed selectivity. Default `NULL`.
 
 - fishsel_pe_wt:
 
@@ -326,6 +344,26 @@ Setup_Mod_Fishsel_and_Q(
   List of integer vectors grouping the bins that share one deviation
   series, e.g. `list(1:5, 6:10, 11:30)`. Only read when
   `fish_sel_devs_spec` names an `"est_shared_b"` variant.
+
+- fish_sel_devs_pars:
+
+  List with one element per fleet naming the selectivity parameters that
+  fleet's `"iid"` or `"rw"` deviations apply to, in the order the form
+  lists them, or `NULL` for every parameter. `list(1:2)` on a
+  `"dbllogist1"` fleet lets the ascending limb vary by year and keeps
+  the descending limb constant. A parameter left out has no deviations
+  and no process error standard deviation. Default `NULL`.
+
+- fish_sel_devs_form:
+
+  Character vector `[n_fish_fleets]` of how `"iid"` or `"rw"` deviations
+  enter the selectivity parameters. `"multiplicative"` (default) is
+  \\\theta_y = \theta \exp(\epsilon_y)\\ and `"additive"` is \\\theta_y
+  = \theta + \epsilon_y\\, where the process error standard deviation is
+  on the parameter's own scale. A list element with one string per
+  parameter mixes the two within a fleet:
+  `list(c("additive", "multiplicative"))` on a logistic fleet walks the
+  age at 50% selection in years of age and the slope in proportion.
 
 - fish_selex_type:
 

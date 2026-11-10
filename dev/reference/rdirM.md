@@ -20,13 +20,15 @@ rdirM(n, N, alpha)
 
 - N:
 
-  Integer. Total count per draw (multinomial sample size).
+  Integer. Total count per draw (multinomial sample size). Zero, a year
+  with no sample, returns zeros.
 
 - alpha:
 
-  Numeric vector of length \\K\\. Dirichlet concentration parameters.
-  All elements must be positive. Larger values relative to \\N\\ produce
-  draws closer to the expected proportions \\\alpha / \sum \alpha\\.
+  Numeric vector of length \\K\\. Dirichlet concentration parameters,
+  none negative. A category at zero is never drawn, and a vector of
+  zeros returns zeros. Larger values relative to \\N\\ produce draws
+  closer to the expected proportions \\\alpha / \sum \alpha\\.
 
 ## Value
 

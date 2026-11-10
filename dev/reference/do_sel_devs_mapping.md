@@ -19,6 +19,7 @@ do_sel_devs_mapping(
   sel_devs_shared_bins,
   bins,
   dont_est_dev_first = NULL,
+  sel_devs_pars = NULL,
   prefix,
   fleet_field,
   use_field,
@@ -56,6 +57,13 @@ do_sel_devs_mapping(
   year two and the fixed selectivity parameters hold year one. Refused
   for the GMRF and 2D AR1 forms, whose deviations are a field rather
   than a walk anchored at year one.
+
+- sel_devs_pars:
+
+  List with one element per fleet naming the curve parameters that
+  fleet's iid or random walk deviations apply to, or `NULL` for every
+  parameter. `list(1:2)` on a double logistic lets the ascending limb
+  vary by year and keeps the descending limb constant.
 
 - prefix:
 

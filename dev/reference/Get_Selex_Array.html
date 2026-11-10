@@ -42,6 +42,7 @@ data arrays are passed in."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -103,7 +104,9 @@ data arrays are passed in.</p>
 <span>  sex_scale <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nselbins <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dbnrml_raw <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  dbnrml_startbin <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  dbnrml_startbin <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  devs_additive <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  zero_bins <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -221,6 +224,18 @@ unaffected.</p></dd>
 <dd><p>Integer vector <code>[n_fleets]</code> or <code>NULL</code>, the
 bin each fleet's double normal anchors its ascending limb at; see
 <code><a href="Get_Selex.html">Get_Selex</a></code>.</p></dd>
+
+
+<dt id="arg-devs-additive">devs_additive<a class="anchor" aria-label="anchor" href="#arg-devs-additive"></a></dt>
+<dd><p>Integer matrix <code>n_slots x n_fleets</code> (0/1) or
+<code>NULL</code>, flagging the parameters whose deviations are added on the
+natural scale for each fleet; see <code><a href="Get_Selex.html">Get_Selex</a></code>.</p></dd>
+
+
+<dt id="arg-zero-bins">zero_bins<a class="anchor" aria-label="anchor" href="#arg-zero-bins"></a></dt>
+<dd><p>Integer matrix <code>n_bins x n_fleets</code> (0/1) or <code>NULL</code>,
+flagging the bins each fleet does not select. Their selectivity is set to
+zero after everything else, for fleets whose selectivity is estimated.</p></dd>
 
 </dl></div>
     <div class="section level2">

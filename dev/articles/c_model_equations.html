@@ -49,6 +49,7 @@
     <li><a class="dropdown-item" href="../articles/ae_ebs_pacific_cod_case_study.html">EBS Pacific Cod</a></li>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
+    <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -2550,6 +2551,36 @@ is estimated on the logit scale, allowing the asymptotic selectivity to
 be less than 1. These forms are useful for fleets where full
 vulnerability is not achieved even at the largest observed sizes or
 ages.</p>
+<p>A descending logistic and a double logistic are also available. The
+descending logistic falls from one toward zero:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mi>b</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>k</mi><mrow><mo stretchy="true" form="prefix">(</mo><mi>b</mi><mo>−</mo><msup><mi>b</mi><mn>50</mn></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+{Sel}_{b} = \frac{1}{1 + \exp\left\lbrack k\left( b - b^{50} \right) \right\rbrack}
+\end{matrix}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>b</mi><mn>50</mn></msup><annotation encoding="application/x-tex">b^{50}</annotation></semantics></math>
+is the bin at which selectivity has fallen to 50% and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>k</mi><annotation encoding="application/x-tex">k</annotation></semantics></math>
+is the slope, supplied in the order
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>b</mi><mn>50</mn></msup><mo>,</mo><mi>k</mi><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\left( b^{50},k \right)</annotation></semantics></math>.
+The double logistic is an ascending logistic multiplied by a descending
+one:</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mtable><mtr><mtd columnalign="center" style="text-align: center"><msub><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mi>b</mi></msub><mo>=</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><mi>−</mi><msup><mi>k</mi><mrow><mi>a</mi><mi>s</mi><mi>c</mi></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>b</mi><mo>−</mo><msup><mi>b</mi><mrow><mn>50</mn><mo>,</mo><mi>a</mi><mi>s</mi><mi>c</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac><mo>⋅</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">[</mo><msup><mi>k</mi><mrow><mi>d</mi><mi>e</mi><mi>s</mi><mi>c</mi></mrow></msup><mrow><mo stretchy="true" form="prefix">(</mo><mi>b</mi><mo>−</mo><msup><mi>b</mi><mrow><mn>50</mn><mo>,</mo><mi>d</mi><mi>e</mi><mi>s</mi><mi>c</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><mo stretchy="true" form="postfix">]</mo></mrow></mrow></mfrac></mtd></mtr></mtable><annotation encoding="application/x-tex">\begin{matrix}
+{Sel}_{b} = \frac{1}{1 + \exp\left\lbrack - k^{asc}\left( b - b^{50,asc} \right) \right\rbrack} \cdot \frac{1}{1 + \exp\left\lbrack k^{desc}\left( b - b^{50,desc} \right) \right\rbrack}
+\end{matrix}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>b</mi><mrow><mn>50</mn><mo>,</mo><mi>a</mi><mi>s</mi><mi>c</mi></mrow></msup><annotation encoding="application/x-tex">b^{50,asc}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>k</mi><mrow><mi>a</mi><mi>s</mi><mi>c</mi></mrow></msup><annotation encoding="application/x-tex">k^{asc}</annotation></semantics></math>
+are the bin-at-50% selection and slope of the ascending limb, and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>b</mi><mrow><mn>50</mn><mo>,</mo><mi>d</mi><mi>e</mi><mi>s</mi><mi>c</mi></mrow></msup><annotation encoding="application/x-tex">b^{50,desc}</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>k</mi><mrow><mi>d</mi><mi>e</mi><mi>s</mi><mi>c</mi></mrow></msup><annotation encoding="application/x-tex">k^{desc}</annotation></semantics></math>
+are the bin at which selectivity has fallen to 50% and the slope of the
+descending limb. Parameters are supplied in the order
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo stretchy="true" form="prefix">(</mo><msup><mi>b</mi><mrow><mn>50</mn><mo>,</mo><mi>a</mi><mi>s</mi><mi>c</mi></mrow></msup><mo>,</mo><msup><mi>k</mi><mrow><mi>a</mi><mi>s</mi><mi>c</mi></mrow></msup><mo>,</mo><msup><mi>b</mi><mrow><mn>50</mn><mo>,</mo><mi>d</mi><mi>e</mi><mi>s</mi><mi>c</mi></mrow></msup><mo>,</mo><msup><mi>k</mi><mrow><mi>d</mi><mi>e</mi><mi>s</mi><mi>c</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\left( b^{50,asc},k^{asc},b^{50,desc},k^{desc} \right)</annotation></semantics></math>,
+all on the log scale. The curve is not rescaled, so its peak sits below
+one wherever the two limbs overlap, and fishing mortality or
+catchability absorbs the difference.</p>
 <div class="section level5">
 <h5 id="selectivity-plateau">Selectivity Plateau<a class="anchor" aria-label="anchor" href="#selectivity-plateau"></a>
 </h5>
@@ -2565,6 +2596,19 @@ plateau convention many existing assessments use, and it is part of the
 model rather than a display choice whenever the curve has not saturated
 by
 <math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>n</mi><mtext mathvariant="normal">sel</mtext></msup><annotation encoding="application/x-tex">n^{\text{sel}}</annotation></semantics></math>.</p>
+</div>
+<div class="section level5">
+<h5 id="bins-not-selected">Bins Not Selected<a class="anchor" aria-label="anchor" href="#bins-not-selected"></a>
+</h5>
+<p>A fleet can name bins it does not select at all
+(<code>fish_sel_zero_bins</code>, <code>srv_sel_zero_bins</code>). Their
+selectivity is zero in every year,</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mrow><mi>y</mi><mo>,</mo><mi>b</mi></mrow></msub><mo>=</mo><mn>0</mn><mspace width="1.0em"></mspace><mrow><mtext mathvariant="normal">for </mtext><mspace width="0.333em"></mspace></mrow><mi>b</mi><mo>∈</mo><msup><mi>ℬ</mi><mn>0</mn></msup></mrow><annotation encoding="application/x-tex">{Sel}_{y,b} = 0 \quad \text{for } b \in \mathcal{B}^{0}</annotation></semantics></math></p>
+<p>where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msup><mi>ℬ</mi><mn>0</mn></msup><annotation encoding="application/x-tex">\mathcal{B}^{0}</annotation></semantics></math>
+is the set of bins named for that fleet. This is applied after the form,
+its deviations and any standardization, so the other bins are
+unchanged.</p>
 </div>
 <div class="section level5">
 <h5 id="sex-offsets">Sex Offsets<a class="anchor" aria-label="anchor" href="#sex-offsets"></a>
@@ -2796,7 +2840,18 @@ parametric deviations are invoked, the following expression is used:</p>
 }{k_{y} = k \cdot \exp\left( \epsilon_{y,1}^{Sel} \right)
 }{b_{y}^{50} = b^{50} \cdot exp(\epsilon_{y,2}^{Sel})}</annotation></semantics></math></p>
 <p>where the parameters of the logistic form are allowed to vary over
-time.</p>
+time. Every parameter of a form varies by default. A fleet can instead
+name the parameters that vary (<code>fish_sel_devs_pars</code>,
+<code>srv_sel_devs_pars</code>), for example the ascending limb of a
+double logistic while its descending limb stays constant. Deviations can
+also be added on the parameter’s own scale
+(<code>fish_sel_devs_form</code>, <code>srv_sel_devs_form</code> set to
+<code>"additive"</code>):</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msubsup><mi>b</mi><mi>y</mi><mn>50</mn></msubsup><mo>=</mo><msup><mi>b</mi><mn>50</mn></msup><mo>+</mo><msubsup><mi>ϵ</mi><mrow><mi>y</mi><mo>,</mo><mn>1</mn></mrow><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow></msubsup></mrow><annotation encoding="application/x-tex">b_{y}^{50} = b^{50} + \epsilon_{y,1}^{Sel}</annotation></semantics></math></p>
+<p>where the deviation
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msubsup><mi>ϵ</mi><mrow><mi>y</mi><mo>,</mo><mn>1</mn></mrow><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow></msubsup><annotation encoding="application/x-tex">\epsilon_{y,1}^{Sel}</annotation></semantics></math>
+and its process error standard deviation are then in bins (years of age
+for an age-based curve) rather than proportions.</p>
 <p>In the context of semi-parametric selectivity, the following equation
 is used:</p>
 <p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mtable><mtr><mtd columnalign="center" style="text-align: center"><msubsup><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mrow><mi>y</mi><mo>,</mo><mi>b</mi></mrow><mi>′</mi></msubsup><mo>=</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><mi>−</mi><mi>k</mi><mrow><mo stretchy="true" form="prefix">[</mo><mi>b</mi><mo>−</mo><msup><mi>b</mi><mn>50</mn></msup><mo stretchy="true" form="postfix">]</mo></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow></mfrac><mrow><mi mathvariant="normal">exp</mi><mo>⁡</mo></mrow><mrow><mo stretchy="true" form="prefix">(</mo><msup><msub><mi>ϵ</mi><mrow><mi>y</mi><mo>,</mo><mi>b</mi></mrow></msub><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow></msup><mo stretchy="true" form="postfix">)</mo></mrow></mtd></mtr><mtr><mtd columnalign="center" style="text-align: center"></mtd></mtr></mtable><mrow><msub><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mrow><mi>y</mi><mo>,</mo><mi>b</mi></mrow></msub><mo>=</mo><mfrac><msubsup><mrow><mi>S</mi><mi>e</mi><mi>l</mi></mrow><mrow><mi>y</mi><mo>,</mo><mi>b</mi></mrow><mi>′</mi></msubsup><mrow><mi>m</mi><mi>e</mi><mi>a</mi><mi>n</mi><mo stretchy="false" form="prefix">(</mo><mrow><mi>𝐒</mi><mi>𝐞</mi></mrow><msup><mi>𝐥</mi><mi mathvariant="bold">′</mi></msup><mo stretchy="false" form="postfix">)</mo></mrow></mfrac></mrow></mrow><annotation encoding="application/x-tex">{\begin{matrix}

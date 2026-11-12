@@ -77,10 +77,15 @@ truncate_yr <- function(j,
   # Recruitment devs: the kept fitted years, then the projected ones from n_proj_yrs_devs
   n_fitted <- length(data$years)
   n_keep <- n_fitted - j
-  retro_parameters$ln_RecDevs <- peel_year_dim(parameters$ln_RecDevs, 3, n_fitted, n_keep)
-  retro_mapping$ln_RecDevs <- peel_map(mapping$ln_RecDevs, parameters$ln_RecDevs, 3, n_fitted, n_keep)
-  retro_data$map_ln_RecDevs <- peel_year_dim(data$map_ln_RecDevs, 3, n_fitted, n_keep) # the penalty's map mirror
-  if(length(data$Wt_Rec) > 1) retro_data$Wt_Rec <- peel_year_dim(data$Wt_Rec, 3, n_fitted, n_keep) # per-deviation weights
+
+  # dont_est_recdev_last leaves the last years without a deviation, so the devs cover fewer fitted years than the model
+  n_proj_devs <- if(is.null(data$n_proj_yrs_devs)) 0 else data$n_proj_yrs_devs
+  n_fitted_rec <- dim(parameters$ln_RecDevs)[3] - n_proj_devs
+  n_keep_rec <- n_fitted_rec - j
+  retro_parameters$ln_RecDevs <- peel_year_dim(parameters$ln_RecDevs, 3, n_fitted_rec, n_keep_rec)
+  retro_mapping$ln_RecDevs <- peel_map(mapping$ln_RecDevs, parameters$ln_RecDevs, 3, n_fitted_rec, n_keep_rec)
+  retro_data$map_ln_RecDevs <- peel_year_dim(data$map_ln_RecDevs, 3, n_fitted_rec, n_keep_rec) # the penalty's map mirror
+  if(length(data$Wt_Rec) > 1) retro_data$Wt_Rec <- peel_year_dim(data$Wt_Rec, 3, n_fitted_rec, n_keep_rec) # per-deviation weights
 
   # the projection's mean recruitment window ends the same number of years before the new terminal year
   if(!is.null(data$proj_calc_rec_yrs)) {

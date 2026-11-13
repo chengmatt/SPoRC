@@ -129,6 +129,21 @@ test_that("the setup refuses what is not identified", {
                "correlated structure")
 })
 
+test_that("sigma blocks must cover every age and year once, and a block with no state is kept fixed", {
+
+  # the errors name the age or year a block list gets wrong
+  expect_error(naa_on("iid", NAA_sigma_ageblk_spec = as.list(2:8)), "position 1 \\(age 1\\) out of every block")
+  expect_error(naa_on("iid", NAA_sigma_ageblk_spec = as.list(1:9)), "names position 9")
+  expect_error(naa_on("iid", NAA_sigma_ageblk_spec = list(1:4, 4:8)), "position 4 \\(age 4\\) in more than one block")
+  expect_error(naa_on("iid", NAA_sigma_yearblk_spec = list(2:22)), "ln_InitDevs")
+
+  # age 1 has no state, so its own block is mapped off and seven are estimated, as when it shares age 2's
+  one_per_age <- naa_on("iid", NAA_sigma_ageblk_spec = as.list(1:8))
+  expect_true(is.na(one_per_age$map$ln_sigmaNAA[1]))
+  expect_equal(nlevels(one_per_age$map$ln_sigmaNAA), 7)
+  expect_equal(nlevels(naa_on("iid", NAA_sigma_ageblk_spec = c(list(1:2), as.list(3:8)))$map$ln_sigmaNAA), 7)
+})
+
 
 # Correlation across regions -------------------------------------------------
 

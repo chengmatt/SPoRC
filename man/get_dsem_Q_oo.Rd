@@ -2,7 +2,7 @@
 % Please edit documentation in R/model_precision.R
 \name{get_dsem_Q_oo}
 \alias{get_dsem_Q_oo}
-\title{The precision of the cells that have an innovation}
+\title{The precision of the cells that have an innovation (i.e., not fully deterministic)}
 \usage{
 get_dsem_Q_oo(IminusB, parts, solve_mat, dsem_cells)
 }

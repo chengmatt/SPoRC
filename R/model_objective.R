@@ -960,7 +960,7 @@ SPoRC_rtmb = function(pars, data) {
   NAA_aft = tmp_pop_proj$NAA_aft # after movement
   NAA_int = tmp_pop_proj$NAA_int # season-integrated abundance (move_timing == 2 only)
   NAA_pred = tmp_pop_proj$NAA_pred # deterministic prediction behind the state (NAA_re != none only)
-  NAA_scalar = tmp_pop_proj$NAA_scalar # factor the state applied, one wherever it did not
+  NAA_scalar = tmp_pop_proj$NAA_scalar # multiplicative factor the state applies to the deterministic prediction
 
   # get derived quantities
   Rec = tmp_pop_proj$Rec

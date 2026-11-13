@@ -5,33 +5,11 @@
 \alias{sgl_rg_goa_pollock_data}
 \title{Gulf of Alaska walleye pollock data for the Rceattle case study}
 \format{
-A list with components \code{inputs} (dimensions, weight, maturity and
-  natural mortality at age, the ageing error matrix and the two with young
-  ages pooled, the catch, index and composition observations with their use
-  flags and sample sizes, survey and spawn timing, the composition constant,
-  \code{Qcov}, the \code{covariates} data frame, the bottom trawl catchability
-  prior and the ages \code{Rceattle} rescales each selectivity curve at), and
-  \code{m26a} and \code{m26b} (\code{Rceattle}'s spawning biomass, recruitment,
-  mean recruitment and its deviations, annual log F, selectivity parameters and
-  the annual offsets of the fishery curve, log catchability and its annual
-  offsets, the Shelikof catchability effect, standard deviation and
-  correlation with the latent series \code{Qcov} measures
-  (\code{qcov_latent}), the Dirichlet-multinomial parameters, predicted indices,
-  marginal negative log likelihood and number of fixed effects; \code{m26b}
-  adds the dsem coefficients by arrow name, the covariate means and the
-  covariate cells). Composition sample sizes and Dirichlet-multinomial
-  parameters are scaled by one plus the number of fitted bins times the
-  composition constant, which is how \code{Rceattle} counts them; every other
-  estimate is in \code{Rceattle}'s own terms.
+Data list containing inputs and outputs for the 2026 GOA Pollock Assessment
 }
 \source{
 Monnahan, C., Adams, G., Lauffenberger, N. 2026. Gulf of Alaska pollock
-  model updates. Alaska Fisheries Science Center, September 2026. Inputs from
-  \url{https://github.com/grantdadams/Rceattle-models}, fit with
-  \code{Rceattle} 5.23.0 (Adams, G. D., Holsman, K. K., Barbeaux, S. J., Dorn,
-  M. W., Ianelli, J. N., Spies, I., Stewart, I. J., Punt, A. E. 2022. An
-  ensemble approach to understand predation mortality for groundfish in the
-  Gulf of Alaska. Fisheries Research 251: 106303).
+  model updates. Alaska Fisheries Science Center, September 2026.
 }
 \usage{
 sgl_rg_goa_pollock_data

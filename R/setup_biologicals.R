@@ -222,8 +222,8 @@ Setup_Sim_Biologicals <- function(
 #' Map natural mortality parameters to a block structure
 #'
 #' Builds the \code{M_blocks} index array and the \code{ln_M} factor map. Each
-#' combination of blocks takes a sequential integer, and every cell in a block
-#' shares one \code{ln_M}.
+#' cell holds its block's position in \code{ln_M}, so every cell in a block shares
+#' \code{ln_M[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]}.
 #'
 #' @param input_list Named list with \code{$data}, \code{$par} and \code{$map}.
 #' @param M_spec \code{"est_ln_M"} estimates \code{ln_M} across the blocks,
@@ -267,9 +267,11 @@ do_natmort_mapping <- function(input_list,
   # create array for blocks
   M_blocks <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, length(input_list$data$years), input_list$data$n_seas, length(input_list$data$ages), input_list$data$n_sexes))
 
-  # loop through to get counters for blocking structure for indexing. Season sits
-  # between year and age so one season block gives the same counters as before
-  counter <- 1
+  # each cell reads ln_M at its block's position. ln_M is stored population block fastest, so
+  # ln_M[popblk, regionblk, yearblk, seasblk, ageblk, sexblk] is the rate for that block
+  n_blks <- c(length(M_popblk_spec_vals), length(M_regionblk_spec_vals), length(M_yearblk_spec_vals),
+              length(M_seasblk_spec_vals), length(M_ageblk_spec_vals), length(M_sexblk_spec_vals))
+  blk_pos <- array(seq_len(prod(n_blks)), dim = n_blks) # position of each block in ln_M
   for(popblk in seq_along(M_popblk_spec_vals)) {
     map_p <- M_popblk_spec_vals[[popblk]]
 
@@ -288,9 +290,7 @@ do_natmort_mapping <- function(input_list,
             for (sexblk in seq_along(M_sexblk_spec_vals)) {
               map_s <- M_sexblk_spec_vals[[sexblk]]
 
-              # Assign the current counter to this block
-              M_blocks[map_p, map_r, map_y, map_seas, map_a, map_s] <- counter
-              counter <- counter + 1
+              M_blocks[map_p, map_r, map_y, map_seas, map_a, map_s] <- blk_pos[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]
 
             } # end sexblk
           } # end ageblk
@@ -525,6 +525,8 @@ do_growth_mapping <- function(input_list,
 #'   combination, with columns \code{popblk}, \code{regionblk}, \code{yearblk},
 #'   \code{ageblk}, \code{sexblk}, \code{mu} on the natural scale, \code{sd}, and
 #'   optionally \code{seasblk} (left out, it reads the block covering season one).
+#'   The block columns are block numbers, the order of the blocks in each
+#'   \code{M_*blk_spec} list, not ages or years.
 #'   Only used when \code{Use_M_prior = 1}.
 #' @param fit_lengths Integer flag for fitting length compositions, \code{0}
 #'   (default) or \code{1}. Requires a valid \code{SizeAgeTrans}.
@@ -723,8 +725,10 @@ do_growth_mapping <- function(input_list,
 #' @param NAA_sigma_popblk_spec,NAA_sigma_regionblk_spec,NAA_sigma_yearblk_spec,NAA_sigma_seasblk_spec,NAA_sigma_ageblk_spec,NAA_sigma_sexblk_spec
 #'   Blocking for the process error standard deviation, each \code{"constant"}
 #'   (default) or a list of integer vectors, exactly as the \code{M_*blk_spec}
-#'   arguments. Blocking shares a standard deviation and never removes a cell from
-#'   the state. Only \code{NAA_re = "iid"} admits one varying over years or ages;
+#'   arguments. The vectors hold positions in the dim and must name each one once,
+#'   the first age and first year included, and a block with no state cell in it
+#'   is kept at its starting value. Blocking shares a standard deviation and never
+#'   removes a cell from the state. Only \code{NAA_re = "iid"} admits one varying over years or ages;
 #'   every other form is separable or Markov in a dim. The season dim is the
 #'   exception, being whitened outside the age and year density, and is ruled out
 #'   only by \code{NAA_re_season = "us"}.
@@ -1182,11 +1186,23 @@ Setup_Mod_Biologicals <- function(input_list,
     if(length(missing_cols) > 0) {
       stop("M_prior is missing required columns: ", paste(missing_cols, collapse = ", "))
     }
-    # maintain backwards compatbility for m prior w/ seasons
-    if(!is.null(M_prior$seasblk)) {
-      if(any(M_prior$seasblk < 1 | M_prior$seasblk > input_list$data$n_seas))
-        stop("M_prior$seasblk must be a season block index between 1 and the number of seasons (", input_list$data$n_seas, ")")
-    }
+    # each column is a block number, so it must be one of the blocks its M_*blk_spec makes. seasblk is optional
+    # so older priors without seasons still work
+    n_M_blks <- c(popblk = if(is.list(M_popblk_spec)) length(M_popblk_spec) else 1,
+                  regionblk = if(is.list(M_regionblk_spec)) length(M_regionblk_spec) else 1,
+                  yearblk = if(is.list(M_yearblk_spec)) length(M_yearblk_spec) else 1,
+                  seasblk = if(is.list(M_seasblk_spec)) length(M_seasblk_spec) else 1,
+                  ageblk = if(is.list(M_ageblk_spec)) length(M_ageblk_spec) else 1,
+                  sexblk = if(is.list(M_sexblk_spec)) length(M_sexblk_spec) else 1)
+    for(col_name in names(n_M_blks)) {
+      if(is.null(M_prior[[col_name]])) next
+      bad_blk <- unique(M_prior[[col_name]][!M_prior[[col_name]] %in% seq_len(n_M_blks[[col_name]])])
+      if(length(bad_blk) > 0)
+        stop("M_prior$", col_name, " has ", paste(bad_blk, collapse = ", "), ", but M_", col_name, "_spec makes ",
+             n_M_blks[[col_name]], if(n_M_blks[[col_name]] == 1) " block" else " blocks",
+             ". The prior columns are block numbers (the order of the blocks in the spec list), not ages, years or ",
+             "other positions in the model.")
+    } # end col_name loop
   }
 
   # AgeingError and LenBinMap both map model bins onto observed bins, one on ages and one on
@@ -1485,7 +1501,9 @@ Setup_Mod_Biologicals <- function(input_list,
 #'   itself; an explicit \code{"est"} is refused under \code{NAA_re = "dsem"}.
 #' @param NAA_sigma_popblk_spec_vals,NAA_sigma_regionblk_spec_vals,NAA_sigma_yearblk_spec_vals,NAA_sigma_seasblk_spec_vals,NAA_sigma_ageblk_spec_vals,NAA_sigma_sexblk_spec_vals
 #'   Lists of integer vectors assigning indices to blocks, as the
-#'   \code{M_*blk_spec_vals} arguments. Blocking shares the standard deviation.
+#'   \code{M_*blk_spec_vals} arguments, each naming every index of its dim once.
+#'   Blocking shares the standard deviation, and a block with no state cell in it
+#'   is mapped off.
 #'
 #' @return \code{input_list} with \code{$par$ln_NAA}, \code{$par$ln_sigmaNAA}, their
 #'   maps, and the data fields \code{NAA_re}, \code{n_est_naa_re},
@@ -1659,8 +1677,68 @@ do_NAAstate_mapping <- function(input_list,
   input_list$data$map_ln_NAA <- array(as.numeric(input_list$map$ln_NAA), dim = dim(map_naa))
 
   # Process error standard deviations, blocked the way natural mortality is
+  # each block list holds positions in its dim (ages and years by position, not value), each named once
+  blk_vals <- list(
+    pop = NAA_sigma_popblk_spec_vals,
+    region = NAA_sigma_regionblk_spec_vals,
+    year = NAA_sigma_yearblk_spec_vals,
+    seas = NAA_sigma_seasblk_spec_vals,
+    age = NAA_sigma_ageblk_spec_vals,
+    sex = NAA_sigma_sexblk_spec_vals
+  )
+  blk_sizes <- c(pop = n_pop, region = n_regions, year = n_yrs, seas = n_seas, age = n_ages, sex = n_sexes) # positions in each dim
+  dim_words <- c(pop = "populations", region = "regions", year = "years", seas = "seasons", age = "ages", sex = "sexes")
+
+  for(dim_name in names(blk_vals)) {
+
+    arg_name <- paste0("NAA_sigma_", dim_name, "blk_spec") # as the user wrote it
+    n_dim <- blk_sizes[[dim_name]]
+    all_idx <- unlist(blk_vals[[dim_name]]) # every position named in some block
+
+    # ages and years are shown with their values, since the blocks name them by position
+    idx_label <- as.character(seq_len(n_dim))
+    if(dim_name == "age") idx_label <- paste0(idx_label, " (age ", ages, ")")
+    if(dim_name == "year") idx_label <- paste0(idx_label, " (", years, ")")
+
+    # a position the dim does not have
+    bad_idx <- unique(all_idx[is.na(all_idx) | !all_idx %in% seq_len(n_dim)])
+    if(length(bad_idx) > 0)
+      stop(arg_name, " names ", if(length(bad_idx) > 1) "positions " else "position ",
+           paste(bad_idx, collapse = ", "), ", but the model has ", n_dim, " ", dim_words[[dim_name]],
+           ". Blocks hold positions 1 to ", n_dim, " in the model's ", dim_words[[dim_name]], ", not the ",
+           dim_words[[dim_name]], " themselves.")
+
+    # a position no block covers. the first age and first year have no state, but still need a block
+    missing_idx <- setdiff(seq_len(n_dim), all_idx)
+    if(length(missing_idx) > 0) {
+      first_tip <- ""
+      if(dim_name == "age" && 1 %in% missing_idx && n_dim > 2)
+        first_tip <- paste0(" The first age is recruitment, so the state never reads its block. Put it with the ",
+                            "second age, e.g. list(1:2, 3:", n_dim, "), or c(list(1:2), as.list(3:", n_dim,
+                            ")) for one block per age.")
+      if(dim_name == "year" && 1 %in% missing_idx && n_dim > 2)
+        first_tip <- paste0(" The first year's numbers come from ln_InitDevs, so the state never reads its block. ",
+                            "Put it with the second year, e.g. list(1:2, 3:", n_dim, ").")
+      stop(arg_name, " leaves ", if(length(missing_idx) > 1) "positions " else "position ",
+           paste(idx_label[missing_idx], collapse = ", "), " out of every block. The blocks must cover all ",
+           n_dim, " ", dim_words[[dim_name]], ", including any the state does not run over.", first_tip)
+    }
+
+    # a position in two blocks, where the later block would silently take it
+    dup_idx <- unique(all_idx[duplicated(all_idx)])
+    if(length(dup_idx) > 0)
+      stop(arg_name, " puts ", if(length(dup_idx) > 1) "positions " else "position ",
+           paste(idx_label[dup_idx], collapse = ", "), " in more than one block. ",
+           "Each position belongs to exactly one block.")
+
+  } # end dim_name loop
+
+  # each cell reads ln_sigmaNAA at its block's position. it is stored population block fastest, so
+  # ln_sigmaNAA[popblk, regionblk, yearblk, seasblk, ageblk, sexblk] is the sd for that block
   sigma_blocks <- array(0, dim = c(n_pop, n_regions, n_yrs, n_seas, n_ages, n_sexes))
-  counter <- 1
+  blk_pos <- array(seq_len(prod(lengths(blk_vals))), dim = unname(lengths(blk_vals))) # position of each block in ln_sigmaNAA
+  blk_index <- arrayInd(seq_along(blk_pos), dim(blk_pos)) # which block of each dim sits at each position
+  colnames(blk_index) <- names(blk_vals)
   for(popblk in seq_along(NAA_sigma_popblk_spec_vals)) {
     map_p <- NAA_sigma_popblk_spec_vals[[popblk]]
     for(regionblk in seq_along(NAA_sigma_regionblk_spec_vals)) {
@@ -1673,18 +1751,13 @@ do_NAAstate_mapping <- function(input_list,
             map_a <- NAA_sigma_ageblk_spec_vals[[ageblk]]
             for(sexblk in seq_along(NAA_sigma_sexblk_spec_vals)) {
               map_s <- NAA_sigma_sexblk_spec_vals[[sexblk]]
-              sigma_blocks[map_p, map_r, map_y, map_k, map_a, map_s] <- counter
-              counter <- counter + 1
+              sigma_blocks[map_p, map_r, map_y, map_k, map_a, map_s] <- blk_pos[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]
             } # end sexblk loop
           } # end ageblk loop
         } # end seasblk loop
       } # end yearblk loop
     } # end regionblk loop
   } # end popblk loop
-
-  if(any(sigma_blocks == 0))
-    stop("The NAA_sigma block specifications do not cover every cell. Each of the population, ",
-         "region, year, season, age and sex block lists must partition its dimension.")
 
   # the projection years take the terminal year's blocks
   if(n_ext > 0) {
@@ -1706,6 +1779,29 @@ do_NAAstate_mapping <- function(input_list,
     stop("NAA_sigma_spec is '", NAA_sigma_spec, "'. Valid options: est, fix")
   if(NAA_sigma_spec == "est") input_list$map$ln_sigmaNAA <- factor(seq_along(input_list$par$ln_sigmaNAA))
   if(NAA_sigma_spec == "fix") input_list$map$ln_sigmaNAA <- factor(rep(NA, length(input_list$par$ln_sigmaNAA)))
+
+  # a block with no state cell in it adds nothing to the likelihood, so keep it at its start rather than estimate it
+  read_blks <- unique(sigma_blocks[!is.na(map_naa)]) # blocks of the cells the penalty reads
+  unread_blks <- setdiff(seq_len(nrow(blk_index)), read_blks)
+  if(NAA_sigma_spec == "est" && length(unread_blks) > 0) {
+
+    map_sigma <- seq_along(input_list$par$ln_sigmaNAA)
+    map_sigma[unread_blks] <- NA
+    input_list$map$ln_sigmaNAA <- factor(map_sigma)
+
+    # name each block by the dims that are blocked, e.g. "age block 1"
+    blk_words <- c(pop = "population", region = "region", year = "year", seas = "season", age = "age", sex = "sex")
+    blocked_dims <- names(blk_vals)[lengths(blk_vals) > 1]
+    blk_desc <- character(length(unread_blks))
+    for(i in seq_along(unread_blks)) {
+      blk_desc[i] <- paste(paste(blk_words[blocked_dims], "block", blk_index[unread_blks[i], blocked_dims]), collapse = ", ")
+      if(length(blocked_dims) == 0) blk_desc[i] <- "the one block" # nothing blocked, so no dim to name it by
+    } # end i loop
+    collect_message("ln_sigmaNAA for ", paste(blk_desc, collapse = "; "), " covers no cell the state runs over, ",
+                    "so it is kept at its starting value rather than estimated.")
+
+  } # end if unread blocks
+
   if(naa_val > 1 && (length(NAA_sigma_yearblk_spec_vals) > 1 || length(NAA_sigma_ageblk_spec_vals) > 1)) {
     stop("NAA_re = \"", NAA_re, "\" is a correlated structure over the age and year grid, but the ",
          "process error standard deviation is blocked over ", length(NAA_sigma_yearblk_spec_vals),

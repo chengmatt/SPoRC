@@ -45,7 +45,9 @@ do_NAAstate_mapping(
 standard deviations are estimated.}
 
 \item{NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_seasblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals}{Lists of integer vectors assigning indices to blocks, as the
-\code{M_*blk_spec_vals} arguments. Blocking shares the standard deviation.}
+\code{M_*blk_spec_vals} arguments, each naming every index of its dim once.
+Blocking shares the standard deviation, and a block with no state cell in it
+is mapped off.}
 
 \item{NAA_pe_spec}{Sharing spec for \code{NAA_pe_pars}, as documented on
 \code{\link{Setup_Mod_Biologicals}}.}

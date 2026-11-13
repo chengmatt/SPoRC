@@ -8,18 +8,19 @@ get_natmort_prior(M_prior, ln_M, M_blocks)
 }
 \arguments{
 \item{M_prior}{Data frame with columns \code{popblk}, \code{regionblk},
-\code{yearblk}, \code{ageblk}, \code{sexblk} (block indices into
-\code{M_blocks}), \code{mu} (prior mean, natural scale), \code{sd} (prior
+\code{yearblk}, \code{ageblk}, \code{sexblk} (block numbers, read as
+\code{ln_M[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]}),
+\code{mu} (prior mean, natural scale), \code{sd} (prior
 SD, log scale), one row per penalized parameter. An optional
 \code{seasblk} column names the season block the prior applies to; without
 it the prior reads the block covering the first season, which is every
 season when mortality does not vary within the year.}
 
-\item{ln_M}{Vector of estimated log natural mortality values, indexed by
-\code{M_blocks}.}
+\item{ln_M}{Array of log natural mortality, one value per block combination
+and dimensioned by the blocks. A five-dim array without seasons is read as
+one season block.}
 
-\item{M_blocks}{Array \code{[pop, region, year, season, age, sex]} mapping each
-population/region/year/season/age/sex cell to an index into \code{ln_M}.}
+\item{M_blocks}{Not read. The prior reads \code{ln_M} by block number.}
 }
 \value{
 Numeric scalar negative log-likelihood contribution, summed across

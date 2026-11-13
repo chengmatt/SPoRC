@@ -145,6 +145,8 @@ at age.}
 combination, with columns \code{popblk}, \code{regionblk}, \code{yearblk},
 \code{ageblk}, \code{sexblk}, \code{mu} on the natural scale, \code{sd}, and
 optionally \code{seasblk} (left out, it reads the block covering season one).
+The block columns are block numbers, the order of the blocks in each
+\code{M_*blk_spec} list, not ages or years.
 Only used when \code{Use_M_prior = 1}.}
 
 \item{fit_lengths}{Integer flag for fitting length compositions, \code{0}
@@ -416,8 +418,10 @@ Both are global, so a two-sex model spends one parameter on
 
 \item{NAA_sigma_popblk_spec, NAA_sigma_regionblk_spec, NAA_sigma_yearblk_spec, NAA_sigma_seasblk_spec, NAA_sigma_ageblk_spec, NAA_sigma_sexblk_spec}{Blocking for the process error standard deviation, each \code{"constant"}
 (default) or a list of integer vectors, exactly as the \code{M_*blk_spec}
-arguments. Blocking shares a standard deviation and never removes a cell from
-the state. Only \code{NAA_re = "iid"} admits one varying over years or ages;
+arguments. The vectors hold positions in the dim and must name each one once,
+the first age and first year included, and a block with no state cell in it
+is kept at its starting value. Blocking shares a standard deviation and never
+removes a cell from the state. Only \code{NAA_re = "iid"} admits one varying over years or ages;
 every other form is separable or Markov in a dim. The season dim is the
 exception, being whitened outside the age and year density, and is ruled out
 only by \code{NAA_re_season = "us"}.}

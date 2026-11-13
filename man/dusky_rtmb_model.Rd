@@ -3,7 +3,7 @@
 \docType{data}
 \name{dusky_rtmb_model}
 \alias{dusky_rtmb_model}
-\title{Dusky model outputs from single regino model}
+\title{Dusky model outputs from single region model}
 \format{
 Data list for single region dusky rockfish assessment
 }

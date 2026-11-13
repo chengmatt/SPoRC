@@ -188,11 +188,14 @@ self_test_priors <- function(data, prior_means, pars, rep) {
     data[[paste0(prefix, "_q_prior")]] <- q_prior
   } # end prefix loop
 
-  # natural mortality, read through its blocks
+  # natural mortality, read by block number as the prior is
   if(isTRUE(any(data$Use_M_prior == 1))) {
+    n_blks <- dim(pars$ln_M)
+    if(length(n_blks) == 5) n_blks <- c(n_blks[1:3], 1, n_blks[4:5]) # ln_M from before seasons, one season block
+    blk_pos <- array(seq_along(pars$ln_M), dim = n_blks) # position of each block in ln_M
     for(i in seq_len(nrow(data$M_prior))) {
       seas <- if(is.null(data$M_prior$seasblk)) 1 else data$M_prior$seasblk[i]
-      M_idx <- data$M_blocks[data$M_prior$popblk[i], data$M_prior$regionblk[i], data$M_prior$yearblk[i], seas, data$M_prior$ageblk[i], data$M_prior$sexblk[i]]
+      M_idx <- blk_pos[data$M_prior$popblk[i], data$M_prior$regionblk[i], data$M_prior$yearblk[i], seas, data$M_prior$ageblk[i], data$M_prior$sexblk[i]]
       data$M_prior$mu[i] <- exp(pars$ln_M[M_idx])
     } # end i loop
   }

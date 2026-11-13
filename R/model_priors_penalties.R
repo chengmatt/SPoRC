@@ -1476,16 +1476,17 @@ get_q_prior <- function(q_prior, ln_q) {
 #' \code{SPoRC_rtmb.R}.
 #'
 #' @param M_prior Data frame with columns \code{popblk}, \code{regionblk},
-#'   \code{yearblk}, \code{ageblk}, \code{sexblk} (block indices into
-#'   \code{M_blocks}), \code{mu} (prior mean, natural scale), \code{sd} (prior
+#'   \code{yearblk}, \code{ageblk}, \code{sexblk} (block numbers, read as
+#'   \code{ln_M[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]}),
+#'   \code{mu} (prior mean, natural scale), \code{sd} (prior
 #'   SD, log scale), one row per penalized parameter. An optional
 #'   \code{seasblk} column names the season block the prior applies to; without
 #'   it the prior reads the block covering the first season, which is every
 #'   season when mortality does not vary within the year.
-#' @param ln_M Vector of estimated log natural mortality values, indexed by
-#'   \code{M_blocks}.
-#' @param M_blocks Array \code{[pop, region, year, season, age, sex]} mapping each
-#'   population/region/year/season/age/sex cell to an index into \code{ln_M}.
+#' @param ln_M Array of log natural mortality, one value per block combination
+#'   and dimensioned by the blocks. A five-dim array without seasons is read as
+#'   one season block.
+#' @param M_blocks Not read. The prior reads \code{ln_M} by block number.
 #'
 #' @return Numeric scalar negative log-likelihood contribution, summed across
 #'   all rows of \code{M_prior}.
@@ -1497,6 +1498,11 @@ get_natmort_prior <- function(M_prior, ln_M, M_blocks) {
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
+  # so munging to handle seasons
+  n_blks <- dim(ln_M)
+  if(length(n_blks) == 5) n_blks <- c(n_blks[1:3], 1, n_blks[4:5]) # ln_M from before seasons, one season block
+  blk_pos <- array(seq_along(ln_M), dim = n_blks) # position of each block in ln_M
+
   nLL <- 0
   for(i in seq_len(nrow(M_prior))) {
     p <- M_prior$popblk[i]
@@ -1506,7 +1512,7 @@ get_natmort_prior <- function(M_prior, ln_M, M_blocks) {
     s <- M_prior$sexblk[i]
     # priors written before seasonal M have no seasblk, so use the first
     seas <- if(is.null(M_prior$seasblk)) 1 else M_prior$seasblk[i]
-    idx <- M_blocks[p,r,b,seas,a,s]
+    idx <- blk_pos[p,r,b,seas,a,s]
     nLL <- nLL + -RTMB::dnorm(ln_M[idx], log(M_prior$mu[i]), M_prior$sd[i], TRUE) # TMB likelihood
   } # end i loop
 

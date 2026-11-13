@@ -48,7 +48,7 @@ sex-specific mortality.}
 }
 \description{
 Builds the \code{M_blocks} index array and the \code{ln_M} factor map. Each
-combination of blocks takes a sequential integer, and every cell in a block
-shares one \code{ln_M}.
+cell holds its block's position in \code{ln_M}, so every cell in a block shares
+\code{ln_M[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]}.
 }
 \keyword{internal}

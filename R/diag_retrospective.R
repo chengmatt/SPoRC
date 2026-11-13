@@ -149,10 +149,13 @@ truncate_yr <- function(j,
     retro_data$Fixed_natmort <- truncate_years(data$Fixed_natmort, length(data$years) - j)
   }
 
-  # Truncate estimated ln_M pars and mapping to match truncated blocks
+  # ln_M keeps its blocks, and a block whose years were all peeled has no cell left reading it, so it is kept
+  # at its value rather than estimated
   if(data$use_fixed_natmort == 0) {
-    retro_parameters$ln_M <- parameters$ln_M[1:max(retro_data$M_blocks), drop = FALSE]
-    retro_mapping$ln_M <- factor(array(mapping$ln_M, dim = dim(parameters$ln_M))[1:max(retro_data$M_blocks), drop = FALSE])
+    unread_M <- setdiff(seq_along(parameters$ln_M), unique(as.vector(retro_data$M_blocks)))
+    map_M <- as.character(mapping$ln_M)
+    map_M[unread_M] <- NA
+    retro_mapping$ln_M <- factor(map_M)
   }
 
 # State-space numbers at age ----------------------------------------------
@@ -189,10 +192,14 @@ truncate_yr <- function(j,
       retro_mapping$ln_NAA <- factor(rep(NA, length(retro_parameters$ln_NAA)))
     }
 
-    # standard deviations follow their blocks, as natural mortality's do
-    retro_parameters$ln_sigmaNAA <- parameters$ln_sigmaNAA[1:max(retro_data$naa_sigma_blocks), drop = FALSE]
+    # standard deviations follow their blocks, as natural mortality's do. a block with no active cell left after
+    # the peel is kept at its value
     if(any(names(retro_mapping) == 'ln_sigmaNAA')) {
-      retro_mapping$ln_sigmaNAA <- factor(array(mapping$ln_sigmaNAA, dim = dim(parameters$ln_sigmaNAA))[1:max(retro_data$naa_sigma_blocks), drop = FALSE])
+      active_blks <- retro_data$naa_sigma_blocks[,, retro_data$naa_re_yrs, data$naa_re_seas, data$naa_re_ages,, drop = FALSE]
+      unread_sigma <- setdiff(seq_along(parameters$ln_sigmaNAA), unique(as.vector(active_blks)))
+      map_sigma <- as.character(mapping$ln_sigmaNAA)
+      map_sigma[unread_sigma] <- NA
+      retro_mapping$ln_sigmaNAA <- factor(map_sigma)
     }
   }
 

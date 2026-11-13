@@ -42,7 +42,7 @@ cal_replicate <- function(family, seed) {
   d$map$ln_dsem_obs_sd <- factor(rep(NA, length(d$par$ln_dsem_obs_sd)))
   fit <- suppressWarnings(fit_model(d$data, d$par, d$map, random = c("ln_RecDevs", "dsem_x"), do_optim = FALSE, silent = TRUE))
 
-  # a randomisation seed per replicate, or every discrete residual takes the same uniform draw
+  # a randomization seed per replicate, or every discrete residual takes the same uniform draw
   osa_fam <- if(family %in% c("bernoulli", "poisson", "tweedie")) family else "continuous"
   r <- suppressWarnings(get_osa(model = fit, data = fit$data, dsem = TRUE, family = osa_fam, seed = seed))
   r$res$resid
@@ -66,7 +66,7 @@ test_that("every covariate family's residuals are standard normal under a correc
 
     # a tolerance rather than a hypothesis test, loose enough that a correct model never trips it and
     # tight enough to catch the defects this has caught: a 0.3 shift on the tweedie from splining its
-    # density, and a 0.18 shift on the bernoulli from one shared randomisation seed
+    # density, and a 0.18 shift on the bernoulli from one shared randomization seed
     expect_lt(abs(mean(rep_mean)), 0.25, label = paste(family, "mean of replicate means"))
     expect_lt(abs(mean(rep_sd) - 1), 0.25, label = paste(family, "mean of replicate sds"))
 

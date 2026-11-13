@@ -930,7 +930,7 @@ get_at_age_fits_plot <- function(data, rep, model_names, data_source = "CatchAA"
       } # end f loop
     }
 
-    # a data source summed over regions or sexes is stored in the first slot, so labelling that slot
+    # a data source summed over regions or sexes is stored in the first slot, so labeling that slot
     # with a region or sex would be wrong. the setting can differ between years, so read it per row
     aa_type <- data[[i]][[paste0(data_source, "_Type")]]
     code <- if(is.null(aa_type)) rep(3, length(fleet))

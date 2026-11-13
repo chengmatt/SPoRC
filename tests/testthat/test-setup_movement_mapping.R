@@ -202,7 +202,7 @@ test_that("a CTMC deviation belongs to a region, and only an isolated region los
 
 test_that("a CTMC deviation reaches every edge of its own region", {
   # the payoff of holding the deviation on preference: raising region 1's preference pulls fish in
-  # from both neighbours at once, where a diffusion deviation would have moved one edge
+  # from both neighbors at once, where a diffusion deviation would have moved one edge
   A <- matrix(1, 3, 3) - diag(3)
   move_ctmc <- function(devs) {
     mv <- SPoRC:::Get_Movement(

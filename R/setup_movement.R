@@ -516,7 +516,7 @@ do_move_re_mapping <- function(input_list, move_year_re, move_age_re, move_pop_r
 #'   \eqn{\theta_j + d} of width \code{ctmc_diffusion_eps}; \code{"upwind"} takes
 #'   the finite volume flux \eqn{\theta_j + \max(d, 0)}, which keeps diffusion
 #'   whole and adds only the down-gradient taxis, so positivity never depends on
-#'   the two cancelling; \code{"sg"} takes the Scharfetter-Gummel flux
+#'   the two canceling; \code{"sg"} takes the Scharfetter-Gummel flux
 #'   \eqn{\theta_j B(-d / \theta_j)}, \eqn{B(x) = x / (e^x - 1)}, smooth and
 #'   positive everywhere with no width to choose.
 #' @param ctmc_diffusion_eps Positive width of the softplus under
@@ -919,7 +919,7 @@ Setup_Mod_Movement <- function(input_list,
     msg <- switch(
       bound_form,
       none = "unbounded generator",
-      softplus = paste0("softplus of width ", ctmc_diffusion_eps, " on the adjacency edges, so a cancelled edge has a floor of ", signif(ctmc_diffusion_eps * log(2), 3)),
+      softplus = paste0("softplus of width ", ctmc_diffusion_eps, " on the adjacency edges, so a canceled edge has a floor of ", signif(ctmc_diffusion_eps * log(2), 3)),
       upwind = "discontinuous Galerkin upwind flux, diffusion kept whole",
       sg = "Scharfetter-Gummel flux, smooth and positive with no width"
     )

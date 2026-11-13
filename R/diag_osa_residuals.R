@@ -720,7 +720,7 @@ run_internal_index_osa <- function(
   colnames(map) <- dim_names
 
   # a data source summed over regions or sexes is stored in the first slot, which is not region one
-  # or sex one, so labelling it that way would mix aggregated residuals with split ones
+  # or sex one, so labeling it that way would mix aggregated residuals with split ones
   aa_split <- list(region = TRUE, sex = TRUE)
   if(at_age) {
     aa_type <- data[[paste0(index_source, if(pop) "_pop", "_Type")]]

@@ -83,13 +83,13 @@ Default \code{FALSE}.}
 
 \item{bias_correct_pe}{Which log scale process deviations are centered on minus half their
 marginal variance, so the process they act on keeps its mean. \code{"rec"} (default) the
-recruitment and initial age deviations, which is every model's behaviour before this existed;
+recruitment and initial age deviations, which is every model's behavior before this existed;
 \code{"all"} those plus the numbers at age state; \code{"none"} nothing. The bias ramp
 (\code{do_rec_bias_ramp}, \code{bias_year}) still scales the recruitment part.}
 
 \item{bias_correct_oe}{Whether a lognormally fit observation is predicted at its mean
 rather than its median, by subtracting sigma^2/2 from the log prediction. \code{0} (default)
-predicts the median, every model's behaviour before this existed.}
+predicts the median, every model's behavior before this existed.}
 
 \item{verbose}{Logical. If \code{TRUE}, prints a summary of all dimension
 settings to the console via \code{message()} after setup. Default

@@ -332,7 +332,7 @@ this one records the form that makes both transfer.
 \eqn{\theta} is a diffusion coefficient: \eqn{\theta/V = D/h^2} on a square cell, so mean
 squared displacement is \eqn{4\theta t} at every cell size, verified exact. A preference
 coefficient is a raw rate difference along an edge, and the covariate gradient between
-neighbours grows with how far apart they are, so the drift it produces goes as \eqn{h^2}.
+neighbors grows with how far apart they are, so the drift it produces goes as \eqn{h^2}.
 Measured on a chain covering a fixed 800 km with the same coefficient of 0.002 per km:
 
 | Cell side | Net drift |

@@ -329,14 +329,14 @@ test_that("Get_Movement works", {
         preference_formula = ~ 0 + factor(regions)
       )
       q <- res$Mrate[1, , , 1, 1, 2, 1]
-      cancelled <- c(q[2, 1], q[1, 2])
-      expect_true(any(abs(cancelled - eps * log(2)) < 1e-8),
-                  label = sprintf("eps %.1f floor on the cancelled edge", eps))
+      canceled <- c(q[2, 1], q[1, 2])
+      expect_true(any(abs(canceled - eps * log(2)) < 1e-8),
+                  label = sprintf("eps %.1f floor on the canceled edge", eps))
       # the opposite direction has D + 1 = 2 up to the softplus tail
-      expect_true(any(abs(cancelled - (2 + eps * log1p(exp(-2 / eps)))) < 1e-8),
+      expect_true(any(abs(canceled - (2 + eps * log1p(exp(-2 / eps)))) < 1e-8),
                   label = sprintf("eps %.1f open edge", eps))
     }
-    # a hard-clamp width shuts the cancelled edge to the floor of 0.001 * log(2)
+    # a hard-clamp width shuts the canceled edge to the floor of 0.001 * log(2)
     res <- make_ctmc_call(
       ctmc_diffusion_bounds = 1,
       ctmc_diffusion_eps = 0.001,
@@ -387,15 +387,15 @@ test_that("Get_Movement works", {
         pref_pars = c(0, 1, 0),
         preference_formula = ~ 0 + factor(regions)
       )$Mrate[1, , , 1, 1, 2, 1]
-      c(cancelled = q[2, 1], open = q[1, 2]) # Mrate is [origin, destination]
+      c(canceled = q[2, 1], open = q[1, 2]) # Mrate is [origin, destination]
     }
     # upwind has diffusion whole and adds only the down-gradient taxis, so the
-    # cancelled edge has theta itself rather than a floor set by the hinge
+    # canceled edge has theta itself rather than a floor set by the hinge
     expect_equal(unname(got("upwind")), c(1, 2), tolerance = 1e-9)
     # and it reads no softplus width
     expect_equal(got("upwind", eps = 0.001), got("upwind", eps = 0.5))
-    # while the softplus form moves with it, by eps * log(2) on the cancelled edge
-    expect_equal(unname(got("softplus", eps = 0.5)["cancelled"]), 0.5 * log(2), tolerance = 1e-9)
+    # while the softplus form moves with it, by eps * log(2) on the canceled edge
+    expect_equal(unname(got("softplus", eps = 0.5)["canceled"]), 0.5 * log(2), tolerance = 1e-9)
   })
 
   test_that("CTMC movement: upwind holds a down-gradient edge open where the softplus underflows", {
@@ -422,7 +422,7 @@ test_that("Get_Movement works", {
         pref_pars = pref,
         preference_formula = ~ 0 + factor(regions)
       )$Mrate[1, , , 1, 1, 2, 1]
-      c(cancelled = q[2, 1], open = q[1, 2]) # Mrate is [origin, destination]
+      c(canceled = q[2, 1], open = q[1, 2]) # Mrate is [origin, destination]
     }
     B <- function(x) x / (exp(x) - 1)
     # theta is one, so a taxis of -1 out of region 2 and +1 into it gives B(1) and B(-1), whose difference is the taxis
@@ -433,13 +433,13 @@ test_that("Get_Movement works", {
     expect_equal(make_ctmc_call(ctmc_diffusion_bounds = 3, pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))$Mrate,
                  make_ctmc_call(ctmc_diffusion_bounds = "sg", pref_pars = c(0, 1, 0), preference_formula = ~ 0 + factor(regions))$Mrate)
     # a steep gradient shrinks the edge towards zero without reaching it, and the width is not read
-    expect_equal(unname(sg(c(0, 20, 0))["cancelled"]), B(20), tolerance = 1e-6) # to the 1e-12 that keeps y off 0
-    expect_gt(unname(sg(c(0, 20, 0))["cancelled"]), 0)
+    expect_equal(unname(sg(c(0, 20, 0))["canceled"]), B(20), tolerance = 1e-6) # to the 1e-12 that keeps y off 0
+    expect_gt(unname(sg(c(0, 20, 0))["canceled"]), 0)
     expect_equal(sg(c(0, 1, 0), eps = 0.001), sg(c(0, 1, 0), eps = 0.5))
   })
 
   test_that("CTMC movement: a move_dev shifts its own region's preference, on every edge that touches it", {
-    # the deviation belongs to region 2, so it raises the rate into region 2 from each neighbour and
+    # the deviation belongs to region 2, so it raises the rate into region 2 from each neighbor and
     # lowers the rate out of it by the same amount, while the edge between 1 and 3 never sees it
     md <- array(0, c(1, 3, 1, 2, 1, 2, 1))
     md[1, 2, 1, , , , ] <- 0.4

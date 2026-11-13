@@ -65,7 +65,7 @@ test_that("OSA residuals and the DAG plot run on a fitted dsem model", {
   e <- igraph::as_data_frame(g)
   expect_equal(igraph::vcount(g), 3L) # env, rec and lag(env,1), the lagged source as its own node like dsem
   expect_equal(e$lag[e$from == "lag(env,1)" & e$to == "env"], 1L) # the ar1 on env
-  expect_true(is.finite(e$estimate[e$from == "env" & e$to == "rec"])) # the env -> rec path, labelled with its estimate
+  expect_true(is.finite(e$estimate[e$from == "env" & e$to == "rec"])) # the env -> rec path, labeled with its estimate
   expect_equal(e$estimate[e$from == "rec" & e$to == "rec"], 0.9) # the fixed sd shows its value
   expect_true(all(nzchar(e$label)))
 

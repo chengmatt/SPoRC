@@ -7,7 +7,7 @@
 #'
 #' One node per series, and a further node \code{lag(series, k)} for a source read \code{k}
 #' years back. A path is a solid edge, blue when its estimate is positive and red when
-#' negative; an sd line is a grey loop on its own node and a covariance a grey dashed line
+#' negative; an sd line is a gray loop on its own node and a covariance a gray dashed line
 #' with no head. Nodes are laid out in layers, in base graphics.
 #'
 #' @param x Output of \code{read_dsem_arrows}, or a fitted model whose data holds one
@@ -93,7 +93,7 @@ plot_dsem_dag <- function(x,
   label[!estimated] <- as.character(round(arrow_value[!estimated], digits)) # a fixed arrow shows its value
   label[arrows$mod_idx > 0] <- paste0("x ", arrows$name[arrows$mod_idx > 0]) # a moderated one shows its moderator
 
-  # a path is colored by the sign of its estimate, and everything else is grey
+  # a path is colored by the sign of its estimate, and everything else is gray
   edge_color <- ifelse(arrow_value < 0, "#B2182B", "#2166AC")
   edge_color[arrows$type != "path" | is.na(arrow_value)] <- "grey55"
 

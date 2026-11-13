@@ -56,7 +56,7 @@ test_that("the packed vector holds the same years, in the same order, the object
 
 })
 
-test_that("a residual comes back for every observed covariate year, labelled by covariate and family", {
+test_that("a residual comes back for every observed covariate year, labeled by covariate and family", {
 
   d <- dsem_cov_setup()
   fit <- suppressWarnings(fit_model(d$data, d$par, d$map, random = dsem_random, newton_loops = 0, silent = TRUE))
@@ -90,7 +90,7 @@ test_that("a bernoulli and a poisson covariate in one model each take their own 
   d <- dsem_cov_setup(family = c(env = "poisson", cpi = "bernoulli"), cov_data = both)
   fit <- suppressWarnings(fit_model(d$data, d$par, d$map, random = dsem_random, newton_loops = 0, silent = TRUE))
 
-  # the two counts cannot share a support, so each is asked for on its own and each comes back labelled
+  # the two counts cannot share a support, so each is asked for on its own and each comes back labeled
   # with its own covariate. this pairing leaves both states weakly identified, so what is checked here is
   # the routing, and the single covariate tests below are where a residual is read
   pois <- suppressWarnings(get_osa(model = fit, data = fit$data, dsem = TRUE, family = "poisson"))

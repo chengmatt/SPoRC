@@ -154,7 +154,7 @@ matrix when taxis outweighs diffusion. \code{"softplus"} takes a softplus of
 \eqn{\theta_j + d} of width \code{ctmc_diffusion_eps}; \code{"upwind"} takes
 the finite volume flux \eqn{\theta_j + \max(d, 0)}, which keeps diffusion
 whole and adds only the down-gradient taxis, so positivity never depends on
-the two cancelling; \code{"sg"} takes the Scharfetter-Gummel flux
+the two canceling; \code{"sg"} takes the Scharfetter-Gummel flux
 \eqn{\theta_j B(-d / \theta_j)}, \eqn{B(x) = x / (e^x - 1)}, smooth and
 positive everywhere with no width to choose.}
 

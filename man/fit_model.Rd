@@ -53,7 +53,7 @@ at parameter values the objective and gradient still evaluate at. The
 \code{nlminb} solution is kept in that case.}
 
 \item{newton_hessian}{Character. Where each refinement step's Hessian comes
-from. \code{"exact"} (default) is the behaviour above. \code{"diff"}
+from. \code{"exact"} (default) is the behavior above. \code{"diff"}
 differences the exact gradient (\code{\link[stats]{optimHess}}, steps of
 1e-5), for models whose tape Hessian is too large to build, and in place of
 the Newton step reruns \code{nlminb} with each parameter in its own

@@ -136,7 +136,7 @@ at parameter values the objective and gradient still evaluate at. The
 
 <dt id="arg-newton-hessian">newton_hessian<a class="anchor" aria-label="anchor" href="#arg-newton-hessian"></a></dt>
 <dd><p>Character. Where each refinement step's Hessian comes
-from. <code>"exact"</code> (default) is the behaviour above. <code>"diff"</code>
+from. <code>"exact"</code> (default) is the behavior above. <code>"diff"</code>
 differences the exact gradient (<code><a href="https://rdrr.io/r/stats/optim.html" class="external-link">optimHess</a></code>, steps of
 1e-5), for models whose tape Hessian is too large to build, and in place of
 the Newton step reruns <code>nlminb</code> with each parameter in its own

@@ -298,12 +298,12 @@ Logical. If TRUE, allows OSA residuals for tagging datasets. Default
 FALSE.
 </td>
 </tr>
-<tr data-k="bias_correct_pe " rec" which log scale process deviations are centered on minus half their marginal variance, so the they act keeps its mean. "rec" (default) recruitment and initial age deviations, is every model's behaviour before this existed; "all" those plus numbers at state; "none" nothing. bias ramp (do_rec_bias_ramp, bias_year) still scales part.">
+<tr data-k="bias_correct_pe " rec" which log scale process deviations are centered on minus half their marginal variance, so the they act keeps its mean. "rec" (default) recruitment and initial age deviations, is every model's behavior before this existed; "all" those plus numbers at state; "none" nothing. bias ramp (do_rec_bias_ramp, bias_year) still scales part.">
 <td><code class="optref-arg">bias_correct_pe</code></td>
 <td><code>"rec"</code></td>
-<td>Which log scale process deviations are centered on minus half their marginal variance, so the process they act on keeps its mean. "rec" (default) the recruitment and initial age deviations, which is every model's behaviour before this existed; "all" those plus the numbers at age state; "none" nothing. The bias ramp (do_rec_bias_ramp, bias_year) still scales the recruitment part.</td>
+<td>Which log scale process deviations are centered on minus half their marginal variance, so the process they act on keeps its mean. "rec" (default) the recruitment and initial age deviations, which is every model's behavior before this existed; "all" those plus the numbers at age state; "none" nothing. The bias ramp (do_rec_bias_ramp, bias_year) still scales the recruitment part.</td>
 </tr>
-<tr data-k="bias_correct_oe 0 whether a lognormally fit observation is predicted at its mean rather than its median, by subtracting sigma^2/2 from the log prediction. 0 (default) predicts the median, every model's behaviour before this existed.">
+<tr data-k="bias_correct_oe 0 whether a lognormally fit observation is predicted at its mean rather than its median, by subtracting sigma^2/2 from the log prediction. 0 (default) predicts the median, every model's behavior before this existed.">
 <td>
 <code class="optref-arg">bias_correct_oe</code>
 </td>
@@ -313,7 +313,7 @@ FALSE.
 <td>
 Whether a lognormally fit observation is predicted at its mean rather
 than its median, by subtracting sigma^2/2 from the log prediction. 0
-(default) predicts the median, every model’s behaviour before this
+(default) predicts the median, every model’s behavior before this
 existed.
 </td>
 </tr>
@@ -1849,10 +1849,10 @@ Formula for the CTMC preference (taxis, ) linear predictor, on the same
 terms. Required under move_type = 1.
 </td>
 </tr>
-<tr data-k="ctmc_diffusion_bounds 0 how the ctmc generator is kept a valid metzler matrix when taxis outweighs diffusion. " softplus" takes a softplus of \theta_j + d width ctmc_diffusion_eps; "upwind" the finite volume flux \max(d, 0), which keeps diffusion whole and adds only down-gradient taxis, so positivity never depends on two cancelling; "sg" scharfetter-gummel b(-d \theta_j), b(x)="x" (e^x - 1), smooth positive everywhere with no to choose.">
+<tr data-k="ctmc_diffusion_bounds 0 how the ctmc generator is kept a valid metzler matrix when taxis outweighs diffusion. " softplus" takes a softplus of \theta_j + d width ctmc_diffusion_eps; "upwind" the finite volume flux \max(d, 0), which keeps diffusion whole and adds only down-gradient taxis, so positivity never depends on two canceling; "sg" scharfetter-gummel b(-d \theta_j), b(x)="x" (e^x - 1), smooth positive everywhere with no to choose.">
 <td><code class="optref-arg">ctmc_diffusion_bounds</code></td>
 <td><code>0</code></td>
-<td>How the CTMC generator is kept a valid Metzler matrix when taxis outweighs diffusion. "softplus" takes a softplus of \theta_j + d of width ctmc_diffusion_eps; "upwind" takes the finite volume flux \theta_j + \max(d, 0), which keeps diffusion whole and adds only the down-gradient taxis, so positivity never depends on the two cancelling; "sg" takes the Scharfetter-Gummel flux \theta_j B(-d / \theta_j), B(x) = x / (e^x - 1), smooth and positive everywhere with no width to choose.</td>
+<td>How the CTMC generator is kept a valid Metzler matrix when taxis outweighs diffusion. "softplus" takes a softplus of \theta_j + d of width ctmc_diffusion_eps; "upwind" takes the finite volume flux \theta_j + \max(d, 0), which keeps diffusion whole and adds only the down-gradient taxis, so positivity never depends on the two canceling; "sg" takes the Scharfetter-Gummel flux \theta_j B(-d / \theta_j), B(x) = x / (e^x - 1), smooth and positive everywhere with no width to choose.</td>
 </tr>
 <tr data-k="ctmc_diffusion_eps 0.1 positive width of the softplus under ctmc_diffusion_bounds = " softplus". default 0.1. an edge where taxis exactly cancels diffusion has eps * log(2), so this is a floor on exchange as well smoothing constant.">
 <td><code class="optref-arg">ctmc_diffusion_eps</code></td>

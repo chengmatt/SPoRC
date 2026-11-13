@@ -72,7 +72,7 @@ fit_model(
 - newton_hessian:
 
   Character. Where each refinement step's Hessian comes from. `"exact"`
-  (default) is the behaviour above. `"diff"` differences the exact
+  (default) is the behavior above. `"diff"` differences the exact
   gradient ([`optimHess`](https://rdrr.io/r/stats/optim.html), steps of
   1e-5), for models whose tape Hessian is too large to build, and in
   place of the Newton step reruns `nlminb` with each parameter in its

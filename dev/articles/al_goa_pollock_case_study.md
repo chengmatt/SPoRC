@@ -664,7 +664,7 @@ one from offshore young of the year is clearly away from zero.
 ![The dsem of model 26b as estimated by SPoRC. An arrow is a path with
 its estimate beside it, blue when positive and red when negative, solid
 for an effect in the same year and dashed for an effect a year later,
-and the grey arrow is a covariance. Each box gives a series and its own
+and the gray arrow is a covariance. Each box gives a series and its own
 year to year path (AR), and for recruitment the standard deviation the
 paths leave unexplained. YOY is young of the year and SST is sea surface
 temperature.](figures/al_goa_pollock_dag_26b.png)
@@ -672,7 +672,7 @@ temperature.](figures/al_goa_pollock_dag_26b.png)
 The dsem of model 26b as estimated by SPoRC. An arrow is a path with its
 estimate beside it, blue when positive and red when negative, solid for
 an effect in the same year and dashed for an effect a year later, and
-the grey arrow is a covariance. Each box gives a series and its own year
+the gray arrow is a covariance. Each box gives a series and its own year
 to year path (AR), and for recruitment the standard deviation the paths
 leave unexplained. YOY is young of the year and SST is sea surface
 temperature.

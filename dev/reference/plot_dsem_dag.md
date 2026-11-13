@@ -2,8 +2,8 @@
 
 One node per series, and a further node `lag(series, k)` for a source
 read `k` years back. A path is a solid edge, blue when its estimate is
-positive and red when negative; an sd line is a grey loop on its own
-node and a covariance a grey dashed line with no head. Nodes are laid
+positive and red when negative; an sd line is a gray loop on its own
+node and a covariance a gray dashed line with no head. Nodes are laid
 out in layers, in base graphics.
 
 ## Usage

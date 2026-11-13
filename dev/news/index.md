@@ -238,7 +238,7 @@
   : diffusion and taxis go into one rate that is positive and smooth
   everywhere, central at small taxis and upwind at large. It has none of
   the softplus’s hinge, where an edge that taxis nearly cancels sits at
-  a bend of width `ctmc_diffusion_eps` that the optimiser crawls along,
+  a bend of width `ctmc_diffusion_eps` that the optimizer crawls along,
   nor its floor of `eps * log(2)`.
 - `fit_model` no longer takes a Newton step that raises the largest
   absolute gradient. With an indefinite Hessian the step could leave the

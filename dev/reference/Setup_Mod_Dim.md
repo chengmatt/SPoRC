@@ -123,7 +123,7 @@ Setup_Mod_Dim(
   Which log scale process deviations are centered on minus half their
   marginal variance, so the process they act on keeps its mean. `"rec"`
   (default) the recruitment and initial age deviations, which is every
-  model's behaviour before this existed; `"all"` those plus the numbers
+  model's behavior before this existed; `"all"` those plus the numbers
   at age state; `"none"` nothing. The bias ramp (`do_rec_bias_ramp`,
   `bias_year`) still scales the recruitment part.
 
@@ -131,7 +131,7 @@ Setup_Mod_Dim(
 
   Whether a lognormally fit observation is predicted at its mean rather
   than its median, by subtracting sigma^2/2 from the log prediction. `0`
-  (default) predicts the median, every model's behaviour before this
+  (default) predicts the median, every model's behavior before this
   existed.
 
 - verbose:

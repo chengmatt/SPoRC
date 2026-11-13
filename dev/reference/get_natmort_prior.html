@@ -72,8 +72,9 @@ SPoRC_rtmb.R."><meta name="robots" content="noindex"></head><body>
 
 <dl><dt id="arg-m-prior">M_prior<a class="anchor" aria-label="anchor" href="#arg-m-prior"></a></dt>
 <dd><p>Data frame with columns <code>popblk</code>, <code>regionblk</code>,
-<code>yearblk</code>, <code>ageblk</code>, <code>sexblk</code> (block indices into
-<code>M_blocks</code>), <code>mu</code> (prior mean, natural scale), <code>sd</code> (prior
+<code>yearblk</code>, <code>ageblk</code>, <code>sexblk</code> (block numbers, read as
+<code>ln_M[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]</code>),
+<code>mu</code> (prior mean, natural scale), <code>sd</code> (prior
 SD, log scale), one row per penalized parameter. An optional
 <code>seasblk</code> column names the season block the prior applies to; without
 it the prior reads the block covering the first season, which is every
@@ -81,13 +82,13 @@ season when mortality does not vary within the year.</p></dd>
 
 
 <dt id="arg-ln-m">ln_M<a class="anchor" aria-label="anchor" href="#arg-ln-m"></a></dt>
-<dd><p>Vector of estimated log natural mortality values, indexed by
-<code>M_blocks</code>.</p></dd>
+<dd><p>Array of log natural mortality, one value per block combination
+and dimensioned by the blocks. A five-dim array without seasons is read as
+one season block.</p></dd>
 
 
 <dt id="arg-m-blocks">M_blocks<a class="anchor" aria-label="anchor" href="#arg-m-blocks"></a></dt>
-<dd><p>Array <code>[pop, region, year, season, age, sex]</code> mapping each
-population/region/year/season/age/sex cell to an index into <code>ln_M</code>.</p></dd>
+<dd><p>Not read. The prior reads <code>ln_M</code> by block number.</p></dd>
 
 </dl></div>
     <div class="section level2">

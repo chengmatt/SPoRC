@@ -24,8 +24,8 @@
 
 ### Simulation and Projections
 
-- [State-Space Numbers at
-  Age](https://chengmatt.github.io/SPoRC/dev/articles/ak_state_space_naa_spatial_sim.md):
+- [State-Space Numbers at Age as an Approximation to Spatial Process
+  Error](https://chengmatt.github.io/SPoRC/dev/articles/ak_state_space_naa_spatial_sim.md):
 - [Run Closed Loop
   Simulations](https://chengmatt.github.io/SPoRC/dev/articles/h_closed_loop_simulations.md):
 - [Deriving Reference Points, Catch Advice, and

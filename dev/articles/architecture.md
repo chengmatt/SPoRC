@@ -482,7 +482,7 @@ use.
 | Prefix | Files | What it covers |
 |----|----|----|
 | `test-setup_*` | 23 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
-| `test-model_*` | 41 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
+| `test-model_*` | 43 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 7 | Shared numerical helpers |
 | `test-sim_*` | 19 | Operating model, including simulate then refit self tests |
 | `test-refpts_*` | 13 | SPR and MSY solvers, one file per spatial structure |
@@ -491,7 +491,7 @@ use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 263 test files in total.
+That is 266 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

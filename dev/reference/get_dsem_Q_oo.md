@@ -1,4 +1,4 @@
-# The precision of the cells that have an innovation
+# The precision of the cells that have an innovation (i.e., not fully deterministic)
 
 With nothing solved out this is \\(I - B)^{\top}V^{-1}(I - B)\\ over
 every cell. Once a series has an sd of zero \\V\\ is singular and that

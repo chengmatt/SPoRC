@@ -1,4 +1,4 @@
-# Dusky model outputs from single regino model
+# Dusky model outputs from single region model
 
 A list containing inputs and outputs for the 2024 GOA Dusky Rockfish
 Assessment

@@ -180,8 +180,9 @@ Setup_Mod_Biologicals(
   Data frame of prior hyperparameters, one row per block combination,
   with columns `popblk`, `regionblk`, `yearblk`, `ageblk`, `sexblk`,
   `mu` on the natural scale, `sd`, and optionally `seasblk` (left out,
-  it reads the block covering season one). Only used when
-  `Use_M_prior = 1`.
+  it reads the block covering season one). The block columns are block
+  numbers, the order of the blocks in each `M_*blk_spec` list, not ages
+  or years. Only used when `Use_M_prior = 1`.
 
 - fit_lengths:
 
@@ -560,11 +561,14 @@ Setup_Mod_Biologicals(
 
   Blocking for the process error standard deviation, each `"constant"`
   (default) or a list of integer vectors, exactly as the `M_*blk_spec`
-  arguments. Blocking shares a standard deviation and never removes a
-  cell from the state. Only `NAA_re = "iid"` admits one varying over
-  years or ages; every other form is separable or Markov in a dim. The
-  season dim is the exception, being whitened outside the age and year
-  density, and is ruled out only by `NAA_re_season = "us"`.
+  arguments. The vectors hold positions in the dim and must name each
+  one once, the first age and first year included, and a block with no
+  state cell in it is kept at its starting value. Blocking shares a
+  standard deviation and never removes a cell from the state. Only
+  `NAA_re = "iid"` admits one varying over years or ages; every other
+  form is separable or Markov in a dim. The season dim is the exception,
+  being whitened outside the age and year density, and is ruled out only
+  by `NAA_re_season = "us"`.
 
 - ...:
 

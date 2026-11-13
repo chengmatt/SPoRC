@@ -1,8 +1,8 @@
 # Map natural mortality parameters to a block structure
 
-Builds the `M_blocks` index array and the `ln_M` factor map. Each
-combination of blocks takes a sequential integer, and every cell in a
-block shares one `ln_M`.
+Builds the `M_blocks` index array and the `ln_M` factor map. Each cell
+holds its block's position in `ln_M`, so every cell in a block shares
+`ln_M[popblk, regionblk, yearblk, seasblk, ageblk, sexblk]`.
 
 ## Usage
 

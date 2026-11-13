@@ -257,4 +257,4 @@ Fitted model output provided by SPoRC
 - [`three_rg_sable_rep`](https://chengmatt.github.io/SPoRC/dev/reference/three_rg_sable_rep.md)
   : Sablefish report for 3 region case study
 - [`dusky_rtmb_model`](https://chengmatt.github.io/SPoRC/dev/reference/dusky_rtmb_model.md)
-  : Dusky model outputs from single regino model
+  : Dusky model outputs from single region model

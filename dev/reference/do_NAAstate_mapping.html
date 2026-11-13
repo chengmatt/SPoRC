@@ -134,7 +134,9 @@ standard deviations are estimated.</p></dd>
 
 <dt id="arg-naa-sigma-popblk-spec-vals-naa-sigma-regionblk-spec-vals-naa-sigma-yearblk-spec-vals-naa-sigma-seasblk-spec-vals-naa-sigma-ageblk-spec-vals-naa-sigma-sexblk-spec-vals">NAA_sigma_popblk_spec_vals, NAA_sigma_regionblk_spec_vals, NAA_sigma_yearblk_spec_vals, NAA_sigma_seasblk_spec_vals, NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals<a class="anchor" aria-label="anchor" href="#arg-naa-sigma-popblk-spec-vals-naa-sigma-regionblk-spec-vals-naa-sigma-yearblk-spec-vals-naa-sigma-seasblk-spec-vals-naa-sigma-ageblk-spec-vals-naa-sigma-sexblk-spec-vals"></a></dt>
 <dd><p>Lists of integer vectors assigning indices to blocks, as the
-<code>M_*blk_spec_vals</code> arguments. Blocking shares the standard deviation.</p></dd>
+<code>M_*blk_spec_vals</code> arguments, each naming every index of its dim once.
+Blocking shares the standard deviation, and a block with no state cell in it
+is mapped off.</p></dd>
 
 
 <dt id="arg-naa-pe-spec">NAA_pe_spec<a class="anchor" aria-label="anchor" href="#arg-naa-pe-spec"></a></dt>

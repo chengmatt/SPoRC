@@ -69,7 +69,9 @@ do_NAAstate_mapping(
   NAA_sigma_ageblk_spec_vals, NAA_sigma_sexblk_spec_vals:
 
   Lists of integer vectors assigning indices to blocks, as the
-  `M_*blk_spec_vals` arguments. Blocking shares the standard deviation.
+  `M_*blk_spec_vals` arguments, each naming every index of its dim once.
+  Blocking shares the standard deviation, and a block with no state cell
+  in it is mapped off.
 
 - NAA_pe_spec:
 

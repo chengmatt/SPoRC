@@ -27,7 +27,7 @@ Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
 
   Integer; composition parameterization type:
 
-  - 0 = aggregated across sexes
+  - 0 = aggregated across regions and sexes
 
   - 1 = split by sex (no implicit sex ratio information)
 

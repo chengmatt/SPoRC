@@ -328,6 +328,10 @@
   proportions.
 - Fixed simulating a Dirichlet-multinomial composition stopping in a
   year with no sample.
+- Fixed
+  [`get_comp_prop()`](https://chengmatt.github.io/SPoRC/dev/reference/get_comp_prop.md)
+  mixing regions and bins in aggregated compositions (`_Type = 0`) with
+  more than one region. The likelihood was not affected.
 
 ## version 1.1.0
 

@@ -167,6 +167,7 @@
 <li>Fixed <code><a href="../reference/do_runs_test.html">do_runs_test()</a></code> returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.</li>
 <li>Fixed the aggregated Dirichlet-multinomial composition likelihood (<code>_Type = 0</code>) not adding <code>addtocomp</code> to the expected and observed proportions.</li>
 <li>Fixed simulating a Dirichlet-multinomial composition stopping in a year with no sample.</li>
+<li>Fixed <code><a href="../reference/get_comp_prop.html">get_comp_prop()</a></code> mixing regions and bins in aggregated compositions (<code>_Type = 0</code>) with more than one region. The likelihood was not affected.</li>
 </ul></div>
 </div>
     <div class="section level2">

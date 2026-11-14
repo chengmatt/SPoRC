@@ -244,7 +244,7 @@ get_idx_fits <- function(data,
 #' @param Obs Array; observed composition values indexed similarly to \code{Exp}.
 #' @param Comp_Type Integer; composition parameterization type:
 #'   \itemize{
-#'     \item 0 = aggregated across sexes
+#'     \item 0 = aggregated across regions and sexes
 #'     \item 1 = split by sex (no implicit sex ratio information)
 #'     \item 2 = joint across sexes (implicit sex ratio information)
 #'   }
@@ -283,7 +283,8 @@ Restrc_Comps <- function(Exp,
   # Aggregated comps by sex and region
   if(Comp_Type == 0) {
 
-    tmp_Exp = matrix(rowSums(matrix(Exp, nrow = n_model_bins)) / (n_sexes * n_regions), nrow = 1) # aggregate
+    # total over regions and sexes in each bin, as the likelihood fits it (Exp leads with region, so it is summed by bin)
+    tmp_Exp = matrix(apply(Exp, 4, sum), nrow = 1) # aggregate
     # Expected age bins get collapsed to observed age bins if ageing error is non-square
     if(age_or_len == 0) {
       tmp_Exp = tmp_Exp %*% AgeingError # apply ageing error

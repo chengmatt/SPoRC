@@ -14,7 +14,7 @@ Restrc_Comps(Exp, Obs, Comp_Type, age_or_len, AgeingError)
 
 \item{Comp_Type}{Integer; composition parameterization type:
 \itemize{
-  \item 0 = aggregated across sexes
+  \item 0 = aggregated across regions and sexes
   \item 1 = split by sex (no implicit sex ratio information)
   \item 2 = joint across sexes (implicit sex ratio information)
 }}

@@ -28,11 +28,14 @@ naaproj_fits <- local({
   }
 })
 
-# fitted innovation in the terminal year, ages two and older, read from the report the comparisons use. a bare parList()
-# reads the last point evaluated, which can sit 1e-11 from the best point the report was taken at
+# fitted innovation in the terminal year, ages two and older, read from the report (taken at last.par.best)
 naaproj_eta_T <- function(fit, n_yrs) {
   log(fit$rep$NAA[1,1,n_yrs,1,2:8,1]) - log(fit$rep$NAA_pred[1,1,n_yrs,1,2:8,1])
 }
+
+# the estimates at the point the report was taken. a bare parList() reads the last point evaluated, which can sit
+# 1e-7 off it on some platforms. par has to be named, a vector passed first is read as the fixed effects alone
+naaproj_pars_best <- function(fit) fit$env$parList(par = fit$env$last.par.best)
 
 test_that("the state runs over the projection years only when it reaches the terminal year", {
   sweep_ext <- sweep_input
@@ -121,7 +124,7 @@ test_that("integrating out the projected cells leaves the marginal likelihood un
 test_that("a year autoregression forecasts the terminal innovation forward", {
   fits <- naaproj_fits("1dar1_y")
   n_yrs <- length(fits$il1$data$years)
-  pars <- fits$f1$env$parList()
+  pars <- naaproj_pars_best(fits$f1)
 
   rho <- rho_trans(pars$NAA_pe_pars[1,1,2,1])
   eta_T <- naaproj_eta_T(fits$f1, n_yrs)
@@ -178,7 +181,7 @@ test_that("a retrospective peel carries the projected cells past the new termina
   # and the peeled fit forecasts from its own terminal year
   peeled <- suppressWarnings(fit_model(cut$retro_data, cut$retro_parameters, cut$retro_mapping,
                                        random = "ln_NAA", silent = TRUE))
-  pp <- peeled$env$parList()
+  pp <- naaproj_pars_best(peeled)
   rho <- rho_trans(pp$NAA_pe_pars[1,1,2,1])
   expect_equal(unname(pp$ln_NAA[1,1,n_keep + proj,1,2:8,1]),
                outer(rho^proj, naaproj_eta_T(peeled, n_keep)), tolerance = 1e-8)

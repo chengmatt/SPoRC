@@ -79,7 +79,8 @@ mortality at age.}
 age.}
 
 \item{CAA, DAA}{Arrays \code{[pop, region, year, season, age, sex,
-fish_fleet]}, output containers for retained/discarded catch at age.}
+fish_fleet]} for retained/discarded catch at age, replaced whole by
+\code{ret_FAA}/\code{disc_FAA} times the abundance available.}
 
 \item{CAL, DAL}{Arrays \code{[pop, region, year, season, len, sex,
 fish_fleet]}, output containers for retained/discarded catch at length.}

@@ -119,6 +119,29 @@ check_profile_mirrors <- function(par, map, what, idx) {
   invisible(NULL)
 }
 
+#' Warn that the data components of a profile cannot be read one by one under random effects
+#'
+#' At every grid value the random effects are refit to all the data at once, so they couple the
+#' data sources and a component no longer tells you that data source's contribution on its own.
+#'
+#' @param random Character vector of random effects, or \code{NULL}.
+#'
+#' @return \code{NULL}, invisibly. Called for the warning it raises.
+#'
+#' @keywords internal
+#' @noRd
+check_profile_random <- function(random) {
+
+  if(length(random) == 0) return(invisible(NULL))
+
+  warning(paste0("Random effects are estimated (", paste(random, collapse = ", "), "), so the marginal in `jnLL_df` ",
+                 "can be looked at but not the data components. The data components are no longer independent and ",
+                 "do not independently tell you a data source's contribution to the profile, because the ",
+                 "random effects are coupled."))
+
+  invisible(NULL)
+}
+
 # Component Weighting -------------------------------------------------------
 
 #' Weight an at-age likelihood component down to the weight's own dimensions
@@ -155,7 +178,10 @@ weight_over_ages <- function(component, weight) {
 #'   fixed stay fixed and positions it estimated as one shared parameter stay shared,
 #'   leaving the profile with the same free parameters as the model being profiled.
 #' @param random Character vector of random effects to estimate. Default
-#'   \code{NULL}.
+#'   \code{NULL}. With random effects, \code{jnLL_df} holds the marginal and the
+#'   profile warns that it can be looked at but not the data components, since
+#'   the random effects couple the data sources and a component no longer tells
+#'   you that data source's contribution on its own.
 #' @param what Character string. Name of the parameter to profile. Profiling
 #'   \code{ln_fish_q} or \code{ln_srv_q} requires the matching \code{fish_q_type}
 #'   or \code{srv_q_type} to be \code{"est"} for the fleets being profiled, since
@@ -174,7 +200,12 @@ weight_over_ages <- function(component, weight) {
 #' @return A named list containing one dataframe per likelihood component,
 #'   each with a \code{prof_val} column indicating the profiled parameter
 #'   value, plus \code{agg_nLL} which aggregates all components across their
-#'   respective dimensions. Components include:
+#'   respective dimensions. \code{jnLL_df} is the objective the fit minimizes:
+#'   the joint negative log-likelihood, or with random effects the marginal,
+#'   which is the joint at the random effect mode plus the Laplace term.
+#'   \code{laplace_nLL_df} is that Laplace term, zero without random effects,
+#'   and is added to \code{agg_nLL} only when \code{random} is set.
+#'   Components include:
 #'   \describe{
 #'     \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df}
 #'       (the recruitment, initial age, initial-age sex tie, recruitment
@@ -232,6 +263,7 @@ do_likelihood_profile <- function(data,
   }
 
   check_analytic_q(data, parameters, what, idx)
+  check_profile_random(random)
 
   # the map the model was fitted with. every grid value rebuilds its map from this copy, so no
   # earlier grid value leaks into a later one
@@ -243,6 +275,7 @@ do_likelihood_profile <- function(data,
 
   # Create objects to store values
   jnLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
+  laplace_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   rec_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   sel_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
   srv_sel_block_nLL <- matrix(NA, nrow = length(vals), ncol = 1, dimnames = list(vals, NULL))
@@ -323,7 +356,9 @@ do_likelihood_profile <- function(data,
         report <- SPoRC_rtmb_model$report(SPoRC_rtmb_model$env$last.par.best)
 
         # Store values and save (note, some need to save wt*nLL, because of how nlL are combined in the jnLL for the model)
-        jnLL[j,1] <- report$jnLL
+        # with random effects the fit minimizes the marginal, which is jnLL at the random effect mode plus the laplace term
+        jnLL[j,1] <- if(is.null(random)) report$jnLL else as.numeric(SPoRC_rtmb_model$env$value.best)
+        laplace_nLL[j,1] <- jnLL[j,1] - report$jnLL
         rec_nLL[j,1] <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL, safe_extract(report, "Init_Sex_nLL"), safe_extract(report, "Rec_level_nLL"), safe_extract(report, "SR_pen_nLL"))
         M_nLL[j,1] <- report$M_nLL
         sel_nLL[j,1] <- report$sel_nLL
@@ -402,6 +437,7 @@ do_likelihood_profile <- function(data,
           prof_val = vals[j],
           success = FALSE,
           jnLL = NA,
+          laplace_nLL = NA,
           rec_nLL = NA,
           M_nLL = NA,
           sel_nLL = NA,
@@ -471,7 +507,9 @@ do_likelihood_profile <- function(data,
           report <- SPoRC_rtmb_model$report(SPoRC_rtmb_model$env$last.par.best)
 
           # Store values and save
-          result$jnLL <- report$jnLL
+          # with random effects the fit minimizes the marginal, which is jnLL at the random effect mode plus the laplace term
+          result$jnLL <- if(is.null(local_random)) report$jnLL else as.numeric(SPoRC_rtmb_model$env$value.best)
+          result$laplace_nLL <- result$jnLL - report$jnLL
           result$rec_nLL <- sum(safe_extract(data, "Wt_Init_Rec") * report$Init_Rec_nLL, data$Wt_Rec * report$Rec_nLL,
                                 safe_extract(report, "Init_Sex_nLL"), safe_extract(report, "Rec_level_nLL"), safe_extract(report, "SR_pen_nLL"))
           result$M_nLL <- report$M_nLL
@@ -542,6 +580,7 @@ do_likelihood_profile <- function(data,
       if(res$success) {
         j <- res$j
         jnLL[j,1] <- res$jnLL
+        laplace_nLL[j,1] <- res$laplace_nLL
         rec_nLL[j,1] <- res$rec_nLL
         M_nLL[j,1] <- res$M_nLL
         sel_nLL[j,1] <- res$sel_nLL
@@ -603,6 +642,10 @@ do_likelihood_profile <- function(data,
     dplyr::select(-Var2) %>%
     dplyr::rename(prof_val = Var1) %>%
     dplyr::mutate(type = 'jnLL')
+  laplace_nLL_df <- reshape2::melt(laplace_nLL) %>%
+    dplyr::select(-Var2) %>%
+    dplyr::rename(prof_val = Var1) %>%
+    dplyr::mutate(type = 'Laplace')
   rec_nLL_df <- reshape2::melt(rec_nLL) %>%
     dplyr::select(-Var2) %>%
     dplyr::rename(prof_val = Var1) %>%
@@ -1090,8 +1133,8 @@ do_likelihood_profile <- function(data,
     dplyr::rename(Pop = Var1, Region = Var2, Year = Var3, Seas = Var4, Sex = Var5, Fleet = Var6) %>%
     dplyr::mutate(type = 'SrvLenPop')
 
-  # Get likelihoods aggregated across all dimensions
-  agg_nLL <- rbind(jnLL_df, rec_nLL_df, M_nLL_df, rec_prop_nLL_df, Movement_nLL_df, h_nLL_df, R0_nLL_df,
+  # Get likelihoods aggregated across all dimensions. the laplace term is zero without random effects, so leave it out
+  agg_nLL <- rbind(jnLL_df, if(!is.null(random)) laplace_nLL_df, rec_nLL_df, M_nLL_df, rec_prop_nLL_df, Movement_nLL_df, h_nLL_df, R0_nLL_df,
                    NAA_state_nLL_df,
                    TagRep_nLL_df,Fmort_nLL_df, dmr_nLL_df, sel_nLL_df,
                    srv_sel_block_nLL_df,
@@ -1147,6 +1190,7 @@ do_likelihood_profile <- function(data,
 
   profile_list <- list(
     jnLL_df = jnLL_df,
+    laplace_nLL_df = laplace_nLL_df,
     rec_nLL_df = rec_nLL_df,
     M_nLL_df = M_nLL_df,
     sel_nLL_df = sel_nLL_df,

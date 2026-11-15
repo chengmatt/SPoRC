@@ -108,8 +108,9 @@ jitter_start_values <- function(obj, par_vec, sd, jitter_random) {
 #'
 #' @return A data frame of the jitter results: the spawning stock biomass and
 #'   recruitment series of each run, with its jitter index, whether the Hessian
-#'   was positive definite, the joint negative log-likelihood, and the maximum
-#'   absolute gradient of the fixed effects. Under
+#'   was positive definite, the objective the fit minimized as \code{jnLL} (the
+#'   joint negative log-likelihood, or with random effects the marginal), and
+#'   the maximum absolute gradient of the fixed effects. Under
 #'   \code{return_start_values = TRUE}, a list of two elements:
 #'   \describe{
 #'     \item{\code{jitter_df}}{The data frame above.}
@@ -201,6 +202,8 @@ do_jitter <- function(data,
       )
 
       obj$rep <- obj$report(obj$env$last.par.best) # Get report
+      # with random effects the fit minimizes the marginal, not jnLL at the random effect mode
+      marginal_nLL <- if(is.null(random)) obj$rep$jnLL else as.numeric(obj$env$value.best)
       obj$sd_rep <- RTMB::sdreport(obj) # Get sd report
 
       # put jitter results into a dataframe
@@ -212,7 +215,7 @@ do_jitter <- function(data,
                            dplyr::mutate(Type = 'Recruitment')) %>%
         dplyr::mutate(jitter = i,
                       Hessian = obj$sd_rep$pdHess,
-                      jnLL = obj$rep$jnLL,
+                      jnLL = marginal_nLL,
                       Max_Gradient = max(abs(obj$sd_rep$gradient.fixed)))
 
       jitter_all <- rbind(jitter_all, jitter_ts_df) # bind dataframes
@@ -266,6 +269,8 @@ do_jitter <- function(data,
 
         # get reports
         obj$rep <- obj$report(obj$env$last.par.best)
+        # with random effects the fit minimizes the marginal, not jnLL at the random effect mode
+        marginal_nLL <- if(is.null(random)) obj$rep$jnLL else as.numeric(obj$env$value.best)
         obj$sd_rep <- RTMB::sdreport(obj)
 
         # put jitter results into a dataframe
@@ -277,7 +282,7 @@ do_jitter <- function(data,
                              dplyr::mutate(Type = 'Recruitment')) %>%
           dplyr::mutate(jitter = i,
                         Hessian = obj$sd_rep$pdHess,
-                        jnLL = obj$rep$jnLL,
+                        jnLL = marginal_nLL,
                         Max_Gradient = max(abs(obj$sd_rep$gradient.fixed)))
 
         p() # update progress

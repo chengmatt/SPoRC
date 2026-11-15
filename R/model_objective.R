@@ -1311,7 +1311,8 @@ SPoRC_rtmb = function(pars, data) {
       Mrate = Mrate,
       move_timing = move_timing,
       expm_nsub = move_expm_nsub,
-      NAA_scalar = if(n_est_naa_re > 0) NAA_scalar else NULL
+      NAA_scalar = if(n_est_naa_re > 0) NAA_scalar else NULL,
+      conv_tag_shed_map = map_ln_conv_tag_shed # which release events share a shedding rate
     )
 
     conv_tag_fish_reporting = tmp_tag_obs$conv_tag_fish_reporting

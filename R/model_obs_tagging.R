@@ -73,6 +73,465 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 }
 
 
+# Tag Cohort Season Steps ---------------------------------------------------
+
+# One season for the tag cohorts at liberty, in three steps both get_tagging_observation_model and the simulation's
+# generate_fishery_conv_tags_recap call, so the two follow tagged fish the same way: each cohort's mortality and
+# release, then every cohort's movement together, then each cohort's ageing and recaptures
+
+#' Tag cohorts at liberty in a year and season
+#'
+#' The cohorts released at or before this season that are still within their
+#' years at liberty.
+#'
+#' @param y,rseas Year and season.
+#' @param conv_tag_release_indicator Matrix \code{[cohort, 3]} of release region,
+#'   year and season.
+#' @param conv_tag_max_liberty Integer, the most years a cohort is followed.
+#'
+#' @return Integer vector of cohort indices.
+#' @keywords internal
+get_tag_cohorts_at_liberty <- function(y, rseas, conv_tag_release_indicator, conv_tag_max_liberty) {
+  tag_release_yr <- conv_tag_release_indicator[,2] # tag release year
+  tag_release_seas <- conv_tag_release_indicator[,3] # tag release season
+  released <- tag_release_yr < y | (tag_release_yr == y & tag_release_seas <= rseas) # released by this season
+  within_liberty <- (y - tag_release_yr + 1) <= conv_tag_max_liberty # not past the years followed
+  which(released & within_liberty)
+}
+
+#' Tag shedding groups
+#'
+#' Cohorts mapped to the same estimated shedding parameter, or fixed at the same
+#' shedding value, are in one group, numbered by the first cohort in it. Under
+#' \code{move_timing = 2} the cohorts of a group share one seasonal operator.
+#'
+#' @param conv_tag_shed_map Numeric vector \code{[cohort]}, the map of
+#'   \code{ln_conv_tag_shed} (\code{NA} where it is fixed), or \code{NULL}, which
+#'   makes every cohort its own group.
+#' @param ln_conv_tag_shed Vector \code{[cohort]} of log shedding rates.
+#'
+#' @return Integer vector \code{[cohort]} of group numbers.
+#' @keywords internal
+get_tag_shed_group <- function(conv_tag_shed_map, ln_conv_tag_shed) {
+
+  # setup tag shed groups
+  n_cohorts <- length(ln_conv_tag_shed)
+  tag_shed_group <- 1:n_cohorts
+  if(is.null(conv_tag_shed_map)) return(tag_shed_group)
+
+  shed_value <- ad_value(ln_conv_tag_shed) # make into plain numbers, only compared for fixed rates
+  for(tc in 1:n_cohorts) {
+    for(tc_first in 1:tc) {
+
+      # figure out whether fixed, estimated, same fixed value, or same map
+      both_fixed <- is.na(conv_tag_shed_map[tc]) && is.na(conv_tag_shed_map[tc_first])
+      both_estimated <- !is.na(conv_tag_shed_map[tc]) && !is.na(conv_tag_shed_map[tc_first])
+      same_fixed_value <- both_fixed && shed_value[tc] == shed_value[tc_first]
+      same_parameter <- both_estimated && conv_tag_shed_map[tc] == conv_tag_shed_map[tc_first]
+
+      # if same then part of the same group
+      if(same_fixed_value || same_parameter) {
+        tag_shed_group[tc] <- tag_shed_group[tc_first]
+        break
+      }
+    } # end tc_first loop
+  } # end tc loop
+
+  tag_shed_group
+}
+
+#' Start of a season for one tag cohort: mortality and release
+#'
+#' Total mortality with the cohort's shedding, the share of the season it is at
+#' liberty for, the release in its release season, and survival.
+#'
+#' @param avail_tc Array \code{[liberty + 1, season, pop, region, age, sex]} of
+#'   the cohort's tags.
+#' @param tagged_fish Array \code{[pop, age, sex]} of fish released, read in the
+#'   release season only.
+#' @param mort Output of \code{get_tag_mort} for this year and season.
+#' @param ry,rseas Years at liberty and season.
+#' @param tr,tseas Release region and season.
+#' @param ln_conv_tag_shed_tc,conv_tag_t_tagging_tc,ln_init_conv_tag_mort_tc The
+#'   cohort's log shedding rate, share of the release season remaining at release,
+#'   and log tag-induced mortality.
+#' @param seasdur Numeric vector \code{[season]} of season durations.
+#' @param move_timing Where movement sits relative to mortality (0, 1 or 2).
+#' @param n_pop,n_ages,n_sexes Dimension sizes.
+#'
+#' @return List with \code{avail_tc}, the cohort's tags with this season's
+#'   release in, and \code{seas_vals}, what the rest of the season reads:
+#'   \code{ry}, \code{tmp_ZAA}, \code{tmp_ret_FAA}, \code{tmp_SAA},
+#'   \code{tag_frac}, \code{tag_dur}, \code{tag_moves} and \code{tag_moves_seas}.
+#' @keywords internal
+start_tag_cohort_season <- function(avail_tc,
+                                    tagged_fish,
+                                    mort,
+                                    ry,
+                                    rseas,
+                                    tr,
+                                    tseas,
+                                    ln_conv_tag_shed_tc,
+                                    conv_tag_t_tagging_tc,
+                                    ln_init_conv_tag_mort_tc,
+                                    seasdur,
+                                    move_timing,
+                                    n_pop,
+                                    n_ages,
+                                    n_sexes) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  # get retained fishing mortality, and total mortality with this cohort's shedding rate
+  tmp_ret_FAA <- mort$ret_FAA
+  tmp_ZAA <- mort$Z_before_shed + (exp(ln_conv_tag_shed_tc) * seasdur[rseas])
+
+  # Fraction of this season the tag cohort is actually at liberty for. Mid-season releases
+  # only experience the remainder of the season.
+  tag_frac <- if(ry == 1 && rseas == tseas) conv_tag_t_tagging_tc else 1
+  tag_dur <- seasdur[rseas] * tag_frac
+
+  # discount by tagging time when tagging is not at the start of the season. scale F and Z
+  # together: scaling Z alone makes F/Z exceed one and overpredicts recaptures
+  if(tag_frac != 1) {
+    tmp_ZAA     <- tmp_ZAA     * tag_frac
+    tmp_ret_FAA <- tmp_ret_FAA * tag_frac
+  }
+
+  # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced
+  # mortality (exponential mortality process)
+  if(ry == 1 && rseas == tseas) {
+    avail_tc[1, rseas, , tr, , ] <- array(tagged_fish * exp(-exp(ln_init_conv_tag_mort_tc)), dim = c(n_pop, n_ages, n_sexes))
+  }
+
+  # get temporary survival value
+  tmp_SAA <- exp(-tmp_ZAA)
+
+  # Whether the discrete movement step applies this season. A mid-season release skips it,
+  # since a full-season transition matrix cannot represent a partial interval.
+  tag_moves <- (conv_tag_t_tagging_tc == 1 || ry != 1 || rseas != tseas)
+
+  # continuous movement needs no such exemption: the generator is scaled by tag_dur, so a
+  # mid-season release diffuses for the same fraction of the season its mortality is scaled by
+  tag_moves_seas <- if(move_timing == 2) TRUE else tag_moves
+
+  seas_vals <- list(ry = ry, # years at liberty
+                    tmp_ZAA = tmp_ZAA, # total mortality, with shedding
+                    tmp_ret_FAA = tmp_ret_FAA, # retained fishing mortality
+                    tmp_SAA = tmp_SAA, # survival over the season
+                    tag_frac = tag_frac, # share of the season at liberty
+                    tag_dur = tag_dur, # time at liberty this season
+                    tag_moves = tag_moves, # discrete movement applies
+                    tag_moves_seas = tag_moves_seas) # movement applies under the seasonal operator
+  list(avail_tc = avail_tc, seas_vals = seas_vals)
+}
+
+#' Move a set of tag vectors through one matrix
+#'
+#' Every vector is a cohort's tags by region, moved one cohort at a time,
+#' \code{t(tag_vec) \%*\% move_mat} for each.
+#'
+#' @param tag_vecs List of numeric vectors \code{[region]}.
+#' @param move_mat Matrix \code{[region_from, region_to]}.
+#'
+#' @return List of the moved vectors \code{[region_to]}, in the same order.
+#' @keywords internal
+move_tag_vectors <- function(tag_vecs, move_mat) {
+  moved_vecs <- vector("list", length(tag_vecs))
+  for(k in seq_along(tag_vecs)) moved_vecs[[k]] <- as.vector(t(tag_vecs[[k]]) %*% move_mat) # one product each
+  moved_vecs
+}
+
+#' Movement for every tag cohort at liberty in a season
+#'
+#' Every cohort at liberty goes through the season's movement matrix, or its
+#' seasonal operator under \code{move_timing = 2}, through
+#' \code{move_tag_vectors}. Under \code{move_timing = 0} the cohorts' tags are
+#' moved in place, and mortality follows in \code{end_tag_cohort_season}. Under
+#' \code{move_timing = 1} each cohort is survived and then moved. Under
+#' \code{move_timing = 2} the cohorts of a shedding group with the same time at
+#' liberty share one seasonal operator and its integral.
+#'
+#' @param tag_avail_cohort List \code{[cohort]} of each cohort's tags.
+#' @param cohort_seas_vals List \code{[cohort]} of \code{seas_vals} from
+#'   \code{start_tag_cohort_season}.
+#' @param cohorts_at_liberty Integer vector of the cohorts at liberty this season.
+#' @param rseas Season.
+#' @param move_seas Array \code{[pop, region_from, region_to, age, sex]}, the
+#'   season's movement matrices.
+#' @param rate_seas Array \code{[pop, region_from, region_to, age, sex]}, the
+#'   season's movement rates under \code{move_timing = 2}, else \code{NULL}.
+#' @param tag_shed_group Integer vector \code{[cohort]} from
+#'   \code{get_tag_shed_group}.
+#' @param move_timing,do_recruits_move,expm_nsub Movement settings.
+#' @param n_pop,n_regions,n_ages,n_sexes Dimension sizes.
+#'
+#' @return List with \code{tag_avail_cohort} (moved under \code{move_timing = 0}),
+#'   and \code{tag_step_cohort} and \code{tag_int_cohort}, each cohort's tags at the
+#'   end of the season and integrated over it under \code{move_timing} 1 and 2.
+#' @keywords internal
+move_tag_cohorts <- function(tag_avail_cohort,
+                             cohort_seas_vals,
+                             cohorts_at_liberty,
+                             rseas,
+                             move_seas,
+                             rate_seas,
+                             tag_shed_group,
+                             move_timing,
+                             do_recruits_move,
+                             expm_nsub,
+                             n_pop,
+                             n_regions,
+                             n_ages,
+                             n_sexes) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  n_cohorts <- length(tag_avail_cohort)
+  tag_step_cohort <- vector("list", n_cohorts) # tags at the end of the season, by cohort (move_timing 1 and 2)
+  tag_int_cohort <- vector("list", n_cohorts) # tags integrated over the season, by cohort (move_timing 2)
+
+  # move tagged fish around. under move_timing == 0 movement is applied here and mortality follows
+  if(move_timing == 0) {
+
+    # setup dimensions to figure out how many cohorts to move
+    tag_move_ages <- if(do_recruits_move == 0) 2:n_ages else 1:n_ages # ages that move
+    moving_cohorts <- integer(0)
+    for(tc in cohorts_at_liberty) if(cohort_seas_vals[[tc]]$tag_moves) moving_cohorts <- c(moving_cohorts, tc)
+    n_moving_cohorts <- length(moving_cohorts)
+
+    for(p in 1:n_pop) {
+
+      # skip if no cohorts to move
+      if(n_moving_cohorts == 0) next
+
+      # input each moving cohort's tags this season, regions by ages by sexes
+      moving_tags <- vector("list", n_moving_cohorts)
+      for(k in 1:n_moving_cohorts) {
+        tc <- moving_cohorts[k]
+        moving_tags[[k]] <- array(tag_avail_cohort[[tc]][cohort_seas_vals[[tc]]$ry, rseas, p, , , ], dim = c(n_regions, n_ages, n_sexes))
+      } # end k loop
+
+      # every moving cohort at an age and sex through the same matrix
+      for(a in tag_move_ages) {
+        for(s in 1:n_sexes) {
+          tag_vecs <- vector("list", n_moving_cohorts)
+          for(k in 1:n_moving_cohorts) tag_vecs[[k]] <- moving_tags[[k]][, a, s]
+          moved_vecs <- move_tag_vectors(tag_vecs = tag_vecs, move_mat = move_seas[p, , , a, s])
+          for(k in 1:n_moving_cohorts) moving_tags[[k]][, a, s] <- moved_vecs[[k]]
+        } # end s loop
+      } # end a loop
+
+      # input the moved tags back into each cohort's array
+      for(k in 1:n_moving_cohorts) {
+        tc <- moving_cohorts[k]
+        tmp_avail_tc <- tag_avail_cohort[[tc]]
+        tmp_avail_tc[cohort_seas_vals[[tc]]$ry, rseas, p, , , ] <- moving_tags[[k]]
+        tag_avail_cohort[[tc]] <- tmp_avail_tc
+
+      } # end k loop
+    } # end p loop
+  } # end if move_timing == 0
+
+  # under move_timing 1 and 2 the seasonal transition operator does movement and mortality together
+  if(move_timing %in% c(1, 2) && n_regions > 1) {
+    for(tc in cohorts_at_liberty) {
+      tag_step_cohort[[tc]] <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+      if(move_timing == 2) tag_int_cohort[[tc]] <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
+    } # end tc loop
+
+    # under 2, the tag cohorts that share a seasonal operator so do the same shedding group and the same time at liberty this season.
+    operator_groups <- list() # container
+    if(move_timing == 2) {
+      ungrouped <- cohorts_at_liberty # cohorts not in a group yet
+      while(length(ungrouped) > 0) {
+        group_first_tc <- ungrouped[1]
+        group_cohorts <- integer(0)
+        for(tc in ungrouped) {
+          same_shed_group <- tag_shed_group[tc] == tag_shed_group[group_first_tc]
+          same_time_at_liberty <- cohort_seas_vals[[tc]]$tag_dur == cohort_seas_vals[[group_first_tc]]$tag_dur
+          if(same_shed_group && same_time_at_liberty) group_cohorts <- c(group_cohorts, tc)
+        } # end tc loop
+        operator_groups[[length(operator_groups) + 1]] <- group_cohorts
+        ungrouped <- setdiff(ungrouped, group_cohorts)
+      } # end while ungrouped
+    } # end if move_timing == 2
+
+    for(p in 1:n_pop) {
+      for(a in 1:n_ages) {
+        for(s in 1:n_sexes) {
+
+          # move_timing == 1: each cohort survived, then the ones that move this season moved
+          if(move_timing == 1) {
+            moving_cohorts <- integer(0)
+            survived_vecs <- list()
+            for(tc in cohorts_at_liberty) {
+              tag_vec <- tag_avail_cohort[[tc]][cohort_seas_vals[[tc]]$ry, rseas, p, , a, s] # tags at the start of the season
+              survived_vec <- tag_vec * exp(-cohort_seas_vals[[tc]]$tmp_ZAA[p,,1,a,s]) # survival over the season, with shedding
+              tag_step_cohort[[tc]][p,,a,s] <- survived_vec # a cohort that does not move is only survived
+              if(cohort_seas_vals[[tc]]$tag_moves_seas && (do_recruits_move == 1 || a > 1)) {
+                moving_cohorts <- c(moving_cohorts, tc)
+                survived_vecs[[length(moving_cohorts)]] <- survived_vec
+              }
+            } # end tc loop
+            if(length(moving_cohorts) > 0) {
+              moved_vecs <- move_tag_vectors(tag_vecs = survived_vecs, move_mat = move_seas[p, , , a, s])
+              for(k in seq_along(moving_cohorts)) tag_step_cohort[[moving_cohorts[k]]][p,,a,s] <- moved_vecs[[k]]
+            }
+          } # end if move_timing == 1
+
+          # move_timing == 2: continuous movement, the generator scaled by tag_dur, so a mid-season release diffuses
+          # for the same fraction of the season its mortality is scaled by
+          if(move_timing == 2) {
+            moves <- do_recruits_move == 1 || a > 1
+            Qv <- if(moves) rate_seas[p, , , a, s] else matrix(0, n_regions, n_regions)
+            for(group_cohorts in operator_groups) {
+
+              # the group's seasonal operator, from the first cohort's total mortality and time at liberty
+              group_first_tc <- group_cohorts[1]
+              tag_seas_operator <- seas_operator_and_integral(Z = cohort_seas_vals[[group_first_tc]]$tmp_ZAA[p,,1,a,s], # total mortality, with shedding
+                                                              Q = Qv, # movement rates
+                                                              dur = cohort_seas_vals[[group_first_tc]]$tag_dur, # time at liberty
+                                                              expm_nsub = expm_nsub) # matrix exponential substeps
+
+              # every cohort in the group through it: tags at the end of the season, and integrated over it
+              tag_vecs <- vector("list", length(group_cohorts))
+              for(k in seq_along(group_cohorts)) {
+                tc <- group_cohorts[k]
+                tag_vecs[[k]] <- tag_avail_cohort[[tc]][cohort_seas_vals[[tc]]$ry, rseas, p, , a, s]
+              } # end k loop
+
+              # get fish that moved and died
+              stepped_vecs <- move_tag_vectors(tag_vecs = tag_vecs, move_mat = tag_seas_operator$T)
+              integrated_vecs <- move_tag_vectors(tag_vecs = tag_vecs, move_mat = t(tag_seas_operator$Integral))
+
+              # input back into array
+              for(k in seq_along(group_cohorts)) {
+                tag_step_cohort[[group_cohorts[k]]][p,,a,s] <- stepped_vecs[[k]]
+                tag_int_cohort[[group_cohorts[k]]][p,,a,s] <- integrated_vecs[[k]]
+              } # end k loop
+
+            } # end group_cohorts loop
+          } # end if move_timing == 2
+
+        } # end s loop
+      } # end a loop
+    } # end p loop
+  } # end if move_timing 1 or 2
+
+  list(tag_avail_cohort = tag_avail_cohort, tag_step_cohort = tag_step_cohort, tag_int_cohort = tag_int_cohort)
+}
+
+#' End of a season for one tag cohort: ageing and recaptures
+#'
+#' Survival (under \code{move_timing = 0}, after movement), the shift to the next
+#' season or the next year and age, the state-space numbers at age factor, and the
+#' predicted recaptures. A season the cohort is at liberty for none of
+#' (\code{conv_tag_t_tagging = 0} at release) has no recaptures.
+#'
+#' @param avail_tc,recap_tc Arrays of the cohort's tags
+#'   \code{[liberty + 1, season, pop, region, age, sex]} and predicted recaptures
+#'   \code{[liberty, season, pop, region, age, sex, fish_fleet]}.
+#' @param seas_vals The cohort's \code{seas_vals} from
+#'   \code{start_tag_cohort_season}.
+#' @param tag_step,tag_int The cohort's tags at the end of the season and
+#'   integrated over it, from \code{move_tag_cohorts} (\code{NULL} under
+#'   \code{move_timing = 0}).
+#' @param y,rseas,n_seas Year, season and number of seasons.
+#' @param reporting_y Array \code{[region, fish_fleet]} of tag reporting rates in
+#'   year \code{y}.
+#' @param NAA_scalar Array \code{[pop, region, year, season, age, sex]} of the
+#'   state-space numbers at age factor, or \code{NULL}.
+#' @param move_timing Where movement sits relative to mortality (0, 1 or 2).
+#' @param n_pop,n_regions,n_ages,n_sexes,n_fish_fleets Dimension sizes.
+#'
+#' @return List with \code{avail_tc} and \code{recap_tc}.
+#' @keywords internal
+end_tag_cohort_season <- function(avail_tc,
+                                  recap_tc,
+                                  seas_vals,
+                                  tag_step,
+                                  tag_int,
+                                  y,
+                                  rseas,
+                                  n_seas,
+                                  reporting_y,
+                                  NAA_scalar,
+                                  move_timing,
+                                  n_pop,
+                                  n_regions,
+                                  n_ages,
+                                  n_sexes,
+                                  n_fish_fleets) {
+
+  "c" <- RTMB::ADoverload("c")
+  "[<-" <- RTMB::ADoverload("[<-")
+
+  ry <- seas_vals$ry
+  tmp_ZAA <- seas_vals$tmp_ZAA
+  tmp_ret_FAA <- seas_vals$tmp_ret_FAA
+  tmp_SAA <- seas_vals$tmp_SAA
+
+  # post-season tag numbers, before the ageing shift (from move_tag_cohorts under move_timing 1 and 2)
+  if(move_timing == 0 || n_regions == 1) { # move then mortality
+    tag_step <- array(avail_tc[ry, rseas, , , , ] * tmp_SAA[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes))
+  }
+
+  # Apply mortality and ageing to tagged fish
+  if(rseas < n_seas) {
+
+    # Season mortality within a given year, advance to next season same year/age
+    avail_tc[ry, rseas + 1, , , , ] <- tag_step
+
+    # State-space numbers at age rescale tag cohorts at a within-year boundary too
+    if(!is.null(NAA_scalar) && y <= dim(NAA_scalar)[3]) {
+      avail_tc[ry, rseas + 1, , , , ] <-
+        avail_tc[ry, rseas + 1, , , , ] * NAA_scalar[,,y,rseas + 1,,]
+    }
+
+  } else {
+
+    # End of year mortality and age advancement (end of season)
+    avail_tc[ry + 1, 1, , , 2:n_ages, ] <- tag_step[,,1:(n_ages - 1),]
+
+    # Accumulate plus group
+    avail_tc[ry + 1, 1, , , n_ages, ] <-
+      avail_tc[ry + 1, 1, , , n_ages, ] + tag_step[,,n_ages,]
+
+    # State-space numbers at age rescale tag cohorts as well if applied. The factor is
+    # indexed by the calendar year the cohort has reached, not by its years at liberty.
+    if(!is.null(NAA_scalar) && (y + 1) <= dim(NAA_scalar)[3]) {
+      avail_tc[ry + 1, 1, , , 2:n_ages, ] <-
+        avail_tc[ry + 1, 1, , , 2:n_ages, ] * NAA_scalar[,,y + 1,1,2:n_ages,]
+    }
+  }
+
+  # Apply Baranov's to get predicted recaptures. a cohort at liberty for none of the season (released at its end)
+  # catches nothing, where F / Z would be 0 / 0
+  if(seas_vals$tag_frac > 0) {
+    for(p in 1:n_pop) {
+
+      # spatial Baranov: tags redistribute among regions while being caught, so recaptures use the season-integrated tag abundance
+      for(f in 1:n_fish_fleets) {
+        if(move_timing == 2) {
+          tmp_ret_FAA_slice <- array(tmp_ret_FAA[p,,1,,,f], dim = c(n_regions, n_ages, n_sexes))
+          tag_int_p <- array(tag_int[p,,,], dim = c(n_regions, n_ages, n_sexes))
+          recap_tc[ry,rseas,p,,,,f] <- reporting_y[,f] * tmp_ret_FAA_slice * tag_int_p
+        } else {
+          recap_tc[ry,rseas,p,,,,f] <- reporting_y[,f] *
+            (tmp_ret_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
+            avail_tc[ry,rseas,p,,,] *
+            (1 - tmp_SAA[p,,1,,])
+        }
+      } # end f loop
+    } # end p loop
+  } # end if at liberty this season
+
+  list(avail_tc = avail_tc, recap_tc = recap_tc)
+}
+
 # Tagging Observation Model -------------------------------------------------
 
 #' Tagging observation model
@@ -89,6 +548,11 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 #' \code{conv_tag_fish_reporting}, \code{conv_tag_fish_avail}, and
 #' \code{pred_conv_tag_fish_recap} are passed in already dimensioned
 #' (typically all-zero) and returned fully populated.
+#'
+#' Cohorts are followed calendar year by calendar year, so the cohorts at
+#' liberty in a season share that season's movement matrix, and under
+#' \code{move_timing = 2} a shedding group's seasonal operator is worked out
+#' once for all of its cohorts with the same time at liberty.
 #'
 #' @param n_fish_fleets,n_regions,n_conv_tag_cohorts,n_yrs,n_seas,n_pop,n_ages,n_sexes
 #'   Dimension sizes.
@@ -147,6 +611,10 @@ get_tag_mort <- function(y, rseas, n_pop, n_regions, n_ages, n_sexes, n_fish_fle
 #'   boundary, within a year as well as between years. \code{NULL} (the default)
 #'   leaves them on the
 #'   deterministic trajectory, which is correct only when the state is off.
+#' @param conv_tag_shed_map Numeric vector \code{[cohort]}, the map of
+#'   \code{ln_conv_tag_shed} (\code{NA} where it is fixed). Under
+#'   \code{move_timing = 2}, cohorts with the same map level, or the same fixed
+#'   value, share one seasonal operator. \code{NULL} gives every cohort its own.
 #'
 #' @return List with elements \code{conv_tag_fish_reporting},
 #'   \code{conv_tag_fish_avail}, \code{pred_conv_tag_fish_recap}.
@@ -189,7 +657,8 @@ get_tagging_observation_model <- function(
   Mrate = NULL,
   move_timing = 0,
   expm_nsub = 0,
-  NAA_scalar = NULL
+  NAA_scalar = NULL,
+  conv_tag_shed_map = NULL
 ) {
 
   "c" <- RTMB::ADoverload("c")
@@ -233,178 +702,117 @@ get_tagging_observation_model <- function(
     } # end ry loop
   } # end tc loop
 
+  # Cohort specific containers
+  tag_avail_cohort <- vector("list", n_conv_tag_cohorts)
+  tag_recap_cohort <- vector("list", n_conv_tag_cohorts)
   for(tc in 1:n_conv_tag_cohorts) {
+    tag_avail_cohort[[tc]] <- array(0, dim = c(conv_tag_max_liberty + 1, n_seas, n_pop, n_regions, n_ages, n_sexes))
+    tag_recap_cohort[[tc]] <- array(0, dim = c(conv_tag_max_liberty, n_seas, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets))
+  } # end tc loop
 
-    tr <- conv_tag_release_indicator[tc,1] # extract tag release region
-    ty <- conv_tag_release_indicator[tc,2] # extract tag release year
-    tseas <- conv_tag_release_indicator[tc,3] # extract tag release season
+  # cohorts that share a shedding rate, and so a seasonal operator under move_timing == 2
+  tag_shed_group <- get_tag_shed_group(conv_tag_shed_map, ln_conv_tag_shed)
 
-    # Cohort specific containers
-    avail_tc <- array(0, dim = c(conv_tag_max_liberty + 1, n_seas, n_pop, n_regions, n_ages, n_sexes))
-    recap_tc <- array(0, dim = c(conv_tag_max_liberty, n_seas, n_pop, n_regions, n_ages, n_sexes, n_fish_fleets))
+  # Cohorts are followed calendar year by calendar year, each season in three steps the simulation shares
+  # (generate_fishery_conv_tags_recap): each cohort's mortality and release, every cohort's movement together, then
+  # each cohort's ageing and recaptures
+  for(y in 1:n_yrs) {
+    for(rseas in 1:n_seas) {
 
-    for(ry in 1:min(conv_tag_max_liberty, n_yrs - ty + 1)) {   # years
-      y <- ty + ry - 1 # get real year
-      for(rseas in 1:n_seas) { # seasons
+      cohorts_at_liberty <- get_tag_cohorts_at_liberty(y, rseas, conv_tag_release_indicator, conv_tag_max_liberty)
+      if(length(cohorts_at_liberty) == 0) next
 
-        # get fishing and natural mortality
-        mort <- tag_mort[[(y - 1) * n_seas + rseas]]
-        tmp_FAA <- mort$FAA
-        tmp_ret_FAA <- mort$ret_FAA
-        tmp_disc_DAA <- mort$disc_DAA
+      # get fishing and natural mortality
+      mort <- tag_mort[[(y - 1) * n_seas + rseas]]
+      cohort_seas_vals <- vector("list", n_conv_tag_cohorts) # each cohort's values this season
 
-        # get total mortality, adding this cohort's shedding rate
-        tmp_ZAA <- mort$Z_before_shed + (exp(ln_conv_tag_shed[tc]) * seasdur[rseas])
+      # Mortality and release, cohort by cohort
+      for(tc in cohorts_at_liberty) {
 
-        # Fraction of this season the tag cohort is actually at liberty for. Mid-season releases
-        # only experience the remainder of the season.
-        tag_frac <- if(ry == 1 && rseas == tseas) conv_tag_t_tagging[tc] else 1
-        tag_dur <- seasdur[rseas] * tag_frac
+        tr <- conv_tag_release_indicator[tc,1] # extract tag release region
+        ty <- conv_tag_release_indicator[tc,2] # extract tag release year
+        tseas <- conv_tag_release_indicator[tc,3] # extract tag release season
+        ry <- y - ty + 1 # years at liberty
 
-        # discount by tagging time when tagging is not at the start of the season. scale F and Z
-        # together: scaling Z alone makes F/Z exceed one and overpredicts recaptures
-        if(tag_frac != 1) {
-          tmp_ZAA      <- tmp_ZAA      * tag_frac
-          tmp_FAA      <- tmp_FAA      * tag_frac
-          tmp_ret_FAA  <- tmp_ret_FAA  * tag_frac
-          tmp_disc_DAA <- tmp_disc_DAA * tag_frac
-        }
-
+        # apportion tagged fish out to appropriate dimensions if necessary, in the release season
+        tmp_tagged_fish <- NULL
         if(ry == 1 && rseas == tseas) {
-
-          # apportion tagged fish out to appropriate dimensions if necessary
           tmp_tagged_fish <- release_conv_tag_attr(array(conv_tagged_fish[tc, , , ], dim = c(n_pop, n_ages, n_sexes)),
                                                   conv_fish_tag_attr[tc],
                                                   conv_tag_release_platform[tc,],
                                                   srv_sel, fish_sel, NAA_bef,
                                                   ty, tseas, tr, n_pop,
                                                   n_ages, n_sexes)
-
-          # Input tagged fish into available tags for recapture and adjust initial number of tagged fish for tag induced mortality (exponential mortality process)
-          avail_tc[1, rseas, , tr, , ] <- array(tmp_tagged_fish * exp(-exp(ln_init_conv_tag_mort[tc])), dim = c(n_pop, n_ages, n_sexes))
         }
 
-        # get temporary survival value
-        tmp_SAA <- exp(-tmp_ZAA)
+        season_start <- start_tag_cohort_season(avail_tc = tag_avail_cohort[[tc]], # this cohort's tags
+                                                tagged_fish = tmp_tagged_fish, # released fish, release season only
+                                                mort = mort, # fishing and natural mortality this season
+                                                ry = ry, # years at liberty
+                                                rseas = rseas, # season
+                                                tr = tr, # release region
+                                                tseas = tseas, # release season
+                                                ln_conv_tag_shed_tc = ln_conv_tag_shed[tc], # shedding rate
+                                                conv_tag_t_tagging_tc = conv_tag_t_tagging[tc], # share of the release season left
+                                                ln_init_conv_tag_mort_tc = ln_init_conv_tag_mort[tc], # tag induced mortality
+                                                seasdur = seasdur, # season durations
+                                                move_timing = move_timing, # movement timing
+                                                n_pop = n_pop,
+                                                n_ages = n_ages,
+                                                n_sexes = n_sexes)
+        tag_avail_cohort[[tc]] <- season_start$avail_tc
+        cohort_seas_vals[[tc]] <- season_start$seas_vals
+      } # end tc loop
 
-        # Whether the discrete movement step applies this season. A mid-season release skips it,
-        # since a full-season transition matrix cannot represent a partial interval.
-        tag_moves <- (conv_tag_t_tagging[tc] == 1 || ry != 1 || rseas != tseas)
+      # Movement, every cohort at liberty together
+      move_seas <- array(Movement[,,,y,rseas,,], dim = c(n_pop, n_regions, n_regions, n_ages, n_sexes))
+      rate_seas <- if(move_timing == 2) array(Mrate[,,,y,rseas,,], dim = c(n_pop, n_regions, n_regions, n_ages, n_sexes)) else NULL
+      moved <- move_tag_cohorts(tag_avail_cohort = tag_avail_cohort, # each cohort's tags
+                                cohort_seas_vals = cohort_seas_vals, # each cohort's values this season
+                                cohorts_at_liberty = cohorts_at_liberty, # cohorts at liberty this season
+                                rseas = rseas, # season
+                                move_seas = move_seas, # movement matrices this season
+                                rate_seas = rate_seas, # movement rates this season (move_timing 2)
+                                tag_shed_group = tag_shed_group, # shedding groups
+                                move_timing = move_timing, # movement timing
+                                do_recruits_move = do_recruits_move, # whether age one moves
+                                expm_nsub = expm_nsub, # matrix exponential substeps
+                                n_pop = n_pop,
+                                n_regions = n_regions,
+                                n_ages = n_ages,
+                                n_sexes = n_sexes)
+      tag_avail_cohort <- moved$tag_avail_cohort
 
-        # continuous movement needs no such exemption: the generator is scaled by tag_dur, so a
-        # mid-season release diffuses for the same fraction of the season its mortality is scaled by
-        tag_moves_seas <- if(move_timing == 2) TRUE else tag_moves
+      # Survival, ageing and recaptures, cohort by cohort
+      reporting_y <- array(conv_tag_fish_reporting[,y,], dim = c(n_regions, n_fish_fleets))
+      for(tc in cohorts_at_liberty) {
+        season_end <- end_tag_cohort_season(avail_tc = tag_avail_cohort[[tc]], # this cohort's tags
+                                            recap_tc = tag_recap_cohort[[tc]], # this cohort's recaptures
+                                            seas_vals = cohort_seas_vals[[tc]], # this cohort's values this season
+                                            tag_step = moved$tag_step_cohort[[tc]], # tags at the end of the season
+                                            tag_int = moved$tag_int_cohort[[tc]], # tags integrated over the season
+                                            y = y, # year
+                                            rseas = rseas, # season
+                                            n_seas = n_seas, # number of seasons
+                                            reporting_y = reporting_y, # reporting rates this year
+                                            NAA_scalar = NAA_scalar, # state-space numbers at age factor
+                                            move_timing = move_timing, # movement timing
+                                            n_pop = n_pop,
+                                            n_regions = n_regions,
+                                            n_ages = n_ages,
+                                            n_sexes = n_sexes,
+                                            n_fish_fleets = n_fish_fleets)
+        tag_avail_cohort[[tc]] <- season_end$avail_tc
+        tag_recap_cohort[[tc]] <- season_end$recap_tc
+      } # end tc loop
 
-        # move tagged fish around. under move_timing == 0 movement is applied here and mortality
-        # follows; under 1 and 2 the seasonal transition operator does both together
-        if(move_timing == 0 && tag_moves) {
-          for(p in 1:n_pop) {
-            # Movement of tag cohorts
-            if(do_recruits_move == 0) {
-              for(a in 2:n_ages) for(s in 1:n_sexes) {
-                avail_tc[ry, rseas, p, , a, s] <-
-                  t(avail_tc[ry, rseas, p, , a, s]) %*%
-                  Movement[p, , , y, rseas, a, s]
-              }
-            } else { # if recruits move
-              for(a in 1:n_ages) for(s in 1:n_sexes) {
-                avail_tc[ry, rseas, p, , a, s] <-
-                  t(avail_tc[ry, rseas, p, , a, s]) %*%
-                  Movement[p, , , y, rseas, a, s]
-              } # end s loop
-            } # end else
-          } # end p loop
-        } # end if
+    } # end rseas loop
+  } # end y loop
 
-        # post-season tag numbers, before the ageing shift
-        tag_int <- NULL # only filled in under move_timing == 2; read by the recaptures section below
-        if(move_timing == 0 || n_regions == 1) { # move then mortality
-          tag_step <- array(avail_tc[ry, rseas, , , , ] * tmp_SAA[,,1,,], dim = c(n_pop, n_regions, n_ages, n_sexes))
-        } else if(move_timing == 2) { # continuous movement
-          tag_step <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
-          tag_int <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
-          for(p in 1:n_pop) {
-            for(a in 1:n_ages) {
-              moves <- tag_moves_seas && (do_recruits_move == 1 || a > 1)
-              for(s in 1:n_sexes) {
-                Qv <- if(moves) Mrate[p,,,y,rseas,a,s] else matrix(0, n_regions, n_regions)
-                both <- seas_operator_and_integral(tmp_ZAA[p,,1,a,s], Qv, tag_dur, expm_nsub = expm_nsub)
-                tag_step[p,,a,s] <- as.vector(t(avail_tc[ry,rseas,p,,a,s]) %*% both$T)
-                tag_int[p,,a,s] <- as.vector(both$Integral %*% avail_tc[ry,rseas,p,,a,s])
-              } # end s loop
-            } # end a loop
-          } # end p loop
-        } else {
-          # move_timing == 1: mortality then movement
-          tag_step <- array(0, dim = c(n_pop, n_regions, n_ages, n_sexes))
-          for(p in 1:n_pop) {
-            for(a in 1:n_ages) {
-              moves <- tag_moves_seas && (do_recruits_move == 1 || a > 1)
-              for(s in 1:n_sexes) {
-                Mv <- if(moves) Movement[p,,,y,rseas,a,s] else diag(n_regions)
-                tag_step[p,,a,s] <- advance_seas(avail_tc[ry,rseas,p,,a,s], Mv,
-                                                 tmp_ZAA[p,,1,a,s], NULL, tag_dur, move_timing, expm_nsub = expm_nsub)
-              } # end s loop
-            } # end a loop
-          } # end p loop
-        }
-
-        # Apply mortality and ageing to tagged fish
-        if(rseas < n_seas) {
-
-          # Season mortality within a given year, advance to next season same year/age
-          avail_tc[ry, rseas + 1, , , , ] <- tag_step
-
-          # State-space numbers at age rescale tag cohorts at a within-year boundary too
-          if(!is.null(NAA_scalar) && y <= dim(NAA_scalar)[3]) {
-            avail_tc[ry, rseas + 1, , , , ] <-
-              avail_tc[ry, rseas + 1, , , , ] * NAA_scalar[,,y,rseas + 1,,]
-          }
-
-        } else {
-
-          # End of year mortality and age advancement (end of season)
-          avail_tc[ry + 1, 1, , , 2:n_ages, ] <- tag_step[,,1:(n_ages - 1),]
-
-          # Accumulate plus group
-          avail_tc[ry + 1, 1, , , n_ages, ] <-
-            avail_tc[ry + 1, 1, , , n_ages, ] + tag_step[,,n_ages,]
-
-          # State-space numbers at age rescale tag cohorts as well if applied. The factor is
-          # indexed by the calendar year the cohort has reached, not by its years at liberty.
-          if(!is.null(NAA_scalar) && (y + 1) <= dim(NAA_scalar)[3]) {
-            avail_tc[ry + 1, 1, , , 2:n_ages, ] <-
-              avail_tc[ry + 1, 1, , , 2:n_ages, ] * NAA_scalar[,,y + 1,1,2:n_ages,]
-          }
-        }
-
-        # # Apply Baranov's to get predicted recaptures
-        for(p in 1:n_pop) {
-
-          # spatial Baranov: tags redistribute among regions while being caught, so recaptures use the season-integrated tag abundance
-          for(f in 1:n_fish_fleets) {
-            if(move_timing == 2) {
-              tmp_ret_FAA_slice <- array(tmp_ret_FAA[p,,1,,,f], dim = c(n_regions, n_ages, n_sexes))
-              tag_int_p <- array(tag_int[p,,,], dim = c(n_regions, n_ages, n_sexes))
-              recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
-                tmp_ret_FAA_slice * tag_int_p
-            } else {
-              recap_tc[ry,rseas,p,,,,f] <- conv_tag_fish_reporting[,y,f] *
-                (tmp_ret_FAA[p,,1,,,f] / tmp_ZAA[p,,1,,]) *
-                avail_tc[ry,rseas,p,,,] *
-                (1 - tmp_SAA[p,,1,,])
-            }
-          } # end f loop
-        } # end p loop
-
-
-      } # end rseas loop
-    } # end ry loop
-
-    # Store this cohort's tags and predicted recaptures
-    conv_tag_fish_avail[,,tc,,,,] <- avail_tc
-    pred_conv_tag_fish_recap[,,tc,,,,,] <- recap_tc
-
+  # Store each cohort's tags and predicted recaptures
+  for(tc in 1:n_conv_tag_cohorts) {
+    conv_tag_fish_avail[,,tc,,,,] <- tag_avail_cohort[[tc]]
+    pred_conv_tag_fish_recap[,,tc,,,,,] <- tag_recap_cohort[[tc]]
   } # end tc loop
 
   return(list(conv_tag_fish_reporting = conv_tag_fish_reporting,

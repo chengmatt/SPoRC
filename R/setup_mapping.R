@@ -2227,6 +2227,11 @@ do_sel_devs_mapping <- function(input_list, sel_devs_spec, sel_devs_shared_bins,
 #' @keywords internal
 sync_dev_map_data <- function(data, mapping) {
 
+  # input lists built before the tag shedding mapping existed get it here, so tag cohorts can share seasonal operators
+  if(is.null(data$map_ln_conv_tag_shed) && !is.null(mapping$ln_conv_tag_shed)) {
+    data$map_ln_conv_tag_shed <- array(as.numeric(mapping$ln_conv_tag_shed), dim = length(mapping$ln_conv_tag_shed))
+  }
+
   for(mirror_name in grep("^map_", names(data), value = TRUE)) {
     par_name <- sub("^map_", "", mirror_name)
     if(is.null(mapping[[par_name]])) next

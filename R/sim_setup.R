@@ -83,6 +83,12 @@ Setup_sim_env <- function(sim_list) {
   sim_env$Get_SBPR_Table <- Get_SBPR_Table
   sim_env$get_tag_mort <- get_tag_mort
   sim_env$marginalize_conv_fish_tags <- marginalize_conv_fish_tags
+  # the tag season steps the estimation model shares (model_obs_tagging.R)
+  sim_env$get_tag_cohorts_at_liberty <- get_tag_cohorts_at_liberty
+  sim_env$get_tag_shed_group <- get_tag_shed_group
+  sim_env$start_tag_cohort_season <- start_tag_cohort_season
+  sim_env$move_tag_cohorts <- move_tag_cohorts
+  sim_env$end_tag_cohort_season <- end_tag_cohort_season
 
   # state-space numbers at age; lists built before the option existed have none of it
   if(is.null(sim_list$NAA_re)) sim_list$NAA_re <- 0

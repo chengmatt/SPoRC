@@ -185,18 +185,16 @@ Get_Comp_Likelihoods = function(Exp,
     # NaN. Same guard the split and joint comps have.
     if(!any(is.finite(Obs[1,,1])) || sum(Obs[1,,1], na.rm = TRUE) == 0) return(comp_nLL)
 
-    tmp_Exp = matrix(Exp_all, nrow = 1) # every region and sex
-    tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize
-
     # Expected age bins get collapsed to observed age bins if ageing error is
     # non-square; length bins likewise when a bin map is handed in
-    if(age_or_len == 0 || is.matrix(AgeingError)) {
-      tmp_Exp = tmp_Exp %*% AgeingError # apply ageing error, or the length bin map
-      tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize
-    } else tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize (lengths)
+    tmp_Exp = matrix(Exp_all, nrow = 1) # every region and sex
+    if(age_or_len == 0 || is.matrix(AgeingError)) tmp_Exp = tmp_Exp %*% AgeingError # apply ageing error, or the length bin map
+    tmp_Exp = as.vector(tmp_Exp)
 
-    # Restrict the expectation to the bins being fit and renormalize within them
-    if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
+    # Restrict the expectation to the bins being fit, then normalize once. ageing error acts on numbers rather than
+    # proportions, so each product depends on one cohort, which keeps the random effects hessian short
+    if(restrict) tmp_Exp = tmp_Exp[fit_bins]
+    if(!Likelihood_Type %in% 2:7) tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize, except the logistic normal, whose log ratios cancel the sum
 
     # Multinomial likelihood
     if(Likelihood_Type == 0) { # Note that this indexes 1 because it's only a single sex and single region
@@ -209,7 +207,7 @@ Get_Comp_Likelihoods = function(Exp,
 
     if(Likelihood_Type == 1) {
       tmp_Obs = if(comp_const_obs == 1) (Obs[1,,1] + const) / sum(Obs[1,,1] + const) else Obs[1,,1] / sum(Obs[1,,1]) # Normalize observed values
-      tmp_Exp = (tmp_Exp + const) / sum(tmp_Exp + const) # Normalize expected values (lgamma can't take 0s)
+      tmp_Exp = (tmp_Exp + const) / (1 + length(tmp_Exp) * const) # Normalize expected values (lgamma can't take 0s), tmp_Exp sums to one
       comp_nLL[1,1] = -1 * ddirmult(obs = tmp_Obs, pred = tmp_Exp, Ntotal = ISS[1,1], ln_theta = ln_theta_agg, TRUE) # Dirichlet Multinomial likelihood
     } # end if dirichlet multinomial
 
@@ -227,7 +225,6 @@ Get_Comp_Likelihoods = function(Exp,
         tmp_Obs = tmp_Obs[-zeros]
         tmp_Exp = tmp_Exp[-zeros]
         tmp_Obs = tmp_Obs / sum(tmp_Obs)
-        tmp_Exp = tmp_Exp / sum(tmp_Exp)
         # Adjust Sigma
         Sigma = Sigma[-zeros, -zeros]
       }
@@ -252,7 +249,6 @@ Get_Comp_Likelihoods = function(Exp,
         tmp_Obs = tmp_Obs[-zeros]
         tmp_Exp = tmp_Exp[-zeros]
         tmp_Obs = tmp_Obs / sum(tmp_Obs)
-        tmp_Exp = tmp_Exp / sum(tmp_Exp)
         # Adjust Sigma
         Sigma = Sigma[-zeros, -zeros]
       }
@@ -282,12 +278,12 @@ Get_Comp_Likelihoods = function(Exp,
         if(!any(is.finite(Obs[r,,s])) || sum(Obs[r,,s], na.rm = TRUE) == 0) next # skipping zeros since nromalizing would cause Inf
         # Expected Values
         if(age_or_len == 0 || is.matrix(AgeingError)) {
-          tmp_Exp = ((Exp[r,,s]) / sum(Exp[r,,s])) %*% AgeingError # Normalize temporary variable (ages), or map the length bins
-          tmp_Exp = tmp_Exp / sum(tmp_Exp) # renormalize
-        } else tmp_Exp = (Exp[r,,s]) / sum(Exp[r,,s]) # Normalize lengths
+          tmp_Exp = Exp[r,,s] %*% AgeingError # apply ageing error to numbers (ages), or map the length bins
+        } else tmp_Exp = Exp[r,,s] # lengths
 
-        # Restrict the expectation to the bins being fit and renormalize within them
-        if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
+        # Restrict the expectation to the bins being fit, then normalize once (see the aggregated comps)
+        if(restrict) tmp_Exp = tmp_Exp[fit_bins]
+        if(!Likelihood_Type %in% 2:7) tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize, except the logistic normal, whose log ratios cancel the sum
 
         # Multinomial likelihood
         if(Likelihood_Type == 0) {
@@ -300,7 +296,7 @@ Get_Comp_Likelihoods = function(Exp,
 
         if(Likelihood_Type == 1) {
           tmp_Obs = if(comp_const_obs == 1) (Obs[r,,s] + const) / sum(Obs[r,,s] + const) else Obs[r,,s] / sum(Obs[r,,s]) # Normalize observed temporary variable
-          tmp_Exp = (tmp_Exp + const) / sum(tmp_Exp + const) # Normalize expected temporary variable (lgamma can't take 0s)
+          tmp_Exp = (tmp_Exp + const) / (1 + length(tmp_Exp) * const) # Normalize expected temporary variable (lgamma can't take 0s), tmp_Exp sums to one
           comp_nLL[r,s] = -1 * ddirmult(tmp_Obs, tmp_Exp, ISS[r,s], ln_theta[r,s], TRUE) # Dirichlet Multinomial likelihood
         } # end if dirichlet multinomial
 
@@ -318,7 +314,6 @@ Get_Comp_Likelihoods = function(Exp,
             tmp_Obs = tmp_Obs[-zeros]
             tmp_Exp = tmp_Exp[-zeros]
             tmp_Obs = tmp_Obs / sum(tmp_Obs)
-            tmp_Exp = tmp_Exp / sum(tmp_Exp)
             # Adjust Sigma
             Sigma = Sigma[-zeros, -zeros]
           }
@@ -343,7 +338,6 @@ Get_Comp_Likelihoods = function(Exp,
             tmp_Obs = tmp_Obs[-zeros]
             tmp_Exp = tmp_Exp[-zeros]
             tmp_Obs = tmp_Obs / sum(tmp_Obs)
-            tmp_Exp = tmp_Exp / sum(tmp_Exp)
             # Adjust Sigma
             Sigma = Sigma[-zeros, -zeros]
           }
@@ -377,12 +371,12 @@ Get_Comp_Likelihoods = function(Exp,
 
       # Expected values
       if(age_or_len == 0 || is.matrix(AgeingError)) { # if ages, or lengths with a bin map
-        tmp_Exp = t(as.vector((Exp[r,,]) / sum(Exp[r,,]))) %*% kronecker(diag(n_sexes), AgeingError) # apply ageing error, or the length bin map
-        tmp_Exp = as.vector((tmp_Exp) / sum(tmp_Exp)) # renormalize to make sure sum to 1
-      } else tmp_Exp = as.vector((Exp[r,,]) / sum((Exp[r,,]))) # Normalize temporary variable (lengths)
+        tmp_Exp = as.vector(t(as.vector(Exp[r,,])) %*% kronecker(diag(n_sexes), AgeingError)) # apply ageing error to numbers, or the length bin map
+      } else tmp_Exp = as.vector(Exp[r,,]) # lengths
 
-      # Restrict the expectation to the bins being fit and renormalize within them
-      if(restrict) tmp_Exp = tmp_Exp[fit_bins_joint] / sum(tmp_Exp[fit_bins_joint])
+      # Restrict the expectation to the bins being fit, then normalize once (see the aggregated comps)
+      if(restrict) tmp_Exp = tmp_Exp[fit_bins_joint]
+      if(!Likelihood_Type %in% 2:7) tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize, except the logistic normal, whose log ratios cancel the sum
 
       # Multinomial likelihood
       if(Likelihood_Type == 0) { # Indexing by r for a given region since it's 'Split' by region and 1 for sex since it's 'Joint' for sex
@@ -396,7 +390,7 @@ Get_Comp_Likelihoods = function(Exp,
       if(Likelihood_Type == 1) {
         # see the split by sex case for why the constant is optional on the observed side
         tmp_Obs = if(comp_const_obs == 1) as.vector((Obs[r,,] + const) / sum(Obs[r,,] + const)) else as.vector(Obs[r,,] / sum(Obs[r,,])) # Normalize observed temporary variable
-        tmp_Exp = (tmp_Exp + const) / sum(tmp_Exp + const) # normalize temporary expected variable
+        tmp_Exp = (tmp_Exp + const) / (1 + length(tmp_Exp) * const) # normalize temporary expected variable, tmp_Exp sums to one
         comp_nLL[r,1] = -1 * ddirmult(tmp_Obs, tmp_Exp, ISS[r,1], ln_theta[r,1], TRUE) # Dirichlet Multinomial likelihood
       } # end if dirichlet multinomial
 
@@ -413,7 +407,6 @@ Get_Comp_Likelihoods = function(Exp,
           tmp_Obs = tmp_Obs[-zeros]
           tmp_Exp = tmp_Exp[-zeros]
           tmp_Obs = tmp_Obs / sum(tmp_Obs)
-          tmp_Exp = tmp_Exp / sum(tmp_Exp)
           # Adjust Sigma
           Sigma = Sigma[-zeros, -zeros]
         }
@@ -440,7 +433,6 @@ Get_Comp_Likelihoods = function(Exp,
           tmp_Obs = tmp_Obs[-zeros]
           tmp_Exp = tmp_Exp[-zeros]
           tmp_Obs = tmp_Obs / sum(tmp_Obs)
-          tmp_Exp = tmp_Exp / sum(tmp_Exp)
           # Adjust Sigma
           Sigma = Sigma[-zeros, -zeros]
         }
@@ -469,7 +461,6 @@ Get_Comp_Likelihoods = function(Exp,
           tmp_Obs = tmp_Obs[-zeros]
           tmp_Exp = tmp_Exp[-zeros]
           tmp_Obs = tmp_Obs / sum(tmp_Obs)
-          tmp_Exp = tmp_Exp / sum(tmp_Exp)
           # Adjust Sigma
           Sigma = Sigma[-zeros, -zeros]
         }
@@ -612,14 +603,10 @@ Get_Comp_Likelihoods_OSA = function(Exp,
   if(Comp_Type == 0) {
 
     tmp_Exp = Exp_all # every region and sex
-    tmp_Exp = tmp_Exp / sum(tmp_Exp)
-    if(age_or_len == 0 || is.matrix(AgeingError)) {
-      tmp_Exp = as.vector(matrix(tmp_Exp, nrow = 1) %*% AgeingError)
-      tmp_Exp = tmp_Exp / sum(tmp_Exp)
-    }
-    if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
-    tmp_Exp = tmp_Exp + const
-    tmp_Exp = tmp_Exp / sum(tmp_Exp)
+    if(age_or_len == 0 || is.matrix(AgeingError)) tmp_Exp = as.vector(matrix(tmp_Exp, nrow = 1) %*% AgeingError)
+    if(restrict) tmp_Exp = tmp_Exp[fit_bins]
+    tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize once, after ageing error, as in Get_Comp_Likelihoods
+    tmp_Exp = (tmp_Exp + const) / (1 + length(tmp_Exp) * const) # tmp_Exp sums to one
 
     if(Likelihood_Type == 0) { # Multinomial
       comp_nLL[1,1] = -dmultinom_osa(Obs, tmp_Exp, log = TRUE)
@@ -648,14 +635,13 @@ Get_Comp_Likelihoods_OSA = function(Exp,
       for(r in 1:n_ru) {
 
         if(age_or_len == 0 || is.matrix(AgeingError)) {
-          tmp_Exp = as.vector((Exp[r,,s] / sum(Exp[r,,s])) %*% AgeingError)
-          tmp_Exp = tmp_Exp / sum(tmp_Exp)
+          tmp_Exp = as.vector(Exp[r,,s] %*% AgeingError)
         } else {
-          tmp_Exp = Exp[r,,s] / sum(Exp[r,,s])
+          tmp_Exp = Exp[r,,s]
         }
-        if(restrict) tmp_Exp = tmp_Exp[fit_bins] / sum(tmp_Exp[fit_bins])
-        tmp_Exp = tmp_Exp + const
-        tmp_Exp = tmp_Exp / sum(tmp_Exp)
+        if(restrict) tmp_Exp = tmp_Exp[fit_bins]
+        tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize once, after ageing error
+        tmp_Exp = (tmp_Exp + const) / (1 + length(tmp_Exp) * const) # tmp_Exp sums to one
 
         if(Likelihood_Type %in% c(0,1)) {
           idx = seq(from = r + (s - 1) * n_ru * n_fit_bins, by = n_ru, length.out = n_fit_bins)
@@ -691,14 +677,13 @@ Get_Comp_Likelihoods_OSA = function(Exp,
     for(r in 1:n_ru) {
 
       if(age_or_len == 0 || is.matrix(AgeingError)) {
-        tmp_Exp = as.vector(t(as.vector(Exp[r,,] / sum(Exp[r,,]))) %*% kronecker(diag(n_sexes), AgeingError))
-        tmp_Exp = tmp_Exp / sum(tmp_Exp)
+        tmp_Exp = as.vector(t(as.vector(Exp[r,,])) %*% kronecker(diag(n_sexes), AgeingError))
       } else {
-        tmp_Exp = as.vector(Exp[r,,] / sum(Exp[r,,]))
+        tmp_Exp = as.vector(Exp[r,,])
       }
-      if(restrict) tmp_Exp = tmp_Exp[fit_bins_joint] / sum(tmp_Exp[fit_bins_joint])
-      tmp_Exp = tmp_Exp + const
-      tmp_Exp = tmp_Exp / sum(tmp_Exp)
+      if(restrict) tmp_Exp = tmp_Exp[fit_bins_joint]
+      tmp_Exp = tmp_Exp / sum(tmp_Exp) # normalize once, after ageing error
+      tmp_Exp = (tmp_Exp + const) / (1 + length(tmp_Exp) * const) # tmp_Exp sums to one
 
       if(Likelihood_Type %in% c(0,1)) {
         idx = seq(from = r, by = n_ru, length.out = n_fit_bins * n_sexes)

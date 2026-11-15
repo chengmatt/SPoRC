@@ -49,5 +49,14 @@ release event, so timing, initial mortality and shedding may differ across
 cohorts. At the end of a season the survivors advance to the next season, or to
 the next year's first season with plus group accumulation, and the reporting
 rates in \code{conv_tag_fish_reporting} are applied by fleet and region.
+
+Each season runs through the same steps as the estimation model's
+\code{\link{get_tagging_observation_model}} (\code{get_tag_cohorts_at_liberty},
+\code{start_tag_cohort_season}, \code{move_tag_cohorts},
+\code{end_tag_cohort_season}), so the two follow tagged fish the same way: a
+mid-season release moves through the rest of its release season under
+\code{move_timing = 2}, cohorts take the state-space numbers at age factor
+(\code{exp(naa_eta)}) at each boundary, and a season with no time at liberty
+has no recaptures.
 }
 \keyword{internal}

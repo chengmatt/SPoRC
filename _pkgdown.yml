@@ -48,6 +48,8 @@ navbar:
           href: articles/ai_nea_cod_case_study.html
         - text: "GOA Walleye Pollock"
           href: articles/al_goa_pollock_case_study.html
+        - text: "NSEI Sablefish"
+          href: articles/am_nsei_sablefish_case_study.html
 
 articles:
   - title: "Getting Started"
@@ -82,6 +84,7 @@ articles:
       - ah_north_sea_sandeel_case_study
       - ai_nea_cod_case_study
       - al_goa_pollock_case_study
+      - am_nsei_sablefish_case_study
 
   - title: "Simulation and Projections"
     contents:
@@ -241,6 +244,7 @@ reference:
       - sgl_rg_ebs_pcod_data
       - sgl_rg_neacod_data
       - sgl_rg_goa_pollock_data
+      - sgl_rg_nsei_sablefish_data
 
   - title: "Fitted Model Objects"
     desc: "Fitted model output provided by SPoRC"

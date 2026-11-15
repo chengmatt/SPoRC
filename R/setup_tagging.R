@@ -328,6 +328,10 @@ do_conv_tag_shed_mapping <- function(input_list, conv_tag_shed_spec) {
     }
     collect_message("Conventional Chronic Tag Shedding is specified as: ", conv_tag_shed_spec)
   }
+
+  # the mapping setup / aligned in the data so the tag observation model knows which release events share a shedding rate
+  input_list$data$map_ln_conv_tag_shed <- array(as.numeric(input_list$map$ln_conv_tag_shed), dim = n_events)
+
   return(input_list)
 }
 

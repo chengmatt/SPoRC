@@ -1827,6 +1827,9 @@ maintain_backwards_compatibility <- function(env = parent.frame()) {
   if(!has("bias_correct_pe")) set("bias_correct_pe", 1) # 'rec', which is what every model did before this existed
   if(!has("bias_correct_oe")) set("bias_correct_oe", 0)
 
+  # Tag shedding map mirror; without it every tag cohort keeps its own seasonal operator under move_timing 2
+  if(!has("map_ln_conv_tag_shed")) set("map_ln_conv_tag_shed", NULL)
+
   # Movement timing options.
   if(!has("move_timing")) set("move_timing", 0)
   if(!has("move_expm_nsub")) set("move_expm_nsub", 0)

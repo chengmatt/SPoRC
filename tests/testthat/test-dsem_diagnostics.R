@@ -15,8 +15,11 @@ dsem_random <- c("ln_RecDevs", "dsem_x")
 test_that("a likelihood profile over a dsem coefficient runs and bowls", {
 
   d <- dsem_diag_setup()
-  prof <- do_likelihood_profile(d$data, d$par, d$map, random = dsem_random, what = "dsem_beta", idx = 1,
-                                min_val = -0.2, max_val = 0.2, inc = 0.2, do_par = FALSE)
+  expect_warning(
+    prof <- do_likelihood_profile(d$data, d$par, d$map, random = dsem_random, what = "dsem_beta", idx = 1,
+                                  min_val = -0.2, max_val = 0.2, inc = 0.2, do_par = FALSE),
+    "Random effects are estimated"
+  )
   jn <- prof$jnLL_df$value
   expect_length(jn, 3)
   expect_true(all(is.finite(jn)))

@@ -123,7 +123,8 @@ ddirmult = function(obs, pred, Ntotal, ln_theta, give_log = TRUE) {
 #' @param obs Numeric vector of observed composition values of length
 #'   \eqn{K}. Need not sum to 1; the last element is the ALR reference.
 #' @param pred Numeric vector of predicted proportions of length \eqn{K};
-#'   the last element is the ALR reference.
+#'   the last element is the ALR reference. Need not sum to 1, since the log
+#'   ratios cancel any common scaling.
 #' @param Sigma Covariance matrix \eqn{\Sigma}
 #' @param give_log Logical. If \code{TRUE} (default), returns the
 #'   log-likelihood; otherwise returns the likelihood.
@@ -149,9 +150,11 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE) {
 
 #' Evaluate a logistic normal composition with the zeros dropped
 #'
-#' The zeros are dropped rather than nudged with a constant, and the expected
+#' The zeros are dropped rather than nudged with a constant, and the observed
 #' proportions are renormalized over the bins that remain, so the density is the
-#' one the positive part of the composition actually has. The input sample size
+#' one the positive part of the composition actually has. The expected values
+#' enter only as log ratios, which cancel any common scaling, so they are not
+#' renormalized and need not sum to one. The input sample size
 #' scales the variance, which is how a year sampled harder comes to be fit more
 #' tightly than a year sampled lightly, and the change of variables from the log
 #' ratio is taken off so the result is a density on the composition rather than
@@ -160,8 +163,14 @@ dlogistnormal = function(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE) {
 #' A cell with fewer than two positive bins has no log ratio to take and
 #' contributes nothing.
 #'
+#' The independent and autoregressive forms are written bin by bin, a sum of
+#' normals and a chain of each residual given the one before it, which is the
+#' multivariate normal density without forming its covariance. A supplied
+#' correlation (\code{corr_type = 2}) goes through \code{\link{dlogistnormal}}.
+#'
 #' @param obs Observed proportions in one cell, zeros included.
-#' @param pred Predicted proportions, matching \code{obs}.
+#' @param pred Predicted proportions, or numbers on any common scale, matching
+#'   \code{obs}.
 #' @param ln_sigma Log-scale standard deviation before the sample size scaling.
 #' @param ISS Input sample size for this cell.
 #' @param corr_type Integer. \code{0} independent bins, \code{1} first-order
@@ -189,36 +198,46 @@ get_logistnormal_miss0_nLL = function(obs, pred, ln_sigma, ISS, corr_type = 0, t
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
-  # bins with nothing in them are dropped, and both vectors renormalized over the rest
+  # bins with nothing in them are dropped, and the observed renormalized over the rest (the change of variables reads
+  # it); the expected needs no renormalizing, since its log ratios cancel the sum
   pos = which(as.numeric(obs) > 1e-15)
   n_pos = length(pos)
   if(n_pos < 2) return(0) # one positive bin leaves no log ratio to take
 
   obs_pos = obs[pos] / sum(obs[pos])
-  pred_pos = pred[pos] / sum(pred[pos])
+  pred_pos = pred[pos]
 
   # the sample size enters as a variance scaling, so the parameter is a per fish standard deviation
   var_pos = exp(2 * ln_sigma) / ISS
   n_tr = n_pos - 1
 
-  if(corr_type == 0) Sigma = diag(rep(var_pos, n_tr))
-
-  if(corr_type == 1) {
-    lags = if(is.null(lag_bins)) pos else lag_bins[pos] # spacing in bins, not in position
-    rho = RTMB::plogis(trans_rho)
-    Sigma = matrix(0, n_tr, n_tr)
-    for(i in 1:n_tr) {
-      for(j in 1:n_tr) Sigma[i,j] = var_pos * rho^abs(lags[i] - lags[j])
-    } # end j loop, end i loop
-  } # end ar1 across bins
-
   # a supplied structure is cut to the bins that were seen, then to the transformed length
   if(corr_type == 2) {
     keep = pos[seq_len(n_tr)]
     Sigma = matrix(corr_mat[keep, keep], n_tr, n_tr) * var_pos
+    return(-1 * dlogistnormal(obs = obs_pos, pred = pred_pos, Sigma = Sigma, give_log = TRUE, jacobian = TRUE))
   } # end supplied correlation
 
-  -1 * dlogistnormal(obs = obs_pos, pred = pred_pos, Sigma = Sigma, give_log = TRUE, jacobian = TRUE)
+  # log ratio residuals against the last positive bin, observed minus expected
+  resid = (log(obs_pos[1:n_tr]) - log(obs_pos[n_pos])) - (log(pred_pos[1:n_tr]) - log(pred_pos[n_pos]))
+
+  if(corr_type == 0) logres = sum(dnorm(resid, 0, sqrt(var_pos), log = TRUE)) # independent bins, a normal each
+
+  # ar1 across bins without the dense covariance: each residual given the one before is normal, with mean r times it
+  # and variance var * (1 - r^2), r = rho^(lag gap). the lags come from which(), so they always increase
+  if(corr_type == 1) {
+    lags = if(is.null(lag_bins)) pos else lag_bins[pos] # spacing in bins, not in position
+    rho = RTMB::plogis(trans_rho)
+    logres = dnorm(resid[1], 0, sqrt(var_pos), log = TRUE)
+    if(n_tr > 1) {
+      for(k in 2:n_tr) {
+        r_k = rho^(lags[k] - lags[k - 1]) # correlation across the gap to the previous bin
+        logres = logres + dnorm(resid[k], r_k * resid[k - 1], sqrt(var_pos * (1 - r_k^2)), log = TRUE)
+      } # end k loop
+    }
+  } # end ar1 across bins
+
+  -1 * (logres - sum(log(obs_pos))) # the change of variables, as dlogistnormal takes it
 
 } # end get_logistnormal_miss0_nLL
 

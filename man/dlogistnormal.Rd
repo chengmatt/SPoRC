@@ -11,7 +11,8 @@ dlogistnormal(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE)
 \eqn{K}. Need not sum to 1; the last element is the ALR reference.}
 
 \item{pred}{Numeric vector of predicted proportions of length \eqn{K};
-the last element is the ALR reference.}
+the last element is the ALR reference. Need not sum to 1, since the log
+ratios cancel any common scaling.}
 
 \item{Sigma}{Covariance matrix \eqn{\Sigma}}
 

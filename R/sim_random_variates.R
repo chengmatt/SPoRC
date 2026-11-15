@@ -97,7 +97,7 @@ rlogistnormal <- function(exp,
   if(comp_like %in% c(5, 6, 7)) {
     var_bin <- pars[1]^2 / ISS
     n_tr <- length(exp) - 1
-    if(comp_like == 5) Sigma <- diag(rep(var_bin, n_tr))
+    if(comp_like == 5) Sigma <- diag(n_tr) * var_bin # diag(rep(x, 1)) would read a single variance as a size
     if(comp_like == 6) Sigma <- get_AR1_CorrMat(length(exp), pars[2])[-length(exp), -length(exp)] * var_bin
     if(comp_like == 7) {
       full <- kronecker(get_Constant_CorrMat(n_sexes, pars[3]), get_AR1_CorrMat(length(exp) / n_sexes, pars[2]))

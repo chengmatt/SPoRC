@@ -153,7 +153,7 @@ build_om <- function(move_timing, seed = 1234) {
 
 # Estimation model, matching the operating model's structure -----------------
 
-build_em <- function(om, move_timing, em_expm_nsub = 0, move_extra = list()) {
+build_em <- function(om, move_timing, em_expm_nsub = 0, move_extra = list(), NAA_re = "none") {
   sim_data <- simulation_data_to_SPoRC(sim_env = om, y = om$n_years, sim = 1)
 
   input_list <- Setup_Mod_Dim(
@@ -191,7 +191,8 @@ build_em <- function(om, move_timing, em_expm_nsub = 0, move_extra = list()) {
     fit_lengths = 0,
     AgeingError = sim_data$AgeingError,
     M_spec = "fix",
-    Fixed_natmort = array(0.3, dim = c(1, N_REGIONS, N_YRS, N_AGES, 1))
+    Fixed_natmort = array(0.3, dim = c(1, N_REGIONS, N_YRS, N_AGES, 1)),
+    NAA_re = NAA_re # state-space numbers at age, none by default
   )
 
   input_list <- suppressWarnings(Setup_Mod_Tagging(

@@ -86,6 +86,7 @@
 * Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.
 * Added OSA residuals for time-series observations, compositions, and tagging data.
 * Added `data$extra_nll`, a likelihood from outside the package: a function `(pars, env)` whose value is added to the joint likelihood (reported as `extra_nLL`), where `env` is the objective's environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, ...).
+* `do_likelihood_profile` warns when `random` is set that the marginal in `jnLL_df` can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as `laplace_nLL_df`.
 
 ## Improvements
 - Numeric and character codes are both accepted for simulator dynamics, matching the estimation model.
@@ -95,8 +96,13 @@
 - Index ranges built from `length()`, `nrow()`, `ncol()` and `dim()` now use `seq_along()` and `seq_len()`, so an empty object gives no iterations instead of the indices 1 and 0. Semicolon chains are split one statement per line, `T`/`F` are written as `TRUE`/`FALSE`, two `if()` conditions use `&&`, operators have spaces around them, blocks that sat 2 or 4 spaces off their braces are re-indented, and multi-line pipelines put each step on its own line (for developers).
 - `catch_to_F_singlefleet()` and `catch_to_F_multifleet()` are replaced by `catch_to_F_om()`, which converts catch advice by region, season and fleet into the operating model's F by running the year through the operating model's own dynamics, solved with Newton steps on an `RTMB::MakeTape()` tape of each season's catch. 
 - Improved gamma dome selectivity parameterization (`Selex_Model = 1`) returning NaN at extreme optimizer guesess. Should give equivalent results to the old form.
+- Expected compositions are normalized once, after ageing error, which gives the same likelihoods with a shorter random effects hessian (GOA pollock 26b gradient 37% faster).
+- The tag likelihood adds `addtotag` once per pooled cell after summing the predicted recaptures, the same values with a shorter tape.
+- Logistic normal compositions no longer normalize the expected values, which their log ratios cancel; the same likelihoods, a BSB gradient 44% faster.
+- The zeros dropped logistic normal (types 5 and 6) is written bin by bin, a sum of normals or a chain of conditional normals, without forming its covariance. 
 
 ## Bug Fixes
+- Fixed `do_likelihood_profile` and `do_jitter` reporting `jnLL` at the random effect mode under random effects, rather than the marginal the fit minimizes.
 - Fixed the time-varying selectivity smoothing penalty not being applied in the first year.
 - Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.
 - Fixed `do_runs_test()` returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.

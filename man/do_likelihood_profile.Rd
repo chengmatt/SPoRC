@@ -29,7 +29,10 @@ fixed stay fixed and positions it estimated as one shared parameter stay shared,
 leaving the profile with the same free parameters as the model being profiled.}
 
 \item{random}{Character vector of random effects to estimate. Default
-\code{NULL}.}
+\code{NULL}. With random effects, \code{jnLL_df} holds the marginal and the
+profile warns that it can be looked at but not the data components, since
+the random effects couple the data sources and a component no longer tells
+you that data source's contribution on its own.}
 
 \item{what}{Character string. Name of the parameter to profile. Profiling
 \code{ln_fish_q} or \code{ln_srv_q} requires the matching \code{fish_q_type}
@@ -56,7 +59,12 @@ specific elements to fix when \code{parameters[[what]]} is an array.
 A named list containing one dataframe per likelihood component,
   each with a \code{prof_val} column indicating the profiled parameter
   value, plus \code{agg_nLL} which aggregates all components across their
-  respective dimensions. Components include:
+  respective dimensions. \code{jnLL_df} is the objective the fit minimizes:
+  the joint negative log-likelihood, or with random effects the marginal,
+  which is the joint at the random effect mode plus the Laplace term.
+  \code{laplace_nLL_df} is that Laplace term, zero without random effects,
+  and is added to \code{agg_nLL} only when \code{random} is set.
+  Components include:
   \describe{
     \item{Scalar penalties and priors}{\code{jnLL_df}, \code{rec_nLL_df}
       (the recruitment, initial age, initial-age sex tie, recruitment

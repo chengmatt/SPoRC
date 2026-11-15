@@ -581,6 +581,7 @@ dim_roles <- list(
   conv_tagged_fish = c("Tag_Cohort", "Pop", "Age", "Sex"),
   obs_conv_tag_fish_recap = c("Liberty", "Seas", "Tag_Cohort", "Pop", "Region", "Age", "Sex", "Fish_Fleet"),
   conv_tag_t_tagging = "Tag_Cohort",
+  map_ln_conv_tag_shed = "Tag_Cohort", # the shedding map mirrored in the data
   conv_tag_fish_reporting_blocks = c("Region", "Year", "Fish_Fleet"),
   conv_fish_tag_attr = "Tag_Cohort",
   conv_tag_release_indicator = c("Tag_Cohort", "Column"),

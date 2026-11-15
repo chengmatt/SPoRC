@@ -52,3 +52,8 @@ dev/check_consistency_simple/check_consistency.R
 /dev/wham_growth_bridge
 /dev/wham_goa_pcod_bridge
 /dev/notes
+/dev/seak_sablefish_bridge
+/dev/nsei_spatial_join
+/dev/wc_spatial_join
+/dev/fims_bridge
+/dev/speed_benchmark

@@ -226,6 +226,24 @@
 #'   model updates. Alaska Fisheries Science Center, September 2026.
 "sgl_rg_goa_pollock_data"
 
+#' Northern Southeast Inside sablefish data for the TMB case study
+#'
+#' Inputs for the 2025 Northern Southeast Inside (NSEI) sablefish assessment of the
+#' Alaska Department of Fish and Game, a sex-structured statistical catch-at-age
+#' model written in TMB, 1975 to 2025 at ages 2 to 31 with a plus group: landed
+#' catch, age and length compositions from one fishery, a longline survey index
+#' with age and length compositions, a fishery CPUE index and a mark-recapture
+#' abundance index, with the estimates the TMB model returns for the same inputs,
+#' used to check the bridge.
+#'
+#' @format Data list containing inputs and outputs for the 2025 NSEI sablefish Assessment
+#' @source Lambert, A. W., Ehresmann, R. K. 2026. 2026 Northern Southeast Inside
+#'   Subdistrict sablefish management plan and stock assessment. Alaska Department
+#'   of Fish and Game, Division of Commercial Fisheries, July 2026. Model code
+#'   \code{scaa_mod_v23_Aaron2.cpp}, run \code{v23_3f_3s_2016_NEW_FINAL}, at
+#'   \url{https://github.com/commfish/seak_sablefish}.
+"sgl_rg_nsei_sablefish_data"
+
 #' Dusky data for single region assessment case study
 #'
 #' A data list containing inputs for the 2024 GOA Dusky Rockfish Assessment

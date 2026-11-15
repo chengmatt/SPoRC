@@ -59,8 +59,9 @@ list of \code{jitter_df} and \code{start_values}, described under Value.}
 \value{
 A data frame of the jitter results: the spawning stock biomass and
   recruitment series of each run, with its jitter index, whether the Hessian
-  was positive definite, the joint negative log-likelihood, and the maximum
-  absolute gradient of the fixed effects. Under
+  was positive definite, the objective the fit minimized as \code{jnLL} (the
+  joint negative log-likelihood, or with random effects the marginal), and
+  the maximum absolute gradient of the fixed effects. Under
   \code{return_start_values = TRUE}, a list of two elements:
   \describe{
     \item{\code{jitter_df}}{The data frame above.}

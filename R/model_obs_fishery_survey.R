@@ -114,7 +114,8 @@ get_blocked_analytic_q = function(q_type, obs_vec, pred_vec, yr_obs, blk_yr, n_b
 #' @param NAA Array \code{[pop, region, year, season, age, sex]} of numbers at
 #'   age.
 #' @param CAA,DAA Arrays \code{[pop, region, year, season, age, sex,
-#'   fish_fleet]}, output containers for retained/discarded catch at age.
+#'   fish_fleet]} for retained/discarded catch at age, replaced whole by
+#'   \code{ret_FAA}/\code{disc_FAA} times the abundance available.
 #' @param CAL,DAL Arrays \code{[pop, region, year, season, len, sex,
 #'   fish_fleet]}, output containers for retained/discarded catch at length.
 #' @param PredCatch,PredDiscard,PredFishIdx Arrays \code{[pop, region, year,
@@ -237,7 +238,7 @@ get_fishery_observation_model <- function(
 
   if(move_timing == 2 && is.null(NAA_int)) {
     n_ages <- dim(NAA)[5]
-    NAA_int <- array(0, dim = dim(NAA))
+    NAA_int <- array(0, dim = dim(ZAA)) # the model years, as the dynamics pass it and the catch at age below reads it
     for(p in 1:n_pop) {
       for(y in 1:n_yrs) {
         for(seas in 1:n_seas) {
@@ -257,6 +258,11 @@ get_fishery_observation_model <- function(
     array(NAA[,,1:n_yrs,,,, drop = FALSE] * (1 - exp(-ZAA)) / ZAA, dim = dim(ZAA))
   }
 
+  # Retained and dead discarded catch at age: F times the season-available abundance, spatial Baranov (season-integrated) under move_timing == 2
+  # one product each, Avail repeating over fleets (the last dim); filling a slice at a time copies the whole array every time
+  CAA <- ret_FAA * as.vector(Avail)
+  DAA <- disc_FAA * as.vector(Avail)
+
   for(p in 1:n_pop) {
     for(r in 1:n_regions) {
       for(y in 1:n_yrs) {
@@ -273,10 +279,6 @@ get_fishery_observation_model <- function(
           }
 
           for(seas in 1:n_seas) {
-
-            # Retained and dead discarded catch at age: F times the season-available abundance, spatial Baranov (season-integrated) under move_timing == 2
-            CAA[p,r,y,seas,,,f] <- ret_FAA[p,r,y,seas,,,f] * Avail[p,r,y,seas,,]
-            DAA[p,r,y,seas,,,f] <- disc_FAA[p,r,y,seas,,,f] * Avail[p,r,y,seas,,]
 
             if(fit_lengths == 1) {
               for(s in 1:n_sexes) {

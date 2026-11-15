@@ -117,17 +117,20 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
                       age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
                       sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
 
+                      # the constant goes on once per pooled cell, added after the predicted sum
+                      n_pool_cells = length(pop_pool_idx) * length(age_pool_idx) * length(sex_pool_idx) # cells pooled into one
+
                       # Poisson likelihood
                       if(conv_fish_tag_like == 0) {
                         tmp_nLL = tmp_nLL +
                           -dpois_noint(sum(obs_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
-                                       sum(pred_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag),
+                                       sum(pred_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f]) + n_pool_cells * addtotag,
                                        give_log = TRUE)
                       } # end if poisson likelihood
 
                       # Negative binomial likelihood
                       if(conv_fish_tag_like == 1) {
-                        log_mu = log(sum(pred_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f] + addtotag)) # log mu
+                        log_mu = log(sum(pred_ev[pop_pool_idx,r,age_pool_idx,sex_pool_idx,f]) + n_pool_cells * addtotag) # log mu
                         log_var_minus_mu = 2 * log_mu - ln_conv_fish_tag_theta # log var minus mu
                         tmp_nLL = tmp_nLL +
                           -dnbinom_robust_noint(
@@ -172,10 +175,11 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
                     age_pool_idx = conv_tag_age_pool[[a]] # extract movement age pool indices
                     sex_pool_idx = conv_tag_sex_pool[[s]] # extract movement sex pool indices
 
-                    # Pool observed and expected if any pooling
+                    # Pool observed and expected if any pooling. the constant goes on once per pooled cell, after the sum
+                    n_pool_cells = length(pop_pool_idx) * length(age_pool_idx) * length(sex_pool_idx) # cells pooled into one
                     for (r in 1:n_regions) {
                       ci = ci + 1
-                      tmp_pred_cells[[ci]] = sum(pred_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
+                      tmp_pred_cells[[ci]] = sum(pred_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f]) + n_pool_cells * addtotag
                       tmp_obs_c_all[ci]    = sum(obs_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
                     }
 
@@ -224,10 +228,11 @@ get_conv_tag_likelihoods <- function(n_conv_tag_cohorts,
                     pop_pool_idx = conv_tag_pop_pool[[p]]
                     age_pool_idx = conv_tag_age_pool[[a]]
                     sex_pool_idx = conv_tag_sex_pool[[s]]
+                    n_pool_cells = length(pop_pool_idx) * length(age_pool_idx) * length(sex_pool_idx) # cells pooled into one
 
                     for (r in 1:n_regions) {
                       ci = ci + 1
-                      tmp_pred_cells[[ci]] = sum(pred_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
+                      tmp_pred_cells[[ci]] = sum(pred_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f]) + n_pool_cells * addtotag # constant once per pooled cell
                       tmp_obs_all[ci]      = sum(obs_ev[pop_pool_idx, r, age_pool_idx, sex_pool_idx, f] + addtotag)
                     }
 

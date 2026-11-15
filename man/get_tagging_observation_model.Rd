@@ -40,7 +40,8 @@ get_tagging_observation_model(
   Mrate = NULL,
   move_timing = 0,
   expm_nsub = 0,
-  NAA_scalar = NULL
+  NAA_scalar = NULL,
+  conv_tag_shed_map = NULL
 )
 }
 \arguments{
@@ -123,6 +124,11 @@ otherwise account for, so every cohort takes the same factor at each
 boundary, within a year as well as between years. \code{NULL} (the default)
 leaves them on the
 deterministic trajectory, which is correct only when the state is off.}
+
+\item{conv_tag_shed_map}{Numeric vector \code{[cohort]}, the map of
+\code{ln_conv_tag_shed} (\code{NA} where it is fixed). Under
+\code{move_timing = 2}, cohorts with the same map level, or the same fixed
+value, share one seasonal operator. \code{NULL} gives every cohort its own.}
 }
 \value{
 List with elements \code{conv_tag_fish_reporting},
@@ -142,5 +148,10 @@ projection and selectivity sections.
 \code{conv_tag_fish_reporting}, \code{conv_tag_fish_avail}, and
 \code{pred_conv_tag_fish_recap} are passed in already dimensioned
 (typically all-zero) and returned fully populated.
+
+Cohorts are followed calendar year by calendar year, so the cohorts at
+liberty in a season share that season's movement matrix, and under
+\code{move_timing = 2} a shedding group's seasonal operator is worked out
+once for all of its cohorts with the same time at liberty.
 }
 \keyword{internal}

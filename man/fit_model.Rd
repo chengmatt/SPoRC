@@ -20,6 +20,8 @@ fit_model(
   do_sdrep = FALSE,
   post_optim_sanity_checks_control = list(gradient_tol = 0.001, se_tol = 100, corr_tol =
     0.99),
+  tape_config = NULL,
+  tmb_config = NULL,
   ...
 )
 }
@@ -88,7 +90,14 @@ Newton refinement step. \code{NULL} (default) is unbounded
 \item{model}{Function with signature \code{function(pars, data)} passed to
 \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
 Allows non-SPoRC RTMB models to be fit with the same optimization and
-Newton-refinement routines.}
+Newton-refinement routines. A \code{data} list without the dims
+\code{\link{Setup_Mod_Dim}} writes (\code{years}, \code{n_regions},
+\code{ages}, \code{lens}, \code{n_sexes}, \code{n_fish_fleets} and
+\code{n_srv_fleets}) is taken as such a model, and the SPoRC setup steps
+are skipped: filling in movement and tagging when they were not set up,
+and refreshing the copies of the map kept in the data list. A SPoRC data
+list with a model of your own, such as an edited copy of
+\code{SPoRC_rtmb}, still takes them.}
 
 \item{do_sdrep}{Logical. If \code{TRUE}, runs \code{RTMB::sdreport(obj)} at
 the fitted parameters, returns it as \code{$sd_rep}, and runs
@@ -110,6 +119,57 @@ the defaults for the rest. Any other element, named or not, stops the fit
 with an error before it starts. The checks print a message for each one
 that fails, or a single message when all pass, whatever \code{silent} is
 set to.}
+
+\item{tape_config}{Named list of how RTMB records the model, passed to
+\code{RTMB::TapeConfig()} before it is built. \code{NULL} (default)
+leaves the session's settings as they are. Elements, each a single string:
+\describe{
+  \item{\code{vectorize}}{\code{"enable"} records arithmetic, math
+    functions, sums and sparse matrix products as one operation per
+    vector rather than one per element. \code{"disable"} is RTMB's default.}
+  \item{\code{atomic}}{\code{"enable"} records each matrix product as one
+    operation. \code{"disable"} records matrix products and multivariate
+    normal densities element by element; RTMB's default records the
+    densities as one operation and the products element by element, so
+    \code{"disable"} also changes the densities.}
+  \item{\code{comparison}}{What happens when the model compares two
+    quantities it is differentiating: \code{"forbid"} (RTMB's default)
+    stops with an error, \code{"tape"} records the comparison as an
+    indicator, and \code{"allow"}, for testing only, decides it once at
+    the starting values.}
+}
+\code{"NA"} leaves an element as set. Each recording gives the same
+objective and gradient, to rounding. A vectorized or atomic operation is
+taken as making every output depend on every input, so with
+\code{random} set, \code{vectorize = "enable"} makes the Hessian of the
+random effects dense, and \code{atomic = "enable"} does too when one
+product spans many random effects; each Laplace gradient is then several
+times slower. Time a fit both ways before keeping either.}
+
+\item{tmb_config}{Named list of TMB settings for the models RTMB builds,
+passed to \code{TMB::config(..., DLL = "RTMB")} before the model is
+built. \code{NULL} (default) leaves them as they are. Any name
+\code{TMB::config(DLL = "RTMB")} returns is allowed, each a single 0 or 1
+(or a count for \code{nthreads}). The ones that change a fit:
+\describe{
+  \item{\code{tmbad.sparse_hessian_compress}}{\code{1} compresses the
+    sparse Hessian of the random effects, which takes less memory and can
+    be slower. Read only when \code{random} is set. Default \code{0}.}
+  \item{\code{tmbad.atomic_sparse_log_determinant}}{\code{0} computes the
+    Laplace log determinant from the plain factorization rather than TMB's
+    single operation, which has no second derivative.
+    \code{\link{Setup_Mod_DSEM}} sets \code{0} itself when a moderated
+    arrow needs it, and setting \code{1} then gives NaN. Default \code{1}.}
+  \item{\code{optimize.instantly}}{\code{0} skips removing repeated and
+    unused operations from the recorded model, which is slower but keeps
+    the operations in the order they were recorded, so each can be traced
+    to the line that recorded it. Default \code{1}.}
+}
+Both lists are in force for the builds, Newton steps and \code{sdreport}
+inside \code{fit_model}, and the earlier settings are restored when it
+returns or stops. The diagnostics that refit the model
+(\code{\link{do_retrospective}}, \code{\link{do_jitter}},
+\code{\link{do_likelihood_profile}}) do not record / save these settings}
 
 \item{...}{Additional arguments forwarded to \code{RTMB::MakeADFun}.}
 }

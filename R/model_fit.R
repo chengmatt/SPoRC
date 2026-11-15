@@ -71,7 +71,14 @@
 #' @param model Function with signature \code{function(pars, data)} passed to
 #'   \code{RTMB::MakeADFun} via \code{\link{cmb}}. Default \code{\link{SPoRC_rtmb}}.
 #'   Allows non-SPoRC RTMB models to be fit with the same optimization and
-#'   Newton-refinement routines.
+#'   Newton-refinement routines. A \code{data} list without the dims
+#'   \code{\link{Setup_Mod_Dim}} writes (\code{years}, \code{n_regions},
+#'   \code{ages}, \code{lens}, \code{n_sexes}, \code{n_fish_fleets} and
+#'   \code{n_srv_fleets}) is taken as such a model, and the SPoRC setup steps
+#'   are skipped: filling in movement and tagging when they were not set up,
+#'   and refreshing the copies of the map kept in the data list. A SPoRC data
+#'   list with a model of your own, such as an edited copy of
+#'   \code{SPoRC_rtmb}, still takes them.
 #' @param do_sdrep Logical. If \code{TRUE}, runs \code{RTMB::sdreport(obj)} at
 #'   the fitted parameters, returns it as \code{$sd_rep}, and runs
 #'   \code{\link{post_optim_sanity_checks}} on it. Default \code{FALSE}, which
@@ -91,6 +98,55 @@
 #'   with an error before it starts. The checks print a message for each one
 #'   that fails, or a single message when all pass, whatever \code{silent} is
 #'   set to.
+#' @param tape_config Named list of how RTMB records the model, passed to
+#'   \code{RTMB::TapeConfig()} before it is built. \code{NULL} (default)
+#'   leaves the session's settings as they are. Elements, each a single string:
+#'   \describe{
+#'     \item{\code{vectorize}}{\code{"enable"} records arithmetic, math
+#'       functions, sums and sparse matrix products as one operation per
+#'       vector rather than one per element. \code{"disable"} is RTMB's default.}
+#'     \item{\code{atomic}}{\code{"enable"} records each matrix product as one
+#'       operation. \code{"disable"} records matrix products and multivariate
+#'       normal densities element by element; RTMB's default records the
+#'       densities as one operation and the products element by element, so
+#'       \code{"disable"} also changes the densities.}
+#'     \item{\code{comparison}}{What happens when the model compares two
+#'       quantities it is differentiating: \code{"forbid"} (RTMB's default)
+#'       stops with an error, \code{"tape"} records the comparison as an
+#'       indicator, and \code{"allow"}, for testing only, decides it once at
+#'       the starting values.}
+#'   }
+#'   \code{"NA"} leaves an element as set. Each recording gives the same
+#'   objective and gradient, to rounding. A vectorized or atomic operation is
+#'   taken as making every output depend on every input, so with
+#'   \code{random} set, \code{vectorize = "enable"} makes the Hessian of the
+#'   random effects dense, and \code{atomic = "enable"} does too when one
+#'   product spans many random effects; each Laplace gradient is then several
+#'   times slower. Time a fit both ways before keeping either.
+#' @param tmb_config Named list of TMB settings for the models RTMB builds,
+#'   passed to \code{TMB::config(..., DLL = "RTMB")} before the model is
+#'   built. \code{NULL} (default) leaves them as they are. Any name
+#'   \code{TMB::config(DLL = "RTMB")} returns is allowed, each a single 0 or 1
+#'   (or a count for \code{nthreads}). The ones that change a fit:
+#'   \describe{
+#'     \item{\code{tmbad.sparse_hessian_compress}}{\code{1} compresses the
+#'       sparse Hessian of the random effects, which takes less memory and can
+#'       be slower. Read only when \code{random} is set. Default \code{0}.}
+#'     \item{\code{tmbad.atomic_sparse_log_determinant}}{\code{0} computes the
+#'       Laplace log determinant from the plain factorization rather than TMB's
+#'       single operation, which has no second derivative.
+#'       \code{\link{Setup_Mod_DSEM}} sets \code{0} itself when a moderated
+#'       arrow needs it, and setting \code{1} then gives NaN. Default \code{1}.}
+#'     \item{\code{optimize.instantly}}{\code{0} skips removing repeated and
+#'       unused operations from the recorded model, which is slower but keeps
+#'       the operations in the order they were recorded, so each can be traced
+#'       to the line that recorded it. Default \code{1}.}
+#'   }
+#'   Both lists are in force for the builds, Newton steps and \code{sdreport}
+#'   inside \code{fit_model}, and the earlier settings are restored when it
+#'   returns or stops. The diagnostics that refit the model
+#'   (\code{\link{do_retrospective}}, \code{\link{do_jitter}},
+#'   \code{\link{do_likelihood_profile}}) do not record / save these settings
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'
 #' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
@@ -129,11 +185,16 @@ fit_model <- function(
   model = SPoRC_rtmb,
   do_sdrep = FALSE,
   post_optim_sanity_checks_control = list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99),
+  tape_config = NULL,
+  tmb_config = NULL,
   ...
 ) {
 
   # check par n map len
   check_par_map_lengths(parameters, mapping)
+
+  # check tape settings before fitting, so a misspelled name or value stops here rather than inside RTMB or TMB
+  check_fit_tape_settings(tape_config = tape_config, tmb_config = tmb_config)
 
   # modifyList below would drop a misspelled tolerance without a word, so stop on it before fitting
   tol_names <- names(post_optim_sanity_checks_control)
@@ -142,19 +203,39 @@ fit_model <- function(
   if(length(bad_tol) > 0) stop("post_optim_sanity_checks_control takes only gradient_tol, se_tol and corr_tol, not: ",
                                paste0("'", bad_tol, "'", collapse = ", "))
 
-  # movement, tagging and the dsem are optional, so figure out what each needs when not set up
-  filled <- fill_optional_modules(data, parameters, mapping)
-  data <- filled$data
-  parameters <- filled$par
-  mapping <- filled$map
+  # a data list without the dims Setup_Mod_Dim has always written is a model of the user's own, which has none of the setup fields below
+  sporc_data <- all(c("years", "n_regions", "ages", "lens", "n_sexes", "n_fish_fleets", "n_srv_fleets") %in% names(data))
 
-  # refresh data mapping stuff if mapping declared after setup
-  data <- sync_dev_map_data(data, mapping)
+  if(sporc_data) {
+
+    # movement, tagging and the dsem are optional, so figure out what each needs when not set up
+    filled <- fill_optional_modules(data, parameters, mapping)
+    data <- filled$data
+    parameters <- filled$par
+    mapping <- filled$map
+
+    # refresh data mapping stuff if mapping declared after setup
+    data <- sync_dev_map_data(data, mapping)
+
+  } # end if sporc_data
 
   # the projection adds nothing to the likelihood, so the model is fitted without it
   proj_on <- !is.null(data$proj_n_yrs) && data$proj_n_yrs > 0
   data_fit <- data # new data object for fitting only
   if(proj_on) data_fit$proj_n_yrs <- 0 # set projection years to zero here if actually projection since the devs aren't actually fit
+
+  # tape settings are global to the session, so set them for the builds, newton steps and sdreport below and put the old ones back on exit
+  if(!is.null(tape_config)) {
+    old_tape_config <- RTMB::TapeConfig() # no arguments reads the current settings
+    on.exit(RTMB::TapeConfig(old_tape_config), add = TRUE) # a list as the only argument restores all seven
+    do.call(RTMB::TapeConfig, tape_config)
+  } # end if tape_config
+
+  if(!is.null(tmb_config)) {
+    old_tmb_config <- TMB::config(DLL = "RTMB") # no settings reads the current ones
+    on.exit(do.call(TMB::config, c(old_tmb_config, list(DLL = "RTMB"))), add = TRUE)
+    do.call(TMB::config, c(tmb_config, list(DLL = "RTMB")))
+  } # end if tmb_config
 
   # make AD model function
   obj <- RTMB::MakeADFun(
@@ -303,6 +384,69 @@ fit_model <- function(
 cmb <- function(f, d) {
   function(p) f(p, d)
 }
+
+#' Check the tape settings passed to fit_model
+#'
+#' \code{RTMB::TapeConfig} stops on a bad value only once the fit has begun,
+#' and \code{TMB::config} keeps a misspelled name without a word, so both lists
+#' are checked before anything is built and the error names the argument.
+#'
+#' @param tape_config \code{NULL} or a named list of \code{comparison},
+#'   \code{atomic} and \code{vectorize}, as in \code{\link{fit_model}}.
+#' @param tmb_config \code{NULL} or a named list of TMB settings, as in
+#'   \code{\link{fit_model}}.
+#'
+#' @return \code{NULL}, invisibly. Stops on any name or value not allowed.
+#'
+#' @keywords internal
+check_fit_tape_settings <- function(tape_config,
+                                    tmb_config) {
+
+  # rtmb tape settings, each with the values RTMB::TapeConfig accepts
+  if(!is.null(tape_config)) {
+    tape_values <- list(comparison = c("NA", "forbid", "tape", "allow"), # how a comparison of two model quantities is recorded
+                        atomic = c("NA", "enable", "disable"), # matrix products and multivariate normal densities
+                        vectorize = c("NA", "disable", "enable")) # arithmetic, math functions, sums and sparse products
+
+    if(!is.list(tape_config)) stop("tape_config must be NULL or a named list, such as list(vectorize = 'enable').")
+    tape_names <- names(tape_config)
+    if(is.null(tape_names)) tape_names <- rep("", length(tape_config))
+    bad_tape_names <- setdiff(tape_names, names(tape_values))
+    if(length(bad_tape_names) > 0) stop("tape_config takes only comparison, atomic and vectorize, not: ",
+                                        paste0("'", bad_tape_names, "'", collapse = ", "))
+
+    for(i in seq_along(tape_config)) {
+      setting_name <- tape_names[i] # comparison, atomic or vectorize
+      setting_value <- tape_config[[i]] # value asked for
+      if(!(is.character(setting_value) && length(setting_value) == 1 && setting_value %in% tape_values[[setting_name]])) {
+        stop("tape_config$", setting_name, " must be one of ",
+             paste0("'", tape_values[[setting_name]], "'", collapse = ", "), ".")
+      }
+    } # end i loop
+  } # end if tape_config
+
+  # tmb settings, named as TMB::config reads them back for the RTMB library
+  if(!is.null(tmb_config)) {
+    tmb_names_allowed <- names(TMB::config(DLL = "RTMB")) # no settings reads the current ones
+
+    if(!is.list(tmb_config)) stop("tmb_config must be NULL or a named list, such as list(tmbad.sparse_hessian_compress = 1).")
+    tmb_names <- names(tmb_config)
+    if(is.null(tmb_names)) tmb_names <- rep("", length(tmb_config))
+    bad_tmb_names <- setdiff(tmb_names, tmb_names_allowed)
+    if(length(bad_tmb_names) > 0) stop("tmb_config takes only ", paste0("'", sort(tmb_names_allowed), "'", collapse = ", "),
+                                       ", not: ", paste0("'", bad_tmb_names, "'", collapse = ", "))
+
+    for(i in seq_along(tmb_config)) {
+      setting_value <- tmb_config[[i]] # value asked for, 0 or 1 for a switch, a count for nthreads
+      if(!((is.numeric(setting_value) || is.logical(setting_value)) && length(setting_value) == 1 && !is.na(setting_value))) {
+        stop("tmb_config$", tmb_names[i], " must be a single number or TRUE/FALSE.")
+      }
+    } # end i loop
+  } # end if tmb_config
+
+  return(invisible(NULL))
+
+} # end function
 
 #' Record which SPoRC build produced a fit
 #'

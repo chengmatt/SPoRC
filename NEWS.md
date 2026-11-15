@@ -81,6 +81,7 @@
 * Added `newton_hessian` to `fit_model`. `"exact"` (the default) is the tape Hessian above. `"diff"` differences the exact gradient for models whose tape Hessian is too large to build, and in place of the Newton step reruns `nlminb` with each parameter in its own standard errors, which converges where a raw Newton step on a differenced Hessian goes astray. The last Hessian is returned as `$hessian` for `sdreport`.
 * Added `ctmc_diffusion_bounds = "sg"`, the Scharfetter-Gummel flux \eqn{\theta B(-d / \theta)} with \eqn{B(x) = x / (e^x - 1)}: diffusion and taxis go into one rate that is positive and smooth everywhere, central at small taxis and upwind at large. It has none of the softplus's hinge, where an edge that taxis nearly cancels sits at a bend of width `ctmc_diffusion_eps` that the optimizer crawls along, nor its floor of `eps * log(2)`.
 * `fit_model` no longer takes a Newton step that raises the largest absolute gradient. With an indefinite Hessian the step could leave the `nlminb` optimum for a worse point; refinement now stops there instead.
+* Added `tape_config` and `tmb_config` to `fit_model`, passed to `RTMB::TapeConfig()` (`vectorize`, `atomic`, `comparison`) and `TMB::config()` (such as `tmbad.sparse_hessian_compress`) for the fit only; the session's settings are restored afterward.
 * Added `do_sdrep` to `fit_model`. `TRUE` runs `RTMB::sdreport` at the fit, returned as `$sd_rep`, and `post_optim_sanity_checks` on it, returned as `$post_optim_sanity_checks`; `post_optim_sanity_checks_control` sets the gradient, standard error and correlation tolerances, and any left out take their defaults; any other name stops the fit with an error. The default `FALSE` skips both.
 * Added `label_dims()`, which returns a copy of the report, the parameter list or the data list with every array's dims named (`Pop`, `Region`, `Year`, `Seas`, `Age`, `Len`, `Sex`, `Fleet`, and `Block`, `Sel_Par`, `Bin` and so on for block and parameter dims) and labeled with calendar years, model ages and length bins, so `reshape2::melt()` gives named columns. The lists themselves are left as they were, since the model and the plotting and diagnostic functions read their arrays by position.
 * Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.
@@ -109,6 +110,7 @@
 - Fixed the aggregated Dirichlet-multinomial composition likelihood (`_Type = 0`) not adding `addtocomp` to the expected and observed proportions.
 - Fixed simulating a Dirichlet-multinomial composition stopping in a year with no sample.
 - Fixed `get_comp_prop()` mixing regions and bins in aggregated compositions (`_Type = 0`) with more than one region. The likelihood was not affected.
+- Fixed `fit_model(model = )` stopping on a model that is not SPoRC's, where there is a data list w/o `n_regions`. 
 
 # version 1.1.0
 Release Date: 2026-3-31

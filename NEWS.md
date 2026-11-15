@@ -88,6 +88,7 @@
 * Added OSA residuals for time-series observations, compositions, and tagging data.
 * Added `data$extra_nll`, a likelihood from outside the package: a function `(pars, env)` whose value is added to the joint likelihood (reported as `extra_nLL`), where `env` is the objective's environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, ...).
 * `do_likelihood_profile` warns when `random` is set that the marginal in `jnLL_df` can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as `laplace_nLL_df`.
+* With `random` set, `fit_model` adds `marginal_nLL` and `laplace_nLL` to `obj$rep`, and `get_nLL_plot` shows the marginal as the total.
 
 ## Improvements
 - Numeric and character codes are both accepted for simulator dynamics, matching the estimation model.

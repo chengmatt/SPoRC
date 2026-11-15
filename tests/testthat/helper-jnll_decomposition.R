@@ -158,7 +158,8 @@ expect_jnLL_decomposes <- function(model, tolerance = 1e-8, label = deparse(subs
   bits <- jnLL_rep_and_data(model)
   rep <- bits$rep
 
-  reported <- grep("_nLL$", names(rep), value = TRUE)
+  # fit_model adds the marginal and the laplace term under random effects, and neither is part of jnLL
+  reported <- setdiff(grep("_nLL$", names(rep), value = TRUE), c("marginal_nLL", "laplace_nLL"))
   problems <- character()
   contributions <- NULL
 

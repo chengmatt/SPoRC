@@ -26,7 +26,10 @@ population-specific counterparts \code{Catch_pop_nLL},
 \code{FishIdx_pop_nLL}, \code{SrvIdx_pop_nLL},
 \code{FishAgeComps_pop_nLL}, \code{FishLenComps_pop_nLL},
 \code{SrvAgeComps_pop_nLL}, \code{SrvLenComps_pop_nLL}. Missing
-components are handled via \code{safe_extract}.}
+components are handled via \code{safe_extract}. Pass \code{obj$rep} from
+\code{\link{fit_model}} to get the marginal under random effects, since
+\code{marginal_nLL} and \code{laplace_nLL} are added there and are not in
+\code{obj$report()}.}
 
 \item{model_names}{Character vector of length \code{n_models} giving display
 names for each model run. Used as facet labels on the bar chart.}
@@ -37,7 +40,8 @@ A list of two objects:
   \item{[[1]] nLL_plot}{A stacked bar chart (\code{ggplot}) with one facet
     per model. Bars show the weighted nLL contribution of each component,
     colored by component type (Prior, Penalty, Catch, Index, Age, Length,
-    Tagging, jnLL). Components with value 0 are excluded.}
+    Tagging, jnLL, or Marginal and Laplace under random effects). Components
+    with value 0 are excluded.}
   \item{[[2]] table_plot}{A \code{ggdraw} table (via \code{gridExtra} and
     \code{cowplot}) showing weighted nLL values in wide format, with one
     column per non-zero component and one row per model.}
@@ -49,7 +53,11 @@ components from one or more SPoRC model runs. Likelihood weights stored in
 the data list are applied to the relevant components (catch, indices,
 recruitment, tagging, fishing mortality) before plotting, so reported values
 reflect the actual contribution of each component to the joint nLL. Components
-with a value of zero are silently excluded from both the plot and table.
+with a value of zero are silently excluded from both the plot and table. For
+a model fit with random effects, the total shown is the marginal the fit
+minimized (\code{Marginal nLL}) rather than \code{jnLL} at the random effect
+mode, and the Laplace term (the marginal minus \code{jnLL}) is shown with the
+components.
 }
 \examples{
 \dontrun{

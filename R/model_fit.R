@@ -152,7 +152,10 @@
 #' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
 #'   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
 #'   the bounds used), \code{$rep} (the model report evaluated at
-#'   \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
+#'   \code{obj$env$last.par.best}; with \code{random} set, \code{jnLL} is at the
+#'   random effect mode and \code{$rep} also has \code{marginal_nLL}, the marginal
+#'   the fit minimized, and \code{laplace_nLL}, the marginal minus \code{jnLL}),
+#'   \code{$data}, \code{$parameters},
 #'   \code{$mapping}, \code{$random}, \code{$provenance} (the package
 #'   version and commit that built the fit, see \code{\link{fit_provenance}}),
 #'   \code{$hessian} (the last refinement step's Hessian; \code{NULL} if
@@ -314,6 +317,9 @@ fit_model <- function(
 
     # save optim
     obj$optim <- optim
+
+    # with random effects the fit minimizes the marginal, which is jnLL at the random effect mode plus the laplace term
+    if(!is.null(random)) marginal_nLL <- as.numeric(obj$env$value.best)
   }
 
   # make sure to rename if naming got stripped by nlminb
@@ -340,6 +346,12 @@ fit_model <- function(
 
   # save report
   obj$rep <- obj$report(obj$env$last.par.best)
+
+  # the report's jnLL is at the random effect mode, so add the marginal and the laplace term
+  if(do_optim && !is.null(random)) {
+    obj$rep$marginal_nLL <- marginal_nLL # marginal negative log likelihood the fit minimized
+    obj$rep$laplace_nLL <- marginal_nLL - obj$rep$jnLL # laplace term, marginal minus jnLL at the mode
+  } # end if random effects
 
   # if doing sdrep
   if(do_sdrep) obj$sd_rep <- RTMB::sdreport(obj)

@@ -677,7 +677,11 @@ get_data_fitted_plot <- function(data,
 #' the data list are applied to the relevant components (catch, indices,
 #' recruitment, tagging, fishing mortality) before plotting, so reported values
 #' reflect the actual contribution of each component to the joint nLL. Components
-#' with a value of zero are silently excluded from both the plot and table.
+#' with a value of zero are silently excluded from both the plot and table. For
+#' a model fit with random effects, the total shown is the marginal the fit
+#' minimized (\code{Marginal nLL}) rather than \code{jnLL} at the random effect
+#' mode, and the Laplace term (the marginal minus \code{jnLL}) is shown with the
+#' components.
 #'
 #' @param data List of length \code{n_models}, where each element is a SPoRC
 #'   data list. Likelihood weights are extracted from \code{Wt_Catch},
@@ -697,7 +701,10 @@ get_data_fitted_plot <- function(data,
 #'   \code{FishIdx_pop_nLL}, \code{SrvIdx_pop_nLL},
 #'   \code{FishAgeComps_pop_nLL}, \code{FishLenComps_pop_nLL},
 #'   \code{SrvAgeComps_pop_nLL}, \code{SrvLenComps_pop_nLL}. Missing
-#'   components are handled via \code{safe_extract}.
+#'   components are handled via \code{safe_extract}. Pass \code{obj$rep} from
+#'   \code{\link{fit_model}} to get the marginal under random effects, since
+#'   \code{marginal_nLL} and \code{laplace_nLL} are added there and are not in
+#'   \code{obj$report()}.
 #' @param model_names Character vector of length \code{n_models} giving display
 #'   names for each model run. Used as facet labels on the bar chart.
 #'
@@ -706,7 +713,8 @@ get_data_fitted_plot <- function(data,
 #'   \item{[[1]] nLL_plot}{A stacked bar chart (\code{ggplot}) with one facet
 #'     per model. Bars show the weighted nLL contribution of each component,
 #'     colored by component type (Prior, Penalty, Catch, Index, Age, Length,
-#'     Tagging, jnLL). Components with value 0 are excluded.}
+#'     Tagging, jnLL, or Marginal and Laplace under random effects). Components
+#'     with value 0 are excluded.}
 #'   \item{[[2]] table_plot}{A \code{ggdraw} table (via \code{gridExtra} and
 #'     \code{cowplot}) showing weighted nLL values in wide format, with one
 #'     column per non-zero component and one row per model.}
@@ -734,10 +742,22 @@ get_nLL_plot <- function(data,
   nLL_all_df <- data.frame() # empty dataframe
   for(i in seq_along(rep)) {
 
+    # with random effects the fit minimizes the marginal, so show that as the total instead of jnLL at the mode
+    if(is.null(rep[[i]]$marginal_nLL)) {
+      total_nLL <- safe_extract(rep[[i]], "jnLL") # joint negative log likelihood
+      total_name <- "jnLL"
+      total_type <- 'jnLL'
+    } else {
+      total_nLL <- rep[[i]]$marginal_nLL # marginal negative log likelihood from fit_model
+      total_name <- "Marginal nLL"
+      total_type <- 'Marginal'
+    } # end if random effects
+
     # nLL values
     nLL_df <- data.frame(
 
-      value = c(safe_extract(rep[[i]], "jnLL"),
+      value = c(total_nLL,
+                safe_extract(rep[[i]], "laplace_nLL"), # zero without random effects, so dropped below
                 safe_extract(rep[[i]], "h_nLL"),
                 safe_extract(rep[[i]], "R0_nLL"),
                 safe_extract(rep[[i]], "M_nLL"),
@@ -770,7 +790,7 @@ get_nLL_plot <- function(data,
                 sum(safe_extract(rep[[i]], "SrvAgeComps_pop_nLL")),
                 sum(safe_extract(rep[[i]], "SrvLenComps_pop_nLL"))),
 
-      name = c("jnLL", "Steepness Prior", "R0 Prior", "M Prior", "Recruitment Prop Prior", "Recruitment Penalty",
+      name = c(total_name, "Laplace Term", "Steepness Prior", "R0 Prior", "M Prior", "Recruitment Prop Prior", "Recruitment Penalty",
                "Selectivity Penalty", "Conventional Tagging nLL", "Catch nLL", "Fishing Mortality Penalty",
                "Survey Q Prior and Penalty", "Fishery Q Prior and Penalty", "Survey Index nLL", "Tag Reporting Prior",
                "Fishery Index nLL", "Initial Age Penalty", "Initial Age Sex Tie", "Recruitment Level Penalty",
@@ -780,7 +800,7 @@ get_nLL_plot <- function(data,
                "Pop Fishery Age nLL", "Pop Fishery Length nLL",
                "Pop Survey Age nLL", "Pop Survey Length nLL"),
 
-      type = c('jnLL', 'Prior', "Prior", "Prior", "Prior", "Penalty", "Penalty", "Tagging",
+      type = c(total_type, 'Laplace', 'Prior', "Prior", "Prior", "Prior", "Penalty", "Penalty", "Tagging",
                "Catch", "Penalty", "Prior", "Prior", "Index",
                "Prior", "Index", "Penalty", "Penalty", "Penalty", "Penalty", "Prior", "Age",
                "Age", "Length", "Length",

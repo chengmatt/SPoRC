@@ -177,7 +177,10 @@ returns or stops. The diagnostics that refit the model
 The RTMB \code{ADFun} object with additional fields: \code{$optim}
   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
   the bounds used), \code{$rep} (the model report evaluated at
-  \code{obj$env$last.par.best}), \code{$data}, \code{$parameters},
+  \code{obj$env$last.par.best}; with \code{random} set, \code{jnLL} is at the
+  random effect mode and \code{$rep} also has \code{marginal_nLL}, the marginal
+  the fit minimized, and \code{laplace_nLL}, the marginal minus \code{jnLL}),
+  \code{$data}, \code{$parameters},
   \code{$mapping}, \code{$random}, \code{$provenance} (the package
   version and commit that built the fit, see \code{\link{fit_provenance}}),
   \code{$hessian} (the last refinement step's Hessian; \code{NULL} if

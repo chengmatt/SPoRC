@@ -86,7 +86,9 @@ test_that("the projected innovations have the process sd, and the projection tak
   naa_se_fixed <- array(as.numeric(sdr_fixed$sd[names(sdr_fixed$value) == "log_proj_NAA"]), dim = c(1, 1, n_proj_yrs, 1, naa_dims$n_ages, 1))
   a <- state_ages[2]
   expect_equal(naa_se[1,1,2,1,a,1]^2 - naa_se_fixed[1,1,2,1,a,1]^2, sigma_naa^2, tolerance = 0.05)
-  expect_equal(as.numeric(fit$rep$proj_SSB[1,1,]), as.numeric(fit_fixed$rep$proj_SSB[1,1,]), tolerance = 1e-4) # two optimizations, so not to the last digit
+  # projected SSB compared at one point too, fit_fixed's own optimum can sit far along the flat surface
+  invisible(fit_fixed$fn(fit$env$last.par.best[fit$env$lfixed()]))
+  expect_equal(as.numeric(fit$rep$proj_SSB[1,1,]), as.numeric(fit_fixed$report(fit_fixed$env$last.par)$proj_SSB[1,1,]), tolerance = 1e-8)
 
   # the post hoc projection with the fit's innovations passed as naa_devs
   rec_devs <- array(1, dim = c(1, 1, n_proj_yrs))

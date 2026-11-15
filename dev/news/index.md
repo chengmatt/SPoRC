@@ -244,6 +244,12 @@
   absolute gradient. With an indefinite Hessian the step could leave the
   `nlminb` optimum for a worse point; refinement now stops there
   instead.
+- Added `tape_config` and `tmb_config` to `fit_model`, passed to
+  [`RTMB::TapeConfig()`](https://rdrr.io/pkg/RTMB/man/Tape.html)
+  (`vectorize`, `atomic`, `comparison`) and
+  [`TMB::config()`](https://rdrr.io/pkg/TMB/man/config.html) (such as
+  `tmbad.sparse_hessian_compress`) for the fit only; the session’s
+  settings are restored afterward.
 - Added `do_sdrep` to `fit_model`. `TRUE` runs `RTMB::sdreport` at the
   fit, returned as `$sd_rep`, and `post_optim_sanity_checks` on it,
   returned as `$post_optim_sanity_checks`;
@@ -350,6 +356,8 @@
   [`get_comp_prop()`](https://chengmatt.github.io/SPoRC/dev/reference/get_comp_prop.md)
   mixing regions and bins in aggregated compositions (`_Type = 0`) with
   more than one region. The likelihood was not affected.
+- Fixed `fit_model(model = )` stopping on a model that is not SPoRC’s,
+  where there is a data list w/o `n_regions`.
 
 ## version 1.1.0
 

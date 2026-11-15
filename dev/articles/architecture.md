@@ -198,7 +198,7 @@ that moves fish through a season goes through that one file.
 |----|----|----|----|
 | `model_biomass.R` | `biom_at_spawn`, `compute_biom_y`, `derive_proj_biom` | `model_transition.R` | `model_population_dynamics.R`, `projection.R`, `sim_population.R` |
 | `model_distributions.R` | `build_idx_sd`, `combine_idx_sd`, `dbeta_symmetric`, `ddirichlet`, `ddirmult`, `dlogistnormal`, `dnbinom_robust_noint`, `dpois_noint`, `eval_index_osa_nLL`, `get_at_age_2dar1_nLL`, `get_at_age_nLL`, `get_beta_scaled_pars`, `get_discard_pred`, `get_fish_idx_seas_wt`, `get_index_nLL`, `get_index_pop_nLL`, `get_index_regional_nLL`, `get_logistnormal_miss0_nLL`, `get_seas_pred`, `get_seas_pred_pop` | `utils_math.R` | `model_lik_at_age.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_objective.R`, `model_obs_fishery_survey.R`, `model_priors_penalties.R`, `sim_observations.R` |
-| `model_fit.R` | `cmb`, `fit_model`, `fit_provenance` | `setup_mapping.R`, `utils_postfit.R`, `utils_setup.R` | `diag_francis.R`, `diag_jitter.R`, `diag_likelihood_profile.R`, `diag_retrospective.R`, `refpts_main.R`, `sim_self_test.R` |
+| `model_fit.R` | `check_fit_tape_settings`, `cmb`, `fit_model`, `fit_provenance` | `setup_mapping.R`, `utils_postfit.R`, `utils_setup.R` | `diag_francis.R`, `diag_jitter.R`, `diag_likelihood_profile.R`, `diag_retrospective.R`, `refpts_main.R`, `sim_self_test.R` |
 | `model_growth.R` | `get_alk`, `Get_Growth`, `get_growth_pars_year`, `Get_Growth_Year`, `get_laa_curve`, `get_selected_waa`, `grow_increment`, `growth_containers`, `growth_fill_year`, `growth_laa_at`, `growth_len_mid`, `growth_selected_waa_year`, `growth_start_state`, `growth_take_year`, `plus_group_size` | nothing | `model_objective.R`, `model_population_dynamics.R`, `sim_biologicals.R` |
 | `model_init_naa.R` | `Get_Init_NAA` | `model_transition.R`, `utils_setup.R` | `model_objective.R`, `sim_population.R` |
 | `model_lik_at_age.R` | `at_age_obs_sd`, `at_age_split`, `get_at_age_obs_prediction`, `get_at_age_prediction`, `get_at_age_source_nLL`, `is_identity_ageing_error`, `prep_at_age_obs` | `model_distributions.R`, `utils_math.R` | `diag_osa_residuals.R`, `model_objective.R`, `plot_figures_tables.R`, `setup_mapping.R`, `sim_observations.R` |
@@ -482,7 +482,7 @@ use.
 | Prefix | Files | What it covers |
 |----|----|----|
 | `test-setup_*` | 23 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
-| `test-model_*` | 44 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
+| `test-model_*` | 46 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 7 | Shared numerical helpers |
 | `test-sim_*` | 20 | Operating model, including simulate then refit self tests |
 | `test-refpts_*` | 13 | SPR and MSY solvers, one file per spatial structure |
@@ -491,7 +491,7 @@ use.
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 20 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 273 test files in total.
+That is 275 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

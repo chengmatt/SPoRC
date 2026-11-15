@@ -6642,6 +6642,23 @@ returned as <code>$sd_rep</code>, and the convergence checks of
 the checks accept; any left out of the list take their defaults, and any
 other name is an error</td>
 </tr>
+<tr class="even">
+<td><code>tape_config</code></td>
+<td><code>NULL</code></td>
+<td>How RTMB records the model, passed to
+<code><a href="https://rdrr.io/pkg/RTMB/man/Tape.html" class="external-link">RTMB::TapeConfig()</a></code>: <code>vectorize</code> and
+<code>atomic</code> (<code>"enable"</code>, <code>"disable"</code> or
+<code>"NA"</code>) and <code>comparison</code> (<code>"forbid"</code>,
+<code>"tape"</code>, <code>"allow"</code> or <code>"NA"</code>).
+<code>NULL</code> leaves the session’s settings alone</td>
+</tr>
+<tr class="odd">
+<td><code>tmb_config</code></td>
+<td><code>NULL</code></td>
+<td>TMB settings, passed to <code>TMB::config(..., DLL = "RTMB")</code>,
+such as <code>list(tmbad.sparse_hessian_compress = 1)</code> to compress
+the random effects Hessian. <code>NULL</code> leaves them alone</td>
+</tr>
 </tbody>
 </table>
 <p><code>sdreport()</code> differences the gradient for its Hessian, so
@@ -6650,6 +6667,17 @@ positive definite where the tape Hessian is. Rerun
 <code>RTMB::sdreport(obj, hessian.fixed = obj$he())</code> before
 reading that as non-convergence. The checks print their messages
 whatever <code>silent</code> is set to.</p>
+<p><code>tape_config</code> and <code>tmb_config</code> apply to the fit
+only and the earlier settings are put back when <code><a href="../reference/fit_model.html">fit_model()</a></code>
+returns; the retrospective, jitter and profile functions do not take
+them. The objective and gradient are the same to rounding under any
+setting, so they change only speed and memory, and not always for the
+better. A vectorized or atomic operation is taken as making every output
+depend on every input, so with random effects
+<code>vectorize = "enable"</code> makes their Hessian dense, as does
+<code>atomic = "enable"</code> when one matrix product spans many random
+effects, and each Laplace gradient runs several times slower. Time a fit
+both ways before keeping a setting.</p>
 <div class="section level4">
 <h4 id="lognormal-bias-corrections-bias_correct_pe-bias_correct_oe">Lognormal bias corrections (<code>bias_correct_pe</code>,
 <code>bias_correct_oe</code>)<a class="anchor" aria-label="anchor" href="#lognormal-bias-corrections-bias_correct_pe-bias_correct_oe"></a>

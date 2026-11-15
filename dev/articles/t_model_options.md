@@ -3053,6 +3053,8 @@ constructs the RTMB automatic-differentiation function, optimizes via
 | `nlminb_control` | `list(iter.max = 1e5, eval.max = 1e5, rel.tol = 1e-15)` | Passed to [`stats::nlminb`](https://rdrr.io/r/stats/nlminb.html) |
 | `do_sdrep` | `FALSE` | `TRUE` runs `RTMB::sdreport()` at the fit, returned as `$sd_rep`, and the convergence checks of [`post_optim_sanity_checks()`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md) on it, returned as `$post_optim_sanity_checks` |
 | `post_optim_sanity_checks_control` | `list(gradient_tol = 1e-3, se_tol = 100, corr_tol = 0.99)` | Largest absolute gradient, standard error and absolute correlation the checks accept; any left out of the list take their defaults, and any other name is an error |
+| `tape_config` | `NULL` | How RTMB records the model, passed to [`RTMB::TapeConfig()`](https://rdrr.io/pkg/RTMB/man/Tape.html): `vectorize` and `atomic` (`"enable"`, `"disable"` or `"NA"`) and `comparison` (`"forbid"`, `"tape"`, `"allow"` or `"NA"`). `NULL` leaves the session’s settings alone |
+| `tmb_config` | `NULL` | TMB settings, passed to `TMB::config(..., DLL = "RTMB")`, such as `list(tmbad.sparse_hessian_compress = 1)` to compress the random effects Hessian. `NULL` leaves them alone |
 
 `sdreport()` differences the gradient for its Hessian, so on an
 ill-conditioned fit the checks can report a Hessian that is not positive
@@ -3060,6 +3062,18 @@ definite where the tape Hessian is. Rerun
 `RTMB::sdreport(obj, hessian.fixed = obj$he())` before reading that as
 non-convergence. The checks print their messages whatever `silent` is
 set to.
+
+`tape_config` and `tmb_config` apply to the fit only and the earlier
+settings are put back when
+[`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md)
+returns; the retrospective, jitter and profile functions do not take
+them. The objective and gradient are the same to rounding under any
+setting, so they change only speed and memory, and not always for the
+better. A vectorized or atomic operation is taken as making every output
+depend on every input, so with random effects `vectorize = "enable"`
+makes their Hessian dense, as does `atomic = "enable"` when one matrix
+product spans many random effects, and each Laplace gradient runs
+several times slower. Time a fit both ways before keeping a setting.
 
 #### Lognormal bias corrections (`bias_correct_pe`, `bias_correct_oe`)
 

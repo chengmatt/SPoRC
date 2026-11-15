@@ -89,6 +89,8 @@ optimizer output, and model report are attached to the returned object.</p>
 <span>  do_sdrep <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  post_optim_sanity_checks_control <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>gradient_tol <span class="op">=</span> <span class="fl">0.001</span>, se_tol <span class="op">=</span> <span class="fl">100</span>, corr_tol <span class="op">=</span></span>
 <span>    <span class="fl">0.99</span><span class="op">)</span>,</span>
+<span>  tape_config <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tmb_config <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -184,7 +186,14 @@ Newton refinement step. <code>NULL</code> (default) is unbounded
 <dd><p>Function with signature <code>function(pars, data)</code> passed to
 <code>RTMB::MakeADFun</code> via <code><a href="cmb.html">cmb</a></code>. Default <code><a href="SPoRC_rtmb.html">SPoRC_rtmb</a></code>.
 Allows non-SPoRC RTMB models to be fit with the same optimization and
-Newton-refinement routines.</p></dd>
+Newton-refinement routines. A <code>data</code> list without the dims
+<code><a href="Setup_Mod_Dim.html">Setup_Mod_Dim</a></code> writes (<code>years</code>, <code>n_regions</code>,
+<code>ages</code>, <code>lens</code>, <code>n_sexes</code>, <code>n_fish_fleets</code> and
+<code>n_srv_fleets</code>) is taken as such a model, and the SPoRC setup steps
+are skipped: filling in movement and tagging when they were not set up,
+and refreshing the copies of the map kept in the data list. A SPoRC data
+list with a model of your own, such as an edited copy of
+<code>SPoRC_rtmb</code>, still takes them.</p></dd>
 
 
 <dt id="arg-do-sdrep">do_sdrep<a class="anchor" aria-label="anchor" href="#arg-do-sdrep"></a></dt>
@@ -210,6 +219,69 @@ the defaults for the rest. Any other element, named or not, stops the fit
 with an error before it starts. The checks print a message for each one
 that fails, or a single message when all pass, whatever <code>silent</code> is
 set to.</p></dd>
+
+
+<dt id="arg-tape-config">tape_config<a class="anchor" aria-label="anchor" href="#arg-tape-config"></a></dt>
+<dd><p>Named list of how RTMB records the model, passed to
+<code><a href="https://rdrr.io/pkg/RTMB/man/Tape.html" class="external-link">RTMB::TapeConfig()</a></code> before it is built. <code>NULL</code> (default)
+leaves the session's settings as they are. Elements, each a single string:</p><dl><dt><code>vectorize</code></dt>
+<dd><p><code>"enable"</code> records arithmetic, math
+    functions, sums and sparse matrix products as one operation per
+    vector rather than one per element. <code>"disable"</code> is RTMB's default.</p></dd>
+
+  <dt><code>atomic</code></dt>
+<dd><p><code>"enable"</code> records each matrix product as one
+    operation. <code>"disable"</code> records matrix products and multivariate
+    normal densities element by element; RTMB's default records the
+    densities as one operation and the products element by element, so
+    <code>"disable"</code> also changes the densities.</p></dd>
+
+  <dt><code>comparison</code></dt>
+<dd><p>What happens when the model compares two
+    quantities it is differentiating: <code>"forbid"</code> (RTMB's default)
+    stops with an error, <code>"tape"</code> records the comparison as an
+    indicator, and <code>"allow"</code>, for testing only, decides it once at
+    the starting values.</p></dd>
+
+
+</dl><p><code>"NA"</code> leaves an element as set. Each recording gives the same
+objective and gradient, to rounding. A vectorized or atomic operation is
+taken as making every output depend on every input, so with
+<code>random</code> set, <code>vectorize = "enable"</code> makes the Hessian of the
+random effects dense, and <code>atomic = "enable"</code> does too when one
+product spans many random effects; each Laplace gradient is then several
+times slower. Time a fit both ways before keeping either.</p></dd>
+
+
+<dt id="arg-tmb-config">tmb_config<a class="anchor" aria-label="anchor" href="#arg-tmb-config"></a></dt>
+<dd><p>Named list of TMB settings for the models RTMB builds,
+passed to <code>TMB::config(..., DLL = "RTMB")</code> before the model is
+built. <code>NULL</code> (default) leaves them as they are. Any name
+<code>TMB::config(DLL = "RTMB")</code> returns is allowed, each a single 0 or 1
+(or a count for <code>nthreads</code>). The ones that change a fit:</p><dl><dt><code>tmbad.sparse_hessian_compress</code></dt>
+<dd><p><code>1</code> compresses the
+    sparse Hessian of the random effects, which takes less memory and can
+    be slower. Read only when <code>random</code> is set. Default <code>0</code>.</p></dd>
+
+  <dt><code>tmbad.atomic_sparse_log_determinant</code></dt>
+<dd><p><code>0</code> computes the
+    Laplace log determinant from the plain factorization rather than TMB's
+    single operation, which has no second derivative.
+    <code><a href="Setup_Mod_DSEM.html">Setup_Mod_DSEM</a></code> sets <code>0</code> itself when a moderated
+    arrow needs it, and setting <code>1</code> then gives NaN. Default <code>1</code>.</p></dd>
+
+  <dt><code>optimize.instantly</code></dt>
+<dd><p><code>0</code> skips removing repeated and
+    unused operations from the recorded model, which is slower but keeps
+    the operations in the order they were recorded, so each can be traced
+    to the line that recorded it. Default <code>1</code>.</p></dd>
+
+
+</dl><p>Both lists are in force for the builds, Newton steps and <code>sdreport</code>
+inside <code>fit_model</code>, and the earlier settings are restored when it
+returns or stops. The diagnostics that refit the model
+(<code><a href="do_retrospective.html">do_retrospective</a></code>, <code><a href="do_jitter.html">do_jitter</a></code>,
+<code><a href="do_likelihood_profile.html">do_likelihood_profile</a></code>) do not record / save these settings</p></dd>
 
 
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>

@@ -26,6 +26,8 @@ fit_model(
   do_sdrep = FALSE,
   post_optim_sanity_checks_control = list(gradient_tol = 0.001, se_tol = 100, corr_tol =
     0.99),
+  tape_config = NULL,
+  tmb_config = NULL,
   ...
 )
 ```
@@ -122,7 +124,14 @@ fit_model(
   Default
   [`SPoRC_rtmb`](https://chengmatt.github.io/SPoRC/dev/reference/SPoRC_rtmb.md).
   Allows non-SPoRC RTMB models to be fit with the same optimization and
-  Newton-refinement routines.
+  Newton-refinement routines. A `data` list without the dims
+  [`Setup_Mod_Dim`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Dim.md)
+  writes (`years`, `n_regions`, `ages`, `lens`, `n_sexes`,
+  `n_fish_fleets` and `n_srv_fleets`) is taken as such a model, and the
+  SPoRC setup steps are skipped: filling in movement and tagging when
+  they were not set up, and refreshing the copies of the map kept in the
+  data list. A SPoRC data list with a model of your own, such as an
+  edited copy of `SPoRC_rtmb`, still takes them.
 
 - do_sdrep:
 
@@ -148,6 +157,80 @@ fit_model(
   fit with an error before it starts. The checks print a message for
   each one that fails, or a single message when all pass, whatever
   `silent` is set to.
+
+- tape_config:
+
+  Named list of how RTMB records the model, passed to
+  [`RTMB::TapeConfig()`](https://rdrr.io/pkg/RTMB/man/Tape.html) before
+  it is built. `NULL` (default) leaves the session's settings as they
+  are. Elements, each a single string:
+
+  `vectorize`
+
+  :   `"enable"` records arithmetic, math functions, sums and sparse
+      matrix products as one operation per vector rather than one per
+      element. `"disable"` is RTMB's default.
+
+  `atomic`
+
+  :   `"enable"` records each matrix product as one operation.
+      `"disable"` records matrix products and multivariate normal
+      densities element by element; RTMB's default records the densities
+      as one operation and the products element by element, so
+      `"disable"` also changes the densities.
+
+  `comparison`
+
+  :   What happens when the model compares two quantities it is
+      differentiating: `"forbid"` (RTMB's default) stops with an error,
+      `"tape"` records the comparison as an indicator, and `"allow"`,
+      for testing only, decides it once at the starting values.
+
+  `"NA"` leaves an element as set. Each recording gives the same
+  objective and gradient, to rounding. A vectorized or atomic operation
+  is taken as making every output depend on every input, so with
+  `random` set, `vectorize = "enable"` makes the Hessian of the random
+  effects dense, and `atomic = "enable"` does too when one product spans
+  many random effects; each Laplace gradient is then several times
+  slower. Time a fit both ways before keeping either.
+
+- tmb_config:
+
+  Named list of TMB settings for the models RTMB builds, passed to
+  `TMB::config(..., DLL = "RTMB")` before the model is built. `NULL`
+  (default) leaves them as they are. Any name
+  `TMB::config(DLL = "RTMB")` returns is allowed, each a single 0 or 1
+  (or a count for `nthreads`). The ones that change a fit:
+
+  `tmbad.sparse_hessian_compress`
+
+  :   `1` compresses the sparse Hessian of the random effects, which
+      takes less memory and can be slower. Read only when `random` is
+      set. Default `0`.
+
+  `tmbad.atomic_sparse_log_determinant`
+
+  :   `0` computes the Laplace log determinant from the plain
+      factorization rather than TMB's single operation, which has no
+      second derivative.
+      [`Setup_Mod_DSEM`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_DSEM.md)
+      sets `0` itself when a moderated arrow needs it, and setting `1`
+      then gives NaN. Default `1`.
+
+  `optimize.instantly`
+
+  :   `0` skips removing repeated and unused operations from the
+      recorded model, which is slower but keeps the operations in the
+      order they were recorded, so each can be traced to the line that
+      recorded it. Default `1`.
+
+  Both lists are in force for the builds, Newton steps and `sdreport`
+  inside `fit_model`, and the earlier settings are restored when it
+  returns or stops. The diagnostics that refit the model
+  ([`do_retrospective`](https://chengmatt.github.io/SPoRC/dev/reference/do_retrospective.md),
+  [`do_jitter`](https://chengmatt.github.io/SPoRC/dev/reference/do_jitter.md),
+  [`do_likelihood_profile`](https://chengmatt.github.io/SPoRC/dev/reference/do_likelihood_profile.md))
+  do not record / save these settings
 
 - ...:
 

@@ -281,6 +281,8 @@
   in `jnLL_df` can be looked at but not the data components, since the
   random effects couple the data sources. The Laplace term is returned
   as `laplace_nLL_df`.
+- With `random` set, `fit_model` adds `marginal_nLL` and `laplace_nLL`
+  to `obj$rep`, and `get_nLL_plot` shows the marginal as the total.
 
 ### Improvements
 

@@ -240,9 +240,11 @@ fit_model(
 
 The RTMB `ADFun` object with additional fields: `$optim` (the `nlminb`
 output list, with `$lower`/`$upper` recording the bounds used), `$rep`
-(the model report evaluated at `obj$env$last.par.best`), `$data`,
-`$parameters`, `$mapping`, `$random`, `$provenance` (the package version
-and commit that built the fit, see
+(the model report evaluated at `obj$env$last.par.best`; with `random`
+set, `jnLL` is at the random effect mode and `$rep` also has
+`marginal_nLL`, the marginal the fit minimized, and `laplace_nLL`, the
+marginal minus `jnLL`), `$data`, `$parameters`, `$mapping`, `$random`,
+`$provenance` (the package version and commit that built the fit, see
 [`fit_provenance`](https://chengmatt.github.io/SPoRC/dev/reference/fit_provenance.md)),
 `$hessian` (the last refinement step's Hessian; `NULL` if none was
 taken), and under `do_sdrep = TRUE` `$sd_rep` (the `sdreport`) and

@@ -151,6 +151,7 @@
 <li>Added <code>data$extra_nll</code>, a likelihood from outside the package: a function <code>(pars, env)</code> whose value is added to the joint likelihood (reported as <code>extra_nLL</code>), where <code>env</code> is the objective’s environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, …).</li>
 <li>
 <code>do_likelihood_profile</code> warns when <code>random</code> is set that the marginal in <code>jnLL_df</code> can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as <code>laplace_nLL_df</code>.</li>
+<li>With <code>random</code> set, <code>fit_model</code> adds <code>marginal_nLL</code> and <code>laplace_nLL</code> to <code>obj$rep</code>, and <code>get_nLL_plot</code> shows the marginal as the total.</li>
 </ul></div>
 </div>
 <div class="section level3">

@@ -293,7 +293,10 @@ returns or stops. The diagnostics that refit the model
     <p>The RTMB <code>ADFun</code> object with additional fields: <code>$optim</code>
   (the <code>nlminb</code> output list, with <code>$lower</code>/<code>$upper</code> recording
   the bounds used), <code>$rep</code> (the model report evaluated at
-  <code>obj$env$last.par.best</code>), <code>$data</code>, <code>$parameters</code>,
+  <code>obj$env$last.par.best</code>; with <code>random</code> set, <code>jnLL</code> is at the
+  random effect mode and <code>$rep</code> also has <code>marginal_nLL</code>, the marginal
+  the fit minimized, and <code>laplace_nLL</code>, the marginal minus <code>jnLL</code>),
+  <code>$data</code>, <code>$parameters</code>,
   <code>$mapping</code>, <code>$random</code>, <code>$provenance</code> (the package
   version and commit that built the fit, see <code><a href="fit_provenance.html">fit_provenance</a></code>),
   <code>$hessian</code> (the last refinement step's Hessian; <code>NULL</code> if

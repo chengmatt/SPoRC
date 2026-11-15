@@ -853,6 +853,20 @@ and zero throughout when no such penalty is applied</td>
 <td>Joint negative log-likelihood</td>
 <td>scalar</td>
 </tr>
+<tr class="even">
+<td><code>marginal_nLL</code></td>
+<td>Marginal negative log-likelihood the fit minimized. Added to
+<code>obj$rep</code> by <code>fit_model</code> only when random effects
+are estimated</td>
+<td>scalar</td>
+</tr>
+<tr class="odd">
+<td><code>laplace_nLL</code></td>
+<td>Laplace term, <code>marginal_nLL</code> minus <code>jnLL</code> at
+the random effect mode. Added with <code>marginal_nLL</code>
+</td>
+<td>scalar</td>
+</tr>
 </tbody>
 </table>
 </div>

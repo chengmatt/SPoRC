@@ -206,6 +206,8 @@ contain active observations.
 | `TagRep_nLL` | Negative log-likelihood (prior) for tag reporting rate | scalar |
 | `rec_prop_nLL` | Negative log-likelihood (prior) for recruitment proportions | scalar |
 | `jnLL` | Joint negative log-likelihood | scalar |
+| `marginal_nLL` | Marginal negative log-likelihood the fit minimized. Added to `obj$rep` by `fit_model` only when random effects are estimated | scalar |
+| `laplace_nLL` | Laplace term, `marginal_nLL` minus `jnLL` at the random effect mode. Added with `marginal_nLL` | scalar |
 
 ## Derived Quantities (also reported via ADREPORT)
 

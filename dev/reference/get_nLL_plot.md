@@ -6,7 +6,10 @@ in the data list are applied to the relevant components (catch, indices,
 recruitment, tagging, fishing mortality) before plotting, so reported
 values reflect the actual contribution of each component to the joint
 nLL. Components with a value of zero are silently excluded from both the
-plot and table.
+plot and table. For a model fit with random effects, the total shown is
+the marginal the fit minimized (`Marginal nLL`) rather than `jnLL` at
+the random effect mode, and the Laplace term (the marginal minus `jnLL`)
+is shown with the components.
 
 ## Usage
 
@@ -35,7 +38,10 @@ get_nLL_plot(data, rep, model_names)
   population-specific counterparts `Catch_pop_nLL`, `FishIdx_pop_nLL`,
   `SrvIdx_pop_nLL`, `FishAgeComps_pop_nLL`, `FishLenComps_pop_nLL`,
   `SrvAgeComps_pop_nLL`, `SrvLenComps_pop_nLL`. Missing components are
-  handled via `safe_extract`.
+  handled via `safe_extract`. Pass `obj$rep` from
+  [`fit_model`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md)
+  to get the marginal under random effects, since `marginal_nLL` and
+  `laplace_nLL` are added there and are not in `obj$report()`.
 
 - model_names:
 
@@ -50,8 +56,9 @@ A list of two objects:
 
   A stacked bar chart (`ggplot`) with one facet per model. Bars show the
   weighted nLL contribution of each component, colored by component type
-  (Prior, Penalty, Catch, Index, Age, Length, Tagging, jnLL). Components
-  with value 0 are excluded.
+  (Prior, Penalty, Catch, Index, Age, Length, Tagging, jnLL, or Marginal
+  and Laplace under random effects). Components with value 0 are
+  excluded.
 
 - \[\[2\]\] table_plot:
 

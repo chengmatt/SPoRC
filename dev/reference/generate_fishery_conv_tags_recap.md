@@ -60,3 +60,12 @@ mortality and shedding may differ across cohorts. At the end of a season
 the survivors advance to the next season, or to the next year's first
 season with plus group accumulation, and the reporting rates in
 `conv_tag_fish_reporting` are applied by fleet and region.
+
+Each season runs through the same steps as the estimation model's
+[`get_tagging_observation_model`](https://chengmatt.github.io/SPoRC/dev/reference/get_tagging_observation_model.md)
+(`get_tag_cohorts_at_liberty`, `start_tag_cohort_season`,
+`move_tag_cohorts`, `end_tag_cohort_season`), so the two follow tagged
+fish the same way: a mid-season release moves through the rest of its
+release season under `move_timing = 2`, cohorts take the state-space
+numbers at age factor (`exp(naa_eta)`) at each boundary, and a season
+with no time at liberty has no recaptures.

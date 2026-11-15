@@ -49,6 +49,7 @@ projection and selectivity sections."><meta name="robots" content="noindex"></he
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
     <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/am_nsei_sablefish_case_study.html">NSEI Sablefish</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -117,7 +118,8 @@ projection and selectivity sections.</p>
 <span>  Mrate <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  expm_nsub <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  NAA_scalar <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  NAA_scalar <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  conv_tag_shed_map <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -252,6 +254,13 @@ boundary, within a year as well as between years. <code>NULL</code> (the default
 leaves them on the
 deterministic trajectory, which is correct only when the state is off.</p></dd>
 
+
+<dt id="arg-conv-tag-shed-map">conv_tag_shed_map<a class="anchor" aria-label="anchor" href="#arg-conv-tag-shed-map"></a></dt>
+<dd><p>Numeric vector <code>[cohort]</code>, the map of
+<code>ln_conv_tag_shed</code> (<code>NA</code> where it is fixed). Under
+<code>move_timing = 2</code>, cohorts with the same map level, or the same fixed
+value, share one seasonal operator. <code>NULL</code> gives every cohort its own.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -263,6 +272,10 @@ deterministic trajectory, which is correct only when the state is off.</p></dd>
     <p><code>conv_tag_fish_reporting</code>, <code>conv_tag_fish_avail</code>, and
 <code>pred_conv_tag_fish_recap</code> are passed in already dimensioned
 (typically all-zero) and returned fully populated.</p>
+<p>Cohorts are followed calendar year by calendar year, so the cohorts at
+liberty in a season share that season's movement matrix, and under
+<code>move_timing = 2</code> a shedding group's seasonal operator is worked out
+once for all of its cohorts with the same time at liberty.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

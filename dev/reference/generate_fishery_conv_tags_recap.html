@@ -45,6 +45,7 @@ skipped."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
     <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/am_nsei_sablefish_case_study.html">NSEI Sablefish</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -123,6 +124,14 @@ release event, so timing, initial mortality and shedding may differ across
 cohorts. At the end of a season the survivors advance to the next season, or to
 the next year's first season with plus group accumulation, and the reporting
 rates in <code>conv_tag_fish_reporting</code> are applied by fleet and region.</p>
+<p>Each season runs through the same steps as the estimation model's
+<code><a href="get_tagging_observation_model.html">get_tagging_observation_model</a></code> (<code>get_tag_cohorts_at_liberty</code>,
+<code>start_tag_cohort_season</code>, <code>move_tag_cohorts</code>,
+<code>end_tag_cohort_season</code>), so the two follow tagged fish the same way: a
+mid-season release moves through the rest of its release season under
+<code>move_timing = 2</code>, cohorts take the state-space numbers at age factor
+(<code>exp(naa_eta)</code>) at each boundary, and a season with no time at liberty
+has no recaptures.</p>
     </div>
 
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

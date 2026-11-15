@@ -39,6 +39,7 @@ both sequential and parallel execution."><meta name="robots" content="noindex"><
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
     <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/am_nsei_sablefish_case_study.html">NSEI Sablefish</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -102,7 +103,10 @@ leaving the profile with the same free parameters as the model being profiled.</
 
 <dt id="arg-random">random<a class="anchor" aria-label="anchor" href="#arg-random"></a></dt>
 <dd><p>Character vector of random effects to estimate. Default
-<code>NULL</code>.</p></dd>
+<code>NULL</code>. With random effects, <code>jnLL_df</code> holds the marginal and the
+profile warns that it can be looked at but not the data components, since
+the random effects couple the data sources and a component no longer tells
+you that data source's contribution on its own.</p></dd>
 
 
 <dt id="arg-what">what<a class="anchor" aria-label="anchor" href="#arg-what"></a></dt>
@@ -145,7 +149,12 @@ specific elements to fix when <code>parameters[[what]]</code> is an array.
     <p>A named list containing one dataframe per likelihood component,
   each with a <code>prof_val</code> column indicating the profiled parameter
   value, plus <code>agg_nLL</code> which aggregates all components across their
-  respective dimensions. Components include:</p><dl><dt>Scalar penalties and priors</dt>
+  respective dimensions. <code>jnLL_df</code> is the objective the fit minimizes:
+  the joint negative log-likelihood, or with random effects the marginal,
+  which is the joint at the random effect mode plus the Laplace term.
+  <code>laplace_nLL_df</code> is that Laplace term, zero without random effects,
+  and is added to <code>agg_nLL</code> only when <code>random</code> is set.
+  Components include:</p><dl><dt>Scalar penalties and priors</dt>
 <dd><p><code>jnLL_df</code>, <code>rec_nLL_df</code>
       (the recruitment, initial age, initial-age sex tie, recruitment
       level, and stock-recruit penalties together, each with its weight),

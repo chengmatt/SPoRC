@@ -35,6 +35,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
     <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/am_nsei_sablefish_case_study.html">NSEI Sablefish</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="active nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -147,6 +148,8 @@
 <li>Added 95% confidence intervals for SDNR based on a chi-squared test for OSA residuals.</li>
 <li>Added OSA residuals for time-series observations, compositions, and tagging data.</li>
 <li>Added <code>data$extra_nll</code>, a likelihood from outside the package: a function <code>(pars, env)</code> whose value is added to the joint likelihood (reported as <code>extra_nLL</code>), where <code>env</code> is the objective’s environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, …).</li>
+<li>
+<code>do_likelihood_profile</code> warns when <code>random</code> is set that the marginal in <code>jnLL_df</code> can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as <code>laplace_nLL_df</code>.</li>
 </ul></div>
 </div>
 <div class="section level3">
@@ -159,10 +162,15 @@
 <li>
 <code>catch_to_F_singlefleet()</code> and <code>catch_to_F_multifleet()</code> are replaced by <code><a href="../reference/catch_to_F_om.html">catch_to_F_om()</a></code>, which converts catch advice by region, season and fleet into the operating model’s F by running the year through the operating model’s own dynamics, solved with Newton steps on an <code><a href="https://rdrr.io/pkg/RTMB/man/Tape.html" class="external-link">RTMB::MakeTape()</a></code> tape of each season’s catch.</li>
 <li>Improved gamma dome selectivity parameterization (<code>Selex_Model = 1</code>) returning NaN at extreme optimizer guesess. Should give equivalent results to the old form.</li>
+<li>Expected compositions are normalized once, after ageing error, which gives the same likelihoods with a shorter random effects hessian (GOA pollock 26b gradient 37% faster).</li>
+<li>The tag likelihood adds <code>addtotag</code> once per pooled cell after summing the predicted recaptures, the same values with a shorter tape.</li>
+<li>Logistic normal compositions no longer normalize the expected values, which their log ratios cancel; the same likelihoods, a BSB gradient 44% faster.</li>
+<li>The zeros dropped logistic normal (types 5 and 6) is written bin by bin, a sum of normals or a chain of conditional normals, without forming its covariance.</li>
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>
-<ul><li>Fixed the time-varying selectivity smoothing penalty not being applied in the first year.</li>
+<ul><li>Fixed <code>do_likelihood_profile</code> and <code>do_jitter</code> reporting <code>jnLL</code> at the random effect mode under random effects, rather than the marginal the fit minimizes.</li>
+<li>Fixed the time-varying selectivity smoothing penalty not being applied in the first year.</li>
 <li>Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.</li>
 <li>Fixed <code><a href="../reference/do_runs_test.html">do_runs_test()</a></code> returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.</li>
 <li>Fixed the aggregated Dirichlet-multinomial composition likelihood (<code>_Type = 0</code>) not adding <code>addtocomp</code> to the expected and observed proportions.</li>

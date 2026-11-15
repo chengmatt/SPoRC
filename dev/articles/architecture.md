@@ -208,7 +208,7 @@ that moves fish through a season goes through that one file.
 | `model_movement.R` | `get_ctmc_bound_form`, `Get_Movement`, `get_movement_dp_design_matrix` | `utils_math.R` | `model_objective.R`, `setup_movement.R` |
 | `model_objective.R` | `SPoRC_rtmb` | `model_distributions.R`, `model_growth.R`, `model_init_naa.R`, `model_lik_at_age.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_movement.R`, `model_obs_fishery_survey.R`, `model_obs_tagging.R`, `model_osa.R`, `model_population_dynamics.R`, `model_precision.R`, `model_priors_penalties.R`, `model_projection.R`, `model_selectivity.R`, `setup_dsem.R`, `setup_recruitment.R`, `utils_setup.R` |  |
 | `model_obs_fishery_survey.R` | `get_blocked_analytic_q`, `get_fishery_observation_model`, `get_survey_observation_model` | `model_distributions.R`, `model_transition.R` | `model_objective.R` |
-| `model_obs_tagging.R` | `get_tag_mort`, `get_tagging_observation_model`, `release_conv_tag_attr` | `model_transition.R` | `model_objective.R`, `sim_observations.R` |
+| `model_obs_tagging.R` | `end_tag_cohort_season`, `get_tag_cohorts_at_liberty`, `get_tag_mort`, `get_tag_shed_group`, `get_tagging_observation_model`, `move_tag_cohorts`, `move_tag_vectors`, `release_conv_tag_attr`, `start_tag_cohort_season` | `model_transition.R`, `projection_constraints.R` | `model_objective.R`, `sim_observations.R` |
 | `model_osa.R` | `ddirmult_osa`, `dmultinom_osa`, `osa_dbetabinom`, `osa_extract_cdf`, `osa_extract_keep`, `osa_extract_values`, `osa_extract_x`, `osa_order`, `osa_pbetabinom`, `osa_pbinom`, `osa_squeeze` | nothing | `model_lik_comps.R`, `model_lik_tags.R`, `model_objective.R` |
 | `model_population_dynamics.R` | `compute_mortality_year`, `get_population_projection` | `model_biomass.R`, `model_growth.R`, `model_transition.R` | `model_objective.R` |
 | `model_precision.R` | `Get_3d_precision`, `get_dsem_arrow_values`, `get_dsem_cov_mean`, `get_dsem_grid`, `get_dsem_margvar`, `get_dsem_matrices`, `get_dsem_nLL`, `get_dsem_obs_nLL`, `get_dsem_precision`, `get_dsem_Q_oo`, `get_dsem_solve_mat`, `pack_dsem_cov_osa`, `set_dsem_solved_cells` | nothing | `diag_osa_residuals.R`, `model_objective.R`, `model_priors_penalties.R`, `plot_dsem.R`, `setup_dsem.R`, `sim_biologicals.R`, `sim_dsem.R`, `sim_naa_state.R` |
@@ -222,7 +222,7 @@ that moves fish through a season goes through that one file.
 
 | Script | Defines | Calls into | Called from |
 |----|----|----|----|
-| `projection_constraints.R` | `ad_value`, `catch_cap`, `catch_stability`, `constrain_proj_F`, `constraint_year_value` | `projection.R` | `model_projection.R`, `projection.R` |
+| `projection_constraints.R` | `ad_value`, `catch_cap`, `catch_stability`, `constrain_proj_F`, `constraint_year_value` | `projection.R` | `model_obs_tagging.R`, `model_projection.R`, `projection.R` |
 | `projection.R` | `bind_proj_SSB`, `build_proj_F`, `Do_Population_Projection`, `proj_catch_at_F`, `proj_target_catch`, `refine_proj_F_catch`, `run_proj_year`, `solve_log_catch_newton`, `solve_proj_F_catch`, `solve_proj_year_F` | `model_biomass.R`, `model_recruitment.R`, `model_transition.R`, `projection_constraints.R`, `sim_random_variates.R`, `utils_setup.R` | `model_projection.R`, `plot_figures_tables.R`, `projection_constraints.R`, `sim_closed_loop.R` |
 | `refpts_main.R` | `build_plus_group_T`, `check_msy_rec_model`, `Get_Reference_Points`, `optim_ref_pts`, `solve_plus_group` | `model_fit.R`, `model_transition.R`, `utils_setup.R` | `plot_figures_tables.R`, `refpts_msy.R`, `refpts_spr.R`, `setup_projection.R`, `sim_closed_loop.R` |
 | `refpts_msy.R` | `equil_rec_phi`, `equil_rec_ssb`, `equil_rec_ssb_deriv`, `global_Fmsy`, `global_Fmsy_quantities`, `local_Fmsy_multipop`, `local_Fmsy_multipop_quantities`, `local_Fmsy_sglpop`, `local_Fmsy_sglpop_quantities`, `single_region_Fmsy`, `single_region_Fmsy_quantities` | `model_transition.R`, `refpts_main.R`, `utils_setup.R` |  |
@@ -252,7 +252,7 @@ that moves fish through a season goes through that one file.
 | `diag_fits.R` | `get_caal_fits`, `get_caal_prop`, `get_comp_prop`, `get_idx_fits`, `Restrc_Comps` | `utils_setup.R` | `diag_francis.R`, `plot_figures_tables.R` |
 | `diag_francis.R` | `do_francis_reweighting`, `get_francis_weights`, `get_francis_weights_caal`, `run_francis`, `safe_inv_var` | `diag_fits.R`, `model_fit.R` | `diag_retrospective.R` |
 | `diag_jitter.R` | `do_jitter`, `jitter_start_values` | `model_fit.R` |  |
-| `diag_likelihood_profile.R` | `build_profile_map`, `check_analytic_q`, `check_profile_mirrors`, `do_likelihood_profile`, `weight_over_ages` | `model_fit.R`, `utils_setup.R` |  |
+| `diag_likelihood_profile.R` | `build_profile_map`, `check_analytic_q`, `check_profile_mirrors`, `check_profile_random`, `do_likelihood_profile`, `weight_over_ages` | `model_fit.R`, `utils_setup.R` |  |
 | `diag_osa_residuals.R` | `comp_osa_field_map`, `get_osa`, `index_osa_field_map`, `osa_default_bins`, `osa_keep_subset`, `osa_one_step_predict`, `plot_resids`, `run_external_comp_osa`, `run_internal_caal_osa`, `run_internal_comp_osa`, `run_internal_dsem_osa`, `run_internal_index_osa`, `run_internal_tag_osa`, `validate_osa_method` | `model_lik_at_age.R`, `model_lik_caal.R`, `model_lik_comps.R`, `model_lik_tags.R`, `model_precision.R`, `setup_dsem.R`, `utils_setup.R` |  |
 | `diag_retrospective.R` | `do_retrospective`, `get_retrospective_relative_difference`, `peel_map`, `peel_year_dim`, `truncate_idx_cov`, `truncate_yr` | `diag_francis.R`, `model_fit.R`, `setup_dsem.R`, `utils_setup.R` | `plot_figures_tables.R` |
 | `diag_runs_test.R` | `do_runs_test` | nothing |  |
@@ -482,16 +482,16 @@ use.
 | Prefix | Files | What it covers |
 |----|----|----|
 | `test-setup_*` | 23 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
-| `test-model_*` | 43 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
+| `test-model_*` | 44 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 7 | Shared numerical helpers |
-| `test-sim_*` | 19 | Operating model, including simulate then refit self tests |
+| `test-sim_*` | 20 | Operating model, including simulate then refit self tests |
 | `test-refpts_*` | 13 | SPR and MSY solvers, one file per spatial structure |
 | `test-projection_*` | 12 | Forward projection off a fitted model |
-| `test-diag_*` | 20 | Post fit diagnostics: retrospectives and OSA residuals |
+| `test-diag_*` | 22 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
-| `test-regression_*` | 18 | End to end fits pinning `obj$rep` and `nll` for known configurations |
+| `test-regression_*` | 20 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 266 test files in total.
+That is 273 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

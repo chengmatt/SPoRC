@@ -50,6 +50,7 @@
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
     <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/am_nsei_sablefish_case_study.html">NSEI Sablefish</a></li>
   </ul>
 </li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
@@ -833,11 +834,18 @@ one file.</p>
 <tr class="odd">
 <td><code>model_obs_tagging.R</code></td>
 <td>
-<code>get_tag_mort</code>,
+<code>end_tag_cohort_season</code>,
+<code>get_tag_cohorts_at_liberty</code>, <code>get_tag_mort</code>,
+<code>get_tag_shed_group</code>,
 <code>get_tagging_observation_model</code>,
-<code>release_conv_tag_attr</code>
+<code>move_tag_cohorts</code>, <code>move_tag_vectors</code>,
+<code>release_conv_tag_attr</code>,
+<code>start_tag_cohort_season</code>
 </td>
-<td><code>model_transition.R</code></td>
+<td>
+<code>model_transition.R</code>,
+<code>projection_constraints.R</code>
+</td>
 <td>
 <code>model_objective.R</code>, <code>sim_observations.R</code>
 </td>
@@ -998,7 +1006,8 @@ one file.</p>
 </td>
 <td><code>projection.R</code></td>
 <td>
-<code>model_projection.R</code>, <code>projection.R</code>
+<code>model_obs_tagging.R</code>, <code>model_projection.R</code>,
+<code>projection.R</code>
 </td>
 </tr>
 <tr class="even">
@@ -1361,8 +1370,8 @@ one file.</p>
 <td><code>diag_likelihood_profile.R</code></td>
 <td>
 <code>build_profile_map</code>, <code>check_analytic_q</code>,
-<code>check_profile_mirrors</code>, <code>do_likelihood_profile</code>,
-<code>weight_over_ages</code>
+<code>check_profile_mirrors</code>, <code>check_profile_random</code>,
+<code>do_likelihood_profile</code>, <code>weight_over_ages</code>
 </td>
 <td>
 <code>model_fit.R</code>, <code>utils_setup.R</code>
@@ -1950,7 +1959,7 @@ test setup happens to use.</p>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>43</td>
+<td>44</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
@@ -1961,7 +1970,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-sim_*</code></td>
-<td>19</td>
+<td>20</td>
 <td>Operating model, including simulate then refit self tests</td>
 </tr>
 <tr class="odd">
@@ -1976,7 +1985,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-diag_*</code></td>
-<td>20</td>
+<td>22</td>
 <td>Post fit diagnostics: retrospectives and OSA residuals</td>
 </tr>
 <tr class="even">
@@ -1987,13 +1996,13 @@ and the operating model</td>
 </tr>
 <tr class="odd">
 <td><code>test-regression_*</code></td>
-<td>18</td>
+<td>20</td>
 <td>End to end fits pinning <code>obj$rep</code> and <code>nll</code>
 for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 266 test files in total.</p>
+<p>That is 273 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

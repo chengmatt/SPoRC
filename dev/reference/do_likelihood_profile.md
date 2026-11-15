@@ -42,7 +42,11 @@ do_likelihood_profile(
 
 - random:
 
-  Character vector of random effects to estimate. Default `NULL`.
+  Character vector of random effects to estimate. Default `NULL`. With
+  random effects, `jnLL_df` holds the marginal and the profile warns
+  that it can be looked at but not the data components, since the random
+  effects couple the data sources and a component no longer tells you
+  that data source's contribution on its own.
 
 - what:
 
@@ -83,7 +87,11 @@ do_likelihood_profile(
 A named list containing one dataframe per likelihood component, each
 with a `prof_val` column indicating the profiled parameter value, plus
 `agg_nLL` which aggregates all components across their respective
-dimensions. Components include:
+dimensions. `jnLL_df` is the objective the fit minimizes: the joint
+negative log-likelihood, or with random effects the marginal, which is
+the joint at the random effect mode plus the Laplace term.
+`laplace_nLL_df` is that Laplace term, zero without random effects, and
+is added to `agg_nLL` only when `random` is set. Components include:
 
 - Scalar penalties and priors:
 

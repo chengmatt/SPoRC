@@ -98,8 +98,9 @@ do_jitter(
 
 A data frame of the jitter results: the spawning stock biomass and
 recruitment series of each run, with its jitter index, whether the
-Hessian was positive definite, the joint negative log-likelihood, and
-the maximum absolute gradient of the fixed effects. Under
+Hessian was positive definite, the objective the fit minimized as `jnLL`
+(the joint negative log-likelihood, or with random effects the
+marginal), and the maximum absolute gradient of the fixed effects. Under
 `return_start_values = TRUE`, a list of two elements:
 
 - `jitter_df`:

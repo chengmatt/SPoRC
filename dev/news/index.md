@@ -271,6 +271,10 @@
   (reported as `extra_nLL`), where `env` is the objective’s environment,
   so the function can read anything the model computes (movement,
   mortality, numbers at age, spawning biomass, selectivities, …).
+- `do_likelihood_profile` warns when `random` is set that the marginal
+  in `jnLL_df` can be looked at but not the data components, since the
+  random effects couple the data sources. The Laplace term is returned
+  as `laplace_nLL_df`.
 
 ### Improvements
 
@@ -309,9 +313,23 @@
 - Improved gamma dome selectivity parameterization (`Selex_Model = 1`)
   returning NaN at extreme optimizer guesess. Should give equivalent
   results to the old form.
+- Expected compositions are normalized once, after ageing error, which
+  gives the same likelihoods with a shorter random effects hessian (GOA
+  pollock 26b gradient 37% faster).
+- The tag likelihood adds `addtotag` once per pooled cell after summing
+  the predicted recaptures, the same values with a shorter tape.
+- Logistic normal compositions no longer normalize the expected values,
+  which their log ratios cancel; the same likelihoods, a BSB gradient
+  44% faster.
+- The zeros dropped logistic normal (types 5 and 6) is written bin by
+  bin, a sum of normals or a chain of conditional normals, without
+  forming its covariance.
 
 ### Bug Fixes
 
+- Fixed `do_likelihood_profile` and `do_jitter` reporting `jnLL` at the
+  random effect mode under random effects, rather than the marginal the
+  fit minimizes.
 - Fixed the time-varying selectivity smoothing penalty not being applied
   in the first year.
 - Fixed the projection dropping the AD class when joining assessment and

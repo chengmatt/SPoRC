@@ -23,7 +23,8 @@ dlogistnormal(obs, pred, Sigma, give_log = TRUE, jacobian = FALSE)
 - pred:
 
   Numeric vector of predicted proportions of length \\K\\; the last
-  element is the ALR reference.
+  element is the ALR reference. Need not sum to 1, since the log ratios
+  cancel any common scaling.
 
 - Sigma:
 

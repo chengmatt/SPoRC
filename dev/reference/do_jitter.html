@@ -51,6 +51,7 @@ future."><meta name="robots" content="noindex"></head><body>
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
     <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/am_nsei_sablefish_case_study.html">NSEI Sablefish</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -168,8 +169,9 @@ list of <code>jitter_df</code> and <code>start_values</code>, described under Va
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame of the jitter results: the spawning stock biomass and
   recruitment series of each run, with its jitter index, whether the Hessian
-  was positive definite, the joint negative log-likelihood, and the maximum
-  absolute gradient of the fixed effects. Under
+  was positive definite, the objective the fit minimized as <code>jnLL</code> (the
+  joint negative log-likelihood, or with random effects the marginal), and
+  the maximum absolute gradient of the fixed effects. Under
   <code>return_start_values = TRUE</code>, a list of two elements:</p><dl><dt><code>jitter_df</code></dt>
 <dd><p>The data frame above.</p></dd>
 

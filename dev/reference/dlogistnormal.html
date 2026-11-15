@@ -41,6 +41,7 @@ is \(\mu_k = \log(\hat{p}_k / \hat{p}_K)\), \(k = 1,\ldots,K-1\)."><meta name="r
     <li><a class="dropdown-item" href="../articles/ah_north_sea_sandeel_case_study.html">North Sea Sand Eel</a></li>
     <li><a class="dropdown-item" href="../articles/ai_nea_cod_case_study.html">Northeast Arctic Cod</a></li>
     <li><a class="dropdown-item" href="../articles/al_goa_pollock_case_study.html">GOA Walleye Pollock</a></li>
+    <li><a class="dropdown-item" href="../articles/am_nsei_sablefish_case_study.html">NSEI Sablefish</a></li>
   </ul></li>
 <li class="nav-item"><a class="nav-link" href="../articles/aj_development_roadmap.html">Roadmap</a></li>
 <li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
@@ -83,7 +84,8 @@ is \(\mu_k = \log(\hat{p}_k / \hat{p}_K)\), \(k = 1,\ldots,K-1\).</p>
 
 <dt id="arg-pred">pred<a class="anchor" aria-label="anchor" href="#arg-pred"></a></dt>
 <dd><p>Numeric vector of predicted proportions of length \(K\);
-the last element is the ALR reference.</p></dd>
+the last element is the ALR reference. Need not sum to 1, since the log
+ratios cancel any common scaling.</p></dd>
 
 
 <dt id="arg-sigma">Sigma<a class="anchor" aria-label="anchor" href="#arg-sigma"></a></dt>

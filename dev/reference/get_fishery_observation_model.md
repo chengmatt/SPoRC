@@ -102,8 +102,9 @@ get_fishery_observation_model(
 
 - CAA, DAA:
 
-  Arrays `[pop, region, year, season, age, sex, fish_fleet]`, output
-  containers for retained/discarded catch at age.
+  Arrays `[pop, region, year, season, age, sex, fish_fleet]` for
+  retained/discarded catch at age, replaced whole by
+  `ret_FAA`/`disc_FAA` times the abundance available.
 
 - CAL, DAL:
 

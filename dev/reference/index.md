@@ -245,6 +245,8 @@ Assessment data inputs provided by SPoRC
   : Northeast Arctic cod data for the SAM case study
 - [`sgl_rg_goa_pollock_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_goa_pollock_data.md)
   : Gulf of Alaska walleye pollock data for the Rceattle case study
+- [`sgl_rg_nsei_sablefish_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_nsei_sablefish_data.md)
+  : Northern Southeast Inside sablefish data for the TMB case study
 
 ## Fitted Model Objects
 

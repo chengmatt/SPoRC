@@ -396,6 +396,9 @@ if(any(data$UseSrvIdx_pop == 1) || any(data$UseSrvAgeComps_pop == 1) || any(data
     if(!is.na(sum(retro_data$conv_tag_fish_reporting_blocks))) {
       retro_parameters$conv_tag_fish_reporting_pars <- parameters$conv_tag_fish_reporting_pars[,1:max(retro_data$conv_tag_fish_reporting_blocks),,drop = FALSE]
       retro_mapping$conv_tag_fish_reporting_pars <- factor(array(mapping$conv_tag_fish_reporting_pars, dim = dim(parameters$conv_tag_fish_reporting_pars))[,1:max(retro_data$conv_tag_fish_reporting_blocks),,drop = FALSE])
+      if(is.data.frame(retro_data$conv_tag_fishrep_prior)) { # trim fish erporting prior
+        retro_data$conv_tag_fishrep_prior <- retro_data$conv_tag_fishrep_prior[retro_data$conv_tag_fishrep_prior$block <= max(retro_data$conv_tag_fish_reporting_blocks),,drop = FALSE]
+      }
     }
 
     # Tag cohort stuff

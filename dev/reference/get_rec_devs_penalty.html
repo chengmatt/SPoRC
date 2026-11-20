@@ -94,8 +94,9 @@ process over time. Called from <code><a href="get_recruitment_penalty.html">get_
 
 
 <dt id="arg-rec-region-prop-spec">rec_region_prop_spec<a class="anchor" aria-label="anchor" href="#arg-rec-region-prop-spec"></a></dt>
-<dd><p>Integer switch; <code>1</code> skips populations and
-regions with a fixed zero recruitment proportion.</p></dd>
+<dd><p>Integer switch; <code>1</code> with <code>n_pop &gt; 1</code> skips
+populations and regions with a fixed zero recruitment proportion. A single
+population keeps a small proportion in every region, so nothing is skipped.</p></dd>
 
 
 <dt id="arg-rec-region-prop">rec_region_prop<a class="anchor" aria-label="anchor" href="#arg-rec-region-prop"></a></dt>

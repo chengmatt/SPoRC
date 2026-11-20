@@ -4,12 +4,12 @@
 
 This case study sets up the 2024 federal Alaska sablefish stock
 assessment in `SPoRC` and compares it against the operational ADMB model
-(`tem.tpl`). Unlike the [eastern Bering Sea pollock case
+(`tem.tpl`). Like the [eastern Bering Sea pollock case
 study](https://chengmatt.github.io/SPoRC/dev/articles/f_single_region_ebs_pollock_case_study.md),
-which is an exact bridge, this one is a *close* bridge: the population
-dynamics and most likelihood components correspond one to one, but a
-handful of conventions in `tem.tpl` have no counterpart in `SPoRC` and
-are deliberately not reproduced. Those are enumerated in [Where the two
+this one is a *close* bridge: the population dynamics and most
+likelihood components correspond one to one, but a handful of
+conventions in `tem.tpl` have no counterpart in `SPoRC` and are
+deliberately not reproduced. Those are enumerated in [Where the two
 models differ](#where-the-two-models-differ), and they are the reason
 the two trajectories are close rather than identical.
 

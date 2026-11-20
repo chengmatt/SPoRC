@@ -198,6 +198,8 @@
   bridging recent assessments.
 - Added a GOA walleye pollock case study bridging the 2026 `Rceattle`
   models 26a and 26b.
+- The EBS walleye pollock case study now bridges the 2026 `Rceattle`
+  base model (Model 26.0), with its data in `sgl_rg_ebswp_m26_data`.
 
 #### Model fitting and diagnostics
 
@@ -360,6 +362,9 @@
   more than one region. The likelihood was not affected.
 - Fixed `fit_model(model = )` stopping on a model that is not SPoRC’s,
   where there is a data list w/o `n_regions`.
+- Fixed `rec_region_prop_spec = "no_dispersal"` with one population
+  stopping with “Comparison is generally unsafe for AD types” in the
+  recruitment penalties.
 
 ## version 1.1.0
 

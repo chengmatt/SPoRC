@@ -220,6 +220,8 @@ Assessment data inputs provided by SPoRC
   : Sablefish data for multi region (3 area) case study
 - [`sgl_rg_ebswp_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebswp_data.md)
   : EBS Walleye Pollock data for single region case study
+- [`sgl_rg_ebswp_m26_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_ebswp_m26_data.md)
+  : EBS walleye pollock data for the Rceattle case study
 - [`sgl_rg_dusky_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_dusky_data.md)
   : Dusky data for single region assessment case study
 - [`sgl_rg_goa_nork_data`](https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_goa_nork_data.md)

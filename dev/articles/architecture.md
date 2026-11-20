@@ -489,9 +489,9 @@ use.
 | `test-projection_*` | 12 | Forward projection off a fitted model |
 | `test-diag_*` | 22 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
-| `test-regression_*` | 20 | End to end fits pinning `obj$rep` and `nll` for known configurations |
+| `test-regression_*` | 22 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 276 test files in total.
+That is 279 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

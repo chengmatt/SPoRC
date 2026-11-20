@@ -36,8 +36,9 @@ get_rec_devs_penalty(
 
 - rec_region_prop_spec:
 
-  Integer switch; `1` skips populations and regions with a fixed zero
-  recruitment proportion.
+  Integer switch; `1` with `n_pop > 1` skips populations and regions
+  with a fixed zero recruitment proportion. A single population keeps a
+  small proportion in every region, so nothing is skipped.
 
 - rec_region_prop:
 

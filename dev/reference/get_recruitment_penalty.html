@@ -115,8 +115,10 @@ the objective: the initial age deviations from
 
 
 <dt id="arg-rec-region-prop-spec">rec_region_prop_spec<a class="anchor" aria-label="anchor" href="#arg-rec-region-prop-spec"></a></dt>
-<dd><p>Integer switch; when <code>1</code>, populations and
-regions with a fixed zero recruitment proportion are skipped.</p></dd>
+<dd><p>Integer switch; when <code>1</code> and <code>n_pop &gt; 1</code>,
+populations and regions with a fixed zero recruitment proportion are skipped.
+A single population keeps a small proportion in every region, so nothing is
+skipped.</p></dd>
 
 
 <dt id="arg-rec-region-prop">rec_region_prop<a class="anchor" aria-label="anchor" href="#arg-rec-region-prop"></a></dt>

@@ -127,6 +127,7 @@
 <h4 id="case-studies-and-applications-1-2-0-9000">Case studies and applications<a class="anchor" aria-label="anchor" href="#case-studies-and-applications-1-2-0-9000"></a></h4>
 <ul><li>Added BSAI Atka mackerel, West Coast sablefish, EBS Pacific cod, North Sea sand eel, GOA Rex Sole, BSAI Northern Rock Sole case studies bridging recent assessments.</li>
 <li>Added a GOA walleye pollock case study bridging the 2026 <code>Rceattle</code> models 26a and 26b.</li>
+<li>The EBS walleye pollock case study now bridges the 2026 <code>Rceattle</code> base model (Model 26.0), with its data in <code>sgl_rg_ebswp_m26_data</code>.</li>
 </ul></div>
 <div class="section level4">
 <h4 id="model-fitting-and-diagnostics-1-2-0-9000">Model fitting and diagnostics<a class="anchor" aria-label="anchor" href="#model-fitting-and-diagnostics-1-2-0-9000"></a></h4>
@@ -179,6 +180,7 @@
 <li>Fixed simulating a Dirichlet-multinomial composition stopping in a year with no sample.</li>
 <li>Fixed <code><a href="../reference/get_comp_prop.html">get_comp_prop()</a></code> mixing regions and bins in aggregated compositions (<code>_Type = 0</code>) with more than one region. The likelihood was not affected.</li>
 <li>Fixed <code>fit_model(model = )</code> stopping on a model that is not SPoRC’s, where there is a data list w/o <code>n_regions</code>.</li>
+<li>Fixed <code>rec_region_prop_spec = "no_dispersal"</code> with one population stopping with “Comparison is generally unsafe for AD types” in the recruitment penalties.</li>
 </ul></div>
 </div>
     <div class="section level2">

@@ -68,6 +68,7 @@
 
 * Added BSAI Atka mackerel, West Coast sablefish, EBS Pacific cod, North Sea sand eel, GOA Rex Sole, BSAI Northern Rock Sole case studies bridging recent assessments.
 * Added a GOA walleye pollock case study bridging the 2026 `Rceattle` models 26a and 26b.
+* The EBS walleye pollock case study now bridges the 2026 `Rceattle` base model (Model 26.0), with its data in `sgl_rg_ebswp_m26_data`.
 
 ### Model fitting and diagnostics
 
@@ -112,6 +113,7 @@
 - Fixed simulating a Dirichlet-multinomial composition stopping in a year with no sample.
 - Fixed `get_comp_prop()` mixing regions and bins in aggregated compositions (`_Type = 0`) with more than one region. The likelihood was not affected.
 - Fixed `fit_model(model = )` stopping on a model that is not SPoRC's, where there is a data list w/o `n_regions`. 
+- Fixed `rec_region_prop_spec = "no_dispersal"` with one population stopping with "Comparison is generally unsafe for AD types" in the recruitment penalties.
 
 # version 1.1.0
 Release Date: 2026-3-31

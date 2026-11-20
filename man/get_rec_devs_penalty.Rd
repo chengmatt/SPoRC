@@ -27,8 +27,9 @@ get_rec_devs_penalty(
 \arguments{
 \item{n_pop, n_regions, n_est_rec_devs}{Dimension sizes.}
 
-\item{rec_region_prop_spec}{Integer switch; \code{1} skips populations and
-regions with a fixed zero recruitment proportion.}
+\item{rec_region_prop_spec}{Integer switch; \code{1} with \code{n_pop > 1} skips
+populations and regions with a fixed zero recruitment proportion. A single
+population keeps a small proportion in every region, so nothing is skipped.}
 
 \item{rec_region_prop}{Array \code{[pop, region]} of the regional
 apportionment.}

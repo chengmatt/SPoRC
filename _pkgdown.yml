@@ -232,6 +232,7 @@ reference:
       - mlt_rg_sable_data
       - three_rg_sable_data
       - sgl_rg_ebswp_data
+      - sgl_rg_ebswp_m26_data
       - sgl_rg_dusky_data
       - sgl_rg_goa_nork_data
       - sgl_rg_bsai_nork_data

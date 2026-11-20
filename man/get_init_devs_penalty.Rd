@@ -30,8 +30,10 @@ get_init_devs_penalty(
 \arguments{
 \item{n_pop, n_regions, n_ages}{Dimension sizes.}
 
-\item{rec_region_prop_spec}{Integer switch; when \code{1}, populations and
-regions with a fixed zero recruitment proportion are skipped.}
+\item{rec_region_prop_spec}{Integer switch; when \code{1} and \code{n_pop > 1},
+populations and regions with a fixed zero recruitment proportion are skipped.
+A single population keeps a small proportion in every region, so nothing is
+skipped.}
 
 \item{rec_region_prop}{Array \code{[pop, region]} of recruitment regional
 apportionment.}

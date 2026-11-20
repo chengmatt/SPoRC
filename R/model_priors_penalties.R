@@ -961,8 +961,10 @@ dev_own_mean <- function(devs, wt) {
 #' }
 #'
 #' @param n_pop,n_regions,n_ages Dimension sizes.
-#' @param rec_region_prop_spec Integer switch; when \code{1}, populations and
-#'   regions with a fixed zero recruitment proportion are skipped.
+#' @param rec_region_prop_spec Integer switch; when \code{1} and \code{n_pop > 1},
+#'   populations and regions with a fixed zero recruitment proportion are skipped.
+#'   A single population keeps a small proportion in every region, so nothing is
+#'   skipped.
 #' @param rec_region_prop Array \code{[pop, region]} of recruitment regional
 #'   apportionment.
 #' @param equil_init_age_strc Integer switch naming which initial age deviations
@@ -1071,7 +1073,8 @@ get_init_devs_penalty <- function(
   for(p in 1:n_pop) {
     for(r in 1:n_regions) {
 
-      if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next # no recruits here, no penalty
+      # one population's share is computed from its parameters and is never exactly zero, so it is not tested
+      if(n_pop > 1 && rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next # no recruits here, no penalty
 
       sigma_init <- exp(ln_sigmaR[1,p,r]) # initial ages read the early recruitment sigma
 
@@ -1127,8 +1130,9 @@ get_init_devs_penalty <- function(
 #' in the model equations vignette.
 #'
 #' @param n_pop,n_regions,n_est_rec_devs Dimension sizes.
-#' @param rec_region_prop_spec Integer switch; \code{1} skips populations and
-#'   regions with a fixed zero recruitment proportion.
+#' @param rec_region_prop_spec Integer switch; \code{1} with \code{n_pop > 1} skips
+#'   populations and regions with a fixed zero recruitment proportion. A single
+#'   population keeps a small proportion in every region, so nothing is skipped.
 #' @param rec_region_prop Array \code{[pop, region]} of the regional
 #'   apportionment.
 #' @param ln_sigmaR Array \code{[early/late, pop, region]} of log sigma.
@@ -1201,7 +1205,8 @@ get_rec_devs_penalty <- function(
   for(p in 1:n_pop) {
     for(r in 1:n_regions) {
 
-      if(rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next # no recruits here, no penalty
+      # one population's share is computed from its parameters and is never exactly zero, so it is not tested
+      if(n_pop > 1 && rec_region_prop_spec == 1 && as.numeric(rec_region_prop[p,r]) == 0) next # no recruits here, no penalty
 
       if(RecDevs_model == 1) {
 

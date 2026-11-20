@@ -21,9 +21,9 @@ knitr::opts_chunk$set(
 ## Overview
 
 This case study sets up the 2024 federal Alaska sablefish stock assessment in
-`SPoRC` and compares it against the operational ADMB model (`tem.tpl`). Unlike
+`SPoRC` and compares it against the operational ADMB model (`tem.tpl`). Like
 the [eastern Bering Sea pollock case study](f_single_region_ebs_pollock_case_study.html),
-which is an exact bridge, this one is a *close* bridge: the population dynamics
+this one is a *close* bridge: the population dynamics
 and most likelihood components correspond one to one, but a handful of
 conventions in `tem.tpl` have no counterpart in `SPoRC` and are deliberately not
 reproduced. Those are enumerated in

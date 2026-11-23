@@ -1,5 +1,10 @@
 # Multi-WHAM black sea bass bridge
 
+*Disclaimer: this bridge is a demonstration of how an existing assessment can
+be set up in SPoRC. It is not an official stock assessment and should not be
+used for management advice. Please refer to the assessment document for
+official results.*
+
 Bridges `fit_0` from Miller, Curti and Hansell (multi-region, multi-stock WHAM applied to
 northern and southern black sea bass) into SPoRC. `fit_0` is the base run: no temperature
 effect on recruitment or natural mortality, no natural mortality random effects.

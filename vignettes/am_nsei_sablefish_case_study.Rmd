@@ -9,6 +9,8 @@ vignette: >
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing assessment can be set up in `SPoRC`. It is not an official stock assessment and should not be used for management advice. Please refer to the assessment document for official results.*
+
 In this vignette, we will demonstrate how the 2025 Northern Southeast Inside (NSEI) sablefish stock assessment, conducted by the Alaska Department of Fish and Game (Lambert and Ehresmann 2026), can be set up in `SPoRC` and compares model outputs from `SPoRC` to the existing TMB model (`scaa_mod_v23_Aaron2.cpp`, run `v23_3f_3s_2016_NEW_FINAL`). The NSEI sablefish stock is assessed as a panmictic single-region model from 1975 to 2025, with 2 sexes (females and males), ages 2 to 31 (with a plus group), 2 cm length bins from 41 to 99 cm, 1 fishery, and 3 indices (a longline survey CPUE, a fishery CPUE, and a mark-recapture abundance estimate).
 
 | Data source | Years | Observations | Likelihood |

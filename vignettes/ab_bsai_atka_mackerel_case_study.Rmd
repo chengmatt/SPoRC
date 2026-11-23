@@ -20,6 +20,11 @@ knitr::opts_chunk$set(
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing assessment
+can be set up in `SPoRC`. It is not an official stock assessment and should not
+be used for management advice. Please refer to the assessment document for
+official results.*
+
 This case study reproduces the 2024 Bering Sea and Aleutian Islands Atka
 mackerel assessment, Model 16.0b, in `SPoRC`. 
 

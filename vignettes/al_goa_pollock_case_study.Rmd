@@ -9,6 +9,11 @@ vignette: >
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing assessment
+can be set up in `SPoRC`. It is not an official stock assessment and should not
+be used for management advice. Please refer to the assessment document for
+official results.*
+
 This case study bridges the two models proposed for the 2026 Gulf of Alaska walleye
 pollock assessment (Monnahan et al. 2026) from `Rceattle` into `SPoRC`. `Rceattle`
 (Adams et al. 2022) is an age-structured assessment framework written in TMB, and the

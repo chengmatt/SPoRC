@@ -1,5 +1,10 @@
 # EBS Pacific cod bridge
 
+*Disclaimer: this bridge is a demonstration of how an existing assessment can
+be set up in SPoRC. It is not an official stock assessment and should not be
+used for management advice. Please refer to the assessment document for
+official results.*
+
 SPoRC rebuilt from the 2024 eastern Bering Sea Pacific cod assessment (Stock
 Synthesis Model 24.1, Barbeaux et al. 2024) and evaluated at the assessment's own
 maximum likelihood estimate. One area, one sex, ages 0-20, 1977-2024, with

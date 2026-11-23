@@ -9,6 +9,8 @@ vignette: >
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing assessment can be set up in `SPoRC`. It is not an official stock assessment and should not be used for management advice. Please refer to the assessment document for official results.*
+
 In this vignette, we will demonstrate how the base model of the 2026 eastern Bering Sea (EBS) walleye pollock assessment (Model 26.0; Ianelli et al. 2026) can be set up in `SPoRC`, and compare model outputs from `SPoRC` to the same model fit in `Rceattle` (Adams et al. 2022), the age-structured framework the assessment moved to in 2026. We use the September 2026 version of Model 26.0, whose input file is public, with data from 1964 to 2024. The stock is assessed as a single region with one sex, ages 1 to 15 (with a plus group), one fishery, and four survey indices, together with an early fishery CPUE.
 
 | Data source | Years | Observations | Likelihood |

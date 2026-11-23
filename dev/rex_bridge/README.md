@@ -1,5 +1,10 @@
 # GOA rex sole bridge
 
+*Disclaimer: this bridge is a demonstration of how an existing assessment can
+be set up in SPoRC. It is not an official stock assessment and should not be
+used for management advice. Please refer to the assessment document for
+official results.*
+
 SPoRC rebuilt from the 2025 Gulf of Alaska rex sole assessment (Stock Synthesis
 Model 25.1, `runs/2025_models/run_14_asfor7_ageing_error` in Carey McGilliard's
 `goa_rex` repository) and evaluated at the assessment's own maximum likelihood

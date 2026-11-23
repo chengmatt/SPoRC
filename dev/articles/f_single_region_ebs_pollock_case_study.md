@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 In this vignette, we will demonstrate how the base model of the 2026
 eastern Bering Sea (EBS) walleye pollock assessment (Model 26.0; Ianelli
 et al. 2026) can be set up in `SPoRC`, and compare model outputs from

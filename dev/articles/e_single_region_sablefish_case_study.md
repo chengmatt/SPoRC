@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 This case study sets up the 2024 federal Alaska sablefish stock
 assessment in `SPoRC` and compares it against the operational ADMB model
 (`tem.tpl`). Like the [eastern Bering Sea pollock case

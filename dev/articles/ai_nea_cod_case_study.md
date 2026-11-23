@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 This case study bridges the State-space Assessment Model (SAM), the
 model ICES uses for many of its age-structured assessments, into `SPoRC`
 for Northeast Arctic cod. We use the stock’s input files from the ICES

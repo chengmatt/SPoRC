@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 This case study reproduces Model 24.1 of the 2024 eastern Bering Sea
 Pacific cod assessment (Barbeaux et al. 2024), run in Stock Synthesis 3,
 in `SPoRC`.

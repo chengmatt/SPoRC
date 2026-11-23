@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 This case study reproduces the 2024 Bering Sea and Aleutian Islands
 northern rock sole assessment, Model 24.2, in `SPoRC`. The assessment
 runs on the flatfish model `fm.tpl`.

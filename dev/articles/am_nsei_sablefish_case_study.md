@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 In this vignette, we will demonstrate how the 2025 Northern Southeast
 Inside (NSEI) sablefish stock assessment, conducted by the Alaska
 Department of Fish and Game (Lambert and Ehresmann 2026), can be set up

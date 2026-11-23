@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 This case study reproduces the 2024 Gulf of Alaska northern rockfish
 assessment in `SPoRC`. Every structural choice below follows the
 assessment rather than `SPoRC`’s defaults, and the result is an exact

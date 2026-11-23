@@ -2,6 +2,11 @@
 
 ## Overview
 
+*Disclaimer: this case study is a demonstration of how an existing
+assessment can be set up in `SPoRC`. It is not an official stock
+assessment and should not be used for management advice. Please refer to
+the assessment document for official results.*
+
 This case study bridges `smsR`, the seasonal assessment model used for
 four North Sea sandeel stocks and for sprat, into `SPoRC`. The stock is
 sandeel in area 1r, 1983 to 2021, ages 0 to 4, two seasons, one region

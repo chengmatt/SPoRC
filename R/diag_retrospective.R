@@ -1068,6 +1068,9 @@ do_retrospective <- function(
 
   } # do parrallelization for retrospective loop
 
+  # label for plot(), the results are still a data frame
+  class(retro_all) <- c("sporc_retro", class(retro_all))
+
   # return models
   if(return_models) {
     return(list(

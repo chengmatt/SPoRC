@@ -149,9 +149,12 @@
 #'   \code{\link{do_likelihood_profile}}) do not record / save these settings
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'
-#' @return The RTMB \code{ADFun} object with additional fields: \code{$optim}
+#' @return The RTMB \code{ADFun} object, a list of class \code{sporc_fit} with
+#'   \code{print}, \code{summary}, \code{logLik} and \code{plot} methods (see
+#'   \code{\link{sporc_fit}}), with additional fields: \code{$optim}
 #'   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
-#'   the bounds used), \code{$rep} (the model report evaluated at
+#'   the bounds used and \code{$gradient} the gradient at the estimates),
+#'   \code{$rep} (the model report evaluated at
 #'   \code{obj$env$last.par.best}; with \code{random} set, \code{jnLL} is at the
 #'   random effect mode and \code{$rep} also has \code{marginal_nLL}, the marginal
 #'   the fit minimized, and \code{laplace_nLL}, the marginal minus \code{jnLL}),
@@ -311,6 +314,9 @@ fit_model <- function(
     # return obj estimate here
     optim$objective = as.numeric(obj$fn(optim$par))
 
+    # gradient at the estimates, so convergence can be read off the fit without the sdreport
+    optim$gradient = as.numeric(obj$gr(optim$par))
+
     # record bounds used alongside optim output
     optim$lower <- lower
     optim$upper <- upper
@@ -356,7 +362,7 @@ fit_model <- function(
   # if doing sdrep
   if(do_sdrep) obj$sd_rep <- RTMB::sdreport(obj)
 
-  # attach inputs used to construct the model for reference, reuse, and serialization
+  # attach inputs used to construct the model for reference
   obj$data <- data
   obj$parameters <- parameters
   obj$mapping <- mapping
@@ -374,6 +380,9 @@ fit_model <- function(
                                                              corr_tol = check_control$corr_tol
     )
   }
+
+  # class for the print, summary, logLik and plot methods, the fit is still a list
+  class(obj) <- c("sporc_fit", class(obj))
 
   return(obj)
 }

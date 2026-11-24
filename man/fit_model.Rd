@@ -174,9 +174,12 @@ returns or stops. The diagnostics that refit the model
 \item{...}{Additional arguments forwarded to \code{RTMB::MakeADFun}.}
 }
 \value{
-The RTMB \code{ADFun} object with additional fields: \code{$optim}
+The RTMB \code{ADFun} object, a list of class \code{sporc_fit} with
+  \code{print}, \code{summary}, \code{logLik} and \code{plot} methods (see
+  \code{\link{sporc_fit}}), with additional fields: \code{$optim}
   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
-  the bounds used), \code{$rep} (the model report evaluated at
+  the bounds used and \code{$gradient} the gradient at the estimates),
+  \code{$rep} (the model report evaluated at
   \code{obj$env$last.par.best}; with \code{random} set, \code{jnLL} is at the
   random effect mode and \code{$rep} also has \code{marginal_nLL}, the marginal
   the fit minimized, and \code{laplace_nLL}, the marginal minus \code{jnLL}),
@@ -217,6 +220,7 @@ Other Utility:
 \code{\link[=label_dims]{label_dims()}},
 \code{\link[=post_optim_sanity_checks]{post_optim_sanity_checks()}},
 \code{\link[=rho_trans]{rho_trans()}},
-\code{\link[=set_data_indicator_unused]{set_data_indicator_unused()}}
+\code{\link[=set_data_indicator_unused]{set_data_indicator_unused()}},
+\code{\link{sporc_fit}}
 }
 \concept{Utility}

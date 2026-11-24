@@ -3,16 +3,6 @@
 # The generated half of the options documentation. t_model_options.Rmd says why a setting exists;
 # this reads the package itself and lists every setting there is.
 
-#' The setup stages, in the order a model is built
-#'
-#' @keywords internal
-setup_stage_order <- function() {
-  c("Setup_Mod_Dim", "Setup_Mod_Rec", "Setup_Mod_Biologicals", "Setup_Mod_Movement",
-    "Setup_Mod_Tagging", "Setup_Mod_Catch_and_F", "Setup_Mod_FishIdx_and_Comps",
-    "Setup_Mod_SrvIdx_and_Comps", "Setup_Mod_Fishsel_and_Q", "Setup_Mod_Srvsel_and_Q",
-    "Setup_Mod_DSEM", "Setup_Mod_Weighting", "Setup_Mod_Projection")
-}
-
 #' The package's Rd database, wherever it is being read from
 #'
 #' Three places this gets called from and each needs a different route. An
@@ -85,7 +75,8 @@ rd_argument_text <- function(topic, db) {
 #' argument as the package currently defines them, not as someone last wrote
 #' them down. Regenerating the vignette regenerates this.
 #'
-#' @param stages Function names to document. Defaults to the eleven setup stages.
+#' @param stages Function names to document. Defaults to every setup stage, in
+#'   the order a model is built.
 #' @param guide Path to the hand-written options guide, checked so the reference
 #'   can report which settings it also discusses. \code{NULL} skips the check.
 #'
@@ -99,7 +90,11 @@ rd_argument_text <- function(topic, db) {
 #' }
 #'
 #' @export
-option_reference <- function(stages = setup_stage_order(), guide = NULL) {
+option_reference <- function(stages = c("Setup_Mod_Dim", "Setup_Mod_Rec", "Setup_Mod_Biologicals", "Setup_Mod_Movement",
+                                        "Setup_Mod_Tagging", "Setup_Mod_Catch_and_F", "Setup_Mod_FishIdx_and_Comps",
+                                        "Setup_Mod_SrvIdx_and_Comps", "Setup_Mod_Fishsel_and_Q", "Setup_Mod_Srvsel_and_Q",
+                                        "Setup_Mod_DSEM", "Setup_Mod_Weighting", "Setup_Mod_Projection"),
+                             guide = NULL) {
 
   db <- rd_database()
 

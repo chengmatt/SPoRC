@@ -36,8 +36,7 @@ sable_srr_opt <- function() {
     sex_ratio_f = array(0.5, dim = c(n_pop, n_regions)),
     sgl_seas_spawning_movement = NULL,
     stray_rate = array(0, dim = n_pop),
-    # the packaged report predates seasonal M, so it has no season dimension to read
-    natmort = array(rp$natmort[,,ny,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
+    natmort = array(rp$natmort[,,ny,,,1], dim = c(n_pop, n_regions, n_seas, n_ages)),
     fish_sel = array(rp$fish_sel[,,ny,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     ret_sel = array(rp$ret_sel[,,ny,,,1,], dim = c(n_pop, n_regions, n_seas, n_ages, n_fish_fleets)),
     init_F = array(0, dim = c(n_regions, n_seas, n_fish_fleets)),

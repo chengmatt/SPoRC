@@ -1211,7 +1211,8 @@ get_catch_fits_plot <- function(data,
 #' runs: a relative-difference plot with Mohn's rho, an absolute-scale
 #' trajectory plot, and a cohort-tracking squid plot for recruitment. Together
 #' these plots diagnose systematic retrospective patterns in SSB and recruitment
-#' estimates across sequential data removals.
+#' estimates across sequential data removals. \code{plot(retro_output, Rec_Age)}
+#' on the results of \code{\link{do_retrospective}} draws the same plots.
 #'
 #' @param retro_output Data frame produced by \code{do_retrospective}, containing
 #'   columns \code{Year}, \code{value}, \code{peel}, \code{Type} (e.g.

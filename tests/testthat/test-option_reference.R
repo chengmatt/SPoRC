@@ -8,7 +8,7 @@
 test_that("the reference covers every argument of every setup stage", {
   ref <- option_reference()
 
-  for(s in setup_stage_order()) {
+  for(s in eval(formals(option_reference)$stages)) {
     want <- setdiff(names(formals(getExportedValue("SPoRC", s))),
                     c("input_list", "...", "verbose"))
     got <- ref$argument[ref$stage == sub("^Setup_Mod_", "", s)]
@@ -52,7 +52,7 @@ test_that("the reference reports which settings the written guide also discusses
 test_that("the stages are listed in the order a model is built", {
   # the vignette groups by this order, so a reader going top to bottom follows the stages.
   # dimensions first and the projection last, since it projects the model the other stages build
-  o <- setup_stage_order()
+  o <- eval(formals(option_reference)$stages) # the default stages
 
   expect_equal(o[1], "Setup_Mod_Dim")
   expect_equal(o[length(o)], "Setup_Mod_Projection")

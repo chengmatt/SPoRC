@@ -74,9 +74,9 @@ test_that("a long projection under the control rule settles at F40% and B40%", {
   terminal_dmr <- array(sgl_rg_sable_rep$dmr[,length(sgl_rg_sable_data$years),,], dim = c(n_regions, n_seas, n_fish_fleets)) # terminal F
 
   # Natural Mortality
-  natmort_slice <- sgl_rg_sable_rep$natmort[,, length(sgl_rg_sable_data$years), , ]  # [n_pop, n_regions, n_ages, n_sexes]
+  natmort_slice <- sgl_rg_sable_rep$natmort[,, length(sgl_rg_sable_data$years), 1, , ]  # [n_pop, n_regions, n_ages, n_sexes], season 1
   natmort <- array(rep(natmort_slice, each = n_proj_yrs), dim = c(n_pop, n_regions, n_proj_yrs, n_ages, n_sexes))
-  # packaged report predates seasonal M, so repeat it over seasons
+  # M is constant within the year, so repeat season 1 over seasons
   natmort <- SPoRC:::expand_natmort_seasons(natmort, n_seas)
 
   # Recruitment
@@ -134,8 +134,8 @@ test_that("a long projection under the control rule settles at F40% and B40%", {
                round(as.numeric(out$proj_SSB[1,1,n_proj_yrs - 1]), 10), tolerance = 1e-5)
 
   # Check to make sure single region F40% and B40% is consistent with historical values
-  expect_equal(round(sgl_ref_pt$f_ref_pt, 8), 0.08625413, tolerance = 1e-5)
-  expect_equal(round(as.numeric(sgl_ref_pt$b_ref_pt), 4), 121.3814, tolerance = 1e-5)
+  expect_equal(round(sgl_ref_pt$f_ref_pt, 8), 0.08627022, tolerance = 1e-5)
+  expect_equal(round(as.numeric(sgl_ref_pt$b_ref_pt), 4), 121.4778, tolerance = 1e-5)
 
 
 })

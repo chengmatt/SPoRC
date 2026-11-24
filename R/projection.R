@@ -950,10 +950,31 @@ run_proj_year <- function(y,
     # share before mortality and ageing run
     if(age0_rec && seas == spawn_seas) {
 
-      biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
-                              n_seas, n_pop, n_regions, n_ages, n_sexes,
-                              sgl_seas_spawning_movement, natal_region, stray_rate,
-                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
+      biom <- compute_biom_y(
+        y = y, # projection year
+        seas = seas, # spawning season
+        NAA = proj_NAA, # projected numbers at age, fished
+        NAA0 = proj_NAA0, # projected numbers at age, unfished
+        WAA = WAA,
+        MatAA = MatAA,
+        ZAA = proj_ZAA, # projected total mortality
+        natmort = natmort,
+        t_spawn = t_spawn,
+        seasdur = seasdur,
+        n_seas = n_seas,
+        n_pop = n_pop,
+        n_regions = n_regions,
+        n_ages = n_ages,
+        n_sexes = n_sexes,
+        sgl_seas_spawning_movement = sgl_seas_spawning_movement,
+        natal_region = natal_region,
+        stray_rate = stray_rate,
+        Movement = Movement,
+        Mrate = Mrate,
+        move_timing = move_timing,
+        do_recruits_move = do_recruits_move,
+        expm_nsub = expm_nsub
+      )
       proj_SSB[,, y] <- biom$SSB_y
       proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
       proj_eff_SSB[,y] <- biom$eff_SSB_y
@@ -1070,10 +1091,31 @@ run_proj_year <- function(y,
 
     # Derive Biomass (age0_rec: already computed above, before mortality/ageing),
     if(seas == spawn_seas && !age0_rec) {
-      biom <- derive_proj_biom(y, seas, proj_NAA, proj_NAA0, WAA, MatAA, proj_ZAA, natmort, t_spawn, seasdur,
-                              n_seas, n_pop, n_regions, n_ages, n_sexes,
-                              sgl_seas_spawning_movement, natal_region, stray_rate,
-                              Movement, Mrate, move_timing, do_recruits_move, expm_nsub = expm_nsub)
+      biom <- compute_biom_y(
+        y = y, # projection year
+        seas = seas, # spawning season
+        NAA = proj_NAA, # projected numbers at age, fished
+        NAA0 = proj_NAA0, # projected numbers at age, unfished
+        WAA = WAA,
+        MatAA = MatAA,
+        ZAA = proj_ZAA, # projected total mortality
+        natmort = natmort,
+        t_spawn = t_spawn,
+        seasdur = seasdur,
+        n_seas = n_seas,
+        n_pop = n_pop,
+        n_regions = n_regions,
+        n_ages = n_ages,
+        n_sexes = n_sexes,
+        sgl_seas_spawning_movement = sgl_seas_spawning_movement,
+        natal_region = natal_region,
+        stray_rate = stray_rate,
+        Movement = Movement,
+        Mrate = Mrate,
+        move_timing = move_timing,
+        do_recruits_move = do_recruits_move,
+        expm_nsub = expm_nsub
+      )
       proj_SSB[,, y] <- biom$SSB_y
       proj_Dynamic_SSB0[,,y] <- biom$Dynamic_SSB0_y
       proj_eff_SSB[,y] <- biom$eff_SSB_y

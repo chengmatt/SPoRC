@@ -4,10 +4,18 @@
 \alias{option_reference}
 \title{Every argument the setup stages accept}
 \usage{
-option_reference(stages = setup_stage_order(), guide = NULL)
+option_reference(
+  stages = c("Setup_Mod_Dim", "Setup_Mod_Rec", "Setup_Mod_Biologicals",
+    "Setup_Mod_Movement", "Setup_Mod_Tagging", "Setup_Mod_Catch_and_F",
+    "Setup_Mod_FishIdx_and_Comps", "Setup_Mod_SrvIdx_and_Comps",
+    "Setup_Mod_Fishsel_and_Q", "Setup_Mod_Srvsel_and_Q", "Setup_Mod_DSEM",
+    "Setup_Mod_Weighting", "Setup_Mod_Projection"),
+  guide = NULL
+)
 }
 \arguments{
-\item{stages}{Function names to document. Defaults to the eleven setup stages.}
+\item{stages}{Function names to document. Defaults to every setup stage, in
+the order a model is built.}
 
 \item{guide}{Path to the hand-written options guide, checked so the reference
 can report which settings it also discusses. \code{NULL} skips the check.}

@@ -165,11 +165,15 @@ get_par_est_info <- function(parameters, mapping, sd_rep) {
     dplyr::mutate(map = ifelse(map != 'NE', as.character(cumsum(map != 'NE')), 'NE'),
                   Par_Num_map = paste(Par, map, sep = "_")) # now, make a variable that is consistent with numbering in sdreport
 
+  # sdreport stores the random effect variances, so take the square root
+  se_random <- NULL # stays NULL without random effects
+  if(!is.null(sd_rep$diag.cov.random)) se_random <- sqrt(sd_rep$diag.cov.random)
+
   # now, get estimater parameter names and values
   est_names <- data.frame(
     Par = c(names(sd_rep$par.fixed), names(sd_rep$par.random)),
     Est_Val = c(sd_rep$par.fixed, sd_rep$par.random),
-    SE_Val = c(sqrt(diag(sd_rep$cov.fixed)), sd_rep$diag.cov.random),
+    SE_Val = c(sqrt(diag(sd_rep$cov.fixed)), se_random),
     Abs_Grad_Val = c(abs(as.vector(sd_rep$gradient.fixed)), rep(NA, length(sd_rep$diag.cov.random)))
   ) %>%
     dplyr::group_by(Par) %>%

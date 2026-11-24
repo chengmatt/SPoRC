@@ -90,6 +90,8 @@
 * Added `data$extra_nll`, a likelihood from outside the package: a function `(pars, env)` whose value is added to the joint likelihood (reported as `extra_nLL`), where `env` is the objective's environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, ...).
 * `do_likelihood_profile` warns when `random` is set that the marginal in `jnLL_df` can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as `laplace_nLL_df`.
 * With `random` set, `fit_model` adds `marginal_nLL` and `laplace_nLL` to `obj$rep`, and `get_nLL_plot` shows the marginal as the total.
+* `fit_model` returns a list of class `sporc_fit` with `print`, `summary`, `logLik` and `plot` methods, so `AIC(fit_1, fit_2)` and `plot(fit, type = "selex")` work. The general format of these functions remain unchanged.
+* `plot()` works on the results of `do_retrospective` and `get_osa` as well, and plot what `get_retrospective_plot` and `plot_resids` plot.
 
 ## Improvements
 - Numeric and character codes are both accepted for simulator dynamics, matching the estimation model.
@@ -105,6 +107,7 @@
 - The zeros dropped logistic normal (types 5 and 6) is written bin by bin, a sum of normals or a chain of conditional normals, without forming its covariance. 
 
 ## Bug Fixes
+- Fixed `get_par_est_info` reporting the variance of a random effect in `SE_Val` rather than its standard error.
 - Fixed `do_likelihood_profile` and `do_jitter` reporting `jnLL` at the random effect mode under random effects, rather than the marginal the fit minimizes.
 - Fixed the time-varying selectivity smoothing penalty not being applied in the first year.
 - Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.

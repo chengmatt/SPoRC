@@ -16,7 +16,7 @@ test_that("the message names the fleet and every accepted value", {
   expect_match(m, "FishAgeComps_LikeType has 1 entry")
   expect_match(m, 'fleet 2 was given "multinomial"')
   # the three -miss0 forms are what the old message left out
-  for(v in SPoRC:::comp_like_type_options()) expect_match(m, v, fixed = TRUE)
+  for(v in eval(formals(SPoRC:::check_comp_like_type)$allowed)) expect_match(m, v, fixed = TRUE)
 })
 
 test_that("a near miss gets a suggestion and a distant one does not", {

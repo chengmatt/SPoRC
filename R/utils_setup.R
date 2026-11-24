@@ -1333,16 +1333,6 @@ obs_len_labels <- function(data) {
   labels
 }
 
-#' The composition likelihoods a fleet can be given
-#'
-#' @return Character vector of accepted values, in the order the message lists them.
-#' @keywords internal
-comp_like_type_options <- function() {
-  c("none", "Multinomial", "Dirichlet-Multinomial",
-    "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal",
-    "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0")
-}
-
 #' Check a composition likelihood setting
 #'
 #' Names the fleets that were given something unrecognized, and suggests the accepted
@@ -1350,13 +1340,17 @@ comp_like_type_options <- function() {
 #'
 #' @param x Character vector given for the setting, one entry per fleet.
 #' @param what Character. The argument name, used in the message.
-#' @param allowed Character vector of accepted values.
+#' @param allowed Character vector of accepted values, in the order the message
+#'   lists them.
 #' @param note Character. Sentence appended after the accepted values, explaining
 #'   what the less obvious ones do.
 #'
 #' @return \code{x}, invisibly.
 #' @keywords internal
-check_comp_like_type <- function(x, what, allowed = comp_like_type_options(),
+check_comp_like_type <- function(x, what,
+                                 allowed = c("none", "Multinomial", "Dirichlet-Multinomial",
+                                             "iid-Logistic-Normal", "1d-Logistic-Normal", "2d-Logistic-Normal",
+                                             "iid-Logistic-Normal-miss0", "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0"),
                                  note = paste0("The -miss0 forms drop the empty bins and scale the standard deviation by the ",
                                                "input sample size.")) {
 

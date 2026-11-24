@@ -441,7 +441,9 @@ run_internal_comp_osa <- function(
       )
     )
 
-  list(res = res)
+  osa_out <- list(res = res)
+  class(osa_out) <- c("sporc_osa", class(osa_out)) # label for plot()
+  osa_out
 }
 
 #' Run internal (model-based) OSA residuals for conditional age-at-length data
@@ -531,7 +533,9 @@ run_internal_caal_osa <- function(model, data, comp_source, bins, bin_label,
       )
     )
 
-  list(res = res)
+  osa_out <- list(res = res)
+  class(osa_out) <- c("sporc_osa", class(osa_out)) # label for plot()
+  osa_out
 }
 
 #' Run internal (model-based) OSA residuals for conventional tagging data
@@ -635,7 +639,9 @@ run_internal_tag_osa <- function(model, data, osa_method = NULL, parallel = FALS
       .keep = 'none'
     )
 
-  list(res = res)
+  osa_out <- list(res = res)
+  class(osa_out) <- c("sporc_osa", class(osa_out)) # label for plot()
+  osa_out
 }
 
 #' Map an index-type data source to its internal-OSA field names
@@ -763,7 +769,9 @@ run_internal_index_osa <- function(
     idx_type = index_source
   )
 
-  list(res = res)
+  osa_out <- list(res = res)
+  class(osa_out) <- c("sporc_osa", class(osa_out)) # label for plot()
+  osa_out
 }
 
 #' Run internal (model-based) OSA residuals for a dsem's covariate observations
@@ -845,7 +853,9 @@ run_internal_dsem_osa <- function(model,
     idx_type = "DsemCov"
   )
 
-  list(res = res)
+  osa_out <- list(res = res)
+  class(osa_out) <- c("sporc_osa", class(osa_out)) # label for plot()
+  osa_out
 }
 
 #' Compute OSA residuals for composition data
@@ -1221,6 +1231,7 @@ get_osa <- function(obs_mat = NULL,
 
     } # end split region, joint by sex
 
+    class(osa_all) <- c("sporc_osa", class(osa_all)) # label for plot()
     return(osa_all)
   }
 
@@ -1231,7 +1242,8 @@ get_osa <- function(obs_mat = NULL,
 #'
 #' Generates diagnostic plots for one-step-ahead (OSA) residuals. Includes
 #' QQ-plots with SDNR annotations and bubble plots showing residual magnitude
-#' and sign.
+#' and sign. \code{plot(osa_results)} on the results of \code{\link{get_osa}}
+#' draws the same plots.
 #'
 #' Panels are faceted by every structural dimension the residual data frame
 #' actually spans. Composition plots always facet by \code{region}/\code{sex} and additionally facet by \code{fleet}, \code{pop}, and \code{seas}

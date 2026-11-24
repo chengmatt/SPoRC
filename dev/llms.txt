@@ -230,6 +230,7 @@ Functions for model diagnostics
 - [`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
   : Compute OSA residuals for composition data
 - [`plot_resids()`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md)
+  [`plot(`*`<sporc_osa>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/plot_resids.md)
   : Plot OSA residuals from outputs of get_osa
 - [`get_nLL_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_nLL_plot.md)
   : Get Plot of Negative Log Likelihood Values
@@ -240,6 +241,7 @@ Functions for model diagnostics
 - [`get_at_age_fits_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_at_age_fits_plot.md)
   : Plot observed and predicted age-disaggregated observations
 - [`get_retrospective_plot()`](https://chengmatt.github.io/SPoRC/dev/reference/get_retrospective_plot.md)
+  [`plot(`*`<sporc_retro>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/get_retrospective_plot.md)
   : Get Retrospective Plot
 - [`do_likelihood_profile()`](https://chengmatt.github.io/SPoRC/dev/reference/do_likelihood_profile.md)
   : Run Likelihood Profile
@@ -254,6 +256,11 @@ Functions for convenience
 
 - [`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md)
   : Fit a SPoRC RTMB model
+- [`print(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  [`summary(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  [`logLik(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  [`plot(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  : Print, summarize, compare and plot a fitted SPoRC model
 - [`option_reference()`](https://chengmatt.github.io/SPoRC/dev/reference/option_reference.md)
   : Every argument the setup stages accept
 - [`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md)

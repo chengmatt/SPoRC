@@ -290,9 +290,12 @@ returns or stops. The diagnostics that refit the model
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>The RTMB <code>ADFun</code> object with additional fields: <code>$optim</code>
+    <p>The RTMB <code>ADFun</code> object, a list of class <code>sporc_fit</code> with
+  <code>print</code>, <code>summary</code>, <code>logLik</code> and <code>plot</code> methods (see
+  <code><a href="sporc_fit.html">sporc_fit</a></code>), with additional fields: <code>$optim</code>
   (the <code>nlminb</code> output list, with <code>$lower</code>/<code>$upper</code> recording
-  the bounds used), <code>$rep</code> (the model report evaluated at
+  the bounds used and <code>$gradient</code> the gradient at the estimates),
+  <code>$rep</code> (the model report evaluated at
   <code>obj$env$last.par.best</code>; with <code>random</code> set, <code>jnLL</code> is at the
   random effect mode and <code>$rep</code> also has <code>marginal_nLL</code>, the marginal
   the fit minimized, and <code>laplace_nLL</code>, the marginal minus <code>jnLL</code>),
@@ -322,7 +325,8 @@ side. <code>do_sdrep = TRUE</code> then covers the projected quantities.</p>
 <code><a href="label_dims.html">label_dims()</a></code>,
 <code><a href="post_optim_sanity_checks.html">post_optim_sanity_checks()</a></code>,
 <code><a href="rho_trans.html">rho_trans()</a></code>,
-<code><a href="set_data_indicator_unused.html">set_data_indicator_unused()</a></code></p></div>
+<code><a href="set_data_indicator_unused.html">set_data_indicator_unused()</a></code>,
+<code><a href="sporc_fit.html">sporc_fit</a></code></p></div>
     </div>
 
     <div class="section level2">

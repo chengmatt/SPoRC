@@ -10,7 +10,9 @@ punctuation.
 check_comp_like_type(
   x,
   what,
-  allowed = comp_like_type_options(),
+  allowed = c("none", "Multinomial", "Dirichlet-Multinomial", "iid-Logistic-Normal",
+    "1d-Logistic-Normal", "2d-Logistic-Normal", "iid-Logistic-Normal-miss0",
+    "1d-Logistic-Normal-miss0", "2d-Logistic-Normal-miss0"),
   note =
     paste0("The -miss0 forms drop the empty bins and scale the standard deviation by the ",
     "input sample size.")
@@ -29,7 +31,8 @@ check_comp_like_type(
 
 - allowed:
 
-  Character vector of accepted values.
+  Character vector of accepted values, in the order the message lists
+  them.
 
 - note:
 

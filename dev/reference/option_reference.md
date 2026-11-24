@@ -8,14 +8,22 @@ Regenerating the vignette regenerates this.
 ## Usage
 
 ``` r
-option_reference(stages = setup_stage_order(), guide = NULL)
+option_reference(
+  stages = c("Setup_Mod_Dim", "Setup_Mod_Rec", "Setup_Mod_Biologicals",
+    "Setup_Mod_Movement", "Setup_Mod_Tagging", "Setup_Mod_Catch_and_F",
+    "Setup_Mod_FishIdx_and_Comps", "Setup_Mod_SrvIdx_and_Comps",
+    "Setup_Mod_Fishsel_and_Q", "Setup_Mod_Srvsel_and_Q", "Setup_Mod_DSEM",
+    "Setup_Mod_Weighting", "Setup_Mod_Projection"),
+  guide = NULL
+)
 ```
 
 ## Arguments
 
 - stages:
 
-  Function names to document. Defaults to the eleven setup stages.
+  Function names to document. Defaults to every setup stage, in the
+  order a model is built.
 
 - guide:
 

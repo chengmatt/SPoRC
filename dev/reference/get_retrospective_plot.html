@@ -3,11 +3,13 @@
 runs: a relative-difference plot with Mohn's rho, an absolute-scale
 trajectory plot, and a cohort-tracking squid plot for recruitment. Together
 these plots diagnose systematic retrospective patterns in SSB and recruitment
-estimates across sequential data removals."><meta property="og:description" content="Generates three retrospective diagnostic plots from a set of peeled model
+estimates across sequential data removals. plot(retro_output, Rec_Age)
+on the results of do_retrospective draws the same plots."><meta property="og:description" content="Generates three retrospective diagnostic plots from a set of peeled model
 runs: a relative-difference plot with Mohn's rho, an absolute-scale
 trajectory plot, and a cohort-tracking squid plot for recruitment. Together
 these plots diagnose systematic retrospective patterns in SSB and recruitment
-estimates across sequential data removals."><meta name="robots" content="noindex"></head><body>
+estimates across sequential data removals. plot(retro_output, Rec_Age)
+on the results of do_retrospective draws the same plots."><meta name="robots" content="noindex"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -59,7 +61,7 @@ estimates across sequential data removals."><meta name="robots" content="noindex
   <main id="main" class="col-md-9"><div class="page-header">
 
       <h1>Get Retrospective Plot</h1>
-      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/R/plot_figures_tables.R" class="external-link"><code>R/plot_figures_tables.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/R/plot_figures_tables.R" class="external-link"><code>R/plot_figures_tables.R</code></a>, <a href="https://github.com/chengmatt/SPoRC/blob/dev-popn-seasons/R/utils_s3_methods.R" class="external-link"><code>R/utils_s3_methods.R</code></a></small>
       <div class="d-none name"><code>get_retrospective_plot.Rd</code></div>
     </div>
 
@@ -68,12 +70,16 @@ estimates across sequential data removals."><meta name="robots" content="noindex
 runs: a relative-difference plot with Mohn's rho, an absolute-scale
 trajectory plot, and a cohort-tracking squid plot for recruitment. Together
 these plots diagnose systematic retrospective patterns in SSB and recruitment
-estimates across sequential data removals.</p>
+estimates across sequential data removals. <code>plot(retro_output, Rec_Age)</code>
+on the results of <code><a href="do_retrospective.html">do_retrospective</a></code> draws the same plots.</p>
     </div>
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_retrospective_plot</span><span class="op">(</span><span class="va">retro_output</span>, <span class="va">Rec_Age</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">get_retrospective_plot</span><span class="op">(</span><span class="va">retro_output</span>, <span class="va">Rec_Age</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'sporc_retro'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">Rec_Age</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -93,6 +99,16 @@ with <code>peel = 0</code> represent the full-data terminal run; rows with
 <dd><p>Integer giving the age at recruitment (e.g. <code>2</code> for
 age-2 recruitment). Used to convert model year to cohort year in the squid
 plot (<code>cohort = Year - Rec_Age</code>).</p></dd>
+
+
+<dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
+<dd><p>Retrospective results from <code><a href="do_retrospective.html">do_retrospective</a></code>, the
+data frame itself or <code>$retro_df</code> under <code>return_models = TRUE</code>.
+<code>plot(x, Rec_Age)</code> draws the same three plots.</p></dd>
+
+
+<dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
+<dd><p>Not used.</p></dd>
 
 </dl></div>
     <div class="section level2">

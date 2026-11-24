@@ -163,7 +163,6 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/color_naa_dim.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/combine_idx_sd.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/comp_corr_natural.html</loc></url>
-<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/comp_like_type_options.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/comp_mltnml_term.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/comp_osa_field_map.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/compute_biom_y.html</loc></url>
@@ -177,7 +176,6 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ddirmult.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/ddirmult_osa.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/default_tag_release_platform.html</loc></url>
-<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/derive_proj_biom.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/derive_sim_growth.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/derive_sim_movement.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/dev_map_levels.html</loc></url>
@@ -503,7 +501,6 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_norm_bins.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_sex_offset.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_sel_zero_bins.html</loc></url>
-<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/setup_stage_order.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_atka_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nork_data.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sgl_rg_bsai_nrs_data.html</loc></url>
@@ -544,6 +541,7 @@
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/solve_plus_group.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/spawn_state.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/split_reported_q.html</loc></url>
+<url><loc>https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/start_tag_cohort_season.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/store_at_age_cell.html</loc></url>
 <url><loc>https://chengmatt.github.io/SPoRC/dev/reference/store_idx_sigma.html</loc></url>

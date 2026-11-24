@@ -67,7 +67,9 @@ value when the entry differs only in case, spacing or punctuation.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">check_comp_like_type</span><span class="op">(</span></span>
 <span>  <span class="va">x</span>,</span>
 <span>  <span class="va">what</span>,</span>
-<span>  allowed <span class="op">=</span> <span class="fu"><a href="comp_like_type_options.html">comp_like_type_options</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  allowed <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"Multinomial"</span>, <span class="st">"Dirichlet-Multinomial"</span>, <span class="st">"iid-Logistic-Normal"</span>,</span>
+<span>    <span class="st">"1d-Logistic-Normal"</span>, <span class="st">"2d-Logistic-Normal"</span>, <span class="st">"iid-Logistic-Normal-miss0"</span>,</span>
+<span>    <span class="st">"1d-Logistic-Normal-miss0"</span>, <span class="st">"2d-Logistic-Normal-miss0"</span><span class="op">)</span>,</span>
 <span>  note <span class="op">=</span></span>
 <span>    <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="st">"The -miss0 forms drop the empty bins and scale the standard deviation by the "</span>,</span>
 <span>    <span class="st">"input sample size."</span><span class="op">)</span></span>
@@ -87,7 +89,8 @@ value when the entry differs only in case, spacing or punctuation.</p>
 
 
 <dt id="arg-allowed">allowed<a class="anchor" aria-label="anchor" href="#arg-allowed"></a></dt>
-<dd><p>Character vector of accepted values.</p></dd>
+<dd><p>Character vector of accepted values, in the order the message
+lists them.</p></dd>
 
 
 <dt id="arg-note">note<a class="anchor" aria-label="anchor" href="#arg-note"></a></dt>

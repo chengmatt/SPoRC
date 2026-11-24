@@ -61,4 +61,5 @@ Other Utility:
 [`get_par_est_info()`](https://chengmatt.github.io/SPoRC/dev/reference/get_par_est_info.md),
 [`label_dims()`](https://chengmatt.github.io/SPoRC/dev/reference/label_dims.md),
 [`rho_trans()`](https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.md),
-[`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md)
+[`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md),
+[`sporc_fit`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)

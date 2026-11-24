@@ -238,13 +238,17 @@ fit_model(
 
 ## Value
 
-The RTMB `ADFun` object with additional fields: `$optim` (the `nlminb`
-output list, with `$lower`/`$upper` recording the bounds used), `$rep`
-(the model report evaluated at `obj$env$last.par.best`; with `random`
-set, `jnLL` is at the random effect mode and `$rep` also has
-`marginal_nLL`, the marginal the fit minimized, and `laplace_nLL`, the
-marginal minus `jnLL`), `$data`, `$parameters`, `$mapping`, `$random`,
-`$provenance` (the package version and commit that built the fit, see
+The RTMB `ADFun` object, a list of class `sporc_fit` with `print`,
+`summary`, `logLik` and `plot` methods (see
+[`sporc_fit`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)),
+with additional fields: `$optim` (the `nlminb` output list, with
+`$lower`/`$upper` recording the bounds used and `$gradient` the gradient
+at the estimates), `$rep` (the model report evaluated at
+`obj$env$last.par.best`; with `random` set, `jnLL` is at the random
+effect mode and `$rep` also has `marginal_nLL`, the marginal the fit
+minimized, and `laplace_nLL`, the marginal minus `jnLL`), `$data`,
+`$parameters`, `$mapping`, `$random`, `$provenance` (the package version
+and commit that built the fit, see
 [`fit_provenance`](https://chengmatt.github.io/SPoRC/dev/reference/fit_provenance.md)),
 `$hessian` (the last refinement step's Hessian; `NULL` if none was
 taken), and under `do_sdrep = TRUE` `$sd_rep` (the `sdreport`) and
@@ -270,7 +274,8 @@ Other Utility:
 [`label_dims()`](https://chengmatt.github.io/SPoRC/dev/reference/label_dims.md),
 [`post_optim_sanity_checks()`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md),
 [`rho_trans()`](https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.md),
-[`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md)
+[`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md),
+[`sporc_fit`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
 
 ## Examples
 

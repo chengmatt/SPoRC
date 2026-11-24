@@ -2,12 +2,17 @@
 
 Generates diagnostic plots for one-step-ahead (OSA) residuals. Includes
 QQ-plots with SDNR annotations and bubble plots showing residual
-magnitude and sign.
+magnitude and sign. `plot(osa_results)` on the results of
+[`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md)
+draws the same plots.
 
 ## Usage
 
 ``` r
 plot_resids(osa_results)
+
+# S3 method for class 'sporc_osa'
+plot(x, ...)
 ```
 
 ## Arguments
@@ -15,6 +20,16 @@ plot_resids(osa_results)
 - osa_results:
 
   List obtained from get_osa() containing residuals dataframe.
+
+- x:
+
+  Residuals from
+  [`get_osa`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md).
+  `plot(x)` draws the same two plots.
+
+- ...:
+
+  Not used.
 
 ## Value
 

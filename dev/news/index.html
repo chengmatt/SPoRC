@@ -153,6 +153,10 @@
 <li>
 <code>do_likelihood_profile</code> warns when <code>random</code> is set that the marginal in <code>jnLL_df</code> can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as <code>laplace_nLL_df</code>.</li>
 <li>With <code>random</code> set, <code>fit_model</code> adds <code>marginal_nLL</code> and <code>laplace_nLL</code> to <code>obj$rep</code>, and <code>get_nLL_plot</code> shows the marginal as the total.</li>
+<li>
+<code>fit_model</code> returns a list of class <code>sporc_fit</code> with <code>print</code>, <code>summary</code>, <code>logLik</code> and <code>plot</code> methods, so <code>AIC(fit_1, fit_2)</code> and <code>plot(fit, type = "selex")</code> work. The general format of these functions remain unchanged.</li>
+<li>
+<code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> works on the results of <code>do_retrospective</code> and <code>get_osa</code> as well, and plot what <code>get_retrospective_plot</code> and <code>plot_resids</code> plot.</li>
 </ul></div>
 </div>
 <div class="section level3">
@@ -172,7 +176,8 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>
-<ul><li>Fixed <code>do_likelihood_profile</code> and <code>do_jitter</code> reporting <code>jnLL</code> at the random effect mode under random effects, rather than the marginal the fit minimizes.</li>
+<ul><li>Fixed <code>get_par_est_info</code> reporting the variance of a random effect in <code>SE_Val</code> rather than its standard error.</li>
+<li>Fixed <code>do_likelihood_profile</code> and <code>do_jitter</code> reporting <code>jnLL</code> at the random effect mode under random effects, rather than the marginal the fit minimizes.</li>
 <li>Fixed the time-varying selectivity smoothing penalty not being applied in the first year.</li>
 <li>Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.</li>
 <li>Fixed <code><a href="../reference/do_runs_test.html">do_runs_test()</a></code> returning a NaN p-value when the runs test has too few runs for a variance (a two-point series, or zeros with every other residual one sign). It now returns 0.001, as it already did for a series with no sign changes.</li>

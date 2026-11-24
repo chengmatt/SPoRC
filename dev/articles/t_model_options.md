@@ -3161,3 +3161,13 @@ in them is absorbed rather than estimated.
 
 All plotting functions accept either a single fitted model or a list of
 models for side-by-side comparison.
+
+[`plot()`](https://rdrr.io/r/graphics/plot.default.html) draws the same
+figures for one object at a time: `plot(fit, type = "selex")` on a fit
+from
+[`fit_model()`](https://chengmatt.github.io/SPoRC/dev/reference/fit_model.md),
+`plot(retro, Rec_Age = 4)` on the results of
+[`do_retrospective()`](https://chengmatt.github.io/SPoRC/dev/reference/do_retrospective.md),
+and `plot(osa)` on the residuals from
+[`get_osa()`](https://chengmatt.github.io/SPoRC/dev/reference/get_osa.md).
+Either form can be used.

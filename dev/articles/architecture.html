@@ -647,8 +647,7 @@ one file.</p>
 <tr class="odd">
 <td><code>model_biomass.R</code></td>
 <td>
-<code>biom_at_spawn</code>, <code>compute_biom_y</code>,
-<code>derive_proj_biom</code>
+<code>biom_at_spawn</code>, <code>compute_biom_y</code>
 </td>
 <td><code>model_transition.R</code></td>
 <td>
@@ -1395,7 +1394,7 @@ one file.</p>
 <code>model_precision.R</code>, <code>setup_dsem.R</code>,
 <code>utils_setup.R</code>
 </td>
-<td></td>
+<td><code>utils_s3_methods.R</code></td>
 </tr>
 <tr class="even">
 <td><code>diag_retrospective.R</code></td>
@@ -1458,7 +1457,7 @@ one file.</p>
 <code>model_lik_at_age.R</code>, <code>projection.R</code>,
 <code>refpts_main.R</code>, <code>utils_setup.R</code>
 </td>
-<td></td>
+<td><code>utils_s3_methods.R</code></td>
 </tr>
 </tbody>
 </table>
@@ -1512,7 +1511,7 @@ one file.</p>
 <td><code>utils_option_reference.R</code></td>
 <td>
 <code>option_reference</code>, <code>rd_argument_text</code>,
-<code>rd_database</code>, <code>setup_stage_order</code>
+<code>rd_database</code>
 </td>
 <td>nothing</td>
 <td></td>
@@ -1531,6 +1530,19 @@ one file.</p>
 </td>
 </tr>
 <tr class="odd">
+<td><code>utils_s3_methods.R</code></td>
+<td>
+<code>logLik.sporc_fit</code>, <code>plot.sporc_fit</code>,
+<code>plot.sporc_osa</code>, <code>plot.sporc_retro</code>,
+<code>print.sporc_fit</code>, <code>summary.sporc_fit</code>
+</td>
+<td>
+<code>diag_osa_residuals.R</code>,
+<code>plot_figures_tables.R</code>
+</td>
+<td></td>
+</tr>
+<tr class="even">
 <td><code>utils_setup.R</code></td>
 <td>
 <code>assign_sel_block</code>, <code>bins_or_null</code>,
@@ -1538,8 +1550,8 @@ one file.</p>
 <code>check_caal_len_bin_map</code>, <code>check_comp_bins_min</code>,
 <code>check_comp_like_type</code>, <code>check_par_map_lengths</code>,
 <code>check_sim_2d_comp</code>, <code>collapse_natmort_annual</code>,
-<code>collect_message</code>, <code>comp_like_type_options</code>,
-<code>convert_to_numeric</code>, <code>drop_empty_fitted_blocks</code>,
+<code>collect_message</code>, <code>convert_to_numeric</code>,
+<code>drop_empty_fitted_blocks</code>,
 <code>expand_fleet_ageing_error</code>,
 <code>expand_natmort_seasons</code>, <code>extend_years</code>,
 <code>fill_optional_modules</code>, <code>fleet_ageing_error</code>,
@@ -1584,7 +1596,7 @@ one file.</p>
 <code>sim_observations.R</code>, <code>sim_self_test.R</code>
 </td>
 </tr>
-<tr class="even">
+<tr class="odd">
 <td><code>utils_year_fleet_spec.R</code></td>
 <td>
 <code>at_age_type_matrix</code>,
@@ -1959,13 +1971,13 @@ test setup happens to use.</p>
 </tr>
 <tr class="even">
 <td><code>test-model_*</code></td>
-<td>46</td>
+<td>47</td>
 <td>One objective function module each: selectivity, movement,
 transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-utils_*</code></td>
-<td>7</td>
+<td>8</td>
 <td>Shared numerical helpers</td>
 </tr>
 <tr class="even">
@@ -1985,7 +1997,7 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="odd">
 <td><code>test-diag_*</code></td>
-<td>22</td>
+<td>23</td>
 <td>Post fit diagnostics: retrospectives and OSA residuals</td>
 </tr>
 <tr class="even">
@@ -2002,7 +2014,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 279 test files in total.</p>
+<p>That is 282 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

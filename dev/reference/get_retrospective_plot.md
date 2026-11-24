@@ -5,12 +5,17 @@ model runs: a relative-difference plot with Mohn's rho, an
 absolute-scale trajectory plot, and a cohort-tracking squid plot for
 recruitment. Together these plots diagnose systematic retrospective
 patterns in SSB and recruitment estimates across sequential data
-removals.
+removals. `plot(retro_output, Rec_Age)` on the results of
+[`do_retrospective`](https://chengmatt.github.io/SPoRC/dev/reference/do_retrospective.md)
+draws the same plots.
 
 ## Usage
 
 ``` r
 get_retrospective_plot(retro_output, Rec_Age)
+
+# S3 method for class 'sporc_retro'
+plot(x, Rec_Age, ...)
 ```
 
 ## Arguments
@@ -28,6 +33,17 @@ get_retrospective_plot(retro_output, Rec_Age)
   Integer giving the age at recruitment (e.g. `2` for age-2
   recruitment). Used to convert model year to cohort year in the squid
   plot (`cohort = Year - Rec_Age`).
+
+- x:
+
+  Retrospective results from
+  [`do_retrospective`](https://chengmatt.github.io/SPoRC/dev/reference/do_retrospective.md),
+  the data frame itself or `$retro_df` under `return_models = TRUE`.
+  `plot(x, Rec_Age)` draws the same three plots.
+
+- ...:
+
+  Not used.
 
 ## Value
 

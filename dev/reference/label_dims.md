@@ -53,7 +53,8 @@ Other Utility:
 [`get_par_est_info()`](https://chengmatt.github.io/SPoRC/dev/reference/get_par_est_info.md),
 [`post_optim_sanity_checks()`](https://chengmatt.github.io/SPoRC/dev/reference/post_optim_sanity_checks.md),
 [`rho_trans()`](https://chengmatt.github.io/SPoRC/dev/reference/rho_trans.md),
-[`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md)
+[`set_data_indicator_unused()`](https://chengmatt.github.io/SPoRC/dev/reference/set_data_indicator_unused.md),
+[`sporc_fit`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
 
 ## Examples
 

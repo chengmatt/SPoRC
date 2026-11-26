@@ -1,5 +1,6 @@
 # Checks the sporc_fit class fit_model puts on its return: the fit still reads as a list, print shows the fit rather than
-# the list, summary matches the sdreport, logLik gives the same AIC as marg_AIC, and plot matches the plotting functions.
+# the list, summary, coef, vcov and confint match the sdreport, logLik gives the same AIC as marg_AIC, as.data.frame
+# matches the report, and plot matches the plotting functions.
 
 library(testthat)
 library(SPoRC)
@@ -80,6 +81,79 @@ test_that("logLik gives the AIC marg_AIC gives", {
 
 })
 
+test_that("coef and vcov return the sdreport's fixed effects and their covariance", {
+
+  expect_equal(coef(fit), fit$sd_rep$par.fixed)
+  expect_named(coef(fit), names(fit$par)) # names repeat, one per estimated value
+  expect_identical(vcov(fit), fit$sd_rep$cov.fixed)
+  expect_equal(coef(fit, random = TRUE), coef(fit)) # no random effects in this fit
+
+})
+
+test_that("confint is the estimate plus and minus a normal quantile times its standard error", {
+
+  est_val <- fit$sd_rep$par.fixed
+  se_val <- sqrt(diag(fit$sd_rep$cov.fixed))
+
+  # every fixed effect, each row against its own estimate and standard error
+  ci_table <- confint(fit)
+  expect_equal(dim(ci_table), c(length(est_val), 2))
+  expect_equal(colnames(ci_table), c("2.5 %", "97.5 %"))
+  expect_equal(rownames(ci_table), names(est_val))
+  expect_equal(unname(ci_table[, 1]), unname(est_val - qnorm(0.975) * se_val))
+  expect_equal(unname(ci_table[, 2]), unname(est_val + qnorm(0.975) * se_val))
+
+  # a parameter estimated once matches stats::confint.default
+  expect_equal(confint(fit, parm = "ln_global_R0"), stats::confint.default(fit, parm = "ln_global_R0"))
+
+  # a name with many values gets one interval per value, where confint.default repeats the first
+  init_dev_idx <- which(names(est_val) == "ln_InitDevs")
+  expect_true(length(init_dev_idx) > 1)
+  expect_equal(confint(fit, parm = "ln_InitDevs"), ci_table[init_dev_idx, ])
+  expect_true(length(unique(ci_table[init_dev_idx, 1])) > 1)
+  expect_equal(length(unique(stats::confint.default(fit)[init_dev_idx, 1])), 1)
+
+  # positions in coef(fit), and another level
+  expect_equal(confint(fit, parm = c(1, 3)), ci_table[c(1, 3), ])
+  ci_90 <- confint(fit, parm = 1, level = 0.9)
+  expect_equal(colnames(ci_90), c("5 %", "95 %"))
+  expect_equal(unname(ci_90[1, ]), unname(est_val[1] + qnorm(c(0.05, 0.95)) * se_val[1]))
+
+  expect_error(confint(fit, parm = "not_a_parameter"), "not estimated as fixed effects")
+  expect_error(confint(fit, parm = length(est_val) + 1), "positions in coef")
+
+})
+
+test_that("as.data.frame returns a reported quantity with one row per value and its dims labeled", {
+
+  # against label_dims and melt called directly
+  ssb_df <- as.data.frame(fit, what = "SSB")
+  expect_named(ssb_df, c("Pop", "Region", "Year", "value"))
+  expect_equal(ssb_df, reshape2::melt(label_dims(fit$rep, fit$data)$SSB))
+  expect_equal(unique(ssb_df$Year), data$years)
+
+  # a vector gets a column for what it runs over, and a single value is one row
+  agg_ssb_df <- as.data.frame(fit, what = "Aggregated_SSB")
+  expect_named(agg_ssb_df, c("Year", "value"))
+  expect_equal(agg_ssb_df$Year, data$years)
+  expect_equal(as.data.frame(fit, what = "jnLL")$value, fit$rep$jnLL)
+
+  # labels are passed to label_dims
+  naa_df <- as.data.frame(fit, what = "NAA", labels = list(Sex = "Female"))
+  expect_true(all(naa_df$Sex == "Female"))
+
+  # every reported quantity returns its values in the order the report stores them
+  for(rep_name in names(fit$rep)) {
+    rep_df <- as.data.frame(fit, what = rep_name)
+    expect_equal(nrow(rep_df), length(fit$rep[[rep_name]]), info = rep_name)
+    expect_equal(rep_df$value, as.vector(fit$rep[[rep_name]]), info = rep_name)
+  } # end rep_name loop
+
+  expect_error(as.data.frame(fit), "what must name one quantity")
+  expect_error(as.data.frame(fit, what = "not_reported"), "what must name one quantity")
+
+})
+
 test_that("plot draws what the plotting function draws for this fit alone", {
 
   # each type against the function it calls, given the fit as a list of one model
@@ -125,6 +199,12 @@ test_that("a fit without the sdreport prints and summarizes without standard err
   expect_equal(par_table$Abs_Grad_Max, summary(fit)$Abs_Grad_Max) # same fit, so the same gradients
   expect_equal(par_table$Est_Min, summary(fit)$Est_Min) # and the same estimates
 
+  # the estimates and the report do not need the sdreport, the covariance and intervals do
+  expect_equal(coef(fit_no_sd), coef(fit))
+  expect_equal(as.data.frame(fit_no_sd, what = "SSB"), as.data.frame(fit, what = "SSB"))
+  expect_error(vcov(fit_no_sd), "needs the sdreport")
+  expect_error(confint(fit_no_sd), "needs the sdreport")
+
 })
 
 test_that("the stored gradient is the gradient at the estimates, and the one the sdreport has", {
@@ -156,6 +236,9 @@ test_that("a fit that was not optimized prints, and summary and logLik stop", {
 
   expect_error(summary(fit_no_optim), "do_optim = FALSE")
   expect_error(logLik(fit_no_optim), "do_optim = FALSE")
+  expect_error(coef(fit_no_optim), "do_optim = FALSE")
+  expect_error(confint(fit_no_optim), "do_optim = FALSE")
+  expect_equal(as.data.frame(fit_no_optim, what = "SSB")$value, as.vector(fit_no_optim$rep$SSB)) # report at the starting values
 
 })
 
@@ -187,5 +270,17 @@ test_that("with random effects, print names them, summary reports them and logLi
     expect_equal(random_rows$Est_Max[i], max(sd_random[par_idx, "Estimate"]))
     expect_equal(random_rows$SE_Max[i], max(sd_random[par_idx, "Std. Error"]))
   } # end i loop
+
+  # coef, vcov and confint are the fixed effects, and coef adds the random effects when asked
+  expect_equal(coef(fit_re), fit_re$sd_rep$par.fixed)
+  expect_false(any(c("ln_RecDevs", "ln_InitDevs") %in% names(coef(fit_re))))
+  expect_equal(dim(vcov(fit_re)), rep(length(fit_re$par), 2))
+  expect_equal(nrow(confint(fit_re)), length(fit_re$par))
+  expect_error(confint(fit_re, parm = "ln_RecDevs"), "not estimated as fixed effects")
+
+  coef_all <- coef(fit_re, random = TRUE)
+  expect_equal(length(coef_all), length(fit_re$par) + nrow(sd_random))
+  expect_equal(unname(coef_all[names(coef_all) %in% c("ln_RecDevs", "ln_InitDevs")]), unname(sd_random[, "Estimate"]))
+  expect_equal(coef_all[!names(coef_all) %in% c("ln_RecDevs", "ln_InitDevs")], coef(fit_re))
 
 })

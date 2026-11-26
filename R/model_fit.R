@@ -150,7 +150,7 @@
 #' @param ... Additional arguments forwarded to \code{RTMB::MakeADFun}.
 #'
 #' @return The RTMB \code{ADFun} object, a list of class \code{sporc_fit} with
-#'   \code{print}, \code{summary}, \code{logLik} and \code{plot} methods (see
+#'   \code{print}, \code{summary}, \code{plot} and other methods (see
 #'   \code{\link{sporc_fit}}), with additional fields: \code{$optim}
 #'   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
 #'   the bounds used and \code{$gradient} the gradient at the estimates),
@@ -381,7 +381,7 @@ fit_model <- function(
     )
   }
 
-  # class for the print, summary, logLik and plot methods, the fit is still a list
+  # class for the methods in utils_s3_methods.R, the fit is still a list
   class(obj) <- c("sporc_fit", class(obj))
 
   return(obj)

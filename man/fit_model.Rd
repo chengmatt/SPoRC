@@ -175,7 +175,7 @@ returns or stops. The diagnostics that refit the model
 }
 \value{
 The RTMB \code{ADFun} object, a list of class \code{sporc_fit} with
-  \code{print}, \code{summary}, \code{logLik} and \code{plot} methods (see
+  \code{print}, \code{summary}, \code{plot} and other methods (see
   \code{\link{sporc_fit}}), with additional fields: \code{$optim}
   (the \code{nlminb} output list, with \code{$lower}/\code{$upper} recording
   the bounds used and \code{$gradient} the gradient at the estimates),

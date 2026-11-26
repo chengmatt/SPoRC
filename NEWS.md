@@ -90,7 +90,7 @@
 * Added `data$extra_nll`, a likelihood from outside the package: a function `(pars, env)` whose value is added to the joint likelihood (reported as `extra_nLL`), where `env` is the objective's environment, so the function can read anything the model computes (movement, mortality, numbers at age, spawning biomass, selectivities, ...).
 * `do_likelihood_profile` warns when `random` is set that the marginal in `jnLL_df` can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as `laplace_nLL_df`.
 * With `random` set, `fit_model` adds `marginal_nLL` and `laplace_nLL` to `obj$rep`, and `get_nLL_plot` shows the marginal as the total.
-* `fit_model` returns a list of class `sporc_fit` with `print`, `summary`, `logLik` and `plot` methods, so `AIC(fit_1, fit_2)` and `plot(fit, type = "selex")` work. The general format of these functions remain unchanged.
+* `fit_model` returns a list of class `sporc_fit` with `print`, `summary`, `logLik`, `coef`, `vcov`, `confint`, `as.data.frame` and `plot` methods, so `AIC(fit_1, fit_2)`, `as.data.frame(fit, what = "SSB")` and `plot(fit, type = "selex")` work. The general format of these functions remain unchanged.
 * `plot()` works on the results of `do_retrospective` and `get_osa` as well, and plot what `get_retrospective_plot` and `plot_resids` plot.
 
 ## Improvements

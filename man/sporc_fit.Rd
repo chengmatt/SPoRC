@@ -5,6 +5,10 @@
 \alias{print.sporc_fit}
 \alias{summary.sporc_fit}
 \alias{logLik.sporc_fit}
+\alias{coef.sporc_fit}
+\alias{vcov.sporc_fit}
+\alias{confint.sporc_fit}
+\alias{as.data.frame.sporc_fit}
 \alias{plot.sporc_fit}
 \title{Print, summarize, compare and plot a fitted SPoRC model}
 \usage{
@@ -13,6 +17,21 @@
 \method{summary}{sporc_fit}(object, ...)
 
 \method{logLik}{sporc_fit}(object, ...)
+
+\method{coef}{sporc_fit}(object, random = FALSE, ...)
+
+\method{vcov}{sporc_fit}(object, ...)
+
+\method{confint}{sporc_fit}(object, parm, level = 0.95, ...)
+
+\method{as.data.frame}{sporc_fit}(
+  x,
+  row.names = NULL,
+  optional = FALSE,
+  what,
+  labels = list(),
+  ...
+)
 
 \method{plot}{sporc_fit}(x, type = "ts", model_name = "Model 1", ...)
 }
@@ -27,6 +46,26 @@ as \code{do_ci}, \code{Selex_Type}, \code{year_indx} or
 \code{data_source}. Not used by the other methods.}
 
 \item{object}{A fit returned by \code{\link{fit_model}}.}
+
+\item{random}{For \code{coef}, \code{TRUE} returns the random effects with
+the fixed effects, in the order RTMB stores them. Default \code{FALSE}.}
+
+\item{parm}{For \code{confint}, which estimates to return: parameter names
+(every estimated value of each, e.g. \code{"ln_RecDevs"}) or positions in
+\code{coef(object)}. Default is every fixed effect.}
+
+\item{level}{Confidence level for \code{confint}. Default \code{0.95}.}
+
+\item{row.names}{Not used.}
+
+\item{optional}{Not used.}
+
+\item{what}{For \code{as.data.frame}, name of the quantity in \code{x$rep}
+to return, e.g. \code{"SSB"} or \code{"NAA"}.}
+
+\item{labels}{For \code{as.data.frame}, optional named list of labels for
+populations, regions, seasons, sexes and fleets, as in
+\code{\link{label_dims}}.}
 
 \item{type}{Which plot to draw, each from the function named:
 \code{"ts"} (the default, \code{\link{get_ts_plot}}, which needs
@@ -54,15 +93,28 @@ as \code{do_ci}, \code{Selex_Type}, \code{year_indx} or
   minimized, with \code{df} the number of estimated fixed effects. That
   objective includes every penalty and prior in the model, and with
   \code{random} set it is the marginal. No number of observations is set,
-  so \code{BIC()} is not available. A fit run with \code{do_optim = FALSE}
-  has no estimates, and \code{summary} and \code{logLik} stop on it.
+  so \code{BIC()} is not available. \code{coef} returns the fixed effect
+  estimates on the scale each is estimated on (mostly log), named by
+  parameter, so a name repeats once per estimated value. \code{vcov} returns
+  their covariance matrix from the sdreport, and \code{confint} a matrix of
+  lower and upper limits on that same scale, the estimate plus and minus a
+  normal quantile times its standard error. Both need
+  \code{do_sdrep = TRUE} and leave out random effects, whose standard errors
+  are in \code{fit$sd_rep}. \code{as.data.frame} returns one row per value
+  of the quantity, with a column for each dim (\code{Region}, \code{Year},
+  \code{Age}, ...) and the value in \code{value}. A fit run with
+  \code{do_optim = FALSE} has no estimates, and \code{summary},
+  \code{logLik}, \code{coef} and \code{confint} stop on it.
 }
 \description{
 \code{\link{fit_model}} returns a list of class \code{sporc_fit}. Typing its
 name prints a short description of the fit in place of the whole list,
 \code{summary()} tabulates the estimates by parameter, and \code{logLik()}
 returns the maximized log likelihood, so \code{AIC(fit_1, fit_2)} compares
-fits. \code{plot()} draws one of the package's plots for this fit alone; to
+fits. \code{coef()}, \code{vcov()} and \code{confint()} return the fixed
+effect estimates, their covariance matrix and their confidence intervals, and
+\code{as.data.frame()} returns one reported quantity as a long data frame.
+\code{plot()} draws one of the package's plots for this fit alone; to
 compare fits, call the plotting function itself with a list of them. The fit
 is still a list: \code{fit$rep}, \code{fit$sd_rep} and
 \code{RTMB::sdreport(fit)} work as before, and \code{unclass(fit)} prints
@@ -80,6 +132,9 @@ fit <- fit_model(data, parameters, mapping, do_sdrep = TRUE)
 fit
 summary(fit)
 AIC(fit)
+coef(fit)
+confint(fit, parm = "ln_global_R0")
+ssb_df <- as.data.frame(fit, what = "SSB") # columns Pop, Region, Year, value
 plot(fit, type = "selex")
 }
 

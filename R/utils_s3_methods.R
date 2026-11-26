@@ -1,7 +1,7 @@
 # Shared helpers
 #
-# Every S3 method in the package: print, summary, logLik and plot for a fit (sporc_fit), and plot for
-# retrospective results (sporc_retro) and OSA residuals (sporc_osa).
+# Every S3 method in the package: print, summary, logLik, coef, vcov, confint, as.data.frame and plot for a
+# fit (sporc_fit), and plot for retrospective results (sporc_retro) and OSA residuals (sporc_osa).
 
 # Fitted model (sporc_fit) ------------------------------------------------
 
@@ -11,7 +11,10 @@
 #' name prints a short description of the fit in place of the whole list,
 #' \code{summary()} tabulates the estimates by parameter, and \code{logLik()}
 #' returns the maximized log likelihood, so \code{AIC(fit_1, fit_2)} compares
-#' fits. \code{plot()} draws one of the package's plots for this fit alone; to
+#' fits. \code{coef()}, \code{vcov()} and \code{confint()} return the fixed
+#' effect estimates, their covariance matrix and their confidence intervals, and
+#' \code{as.data.frame()} returns one reported quantity as a long data frame.
+#' \code{plot()} draws one of the package's plots for this fit alone; to
 #' compare fits, call the plotting function itself with a list of them. The fit
 #' is still a list: \code{fit$rep}, \code{fit$sd_rep} and
 #' \code{RTMB::sdreport(fit)} work as before, and \code{unclass(fit)} prints
@@ -26,6 +29,19 @@
 #' @param object A fit returned by \code{\link{fit_model}}.
 #' @param digits Number of significant digits printed for the objective and
 #'   the largest absolute gradient. Default \code{6}.
+#' @param random For \code{coef}, \code{TRUE} returns the random effects with
+#'   the fixed effects, in the order RTMB stores them. Default \code{FALSE}.
+#' @param parm For \code{confint}, which estimates to return: parameter names
+#'   (every estimated value of each, e.g. \code{"ln_RecDevs"}) or positions in
+#'   \code{coef(object)}. Default is every fixed effect.
+#' @param level Confidence level for \code{confint}. Default \code{0.95}.
+#' @param row.names Not used.
+#' @param optional Not used.
+#' @param what For \code{as.data.frame}, name of the quantity in \code{x$rep}
+#'   to return, e.g. \code{"SSB"} or \code{"NAA"}.
+#' @param labels For \code{as.data.frame}, optional named list of labels for
+#'   populations, regions, seasons, sexes and fleets, as in
+#'   \code{\link{label_dims}}.
 #' @param type Which plot to draw, each from the function named:
 #'   \code{"ts"} (the default, \code{\link{get_ts_plot}}, which needs
 #'   \code{do_sdrep = TRUE}), \code{"selex"} (\code{\link{get_selex_plot}}),
@@ -53,8 +69,18 @@
 #'   minimized, with \code{df} the number of estimated fixed effects. That
 #'   objective includes every penalty and prior in the model, and with
 #'   \code{random} set it is the marginal. No number of observations is set,
-#'   so \code{BIC()} is not available. A fit run with \code{do_optim = FALSE}
-#'   has no estimates, and \code{summary} and \code{logLik} stop on it.
+#'   so \code{BIC()} is not available. \code{coef} returns the fixed effect
+#'   estimates on the scale each is estimated on (mostly log), named by
+#'   parameter, so a name repeats once per estimated value. \code{vcov} returns
+#'   their covariance matrix from the sdreport, and \code{confint} a matrix of
+#'   lower and upper limits on that same scale, the estimate plus and minus a
+#'   normal quantile times its standard error. Both need
+#'   \code{do_sdrep = TRUE} and leave out random effects, whose standard errors
+#'   are in \code{fit$sd_rep}. \code{as.data.frame} returns one row per value
+#'   of the quantity, with a column for each dim (\code{Region}, \code{Year},
+#'   \code{Age}, ...) and the value in \code{value}. A fit run with
+#'   \code{do_optim = FALSE} has no estimates, and \code{summary},
+#'   \code{logLik}, \code{coef} and \code{confint} stop on it.
 #'
 #' @name sporc_fit
 #' @family Utility
@@ -65,6 +91,9 @@
 #' fit
 #' summary(fit)
 #' AIC(fit)
+#' coef(fit)
+#' confint(fit, parm = "ln_global_R0")
+#' ssb_df <- as.data.frame(fit, what = "SSB") # columns Pop, Region, Year, value
 #' plot(fit, type = "selex")
 #' }
 #'
@@ -214,6 +243,109 @@ logLik.sporc_fit <- function(object,
   class(loglik_val) <- "logLik"
 
   return(loglik_val)
+} # end function
+
+#' @rdname sporc_fit
+#' @importFrom stats coef
+#' @export
+coef.sporc_fit <- function(object,
+                           random = FALSE,
+                           ...
+                           ) {
+
+  if(is.null(object$optim)) stop("This fit was run with do_optim = FALSE, so there are no estimates.")
+
+  # fixed effects at the estimates
+  coef_val <- object$optim$par
+  names(coef_val) <- names(object$par) # a newton step drops the names on optim$par
+
+  # fixed and random effects together, in the order RTMB stores them
+  if(random) coef_val <- object$env$last.par.best
+
+  return(coef_val)
+} # end function
+
+#' @rdname sporc_fit
+#' @importFrom stats vcov
+#' @export
+vcov.sporc_fit <- function(object,
+                           ...
+                           ) {
+
+  if(is.null(object$sd_rep)) stop("vcov needs the sdreport (object$sd_rep). Fit with do_sdrep = TRUE.")
+
+  return(object$sd_rep$cov.fixed) # fixed effects only, rows and columns named by parameter
+} # end function
+
+#' @rdname sporc_fit
+#' @importFrom stats confint
+#' @export
+confint.sporc_fit <- function(object,
+                              parm,
+                              level = 0.95,
+                              ...
+                              ) {
+
+  est_val <- coef(object) # fixed effects, on the scale they are estimated on
+  se_val <- sqrt(diag(vcov(object)))
+
+  # every estimated value, unless parm picks some
+  par_idx <- seq_along(est_val)
+
+  if(!missing(parm)) {
+
+    if(is.character(parm)) {
+
+      missing_names <- setdiff(parm, names(est_val))
+      if(length(missing_names) > 0) stop("parm names parameters that were not estimated as fixed effects: ", paste(missing_names, collapse = ", "), ". See unique(names(coef(object))).")
+      par_idx <- which(names(est_val) %in% parm) # every value of a named parameter
+
+    } else {
+
+      if(!all(parm %in% seq_along(est_val))) stop("parm must be parameter names, or positions in coef(object) from 1 to ", length(est_val), ".")
+      par_idx <- parm
+
+    } # end if else names or positions
+
+  } # end if parm given
+
+  # normal quantiles for the lower and upper limit
+  tail_prob <- (1 - level) / 2
+  lower_val <- est_val[par_idx] + stats::qnorm(tail_prob) * se_val[par_idx]
+  upper_val <- est_val[par_idx] + stats::qnorm(1 - tail_prob) * se_val[par_idx]
+
+  # one row per estimated value, columns labeled the way stats::confint labels them
+  ci_table <- cbind(lower_val, upper_val)
+  ci_labels <- paste(format(100 * c(tail_prob, 1 - tail_prob), trim = TRUE, scientific = FALSE, digits = 3), "%")
+  dimnames(ci_table) <- list(names(est_val)[par_idx], ci_labels)
+
+  return(ci_table)
+} # end function
+
+#' @rdname sporc_fit
+#' @export
+as.data.frame.sporc_fit <- function(x,
+                                    row.names = NULL,
+                                    optional = FALSE,
+                                    what,
+                                    labels = list(),
+                                    ...
+                                    ) {
+
+  if(missing(what) || length(what) != 1 || !what %in% names(x$rep)) stop("what must name one quantity in the report, e.g. what = 'SSB'. See names(x$rep).")
+
+  rep_val <- x$rep[what] # kept as a list of one, which label_dims reads
+
+  # a vector has no dim, so give it one for melt to make a column of (e.g. Year)
+  if(is.null(dim(rep_val[[what]])) && length(rep_val[[what]]) > 1) rep_val[[what]] <- array(data = rep_val[[what]], dim = length(rep_val[[what]]))
+
+  # name the dims, which needs the years and ages of a SPoRC data list
+  if(!is.null(x$data$years) && !is.null(x$data$ages)) rep_val <- label_dims(x = rep_val, data = x$data, labels = labels)
+
+  # one row per value, one column per dim
+  rep_df <- reshape2::melt(rep_val[[what]])
+
+  return(rep_df)
 } # end function
 
 #' @rdname sporc_fit

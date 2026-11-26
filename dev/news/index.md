@@ -286,9 +286,10 @@
 - With `random` set, `fit_model` adds `marginal_nLL` and `laplace_nLL`
   to `obj$rep`, and `get_nLL_plot` shows the marginal as the total.
 - `fit_model` returns a list of class `sporc_fit` with `print`,
-  `summary`, `logLik` and `plot` methods, so `AIC(fit_1, fit_2)` and
-  `plot(fit, type = "selex")` work. The general format of these
-  functions remain unchanged.
+  `summary`, `logLik`, `coef`, `vcov`, `confint`, `as.data.frame` and
+  `plot` methods, so `AIC(fit_1, fit_2)`,
+  `as.data.frame(fit, what = "SSB")` and `plot(fit, type = "selex")`
+  work. The general format of these functions remain unchanged.
 - [`plot()`](https://rdrr.io/r/graphics/plot.default.html) works on the
   results of `do_retrospective` and `get_osa` as well, and plot what
   `get_retrospective_plot` and `plot_resids` plot.

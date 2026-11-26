@@ -3,7 +3,10 @@
 name prints a short description of the fit in place of the whole list,
 summary() tabulates the estimates by parameter, and logLik()
 returns the maximized log likelihood, so AIC(fit_1, fit_2) compares
-fits. plot() draws one of the package's plots for this fit alone; to
+fits. coef(), vcov() and confint() return the fixed
+effect estimates, their covariance matrix and their confidence intervals, and
+as.data.frame() returns one reported quantity as a long data frame.
+plot() draws one of the package's plots for this fit alone; to
 compare fits, call the plotting function itself with a list of them. The fit
 is still a list: fit$rep, fit$sd_rep and
 RTMB::sdreport(fit) work as before, and unclass(fit) prints
@@ -11,7 +14,10 @@ every element."><meta property="og:description" content="fit_model returns a lis
 name prints a short description of the fit in place of the whole list,
 summary() tabulates the estimates by parameter, and logLik()
 returns the maximized log likelihood, so AIC(fit_1, fit_2) compares
-fits. plot() draws one of the package's plots for this fit alone; to
+fits. coef(), vcov() and confint() return the fixed
+effect estimates, their covariance matrix and their confidence intervals, and
+as.data.frame() returns one reported quantity as a long data frame.
+plot() draws one of the package's plots for this fit alone; to
 compare fits, call the plotting function itself with a list of them. The fit
 is still a list: fit$rep, fit$sd_rep and
 RTMB::sdreport(fit) work as before, and unclass(fit) prints
@@ -76,7 +82,10 @@ every element."><meta name="robots" content="noindex"></head><body>
 name prints a short description of the fit in place of the whole list,
 <code><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary()</a></code> tabulates the estimates by parameter, and <code><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik()</a></code>
 returns the maximized log likelihood, so <code>AIC(fit_1, fit_2)</code> compares
-fits. <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> draws one of the package's plots for this fit alone; to
+fits. <code><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef()</a></code>, <code><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov()</a></code> and <code><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint()</a></code> return the fixed
+effect estimates, their covariance matrix and their confidence intervals, and
+<code><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame()</a></code> returns one reported quantity as a long data frame.
+<code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> draws one of the package's plots for this fit alone; to
 compare fits, call the plotting function itself with a list of them. The fit
 is still a list: <code>fit$rep</code>, <code>fit$sd_rep</code> and
 <code>RTMB::sdreport(fit)</code> work as before, and <code>unclass(fit)</code> prints
@@ -93,6 +102,25 @@ every element.</p>
 <span></span>
 <span><span class="co"># S3 method for class 'sporc_fit'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/stats/logLik.html" class="external-link">logLik</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'sporc_fit'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">object</span>, random <span class="op">=</span> <span class="cn">FALSE</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'sporc_fit'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/vcov.html" class="external-link">vcov</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'sporc_fit'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">object</span>, <span class="va">parm</span>, level <span class="op">=</span> <span class="fl">0.95</span>, <span class="va">...</span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'sporc_fit'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span></span>
+<span>  <span class="va">x</span>,</span>
+<span>  row.names <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  optional <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  <span class="va">what</span>,</span>
+<span>  labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span><span class="op">)</span>,</span>
+<span>  <span class="va">...</span></span>
+<span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'sporc_fit'</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">x</span>, type <span class="op">=</span> <span class="st">"ts"</span>, model_name <span class="op">=</span> <span class="st">"Model 1"</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
@@ -119,6 +147,40 @@ as <code>do_ci</code>, <code>Selex_Type</code>, <code>year_indx</code> or
 
 <dt id="arg-object">object<a class="anchor" aria-label="anchor" href="#arg-object"></a></dt>
 <dd><p>A fit returned by <code><a href="fit_model.html">fit_model</a></code>.</p></dd>
+
+
+<dt id="arg-random">random<a class="anchor" aria-label="anchor" href="#arg-random"></a></dt>
+<dd><p>For <code>coef</code>, <code>TRUE</code> returns the random effects with
+the fixed effects, in the order RTMB stores them. Default <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-parm">parm<a class="anchor" aria-label="anchor" href="#arg-parm"></a></dt>
+<dd><p>For <code>confint</code>, which estimates to return: parameter names
+(every estimated value of each, e.g. <code>"ln_RecDevs"</code>) or positions in
+<code>coef(object)</code>. Default is every fixed effect.</p></dd>
+
+
+<dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
+<dd><p>Confidence level for <code>confint</code>. Default <code>0.95</code>.</p></dd>
+
+
+<dt id="arg-row-names">row.names<a class="anchor" aria-label="anchor" href="#arg-row-names"></a></dt>
+<dd><p>Not used.</p></dd>
+
+
+<dt id="arg-optional">optional<a class="anchor" aria-label="anchor" href="#arg-optional"></a></dt>
+<dd><p>Not used.</p></dd>
+
+
+<dt id="arg-what">what<a class="anchor" aria-label="anchor" href="#arg-what"></a></dt>
+<dd><p>For <code>as.data.frame</code>, name of the quantity in <code>x$rep</code>
+to return, e.g. <code>"SSB"</code> or <code>"NAA"</code>.</p></dd>
+
+
+<dt id="arg-labels">labels<a class="anchor" aria-label="anchor" href="#arg-labels"></a></dt>
+<dd><p>For <code>as.data.frame</code>, optional named list of labels for
+populations, regions, seasons, sexes and fleets, as in
+<code><a href="label_dims.html">label_dims</a></code>.</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
@@ -152,8 +214,18 @@ as <code>do_ci</code>, <code>Selex_Type</code>, <code>year_indx</code> or
   minimized, with <code>df</code> the number of estimated fixed effects. That
   objective includes every penalty and prior in the model, and with
   <code>random</code> set it is the marginal. No number of observations is set,
-  so <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> is not available. A fit run with <code>do_optim = FALSE</code>
-  has no estimates, and <code>summary</code> and <code>logLik</code> stop on it.</p>
+  so <code><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">BIC()</a></code> is not available. <code>coef</code> returns the fixed effect
+  estimates on the scale each is estimated on (mostly log), named by
+  parameter, so a name repeats once per estimated value. <code>vcov</code> returns
+  their covariance matrix from the sdreport, and <code>confint</code> a matrix of
+  lower and upper limits on that same scale, the estimate plus and minus a
+  normal quantile times its standard error. Both need
+  <code>do_sdrep = TRUE</code> and leave out random effects, whose standard errors
+  are in <code>fit$sd_rep</code>. <code>as.data.frame</code> returns one row per value
+  of the quantity, with a column for each dim (<code>Region</code>, <code>Year</code>,
+  <code>Age</code>, ...) and the value in <code>value</code>. A fit run with
+  <code>do_optim = FALSE</code> has no estimates, and <code>summary</code>,
+  <code>logLik</code>, <code>coef</code> and <code>confint</code> stop on it.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -181,6 +253,9 @@ they are shown only for a fit run with <code>do_sdrep = TRUE</code>.</p>
 <span class="r-in"><span><span class="va">fit</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/summary.html" class="external-link">summary</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/AIC.html" class="external-link">AIC</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/coef.html" class="external-link">coef</a></span><span class="op">(</span><span class="va">fit</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/stats/confint.html" class="external-link">confint</a></span><span class="op">(</span><span class="va">fit</span>, parm <span class="op">=</span> <span class="st">"ln_global_R0"</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="va">ssb_df</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.data.frame.html" class="external-link">as.data.frame</a></span><span class="op">(</span><span class="va">fit</span>, what <span class="op">=</span> <span class="st">"SSB"</span><span class="op">)</span> <span class="co"># columns Pop, Region, Year, value</span></span></span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">fit</span>, type <span class="op">=</span> <span class="st">"selex"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span> <span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>

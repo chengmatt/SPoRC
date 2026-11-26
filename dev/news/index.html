@@ -154,7 +154,7 @@
 <code>do_likelihood_profile</code> warns when <code>random</code> is set that the marginal in <code>jnLL_df</code> can be looked at but not the data components, since the random effects couple the data sources. The Laplace term is returned as <code>laplace_nLL_df</code>.</li>
 <li>With <code>random</code> set, <code>fit_model</code> adds <code>marginal_nLL</code> and <code>laplace_nLL</code> to <code>obj$rep</code>, and <code>get_nLL_plot</code> shows the marginal as the total.</li>
 <li>
-<code>fit_model</code> returns a list of class <code>sporc_fit</code> with <code>print</code>, <code>summary</code>, <code>logLik</code> and <code>plot</code> methods, so <code>AIC(fit_1, fit_2)</code> and <code>plot(fit, type = "selex")</code> work. The general format of these functions remain unchanged.</li>
+<code>fit_model</code> returns a list of class <code>sporc_fit</code> with <code>print</code>, <code>summary</code>, <code>logLik</code>, <code>coef</code>, <code>vcov</code>, <code>confint</code>, <code>as.data.frame</code> and <code>plot</code> methods, so <code>AIC(fit_1, fit_2)</code>, <code>as.data.frame(fit, what = "SSB")</code> and <code>plot(fit, type = "selex")</code> work. The general format of these functions remain unchanged.</li>
 <li>
 <code><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot()</a></code> works on the results of <code>do_retrospective</code> and <code>get_osa</code> as well, and plot what <code>get_retrospective_plot</code> and <code>plot_resids</code> plot.</li>
 </ul></div>

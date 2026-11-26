@@ -239,7 +239,7 @@ fit_model(
 ## Value
 
 The RTMB `ADFun` object, a list of class `sporc_fit` with `print`,
-`summary`, `logLik` and `plot` methods (see
+`summary`, `plot` and other methods (see
 [`sporc_fit`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)),
 with additional fields: `$optim` (the `nlminb` output list, with
 `$lower`/`$upper` recording the bounds used and `$gradient` the gradient

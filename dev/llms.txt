@@ -259,6 +259,10 @@ Functions for convenience
 - [`print(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
   [`summary(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
   [`logLik(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  [`coef(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  [`vcov(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  [`confint(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
+  [`as.data.frame(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
   [`plot(`*`<sporc_fit>`*`)`](https://chengmatt.github.io/SPoRC/dev/reference/sporc_fit.md)
   : Print, summarize, compare and plot a fitted SPoRC model
 - [`option_reference()`](https://chengmatt.github.io/SPoRC/dev/reference/option_reference.md)

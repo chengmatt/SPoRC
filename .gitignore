@@ -61,3 +61,6 @@ dev/check_consistency_simple/check_consistency.R
 /dev/ebs_pollock_2area
 /dev/ebs_pollock_repo
 /dev/pollock_spatial_join
+/dev/mutation_testing
+/dev/fims_petrale
+/dev/proj_ci_coverage

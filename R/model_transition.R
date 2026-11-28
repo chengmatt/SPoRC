@@ -120,24 +120,34 @@ advance_seas <- function(N, Move, Z, Q = NULL, dur = 1, move_timing = 0, expm_ns
 #' @inheritParams build_seas_operator
 #' @param N Numeric vector of length \code{n_regions} at the start of the season.
 #' @param t_spawn Fraction of the season elapsed before spawning, in \code{[0, 1]}.
+#' @param spawn_move Matrix \code{[region_from, region_to]} of natal homing at spawning, or
+#'   \code{NULL} (default) for none. Under \code{move_timing = 0} the fish home after they
+#'   move and then take the mortality up to spawning where they spawn; under 1 and 2 they
+#'   home after that mortality. This is the order \code{\link{biom_at_spawn}} uses.
 #'
 #' @return Numeric vector of length \code{n_regions}.
 #'
 #' @keywords internal
 #' @import RTMB
-spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing = 0, expm_nsub = 0) {
+spawn_state <- function(N, Move, Z, Q = NULL, dur = 1, t_spawn = 0, move_timing = 0, expm_nsub = 0, spawn_move = NULL) {
 
   "c" <- RTMB::ADoverload("c")
   "[<-" <- RTMB::ADoverload("[<-")
 
   if(move_timing == 0) {
-    as.vector(t(N) %*% Move) * exp(-t_spawn * Z)
-  } else if(move_timing == 1) {
-    N * exp(-t_spawn * Z)
+    N_spawn <- as.vector(t(N) %*% Move) # moved at the start of the season
+    if(!is.null(spawn_move)) N_spawn <- as.vector(t(N_spawn) %*% spawn_move) # home, then die where they spawn
+    N_spawn * exp(-t_spawn * Z)
   } else {
-    n_regions <- length(Z)
-    A_ss <- (t(Q) * dur - diag(Z, n_regions)) * t_spawn
-    as.vector(mat_exp(A_ss, expm_nsub) %*% N)
+    if(move_timing == 1) {
+      N_spawn <- N * exp(-t_spawn * Z)
+    } else {
+      n_regions <- length(Z)
+      A_ss <- (t(Q) * dur - diag(Z, n_regions)) * t_spawn
+      N_spawn <- as.vector(mat_exp(A_ss, expm_nsub) %*% N)
+    }
+    if(!is.null(spawn_move)) N_spawn <- as.vector(t(N_spawn) %*% spawn_move) # home after the mortality up to spawning
+    N_spawn
   }
 }
 

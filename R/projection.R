@@ -214,6 +214,10 @@
 #'   \item{\code{proj_Catch}}{`[n_pop, n_regions, n_proj_yrs, n_seas,
 #'     n_fish_fleets]`. Retained catch in biomass, built from `proj_ret_FAA`, and
 #'     the quantity `catch_input` is matched against.}
+#'   \item{\code{proj_CAA}}{`[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes,
+#'     n_fish_fleets]`. Retained catch at age in numbers.}
+#'   \item{\code{proj_DAA}}{Dimensioned as `proj_CAA`. Dead discards at age in
+#'     numbers, from `proj_disc_FAA`.}
 #'   \item{\code{proj_SSB}}{`[n_pop, n_regions, n_proj_yrs]`. Female spawning
 #'     biomass, accumulated in `spawn_seas` with the `t_spawn` correction. Halved
 #'     when `n_sexes = 1`.}
@@ -704,6 +708,7 @@ Do_Population_Projection <- function(
     proj_disc_FAA <- state$proj_disc_FAA
     proj_tot_FAA <- state$proj_tot_FAA
     proj_CAA <- state$proj_CAA
+    proj_DAA <- state$proj_DAA
     proj_Catch <- state$proj_Catch
     proj_SSB <- state$proj_SSB
     proj_Dynamic_SSB0 <- state$proj_Dynamic_SSB0
@@ -772,6 +777,7 @@ Do_Population_Projection <- function(
               proj_disc_FAA = proj_disc_FAA,
               proj_Catch = proj_Catch,
               proj_CAA = proj_CAA,
+              proj_DAA = proj_DAA,
               proj_SSB = proj_SSB,
               proj_eff_SSB = proj_eff_SSB,
               proj_Total_Biom = proj_Total_Biom,

@@ -176,7 +176,8 @@ eval_refpt_log_quantities <- function(obj, p, refpt_args, extra_quantities = NUL
 #'
 #' @param obj Fitted RTMB model object from \code{\link{fit_model}}.
 #' @param SPR_x Numeric. Target spawning potential ratio fraction.
-#' @param t_spawn Numeric. Spawning season fraction elapsed before spawning. Default = 0.
+#' @param t_spawn Numeric. Spawning season fraction elapsed before spawning. Default
+#'   \code{NULL} reads the fitted model's own, as \code{\link{Get_Reference_Points}} does.
 #' @param sex_ratio_f Numeric array \code{[n_pop, n_regions]}. Defaults to 0.5.
 #' @param calc_rec_st_yr Integer. First year of the mean recruitment window. Default = 1.
 #' @param rec_age Integer. Recruitment lag in years. Default = 1.
@@ -243,7 +244,7 @@ eval_refpt_log_quantities <- function(obj, p, refpt_args, extra_quantities = NUL
 #' }
 Get_Reference_Point_Uncertainty <- function(obj,
                                             SPR_x = NULL,
-                                            t_spawn = 0,
+                                            t_spawn = NULL,
                                             sex_ratio_f = NULL,
                                             calc_rec_st_yr = 1,
                                             rec_age = 1,

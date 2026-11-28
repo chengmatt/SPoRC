@@ -311,6 +311,10 @@ A named list of projected quantities. Year index 1 is the terminal
   \item{\code{proj_Catch}}{`[n_pop, n_regions, n_proj_yrs, n_seas,
     n_fish_fleets]`. Retained catch in biomass, built from `proj_ret_FAA`, and
     the quantity `catch_input` is matched against.}
+  \item{\code{proj_CAA}}{`[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes,
+    n_fish_fleets]`. Retained catch at age in numbers.}
+  \item{\code{proj_DAA}}{Dimensioned as `proj_CAA`. Dead discards at age in
+    numbers, from `proj_disc_FAA`.}
   \item{\code{proj_SSB}}{`[n_pop, n_regions, n_proj_yrs]`. Female spawning
     biomass, accumulated in `spawn_seas` with the `t_spawn` correction. Halved
     when `n_sexes = 1`.}

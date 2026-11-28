@@ -7,7 +7,7 @@
 Get_Reference_Point_Uncertainty(
   obj,
   SPR_x = NULL,
-  t_spawn = 0,
+  t_spawn = NULL,
   sex_ratio_f = NULL,
   calc_rec_st_yr = 1,
   rec_age = 1,
@@ -33,7 +33,8 @@ Get_Reference_Point_Uncertainty(
 
 \item{SPR_x}{Numeric. Target spawning potential ratio fraction.}
 
-\item{t_spawn}{Numeric. Spawning season fraction elapsed before spawning. Default = 0.}
+\item{t_spawn}{Numeric. Spawning season fraction elapsed before spawning. Default
+\code{NULL} reads the fitted model's own, as \code{\link{Get_Reference_Points}} does.}
 
 \item{sex_ratio_f}{Numeric array \code{[n_pop, n_regions]}. Defaults to 0.5.}
 

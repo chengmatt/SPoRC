@@ -8,7 +8,7 @@ Get_Reference_Points(
   data,
   rep,
   SPR_x = NULL,
-  t_spawn = 0,
+  t_spawn = NULL,
   sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
   calc_rec_st_yr = 1,
   rec_age = 1,
@@ -33,7 +33,8 @@ maturity, natural mortality, seasons and spatial configuration.}
 \code{"independent_SPR"} and \code{"global_SPR"}.}
 
 \item{t_spawn}{Fraction of the spawning season elapsed before spawning, for the
-mid-season mortality correction. Default 0.}
+mid-season mortality correction. Default \code{NULL} reads \code{data$t_spawn},
+the value the model was fitted with, or 0 where \code{data} has none.}
 
 \item{sex_ratio_f}{Numeric array \code{[n_pop, n_regions]} of the female sex
 ratio at recruitment. Default 0.5.}

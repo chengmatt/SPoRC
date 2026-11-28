@@ -430,8 +430,10 @@ do_move_re_mapping <- function(input_list, move_year_re, move_age_re, move_pop_r
 #'   to \code{NA}.
 #' @param Fixed_Movement Movement probability array \code{[n_pop × n_regions ×
 #'   n_regions × n_years × n_seas × n_ages × n_sexes]}, each \code{[n_regions ×
-#'   n_regions]} slice row-stochastic. Required when
-#'   \code{use_fixed_movement = 1}. \code{NA} (default) builds an identity matrix.
+#'   n_regions]} slice row-stochastic: each row, the fish leaving one region, sums to
+#'   one, and setup stops when a row does not. Required when
+#'   \code{use_fixed_movement = 1}. \code{NA} (default) builds an identity matrix; a
+#'   matrix with only some values missing stops setup.
 #' @param Use_Movement_Prior Integer flag, \code{1} for Dirichlet priors on the
 #'   movement rows. Default \code{0}.
 #' @param Movement_prior Data frame with columns \code{pop}, \code{region_from},
@@ -605,8 +607,14 @@ Setup_Mod_Movement <- function(input_list,
 
   # Input Validation --------------------------------------------------------
 
+  # a matrix that is used and only partly given is refused, since filling in no movement would hide the gap
+  movement_missing <- is.na(Fixed_Movement)
+  if(any(movement_missing) && !all(movement_missing) && isTRUE(use_fixed_movement == 1))
+    stop("Fixed_Movement has ", sum(movement_missing), " missing values among its ", length(Fixed_Movement),
+         " fractions. Give every fraction, or Fixed_Movement = NA for no movement.")
+
   # If no movement matrix is provided
-  if(is.na(sum(Fixed_Movement))) {
+  if(any(movement_missing)) {
     Fixed_Movement <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, input_list$data$n_regions,
                                        length(input_list$data$years), input_list$data$n_seas,
                                        length(input_list$data$ages), input_list$data$n_sexes))
@@ -626,6 +634,7 @@ Setup_Mod_Movement <- function(input_list,
     n_seas = input_list$data$n_seas,
     what = 'Fixed_Movement'
   )
+  if(use_fixed_movement == 1) check_movement_rows(Fixed_Movement, "Fixed_Movement") # every region's fish go somewhere
 
   # Check for movement priors
   if(!Use_Movement_Prior %in% c(0,1)) stop('Options for movement priors not correctly specified. The options are Use_Movement_Prior == 0 (dont use), or == 1 (use)')

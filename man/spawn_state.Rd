@@ -12,7 +12,8 @@ spawn_state(
   dur = 1,
   t_spawn = 0,
   move_timing = 0,
-  expm_nsub = 0
+  expm_nsub = 0,
+  spawn_move = NULL
 )
 }
 \arguments{
@@ -44,6 +45,11 @@ movement and mortality.}
 under \code{move_timing = 2}: \code{0} (default) uses \code{Matrix::expm},
 a value \eqn{n \ge 1} uses the implicit backward Euler scheme
 \eqn{(I - A/n)^{-n}}. See \code{\link{mat_exp}}.}
+
+\item{spawn_move}{Matrix \code{[region_from, region_to]} of natal homing at spawning, or
+\code{NULL} (default) for none. Under \code{move_timing = 0} the fish home after they
+move and then take the mortality up to spawning where they spawn; under 1 and 2 they
+home after that mortality. This is the order \code{\link{biom_at_spawn}} uses.}
 }
 \value{
 Numeric vector of length \code{n_regions}.

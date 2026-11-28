@@ -319,9 +319,13 @@ $$\mathbf{N}_{p,a}^{spawn} = \left\{ \begin{matrix}
 
 Under $\kappa = 0$ fish move at the start of the season and spawn at their post-movement location; under $\kappa = 1$ movement follows spawning, so they spawn where they started; under $\kappa = 2$ they are partially redistributed by the time they spawn. The $t^{spawn}$ mortality discount is kept inside $\mathbf{N}^{spawn}$ in all three cases rather than applied separately to $SSBPR$.
 
-When $n_\tau = 1$ and $n_p > 1$ (single-season natal homing), a separate spawning movement matrix $\mathbf{M}^{spawn}_{p,a,s=1}$ then redistributes fish to natal grounds:
+When $n_\tau = 1$ and $n_p > 1$ (single-season natal homing), a separate spawning movement matrix $\mathbf{M}^{spawn}_{p,a,s=1}$ then redistributes fish to natal grounds. Under $\kappa = 1$ and $\kappa = 2$ it is applied to the spawning state above:
 
 $$\mathbf{N}^{spawn}_{p,a} \leftarrow \left(\mathbf{N}^{spawn}_{p,a}\right)^{\top} \mathbf{M}^{spawn}_{p,a,s=1}$$
+
+Under $\kappa = 0$ fish move, then home, and the $t^{spawn}$ mortality discount is taken afterwards at the natal grounds, as in the population dynamics:
+
+$$\mathbf{N}_{p,a}^{spawn} = \left[\left(\mathbf{N}_{p,a}\right)^{\top}\mathbf{M}_{p,\tau^{spawn},a,s=1}\mathbf{M}^{spawn}_{p,a,s=1}\right] \odot e^{-t^{spawn}\mathbf{Z}_{p,a,\tau^{spawn}}}$$
 
 **Analytical plus-group solution.** For the spatial case, the scalar geometric series does not correctly accumulate the plus group under movement. Instead, the plus-group abundance vector $\mathbf{N}_{p,a_+}$ is solved analytically using four annual transition matrices that accumulate the effects of seasonal survival and movement for both the penultimate age and the plus-group age under fished and unfished conditions. Each annual matrix $\mathbf{T}_{p,a}$ is the year-long composition of the seasonal operators $\mathbf{T}_{p,\tau,a}$ defined above, transposed into the column convention so it acts on $\mathbf{N}$ directly:
 

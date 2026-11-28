@@ -110,10 +110,9 @@ Get_Init_NAA <- function(
           # discarded F
           tmp_disc_F = rowSums(sweep(
             array(fish_sel[p,r,1,1:(n_ages - 1),s,, drop = FALSE] *
-                    (1 - ret_sel[p,r,1,1:(n_ages - 1),s,, drop = FALSE]) *
-                    dmr[r,1,],
+                    (1 - ret_sel[p,r,1,1:(n_ages - 1),s,, drop = FALSE]),
                   dim = c(n_ages - 1, n_fish_fleets)),
-            2, as.vector(init_F[r,1,]), "*"
+            2, as.vector(init_F[r,1,] * dmr[r,1,]), "*" # each fleet's discards die at its own rate
           ))
           tmp_F = tmp_ret_F + tmp_disc_F # total F
           tmp_cumsum_Z = cumsum(natmort_annual[p,r,1:(n_ages - 1),s] + tmp_F)
@@ -137,9 +136,9 @@ Get_Init_NAA <- function(
               2, as.vector(init_F[r,seas,]), "*"
             ))
             tmp_disc_F = rowSums(sweep(
-              array(fish_sel[p,r,seas,1:n_ages,s,, drop = FALSE] * (1 - ret_sel[p,r,seas,1:n_ages,s,, drop = FALSE]) * dmr[r,seas,],
+              array(fish_sel[p,r,seas,1:n_ages,s,, drop = FALSE] * (1 - ret_sel[p,r,seas,1:n_ages,s,, drop = FALSE]),
                     dim = c(n_ages, n_fish_fleets)),
-              2, as.vector(init_F[r,seas,]), "*"
+              2, as.vector(init_F[r,seas,] * dmr[r,seas,]), "*" # each fleet's discards die at its own rate
             ))
             Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_ret_F + tmp_disc_F
           } # end r loop
@@ -233,8 +232,8 @@ Get_Init_NAA <- function(
             for(r in 1:n_regions) {
               tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
                                         2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
-              tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
-                                         2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+              tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]), dim = c(n_ages, n_fish_fleets)),
+                                         2, array(init_F[r,seas,] * dmr[r,seas,], dim = n_fish_fleets), "*")) # discarded F, each fleet's discards dying at its own rate
               tmp_F = tmp_ret_F + tmp_disc_F # total F
               # within season mortality
               if(seas < n_seas) {
@@ -287,8 +286,8 @@ Get_Init_NAA <- function(
           for(r in 1:n_regions) {
             tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
                                       2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
-            tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
-                                       2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+            tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]), dim = c(n_ages, n_fish_fleets)),
+                                       2, array(init_F[r,seas,] * dmr[r,seas,], dim = n_fish_fleets), "*")) # discarded F, each fleet's discards dying at its own rate
             Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_ret_F + tmp_disc_F
           } # end r loop
 
@@ -404,8 +403,8 @@ Get_Init_NAA <- function(
           for(r in 1:n_regions) {
             tmp_ret_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * ret_sel[p,r,seas,1:n_ages,s,], dim = c(n_ages, n_fish_fleets)),
                                       2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # retained F
-            tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]) * dmr[r,seas,], dim = c(n_ages, n_fish_fleets)),
-                                       2, array(init_F[r,seas,], dim = n_fish_fleets), "*")) # discarded F
+            tmp_disc_F = rowSums(sweep(array(fish_sel[p,r,seas,1:n_ages,s,] * (1 - ret_sel[p,r,seas,1:n_ages,s,]), dim = c(n_ages, n_fish_fleets)),
+                                       2, array(init_F[r,seas,] * dmr[r,seas,], dim = n_fish_fleets), "*")) # discarded F, each fleet's discards dying at its own rate
             Z_ra[r,] = (natmort[p,r,seas,1:n_ages,s] * seasdur[seas]) + tmp_ret_F + tmp_disc_F
           } # end r loop
 

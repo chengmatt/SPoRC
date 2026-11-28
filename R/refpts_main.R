@@ -273,7 +273,8 @@ check_msy_rec_model <- function(what, rec_model, sr_penalty = 0) {
 #' @param SPR_x Target spawning potential ratio, required under \code{"SPR"},
 #'   \code{"independent_SPR"} and \code{"global_SPR"}.
 #' @param t_spawn Fraction of the spawning season elapsed before spawning, for the
-#'   mid-season mortality correction. Default 0.
+#'   mid-season mortality correction. Default \code{NULL} reads \code{data$t_spawn},
+#'   the value the model was fitted with, or 0 where \code{data} has none.
 #' @param sex_ratio_f Numeric array \code{[n_pop, n_regions]} of the female sex
 #'   ratio at recruitment. Default 0.5.
 #' @param calc_rec_st_yr First model year in the mean historical recruitment the
@@ -327,7 +328,7 @@ Get_Reference_Points <- function(
   data,
   rep,
   SPR_x = NULL,
-  t_spawn = 0,
+  t_spawn = NULL,
   sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
   calc_rec_st_yr = 1,
   rec_age = 1,
@@ -355,6 +356,13 @@ Get_Reference_Points <- function(
   }
 
   if(all(is_discard_fleet == 1)) stop("is_discard_fleet is all 1's! At least one fleet needs to be a retention fleet (0).")
+
+  # spawn timing not given is the model's own, so the reference points and the fitted SSB are on the same basis
+  if(is.null(t_spawn)) {
+    t_spawn <- 0 # older data lists have no t_spawn
+    if(!is.null(data$t_spawn)) t_spawn <- data$t_spawn
+  }
+
   # old reports have no season dim
   rep$natmort <- expand_natmort_seasons(rep$natmort, data$n_seas)
 
@@ -615,7 +623,7 @@ Get_Reference_Points <- function(
             for(p2 in 1:n_pop) {
               rn <- data$natal_region[p2]
               pop_b_ref_pt[p2,r]        <- tmp_obj[[r]]$rep$SB[p2]  * tmp_obj[[r]]$rep$Req[p2]
-              virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * rep$R0[p2]
+              virgin_pop_b_ref_pt[p2,r] <- tmp_obj[[r]]$rep$SB0[p2] * data_list$R0[p2] # unfished recruitment in this region
               for(p in 1:n_pop) {
                 if(p != p2) {
                   sc <- data_list$stray_rate[p] / n_pop_in_region[rn]

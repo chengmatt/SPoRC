@@ -400,15 +400,11 @@ global_SPR_quantities <- function(log_F_x,
 
           # Propagate to the spawning point; movement and t_spawn mortality are applied
           # together so the spawning location is consistent with move_timing.
-          tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, M_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
-          tmp_fished_spawn   = spawn_state(tmp_fished,   Mv, Z_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+          spawn_move = NULL # natal homing, in a single season model with several populations
+          if(n_pop > 1 && n_seas == 1) spawn_move = sgl_seas_spawning_movement[p,,,j - 1]
+          tmp_unfished_spawn = spawn_state(tmp_unfished, Mv, M_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub, spawn_move = spawn_move)
+          tmp_fished_spawn   = spawn_state(tmp_fished,   Mv, Z_seas, Qv, seasdur[seas], t_spawn, move_timing, expm_nsub = expm_nsub, spawn_move = spawn_move)
 
-          # If single season natal homing population
-          if(n_pop > 1 && n_seas == 1) {
-            # Get NAA during spawning in single season case
-            tmp_unfished_spawn = tmp_unfished_spawn %*% sgl_seas_spawning_movement[p,,,j - 1]
-            tmp_fished_spawn = tmp_fished_spawn %*% sgl_seas_spawning_movement[p,,,j - 1]
-          }
 
           # Get spawning biomass per recruit
           SB_age[1,p,, j - 1] = tmp_unfished_spawn * WAA[p,, spawn_seas, j - 1] * MatAA[p,, spawn_seas, j - 1]
@@ -464,16 +460,12 @@ global_SPR_quantities <- function(log_F_x,
     # applied to SB_age below, so that continuous movement can redistribute spawners.
     Zu_spawn = natmort[p,,spawn_seas, n_ages - 1] * seasdur[spawn_seas]
     Zf_spawn = Zu_spawn + ret_F_by_region(p, n_ages - 1, spawn_seas) + disc_F_by_region(p, n_ages - 1, spawn_seas)
+    spawn_move = NULL # natal homing, in a single season model with several populations
+    if(n_pop > 1 && n_seas == 1) spawn_move = sgl_seas_spawning_movement[p,,,n_ages - 1]
     tmp_unfished_spawn[p,] = spawn_state(tmp_unfished_spawn[p,], Movement[p,,, spawn_seas, n_ages - 1],
-                                         Zu_spawn, Mrate[p,,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+                                         Zu_spawn, Mrate[p,,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub, spawn_move = spawn_move)
     tmp_fished_spawn[p,]   = spawn_state(tmp_fished_spawn[p,], Movement[p,,, spawn_seas, n_ages - 1],
-                                         Zf_spawn, Mrate[p,,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
-    # If single season natal homing population
-    if(n_pop > 1 && n_seas == 1) {
-      # Get NAA during spawning in single season case
-      tmp_unfished_spawn[p,] = as.vector(tmp_unfished_spawn[p,] %*% sgl_seas_spawning_movement[p,,,n_ages - 1])
-      tmp_fished_spawn[p,] = as.vector(tmp_fished_spawn[p,] %*% sgl_seas_spawning_movement[p,,,n_ages - 1])
-    }
+                                         Zf_spawn, Mrate[p,,, spawn_seas, n_ages - 1], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub, spawn_move = spawn_move)
 
   }
 
@@ -541,17 +533,13 @@ global_SPR_quantities <- function(log_F_x,
     # so that continuous movement can redistribute spawners before spawning.
     Zu_spawn_plus = natmort[p,,spawn_seas,n_ages] * seasdur[spawn_seas]
     Zf_spawn_plus = Zu_spawn_plus + ret_F_by_region(p, n_ages, spawn_seas) + disc_F_by_region(p, n_ages, spawn_seas)
+    spawn_move = NULL # natal homing, in a single season model with several populations
+    if(n_pop > 1 && n_seas == 1) spawn_move = sgl_seas_spawning_movement[p,,,n_ages]
     tmp_unfished_spawn[p,] = spawn_state(tmp_unfished_spawn[p,], Movement[p,,, spawn_seas, n_ages],
-                                         Zu_spawn_plus, Mrate[p,,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+                                         Zu_spawn_plus, Mrate[p,,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub, spawn_move = spawn_move)
     tmp_fished_spawn[p,]   = spawn_state(tmp_fished_spawn[p,], Movement[p,,, spawn_seas, n_ages],
-                                         Zf_spawn_plus, Mrate[p,,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub)
+                                         Zf_spawn_plus, Mrate[p,,, spawn_seas, n_ages], seasdur[spawn_seas], t_spawn, move_timing, expm_nsub = expm_nsub, spawn_move = spawn_move)
 
-    # If single season natal homing population
-    if(n_pop > 1 && n_seas == 1) {
-      # Get NAA during spawning in single season case
-      tmp_unfished_spawn[p,] = as.vector(tmp_unfished_spawn[p,] %*% sgl_seas_spawning_movement[p,,,n_ages])
-      tmp_fished_spawn[p,] = as.vector(tmp_fished_spawn[p,] %*% sgl_seas_spawning_movement[p,,,n_ages])
-    }
   }
 
   # Get spawning biomass per recruit

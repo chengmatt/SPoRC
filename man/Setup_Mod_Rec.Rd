@@ -291,7 +291,10 @@ from \code{ln_global_R0}, \code{"est"} gives it its own \code{ln_sr_R0}, and
 
 \item{sgl_seas_spawning_movement}{Array \code{[n_pop x n_regions x n_regions x
 n_years x n_ages x n_sexes]}, each \code{[p, , r, y, a, s]} slice row-stochastic.
-\code{NA} (default) assumes complete natal homing and builds the array internally.}
+The fractions leaving one region to spawn sum to one over the regions they arrive
+in, and setup stops when they do not. \code{NA} (default) assumes complete natal
+homing and builds the array internally; an array with only some values missing
+stops setup.}
 
 \item{t_spawn}{Numeric fraction of the spawning season elapsed before spawning.
 \code{0} (default) spawns before any mortality, \code{1} after all of it.}

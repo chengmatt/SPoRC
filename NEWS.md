@@ -62,6 +62,8 @@
 * Reference points now support local density dependence for meta-population and natal homing models.
 * Added uncertainty estimation for reference points.
 * `Get_Reference_Points` now uses growth-derived weight at age from the model report rather than the data placeholder.
+* `Get_Reference_Points()` and `Get_Reference_Point_Uncertainty()` read `t_spawn` from the fitted model when it is not given. It defaulted to 0 before.
+* `Do_Population_Projection()` returns `proj_DAA`, the dead discards at age.
 * `Get_Reference_Points()` has a new `calc_rec_yrs` argument, the model years mean recruitment is averaged over for SPR biomass reference points, as an alternative to the `calc_rec_st_yr:(n_years - rec_age)` window, so the mean can run to the terminal year or skip years. It is passed through `get_key_quants()`, `get_closed_loop_reference_points()` and `Get_Reference_Point_Uncertainty()`. The mean recruitment is also now returned as `mean_rec` `[n_pop, n_regions]` under every method.
 
 ### Case studies and applications
@@ -107,6 +109,10 @@
 - The zeros dropped logistic normal (types 5 and 6) is written bin by bin, a sum of normals or a chain of conditional normals, without forming its covariance. 
 
 ## Bug Fixes
+- Fixed `virgin_pop_b_ref_pt` under `what = "independent_MSY"` with several populations scaling a population's own unfished spawning biomass by its total R0, where every other term uses its R0 in that region.
+- `Setup_Mod_Movement()` and `Setup_Mod_Rec()` now stop when a row of `Fixed_Movement` or `sgl_seas_spawning_movement` does not sum to one, or when the matrix is only partly given. Both were accepted before, the second by filling in the default.
+- Fixed unfished spawning biomass per recruit and the reference points applying natal homing after the `t_spawn` mortality under `move_timing = 0`, where the population dynamics apply it before. An unfished natal homing model with mid-year spawning now starts at equilibrium.
+- Fixed the initial age structure applying fleet discard mortality by age position rather than by fleet, which mattered only under a fished initial equilibrium with discards and a discard mortality that differs among fleets.
 - Fixed `get_par_est_info` reporting the variance of a random effect in `SE_Val` rather than its standard error.
 - Fixed `do_likelihood_profile` and `do_jitter` reporting `jnLL` at the random effect mode under random effects, rather than the marginal the fit minimizes.
 - Fixed the time-varying selectivity smoothing penalty not being applied in the first year.

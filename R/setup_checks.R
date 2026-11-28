@@ -625,3 +625,35 @@ check_miss0_osa <- function(input_list, like_vals, arg_name) {
        "which keep every bin and add a small constant to the zeros instead.")
 
 } # end check_miss0_osa
+
+
+# Movement Rows -----------------------------------------------------------
+
+#' Check that every row of a movement array sums to one
+#'
+#' A row is where the fish in one region go, so its fractions sum to one. Rows that
+#' do not would add or remove fish every time the matrix is applied.
+#'
+#' @param x Movement array whose second dim is the region fish leave and whose third is
+#'   the region they arrive in.
+#' @param arg_name Character. The argument \code{x} was given as, for the error message.
+#'
+#' @return No return value. Stops when a row does not sum to one (1e-6).
+#'
+#' @keywords internal
+check_movement_rows <- function(x, arg_name) {
+
+  row_sums <- apply(x, seq_along(dim(x))[-3], sum) # summed over the region fish arrive in
+  off_by <- abs(row_sums - 1)
+  off_by[!is.finite(off_by)] <- Inf # a missing value cannot sum to one
+  if(max(off_by) <= 1e-6) return(invisible(NULL))
+
+  # the row furthest from one, by population and the region fish leave
+  worst_row <- arrayInd(which.max(off_by), dim(row_sums))
+
+  stop(arg_name, " has rows that do not sum to 1. Each row holds where the fish in one region go, so its fractions ",
+       "have to sum to 1 over the regions they arrive in (the third dim). ", sum(off_by > 1e-6), " of ", length(row_sums),
+       " rows do not. The furthest is population ", worst_row[1], ", region ", worst_row[2], ", which sums to ",
+       signif(row_sums[which.max(off_by)], 6), ".")
+
+} # end check_movement_rows

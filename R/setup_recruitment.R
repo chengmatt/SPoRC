@@ -1373,7 +1373,10 @@ do_rec_seas_prop_mapping <- function(input_list, rec_seas_prop_spec) {
 #'   \code{0} (default) spawns before any mortality, \code{1} after all of it.
 #' @param sgl_seas_spawning_movement Array \code{[n_pop x n_regions x n_regions x
 #'   n_years x n_ages x n_sexes]}, each \code{[p, , r, y, a, s]} slice row-stochastic.
-#'   \code{NA} (default) assumes complete natal homing and builds the array internally.
+#'   The fractions leaving one region to spawn sum to one over the regions they arrive
+#'   in, and setup stops when they do not. \code{NA} (default) assumes complete natal
+#'   homing and builds the array internally; an array with only some values missing
+#'   stops setup.
 #' @param use_fixed_stray_rate Integer (0/1). Whether stray rates come from
 #'   \code{fixed_stray_rate} rather than being estimated. Default \code{1}.
 #' @param fixed_stray_rate Array \code{[n_pop x n_years]} of stray rates in
@@ -1640,7 +1643,14 @@ Setup_Mod_Rec <- function(input_list,
 
 
   # Spawning Movement -------------------------------------------------------
-  if(is.na(sum(sgl_seas_spawning_movement))) {
+
+  # a matrix only partly given is refused, since filling in complete natal homing would hide the gap
+  spawn_move_missing <- is.na(sgl_seas_spawning_movement)
+  if(any(spawn_move_missing) && !all(spawn_move_missing))
+    stop("sgl_seas_spawning_movement has ", sum(spawn_move_missing), " missing values among its ", length(sgl_seas_spawning_movement),
+         " fractions. Give every fraction, or sgl_seas_spawning_movement = NA for complete natal homing.")
+
+  if(all(spawn_move_missing)) {
     natal_region <- input_list$data$natal_region
     arr <- array(0, dim = c(input_list$data$n_pop, input_list$data$n_regions, input_list$data$n_regions, length(input_list$data$years), length(input_list$data$ages), input_list$data$n_sexes))
     for(p in seq_len(input_list$data$n_pop)) arr[p, , natal_region[p], , , ] <- 1
@@ -1656,6 +1666,7 @@ Setup_Mod_Rec <- function(input_list,
       n_sexes = input_list$data$n_sexes,
       what = 'sgl_seas_spawning_movement'
     )
+    check_movement_rows(sgl_seas_spawning_movement, "sgl_seas_spawning_movement") # every region's fish spawn somewhere
     tmp_sgl_seas_spawning_movement <- sgl_seas_spawning_movement
     if(input_list$data$n_pop > 1 && input_list$data$n_seas == 1 && rec_model_val %in% c(1, 2)) collect_message("Using user input natal homing rate.")
   }

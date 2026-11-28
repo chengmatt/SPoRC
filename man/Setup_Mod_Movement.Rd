@@ -56,8 +56,10 @@ to \code{NA}.}
 
 \item{Fixed_Movement}{Movement probability array \code{[n_pop × n_regions ×
 n_regions × n_years × n_seas × n_ages × n_sexes]}, each \code{[n_regions ×
-n_regions]} slice row-stochastic. Required when
-\code{use_fixed_movement = 1}. \code{NA} (default) builds an identity matrix.}
+n_regions]} slice row-stochastic: each row, the fish leaving one region, sums to
+one, and setup stops when a row does not. Required when
+\code{use_fixed_movement = 1}. \code{NA} (default) builds an identity matrix; a
+matrix with only some values missing stops setup.}
 
 \item{Use_Movement_Prior}{Integer flag, \code{1} for Dirichlet priors on the
 movement rows. Default \code{0}.}

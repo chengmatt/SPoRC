@@ -486,6 +486,14 @@ comparisons through <code><a href="ad_value.html">ad_value</a></code>.</p></dd>
     n_fish_fleets]`. Retained catch in biomass, built from `proj_ret_FAA`, and
     the quantity `catch_input` is matched against.</p></dd>
 
+  <dt><code>proj_CAA</code></dt>
+<dd><p>`[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes,
+    n_fish_fleets]`. Retained catch at age in numbers.</p></dd>
+
+  <dt><code>proj_DAA</code></dt>
+<dd><p>Dimensioned as `proj_CAA`. Dead discards at age in
+    numbers, from `proj_disc_FAA`.</p></dd>
+
   <dt><code>proj_SSB</code></dt>
 <dd><p>`[n_pop, n_regions, n_proj_yrs]`. Female spawning
     biomass, accumulated in `spawn_seas` with the `t_spawn` correction. Halved

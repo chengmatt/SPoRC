@@ -67,7 +67,7 @@ estimates only.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">Get_Reference_Point_Uncertainty</span><span class="op">(</span></span>
 <span>  <span class="va">obj</span>,</span>
 <span>  SPR_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  t_spawn <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  t_spawn <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sex_ratio_f <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  calc_rec_st_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  rec_age <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -102,7 +102,8 @@ estimates only.</p>
 
 
 <dt id="arg-t-spawn">t_spawn<a class="anchor" aria-label="anchor" href="#arg-t-spawn"></a></dt>
-<dd><p>Numeric. Spawning season fraction elapsed before spawning. Default = 0.</p></dd>
+<dd><p>Numeric. Spawning season fraction elapsed before spawning. Default
+<code>NULL</code> reads the fitted model's own, as <code><a href="Get_Reference_Points.html">Get_Reference_Points</a></code> does.</p></dd>
 
 
 <dt id="arg-sex-ratio-f">sex_ratio_f<a class="anchor" aria-label="anchor" href="#arg-sex-ratio-f"></a></dt>

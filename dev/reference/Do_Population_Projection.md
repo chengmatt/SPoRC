@@ -441,6 +441,16 @@ catch advice for terminal year + 1 is read from index 2. `proj_NAA`,
   catch in biomass, built from \`proj_ret_FAA\`, and the quantity
   \`catch_input\` is matched against.
 
+- `proj_CAA`:
+
+  \`\[n_pop, n_regions, n_proj_yrs, n_seas, n_ages, n_sexes,
+  n_fish_fleets\]\`. Retained catch at age in numbers.
+
+- `proj_DAA`:
+
+  Dimensioned as \`proj_CAA\`. Dead discards at age in numbers, from
+  \`proj_disc_FAA\`.
+
 - `proj_SSB`:
 
   \`\[n_pop, n_regions, n_proj_yrs\]\`. Female spawning biomass,

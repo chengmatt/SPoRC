@@ -129,7 +129,8 @@ imposed:</p><dl><dt><code>move_timing = 0</code></dt>
 <span>  dur <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  t_spawn <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  move_timing <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span></span>
+<span>  expm_nsub <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  spawn_move <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -180,6 +181,13 @@ movement and mortality.</p></dd>
 under <code>move_timing = 2</code>: <code>0</code> (default) uses <code><a href="https://rdrr.io/pkg/Matrix/man/expm-methods.html" class="external-link">Matrix::expm</a></code>,
 a value \(n \ge 1\) uses the implicit backward Euler scheme
 \((I - A/n)^{-n}\). See <code><a href="mat_exp.html">mat_exp</a></code>.</p></dd>
+
+
+<dt id="arg-spawn-move">spawn_move<a class="anchor" aria-label="anchor" href="#arg-spawn-move"></a></dt>
+<dd><p>Matrix <code>[region_from, region_to]</code> of natal homing at spawning, or
+<code>NULL</code> (default) for none. Under <code>move_timing = 0</code> the fish home after they
+move and then take the mortality up to spawning where they spawn; under 1 and 2 they
+home after that mortality. This is the order <code><a href="biom_at_spawn.html">biom_at_spawn</a></code> uses.</p></dd>
 
 </dl></div>
     <div class="section level2">

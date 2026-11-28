@@ -180,6 +180,13 @@
 - `Get_Reference_Points` now uses growth-derived weight at age from the
   model report rather than the data placeholder.
 - [`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md)
+  and
+  [`Get_Reference_Point_Uncertainty()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Point_Uncertainty.md)
+  read `t_spawn` from the fitted model when it is not given. It
+  defaulted to 0 before.
+- [`Do_Population_Projection()`](https://chengmatt.github.io/SPoRC/dev/reference/Do_Population_Projection.md)
+  returns `proj_DAA`, the dead discards at age.
+- [`Get_Reference_Points()`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md)
   has a new `calc_rec_yrs` argument, the model years mean recruitment is
   averaged over for SPR biomass reference points, as an alternative to
   the `calc_rec_st_yr:(n_years - rec_age)` window, so the mean can run
@@ -345,6 +352,26 @@
 
 ### Bug Fixes
 
+- Fixed `virgin_pop_b_ref_pt` under `what = "independent_MSY"` with
+  several populations scaling a population’s own unfished spawning
+  biomass by its total R0, where every other term uses its R0 in that
+  region.
+- [`Setup_Mod_Movement()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Movement.md)
+  and
+  [`Setup_Mod_Rec()`](https://chengmatt.github.io/SPoRC/dev/reference/Setup_Mod_Rec.md)
+  now stop when a row of `Fixed_Movement` or
+  `sgl_seas_spawning_movement` does not sum to one, or when the matrix
+  is only partly given. Both were accepted before, the second by filling
+  in the default.
+- Fixed unfished spawning biomass per recruit and the reference points
+  applying natal homing after the `t_spawn` mortality under
+  `move_timing = 0`, where the population dynamics apply it before. An
+  unfished natal homing model with mid-year spawning now starts at
+  equilibrium.
+- Fixed the initial age structure applying fleet discard mortality by
+  age position rather than by fleet, which mattered only under a fished
+  initial equilibrium with discards and a discard mortality that differs
+  among fleets.
 - Fixed `get_par_est_info` reporting the variance of a random effect in
   `SE_Val` rather than its standard error.
 - Fixed `do_likelihood_profile` and `do_jitter` reporting `jnLL` at the

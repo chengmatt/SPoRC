@@ -33,7 +33,8 @@ spawn_state(
   dur = 1,
   t_spawn = 0,
   move_timing = 0,
-  expm_nsub = 0
+  expm_nsub = 0,
+  spawn_move = NULL
 )
 ```
 
@@ -84,6 +85,15 @@ spawn_state(
   value \\n \ge 1\\ uses the implicit backward Euler scheme \\(I -
   A/n)^{-n}\\. See
   [`mat_exp`](https://chengmatt.github.io/SPoRC/dev/reference/mat_exp.md).
+
+- spawn_move:
+
+  Matrix `[region_from, region_to]` of natal homing at spawning, or
+  `NULL` (default) for none. Under `move_timing = 0` the fish home after
+  they move and then take the mortality up to spawning where they spawn;
+  under 1 and 2 they home after that mortality. This is the order
+  [`biom_at_spawn`](https://chengmatt.github.io/SPoRC/dev/reference/biom_at_spawn.md)
+  uses.
 
 ## Value
 

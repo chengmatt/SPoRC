@@ -10,7 +10,7 @@ which returns point estimates only.
 Get_Reference_Point_Uncertainty(
   obj,
   SPR_x = NULL,
-  t_spawn = 0,
+  t_spawn = NULL,
   sex_ratio_f = NULL,
   calc_rec_st_yr = 1,
   rec_age = 1,
@@ -45,8 +45,10 @@ Get_Reference_Point_Uncertainty(
 
 - t_spawn:
 
-  Numeric. Spawning season fraction elapsed before spawning. Default =
-  0.
+  Numeric. Spawning season fraction elapsed before spawning. Default
+  `NULL` reads the fitted model's own, as
+  [`Get_Reference_Points`](https://chengmatt.github.io/SPoRC/dev/reference/Get_Reference_Points.md)
+  does.
 
 - sex_ratio_f:
 

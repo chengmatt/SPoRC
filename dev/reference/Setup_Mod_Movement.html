@@ -135,8 +135,10 @@ to <code>NA</code>.</p></dd>
 <dt id="arg-fixed-movement">Fixed_Movement<a class="anchor" aria-label="anchor" href="#arg-fixed-movement"></a></dt>
 <dd><p>Movement probability array <code>[n_pop × n_regions ×
 n_regions × n_years × n_seas × n_ages × n_sexes]</code>, each <code>[n_regions ×
-n_regions]</code> slice row-stochastic. Required when
-<code>use_fixed_movement = 1</code>. <code>NA</code> (default) builds an identity matrix.</p></dd>
+n_regions]</code> slice row-stochastic: each row, the fish leaving one region, sums to
+one, and setup stops when a row does not. Required when
+<code>use_fixed_movement = 1</code>. <code>NA</code> (default) builds an identity matrix; a
+matrix with only some values missing stops setup.</p></dd>
 
 
 <dt id="arg-use-movement-prior">Use_Movement_Prior<a class="anchor" aria-label="anchor" href="#arg-use-movement-prior"></a></dt>

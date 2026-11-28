@@ -175,7 +175,7 @@ that moves fish through a season goes through that one file.
 | `setup_biologicals.R` | `do_growth_mapping`, `do_NAAstate_mapping`, `do_natmort_mapping`, `Setup_Mod_Biologicals`, `Setup_Sim_Biologicals` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_caal.R` | `parse_caal_type`, `setup_caal_source` | `utils_setup.R` | `setup_fishery_comps.R`, `setup_survey_comps.R` |
 | `setup_catchability.R` | `do_q_devs_mapping`, `q_dev_par_names`, `renumber_map_levels`, `setup_q_devs` | `setup_mapping.R`, `utils_setup.R` | `setup_dsem.R`, `setup_fishery_selectivity.R`, `setup_mapping.R`, `setup_survey_selectivity.R`, `sim_catchability.R`, `sim_dsem.R`, `sim_setup.R` |
-| `setup_checks.R` | `check_data_dimensions`, `check_miss0_osa`, `check_sim_dimensions` | nothing | `setup_biologicals.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R` |
+| `setup_checks.R` | `check_data_dimensions`, `check_miss0_osa`, `check_movement_rows`, `check_sim_dimensions` | nothing | `setup_biologicals.R`, `setup_fishery_catch.R`, `setup_fishery_comps.R`, `setup_fishery_selectivity.R`, `setup_movement.R`, `setup_recruitment.R`, `setup_sim_fleets.R`, `setup_survey_comps.R`, `setup_survey_selectivity.R`, `setup_tagging.R` |
 | `setup_dimensions.R` | `Setup_Mod_Dim`, `Setup_Sim_Dim` | `utils_setup.R` | `sim_closed_loop.R`, `sim_self_test.R` |
 | `setup_dsem.R` | `apply_dsem_link_switch`, `check_dsem_cov_support`, `dev_map_levels`, `dsem_cov_link_mean`, `dsem_cov_sd_start`, `dsem_declared_by`, `dsem_default_link`, `dsem_family_codes`, `dsem_link_codes`, `dsem_process_table`, `dsem_rec_correction_on`, `dsem_rec_margvar_on`, `dsem_series`, `get_dsem_cells`, `get_dsem_link`, `get_dsem_link_sd_arrow`, `get_dsem_link_settles`, `peel_dsem_years`, `peel_series_order`, `read_dsem_arrows`, `set_dsem_logdet_atomic`, `Setup_Mod_DSEM` | `model_precision.R`, `setup_catchability.R`, `setup_movement.R`, `setup_recruitment.R`, `utils_setup.R` | `diag_osa_residuals.R`, `diag_retrospective.R`, `model_objective.R`, `setup_mapping.R`, `sim_dsem.R`, `sim_setup.R` |
 | `setup_fishery_catch.R` | `do_dmr_dev_mapping`, `do_dmr_mean_mapping`, `do_Fdev_rho_mapping`, `do_Fmort_mapping`, `do_sigma_dmr_mapping`, `do_sigmaC_mapping`, `do_sigmaC_pop_mapping`, `do_sigmaD_mapping`, `do_sigmaD_pop_mapping`, `do_sigmaF_mapping`, `Setup_Mod_Catch_and_F` | `setup_checks.R`, `setup_mapping.R`, `utils_setup.R`, `utils_year_fleet_spec.R` |  |
@@ -482,17 +482,17 @@ use.
 
 | Prefix | Files | What it covers |
 |----|----|----|
-| `test-setup_*` | 23 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
+| `test-setup_*` | 24 | Input building: the `map` factor builders and the `Setup_Mod_*` validation |
 | `test-model_*` | 47 | One objective function module each: selectivity, movement, transition, observation models, likelihoods, distributions |
 | `test-utils_*` | 8 | Shared numerical helpers |
-| `test-sim_*` | 20 | Operating model, including simulate then refit self tests |
-| `test-refpts_*` | 13 | SPR and MSY solvers, one file per spatial structure |
-| `test-projection_*` | 12 | Forward projection off a fitted model |
+| `test-sim_*` | 22 | Operating model, including simulate then refit self tests |
+| `test-refpts_*` | 15 | SPR and MSY solvers, one file per spatial structure |
+| `test-projection_*` | 15 | Forward projection off a fitted model |
 | `test-diag_*` | 23 | Post fit diagnostics: retrospectives and OSA residuals |
 | `test-integration_*` | 4 | Cross cutting agreement between the objective, the reference points and the operating model |
 | `test-regression_*` | 22 | End to end fits pinning `obj$rep` and `nll` for known configurations |
 
-That is 282 test files in total.
+That is 301 test files in total.
 
 Two groups are worth calling out. The `test-regression_*` files pin
 `obj$rep` and `nll` values for known configurations against bundled

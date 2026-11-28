@@ -390,8 +390,11 @@ rec_seas_prop[, 1] <- 1
 - sgl_seas_spawning_movement:
 
   Array `[n_pop x n_regions x n_regions x n_years x n_ages x n_sexes]`,
-  each `[p, , r, y, a, s]` slice row-stochastic. `NA` (default) assumes
-  complete natal homing and builds the array internally.
+  each `[p, , r, y, a, s]` slice row-stochastic. The fractions leaving
+  one region to spawn sum to one over the regions they arrive in, and
+  setup stops when they do not. `NA` (default) assumes complete natal
+  homing and builds the array internally; an array with only some values
+  missing stops setup.
 
 - t_spawn:
 

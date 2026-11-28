@@ -12,7 +12,7 @@ Get_Reference_Points(
   data,
   rep,
   SPR_x = NULL,
-  t_spawn = 0,
+  t_spawn = NULL,
   sex_ratio_f = array(0.5, dim = c(data$n_pop, data$n_regions)),
   calc_rec_st_yr = 1,
   rec_age = 1,
@@ -46,7 +46,8 @@ Get_Reference_Points(
 - t_spawn:
 
   Fraction of the spawning season elapsed before spawning, for the
-  mid-season mortality correction. Default 0.
+  mid-season mortality correction. Default `NULL` reads `data$t_spawn`,
+  the value the model was fitted with, or 0 where `data` has none.
 
 - sex_ratio_f:
 

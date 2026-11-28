@@ -121,6 +121,10 @@
 <li>
 <code>Get_Reference_Points</code> now uses growth-derived weight at age from the model report rather than the data placeholder.</li>
 <li>
+<code><a href="../reference/Get_Reference_Points.html">Get_Reference_Points()</a></code> and <code><a href="../reference/Get_Reference_Point_Uncertainty.html">Get_Reference_Point_Uncertainty()</a></code> read <code>t_spawn</code> from the fitted model when it is not given. It defaulted to 0 before.</li>
+<li>
+<code><a href="../reference/Do_Population_Projection.html">Do_Population_Projection()</a></code> returns <code>proj_DAA</code>, the dead discards at age.</li>
+<li>
 <code><a href="../reference/Get_Reference_Points.html">Get_Reference_Points()</a></code> has a new <code>calc_rec_yrs</code> argument, the model years mean recruitment is averaged over for SPR biomass reference points, as an alternative to the <code>calc_rec_st_yr:(n_years - rec_age)</code> window, so the mean can run to the terminal year or skip years. It is passed through <code><a href="../reference/get_key_quants.html">get_key_quants()</a></code>, <code><a href="../reference/get_closed_loop_reference_points.html">get_closed_loop_reference_points()</a></code> and <code><a href="../reference/Get_Reference_Point_Uncertainty.html">Get_Reference_Point_Uncertainty()</a></code>. The mean recruitment is also now returned as <code>mean_rec</code> <code>[n_pop, n_regions]</code> under every method.</li>
 </ul></div>
 <div class="section level4">
@@ -176,7 +180,12 @@
 </ul></div>
 <div class="section level3">
 <h3 id="bug-fixes-1-2-0-9000">Bug Fixes<a class="anchor" aria-label="anchor" href="#bug-fixes-1-2-0-9000"></a></h3>
-<ul><li>Fixed <code>get_par_est_info</code> reporting the variance of a random effect in <code>SE_Val</code> rather than its standard error.</li>
+<ul><li>Fixed <code>virgin_pop_b_ref_pt</code> under <code>what = "independent_MSY"</code> with several populations scaling a population’s own unfished spawning biomass by its total R0, where every other term uses its R0 in that region.</li>
+<li>
+<code><a href="../reference/Setup_Mod_Movement.html">Setup_Mod_Movement()</a></code> and <code><a href="../reference/Setup_Mod_Rec.html">Setup_Mod_Rec()</a></code> now stop when a row of <code>Fixed_Movement</code> or <code>sgl_seas_spawning_movement</code> does not sum to one, or when the matrix is only partly given. Both were accepted before, the second by filling in the default.</li>
+<li>Fixed unfished spawning biomass per recruit and the reference points applying natal homing after the <code>t_spawn</code> mortality under <code>move_timing = 0</code>, where the population dynamics apply it before. An unfished natal homing model with mid-year spawning now starts at equilibrium.</li>
+<li>Fixed the initial age structure applying fleet discard mortality by age position rather than by fleet, which mattered only under a fished initial equilibrium with discards and a discard mortality that differs among fleets.</li>
+<li>Fixed <code>get_par_est_info</code> reporting the variance of a random effect in <code>SE_Val</code> rather than its standard error.</li>
 <li>Fixed <code>do_likelihood_profile</code> and <code>do_jitter</code> reporting <code>jnLL</code> at the random effect mode under random effects, rather than the marginal the fit minimizes.</li>
 <li>Fixed the time-varying selectivity smoothing penalty not being applied in the first year.</li>
 <li>Fixed the projection dropping the AD class when joining assessment and projected spawning biomass for the stock-recruit curve, which took recruitment off the tape.</li>

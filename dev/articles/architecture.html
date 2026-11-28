@@ -388,7 +388,7 @@ one file.</p>
 <td><code>setup_checks.R</code></td>
 <td>
 <code>check_data_dimensions</code>, <code>check_miss0_osa</code>,
-<code>check_sim_dimensions</code>
+<code>check_movement_rows</code>, <code>check_sim_dimensions</code>
 </td>
 <td>nothing</td>
 <td>
@@ -1967,7 +1967,7 @@ test setup happens to use.</p>
 <tbody>
 <tr class="odd">
 <td><code>test-setup_*</code></td>
-<td>23</td>
+<td>24</td>
 <td>Input building: the <code>map</code> factor builders and the
 <code>Setup_Mod_*</code> validation</td>
 </tr>
@@ -1984,17 +1984,17 @@ transition, observation models, likelihoods, distributions</td>
 </tr>
 <tr class="even">
 <td><code>test-sim_*</code></td>
-<td>20</td>
+<td>22</td>
 <td>Operating model, including simulate then refit self tests</td>
 </tr>
 <tr class="odd">
 <td><code>test-refpts_*</code></td>
-<td>13</td>
+<td>15</td>
 <td>SPR and MSY solvers, one file per spatial structure</td>
 </tr>
 <tr class="even">
 <td><code>test-projection_*</code></td>
-<td>12</td>
+<td>15</td>
 <td>Forward projection off a fitted model</td>
 </tr>
 <tr class="odd">
@@ -2016,7 +2016,7 @@ for known configurations</td>
 </tr>
 </tbody>
 </table>
-<p>That is 282 test files in total.</p>
+<p>That is 301 test files in total.</p>
 <p>Two groups are worth calling out. The <code>test-regression_*</code>
 files pin <code>obj$rep</code> and <code>nll</code> values for known
 configurations against bundled example fits, so they are the ones most

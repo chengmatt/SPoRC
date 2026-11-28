@@ -455,7 +455,10 @@ from <code>ln_global_R0</code>, <code>"est"</code> gives it its own <code>ln_sr_
 <dt id="arg-sgl-seas-spawning-movement">sgl_seas_spawning_movement<a class="anchor" aria-label="anchor" href="#arg-sgl-seas-spawning-movement"></a></dt>
 <dd><p>Array <code>[n_pop x n_regions x n_regions x
 n_years x n_ages x n_sexes]</code>, each <code>[p, , r, y, a, s]</code> slice row-stochastic.
-<code>NA</code> (default) assumes complete natal homing and builds the array internally.</p></dd>
+The fractions leaving one region to spawn sum to one over the regions they arrive
+in, and setup stops when they do not. <code>NA</code> (default) assumes complete natal
+homing and builds the array internally; an array with only some values missing
+stops setup.</p></dd>
 
 
 <dt id="arg-t-spawn">t_spawn<a class="anchor" aria-label="anchor" href="#arg-t-spawn"></a></dt>

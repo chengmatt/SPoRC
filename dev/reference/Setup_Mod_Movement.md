@@ -71,8 +71,10 @@ Setup_Mod_Movement(
 
   Movement probability array
   `[n_pop × n_regions × n_regions × n_years × n_seas × n_ages × n_sexes]`,
-  each `[n_regions × n_regions]` slice row-stochastic. Required when
-  `use_fixed_movement = 1`. `NA` (default) builds an identity matrix.
+  each `[n_regions × n_regions]` slice row-stochastic: each row, the
+  fish leaving one region, sums to one, and setup stops when a row does
+  not. Required when `use_fixed_movement = 1`. `NA` (default) builds an
+  identity matrix; a matrix with only some values missing stops setup.
 
 - Use_Movement_Prior:
 

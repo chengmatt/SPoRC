@@ -458,10 +458,19 @@ cases rather than applied separately to $`SSBPR`$.
 
 When $`n_\tau = 1`$ and $`n_p > 1`$ (single-season natal homing), a
 separate spawning movement matrix $`\mathbf{M}^{spawn}_{p,a,s=1}`$ then
-redistributes fish to natal grounds:
+redistributes fish to natal grounds. Under $`\kappa = 1`$ and
+$`\kappa = 2`$ it is applied to the spawning state above:
 
 ``` math
 \mathbf{N}^{spawn}_{p,a} \leftarrow \left(\mathbf{N}^{spawn}_{p,a}\right)^{\top} \mathbf{M}^{spawn}_{p,a,s=1}
+```
+
+Under $`\kappa = 0`$ fish move, then home, and the $`t^{spawn}`$
+mortality discount is taken afterwards at the natal grounds, as in the
+population dynamics:
+
+``` math
+\mathbf{N}_{p,a}^{spawn} = \left[\left(\mathbf{N}_{p,a}\right)^{\top}\mathbf{M}_{p,\tau^{spawn},a,s=1}\mathbf{M}^{spawn}_{p,a,s=1}\right] \odot e^{-t^{spawn}\mathbf{Z}_{p,a,\tau^{spawn}}}
 ```
 
 **Analytical plus-group solution.** For the spatial case, the scalar

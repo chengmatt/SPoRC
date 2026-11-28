@@ -71,7 +71,7 @@ Covers single-region and spatially explicit models, on SPR or Beverton-Holt MSY.
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">rep</span>,</span>
 <span>  SPR_x <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  t_spawn <span class="op">=</span> <span class="fl">0</span>,</span>
+<span>  t_spawn <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sex_ratio_f <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/array.html" class="external-link">array</a></span><span class="op">(</span><span class="fl">0.5</span>, dim <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">data</span><span class="op">$</span><span class="va">n_pop</span>, <span class="va">data</span><span class="op">$</span><span class="va">n_regions</span><span class="op">)</span><span class="op">)</span>,</span>
 <span>  calc_rec_st_yr <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  rec_age <span class="op">=</span> <span class="fl">1</span>,</span>
@@ -107,7 +107,8 @@ maturity, natural mortality, seasons and spatial configuration.</p></dd>
 
 <dt id="arg-t-spawn">t_spawn<a class="anchor" aria-label="anchor" href="#arg-t-spawn"></a></dt>
 <dd><p>Fraction of the spawning season elapsed before spawning, for the
-mid-season mortality correction. Default 0.</p></dd>
+mid-season mortality correction. Default <code>NULL</code> reads <code>data$t_spawn</code>,
+the value the model was fitted with, or 0 where <code>data</code> has none.</p></dd>
 
 
 <dt id="arg-sex-ratio-f">sex_ratio_f<a class="anchor" aria-label="anchor" href="#arg-sex-ratio-f"></a></dt>

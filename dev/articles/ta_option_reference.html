@@ -742,7 +742,7 @@ an error.
 <td><code>NULL</code></td>
 <td>Character or NULL. Sharing structure for steepness_h [n_pop x n_regions], on a logit scale bounded to (0.2, 1). Default NULL, ignored under rec_model = "mean_rec". See do_h_mapping.</td>
 </tr>
-<tr data-k="sgl_seas_spawning_movement na array [n_pop x n_regions x n_regions x n_years x n_ages x n_sexes], each [p, , r, y, a, s] slice row-stochastic. na (default) assumes complete natal homing and builds the array internally.">
+<tr data-k="sgl_seas_spawning_movement na array [n_pop x n_regions x n_regions x n_years x n_ages x n_sexes], each [p, , r, y, a, s] slice row-stochastic. the fractions leaving one region to spawn sum to one over the regions they arrive in, and setup stops when they do not. na (default) assumes complete natal homing and builds the array internally; an array with only some values missing stops setup.">
 <td>
 <code class="optref-arg">sgl_seas_spawning_movement</code>
 </td>
@@ -751,8 +751,11 @@ an error.
 </td>
 <td>
 Array [n_pop x n_regions x n_regions x n_years x n_ages x n_sexes], each
-[p, , r, y, a, s] slice row-stochastic. NA (default) assumes complete
-natal homing and builds the array internally.
+[p, , r, y, a, s] slice row-stochastic. The fractions leaving one region
+to spawn sum to one over the regions they arrive in, and setup stops
+when they do not. NA (default) assumes complete natal homing and builds
+the array internally; an array with only some values missing stops
+setup.
 </td>
 </tr>
 <tr data-k="t_spawn 0 numeric fraction of the spawning season elapsed before spawning. 0 (default) spawns before any mortality, 1 after all of it.">
@@ -1617,7 +1620,7 @@ Integer flag. 0 (default) estimates movement, 1 fixes it at
 Fixed_Movement and maps every movement parameter to NA.
 </td>
 </tr>
-<tr data-k="fixed_movement na movement probability array [n_pop × n_regions × n_regions × n_years × n_seas × n_ages × n_sexes], each [n_regions × n_regions] slice row-stochastic. required when use_fixed_movement = 1. na (default) builds an identity matrix.">
+<tr data-k="fixed_movement na movement probability array [n_pop × n_regions × n_regions × n_years × n_seas × n_ages × n_sexes], each [n_regions × n_regions] slice row-stochastic: each row, the fish leaving one region, sums to one, and setup stops when a row does not. required when use_fixed_movement = 1. na (default) builds an identity matrix; a matrix with only some values missing stops setup.">
 <td>
 <code class="optref-arg">Fixed_Movement</code>
 </td>
@@ -1627,8 +1630,10 @@ Fixed_Movement and maps every movement parameter to NA.
 <td>
 Movement probability array [n_pop × n_regions × n_regions × n_years ×
 n_seas × n_ages × n_sexes], each [n_regions × n_regions] slice
-row-stochastic. Required when use_fixed_movement = 1. NA (default)
-builds an identity matrix.
+row-stochastic: each row, the fish leaving one region, sums to one, and
+setup stops when a row does not. Required when use_fixed_movement = 1.
+NA (default) builds an identity matrix; a matrix with only some values
+missing stops setup.
 </td>
 </tr>
 <tr data-k="use_movement_prior 0 integer flag, 1 for dirichlet priors on the movement rows. default 0.">
